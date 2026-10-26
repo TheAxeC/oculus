@@ -757,9 +757,9 @@ describe('the roles of a collection', () => {
     function tasks(required: boolean, entries: string[]): string {
         return [
             'schema:',
-            '  - { field: title, type: text }',
+            '  - { field: title, type: text, primary_key: true }',
             '  - { field: status, type: text }',
-            `  - { field: lead, type: tags, from: people${required ? ', required: true' : ''} }`,
+            `  - { field: lead, type: tags, foreign_key: people${required ? ', required: true' : ''} }`,
             'entries:',
             ...entries,
             ''

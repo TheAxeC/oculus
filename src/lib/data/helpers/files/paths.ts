@@ -11,8 +11,11 @@
 // data/helpers/guards.ts. A folder may arrive written with a trailing slash (a configured root) or
 // without one (a repository key of the `git` channel), and both spellings name the same folder
 // here, which is what lets the file browser, the source tab and the status bar agree on which root
-// or repository holds a file. The folder holds the rules over what a file's path and name say,
-// with text-kind.ts and opens-in-program.ts beside it.
+// or repository holds a file. A file is named by the served root it lies under and its path inside
+// that root (`FileName`), and two names are told to be one disk file by the roots' folders, so a
+// folder listed twice, or inside another listed folder, reaches one file by two names. The folder
+// holds the rules over what a file's path and name say, with text-kind.ts and opens-in-program.ts
+// beside it.
 
 /** The last non-empty segment of a path, which is what a tab or a row is labelled with. */
 export function nameOf(path: string): string {
@@ -159,4 +162,93 @@ export function relativePath(from: string, target: string): string {
  */
 export function hasHiddenSegment(path: string): boolean {
     return path.split('/').some((part) => part === 'node_modules' || part.startsWith('.'));
+}
+
+/** A file named by the root it is served under and its path inside that root. */
+export type FileName = { root: string; path: string };
+
+/** A served root as the decision of one disk file needs it: its key and its folders. */
+export type RootFolder = { key: string; dir: string; real?: string };
+
+/**
+ * The name of a file that lies under one of the roots: the root whose folder holds it most closely
+ * and the path under that root, or null when no root holds it. A path that is not absolute is
+ * already relative to the primary's folder, and names no file when the workspace has no primary.
+ */
+export function fileUnder(
+    file: string,
+    roots: readonly RootFolder[],
+    primary: string | null
+): FileName | null {
+    if (!file.startsWith('/')) return primary === null ? null : { root: primary, path: file };
+    let best: FileName | null = null;
+    let depth = -1;
+    for (const root of roots) {
+        const base = (root.real ?? root.dir).replace(/\/+$/, '');
+        if (base === '' || !file.startsWith(`${base}/`) || base.length <= depth) continue;
+        best = { root: root.key, path: file.slice(base.length + 1) };
+        depth = base.length;
+    }
+    return best;
+}
+
+/**
+ * The name of the file an absolute path stands for in a record: its name under a root, or while no
+ * root is read a name under no root, which `diskRelation` then answers `unread` against every other
+ * name. Null for a path no root holds once the roots are read.
+ */
+export function fileNamed(
+    file: string,
+    roots: readonly RootFolder[],
+    primary: string | null
+): FileName | null {
+    const under = fileUnder(file, roots, primary);
+    if (under !== null) return under;
+    return roots.length === 0 && file.startsWith('/') ? { root: '', path: file } : null;
+}
+
+/**
+ * The path of a named file on disk: its root's real folder (the root's `dir` when it carries no
+ * `real`) joined with its path. Null for a name whose root is not among the roots, and for a root
+ * whose real folder is empty, a folder that does not exist.
+ */
+export function diskPath(file: FileName, roots: readonly RootFolder[]): string | null {
+    const root = roots.find((one) => one.key === file.root);
+    const folder = root === undefined ? '' : (root.real ?? root.dir);
+    if (folder === '') return null;
+    const base = folder.replace(/\/+$/, '');
+    return file.path === '' ? base : `${base}/${file.path}`;
+}
+
+/**
+ * Whether two names are one file on disk. Each name stands for its root's folder joined with its
+ * path, so a folder listed twice under two names, or inside another listed folder, reaches one file
+ * by two names. A name that stands for no path on disk (see `diskPath`) is one file with itself
+ * alone. A file reached through a symbolic link inside a root is another file than its target.
+ */
+export function sameDiskFile(
+    one: FileName,
+    other: FileName,
+    roots: readonly RootFolder[]
+): boolean {
+    const [first, second] = [diskPath(one, roots), diskPath(other, roots)];
+    if (first !== null && second !== null) return first === second;
+    return one.root === other.root && one.path === other.path;
+}
+
+/** How two names stand to each other on disk: one file, two files, or not yet knowable. */
+export type DiskRelation = 'same' | 'other' | 'unread';
+
+/**
+ * Whether two names are one file on disk, as `sameDiskFile` decides, with a third answer for the
+ * time before the roots are read: with no root listed no name reaches a folder, so two different
+ * names may still be one file, and `unread` says that is not known.
+ */
+export function diskRelation(
+    one: FileName,
+    other: FileName,
+    roots: readonly RootFolder[]
+): DiskRelation {
+    if (sameDiskFile(one, other, roots)) return 'same';
+    return roots.length === 0 ? 'unread' : 'other';
 }

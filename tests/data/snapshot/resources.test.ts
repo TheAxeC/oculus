@@ -26,8 +26,8 @@ function sentence(key: string, ...args: string[]): string {
 /** The three seed entries of .oculus/data/research/resources.yml. */
 const SEED = [
     'schema:',
-    '  - { field: key, type: text }',
-    '  - { field: name, type: text }',
+    '  - { field: key, type: text, primary_key: true }',
+    '  - { field: name, type: text, display: 1 }',
     '  - { field: kind, type: text }',
     '  - { field: host, type: text }',
     '  - { field: access, type: text }',

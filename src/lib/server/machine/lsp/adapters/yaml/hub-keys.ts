@@ -32,7 +32,7 @@
 // since a file can change between the two requests.
 
 import { WRITE_MAX_MEGABYTES } from '../../../../../data/file-ops.ts';
-import { diskPath } from '../../../../../data/helpers/hub-names.ts';
+import { diskPath } from '../../../../../data/helpers/files/paths.ts';
 import {
     graphOf,
     hitAt,

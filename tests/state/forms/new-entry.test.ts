@@ -18,14 +18,14 @@ const ENGINE = loadConfig(engineDir()).config;
 setCatalog(textCatalog(ENGINE));
 
 const TASK_SCHEMA: SchemaField[] = [
-    { field: 'key', type: 'text' },
-    { field: 'title', type: 'text' },
+    { field: 'key', type: 'text', primary_key: true },
+    { field: 'title', type: 'text', display: 1 },
     { field: 'status', type: 'select' }
 ];
 
 function entry(key: string, root: string): Entry {
     return {
-        id: key,
+        id: `${root}:${key}`,
         title: key,
         fields: { key },
         file: '/hub/.oculus/data/academic/tasks.yml',
@@ -40,23 +40,27 @@ function tasks(keys: string[], root = 'research'): Collection {
         title: 'Tasks',
         file: '/hub/.oculus/data/academic/tasks.yml',
         schema: TASK_SCHEMA,
+        primary_key: 'key',
         entries: keys.map((one) => entry(one, root)),
         root
     };
 }
 
+const VENUE_SCHEMA: SchemaField[] = [
+    { field: 'id', type: 'text', primary_key: true },
+    { field: 'short', type: 'text', display: 1 },
+    { field: 'name', type: 'text', display: 2, required: true },
+    { field: 'tier', type: 'select' }
+];
+
 describe('askFields', () => {
     it.each([
-        ['a collection keyed by its first field', 'tasks', TASK_SCHEMA, ['key']],
-        [
-            'venues, whose entities are keyed by id',
-            'venues',
-            [{ field: 'name', type: 'text' }],
-            ['name', 'id']
-        ],
-        ['a file with no schema', 'tasks', undefined, ['title']]
-    ])('%s', (_name, collection, schema, fields) => {
-        expect(askFields(collection, schema).map((one) => one.field)).toEqual(fields);
+        ['the primary key of a collection keyed by key', TASK_SCHEMA, 'key', ['key']],
+        ['the primary key of venues and their required name', VENUE_SCHEMA, 'id', ['id', 'name']],
+        ['the key a file with no schema names', undefined, 'title', ['title']],
+        ['only the required fields of a file with no primary key', VENUE_SCHEMA, null, ['name']]
+    ])('asks %s (G8)', (_name, schema, primaryKey, fields) => {
+        expect(askFields(schema, primaryKey).map((one) => one.field)).toEqual(fields);
     });
 });
 
@@ -147,14 +151,15 @@ describe('the hub a task is added to', () => {
 
 describe('the hub a person is added to', () => {
     const PEOPLE_SCHEMA: SchemaField[] = [
-        { field: 'key', type: 'text' },
-        { field: 'name', type: 'text' }
+        { field: 'key', type: 'text', primary_key: true },
+        { field: 'name', type: 'text', display: 1 }
     ];
     const people = (root: string): Collection => ({
         id: 'people',
         title: 'People',
         file: '/hub/.oculus/data/academic/people.yml',
         schema: PEOPLE_SCHEMA,
+        primary_key: 'key',
         entries: [],
         root
     });
@@ -186,6 +191,15 @@ describe('the hub a person is added to', () => {
             t('editor.add_person_which_hub')
         );
     });
+
+    it('writes the key under the primary key and the name under the display (G8)', async () => {
+        const written: Record<string, unknown>[] = [];
+        await addPerson(' Ada Lovelace ', [people('research')], 'research', (_c, one) => {
+            written.push(one);
+            return Promise.resolve({ ok: true, changed: [], refused: [], id: 'research:x' });
+        });
+        expect(written).toEqual([{ key: 'ada-lovelace', name: 'Ada Lovelace' }]);
+    });
 });
 
 describe('the task a title makes', () => {
@@ -206,6 +220,23 @@ describe('the task a title makes', () => {
         ['a key held twice gets -3', 'Review', ['review', 'review-2'], 'review-3']
     ])('%s', async (_name, title, held, key) => {
         expect(await made(title, [tasks(held)])).toEqual({ key, title, status: 'todo' });
+    });
+
+    it('is written under the primary key and the display the schema flags (G8)', async () => {
+        const home: Collection = {
+            ...tasks(['review']),
+            schema: [
+                { field: 'slug', type: 'text', primary_key: true },
+                { field: 'label', type: 'text', display: 1 },
+                { field: 'status', type: 'select' }
+            ],
+            primary_key: 'slug'
+        };
+        expect(await made('Review', [home])).toEqual({
+            slug: 'review-2',
+            label: 'Review',
+            status: 'todo'
+        });
     });
 
     it('is cut to 80 characters with no trailing hyphen', async () => {

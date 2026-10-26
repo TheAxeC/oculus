@@ -1,9 +1,9 @@
 // Layer 3, view helper of views/shared/forms/entry/AddAsk.svelte. What each Add asks and does: a
-// collection's Add asks the entry's identity value (a venue: its name and its id); a lead's asks
-// its title; a Lit Watch paper's asks its title, its address and its bucket; Literature's asks a
-// DOI or an address. Each writes the entry and opens its page, which names the entry by its hub
-// and its key and where the editor fills the rest; a refusal comes back as the server's sentence
-// for the box to show above what was typed.
+// collection's Add asks the file's primary key and the fields its schema marks required (a venue:
+// its id and its name); a lead's asks its title; a Lit Watch paper's asks its title, its address
+// and its bucket; Literature's asks a DOI or an address. Each writes the entry and opens its page,
+// which names the entry by its hub and its key and where the editor fills the rest; a refusal
+// comes back as the server's sentence for the box to show above what was typed.
 //
 // A collection's Add, Literature's Add and Lit Watch's Add write to a hub that could take the
 // entry, by the rule every path that makes a record reads (`hubsTaking` and `chosenHub` of
@@ -19,7 +19,7 @@
 
 import type { PromptField } from '$lib/ui/forms/prompt';
 import type { ClientState } from '$lib/state/client/context';
-import type { Collection, SchemaField } from '$lib/state/boards/collection';
+import { primaryKeyOf, type Collection, type SchemaField } from '$lib/state/boards/collection';
 import { pageView } from '$lib/state/forms/page-entry';
 import {
     addressOfId,
@@ -95,8 +95,8 @@ function hubAsk(
 }
 
 /**
- * The Add of a collection: the identity value of the new entry, the registry key if any, and the
- * hub to write it in when more than one hub holds the collection, `chosen` chosen when it is one of
+ * The Add of a collection: the primary key and the required fields of the new entry, and the hub
+ * to write it in when more than one hub holds the collection, `chosen` chosen when it is one of
  * them, else the primary when it is, else none (`hubField`). `held` is the collection of each hub
  * that holds it, those of the key `collection` unless given (a registry's, whose key each hub's
  * list gives); the entry is written under the key of the chosen hub's collection.
@@ -109,7 +109,8 @@ export function collectionAsk(
     chosen?: string,
     held: Collection[] = client.selectors.collectionsOfKey(collection)
 ): Ask {
-    const asked = askFields(collection, schema);
+    const named = held.find((one) => one.primary_key !== undefined)?.primary_key ?? null;
+    const asked = askFields(schema, schema === undefined ? named : primaryKeyOf(schema));
     const hub = hubAsk(client, held, chosen);
     /** The key the hub `root` names the collection by, `collection` for none. */
     const keyIn = (root: string | undefined): string => {

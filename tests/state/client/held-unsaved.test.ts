@@ -27,7 +27,7 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
-import { fileNamed } from '../../../src/lib/data/helpers/hub-names.ts';
+import { fileNamed } from '../../../src/lib/data/helpers/files/paths.ts';
 import type { FeedsPayload } from '../../../src/lib/data/model/index.ts';
 import { createWrites } from '../../../src/lib/state/client/writes.svelte.ts';
 import { NO_LOOKUPS } from '../../../src/lib/state/sessions/source/write-files.ts';

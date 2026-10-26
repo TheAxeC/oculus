@@ -6,10 +6,13 @@
 // `manifest_fields` laid into it (data/shapes/vocab-keys.ts, `withManifestFields`),
 // each added field after oculus's fields of its section, and a `vocab.<key>` list is the hub's own.
 //
-// The `from` of a field names where its choices come from: one of the eight registries, the
-// projects themselves, or `vocab.<key>` for a list of config/catalogs/vocab.yml. That is the only
-// place a widget learns what to offer, so adding a venue to the registry adds it to the form with
-// no code change.
+// The `foreign_key` of a field names where its choices come from: a collection by its key in the
+// `collections:` list of the record's own hub, the projects themselves, or `vocab.<key>` for a list
+// of config/catalogs/vocab.yml. A choice stores the primary key of the entry it names and shows the
+// entry's display, the first filled field of the target's schema by `display:` rank; a collection
+// that carries a registry offers the entries of that registry's collection of every hub. That is
+// the only place a widget learns what to offer, so adding a venue to the registry adds it to the
+// form with no code change.
 //
 // The current values come from the snapshot's Project, which carries what the model declares and no
 // more. Five of the schema's fields are not in the model (NOT_IN_MODEL below), so the form opens
@@ -21,15 +24,26 @@ import { z } from 'zod';
 import {
     optionKey,
     optionLabel,
+    primaryKeyOf,
+    type Collection,
     type Id,
     type Project,
+    type RegistryWord,
     type Resource,
     type SchemaOption,
     type Snapshot
 } from '../../data/model/index.ts';
 import type { DraftTarget } from './form-draft.ts';
 import { byKey, scalar } from '../../data/helpers/guards.ts';
-import { bareId, hubId, keyOf, rootOf } from '../../data/helpers/hub-names.ts';
+import {
+    PROJECTS_TARGET,
+    VOCAB_PREFIX,
+    bareId,
+    hubId,
+    keyOf,
+    registryCollections,
+    rootOf
+} from '../../data/helpers/hub-names.ts';
 import {
     MANIFEST_FIELDS_KEY,
     vocabKeys,
@@ -54,8 +68,11 @@ export type FormField = {
     type: string;
     /** One of the sections of `manifest_schema.sections`. */
     section: string;
-    /** Where the choices come from, when they are data: one source or several offered together. */
-    from?: string | string[];
+    /**
+     * Where the choices come from, when they are data: one `foreign_key:` target or several
+     * offered together.
+     */
+    foreign_key?: string | string[];
     /** The choices, when they are a literal list in the schema: words or `{ key, label }` rows. */
     options?: SchemaOption[];
     /** On a `records` field: the fields of each record, in the schema's order. */
@@ -66,6 +83,10 @@ export type FormField = {
     map?: boolean;
     /** Whether the field must be present, as its schema says; a conditional rule is not drawn. */
     required?: boolean;
+    /** On the project form: the field is a project's id, which no write sets. */
+    primary_key?: true;
+    /** On the project form: the field's rank among those a reference to a project shows. */
+    display?: number;
 };
 
 /**
@@ -74,9 +95,6 @@ export type FormField = {
  * than the record's own the name of that hub, which the control draws as its hub chip.
  */
 export type Choice = { id: Id; label: string; glyph?: string; hub?: string };
-
-/** The field a write never touches, which the form therefore shows and does not edit. */
-export const NOT_WRITTEN = ['id'];
 
 /**
  * The schema fields the snapshot's Project does not carry, so the form cannot show their current
@@ -91,9 +109,13 @@ export const NOT_IN_MODEL = [
     'paths'
 ];
 
-/** Whether the form may write a field of a project: every field but `id`. */
-export function writableField(field: string): boolean {
-    return !NOT_WRITTEN.includes(field);
+/**
+ * Whether the form may write a field of a project: every field but the manifest schema's primary
+ * key, the project's id, which `fields` (the form's fields) give by the rule every file of entries
+ * is keyed by (`primaryKeyOf`). A form whose schema has no primary key writes every field.
+ */
+export function writableField(field: string, fields: readonly FormField[]): boolean {
+    return field !== primaryKeyOf(fields);
 }
 
 /** The word a value holds, and undefined for an empty text and for anything that is no text. */
@@ -134,7 +156,9 @@ const fieldRowShape = z.object({
     help: filledTextShape,
     type: filledTextShape,
     section: filledTextShape,
-    from: filledTextShape,
+    foreign_key: filledTextShape,
+    primary_key: z.literal(true).optional().catch(undefined),
+    display: z.number().int().min(1).optional().catch(undefined),
     options: rowsShape(z.string()).optional().catch(undefined)
 });
 
@@ -160,8 +184,10 @@ export function formFields(
             help: row.help,
             type: row.type ?? '',
             section: row.section ?? '',
-            from: row.from,
-            options: row.options
+            foreign_key: row.foreign_key,
+            options: row.options,
+            ...(row.primary_key === undefined ? {} : { primary_key: true }),
+            ...(row.display === undefined ? {} : { display: row.display })
         });
     }
     return found;
@@ -177,9 +203,6 @@ const choiceShape = z.union([
         .object({ key: z.string(), label: filledTextShape })
         .transform((row) => ({ id: row.key, label: row.label ?? row.key }))
 ]) satisfies z.ZodType<Choice>;
-
-/** The prefix of a `from` that names a keyed list of config/catalogs/vocab.yml. */
-const VOCAB_PREFIX = 'vocab.';
 
 /** The entries of one keyed vocabulary list of config/catalogs/vocab.yml, as choices. */
 const vocabChoicesShape = rowsShape(choiceShape);
@@ -214,15 +237,15 @@ export function resourceGlyph(kind: string): string | undefined {
 
 /**
  * The entities of one kind a record of the hub `root` may name, as choices, each by the key its own
- * hub's file gives it, which is what the field writes: the records of the hub `root` first, then
- * the record of another hub whose key the hub `root` does not hold, with that hub's name. A key the
- * field writes resolves in the record's own hub first, then in the others, so a key the hub `root`
- * holds is offered once, as its own record's, and a key two or more other hubs hold, which would
- * resolve to none, is not offered.
+ * hub's file gives it, which is what the field writes, and shown by `label` (by the key when it
+ * gives nothing): the records of the hub `root` first, then the record of another hub whose key the
+ * hub `root` does not hold, with that hub's name. A key the field writes resolves in the record's
+ * own hub first, then in the others, so a key the hub `root` holds is offered once, as its own
+ * record's, and a key two or more other hubs hold, which would resolve to none, is not offered.
  */
-export function recordChoices(
-    entities: Record<Id, Record<string, unknown> & { root?: string }> | undefined,
-    keys: string[],
+export function recordChoices<T extends { root?: string }>(
+    entities: Record<Id, T> | undefined,
+    label: (entity: T) => string | undefined,
     root: string
 ): Choice[] {
     if (entities === undefined) return [];
@@ -231,10 +254,10 @@ export function recordChoices(
     for (const id of Object.keys(entities).sort()) {
         const entity = entities[id];
         const key = keyOf(id);
-        const label = keys.map((name) => filled(entity[name])).find((one) => one !== undefined);
         const hub = rootOf(entity);
-        if (hub === root) own.push({ id: key, label: label ?? key });
-        else others.set(key, [...(others.get(key) ?? []), { id: key, label: label ?? key, hub }]);
+        const words = filled(label(entity)) ?? key;
+        if (hub === root) own.push({ id: key, label: words });
+        else others.set(key, [...(others.get(key) ?? []), { id: key, label: words, hub }]);
     }
     const held = new Set(own.map((one) => one.id));
     const elsewhere = [...others.entries()]
@@ -257,9 +280,34 @@ export function selectChoices(
     );
 }
 
-/** The resources as choices, each with the glyph of its kind when the kind says one. */
-function resourceChoices(resources: Record<Id, Resource> | undefined, root: string): Choice[] {
-    return recordChoices(resources, ['name'], root).map((choice) => {
+/** The registry word whose entries are drawn with the glyph of their kind. */
+const RESOURCES: RegistryWord = 'resources';
+
+/**
+ * The entries of `collections` as choices for a record of the hub `root` (`recordChoices`), each
+ * by its primary key and shown by its display (`Entry.title`). A collection whose file has no
+ * primary key offers nothing, and neither does an entry with no value of it.
+ */
+export function entryChoices(collections: readonly Collection[], root: string): Choice[] {
+    const entries: Record<Id, { root?: string; label: string }> = {};
+    for (const one of collections) {
+        if (one.primary_key === undefined) continue;
+        for (const entry of one.entries) {
+            if (bareId(entry) !== '') entries[entry.id] = { root: entry.root, label: entry.title };
+        }
+    }
+    return recordChoices(entries, (entry) => entry.label, root);
+}
+
+/**
+ * Choices of the resources registry, each with the glyph of its resource's kind, when it has one.
+ */
+function withGlyphs(
+    choices: Choice[],
+    resources: Record<Id, Resource> | undefined,
+    root: string
+): Choice[] {
+    return choices.map((choice) => {
         const id = hubId(choice.hub ?? root, choice.id);
         const glyph = resourceGlyph(byKey(resources ?? {}, id)?.kind ?? '');
         return glyph === undefined ? choice : { ...choice, glyph };
@@ -267,10 +315,27 @@ function resourceChoices(resources: Record<Id, Resource> | undefined, root: stri
 }
 
 /**
- * What a field of choices may be set to, for a record of the hub named `root`. A `from` that names
- * nothing, and a snapshot that has not arrived, both give no choices, which the widget shows as a
- * list with nothing in it rather than as an error: the page is a moment ahead of its data at first
- * load.
+ * The words a project is shown by as a choice: the first filled field of the project form by
+ * `display:` rank, read from the form's fields of `config`; undefined when none is filled.
+ */
+export function projectDisplay(
+    config: Record<string, unknown>
+): (project: Project) => string | undefined {
+    const ranked = formFields(config)
+        .filter((one) => one.display !== undefined)
+        .sort((left, right) => (left.display ?? 0) - (right.display ?? 0))
+        .map((one) => one.field);
+    return (project) => {
+        const values = fieldValues(project, () => false);
+        return ranked.map((name) => filled(values[name])).find((one) => one !== undefined);
+    };
+}
+
+/**
+ * What a field of choices may be set to, for a record of the hub named `root`. A `foreign_key`
+ * that names nothing, and a snapshot that has not arrived, both give no choices, which the widget
+ * shows as a list with nothing in it rather than as an error: the page is a moment ahead of its
+ * data at first load.
  */
 export function choicesFor(
     field: FormField,
@@ -282,31 +347,46 @@ export function choicesFor(
         const id = optionKey(one);
         return { id, label: optionLabel(field, id) };
     });
-    if (field.from === undefined) return own;
-    const sources = Array.isArray(field.from) ? field.from : [field.from];
-    return [...own, ...sources.flatMap((from) => sourceChoices(from, snapshot, config, root))];
+    if (field.foreign_key === undefined) return own;
+    const targets = Array.isArray(field.foreign_key) ? field.foreign_key : [field.foreign_key];
+    return [...own, ...targets.flatMap((one) => targetChoices(one, snapshot, config, root))];
 }
 
-/** The choices a `from:` source offers: a registry's entities, the projects or a vocab list. */
-function sourceChoices(
-    from: string,
+/**
+ * The collection a `foreign_key:` target names for a record of the hub `root`: the collection its
+ * hub's `collections:` list keys so, or undefined when it keys none.
+ */
+function targetCollection(
+    target: string,
+    snapshot: Snapshot | null,
+    root: string
+): Collection | undefined {
+    return byKey(snapshot?.entities.collections ?? {}, hubId(root, target));
+}
+
+/**
+ * The choices a `foreign_key:` target offers: the projects, a vocab list's words by their labels,
+ * or the entries of the collection the record's hub keys so, joined over every hub's collection of
+ * the registry it carries; nothing for a key no collection has.
+ */
+function targetChoices(
+    target: string,
     snapshot: Snapshot | null,
     config: Record<string, unknown>,
     root: string
 ): Choice[] {
-    const entities = snapshot?.entities;
-    if (from === 'venues') return recordChoices(entities?.venues, ['short', 'name'], root);
-    if (from === 'datasets') return recordChoices(entities?.datasets, ['name'], root);
-    if (from === 'pillars') return recordChoices(entities?.pillars, ['title'], root);
-    if (from === 'domains') return recordChoices(entities?.domains, ['title'], root);
-    if (from === 'funding') return recordChoices(entities?.funding, ['title'], root);
-    if (from === 'projects') return recordChoices(entities?.projects, ['short', 'title'], root);
-    if (from === 'people') return recordChoices(entities?.people, ['name'], root);
-    if (from === 'organisations') return recordChoices(entities?.organisations, ['name'], root);
-    if (from === 'resources') return resourceChoices(entities?.resources, root);
-    return from.startsWith(VOCAB_PREFIX)
-        ? vocabChoices(config, from.slice(VOCAB_PREFIX.length))
-        : [];
+    if (target === PROJECTS_TARGET) {
+        return recordChoices(snapshot?.entities.projects, projectDisplay(config), root);
+    }
+    if (target.startsWith(VOCAB_PREFIX)) {
+        return vocabChoices(config, target.slice(VOCAB_PREFIX.length));
+    }
+    const named = targetCollection(target, snapshot, root);
+    if (snapshot === null || named === undefined) return [];
+    const registry = named.registry;
+    if (registry === undefined) return entryChoices([named], root);
+    const joined = entryChoices(registryCollections(snapshot.entities.collections, registry), root);
+    return registry === RESOURCES ? withGlyphs(joined, snapshot.entities.resources, root) : joined;
 }
 
 /** The follow-up notes, as one text with each note's date; the box that shows it is read-only. */
@@ -402,15 +482,36 @@ const listShape = z.union([
         .transform((one) => [one])
 ]);
 
+/** The registry word of the people. */
+const PEOPLE: RegistryWord = 'people';
+
 /**
- * Whether a field's choices are the people of the people registry and nothing else: its `from` is
- * `people` alone and it lists no options. The picker of such a field offers Add person
+ * Whether a `foreign_key:` target names, for a record of the hub `root`, a collection that carries
+ * the people registry, whatever its key.
+ */
+export function namesPeople(target: string, snapshot: Snapshot | null, root: string): boolean {
+    return targetCollection(target, snapshot, root)?.registry === PEOPLE;
+}
+
+/**
+ * Whether a field's choices are the people of the people registry and nothing else: its
+ * `foreign_key` is one target that names a collection carrying the people registry (`people`
+ * answers it) and it lists no options. The picker of such a field offers Add person
  * (state/forms/new-entry.ts, `personToAdd`); a field that also takes projects, such as
  * `waiting-on`, keeps its free text instead.
  */
-export function picksPeople(field: Pick<FormField, 'from' | 'options'>): boolean {
-    const from = Array.isArray(field.from) ? field.from : [field.from];
-    return from.length === 1 && from[0] === 'people' && (field.options ?? []).length === 0;
+export function picksPeople(
+    field: Pick<FormField, 'foreign_key' | 'options'>,
+    people: (target: string) => boolean
+): boolean {
+    const keys = Array.isArray(field.foreign_key) ? field.foreign_key : [field.foreign_key];
+    const [target] = keys;
+    return (
+        keys.length === 1 &&
+        target !== undefined &&
+        people(target) &&
+        (field.options ?? []).length === 0
+    );
 }
 
 /**
@@ -446,14 +547,17 @@ export function fieldsOfSection(fields: FormField[], section: string): FormField
 
 /**
  * What a save posts, and what the draft drops once the server took it: the fields of `dirty` the
- * form writes, `id` left out.
+ * form writes, the primary key of the form's fields `fields` left out.
  */
 export function manifestPayload(
     edits: Record<string, unknown>,
-    dirty: string[]
+    dirty: string[],
+    fields: readonly FormField[]
 ): { body: Record<string, unknown>; taken: Record<string, unknown> } {
     const body: Record<string, unknown> = {};
-    for (const field of dirty.filter(writableField)) body[field] = edits[field];
+    for (const field of dirty.filter((one) => writableField(one, fields))) {
+        body[field] = edits[field];
+    }
     return { body, taken: { ...body } };
 }
 
@@ -473,12 +577,14 @@ export function projectKey(id: string): string {
 
 /**
  * What the project editor's draft is judged by: the project's values in the snapshot now, the
- * trimmed comparison above, and the fields the manifest form writes (`writableField`).
+ * trimmed comparison above, and the fields the manifest form writes (`writableField` over the
+ * form's fields of the project's hub, `fieldsOf`).
  */
 export function projectDraftTarget(
     projectOf: (id: string) => Project | null,
     settled: (key: string, values: Record<string, unknown>) => Record<string, unknown>,
-    waitedOn: (id: Id) => boolean
+    waitedOn: (id: Id) => boolean,
+    fieldsOf: (project: Project | null) => readonly FormField[]
 ): DraftTarget {
     return {
         values: (name) => {
@@ -488,6 +594,6 @@ export function projectDraftTarget(
                 : settled(projectKey(name), fieldValues(project, waitedOn));
         },
         differs: (_name, _field, edit, value) => editDiffers(edit, value),
-        writable: (_name, field) => writableField(field)
+        writable: (name, field) => writableField(field, fieldsOf(projectOf(name)))
     };
 }

@@ -21,7 +21,12 @@ import {
     wordsWith
 } from './shapes/vocab-keys.ts';
 import { manifestDir, readHubManifests } from './sources/manifests.ts';
-import { REGISTRY_NAMES, readRegistries, registryFiles } from './sources/registries.ts';
+import {
+    REGISTRY_NAMES,
+    readRegistries,
+    registryFiles,
+    registryKeys
+} from './sources/registries.ts';
 import {
     collectionFiles,
     collectionListFindings,
@@ -388,7 +393,13 @@ export function readHub(
 ): HubRead {
     const manifests = readHubManifests(hub, config.scan, roots, config.text);
     const unnamed = heldUnnamed(hub, config.unnamed);
-    const registries = readRegistries(hub, config.registries, config.text, unnamed?.registries);
+    const registries = readRegistries(
+        hub,
+        config.registries,
+        config.text,
+        unnamed?.registries,
+        registryKeys(config.collections)
+    );
     // Oculus's Literature entry, which the hub's list does not name, is read once the hub holds it.
     const read = config.collections.filter(
         (file) =>
@@ -472,7 +483,7 @@ export function builtHub(read: HubRead, options: BuildOptions): PortfolioBuild {
     const findings = sortFindings([
         ...validate(raw, {
             vocab: config.vocab,
-            listed: listedFields(config.schema, unread),
+            listed: listedFields(config.schema, unread, config.collections),
             text: config.text,
             self: {
                 key: selfKey(config.merged),

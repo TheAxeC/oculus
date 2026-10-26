@@ -30,11 +30,23 @@ const manifestField = z.strictObject({
     help: text
         .optional()
         .describe('What the field holds, shown by the form and on hover in the YAML editor.'),
-    from: z
+    foreign_key: z
         .union([text, z.array(text)])
         .optional()
         .describe(
-            'Where the choices come from: a registry, people, organisations, resources, projects or a vocab.yml list written vocab.<key>; a list offers their keys together.'
+            "Where the choices come from: a collection by its key in the hub's collections list, projects, or a vocab.yml list written vocab.<key>; a value stored is the primary key of the entry it names, and a list offers their keys together."
+        ),
+    primary_key: z
+        .literal(true)
+        .optional()
+        .describe('true marks the field a project is addressed by, its id, which no write sets.'),
+    display: z
+        .number()
+        .int()
+        .min(1)
+        .optional()
+        .describe(
+            'The rank of the field among those a reference to a project shows: the filled field of the lowest rank is shown, the id when none is filled.'
         ),
     options: z.array(text).optional().describe('A literal list of the choices.'),
     required: z
@@ -45,9 +57,10 @@ const manifestField = z.strictObject({
 
 /**
  * One field a hub adds to the project form: the key of project.yml it adds under `field`, and the
- * rest as a field of `manifest_schema` is written.
+ * rest as a field of `manifest_schema` is written, but for `primary_key` and `display`: a project
+ * is addressed by oculus's own id, and shown by oculus's own ranks, in every hub.
  */
-export const manifestFieldRow = manifestField.extend({
+export const manifestFieldRow = manifestField.omit({ primary_key: true, display: true }).extend({
     field: text.describe('The key of project.yml the row adds, which no field of oculus holds.'),
     section: text.describe('The section of `manifest_schema.sections` the field is drawn in.')
 });

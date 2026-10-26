@@ -22,8 +22,8 @@ import { mergedFeeds } from '../../../src/lib/data/snapshot/hubs/feeds.ts';
 import { createSettled } from '../../../src/lib/state/forms/settled.svelte.ts';
 
 const SCHEMA: SchemaField[] = [
-    { field: 'key', type: 'text' },
-    { field: 'title', type: 'text' },
+    { field: 'key', type: 'text', primary_key: true },
+    { field: 'title', type: 'text', display: 1 },
     { field: 'status', type: 'select', options: ['todo', 'done'] }
 ];
 
@@ -33,6 +33,7 @@ function collection(root: string, keys: string[]): Collection {
         title: 'Tasks',
         file: `/${root}/tasks.yml`,
         schema: SCHEMA,
+        primary_key: 'key',
         entries: keys.map((key, index) => ({
             id: `${root}:${key}`,
             title: `Title of ${key}`,
@@ -64,7 +65,8 @@ const FEEDS = {
     leads: {
         meta: {},
         entries: [{ title: 'Postdoc A', status: 'open', root: 'hub', id: 'hub:Postdoc A' }],
-        schema: [{ field: 'title', type: 'text' }]
+        schema: [{ field: 'title', type: 'text', primary_key: true }],
+        primary_key: 'title'
     },
     radar: { meta: {}, entries: [{ title: 'A paper', root: 'hub', id: 'hub:A paper' }] }
 } as unknown as FeedsPayload;
@@ -165,7 +167,7 @@ describe('pageOf', () => {
             file: 'leads.yml',
             meta: {},
             entries: [{ title }],
-            ...(schema === undefined ? {} : { schema })
+            ...(schema === undefined ? {} : { schema, primary_key: 'title' })
         });
         const empty = { ok: true, file: '', meta: {}, entries: [], missing: true };
         const none = {
@@ -176,7 +178,7 @@ describe('pageOf', () => {
         const own = (schema: SchemaField[] | undefined, title: string) =>
             ({ ...none, leads: feed(schema, title) }) as unknown as FeedsPayload;
         const lab: SchemaField[] = [
-            { field: 'title', type: 'text' },
+            { field: 'title', type: 'text', primary_key: true },
             { field: 'fit', type: 'text' }
         ];
         const merged = mergedFeeds(none, [

@@ -62,7 +62,12 @@ import {
     type RepositoryGroup
 } from '../sources/repositories/repositories.ts';
 import type { LayoutStore } from '../workbench/layout.svelte.ts';
-import { choicesFor, formFields, formSections } from '../forms/schema.ts';
+import {
+    choicesFor,
+    formFields,
+    formSections,
+    namesPeople as peopleTarget
+} from '../forms/schema.ts';
 import { vocabOf } from '../shared/words/tones.ts';
 import {
     newProjectFolder as folderOfNewProjects,
@@ -240,6 +245,11 @@ export type SelectorsStore = {
     manifestFields: (hub?: string) => FormField[];
     manifestSections: () => string[];
     fieldChoices: (field: FormField, project?: Project | null, root?: string) => Choice[];
+    /**
+     * Whether a `foreign_key:` target names, for a record of the hub `hub` (the primary when
+     * absent), the collection that carries the people registry.
+     */
+    namesPeople: (target: string, hub?: string) => boolean;
     contextWindow: () => number;
     waitingCount: () => number;
     sessionById: (id: string | null) => GroupedSession | null;
@@ -569,6 +579,10 @@ export function createSelectors(
         return choicesFor(field, entities.portfolio(), hubConfig(root), root);
     }
 
+    function namesPeople(target: string, hub?: string): boolean {
+        return peopleTarget(target, entities.portfolio(), hub ?? workspace().primary ?? '');
+    }
+
     // ------------------------------------------------------------------ sessions The joins over
     // the `sessions` and `git` payloads. The tree the server grouped is what every one of them
     // reads: a record in `records` carries no workspace and no area, and those are the two things a
@@ -821,6 +835,7 @@ export function createSelectors(
         manifestFields,
         manifestSections,
         fieldChoices,
+        namesPeople,
         contextWindow,
         waitingCount,
         sessionById,

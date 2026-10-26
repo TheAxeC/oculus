@@ -4,8 +4,8 @@
 # `kind:` is one of university | hospital | funder | company | other.
 
 schema:
-  - { field: key,     type: text,   required: true, label: "Organisation key" }
-  - { field: name,    type: text,   required: true }
+  - { field: key,     type: text,   primary_key: true, required: true, label: "Organisation key" }
+  - { field: name,    type: text,   display: 1, required: true }
   - { field: kind,    type: select, options: [university, hospital, funder, company, other], required: true }
   - { field: country, type: text,   help: "two-letter country code" }
   - { field: links,   type: tags }

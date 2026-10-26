@@ -18,6 +18,13 @@ text:
         hub_facet: Hub
         hub_tip: show or hide the entries of {0}
         identity_unusable: 'Writes are off: {0} "{1}" is empty or shared with another entry'
+        no_primary_key_none: 'Writes are off: {0} has no primary key, as its schema flags no field with primary_key: true; flag the field an entry is addressed by'
+        no_primary_key_two: 'Writes are off: {0} has no primary key, as its schema flags {1} with primary_key: true and a file has only one; keep the flag on one of them'
+        no_primary_key_unkeyed: 'Writes are off: {0} has no primary key, as its schema flags {1}, a {2} field, whose value names no one entry; flag a field that holds one value'
+        no_primary_key_beside: 'Writes are off: {0} has no primary key, as its collections entry names {1} beside the flag on {2} in its schema; take the primary_key out of its collections entry'
+        no_primary_key_missing: 'Writes are off: {0} has no primary key, as it has no schema and its collections entry names no primary_key; give it a schema that flags one field with primary_key: true'
+        no_primary_key_unread: 'Writes are off: {0} has no primary key, as its schema does not read, and the Audit view names the fault; correct the schema'
+        no_primary_key_named: 'Writes are off: {0} has no primary key, as its schema flags no field with primary_key: true and its collections entry names {1}, which a file with a schema does not read; flag {1} in the schema and take the primary_key out of its collections entry'
         link_glyph: link
         line: line {0}
         list_inline: '{0} lists its entries inline; add the entry in the file'

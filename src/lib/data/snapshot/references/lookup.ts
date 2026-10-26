@@ -10,11 +10,11 @@
 // question is asked, over the files as they are then, so the text of an open tab replaces the text
 // the build read (`overlay`) without the build being redone.
 //
-// Two names of one disk file are told apart by the folders of the served roots (hub-names.ts), so
-// a tab that holds a file under another root, or under another checkout's engine root, replaces
-// the right file of the index and no other.
+// Two names of one disk file are told apart by the folders of the served roots
+// (data/helpers/files/paths.ts), so a tab that holds a file under another root, or under another
+// checkout's engine root, replaces the right file of the index and no other.
 
-import { diskPath, type RootFolder } from '../../helpers/hub-names.ts';
+import { diskPath, type RootFolder } from '../../helpers/files/paths.ts';
 import type { Candidate, Definition, FileScan, Mention, Place, ReferenceIndex } from './model.ts';
 import { scanText } from './scan.ts';
 

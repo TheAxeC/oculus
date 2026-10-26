@@ -14,7 +14,7 @@
 import { tick, untrack } from 'svelte';
 import { OCULUS_CONFIG_ROOT } from '../../../data/helpers/files/address.ts';
 import { endText, trimText, type KeptPlace } from '../../../data/helpers/files/save-text.ts';
-import { diskRelation, type RootFolder } from '../../../data/helpers/hub-names.ts';
+import { diskRelation, type RootFolder } from '../../../data/helpers/files/paths.ts';
 import { editsBetween, type TextEdit } from '../../../data/prose/text-edits.ts';
 import type { WordWrap } from '../../../data/helpers/editor/editor.ts';
 import type {

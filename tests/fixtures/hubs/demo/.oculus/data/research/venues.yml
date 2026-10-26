@@ -1,7 +1,7 @@
 # Venue catalogue -> the Venues tab. A project points at one by `venue:`.
 schema:
-  - { field: id,       type: text, required: true }
-  - { field: name,     type: text, required: true }
+  - { field: id,       type: text, primary_key: true, required: true }
+  - { field: name,     type: text, display: 1, required: true }
   - { field: tier,     type: select, options: [flagship, strong, specialist] }
   - { field: category, type: select, options: [journal, conference] }
   - { field: themes,   type: tags, options: [{ key: core-ml, label: "Core ML" }, { key: graphs, label: "Graphs" }, { key: systems, label: "Systems" }] }

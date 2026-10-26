@@ -35,7 +35,8 @@ import type {
 import { byId, jointWorkRows } from '../normalise.ts';
 import { linked } from '../normalise-parts/links.ts';
 import { sortFindings } from '../validate.ts';
-import { throughSchema } from './references.ts';
+import { targetRegistry } from '../schema/lists.ts';
+import { throughSchema, type Reach, type SourceNames } from './references.ts';
 
 /**
  * One hub's own build, in the workspace's folder order: the hub's name, its snapshot, whose records
@@ -184,17 +185,35 @@ function personOf(one: Person, own: string, file: string, resolve: Resolve): Per
 }
 
 /**
+ * The source each `foreign_key:` target of the hub of `part` names: the registry the collection
+ * its own `collections:` list keys so carries, else the target itself.
+ */
+function namesOf(part: HubPart): SourceNames {
+    const listed = Object.values(part.snapshot.entities.collections).map((one) => ({
+        key: one.id,
+        registry: one.registry
+    }));
+    return (target) => targetRegistry(target, listed) ?? target;
+}
+
+/**
  * A collection of the hub `own`, its id and the id of each entry given. The fields keep the keys
  * the file holds; each value that names a record is resolved for the finding a key two other hubs
- * hold gives.
+ * hold gives, its target named by `names`.
  */
-function collectionOf(one: Collection, own: string, resolve: Resolve): Collection {
+function collectionOf(
+    one: Collection,
+    own: string,
+    resolve: Resolve,
+    names: SourceNames
+): Collection {
     const entries = one.entries.map((entry) => {
         if (one.schema !== undefined) {
-            throughSchema(one.schema, entry.fields, (value, sources, _held, field) => {
+            const reach: Reach = (value, sources, _held, field) => {
                 resolve(sources, value, { file: one.file, key: entry.id, field });
                 return value;
-            });
+            };
+            throughSchema(one.schema, entry.fields, reach, names);
         }
         return { ...entry, id: hubId(own, entry.id), root: own };
     });
@@ -286,7 +305,7 @@ export function mergeHubs(parts: readonly HubPart[], text: TextCatalog, version:
     const collections = joined(
         parts,
         (all) => all.collections,
-        (one, part) => collectionOf(one, part.key, of(part))
+        (one, part) => collectionOf(one, part.key, of(part), namesOf(part))
     );
     const entities: Entities = {
         projects,

@@ -1,10 +1,11 @@
 // Layer 3, view helper of the entry page, the person page and the Career panel. The file a page
 // entry is written in, which the editor watches for unsaved text in a source tab and the toolbar
-// opens as a source tab, and the identity fault that makes a write unable to address the entry.
+// opens as a source tab, and the fault of its primary key that makes a write unable to address the
+// entry.
 
 import type { ClientState } from '$lib/state/client/context';
 import { entryById, identityFaults, type IdentityFault } from '$lib/state/boards/collection';
-import type { PageEntry } from '$lib/state/forms/page-entry';
+import { isPageFeed, type PageEntry } from '$lib/state/forms/page-entry';
 import { fileUnder, keyOf } from '$lib/state/shared/page/hubs';
 import { feedEntryId } from '$lib/state/shared/page/idents';
 import { viewSourceFile, type ViewSource } from '$lib/state/sessions/view-source';
@@ -19,7 +20,8 @@ export function pageFile(client: ClientState, page: PageEntry): ViewSource | nul
     const primary = client.fs.primary();
     if (page.kind === 'career') return viewSourceFile('career', configMap(), primary);
     if (page.kind === 'feed') {
-        const kind = page.collection === 'leads' ? 'leads' : 'radar';
+        if (!isPageFeed(page.collection)) return null;
+        const kind = page.collection;
         if (page.root === primary) return viewSourceFile(kind, configMap(), primary);
         const hubFiles = client.feeds.feed(kind)?.hubFiles ?? {};
         return Object.hasOwn(hubFiles, page.root)
@@ -33,22 +35,19 @@ export function pageFile(client: ClientState, page: PageEntry): ViewSource | nul
 }
 
 /**
- * Why a write cannot address the entry: its identity is empty or shared with another entry of the
- * file. Undefined when it can.
+ * Why a write cannot address the entry: its file has no primary key, or its value of the primary
+ * key is empty or shared with another entry of the file. Undefined when it can. A feed entry's
+ * primary key is the one field the page shows and never writes (`PageEntry.fixed`).
  */
 export function pageFault(client: ClientState, page: PageEntry): IdentityFault | undefined {
     if (page.kind === 'career') return undefined;
     if (page.kind === 'feed') {
-        const same = (
-            client.feeds.feed(page.collection === 'leads' ? 'leads' : 'radar')?.entries ?? []
-        ).filter((one) => feedEntryId(one) === page.writeId);
+        const field = page.fixed.at(0);
+        if (field === undefined) return { kind: 'unkeyed', field: '', value: '', own: true };
+        const feed = isPageFeed(page.collection) ? client.feeds.feed(page.collection) : null;
+        const same = (feed?.entries ?? []).filter((one) => feedEntryId(one) === page.writeId);
         return same.length > 1
-            ? {
-                  kind: 'shared',
-                  field: page.schema.at(0)?.field ?? 'title',
-                  value: keyOf(page.writeId),
-                  own: true
-              }
+            ? { kind: 'shared', field, value: keyOf(page.writeId), own: true }
             : undefined;
     }
     const held = client.selectors
@@ -57,5 +56,5 @@ export function pageFault(client: ClientState, page: PageEntry): IdentityFault |
     const entry = held === undefined ? null : entryById(held, page.key);
     return held === undefined || entry === null
         ? undefined
-        : identityFaults(held.entries, held.schema).get(entry.index);
+        : identityFaults(held.entries, held.primary_key ?? null, held.key_fault).get(entry.index);
 }

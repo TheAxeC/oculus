@@ -58,7 +58,8 @@ import { createFiles } from '../sources/files.svelte.ts';
 import { cardTreePrefix } from '../sources/explorer/view/card-tree.ts';
 import { createFolderPages } from '../workbench/layout/open/float/folder-opener.ts';
 import { createFs } from '../sources/fs.svelte.ts';
-import { fileNamed, hubId, registryKeyOf } from '../../data/helpers/hub-names.ts';
+import { fileNamed } from '../../data/helpers/files/paths.ts';
+import { hubId, registryKeyOf, rootOf } from '../../data/helpers/hub-names.ts';
 import { filesLineTyped } from '../sources/fs.ts';
 import { createHpc } from '../system/machine/hpc/hpc.svelte.ts';
 import { createProcesses } from '../system/machine/processes/processes.svelte.ts';
@@ -486,7 +487,12 @@ export function createClientState(
         after: createCloneAfter(fs, notices)
     });
     const formDraft = createFormDraft(ui, {
-        project: projectDraftTarget(selectors.projectOf, settled.overlay, selectors.waitedOn),
+        project: projectDraftTarget(
+            selectors.projectOf,
+            settled.overlay,
+            selectors.waitedOn,
+            (project) => selectors.manifestFields(project === null ? undefined : rootOf(project))
+        ),
         page: pageDraftTarget(pages)
     });
     ui.registerUnsaved(formDraft.draftDirty);

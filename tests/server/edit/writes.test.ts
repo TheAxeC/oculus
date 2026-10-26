@@ -545,11 +545,26 @@ const ADD_ROWS = [
         collection: 'venues',
         fields: { name: 'New V', id: '' },
         changed: [],
-        refused: [{ field: 'id', reason: ['server.entries.new_key_empty', 'id'] }],
+        refused: [{ field: 'id', reason: ['server.entries.new_ident_missing', 'id'] }],
         after: VENUES
     },
     {
-        name: 'writes a venue from its name and its id',
+        name: 'refuses an Add to a file whose schema flags no primary key (G8)',
+        path: '.oculus/data/academic/tasks.yml',
+        file: KEYED.replace(', primary_key: true', ''),
+        collection: 'tasks',
+        fields: { key: 'review-x' },
+        changed: [],
+        refused: [
+            {
+                field: 'schema',
+                reason: ['server.entries.no_primary_key_none', '.oculus/data/academic/tasks.yml']
+            }
+        ],
+        after: KEYED.replace(', primary_key: true', '')
+    },
+    {
+        name: 'writes a venue from its name and its id, in the order its schema lists them',
         path: '.oculus/data/research/venues.yml',
         file: VENUES,
         collection: 'venues',

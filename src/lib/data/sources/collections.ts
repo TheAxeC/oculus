@@ -108,7 +108,7 @@ function listKey(entry: Pick<CollectionEntry, 'registry'>): string {
 
 /**
  * What a read collection carries from its entry: its registry, its flags, what Disseminated in
- * leaves out, its ticker reading, and the entry's position in the list.
+ * leaves out, its ticker reading, the primary key it names, and the entry's position in the list.
  */
 function traitsOf(entry: CollectionEntry, index: number): CollectionTraits & { index: number } {
     const traits: CollectionTraits & { index: number } = { index };
@@ -117,6 +117,7 @@ function traitsOf(entry: CollectionEntry, index: number): CollectionTraits & { i
     if (entry.dissemination_skip !== undefined)
         traits.dissemination_skip = entry.dissemination_skip;
     if (entry.ticker !== undefined) traits.ticker = entry.ticker;
+    if (entry.primary_key !== undefined) traits.primary_key = entry.primary_key;
     return traits;
 }
 
@@ -177,12 +178,12 @@ function readCollection(
 /**
  * Read the collection files named, keyed by the key each was named under, each with its entry's
  * traits and its position in `files`. An entry keeps every field the YAML gave it plus
- * `provenance`, and its identity is left as read: nothing here decides whether a record is known by
- * its `key` or its `title`. A file that is missing, does not parse, is not a map, or has no entry
- * list gives an empty collection and one finding; an entry that is not a map is one finding and no
- * record. Two entries for the same key is a finding on the second and the first file is the one
- * read, so the returned map has one collection per key. An entry `unnamed` answers true for is one
- * the hub's own config does not name, so its file being absent raises no finding.
+ * `provenance`, and its identity is left as read: the field a record is known by is its file's
+ * primary key, which normalise reads. A file that is missing, does not parse, is not a map, or has
+ * no entry list gives an empty collection and one finding; an entry that is not a map is one
+ * finding and no record. Two entries for the same key is a finding on the second and the first
+ * file is the one read, so the returned map has one collection per key. An entry `unnamed` answers
+ * true for is one the hub's own config does not name, so its file being absent raises no finding.
  */
 export function readCollections(
     hub: string,

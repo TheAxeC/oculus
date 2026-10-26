@@ -65,7 +65,7 @@ function buildHub(): string {
         [
             'intro: dataset registry',
             'schema:',
-            '  - { field: key, type: text }',
+            '  - { field: key, type: text, primary_key: true }',
             'datasets:',
             '  - { key: mimic, name: MIMIC-IV, themes: [ecg], source: https://example.invalid/mimic }',
             ''
@@ -78,7 +78,7 @@ function buildHub(): string {
             'title: Talks & Events',
             'intro: where the work was shown',
             'schema:',
-            '  - { field: title, type: text }',
+            '  - { field: title, type: text, primary_key: true }',
             'entries:',
             '  - { title: ISBI keynote, year: 2026 }',
             '  - { title: Tensor workshop, year: 2025 }',
@@ -150,7 +150,7 @@ describe('the registries that are collections of their own', () => {
             '.oculus/data/people/people.yml',
             [
                 'schema:',
-                '  - { field: key, type: text }',
+                '  - { field: key, type: text, primary_key: true }',
                 '  - { field: affiliations, type: tags }',
                 'entries:',
                 '  - { key: wim, name: Wim, affiliations: [kuleuven, ut] }',
@@ -163,7 +163,7 @@ describe('the registries that are collections of their own', () => {
             '.oculus/data/people/organisations.yml',
             [
                 'schema:',
-                '  - { field: key, type: text }',
+                '  - { field: key, type: text, primary_key: true }',
                 'entries:',
                 '  - { key: ut, name: Twente, kind: university }',
                 ''
@@ -174,7 +174,7 @@ describe('the registries that are collections of their own', () => {
             '.oculus/data/research/resources.yml',
             [
                 'schema:',
-                '  - { field: key, type: text }',
+                '  - { field: key, type: text, primary_key: true }',
                 '  - { field: links, type: tags }',
                 'entries:',
                 '  - key: utwente',
@@ -211,7 +211,7 @@ describe('the registries that are collections of their own', () => {
         write(
             hub,
             '.oculus/data/people/people.yml',
-            'schema:\n  - { field: key, type: text }\nentries:\n  # none yet\n'
+            'schema:\n  - { field: key, type: text, primary_key: true }\nentries:\n  # none yet\n'
         );
         const { collections, findings } = readCollections(hub, [REGISTRIES[0]], CATALOG);
         expect(collections.people.entries).toEqual([]);

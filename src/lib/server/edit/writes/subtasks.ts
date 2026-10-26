@@ -59,7 +59,7 @@ export function subtaskHost(
         const held = readCollection(hub, config, target.collection);
         if (held === null) return null;
         const value = identityOf(held, target.id);
-        if (value === null) return null;
+        if (value === null || held.ident === null) return null;
         const range = entryRange(held.source, held.ident, value);
         if (range === null) return null;
         return { file: held.file, source: held.source, range };

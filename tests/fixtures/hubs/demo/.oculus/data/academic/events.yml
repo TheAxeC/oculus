@@ -4,8 +4,8 @@
 title: Talks & Events
 intro: "Talks given and events attended. A `present` talk with a `related:` project id shows on that project's card as 'Disseminated in'."
 schema:
-  - { field: key, type: text, required: true, help: "The event's short name, unique in this file; a write and Edit in File address the entry by it." }
-  - { field: title,    type: text,     required: true }
+  - { field: key, type: text, primary_key: true, required: true, help: "The event's short name, unique in this file; a write and Edit in File address the entry by it." }
+  - { field: title,    type: text,     display: 1, required: true }
   - { field: sub,      type: text,     label: "Subtitle" }
   - { field: role,     type: select,   options: [present, attend], required: true, help: "present = a talk/poster I give; attend = attending only" }
   - { field: status,   type: select,   options: [upcoming, planned, completed, cancelled, not-attending], required: true }

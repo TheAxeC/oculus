@@ -13,16 +13,17 @@ export function renderFlowMap(record: Record<string, FieldValue>): string {
 }
 
 /**
- * One new entry as the lines it is written on: the identity field on the `- ` line and every other
- * field under it, in the order the file's own schema names them. A field the caller did not give a
- * value for is not written at all.
+ * One new entry as the lines it is written on, its fields in the order the file's own schema names
+ * them, the first on the `- ` line. The file's primary key `ident` goes first when the schema does
+ * not name it, as in a file with no schema, and a field the schema does not name goes last. A
+ * field the caller did not give a value for is not written at all.
  */
 export function renderEntry(
     order: string[],
     ident: string,
     fields: Record<string, FieldValue>
 ): string {
-    const names = [ident, ...order.filter((one) => one !== ident)];
+    const names = order.includes(ident) ? [...order] : [ident, ...order];
     for (const name of Object.keys(fields)) if (!names.includes(name)) names.push(name);
     const lines: string[] = [];
     for (const name of names) {

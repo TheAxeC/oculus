@@ -3,8 +3,8 @@
 title: Funding
 intro: "Grant applications and the programmes this work sits inside. (Example data.)"
 schema:
-  - { field: key,       type: text, required: true, help: "funding: tag the projects use" }
-  - { field: title,     type: text,   required: true }
+  - { field: key,       type: text, primary_key: true, required: true, help: "funding: tag the projects use" }
+  - { field: title,     type: text,   display: 1, required: true }
   - { field: sub,       type: text,   help: "Scheme | role | period" }
   - { field: status,    type: select, options: [in-prep, planned, submitted, awarded, rejected], required: true }
   - { field: date,      type: text,   help: "Year or range" }

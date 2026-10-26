@@ -407,7 +407,7 @@ Payloads are plain JSON. `X?` may be absent. A `Finding` is `{ file, key, messag
 | `people` | `id`, `name`, `affiliations`, `links`, `projectIds`, `jointWorkIds`, `role?`, `orcid?`, `email?`, `folder?`, `file?`, `self?` |
 | `organisations` | `id`, `name`, `links`, `personIds`, `fundingIds`, `kind?`, `country?` |
 | `resources` | `id`, `name`, `kind`, `links`, `order`, `host?`, `access?` |
-| `collections` | `id`, `title`, `file`, `entries`, `intro?`, `schema?`; a schema line is `{ field, type, label?, required?, options?, from?, when?, help?, open?, map?, fields?, filter? }`, an option a word or `{ key, label }` |
+| `collections` | `id`, `title`, `file`, `entries`, `intro?`, `schema?`, `primary_key?` (the field an entry is addressed by, absent when the file has none), `key_fault?` (why the file has none: `{ cause }`, with `cause` one of `none` with `named?`, `two` with `fields`, `unkeyed` with `field` and `type`, `beside` with `named` and `field`, `unread`, and `missing`); a schema line is `{ field, type, label?, required?, options?, foreign_key?, primary_key?, display?, when?, help?, open?, map?, fields?, filter? }`, an option a word or `{ key, label }` |
 | `feeds` | `leads`, `radar`, `scout`, `linkedin` summaries |
 | `career` | the career file, or `null` |
 
@@ -417,7 +417,7 @@ Every record carries `root`, the name of its hub, and has the id `<hub>:<key>`, 
 
 | Channel | Payload |
 |---------|---------|
-| `feeds` | `radar`, `leads`, `linkedin`, each `{ ok, kind, file, meta, entries, cadenceDays?, schema?, missing?, error?, hubFiles?, hubSchemas? }` |
+| `feeds` | `radar`, `leads`, `linkedin`, each `{ ok, kind, file, meta, entries, cadenceDays?, schema?, primary_key?, key_fault?, missing?, error?, hubFiles?, hubSchemas? }`, with `primary_key?` and `key_fault?` as on `collections` |
 | `hpc` | `status` (`starting`, `ok`, `unreachable`, `slurm_down`, `error`, `unconfigured`; a failed poll is `unreachable` when ssh did not connect, `slurm_down` when ssh connected and Slurm did not answer, `error` for anything else; each failed poll carries the last rows; a `slurm_down` poll whose `lastOk` equals `updated` has this poll's queue; `stale` names each table older than the queue with the time its rows came from, or `null` when none of its polls has answered since the server started), `hint?`, `jobs`, `running`, `pending`, `total`, `recent`, `sinfo`, `quota`, `updated`, `lastOk?`, `stale?`, `host`, `pollMin`, `retryMin?` |
 | `audit` | `{ findings: [{ hub, scope, where, root, file, kind, message, signature }], muted }`; `hub` is the hub the finding is of, `scope` its place in that hub |
 | `config` | `{ config, hubs: { primary, lists }, text, icons, host: { name, address }, findings }`; `lists` holds each hub's `{ domains, venue_themes, data_themes, collections, list, words }`: `domains`, `venue_themes` and `data_themes` built from its domains registry and the `themes` options of its venues and data registries, `collections` the entries the hub lists, `list` its `collections:` list as written with the file it was read from, and `words` its merged vocabulary |

@@ -130,7 +130,7 @@
                 rootOf(one) === primary()
                     ? viewSourceFile('collection', configMap(), primary(), key)
                     : fileUnder(one.file, roots(), primary()),
-            faults: identityFaults(one.entries, one.schema)
+            faults: identityFaults(one.entries, one.primary_key ?? null, one.key_fault)
         }))
     );
     const entries = $derived(pinnedFirst(parts.flatMap((part) => part.collection.entries)));
@@ -280,14 +280,14 @@
         if (from === '' || from === onto) return;
         const part = partOf(from);
         if (part === undefined) return;
-        const order = fileOrder(part.collection.entries, part.schema);
+        const order = fileOrder(part.collection.entries);
         await writeOrder(part, order, order.indexOf(from), order.indexOf(onto));
     }
 
-    /** The collection of the hub whose file holds the card with the identity `value`. */
+    /** The collection of the hub whose file holds the card a write addresses by `value`. */
     function partOf(value: string): (typeof parts)[number] | undefined {
         return parts.find((part) =>
-            part.collection.entries.some((entry) => identityValue(entry, part.schema) === value)
+            part.collection.entries.some((entry) => identityValue(entry) === value)
         );
     }
 
@@ -298,7 +298,7 @@
     async function carry(value: string, step: -1 | 1): Promise<void> {
         const part = partOf(value);
         if (part === undefined) return;
-        const order = fileOrder(part.collection.entries, part.schema);
+        const order = fileOrder(part.collection.entries);
         const at = order.indexOf(value);
         await writeOrder(part, order, at, at + step);
     }
@@ -450,7 +450,7 @@
                     >
                         <EntryCard
                             {entry}
-                            cursor={cursor === identityValue(entry, part.schema)}
+                            cursor={cursor === identityValue(entry)}
                             collection={key}
                             schema={part.schema}
                             projects={all}

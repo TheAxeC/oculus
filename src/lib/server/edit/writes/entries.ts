@@ -15,23 +15,25 @@
 // server/edit/writes.ts is the route and re-exports the public half of this file.
 //
 // A write answers with the id the file gives the entry after the write (`WriteOutcome.id`, set by
-// `writeEntry` and `createEntry` from their own `entryId`, carried in the endpoint's JSON and read
-// into `WriteAnswer`), so the page is told where the entry now is after a rename rather than
-// reading the file's id rule a second time.
+// `writeEntry` and `createEntry` by `entryIdOf`, carried in the endpoint's JSON and read into
+// `WriteAnswer`), so the page is told where the entry now is after a rename rather than reading the
+// file's id rule a second time. An entry is addressed by its value of the file's primary key, and
+// every write to a file with no primary key is refused with a sentence that says so.
 //
 // An add and a delete of an entry record the text they replaced, whole lines and one line around it
 // (`replaced`), so that their undo puts the file back byte for byte while it still holds what the
 // write left there (`putBackEntry`); a file changed there since is put right by the writer the
 // other way, which never writes over the change.
 
+import { relative } from 'node:path';
 import { isDeepStrictEqual } from 'node:util';
 import { parse } from 'yaml';
 import { z } from 'zod';
 import { ISO_DATE } from '../../../data/helpers/dates.ts';
-import { KEYED_FIELDS, LIST } from '../../../data/helpers/files/yaml/collection-text.ts';
-import { byKey, isMap, scalar } from '../../../data/helpers/guards.ts';
+import { isMap, scalar } from '../../../data/helpers/guards.ts';
 import { mapShape } from '../../../data/shapes/shapes.ts';
 import { throughSchema } from '../../../data/snapshot/hubs/references.ts';
+import type { KeyFault } from '../../../data/model/model-collections.ts';
 import { collectionSchema } from '../../../data/snapshot/normalise.ts';
 import { fieldNames } from '../../../data/snapshot/validate.ts';
 import {
@@ -47,7 +49,6 @@ import { writeTextAtomic } from '../../core/json.ts';
 import { words } from '../../core/words.ts';
 import {
     collectionText,
-    entryId,
     entryOf,
     identityOf,
     identityText,
@@ -59,7 +60,12 @@ import { asFieldValue } from '../yaml/yaml-edit.ts';
 import type { ChangeRecord } from '../../core/changes.ts';
 import type { EditResult, Refusal } from '../yaml/yaml-edit.ts';
 import type { FieldValue } from '../yaml/yaml-values.ts';
-import { optionKeys, type PortfolioConfig, type SchemaField } from '../../../data/model/index.ts';
+import {
+    entryIdOf,
+    optionKeys,
+    type PortfolioConfig,
+    type SchemaField
+} from '../../../data/model/index.ts';
 import type { WriteOutcome } from '../writes.ts';
 
 /** One edit put on disk the way writeManifest does it: only when the edit changed something. */
@@ -94,8 +100,8 @@ function typeRefusal(field: SchemaField, value: unknown, catalog: Record<string,
             : words(catalog, 'server.entries.type_checkbox', name);
     }
     if (field.type === 'records') return recordRefusal(field, value, catalog);
-    // A field whose options come from a source (`from`) alone has none of its own here, and its
-    // value is then not held to a list: the sources are the page's data, not the file's.
+    // A field whose options come from a collection (`foreign_key`) alone has none of its own here,
+    // and its value is then not held to a list: the collection is the page's data, not the file's.
     const options = optionKeys(field);
     if (field.type === 'tags') return tagsRefusal(name, options, value, catalog);
     if (field.type !== 'select') return '';
@@ -208,21 +214,88 @@ function normaliseMetalists(
 }
 
 /**
- * The id the reader gives the entry one identity value names, which is what every write addresses
- * an entry by. It is identityOf read the other way round, and an undo needs it: what a change
- * records is the identity value the file is keyed by.
+ * The id the reader gives the entry one value of the primary key names, which is what every write
+ * addresses an entry by. It is identityOf read the other way round, and an undo needs it: what a
+ * change records is the value of the primary key the file is keyed by.
  */
 export function idOfIdentity(collection: Collection, value: string): string | null {
     const entry = entryOf(collection, value);
-    return entry === undefined ? null : entryId(entry, collection.ident);
+    return entry === undefined ? null : entryIdOf(entry, collection.ident);
 }
 
-/** Every entry's identity value, in the order the file lists them. */
+/**
+ * Every entry's value of the primary key, in the order the file lists them; none for a file with
+ * no primary key.
+ */
 export function identityOrder(collection: Collection): string[] {
+    const ident = collection.ident;
+    if (ident === null) return [];
     return collection.items.flatMap((one) => {
-        const value = identityText(one, collection.ident);
+        const value = identityText(one, ident);
         return value === null ? [] : [value];
     });
+}
+
+/**
+ * The refusal of every write that addresses an entry of a collection file with no primary key, the
+ * file named by its path inside the hub `hub`.
+ */
+function unkeyed(hub: string, held: Collection, catalog: Record<string, string>): WriteOutcome {
+    const reason = noPrimaryKey(catalog, relative(hub, held.file), held.fault);
+    return { found: true, changed: [], refused: [{ field: 'schema', reason }] };
+}
+
+/**
+ * The sentence refusing a write to the file `file`, which has no primary key for the cause `fault`
+ * (`keyFaultOf`), with what takes the cause away. A collection, a feed and the Literature file are
+ * refused by it alike.
+ */
+export function noPrimaryKey(
+    catalog: Record<string, string>,
+    file: string,
+    fault: KeyFault | null
+): string {
+    switch (fault?.cause) {
+        case 'two':
+            return words(
+                catalog,
+                'server.entries.no_primary_key_two',
+                file,
+                fault.fields.join(', ')
+            );
+        case 'unkeyed':
+            return words(
+                catalog,
+                'server.entries.no_primary_key_unkeyed',
+                file,
+                fault.field,
+                fault.type
+            );
+        case 'beside':
+            return words(
+                catalog,
+                'server.entries.no_primary_key_beside',
+                file,
+                fault.named,
+                fault.field
+            );
+        case 'missing':
+            return words(catalog, 'server.entries.no_primary_key_missing', file);
+        case 'unread':
+            return words(catalog, 'server.entries.no_primary_key_unread', file);
+        case 'none':
+            if (fault.named !== undefined) {
+                return words(catalog, 'server.entries.no_primary_key_named', file, fault.named);
+            }
+            return words(catalog, 'server.entries.no_primary_key_none', file);
+        default:
+            return words(catalog, 'server.entries.no_primary_key_none', file);
+    }
+}
+
+/** A refusal of one field beside the type refusals `typed` the same request met. */
+function refusedWith(typed: Refusal[], field: string, reason: string): WriteOutcome {
+    return { found: true, changed: [], refused: [...typed, { field, reason }] };
 }
 
 /**
@@ -266,10 +339,10 @@ export function sharedRefusal(
 }
 
 /**
- * The fields with the hub's name and a colon taken off every value that names a record (a `from:`
- * of the file's schema), since the portfolio names a record by its hub and its key
- * (data/snapshot/hubs/merge.ts) and the file of the hub holds the key. A value without the prefix,
- * the key a form sends, is kept as it is.
+ * The fields with the hub's name and a colon taken off every value that names an entry (a
+ * `foreign_key:` of the file's schema that names no vocabulary list), since the portfolio names an
+ * entry by its hub and its key (data/snapshot/hubs/merge.ts) and the file of the hub holds the key.
+ * A value without the prefix, the key a form sends, is kept as it is.
  */
 function hubOwnValues(
     schema: unknown,
@@ -284,8 +357,8 @@ function hubOwnValues(
 
 /**
  * Set fields of one collection entry, found by the key the hub's file gives it. `hubKey` is the
- * name of the hub the file belongs to: a value of a field that names a record may come with that
- * name in front, and is written without it.
+ * name of the hub the file belongs to: a value of a field that names an entry may come with that
+ * name in front, and is written without it. A file with no primary key is refused.
  */
 export function writeEntry(
     hub: string,
@@ -298,69 +371,33 @@ export function writeEntry(
 ): WriteOutcome {
     const held = readCollection(hub, config, collection, own);
     if (held === null) return { found: false, changed: [], refused: [] };
-    const shared = sharedRefusal(held.items, held.ident, config.text);
+    const ident = held.ident;
+    if (ident === null) return unkeyed(hub, held, config.text);
+    const shared = sharedRefusal(held.items, ident, config.text);
     if (shared !== null) return shared;
     const value = identityOf(held, id);
     if (value === null) return { found: false, changed: [], refused: [] };
     const fields = hubKey === undefined ? given : hubOwnValues(held.schema, given, hubKey);
     const typed = typeRefusals(held.schema, fields, config.text);
-    const wanted = fitting(fields, typed);
-    if (held.ident in wanted) {
-        // The identity value is what addresses an entry in this file, so an edit may not move the
-        // entry onto another entry's value: the file would then hold two entries no write can tell
-        // apart, and every later write to it is refused.
-        const raw = wanted[held.ident];
-        const next = typeof raw === 'string' ? raw.trim() : scalar(raw);
-        if (next !== value && held.items.some((one) => scalar(one[held.ident]) === next)) {
-            return {
-                found: true,
-                changed: [],
-                refused: [
-                    ...typed,
-                    {
-                        field: held.ident,
-                        reason: words(config.text, 'server.entries.name_taken', next)
-                    }
-                ]
-            };
-        }
-    }
-    const registryField = byKey(KEYED_FIELDS, collection);
-    if (registryField !== undefined && registryField in wanted) {
-        // The registry keys its entities by this field, so an edit may neither clear it nor move
-        // the entry onto another entry's value: normalise would then keep one of the two.
-        const own = held.items.find((one) => scalar(one[held.ident]) === value);
-        const raw = wanted[registryField];
-        const next = typeof raw === 'string' ? raw.trim() : '';
-        const current = scalar(own?.[registryField]).trim();
-        if (next === '') {
-            return {
-                found: true,
-                changed: [],
-                refused: [
-                    ...typed,
-                    {
-                        field: registryField,
-                        reason: words(config.text, 'server.entries.key_empty', registryField)
-                    }
-                ]
-            };
-        }
-        if (
-            next !== current &&
-            held.items.some((one) => scalar(one[registryField]).trim() === next)
-        ) {
-            return {
-                found: true,
-                changed: [],
-                refused: [
-                    ...typed,
-                    {
-                        field: registryField,
-                        reason: words(config.text, 'server.entries.key_taken', registryField)
-                    }
-                ]
-            };
+    // The value of the primary key is what addresses an entry in this file and what every
+    // reference to it stores, so an edit may neither clear it nor move the entry onto another
+    // entry's value: the file would then hold an entry no write can find, or two no write can tell
+    // apart, and every later write to it is refused. A cleared value is refused as a field of the
+    // wrong type is, and the other fields are written; a value another entry holds refuses the
+    // whole write, since the reader meant to move the entry.
+    const fitted = fitting(fields, typed);
+    const keyText = (raw: unknown): string => (typeof raw === 'string' ? raw.trim() : scalar(raw));
+    const cleared = ident in fitted && keyText(fitted[ident]) === '';
+    const keyRefused: Refusal[] = cleared
+        ? [{ field: ident, reason: words(config.text, 'server.entries.key_empty', ident) }]
+        : [];
+    const wanted = cleared
+        ? Object.fromEntries(Object.entries(fitted).filter(([name]) => name !== ident))
+        : fitted;
+    if (ident in wanted) {
+        const next = keyText(wanted[ident]);
+        if (next !== value && held.items.some((one) => scalar(one[ident]) === next)) {
+            return refusedWith(typed, ident, words(config.text, 'server.entries.name_taken', next));
         }
     }
     const entry = entryOf(held, value);
@@ -368,7 +405,7 @@ export function writeEntry(
     const out = saved(
         held.file,
         held.source,
-        setEntryFields(held.source, held.ident, value, writing, config.text)
+        setEntryFields(held.source, ident, value, writing, config.text)
     );
     // The entry the edit was computed against is the value before it, and `writing` is the value
     // the edit put there, so the record is made where both halves are in hand rather than by
@@ -376,7 +413,7 @@ export function writeEntry(
     // wrote, so each of its records is keyed by that value and carries the one before it (`was`):
     // the reader may undo the write's records in any order, and each undo finds the entry under
     // one or the other.
-    const renamed = out.changed.includes(held.ident) ? scalar(writing[held.ident]) : null;
+    const renamed = out.changed.includes(ident) ? scalar(writing[ident]) : null;
     const records: ChangeRecord[] = out.changed.map((field) => ({
         file: held.file,
         key: renamed ?? value,
@@ -388,15 +425,15 @@ export function writeEntry(
     }));
     return {
         ...out,
-        id: entryId({ ...entry, ...writing }, held.ident),
-        refused: [...typed, ...out.refused],
+        id: entryIdOf({ ...entry, ...writing }, ident),
+        refused: [...typed, ...keyRefused, ...out.refused],
         records
     };
 }
 
 /**
- * Put one collection's entries in the order the reader dragged them into. The order is the identity
- * values, not the ids: it is what addresses an entry in the file, and it is what the card carries.
+ * Put one collection's entries in the order the reader dragged them into. The order is the values
+ * of the primary key: it is what addresses an entry in the file, and it is what the card carries.
  */
 export function reorderCollection(
     hub: string,
@@ -407,13 +444,15 @@ export function reorderCollection(
 ): WriteOutcome {
     const held = readCollection(hub, config, collection, own);
     if (held === null) return { found: false, changed: [], refused: [] };
-    const shared = sharedRefusal(held.items, held.ident, config.text);
+    const ident = held.ident;
+    if (ident === null) return unkeyed(hub, held, config.text);
+    const shared = sharedRefusal(held.items, ident, config.text);
     if (shared !== null) return shared;
     const before = identityOrder(held);
     const out = saved(
         held.file,
         held.source,
-        reorderEntries(held.source, held.ident, order, config.text)
+        reorderEntries(held.source, ident, order, config.text)
     );
     if (out.changed.length === 0) return out;
     return {
@@ -441,12 +480,14 @@ export function removeEntry(
 ): WriteOutcome {
     const held = readCollection(hub, config, collection, own);
     if (held === null) return { found: false, changed: [], refused: [] };
-    const shared = sharedRefusal(held.items, held.ident, config.text);
+    const ident = held.ident;
+    if (ident === null) return unkeyed(hub, held, config.text);
+    const shared = sharedRefusal(held.items, ident, config.text);
     if (shared !== null) return shared;
     const value = identityOf(held, id);
     if (value === null) return { found: false, changed: [], refused: [] };
     const entry = entryOf(held, value);
-    const edit = deleteEntry(held.source, held.ident, value, config.text);
+    const edit = deleteEntry(held.source, ident, value, config.text);
     const out = saved(held.file, held.source, edit);
     if (out.changed.length === 0) return out;
     const replaced = replacedLines(held.source, edit.text);
@@ -468,12 +509,12 @@ export function removeEntry(
 
 /**
  * Take back the add or the delete of one entry by the text its record replaced, which leaves the
- * file byte for byte as it was before the write: `key` is the entry's identity and `entry` the
- * entry the undo puts back, null for the undo of an add. The text goes back only while the file
- * holds what the write left at the record's place and the file with the text back lists the entries
- * the undo leaves, every other entry as it is now; otherwise nothing is written and the answer is
- * null, and the undo goes through removeEntry or createEntry. The record of the undo is the one
- * those writers make, with the text it replaced.
+ * file byte for byte as it was before the write: `key` is the entry's value of the primary key and
+ * `entry` the entry the undo puts back, null for the undo of an add. The text goes back only while
+ * the file holds what the write left at the record's place and the file with the text back lists
+ * the entries the undo leaves, every other entry as it is now; otherwise nothing is written and the
+ * answer is null, and the undo goes through removeEntry or createEntry. The record of the undo is
+ * the one those writers make, with the text it replaced.
  */
 export function putBackEntry(
     hub: string,
@@ -485,12 +526,14 @@ export function putBackEntry(
     const held = readCollection(hub, config, collection, own);
     const put = replacedShape.safeParse(taken.replaced);
     if (held === null || !put.success) return null;
+    const ident = held.ident;
+    if (ident === null) return null;
     const text = putBack(held.source, put.data);
-    const back = text === null ? null : collectionText(held.file, text, own);
+    const back = text === null ? null : collectionText(held.file, text, own, held.named);
     if (text === null || back === null) return null;
     const { key, entry } = taken;
     const others = (items: Record<string, unknown>[]) =>
-        items.filter((one) => scalar(one[held.ident]) !== key);
+        items.filter((one) => scalar(one[ident]) !== key);
     const now = entryOf(held, key);
     const restored = entryOf(back, key);
     const fits =
@@ -517,7 +560,11 @@ export function putBackEntry(
     };
 }
 
-/** Add one entry to a collection, rendered from the file's own schema. */
+/**
+ * Add one entry to a collection, rendered from the file's own schema. The entry needs a value of
+ * the file's primary key that no entry of the file holds, and a file with no primary key is
+ * refused.
+ */
 export function createEntry(
     hub: string,
     config: PortfolioConfig,
@@ -527,67 +574,20 @@ export function createEntry(
 ): WriteOutcome {
     const held = readCollection(hub, config, collection, own);
     if (held === null) return { found: false, changed: [], refused: [] };
-    const shared = sharedRefusal(held.items, held.ident, config.text);
+    const ident = held.ident;
+    if (ident === null) return unkeyed(hub, held, config.text);
+    const shared = sharedRefusal(held.items, ident, config.text);
     if (shared !== null) return shared;
     const typed = typeRefusals(held.schema, fields, config.text);
     const wanted = fitting(fields, typed);
-    const registryField = byKey(KEYED_FIELDS, collection);
-    const registryRaw = registryField === undefined ? undefined : wanted[registryField];
-    const registryValue = typeof registryRaw === 'string' ? registryRaw.trim() : '';
-    if (registryField !== undefined && registryValue === '') {
-        return {
-            found: true,
-            changed: [],
-            refused: [
-                ...typed,
-                {
-                    field: registryField,
-                    reason: words(config.text, 'server.entries.new_key_empty', registryField)
-                }
-            ]
-        };
-    }
-    if (
-        registryField !== undefined &&
-        held.items.some((one) => scalar(one[registryField]).trim() === registryValue)
-    ) {
-        return {
-            found: true,
-            changed: [],
-            refused: [
-                ...typed,
-                {
-                    field: registryField,
-                    reason: words(config.text, 'server.entries.key_taken', registryField)
-                }
-            ]
-        };
-    }
-    const ident = held.ident;
     const raw = wanted[ident];
     const value = typeof raw === 'string' ? raw.trim() : '';
     if (value === '') {
-        return {
-            found: true,
-            changed: [],
-            refused: [
-                ...typed,
-                {
-                    field: ident,
-                    reason: words(config.text, 'server.entries.new_ident_missing', ident)
-                }
-            ]
-        };
+        const missing = words(config.text, 'server.entries.new_ident_missing', ident);
+        return refusedWith(typed, ident, missing);
     }
-    if (held.items.some((one) => scalar(one[ident]) === value)) {
-        return {
-            found: true,
-            changed: [],
-            refused: [
-                ...typed,
-                { field: ident, reason: words(config.text, 'server.entries.key_taken', ident) }
-            ]
-        };
+    if (held.items.some((one) => scalar(one[ident]).trim() === value)) {
+        return refusedWith(typed, ident, words(config.text, 'server.entries.key_taken', ident));
     }
 
     const values: Record<string, FieldValue> = {};
@@ -601,7 +601,6 @@ export function createEntry(
         values[field] = one;
     }
     values[ident] = value;
-    if (registryField !== undefined) values[registryField] = registryValue;
 
     const block = renderEntry(fieldNames(held.schema), ident, values);
     if (block === '') {
@@ -614,10 +613,11 @@ export function createEntry(
             ]
         };
     }
-    // A file with no list yet is given one with this entry under it; every later add appends.
+    // A file with no list yet is given one with this entry under it, under the key that holds
+    // nothing when the file has one; every later add appends.
     const edit =
         held.list === ''
-            ? startEntries(held.source, LIST, block, config.text)
+            ? startEntries(held.source, held.starts, block, config.text)
             : appendEntry(held.source, held.list, block, config.text);
     const out = saved(held.file, held.source, edit);
     // The record holds the entry as the file holds it after the write, read back from the block the
@@ -641,7 +641,7 @@ export function createEntry(
               ];
     return {
         ...out,
-        id: entryId(values, ident),
+        id: entryIdOf(values, ident),
         refused: [...refused, ...out.refused],
         records
     };

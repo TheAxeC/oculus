@@ -139,7 +139,13 @@
     const hub = $derived(entry === null ? null : rootOf(entry));
     const file = $derived(page === null ? null : pageFile(client, page));
     const fault = $derived(page === null ? undefined : pageFault(client, page));
-    const faults = $derived(identityFaults(collection?.entries ?? [], schema));
+    const faults = $derived(
+        identityFaults(
+            collection?.entries ?? [],
+            collection?.primary_key ?? null,
+            collection?.key_fault
+        )
+    );
     const lifecycle = $derived(offeredStatuses(schema, statusFacets(collection?.entries ?? [])));
     const blocked = $derived(
         blockedBy(file, file !== null && unsavedFile(file.root, file.path), fault)

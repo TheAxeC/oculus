@@ -28,5 +28,5 @@ deck_schema:
       - { field: find, type: raw, help: "Which project folders the group finds: their folder globs, the tiers, the types and the statuses they may have." }
       - { field: sort, type: text, help: "How the found decks are ordered: folder or title." }
       - { field: discover, type: checkbox, help: "Whether the group also takes the decks it finds beyond the slides it names." }
-      - { field: slides, type: tags, from: projects, help: "The projects whose decks the group shows, in order, each named by its project id." }
+      - { field: slides, type: tags, foreign_key: projects, help: "The projects whose decks the group shows, in order, each named by its project id." }
   - { field: order, type: raw, help: "The slides in the order they are shown: a slide file name, a group of slides, or a summary or a grid of a group." }

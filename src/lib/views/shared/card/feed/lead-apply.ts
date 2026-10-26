@@ -67,7 +67,7 @@ export async function applyFromLead(
         client,
         file,
         held.schema,
-        key,
+        held,
         applicationFromLead(entry, vocabOf(hub)),
         (one) => client.layout.openBeside('source', sourceFileState(client, one), undefined, beside)
     );

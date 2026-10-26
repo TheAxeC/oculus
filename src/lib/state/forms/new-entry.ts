@@ -7,34 +7,33 @@
 // refusals of a value the file holds and of a value that is empty are the server's
 // (server/edit/writes/entries.ts), and are shown as it words them.
 
-import { KEYED_FIELDS } from '../../data/helpers/files/yaml/collection-text.ts';
-import { byKey, scalar, slugOf } from '../../data/helpers/guards.ts';
+import { slugOf } from '../../data/helpers/guards.ts';
 import { bareId, keyOf, rootOf } from '../../data/helpers/hub-names.ts';
 import { chosenHub, hubsTaking } from '../shared/page/hubs.ts';
 import { oneWordWith, type WordsOf } from '../../data/shapes/vocab-keys.ts';
+import { displayFields } from '../../data/model/index.ts';
 import type { Collection, SchemaField } from '../../data/model/index.ts';
 import { t } from '../shared/words/text.ts';
 import type { WriteAnswer } from '../shared/stores/shapes.ts';
-import { identityField } from './record-fields.ts';
 
 /** The longest key a task or a person is given, however long its words. */
 const TASK_KEY_MAX = 80;
 
-/** The field of the people registry that holds a person's name. */
-const NAME_FIELD = 'name';
-
 /**
- * The fields an Add box asks for when it adds to a collection: the identity field, and the field
- * the collection's registry keys its entities by when that is another (a venue: its name and its
- * id).
+ * The fields an Add box asks for when it adds to a collection: the file's primary key
+ * `primaryKey` and every field the schema marks `required: true`, in the schema's order (a venue:
+ * its id and its name). A primary key the schema does not name, the one a file with no schema
+ * names on its `collections:` entry, is asked first as text; a file with no primary key is asked
+ * its required fields, and the write that follows is refused with the sentence that says why.
  */
-export function askFields(collection: string, schema: SchemaField[] | undefined): SchemaField[] {
-    const identity = identityField(schema);
-    const keyed = byKey(KEYED_FIELDS, collection);
-    const names = keyed === undefined || keyed === identity ? [identity] : [identity, keyed];
-    return names.map(
-        (name) => (schema ?? []).find((one) => one.field === name) ?? { field: name, type: 'text' }
-    );
+export function askFields(
+    schema: SchemaField[] | undefined,
+    primaryKey: string | null
+): SchemaField[] {
+    const own = schema ?? [];
+    const asked = own.filter((one) => one.field === primaryKey || one.required === true);
+    const named = primaryKey !== null && !own.some((one) => one.field === primaryKey);
+    return named ? [{ field: primaryKey, type: 'text' }, ...asked] : asked;
 }
 
 /**
@@ -53,10 +52,23 @@ function freeKey(words: string, taken: ReadonlySet<string>): string {
     return key;
 }
 
-/** The keys the entries of a collection hold in its identity field. */
+/** The values of the primary key the entries of a collection hold, which are their ids' keys. */
 function takenKeys(collection: Collection): Set<string> {
-    const identity = identityField(collection.schema);
-    return new Set(collection.entries.map((entry) => scalar(entry.fields[identity])));
+    return new Set(collection.entries.map((entry) => bareId(entry)));
+}
+
+/**
+ * The fields of a new entry of `home` made from `words` and the key `key` they give: the key under
+ * the file's primary key, and the words under the field of the schema ranked `display: 1`, the
+ * field a reference to the entry shows. A file with no primary key gets no key, and the write is
+ * refused with the sentence that says why; a schema that ranks no field gets no words.
+ */
+function madeFields(home: Collection, key: string, words: string): Record<string, unknown> {
+    const shown = displayFields(home.schema).at(0);
+    return {
+        ...(home.primary_key === undefined ? {} : { [home.primary_key]: key }),
+        ...(shown === undefined ? {} : { [shown]: words })
+    };
 }
 
 /**
@@ -72,11 +84,12 @@ type Refusal = 'title' | 'key' | 'collection' | 'hub';
 /**
  * The task a title makes in `home`, the collection flagged `tasks` of the hub it is added to. The
  * key is the title as lowercase ASCII words joined by hyphens, accents taken off and cut to
- * `TASK_KEY_MAX`; a key the file holds already gets `-2`, `-3` and on, inside the same length. An
- * empty title, a title that gives no key (no ASCII letter or digit after the accents are taken off)
- * and no tasks collection give a refusal and no fields. The task's status is the word of `statuses`
- * carrying `default_task` in `config`, the words of the hub it is added to, and none when no word
- * or more than one does (`oneWordWith`).
+ * `TASK_KEY_MAX`; a key the file holds already gets `-2`, `-3` and on, inside the same length. The
+ * key and the title are written as `madeFields` places them. An empty title, a title that gives no
+ * key (no ASCII letter or digit after the accents are taken off) and no tasks collection give a
+ * refusal and no fields. The task's status is the word of `statuses` carrying `default_task` in
+ * `config`, the words of the hub it is added to, and none when no word or more than one does
+ * (`oneWordWith`).
  */
 function taskFields(
     title: string,
@@ -86,12 +99,11 @@ function taskFields(
     const words = title.trim();
     if (words === '') return { refusal: 'title' };
     if (home?.schema === undefined) return { refusal: 'collection' };
-    const identity = identityField(home.schema);
     const key = freeKey(words, takenKeys(home));
     if (key === '') return { refusal: 'key' };
     const status = oneWordWith(config, 'statuses', 'default_task');
     return {
-        fields: { [identity]: key, title: words, ...(status === undefined ? {} : { status }) },
+        fields: { ...madeFields(home, key, words), ...(status === undefined ? {} : { status }) },
         hub: rootOf(home),
         collection: bareId(home)
     };
@@ -172,7 +184,7 @@ export async function addTask(
     if (!answer.ok) return { id: '', label: '', said: answer.error ?? t('editor.failed', '') };
     const refused = answer.refused.map((one) => one.reason).join('; ');
     if (refused !== '' || answer.id === undefined) return { id: '', label: '', said: refused };
-    return { id: answer.id, label: String(made.fields.title), said: '' };
+    return { id: answer.id, label: title.trim(), said: '' };
 }
 
 /**
@@ -206,8 +218,9 @@ export type PersonAdded = { key: string; said: '' } | { key: ''; said: string };
  * registry is the one hub's when one hub holds a people collection, and none when several do, since
  * no primary names one of them. `name` is the words `personToAdd` offered, which give a key. The
  * key is made from the name as a task's is from its title (`freeKey`), `-2` and on while that
- * registry holds it; the name is the words trimmed. A hub with no people collection, several with
- * none named, and a refusal of the write come back as the sentence to say.
+ * registry holds it, and written under the file's primary key; the words trimmed are written under
+ * the field its schema ranks `display: 1` (`madeFields`). A hub with no people collection, several
+ * with none named, and a refusal of the write come back as the sentence to say.
  */
 export async function addPerson(
     name: string,
@@ -230,8 +243,7 @@ export async function addPerson(
         return { key: '', said: t('editor.add_person_collection') };
     }
     const key = freeKey(words, takenKeys(home));
-    const fields = { [identityField(home.schema)]: key, [NAME_FIELD]: words };
-    const answer = await write(bareId(home), fields, rootOf(home));
+    const answer = await write(bareId(home), madeFields(home, key, words), rootOf(home));
     if (!answer.ok) return { key: '', said: answer.error ?? t('editor.failed', '') };
     const refused = answer.refused.map((one) => one.reason).join('; ');
     if (refused !== '' || answer.id === undefined) return { key: '', said: refused };

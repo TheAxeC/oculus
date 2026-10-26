@@ -66,7 +66,7 @@ export function registryFile(client: ClientState, kind: RegistryKind): RegistryF
                 rootOf(one) === client.fs.primary()
                     ? source
                     : fileUnder(one.file, client.fs.roots(), client.fs.primary()),
-            faults: identityFaults(one.entries, one.schema)
+            faults: identityFaults(one.entries, one.primary_key ?? null, one.key_fault)
         }))
     );
     /** The part whose file holds the entry of the id. */

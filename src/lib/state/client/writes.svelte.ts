@@ -431,9 +431,9 @@ export function createWrites(
     }
 
     /**
-     * Put one collection's entries in the order a drag left them. `order` is every entry's identity
-     * value, the file's own schema's first field, in the new order; an order that does not name
-     * every entry exactly once is refused by the server and the file is left alone.
+     * Put one collection's entries in the order a drag left them. `order` is every entry's value of
+     * the file's primary key, in the new order; an order that does not name every entry exactly
+     * once is refused by the server and the file is left alone.
      */
     async function reorderEntries(collection: string, order: string[]): Promise<WriteAnswer> {
         return send({ kind: 'reorder', collection, order });

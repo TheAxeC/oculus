@@ -3,9 +3,10 @@
 //
 // It is a collection file and not a JSON store so that the write path that edits every other
 // collection edits this one too: the same schema, the same field-by-field surgery that keeps the
-// reader's own comments and spacing. The write path reaches it by the key
-// `bookmarks`, which server/files/fs/collections.ts resolves to this file instead of asking
-// sources.yml for one inside the hub.
+// reader's own comments and spacing. The write path reaches it by the key `bookmarks`, which
+// server/files/fs/collections.ts resolves to this file instead of asking sources.yml for one inside
+// the hub. A bookmark is addressed by the file's primary key, the `label` the scaffold's schema
+// flags `primary_key: true`.
 //
 // A file this machine has not got yet carries its title and its schema and no `entries:` key at
 // all. YAML writes no empty block list: `entries: []` is a flow list, which every later append
@@ -21,22 +22,21 @@
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import { parse } from 'yaml';
 import { z } from 'zod';
-import type { Entry } from '../../../data/model/index.ts';
+import { entryIdOf, primaryKeyOf, type Entry } from '../../../data/model/index.ts';
+import { collectionSchema } from '../../../data/snapshot/normalise.ts';
 import { writeTextAtomic } from '../../core/json.ts';
 import { resolveRootPath, type Root } from '../files.ts';
-import { anyNumberShape, mapShape } from '../../../data/shapes/shapes.ts';
+import { mapShape } from '../../../data/shapes/shapes.ts';
 
 /** The collection key the write path resolves to the reader's own file. */
 export const BOOKMARKS = 'bookmarks';
 
-/** The field a bookmark is addressed by, which is the first field of the scaffold's schema. */
-export const BOOKMARK_IDENTITY = 'label';
-
 /**
  * The file a machine with no bookmarks is given. The schema types a bookmark for the writers: a
- * label the entry is found by, the root key the file sits under, and the path inside that root,
- * which an entry naming the root's top leaves out. The root is a select with no options of its own,
- * so a bookmark may name a root added after the file was written.
+ * label the entry is found by, flagged as the file's primary key, the root key the file sits under,
+ * and the path inside that root, which an entry naming the root's top leaves out. The root is a
+ * select with no options of its own, so a bookmark may name a root added after the file was
+ * written.
  */
 const SCAFFOLD = [
     "# The hub's bookmarks, written by oculus from the Files view.",
@@ -47,6 +47,7 @@ const SCAFFOLD = [
     '  - field: label',
     '    type: text',
     '    label: Label',
+    '    primary_key: true',
     '    required: true',
     '    help: The name the bookmark is listed and found by.',
     '  - field: root',
@@ -80,26 +81,29 @@ export type BookmarkEntry = Entry & { kind: BookmarkKind };
 /** An item of the file's `entries:` list that is a map, answered as the file holds it. */
 const bookmarkItemShape = mapShape;
 
-/** What a bookmark is found by: a label of text or a number, written out as text. */
-const bookmarkLabelShape = z.union([z.string(), anyNumberShape]).transform(String);
-
 /** What a GET for the bookmarks answers: the entries as the Files view lists them. */
 export type BookmarksAnswer = { entries: BookmarkEntry[] };
 
-/** The part of the file this module reads: the `entries:` list, empty when it is odd. */
-const bookmarksFileShape = z.object({ entries: z.array(z.unknown()).catch(() => []) });
+/**
+ * The part of the file this module reads: the `entries:` list, empty when it is odd, and the
+ * `schema:` whose primary key a bookmark is found by.
+ */
+const bookmarksFileShape = z.object({
+    entries: z.array(z.unknown()).catch(() => []),
+    schema: z.unknown()
+});
 
 /**
- * One entry of the file as the page reads it, or null for an item that is not a map. An entry with
- * no `path` line names its root's top, which the page reads as the empty path so that every reader
- * of an entry sees one shape.
+ * One entry of the file as the page reads it, or null for an item that is not a map or holds no
+ * value of the file's primary key `key`. An entry with no `path` line names its root's top, which
+ * the page reads as the empty path so that every reader of an entry sees one shape.
  */
-function bookmark(item: unknown, file: string, index: number): Entry | null {
+function bookmark(item: unknown, file: string, index: number, key: string): Entry | null {
     const held = bookmarkItemShape.safeParse(item);
     if (!held.success) return null;
-    const named = bookmarkLabelShape.safeParse(held.data[BOOKMARK_IDENTITY]);
-    if (!named.success || named.data === '') return null;
-    return { id: named.data, title: named.data, fields: { path: '', ...held.data }, file, index };
+    const id = entryIdOf(held.data, key);
+    if (id === '') return null;
+    return { id, title: id, fields: { path: '', ...held.data }, file, index };
 }
 
 /**
@@ -122,7 +126,8 @@ export function bookmarkKind(roots: Root[], entry: Entry): BookmarkKind {
 
 /**
  * The bookmarks of one file. A missing, unreadable or unparseable file reads as no bookmarks, which
- * is what a machine that has never written one has.
+ * is what a machine that has never written one has, and so does a file whose schema flags no
+ * primary key, since no bookmark of it can be found.
  */
 export function readBookmarks(file: string, roots: Root[] = []): BookmarksAnswer {
     let data: unknown;
@@ -133,9 +138,11 @@ export function readBookmarks(file: string, roots: Root[] = []): BookmarksAnswer
     }
     const held = bookmarksFileShape.safeParse(data);
     if (!held.success) return { entries: [] };
+    const key = primaryKeyOf(collectionSchema(held.data.schema) ?? []);
+    if (key === null) return { entries: [] };
     const entries: BookmarkEntry[] = [];
     for (const [index, item] of held.data.entries.entries()) {
-        const one = bookmark(item, file, index);
+        const one = bookmark(item, file, index, key);
         if (one !== null) entries.push({ ...one, kind: bookmarkKind(roots, one) });
     }
     return { entries };

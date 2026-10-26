@@ -3,38 +3,29 @@
 // with the same field type the project editor's form is drawn from (state/forms/schema.ts), so one
 // set of controls draws both. Pure.
 //
-// The first field of a schema is the entry's identity: it addresses the entry in the file, so the
-// form shows it and never writes it. A registry whose entities are keyed by another field (the
-// venues by `id`) shows that field read-only instead and writes the identity: a rename of the
-// identity is written through the `entry` write's `was` record and leaves the key, which every
-// manifest names the entry by, as it is.
+// The field of a schema flagged `primary_key: true` is the entry's primary key: it addresses the
+// entry in the file and every reference to the entry stores it, so the form shows it and never
+// writes it (a venue's `id`, a person's `key`).
 
 import type { SchemaField } from '../../data/model/index.ts';
-import { KEYED_FIELDS } from '../../data/helpers/files/yaml/collection-text.ts';
 import { byKey, scalar } from '../../data/helpers/guards.ts';
 import type { FormField } from './schema.ts';
 
-/** The field a file without a schema is addressed by, and the card's own heading. */
-export const TITLE_FIELD = 'title';
-
-/** The field an entry is addressed by: the file's own schema's first field, `title` without one. */
-export function identityField(schema: SchemaField[] | undefined): string {
-    const first = (schema ?? []).at(0);
-    return first === undefined ? TITLE_FIELD : first.field;
-}
-
 /**
- * The fields of an entry the form shows and never writes: the field the collection's registry keys
- * its entities by when it has one (a venue's `id`), else the identity.
+ * The fields of an entry the form shows and never writes: the file's primary key `primaryKey`,
+ * none for a file with no primary key, whose entries take no write.
  */
-export function fixedFields(collection: string, schema: SchemaField[] | undefined): string[] {
-    return [byKey(KEYED_FIELDS, collection) ?? identityField(schema)];
+export function fixedFields(primaryKey: string | null): string[] {
+    return primaryKey === null ? [] : [primaryKey];
 }
 
-/** The source of a field's choices: its list, or the one the record's other field picks. */
-function fromOf(from: SchemaField['from'], record: Record<string, unknown>): FormField['from'] {
-    if (from === undefined || Array.isArray(from)) return from;
-    return byKey(from.sources, scalar(record[from.field]));
+/** The target of a field's choices: its list, or the one the record's other field picks. */
+function keysOf(
+    keys: SchemaField['foreign_key'],
+    record: Record<string, unknown>
+): FormField['foreign_key'] {
+    if (keys === undefined || Array.isArray(keys)) return keys;
+    return byKey(keys.sources, scalar(record[keys.field]));
 }
 
 /**
@@ -50,8 +41,8 @@ function formFieldOf(one: SchemaField, record: Record<string, unknown>): FormFie
     };
     if (one.help !== undefined) field.help = one.help;
     if (one.options !== undefined) field.options = one.options;
-    const from = fromOf(one.from, record);
-    if (from !== undefined) field.from = from;
+    const keys = keysOf(one.foreign_key, record);
+    if (keys !== undefined) field.foreign_key = keys;
     if (one.fields !== undefined) field.fields = one.fields.map((sub) => formFieldOf(sub, {}));
     if (one.open === true) field.open = true;
     if (one.map === true) field.map = true;

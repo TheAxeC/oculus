@@ -8,11 +8,12 @@
 // the form and pressing Save are DOM events no case here fires.
 
 import { beforeEach, describe, expect, it } from 'vitest';
-import type {
-    Collection,
-    Project,
-    SchemaField,
-    Snapshot
+import {
+    primaryKeyOf,
+    type Collection,
+    type Project,
+    type SchemaField,
+    type Snapshot
 } from '../../../src/lib/data/model/index.ts';
 import {
     createFormDraft,
@@ -25,7 +26,11 @@ import {
     type Pages
 } from '../../../src/lib/state/forms/page-entry.ts';
 import { createSettled } from '../../../src/lib/state/forms/settled.svelte.ts';
-import { projectDraftTarget } from '../../../src/lib/state/forms/schema.ts';
+import {
+    projectDraftTarget,
+    writableField,
+    type FormField
+} from '../../../src/lib/state/forms/schema.ts';
 import { createClientState, type ClientState } from '../../fixtures/client.ts';
 
 let client: ClientState;
@@ -70,7 +75,8 @@ function build(storeOf: ClientState): FormDraftStore {
         project: projectDraftTarget(
             (id) => projects[id] ?? null,
             (_key, values) => values,
-            () => false
+            () => false,
+            () => [{ field: 'id', label: 'id', type: 'text', section: '', primary_key: true }]
         ),
         page: pageTarget()
     });
@@ -103,6 +109,28 @@ describe('the edits', () => {
         drafts.editDraft('ed-1', 'page', 'venues:jbhi', 'short', 'JBHI');
         drafts.editDraft('ed-1', 'page', 'venues:jbhi', 'key', 'changed');
         expect(drafts.draftDirty('ed-1')).toBe(false);
+    });
+
+    it('does not count an edit of the field the manifest form flags as its primary key', () => {
+        drafts.editDraft('ed-1', 'project', 'alpha', 'id', 'renamed');
+        expect(drafts.draftDirty('ed-1')).toBe(false);
+    });
+
+    it('writes every field of a manifest form whose flag is on a tags field, as no reader keys by it', () => {
+        const form = (field: string, type: string, flagged: boolean): FormField => ({
+            field,
+            label: field,
+            type,
+            section: '',
+            ...(flagged ? { primary_key: true as const } : {})
+        });
+        const onTags = [form('id', 'text', false), form('lead', 'tags', true)];
+        expect(primaryKeyOf(onTags)).toBeNull();
+        expect(writableField('lead', onTags)).toBe(true);
+        expect(writableField('id', onTags)).toBe(true);
+        const onText = [form('id', 'text', true), form('lead', 'tags', false)];
+        expect(writableField('id', onText)).toBe(false);
+        expect(writableField('lead', onText)).toBe(true);
     });
 
     it('counts any edit of a thing the snapshot does not hold', () => {
@@ -179,8 +207,8 @@ describe('the wiring', () => {
 
 describe('a save the snapshot has not caught up with', () => {
     const SCHEMA: SchemaField[] = [
-        { field: 'key', type: 'text' },
-        { field: 'title', type: 'text' },
+        { field: 'key', type: 'text', primary_key: true },
+        { field: 'title', type: 'text', display: 1 },
         { field: 'role', type: 'text' }
     ];
     let version: number;
@@ -203,6 +231,7 @@ describe('a save the snapshot has not caught up with', () => {
             title: 'Pillars',
             file: '/hub/pillars.yml',
             schema: SCHEMA,
+            primary_key: 'key',
             entries
         };
         const career = {

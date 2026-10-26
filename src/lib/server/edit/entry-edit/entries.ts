@@ -74,7 +74,7 @@ export function setEntryFields(
                   ? null
                   : parsed;
         if (field === ident && (wanted === null || Array.isArray(wanted))) {
-            refused.push({ field, reason: said(catalog, why(REFUSALS.identityField)) });
+            refused.push({ field, reason: said(catalog, why(REFUSALS.primaryKey)) });
             continue;
         }
         if (sameValue(wanted, current[field])) continue;

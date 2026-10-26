@@ -7,10 +7,11 @@
 // literature-key.ts from the file as it is read here, and a paper the file holds already is
 // refused: the same DOI, or, when either has no DOI, the same title, and for a paper saved from an
 // address alone the same address. The result is parsed again and kept only when it is the file as
-// it was with this one entry added.
+// it was with this one entry added. A saved paper is addressed by its value of the file's primary
+// key, and a file with no primary key takes no paper.
 
 import { existsSync, readFileSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import { join, relative, resolve } from 'node:path';
 import { isDeepStrictEqual } from 'node:util';
 import { parse } from 'yaml';
 import { z } from 'zod';
@@ -24,12 +25,15 @@ import {
     wholeNumber
 } from '../../../data/prose/literature.ts';
 import { collectionFiles } from '../../../data/helpers/hub-names.ts';
+import { primaryKeyOf } from '../../../data/model/index.ts';
+import { keyFaultOf } from '../../../data/model/model-collections.ts';
+import { keyedSchema } from '../../../data/snapshot/schema/field.ts';
 import { fieldNames } from '../../../data/snapshot/validate.ts';
 import { inside } from '../../core/paths.ts';
 import { words } from '../../core/words.ts';
 import { appendEntry, renderEntry, startEntries, takeOutAppended } from '../entry-edit/index.ts';
 import { replacedText } from '../writes/config/config-checks.ts';
-import { saved, sharedRefusal, typeRefusals } from '../writes/entries.ts';
+import { noPrimaryKey, saved, sharedRefusal, typeRefusals } from '../writes/entries.ts';
 import { asFieldValue } from '../yaml/yaml-edit.ts';
 import { addressBase, citationBase, freeKey } from './literature-key.ts';
 import type { FieldValue } from '../yaml/yaml-values.ts';
@@ -37,8 +41,8 @@ import type { LiteratureSaveWrite } from '../writes/bodies.ts';
 import type { PortfolioConfig } from '../../../data/model/index.ts';
 import type { WriteOutcome } from '../writes.ts';
 
-/** The field a literature entry is keyed by. */
-const KEY = 'key';
+/** The field a saved paper's citation key, made by literature-key.ts, is written under. */
+const CITATION = 'key';
 
 /** Where a saved paper came from, one of the options of the file's `source` field. */
 type LiteratureSource = LiteratureSaveWrite['source'];
@@ -100,6 +104,19 @@ function refusal(field: string, reason: string): WriteOutcome {
     return { found: true, changed: [], refused: [{ field, reason }] };
 }
 
+/**
+ * The primary key of a Literature file read as `read` (`primaryKeyOf`): the field its schema
+ * flags, else the one the hub's entry of the `literature` registry in `config` names, else none.
+ */
+function primaryOf(read: Read, config: PortfolioConfig): string | null {
+    return primaryKeyOf(keyedSchema(read.schema), namedOf(config));
+}
+
+/** The primary key the hub's entry of the `literature` registry in `config` names, if any. */
+function namedOf(config: PortfolioConfig): string | undefined {
+    return config.collections.find((one) => one.registry === 'literature')?.primary_key;
+}
+
 /** Whether an entry of the file is the paper with these identifiers. */
 function holds(entry: Record<string, unknown>, doi: string, title: string, url: string): boolean {
     const held = { doi: scalar(entry.doi), title: scalar(entry.title) };
@@ -132,7 +149,12 @@ export function saveLiterature(
     }
     const unread = words(config.text, 'server.literature.file_unread');
     if (read === null) return refusal('entries', unread);
-    const shared = sharedRefusal(read.entries, KEY, config.text);
+    const primary = primaryOf(read, config);
+    if (primary === null) {
+        const fault = keyFaultOf(keyedSchema(read.schema), namedOf(config));
+        return refusal('schema', noPrimaryKey(config.text, relative(hub, file), fault));
+    }
+    const shared = sharedRefusal(read.entries, primary, config.text);
     if (shared !== null) return shared;
 
     const title = textOf(paper.title);
@@ -150,11 +172,11 @@ export function saveLiterature(
         title === ''
             ? addressBase(doi === '' ? url : doi)
             : citationBase(authors, year === null ? '' : String(year), title);
-    const taken = new Set(read.entries.map((entry) => scalar(entry[KEY])));
-    const key = freeKey(base === '' ? citationBase([], '', '') : base, taken);
+    const taken = new Set(read.entries.map((entry) => scalar(entry[CITATION])));
+    const citation = freeKey(base === '' ? citationBase([], '', '') : base, taken);
 
     const given: Record<string, unknown> = {
-        key,
+        [CITATION]: citation,
         title,
         authors,
         venue: textOf(paper.venue),
@@ -173,7 +195,14 @@ export function saveLiterature(
         const empty = value === '' || (Array.isArray(value) && value.length === 0);
         if (value !== undefined && value !== null && !empty) values[name] = value;
     }
-    const block = renderEntry(fieldNames(read.schema), KEY, values);
+    const key = scalar(values[primary]).trim();
+    if (key === '') {
+        return refusal(primary, words(config.text, 'server.feeds.entry_needs_key', primary));
+    }
+    if (read.entries.some((entry) => scalar(entry[primary]).trim() === key)) {
+        return refusal(primary, words(config.text, 'server.feeds.entry_key_taken', primary));
+    }
+    const block = renderEntry(fieldNames(read.schema), primary, values);
     const edit = read.listed
         ? appendEntry(text, 'entries', block, config.text)
         : startEntries(text, 'entries', block, config.text);
@@ -210,24 +239,34 @@ export function saveLiterature(
 /** A record's replaced text as the log holds it: a whole offset and two texts, else none. */
 const replacedShape = z.object({ offset: z.int().min(0), before: z.string(), after: z.string() });
 
-/** The entry of a Literature file under one key, or undefined when the file holds none. */
-export function literatureEntry(file: string, key: string): Record<string, unknown> | undefined {
+/**
+ * The entry of a Literature file under one value `key` of its primary key, for a hub whose
+ * configuration is `config`, or undefined when the file holds none or has no primary key.
+ */
+export function literatureEntry(
+    file: string,
+    key: string,
+    config: PortfolioConfig
+): Record<string, unknown> | undefined {
     const read = readText(readFileSync(file, 'utf8'));
-    return read?.entries.find((entry) => scalar(entry[KEY]) === key);
+    const primary = read === null ? null : primaryOf(read, config);
+    if (primary === null) return undefined;
+    return read?.entries.find((entry) => scalar(entry[primary]) === key);
 }
 
 /**
- * Take one saved paper out again, the way the undo of its save does, by its key. The text the save
- * added goes back over what it left when the file still holds it there, so the file is what it was
- * byte for byte; a file edited since has the entry's lines and the blank line the append put over
- * them taken out.
+ * Take one saved paper out again, the way the undo of its save does, by its value `key` of the
+ * file's primary key. The text the save added goes back over what it left when the file still
+ * holds it there, so the file is what it was byte for byte; a file edited since has the entry's
+ * lines and the blank line the append put over them taken out.
  */
 export function removeLiterature(
     file: string,
     key: string,
     replaced: unknown,
-    catalog: Record<string, string>
+    config: PortfolioConfig
 ): WriteOutcome {
+    const catalog = config.text;
     const text = readFileSync(file, 'utf8');
     let read: Read | null;
     try {
@@ -235,8 +274,10 @@ export function removeLiterature(
     } catch {
         read = null;
     }
-    const at = read?.entries.findIndex((entry) => scalar(entry[KEY]) === key) ?? -1;
-    if (read === null || at < 0) return { found: false, changed: [], refused: [] };
+    const primary = read === null ? null : primaryOf(read, config);
+    if (read === null || primary === null) return { found: false, changed: [], refused: [] };
+    const at = read.entries.findIndex((entry) => scalar(entry[primary]) === key);
+    if (at < 0) return { found: false, changed: [], refused: [] };
     const put = replacedShape.safeParse(replaced);
     if (put.success && text.startsWith(put.data.after, put.data.offset)) {
         const { offset, before, after } = put.data;
@@ -252,5 +293,5 @@ export function removeLiterature(
             return saved(file, text, { text: back, changed: ['entries'], refused: [] });
         }
     }
-    return saved(file, text, takeOutAppended(text, KEY, key, catalog));
+    return saved(file, text, takeOutAppended(text, primary, key, catalog));
 }

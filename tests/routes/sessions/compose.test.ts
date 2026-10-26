@@ -295,7 +295,7 @@ describe('POST /api/terminal, a start with a task', () => {
     function plant(note: string): void {
         writeFileSync(
             join(hub, '.oculus', 'data', 'academic', 'tasks.yml'),
-            `title: Tasks\nschema:\n  - { field: title, type: text }\nentries:\n  - title: Submission\n    status: todo\n    note: "${note}"\n`
+            `title: Tasks\nschema:\n  - { field: title, type: text, primary_key: true }\nentries:\n  - title: Submission\n    status: todo\n    note: "${note}"\n`
         );
     }
 

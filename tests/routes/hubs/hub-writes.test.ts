@@ -76,9 +76,9 @@ function heldBy(dir: string, file: string): boolean {
 /** A collection file whose `person` field takes a key of the people registry. */
 const PERSON_FIELD_FILE = `title: Joint work
 schema:
-  - { field: key, type: text }
-  - { field: title, type: text }
-  - { field: person, type: select, from: people }
+  - { field: key, type: text, primary_key: true }
+  - { field: title, type: text, display: 1 }
+  - { field: person, type: select, foreign_key: people }
 entries:
   - key: rivera-lab
     title: "Streaming systems"
@@ -88,8 +88,8 @@ entries:
 /** A Literature file with no entry, which a save adds one to. */
 const LITERATURE = `title: Literature
 schema:
-  - { field: key, type: text, required: true }
-  - { field: title, type: text }
+  - { field: key, type: text, primary_key: true, required: true }
+  - { field: title, type: text, display: 1 }
   - { field: authors, type: tags }
   - { field: year, type: text }
   - { field: doi, type: text }

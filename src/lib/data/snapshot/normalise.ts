@@ -14,7 +14,7 @@
 
 import { z } from 'zod';
 import { compact } from './compact.ts';
-import { fieldsOf } from './schema/field.ts';
+import { fieldsOf, keyedSchema } from './schema/field.ts';
 import { career } from './normalise-parts/career.ts';
 import { docFlags } from './normalise-parts/folder.ts';
 import { retrievalOf } from './normalise-parts/retrieval.ts';
@@ -50,7 +50,8 @@ import type {
     ListedCollection,
     Venue
 } from '../model/index.ts';
-import { domainColorOf, entryIdOf, entryTitleOf } from '../model/index.ts';
+import { domainColorOf, entryIdOf, entryTitleOf, primaryKeyOf } from '../model/index.ts';
+import { keyFaultOf } from '../model/model-collections.ts';
 import { isMap, str, strings } from '../helpers/guards.ts';
 import {
     collectionFiles,
@@ -507,17 +508,23 @@ function funding(entry: RawRegistryEntry): Funding {
 }
 
 /**
- * One collection entry: its identity, and every field the YAML gave it apart from the provenance.
+ * One collection entry: its id, the value of its file's primary key (`primaryKey`), its display
+ * over the file's schema, and every field the YAML gave it apart from the provenance.
  */
-function entry(raw: RawEntry, index: number, ident = 'title'): Entry {
+function entry(
+    raw: RawEntry,
+    index: number,
+    schema: SchemaField[] | undefined,
+    primaryKey: string | null
+): Entry {
     // An own `__proto__` key is skipped: assigning to it would replace the new map's prototype.
     const fields: Record<string, unknown> = {};
     for (const [key, value] of Object.entries(raw)) {
         if (key !== 'provenance' && key !== '__proto__') fields[key] = value;
     }
     return {
-        id: entryIdOf(fields, ident),
-        title: entryTitleOf(fields, ident),
+        id: entryIdOf(fields, primaryKey),
+        title: entryTitleOf(fields, schema, primaryKey),
         fields,
         file: raw.provenance.file,
         index
@@ -534,10 +541,16 @@ export function collectionSchema(value: unknown): SchemaField[] | undefined {
     return fieldsOf(value);
 }
 
+/**
+ * One collection, its `primary_key` the one its schema flags, or for a file with no schema the one
+ * its `collections:` entry names (`primaryKeyOf`), and absent when it has none, with the cause in
+ * `key_fault` (`keyFaultOf`).
+ */
 function collection(raw: ReadCollection): Collection {
     const schema = collectionSchema(raw.meta.schema);
-    const ident = schema?.[0]?.field ?? 'title';
-    const { key, file, meta, entries, ...traits } = raw;
+    const { key, file, meta, entries, primary_key: named, ...traits } = raw;
+    const keyed = keyedSchema(raw.meta.schema);
+    const primaryKey = primaryKeyOf(keyed, named);
     return compact({
         ...traits,
         id: key,
@@ -545,7 +558,9 @@ function collection(raw: ReadCollection): Collection {
         intro: str(meta.intro),
         file,
         schema,
-        entries: entries.map((item, index) => entry(item, index, ident))
+        primary_key: primaryKey ?? undefined,
+        key_fault: keyFaultOf(keyed, named) ?? undefined,
+        entries: entries.map((item, index) => entry(item, index, schema, primaryKey))
     });
 }
 

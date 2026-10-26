@@ -10,9 +10,9 @@
 // is one finding naming the hub's file at the word's place there. The options' defaults lose the
 // word the same way. `manifest_fields`, the fields the hub adds to the project form, is read row by
 // row here: a row is a field of `manifest_schema` under the key `field` it adds to project.yml, and
-// a row that would change a field oculus's form has, that the form cannot draw, or whose `from`
-// names no registry, `projects` or vocab list once the hub's own values are laid in, is left out.
-// Every other key replaces oculus's value whole.
+// a row that would change a field oculus's form has, that the form cannot draw, or whose
+// `foreign_key:` names no collection of the hub, `projects` or vocab list once the hub's own values
+// are laid in, is left out. Every other key replaces oculus's value whole.
 
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -382,8 +382,11 @@ function oculusForm(config: Record<string, unknown>): { sections: string[]; fiel
     };
 }
 
-/** A row of a hub's `manifest_fields` the form takes, its index in the hub's list, its `from`. */
-type TakenRow = { index: number; row: unknown; from: string | string[] | undefined };
+/**
+ * A row of a hub's `manifest_fields` the form takes, its index in the hub's list, its
+ * `foreign_key:`.
+ */
+type TakenRow = { index: number; row: unknown; foreignKey: string | string[] | undefined };
 
 /**
  * The rows of a hub's `manifest_fields` the form takes, in the hub's order, each with its index in
@@ -391,8 +394,8 @@ type TakenRow = { index: number; row: unknown; from: string | string[] | undefin
  * oculus's form has or an earlier row names, one whose `section` is not a section of the form, one
  * whose `type` is no widget the form draws, and one its row shape refuses otherwise are each a
  * finding naming the hub's file and the row's key (`manifest_fields.0.section`), and are left out.
- * A value that is no list is a finding, and no field is added. The rows' `from` is checked by
- * `rowsNamingLists` once the hub's own values are laid in.
+ * A value that is no list is a finding, and no field is added. The rows' `foreign_key:` is checked
+ * by `rowsNamingLists` once the hub's own values are laid in.
  */
 function readManifestFields(
     value: unknown,
@@ -466,18 +469,19 @@ function readManifestFields(
             );
             return;
         }
-        taken.push({ index, row, from: read.data.from });
+        taken.push({ index, row, foreignKey: read.data.foreign_key });
     });
     return taken;
 }
 
 /**
- * The rows of `taken` whose `from` names lists only, held to the lists of `config` with the hub's
- * own values laid in, so a vocab list or a flag the hub adds counts. A row whose `from` holds a
- * source that names no registry, `projects` or vocab list (`namesList`) is a finding naming the
- * hub's file, the row's key as the hub wrote it (`manifest_fields.2.from`) and the first such
- * source, and is left out; a `from` that is an empty list, or whose first such source is the empty
- * text, is the finding that it names no list. A row with no `from` is kept.
+ * The rows of `taken` whose `foreign_key:` names lists only, held to the lists of `config` with the
+ * hub's own values laid in, so a collection, a vocab list or a flag the hub adds counts. A row
+ * whose `foreign_key:` holds a target that names no collection of the hub, `projects` or vocab
+ * list (`namesList`) is a finding naming the hub's file, the row's key as the hub wrote it
+ * (`manifest_fields.2.foreign_key`) and the first such target, and is left out; a `foreign_key:`
+ * that is an empty list, or whose first such target is the empty text, is the finding that it
+ * names nothing. A row with no `foreign_key:` is kept.
  */
 function rowsNamingLists(
     taken: readonly TakenRow[],
@@ -485,19 +489,19 @@ function rowsNamingLists(
     file: string,
     pending: PendingFinding[]
 ): unknown[] {
-    return taken.flatMap(({ index, row, from }) => {
-        if (from === undefined) return [row];
-        const sources = typeof from === 'string' ? [from] : from;
-        const bad = sources.find((source) => !namesList(source, config));
-        if (sources.length > 0 && bad === undefined) return [row];
-        const at = `${MANIFEST_FIELDS_KEY}.${index}.from`;
+    return taken.flatMap(({ index, row, foreignKey }) => {
+        if (foreignKey === undefined) return [row];
+        const targets = typeof foreignKey === 'string' ? [foreignKey] : foreignKey;
+        const bad = targets.find((target) => !namesList(target, config));
+        if (targets.length > 0 && bad === undefined) return [row];
+        const at = `${MANIFEST_FIELDS_KEY}.${index}.foreign_key`;
         pending.push({
             file,
             key: at,
             words: (catalog) =>
                 bad === undefined || bad === ''
-                    ? findingText(catalog, 'findings.config.manifest_field_from_none', at)
-                    : findingText(catalog, 'findings.config.manifest_field_from', at, bad)
+                    ? findingText(catalog, 'findings.config.manifest_field_foreign_key_none', at)
+                    : findingText(catalog, 'findings.config.manifest_field_foreign_key', at, bad)
         });
         return [];
     });
@@ -512,11 +516,11 @@ function rowsNamingLists(
  * nothing of it is applied; a file that is empty, is no map or does not parse (a key twice
  * included) is a finding and oculus's values stand. The file is not required, and a hub without it
  * adds nothing. The merged values are checked against the shape of oculus's file their key belongs
- * to. The rows of `manifest_fields` whose `from` names no list are taken out once the hub's values
- * are laid in, so a list the hub adds counts. `from` names the hub's file for every key it set, and
- * for a map of the vocabulary, oculus's file for each of oculus's words the merged map holds and
- * the hub did not write. `text` is the file's text to read instead of the disk, null for the file
- * removed.
+ * to. The rows of `manifest_fields` whose `foreign_key:` names no list are taken out once the hub's
+ * values are laid in, so a list the hub adds counts. `from` names the hub's file for every key it
+ * set, and for a map of the vocabulary, oculus's file for each of oculus's words the merged map
+ * holds and the hub did not write. `text` is the file's text to read instead of the disk, null for
+ * the file removed.
  */
 export function mergeHub(
     hub: string,

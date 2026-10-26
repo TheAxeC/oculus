@@ -2,8 +2,8 @@
 # Each entry has a `key`, its short name, unique in this file; a write and Edit in File address the entry by it.
 title: Applications
 schema:
-  - { field: key, type: text, required: true, help: "The application's short name, unique in this file; a write and Edit in File address the entry by it." }
-  - { field: title,  type: text,   required: true }
+  - { field: key, type: text, primary_key: true, required: true, help: "The application's short name, unique in this file; a write and Edit in File address the entry by it." }
+  - { field: title,  type: text,   display: 1, required: true }
   - { field: sub,    type: text }
   - { field: status, type: select, options: [in-prep, applied, rejected, declined, withdrawn] }
   - { field: date,   type: text }

@@ -55,7 +55,7 @@
     const {
         entities: { portfolio },
         layout: { openView },
-        selectors: { collectionsOfKey, configMap, registryKey, venues }
+        selectors: { collectionsOfKey, configMap, namesPeople, registryKey, venues }
     } = client;
 
     type Props = {
@@ -117,6 +117,11 @@
         return pageView(registryKey('venues', rootOf(one)), one.id, one.name);
     });
 
+    /** Whether a `foreign_key:` target names a people collection of the entry's hub. */
+    function namesPerson(target: string): boolean {
+        return namesPeople(target, root);
+    }
+
     /** One person as their own tab, the tab a person of a project card's team opens. */
     function openPerson(key: string): void {
         const id = personId(key);
@@ -137,7 +142,7 @@
     {/if}
 {/snippet}
 
-{#each drawnFields(entry, schema) as drawn (drawn.field)}
+{#each drawnFields(entry, schema, namesPerson) as drawn (drawn.field)}
     {#if drawn.kind === 'sub'}
         <p class="sub"><LinkedText text={drawn.values[0]} /></p>
     {:else if drawn.kind === 'status'}

@@ -7,12 +7,13 @@
 // These schemas serve the editor. The readers of their files report their own findings, so the gate
 // of the snapshot does not check these files again.
 
-import type { PortfolioConfig, RegistryName, SchemaField } from '../../model/index.ts';
+import type { PortfolioConfig, SchemaField } from '../../model/index.ts';
+import { PROJECTS_TARGET, VOCAB_PREFIX, collectionFiles } from '../../helpers/hub-names.ts';
 import { fieldsOf } from './field.ts';
 import { fileSchema } from './hub.ts';
 import type { JsonSchema } from './json.ts';
 import { VOCAB_FILE_KEYS } from '../../shapes/catalog-files/vocab.ts';
-import { REGISTRIES, VOCAB_PREFIX, vocabLists } from './lists.ts';
+import { vocabLists } from './lists.ts';
 import { manifestGroupProblems, manifestSchema } from './manifest.ts';
 import type { Context, Lists, SchemaProblem } from './record.ts';
 import type { NamedSchema } from './set.ts';
@@ -36,23 +37,26 @@ export const SCHEMA_FILES = [
 ] as const;
 
 /**
- * Whether a `from` source names a list: `projects`, one of the eight registries, or `vocab.<name>`
- * where `<name>` is a list `vocabLists` reads from the merged configuration, so `vocab.<key>` for a
- * key of config/catalogs/vocab.yml set there and `vocab.<key>.<field>` for a field a row of that
- * key carries as `true`. An empty source names no list. Which keys a list holds on disk does not
- * matter here.
+ * Whether a `foreign_key:` target names a list: `projects`, a key of the merged `collections:`
+ * list, or `vocab.<name>` where `<name>` is a list `vocabLists` reads from the merged
+ * configuration, so `vocab.<key>` for a key of config/catalogs/vocab.yml set there and
+ * `vocab.<key>.<field>` for a field a row of that key carries as `true`. An empty target names no
+ * list. Which keys a list holds on disk does not matter here.
  */
-export function namesList(source: string, merged: Record<string, unknown>): boolean {
-    if (source === 'projects' || REGISTRIES.includes(source as RegistryName)) return true;
-    if (!source.startsWith(VOCAB_PREFIX)) return false;
-    return Object.hasOwn(vocabLists(merged, VOCAB_FILE_KEYS), source.slice(VOCAB_PREFIX.length));
+export function namesList(target: string, merged: Record<string, unknown>): boolean {
+    if (target === PROJECTS_TARGET) return true;
+    if (!target.startsWith(VOCAB_PREFIX)) {
+        return collectionFiles(merged.collections).some((one) => one.key === target);
+    }
+    return Object.hasOwn(vocabLists(merged, VOCAB_FILE_KEYS), target.slice(VOCAB_PREFIX.length));
 }
 
 /**
- * What is wrong with the schema files themselves: a `from` that names no registry, `projects` or
- * vocab list, a `when` that names a field its record does not declare, and in the manifest schema
- * file a map of dotted fields with no help line in `groups:` or a line for no such map. Which keys
- * a source holds on disk does not matter here, so the check needs the merged configuration alone.
+ * What is wrong with the schema files themselves: a `foreign_key` that names no collection,
+ * `projects` or vocab list, a `when` that names a field its record does not declare, and in the
+ * manifest schema file a map of dotted fields with no help line in `groups:` or a line for no such
+ * map. Which keys a target holds on disk does not matter here, so the check needs the merged
+ * configuration alone.
  */
 export function schemaFileProblems(
     merged: Record<string, unknown>

@@ -14,9 +14,10 @@
 // a setting names, the person `self` names among them, rewrites the setting. The unsaved workspace
 // has no file, and nothing is read for it.
 //
-// What a file defines: a registry file its entries' identity scalars (`REGISTRY_SHAPES`), a
-// manifest its `id:` line, vocab.yml the items of the lists some reference names, and a hub file
-// the keys of the option rows of its own schema's fields.
+// What a file defines: a file of entries of the hub's `collections:` its entries' primary keys, as
+// keys of the registry the collection carries or, for one that carries none, of the collection's
+// key; a manifest its `id:` line; vocab.yml the items of the lists some reference names; and a hub
+// file the keys of the option rows of its own schema's fields.
 //
 // Files are named by the workspace folder they are served under: the hub's name for a hub's files,
 // and for oculus's own configuration folder the name of the first workspace folder that holds it,
@@ -26,18 +27,19 @@
 
 import { readFileSync, realpathSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
-import type {
-    PortfolioConfig,
-    RawDeck,
-    RawManifest,
-    RegistryName,
-    SchemaField
+import {
+    primaryKeyOf,
+    type PortfolioConfig,
+    type RawDeck,
+    type RawManifest,
+    type RegistryName,
+    type SchemaField
 } from '../../model/index.ts';
-import { REGISTRY_SHAPES } from '../../helpers/hub-names.ts';
+import { REGISTRY_SHAPES, reservedTarget } from '../../helpers/hub-names.ts';
 import { fieldsOf } from '../schema/field.ts';
 import { manifestFields } from '../schema/manifest.ts';
 import type { ReadTexts } from '../schema/run.ts';
-import { REGISTRIES } from '../schema/lists.ts';
+import { REGISTRIES, targetName } from '../schema/lists.ts';
 import type { FieldNode, FileId, FileScan, OptionFile, Reading, ReferenceIndex } from './model.ts';
 import { scanText } from './scan.ts';
 import {
@@ -47,7 +49,8 @@ import {
     manifestRecord,
     optionSource,
     schemaRecord,
-    sourcesOf
+    sourcesOf,
+    type TargetNames
 } from './specs.ts';
 
 /**
@@ -105,12 +108,36 @@ function posix(path: string): string {
     return path.split(sep).join('/');
 }
 
-/** The registry a hub path is the file of, with the way the file lists its entries. */
-function registryOf(config: PortfolioConfig, path: string): Reading['defines'] {
-    const name = REGISTRIES.find((one: RegistryName) => config.registries[one] === path);
-    if (name === undefined) return { kind: 'none' };
-    const shape = REGISTRY_SHAPES[name];
-    return { kind: 'registry', source: name, list: shape.list, field: shape.idField };
+/**
+ * What the hub file at `path`, whose schema is `fields` as `keyedSchema` reads it, defines: the
+ * primary key of each entry under its list, as a key of the registry the file is read as or, for a
+ * file of a collection that carries no registry, of the collection's key. A file of no collection,
+ * of a collection keyed by a reserved target, and a file with no primary key define nothing.
+ */
+function definesOf(
+    config: PortfolioConfig,
+    path: string,
+    fields: SchemaField[] | null | undefined
+): Reading['defines'] {
+    const registry = REGISTRIES.find((one: RegistryName) => config.registries[one] === path);
+    const entry =
+        registry === undefined
+            ? config.collections.find((one) => one.file === path && !reservedTarget(one.key))
+            : config.collections.find((one) => one.registry === registry);
+    if (registry === undefined && entry === undefined) return { kind: 'none' };
+    const field = primaryKeyOf(fields, entry?.primary_key);
+    if (field === null) return { kind: 'none' };
+    if (registry !== undefined) {
+        return { kind: 'registry', source: registry, list: REGISTRY_SHAPES[registry].list, field };
+    }
+    const source = entry === undefined ? undefined : targetName(entry.key, config.collections);
+    if (source === undefined) return { kind: 'none' };
+    return { kind: 'registry', source, list: 'entries', field };
+}
+
+/** The source the index names a `foreign_key:` target of the hub by (`targetName`). */
+function namesOf(config: PortfolioConfig): TargetNames {
+    return (target) => targetName(target, config.collections) ?? target;
 }
 
 /** A path with its symbolic links followed, or the path itself when it cannot be resolved. */
@@ -156,18 +183,20 @@ function hubScans(
     const add = (path: string, text: string, reading: Reading): void => {
         scans.push(scanText({ root: sources.root, path }, text, reading));
     };
+    const names = namesOf(config);
     for (const file of sources.read.hub) {
         const spec =
             file.fields === undefined
                 ? null
-                : fileRecord(file.fields, file.kind, file.list, file.path);
+                : fileRecord(file.fields, file.kind, file.list, names, file.path);
         const options = (file.fields ?? []).filter(hasOptionRows).map((field) => ({
             field: field.field,
             source: optionSource(file.path, field.field)
         }));
-        add(file.path, file.text, { spec, defines: registryOf(config, file.path), options });
+        const defines = definesOf(config, file.path, file.keyed);
+        add(file.path, file.text, { spec, defines, options });
     }
-    const manifest = manifestRecord(manifestFields(config.schema));
+    const manifest = manifestRecord(manifestFields(config.schema), names);
     const ids = new Map(sources.manifests.map((one) => [one.file, one.id]));
     for (const file of sources.read.manifests) {
         if (!inside(file.file, hub)) continue;

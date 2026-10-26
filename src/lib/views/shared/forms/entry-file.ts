@@ -13,17 +13,18 @@
 import { tick } from 'svelte';
 import type { ClientState } from '$lib/state/client/context';
 import {
-    identityField,
-    identityValue,
+    primaryKeyOf,
     type Entry,
     type IdentityFault,
     type SchemaField
 } from '$lib/state/boards/collection';
 import {
     findEntry,
+    noPrimaryKeyLine,
     placeEntry,
     type EntryAnswer,
-    type EntryAt
+    type EntryAt,
+    type Keyed
 } from '$lib/state/sessions/source/draft-entry';
 import type { ViewSource } from '$lib/state/sessions/view-source';
 import { t } from '$lib/state/shared/words/text';
@@ -70,21 +71,22 @@ export type Placed = { placed: boolean; sentence: string };
 
 /**
  * Place a new entry in a file: the tab opened, the entry placed in its unsaved text, and the caret
- * in it. `values` are fields the entry starts with. `open` opens the tab (beside the reader's view
- * for a lead's `applied`); the place is opened in the tab that holds the file. Nothing is placed
- * and nothing said when no tab could be opened.
+ * in it. `keyed` is the file's collection: its primary key, absent for a file with none, which
+ * takes no entry, and then why it has none. `values` are fields the entry starts with. `open`
+ * opens the tab (beside the reader's view for a lead's `applied`); the place is opened in the tab
+ * that holds the file. Nothing is placed and nothing said when no tab could be opened.
  */
 export async function placeInFile(
     client: ClientState,
     file: ViewSource,
     schema: SchemaField[] | undefined,
-    collection: string,
+    keyed: Keyed,
     values: Record<string, unknown> = {},
     open: (file: ViewSource) => string = (one) => openSourceFile(client, one)
 ): Promise<Placed> {
     const id = await openedDraft(client, file, open);
     if (id === '') return { placed: false, sentence: '' };
-    const answer = placeEntry(client.source, id, schema, collection, values);
+    const answer = placeEntry(client.source, id, schema, keyed, values);
     return { placed: answer.ok, sentence: await arrived(client, file, answer) };
 }
 
@@ -107,9 +109,10 @@ export async function openFound(
 }
 
 /**
- * Which entry of a file Edit in File opens at: by the identity field's value when a write can
- * address the entry by it, and by its position in the file when its own identity is empty or one
- * that another entry holds, so each of two entries sharing a title opens at its own lines.
+ * Which entry of a file Edit in File opens at: by its value of the primary key `schema` flags when
+ * a write can address the entry by it, and by its position in the file when the file has no
+ * primary key or the entry's value of it is empty or one that another entry holds, so each of two
+ * entries sharing a key opens at its own lines.
  */
 function entryTarget(
     entry: Entry,
@@ -117,9 +120,10 @@ function entryTarget(
     fault: IdentityFault | undefined
 ): EntryAt {
     const label = entry.title === '' ? bareId(entry) : entry.title;
-    return fault?.own === true
+    const field = schema === undefined ? null : primaryKeyOf(schema);
+    return fault?.own === true || field === null
         ? { index: entry.index, label }
-        : { field: identityField(schema), value: identityValue(entry, schema), label };
+        : { field, value: bareId(entry), label };
 }
 
 /**
@@ -142,8 +146,9 @@ export async function openEntry(
 
 /**
  * The words saying why the controls that write an entry are disabled, or '' when they are not: the
- * file has unsaved text in a source tab, or the entry has no identity a write can address. The
- * unsaved text comes first, since saving it can change the identity too.
+ * file has unsaved text in a source tab, the file has no primary key, or the entry has no value of
+ * it a write can address. The unsaved text comes first, since saving it can change the primary key
+ * too.
  */
 export function blockedBy(
     file: ViewSource | null,
@@ -153,7 +158,9 @@ export function blockedBy(
     if (unsaved && file !== null) {
         return t('collection.file_unsaved', fileNameOf(file));
     }
-    return fault === undefined ? '' : t('collection.identity_unusable', fault.field, fault.value);
+    if (fault === undefined) return '';
+    if (fault.kind === 'unkeyed') return noPrimaryKeyLine(fileNameOf(file), fault.cause);
+    return t('collection.identity_unusable', fault.field, fault.value);
 }
 
 /** The name of the file a control opens, which its title names. */

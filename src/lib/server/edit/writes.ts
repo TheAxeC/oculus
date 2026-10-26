@@ -215,7 +215,7 @@ export type WriteOutcome = {
 export { coerce, createIdea, fieldTypes, writeManifest } from './writes/manifest.ts';
 export { writeDeckSlides } from './writes/config/lists/deck/deck.ts';
 export { createEntry, removeEntry, reorderCollection, writeEntry } from './writes/entries.ts';
-export { collectionFile, identityField } from '../files/fs/collections.ts';
+export { collectionFile } from '../files/fs/collections.ts';
 export { writeFollowup, writeSubtask, writeSubtaskAdd } from './writes/subtasks.ts';
 export type { SubtaskAction, SubtaskTarget } from './writes/subtasks.ts';
 export { writeMute } from './writes/config/lists/audit-mute.ts';

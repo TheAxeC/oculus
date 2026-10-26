@@ -13,9 +13,8 @@
 import { z } from 'zod';
 import { ADDRESSED, HOSTED, isHubPath } from '../../../data/places/hub-address.ts';
 import { isMap } from '../../../data/helpers/guards.ts';
-import { bareId, hubId, rootOf } from '../../../data/helpers/hub-names.ts';
+import { bareId, rootOf } from '../../../data/helpers/hub-names.ts';
 import {
-    anyNumberShape,
     anyValueShape,
     fieldItemsShape,
     filledTextShape,
@@ -29,9 +28,12 @@ import {
 } from '../../../data/shapes/shapes.ts';
 import {
     FILTERED_TYPES,
+    displayFields,
     optionLabel,
+    primaryKeyOf,
     type Entry,
     type Followup,
+    type KeyFault,
     type SchemaField,
     type Subtask
 } from '../../../data/model/index.ts';
@@ -39,7 +41,6 @@ import { fileBytesUrl } from '../../sources/fs-transport.ts';
 import { normalisePath } from '../../sources/fs.ts';
 import { dirOf } from '../../sources/repositories/change-tree.ts';
 import { entryPageState } from '../../forms/page-entry.ts';
-import { TITLE_FIELD, identityField } from '../../forms/record-fields.ts';
 
 // The boundary table lets `views/` import `state/` and nothing of `data/`, so the types the view
 // names reach it from here, beside the functions that return them.
@@ -52,7 +53,7 @@ export type {
     SchemaField,
     Subtask
 } from '../../../data/model/index.ts';
-export { optionKeys, optionLabel } from '../../../data/model/index.ts';
+export { optionKeys, optionLabel, primaryKeyOf } from '../../../data/model/index.ts';
 export { joinedRegistries } from './joined.ts';
 
 // The address rule lives in the data layer, where the Audit reads it too; a view reaches it from
@@ -66,10 +67,6 @@ export function entryById(
 ): Entry | null {
     return collection?.entries.find((entry) => entry.id === id) ?? null;
 }
-
-// The card's own heading and the field an entry is addressed by are the form's (state/forms), which
-// reads the same schema; the card draws the heading and no drawn field repeats it.
-export { TITLE_FIELD, identityField };
 
 /** The field the status chip and the status facet read. */
 export const STATUS_FIELD = 'status';
@@ -171,9 +168,6 @@ export function parseCollectionState(raw: unknown): CollectionState {
 /** A string and nothing else, for a value the data layer types as unknown. */
 const stringShape = z.string();
 
-/** The `from:` source of a schema field whose value is a key of the people registry. */
-export const PEOPLE_OPTIONS = 'people';
-
 const CHIP_FIELDS = ['tags', 'related'];
 const BODY_FIELDS = ['note', 'statement'];
 const LINK_FIELDS = ['link', 'url'];
@@ -185,19 +179,20 @@ const PAIR = ': ';
 const JOIN = ' | ';
 
 /**
- * How one field is drawn. The name decides it where the seven files agree on a name, the registry a
- * choice is drawn from decides it where the schema names one, and the type decides it otherwise; a
- * type none of them uses falls through to text, which is the widest of the kinds and loses nothing
- * but the shape.
+ * How one field is drawn. The name decides it where the seven files agree on a name, the registry
+ * of the collection the field's values name decides it where the schema names one, and the type
+ * decides it otherwise; a type none of them uses falls through to text, which is the widest of the
+ * kinds and loses nothing but the shape.
  *
- * A field whose choices come from the people registry holds a person's key, so the card draws it as
- * the control that opens that person rather than as the key itself. The rule is the schema's own
- * `from:` and not the field's name, so a second field of people follows it with no change.
+ * A field whose `foreign_key:` is the one collection that carries the people registry (`person`)
+ * holds a person's key, so the card draws it as the control that opens that person rather than as
+ * the key itself. The rule is the schema's own `foreign_key:` and not the field's name, so a second
+ * field of people follows it with no change, whatever the people's collection is keyed.
  */
-export function kindOf(field: string, type: string, from?: SchemaField['from']): FieldKind {
+export function kindOf(field: string, type: string, person = false): FieldKind {
     if (field === 'sub') return 'sub';
     if (field === STATUS_FIELD) return 'status';
-    if (Array.isArray(from) && from.length === 1 && from[0] === PEOPLE_OPTIONS) return 'person';
+    if (person) return 'person';
     if (CHIP_FIELDS.includes(field) || type === 'tags') return 'chips';
     if (field === 'meta' || type === 'metalist') return 'meta';
     if (BODY_FIELDS.includes(field) || type === 'textarea') return 'body';
@@ -272,20 +267,41 @@ function valuesOf(kind: FieldKind, value: unknown): string[] {
 }
 
 /**
+ * The field of a schema whose value a card's heading shows for the entry `fields`: the filled field
+ * of the lowest `display:` rank, as data/model's entryTitleOf picks it, else the primary key the
+ * schema flags, and none for a schema with neither.
+ */
+function headingField(
+    fields: Record<string, unknown>,
+    schema: SchemaField[] | undefined
+): string | null {
+    const filled = displayFields(schema).find((field) => (textOf(fields[field]) ?? '').trim());
+    return filled ?? (schema === undefined ? null : primaryKeyOf(schema));
+}
+
+/**
  * The fields of one entry in the order a card draws them: the schema's own order first, with a
  * field the entry does not carry left out, and then every field the entry carries that the schema
- * does not name, in the entry's own order, as text. The title is neither, since the card's heading
- * is what draws it. A collection whose file has no schema draws every field of the entry as text,
- * which is what the last half does on its own.
+ * does not name, in the entry's own order, as text. The field the card's heading shows is neither
+ * (`headingField`). A collection whose file has no schema draws every field of the entry as text,
+ * which is what the last half does on its own. `person` answers whether a `foreign_key:` target
+ * names the collection that carries the people registry.
  */
-export function drawnFields(entry: Entry, schema: SchemaField[] | undefined): Drawn[] {
+export function drawnFields(
+    entry: Entry,
+    schema: SchemaField[] | undefined,
+    person: (target: string) => boolean = () => false
+): Drawn[] {
     const drawn: Drawn[] = [];
-    const named = new Set<string>([TITLE_FIELD]);
+    const heading = headingField(entry.fields, schema);
+    const named = new Set<string>(heading === null ? [] : [heading]);
     for (const field of schema ?? []) {
         named.add(field.field);
-        if (field.field === TITLE_FIELD) continue;
+        if (field.field === heading) continue;
         const held = entry.fields[field.field];
-        const kind = kindOf(field.field, field.type, field.from);
+        const keys = field.foreign_key;
+        const people = Array.isArray(keys) && keys.length === 1 && person(keys[0]);
+        const kind = kindOf(field.field, field.type, people);
         const values = valuesOf(kind, held);
         if (values.length > 0) {
             drawn.push({ field: field.field, label: field.label ?? field.field, kind, values });
@@ -582,51 +598,59 @@ export function fieldFilters(
 /** The facet value of the synthetic card the Funding view draws for the projects with no scheme. */
 export const NO_FUNDING = 'no-funding';
 
-/** An identity a file writes as a string or a number, answered as text. */
-const identityShape = z.union([z.string(), anyNumberShape.transform(String)]);
-
 /**
- * The value a write addresses one entry by. It is not always the id: a file whose schema opens with
- * one field while its entries carry another of `id`, `key` and `title` has the other as its id, so
- * a write names the identity field's own value and the server finds the entry by it.
+ * The value a write addresses one entry by: its internal id, which is its hub and its value of its
+ * file's primary key (`entryIdOf`), and the empty text for an entry that holds no such value or is
+ * of a file with no primary key.
  */
-export function identityValue(entry: Entry, schema: SchemaField[] | undefined): string {
-    const held = readAs(identityShape, entry.fields[identityField(schema)]);
-    if (held !== null) return held === '' ? '' : hubId(rootOf(entry), held);
-    return entry.title === '' ? entry.id : hubId(rootOf(entry), entry.title);
+export function identityValue(entry: Entry): string {
+    const root = rootOf(entry);
+    const key = root === '' ? entry.id : entry.id.slice(root.length + 1);
+    return key === '' ? '' : entry.id;
 }
 
 /**
- * Why the controls that write an entry are disabled: the entry's identity field is empty, or two
- * entries hold one value of it, which the server refuses every write over. `own` is whether the
- * entry is itself one of those; `value` is the shared value, and '' for an empty one.
+ * Why the controls that write an entry are disabled: the file has no primary key (`unkeyed`), the
+ * entry's value of the primary key is empty, or two entries hold one value of it, which the server
+ * refuses every write over. `own` is whether the entry is itself one of those; `value` is the
+ * shared value, and '' for an empty one and an unkeyed file. An unkeyed file's fault carries why
+ * the file has no primary key (`cause`, `Collection.key_fault`).
  */
 export type IdentityFault = {
-    kind: 'empty' | 'shared';
+    kind: 'empty' | 'shared' | 'unkeyed';
     field: string;
     value: string;
     own: boolean;
+    cause?: KeyFault;
 };
 
 /**
- * The faults of one file's entries, by `entry.index`. An entry with an empty identity has its own
- * fault, and so has an entry that holds a value another entry holds, with that value. Every other
- * entry of a file that holds a shared value has the file's fault, the first shared value, which is
- * not its own. An entry the faults do not touch is not in the map.
+ * The faults of one file's entries, by `entry.index`, for the file's primary key `primaryKey`
+ * (`Collection.primary_key`, null when it has none) and the cause `cause` of its having none
+ * (`Collection.key_fault`). Every entry of a file with no primary key has the `unkeyed` fault
+ * with that cause. An entry with an empty value of the primary key has its own fault, and so
+ * has an entry that holds a value another entry holds, with that value. Every other entry of a
+ * file that holds a shared value has the file's fault, the first shared value, which is not its
+ * own. An entry the faults do not touch is not in the map.
  */
 export function identityFaults(
     entries: Entry[],
-    schema: SchemaField[] | undefined
+    primaryKey: string | null,
+    cause?: KeyFault
 ): Map<number, IdentityFault> {
-    const field = identityField(schema);
-    const values = entries.map((entry) => {
-        const own = readAs(identityShape, entry.fields[field]);
-        return own === null || own === '' ? '' : hubId(rootOf(entry), own);
-    });
+    const faults = new Map<number, IdentityFault>();
+    if (primaryKey === null) {
+        const unkeyed = { kind: 'unkeyed', field: '', value: '', own: true } as const;
+        for (const entry of entries) {
+            faults.set(entry.index, { ...unkeyed, ...(cause === undefined ? {} : { cause }) });
+        }
+        return faults;
+    }
+    const field = primaryKey;
+    const values = entries.map(identityValue);
     const held = (value: string): boolean =>
         value !== '' && values.indexOf(value) !== values.lastIndexOf(value);
     const shared = values.find(held);
-    const faults = new Map<number, IdentityFault>();
     entries.forEach((entry, at) => {
         const value = values[at];
         if (value === '') {
@@ -640,9 +664,9 @@ export function identityFaults(
     return faults;
 }
 
-/** The identity of every entry the file holds, in the order the file holds them. */
-export function fileOrder(entries: Entry[], schema: SchemaField[] | undefined): string[] {
-    return entries.map((entry) => identityValue(entry, schema));
+/** The value a write addresses every entry the file holds by, in the order the file holds them. */
+export function fileOrder(entries: Entry[]): string[] {
+    return entries.map(identityValue);
 }
 
 /** Whether the file floats this entry to the top of its list: `pin: true` and nothing else. */

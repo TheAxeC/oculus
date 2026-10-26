@@ -2,10 +2,11 @@
 // schema generator of data/snapshot, the file server and the page all hold: the manifest's file
 // name, the five tier words and the folder of a repository that holds oculus's own files, how a
 // record of the merged portfolio names the hub it was read from, how each registry file names its
-// entry list and its id field, and which folders the project scan walks: the scan reader
-// (data/sources/manifests.ts), the `new_project_dir` check (data/sources/config/settings/scan.ts)
-// and the new project form (state/boards/board/new-project.ts) share those, so they agree on what
-// is scanned.
+// entry list (an entry's id is its file's primary key, read from the file's schema), the targets a
+// `foreign_key:` names that are no collection, and which folders the project scan walks: the scan
+// reader (data/sources/manifests.ts), the `new_project_dir` check
+// (data/sources/config/settings/scan.ts) and the new project form
+// (state/boards/board/new-project.ts) share those, so they agree on what is scanned.
 //
 // A workspace lists folders, and the ones that hold `.oculus/config.yml` are hubs. Every record of
 // the merged portfolio, the primary hub's included, carries the name of its hub in `root` and has
@@ -364,6 +365,8 @@ function entryOf(
     }
     const order = parsed(orderShape, raw.order);
     if (order !== null) entry.order = order;
+    const primaryKey = parsed(wordShape, raw.primary_key);
+    if (primaryKey !== null) entry.primary_key = primaryKey;
     for (const field of ['label', 'glyph', 'about'] as const) {
         const key = parsed(wordShape, raw[field]);
         if (key === null) continue;
@@ -373,13 +376,29 @@ function entryOf(
     return entry;
 }
 
+/** The `foreign_key:` target that names the project manifests, which no collection takes. */
+export const PROJECTS_TARGET = 'projects';
+
+/** The prefix of a `foreign_key:` target that names a list of config/catalogs/vocab.yml. */
+export const VOCAB_PREFIX = 'vocab.';
+
+/**
+ * Whether a key is a `foreign_key:` target with a meaning of its own: `projects`, or a vocabulary
+ * list. A collection keyed so is a problem of its list, and a foreign key naming the key names the
+ * manifests or the list.
+ */
+export function reservedTarget(key: string): boolean {
+    return key === PROJECTS_TARGET || key.startsWith(VOCAB_PREFIX);
+}
+
 /**
  * A `collections:` list as its entries. A registry word an earlier entry already names, and a flag
  * of `SINGLE_FLAGS` an earlier entry already carries, is left off the later entry, the first being
- * the one read; a plain collection keyed by the id of the view of one of oculus's registries is
- * kept, and is a problem, since it gets no card-list view; so is, in `taken`, an entry drawn as a
- * card list under a key `views` holds. Anything that is no list names no entry, and an item with no
- * text key or file is none.
+ * the one read; a plain collection keyed by the id of the view of one of oculus's registries, and a
+ * collection keyed by a reserved `foreign_key:` target (`reservedTarget`), is kept, and is a
+ * problem, since the one gets no card-list view and the other's key names the manifests or a list;
+ * so is, in `taken`, an entry drawn as a card list under a key `views` holds. Anything that is no
+ * list names no entry, and an item with no text key or file is none.
  */
 function readList(value: unknown, words?: ListWords, views?: ReadonlySet<string>): ReadList {
     const entries: CollectionEntry[] = [];
@@ -419,6 +438,14 @@ function readList(value: unknown, words?: ListWords, views?: ReadonlySet<string>
                     values: [flag, first]
                 });
             }
+        }
+        if (reservedTarget(entry.key)) {
+            problems.push({
+                index,
+                field: 'key',
+                word: 'findings.collections.reserved_key',
+                values: [entry.key]
+            });
         }
         const viewId = {
             index,
@@ -469,6 +496,15 @@ export function collectionFiles(value: unknown, words?: ListWords): CollectionEn
 }
 
 /**
+ * The primary key the `collections:` entry of the YAML feed `feed` names (`primary_key:`) in the
+ * merged config's list `value`, which the feed's file is keyed by when it has no schema;
+ * undefined when the list names none.
+ */
+export function feedPrimaryKey(value: unknown, feed: 'leads' | 'radar'): string | undefined {
+    return collectionFiles(value).find((one) => one.registry === feed)?.primary_key;
+}
+
+/**
  * The problems of a `collections:` list: an unknown registry word, a `ticker:` or a
  * `dissemination_skip:` that does not read, a registry or a single flag an earlier entry already
  * has, a group, a label, glyph or about, or a ticker category `words` does not hold, and a plain
@@ -513,95 +549,6 @@ export function resolveKey(
 export function resolvedId(holders: Holders, own: string, key: string): string | null {
     const found = resolveKey(holders, own, key);
     return found !== null && 'id' in found ? found.id : null;
-}
-
-/** A file named by the root it is served under and its path inside that root. */
-export type FileName = { root: string; path: string };
-
-/** A served root as the decision of one disk file needs it: its key and its folders. */
-export type RootFolder = { key: string; dir: string; real?: string };
-
-/**
- * The name of a file that lies under one of the roots: the root whose folder holds it most closely
- * and the path under that root, or null when no root holds it. A path that is not absolute is
- * already relative to the primary's folder, and names no file when the workspace has no primary.
- */
-export function fileUnder(
-    file: string,
-    roots: readonly RootFolder[],
-    primary: string | null
-): FileName | null {
-    if (!file.startsWith('/')) return primary === null ? null : { root: primary, path: file };
-    let best: FileName | null = null;
-    let depth = -1;
-    for (const root of roots) {
-        const base = (root.real ?? root.dir).replace(/\/+$/, '');
-        if (base === '' || !file.startsWith(`${base}/`) || base.length <= depth) continue;
-        best = { root: root.key, path: file.slice(base.length + 1) };
-        depth = base.length;
-    }
-    return best;
-}
-
-/**
- * The name of the file an absolute path stands for in a record: its name under a root, or while no
- * root is read a name under no root, which `diskRelation` then answers `unread` against every other
- * name. Null for a path no root holds once the roots are read.
- */
-export function fileNamed(
-    file: string,
-    roots: readonly RootFolder[],
-    primary: string | null
-): FileName | null {
-    const under = fileUnder(file, roots, primary);
-    if (under !== null) return under;
-    return roots.length === 0 && file.startsWith('/') ? { root: '', path: file } : null;
-}
-
-/**
- * The path of a named file on disk: its root's real folder (the root's `dir` when it carries no
- * `real`) joined with its path. Null for a name whose root is not among the roots, and for a root
- * whose real folder is empty, a folder that does not exist.
- */
-export function diskPath(file: FileName, roots: readonly RootFolder[]): string | null {
-    const root = roots.find((one) => one.key === file.root);
-    const folder = root === undefined ? '' : (root.real ?? root.dir);
-    if (folder === '') return null;
-    const base = folder.replace(/\/+$/, '');
-    return file.path === '' ? base : `${base}/${file.path}`;
-}
-
-/**
- * Whether two names are one file on disk. Each name stands for its root's folder joined with its
- * path, so a folder listed twice under two names, or inside another listed folder, reaches one file
- * by two names. A name that stands for no path on disk (see `diskPath`) is one file with itself
- * alone. A file reached through a symbolic link inside a root is another file than its target.
- */
-export function sameDiskFile(
-    one: FileName,
-    other: FileName,
-    roots: readonly RootFolder[]
-): boolean {
-    const [first, second] = [diskPath(one, roots), diskPath(other, roots)];
-    if (first !== null && second !== null) return first === second;
-    return one.root === other.root && one.path === other.path;
-}
-
-/** How two names stand to each other on disk: one file, two files, or not yet knowable. */
-export type DiskRelation = 'same' | 'other' | 'unread';
-
-/**
- * Whether two names are one file on disk, as `sameDiskFile` decides, with a third answer for the
- * time before the roots are read: with no root listed no name reaches a folder, so two different
- * names may still be one file, and `unread` says that is not known.
- */
-export function diskRelation(
-    one: FileName,
-    other: FileName,
-    roots: readonly RootFolder[]
-): DiskRelation {
-    if (sameDiskFile(one, other, roots)) return 'same';
-    return roots.length === 0 ? 'unread' : 'other';
 }
 
 /**
@@ -827,23 +774,19 @@ export function fromHubFile(file: string): boolean {
 }
 
 /**
- * How each file names its entry list and its id field. The seven registries keyed by `key` and the
- * venue registry keyed by `id` are what the files hold, and `idRequired` in this table, whatever a
- * file's schema marks, is what makes an entry without its id a finding. Funding's `key` is also the
- * cross-link anchor a manifest names.
+ * How each registry's file names its entry list, and whether an entry without a value of the
+ * file's primary key is a finding (`idRequired`), whatever the schema marks. The field an entry is
+ * keyed by is the file's primary key (`primaryKeyOf` of data/model), not a column of this table.
  */
-export const REGISTRY_SHAPES: Record<
-    RegistryName,
-    { list: string; idField: string; idRequired: boolean }
-> = {
-    venues: { list: 'entries', idField: 'id', idRequired: true },
-    datasets: { list: 'datasets', idField: 'key', idRequired: true },
-    pillars: { list: 'entries', idField: 'key', idRequired: true },
-    domains: { list: 'entries', idField: 'key', idRequired: true },
-    funding: { list: 'entries', idField: 'key', idRequired: true },
-    people: { list: 'entries', idField: 'key', idRequired: true },
-    organisations: { list: 'entries', idField: 'key', idRequired: true },
-    resources: { list: 'entries', idField: 'key', idRequired: true }
+export const REGISTRY_SHAPES: Record<RegistryName, { list: string; idRequired: boolean }> = {
+    venues: { list: 'entries', idRequired: true },
+    datasets: { list: 'datasets', idRequired: true },
+    pillars: { list: 'entries', idRequired: true },
+    domains: { list: 'entries', idRequired: true },
+    funding: { list: 'entries', idRequired: true },
+    people: { list: 'entries', idRequired: true },
+    organisations: { list: 'entries', idRequired: true },
+    resources: { list: 'entries', idRequired: true }
 };
 
 /** The folder name no walk enters besides the dot folders: a package tree holds no project. */

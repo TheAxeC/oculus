@@ -72,6 +72,7 @@
             fieldChoices,
             manifestFields,
             manifestSections,
+            namesPeople,
             projectOf,
             registryCollections,
             waitedOn
@@ -109,7 +110,7 @@
 
     /** Whether the form may write a field: a read-only one shows the project's value only. */
     function writable(field: string): boolean {
-        return project !== null && writableField(field);
+        return project !== null && writableField(field, fields);
     }
 
     /** The value a control shows: the edit when there is one, the project's value otherwise. */
@@ -172,7 +173,8 @@
                 ? { body: {}, taken: {} }
                 : manifestPayload(
                       edits,
-                      dirty.map((one) => one.field)
+                      dirty.map((one) => one.field),
+                      fields
                   );
         if (Object.keys(body).length === 0) {
             result = [t('editor.saved_none')];
@@ -267,6 +269,7 @@
                             choices={(one: FormField) => fieldChoices(one, project)}
                             note={noteFor}
                             addPerson={addTo(rootOf(project))}
+                            people={(target: string) => namesPeople(target, rootOf(project))}
                         />
                     </section>
                 {/if}

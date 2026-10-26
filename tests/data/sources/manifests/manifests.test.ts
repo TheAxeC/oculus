@@ -50,8 +50,9 @@ function built(
 /** The hub every row is read over: two registries at oculus's own paths, and three projects. */
 const HUB_FILES: Record<string, string> = {
     '.oculus/data/research/venues.yml':
-        'entries:\n  - { id: jmlr, name: Journal of Machine Learning }\n',
-    '.oculus/data/people/people.yml': 'entries:\n  - { key: rivera, name: Ana Rivera }\n',
+        'schema:\n  - { field: id, type: text, primary_key: true }\n  - { field: name, type: text, display: 1 }\nentries:\n  - { id: jmlr, name: Journal of Machine Learning }\n',
+    '.oculus/data/people/people.yml':
+        'schema:\n  - { field: key, type: text, primary_key: true }\n  - { field: name, type: text, display: 1 }\nentries:\n  - { key: rivera, name: Ana Rivera }\n',
     'projects/ideas/tensor-spark/project.yml':
         'title: Tensor spark\ntier: research\nstage: nascent\n',
     'projects/ideas/beta/project.yml': 'title: Beta\ntier: research\nstage: nascent\n',
@@ -729,7 +730,7 @@ describe('a hub reports only the files its own configuration names', () => {
                 ...(held
                     ? {
                           '.oculus/data/literature/literature.yml':
-                              'entries:\n  - { key: a24, title: A }\n'
+                              'schema:\n  - { field: key, type: text, primary_key: true }\n  - { field: title, type: text, display: 1 }\nentries:\n  - { key: a24, title: A }\n'
                       }
                     : {})
             });

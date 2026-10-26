@@ -1,16 +1,19 @@
 // Layer 1, data. A `schema:` field as a hub file writes it, read into the SchemaField the snapshot
 // and the apps API carry: the name and the type, and beside them the keys a field may hold (its
-// label, options, the sources its values come from, the condition under which it is allowed, the
-// condition under which it is required, whether it takes keys it does not declare, and the fields
-// of a list of records, or of a map from a name to a record). The same reader reads the fields
-// nested in a `records` field, so a schema is one vocabulary at every depth.
+// label, options, the collection its values name (`foreign_key:`), whether it is its file's primary
+// key (`primary_key: true`) and its rank among the fields an entry is shown by (`display:`), the
+// condition under which it is allowed, the condition under which it is required, whether it takes
+// keys it does not declare, and the fields of a list of records, or of a map from a name to a
+// record). The same reader reads the fields nested in a `records` field, so a schema is one
+// vocabulary at every depth.
 //
-// A key of the wrong kind reads as absent; a field that names no `field` and `type`, or a nested
-// `fields:` that is no list of such fields, costs the whole schema, because half a schema would
-// draw half a record in a field order the file did not write. An option is a word or a
-// `{ key, label }` row; a row that does not read is left out of the field, and a row holding a key
-// besides `key` and `label` is read with its key and label; each is a finding of the schema run
-// with its line.
+// A key of the wrong kind reads as absent: a `primary_key:` that is not `true` and a `display:`
+// that is no whole number from 1 among them, each a finding of the schema run. A field that names
+// no `field` and `type`, or a nested `fields:` that is no list of such fields, costs the whole
+// schema, because half a schema would draw half a record in a field order the file did not write.
+// An option is a word or a `{ key, label }` row; a row that does not read is left out of the field,
+// and a row holding a key besides `key` and `label` is read with its key and label; each is a
+// finding of the schema run with its line.
 
 import { z } from 'zod';
 import type { SchemaField, SchemaOption } from '../../model/index.ts';
@@ -26,8 +29,8 @@ const whenMapShape = z.record(z.string(), z.union([z.string(), z.array(z.string(
 /** `when:` as a file writes it, and absent for any other value. */
 const whenShape = whenMapShape.optional().catch(undefined);
 
-/** `from:` as a file writes it: one source, a list of sources, or `{ field, sources }`. */
-const fromShape = z
+/** `foreign_key:` as a file writes it: one target, a list of targets, or `{ field, sources }`. */
+const foreignKeyShape = z
     .union([
         z.string().transform((one): string[] => [one]),
         z.array(z.string()),
@@ -44,6 +47,12 @@ const requiredShape = z
 
 /** A flag that is a boolean, and absent for any other value. */
 const flagShape = z.boolean().optional().catch(undefined);
+
+/** `primary_key:` as it is read: `true`, and absent for any other value. */
+export const primaryKeyShape = z.literal(true).optional().catch(undefined);
+
+/** `display:` as it is read: a whole number from 1, and absent for any other value. */
+export const displayShape = z.number().int().min(1).optional().catch(undefined);
 
 /** What an option key is held to: one word of letters, digits, `-` and `_`. */
 const OPTION_KEY = /^[A-Za-z0-9][A-Za-z0-9_-]*$/;
@@ -133,7 +142,9 @@ function fieldOf(item: unknown): SchemaField | null {
         type: named.data.type,
         label: optionalTextShape.parse(held.label),
         options: readOptions(held.options).options,
-        from: fromShape.parse(held.from),
+        foreign_key: foreignKeyShape.parse(held.foreign_key),
+        primary_key: primaryKeyShape.parse(held.primary_key),
+        display: displayShape.parse(held.display),
         required: requiredShape.parse(held.required),
         help: optionalTextShape.parse(held.help),
         when: whenShape.parse(held.when),
@@ -154,4 +165,14 @@ export function fieldsOf(value: unknown): SchemaField[] | undefined {
         fields.push(field);
     }
     return fields;
+}
+
+/**
+ * The schema a file's primary key is read by (`primaryKeyOf`, `keyFaultOf`): undefined when the
+ * file carries no `schema:` key, the fields when it reads whole, and null when it carries one that
+ * does not read, which gives the file no primary key. A file is keyed alike by every reader and
+ * every writer.
+ */
+export function keyedSchema(value: unknown): SchemaField[] | null | undefined {
+    return value === undefined ? undefined : (fieldsOf(value) ?? null);
 }

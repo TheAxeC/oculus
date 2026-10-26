@@ -1,21 +1,35 @@
-// Layer 1, data. The keys each `from:` source offers, as they are on disk: the identity field of
-// each registry (`SHAPES` of sources/registries.ts), the resources `keptResources` keeps, the
-// project folders' ids, and the keyed lists of config/catalogs/vocab.yml as `vocab.<key>`, or as
-// `vocab.<key>.<field>` for the keys of a map whose row carries the field as `true`, a field no
-// row carries as `true` naming no list. A funding entry with no `key` adds nothing. A source of a
-// hub's own files offers the keys the other hubs of the workspace hold beside its own
-// (`joinedLists`), since a reference resolves in any hub. A key that stands twice in one registry
-// file is reported with the file and the key, since a reference to it could mean either entry.
+// Layer 1, data. The keys each `foreign_key:` target offers, as they are on disk: the primary key
+// of each registry's file, the resources `keptResources` keeps, the project folders' ids, the
+// primary keys of the entries of a collection that carries no registry, and the keyed lists of
+// config/catalogs/vocab.yml as `vocab.<key>`, or as `vocab.<key>.<field>` for the keys of a map
+// whose row carries the field as `true`, a field no row carries as `true` naming no list. An entry
+// with no value of its primary key adds nothing. A registry offers the keys the other hubs of the
+// workspace hold beside its own (`joinedLists`), since a reference resolves in any hub; a target
+// names a collection by its key in the hub's own `collections:` list, which is read as the
+// registry it carries (`targetLists`). A key that stands twice in one registry file is reported
+// with the file and the key, since a reference to it could mean either entry.
 
 import { basename, join } from 'node:path';
 import { LineCounter, isSeq, parseDocument } from 'yaml';
-import type { Finding, RawPortfolio, RegistryName } from '../../model/index.ts';
+import {
+    primaryKeyOf,
+    type CollectionEntry,
+    type Finding,
+    type RawPortfolio,
+    type RegistryName
+} from '../../model/index.ts';
 import { itemWith } from '../../helpers/files/yaml/collection-text.ts';
 import { findingText, type TextCatalog } from '../../helpers/finding-text.ts';
-import { mapShape, readAs } from '../../shapes/shapes.ts';
+import { mapShape, readAs, textOrNumberOnlyShape } from '../../shapes/shapes.ts';
 import { vocabKeys } from '../../shapes/vocab-keys.ts';
-import { MANIFEST, REGISTRY_SHAPES } from '../../helpers/hub-names.ts';
+import {
+    MANIFEST,
+    PROJECTS_TARGET,
+    REGISTRY_SHAPES,
+    VOCAB_PREFIX
+} from '../../helpers/hub-names.ts';
 import { keptResources } from '../normalise.ts';
+import { keyedSchema } from './field.ts';
 import type { Lists } from './record.ts';
 
 /**
@@ -44,10 +58,7 @@ function flagKeys(row: unknown): string[] {
     return Object.keys(map).filter((field) => map[field] === true);
 }
 
-/** The prefix of a source that names a keyed list of config/catalogs/vocab.yml. */
-export const VOCAB_PREFIX = 'vocab.';
-
-/** The eight registries a `from:` may name. */
+/** The eight registries, whose keys the hubs of a workspace share. */
 export const REGISTRIES: RegistryName[] = [
     'venues',
     'datasets',
@@ -59,7 +70,10 @@ export const REGISTRIES: RegistryName[] = [
     'resources'
 ];
 
-/** The sources of the hub's own files: the eight registries and the projects. */
+/**
+ * The keys of the hub's own records the hubs of a workspace share, by registry name: the eight
+ * registries and the projects.
+ */
 export function hubLists(raw: RawPortfolio): Record<string, string[]> {
     const lists: Record<string, string[]> = {};
     for (const name of REGISTRIES) {
@@ -123,6 +137,69 @@ export function listsOf(
     };
 }
 
+/** Whether a `foreign_key:` target names itself: `projects`, or a vocabulary list. */
+function selfNamed(target: string): boolean {
+    return target === PROJECTS_TARGET || target.startsWith(VOCAB_PREFIX);
+}
+
+/**
+ * The registry the collection a `foreign_key:` target names carries, in a hub whose
+ * `collections:` list is `collections`; undefined for `projects`, a vocabulary list, a key no
+ * entry of the list has and a collection that carries no registry.
+ */
+export function targetRegistry(
+    target: string,
+    collections: readonly Pick<CollectionEntry, 'key' | 'registry'>[]
+): RegistryName | undefined {
+    if (selfNamed(target)) return undefined;
+    const registry = collections.find((one) => one.key === target)?.registry;
+    return REGISTRIES.find((name) => name === registry);
+}
+
+/**
+ * What a `foreign_key:` target names in a hub whose `collections:` list is `collections`: the
+ * registry a collection key's entry carries, or the key itself for a collection that carries none;
+ * `projects` and a vocabulary list name themselves, whatever collection is keyed so, and a target
+ * no entry of the list keys names nothing (undefined). The reference index names a target by it,
+ * so a value of a field `foreign_key: people` and an option of `from: people` are one definition.
+ */
+export function targetName(
+    target: string,
+    collections: readonly Pick<CollectionEntry, 'key' | 'registry'>[]
+): string | undefined {
+    if (selfNamed(target)) return target;
+    if (!collections.some((one) => one.key === target)) return undefined;
+    return targetRegistry(target, collections) ?? target;
+}
+
+/**
+ * The lists a hub's schemas read by `foreign_key:` target: `projects`, a vocabulary list and the
+ * registry a collection carries from `lists` (`listsOf` over the joined registry lists and the
+ * vocabulary), and for a collection that carries no registry the primary keys its own entries
+ * hold, read from `raw`; a collection whose file has no primary key, or was not read, holds its
+ * values to no list (null), the schema run's finding naming it. A target no entry of
+ * `collections` keys names no list (undefined).
+ */
+export function targetLists(
+    raw: RawPortfolio,
+    collections: readonly CollectionEntry[],
+    lists: Lists
+): Lists {
+    return (target) => {
+        if (selfNamed(target)) return lists(target);
+        if (!collections.some((one) => one.key === target)) return undefined;
+        const registry = targetRegistry(target, collections);
+        if (registry !== undefined) return lists(registry);
+        if (!Object.hasOwn(raw.collections, target)) return null;
+        const held = raw.collections[target];
+        const key = primaryKeyOf(keyedSchema(held.meta.schema), held.primary_key);
+        if (key === null) return null;
+        return held.entries
+            .map((entry) => readAs(textOrNumberOnlyShape, entry[key]) ?? '')
+            .filter((value) => value !== '');
+    };
+}
+
 /** The line of the n-th (from 0) item of a file's list whose `field` is `key`, or undefined. */
 function lineOfItem(
     text: string,
@@ -140,8 +217,8 @@ function lineOfItem(
 }
 
 /**
- * One finding for each key a registry file holds twice, on the second place it stands. `textOf`
- * gives the text of a registry file, which the line is read from.
+ * One finding for each key a registry file holds twice in its primary key, on the second place it
+ * stands. `textOf` gives the text of a registry file, which the line is read from.
  */
 export function duplicateKeys(
     raw: RawPortfolio,
@@ -151,6 +228,8 @@ export function duplicateKeys(
     const findings: Finding[] = [];
     for (const name of REGISTRIES) {
         const shape = REGISTRY_SHAPES[name];
+        const field = raw.registries[name].primaryKey;
+        if (field === undefined) continue;
         const seen = new Map<string, number>();
         raw.registries[name].entries.forEach((entry, index) => {
             if (entry.key === '') return;
@@ -161,10 +240,10 @@ export function duplicateKeys(
             const line =
                 text === undefined
                     ? undefined
-                    : lineOfItem(text, shape.list, shape.idField, entry.key, before);
+                    : lineOfItem(text, shape.list, field, entry.key, before);
             findings.push({
                 file: entry.file,
-                key: `${shape.list}[${index}].${shape.idField}`,
+                key: `${shape.list}[${index}].${field}`,
                 message: findingText(catalog, 'findings.schema.duplicate_key', entry.key),
                 ...(line === undefined ? {} : { line })
             });

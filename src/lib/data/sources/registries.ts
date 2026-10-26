@@ -6,8 +6,10 @@
 import { join } from 'node:path';
 import { findingText, type TextCatalog } from '../helpers/finding-text.ts';
 import { REGISTRY_SHAPES } from '../helpers/hub-names.ts';
-import { filledText, itemsShape, mapShape, readAs } from '../shapes/shapes.ts';
+import { itemsShape, mapShape, readAs } from '../shapes/shapes.ts';
+import { keyedSchema } from '../snapshot/schema/field.ts';
 import { isAbsent, readYamlMap } from './yaml-file.ts';
+import { entryIdOf, primaryKeyOf } from '../model/index.ts';
 import type {
     CollectionEntry,
     Finding,
@@ -47,7 +49,25 @@ function empty(): RawRegistry {
 }
 
 /**
+ * The field each registry's `collections:` entry of `listed` names as its primary key, which a
+ * registry file with no schema is keyed by.
+ */
+export function registryKeys(
+    listed: readonly CollectionEntry[]
+): Partial<Record<RegistryName, string>> {
+    const keys: Partial<Record<RegistryName, string>> = {};
+    for (const name of REGISTRY_NAMES) {
+        const named = listed.find((one) => one.registry === name)?.primary_key;
+        if (named !== undefined) keys[name] = named;
+    }
+    return keys;
+}
+
+/**
  * One registry: its entries in file order with provenance, and every other top-level key as meta.
+ * An entry's `key` is the value of the file's primary key (`primaryKeyOf`, over its schema and
+ * `named`, the key its `collections:` entry names); a file with no primary key keys no entry, and
+ * the schema run's finding names it once rather than each entry.
  */
 function readRegistry(
     hub: string,
@@ -55,7 +75,8 @@ function readRegistry(
     relPath: string,
     catalog: TextCatalog,
     findings: Finding[],
-    unnamed: boolean
+    unnamed: boolean,
+    named: string | undefined
 ): RawRegistry {
     const shape = REGISTRY_SHAPES[name];
     const file = join(hub, relPath);
@@ -82,6 +103,7 @@ function readRegistry(
         return { entries: [], meta };
     }
 
+    const primaryKey = primaryKeyOf(keyedSchema(data.schema), named);
     const entries: RawRegistryEntry[] = [];
     list.forEach((item, index) => {
         const where = `${shape.list}[${index}]`;
@@ -94,18 +116,18 @@ function readRegistry(
             });
             return;
         }
-        const key = filledText(raw[shape.idField]) ?? '';
-        if (key === '' && shape.idRequired) {
+        const key = entryIdOf(raw, primaryKey);
+        if (primaryKey !== null && key === '' && shape.idRequired) {
             findings.push({
                 file,
                 key: where,
-                message: findingText(catalog, 'findings.registries.entry_no_id', shape.idField)
+                message: findingText(catalog, 'findings.registries.entry_no_id', primaryKey)
             });
         }
         entries.push({ ...raw, registry: name, key, file });
     });
 
-    return { entries, meta };
+    return primaryKey === null ? { entries, meta } : { entries, meta, primaryKey };
 }
 
 /**
@@ -113,18 +135,21 @@ function readRegistry(
  * `meta`, both untouched apart from the `registry`, `key` and `file` provenance added to every
  * entry. A file that is missing, does not parse, is not a map, or has no entry list gives an empty
  * list and one finding; nothing here throws and no entry is repaired. A registry in `unnamed`, one
- * the hub's own config does not name, raises no finding when its file is absent.
+ * the hub's own config does not name, raises no finding when its file is absent. `keys` holds the
+ * primary key each registry's `collections:` entry names (`registryKeys`).
  */
 export function readRegistries(
     hub: string,
     files: RegistryFiles,
     catalog: TextCatalog,
-    unnamed: readonly RegistryName[] = []
+    unnamed: readonly RegistryName[] = [],
+    keys: Partial<Record<RegistryName, string>> = {}
 ): Record<RegistryName, RawRegistry> & { findings: Finding[] } {
     const findings: Finding[] = [];
     const out = {} as Record<RegistryName, RawRegistry>;
     for (const name of REGISTRY_NAMES) {
-        out[name] = readRegistry(hub, name, files[name], catalog, findings, unnamed.includes(name));
+        const unread = unnamed.includes(name);
+        out[name] = readRegistry(hub, name, files[name], catalog, findings, unread, keys[name]);
     }
     return { ...out, findings };
 }

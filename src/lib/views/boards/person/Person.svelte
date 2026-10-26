@@ -248,7 +248,7 @@
                     <Empty message={t('person.no_joint_work')} />
                 {:else}
                     <ul class="rows">
-                        {#each jointWork as { entry, status } (entry.id)}
+                        {#each jointWork as { entry, status } (`${entry.file}:${entry.index}`)}
                             <li>
                                 <span class="what">{entry.title}</span>
                                 {#if status !== undefined}

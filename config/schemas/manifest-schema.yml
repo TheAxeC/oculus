@@ -10,13 +10,18 @@
 #   text      one line | textarea several lines | lines one list item per line
 #   select    one of a list | chips several of a list, with a filter | tags several free strings
 #   date      an ISO date | checkbox a flag | keymap a map the form does not write
-# `from:` names where the choices come from: a registry (venues, pillars, funding, datasets,
-# domains), `people`, `organisations`, `resources`, `projects`, or a list of vocab.yml written
-# `vocab.<key>` (vocab.tiers, vocab.stages, vocab.forms, vocab.chips), or `vocab.<key>.<field>` for
-# the keys of a map whose row carries that field as true (vocab.statuses.acknowledged, the funding
-# statuses a manuscript acknowledges). A list of sources offers their keys together (`waiting-on`
-# takes people and projects). Each value of a `from` field is a link in the YAML editor: it opens
-# the entry it names, lists the other files that name it and renames it everywhere.
+# `primary_key: true` marks the field a project is addressed by, its id: no write sets it, and a
+# reference to a project stores it. `display:` ranks the fields a reference to a project shows,
+# the filled field of the lowest rank first (`short`, else `title`), the id when neither is filled.
+# `foreign_key:` names where the choices come from: a collection by its key in the hub's
+# `collections:` list (venues, pillars, funding, data, domains, people, resources), `projects`, or
+# a list of vocab.yml written `vocab.<key>` (vocab.tiers, vocab.stages, vocab.forms, vocab.chips),
+# or `vocab.<key>.<field>` for the keys of a map whose row carries that field as true
+# (vocab.statuses.acknowledged, the funding statuses a manuscript acknowledges). A value stored is
+# the primary key of the entry it names, shown by that collection's `display:` fields. A list of
+# targets offers their keys together (`waiting-on` takes people and projects). Each value of a
+# `foreign_key` field is a link in the YAML editor: it opens the entry it names, lists the other
+# files that name it and renames it everywhere.
 # `options:` is a literal list, and a select takes both. Every field has a `help:` line: the form
 # shows it and the YAML editor shows it on hover. oculus turns this file into the JSON Schema
 # of every project.yml, so a key not named here is marked in the editor and is a finding.
@@ -30,16 +35,16 @@ manifest_schema:
     Outcome: Outcome
     "Overrides (rare)": "Overrides (rare)"
   fields:
-    id:            { label: "id", type: readonly, section: Core, help: "The project's folder name, or for a repository the name of its workspace folder. Never set by a write: rename the folder or the folder's entry in the workspace file to change it." }
-    tier:          { label: "Tier", type: select, from: vocab.tiers, required: true, section: Core, help: "The kind of project, one word of the tiers list: research, personal or software. A board takes projects by their tier and, on the research boards, by your role and the stage. The project is shown with a finding when the key is missing or is not a word of the list." }
-    stage:         { label: "Stage", type: select, from: vocab.stages, required: true, section: Core, help: "Where the project stands, one word of the stages list: an idea (nascent, scoping), work in flight (de-risking, exploring, in-prep, building, submit-ready, submitted, revision), or done (published, which covers accepted and to appear, released, failed, stopped). The stage sets the category on the board, the Focus lane, the countdown and the in-flight counts; the folder the project is in decides neither the tier nor the stage." }
-    form:          { label: "Form", type: select, from: vocab.forms, section: Core, help: "The form of the output, one word of the forms list: journal, conference, thesis, abstract, poster or tech-report. Leave it empty for a project with no such output; a software project is its tier." }
-    short:         { label: "Short handle", type: text, section: Core, help: "A short name for the card and the lists, such as bttd or raw-pls." }
-    title:         { label: "Title", type: text, section: Core, help: "The full title of the project or paper." }
-    "status.chips": { label: "Status chips", type: chips, from: vocab.chips, section: Core, help: "The chips shown on the card, picked from the chips list: a situation such as blocked (external), parked (not being worked) or numbers still to run. Blocked and parked put the card on the Focus board's Blocked and Backburner lanes whatever its stage. A stage word belongs in Stage and a form in Form." }
+    id:            { label: "id", type: readonly, primary_key: true, section: Core, help: "The project's folder name, or for a repository the name of its workspace folder. Never set by a write: rename the folder or the folder's entry in the workspace file to change it." }
+    tier:          { label: "Tier", type: select, foreign_key: vocab.tiers, required: true, section: Core, help: "The kind of project, one word of the tiers list: research, personal or software. A board takes projects by their tier and, on the research boards, by your role and the stage. The project is shown with a finding when the key is missing or is not a word of the list." }
+    stage:         { label: "Stage", type: select, foreign_key: vocab.stages, required: true, section: Core, help: "Where the project stands, one word of the stages list: an idea (nascent, scoping), work in flight (de-risking, exploring, in-prep, building, submit-ready, submitted, revision), or done (published, which covers accepted and to appear, released, failed, stopped). The stage sets the category on the board, the Focus lane, the countdown and the in-flight counts; the folder the project is in decides neither the tier nor the stage." }
+    form:          { label: "Form", type: select, foreign_key: vocab.forms, section: Core, help: "The form of the output, one word of the forms list: journal, conference, thesis, abstract, poster or tech-report. Leave it empty for a project with no such output; a software project is its tier." }
+    short:         { label: "Short handle", type: text, display: 1, section: Core, help: "A short name for the card and the lists, such as bttd or raw-pls." }
+    title:         { label: "Title", type: text, display: 2, section: Core, help: "The full title of the project or paper." }
+    "status.chips": { label: "Status chips", type: chips, foreign_key: vocab.chips, section: Core, help: "The chips shown on the card, picked from the chips list: a situation such as blocked (external), parked (not being worked) or numbers still to run. Blocked and parked put the card on the Focus board's Blocked and Backburner lanes whatever its stage. A stage word belongs in Stage and a form in Form." }
     "status.line": { label: "Status line", type: text, section: Core, help: "One short line a reader takes in at a glance, such as the page count and where it stands." }
     pin:           { label: "Pin to top", type: checkbox, section: Core, help: "Tick to keep the card at the top of its board. Search and filters still hide it when it does not match." }
-    venue:         { label: "Venue", type: select, from: venues, section: Core, help: "The venue the project is aimed at or published in, picked from the venues list by its id." }
+    venue:         { label: "Venue", type: select, foreign_key: venues, section: Core, help: "The venue the project is aimed at or published in, picked from the venues list by its id." }
     links:         { label: "Links", type: tags, section: Core, help: "Web addresses or paths that belong to the project, one per entry." }
     tags:          { label: "Tags", type: tags, section: Core, help: "Words the project is found by, one per entry, such as the language of a software project. The board search reads them." }
     year:          { label: "Year", type: text, section: Core, help: "The year of the paper or of the project, as a whole number." }
@@ -48,15 +53,15 @@ manifest_schema:
     latest:        { label: "Latest", type: textarea, section: Content, help: "What changed most recently in the project, in a sentence or two." }
     results:       { label: "Results", type: lines, section: Content, help: "One headline result per line, each one a result you can claim." }
     ideas:         { label: "Ideas", type: lines, section: Content, help: "One avenue to try per line." }
-    domain:        { label: "Domain", type: select, from: domains, section: Connections, help: "The research domain the project belongs to, picked from the domains list." }
-    pillars:       { label: "Pillars", type: chips, from: pillars, section: Connections, help: "The research lines this project belongs to, picked from the pillars list." }
-    funding:       { label: "Funding", type: chips, from: funding, section: Connections, help: "The grants that fund this project, picked from the funding list; pick as many as apply." }
-    lead:          { label: "Lead", type: chips, from: people, section: Connections, help: "The person or people who lead the project, several for co-first authors, picked from the people list; pick as many as apply. A project naming you here is on your lead boards (Projects, Archive); one naming no lead is a finding." }
-    collaborators: { label: "Collaborators", type: chips, from: people, section: Connections, help: "The people who work on this project, picked from the people list; pick as many as apply. A project naming you here, and not as lead or supervisor, is on the Coauthor board." }
-    supervisors:   { label: "Supervisors", type: chips, from: people, section: Connections, help: "The people who supervise the work, listed last among the authors, picked from the people list; pick as many as apply. A project naming you here, and not as lead, is on the Supervision board." }
-    "waiting-on":  { label: "Waiting on", type: tags, from: [people, projects], section: Connections, help: "Who or what this project is waiting for: a person from the people list or another project, one per entry." }
-    related:       { label: "Related projects", type: chips, from: projects, section: Connections, help: "Other projects this one builds on or feeds, picked from the project list." }
-    datasets:      { label: "Datasets", type: chips, from: datasets, section: Connections, help: "The datasets this project uses, picked from the data list." }
+    domain:        { label: "Domain", type: select, foreign_key: domains, section: Connections, help: "The research domain the project belongs to, picked from the domains list." }
+    pillars:       { label: "Pillars", type: chips, foreign_key: pillars, section: Connections, help: "The research lines this project belongs to, picked from the pillars list." }
+    funding:       { label: "Funding", type: chips, foreign_key: funding, section: Connections, help: "The grants that fund this project, picked from the funding list; pick as many as apply." }
+    lead:          { label: "Lead", type: chips, foreign_key: people, section: Connections, help: "The person or people who lead the project, several for co-first authors, picked from the people list; pick as many as apply. A project naming you here is on your lead boards (Projects, Archive); one naming no lead is a finding." }
+    collaborators: { label: "Collaborators", type: chips, foreign_key: people, section: Connections, help: "The people who work on this project, picked from the people list; pick as many as apply. A project naming you here, and not as lead or supervisor, is on the Coauthor board." }
+    supervisors:   { label: "Supervisors", type: chips, foreign_key: people, section: Connections, help: "The people who supervise the work, listed last among the authors, picked from the people list; pick as many as apply. A project naming you here, and not as lead, is on the Supervision board." }
+    "waiting-on":  { label: "Waiting on", type: tags, foreign_key: [people, projects], section: Connections, help: "Who or what this project is waiting for: a person from the people list or another project, one per entry." }
+    related:       { label: "Related projects", type: chips, foreign_key: projects, section: Connections, help: "Other projects this one builds on or feeds, picked from the project list." }
+    datasets:      { label: "Datasets", type: chips, foreign_key: data, section: Connections, help: "The datasets this project uses, picked from the data list." }
     deadline:      { label: "Deadline", type: date, section: Dates, help: "The day the next deadline falls on; it shows on the Focus radar until the project's stage meets it, such as submitted. Text that is not a date shows as open work." }
     followup:      { label: "Follow-ups", type: keymap, section: Dates, help: "Notes of things to do later, each with what to do and the date before which it stays hidden; they show in the Follow-ups group on the Focus board. Add, change and clear them on the project's card; this form does not change them." }
     snooze:        { label: "Snooze until", type: date, section: Dates, help: "Pick a date to keep this project off the ticker until then; clear it to bring the project back." }
@@ -75,7 +80,7 @@ manifest_schema:
     "repository.homepage": { label: "Remote homepage", type: text, section: "Deposit & compute", help: "The web address the repository on the remote points to as its homepage." }
     "repository.topics": { label: "Remote topics", type: tags, section: "Deposit & compute", help: "The topics of the repository on the remote, one per entry." }
     "repository.date": { label: "Remote created", type: date, section: "Deposit & compute", help: "The date the repository was created on the remote." }
-    compute:       { label: "Compute", type: chips, from: resources, section: "Deposit & compute", help: "The clusters, machines and storage the project runs on, picked from the resources list." }
+    compute:       { label: "Compute", type: chips, foreign_key: resources, section: "Deposit & compute", help: "The clusters, machines and storage the project runs on, picked from the resources list." }
     "reproduced.date": { label: "Reproduced (date)", type: date, section: "Deposit & compute", help: "The date the whole pipeline was last run again from the raw data to regenerate the reported numbers." }
     "reproduced.note": { label: "Reproduced (note)", type: textarea, section: "Deposit & compute", help: "What was run again, and anything a rerun needs, such as a GPU cluster or credentialed data." }
     outcome:       { label: "Outcome (citation / why-not)", type: textarea, section: Outcome, help: "How the project ended, as a citation for a published project or the reason for one that was stopped. Any project may carry it." }
@@ -83,7 +88,7 @@ manifest_schema:
     paths:         { label: "Path overrides", type: keymap, section: "Overrides (rare)", help: "Where a document is kept when it is not in its usual place. Change these only when a document has moved. It also holds cluster, the folder on the cluster that holds the project's code for Submit; its default is ~/projects/<id>." }
     subtasks:      { label: "Subtasks", type: keymap, section: Dates, help: "A checklist of lines, each with what to do, a deadline, whether it is done and a snooze date. Add and tick them on the project's card; this form does not change them." }
 
-# The fields a hub adds to the project form of its own projects, set in the hub's .oculus/config.yml; oculus adds none. A row is a field of `manifest_schema` with `field:`, the key of project.yml it adds, beside its `label`, `type`, `section`, `help` and, where its widget takes them, `from`, `options` and `required`. The field is drawn after oculus's fields of its section, in the hub's order, and is a known key of that hub's manifests only. A row with no field, a row naming a field the form already has or an earlier row names, a section the form lacks or a widget the form does not draw, a row its shape refuses otherwise, and a row whose `from` names no registry, `projects` or vocab list are each a finding, and the row is left out. For example:
+# The fields a hub adds to the project form of its own projects, set in the hub's .oculus/config.yml; oculus adds none. A row is a field of `manifest_schema` with `field:`, the key of project.yml it adds, beside its `label`, `type`, `section`, `help` and, where its widget takes them, `foreign_key`, `options` and `required`. The field is drawn after oculus's fields of its section, in the hub's order, and is a known key of that hub's manifests only. A row with no field, a row naming a field the form already has or an earlier row names, a section the form lacks or a widget the form does not draw, a row its shape refuses otherwise, and a row whose `foreign_key` names no collection of the hub, `projects` or vocab list are each a finding, and the row is left out. For example:
 #   manifest_fields:
 #     - { field: grant_id, label: Grant, type: text, section: Core, help: "The grant number." }
 manifest_fields: []

@@ -20,7 +20,7 @@
 // is dropped, and the older page is merged into the rows held inside the request.
 
 import { z } from 'zod';
-import { fileUnder, type RootFolder } from '../../data/helpers/hub-names.ts';
+import { fileUnder, type RootFolder } from '../../data/helpers/files/paths.ts';
 import {
     anyNumberShape,
     readAs,

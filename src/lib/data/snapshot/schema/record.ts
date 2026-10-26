@@ -6,9 +6,11 @@
 // written as, a `date` a day written YYYY-MM-DD, a `checkbox` a flag, `tags` a list, `metalist` a
 // list of label and value maps, `raw` anything but a `followup` field, which takes the list of
 // notes oculus writes there. Every field also accepts null, which is what a bare `key:` reads as. A
-// `select` takes the keys of its `options` and of its `from` sources, and any word when it has
-// neither, a `tags` field each of them as an item; a `text` takes its `from` keys as suggestions
-// only. A record allows no key it does not declare unless it is `open`.
+// `select` takes the keys of its `options` and of its `foreign_key` targets, and any word when it
+// has neither, a `tags` field each of them as an item; a `text` takes its targets' keys as
+// suggestions only. A record allows no key it does not declare unless it is `open`, so a schema
+// field written with a key no field takes (a `from:` among them) is a finding of the schema of a
+// schema below.
 //
 // A `records` field holds a list of records, one record, or with `map: true` a map from a name to
 // one record (the groups of a deck). A condition (`when`, `required: { when }`) becomes an `if`
@@ -21,33 +23,46 @@ import { withoutPath } from '../../helpers/files/yaml/collection-text.ts';
 import {
     optionKeys,
     optionLabel,
-    type FromPicked,
+    type KeyPicked,
     type SchemaField,
     type When
 } from '../../model/index.ts';
 import { TEXT_TYPES, type JsonSchema } from './json.ts';
 
 /**
- * The keys a source offers, undefined for a source no list answers, and null for a source whose
- * file did not parse, whose keys are not known: a value that names one is not held to a list.
+ * The keys a `foreign_key` target offers, undefined for a target no list answers, and null for a
+ * target whose keys are not known (its file did not parse, or has no primary key): a value that
+ * names one is not held to a list.
  */
-export type Lists = (source: string) => string[] | null | undefined;
+export type Lists = (target: string) => string[] | null | undefined;
 
 /**
- * Something wrong with the schema itself: a `from` that names no list, a `when` on no field, a
- * `map` on a field that is no `records` field.
+ * Something wrong with the schema itself: a `foreign_key` that names no list, names nothing or
+ * names a collection whose file has no primary key, a `when` on no field, a `map` on a field that
+ * is no `records` field.
  */
 export type SchemaProblem = {
     key: string;
-    word: 'from' | 'when' | 'map' | 'group_missing' | 'group_unknown';
+    word:
+        | 'foreign_key'
+        | 'foreign_key_empty'
+        | 'foreign_key_unkeyed'
+        | 'when'
+        | 'map'
+        | 'group_missing'
+        | 'group_unknown';
     args: string[];
 };
 
 /** The sentence of a schema problem, in the catalog's words. */
 export function problemText(catalog: TextCatalog, problem: SchemaProblem): string {
     switch (problem.word) {
-        case 'from':
-            return findingText(catalog, 'findings.schema.bad_from', ...problem.args);
+        case 'foreign_key':
+            return findingText(catalog, 'findings.schema.bad_foreign_key', ...problem.args);
+        case 'foreign_key_empty':
+            return findingText(catalog, 'findings.schema.foreign_key_empty', ...problem.args);
+        case 'foreign_key_unkeyed':
+            return findingText(catalog, 'findings.schema.foreign_key_unkeyed', ...problem.args);
         case 'when':
             return findingText(catalog, 'findings.schema.bad_when', ...problem.args);
         case 'map':
@@ -59,8 +74,17 @@ export function problemText(catalog: TextCatalog, problem: SchemaProblem): strin
     }
 }
 
-/** What a conversion needs: the lists `from` reads, and where to report what is wrong. */
-export type Context = { lists: Lists; problems: SchemaProblem[]; at: string };
+/**
+ * What a conversion needs: the lists `foreign_key` reads, where to report what is wrong, and,
+ * where the targets are a hub's collections, whether a target names a collection whose file has no
+ * primary key.
+ */
+export type Context = {
+    lists: Lists;
+    problems: SchemaProblem[];
+    at: string;
+    unkeyed?: (target: string) => boolean;
+};
 
 /** The type words of the hub's schemas. A word outside them is read as `text`. */
 const FIELD_TYPES = [
@@ -75,39 +99,56 @@ const FIELD_TYPES = [
     'records'
 ];
 
-/** Whether `from` is the map form, the source another field of the record picks. */
-function isPicked(from: SchemaField['from']): from is FromPicked {
-    return from !== undefined && !Array.isArray(from);
+/** Whether `foreign_key` is the map form, the target another field of the record picks. */
+function isPicked(targets: SchemaField['foreign_key']): targets is KeyPicked {
+    return targets !== undefined && !Array.isArray(targets);
 }
 
 /**
- * The keys of a field's listed sources, and the sources that no list answers. `unread` is true
- * when a source's file did not parse, so the field has no list to be held to.
+ * The keys one target offers, with the problem of a target that names no list, or names a
+ * collection whose file has no primary key (`ctx.unkeyed`), pushed to `ctx`: undefined for no
+ * list, null for keys that are not known.
+ */
+function targetKeys(field: SchemaField, target: string, ctx: Context): string[] | null | undefined {
+    const at = `${ctx.at}${field.field}`;
+    if (ctx.unkeyed?.(target) === true) {
+        ctx.problems.push({ key: at, word: 'foreign_key_unkeyed', args: [field.field, target] });
+        return null;
+    }
+    const keys = ctx.lists(target);
+    if (keys === undefined) {
+        ctx.problems.push({ key: at, word: 'foreign_key', args: [field.field, target] });
+    }
+    return keys;
+}
+
+/**
+ * The keys of a field's listed targets, and the targets that no list answers. `unread` is true
+ * when a target's keys are not known, so the field has no list to be held to; a `foreign_key` of
+ * no target, or of the empty word alone, is a problem and holds the field to no list.
  */
 function listed(
     field: SchemaField,
     ctx: Context
 ): { words: string[]; sources: string[]; unread: boolean } | undefined {
-    if (field.from === undefined || isPicked(field.from)) return undefined;
+    const targets = field.foreign_key;
+    if (targets === undefined || isPicked(targets)) return undefined;
+    if (targets.every((one) => one === '')) {
+        ctx.problems.push({
+            key: `${ctx.at}${field.field}`,
+            word: 'foreign_key_empty',
+            args: [field.field]
+        });
+        return { words: [], sources: [], unread: true };
+    }
     const words: string[] = [];
     let unread = false;
-    for (const source of field.from) {
-        const keys = ctx.lists(source);
-        if (keys === null) {
-            unread = true;
-            continue;
-        }
-        if (keys === undefined) {
-            ctx.problems.push({
-                key: `${ctx.at}${field.field}`,
-                word: 'from',
-                args: [field.field, source]
-            });
-            continue;
-        }
-        words.push(...keys);
+    for (const target of targets) {
+        const keys = targetKeys(field, target, ctx);
+        if (keys === null) unread = true;
+        else if (keys !== undefined) words.push(...keys);
     }
-    return { words: [...new Set(words)], sources: field.from, unread };
+    return { words: [...new Set(words)], sources: targets, unread };
 }
 
 /** The label and value of a `metalist` row. */
@@ -142,7 +183,7 @@ function tagWords(words: string[]): (string | null)[] {
 
 /** The schema of one field's value, without its title and description. */
 function valueSchema(field: SchemaField, ctx: Context): JsonSchema {
-    const from = listed(field, ctx);
+    const targets = listed(field, ctx);
     switch (field.type) {
         case 'date':
             return { type: ['string', 'null'], pattern: ISO_DATE.source };
@@ -154,32 +195,32 @@ function valueSchema(field: SchemaField, ctx: Context): JsonSchema {
             return { type: ['array', 'null'], items: METALIST_ROW };
         case 'tags': {
             // A list of keys is exactly a list; free words may be written as one text as well. A
-            // source with no key yet leaves null alone, which no item equals, since ajv takes no
-            // empty enum. A field with options and no source takes the options' keys alone.
+            // target with no key yet leaves null alone, which no item equals, since ajv takes no
+            // empty enum. A field with options and no target takes the options' keys alone.
             const own = optionKeys(field);
-            if (from === undefined && own.length > 0) {
+            if (targets === undefined && own.length > 0) {
                 return { type: ['array', 'null'], items: wordsEnum(field, own) };
             }
-            return from === undefined || from.unread
+            return targets === undefined || targets.unread
                 ? { type: ['array', 'string', 'null'], items: { type: ['string', 'number'] } }
                 : {
                       type: ['array', 'null'],
                       items: {
-                          ...wordsEnum(field, tagWords([...own, ...from.words])),
-                          'x-from': from.sources.join(' ')
+                          ...wordsEnum(field, tagWords([...own, ...targets.words])),
+                          'x-from': targets.sources.join(' ')
                       }
                   };
         }
         case 'select': {
-            // A select with neither options nor a source names no words, so it takes any word, as
+            // A select with neither options nor a target names no words, so it takes any word, as
             // the write path does (server/edit/writes/entries.ts).
-            const words = [...optionKeys(field), ...(from?.words ?? [])];
-            const open = from === undefined && words.length === 0;
-            if (open || isPicked(field.from) || from?.unread === true) {
+            const words = [...optionKeys(field), ...(targets?.words ?? [])];
+            const open = targets === undefined && words.length === 0;
+            if (open || isPicked(field.foreign_key) || targets?.unread === true) {
                 return { type: ['string', 'null'] };
             }
             const schema = wordsEnum(field, [...new Set(words), null]);
-            if (from !== undefined) schema['x-from'] = from.sources.join(' ');
+            if (targets !== undefined) schema['x-from'] = targets.sources.join(' ');
             return schema;
         }
         case 'records': {
@@ -197,7 +238,7 @@ function valueSchema(field: SchemaField, ctx: Context): JsonSchema {
         }
         default: {
             const schema: JsonSchema = { type: TEXT_TYPES };
-            if (from !== undefined && from.words.length > 0) schema.examples = from.words;
+            if (targets !== undefined && targets.words.length > 0) schema.examples = targets.words;
             return schema;
         }
     }
@@ -248,8 +289,8 @@ function condition(when: When, field: string, known: Set<string>, ctx: Context):
 
 /**
  * The record schema of a list of fields. A field with a `when` is allowed only where it holds; a
- * field with `required: { when }` is required only where it holds; a field whose `from` is a
- * `{ field, sources }` map takes the keys of the source its picking field names.
+ * field with `required: { when }` is required only where it holds; a field whose `foreign_key` is
+ * a `{ field, sources }` map takes the keys of the target its picking field names.
  */
 export function recordSchema(fields: SchemaField[], ctx: Context): JsonSchema {
     const properties: Record<string, JsonSchema> = {};
@@ -279,7 +320,7 @@ export function recordSchema(fields: SchemaField[], ctx: Context): JsonSchema {
                 });
             }
         }
-        if (isPicked(field.from)) rules.push(...pickedRules(field, field.from, ctx));
+        if (isPicked(field.foreign_key)) rules.push(...pickedRules(field, field.foreign_key, ctx));
     }
     const schema: JsonSchema = { type: 'object', properties, additionalProperties: false };
     if (required.length > 0) schema.required = required;
@@ -287,24 +328,16 @@ export function recordSchema(fields: SchemaField[], ctx: Context): JsonSchema {
     return schema;
 }
 
-/** The rules that hold a field to the keys of the source its picking field names. */
-function pickedRules(field: SchemaField, from: FromPicked, ctx: Context): JsonSchema[] {
+/** The rules that hold a field to the keys of the target its picking field names. */
+function pickedRules(field: SchemaField, picked: KeyPicked, ctx: Context): JsonSchema[] {
     const rules: JsonSchema[] = [];
-    for (const [word, source] of Object.entries(from.sources)) {
-        const keys = ctx.lists(source);
-        if (keys === null) continue;
-        if (keys === undefined) {
-            ctx.problems.push({
-                key: `${ctx.at}${field.field}`,
-                word: 'from',
-                args: [field.field, source]
-            });
-            continue;
-        }
+    for (const [word, target] of Object.entries(picked.sources)) {
+        const keys = targetKeys(field, target, ctx);
+        if (keys === null || keys === undefined) continue;
         rules.push({
-            if: { properties: { [from.field]: { const: word } }, required: [from.field] },
+            if: { properties: { [picked.field]: { const: word } }, required: [picked.field] },
             then: {
-                properties: { [field.field]: { enum: [...keys, null], 'x-from': source } }
+                properties: { [field.field]: { enum: [...keys, null], 'x-from': target } }
             }
         });
     }
@@ -326,7 +359,7 @@ const SCHEMA_FIELD: JsonSchema = {
             description:
                 'The allowed values of a select or a tags field, each a word or a { key, label } row.'
         },
-        from: {
+        foreign_key: {
             anyOf: [
                 { type: 'string' },
                 { type: 'array', items: { type: 'string' } },
@@ -335,18 +368,27 @@ const SCHEMA_FIELD: JsonSchema = {
                     properties: {
                         field: {
                             type: 'string',
-                            description: 'The field of the record whose value picks the source.'
+                            description: 'The field of the record whose value picks the target.'
                         },
                         sources: {
                             type: 'object',
-                            description: 'The source each value of that field picks.'
+                            description: 'The target each value of that field picks.'
                         }
                     },
                     required: ['field', 'sources'],
                     additionalProperties: false
                 }
             ],
-            description: 'Where the field takes its keys from: a registry, projects or vocab.<key>.'
+            description:
+                "What the field's values name, each the primary key of one entry: a key of the hub's collections list, projects or vocab.<key>."
+        },
+        primary_key: {
+            description:
+                'true makes the field the primary key of its file, the value an entry is addressed by; one field of a file carries it.'
+        },
+        display: {
+            description:
+                'The rank, a whole number from 1, of the field among those an entry is shown by: a reference shows the first that is filled.'
         },
         required: {
             anyOf: [

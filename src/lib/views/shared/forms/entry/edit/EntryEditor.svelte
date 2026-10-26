@@ -45,7 +45,7 @@
     const {
         formDraft: { draftEdits, editDraft, revertDraft, settleDraft },
         fs: { primary },
-        selectors: { fieldChoices, registryCollections },
+        selectors: { fieldChoices, namesPeople, registryCollections },
         source: { unsavedFile },
         writes
     } = useState();
@@ -209,6 +209,7 @@
         {refusals}
         {empty}
         addPerson={newPerson}
+        people={(target: string) => namesPeople(target, page.root === '' ? undefined : page.root)}
         {openOn}
     />
     {#if result.length > 0}

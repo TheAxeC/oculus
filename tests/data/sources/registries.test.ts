@@ -40,6 +40,7 @@ function buildHub(): string {
         [
             'schema:',
             '  - { field: name, type: text }',
+            '  - { field: id, type: text, primary_key: true }',
             'entries:',
             '  - { id: bspc, name: BSPC, jif: 4.9 }',
             '  - { id: media, name: MedIA }',
@@ -51,7 +52,7 @@ function buildHub(): string {
         REGISTRY_FILES.datasets,
         [
             'intro: the local caches',
-            'schema: []',
+            'schema: [{ field: key, type: text, primary_key: true }]',
             'datasets:',
             '  - { key: mimic, name: MIMIC-IV, source: https://example.invalid/mimic }',
             '  - { name: nameless }',
@@ -61,16 +62,19 @@ function buildHub(): string {
     write(
         hub,
         REGISTRY_FILES.pillars,
-        ['schema: []', 'entries:', '  - { key: federated, title: Federated learning }', ''].join(
-            '\n'
-        )
+        [
+            'schema: [{ field: key, type: text, primary_key: true }]',
+            'entries:',
+            '  - { key: federated, title: Federated learning }',
+            ''
+        ].join('\n')
     );
     write(hub, REGISTRY_FILES.domains, 'entries: "unterminated\n  - [\n');
     write(
         hub,
         REGISTRY_FILES.people,
         [
-            'schema: []',
+            'schema: [{ field: key, type: text, primary_key: true }]',
             'entries:',
             '  - { key: naesens, name: Maarten Naesens, affiliations: [ku-leuven], role: host }',
             '  - { key: me, name: The Owner }',
@@ -112,9 +116,16 @@ describe('readRegistries', () => {
                 file: join(hub, REGISTRY_FILES.venues)
             }
         ]);
-        expect(out.venues.meta).toEqual({ schema: [{ field: 'name', type: 'text' }] });
+        expect(out.venues.meta).toEqual({
+            schema: [
+                { field: 'name', type: 'text' },
+                { field: 'id', type: 'text', primary_key: true }
+            ]
+        });
         expect(out.pillars.entries.map((e) => e.key)).toEqual(['federated']);
-        expect(out.pillars.meta).toEqual({ schema: [] });
+        expect(out.pillars.meta).toEqual({
+            schema: [{ field: 'key', type: 'text', primary_key: true }]
+        });
     });
 });
 
@@ -164,7 +175,7 @@ describe('a registry whose list key holds nothing', () => {
         write(
             hub,
             REGISTRY_FILES.pillars,
-            'schema:\n  - { field: key, type: text }\nentries:\n  # none yet\n'
+            'schema:\n  - { field: key, type: text, primary_key: true }\nentries:\n  # none yet\n'
         );
         const out = readRegistries(hub, REGISTRY_FILES, CATALOG);
         expect(out.pillars.entries).toEqual([]);

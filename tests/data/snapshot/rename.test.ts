@@ -108,7 +108,32 @@ const AMIR_RENAMED: Texts = {
     ).replace('collaborators: [amir]', 'collaborators: [amir-2]')
 };
 
+/** The venues file with its `name` written before the `id` its schema flags as its primary key. */
+const VENUE_NAME_FIRST = [
+    'schema:',
+    '  - { field: name, type: text, display: 1, required: true, help: The venue name. }',
+    '  - { field: id, type: text, primary_key: true, required: true, help: The venue key. }',
+    'entries:',
+    '  - { name: Journal One, id: jbhi }',
+    '  - { name: Journal Two, id: bspc }',
+    ''
+].join('\n');
+
 const EDITED: Edited[] = [
+    {
+        name: 'a venue id that is the primary key but not the first field, and every reference to it (G67)',
+        at: ['hub', 'projects/active/alpha/project.yml', 3, 7],
+        newKey: 'jama',
+        hub: { '.oculus/data/research/venues.yml': VENUE_NAME_FIRST },
+        after: {
+            'hub:.oculus/data/research/venues.yml': VENUE_NAME_FIRST.replace(
+                'id: jbhi }',
+                'id: jama }'
+            ),
+            'hub:projects/active/alpha/project.yml': ALPHA.replace('venue: jbhi', 'venue: jama'),
+            'hub:projects/active/beta/project.yml': BETA.replace('venue: "jbhi"', 'venue: "jama"')
+        }
+    },
     {
         name: 'a plain and a double-quoted reference and the definition, and no other byte',
         at: ['hub', 'projects/active/alpha/project.yml', 3, 7],

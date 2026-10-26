@@ -65,7 +65,7 @@
     import { t } from '$lib/state/shared/words/text';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
-    import { recordChoices, selectChoices } from '$lib/state/forms/schema';
+    import { projectDisplay, recordChoices, selectChoices } from '$lib/state/forms/schema';
     import { vocabOf } from '$lib/state/shared/words/tones';
 
     const {
@@ -89,12 +89,17 @@
         }))
     );
     /**
-     * The projects a paper added to the radar may name, by key: the radar is the primary hub's, so
-     * its projects come first, then another hub's under that hub's name, each group by title.
+     * The projects a paper added to the radar may name, by key and shown by the project form's
+     * display (`projectDisplay`): the radar is the primary hub's, so its projects come first, then
+     * another hub's under that hub's name, each group by those words.
      */
     const projects = $derived(
         selectChoices(
-            recordChoices(portfolio()?.entities.projects, ['title'], primary() ?? '').sort(
+            recordChoices(
+                portfolio()?.entities.projects,
+                projectDisplay(config()?.config ?? {}),
+                primary() ?? ''
+            ).sort(
                 (left, right) =>
                     Number(left.hub !== undefined) - Number(right.hub !== undefined) ||
                     left.label.localeCompare(right.label)

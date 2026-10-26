@@ -1,8 +1,9 @@
-// Layer 2, client state. The views' way in to the hub names, which live in the data layer
-// (data/helpers/hub-names.ts) because the server, the snapshot merge and the write routes read the
-// same ones. The state row of the layer table lets state import that data module, and a view
-// imports state, so a view that names the hub a record is of, or the file under a root a path is
-// in, or where a project's folder is, imports it from here.
+// Layer 2, client state. The views' way in to the hub names and the file a path names under a
+// root, which live in the data layer (data/helpers/hub-names.ts, data/helpers/files/paths.ts)
+// because the server, the snapshot merge and the write routes read the same ones. The state row of
+// the layer table lets state import those data modules, and a view imports state, so a view that
+// names the hub a record is of, or the file under a root a path is in, or where a project's folder
+// is, imports it from here.
 //
 // It also holds the one rule for which hubs could take a new record, which every path that makes
 // one reads (a collection's Add, Literature's Add, Save to Literature, Add Task, the apply control
@@ -16,13 +17,13 @@ import { rootOf } from '../../../data/helpers/hub-names.ts';
 export {
     addressOfId,
     bareId,
-    fileUnder,
     holdersOf,
     keyOf,
     resolvedId,
     rootOf,
     type RegistryWord
 } from '../../../data/helpers/hub-names.ts';
+export { fileUnder } from '../../../data/helpers/files/paths.ts';
 export { placeOf } from '../../../data/snapshot/place.ts';
 
 /**

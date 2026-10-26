@@ -27,14 +27,13 @@ import { APP_STORE, storeNow, writeAppStore } from './apps/store.ts';
 import { mapShape, stringItemsShape } from '../../../data/shapes/shapes.ts';
 import { feedValueShape } from './bodies.ts';
 import {
-    FEED_RULES,
     deleteFeedEntry,
     isFeedKind,
     readFeedFile,
-    removeRadarEntry,
     restoreFeedEntry,
     writeFeedField
 } from '../feeds/feeds.ts';
+import { removeRadarEntry } from '../feeds/radar.ts';
 import { literatureEntry, removeLiterature } from '../feeds/literature.ts';
 import { overrides, setFlag, setOverride } from '../../sessions/overrides.ts';
 import { deckSlidesNow, undoDeckSlides } from './config/lists/deck/deck.ts';
@@ -73,7 +72,8 @@ import {
     writeSubtaskAdd
 } from './subtasks.ts';
 import { FOLLOWUP } from '../entry-edit/index.ts';
-import { entryId, entryOf, readCollection, type Collection } from '../../files/fs/collections.ts';
+import { entryOf, readCollection, type Collection } from '../../files/fs/collections.ts';
+import { entryIdOf } from '../../../data/model/index.ts';
 import type { FeedKind } from '../../../data/model/index.ts';
 import type { Change, ChangeRecord } from '../../core/changes.ts';
 import type { SubtaskTarget } from './subtasks.ts';
@@ -256,7 +256,7 @@ export function valueNow(into: WriteTarget, change: Change): { found: boolean; v
     if (change.kind === LITERATURE_SAVE) {
         const file = fileOf(change);
         if (!existsSync(file)) return ABSENT;
-        return { found: true, value: literatureEntry(file, change.key) ?? null };
+        return { found: true, value: literatureEntry(file, change.key, own.config) ?? null };
     }
     if (change.kind === 'subtask' || change.kind === 'subtask-add') {
         return subtaskValue(own.hub, own.config, subtaskTarget(own, change), change.field);
@@ -294,23 +294,25 @@ export function valueNow(into: WriteTarget, change: Change): { found: boolean; v
 }
 
 /**
- * Whether a collection record names its entry by a value that is not the entry's identity,
- * which is what a record made while the file's first schema field was another field does: the
- * entry the file lists under that field's value is not the one the record is about. A record of a
- * new or a deleted entry holds the entry's fields, and the identity field of those fields must
- * hold the value the record names it by; a new entry's record whose fields lack it still names its
- * entry when the file holds an entry under the record's key, as when a title was already the key.
- * A reorder record holds identity values, and one of them
- * that is no identity now but is a field value of an entry now names an entry by that field.
- * A field write is not asked: the entry its key names is looked up by the identity field, and an
- * old key finds none.
+ * Whether a collection record names its entry by a value that is not the entry's identity, which
+ * is what a record made while another field was the file's primary key does: the entry the file
+ * lists under that field's value is not the one the record is about. A file with no primary key
+ * names no entry, so every record of it is one. A record of a new or a deleted entry holds the
+ * entry's fields, and the primary key of those fields must hold the value the record names it by;
+ * a new entry's record whose fields lack it still names its entry when the file holds an entry
+ * under the record's key, as when a title was already the key. A reorder record holds identity
+ * values, and one of them that is no identity now but is a field value of an entry now names an
+ * entry by that field. A field write is not asked: the entry its key names is looked up by the
+ * primary key, and an old key finds none.
  */
 function namesOldIdentity(held: Collection, change: Change): boolean {
+    if (held.ident === null) return true;
+    const ident = held.ident;
     if (change.kind === 'new-entry' || change.kind === 'delete-entry') {
         const fields = mapShape.safeParse(
             change.kind === 'new-entry' ? change.after : change.before
         );
-        const named = fields.success && scalar(fields.data[held.ident]) === change.key;
+        const named = fields.success && scalar(fields.data[ident]) === change.key;
         if (change.kind === 'delete-entry') return !named;
         return !named && entryOf(held, change.key) === undefined;
     }
@@ -325,7 +327,10 @@ function namesOldIdentity(held: Collection, change: Change): boolean {
         );
 }
 
-/** One feed entry by its feed-specific identity, or undefined when the feed no longer holds it. */
+/**
+ * One feed entry by its value of the feed file's primary key, or undefined when the feed no longer
+ * holds it or the file has no primary key.
+ */
 function readFeedEntry(
     into: PrimaryTarget,
     feed: FeedKind,
@@ -333,7 +338,8 @@ function readFeedEntry(
 ): Record<string, unknown> | undefined {
     try {
         const read = readFeedFile(into.hub, into.config, feed);
-        const ident = FEED_RULES[feed].identity;
+        const ident = read?.primary_key;
+        if (ident === undefined) return undefined;
         return read?.entries.find((one) => scalar(one[ident]) === id);
     } catch {
         return undefined;
@@ -492,7 +498,7 @@ function apply(into: WriteTarget, change: Change): WriteOutcome | { error: 'unwr
     }
     if (own === null) return null;
     if (change.kind === LITERATURE_SAVE) {
-        return removeLiterature(fileOf(change), change.key, change.replaced, own.config.text);
+        return removeLiterature(fileOf(change), change.key, change.replaced, own.config);
     }
     if (change.kind === 'subtask') {
         const target = subtaskTarget(own, change);
@@ -584,7 +590,7 @@ function collectionUndo(into: PrimaryTarget, change: Change): WriteOutcome | nul
         hub,
         config,
         key,
-        entryId(entry, held.ident),
+        entryIdOf(entry, held.ident),
         { [change.field]: change.before },
         bookmarks
     );

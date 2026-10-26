@@ -20,7 +20,9 @@ import { dirname, join, relative, resolve } from 'node:path';
 import { z } from 'zod';
 import { scalar, str, strings } from '../../../../data/helpers/guards.ts';
 import { PROMPT_MAX } from '../../../../data/helpers/run/schedules.ts';
+import { entryTitleOf } from '../../../../data/model/index.ts';
 import type { PortfolioConfig, TaskRef } from '../../../../data/model/index.ts';
+import { collectionSchema } from '../../../../data/snapshot/normalise.ts';
 import { keyedRowsShape, readAs, wordShape } from '../../../../data/shapes/shapes.ts';
 import { manifestDir } from '../../../../data/sources/manifests.ts';
 import { hubManifests } from '../../../files/roots.ts';
@@ -95,7 +97,7 @@ function hostOf(ref: TaskRef, hub: string, config: PortfolioConfig): Host | null
     const entry = identity === null ? undefined : entryOf(held, identity);
     if (identity === null || entry === undefined) return null;
     return {
-        title: str(entry.title) ?? identity,
+        title: entryTitleOf(entry, collectionSchema(held.schema), held.ident) || identity,
         lines: linesOf(entry.subtasks),
         fields: entry,
         file: held.file,

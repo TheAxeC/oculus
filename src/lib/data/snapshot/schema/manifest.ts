@@ -1,14 +1,18 @@
 // Layer 1, data. The `manifest_schema` of config/schemas/manifest-schema.yml as the JSON Schema of
 // a project.yml. The schema is the project.yml edit form as data, so each widget is read as the
-// type of value it writes: a `select` and a `chips` field are held to the keys of their `from`
-// sources and their `options`, `readonly` and `keymap` fields hold whatever the file has, and a
-// dotted name (`status.chips`) is a key inside a map the file holds under its first part. Each
-// such map is described by its help line in the file's top-level `groups:`.
+// type of value it writes: a `select` and a `chips` field are held to the primary keys of the
+// targets their `foreign_key:` names and their `options`, `readonly` and `keymap` fields hold
+// whatever the file has, and a dotted name (`status.chips`) is a key inside a map the file holds
+// under its first part. Each such map is described by its help line in the file's top-level
+// `groups:`. The field flagged `primary_key: true` is a project's id, and the `display:` ranks say
+// which field a reference to a project shows.
 
 import { z } from 'zod';
-import type { SchemaField } from '../../model/index.ts';
+import type { CollectionEntry, SchemaField } from '../../model/index.ts';
 import { filledTextShape, optionalItemsShape, readAs } from '../../shapes/shapes.ts';
+import { displayShape, primaryKeyShape } from './field.ts';
 import type { JsonSchema } from './json.ts';
+import { targetRegistry } from './lists.ts';
 import { fieldSchema, type Context, type SchemaProblem } from './record.ts';
 
 /** One row of the schema's `fields:` map, each part absent unless it is the kind it should be. */
@@ -16,10 +20,12 @@ const rowShape = z.object({
     label: filledTextShape,
     type: filledTextShape,
     help: filledTextShape,
-    from: z
+    foreign_key: z
         .union([z.string(), z.array(z.string())])
         .optional()
         .catch(undefined),
+    primary_key: primaryKeyShape,
+    display: displayShape,
     options: optionalItemsShape,
     required: z.literal(true).optional().catch(undefined)
 });
@@ -54,7 +60,7 @@ export function manifestFields(schema: unknown): SchemaField[] {
     const parsed = readAs(fieldsShape, schema);
     if (parsed === null) return [];
     return Object.entries(parsed.fields).map(([name, row]) => {
-        const from = row.from === undefined ? undefined : [row.from].flat();
+        const keys = row.foreign_key === undefined ? undefined : [row.foreign_key].flat();
         return {
             field: name,
             type: recordType(row.type ?? 'text'),
@@ -62,7 +68,9 @@ export function manifestFields(schema: unknown): SchemaField[] {
             ...(row.help === undefined ? {} : { help: row.help }),
             ...(row.options === undefined ? {} : { options: row.options }),
             ...(row.required === undefined ? {} : { required: true }),
-            ...(from === undefined ? {} : { from })
+            ...(row.primary_key === undefined ? {} : { primary_key: true }),
+            ...(row.display === undefined ? {} : { display: row.display }),
+            ...(keys === undefined ? {} : { foreign_key: keys })
         };
     });
 }
@@ -152,15 +160,23 @@ export function manifestGroupProblems(schema: unknown, groups: unknown): SchemaP
 }
 
 /**
- * The manifest fields whose values are held to the keys of their `from` sources, every one of
- * which was read: the generated schema reports a value of the wrong shape in them.
+ * The manifest fields whose values are held to the primary keys of their `foreign_key:` targets,
+ * every one of which was read: the generated schema reports a value of the wrong shape in them.
+ * `unread` names the registries and `projects` whose file did not read, and a target is read by
+ * the registry its entry of `collections` carries.
  */
-export function listedFields(schema: unknown, unread: ReadonlySet<string>): Set<string> {
+export function listedFields(
+    schema: unknown,
+    unread: ReadonlySet<string>,
+    collections: readonly CollectionEntry[]
+): Set<string> {
+    const read = (target: string): boolean =>
+        !unread.has(targetRegistry(target, collections) ?? target);
     const listed = manifestFields(schema).filter(
         (field) =>
-            Array.isArray(field.from) &&
-            field.from.length > 0 &&
-            field.from.every((source) => !unread.has(source))
+            Array.isArray(field.foreign_key) &&
+            field.foreign_key.length > 0 &&
+            field.foreign_key.every(read)
     );
     return new Set(listed.map((field) => field.field));
 }

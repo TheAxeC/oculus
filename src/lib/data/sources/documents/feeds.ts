@@ -13,7 +13,16 @@
 
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
-import type { Feeds, FeedFiles, Finding, Lead, RawFeeds } from '../../model/index.ts';
+import {
+    primaryKeyOf,
+    type Feeds,
+    type FeedFiles,
+    type Finding,
+    type Lead,
+    type RawFeeds
+} from '../../model/index.ts';
+import { keyedSchema } from '../../snapshot/schema/field.ts';
+import { feedPrimaryKey } from '../../helpers/hub-names.ts';
 // `str` here is the shared `text`: this file's reading of a missing or mistyped value has always
 // been the empty string rather than undefined, and the alias keeps that reading at every call it
 // makes. The lead's status is the one value it does not read for itself, since the rule that closes
@@ -21,7 +30,7 @@ import type { Feeds, FeedFiles, Finding, Lead, RawFeeds } from '../../model/inde
 import { text as str } from '../../helpers/guards.ts';
 import { itemsShape, mapShape, readOr, rowsShape } from '../../shapes/shapes.ts';
 import { isLeadClosed } from '../../accounts/leads.ts';
-import { identityFieldOf, identityFindings, leadStatusFindings } from '../../snapshot/validate.ts';
+import { identityFindings, leadStatusFindings } from '../../snapshot/validate.ts';
 import { vocabKeys } from '../../shapes/vocab-keys.ts';
 import { findingText, type TextCatalog } from '../../helpers/finding-text.ts';
 import { errorLine, readYamlMap } from '../yaml-file.ts';
@@ -72,9 +81,12 @@ function leads(
     const data = readYamlMap(file, catalog, findings, missing(catalog, named));
     if (data === null) return { leads: null, scout: null };
     const entries = readOr(entriesShape, data.entries, []);
-    // Every lead of the file is checked for its identity, the closed ones too, since a write
-    // addresses a lead by its title whether it is live or not.
-    findings.push(...identityFindings(file, identityFieldOf(data.schema), entries, catalog));
+    // Every lead of the file is checked for its primary key, the closed ones too, since a write
+    // addresses a lead by it whether it is live or not. A file with no primary key is the schema
+    // run's one finding.
+    const listed = feedPrimaryKey(merged.collections, 'leads');
+    const primaryKey = primaryKeyOf(keyedSchema(data.schema), listed);
+    if (primaryKey !== null) findings.push(...identityFindings(file, primaryKey, entries, catalog));
     findings.push(...leadStatusFindings(file, entries, vocabKeys(merged.lead_statuses), catalog));
     const live = entries.filter((entry) => !isLeadClosed(merged, entry.status)).map(lead);
     const runs = readOr(itemsShape, metaOf(data).log, [])

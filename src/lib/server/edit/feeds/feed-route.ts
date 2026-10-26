@@ -34,13 +34,12 @@ import {
 import {
     addLead,
     addLinkedinIdea,
-    addRadarEntry,
     deleteFeedEntry,
     isFeedKind,
     markLinkedinPosted,
-    radarBucketKeys,
     writeFeedField
 } from './feeds.ts';
+import { addRadarEntry, radarBucketKeys } from './radar.ts';
 import { engineLiteraturePath, saveLiterature } from './literature.ts';
 import type { HeldApp } from '../../machine/apps/read/held.ts';
 import type { WriteOutcome, WriteTarget } from '../writes.ts';

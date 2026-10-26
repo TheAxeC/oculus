@@ -4,7 +4,7 @@
 # ===========================================================================
 
 
-# The hub's data files, one entry each, at oculus's own path under .oculus/data/, in the folder of its kind: the registries of research, pillars and people, the card lists and the Position Leads feed (`leads`) under academic/, and the Literature file and the Lit Watch feed (`radar`) under literature/. Each entry carries the fields oculus's own list gives it (config/defaults/sources.yml): the registry it is, the features that read it, its ticker category, its place in the view catalogue and the words of its name, glyph and line.
+# The hub's data files, one entry each, at oculus's own path under .oculus/data/, in the folder of its kind: the registries of research, pillars and people, the card lists and the Position Leads feed (`leads`) under academic/, and the Literature file and the Lit Watch feed (`radar`) under literature/. Each entry carries the fields oculus's own list gives it (config/defaults/sources.yml): the registry it is, the features that read it, its ticker category, its place in the view catalogue and the words of its name, glyph and line. The leads and radar files have no schema, so their entries name the field an entry is found by, `primary_key: title`.
 collections:
   - { key: data, file: ".oculus/data/research/data.yml", registry: datasets, about: files.make_collection_line_data }
   - { key: venues, file: ".oculus/data/research/venues.yml", registry: venues, ticker: { category: conference }, about: files.make_collection_line_venues }
@@ -21,8 +21,8 @@ collections:
   - { key: joint-work, file: ".oculus/data/academic/joint-work.yml", joint_work: true, ticker: { category: collab }, group: academic, order: 4, label: views.joint-work, glyph: views.joint-work_glyph, about: files.make_collection_line_joint_work }
   - { key: tasks, file: ".oculus/data/academic/tasks.yml", tasks: true, ticker: { category: task, undated: true }, group: academic, order: 5, label: views.tasks, glyph: views.tasks_glyph, about: files.make_collection_line_tasks }
   - { key: literature, file: ".oculus/data/literature/literature.yml", registry: literature, group: literature, order: 2, label: views.literature, glyph: views.literature_glyph, about: files.make_collection_line_literature }
-  - { key: leads, file: ".oculus/data/academic/leads.yml", registry: leads, ticker: { category: position }, about: files.make_collection_line_leads }
-  - { key: radar, file: ".oculus/data/literature/radar.yml", registry: radar, about: files.make_collection_line_radar }
+  - { key: leads, file: ".oculus/data/academic/leads.yml", registry: leads, primary_key: title, ticker: { category: position }, about: files.make_collection_line_leads }
+  - { key: radar, file: ".oculus/data/literature/radar.yml", registry: radar, primary_key: title, about: files.make_collection_line_radar }
 
 
 # The hub's documents, each a tab of the page its group names.

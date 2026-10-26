@@ -194,7 +194,7 @@ describe('the portfolio of several hubs', () => {
             const schema = readFileSync(events, 'utf8');
             const declared = schema.replace(
                 'type: tags,     help: "Project ids"',
-                'type: tags,     from: projects, help: "Project ids"'
+                'type: tags,     foreign_key: projects, help: "Project ids"'
             );
             expect(declared).not.toBe(schema);
             writeFileSync(events, declared);

@@ -10,7 +10,7 @@
 // They run synchronously from the draft they are given, so two presses whose reads were in flight
 // together place one entry and the second finds it untouched.
 
-import type { SchemaField } from '../../../data/model/index.ts';
+import type { KeyFault, SchemaField } from '../../../data/model/index.ts';
 import {
     entryAt,
     entryAtIndex,
@@ -34,6 +34,9 @@ export type EntryAnswer =
     | { ok: true; line: number; column: number }
     | { ok: false; sentence: string; line: number | null };
 
+/** What a file's entries are keyed by: its primary key, or why it has none (`keyFaultOf`). */
+export type Keyed = { primary_key?: string; key_fault?: KeyFault };
+
 /** Which entry Edit in File finds: by a field's value (the nth that holds it) or by position. */
 export type EntryAt = ({ field: string; value: string; nth?: number } | { index: number }) & {
     label: string;
@@ -48,18 +51,53 @@ function nameOf(file: string): string {
     return path.slice(path.lastIndexOf('/') + 1);
 }
 
-/** The sentence of a text refusal, naming the file. */
-function refused(refusal: EntryRefusal, file: string): EntryAnswer {
+/** The sentence of a text refusal, naming the file; `fault` is why the file has no primary key. */
+function refused(refusal: EntryRefusal, file: string, fault?: KeyFault): EntryAnswer {
     const name = nameOf(file);
-    const sentence =
-        refusal.code === 'file_unparsed'
-            ? t('collection.file_unparsed', name, t('collection.line', refusal.line))
-            : refusal.code === 'list_inline'
-              ? t('collection.list_inline', name)
-              : refusal.code === 'list_not_a_list'
-                ? t('collection.list_not_a_list', name, refusal.key)
-                : t('collection.stub_unparsed', name);
-    return { ok: false, sentence, line: refusal.line };
+    return { ok: false, sentence: refusalText(refusal, name, fault), line: refusal.line };
+}
+
+/** The words of a text refusal, naming the file by `name`. */
+function refusalText(refusal: EntryRefusal, name: string, fault?: KeyFault): string {
+    switch (refusal.code) {
+        case 'file_unparsed':
+            return t('collection.file_unparsed', name, t('collection.line', refusal.line));
+        case 'list_inline':
+            return t('collection.list_inline', name);
+        case 'list_not_a_list':
+            return t('collection.list_not_a_list', name, refusal.key);
+        case 'no_primary_key':
+            return noPrimaryKeyLine(name, fault);
+        case 'stub_unparsed':
+            return t('collection.stub_unparsed', name);
+    }
+}
+
+/**
+ * The line saying that the file `name` takes no write because it has no primary key, naming the
+ * cause `fault` (`keyFaultOf`) and what takes it away. A card's line about its disabled controls
+ * and the refusal to place an entry in the file's text both say it.
+ */
+export function noPrimaryKeyLine(name: string, fault: KeyFault | undefined): string {
+    switch (fault?.cause) {
+        case 'two':
+            return t('collection.no_primary_key_two', name, fault.fields.join(', '));
+        case 'unkeyed':
+            return t('collection.no_primary_key_unkeyed', name, fault.field, fault.type);
+        case 'beside':
+            return t('collection.no_primary_key_beside', name, fault.named, fault.field);
+        case 'missing':
+            return t('collection.no_primary_key_missing', name);
+        case 'unread':
+            return t('collection.no_primary_key_unread', name);
+        case 'none':
+            if (fault.named !== undefined) {
+                return t('collection.no_primary_key_named', name, fault.named);
+            }
+            return t('collection.no_primary_key_none', name);
+        default:
+            return t('collection.no_primary_key_none', name);
+    }
 }
 
 /** The sentence of a draft whose text must not be edited, or '' when it may be. */
@@ -75,22 +113,23 @@ function unfit(draft: ReturnType<DraftSource['sourceDraft']>): string {
 
 /**
  * Put a new entry into the tab's text, built from the file's schema with the fields `values` names,
- * and answer where the caret goes. A tab holding the entry already, untouched, answers its place
- * and edits nothing. A draft whose text differs from the disk's, or a text that cannot take the
- * entry, is answered with its sentence and the line the tab opens at.
+ * and answer where the caret goes. `keyed` is the file's collection: its primary key, absent for a
+ * file with none, and then why it has none. A tab holding the entry already, untouched, answers
+ * its place and edits nothing. A draft whose text differs from the disk's, or a text that cannot
+ * take the entry, is answered with its sentence and the line the tab opens at.
  */
 export function placeEntry(
     source: DraftSource,
     id: string,
     schema: SchemaField[] | undefined,
-    collection: string,
+    keyed: Keyed,
     values: Record<string, unknown> = {}
 ): EntryAnswer {
     const draft = source.sourceDraft(id);
     const sentence = unfit(draft);
     if (sentence !== '') return { ok: false, sentence, line: null };
-    const stub = entryStub(draft.text, schema, collection, values);
-    if ('code' in stub) return refused(stub, draft.file);
+    const stub = entryStub(draft.text, schema, keyed.primary_key ?? null, values);
+    if ('code' in stub) return refused(stub, draft.file, keyed.key_fault);
     if (stub.edits.length > 0) source.editSourceDraft(id, stub.text, stub.edits);
     return { ok: true, line: stub.line, column: stub.column };
 }

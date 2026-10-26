@@ -198,18 +198,29 @@ function portfolio(): RawPortfolio {
                 meta: {
                     title: 'VENUES',
                     schema: [
-                        { field: 'name', type: 'text' },
-                        { field: 'category', type: 'select', from: 'vocab.venue_categories' }
+                        { field: 'name', type: 'text', display: 1 },
+                        { field: 'id', type: 'text', primary_key: true },
+                        {
+                            field: 'category',
+                            type: 'select',
+                            foreign_key: 'vocab.venue_categories'
+                        }
                     ]
                 }
             },
             pillars: {
                 ...collection('pillars', [{ key: 'federated', title: 'Federated learning' }]),
-                meta: { title: 'PILLARS', schema: [{ field: 'key', type: 'text' }] }
+                meta: {
+                    title: 'PILLARS',
+                    schema: [{ field: 'key', type: 'text', primary_key: true }]
+                }
             },
             domains: {
                 ...collection('domains', [{ key: 'heart', title: 'Cardiology' }]),
-                meta: { title: 'DOMAINS', schema: [{ field: 'key', type: 'text' }] }
+                meta: {
+                    title: 'DOMAINS',
+                    schema: [{ field: 'key', type: 'text', primary_key: true }]
+                }
             },
             data: {
                 ...collection('data', [
@@ -224,7 +235,7 @@ function portfolio(): RawPortfolio {
                 meta: {
                     intro: 'dataset registry',
                     schema: [
-                        { field: 'key', type: 'text' },
+                        { field: 'key', type: 'text', primary_key: true },
                         { field: 'retrieval', type: 'records' }
                     ]
                 }
@@ -243,6 +254,33 @@ const snapshot = normalise(portfolio(), [], { tiers: { research: { label: 'Resea
 const alpha = snapshot.entities.projects.alpha;
 
 describe('normalise, the field mapping', () => {
+    it('heads a collection entry by its display field and addresses it by its primary key (G8)', () => {
+        const entries = Object.values(snapshot.entities.collections).flatMap((one) => one.entries);
+        const venue = entries.find((one) => one.fields.name === 'BSPC');
+        expect({ id: venue?.id, title: venue?.title }).toEqual({ id: 'bspc', title: 'BSPC' });
+    });
+
+    it('carries why a collection file has no primary key, and nothing for one that has it (G8)', () => {
+        const raw = portfolio();
+        const notes: ReadCollection = {
+            ...collection('notes', [{ key: 'a', title: 'A' }]),
+            meta: {
+                title: 'NOTES',
+                schema: [
+                    { field: 'key', type: 'text', primary_key: true },
+                    { field: 'title', type: 'text', primary_key: true }
+                ]
+            }
+        };
+        const built = normalise({ ...raw, collections: { ...raw.collections, notes } }, [], {});
+        const faults = Object.fromEntries(
+            Object.values(built.entities.collections).map((one) => [one.file, one.key_fault])
+        );
+        expect(faults['/hub/funding.yml']).toEqual({ cause: 'missing' });
+        expect(faults['/hub/notes.yml']).toEqual({ cause: 'two', fields: ['key', 'title'] });
+        expect(faults['/hub/venues.yml']).toBeUndefined();
+    });
+
     it("reads a person's organisations from `affiliations:` alone, and nothing from `affiliation:`", () => {
         expect(snapshot.entities.people['nobody-home'].affiliations).toEqual([]);
         expect(snapshot.entities.people.someone.affiliations).toEqual(['twente', 'fwo']);

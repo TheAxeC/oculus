@@ -64,12 +64,13 @@ The hub's own settings. A key of oculus's `config/catalogs/vocab.yml` set here i
 # literature, leads, radar); the flags `band_positions`, `band_teaching`, `awaiting`,
 # `open_badge`, `lead_applications`, `dissemination` (with `dissemination_skip:`), `tasks` and
 # `joint_work`; `ticker:` the word of `ticker_categories` its command center lines carry, with
-# `undated: true` for open work with no date; and `group:`, `order:`, `label:`, `glyph:` and
+# `undated: true` for open work with no date; `group:`, `order:`, `label:`, `glyph:` and
 # `about:`, its place in the view catalogue and the dotted keys of its name, glyph and line in
-# Make Folder a Hub. The domains registry holds each domain's colour and label and which domains
-# expect a dataset; the venues and datasets registries hold their theme words as the options of
-# their `themes` field. A file the list leaves out has no view, and Make Folder a Hub writes the
-# ticked entries as they stand here.
+# Make Folder a Hub; and `primary_key:`, the field an entry is found by, for a file with no
+# `schema:` only, since a schema flags its own. The domains registry holds each domain's colour
+# and label and which domains expect a dataset; the venues and datasets registries hold their
+# theme words as the options of their `themes` field. A file the list leaves out has no view, and
+# Make Folder a Hub writes the ticked entries as they stand here.
 # collections:
 #   - { key: data, file: ".oculus/data/research/data.yml", registry: datasets, about: files.make_collection_line_data }
 #   - { key: venues, file: ".oculus/data/research/venues.yml", registry: venues, ticker: { category: conference }, about: files.make_collection_line_venues }
@@ -357,11 +358,11 @@ The hub's own settings. A key of oculus's `config/catalogs/vocab.yml` set here i
 
 # The fields this hub adds to the form of its own projects. A row is a field of the form with
 # `field:`, the key of project.yml it adds, beside its `label`, `type`, `section`, `help` and, where
-# its widget takes them, `from`, `options` and `required`. The field is drawn after oculus's fields
-# of its section, in this order, and is a known key of this hub's manifests only. A row with no
-# field, naming a field the form already has or an earlier row names, a section the form lacks, a
-# type the form does not draw or a `from` that names no registry, `projects` or vocab list is a
-# finding, and the row is left out.
+# its widget takes them, `foreign_key`, `options` and `required`. The field is drawn after oculus's
+# fields of its section, in this order, and is a known key of this hub's manifests only. A row with
+# no field, naming a field the form already has or an earlier row names, a section the form lacks,
+# a type the form does not draw or a `foreign_key` that names no collection of the hub, `projects`
+# or vocab list is a finding, and the row is left out.
 # manifest_fields: []
 #   example:
 #   manifest_fields:
@@ -449,6 +450,8 @@ schema:
   - field: label
     type: text
     label: Label
+    primary_key: true
+    display: 1
     required: true
     help: The name the bookmark is listed and found by.
   - field: root
@@ -863,7 +866,7 @@ bridge: 1
 
 ## The hub's data files
 
-Every data file has the same shape: an optional `title:` and `intro:`, a `schema:` that lists its fields, and the entries. The first field of the schema is the one an entry is found by. Each template ends with one entry, commented, holding every field; uncomment it and fill it in.
+Every data file has the same shape: an optional `title:` and `intro:`, a `schema:` that lists its fields, and the entries. The one field of the schema flagged `primary_key: true` is the one an entry is found by: every entry holds a value there, no two entries hold the same one, and a reference to the entry from another file stores it. A schema that flags no field, or two, is a finding, and its entries are drawn but take no edit, Add or remove. The fields carrying `display:` ranks are what a card heading and a reference to the entry show: the filled field of the lowest rank, else the primary key. Each template ends with one entry, commented, holding every field; uncomment it and fill it in.
 
 A new entry is written into the file of the hub that lists its collection. With more than one hub listing the collection, Add asks which hub's file takes it, and the `new-entry` write names that hub by its `root`; an app's `new-entry` reaches the primary hub alone.
 
@@ -873,9 +876,11 @@ A schema line takes these keys:
 - field: name          # the key in each entry
   type: text           # text, textarea, date, checkbox, select, tags, metalist, raw or records
   label: "Name"        # the label in the editor; the field name when absent
+  primary_key: true    # the field an entry is found by; one field, never a list or map field
+  display: 1           # what a reference to the entry shows, the lowest filled rank first
   required: true       # or required: { when: { role: present } }
   options: [a, b]      # the values a select or tags field takes: a word, or { key: a, label: "A" }
-  from: people         # takes its values from a registry, `projects`, or `vocab.<list>`
+  foreign_key: people  # takes the primary keys of a collection by its key, `projects`, or `vocab.<list>`
   filter: true         # select, tags or text: a filter of the field beside the view's search
   when: { category: conference }   # the field is allowed only while this holds
   help: "One line."    # shown in the editor and on hover
@@ -887,13 +892,13 @@ A schema line takes these keys:
 ```yaml
 title: Venues
 schema:
-  - { field: name,           type: text,     required: true, help: "The venue's full name." }
-  - { field: id,             type: text,     help: "The id a project's venue names." }
-  - { field: short,          type: text,     help: "Short name or acronym." }
-  - { field: category,       type: select,   from: vocab.venue_categories, help: "journal, conference, thesis or meeting." }
+  - { field: name,           type: text,     display: 2, required: true, help: "The venue's full name." }
+  - { field: id,             type: text,     primary_key: true, help: "The id a project's venue names." }
+  - { field: short,          type: text,     display: 1, help: "Short name or acronym." }
+  - { field: category,       type: select,   foreign_key: vocab.venue_categories, help: "journal, conference, thesis or meeting." }
   - { field: jif,            type: text,     help: "Impact factor." }
   - { field: quartile,       type: text,     help: "Quartile in its category." }
-  - { field: tier,           type: select,   from: vocab.venue_tiers, help: "flagship, strong or specialist." }
+  - { field: tier,           type: select,   foreign_key: vocab.venue_tiers, help: "flagship, strong or specialist." }
   - { field: wos,            type: text,     help: "Web of Science indexing." }
   - { field: scopus,         type: text,     help: "Scopus indexing." }
   - { field: format,         type: text,     help: "LaTeX class or template." }
@@ -909,7 +914,7 @@ schema:
   - { field: email,          type: text,     help: "Editorial office address." }
 entries:
 #  - name: Neurocomputing         # required; renaming it keeps every project's venue
-#    id: neucom                   # what a project's venue names
+#    id: neucom                   # required; what a project's venue names
 #    short: NEUCOM
 #    category: journal            # journal, conference, thesis or meeting
 #    jif: "6.5"
@@ -937,14 +942,14 @@ The datasets are listed under `datasets:`, not `entries:`.
 ```yaml
 title: Data
 schema:
-  - { field: key,         type: text,     required: true, help: "The dataset's key, used by a project's datasets." }
-  - { field: name,        type: text,     required: true, help: "Full name." }
+  - { field: key,         type: text,     primary_key: true, required: true, help: "The dataset's key, used by a project's datasets." }
+  - { field: name,        type: text,     display: 1, required: true, help: "Full name." }
   - { field: modality,    type: text,     help: "Kind of data." }
   - { field: themes,      type: tags,     options: [{ key: eeg, label: "EEG" }, { key: ecg, label: "ECG" }], help: "Theme words: eeg or ecg." }
   - { field: description, type: textarea, help: "What it holds and why it is used." }
   - { field: size,        type: text,     help: "How large it is." }
   - { field: path,        type: text,     label: "Folder", help: "The dataset's folder under ~/data, the same on this Mac and on the cluster; Recover fetches into it." }
-  - { field: access,      type: select,   from: vocab.data_access, help: "open, registration, credentialed or private." }
+  - { field: access,      type: select,   foreign_key: vocab.data_access, help: "open, registration, credentialed or private." }
   - { field: source,      type: text,     help: "Source address." }
   - { field: notes,       type: textarea, help: "What a reader of the set should know, and the steps a person follows that no source states." }
   - field: retrieval
@@ -981,7 +986,7 @@ schema:
           - { field: name,   type: text, help: "The name the file is saved under; the address's last part when absent." }
       - { field: call,       type: text,   when: { kind: library }, required: { when: { kind: library } }, help: "The library call that fetches the set." }
       - { field: contact,    type: text,   when: { kind: request }, required: { when: { kind: request } }, help: "Who grants access to the set." }
-      - { field: from,       type: tags,   from: datasets, when: { kind: derived }, required: { when: { kind: derived } }, help: "The datasets the set is built from." }
+      - { field: from,       type: tags,   foreign_key: data, when: { kind: derived }, required: { when: { kind: derived } }, help: "The datasets the set is built from." }
       - { field: script,     type: text,   when: { kind: derived }, required: { when: { kind: derived } }, help: "The project script that builds the set, as its path in the hub." }
       - { field: into,       type: text,   when: { kind: [physionet, zenodo, figshare, dandi, huggingface, stanford, geo, kaggle, tcia, synapse, url] }, help: "A folder below the dataset's folder that the source's files land in; the folder itself when absent." }
       - { field: unpack,     type: checkbox, when: { kind: [physionet, zenodo, figshare, dandi, huggingface, stanford, geo, kaggle, tcia, synapse, url] }, help: "Whether the source's archives are unpacked into their folder after the check." }
@@ -1016,8 +1021,8 @@ datasets:
 ```yaml
 title: Pillars
 schema:
-  - { field: key,     type: text,     required: true, help: "The pillar's key, used by a project's pillars." }
-  - { field: title,   type: text,     required: true, help: "Name." }
+  - { field: key,     type: text,     primary_key: true, required: true, help: "The pillar's key, used by a project's pillars." }
+  - { field: title,   type: text,     display: 1, required: true, help: "Name." }
   - { field: kind,    type: text,     help: "pillar, provisional or offpillar." }
   - { field: goal,    type: textarea, help: "One-line aim." }
   - { field: color,   type: text,     help: "A hex colour of the palette." }
@@ -1038,8 +1043,8 @@ entries:
 ```yaml
 title: Domains
 schema:
-  - { field: key,              type: text,     required: true, help: "The domain's key, used by a project's domain." }
-  - { field: title,            type: text,     required: true, help: "Name, the label of a project card of the domain." }
+  - { field: key,              type: text,     primary_key: true, required: true, help: "The domain's key, used by a project's domain." }
+  - { field: title,            type: text,     display: 1, required: true, help: "Name, the label of a project card of the domain." }
   - { field: blurb,            type: textarea, help: "What it covers." }
   - { field: color,            type: text,     help: "The colour of a project card of the domain, as #rrggbb." }
   - { field: expects_datasets, type: checkbox, help: "Whether an active project of the domain must list a dataset." }
@@ -1058,9 +1063,9 @@ Your own entry is the one whose key the workspace setting `self` names (see `wor
 ```yaml
 title: People
 schema:
-  - { field: key,          type: text,     required: true, help: "The person's key." }
-  - { field: name,         type: text,     required: true, help: "Full name." }
-  - { field: affiliations, type: tags,     from: organisations, help: "Organisation keys, the primary first." }
+  - { field: key,          type: text,     primary_key: true, required: true, help: "The person's key." }
+  - { field: name,         type: text,     display: 1, required: true, help: "Full name." }
+  - { field: affiliations, type: tags,     foreign_key: organisations, help: "Organisation keys, the primary first." }
   - { field: role,         type: text,     help: "Who they are to you." }
   - { field: orcid,        type: text,     help: "ORCID." }
   - { field: email,        type: text,     help: "Email address." }
@@ -1082,8 +1087,8 @@ entries:
 ```yaml
 title: Organisations
 schema:
-  - { field: key,     type: text,   required: true, help: "The organisation's key." }
-  - { field: name,    type: text,   required: true, help: "Full name." }
+  - { field: key,     type: text,   primary_key: true, required: true, help: "The organisation's key." }
+  - { field: name,    type: text,   display: 1, required: true, help: "Full name." }
   - { field: kind,    type: select, options: [university, hospital, funder, company, other], required: true, help: "Kind." }
   - { field: country, type: text,   help: "Two-letter country code." }
   - { field: links,   type: tags,   help: "Web addresses." }
@@ -1100,8 +1105,8 @@ entries:
 ```yaml
 title: Resources
 schema:
-  - { field: key,    type: text,     required: true, help: "The resource's key, used by compute and slurm.resource." }
-  - { field: name,   type: text,     required: true, help: "Name." }
+  - { field: key,    type: text,     primary_key: true, required: true, help: "The resource's key, used by compute and slurm.resource." }
+  - { field: name,   type: text,     display: 1, required: true, help: "Name." }
   - { field: kind,   type: select,   options: [cluster, machine, storage], required: true, help: "Kind." }
   - { field: host,   type: text,     help: "The ssh alias of a cluster or remote machine." }
   - { field: access, type: textarea, help: "How it is reached." }
@@ -1120,8 +1125,8 @@ entries:
 ```yaml
 title: Statements
 schema:
-  - { field: key,       type: text,     required: true, help: "Short name." }
-  - { field: title,     type: text,     required: true, help: "Name." }
+  - { field: key,       type: text,     primary_key: true, required: true, help: "Short name." }
+  - { field: title,     type: text,     display: 1, required: true, help: "Name." }
   - { field: status,    type: select,   options: [draft, ready], required: true, help: "Draft or ready." }
   - { field: tags,      type: tags,     help: "Filter words." }
   - { field: note,      type: textarea, help: "Where it is used." }
@@ -1140,10 +1145,10 @@ entries:
 ```yaml
 title: Funding
 schema:
-  - { field: key,       type: text,     required: true, help: "The key a project's funding names." }
-  - { field: title,     type: text,     required: true, help: "Scheme or application." }
+  - { field: key,       type: text,     primary_key: true, required: true, help: "The key a project's funding names." }
+  - { field: title,     type: text,     display: 1, required: true, help: "Scheme or application." }
   - { field: sub,       type: text,     help: "Scheme, role, period." }
-  - { field: funder,    type: select,   from: organisations, help: "The funder's organisation key." }
+  - { field: funder,    type: select,   foreign_key: organisations, help: "The funder's organisation key." }
   - { field: status,    type: select,   options: [in-prep, planned, submitted, contributing, awarded, rejected, withdrawn], required: true, help: "Where it stands." }
   - { field: date,      type: text,     help: "Year or range." }
   - { field: deadline,  type: date,     help: "Shows on Focus while live." }
@@ -1154,9 +1159,9 @@ schema:
   - { field: link,      type: text,     help: "A path in the hub." }
   - { field: url,       type: text,     help: "The call's address." }
   - { field: followup,  type: text,     help: "A standing reminder." }
-  - { field: lead,          type: tags,     from: people, required: true, help: "Who leads it." }
-  - { field: collaborators, type: tags,     from: people, help: "Who works on it with the lead." }
-  - { field: supervisors,   type: tags,     from: people, help: "Who supervises it." }
+  - { field: lead,          type: tags,     foreign_key: people, required: true, help: "Who leads it." }
+  - { field: collaborators, type: tags,     foreign_key: people, help: "Who works on it with the lead." }
+  - { field: supervisors,   type: tags,     foreign_key: people, help: "Who supervises it." }
 entries:
 #  - key: my-grant                # required; what a project's funding names
 #    title: "My grant"            # required
@@ -1184,8 +1189,8 @@ entries:
 ```yaml
 title: Talks & Events
 schema:
-  - { field: key,      type: text,     required: true, help: "Short name." }
-  - { field: title,    type: text,     required: true, help: "Event." }
+  - { field: key,      type: text,     primary_key: true, required: true, help: "Short name." }
+  - { field: title,    type: text,     display: 1, required: true, help: "Event." }
   - { field: sub,      type: text,     help: "Place." }
   - { field: role,     type: select,   options: [present, co-present, attend], required: true, help: "Your role." }
   - { field: status,   type: select,   options: [upcoming, planned, completed, cancelled, not-attending], required: true, help: "Where it stands." }
@@ -1195,11 +1200,11 @@ schema:
   - { field: tags,     type: tags,     help: "Filter words." }
   - { field: note,     type: textarea, help: "Notes." }
   - { field: link,     type: text,     required: { when: { role: present } }, help: "Slides of a talk you give." }
-  - { field: related,  type: tags,     from: projects, help: "Project ids." }
+  - { field: related,  type: tags,     foreign_key: projects, help: "Project ids." }
   - { field: followup, type: text,     help: "A standing reminder." }
-  - { field: lead,          type: tags,     from: people, required: true, help: "Who leads it." }
-  - { field: collaborators, type: tags,     from: people, help: "Who works on it with the lead." }
-  - { field: supervisors,   type: tags,     from: people, help: "Who supervises it." }
+  - { field: lead,          type: tags,     foreign_key: people, required: true, help: "Who leads it." }
+  - { field: collaborators, type: tags,     foreign_key: people, help: "Who works on it with the lead." }
+  - { field: supervisors,   type: tags,     foreign_key: people, help: "Who supervises it." }
 entries:
 #  - key: my-talk                 # required
 #    title: "My talk"             # required
@@ -1225,9 +1230,9 @@ entries:
 ```yaml
 title: Joint work
 schema:
-  - { field: key,      type: text,     help: "Short name." }
-  - { field: title,    type: text,     required: true, help: "What the work is." }
-  - { field: person,   type: select,   from: people, required: true, help: "The person's key." }
+  - { field: key,      type: text,     primary_key: true, help: "Short name." }
+  - { field: title,    type: text,     display: 1, required: true, help: "What the work is." }
+  - { field: person,   type: select,   foreign_key: people, required: true, help: "The person's key." }
   - { field: status,   type: select,   options: [exploring, active, completed], required: true, help: "Where it stands." }
   - { field: meta,     type: metalist, help: "Label and value rows." }
   - { field: tags,     type: tags,     help: "Filter words." }
@@ -1235,7 +1240,7 @@ schema:
   - { field: deadline, type: date,     help: "Shows on Focus while live." }
   - { field: followup, type: text,     help: "A standing reminder." }
 entries:
-#  - key: paper-with-sam
+#  - key: paper-with-sam          # required
 #    title: "A paper with Sam"    # required
 #    person: sam                  # required; a person key
 #    status: active               # required: exploring, active or completed
@@ -1251,8 +1256,8 @@ entries:
 ```yaml
 title: Education & Service
 schema:
-  - { field: key,      type: text,     required: true, help: "Short name." }
-  - { field: title,    type: text,     required: true, help: "Course or role." }
+  - { field: key,      type: text,     primary_key: true, required: true, help: "Short name." }
+  - { field: title,    type: text,     display: 1, required: true, help: "Course or role." }
   - { field: sub,      type: text,     help: "Institution, period." }
   - { field: status,   type: select,   options: [planned, ongoing, completed], required: true, help: "Where it stands." }
   - { field: date,     type: text,     help: "Year or range." }
@@ -1261,11 +1266,11 @@ schema:
   - { field: tags,     type: tags,     help: "Filter words." }
   - { field: note,     type: textarea, help: "Notes." }
   - { field: link,     type: text,     help: "A path in the hub." }
-  - { field: related,  type: tags,     from: projects, help: "Project ids." }
+  - { field: related,  type: tags,     foreign_key: projects, help: "Project ids." }
   - { field: followup, type: text,     help: "A standing reminder." }
-  - { field: lead,          type: tags,     from: people, required: true, help: "Who leads it." }
-  - { field: collaborators, type: tags,     from: people, help: "Who works on it with the lead." }
-  - { field: supervisors,   type: tags,     from: people, help: "Who supervises it." }
+  - { field: lead,          type: tags,     foreign_key: people, required: true, help: "Who leads it." }
+  - { field: collaborators, type: tags,     foreign_key: people, help: "Who works on it with the lead." }
+  - { field: supervisors,   type: tags,     foreign_key: people, help: "Who supervises it." }
 entries:
 #  - key: ml-course               # required
 #    title: "Machine learning"    # required
@@ -1289,8 +1294,8 @@ entries:
 ```yaml
 title: Applications
 schema:
-  - { field: key,      type: text,     required: true, help: "Short name." }
-  - { field: title,    type: text,     required: true, help: "Position." }
+  - { field: key,      type: text,     primary_key: true, required: true, help: "Short name." }
+  - { field: title,    type: text,     display: 1, required: true, help: "Position." }
   - { field: sub,      type: text,     help: "Institution." }
   - { field: status,   type: select,   options: [not-applied, active, accepted, rejected, declined, withdrawn, applied], required: true, help: "Where it stands." }
   - { field: date,     type: text,     help: "Year applied." }
@@ -1299,12 +1304,12 @@ schema:
   - { field: note,     type: textarea, help: "Notes." }
   - { field: link,     type: text,     help: "A path in the hub." }
   - { field: url,      type: text,     help: "The posting." }
-  - { field: related,  type: tags,     from: projects, help: "Project ids." }
+  - { field: related,  type: tags,     foreign_key: projects, help: "Project ids." }
   - { field: deadline, type: date,     help: "The deadline, if any." }
   - { field: followup, type: text,     help: "A standing reminder." }
-  - { field: lead,          type: tags,     from: people, required: true, help: "Who leads it." }
-  - { field: collaborators, type: tags,     from: people, help: "Who works on it with the lead." }
-  - { field: supervisors,   type: tags,     from: people, help: "Who supervises it." }
+  - { field: lead,          type: tags,     foreign_key: people, required: true, help: "Who leads it." }
+  - { field: collaborators, type: tags,     foreign_key: people, help: "Who works on it with the lead." }
+  - { field: supervisors,   type: tags,     foreign_key: people, help: "Who supervises it." }
 entries:
 #  - key: my-postdoc              # required
 #    title: "Postdoc position"    # required
@@ -1330,17 +1335,17 @@ entries:
 ```yaml
 title: Tasks
 schema:
-  - { field: key,      type: text,     required: true, help: "Short name." }
-  - { field: title,    type: text,     required: true, help: "What to do." }
+  - { field: key,      type: text,     primary_key: true, required: true, help: "Short name." }
+  - { field: title,    type: text,     display: 1, required: true, help: "What to do." }
   - { field: status,   type: select,   options: [todo, doing, done, dropped], required: true, help: "Where it stands." }
   - { field: deadline, type: date,     help: "Shows on Focus while live." }
   - { field: kind,     type: text,     help: "Review, admin, teaching." }
   - { field: note,     type: textarea, help: "Notes." }
   - { field: tags,     type: tags,     help: "Filter words." }
   - { field: followup, type: text,     help: "A standing reminder." }
-  - { field: lead,          type: tags,     from: people, required: true, help: "Who leads it." }
-  - { field: collaborators, type: tags,     from: people, help: "Who works on it with the lead." }
-  - { field: supervisors,   type: tags,     from: people, help: "Who supervises it." }
+  - { field: lead,          type: tags,     foreign_key: people, required: true, help: "Who leads it." }
+  - { field: collaborators, type: tags,     foreign_key: people, help: "Who works on it with the lead." }
+  - { field: supervisors,   type: tags,     foreign_key: people, help: "Who supervises it." }
 entries:
 #  - key: review-paper            # required
 #    title: "Review a paper"      # required
@@ -1363,8 +1368,8 @@ The papers kept for reading and citing. Save to Literature on a card of the Lite
 title: Literature
 intro: "Papers kept for reading and citing."
 schema:
-  - { field: key,      type: text,     required: true, help: "The citation key: the first author's surname, the year and the first word of the title." }
-  - { field: title,    type: text,     required: true, help: "The paper's title." }
+  - { field: key,      type: text,     primary_key: true, required: true, help: "The citation key: the first author's surname, the year and the first word of the title." }
+  - { field: title,    type: text,     display: 1, required: true, help: "The paper's title." }
   - { field: authors,  type: tags,     filter: true, help: "The authors in order, one name per entry." }
   - { field: venue,    type: text,     filter: true, help: "The journal or conference; a venue of the venues registry by this name opens from it." }
   - { field: year,     type: text,     filter: true, help: "The year it appeared, as a whole number." }
@@ -1372,7 +1377,7 @@ schema:
   - { field: url,      type: text,     help: "The paper's address." }
   - { field: abstract, type: textarea, help: "The abstract, as plain text." }
   - { field: keywords, type: tags,     filter: true, help: "Words the paper is found by." }
-  - { field: projects, type: tags,     from: projects, filter: true, help: "The projects the paper is for." }
+  - { field: projects, type: tags,     foreign_key: projects, filter: true, help: "The projects the paper is for." }
   - { field: source,   type: select,   options: [search, lit-watch, hand], filter: true, help: "Where it came from: search, lit-watch or hand." }
   - { field: added,    type: date,     help: "The day it was saved." }
   - { field: note,     type: textarea, help: "Notes on the paper." }
@@ -1398,20 +1403,20 @@ Written by the scout. `meta.log` holds one dated line per pass.
 
 ```yaml
 schema:
-  - { field: title,    type: text,     help: "Position." }
+  - { field: title,    type: text,     primary_key: true, display: 1, help: "Position." }
   - { field: inst,     type: text,     help: "Institution." }
   - { field: country,  type: text,     help: "Country." }
   - { field: typ,      type: text,     help: "Kind of position." }
   - { field: focus,    type: textarea, help: "What it is about." }
   - { field: fit,      type: textarea, help: "How it fits; strong, moderate or reach colours the card." }
-  - { field: status,   type: select,   from: vocab.lead_statuses, help: "Where it stands: open, applied, declined, closed or dismissed." }
+  - { field: status,   type: select,   foreign_key: vocab.lead_statuses, help: "Where it stands: open, applied, declined, closed or dismissed." }
   - { field: date,     type: date,     help: "Day found." }
   - { field: deadline, type: text,     help: "Deadline as posted." }
   - { field: url,      type: text,     help: "The posting." }
 meta:
   log: []
 entries:
-#  - title: "Assistant professor"
+#  - title: "Assistant professor" # required
 #    inst: "University"
 #    country: NL
 #    typ: tenure-track
@@ -1429,19 +1434,19 @@ Written by the literature scout. `meta.last_run` is the day of its last pass.
 
 ```yaml
 schema:
-  - { field: title,      type: text,     required: true, help: "Title." }
+  - { field: title,      type: text,     primary_key: true, display: 1, required: true, help: "Title." }
   - { field: authors,    type: text,     help: "Authors in order." }
   - { field: venue,      type: text,     help: "Where it appeared." }
   - { field: year,       type: text,     help: "Year." }
   - { field: url,        type: text,     required: true, help: "Address; the sweep deduplicates by it." }
-  - { field: bucket,     type: select,   from: vocab.radar_buckets, required: true, help: "preemption, cite_baseline, adjacent or idea." }
-  - { field: project,    type: select,   from: projects, help: "The project it was found for." }
+  - { field: bucket,     type: select,   foreign_key: vocab.radar_buckets, required: true, help: "preemption, cite_baseline, adjacent or idea." }
+  - { field: project,    type: select,   foreign_key: projects, help: "The project it was found for." }
   - { field: relevance,  type: select,   options: [high, med, low], help: "How close it is." }
   - { field: why,        type: textarea, help: "Why it matters." }
   - { field: found,      type: date,     help: "Day found." }
   - { field: threatens,  type: textarea, help: "The claim a pre-emption puts at stake." }
   - { field: motif,      type: text,     help: "Idea: the pattern taken from it." }
-  - { field: maps_to,    type: text,     from: projects, help: "Idea: the project, or new-idea-candidate." }
+  - { field: maps_to,    type: text,     foreign_key: projects, help: "Idea: the project, or new-idea-candidate." }
   - { field: idea_spark, type: textarea, help: "Idea: the idea itself." }
   - { field: dismissed,  type: checkbox, help: "Set by Lit Watch when you dismiss it." }
 meta:

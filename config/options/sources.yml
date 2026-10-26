@@ -50,9 +50,12 @@ options:
     collections:
         heading: sources
         section: Collections
-        help: "The hub's record files, each from one YAML file. An entry needs a key and a file, and two entries with one key are a finding, the first file being the one read. An entry's registry says which registry or feed its file is, and its flags which features read it, so the key is the hub's own word: a registry or feed no entry names is read from oculus's entry of it, and one an entry names whose file is not there is a finding. The files of the datasets, venues, pillars, domains, leads and radar registries are drawn by the Data, Venues, Pillars, Domains, Position Leads and Lit Watch views; every other entry also becomes a collection view, a generic card list, placed by its group and order and named by its label and glyph. A domain's card colour, its label and whether it expects a dataset are its entry's color, title and expects_datasets in the domains registry, and the theme words are the options of the themes field of the venues and datasets registries."
+        help: "The hub's record files, each from one YAML file. An entry needs a key and a file, and two entries with one key are a finding, the first file being the one read. An entry's registry says which registry or feed its file is, and its flags which features read it, so the key is the hub's own word: a registry or feed no entry names is read from oculus's entry of it, and one an entry names whose file is not there is a finding. The files of the datasets, venues, pillars, domains, leads and radar registries are drawn by the Data, Venues, Pillars, Domains, Position Leads and Lit Watch views; every other entry also becomes a collection view, a generic card list, placed by its group and order and named by its label and glyph. A domain's card colour, its label and whether it expects a dataset are its entry's color, title and expects_datasets in the domains registry, and the theme words are the options of the themes field of the venues and datasets registries. An entry of a file is found by its primary key, the one field of the file's schema flagged primary_key: true, or for a file with no schema the field its entry names as primary_key; a file with neither, or with both, is a finding, and its entries are drawn but take no edit, Add or remove."
         fields:
-            key: the collection's key, which the view and the entries' cross-links use
+            key: the collection's key, which the view uses and a schema field's foreign_key names the collection by
+            primary_key:
+                help: the field an entry of a file with no schema is found by, such as title for a leads file a scout writes; beside a schema that flags its own primary key it is a finding and the file's writes are refused
+                control: text
             file:
                 help: the YAML file of the collection, relative to the hub
                 control: file

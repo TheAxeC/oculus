@@ -1,8 +1,9 @@
 // Layer 4, tree check. The catalog files' keys have readers: every top-level key of a file under
 // config/catalogs/ is named outside a comment by a module or component under src, as a property or
 // a quoted string, the catalog files' shapes left out since they name every key, or is drawn as a
-// `from: vocab.<key>` list by a shipped schema or a template of docs/templates.md. A key whose name
-// is a common word is read by any property of that name, which a check by name cannot tell apart.
+// `foreign_key: vocab.<key>` list by a shipped schema or a template of docs/templates.md. A key
+// whose name is a common word is read by any property of that name, which a check by name cannot
+// tell apart.
 
 import { readFileSync, readdirSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
@@ -34,8 +35,8 @@ function keyReaderCode(): string[] {
 
 /**
  * The text of the shipped schemas and of the templates a hub's schemas are copied from, comment
- * lines left out: a field there draws a vocabulary list as `from: vocab.<key>`, read through the
- * vocabulary file's keys with no code naming the key.
+ * lines left out: a field there draws a vocabulary list as `foreign_key: vocab.<key>`, read through
+ * the vocabulary file's keys with no code naming the key.
  */
 function schemaFilesText(): string {
     const dir = join(engineDir(), 'config', SCHEMAS);
@@ -59,7 +60,7 @@ describe('catalog file keys', () => {
         const read = (key: string): boolean => {
             const name = RegExp.escape(key);
             const named = new RegExp(`\\.${name}\\b|['"]${name}['"]`);
-            const drawn = new RegExp(`from:\\s*vocab\\.${name}\\b`);
+            const drawn = new RegExp(`foreign_key:\\s*vocab\\.${name}\\b`);
             return drawn.test(schemas) || code.some((text) => named.test(text));
         };
         const orphaned = readdirSync(dir)

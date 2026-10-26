@@ -3,7 +3,7 @@
 //
 // The server's writers (server/edit/entry-edit/) insert an entry into a file on disk, and the page
 // builds the same entry in a source tab's unsaved text, so the placement rule lives here once and
-// both import it. The page's side is a stub: the entry's first key, the fields the file's schema
+// both import it. The page's side is a stub: the file's primary key, the fields the file's schema
 // requires, `status`, and the fields the caller names, each with the empty value of its type, and
 // the caret placed where the reader types next. A result is parsed again before it is answered and
 // is refused unless it holds the same entries plus one and every other key unchanged.
@@ -20,14 +20,11 @@ import {
     withoutMark,
     type TextEdit
 } from '../../../prose/text-edits.ts';
-import { byKey, isMap, scalar } from '../../guards.ts';
+import { isMap, scalar } from '../../guards.ts';
 import { columnOf, pairOf, rangeOf, valueEnd } from './yaml-ranges.ts';
 
 /** The collection list key whose entries the writers locate and edit. */
 export const LIST = 'entries';
-
-/** The field a registry keys its entries by when that is not the first field of its schema. */
-export const KEYED_FIELDS: Record<string, string> = { venues: 'id' };
 
 /** A scalar a file's value can be written as. */
 export type ScalarFieldValue = string | number | boolean | null;
@@ -91,6 +88,26 @@ export function listOf(root: YAMLMap): { key: string; seq: YAMLSeq } | null {
     return null;
 }
 
+/** Whether a node holds nothing: a key written with no value under it. */
+function holdsNothing(node: unknown): boolean {
+    return node === null || (isScalar(node) && node.value === null);
+}
+
+/**
+ * The key a file's entry list stands under while it holds nothing yet: `entries:` with nothing
+ * under it, else the one key beside `schema:` that holds nothing (the empty `datasets:` of a new
+ * hub's data file). A file with no such key, or with two or more and no `entries:`, names none.
+ */
+export function emptyListKey(root: YAMLMap): string | null {
+    const listed = pairOf(root, LIST);
+    if (listed !== undefined) return holdsNothing(listed.value) ? LIST : null;
+    const empty = (root.items as Pair<Scalar, Node>[]).filter((item) => {
+        const name = (item.key as Scalar | undefined)?.value;
+        return typeof name === 'string' && name !== 'schema' && holdsNothing(item.value);
+    });
+    return empty.length === 1 ? String(empty[0].key.value) : null;
+}
+
 /** A condition without its `path` key, the part a record can state about its own fields. */
 export function withoutPath(when: When): When {
     return Object.fromEntries(Object.entries(when).filter(([name]) => name !== 'path'));
@@ -125,9 +142,12 @@ export function itemWith(
     return null;
 }
 
-/** Why no entry can be placed or found in a text, and the line (from 1) a tab opens at. */
+/**
+ * Why no entry can be placed or found in a text, and the line (from 1) a tab opens at. A file with
+ * no primary key (`no_primary_key`) takes no stub, since nothing would address the entry.
+ */
 export type EntryRefusal = {
-    code: 'file_unparsed' | 'list_inline' | 'list_not_a_list' | 'stub_unparsed';
+    code: 'file_unparsed' | 'list_inline' | 'list_not_a_list' | 'stub_unparsed' | 'no_primary_key';
     line: number;
     /** The key of the list for `list_not_a_list`, else the empty string. */
     key: string;
@@ -173,9 +193,9 @@ function lineBreak(source: string): string {
 /**
  * Where a new entry's lines go: after the last item of a block list (the line after its last value
  * line, a blank line first); in place of `[]` for an empty flow list; under the key when it holds
- * nothing; at the end of the file, a blank line and `entries:` first, when the file has no list. A
- * flow list that holds entries, a list key that holds a scalar or a map, and a text that does not
- * parse are refused with the line to open at.
+ * nothing (`emptyListKey`); at the end of the file, a blank line and `entries:` first, when the
+ * file has no list. A flow list that holds entries, a list key that holds a scalar or a map, and a
+ * text that does not parse are refused with the line to open at.
  */
 export function entryPlace(source: string): EntryPlace | EntryRefusal {
     const read = readRoot(source);
@@ -197,8 +217,7 @@ export function entryPlace(source: string): EntryPlace | EntryRefusal {
         };
     };
     if (root === null) return fresh();
-    const listed = listOf(root);
-    const pair = pairOf(root, listed === null ? LIST : listed.key);
+    const pair = pairOf(root, listOf(root)?.key ?? emptyListKey(root) ?? LIST);
     if (pair === undefined) return fresh();
     const key = rangeOf(pair.key);
     if (key === null) return { code: 'file_unparsed', line: 1, key: '' };
@@ -265,22 +284,20 @@ function stubValueOf(field: SchemaField, values: Record<string, unknown>): Scala
 }
 
 /**
- * The fields a new entry is written with, in schema order: the first field (`title` when the file
- * has no schema), the collection's keyed field, each field that is required (a condition read over
- * the entry's own written values), `status`, and each field the caller names. A field whose `when`
- * does not hold over those values is left out, whatever else asks for it, since the file would then
- * carry a field outside its condition.
+ * The fields a new entry is written with, in schema order: the file's primary key (the only field
+ * of a file with no schema), each field that is required (a condition read over the entry's own
+ * written values), `status`, and each field the caller names. A field whose `when` does not hold
+ * over those values is left out, whatever else asks for it, since the file would then carry a field
+ * outside its condition.
  */
 function stubFields(
     schema: SchemaField[],
-    collection: string,
+    primaryKey: string,
     values: Record<string, unknown>
 ): [SchemaField, ScalarFieldValue][] {
-    const fields = schema.length > 0 ? schema : [{ field: 'title', type: 'text' }];
-    const first = fields[0].field;
-    const keyed = byKey(KEYED_FIELDS, collection);
+    const fields = schema.length > 0 ? schema : [{ field: primaryKey, type: 'text' }];
     const wanted = (field: SchemaField, held: Record<string, unknown>): boolean => {
-        if (field.field === first || field.field === keyed || field.field === 'status') return true;
+        if (field.field === primaryKey || field.field === 'status') return true;
         if (Object.hasOwn(values, field.field) || field.required === true) return true;
         return typeof field.required === 'object' && holds(field.required.when, held);
     };
@@ -304,11 +321,11 @@ function stubFields(
 /** The lines of a new entry at the list's own indentation, and where the caret goes in them. */
 function entryLines(
     schema: SchemaField[],
-    collection: string,
+    primaryKey: string,
     values: Record<string, unknown>,
     place: Pick<EntryPlace, 'dash' | 'key'>
 ): { lines: string[]; caret: TextPlace } {
-    const chosen = stubFields(schema, collection, values);
+    const chosen = stubFields(schema, primaryKey, values);
     const lines = chosen.map(([field, value], at) => {
         const written = value === null ? '' : ` ${renderScalar(value)}`;
         const head =
@@ -374,17 +391,18 @@ function isUntouchedStub(source: string, place: EntryPlace, made: string[]): boo
  * first `""` (the end of its first line when it has none), and the edits that turn the source into
  * the text. The list's last item being exactly such an entry already, that entry's place is
  * answered and nothing is edited. A result that does not parse back into the same entries plus one
- * is refused.
+ * is refused, and so is a file whose primary key `primaryKey` is null.
  */
 export function entryStub(
     source: string,
     schema: SchemaField[] | undefined,
-    collection: string,
+    primaryKey: string | null,
     values: Record<string, unknown> = {}
 ): Stub | EntryRefusal {
+    if (primaryKey === null) return { code: 'no_primary_key', line: 1, key: '' };
     const place = entryPlace(source);
     if ('code' in place) return place;
-    const made = entryLines(schema ?? [], collection, values, place);
+    const made = entryLines(schema ?? [], primaryKey, values, place);
     if (isUntouchedStub(source, place, made.lines) && place.last !== null) {
         const { line, column } = made.caret;
         return { text: source, line: place.last.start + line, column, edits: [] };

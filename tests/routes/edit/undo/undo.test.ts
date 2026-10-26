@@ -120,7 +120,7 @@ const LINE_ROWS = [
 const QUOTED_TASKS = [
     'title: Tasks',
     'schema:',
-    '  - { field: title, type: text }',
+    '  - { field: title, type: text, primary_key: true }',
     '  - { field: funding, type: text }',
     'entries:',
     '  - title: "First task"',
@@ -135,7 +135,7 @@ const QUOTED_TASKS = [
 const QUOTED_LEADS = [
     'meta: {}',
     'schema:',
-    '  - { field: title, type: text }',
+    '  - { field: title, type: text, primary_key: true }',
     '  - { field: status, type: select, options: [open, applied, declined, dismissed] }',
     '  - { field: fit, type: textarea }',
     'entries:',
@@ -492,7 +492,7 @@ describe('taking a change back', () => {
             [
                 'title: Tasks',
                 'schema:',
-                '  - { field: title, type: text }',
+                '  - { field: title, type: text, primary_key: true }',
                 'entries:',
                 '  - title: "With subtasks"',
                 '    status: open',
@@ -797,7 +797,10 @@ describe('taking a change back', () => {
         expect(radar()).toBe(before);
 
         // The same through a file whose list is written `entries: []`, which the add rewrites.
-        writeFileSync(radarFile, 'meta:\n  last_run: 2026-09-27\nentries: []\n');
+        writeFileSync(
+            radarFile,
+            'meta:\n  last_run: 2026-09-27\nschema:\n  - { field: title, type: text, primary_key: true }\nentries: []\n'
+        );
         const empty = radar();
         const first = await addRadar();
         expect(radar()).not.toBe(empty);

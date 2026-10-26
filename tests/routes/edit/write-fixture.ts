@@ -38,13 +38,13 @@ export const MANIFEST =
 
 /** A collection file and a career file, at the hub paths config/defaults/sources.yml names. */
 const TASKS =
-    'title: Tasks\nschema:\n  - { field: title, type: text }\n  - { field: meta, type: metalist }\nentries:\n  - title: "Review the draft"\n    status: open\n    subtasks:\n      - { do: read it }\n\n  - title: "Another task"\n    status: open\n';
+    'title: Tasks\nschema:\n  - { field: title, type: text, primary_key: true }\n  - { field: meta, type: metalist }\nentries:\n  - title: "Review the draft"\n    status: open\n    subtasks:\n      - { do: read it }\n\n  - title: "Another task"\n    status: open\n';
 
 const VENUES =
-    'title: Venues\nschema:\n  - { field: name, type: text }\n  - { field: id, type: text }\nvenues:\n  - name: Existing Venue\n    id: existing\n';
+    'title: Venues\nschema:\n  - { field: name, type: text, display: 1 }\n  - { field: id, type: text, primary_key: true }\nvenues:\n  - name: Existing Venue\n    id: existing\n';
 
 const DATA =
-    'title: Data\nschema:\n  - { field: key, type: text }\n  - { field: retrieval, type: raw }\ndatasets:\n  - key: mimic-iv\n    retrieval:\n      method: curl\n';
+    'title: Data\nschema:\n  - { field: key, type: text, primary_key: true }\n  - { field: retrieval, type: raw }\ndatasets:\n  - key: mimic-iv\n    retrieval:\n      method: curl\n';
 
 const CAREER = [
     'title: Career',
@@ -54,10 +54,11 @@ const CAREER = [
     'goal: "Assistant professor"',
     ''
 ].join('\n');
-const RADAR = 'meta: {}\nentries:\n  - title: "Paper"\n';
+const RADAR =
+    'meta: {}\nschema:\n  - { field: title, type: text, primary_key: true }\nentries:\n  - title: "Paper"\n';
 const LEADS = `meta: {}
 schema:
-  - { field: title, type: text }
+  - { field: title, type: text, primary_key: true }
   - { field: status, type: select, options: [open, applied, declined, dismissed] }
   - { field: date, type: date }
   - { field: fit, type: textarea }

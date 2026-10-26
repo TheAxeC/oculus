@@ -14,7 +14,6 @@
 // names the entry by its hub and its key, two fields of its state (`entryPageState`), and never by
 // its internal id.
 
-import { scalar } from '../../data/helpers/guards.ts';
 import {
     addressOfId,
     bareId,
@@ -34,10 +33,10 @@ import type {
     SchemaField,
     Snapshot
 } from '../../data/model/index.ts';
-import { entryIdOf, entryTitleOf } from '../../data/model/index.ts';
+import { entryIdOf, entryTitleOf, primaryKeyOf } from '../../data/model/index.ts';
 import { feedEntryId, feedIdents, feedRoot } from '../shared/page/idents.ts';
 import type { DraftTarget } from './form-draft.ts';
-import { fixedFields, formFieldsOf, identityField } from './record-fields.ts';
+import { fixedFields, formFieldsOf } from './record-fields.ts';
 import { fieldDiffers, hasWords } from './record-values.ts';
 import type { FormField } from './schema.ts';
 import type { SettledStore } from './settled.svelte.ts';
@@ -144,20 +143,22 @@ function entryKey(collection: string, id: string): string {
 }
 
 /**
- * The page of an entry of a collection file, over `values`: the entry's fields with the writes the
- * server took and the snapshot has not shown yet put over them. A write that changed the entry's
- * key gives the page the key the entry has now.
+ * The page of an entry of a collection file whose primary key is `primaryKey` (null for a file
+ * with none), over `values`: the entry's fields with the writes the server took and the snapshot
+ * has not shown yet put over them. A write that changed the entry's key gives the page the key the
+ * entry has now.
  */
 function collectionPage(
     key: string,
     schema: SchemaField[],
+    primaryKey: string | null,
     entry: Entry,
     others: readonly Entry[],
     values: Record<string, unknown>
 ): PageEntry {
-    const ident = identityField(schema);
-    const id = values === entry.fields ? entry.id : hubId(rootOf(entry), entryIdOf(values, ident));
-    const title = values === entry.fields ? entry.title : entryTitleOf(values, ident);
+    const own = values === entry.fields;
+    const id = own ? entry.id : hubId(rootOf(entry), entryIdOf(values, primaryKey));
+    const title = own ? entry.title : entryTitleOf(values, schema, primaryKey);
     return {
         kind: 'collection',
         collection: key,
@@ -168,7 +169,7 @@ function collectionPage(
         title: title === '' ? keyOf(id) : title,
         schema,
         values,
-        fixed: fixedFields(key, schema),
+        fixed: fixedFields(primaryKey),
         peers: others.filter((one) => one !== entry).map((one) => one.fields)
     };
 }
@@ -176,7 +177,8 @@ function collectionPage(
 /**
  * The page of a feed entry, `ident` being the identity the feed views give it, over the schema of
  * the file of the entry's hub: the schema the merged feed holds for that hub, or, in a feed not
- * merged across hubs, the one file's.
+ * merged across hubs, the one file's. The page shows the field that schema flags as the primary
+ * key and never writes it, and its title is the entry's display, else its value of that key.
  */
 function feedPage(
     kind: FeedKind,
@@ -191,7 +193,8 @@ function feedPage(
     const schema = feed.hubSchemas === undefined ? feed.schema : feed.hubSchemas[root];
     if (entry === undefined || schema === undefined) return null;
     const values = settled.overlay(entryKey(kind, ident), entry);
-    const title = scalar(values.title);
+    const primaryKey = primaryKeyOf(schema);
+    const title = entryTitleOf(values, schema, primaryKey);
     return {
         kind: 'feed',
         collection: kind,
@@ -202,7 +205,7 @@ function feedPage(
         title: title === '' ? keyOf(ident) : title,
         schema,
         values,
-        fixed: [identityField(schema)],
+        fixed: fixedFields(primaryKey),
         peers: feed.entries.filter((one) => one !== found)
     };
 }
@@ -299,7 +302,8 @@ export function createPages(sources: PageSources, settled: SettledStore): Pages 
         if (found !== null && schema !== undefined) {
             const { held, entry } = found;
             const values = settled.overlay(entryKey(collection, entry.id), entry.fields);
-            return collectionPage(collection, schema, entry, held.entries, values);
+            const primaryKey = held.primary_key ?? null;
+            return collectionPage(collection, schema, primaryKey, entry, held.entries, values);
         }
         if (!settled.pending(entryKey(collection, key))) return null;
         // An entry a write added is of the hub its id names, whose file the write went to.
@@ -309,15 +313,16 @@ export function createPages(sources: PageSources, settled: SettledStore): Pages 
         );
         if (home?.schema === undefined) return null;
         const values = settled.overlay(entryKey(collection, key), {});
+        const primaryKey = home.primary_key ?? null;
         const added: Entry = {
             id: key,
-            title: entryTitleOf(values, identityField(home.schema)),
+            title: entryTitleOf(values, home.schema, primaryKey),
             fields: values,
             file: home.file,
             index: home.entries.length,
             root: hub
         };
-        return collectionPage(collection, home.schema, added, home.entries, values);
+        return collectionPage(collection, home.schema, primaryKey, added, home.entries, values);
     }
 
     function pageNamed(name: string): PageEntry | null {
@@ -335,10 +340,10 @@ export function createPages(sources: PageSources, settled: SettledStore): Pages 
             const snapshot = sources.snapshot();
             const found = snapshot === null ? null : find(snapshot, collection, [id]);
             if (found === null) return;
-            const ident = identityField(found.held.schema);
+            const primaryKey = found.held.primary_key ?? null;
             const now = hubId(
                 rootOf(found.entry),
-                entryIdOf({ ...found.entry.fields, ...saved }, ident)
+                entryIdOf({ ...found.entry.fields, ...saved }, primaryKey)
             );
             settled.record(
                 entryKey(collection, found.entry.id),

@@ -114,9 +114,8 @@ export type RawManifest = {
 };
 
 /**
- * One entry of one registry as it was read, plus provenance. `key` is the entry's identity, taken
- * from the field that registry uses for it (`id` in venues, `key` in the other four); the original
- * field keeps its own name and value as well.
+ * One entry of one registry as it was read, plus provenance. `key` is the entry's identity, the
+ * value of its file's primary key; the original field keeps its own name and value as well.
  */
 export type RawRegistryEntry = {
     [key: string]: unknown;
@@ -125,7 +124,8 @@ export type RawRegistryEntry = {
      */
     registry: RegistryName;
     /**
-     * The entry's id, or the empty string when the registry's id field was missing or not a string.
+     * The entry's id, or the empty string when the file has no primary key or the entry holds no
+     * text or number there.
      */
     key: Id;
     /** Absolute path of the registry file. */
@@ -135,16 +135,20 @@ export type RawRegistryEntry = {
 /** The top-level keys of a registry file other than its entry list, returned untouched. */
 export type RegistryMeta = Record<string, unknown>;
 
-/** One registry as read: its entries in file order, and everything else the file held. */
+/**
+ * One registry as read: its entries in file order, everything else the file held, and the field
+ * its entries are keyed by, absent when the file has no primary key.
+ */
 export type RawRegistry = {
     entries: RawRegistryEntry[];
     meta: RegistryMeta;
+    primaryKey?: string;
 };
 
 /**
  * One entry of one collection as it was read. Every key the YAML map held is present untouched; the
- * reader adds only `provenance`. The entry's identity, its `key` when it has one and its `title`
- * otherwise, is left where it was read and is derived by data/snapshot/normalise.ts, not here.
+ * reader adds only `provenance`. The entry's identity, the value of its file's primary key, is left
+ * where it was read and is derived by data/snapshot/normalise.ts, not here.
  */
 export type RawEntry = {
     [key: string]: unknown;

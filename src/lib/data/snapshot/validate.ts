@@ -20,7 +20,8 @@ import type {
     ValidationRules,
     Vocabulary
 } from '../model/index.ts';
-import { domainColorOf } from '../model/index.ts';
+import { domainColorOf, primaryKeyOf } from '../model/index.ts';
+import { keyedSchema } from './schema/field.ts';
 import { z } from 'zod';
 import { findingText, type TextCatalog } from '../helpers/finding-text.ts';
 import {
@@ -387,20 +388,13 @@ export function withoutValidated(
     return schema.filter((finding) => !taken.has(`${finding.file}\n${finding.key}`));
 }
 
-/** The field a file's entries are addressed by: its schema's first field, `title` without one. */
-export function identityFieldOf(schema: unknown): string {
-    const names = fieldNames(schema);
-    return names.length > 0 ? names[0] : 'title';
-}
-
 /**
- * The identity findings of one file's entries. The identity field is the schema's first, `title`
- * where the file has no schema, and it is what a write addresses an entry by: an entry with no
- * value there can be addressed by nothing, and with two of one value an edit reaches the first and
- * the second can be neither edited nor removed. Each entry gives at most one finding:
- * `identity_empty` for an empty value (two empty values are not a shared one), `identity_shared`
- * for a value another entry also holds. Closed entries are checked like the rest, so a caller
- * passes every entry of the file.
+ * The identity findings of one file's entries. The identity `ident` is the file's primary key
+ * (`primaryKeyOf` of data/model), what a write addresses an entry by: an entry with no value there
+ * can be addressed by nothing, and with two of one value an edit reaches the first and the second
+ * can be neither edited nor removed. Each entry gives at most one finding: `identity_empty` for an
+ * empty value (two empty values are not a shared one), `identity_shared` for a value another entry
+ * also holds. Closed entries are checked like the rest, so a caller passes every entry of the file.
  */
 export function identityFindings(
     file: string,
@@ -429,21 +423,23 @@ export function identityFindings(
 }
 
 /**
- * The identity findings of every collection. A collection that is a registry whose schema opens
- * with the registry's own id field is left to the schema's duplicate-key rule (schema/lists.ts) and
- * to the registry reader's missing-id finding; venues open with `name`, so their write identity is
- * checked here.
+ * The identity findings of every collection, by its primary key. A registry's file is left to the
+ * schema's duplicate-key rule (schema/lists.ts) and to the registry reader's missing-id finding,
+ * which read the same primary key, so an entry gives one finding; a file with no primary key gives
+ * the schema run's one finding (schema/run.ts) and none here.
  */
 function checkEntryIdentity(raw: RawPortfolio, catalog: TextCatalog, findings: Finding[]): void {
-    const idFields = new Map(
+    const registryFiles = new Set(
         (Object.keys(REGISTRY_SHAPES) as RegistryName[]).flatMap((name) =>
-            raw.registries[name].entries.map((one) => [one.file, REGISTRY_SHAPES[name].idField])
+            raw.registries[name].entries.map((one) => one.file)
         )
     );
     for (const key of Object.keys(raw.collections).sort()) {
         const collection = raw.collections[key];
-        const ident = identityFieldOf(collection.meta.schema);
-        if (idFields.get(collection.file) === ident) continue;
+        if (registryFiles.has(collection.file)) continue;
+        const named = collection.primary_key;
+        const ident = primaryKeyOf(keyedSchema(collection.meta.schema), named);
+        if (ident === null) continue;
         findings.push(...identityFindings(collection.file, ident, collection.entries, catalog));
     }
 }

@@ -47,10 +47,10 @@ export type CollectionFlag = (typeof COLLECTION_FLAGS)[number];
 
 /**
  * One entry of one collection, as data/snapshot/normalise.ts fills it from a RawEntry. `id` is the
- * entry's `key` when the YAML had one and its `title` otherwise, so it is unique inside its
- * collection and nowhere wider. `fields` holds every key the YAML had, `title` and `key` included,
- * so a view can render a collection from its file's own `schema` without the model naming each
- * field.
+ * value of its file's primary key, the empty text when the file has none or the entry holds none
+ * there, so it is unique inside its collection and nowhere wider. `title` is its display
+ * (`entryTitleOf`). `fields` holds every key the YAML had, so a view can render a collection from
+ * its file's own `schema` without the model naming each field.
  */
 export type Entry = Rooted & {
     id: Id;
@@ -61,31 +61,118 @@ export type Entry = Rooted & {
     index: number;
 };
 
-/** A field's value when it is text. */
-function textOf(value: unknown): string | undefined {
-    return typeof value === 'string' ? value : undefined;
+/** A value as the text a key is written as: a text, or a number; undefined for anything else. */
+function keyText(value: unknown): string | undefined {
+    if (typeof value === 'string') return value;
+    return typeof value === 'number' && Number.isFinite(value) ? String(value) : undefined;
 }
 
 /**
- * The words an entry is known by: its `title`, else its `name`, else the value of the identity
- * field of its file, else nothing. data/snapshot/normalise.ts fills an Entry's `title` by it and
- * the entry page words a saved entry by it, so the two agree.
+ * The field types a primary key cannot be: a field whose value is a list or a map names no one
+ * entry.
  */
-export function entryTitleOf(fields: Record<string, unknown>, ident = 'title'): string {
-    return textOf(fields.title) ?? textOf(fields.name) ?? textOf(fields[ident]) ?? '';
+export const UNKEYED_TYPES: readonly string[] = [
+    'tags',
+    'metalist',
+    'records',
+    'chips',
+    'lines',
+    'keymap'
+];
+
+/** The part of a schema field a primary key is read from; a project form field has it too. */
+type KeyedField = Pick<SchemaField, 'field' | 'type' | 'primary_key'>;
+
+/**
+ * A file's schema as its primary key is read (`keyedSchema`): its fields, undefined when the file
+ * carries no `schema:` key, and null when it carries one that does not read.
+ */
+type KeyedSchema = readonly KeyedField[] | null | undefined;
+
+/**
+ * Why a file of entries has no primary key, with the fields a sentence naming the cause shows: its
+ * schema flags no field (`none`, with the key its `collections:` entry names when it names one),
+ * flags two or more (`two`), flags a field of `UNKEYED_TYPES` (`unkeyed`), its `collections:` entry
+ * names a `primary_key:` beside the schema's flag (`beside`), its schema does not read (`unread`),
+ * or it has neither a schema nor a named key (`missing`).
+ */
+export type KeyFault =
+    | { cause: 'none'; named?: string }
+    | { cause: 'unread' }
+    | { cause: 'two'; fields: string[] }
+    | { cause: 'unkeyed'; field: string; type: string }
+    | { cause: 'beside'; named: string; field: string }
+    | { cause: 'missing' };
+
+/**
+ * Why the file whose schema is `schema` and whose `collections:` entry names `named` has no
+ * primary key, or null when it has one (`primaryKeyOf`). A schema the file carries but that does
+ * not read is null here (`keyedSchema`), whatever it flags. Every refusal of a write and every card
+ * line about a file with no primary key names the cause this gives.
+ */
+export function keyFaultOf(schema: KeyedSchema, named?: string): KeyFault | null {
+    if (schema === null) return { cause: 'unread' };
+    if (schema === undefined) return named === undefined ? { cause: 'missing' } : null;
+    const flagged = schema.filter((one) => one.primary_key === true);
+    if (flagged.length > 1) return { cause: 'two', fields: flagged.map((one) => one.field) };
+    if (flagged.length === 0) {
+        return named === undefined ? { cause: 'none' } : { cause: 'none', named };
+    }
+    const [field] = flagged;
+    if (named !== undefined) return { cause: 'beside', named, field: field.field };
+    if (UNKEYED_TYPES.includes(field.type)) {
+        return { cause: 'unkeyed', field: field.field, type: field.type };
+    }
+    return null;
 }
 
 /**
- * The id an entry has: its `id`, else its `key`, else the value of the identity field of its file,
- * else its title. data/snapshot/normalise.ts fills an Entry's `id` by it and the entry page follows
- * a saved entry by it, so the two agree.
+ * The primary key of a file of entries, the field an entry is addressed by in every read and
+ * write: the one field of the file's schema flagged `primary_key: true`, and for a file with no
+ * schema the field its `collections:` entry names as `primary_key:` (`named`). It is null when the
+ * file has none, for the cause `keyFaultOf` gives. A flag on a field of a `records` field is no
+ * primary key. The project form's fields (`FormField`) are read by it too, so a manifest schema's
+ * flag gives the same key there as everywhere else.
  */
-export function entryIdOf(fields: Record<string, unknown>, ident = 'title'): string {
-    const id = textOf(fields.id);
-    if (id !== undefined && id.length > 0) return id;
-    const key = textOf(fields.key);
-    if (key !== undefined && key.length > 0) return key;
-    return textOf(fields[ident]) ?? entryTitleOf(fields, ident);
+export function primaryKeyOf(schema: KeyedSchema, named?: string): string | null {
+    if (keyFaultOf(schema, named) !== null || schema === null) return null;
+    if (schema === undefined) return named ?? null;
+    return schema.find((one) => one.primary_key === true)?.field ?? null;
+}
+
+/** The fields of a schema that carry a `display:` rank, the lowest rank first. */
+export function displayFields(schema: readonly SchemaField[] | undefined): string[] {
+    const ranked = (schema ?? []).flatMap((one) =>
+        one.display === undefined ? [] : [{ field: one.field, rank: one.display }]
+    );
+    return ranked.sort((left, right) => left.rank - right.rank).map((one) => one.field);
+}
+
+/**
+ * The id an entry has: the value of its file's primary key as text, and the empty text when the
+ * file has no primary key or the entry holds no text or number there. data/snapshot/normalise.ts
+ * fills an Entry's `id` by it and the entry page follows a saved entry by it, so the two agree.
+ */
+export function entryIdOf(fields: Record<string, unknown>, primaryKey: string | null): string {
+    return primaryKey === null ? '' : (keyText(fields[primaryKey]) ?? '');
+}
+
+/**
+ * The words an entry is shown by, its display: the field of the lowest `display:` rank that holds
+ * a text or a number with something in it, else the value of its primary key (`entryIdOf`).
+ * data/snapshot/normalise.ts fills an Entry's `title` by it, so a card's heading, an entry page's
+ * title and a reference to the entry show the same words.
+ */
+export function entryTitleOf(
+    fields: Record<string, unknown>,
+    schema: readonly SchemaField[] | undefined,
+    primaryKey: string | null
+): string {
+    for (const field of displayFields(schema)) {
+        const held = keyText(fields[field]);
+        if (held !== undefined && held.trim() !== '') return held;
+    }
+    return entryIdOf(fields, primaryKey);
 }
 
 /**
@@ -106,11 +193,20 @@ export type SchemaField = {
      */
     options?: SchemaOption[];
     /**
-     * Where the field's keys come from: registry names, `projects` or `vocab.<key>` offered
-     * together, or the source another field of the record picks. A `select` is held to them; a
-     * `text` is completed from them and held to nothing.
+     * What the field's values name, each the primary key of one entry of it: a key of the hub's
+     * `collections:` list, `projects` for the project manifests, or a vocabulary list as
+     * `vocab.<key>` or `vocab.<key>.<field>`; several of these offered together, or the target
+     * another field of the record picks. A `select` is held to the target's keys; a `text` is
+     * completed from them and held to nothing.
      */
-    from?: string[] | FromPicked;
+    foreign_key?: string[] | KeyPicked;
+    /** The field is its file's primary key: an entry is addressed by the value it holds there. */
+    primary_key?: true;
+    /**
+     * The rank, a whole number from 1, of the field among those an entry is shown by: a reference
+     * to the entry shows the first of them that is filled.
+     */
+    display?: number;
     /** Whether the field must be present, always or while its `when` map holds. */
     required?: boolean | { when: When };
     /** The field's meaning in one plain sentence. */
@@ -155,8 +251,8 @@ export function optionLabel(
     return row === undefined || typeof row === 'string' ? value : row.label;
 }
 
-/** A `from` whose source is the one another field of the record picks by its word. */
-export type FromPicked = { field: string; sources: Record<string, string> };
+/** A `foreign_key` whose target is the one another field of the record picks by its word. */
+export type KeyPicked = { field: string; sources: Record<string, string> };
 
 /**
  * A condition: each key is a field of the record and holds a value or a list of values, all of
@@ -175,13 +271,15 @@ type TickerSource = {
 /**
  * What a `collections:` entry says its file is, beside its key and path: the registry it is
  * (`registry:`), the features that read it (a flag of `COLLECTION_FLAGS` set to true), the entries
- * Disseminated in leaves out of it (`dissemination_skip:`) and the ticker's reading of it
- * (`ticker:`). A field the entry does not set, or sets to something no reader takes, is absent.
+ * Disseminated in leaves out of it (`dissemination_skip:`), the ticker's reading of it (`ticker:`)
+ * and the field a file with no schema is addressed by (`primary_key:`). A field the entry does not
+ * set, or sets to something no reader takes, is absent.
  */
 export type CollectionTraits = {
     registry?: RegistryWord;
     dissemination_skip?: When;
     ticker?: TickerSource;
+    primary_key?: string;
 } & Partial<Record<CollectionFlag, true>>;
 
 /**
@@ -261,7 +359,8 @@ export type ReadCollection = RawCollection & CollectionTraits & { index: number 
  * venues, pillars, domains, funding, datasets, people, organisations or resources are carried as
  * entities too, the collection being what their entries are edited as. The datasets registry's
  * file lists its records under `datasets:`; the others use `entries:`. It carries its entry's
- * traits and its position in its hub's list.
+ * traits and its position in its hub's list; its `primary_key` is the one `primaryKeyOf` gives the
+ * file, absent when the file has none, so its entries are drawn and not written.
  */
 export type Collection = Rooted &
     CollectionTraits & {
@@ -278,6 +377,11 @@ export type Collection = Rooted &
          */
         schema?: SchemaField[];
         entries: Entry[];
+        /**
+         * Why the file has no primary key (`keyFaultOf`), absent when it has one. A card of the
+         * collection names this cause on the line that says why its writes are off.
+         */
+        key_fault?: KeyFault;
         /**
          * The position of the collection's entry in its hub's `collections:` list, which orders the
          * collections of one hub that carry the same flag; the read of a hub always sets it.
@@ -325,6 +429,10 @@ export type FeedData = {
     cadenceDays?: number;
     /** The file's own ordered entry schema, when it carries one. */
     schema?: SchemaField[];
+    /** The field an entry is addressed by (`primaryKeyOf`), absent when the file has none. */
+    primary_key?: string;
+    /** Why the file has no primary key (`keyFaultOf`), absent when it has one. */
+    key_fault?: KeyFault;
 };
 
 /**

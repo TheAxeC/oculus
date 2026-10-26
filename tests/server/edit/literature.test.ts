@@ -17,8 +17,8 @@ import { it, scratchDir } from '../../fixtures/scratch.ts';
 /** The head of the Literature file every case starts from, its schema the hub's. */
 const HEAD = `title: Literature
 schema:
-  - { field: key,      type: text,     required: true }
-  - { field: title,    type: text,     required: true }
+  - { field: key,      type: text,     primary_key: true, required: true }
+  - { field: title,    type: text,     display: 1, required: true }
   - { field: authors,  type: tags }
   - { field: venue,    type: text }
   - { field: year,     type: text }

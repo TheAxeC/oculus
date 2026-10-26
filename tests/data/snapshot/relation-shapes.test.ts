@@ -98,7 +98,7 @@ describe('the relation fields of a manifest', () => {
             'oculus-relation-shapes-',
             {
                 '.oculus/data/people/people.yml':
-                    'schema:\n  - { field: key, type: text, required: true, help: The person key. }\n  - { field: name, type: text, required: true, help: The name. }\nentries:\n  - { key: ada, name: Ada }\n',
+                    'schema:\n  - { field: key, type: text, primary_key: true, required: true, help: The person key. }\n  - { field: name, type: text, display: 1, required: true, help: The name. }\nentries:\n  - { key: ada, name: Ada }\n',
                 'projects/active/alpha/project.yml':
                     'id: alpha\ntier: research\nstage: exploring\ntitle: alpha\nwaiting-on: ada\n',
                 'projects/active/beta/project.yml':
@@ -120,7 +120,7 @@ describe('the relation fields of a manifest', () => {
             'oculus-relation-shapes-',
             {
                 '.oculus/data/people/people.yml':
-                    'schema:\n  - { field: key, type: text, required: true, help: The person key. }\n  - { field: name, type: text, required: true, help: The name. }\nentries:\n  - { key: ada, name: Ada }\n',
+                    'schema:\n  - { field: key, type: text, primary_key: true, required: true, help: The person key. }\n  - { field: name, type: text, display: 1, required: true, help: The name. }\nentries:\n  - { key: ada, name: Ada }\n',
                 'projects/active/alpha/project.yml':
                     'id: alpha\ntier: research\nstage: exploring\ntitle: alpha\nlead: Faes\n',
                 'projects/active/beta/project.yml':

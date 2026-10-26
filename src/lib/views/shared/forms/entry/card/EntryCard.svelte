@@ -134,7 +134,7 @@
     const pinned = $derived(isPinned(entry));
     const lines = $derived(entrySubtasks(entry));
     const notes = $derived(entryFollowups(entry));
-    const value = $derived(identityValue(entry, schema));
+    const value = $derived(identityValue(entry));
 
     /** A card carries its controls only where the file has a schema to write by. */
     const addressable = $derived(schema !== undefined);

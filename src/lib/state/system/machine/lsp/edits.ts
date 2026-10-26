@@ -7,7 +7,7 @@
 // A file a tab of this page holds, whatever its language or whether a server serves it, is edited
 // in the tab: the text of its draft is changed, unsaved, which the editor shows as one undo stop in
 // every tab of the file. A tab holds a file when the file is the one the tab shows on disk,
-// whatever root key either is named under (data/helpers/hub-names.ts decides it from the served
+// whatever root key either is named under (data/helpers/files/paths.ts decides it from the served
 // roots). Every other file is written to disk by one `lsp-edit` operation
 // (server/files/fs/lsp-edit.ts), posted before any tab is touched, so a refusal leaves nothing
 // applied. The text edits are applied with data/prose/text-edits.ts, which the server applies the
@@ -50,7 +50,11 @@
 // server checks again as it writes, so a file that moved since the plan is refused by the server.
 
 import { WRITE_MAX_MEGABYTES, type LspEditFile } from '../../../../data/file-ops.ts';
-import { diskRelation, sameDiskFile, type RootFolder } from '../../../../data/helpers/hub-names.ts';
+import {
+    diskRelation,
+    sameDiskFile,
+    type RootFolder
+} from '../../../../data/helpers/files/paths.ts';
 import type { LspPlace } from '../../../../data/model/index.ts';
 import { libraryOf, placeOf } from '../../../../data/prose/lsp-addresses.ts';
 import { inHiddenFolder, inNotes, isNote } from '../../../../data/prose/markdown/note-names.ts';

@@ -29,7 +29,7 @@ Make Folder a Hub..., in the Files view's menu of a folder, writes `.oculus/conf
 
 ## Data files
 
-Each data file is named by its entry in `collections:` of `.oculus/config.yml`, a key and a file relative to the hub, and the entry's fields say what the file is: `registry:` the registry or feed it is, the flags of the features that read it, `ticker:` the category of its command center lines, and `group:`, `order:`, `label:`, `glyph:` and `about:` where its view sits and the words it is drawn with. A hub keys its files as it likes. The table gives oculus's own list (`config/defaults/sources.yml`): the key and default file the templates and Make Folder a Hub use, and the registry each entry names. Each file lists its entries under `entries:` (the `data` file under `datasets:`) and opens with a `schema:` block that declares every field. A collection the hub does not list has no view: its tab is left out of its page, and the pane says which key is missing.
+Each data file is named by its entry in `collections:` of `.oculus/config.yml`, a key and a file relative to the hub, and the entry's fields say what the file is: `registry:` the registry or feed it is, the flags of the features that read it, `ticker:` the category of its command center lines, `group:`, `order:`, `label:`, `glyph:` and `about:` where its view sits and the words it is drawn with, and `primary_key:` the field an entry is found by, for a file with no `schema:` only. A hub keys its files as it likes. The table gives oculus's own list (`config/defaults/sources.yml`): the key and default file the templates and Make Folder a Hub use, and the registry each entry names. Each file lists its entries under `entries:` (the `data` file under `datasets:`) and opens with a `schema:` block that declares every field and flags its primary key with `primary_key: true`. A collection the hub does not list has no view: its tab is left out of its page, and the pane says which key is missing.
 
 | Key | Registry | Default file | One entry is | Primary key | View |
 |---|---|---|---|---|---|
@@ -53,7 +53,7 @@ Each data file is named by its entry in `collections:` of `.oculus/config.yml`, 
 
 Two files are named by keys of their own rather than by `collections:`: the career strategy, one map with no entries drawn by Focus's career banner, at `career_file` (`.oculus/data/academic/career.yml` by default), and a project's `project.yml`, whose primary key is its folder name and which the Projects, Coauthor, Archive, Personal and Project views draw.
 
-A duplicate or empty primary key is a finding. A venue is written by its `name` and linked to by its `id`. The entries whose `registry:` is `leads` and `radar` name the two feed files. The domains registry gives each domain the colour of its project cards (`color`, written `#rrggbb`) and their label (`title`), and `expects_datasets: true` makes the Audit report an active project of the domain that names no dataset. Focus also draws the dates of every file whose entry sets `ticker:`, under the deadline group its `ticker:` names, the follow-ups and subtasks of every file of `collections:`, and the open leads, and every entry has a page with an editor built from its schema.
+A duplicate or empty primary key is a finding, and so is a file whose schema flags no primary key or two or flags a field whose value is a list or a map, whose schema does not read, whose `collections:` entry names one beside its schema's flag, or that has neither a schema nor a named key; such a file is drawn, and every edit, Add and remove of its entries is refused with a sentence naming the cause. A venue is shown by its `short`, else its `name`, and linked to by its `id`, its primary key. The entries whose `registry:` is `leads` and `radar` name the two feed files. The domains registry gives each domain the colour of its project cards (`color`, written `#rrggbb`) and their label (`title`), and `expects_datasets: true` makes the Audit report an active project of the domain that names no dataset. Focus also draws the dates of every file whose entry sets `ticker:`, under the deadline group its `ticker:` names, the follow-ups and subtasks of every file of `collections:`, and the open leads, and every entry has a page with an editor built from its schema.
 
 ## Views that draw these files
 
@@ -151,7 +151,7 @@ A catalog is laid over oculus's in oculus's place: an entry the workspace names 
 
 ## Keys and links
 
-A foreign key is a field whose schema line has `from:`. Its value must be a primary key of the collection it names, or a word of the vocabulary list it names (`config/catalogs/vocab.yml` of oculus). A field with `options` takes only the keys of its options: the theme words of venues and datasets are the options of the `themes` field of the `venues` and `data` files. A value that matches nothing is a finding, and is marked in the editor; `maps_to` is only completed from its list. In the editor, Cmd+click on a foreign key opens the entry, Find All References lists every place that names it, and F2 renames a registry entry's key everywhere it is named.
+A foreign key is a field whose schema line has `foreign_key:`, naming a collection by its key in the hub's own `collections:`, `projects`, or a vocabulary list. Its value must be a primary key of the collection it names, or a word of the vocabulary list it names (`config/catalogs/vocab.yml` of oculus), and the editor offers those entries, each shown by its display (the filled field of the lowest `display:` rank of the target's schema, else its primary key). A `foreign_key:` that is empty, names nothing, or names a collection with no primary key is a finding, and the field offers nothing. A field with `options` takes only the keys of its options: the theme words of venues and datasets are the options of the `themes` field of the `venues` and `data` files. A value that matches nothing is a finding, and is marked in the editor; `maps_to` is only completed from its list. In the editor, Cmd+click on a foreign key opens the entry, Find All References lists every place that names it, and F2 renames a registry entry's key everywhere it is named.
 
 Below, each file is named by its collection key, and `[ ]` marks a list.
 
@@ -226,7 +226,7 @@ A schema is a list of fields. Each is a map with `field` and `type`, and may car
 |---|---|
 | `text` | one line |
 | `textarea` | several lines |
-| `select` | one of `options`, or a key from `from` |
+| `select` | one of `options`, or a key from `foreign_key` |
 | `tags` | a list of strings |
 | `date` | `YYYY-MM-DD` |
 | `checkbox` | `true` or `false` |
@@ -238,7 +238,9 @@ A schema is a list of fields. Each is a map with `field` and `type`, and may car
 |---|---|
 | `label` | the field's name on screen |
 | `options` | the allowed values of a `select` or `tags` field, each a word or `{ key, label }` |
-| `from` | where the keys come from: a registry (`venues`, `datasets`, `pillars`, `domains`, `funding`, `people`, `organisations`, `resources`), `projects`, `vocab.<list>`, `vocab.<map>.<field>` (the keys of a vocabulary map whose row carries the field as `true`, such as `vocab.statuses.acknowledged`), or a list of these |
+| `primary_key` | `true` on the one field an entry of the file is found by and a reference stores; never on a list or map field |
+| `display` | a whole number from 1: what a card heading and a reference to the entry show, the filled field of the lowest rank first |
+| `foreign_key` | where the keys come from: a collection by its key in the hub's `collections:` (`venues`, `data`, `pillars`, `domains`, `funding`, `people`, `organisations`, `resources`, `events`, ...), `projects`, `vocab.<list>`, `vocab.<map>.<field>` (the keys of a vocabulary map whose row carries the field as `true`, such as `vocab.statuses.acknowledged`), or a list of these |
 | `required` | `true`, or `{ when: ... }` |
 | `when` | the field is allowed only while these fields hold these values |
 | `help` | the hover text in the editor |
@@ -247,7 +249,7 @@ A schema is a list of fields. Each is a map with `field` and `type`, and may car
 | `map` | `true` on a `records` field that is a map from a name to a record |
 | `filter` | `true` on a `select`, `tags` or `text` field draws a filter of it beside the search of the field's view |
 
-The first field of the schema is the one a write finds the entry by. An empty value passes for every type. `snooze`, `subtasks` and `followup` are written by oculus into any entry and need no line in a schema.
+The field flagged `primary_key: true` is the one a write finds the entry by, and its value is required. An empty value of any other field passes for every type. `snooze`, `subtasks` and `followup` are written by oculus into any entry and need no line in a schema.
 
 `project.yml`, `present.yml`, `settings.yml`, `commands.yml`, `launch.yml`, `cpp.yml` and `app.yml` have no `schema:` block of their own; their fields are in their templates.
 

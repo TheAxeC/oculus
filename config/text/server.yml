@@ -256,7 +256,6 @@ text:
             followup_needs_do: a follow-up note needs a do line
             followup_no_do: a follow-up note with no do line is not a note
             followup_not_flow: the follow-up note is not a one-line flow map
-            identity_field: the identity field is what the entry is found by
             key_already_there: '{0} is already a key of the manifest'
             key_no_place: the key has no place in the file
             key_no_value: the key holds no value to write over
@@ -275,6 +274,7 @@ text:
             not_scalar: a field of the line takes a string, a number, a boolean or null
             order_not_every: the order does not name every entry exactly once
             parent_not_map: '{0} is not written as a map, so a key cannot be set under it'
+            primary_key: the primary key is what the entry is found by, so it takes one value
             removed_no_fit: the removed text does not fit the file
             row_no_key: the row would be left without a key
             subtask_block_is_map: the block is a map of keys; add the line in the file
@@ -291,7 +291,13 @@ text:
             key_taken: 'an entry with that {0} is already in the file'
             name_taken: 'another entry is already called {0}'
             new_ident_missing: 'a new entry needs a {0}'
-            new_key_empty: 'a new entry needs a non-empty {0}'
+            no_primary_key_none: '{0} has no primary key, so no entry of it can be addressed: its schema flags no field with primary_key: true; flag the field an entry is addressed by'
+            no_primary_key_two: '{0} has no primary key, so no entry of it can be addressed: its schema flags {1} with primary_key: true, and a file has only one; keep the flag on one of them'
+            no_primary_key_unkeyed: '{0} has no primary key, so no entry of it can be addressed: its schema flags {1}, a {2} field, whose value names no one entry; flag a field that holds one value'
+            no_primary_key_beside: '{0} has no primary key, so no entry of it can be addressed: its collections entry names {1} beside the flag on {2} in its schema, and a file has only one; take the primary_key out of its collections entry'
+            no_primary_key_missing: '{0} has no primary key, so no entry of it can be addressed: it has no schema and its collections entry names no primary_key; give it a schema that flags one field with primary_key: true'
+            no_primary_key_unread: '{0} has no primary key, so no entry of it can be addressed: its schema does not read, and the Audit view names the fault; correct the schema'
+            no_primary_key_named: '{0} has no primary key, so no entry of it can be addressed: its schema flags no field with primary_key: true and its collections entry names {1}, which a file with a schema does not read; flag {1} in the schema and take the primary_key out of its collections entry'
             nothing_to_write: nothing to write
             shared_identity: 'two entries share the {0} {1}, so a write cannot address one of them'
             type_checkbox: '{0} takes true or false'
@@ -315,12 +321,11 @@ text:
             bucket_unknown: The bucket is not one of the radar buckets.
             delete_not_allowed: 'The {0} feed does not allow deletion.'
             entries_not_maps: '{0}: every entry must be a map'
+            entry_key_taken: 'An entry with this {0} is in the file already.'
             entry_needs_key: 'An entry needs a {0}.'
             field_not_allowed: 'The {0} feed does not allow that field.'
             file_unread: Lit Watch's file does not read.
             idea_needs_title: A LinkedIn idea needs a title.
-            lead_needs_title: A lead needs a title.
-            lead_title_taken: A lead with this title is in the file already.
             leads_no_schema: The leads feed has no valid schema.
             meta_not_a_map: '{0}: meta is not a map'
             not_a_directory: '{0}: expected a directory'

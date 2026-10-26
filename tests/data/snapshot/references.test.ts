@@ -74,9 +74,9 @@ const BEHAVIOR_WITH_HEADING = `# The cluster.\n${ENGINE_FILES['defaults/behavior
 /** A joint-work file whose `target` takes the keys of the source the `kind` of its record picks. */
 const PICKED = [
     'schema:',
-    '  - { field: key, type: text, help: The slug. }',
+    '  - { field: key, type: text, primary_key: true, help: The slug. }',
     '  - { field: kind, type: select, options: [person, org], help: The kind. }',
-    '  - { field: target, type: select, from: { field: kind, sources: { person: people, org: organisations } }, help: The target. }',
+    '  - { field: target, type: select, foreign_key: { field: kind, sources: { person: people, org: organisations } }, help: The target. }',
     'entries:',
     '  - { key: a, kind: person, target: amir }',
     '  - { key: b, kind: org, target: utwente }',
@@ -165,6 +165,14 @@ const ROWS: Row[] = [
             'hub:projects/active/alpha/project.yml:5:10',
             'hub:projects/active/alpha/project.yml:6:19'
         ]
+    },
+    {
+        name: 'a select naming a collection that is no registry, an event by its key (G66)',
+        at: ['hub', '.oculus/data/academic/education.yml', 5, 11],
+        kind: 'reference',
+        key: 'talk',
+        targets: ['hub:.oculus/data/academic/events.yml:4'],
+        references: ['hub:.oculus/data/academic/education.yml:5:11']
     },
     {
         name: 'a registry tags field, affiliations',
@@ -298,7 +306,7 @@ const ROWS: Row[] = [
         hub: {
             '.oculus/data/research/venues.yml': [
                 'schema:',
-                '  - { field: id, type: text, required: true, help: The venue key. }',
+                '  - { field: id, type: text, primary_key: true, required: true, help: The venue key. }',
                 'entries:',
                 '  - { id: jbhi }',
                 '  - { id: jbhi }',
@@ -343,9 +351,9 @@ const ROWS: Row[] = [
         hub: {
             '.oculus/data/people/people.yml': [
                 '\uFEFFschema:',
-                '  - { field: key, type: text, required: true, help: The person key. }',
-                '  - { field: name, type: text, required: true, help: The name. }',
-                '  - { field: affiliations, type: tags, from: organisations, help: The organisations. }',
+                '  - { field: key, type: text, primary_key: true, required: true, help: The person key. }',
+                '  - { field: name, type: text, display: 1, required: true, help: The name. }',
+                '  - { field: affiliations, type: tags, foreign_key: organisations, help: The organisations. }',
                 'entries:',
                 '  - key: amir',
                 '    name: Amir',

@@ -75,7 +75,7 @@ describe('reordering and deleting entries of a collection', () => {
 const EVENTS = [
     'title: Events',
     'schema:',
-    '  - { field: key, type: text }',
+    '  - { field: key, type: text, primary_key: true }',
     '  - { field: meta, type: metalist }',
     'events:',
     '  - key: e1',
@@ -87,7 +87,7 @@ const EVENTS = [
 const DATA = [
     'title: Data',
     'schema:',
-    '  - { field: key, type: text }',
+    '  - { field: key, type: text, primary_key: true }',
     '  - field: retrieval',
     '    type: records',
     '    fields:',
@@ -111,12 +111,13 @@ const DATA = [
     ''
 ].join('\n');
 
+/** A venues file whose primary key `id` is not its first field. */
 const VENUES = [
     'title: Venues',
     'schema:',
-    '  - { field: name, type: text }',
-    '  - { field: id, type: text }',
-    '  - { field: short, type: text }',
+    '  - { field: name, type: text, display: 2 }',
+    '  - { field: id, type: text, primary_key: true }',
+    '  - { field: short, type: text, display: 1 }',
     'venues:',
     '  - name: Existing Venue',
     '    id: existing',
@@ -192,9 +193,10 @@ describe('writing the fields an entry editor posts', () => {
         const out = writeEntry(root, configFor(), 'venues', 'existing', { name: 'Renamed Venue' });
         expect(out.changed).toEqual(['name']);
         expect(out.id).toBe('existing');
-        expect(out.records).toMatchObject([
-            { key: 'Renamed Venue', was: 'Existing Venue', field: 'name', undo: 'field' }
+        expect(out.records).toEqual([
+            expect.objectContaining({ key: 'existing', field: 'name', undo: 'field' })
         ]);
+        expect(out.records?.[0]).not.toHaveProperty('was');
         expect(readFileSync(file, 'utf8')).toBe(VENUES.replace('Existing Venue', 'Renamed Venue'));
     });
 
@@ -222,8 +224,15 @@ describe('writing the fields an entry editor posts', () => {
 });
 
 describe('a file with two entries of one identity', () => {
-    const TWICE =
-        'title: Tasks\nschema:\n  - { field: key, type: text }\nentries:\n  - key: a\n  - key: a\n';
+    const TWICE = [
+        'title: Tasks',
+        'schema:',
+        '  - { field: key, type: text, primary_key: true }',
+        'entries:',
+        '  - key: a',
+        '  - key: a',
+        ''
+    ].join('\n');
     const sentence = words(configFor().text, 'server.entries.shared_identity', 'key', 'a');
 
     it('refuses a write, an add and a delete with the shared-identity sentence and leaves the file', () => {
@@ -241,4 +250,177 @@ describe('a file with two entries of one identity', () => {
         ]);
         expect(readFileSync(file, 'utf8')).toBe(TWICE);
     });
+});
+
+describe('the primary key a write addresses an entry by (G8)', () => {
+    it('edits a venue by its id when the hub keys the venues collection journals', () => {
+        const root = wider();
+        const file = plant(root, '.oculus/data/research/venues.yml', VENUES);
+        const config = configFor();
+        const collections = config.collections.map((one) =>
+            one.key === 'venues' ? { ...one, key: 'journals' } : one
+        );
+        const out = writeEntry(root, { ...config, collections }, 'journals', 'existing', {
+            short: 'EV'
+        });
+        expect(out.changed).toEqual(['short']);
+        expect(readFileSync(file, 'utf8')).toBe(`${VENUES}    short: EV\n`);
+    });
+
+    it('adds, renames and removes a bookmark by its label, the primary key of its scaffold', () => {
+        const root = wider();
+        const own = join(root, 'bookmarks.yml');
+        const config = configFor();
+        const fields = { label: 'Notes', root: 'hub', path: 'notes' };
+        const added = createEntry(root, config, 'bookmarks', fields, own);
+        const renamed = writeEntry(root, config, 'bookmarks', 'Notes', { label: 'Mine' }, own);
+        const after = readFileSync(own, 'utf8');
+        const removed = removeEntry(root, config, 'bookmarks', 'Mine', own);
+        expect([added, renamed, removed].map((one) => one.refused)).toEqual([[], [], []]);
+        expect(renamed.changed).toEqual(['label']);
+        expect(after).toContain('  - label: Mine\n    root: hub\n    path: notes\n');
+        expect(readFileSync(own, 'utf8')).not.toContain('label: Mine');
+    });
+
+    it('removes a venue by its id, the primary key that is not its first field', () => {
+        const root = wider();
+        const second = '  - name: Second Venue\n    id: second\n';
+        const file = plant(root, '.oculus/data/research/venues.yml', `${VENUES}${second}`);
+        const out = removeEntry(root, configFor(), 'venues', 'existing');
+        expect(out.changed).toEqual(['venues']);
+        const first = '  - name: Existing Venue\n    id: existing\n';
+        expect(readFileSync(file, 'utf8')).toBe(VENUES.replace(first, second));
+    });
+
+    it('refuses a cleared primary key and writes the other fields of the edit', () => {
+        const root = wider();
+        const file = plant(root, '.oculus/data/research/venues.yml', VENUES);
+        const out = writeEntry(root, configFor(), 'venues', 'existing', { id: ' ', short: 'EV' });
+        expect(out.changed).toEqual(['short']);
+        expect(out.refused).toEqual([
+            { field: 'id', reason: words(configFor().text, 'server.entries.key_empty', 'id') }
+        ]);
+        expect(readFileSync(file, 'utf8')).toBe(`${VENUES}    short: EV\n`);
+    });
+
+    const PEOPLE_FILE = '.oculus/data/people/people.yml';
+    const PEOPLE = [
+        'title: People',
+        'schema:',
+        '  - { field: name, type: text, display: 1 }',
+        '  - { field: key, type: text, primary_key: true }',
+        '  - { field: role, type: text }',
+        'people:',
+        '  - name: Alan Turing',
+        '    key: alan',
+        '  - name: Ada Lovelace',
+        '    key: ada',
+        '    role: lead',
+        ''
+    ].join('\n');
+
+    it('edits and removes a person by key, whose display is the name', () => {
+        const root = wider();
+        const file = plant(root, '.oculus/data/people/people.yml', PEOPLE);
+        const edited = writeEntry(root, configFor(), 'people', 'ada', { role: 'adviser' });
+        expect(edited).toMatchObject({ found: true, id: 'ada', changed: ['role'] });
+        const removed = removeEntry(root, configFor(), 'people', 'alan');
+        expect(removed.changed).toEqual(['people']);
+        expect(readFileSync(file, 'utf8')).toBe(
+            PEOPLE.replace('role: lead', 'role: adviser').replace(
+                '  - name: Alan Turing\n    key: alan\n',
+                ''
+            )
+        );
+    });
+
+    it('refuses an edit, a reorder, an Add and a remove of a file with no primary key', () => {
+        const root = wider();
+        const body = PEOPLE.replace(', primary_key: true', '');
+        const file = plant(root, '.oculus/data/people/people.yml', body);
+        const config = configFor();
+        const sentence = words(config.text, 'server.entries.no_primary_key_none', PEOPLE_FILE);
+        const outs = [
+            writeEntry(root, config, 'people', 'ada', { role: 'adviser' }),
+            reorderCollection(root, config, 'people', ['alan', 'ada']),
+            createEntry(root, config, 'people', { key: 'grace', name: 'Grace Hopper' }),
+            removeEntry(root, config, 'people', 'alan')
+        ];
+        expect(outs.map((one) => one.refused)).toEqual(
+            outs.map(() => [{ field: 'schema', reason: sentence }])
+        );
+        expect(readFileSync(file, 'utf8')).toBe(body);
+    });
+
+    /** The settings with the people entry of `collections:` naming `key` as its primary key. */
+    function namingKey(): ReturnType<typeof configFor> {
+        const config = configFor();
+        const collections = config.collections.map((one) =>
+            one.key === 'people' ? { ...one, primary_key: 'key' } : one
+        );
+        return { ...config, collections };
+    }
+
+    type Catalog = Record<string, string>;
+    it.each<[string, string, () => ReturnType<typeof configFor>, (text: Catalog) => string]>([
+        [
+            'two flagged fields',
+            PEOPLE.replace(
+                '{ field: name, type: text, display: 1 }',
+                '{ field: name, type: text, display: 1, primary_key: true }'
+            ),
+            configFor,
+            (text) => words(text, 'server.entries.no_primary_key_two', PEOPLE_FILE, 'name, key')
+        ],
+        [
+            'a flag on a tags field',
+            PEOPLE.replace(', primary_key: true', '').replace(
+                '{ field: role, type: text }',
+                '{ field: role, type: tags, primary_key: true }'
+            ),
+            configFor,
+            (text) =>
+                words(text, 'server.entries.no_primary_key_unkeyed', PEOPLE_FILE, 'role', 'tags')
+        ],
+        [
+            'a primary_key that is not true',
+            PEOPLE.replace('primary_key: true', 'primary_key: "yes"'),
+            configFor,
+            (text) => words(text, 'server.entries.no_primary_key_none', PEOPLE_FILE)
+        ],
+        [
+            "an entry's primary_key beside the schema's flag",
+            PEOPLE,
+            namingKey,
+            (text) => words(text, 'server.entries.no_primary_key_beside', PEOPLE_FILE, 'key', 'key')
+        ],
+        [
+            'a schema that does not read, though it flags key',
+            PEOPLE.replace('{ field: role, type: text }', '{ field: role, typ: text }'),
+            configFor,
+            (text) => words(text, 'server.entries.no_primary_key_unread', PEOPLE_FILE)
+        ],
+        [
+            'no flag in its schema and a primary_key named by its entry',
+            PEOPLE.replace(', primary_key: true', ''),
+            namingKey,
+            (text) => words(text, 'server.entries.no_primary_key_named', PEOPLE_FILE, 'key')
+        ],
+        [
+            'no schema and no primary_key named by its entry',
+            PEOPLE.replace(/schema:\n(?: {2}- .*\n)+/, ''),
+            configFor,
+            (text) => words(text, 'server.entries.no_primary_key_missing', PEOPLE_FILE)
+        ]
+    ])(
+        'refuses every write to a file with %s, naming the cause (G8)',
+        (_name, body, settings, reason) => {
+            const root = wider();
+            const file = plant(root, PEOPLE_FILE, body);
+            const config = settings();
+            const out = writeEntry(root, config, 'people', 'ada', { role: 'adviser' });
+            expect(out.refused).toEqual([{ field: 'schema', reason: reason(config.text) }]);
+            expect(readFileSync(file, 'utf8')).toBe(body);
+        }
+    );
 });

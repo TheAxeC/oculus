@@ -1,10 +1,13 @@
 // Layer 2, server. A collection file read for a lookup: which file a collection key names, how an
-// entry is addressed inside it, and the entry an identity value names. The write path in
+// entry is addressed inside it, and the entry a value of its primary key names. The write path in
 // server/edit/writes/entries.ts and the seed of a task in server/machine/runs/seeds/task-seed.ts
 // read a collection through this module, so neither imports the other.
 //
-// An entry is addressed by its identity value, not by its id. venues.yml's schema opens with `name`
-// while its entries carry an `id`, so identityOf resolves the two rather than assuming they agree.
+// An entry is addressed by its value of the file's primary key (`primaryKeyOf`): the field its
+// schema flags `primary_key: true`, or for a file with no schema the field its `collections:`
+// entry names. The reader's id of an entry is that same value (`entryIdOf`), so a write and the
+// snapshot name an entry alike. A file with no primary key reads with `ident` null, and every
+// write that addresses one of its entries is refused.
 //
 // Whether a path lies in a folder is read from server/core/paths.ts (`below`).
 
@@ -12,12 +15,13 @@ import { readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { isMap as isYamlMap, parseDocument } from 'yaml';
 import { z } from 'zod';
-import { LIST, listOf } from '../../../data/helpers/files/yaml/collection-text.ts';
-import { pairOf } from '../../../data/helpers/files/yaml/yaml-ranges.ts';
+import { LIST, emptyListKey, listOf } from '../../../data/helpers/files/yaml/collection-text.ts';
 import { isMap, scalar } from '../../../data/helpers/guards.ts';
+import { entryIdOf, primaryKeyOf } from '../../../data/model/index.ts';
 import type { PortfolioConfig } from '../../../data/model/index.ts';
+import { keyFaultOf, type KeyFault } from '../../../data/model/model-collections.ts';
 import { anyNumberShape } from '../../../data/shapes/shapes.ts';
-import { fieldNames } from '../../../data/snapshot/validate.ts';
+import { keyedSchema } from '../../../data/snapshot/schema/field.ts';
 import { below } from '../../core/paths.ts';
 import { BOOKMARKS, ensureBookmarksFile } from './bookmarks.ts';
 
@@ -45,49 +49,37 @@ export function collectionFile(
     return below(path, hub) ? path : null;
 }
 
-/**
- * The field an entry is found by: the file's own schema's first field, `title` when it has none.
- */
-export function identityField(schema: unknown): string {
-    const names = fieldNames(schema);
-    return names.length > 0 ? names[0] : 'title';
-}
-
-/** The `id`, `key` and `title` an entry names itself by, each empty unless it is text. */
-const entryNamesShape = z.looseObject({
-    id: z.string().catch(''),
-    key: z.string().catch(''),
-    title: z.string().catch('')
-});
-
-/** An identity value as the file writes it: a string, or any number. */
+/** A value of a primary key as the file writes it: a string, or any number. */
 const idPartShape = z.union([z.string(), anyNumberShape]);
 
-/** The identity value an entry holds under its identity field as text, or null when it has none. */
+/** The value an entry holds under the primary key `ident` as text, or null when it has none. */
 export function identityText(entry: Record<string, unknown>, ident: string): string | null {
     const held = idPartShape.safeParse(entry[ident]);
     return held.success ? String(held.data) : null;
 }
 
-/**
- * The id the reader gives an entry, as normalise.ts's entry() builds it: its `id`, its `key`, its
- * `title`, and for a file whose records carry none of the three the value of its own identity
- * field.
- */
-export function entryId(entry: Record<string, unknown>, ident: string): string {
-    const { id, key, title } = entryNamesShape.parse(entry);
-    return id || key || title || (identityText(entry, ident) ?? '');
-}
-
-/** One collection file read for a write: its text, its entry list and its identity field. */
+/** One collection file read for a write: its text, its entry list and its primary key. */
 export type Collection = {
     file: string;
     source: string;
     schema: unknown;
     /** The key the entries are listed under, and the empty string for a file with no list yet. */
     list: string;
+    /**
+     * The key a first entry is written under while `list` is empty: the one key that holds nothing
+     * (`emptyListKey`), else `entries`.
+     */
+    starts: string;
     items: Record<string, unknown>[];
-    ident: string;
+    /** The file's primary key (`primaryKeyOf`), null when it has none. */
+    ident: string | null;
+    /** Why the file has no primary key (`keyFaultOf`), null when it has one. */
+    fault: KeyFault | null;
+    /**
+     * The primary key the file's `collections:` entry names, which a new text of the file is read
+     * with again (`collectionText`).
+     */
+    named?: string;
 };
 
 /** The collection file one key names, read, or null when it is not there or does not parse. */
@@ -105,14 +97,21 @@ export function readCollection(
     } catch {
         return null;
     }
-    return collectionText(file, source, own);
+    const named = config.collections.find((one) => one.key === key)?.primary_key;
+    return collectionText(file, source, own, file === own ? undefined : named);
 }
 
 /**
  * One collection file's text read as readCollection reads the file, or null when it does not parse:
- * what an undo that puts text back reads its result through before it writes it.
+ * what an undo that puts text back reads its result through before it writes it. `named` is the
+ * primary key the file's `collections:` entry names, which a file with no schema is addressed by.
  */
-export function collectionText(file: string, source: string, own?: string): Collection | null {
+export function collectionText(
+    file: string,
+    source: string,
+    own?: string,
+    named?: string
+): Collection | null {
     const doc = parseDocument(source);
     if (doc.errors.length > 0 || !isYamlMap(doc.contents)) return null;
     let data: unknown;
@@ -124,39 +123,48 @@ export function collectionText(file: string, source: string, own?: string): Coll
     if (!isMap(data)) return null;
     const found = listOf(doc.contents);
     // A file the reader's own writes made carries no list key until the first entry, since YAML
-    // writes no empty block list, and a hub file whose `entries:` key holds nothing but comments
-    // (or whose last entry was deleted) has the key with a null under it. A hub file with neither
-    // is malformed and is refused.
-    const emptied = pairOf(doc.contents, LIST) !== undefined && data[LIST] == null;
-    if (found === null && file !== own && !emptied) return null;
+    // writes no empty block list. A hub file whose `entries:` key holds nothing but comments (or
+    // whose last entry was deleted) has the key with a null under it, and so has a hub file whose
+    // one key beside `schema:` holds nothing (`emptyListKey`), which is read as an empty list under
+    // that key. A hub file with none of these, or with two or more empty keys, is refused.
+    const empty = found === null ? emptyListKey(doc.contents) : null;
+    if (found === null && file !== own && empty === null) return null;
     const held = found === null ? undefined : data[found.key];
+    const schema = keyedSchema(data.schema);
     return {
         file,
         source,
         schema: data.schema,
         list: found?.key ?? '',
+        starts: empty ?? LIST,
         items: Array.isArray(held) ? held.filter(isMap) : [],
-        ident: identityField(data.schema)
+        ident: primaryKeyOf(schema, named),
+        fault: keyFaultOf(schema, named),
+        ...(named === undefined ? {} : { named })
     };
 }
 
 /**
- * The value the entry's identity field holds, which is what the text is addressed by. It is not
- * always the id: venues.yml's schema opens with `name` while its entries carry an `id`, and the id
- * the reader made is that `id`, so the two are resolved here rather than assumed to agree.
+ * The value of the primary key of the entry whose id is `id`, which is what the text is addressed
+ * by, or null when the file holds no such entry or has no primary key. The reader's id of an entry
+ * is its value of the primary key (`entryIdOf`), so this asks whether the file holds it still.
  */
 export function identityOf(collection: Collection, id: string): string | null {
+    const ident = collection.ident;
+    if (ident === null) return null;
     for (const item of collection.items) {
-        if (entryId(item, collection.ident) !== id) continue;
-        return identityText(item, collection.ident);
+        if (entryIdOf(item, ident) !== id) continue;
+        return identityText(item, ident);
     }
     return null;
 }
 
-/** The entry one identity value names, or undefined when the file holds none with it. */
+/** The entry one value of the primary key names, or undefined when the file holds none with it. */
 export function entryOf(
     collection: Collection,
     value: string
 ): Record<string, unknown> | undefined {
-    return collection.items.find((one) => scalar(one[collection.ident]) === value);
+    const ident = collection.ident;
+    if (ident === null) return undefined;
+    return collection.items.find((one) => scalar(one[ident]) === value);
 }

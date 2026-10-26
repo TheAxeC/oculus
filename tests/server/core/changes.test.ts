@@ -35,19 +35,20 @@ const MANIFEST =
     'id: alpha\ntier: research\nstage: exploring\ntitle: "A title"\nstatus:\n  line: "the line"\n';
 
 const TASKS =
-    'title: Tasks\nschema:\n  - { field: title, type: text }\nentries:\n  - title: "Review the draft"\n    status: open\n    subtasks:\n      - { do: read it }\n\n  - title: "Another task"\n    status: open\n';
+    'title: Tasks\nschema:\n  - { field: title, type: text, primary_key: true }\nentries:\n  - title: "Review the draft"\n    status: open\n    subtasks:\n      - { do: read it }\n\n  - title: "Another task"\n    status: open\n';
 
 const VENUES =
-    'title: Venues\nschema:\n  - { field: name, type: text }\n  - { field: id, type: text }\nvenues:\n  - name: Existing Venue\n    id: existing\n';
+    'title: Venues\nschema:\n  - { field: name, type: text, display: 1 }\n  - { field: id, type: text, primary_key: true }\nvenues:\n  - name: Existing Venue\n    id: existing\n';
 
 const LITERATURE =
-    'title: Literature\nschema:\n  - { field: key, type: text, required: true }\n  - { field: title, type: text, required: true }\n  - { field: authors, type: tags }\n  - { field: year, type: text }\n  - { field: doi, type: text }\n  - { field: url, type: text }\n  - { field: source, type: select, options: [search, lit-watch, hand] }\n  - { field: added, type: date }\nentries: []\n';
+    'title: Literature\nschema:\n  - { field: key, type: text, primary_key: true, required: true }\n  - { field: title, type: text, display: 1, required: true }\n  - { field: authors, type: tags }\n  - { field: year, type: text }\n  - { field: doi, type: text }\n  - { field: url, type: text }\n  - { field: source, type: select, options: [search, lit-watch, hand] }\n  - { field: added, type: date }\nentries: []\n';
 
 const CAREER = 'title: Career\ngoal: "Assistant professor"\n';
-const RADAR = 'meta: {}\nentries:\n  - title: "Paper"\n';
+const RADAR =
+    'meta: {}\nschema:\n  - { field: title, type: text, primary_key: true }\nentries:\n  - title: "Paper"\n';
 const LEADS = `meta: {}
 schema:
-  - { field: title, type: text }
+  - { field: title, type: text, primary_key: true }
   - { field: status, type: select, options: [open, applied, declined] }
   - { field: date, type: date }
 entries:

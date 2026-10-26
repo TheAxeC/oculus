@@ -83,11 +83,14 @@ export function tasksPath(root: string): string {
     return join(root, '.oculus', 'data', 'academic', 'tasks.yml');
 }
 
-/** A collection file at the hub path config/defaults/sources.yml gives the `tasks` key. */
+/**
+ * A collection file at the hub path config/defaults/sources.yml gives the `tasks` key, whose
+ * primary key is its `title`.
+ */
 export const TASKS = [
     'title: Tasks',
     'schema:',
-    '  - { field: title, type: text }',
+    '  - { field: title, type: text, primary_key: true }',
     '  - { field: status, type: select }',
     '  - { field: meta, type: metalist }',
     'entries:',
@@ -98,12 +101,15 @@ export const TASKS = [
     ''
 ].join('\n');
 
-/** A venues file with one venue, named `Existing Venue` and identified as `existing`. */
+/**
+ * A venues file with one venue, named `Existing Venue` and identified as `existing`; its primary
+ * key `id` is its second field and its display is `name`.
+ */
 export const VENUES = [
     'title: Venues',
     'schema:',
-    '  - { field: name, type: text }',
-    '  - { field: id, type: text }',
+    '  - { field: name, type: text, display: 1 }',
+    '  - { field: id, type: text, primary_key: true }',
     'venues:',
     '  - name: Existing Venue',
     '    id: existing',
@@ -185,12 +191,12 @@ export function hubLinkedToEngine(engine: string): { hub: string; local: string 
     return { hub, local };
 }
 
-/** A tasks file identified by `key`, holding one entry, `held`. */
+/** A tasks file whose primary key is `key`, holding one entry, `held`. */
 export const KEYED = [
     'title: Tasks',
     'schema:',
-    '  - { field: key, type: text }',
-    '  - { field: title, type: text, required: true }',
+    '  - { field: key, type: text, primary_key: true }',
+    '  - { field: title, type: text, display: 1, required: true }',
     '  - { field: status, type: select, options: [todo, done] }',
     'entries:',
     '  - key: held',

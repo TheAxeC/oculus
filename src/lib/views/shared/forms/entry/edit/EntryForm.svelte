@@ -42,6 +42,11 @@
         empty?: (field: FormField) => boolean;
         /** Write a new person of this name to the people registry of the record's hub. */
         addPerson?: (name: string) => Promise<PersonAdded>;
+        /**
+         * Whether a `foreign_key:` target names the collection of the record's hub that carries the
+         * people registry, which decides the fields that offer Add person.
+         */
+        people?: (target: string) => boolean;
         /** The field the form opens on: scrolled into view, its first control focused. */
         openOn?: string;
     };
@@ -57,6 +62,7 @@
         refusals = {},
         empty,
         addPerson,
+        people,
         openOn
     }: Props = $props();
 
@@ -123,6 +129,7 @@
                 onadd={addPerson === undefined
                     ? undefined
                     : (name: string) => add(field, addPerson, name)}
+                {people}
             />
         </Field>
     </div>

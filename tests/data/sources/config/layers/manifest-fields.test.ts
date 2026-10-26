@@ -1,9 +1,9 @@
 // Layer 1, data tests. The fields a hub's `.oculus/config.yml` adds to the project form under
 // `manifest_fields`: each row's field is drawn in the form of that hub's projects after oculus's
 // fields of its section, and is a known key of that hub's manifests and of no other hub's; a row
-// the form cannot take, or a row whose `from` names no list, is a finding naming the hub's file and
-// the row's key, and is left out. The cases that read a manifest plant a hub in a scratch directory
-// and build it.
+// the form cannot take, or a row whose `foreign_key` names no collection or list, is a finding
+// naming the hub's file and the row's key, and is left out; a row that writes `from` is one the
+// form cannot take. The cases that read a manifest plant a hub in a scratch directory and build it.
 
 import { describe, expect } from 'vitest';
 import { portfolioConfigFrom } from '../../../../../src/lib/data/index.ts';
@@ -89,53 +89,68 @@ describe('the fields a hub adds to the project form', () => {
         ]);
     });
 
-    it('words a row whose from names no registry, projects or vocab list and leaves it out', () => {
+    it('words a row whose foreign_key names no collection, projects or vocab list and leaves it out (G128)', () => {
         const read = withHub(
             [
                 'manifest_fields:',
-                '  - { field: a, label: A, type: chips, section: Core, from: nope }',
-                '  - { field: b, label: B, type: chips, section: Core, from: [people, vocab.nope] }',
-                '  - { field: c, label: C, type: chips, section: Core, from: vocab.stages }',
-                '  - { field: d, label: D, type: chips, section: Core, from: [people, projects] }',
-                '  - { field: e, label: E, type: chips, section: Core, from: vocab.statuses.acknowledged }',
+                '  - { field: a, label: A, type: chips, section: Core, foreign_key: nope }',
+                '  - { field: b, label: B, type: chips, section: Core, foreign_key: [people, vocab.nope] }',
+                '  - { field: c, label: C, type: chips, section: Core, foreign_key: vocab.stages }',
+                '  - { field: d, label: D, type: chips, section: Core, foreign_key: [people, projects] }',
+                '  - { field: e, label: E, type: chips, section: Core, foreign_key: vocab.statuses.acknowledged }',
                 ''
             ].join('\n')
         );
         expect(read.findings.map((one) => `${one.file} | ${one.key} | ${one.message}`)).toEqual([
-            `${FILE} | manifest_fields.0.from | manifest_fields.0.from names nope, which is no registry, projects or vocab list; the row is left out`,
-            `${FILE} | manifest_fields.1.from | manifest_fields.1.from names vocab.nope, which is no registry, projects or vocab list; the row is left out`
+            `${FILE} | manifest_fields.0.foreign_key | manifest_fields.0.foreign_key names nope, which is no collection of the hub's collections list, projects or vocab list; the row is left out`,
+            `${FILE} | manifest_fields.1.foreign_key | manifest_fields.1.foreign_key names vocab.nope, which is no collection of the hub's collections list, projects or vocab list; the row is left out`
         ]);
         const taken = read.config.manifest_fields as { field: string }[];
         expect(taken.map((row) => row.field)).toEqual(['c', 'd', 'e']);
     });
 
-    it("holds a from to the vocab lists of the hub's own values, and words one that names nothing", () => {
+    it('adds a select whose foreign_key names the people, and words a row that writes from (G128)', () => {
+        const read = withHub(
+            [
+                'manifest_fields:',
+                '  - { field: advisor, label: Advisor, type: select, section: Core, foreign_key: people }',
+                '  - { field: mentor, label: Mentor, type: select, section: Core, from: people }',
+                ''
+            ].join('\n')
+        );
+        expect(read.findings.map((one) => `${one.file} | ${one.key}`)).toEqual([
+            `${FILE} | manifest_fields.1`
+        ]);
+        const fields = formFields(OCULUS, read.config);
+        expect(fields.find((field) => field.field === 'advisor')).toMatchObject({
+            type: 'select',
+            foreign_key: 'people'
+        });
+        expect(fields.some((field) => field.field === 'mentor')).toBe(false);
+    });
+
+    it("holds a foreign_key to the vocab lists of the hub's own values, and words one that names nothing (G128)", () => {
         const rows = [
-            '  - { field: a, label: A, type: chips, section: Core, from: vocab.leads_fit }',
-            '  - { field: b, label: B, type: chips, section: Core, from: vocab.statuses.nope }',
-            '  - { field: c, label: C, type: chips, section: Core, from: [] }',
-            '  - { field: d, label: D, type: chips, section: Core, from: "" }',
-            '  - { field: e, label: E, type: chips, section: Core, from: [people, ""] }'
+            '  - { field: a, label: A, type: chips, section: Core, foreign_key: vocab.leads_fit }',
+            '  - { field: b, label: B, type: chips, section: Core, foreign_key: vocab.statuses.nope }',
+            '  - { field: c, label: C, type: chips, section: Core, foreign_key: [] }',
+            '  - { field: d, label: D, type: chips, section: Core, foreign_key: "" }',
+            '  - { field: e, label: E, type: chips, section: Core, foreign_key: [people, ""] }'
         ];
         const fit = 'leads_fit: { strong: "#16a34a", reach: "#9ca3af" }\n';
         const none = (i: number): string =>
-            `${FILE} | manifest_fields.${i}.from | manifest_fields.${i}.from names no list; the row is left out`;
+            `${FILE} | manifest_fields.${i}.foreign_key | manifest_fields.${i}.foreign_key names no collection or list; the row is left out`;
+        const named = (i: number, list: string): string =>
+            `${FILE} | manifest_fields.${i}.foreign_key | manifest_fields.${i}.foreign_key names ${list}, which is no collection of the hub's collections list, projects or vocab list; the row is left out`;
         const table: { settings: string; said: string[]; taken: string[] }[] = [
             {
                 settings: `${fit}manifest_fields:\n${rows.join('\n')}\n`,
-                said: [
-                    `${FILE} | manifest_fields.1.from | manifest_fields.1.from names vocab.statuses.nope, which is no registry, projects or vocab list; the row is left out`,
-                    none(2),
-                    none(3),
-                    none(4)
-                ],
+                said: [named(1, 'vocab.statuses.nope'), none(2), none(3), none(4)],
                 taken: ['a']
             },
             {
                 settings: `manifest_fields:\n${rows[0]}\n`,
-                said: [
-                    `${FILE} | manifest_fields.0.from | manifest_fields.0.from names vocab.leads_fit, which is no registry, projects or vocab list; the row is left out`
-                ],
+                said: [named(0, 'vocab.leads_fit')],
                 taken: []
             }
         ];

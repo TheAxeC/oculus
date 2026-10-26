@@ -1,7 +1,7 @@
 # Application domains -> the Domains tab. A manifest's `domain:` matches a key here; `color` is the colour of the domain's project cards and `title` their label, and `expects_datasets` makes the Audit report an active project of the domain that lists no dataset.
 schema:
-  - { field: key,              type: text,     required: true }
-  - { field: title,            type: text,     required: true }
+  - { field: key,              type: text,     primary_key: true, required: true }
+  - { field: title,            type: text,     display: 1, required: true }
   - { field: color,            type: text }
   - { field: expects_datasets, type: checkbox }
 entries:

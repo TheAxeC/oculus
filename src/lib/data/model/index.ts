@@ -40,7 +40,7 @@ import type {
 
 export type { FeedData, FeedEntry, FeedKind } from './model-collections.ts';
 export type { HubVocab, HubVocabs, ListedCollection } from './model-collections.ts';
-export type { SelfCheck, ValidationRules, Vocabulary } from './model-collections.ts';
+export type { KeyFault, SelfCheck, ValidationRules, Vocabulary } from './model-collections.ts';
 
 /** A project's own deck as the snapshot carries it: where it is, and the tag classes it uses. */
 export type RawDeck = {
@@ -515,7 +515,7 @@ export type {
     CollectionTraits,
     Entry,
     Feeds,
-    FromPicked,
+    KeyPicked,
     Lead,
     RawFeeds,
     ReadCollection,
@@ -629,7 +629,7 @@ export { DECK_GAP } from './model-deck.ts';
 export { confirmValues } from './model-agents.ts';
 export { domainColorOf } from './model-entities.ts';
 export { COLLECTION_FLAGS, FILTERED_TYPES, REGISTRY_WORDS } from './model-collections.ts';
-export { entryIdOf, entryTitleOf } from './model-collections.ts';
+export { displayFields, entryIdOf, entryTitleOf, primaryKeyOf } from './model-collections.ts';
 export { optionKey, optionKeys, optionLabel } from './model-collections.ts';
 export type {
     AgentAccount,

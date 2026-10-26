@@ -1,8 +1,11 @@
 // Layer 2, server. Reads and edits the generated YAML feeds and the LinkedIn Markdown folder.
-// The feed table keeps paths, identities, and writable fields together so reads and writes cannot
-// disagree about which generated file or entry they address. The feed writes go through the entry
-// edits of server/edit and the write route reaches them from server/edit/writes.ts, so the module
-// sits in server/edit with both.
+// A lead and a Lit Watch paper are addressed by their file's primary key, the field its schema
+// flags `primary_key: true` or, for a file with no schema, the one its `collections:` entry names
+// (`FeedData.primary_key`); a file with neither takes no write. The feed table keeps the writable
+// fields together so reads and writes cannot disagree about which entry they address. The feed
+// writes go through the entry edits of server/edit and the write route reaches them from
+// server/edit/writes.ts, so the module sits in server/edit with both. The append of a Lit Watch
+// paper and its undo are the radar's own, in radar.ts.
 //
 // Whether a path lies in a folder is read from server/core/paths.ts (`inside`).
 
@@ -14,10 +17,12 @@ import { z } from 'zod';
 import { openWord } from '../../../data/accounts/leads.ts';
 import { localDate } from '../../../data/helpers/dates.ts';
 import { isMap, scalar, slugOf } from '../../../data/helpers/guards.ts';
-import { addressKey, radarText, sameTitle } from '../../../data/prose/literature.ts';
 import { ideaStub } from '../../../data/prose/linkedin-idea.ts';
-import { FEED_IDENTITY } from '../../../data/snapshot/hubs/feeds.ts';
+import { feedPrimaryKey } from '../../../data/helpers/hub-names.ts';
+import { primaryKeyOf } from '../../../data/model/index.ts';
+import { keyFaultOf } from '../../../data/model/model-collections.ts';
 import { collectionSchema } from '../../../data/snapshot/normalise.ts';
+import { keyedSchema } from '../../../data/snapshot/schema/field.ts';
 import { fieldNames } from '../../../data/snapshot/validate.ts';
 import { plain } from '../../core/changes.ts';
 import { writeTextAtomic } from '../../core/json.ts';
@@ -28,11 +33,10 @@ import {
     deleteEntry,
     renderEntry,
     setEntryFields,
-    startEntries,
-    takeOutAppended
+    startEntries
 } from '../entry-edit/index.ts';
-import { putBack, replacedLines, replacedText } from '../writes/config/config-checks.ts';
-import { saved, sharedRefusal, typeRefusals } from '../writes/entries.ts';
+import { putBack, replacedLines } from '../writes/config/config-checks.ts';
+import { noPrimaryKey, saved, sharedRefusal, typeRefusals } from '../writes/entries.ts';
 import { asFieldValue } from '../yaml/yaml-edit.ts';
 import type { ChangeRecord } from '../../core/changes.ts';
 import type { Refusal } from '../yaml/yaml-edit.ts';
@@ -50,22 +54,31 @@ import { inside } from '../../core/paths.ts';
 export type FeedRead = FeedData & { kind: FeedKind; file: string };
 
 /**
- * What a feed's entries are addressed and edited by. `fields` are always writable. With `schema`,
- * every other field the feed file's own `schema:` names is writable too, the identity excepted,
- * since the identity is what every write and every reference addresses an entry by.
+ * What a feed's entries are edited by. `fields` are always writable. With `schema`, every other
+ * field the feed file's own `schema:` names is writable too, the primary key excepted, since the
+ * primary key is what every write and every reference addresses an entry by.
  */
-type FeedRule = { identity: string; fields: string[]; schema: boolean; deletable: boolean };
+type FeedRule = { fields: string[]; schema: boolean; deletable: boolean };
 
-export const FEED_RULES: Record<FeedKind, FeedRule> = {
-    radar: { identity: FEED_IDENTITY.radar, fields: ['dismissed'], schema: true, deletable: true },
-    leads: { identity: FEED_IDENTITY.leads, fields: ['status'], schema: true, deletable: true },
-    linkedin: { identity: FEED_IDENTITY.linkedin, fields: [], schema: false, deletable: false }
+const FEED_RULES: Record<FeedKind, FeedRule> = {
+    radar: { fields: ['dismissed'], schema: true, deletable: true },
+    leads: { fields: ['status'], schema: true, deletable: true },
+    linkedin: { fields: [], schema: false, deletable: false }
 };
 
-/** The fields of a feed an entry may be written at: the rule's own and its file's schema's. */
-function writableFields(rule: FeedRule, schema: SchemaField[] | undefined): string[] {
+/**
+ * The fields of a feed an entry may be written at: the rule's own and its file's schema's, the
+ * primary key `key` left out.
+ */
+function writableFields(rule: FeedRule, schema: SchemaField[] | undefined, key: string): string[] {
     const named = rule.schema ? (schema ?? []).map((one) => one.field) : [];
-    return [...new Set([...rule.fields, ...named])].filter((one) => one !== rule.identity);
+    return [...new Set([...rule.fields, ...named])].filter((one) => one !== key);
+}
+
+/** The refusal of every write that addresses an entry of a feed file with no primary key. */
+export function unkeyed(config: PortfolioConfig, read: FeedRead): WriteOutcome {
+    const reason = noPrimaryKey(config.text, read.file, read.key_fault ?? null);
+    return { found: true, changed: [], refused: [{ field: 'schema', reason }] };
 }
 
 export function isFeedKind(value: string): value is FeedKind {
@@ -111,12 +124,18 @@ export function readFeedFile(
         throw new Error(words(config.text, 'server.feeds.entries_not_maps', file));
     }
     const schema = collectionSchema(parsed.schema);
+    const named = feedPrimaryKey(config.merged.collections, kind);
+    const keyed = keyedSchema(parsed.schema);
+    const key = primaryKeyOf(keyed, named);
+    const fault = keyFaultOf(keyed, named);
     return {
         kind,
         file: config.feeds[kind],
         meta: meta.data,
         entries: entries.data,
-        ...(schema === undefined ? {} : { schema })
+        ...(schema === undefined ? {} : { schema }),
+        ...(key === null ? {} : { primary_key: key }),
+        ...(fault === null ? {} : { key_fault: fault })
     };
 }
 
@@ -223,7 +242,8 @@ function readLinkedinFolder(folder: string, config: PortfolioConfig): FeedRead {
     };
 }
 
-function outcome(changed: string[] = [], refused: Refusal[] = []): WriteOutcome {
+/** A write that found its file: the fields it changed and the refusals it met. */
+export function outcome(changed: string[] = [], refused: Refusal[] = []): WriteOutcome {
     return { found: true, changed, refused };
 }
 
@@ -341,7 +361,9 @@ export function markLinkedinPosted(
 /**
  * Append one position lead in the order of the feed file's own schema. A lead given no status gets
  * the word of `lead_statuses` carrying `default_lead`, and none when no word carries it. The
- * outcome's `id` is the new lead's title, which its hub's file names it by.
+ * outcome's `id` is the new lead's value of the file's primary key, which its hub's file names it
+ * by; a lead with no such value, one the file holds already and a file with no primary key are
+ * refused.
  */
 export function addLead(
     hub: string,
@@ -355,39 +377,31 @@ export function addLead(
     if (parsed === null) return { found: false, changed: [], refused: [] };
     const schema = parsed.schema;
     if (schema === undefined) {
-        return {
-            found: true,
-            changed: [],
-            refused: [
-                { field: 'schema', reason: words(config.text, 'server.feeds.leads_no_schema') }
-            ]
-        };
+        const reason = words(config.text, 'server.feeds.leads_no_schema');
+        return outcome([], [{ field: 'schema', reason }]);
     }
-    const title = typeof fields.title === 'string' ? fields.title.trim() : '';
+    const key = parsed.primary_key;
+    if (key === undefined) return unkeyed(config, parsed);
+    const given = fields[key];
+    const title = typeof given === 'string' ? given.trim() : '';
     if (title === '') {
-        return {
-            found: true,
-            changed: [],
-            refused: [
-                { field: 'title', reason: words(config.text, 'server.feeds.lead_needs_title') }
-            ]
-        };
+        return outcome(
+            [],
+            [{ field: key, reason: words(config.text, 'server.feeds.entry_needs_key', key) }]
+        );
     }
-    if (parsed.entries.some((entry) => scalar(entry.title).trim() === title)) {
-        return {
-            found: true,
-            changed: [],
-            refused: [
-                { field: 'title', reason: words(config.text, 'server.feeds.lead_title_taken') }
-            ]
-        };
+    if (parsed.entries.some((entry) => scalar(entry[key]).trim() === title)) {
+        return outcome(
+            [],
+            [{ field: key, reason: words(config.text, 'server.feeds.entry_key_taken', key) }]
+        );
     }
 
     const values: Record<string, FieldValue> = {};
     const refused: Refusal[] = [];
     for (const field of fieldNames(schema)) {
         let raw = fields[field];
-        if (field === 'title') raw = title;
+        if (field === key) raw = title;
         if (field === 'date' && (typeof raw !== 'string' || raw.trim() === '')) {
             raw = localDate(Date.now());
         }
@@ -406,7 +420,7 @@ export function addLead(
         }
         values[field] = value;
     }
-    const block = renderEntry(fieldNames(schema), 'title', values);
+    const block = renderEntry(fieldNames(schema), key, values);
     const out = saved(full, source, appendEntry(source, 'entries', block, config.text));
     const records: ChangeRecord[] =
         out.changed.length === 0
@@ -429,169 +443,8 @@ export function addLead(
     };
 }
 
-/** The fields of a Lit Watch entry in the order the file writes them. */
-const RADAR_ORDER = [
-    'title',
-    'authors',
-    'venue',
-    'year',
-    'url',
-    'bucket',
-    'project',
-    'relevance',
-    'why',
-    'found'
-];
-
-/** The relevance words the file holds. */
-const RELEVANCE = ['high', 'med', 'low'];
-
-/** The shape of the radar buckets in the vocabulary, each with its key. */
-const bucketKeysShape = z.array(z.looseObject({ key: z.string() })).catch([]);
-
-/**
- * The keys of the radar buckets a hub's merged configuration `config` holds: oculus's, or the list
- * the hub's settings write in their place.
- */
-export function radarBucketKeys(config: Record<string, unknown>): string[] {
-    const held = config.radar_buckets;
-    return bucketKeysShape.parse(held).map((one) => one.key);
-}
-
-/** The text a field of a Lit Watch entry is written as: plain text on one line. */
-function radarField(raw: unknown): string {
-    if (Array.isArray(raw))
-        return raw
-            .map((one) => radarField(one))
-            .filter(Boolean)
-            .join(', ');
-    return typeof raw === 'string' ? radarText(raw) : '';
-}
-
-/**
- * Append one paper to the Lit Watch radar, in the order of RADAR_ORDER with the empty fields left
- * out and `found` today's date. A title or address the file holds already is refused. A file that
- * does not parse is refused and left as it is; an `entries:` holding nothing, written `entries: []`
- * or with nothing under it, takes the paper as its first entry. The result is parsed again and
- * kept only when it is the file as it was with this one entry added.
- *
- * `buckets` are the keys of the bucket vocabulary a bucket must be one of. The record carries the
- * text the append added, which the undo takes out again byte for byte. The outcome's `id` is the
- * new paper's title, which its hub's file names it by.
- */
-export function addRadarEntry(
-    hub: string,
-    config: PortfolioConfig,
-    fields: Record<string, unknown>,
-    buckets: string[]
-): WriteOutcome {
-    const full = feedFile(hub, config, 'radar');
-    if (full === null || !existsSync(full)) return { found: false, changed: [], refused: [] };
-    const source = readFileSync(full, 'utf8');
-    let parsed: FeedRead | null;
-    try {
-        parsed = readFeedFile(hub, config, 'radar');
-    } catch {
-        return outcome(
-            [],
-            [{ field: 'entries', reason: words(config.text, 'server.feeds.file_unread') }]
-        );
-    }
-    if (parsed === null) return { found: false, changed: [], refused: [] };
-
-    const text = (field: string): string => radarField(fields[field]);
-    const title = text('title');
-    if (title === '') {
-        return outcome(
-            [],
-            [{ field: 'title', reason: words(config.text, 'server.feeds.paper_needs_title') }]
-        );
-    }
-    const bucket = text('bucket');
-    if (!buckets.includes(bucket)) {
-        return outcome(
-            [],
-            [{ field: 'bucket', reason: words(config.text, 'server.feeds.bucket_unknown') }]
-        );
-    }
-    const relevance = text('relevance');
-    if (relevance !== '' && !RELEVANCE.includes(relevance)) {
-        return outcome(
-            [],
-            [{ field: 'relevance', reason: words(config.text, 'server.feeds.relevance_unknown') }]
-        );
-    }
-    const url = text('url');
-    const known = (field: string, same: (held: string) => boolean): boolean =>
-        parsed.entries.some((one) => same(scalar(one[field])));
-    if (known('title', (held) => sameTitle(held, title))) {
-        return outcome(
-            [],
-            [{ field: 'title', reason: words(config.text, 'server.feeds.paper_in_file') }]
-        );
-    }
-    if (url !== '' && known('url', (held) => addressKey(held) === addressKey(url))) {
-        return outcome(
-            [],
-            [{ field: 'url', reason: words(config.text, 'server.feeds.paper_in_file') }]
-        );
-    }
-
-    const year = typeof fields.year === 'number' ? fields.year : Number(text('year'));
-    const given: Record<string, unknown> = {
-        title,
-        authors: text('authors'),
-        venue: text('venue'),
-        year: Number.isInteger(year) && year > 0 ? year : '',
-        url,
-        bucket,
-        project: text('project'),
-        relevance,
-        why: text('why'),
-        found: localDate(Date.now())
-    };
-    const values: Record<string, FieldValue> = {};
-    for (const name of RADAR_ORDER) {
-        const held = asFieldValue(given[name]);
-        if (held !== undefined && held !== '') values[name] = held;
-    }
-    const block = renderEntry(RADAR_ORDER, 'title', values);
-    const edit = appendEntry(source, 'entries', block, config.text);
-    if (edit.changed.length === 0) return { found: true, changed: [], refused: edit.refused };
-    let reread: { entries: Record<string, unknown>[] } | null;
-    try {
-        reread = readFeedFileText(edit.text);
-    } catch {
-        reread = null;
-    }
-    const wanted = [...parsed.entries, values];
-    if (reread === null || !isDeepStrictEqual(reread.entries, wanted)) {
-        return outcome(
-            [],
-            [{ field: 'entries', reason: words(config.text, 'server.edit.unverified') }]
-        );
-    }
-    const out = saved(full, source, edit);
-    const replaced = replacedText(source, edit.text);
-    return {
-        ...out,
-        ...(out.changed.length === 0 ? {} : { id: title }),
-        records: [
-            {
-                file: full,
-                key: title,
-                field: 'entries',
-                before: null,
-                after: values,
-                undo: 'create',
-                ...(replaced === null ? {} : { replaced })
-            }
-        ]
-    };
-}
-
-/** A radar file's entries as a text holds them, or null when it is no map with a list of maps. */
-function readFeedFileText(text: string): { entries: Record<string, unknown>[] } | null {
+/** A feed file's entries as a text holds them, or null when it is no map with a list of maps. */
+export function readFeedFileText(text: string): { entries: Record<string, unknown>[] } | null {
     const held: unknown = parse(text);
     if (!isMap(held)) return null;
     const entries = feedEntriesShape.safeParse(held.entries);
@@ -599,52 +452,11 @@ function readFeedFileText(text: string): { entries: Record<string, unknown>[] } 
 }
 
 /** A record's replaced text as the log holds it: a whole offset and two texts, else none. */
-const replacedShape = z.object({ offset: z.int().min(0), before: z.string(), after: z.string() });
-
-/**
- * Take one Lit Watch entry out again, the way an undo of its append does, by its title. The text
- * the append added goes back over what the append left when the file still holds it there, so the
- * file is what it was byte for byte; a file edited since has the entry's lines and the blank line
- * the append put over them taken out. The reader's own Delete never reaches this.
- */
-export function removeRadarEntry(
-    hub: string,
-    config: PortfolioConfig,
-    title: string,
-    replaced: unknown
-): WriteOutcome {
-    const full = feedFile(hub, config, 'radar');
-    if (full === null || !existsSync(full)) return { found: false, changed: [], refused: [] };
-    const source = readFileSync(full, 'utf8');
-    let parsed: FeedRead | null;
-    try {
-        parsed = readFeedFile(hub, config, 'radar');
-    } catch {
-        return outcome(
-            [],
-            [{ field: 'entries', reason: words(config.text, 'server.feeds.file_unread') }]
-        );
-    }
-    const at = parsed?.entries.findIndex((one) => scalar(one.title) === title) ?? -1;
-    if (parsed === null || at < 0) return { found: false, changed: [], refused: [] };
-
-    const put = replacedShape.safeParse(replaced);
-    if (put.success && source.startsWith(put.data.after, put.data.offset)) {
-        const { offset, before, after } = put.data;
-        const text = `${source.slice(0, offset)}${before}${source.slice(offset + after.length)}`;
-        let reread: { entries: Record<string, unknown>[] } | null;
-        try {
-            reread = readFeedFileText(text);
-        } catch {
-            reread = null;
-        }
-        const wanted = parsed.entries.filter((_one, index) => index !== at);
-        if (reread !== null && isDeepStrictEqual(reread.entries, wanted)) {
-            return saved(full, source, { text, changed: ['entries'], refused: [] });
-        }
-    }
-    return saved(full, source, takeOutAppended(source, 'title', title, config.text));
-}
+export const replacedShape = z.object({
+    offset: z.int().min(0),
+    before: z.string(),
+    after: z.string()
+});
 
 /**
  * Put one recorded feed entry back exactly as it was recorded: every field it held, in the order
@@ -672,7 +484,8 @@ export function restoreFeedEntry(
     const source = readFileSync(full, 'utf8');
     const parsed = readFeedFile(hub, config, feed);
     if (parsed === null) return { found: false, changed: [], refused: [] };
-    const ident = FEED_RULES[feed].identity;
+    const ident = parsed.primary_key;
+    if (ident === undefined) return unkeyed(config, parsed);
     const value = scalar(fields[ident]).trim();
     if (value === '') {
         return outcome(
@@ -683,7 +496,7 @@ export function restoreFeedEntry(
     if (parsed.entries.some((one) => scalar(one[ident]).trim() === value)) {
         return outcome(
             [],
-            [{ field: ident, reason: words(config.text, 'server.entries.key_taken', ident) }]
+            [{ field: ident, reason: words(config.text, 'server.feeds.entry_key_taken', ident) }]
         );
     }
     const back = putBackDeleted(source, parsed.entries, ident, value, fields, replaced);
@@ -759,9 +572,9 @@ function putBackDeleted(
 }
 
 /**
- * Set or clear one field that a feed allows on the entry named by its identity. The value is held
- * to the type the feed file's schema gives the field, and a file with two entries of one identity
- * is refused, since the second could not be addressed.
+ * Set or clear one field that a feed allows on the entry whose value of the file's primary key is
+ * `id`. The value is held to the type the feed file's schema gives the field, and a file with two
+ * entries of one value of the primary key is refused, since the second could not be addressed.
  */
 export function writeFeedField(
     hub: string,
@@ -777,23 +590,22 @@ export function writeFeedField(
     const source = readFileSync(full, 'utf8');
     const parsed = readFeedFile(hub, config, feed);
     if (parsed === null) return { found: false, changed: [], refused: [] };
-    if (!writableFields(rule, parsed.schema).includes(field)) {
-        return {
-            found: true,
-            changed: [],
-            refused: [{ field, reason: words(config.text, 'server.feeds.field_not_allowed', feed) }]
-        };
+    const key = parsed.primary_key;
+    if (key === undefined) return unkeyed(config, parsed);
+    if (!writableFields(rule, parsed.schema, key).includes(field)) {
+        const reason = words(config.text, 'server.feeds.field_not_allowed', feed);
+        return outcome([], [{ field, reason }]);
     }
-    const entry = parsed.entries.find((one) => scalar(one[rule.identity]) === id);
+    const entry = parsed.entries.find((one) => scalar(one[key]) === id);
     if (entry === undefined) return { found: false, changed: [], refused: [] };
-    const shared = sharedRefusal(parsed.entries, rule.identity, config.text);
+    const shared = sharedRefusal(parsed.entries, key, config.text);
     if (shared !== null) return shared;
     const typed = typeRefusals(parsed.schema, { [field]: value }, config.text);
     if (typed.length > 0) return { found: true, changed: [], refused: typed };
     const out = saved(
         full,
         source,
-        setEntryFields(source, rule.identity, id, { [field]: value }, config.text)
+        setEntryFields(source, key, id, { [field]: value }, config.text)
     );
     if (out.changed.length === 0) return out;
     return {
@@ -835,11 +647,14 @@ export function deleteFeedEntry(
     if (full === null || !existsSync(full)) return { found: false, changed: [], refused: [] };
     const source = readFileSync(full, 'utf8');
     const parsed = readFeedFile(hub, config, feed);
-    const entry = parsed?.entries.find((one) => scalar(one[rule.identity]) === id);
-    if (parsed === null || entry === undefined) return { found: false, changed: [], refused: [] };
-    const shared = sharedRefusal(parsed.entries, rule.identity, config.text);
+    if (parsed === null) return { found: false, changed: [], refused: [] };
+    const key = parsed.primary_key;
+    if (key === undefined) return unkeyed(config, parsed);
+    const entry = parsed.entries.find((one) => scalar(one[key]) === id);
+    if (entry === undefined) return { found: false, changed: [], refused: [] };
+    const shared = sharedRefusal(parsed.entries, key, config.text);
     if (shared !== null) return shared;
-    const edit = deleteEntry(source, rule.identity, id, config.text);
+    const edit = deleteEntry(source, key, id, config.text);
     const out = saved(full, source, edit);
     if (out.changed.length === 0) return out;
     const replaced = replacedLines(source, edit.text);

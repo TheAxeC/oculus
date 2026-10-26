@@ -62,7 +62,7 @@ describe('a paper saved to Literature', () => {
         mkdirSync(join(hub, '.oculus', 'data', 'literature'), { recursive: true });
         writeFileSync(
             file,
-            'schema:\n  - { field: key, type: text }\n  - { field: title, type: text }\n  - { field: abstract, type: textarea }\nentries: []\n'
+            'schema:\n  - { field: key, type: text, primary_key: true }\n  - { field: title, type: text, display: 1 }\n  - { field: abstract, type: textarea }\nentries: []\n'
         );
         const config = portfolioConfigFrom(loadConfig(engineDir()).config);
         const sent =

@@ -88,14 +88,14 @@ export function fieldTypes(schema: unknown): Record<string, string> {
     return fieldTypesShape.parse(schema);
 }
 
-/** The `from:` of a manifest field: one source or a list of them. */
-const fromShape = z
+/** The `foreign_key:` of a manifest field: one target or a list of them. */
+const foreignKeyShape = z
     .union([z.string().transform((one) => [one]), z.array(z.string())])
     .optional()
     .catch(undefined);
 
-/** One field of a schema with its type and `from:`, in the `fields` map or a list row. */
-const sourcedShape = z.looseObject({ type: z.string(), from: fromShape });
+/** One field of a schema with its type and `foreign_key:`, in the `fields` map or a list row. */
+const sourcedShape = z.looseObject({ type: z.string(), foreign_key: foreignKeyShape });
 
 /**
  * The fields of a manifest schema in the shape the walk of data/snapshot/hubs/references.ts reads,
@@ -112,17 +112,17 @@ function sourced(entries: [string, unknown][]): SchemaField[] {
     for (const [field, entry] of entries) {
         const read = sourcedShape.safeParse(entry);
         if (field === '' || !read.success) continue;
-        const { type, from } = read.data;
-        out.push(from === undefined ? { field, type } : { field, type, from });
+        const { type, foreign_key: keys } = read.data;
+        out.push(keys === undefined ? { field, type } : { field, type, foreign_key: keys });
     }
     return out;
 }
 
 /**
- * The fields with the hub's name and a colon taken off every value that names a record (a `from:`
- * of the manifest schema naming a registry or the projects), since the portfolio names a record by
- * its hub and its key (data/snapshot/hubs/merge.ts) and the hub's own manifest holds the key. A
- * value without the prefix, the key a form sends, is kept as it is.
+ * The fields with the hub's name and a colon taken off every value that names an entry (a
+ * `foreign_key:` of the manifest schema that names no vocabulary list), since the portfolio names
+ * an entry by its hub and its key (data/snapshot/hubs/merge.ts) and the hub's own manifest holds
+ * the key. A value without the prefix, the key a form sends, is kept as it is.
  */
 function hubOwnFields(
     schema: unknown,

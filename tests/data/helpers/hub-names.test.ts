@@ -1,5 +1,5 @@
 // Layer 1, data test. The one function that decides whether two names are one file on disk
-// (data/helpers/hub-names.ts `sameDiskFile`, with `diskPath` under it), the guarded entry G28: a
+// (data/helpers/files/paths.ts `sameDiskFile`, with `diskPath` under it), the guarded entry G28: a
 // write over a file a source tab holds unsaved text of is refused, and the tab's file and the
 // write's file are told apart by this function. Each row gives synthetic folders and two names.
 // `fileNamed` gives a recorded absolute path the name this decision is made on.
@@ -18,17 +18,19 @@ import {
     diskPath,
     diskRelation,
     fileNamed,
+    sameDiskFile,
+    type FileName,
+    type RootFolder
+} from '../../../src/lib/data/helpers/files/paths.ts';
+import {
     flaggedCollections,
     hubId,
     registryCollection,
     registryCollections,
     registryEntries,
     registryKeyOf,
-    sameDiskFile,
     type CollectionFlag,
-    type FileName,
-    type RegistryWord,
-    type RootFolder
+    type RegistryWord
 } from '../../../src/lib/data/helpers/hub-names.ts';
 import type {
     Collection,

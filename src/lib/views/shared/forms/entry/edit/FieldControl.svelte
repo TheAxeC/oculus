@@ -52,15 +52,28 @@
         field: FormField;
         value: unknown;
         onchange: (value: unknown) => void;
-        /** The choices of a field whose `from` or `options` offer some. */
+        /** The choices of a field whose `foreign_key` or `options` offer some. */
         choices: (field: FormField) => Choice[];
         /** A field the form shows and never writes. */
         readonly?: boolean;
         /** Write a new person of this name, answering their key, or the empty text for none. */
         onadd?: (name: string) => Promise<string>;
+        /**
+         * Whether a `foreign_key:` target names the collection that carries the people registry,
+         * which decides whether the field picks people; none for a form that adds no person.
+         */
+        people?: (target: string) => boolean;
     };
 
-    let { field, value, onchange, choices, readonly = false, onadd }: Props = $props();
+    let {
+        field,
+        value,
+        onchange,
+        choices,
+        readonly = false,
+        onadd,
+        people = () => false
+    }: Props = $props();
 
     /** Whether this field's Add person write is out. */
     let adding = $state(false);
@@ -72,7 +85,7 @@
 
     /** The Add person choice the typed text makes, or null when the field offers none. */
     function addChoice(typed: string): { label: string; run: () => void } | null {
-        if (onadd === undefined || adding || !picksPeople(field)) return null;
+        if (onadd === undefined || adding || !picksPeople(field, people)) return null;
         const name = personToAdd(typed, choices(field));
         if (name === '') return null;
         return { label: t('editor.add_person', name), run: () => void addPerson(onadd, name) };
@@ -148,6 +161,7 @@
                     onchange={(held: unknown) => change(withField(edit, sub.field, held))}
                     {choices}
                     {onadd}
+                    {people}
                 />
             </Field>
         {/each}
@@ -177,7 +191,7 @@
         empty={t('editor.empty_choice')}
         choices={selectChoices(choices(field))}
         onchange={(held: string) => onchange(held)}
-        extra={onadd === undefined || !picksPeople(field) ? undefined : addChoice}
+        extra={onadd === undefined || !picksPeople(field, people) ? undefined : addChoice}
         typing={t('editor.add_person_name')}
     />
 {:else if field.type === 'chips' || field.type === 'tags'}
@@ -307,7 +321,7 @@
             });
         }}
     />
-{:else if field.from !== undefined}
+{:else if field.foreign_key !== undefined}
     <SuggestInput
         value={asText(value)}
         label={field.label}

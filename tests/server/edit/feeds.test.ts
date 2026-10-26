@@ -10,11 +10,11 @@ import { describe, expect } from 'vitest';
 import {
     addLead,
     addLinkedinIdea,
-    addRadarEntry,
     deleteFeedEntry,
     markLinkedinPosted,
     writeFeedField
 } from '../../../src/lib/server/edit/feeds/feeds.ts';
+import { addRadarEntry } from '../../../src/lib/server/edit/feeds/radar.ts';
 import { portfolioConfigFrom } from '../../../src/lib/data/index.ts';
 import { localDate } from '../../../src/lib/data/helpers/dates.ts';
 import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
@@ -29,7 +29,7 @@ const FILES: Record<FeedKind, string> = {
 };
 
 const LEAD_SCHEMA = `schema:
-  - { field: title, type: text }
+  - { field: title, type: text, primary_key: true }
   - { field: inst, type: text }
   - { field: country, type: text }
   - { field: typ, type: text }
@@ -41,12 +41,22 @@ const LEAD_SCHEMA = `schema:
   - { field: url, type: text }
 `;
 
-/** The checkout's configuration, read once: every case builds its own copy over it. */
+/**
+ * The checkout's configuration, read once: every case builds its own copy over it. Its radar
+ * entry of `collections:` names `title` as the primary key, since the radar fixtures have no
+ * schema, as a scout writes the file.
+ */
 let base: PortfolioConfig | undefined;
 
 function fixture(): { hub: string; config: PortfolioConfig } {
     const hub = scratchDir('oculus-feeds-');
-    base ??= portfolioConfigFrom(loadConfig(engineDir()).config);
+    if (base === undefined) {
+        const loaded = loadConfig(engineDir()).config;
+        const list = (loaded.collections as Record<string, unknown>[]).map((one) =>
+            one.registry === 'radar' ? { ...one, primary_key: 'title' } : one
+        );
+        base = portfolioConfigFrom({ ...loaded, collections: list });
+    }
     const config = { ...base, feeds: { ...FILES, linkedin: 'fixture/linkedin' } };
     for (const [kind, id] of [
         ['radar', 'Paper'],
@@ -169,6 +179,32 @@ describe('feed writes', () => {
         expect(source).toContain(
             `  - title: New role\n    country: Belgium\n    focus: Clinical AI\n    status: open\n    date: ${localDate(Date.now())}`
         );
+    });
+
+    it('refuses a lead with no value of the primary key, one the file holds, and any lead of a file with no primary key (G8)', () => {
+        const into = fixture();
+        const file = join(into.hub, FILES.leads);
+        const add = (title: string) => addLead(into.hub, into.config, { title });
+        expect(add('  ').refused).toEqual([
+            {
+                field: 'title',
+                reason: words(into.config.text, 'server.feeds.entry_needs_key', 'title')
+            }
+        ]);
+        expect(add('Job').refused).toEqual([
+            {
+                field: 'title',
+                reason: words(into.config.text, 'server.feeds.entry_key_taken', 'title')
+            }
+        ]);
+        writeFileSync(file, readFileSync(file, 'utf8').replace(', primary_key: true', ''));
+        const before = readFileSync(file, 'utf8');
+        const none = words(into.config.text, 'server.entries.no_primary_key_none', FILES.leads);
+        expect(add('New role').refused).toEqual([{ field: 'schema', reason: none }]);
+        expect(writeFeedField(into.hub, into.config, 'leads', 'Job', 'fit', 'x').refused).toEqual([
+            { field: 'schema', reason: none }
+        ]);
+        expect(readFileSync(file, 'utf8')).toBe(before);
     });
 
     it('uses each feed identity and allows only its field', () => {
