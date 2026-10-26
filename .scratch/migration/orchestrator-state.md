@@ -37,8 +37,17 @@ dispatch:          # steps in flight, up to six (Z632)
   round: 0
   landing: not-started
 - step: O82
-  brief_check: "running: ae57906ed63a7f9f2"
-  landing: preparing
+  brief_check: .scratch/migration/agents/reviews/O82-brief-check.md (ae57906ed63a7f9f2, claude-opus-5-5, 171305 tokens, 41 tool uses, 6 min 43 s)
+  base: 4959cb90
+  worktree: .agents/worktrees/migration-O82
+  executor: agent
+  worker: claude:opus
+  session_id: aef746e492419e883 (claude-opus-5-5)
+  launched: 2026-10-26
+  report: .scratch/migration/agents/reviews/O82-report.md
+  shared_paths: "docs/apps.md with O80 of this plan: O82 changes line 421, the hpc row's status words, and O80 changes other rows, so the merge is simple"
+  round: 0
+  landing: not-started
 ```
 
 ## The standing demands (from Axel, in force)
@@ -599,6 +608,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-10-26 (O82 launched). O82's brief `agents/briefs/O82.md` written and checked (`agents/reviews/O82-brief-check.md`, ae57906ed63a7f9f2, claude-opus-5-5), every finding closed in the brief under the report's Closed heading; O82's line in `plan.md` narrowed to ruling 428's words (a timeout while a Slurm command runs). Preparation commit 4959cb90 is the base; worktree `.agents/worktrees/migration-O82` with `npm ci` and `svelte-kit sync`; base copy `.agents/worktrees/O82-base` with `unused-exports.txt` (341 lines); the builder aef746e492419e883 launched on claude-opus-5-5. Shared path with O80: `docs/apps.md` (O82 line 421, O80 line 452). In flight (2 of 6): O80 and O82 (building). Next: each builder's report, /refute, /land; then /spec O79 after O80's landing, and O81. Open items: none.
 - 2026-10-26 (428 ruled). Axel ruled 428 (a): step O82 added after O81 (the HPC poll's three failures). In flight (1 of 6): O80 (build). Next: O80's report, review and landing; then /spec O79, O81, O82. Open items: none.
 - 2026-10-26 (O79 waits for O80's landing). /spec O79 found that O79 and O80 share `src/lib/state/forms/new-entry.ts` (both change `addPerson`), `src/lib/data/snapshot/normalise.ts`, `src/lib/server/edit/writes/manifest.ts`, `src/lib/data/sources/config/merge/hub-layer.ts`, `src/lib/data/helpers/hub-names.ts`, `config/text/findings.yml`, `docs/HELP.md`, `docs/data-map.md`, `docs/templates.md`, `docs/apps.md`, `tests/server/edit/writes.test.ts`, `tests/checks/source/keys.test.ts`, `tests/state/boards/board/board-rules.test.ts` and `tests/state/forms/new-entry.test.ts`; judged not simple to merge, so O79 waits until O80 lands, then /spec O79 again (its brief check stands; the brief with every finding closed is drafted in the session scratchpad as `o79-brief-v2.md`). In flight (1 of 6): O80 (build). Open items: none.
 - 2026-10-26 (423, 425, 426 and 427 ruled). Axel ruled 423 (a), built in O81; 425 (a), the entry G132; 427 (a); 426 needed no ruling. Booked in `plan.md` Rulings, on O79's and O81's lines. In flight (1 of 6): O80 (build). Next: /spec O79. Open items: none.
