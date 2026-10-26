@@ -1,7 +1,7 @@
 In flight (3 of 6 slots in use):
 - O84 (who the user is), repair round 1 reported; its review over the round next.
 - O87 (the Focus band's positions and teaching, and the dated lines in Tasks), building.
-- O94 (LinkedIn's Mark posted), /spec: brief check done, its findings being closed in the brief.
+- O94 (LinkedIn's Mark posted), building.
 
 Queued (5):
 - O88 (one heading, one card grid, no intro paragraph, Pillars by kind, and the app theme that failed to load), /spec next after O87's and O94's dispatch (487 ruled (b)).

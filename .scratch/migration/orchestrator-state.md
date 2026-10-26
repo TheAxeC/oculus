@@ -51,7 +51,15 @@ dispatch:          # steps in flight, up to six (Z632)
   landing: not-started
 - step: O94
   brief_check: .scratch/migration/agents/reviews/O94-brief-check.md (a0b48bbc141e6efce, claude-opus-5-5, 183761 tokens, 49 tool uses, 8 min 7 s)
-  landing: preparing
+  base: 5c3847a33
+  worktree: .agents/worktrees/migration-O94
+  executor: agent
+  worker: claude:opus
+  session_id: a842e39268dc6aed0 (claude-opus-5-5)
+  launched: 2026-10-27
+  report: .scratch/migration/agents/reviews/O94-report.md
+  shared_paths: with O84, `config/text/server.yml` (O84 under `server.config_key.*`; O94 lines 330-340), and `docs/HELP.md` (O84 Doc text at 288 and 532; O94 332); with O87, `docs/HELP.md` (O87 294, 529, 538, 547) and `docs/templates.md` (O87 64-68, 274-278, 318-332; O94 664-691); the generated `docs/diagrams/*`, regenerated at each landing; simple merges in separate lines.
+  landing: not-started
 ```
 
 ## The standing demands (from Axel, in force)
