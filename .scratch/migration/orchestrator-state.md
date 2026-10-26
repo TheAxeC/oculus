@@ -34,8 +34,9 @@ dispatch:          # steps in flight, up to six (Z632)
   launched: 2026-10-26
   report: .scratch/migration/agents/reviews/O79-report.md
   builder_usage: 119528 tokens, 125 tool uses, 21 min 28 s (first run, handed back at case 15); build under the cases ruling: 411377 tokens, 1501 tool uses, 170 min 19 s
+  reviewer_report: .scratch/migration/agents/reviews/O79-refuter.md (a3d077e13c109e0ab, claude-opus-5-5, 247539 tokens, 121 tool uses, 31 min 26 s)
   shared_paths: `docs/apps.md` (O79 the `collections` row at line 410, O83 the `hpc` row at line 421), `docs/HELP.md` (O79 the paragraphs on a schema's fields and an entry's identity, O83 the Live HPC paragraph at line 320), `src/lib/data/model/index.ts` (O79 the exports of model-collections.ts, O83 the exports of model-sessions.ts), and the generated `docs/diagrams/` files, each with migration step O83; simple, since the hunks are apart and the diagrams are regenerated with `npm run diagrams` at each landing; with migration step O81 also `src/lib/data/helpers/hub-names.ts` (both change `readList`), `src/lib/data/model/model-collections.ts` (O81 moves `HubVocab`, `ListedCollection` and `HubVocabs` into it), `src/lib/data/index.ts`, `src/lib/data/sources/collections.ts` and `src/lib/data/model/index.ts`, found by O81's review (Spec 2): O81 lands first, and O79's landing resolves the overlapping hunks and splits `hub-names.ts`, which O79's lines take past the size limit (843 at the base, 877 after O81, about 908 with both)
-  round: 0
+  round: 1
   landing: not-started
 - step: O85
   brief_check: .scratch/migration/agents/reviews/O85-brief-check.md (a8ab0d4773e514752, claude-opus-5-5, 276151 tokens, 97 tool uses, 14 min 31 s, the run after its resume on a 529 server error)
@@ -51,6 +52,8 @@ dispatch:          # steps in flight, up to six (Z632)
   shared_paths: with O79, simple merges, each in separate lines: `src/lib/state/client/writes.svelte.ts` (O79 the comment at line 435, O85 lines 560-630), `src/lib/server/edit/writes.ts` (O79 near line 218 and its write bodies, O85 the head comment at line 29), `src/lib/server/edit/writes/undo.ts` (O79 near lines 259-341, 495 and 587, O85 lines 90-140), `config/text/server.yml` (O79 `server.edit.*`, O85 new keys under `server.workspace.*`); `docs/HELP.md` and `docs/data-map.md` take O85's Doc text at landing. None with O81.
   round: 0
   landing: not-started
+- step: O86
+  landing: preparing
 ```
 
 ## The standing demands (from Axel, in force)
@@ -189,9 +192,11 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
+- 447 (2026-10-26, how ruling 446 (a) is built): (a) a step of its own, O88, after O87, tagged (ruling 446): it changes `ticker.ts`, `Tasks.svelte`, `CommandCenter.svelte`, `CommandCenterView.svelte`, the Focus words and the HELP note, none of O87's files (`vocab.yml`, its options file, `vocab.ts`, `vocab-keys.ts`, `focus.ts`, `Band.svelte`), so the two can be built side by side; Pros: each step one concern, reviewed on its own; Cons: one more step on the ledger. (b) folded into O87 before its /spec; Pros: no new step; Cons: one step with two concerns (the band's stages and the Tasks and Command Center split), a larger brief and review, and O87 cannot start until the brief covers both. Recommendation: (a), a judgment; it needs Axel's explicit word to schedule.
 
 
 ## Closed items
+- 446 (2026-10-26): ruled (a) by Axel; booked in `plan.md` Rulings; scheduling waits on open item 447.
 - 445 (2026-10-26): ruled (a) by Axel; step O87 booked in `plan.md` after O86, tagged (ruling 445).
 - 2026-10-26: Open item 444, O85's scope over the keys of the hub list (/spec O85): closed under self-rule, Z1033.
 - 443 (2026-10-26): ruled (a) by Axel; steps O85 and O86 booked in `plan.md` after O84, tagged with rulings 440, 441 and 443.
