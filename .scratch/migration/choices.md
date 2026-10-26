@@ -5416,3 +5416,33 @@ O86's brief check found that the save route refuses every entry with a disk prob
 
 Where it applies: O86. Booked in `agents/briefs/O86.md`, "Decisions taken in this brief" 7.
 Builds on it: O86
+
+## Z1044 (2026-10-26, /spec O84, the orchestrator, automode): how the Settings row and the Person button write `self` into the primary's local.yml
+
+Every config write refuses `local.yml` today (`config-key.ts:122`, `config-value.ts:217`, `config-reset.ts:127`), and the one writer of a `local.yml` (`accounts/connect/rows.ts`) is not in History.
+
+- Chosen: (a) the existing config key and reset writes open for the one key `self` of `local.yml`, landing in the primary's file as a byte-range edit checked by `checkLocal`, logged by key and value and undone in History, as the Settings write of `self` is today; every other key stays refused, apps stay closed out.
+- Not chosen: (b) a new write kind outside History, like the account rows, which loses the Undo the setting has now; the lazy option.
+
+Where it applies: O84. Booked in `agents/briefs/O84.md`, "Decisions taken in this brief" 1.
+Builds on it: O84
+
+## Z1045 (2026-10-26, /spec O84, the orchestrator, automode): a person of another hub whose key the primary also holds
+
+`self` is a bare key resolved from the primary (`resolvedId`, `hub-names.ts:549`), so it cannot name `L:kim` while P holds kim.
+
+- Chosen: (a) such a person is not offered by the Settings choice, and their "this is me" button is drawn disabled with a tip naming the person the key names first and their hub.
+- Not chosen: (b) a stored form naming a hub (`self: L:kim`), a new user-visible shape no ruling names; (c) the button pressing anyway and marking P's kim, which marks the wrong person.
+
+Where it applies: O84. Booked in `agents/briefs/O84.md`, "Decisions taken in this brief" 2.
+Builds on it: O84
+
+## Z1046 (2026-10-26, O84's brief check, the orchestrator, automode): the page applying a rename whose places lie in a hub's `.oculus/` folder
+
+The Refactor Preview applies a rename through `lspEdits.plan` and `lsp-edit`, which refuse every file under a dot folder other than `.oculus/notes/` (`edits.ts:243`, `lsp-edit.ts:63`), so a rename of a hub key whose places are in `.oculus/data/`, the workspace file or `local.yml` is refused at Apply today, and O84's rename of the `self` person could not be applied.
+
+- Chosen: (a) both accept a file in a hub's own `.oculus/` folder, still refusing a nested dot folder, `node_modules`, the `secrets` folder and `~/.oculus`, with a `local.yml` checked by `checkLocal` before it is written.
+- Not chosen: (b) only `local.yml` let through, which leaves the rename of every other hub key refused; (c) no change, the lazy option, which leaves O84's rename unapplied.
+
+Where it applies: O84. Booked in `agents/briefs/O84.md`, "What to build" 8 and "Decisions taken in this brief" 6.
+Builds on it: O84

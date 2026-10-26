@@ -3,14 +3,17 @@ In flight (2 of 6 slots in use):
 - O89 (one record card, one way to add a dated line), building.
 
 Queued (3):
-- O88 (one grouping heading), stopped on open item 461.
-- O84 (who the user is), /spec next; open item 462 before its landing.
-- O87 (the Focus band's positions and teaching), /spec later.
+- O88 (one grouping heading), /spec after O89 lands.
+- O87 (the Focus band's positions and teaching), /spec after O86 lands.
+- O90 (the board bar's Waiting on filter), /spec after O88 and O87.
+
+Waiting on a ruling:
+- O84 (who the user is), stopped on open item 465.
 
 Owed looks: none.
 
 Landed, newest first:
-- O85 (a hub's own settings for any hub), 2026-10-26, the commit "Land O85".
+- O85 (a hub's own settings for any hub), 2026-10-26, 467be69c.
 - O79 (primary and foreign keys), 2026-10-26, 153f4f0b; hub dd97f7ec0.
 - O81 (the grouping heading, the Venues view, the track record), 2026-10-26, 4e0fbd48.
 - O83 (one failing Slurm table keeps the queue live), 2026-10-26, 9961e0d5.
