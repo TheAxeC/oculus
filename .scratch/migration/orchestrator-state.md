@@ -47,10 +47,12 @@ dispatch:          # steps in flight, up to six (Z632)
   session_id: aed0feff241baf1c1 (claude-opus-5-5)
   launched: 2026-10-26
   report: .scratch/migration/agents/reviews/O79-report.md
+  builder_usage: 119528 tokens, 125 tool uses, 21 min 28 s (first run, handed back at case 15)
   shared_paths: `docs/apps.md` (O79 the `collections` row at line 410, O83 the `hpc` row at line 421), `docs/HELP.md` (O79 the paragraphs on a schema's fields and an entry's identity, O83 the Live HPC paragraph at line 320), `src/lib/data/model/index.ts` (O79 the exports of model-collections.ts, O83 the exports of model-sessions.ts), and the generated `docs/diagrams/` files, each with migration step O83; simple, since the hunks are apart and the diagrams are regenerated with `npm run diagrams` at each landing
   round: 0
   landing: not-started
 - step: O81
+  brief_check: "running: a5d05f8c3ea7e30b0"
   landing: preparing
 ```
 
