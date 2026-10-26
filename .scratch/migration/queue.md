@@ -3,7 +3,10 @@ In flight (2 of 6 slots in use):
 - O81 (the grouping heading, the Venues view by `venue_categories` and the track record's board; rulings 395, 399 to 401, 403, 423, 434, Z1031), building under the cases ruling after its first run.
 
 Queued, in order:
-- O84 (who the user is: `self` out of the workspace file and into a machine file, the person in any hub; rulings 437, 438); its /spec waits on open item 439, which decides the file it reads.
+- O84 (who the user is: `self` out of the workspace file and into the primary hub's `.oculus/local.yml`, the person in any hub; rulings 437, 438); `self` read from the primary hub's `.oculus/local.yml` (ruling 439 (b)); waits for O79 to land, since both change `normalise.ts`, `validate.ts`, `data/index.ts`, `config/options/sources.yml` and the same line of `config/defaults/sources.yml`.
+- O85 (a hub's words set in Settings for any hub, the primary first and chosen; rulings 440, 443).
+- O86 (the update tasks of every hub, named by their hub when two hold one; rulings 441, 443).
+- O87 (the Focus band's positions and teaching by stages, as Funding; ruling 445); its /spec runs after O81 lands, since O81 changes the same files: `vocab.yml`, its options file, `vocab.ts`, `vocab-keys.ts`, `focus.ts` and `Band.svelte`.
 
 Owed looks: none.
 

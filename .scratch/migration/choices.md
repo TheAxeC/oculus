@@ -5304,3 +5304,25 @@ O81 gives each hub's vocabulary (`HubVocab`, `src/lib/data/model/model-collectio
 
 Where it applies: O81. Booked in `agents/briefs/O81-round1.md` item 4.
 Builds on it: O81
+
+## Z1033 (2026-10-26, /spec O85, the orchestrator, automode): which Settings rows name the hub they write
+
+Ruling 440 gives a hub choice to the Settings rows of a hub's words, categories and form fields, the three `docs/HELP.md:527` names. The write places every key of the hub list (`HUB_LIST`, `src/lib/data/helpers/hub-names.ts`) in the primary hub's `config.yml` (`placeOf`, `src/lib/server/edit/writes/config/config-place.ts`), and 36 of those 49 keys are read from each hub's own file: `scan`, `collections`, `chat_context`, `new_project_dir`, `memories_dir`, `wallpaper_dir`, the 22 keys of `vocab.yml`, `manifest_fields` and the seven `audit.*` keys (`readHub` per hub in `src/lib/server/root/watch/build.ts`, the audit over each hub's merged config at `src/lib/server/root/watch/portfolio/portfolio.ts:632`, `hubPictures` in `src/lib/server/content/images.ts:391`, the chat index per hub in `src/lib/server/machine/pty/start/context.ts:3`, `createIdea` under the chosen hub's config at `src/lib/server/edit/writes.ts:674`). The other 13 are read from the primary alone: `portfolio_deck`, `linkedin_dir`, `career_file`, `bookmarks`, `schedules`, `apps_dir`, `app_settings`, `wallpaper.image`, `docs`, `counts`, `slurm.resource`, `lint.writing_skip` and `lint.writing_glyphs` (`lintSettings` over the primary's config at `src/lib/server/root/context.ts:218`, `docs` and `counts` from the `config` channel's primary config at `src/lib/state/workbench/navigation/rail.ts:44` and `rail-badges.svelte.ts:149`, `wallpaper.image` at `src/lib/server/content/wallpaper.ts:10`, `apps_dir` and `app_settings` at `src/lib/server/root/watch/apps.ts:167,349`, `slurm.resource` at `src/lib/server/machine/hpc/host.ts:89`), while `docs/data-map.md`'s "A second hub" names only three of them as not read.
+
+- Chosen: (a) O85 covers the 36 keys, each row naming the hub it writes, the primary first and chosen; the 13 keep writing the primary with no choice; the data map's sentence names all 13.
+- Not chosen: (b) the words, categories and form fields alone, the lazy option, a narrower reading of the defect 440 rules on.
+
+Premise corrected by O85's brief check: `linkedin_dir` is read from each hub's own file (`src/lib/data/index.ts:201-206`), so the split is 37 keys read per hub and 12 read from the primary alone; the choice stands.
+
+Where it applies: O85. Booked in `plan.md` Rulings (open item 444) and O85's line.
+Builds on it: O85
+
+## Z1034 (2026-10-26, /spec O85, the orchestrator, automode): the internal widenings O85's brief check found
+
+O85's brief check (`agents/reviews/O85-brief-check.md`) found places the step's own line needs that the brief's paths left out: undo of a Settings record (`undo.ts` `recordLayers`), the page's list and family write (`editors/writer.ts`), its type (`shapes.ts`), the folder lists of the controls (`editors/sources.ts`), the unsaved-text guard (`write-files.ts`), the value checks under the primary's folder (`config-fit.ts`, `config-sources.ts`), and a second hub's merged values and pruned defaults, which the page cannot compute without the server-only hub layer. Each is needed for the line's "the write lands in that hub's `.oculus/config.yml`" and "shows that hub's value", and none shows the user anything the line does not name.
+
+- Chosen: (a) under ruling 374 (a), the brief takes these paths, a GET route `src/routes/api/(docs)/hub-settings/+server.ts` read by the Settings view alone that answers a hub's slice of the server's kept parse, the guarded entries' test files (G8, G9, G28, G96), and the cases the implied inputs give (cases 18 to 31).
+- Not chosen: (b) a page copy of the hub layer's merge and pruning, which needs a split of `hub-layer.ts` that O79 also changes and keeps two copies of one rule; (c) leaving undo, list rows and the guard on the primary, the lazy option, which ships a write that cannot be undone and a list row that writes the wrong hub.
+
+Where it applies: O85. Booked in `agents/briefs/O85.md` (decisions 4, 7 and 8) and the brief check's "Closed" heading.
+Builds on it: O85
