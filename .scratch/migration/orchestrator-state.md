@@ -43,10 +43,25 @@ dispatch:          # steps in flight, up to six (Z632)
   brief_check: .scratch/migration/agents/reviews/O86-brief-check.md (a3bd147e859e9ce7f, claude-opus-5-5, 259309 tokens, 95 tool uses, 10 min 43 s)
   base: bf27e33ff
   worktree: .agents/worktrees/migration-O86
-  landing: preparing
+  executor: agent
+  worker: claude:opus
+  launched: 2026-10-26
+  report: .scratch/migration/agents/reviews/O86-report.md
+  shared_paths: with O89, simple merges in separate lines: `config/text/views/boards/focus.yml` (O86 lines 85-90, O89 lines 1-10 and 130-140); the generated `docs/diagrams/*` with O85 and O89, regenerated at each landing.
+  round: 0
+  landing: not-started
 - step: O89
   brief_check: .scratch/migration/agents/reviews/O89-brief-check.md (a17b47d782ada96fb, claude-opus-5-5, 241420 tokens, 78 tool uses, 11 min 1 s)
-  landing: preparing
+  base: 1da23d50b
+  worktree: .agents/worktrees/migration-O89
+  executor: agent
+  worker: claude:opus
+  session_id: a6462cf6ae75f9bfa (claude-opus-5-5)
+  launched: 2026-10-26
+  report: .scratch/migration/agents/reviews/O89-report.md
+  shared_paths: with O86, simple merges in separate lines: `config/text/views/boards/focus.yml` (O86 lines 85-90, O89 lines 1-10 and 130-140); the generated `docs/diagrams/*` with O85 and O86, regenerated at each landing. None other with O85.
+  round: 0
+  landing: not-started
 ```
 
 ## The standing demands (from Axel, in force)
