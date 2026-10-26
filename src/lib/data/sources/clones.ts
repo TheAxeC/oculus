@@ -14,7 +14,7 @@
 // first. A project with none keeps an empty list, which is what offers Clone.
 
 import { findingText, type TextCatalog } from '../helpers/finding-text.ts';
-import type { Finding, Snapshot } from '../model/index.ts';
+import type { Entities, Finding } from '../model/index.ts';
 import { gitFolderOf, originOf, repositoryStandIns, sameAddress } from './origin.ts';
 import { sortFindings } from '../snapshot/validate.ts';
 
@@ -40,10 +40,11 @@ function listedClones(repositories: readonly string[]): { dir: string; origin: s
 /**
  * Set `repository.clones` on every project of the snapshot that has a `repository.url`, from the
  * repositories given, and add the finding for each project cloned more than once. The snapshot is
- * changed in place, before it is published.
+ * changed in place, before it is published; only its projects and its findings are read, so a hub's
+ * own snapshot takes it as the merged one does.
  */
 export function placeClones(
-    snapshot: Snapshot,
+    snapshot: { entities: Pick<Entities, 'projects'>; findings: Finding[] },
     repositories: readonly string[],
     catalog: TextCatalog
 ): void {

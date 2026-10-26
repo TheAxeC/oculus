@@ -408,7 +408,7 @@ Payloads are plain JSON. `X?` may be absent. A `Finding` is `{ file, key, messag
 | `organisations` | `id`, `name`, `links`, `personIds`, `fundingIds`, `kind?`, `country?` |
 | `resources` | `id`, `name`, `kind`, `links`, `order`, `host?`, `access?` |
 | `collections` | `id`, `title`, `file`, `entries`, `intro?`, `schema?`, `primary_key?` (the field an entry is addressed by, absent when the file has none), `key_fault?` (why the file has none: `{ cause }`, with `cause` one of `none` with `named?`, `two` with `fields`, `unkeyed` with `field` and `type`, `beside` with `named` and `field`, `unread`, and `missing`); a schema line is `{ field, type, label?, required?, options?, foreign_key?, primary_key?, display?, when?, help?, open?, map?, fields?, filter? }`, an option a word or `{ key, label }` |
-| `feeds` | `leads`, `radar`, `scout`, `linkedin` summaries |
+| `feeds` | `leads`, `radar`, `scout`, `linkedin` summaries over the hubs, and `byHub`, one row `{ hub, radar, scout, linkedin }` per hub with that hub's own run dates |
 | `career` | the career file, or `null` |
 
 An Entry is `{ id, title, fields, file, index, root }`. `relations` holds `[id, id]` lists: `projectVenue`, `projectFunding`, `projectDataset`, `projectPillar`, `projectDomain`, `projectRelated`, `fundingPillar`, `projectPerson`, `jointWorkPerson`, `personOrganisation`, `fundingOrganisation`. `projectPerson` pairs a project with each person of its `lead` and its `collaborators`.

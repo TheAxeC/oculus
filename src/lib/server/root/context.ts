@@ -383,10 +383,10 @@ export function createServerContext(
         return make.watchSchedules(hub, {
             files,
             rootsFor,
-            hub: () => open().primaryDir,
+            hubs: () => open(),
             run: (entry, size) =>
                 runEntry(entry, size, {
-                    hub: open().primaryDir,
+                    hubs: open(),
                     claudeBin: local.claudeBin,
                     text: textCatalog(configCache.quiet().config),
                     rootsFor,
@@ -810,6 +810,10 @@ export function createServerContext(
         const moved = now.primaryDir !== before.primaryDir || now.primary !== before.primary;
         const hubsMoved = !isDeepStrictEqual(now.hubs, before.hubs);
         if (moved || hubsMoved) reloadLocal(moved);
+        // The schedules offer the task files of every hub and watch each hub's tasks folder, so the
+        // hubs are read again here when one came or went; a move of the primary, whose files the
+        // watcher reads, builds the watcher again besides.
+        if (hubsMoved) owned().schedules.reload();
     });
     return context;
 }

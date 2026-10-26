@@ -16,7 +16,7 @@
 //
 // The career, the website and the portfolio deck are the primary's alone: a hub other than the
 // primary is built with none, and the feeds summary is the hubs' leads together with the latest
-// run dates.
+// run dates and each hub's own run dates.
 
 import { findingText, type TextCatalog } from '../../helpers/finding-text.ts';
 import { hubId, resolveKey, type Holders } from '../../helpers/hub-names.ts';
@@ -26,6 +26,7 @@ import type {
     Feeds,
     Finding,
     Funding,
+    HubSnapshot,
     Id,
     Person,
     Project,
@@ -43,7 +44,7 @@ import { throughSchema, type Reach, type SourceNames } from './references.ts';
  * have the keys its files give them, and the absolute path of each of its registry files (the empty
  * text for a part with none).
  */
-export type HubPart = { key: string; snapshot: Snapshot; files: Record<RegistryName, string> };
+export type HubPart = { key: string; snapshot: HubSnapshot; files: Record<RegistryName, string> };
 
 /** The kinds of record a reference may name, each a table of the entities by the same name. */
 const SOURCES = [
@@ -238,7 +239,15 @@ function latest<T>(held: (T | null)[], date: (one: T) => string | null): string 
     return there.length === 0 ? undefined : there.map(date).reduce(later, null);
 }
 
-/** The feeds summary of the hubs: every hub's live leads marked with its hub, the latest runs. */
+/** Whether a part was read from a hub: a part of a project folder that is no hub has no file. */
+function fromHub(part: HubPart): boolean {
+    return Object.values(part.files).some((file) => file !== '');
+}
+
+/**
+ * The feeds summary of the hubs: every hub's live leads marked with its hub, the latest runs, and
+ * each hub's own runs in `byHub`.
+ */
 function feedsOf(parts: readonly HubPart[]): Feeds {
     const all = parts.map((part) => part.snapshot.entities.feeds);
     const leads = parts.flatMap((part) =>
@@ -260,14 +269,18 @@ function feedsOf(parts: readonly HubPart[]): Feeds {
         leads: all.every((one) => one.leads === null) ? null : leads,
         radar: radar === undefined ? null : { lastRun: radar },
         scout: scout === undefined ? null : { lastRun: scout },
-        linkedin: linkedin === undefined ? null : { lastPost: linkedin }
+        linkedin: linkedin === undefined ? null : { lastPost: linkedin },
+        byHub: parts.filter(fromHub).map((part) => {
+            const own = part.snapshot.entities.feeds;
+            return { hub: part.key, radar: own.radar, scout: own.scout, linkedin: own.linkedin };
+        })
     };
 }
 
 /** The records of one kind of every part, each passed through `fix`, under the ids it gave them. */
 function joined<T extends { id: Id }>(
     parts: readonly HubPart[],
-    table: (entities: Entities) => Record<Id, T>,
+    table: (entities: HubSnapshot['entities']) => Record<Id, T>,
     fix: (one: T, part: HubPart) => T
 ): Record<Id, T> {
     return byId(

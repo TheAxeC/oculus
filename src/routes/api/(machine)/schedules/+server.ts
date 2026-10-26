@@ -22,7 +22,7 @@ export const POST: RequestHandler = ({ request, locals }) => {
             record: server.local.scheduleRecord ?? defaultRecordPath()
         }),
         rootsFor: () => repositoryRoots(server.workspace.open()),
-        hubFor: () => server.workspace.open().primaryDir,
+        hubsFor: () => server.workspace.open(),
         text: () => textCatalog(locals.config().config),
         approvalsFor: () => server.local.approvals ?? defaultApprovalsPath(),
         writes: server.fsWrites,

@@ -48,6 +48,8 @@ export type TaskConfig = {
     taskEngine: string;
     /** A hub whose `.oculus/local.yml` names a Claude command with a space in its path. */
     taskHub: string;
+    /** A second hub, `other` beside the task hub in `worldOf`, holding the Lit Watch task alone. */
+    otherHub: string;
     chatHub: string;
     chatState: string;
     chatProject: string;
@@ -94,11 +96,15 @@ export function makeTaskConfig(): TaskConfig {
     mkdirSync(join(chatHub, '.oculus', 'data', 'research'), { recursive: true });
     writeFileSync(join(chatProject, 'project.yml'), 'id: alpha\ntitle: Alpha Study\n');
     writeFileSync(join(chatHub, '.oculus', 'data', 'research', 'venues.yml'), 'entries: []\n');
+    const otherHub = hubWith(root, 'other-hub', '');
+    mkdirSync(join(otherHub, '.oculus', 'tasks'), { recursive: true });
+    writeFileSync(join(otherHub, '.oculus', 'tasks', 'litwatch.md'), '# litwatch\n');
     return {
         root,
         engine: engineWith(root, 'engine'),
         taskEngine: engineWith(root, 'task-engine'),
         taskHub: hubWith(root, 'task-hub', 'claude_bin: /opt/Claude CLI/claude\n'),
+        otherHub,
         chatHub,
         chatState,
         chatProject,
@@ -193,15 +199,22 @@ export function configOf(engine: string): () => Record<string, unknown> {
 /**
  * The open workspace and the machine values a request is given: the folder `hub` as the primary hub
  * of a workspace when one is named (it is made a hub) with the values of its `.oculus/local.yml`,
- * else a workspace with no folder and the defaults of local.yml. The settings of another hub are
- * the shipped engine's under that hub's own file, parsed at each call as the server's cache parses
- * them on a change.
+ * and the folder `other` after it as a second hub named `other` when one is named, else a workspace
+ * with no folder and the defaults of local.yml. The settings of another hub are the shipped
+ * engine's under that hub's own file, parsed at each call as the server's cache parses them on a
+ * change.
  */
 export function worldOf(
-    hub?: string
+    hub?: string,
+    other?: string
 ): Pick<TerminalOptions, 'openFor' | 'localFor' | 'hubSettings'> {
     const workspace = workspaceWith(
-        hub === undefined ? [] : [{ name: 'hub', dir: plantHub(hub) }],
+        hub === undefined
+            ? []
+            : [
+                  { name: 'hub', dir: plantHub(hub) },
+                  ...(other === undefined ? [] : [{ name: 'other', dir: plantHub(other) }])
+              ],
         hub === undefined ? undefined : 'hub'
     );
     return {

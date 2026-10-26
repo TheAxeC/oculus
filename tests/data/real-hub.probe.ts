@@ -112,7 +112,6 @@ process.on('exit', () => rmSync(scratch, { recursive: true, force: true }));
 const options = {
     ...sessionFolders(local.accounts),
     hub,
-    snapshot,
     cachePath: join(scratch, 'transcript-cache.json'),
     overridesPath: join(scratch, 'sessions.json')
 };

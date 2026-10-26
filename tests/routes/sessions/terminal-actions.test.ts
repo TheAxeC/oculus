@@ -109,6 +109,31 @@ describe('POST /api/terminal, the task action', () => {
         }
     });
 
+    it('starts the task in the folder of the hub its root names, the primary for its own name', async () => {
+        for (const [root, cwd] of [
+            ['other', task.otherHub],
+            ['hub', task.taskHub]
+        ]) {
+            const driver = tmux();
+            const response = await handleTerminal(
+                request({ action: 'task', kind: 'litwatch', root, cols: 92, rows: 27 }),
+                TOKEN,
+                {
+                    ...worldOf(task.taskHub, task.otherHub),
+                    engine: task.taskEngine,
+                    run: driver.run,
+                    configFor: () => CHAT_CONFIG
+                }
+            );
+            expect(response.status, root).toBe(200);
+            const started = driver.calls.find((args) => args[0] === 'new-session') ?? [];
+            expect(started[started.indexOf('-c') + 1], root).toBe(cwd);
+            expect(lineOf(started), root).toEqual([
+                `'/opt/Claude CLI/claude' '${taskSentence('litwatch')}'`
+            ]);
+        }
+    });
+
     it('refuses a task while the workspace has no primary hub, and starts nothing', async () => {
         const driver = tmux();
         const response = await handleTerminal(
@@ -440,7 +465,8 @@ describe('POST /api/terminal, a refusal', () => {
             ? Promise.reject(new Error(`can't find session: oculus-${ID}`))
             : Promise.resolve('');
 
-    const REFUSALS: { title: string; body: unknown; word: string }[] = [
+    /** A refusal: its body, its word, and the names it answers with when it has any. */
+    const REFUSALS: { title: string; body: unknown; word: string; names?: string[] }[] = [
         { title: 'a body that is no map', body: [], word: 'not-an-action' },
         { title: 'an action that is none', body: { action: 'nonsense' }, word: 'not-an-action' },
         {
@@ -485,18 +511,48 @@ describe('POST /api/terminal, a refusal', () => {
                 rows: 25
             },
             word: 'outside'
+        },
+        {
+            title: 'a task whose root names no hub of the workspace',
+            body: { action: 'task', kind: 'litwatch', root: 'nope', cols: 80, rows: 24 },
+            word: 'hub-unknown',
+            names: ['nope']
+        },
+        {
+            title: 'a task whose root is empty',
+            body: { action: 'task', kind: 'litwatch', root: '', cols: 80, rows: 24 },
+            word: 'hub-unknown',
+            names: ['']
+        },
+        {
+            title: 'a task whose root is no text',
+            body: { action: 'task', kind: 'litwatch', root: 3, cols: 80, rows: 24 },
+            word: 'bad-terminal'
+        },
+        {
+            title: 'a task the hub its root names holds no file of',
+            body: { action: 'task', kind: 'scout', root: 'other', cols: 80, rows: 24 },
+            word: 'task-file-missing',
+            names: ['.oculus/tasks/scout.md', 'other']
         }
     ];
 
-    it.each(REFUSALS)('answers $title as the word $word', async ({ body, word }) => {
+    // A body that names a `root` is sent over the task hub and the second hub, and starts nothing.
+    it.each(REFUSALS)('answers $title as the word $word', async ({ body, word, names }) => {
+        const calls: string[][] = [];
+        const hubs = typeof body === 'object' && body !== null && 'root' in body;
         const response = await handleTerminal(request(body), TOKEN, {
-            ...worldOf(),
+            ...(hubs ? worldOf(task.taskHub, task.otherHub) : worldOf()),
             engine: task.engine,
-            run: gone,
+            run: (args) => {
+                calls.push(args);
+                return gone(args);
+            },
             configFor: configOf(task.engine)
         });
         expect(response.status).toBe(400);
-        expect(await answer(response)).toEqual({ error: word });
+        expect(await answer(response)).toEqual({ error: word, ...(names && { names }) });
+        if (hubs) expect(calls.filter((args) => args[0] === 'new-session')).toEqual([]);
     });
 });
 

@@ -1,9 +1,11 @@
 // Layer 2, server. Start what a schedule runs, for a due time or a Run now. An update task starts
-// as the tray's press starts it (schedules/task.ts) with the entry's `unattended` as its flag. A
-// command of a repository's `.oculus/commands.yml` starts as the command route starts it
-// (commands/run.ts `runCommand`), from the repository the entry names, with an empty context. A
-// prompt starts a Claude session in its folder with the prompt as the one argument after `--`,
-// which tmux hands to the process as it is, so no shell reads it.
+// as the tray's press starts it (schedules/task.ts) with the entry's `unattended` as its flag, in
+// the hub its `hub` names among the hubs at the call, the primary when it names none; a hub taken
+// out of the workspace since the entry was read is refused with `hub-unknown`. A command of a
+// repository's `.oculus/commands.yml` starts as the command route starts it (commands/run.ts
+// `runCommand`), from the repository the entry names, with an empty context. A prompt starts a
+// Claude session in its folder with the prompt as the one argument after `--`, which tmux hands to
+// the process as it is, so no shell reads it.
 //
 // The answer is the terminal or the word that refused the start with the names its sentence is
 // about, and nothing is thrown for a start the system refused. A command chain that needs the
@@ -19,15 +21,16 @@ import { runCommand } from '../commands/run.ts';
 import { TerminalRefused } from '../../pty/refusal.ts';
 import { startTerminal, type StartOptions } from '../../pty/sessions.ts';
 import { promptFolder, resolveFolder } from './file.ts';
-import { startUpdateTask } from './task.ts';
+import { namedHub, startUpdateTask, type TaskHubs } from './task.ts';
 
 /** What a run needs besides the tmux options of every terminal start. */
 export type RunEntryOptions = StartOptions & {
     /**
-     * The primary hub's folder, the folder of an update task and what `hub` of a folder names; null
-     * while the workspace has no primary, and then a run that needs it is refused.
+     * The open workspace's hubs, read at the call: the hub an update task's `hub` names, and the
+     * primary, whose folder is the one of a task that names none and what `hub` of a folder names;
+     * with no primary a run that needs it is refused.
      */
-    hub: string | null;
+    hubs: TaskHubs;
     /** The `claude` program, as `claude_bin` of the machine's configuration names it. */
     claudeBin: string;
     /** The text catalog, which holds the sentence an update task starts with. */
@@ -49,13 +52,16 @@ export async function runEntry(
     size: { cols: number; rows: number },
     options: RunEntryOptions
 ): Promise<RunAnswer> {
-    const { hub, claudeBin, text, rootsFor, approvalsFor, ...tmux } = options;
+    const { hubs, claudeBin, text, rootsFor, approvalsFor, ...tmux } = options;
+    const hub = hubs.primaryDir;
     const runs = entry.runs;
     try {
         if ('task' in runs) {
+            const named = namedHub(hubs, runs.hub);
+            if ('refused' in named) return named;
             return await startUpdateTask(runs.task, entry.unattended, {
                 ...tmux,
-                hub,
+                hub: named.hub,
                 claudeBin,
                 text,
                 size

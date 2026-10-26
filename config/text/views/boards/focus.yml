@@ -86,8 +86,8 @@ text:
             overdue_generic: '{0} {1}d ago'
             refresh_glyph: refresh_live
             refresh_inbox_plain: 'Inbox: triaged {0}d ago | run Inbox from the Update tray'
-            refresh_litwatch_plain: 'Lit Watch: {0} | run Lit Watch from the Update tray'
-            refresh_scout_plain: 'Position scout: ran {0}d ago | run Scout from the Update tray'
+            refresh_litwatch_plain: '{0}: {1} | run {0} from the Update tray'
+            refresh_scout_plain: '{0}: ran {1}d ago | run {0} from the Update tray'
             scout_glyph: scout
             since_linkedin: since your last LinkedIn post
             snoozed: Snoozed ({0})

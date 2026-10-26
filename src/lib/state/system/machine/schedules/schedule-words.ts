@@ -4,10 +4,41 @@
 // terminal route (`command-unknown`, `no-file`, `bad-repo` and the others a chain or a start is
 // refused with) is said by state/shared/answers/terminal-words.ts, and a word of neither is said as
 // a failure for a reason this version of oculus does not name.
+//
+// The labels an update task goes by are here too, since the tray, its dialog, the Focus board's
+// refresh lines and the notices all name a task of a hub by the same words: the task's label, with
+// the hub's name beside it when two or more hubs offer that task.
 
-import { SCHEDULE_WORDS, type ScheduleWord } from '../../../../data/model/index.ts';
+import { SCHEDULE_WORDS, type HubTask, type ScheduleWord } from '../../../../data/model/index.ts';
+import type { UpdateTask } from '../../../../data/helpers/run/tasks.ts';
 import { terminalSentence, terminalWord } from '../../../shared/answers/terminal-words.ts';
 import { t as catalogText } from '../../../shared/words/text.ts';
+
+const TASK_LABELS: Record<UpdateTask, () => string> = {
+    litwatch: () => catalogText('app.tasks.lit_label'),
+    scout: () => catalogText('app.tasks.scout_label'),
+    linkedin: () => catalogText('app.tasks.linkedin_label'),
+    inbox: () => catalogText('app.tasks.inbox_label')
+};
+
+/** The label of an update task, whichever hub holds it. */
+export function taskLabel(task: UpdateTask): string {
+    return TASK_LABELS[task]();
+}
+
+/** The label of a task of one hub, with the hub's name beside it as `app.tasks.in_hub` puts it. */
+export function hubTaskLabel(pair: HubTask): string {
+    return catalogText('app.tasks.in_hub', taskLabel(pair.task), pair.hub);
+}
+
+/**
+ * The label of a task of one hub as the tray names its row: the task's label, with the hub's name
+ * beside it when two or more of the `offered` pairs are of that task.
+ */
+export function pairLabel(pair: HubTask, offered: readonly HubTask[]): string {
+    const shared = offered.filter((one) => one.task === pair.task).length > 1;
+    return shared ? hubTaskLabel(pair) : taskLabel(pair.task);
+}
 
 /** The schedule word a value is, or null for any other value. */
 function scheduleWord(value: unknown): ScheduleWord | null {
@@ -46,6 +77,10 @@ function problemSentence(word: ScheduleWord, names: readonly string[]): string {
             return catalogText('app.schedules.problem_prompt_too_long', first);
         case 'prompt-control':
             return catalogText('app.schedules.problem_prompt_control');
+        case 'hub-wrong':
+            return catalogText('app.schedules.problem_hub_wrong', first);
+        case 'hub-unknown':
+            return catalogText('app.schedules.problem_hub_unknown', first);
         case 'when-unreadable':
             return catalogText('app.schedules.problem_when_unreadable', first);
         case 'when-never':

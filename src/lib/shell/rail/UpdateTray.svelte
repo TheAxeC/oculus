@@ -2,14 +2,17 @@
     // Layer 3, shell. The update tray. It holds two sections under its heading. Schedules
     // (ScheduleList.svelte) lists the entries of `schedules.yml` in the hub's `.oculus` folder with
     // their next and latest runs and the controls that edit, pause, run and delete them. Tasks
-    // lists the update tasks whose file `.oculus/tasks/<task>.md` the primary hub holds (the
-    // schedule store's `offered`), and one line in their place when it holds none or there is no
-    // primary: each control starts the server-built Claude command in a terminal, selects it, and
-    // shows it in the Terminal tab of the page on screen, or a new one (the terminals store's
-    // `showTerminal`); beside each control, a cell gives the last run with its label (the
-    // snapshot's feed summary supplies it, and the inbox triage's comes from the `inbox` channel,
-    // whose notes file is what that task writes), a separator, a cell saying which schedule runs
-    // the task next, and the control that opens the schedule dialog for the task.
+    // lists one row for each hub's update task whose file `.oculus/tasks/<task>.md` that hub
+    // holds (the schedule store's `offered`), the primary's first, each named by its hub when two
+    // or more hubs hold that task, and one line in their place when no hub holds a task file or
+    // the workspace holds no hub: each control starts the server-built Claude command in that
+    // hub's folder in a terminal, selects it, and shows it in the Terminal tab of the page on
+    // screen, or a new one (the terminals store's `showTerminal`); beside each control, a cell
+    // gives the last run with its label (that hub's row of the snapshot's feed summary, `byHub`,
+    // supplies it, and the inbox triage's comes from the `inbox` channel, whose notes file is what
+    // that task writes, the same for every hub), a separator, a cell saying which schedule runs
+    // the task of that hub next, and the control that opens the schedule dialog for the task of
+    // that hub.
     //
     // A task is an ordinary Claude session, so its permission prompts are answered in the terminal
     // pane and a press starts it straight away. From the press until the start is answered (the
@@ -46,7 +49,8 @@
     };
 
     let { open, onclose }: Props = $props();
-    let running: UpdateTask | null = $state(null);
+    /** The key of the row whose start is awaited, its task and its hub. */
+    let running: string | null = $state(null);
     let chatting = $state(false);
     let said = $state('');
     /** The schedule a delete is being asked about, by its position and the name read there. */
@@ -58,20 +62,26 @@
         inbox: () => t('app.tasks.inbox_note')
     };
     const current = $derived(paletteSource());
-    const summary = $derived(current.snapshot?.entities.feeds);
-    const lastRuns: Record<UpdateTask, () => string | null | undefined> = {
-        litwatch: () => summary?.radar?.lastRun,
-        scout: () => summary?.scout?.lastRun,
-        linkedin: () => summary?.linkedin?.lastPost,
-        inbox: () => current.notesRun ?? undefined
-    };
+    const byHub = $derived(current.snapshot?.entities.feeds.byHub ?? []);
+
+    /** The last run of a task of one hub: that hub's feed, or the machine's inbox triage. */
+    function lastRun(kind: UpdateTask, hub: string): string | null | undefined {
+        if (kind === 'inbox') return current.notesRun ?? undefined;
+        const own = byHub.find((one) => one.hub === hub);
+        if (kind === 'litwatch') return own?.radar?.lastRun;
+        if (kind === 'scout') return own?.scout?.lastRun;
+        return own?.linkedin?.lastPost;
+    }
+
     const tasks = $derived(
-        schedule.offered().map((kind) => ({
-            kind,
-            label: schedule.taskLabel(kind),
-            note: NOTES[kind](),
-            last: lastRuns[kind](),
-            next: schedule.nextOfTask(kind)
+        schedule.offered().map((pair) => ({
+            key: JSON.stringify([pair.task, pair.hub]),
+            kind: pair.task,
+            hub: pair.hub,
+            label: schedule.taskLabel(pair),
+            note: NOTES[pair.task](),
+            last: lastRun(pair.task, pair.hub),
+            next: schedule.nextOfTask(pair)
         }))
     );
 
@@ -81,10 +91,10 @@
         return kind === 'linkedin' ? t('app.tasks.last_post', last) : t('app.tasks.last', last);
     }
 
-    async function start(kind: UpdateTask): Promise<void> {
-        running = kind;
+    async function start(task: { key: string; kind: UpdateTask; hub: string }): Promise<void> {
+        running = task.key;
         said = '';
-        const answer = await startTask(kind);
+        const answer = await startTask(task.kind, task.hub);
         running = null;
         if (!answer.ok) {
             said = t('editor.failed', answer.error);
@@ -152,16 +162,16 @@
                     {#if schedule.noTasks() !== ''}
                         <p class="none">{schedule.noTasks()}</p>
                     {/if}
-                    {#each tasks as task (task.kind)}
-                        <div class="task" data-task={task.kind}>
+                    {#each tasks as task (task.key)}
+                        <div class="task" data-task={task.kind} data-hub={task.hub}>
                             <ToolButton
                                 label={task.label}
                                 title={task.note}
-                                glyph={running === task.kind ? 'sync' : undefined}
-                                turning={running === task.kind}
-                                active={running === task.kind}
+                                glyph={running === task.key ? 'sync' : undefined}
+                                turning={running === task.key}
+                                active={running === task.key}
                                 disabled={running !== null || chatting}
-                                onclick={() => start(task.kind)}
+                                onclick={() => start(task)}
                             />
                             <span class="last">{lastLine(task.kind, task.last)}</span>
                             <span class="sep" aria-hidden="true">{t('sessions.meta_sep')}</span>
@@ -170,7 +180,11 @@
                                 label={t('app.tasks.schedule')}
                                 compact
                                 onclick={() =>
-                                    schedule.openDialog({ task: task.kind, name: task.label })}
+                                    schedule.openDialog({
+                                        task: task.kind,
+                                        hub: task.hub,
+                                        name: task.label
+                                    })}
                             />
                             {#if task.kind === 'inbox'}
                                 <span class="note">

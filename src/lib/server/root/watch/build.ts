@@ -17,6 +17,7 @@ import {
     readFolders,
     readHub,
     type EngineConfigIn,
+    type HubBuild,
     type HubRoot,
     type OtherHub,
     type PortfolioBuild
@@ -103,7 +104,7 @@ const NO_FILES = Object.fromEntries(REGISTRIES.map((name) => [name, ''])) as Rec
  * The build of the project folders of a workspace with no primary, one part per project, each of
  * the hub named by its folder; the findings of the build ride on the first.
  */
-function folderParts(build: PortfolioBuild): HubPart[] {
+function folderParts(build: HubBuild): HubPart[] {
     const { snapshot } = build;
     return Object.values(snapshot.entities.projects).map((project, at) => ({
         key: project.id,

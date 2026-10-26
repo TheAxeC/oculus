@@ -31,9 +31,9 @@ import { createReader } from '../../../src/lib/data/sources/deck/read.ts';
 import type { DeckProject } from '../../../src/lib/data/sources/deck/kinds.ts';
 import type {
     Deck,
+    HubSnapshot,
     PortfolioConfig,
-    Project,
-    Snapshot
+    Project
 } from '../../../src/lib/data/model/index.ts';
 
 /**
@@ -180,7 +180,7 @@ function derivedCounts(read: HubRead): Record<string, number> {
 }
 
 /** A hub read and built once, on the first case that asks for it. */
-type Built = { read: HubRead; snapshot: Snapshot; projects: Project[] };
+type Built = { read: HubRead; snapshot: HubSnapshot; projects: Project[] };
 
 /** The read and build of a hub, made on the first call and kept for the cases after it. */
 function builder(readOf: () => HubRead): () => Built {

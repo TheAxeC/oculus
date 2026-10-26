@@ -530,6 +530,10 @@ A list of schedules. Each runs one thing: an update task, a command of a reposit
 #   paused: true
 #   unattended: true                # runs without asking for permissions
 #
+# - name: Lab radar
+#   runs: { task: litwatch, hub: lab }  # the task of the hub named lab; without `hub`, the primary's
+#   when: "0 7 * * 3"
+#
 # - name: Nightly build
 #   runs: { command: build, folder: ~/code/my-tool }
 #   when: "0 2 * * *"
@@ -541,7 +545,7 @@ A list of schedules. Each runs one thing: an update task, a command of a reposit
 
 ## Update tasks
 
-An update task is a Markdown file of the hub, `.oculus/tasks/<task>.md`, for `litwatch`, `scout`, `inbox` and `linkedin`. The Update tray and a schedule start a Claude Code session in the hub's folder and ask it to follow the file step by step, so the file is the whole instruction for one run. The tray offers only the tasks whose file the hub holds. Each template has the same sections: what the task does, the steps, the guardrails and the finish line. Replace every `<...>` with your own words; the rest can stay as it is.
+An update task is a Markdown file of a hub, `.oculus/tasks/<task>.md`, for `litwatch`, `scout`, `inbox` and `linkedin`, and any hub of the workspace may hold one. The Update tray and a schedule start a Claude Code session in the folder of the hub whose task it is and ask it to follow the file step by step, so the file is the whole instruction for one run. The tray offers the task of every hub that holds its file, the primary's first, and names a row by its hub when two hubs hold that task; a schedule names its hub with `hub:`, the primary when it names none. A save from the Schedule dialog keeps the `hub:` an entry names, the primary's name included, writes none for an entry that names none and runs the primary's task, and writes `hub:` for the task of any other hub. Each template has the same sections: what the task does, the steps, the guardrails and the finish line. Replace every `<...>` with your own words; the rest can stay as it is.
 
 ### .oculus/tasks/litwatch.md
 

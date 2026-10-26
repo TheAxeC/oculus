@@ -66,7 +66,9 @@ export function terminalSentence(word: TerminalRefusal, names: readonly string[]
         case 'task-needs-agent':
             return catalogText('sessions.refused_task_needs_agent');
         case 'task-file-missing':
-            return catalogText('sessions.refused_task_file_missing', first);
+            return catalogText('sessions.refused_task_file_missing', first, second);
+        case 'hub-unknown':
+            return catalogText('sessions.refused_hub_unknown', first);
         case 'needs-confirm':
             return catalogText('sessions.refused_needs_confirm', first);
         case 'approvals-unwritable':

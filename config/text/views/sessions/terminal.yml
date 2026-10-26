@@ -54,6 +54,7 @@ text:
         refused_task_gone: The task {0} is not offered by an app that acts, so nothing was started.
         refused_dependency_self: The command {0} depends on itself.
         refused_dependency_unknown: The command {0} depends on {1}, which is not a command.
+        refused_hub_unknown: The open workspace holds no hub named "{0}", so nothing was started.
         refused_no_file: 'No value for {0}: open a file in a source tab first.'
         refused_no_primary: The open workspace has no primary hub, so nothing was started; set a primary in the workspace file.
         refused_no_selection: 'No value for {0}: select text in a source tab first.'
@@ -64,7 +65,7 @@ text:
         refused_nul_value: The value of {0} holds a NUL character, which no environment variable can carry.
         refused_task_changed: The task changed since it was shown; the composer shows its text now.
         refused_task_needs_agent: A task starts Claude or Codex, so nothing was started.
-        refused_task_file_missing: The primary hub holds no {0}, so the update task has nothing to follow and nothing was started.
+        refused_task_file_missing: The hub {1} holds no {0}, so the update task has nothing to follow and nothing was started.
         refused_task_too_long: The task's text, with the words added to it, is longer than a prompt may be, so nothing was started.
         refused_task_unknown: That task is no longer in the hub, so nothing was started.
         refused_still_running: The line is still running. Restart it to run it again.

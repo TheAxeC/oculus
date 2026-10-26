@@ -411,13 +411,28 @@ export type Lead = Rooted & {
  *
  * `scout` is the position scout's own run date, which lives in the leads file's `meta.log` rather
  * than in a file of its own, so it is null exactly when `leads` is.
+ *
+ * This is one hub's feeds as sources/documents/feeds.ts reads them; the summary the snapshot
+ * carries (`Feeds`) adds each hub's run dates.
  */
-export type Feeds = {
+export type RawFeeds = {
     leads: Lead[] | null;
     radar: { lastRun: string | null } | null;
     scout: { lastRun: string | null } | null;
     linkedin: { lastPost: string | null } | null;
 };
+
+/** One hub's own run dates: its name, and its radar, scout and LinkedIn as its feeds give them. */
+type HubRuns = { hub: string } & Pick<RawFeeds, 'radar' | 'scout' | 'linkedin'>;
+
+/**
+ * The feeds summary of the snapshot: the hubs' live leads together and the latest run date of each
+ * feed over the hubs, with `byHub`, one row per hub of the merge in the merge's order holding that
+ * hub's own run dates, which the update tray and the Focus board read for a task of one hub. A
+ * hub's own snapshot (`HubSnapshot`) carries its `RawFeeds`, with no `byHub`; the merge of the hubs
+ * (snapshot/hubs/merge.ts) gives the rows, and a project folder that is no hub gives none.
+ */
+export type Feeds = RawFeeds & { byHub: HubRuns[] };
 
 /** The generated YAML and Markdown feeds delivered together on the feeds channel. */
 export type FeedKind = 'radar' | 'leads' | 'linkedin';
@@ -434,12 +449,6 @@ export type FeedData = {
     /** Why the file has no primary key (`keyFaultOf`), absent when it has one. */
     key_fault?: KeyFault;
 };
-
-/**
- * What sources/documents/feeds.ts returns. It is already JSON-safe, so the snapshot carries it
- * unchanged.
- */
-export type RawFeeds = Feeds;
 
 /**
  * The career strategy of the career file (`career_file`): its title, the goal it works toward, the

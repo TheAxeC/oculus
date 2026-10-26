@@ -24,6 +24,7 @@ function linesOver(waiting: string | null): string[] {
         commands: [],
         folders: [],
         tasks: null,
+        primary: null,
         unread: [],
         waiting
     };

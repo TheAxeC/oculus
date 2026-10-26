@@ -96,6 +96,7 @@ const scheduleShape = unchangedAs<Payloads['schedule']>(
         commands: listShape,
         folders: listShape,
         tasks: listShape.nullable(),
+        primary: z.string().nullable(),
         unread: listShape,
         waiting: z.string().nullable()
     })

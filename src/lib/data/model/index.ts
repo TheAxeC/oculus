@@ -197,6 +197,15 @@ export type Snapshot = {
 };
 
 /**
+ * One hub's own snapshot, as normalise builds it from that hub's files: the snapshot the merge of
+ * the hubs (snapshot/hubs/merge.ts) joins, whose feeds are that hub's own (`RawFeeds`), so it has
+ * no rows of `byHub`. The merge gives the `Snapshot` the socket carries.
+ */
+export type HubSnapshot = Omit<Snapshot, 'entities'> & {
+    entities: Omit<Entities, 'feeds'> & { feeds: RawFeeds };
+};
+
+/**
  * One message on the socket. The types of the wire live here with the
  * snapshot because both halves of layer 2 need them and the boundary table lets `state/` import
  * `data/model` and nothing else of `data/`.
@@ -722,6 +731,7 @@ export type {
     LspState,
     LspToPage,
     LspToServer,
+    HubTask,
     ProcessesPayload,
     ProcessRow,
     PtyPayload,

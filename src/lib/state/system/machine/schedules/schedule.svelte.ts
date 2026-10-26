@@ -21,6 +21,7 @@ import { UPDATE_TASKS, type UpdateTask } from '../../../../data/helpers/run/task
 import type {
     ChainLine,
     CommandsAnswer,
+    HubTask,
     ScheduleRow,
     Terminal,
     UnchosenKey
@@ -35,7 +36,7 @@ import type { EntitiesStore, WritesStore } from '../../../shared/stores/shapes.t
 import { ahead, stamp } from '../../../shared/words/format.ts';
 import { t } from '../../../shared/words/text.ts';
 import { whenOf, patternOf, WEEK_DAYS, WHEN_CHOICES, type WhenChoice } from './schedule-when.ts';
-import { wordSentence } from './schedule-words.ts';
+import { hubTaskLabel, pairLabel, wordSentence } from './schedule-words.ts';
 
 /** How many of an entry's latest runs a row lists. */
 const RUNS_SHOWN = 5;
@@ -56,8 +57,18 @@ type ScheduleDraft = {
     was: { at: number; name: string } | null;
     name: string;
     kind: RunsKind;
-    /** The chosen update task; '' while the entry's own value does not read and none is chosen. */
+    /**
+     * The chosen update task; '' while none is chosen: no task is offered, or the entry's own task
+     * or hub does not read.
+     */
     task: UpdateTask | '';
+    /** The name of the hub whose task it is; '' while no task is chosen. */
+    hub: string;
+    /**
+     * Whether the entry being edited names a hub in its `runs` as the file holds it, so a save
+     * writes `hub` whichever hub is chosen, the primary included; false for a new entry.
+     */
+    named: boolean;
     /** The chosen command, as `commands()` keys it; '' is none. */
     commandKey: string;
     /** The folder a prompt starts in: `hub`, an absolute path or a path under `~/`. */
@@ -84,6 +95,8 @@ type DialogFill = {
     at?: number;
     name?: string;
     task?: UpdateTask;
+    /** The hub whose task `task` is; the primary when absent. */
+    hub?: string;
     /** A command's name in a repository's `.oculus/commands.yml`; `folder` is the repository. */
     command?: string;
     folder?: string;
@@ -136,23 +149,33 @@ export type ScheduleStore = {
     none: () => string;
     /** One line for each file that does not read. */
     unread: () => string[];
-    /** The earliest next run of the entries that run a task, as a line of the task's row. */
-    nextOfTask: (kind: UpdateTask) => string;
-    /** A task's label in the tray. */
-    taskLabel: (kind: UpdateTask) => string;
     /**
-     * The update tasks whose file the primary hub holds, in the order of UPDATE_TASKS, which the
-     * tray and the Focus board offer; none before the first payload.
+     * The earliest next run of the entries that run a task of one hub (an entry with no `hub` runs
+     * the primary's), as a line of that task's row.
      */
-    offered: () => UpdateTask[];
+    nextOfTask: (pair: HubTask) => string;
+    /** The label of a task of one hub, as the tray names its row. */
+    taskLabel: (pair: HubTask) => string;
     /**
-     * The line the tray shows when it offers no task, for a workspace with no primary hub or a hub
-     * with no task file; '' when it offers one and before the first payload.
+     * The update tasks the hubs hold a file for, each with its hub, in the order the payload gives
+     * them (by task in the order of UPDATE_TASKS, then the primary's first and the other hubs in
+     * the folders' order), which the tray and the Focus board offer; none before the first payload.
+     */
+    offered: () => HubTask[];
+    /**
+     * The line the tray and the dialog's Task box show when no task is offered, for a workspace
+     * with no hub or hubs with no task file; '' when one is offered and before the first payload.
      */
     noTasks: () => string;
     /** The choices of the dialog's Runs, Task and When boxes, and the names of the seven days. */
     kinds: () => CommandChoice[];
+    /**
+     * The offered pairs, labelled as the tray's rows, with the draft's own pair labelled with its
+     * hub when it is not offered; each id is the pair as `taskChoice` writes it.
+     */
     tasks: () => CommandChoice[];
+    /** The id of the draft's pair among `tasks()`, '' while no task is chosen. */
+    taskChoice: (draft: ScheduleDraft) => string;
     whens: () => CommandChoice[];
     dayNames: () => string[];
     /**
@@ -247,12 +270,24 @@ function readKey(key: string): { folder: string; name: string } | null {
     return null;
 }
 
-const TASK_LABELS: Record<UpdateTask, () => string> = {
-    litwatch: () => t('app.tasks.lit_label'),
-    scout: () => t('app.tasks.scout_label'),
-    linkedin: () => t('app.tasks.linkedin_label'),
-    inbox: () => t('app.tasks.inbox_label')
-};
+/** A pair's id in the dialog's Task box: its task and its hub. */
+function pairKeyOf(task: UpdateTask, hub: string): string {
+    return JSON.stringify([task, hub]);
+}
+
+/** The task and the hub an id of the Task box stands for, or null for an id that is none. */
+function readPair(key: string): HubTask | null {
+    try {
+        const read: unknown = JSON.parse(key);
+        if (Array.isArray(read) && typeof read[1] === 'string') {
+            const task = UPDATE_TASKS.find((one) => one === read[0]);
+            if (task !== undefined) return { task, hub: read[1] };
+        }
+    } catch {
+        return null;
+    }
+    return null;
+}
 
 const TRIGGERS = {
     schedule: () => t('app.schedules.trigger_schedule'),
@@ -305,10 +340,25 @@ export function createSchedule(
         return wordSentence(word, names) ?? t('app.schedules.outcome_failed_unknown');
     }
 
+    /** The primary hub's name, whose task an entry with no `hub` runs; null with no primary. */
+    function primary(): string | null {
+        return entities.schedule()?.primary ?? null;
+    }
+
+    /**
+     * The label of what a task entry runs: named by its hub whenever the entry names a hub other
+     * than the primary, and as the tray names the pair's row otherwise.
+     */
+    function taskWhat(runs: { task: UpdateTask; hub?: string }): string {
+        const pair = { task: runs.task, hub: runs.hub ?? primary() ?? '' };
+        const other = runs.hub !== undefined && runs.hub !== primary();
+        return other ? hubTaskLabel(pair) : pairLabel(pair, offered());
+    }
+
     function whatOf(row: ScheduleRow): string {
         const runs = row.entry?.runs;
         if (runs === undefined) return '';
-        if ('task' in runs) return TASK_LABELS[runs.task]();
+        if ('task' in runs) return taskWhat(runs);
         if ('command' in runs) {
             return t('app.schedules.runs_command', runs.command, lastSegment(runs.folder));
         }
@@ -392,16 +442,16 @@ export function createSchedule(
         return waiting === null ? lines : [...lines, t('app.schedules.no_terminals', waiting)];
     }
 
-    function offered(): UpdateTask[] {
-        const held = new Set<unknown>(entities.schedule()?.tasks ?? []);
-        return UPDATE_TASKS.filter((kind) => held.has(kind));
+    function offered(): HubTask[] {
+        return (entities.schedule()?.tasks ?? []).map((pair) => ({ ...pair }));
     }
 
-    function nextOfTask(kind: UpdateTask): string {
+    function nextOfTask(pair: HubTask): string {
         let best: { next: string; name: string } | null = null;
         for (const row of entities.schedule()?.schedules ?? []) {
             const runs = row.entry?.runs;
-            if (runs === undefined || !('task' in runs) || runs.task !== kind) continue;
+            if (runs === undefined || !('task' in runs) || runs.task !== pair.task) continue;
+            if ((runs.hub ?? primary()) !== pair.hub) continue;
             if (row.next === null || row.problem !== null) continue;
             if (best === null || Date.parse(row.next) < Date.parse(best.next)) {
                 best = { next: row.next, name: row.name };
@@ -427,17 +477,42 @@ export function createSchedule(
         ];
     }
 
+    function tasks(): CommandChoice[] {
+        const list = offered();
+        const listed = list.map((pair) => ({
+            id: pairKeyOf(pair.task, pair.hub),
+            label: pairLabel(pair, list)
+        }));
+        if (draft === null || draft.task === '') return listed;
+        const id = pairKeyOf(draft.task, draft.hub);
+        if (listed.some((one) => one.id === id)) return listed;
+        return [...listed, { id, label: hubTaskLabel({ task: draft.task, hub: draft.hub }) }];
+    }
+
     function folders(): string[] {
         return ['hub', ...(entities.schedule()?.folders ?? []).slice(1)];
     }
 
+    /**
+     * A new draft: the pair it was opened with (the primary's task for a fill that names no hub),
+     * else the first offered pair, else no task.
+     */
     function blank(fill: DialogFill): ScheduleDraft {
         const command = fill.command !== undefined && fill.folder !== undefined;
+        const list = offered();
+        const pair: HubTask | null =
+            fill.task !== undefined
+                ? { task: fill.task, hub: fill.hub ?? primary() ?? '' }
+                : list.length > 0
+                  ? list[0]
+                  : null;
         return {
             was: null,
             name: fill.name ?? '',
             kind: command ? 'command' : 'task',
-            task: fill.task ?? UPDATE_TASKS[0],
+            task: pair?.task ?? '',
+            hub: pair?.hub ?? '',
+            named: false,
             commandKey: command ? commandKeyOf(fill.folder ?? '', fill.command ?? '') : '',
             folder: 'hub',
             prompt: '',
@@ -462,12 +537,15 @@ export function createSchedule(
         if (row === undefined || entry === null || entry === undefined) return;
         const shape = whenOf(entry.when);
         const runs = entry.runs;
+        const unchosen = row.unchosen.includes('task') || row.unchosen.includes('hub');
         draft = {
             ...base,
             was: { at: row.at, name: row.name },
             name: entry.name,
             kind: 'task' in runs ? 'task' : 'command' in runs ? 'command' : 'prompt',
-            task: 'task' in runs ? (row.unchosen.includes('task') ? '' : runs.task) : base.task,
+            task: 'task' in runs ? (unchosen ? '' : runs.task) : base.task,
+            hub: 'task' in runs ? (unchosen ? '' : (runs.hub ?? primary() ?? '')) : base.hub,
+            named: 'task' in runs && (runs.hub !== undefined || row.unchosen.includes('hub')),
             commandKey: 'command' in runs ? commandKeyOf(runs.folder, runs.command) : '',
             folder: 'prompt' in runs ? runs.folder : base.folder,
             prompt: 'prompt' in runs ? runs.prompt : '',
@@ -490,8 +568,8 @@ export function createSchedule(
             const kind = KINDS.find((one) => one === value);
             if (kind !== undefined) edit({ kind });
         } else if (box === 'task') {
-            const task = UPDATE_TASKS.find((one) => one === value);
-            if (task !== undefined) edit({ task });
+            const pair = readPair(value);
+            if (pair !== null) edit({ task: pair.task, hub: pair.hub });
         } else {
             const when = WHEN_CHOICES.find((one) => one === value);
             if (when !== undefined) edit({ when });
@@ -531,12 +609,18 @@ export function createSchedule(
         };
     }
 
-    /** The entry the draft stands for, as the file and the route read it. */
+    /**
+     * The entry the draft stands for, as the file and the route read it: an entry that named a hub
+     * names the chosen one, the primary included, a task of the primary for an entry that named
+     * none names no hub, and a task of any other hub names it.
+     */
     function rawOf(one: ScheduleDraft, when: string): Record<string, unknown> {
         const chosen = readKey(one.commandKey);
         const runs =
             one.kind === 'task'
-                ? { task: one.task }
+                ? one.named || one.hub !== primary()
+                    ? { task: one.task, hub: one.hub }
+                    : { task: one.task }
                 : one.kind === 'command'
                   ? { command: chosen?.name ?? '', folder: chosen?.folder ?? '' }
                   : { prompt: one.prompt, folder: one.folder };
@@ -626,15 +710,16 @@ export function createSchedule(
         none,
         unread,
         nextOfTask,
-        taskLabel: (kind) => TASK_LABELS[kind](),
+        taskLabel: (pair) => pairLabel(pair, offered()),
         offered,
         noTasks: () => {
             const payload = entities.schedule();
             if (payload === null || offered().length > 0) return '';
-            return payload.tasks === null ? t('app.tasks.no_primary') : t('app.tasks.no_files');
+            return payload.tasks === null ? t('app.tasks.no_hub') : t('app.tasks.no_files');
         },
         kinds: () => KINDS.map(choice(KIND_LABELS)),
-        tasks: () => UPDATE_TASKS.map(choice(TASK_LABELS)),
+        tasks,
+        taskChoice: (one) => (one.task === '' ? '' : pairKeyOf(one.task, one.hub)),
         whens: () => WHEN_CHOICES.map(choice(WHEN_LABELS)),
         dayNames: () => WEEK_DAYS.map((day) => DAY_LABELS[day]()),
         commands,

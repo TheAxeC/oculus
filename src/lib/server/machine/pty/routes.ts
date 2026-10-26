@@ -76,7 +76,7 @@ import {
     type StartOptions
 } from './sessions.ts';
 import { TmuxFailed, TerminalRefused, refusal, refusalFor } from './refusal.ts';
-import { startUpdateTask } from '../runs/schedules/task.ts';
+import { namedHub, startUpdateTask } from '../runs/schedules/task.ts';
 import { run } from './tmux.ts';
 import type { Turns } from './latex/turns.ts';
 import type { SessionRecord, TerminalKind, TerminalResume } from '../../../data/model/index.ts';
@@ -345,20 +345,26 @@ function approveSeedTask(message: Record<string, unknown>, options: TerminalOpti
     return json({ ok: true }, { headers: NO_STORE });
 }
 
-/** Start one of the four update tasks as a Claude terminal in the configured hub root. */
+/**
+ * Start one of the four update tasks as a Claude terminal in the folder of the hub `root` names,
+ * the primary's with no `root`. A `root` that is not text is `bad-terminal`, and text that names no
+ * hub of the open workspace is refused with `hub-unknown`.
+ */
 async function startTask(
     kind: unknown,
+    root: unknown,
     cols: unknown,
     rows: unknown,
     options: TerminalOptions
 ): Promise<Response> {
     if (!isUpdateTask(kind)) return refusal('bad-terminal');
+    if (root !== undefined && typeof root !== 'string') return refusal('bad-terminal');
     const local = options.localFor();
-    const hub = options.openFor().primaryDir;
-    if (hub === null) return refusal('no-primary');
+    const named = namedHub(options.openFor(), root);
+    if ('refused' in named) return refusal(named.refused, named.names);
     const started = await startUpdateTask(kind, false, {
         ...options,
-        hub,
+        hub: named.hub,
         claudeBin: local.claudeBin,
         size: { cols, rows },
         text: textCatalog(options.configFor())
@@ -422,7 +428,7 @@ export async function handleTerminal(
             return json({ ok: true, terminal }, { headers: NO_STORE });
         }
         if (message.action === 'task') {
-            return await startTask(message.kind, message.cols, message.rows, options);
+            return await startTask(message.kind, message.root, message.cols, message.rows, options);
         }
         if (message.action === 'latex') {
             return await startLatex(message, options);

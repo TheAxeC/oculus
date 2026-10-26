@@ -19,10 +19,21 @@
 // unanswered (`writes.onUnwritten`), a save of the page state the server refused
 // (`pageState.onRefused`), and an option a control set while no workspace file is open, which
 // offers Save Workspace As (`noWorkspace`, called by the ui store).
+//
+// An update task's run date is its hub's own, from that hub's row of the portfolio's feed summary
+// (`byHub`), and the inbox triage's one date of the machine. The dates are remembered by task and
+// hub: the dates a task of a hub carries when the channel first shows that task of that hub are
+// where its reading starts and post nothing, as the first message of a channel does, so a hub added
+// or renamed while the page is open posts nothing until one of its dates moves. A notice is posted
+// only for a task of a hub the `schedule` channel offers, named as the tray names that row, so a
+// hub with no file of the task posts no notice for it; the inbox's notice, whose date is no hub's,
+// names the task alone and is posted while any hub offers it.
 
 import { z } from 'zod';
-import type { HookEvent, Message } from '../../../data/model/index.ts';
+import { UPDATE_TASKS, type UpdateTask } from '../../../data/helpers/run/tasks.ts';
+import type { HookEvent, HubTask, Message } from '../../../data/model/index.ts';
 import { readAs, rowsShape } from '../../../data/shapes/shapes.ts';
+import { pairLabel, taskLabel } from '../../system/machine/schedules/schedule-words.ts';
 import type { NoticeAction, NoticesStore } from './notices.svelte.ts';
 import { t } from '../../shared/words/text.ts';
 
@@ -115,19 +126,19 @@ export function jobFinished(job: { state: string; exit: string }): boolean {
     return job.state.trim() === 'COMPLETED' && (exit === '' || exit === '0:0');
 }
 
-/** The update tray's tasks. */
-export type Task = 'litwatch' | 'scout' | 'linkedin' | 'inbox';
-
-/** The update tray's tasks, by the value that says when each last produced its results. */
-export type TaskRuns = Partial<Record<Task, string>>;
-
-/** The view each task's results are read in. */
-export const TASK_VIEW: Record<Task, string> = {
+/** The view each update task's results are read in. */
+const TASK_VIEW: Record<UpdateTask, string> = {
     litwatch: 'radar',
     scout: 'leads',
     linkedin: 'linkedin',
     inbox: 'inbox'
 };
+
+/**
+ * One run date of an update task: the task, the hub whose feed carries the date (null for the
+ * inbox, whose date is the machine's), and the date as the text the portfolio or the inbox carries.
+ */
+type TaskRun = { task: UpdateTask; hub: string | null; at: string };
 
 /** When a task last ran, as the text the portfolio or the inbox carries; empty otherwise. */
 const stampShape = z.string().catch('');
@@ -135,41 +146,58 @@ const stampShape = z.string().catch('');
 /** A feed summary that carries a `lastRun`. */
 const lastRunShape = z.object({ lastRun: stampShape }).catch({ lastRun: '' });
 
-/** The three feed summaries of a portfolio; a snapshot still being built carries none. */
+/** One hub's run dates in the portfolio's feed summary. */
+const hubRunsShape = z.object({
+    hub: z.string(),
+    radar: lastRunShape,
+    scout: lastRunShape,
+    linkedin: z.object({ lastPost: stampShape }).catch({ lastPost: '' })
+});
+
+/** Each hub's run dates of a portfolio; a snapshot still being built carries none. */
 const feedRunsShape = z.object({
     entities: z
         .object({
-            feeds: z
-                .object({
-                    radar: lastRunShape,
-                    scout: lastRunShape,
-                    linkedin: z.object({ lastPost: stampShape }).catch({ lastPost: '' })
-                })
-                .catch({
-                    radar: { lastRun: '' },
-                    scout: { lastRun: '' },
-                    linkedin: { lastPost: '' }
-                })
+            feeds: z.object({ byHub: rowsShape(hubRunsShape).catch([]) }).catch({ byHub: [] })
         })
         .optional()
 });
 
-/** The run dates of the three tasks the portfolio's feed summary carries, empty for none. */
-export function feedRuns(snapshot: unknown): TaskRuns {
-    const feeds = readAs(feedRunsShape, snapshot)?.entities?.feeds;
-    return {
-        litwatch: feeds?.radar.lastRun ?? '',
-        scout: feeds?.scout.lastRun ?? '',
-        linkedin: feeds?.linkedin.lastPost ?? ''
-    };
+/**
+ * The run dates of the three tasks each hub's row of the feed summary carries, the empty text for a
+ * task with none, so a task of a hub is shown from the first message that carries its hub's row.
+ */
+function feedRuns(snapshot: unknown): TaskRun[] {
+    const rows = readAs(feedRunsShape, snapshot)?.entities?.feeds.byHub ?? [];
+    return rows.flatMap((row): TaskRun[] => [
+        { task: 'litwatch', hub: row.hub, at: row.radar.lastRun },
+        { task: 'scout', hub: row.hub, at: row.scout.lastRun },
+        { task: 'linkedin', hub: row.hub, at: row.linkedin.lastPost }
+    ]);
 }
 
 /** The date the inbox triage last ran, which its own channel carries. */
 const notesShape = z.object({ notesRun: stampShape });
 
-/** The run date of the inbox triage, which its own channel carries. */
-export function notesRuns(inbox: unknown): TaskRuns {
-    return { inbox: readAs(notesShape, inbox)?.notesRun ?? '' };
+/**
+ * The run date of the inbox triage, which its own channel carries, the empty text while it has
+ * none, so the inbox task is shown from the channel's first message.
+ */
+function notesRuns(inbox: unknown): TaskRun[] {
+    return [{ task: 'inbox', hub: null, at: readAs(notesShape, inbox)?.notesRun ?? '' }];
+}
+
+/** One task of one hub as the `schedule` channel offers it. */
+const offeredShape = z.object({
+    tasks: rowsShape(z.object({ task: z.string(), hub: z.string() }))
+});
+
+/** The pairs the `schedule` payload offers that are update tasks; none for a payload without. */
+function offeredOf(payload: unknown): HubTask[] {
+    return (readAs(offeredShape, payload)?.tasks ?? []).flatMap((pair) => {
+        const task = UPDATE_TASKS.find((one) => one === pair.task);
+        return task === undefined ? [] : [{ task, hub: pair.hub }];
+    });
 }
 
 /** What the store opens for a notification's action. */
@@ -194,14 +222,6 @@ export type NoticeSourcesStore = {
     noWorkspace: () => void;
 };
 
-/** The words each update task goes by, the tray's own. */
-function taskName(task: Task): string {
-    if (task === 'litwatch') return t('app.tasks.lit_label');
-    if (task === 'scout') return t('app.tasks.scout_label');
-    if (task === 'linkedin') return t('app.tasks.linkedin_label');
-    return t('app.tasks.inbox_label');
-}
-
 /**
  * The states one channel has shown since the page loaded. `seen` answers the keys never shown
  * before and remembers them; the first reading remembers and answers none.
@@ -218,14 +238,45 @@ function memory(): (keys: readonly string[]) => string[] {
     };
 }
 
+/**
+ * The run dates one channel has shown since the page loaded, by task and hub. Each message of the
+ * channel carries every task and hub it holds, and the function answers the runs whose date that
+ * task of that hub never showed before. A task and hub the channel did not carry in its last
+ * message, every pair of the first message among them, is remembered with its date and answers
+ * none, since that date was there before the reader looked at it; an empty date is no run. A pair
+ * a message no longer carries is forgotten, so a hub that leaves and a hub that later takes its
+ * name is seen for the first time.
+ */
+function runMemory(): (runs: readonly TaskRun[]) => TaskRun[] {
+    const known = new Map<string, Set<string>>();
+    return (runs) => {
+        const fresh: TaskRun[] = [];
+        const carried = new Set(runs.map((run) => JSON.stringify([run.task, run.hub])));
+        for (const pair of known.keys()) if (!carried.has(pair)) known.delete(pair);
+        for (const run of runs) {
+            const pair = JSON.stringify([run.task, run.hub]);
+            const dates = known.get(pair);
+            if (dates === undefined) {
+                known.set(pair, new Set([run.at]));
+            } else if (run.at !== '' && !dates.has(run.at)) {
+                dates.add(run.at);
+                fresh.push(run);
+            }
+        }
+        return fresh;
+    };
+}
+
 export function createNoticeSources(
     notices: Pick<NoticesStore, 'post'>,
     open: NoticeOpeners
 ): NoticeSourcesStore {
     const sessions = memory();
     const jobs = memory();
-    const feeds = memory();
-    const notes = memory();
+    const feeds = runMemory();
+    const notes = runMemory();
+    /** The tasks the tray offers, each with its hub, as the `schedule` channel last said them. */
+    let offered: HubTask[] = [];
 
     function action(run: () => void): NoticeAction[] {
         return [{ label: t('statusbar.notice_open'), run }];
@@ -268,15 +319,30 @@ export function createNoticeSources(
         }
     }
 
-    /** Post for every task whose run date is one this channel has not shown before. */
-    function runsHeard(seen: (keys: readonly string[]) => string[], runs: TaskRuns): void {
-        const keys = (Object.keys(runs) as Task[]).flatMap((task) =>
-            (runs[task] ?? '') === '' ? [] : [`${task}@${runs[task]}`]
-        );
-        for (const key of seen(keys)) {
-            const task = key.slice(0, key.indexOf('@')) as Task;
-            notices.post(t('statusbar.notice_update', taskName(task)), {
-                actions: action(() => open.openView(TASK_VIEW[task]))
+    /**
+     * The label a run's notice names its task by: the tray's label of the task of that hub when the
+     * tray offers it, the inbox task's own label while any hub offers the inbox task, and null when
+     * the tray offers no such task.
+     */
+    function runLabel(run: TaskRun): string | null {
+        if (run.hub === null) {
+            return offered.some((one) => one.task === run.task) ? taskLabel(run.task) : null;
+        }
+        const pair = offered.find((one) => one.task === run.task && one.hub === run.hub);
+        return pair === undefined ? null : pairLabel(pair, offered);
+    }
+
+    /**
+     * Post for every run date this channel has not shown before for its task and hub, of a task the
+     * tray offers. Every date is remembered, so a task offered later posts nothing for a date it
+     * already had.
+     */
+    function runsHeard(seen: (runs: readonly TaskRun[]) => TaskRun[], runs: TaskRun[]): void {
+        for (const run of seen(runs)) {
+            const label = runLabel(run);
+            if (label === null) continue;
+            notices.post(t('statusbar.notice_update', label), {
+                actions: action(() => open.openView(TASK_VIEW[run.task]))
             });
         }
     }
@@ -286,6 +352,8 @@ export function createNoticeSources(
             sessionsHeard(message.payload);
         } else if (message.channel === 'hpc') {
             hpcHeard(message.payload);
+        } else if (message.channel === 'schedule') {
+            offered = offeredOf(message.payload);
         } else if (message.channel === 'portfolio') {
             runsHeard(feeds, feedRuns(message.payload));
         } else if (message.channel === 'inbox') {

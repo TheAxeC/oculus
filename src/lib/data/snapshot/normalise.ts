@@ -27,7 +27,6 @@ import type {
     DocPresence,
     Domain,
     Entry,
-    Feeds,
     Finding,
     Funding,
     Id,
@@ -38,6 +37,7 @@ import type {
     Reproduced,
     RawDeck,
     RawEntry,
+    RawFeeds,
     RawManifest,
     RawPortfolio,
     RawRegistryEntry,
@@ -45,7 +45,7 @@ import type {
     RepositoryBlock,
     Resource,
     SchemaField,
-    Snapshot,
+    HubSnapshot,
     HubVocabs,
     ListedCollection,
     Venue
@@ -586,7 +586,7 @@ export function jointWorkRows(collections: Collection[]): { id: Id; person: Id; 
  * than passed through so that the snapshot owns its own objects, which is what every other entity
  * here does.
  */
-function feeds(raw: Feeds): Feeds {
+function feeds(raw: RawFeeds): RawFeeds {
     return {
         leads: raw.leads === null ? null : raw.leads.map((one) => ({ ...one })),
         radar: raw.radar === null ? null : { ...raw.radar },
@@ -596,12 +596,13 @@ function feeds(raw: Feeds): Feeds {
 }
 
 /**
- * The snapshot the socket carries. `version` is the caller's, monotonic and incremented by the
- * watcher on every rebuild; `findings` is what validate returned, carried as it stands; `merged`
- * is the hub's merged config, whose `tiers` the projects and whose `self` the people are read with.
- * `others` holds the keys the other hubs of the workspace hold, by source: a reference to one of
- * them is kept beside the references to the hub's own records, so the merge of the hubs
- * (hubs/merge.ts) resolves it, and a reference no hub holds is left out.
+ * One hub's own snapshot, which the merge of the hubs (hubs/merge.ts) turns into the snapshot the
+ * socket carries. `version` is the caller's, monotonic and incremented by the watcher on every
+ * rebuild; `findings` is what validate returned, carried as it stands; `merged` is the hub's merged
+ * config, whose `tiers` the projects and whose `self` the people are read with. `others` holds the
+ * keys the other hubs of the workspace hold, by source: a reference to one of them is kept beside
+ * the references to the hub's own records, so the merge of the hubs (hubs/merge.ts) resolves it,
+ * and a reference no hub holds is left out.
  */
 export function normalise(
     raw: RawPortfolio,
@@ -609,7 +610,7 @@ export function normalise(
     merged: Record<string, unknown>,
     version = 0,
     others: Readonly<Record<string, readonly string[]>> = {}
-): Snapshot {
+): HubSnapshot {
     const withId = (entries: RawRegistryEntry[]): RawRegistryEntry[] =>
         entries.filter((item) => item.key.length > 0);
 

@@ -1,10 +1,9 @@
-In flight (2 of 6 slots in use):
-- O86 (the update tasks of every hub), round 1 refuted, landing next.
+In flight (1 of 6 slots in use):
 - O84 (who the user is), building.
 
 Queued (3):
 - O88 (one grouping heading), /spec next.
-- O87 (the Focus band's positions and teaching), /spec after O86 lands.
+- O87 (the Focus band's positions and teaching), /spec next.
 - O90 (the board bar's Waiting on filter), /spec after O88 and O87.
 
 Waiting on a ruling: none.
@@ -12,7 +11,8 @@ Waiting on a ruling: none.
 Owed looks: none.
 
 Landed, newest first:
-- O89 (one record card, one way to add a dated line), 2026-10-26, the landing commit.
+- O86 (the update tasks of every hub), 2026-10-26, the landing commit.
+- O89 (one record card, one way to add a dated line), 2026-10-26, 7f7249ab.
 - O85 (a hub's own settings for any hub), 2026-10-26, 467be69c.
 - O79 (primary and foreign keys), 2026-10-26, 153f4f0b; hub dd97f7ec0.
 - O81 (the grouping heading, the Venues view, the track record), 2026-10-26, 4e0fbd48.

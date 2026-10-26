@@ -12,7 +12,8 @@ export const NO_FEEDS: Feeds = {
     leads: null,
     radar: null,
     scout: null,
-    linkedin: null
+    linkedin: null,
+    byHub: []
 };
 
 /** A project with every required field empty, and the fields a case sets in place of those. */

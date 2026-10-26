@@ -3,11 +3,13 @@
 // it, checks each entry against the disk, and plans and commits a write.
 //
 // Reading is the shared rule of data/helpers/run/schedules.ts for the shape of an entry, with the
-// checks that need the disk on top: a folder that exists, a prompt's folder that the hub or a
-// served root holds, a command's repository the file browser serves and a plain entry of that
-// name in its `.oculus/commands.yml` (`scheduledCommands`), a file that does not read being
-// `commands-unread`. The names are compared over the whole list, so two entries of one name both
-// carry `name-twice`.
+// checks that need the disk on top: a task's `hub` that names a hub of the open workspace, compared
+// as written (`hub-unknown` otherwise), a folder that exists, a prompt's folder that the hub or a
+// served root holds, a command's repository the file browser serves and a plain entry of that name
+// in its `.oculus/commands.yml` (`scheduledCommands`), a file that does not read being
+// `commands-unread`. Whether the named hub holds the task's file is checked at the run, as the
+// primary's is. The names are compared over the whole list, so two entries of one name both carry
+// `name-twice`.
 // A file that does not parse, or whose top level is no list, is unread: no entry of it is read, and
 // no write touches it.
 //
@@ -74,7 +76,7 @@ import { repositoryOf } from '../commands/repo.ts';
 /** The mode of the file: it names the folders and the prompts of this machine. */
 const FILE_MODE = 0o600;
 
-/** What the checks that need the disk read: the hub and the served roots. */
+/** What the checks that need the disk read: the hub, the served roots and the hubs' names. */
 export type Disk = {
     /**
      * The primary hub's folder, `hub` of a folder and the first place a prompt may start in; null
@@ -83,6 +85,8 @@ export type Disk = {
     hub: string | null;
     /** The directories the file browser serves. */
     roots: string[];
+    /** The names of the open workspace's hubs, which a task's `hub` must be one of. */
+    hubs: string[];
 };
 
 /** One entry of the file as the page reads it. */
@@ -157,7 +161,10 @@ export function diskChecker(disk: Disk): DiskChecker {
     return {
         problem(entry): ScheduleProblem | null {
             const runs = entry.runs;
-            if ('task' in runs) return null;
+            if ('task' in runs) {
+                if (runs.hub === undefined || disk.hubs.includes(runs.hub)) return null;
+                return { word: 'hub-unknown', names: [runs.hub] };
+            }
             if ('prompt' in runs) {
                 const found = promptFolder(runs.folder, disk);
                 return 'cwd' in found ? null : found;
@@ -360,13 +367,15 @@ type Change = { key: Key; value: unknown };
  * The keys whose value in `entry` differs from the entry as the page read it, `held`. A key that
  * is equal after the reader's rule has read it is not touched, so what the rule normalised (an
  * unknown task, `when: 5`, `unattended: 1`) stays as the reader wrote it. A key whose value does
- * not read (`unchosen`) is the exception: the dialog opened it with none chosen, so the value it
- * sends is a choice and is written. A cleared `when` and a flag that is off are removed.
+ * not read (`unchosen`, the task or the hub of `runs` among them) is the exception: the dialog
+ * opened it with none chosen, so the value it sends is a choice and is written. A cleared `when`
+ * and a flag that is off are removed.
  */
 function changesOf(held: ScheduleEntry, entry: ScheduleEntry, unchosen: UnchosenKey[]): Change[] {
     const changes: Change[] = [];
     if (held.name !== entry.name) changes.push({ key: 'name', value: entry.name });
-    const chosenTask = unchosen.includes('task') && 'task' in entry.runs;
+    const chosenTask =
+        (unchosen.includes('task') || unchosen.includes('hub')) && 'task' in entry.runs;
     if (chosenTask || !isDeepStrictEqual(held.runs, entry.runs)) {
         changes.push({ key: 'runs', value: { ...entry.runs } });
     }

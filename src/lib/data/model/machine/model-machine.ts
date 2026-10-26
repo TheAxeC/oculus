@@ -13,6 +13,9 @@ export const UPDATE_TASKS = ['litwatch', 'scout', 'linkedin', 'inbox'] as const;
 /** One of the four update tasks. */
 export type UpdateTask = (typeof UPDATE_TASKS)[number];
 
+/** An update task of one hub: the task and the name of the hub that holds its file. */
+export type HubTask = { task: UpdateTask; hub: string };
+
 /** The state of a read: `failed` carries the rows of the last good read under the error. */
 type ProcessesStatus = 'ok' | 'failed';
 
@@ -115,6 +118,8 @@ export const SCHEDULE_WORDS = [
     'prompt-empty',
     'prompt-too-long',
     'prompt-control',
+    'hub-wrong',
+    'hub-unknown',
     'when-unreadable',
     'when-never',
     'key-unknown',
@@ -137,11 +142,14 @@ export const SCHEDULE_WORDS = [
 export type ScheduleWord = (typeof SCHEDULE_WORDS)[number];
 
 /**
- * What a schedule runs: an update task, a command of a repository's `.oculus/commands.yml` or the
- * first message of a Claude session.
+ * What a schedule runs: an update task, with the name of the hub whose task it is (the primary's
+ * when `hub` is absent), a command of a repository's `.oculus/commands.yml` or the first message of
+ * a Claude session.
  */
 type ScheduleTarget =
-    { task: UpdateTask } | { command: string; folder: string } | { prompt: string; folder: string };
+    | { task: UpdateTask; hub?: string }
+    | { command: string; folder: string }
+    | { prompt: string; folder: string };
 
 /** One schedule as `schedules.yml` writes it, with its defaults filled in. */
 export type ScheduleEntry = {
@@ -174,8 +182,11 @@ export type ScheduleRun = {
     why?: { word: string; names: string[] };
 };
 
-/** A key whose value is in the file and does not read: the task of `runs`, or `unattended`. */
-export type UnchosenKey = 'task' | 'unattended';
+/**
+ * A key whose value is in the file and does not read: the task of `runs`, the hub of `runs`, or
+ * `unattended`.
+ */
+export type UnchosenKey = 'task' | 'hub' | 'unattended';
 
 /** One entry of `schedules.yml` as a row of the tray lists it. */
 export type ScheduleRow = {
@@ -207,10 +218,14 @@ export type SchedulePayload = {
      */
     folders: string[];
     /**
-     * The update tasks whose file `.oculus/tasks/<kind>.md` the primary hub holds, which the tray
-     * offers; null while the workspace has no primary.
+     * The update tasks the tray offers: one per hub of the workspace that holds the task's file
+     * `.oculus/tasks/<kind>.md`, ordered by task in the order of UPDATE_TASKS and within one task
+     * by hub, the primary first and the others in the folders' order. Empty while no hub holds a
+     * task file, and null while the workspace holds no hub.
      */
-    tasks: UpdateTask[] | null;
+    tasks: HubTask[] | null;
+    /** The primary hub's name, whose task a task entry with no `hub` runs; null with no primary. */
+    primary: string | null;
     /** The files that do not read, with the parser's line when it gave one. */
     unread: { file: 'schedules' | 'record'; line: number | null }[];
     /**
@@ -324,6 +339,7 @@ export const TERMINAL_REFUSALS = [
     'task-too-long',
     'task-needs-agent',
     'task-file-missing',
+    'hub-unknown',
     'needs-confirm',
     'approvals-unwritable',
     'latex-program',

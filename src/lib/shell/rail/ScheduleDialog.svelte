@@ -94,10 +94,10 @@
                 {#if draft.kind === 'task'}
                     <Field label={t('app.schedules.task')}>
                         <Select
-                            value={draft.task}
+                            value={schedule.taskChoice(draft)}
                             label={t('app.schedules.task')}
-                            empty={draft.unchosen.includes('task')
-                                ? t('app.schedules.refused_task')
+                            empty={draft.task === ''
+                                ? schedule.noTasks() || t('app.schedules.refused_task')
                                 : undefined}
                             choices={schedule.tasks()}
                             onchange={(value: string) => schedule.choose('task', value)}

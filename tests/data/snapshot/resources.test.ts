@@ -9,7 +9,7 @@ import { portfolioConfigFrom } from '../../../src/lib/data/index.ts';
 import { buildOneHub } from '../../fixtures/hubs/hub-build.ts';
 import { findingText } from '../../../src/lib/data/helpers/finding-text.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
-import type { Finding, Snapshot } from '../../../src/lib/data/model/index.ts';
+import type { Finding, HubSnapshot } from '../../../src/lib/data/model/index.ts';
 import { it, plantScratch } from '../../fixtures/scratch.ts';
 
 const ENGINE = engineDir();
@@ -50,7 +50,7 @@ const SEED = [
 ].join('\n');
 
 /** A hub holding the resources registry (or none) and one project per `compute:` text. */
-function build(registry: string | null, computes: Record<string, string>): Snapshot {
+function build(registry: string | null, computes: Record<string, string>): HubSnapshot {
     const files: Record<string, string> = {};
     if (registry !== null) files['.oculus/data/research/resources.yml'] = registry;
     for (const [id, compute] of Object.entries(computes)) {
@@ -62,7 +62,7 @@ function build(registry: string | null, computes: Record<string, string>): Snaps
 }
 
 /** The findings about the resources registry and the manifests, not the other files' absence. */
-function about(snapshot: Snapshot): Finding[] {
+function about(snapshot: HubSnapshot): Finding[] {
     return snapshot.findings.filter(
         (finding) => finding.file.endsWith('resources.yml') || finding.file.endsWith('project.yml')
     );
@@ -78,7 +78,7 @@ function plain(findings: Finding[]): [string, string, string][] {
 }
 
 describe("a project's compute list", () => {
-    const projectOf = (snapshot: Snapshot, id = 'alpha'): string[] | undefined =>
+    const projectOf = (snapshot: HubSnapshot, id = 'alpha'): string[] | undefined =>
         snapshot.entities.projects[id].resourceIds;
 
     it('answers a scalar compute: with the type finding and reads it as none', () => {

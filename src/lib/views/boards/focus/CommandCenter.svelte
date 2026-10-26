@@ -41,7 +41,7 @@
         selectors: { configMap },
         inbox: { actionable, state: inboxState },
         layout: { openView },
-        schedule: { offered },
+        schedule: { offered, taskLabel },
         ui: { instanceState, requestUpdateTray, setInstanceState }
     } = client;
 
@@ -196,13 +196,15 @@
         const rows = nudges.map((one, at): TickerRow => {
             const id = `refresh:${one.feed}:${at}`;
             index[id] = one;
+            const task = taskLabel({ task: one.feed, hub: one.hub ?? '' });
             const label =
                 one.feed === 'inbox'
                     ? t('focus.command.refresh_inbox_plain', one.days ?? 0)
                     : one.feed === 'scout'
-                      ? t('focus.command.refresh_scout_plain', one.days ?? 0)
+                      ? t('focus.command.refresh_scout_plain', task, one.days ?? 0)
                       : t(
                             'focus.command.refresh_litwatch_plain',
+                            task,
                             one.days === null
                                 ? t('focus.command.never_run')
                                 : t('focus.command.last_refreshed', one.days)

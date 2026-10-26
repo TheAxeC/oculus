@@ -9,7 +9,7 @@ import {
     builtHub,
     readHub,
     type EngineConfigIn,
-    type PortfolioBuild
+    type HubBuild
 } from '../../../src/lib/data/index.ts';
 import type { PortfolioConfig, RepositoryRoot } from '../../../src/lib/data/model/index.ts';
 import type { SettingsFile } from '../../../src/lib/data/snapshot/references/build.ts';
@@ -29,7 +29,7 @@ export function buildOneHub(
     engine: EngineConfigIn | null = null,
     root: string = basename(hub),
     workspace: SettingsFile | null = null
-): PortfolioBuild {
+): HubBuild {
     const read = readHub(hub, config, roots, root);
     return builtHub(read, { version, checker, engine, workspace, others: {} });
 }

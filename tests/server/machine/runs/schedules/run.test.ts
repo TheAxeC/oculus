@@ -5,6 +5,7 @@
 // with. No case reaches tmux or `claude`, reads `local.yml` or the home folder; the paths are the
 // ones the scratch world holds. What this does not cover: the session a real `claude` starts.
 
+import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect } from 'vitest';
 import type { ScheduleEntry } from '../../../../../src/lib/data/model/index.ts';
@@ -37,6 +38,8 @@ type Row = {
     commands?: string;
     /** The roots the file browser serves at the start; the world's repository when absent. */
     roots?: (w: World) => string[];
+    /** The task files the second hub `B` holds; none when absent. */
+    tasks?: string[];
     /** The answer and, for a start, what tmux was told. */
     expected:
         | { refused: (w: World) => { refused: string; names: string[] } }
@@ -60,6 +63,32 @@ const ROWS: Row[] = [
             cwd: (w) => w.hub,
             words: [`'${CLAUDE}' '--dangerously-skip-permissions' '${LITWATCH}'`],
             terminalName: 'task litwatch'
+        }
+    },
+    {
+        name: 'an update task that names a hub starts in that hub',
+        entry: () => entry({ task: 'litwatch', hub: 'B' }),
+        tasks: ['litwatch'],
+        expected: {
+            cwd: (w) => w.other,
+            words: [`'${CLAUDE}' '${LITWATCH}'`],
+            terminalName: 'task litwatch'
+        }
+    },
+    {
+        name: 'an update task that names no hub of the workspace is refused with hub-unknown',
+        entry: () => entry({ task: 'litwatch', hub: 'nope' }),
+        tasks: ['litwatch'],
+        expected: { refused: () => ({ refused: 'hub-unknown', names: ['nope'] }) }
+    },
+    {
+        name: 'an update task whose hub holds no file of it is refused with task-file-missing',
+        entry: () => entry({ task: 'litwatch', hub: 'B' }),
+        expected: {
+            refused: () => ({
+                refused: 'task-file-missing',
+                names: ['.oculus/tasks/litwatch.md', 'B']
+            })
         }
     },
     {
@@ -135,11 +164,15 @@ describe('runEntry', () => {
         for (const row of ROWS) {
             const w = world();
             if (row.commands !== undefined) plantCommands(w, row.commands);
+            for (const kind of row.tasks ?? []) {
+                mkdirSync(join(w.other, '.oculus', 'tasks'), { recursive: true });
+                writeFileSync(join(w.other, '.oculus', 'tasks', `${kind}.md`), `# ${kind}\n`);
+            }
             const driver = tmux();
             const roots = row.roots === undefined ? [w.repo] : row.roots(w);
             const answer = await runEntry(row.entry(w), SIZE, {
                 run: driver.run,
-                hub: w.hub,
+                hubs: w.hubs,
                 claudeBin: CLAUDE,
                 text: TEXT,
                 rootsFor: () => roots,

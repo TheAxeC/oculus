@@ -69,7 +69,7 @@ describe('POST /api/schedules', () => {
         const options = {
             ...routeOptions(w, schedules),
             files: () => ({ ...w.files, schedules: null }),
-            hubFor: () => null
+            hubsFor: () => ({ primary: null, primaryDir: null, hubs: [] })
         };
         const entry = {
             name: 'Daily radar',

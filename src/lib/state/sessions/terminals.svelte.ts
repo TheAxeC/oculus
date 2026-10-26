@@ -134,7 +134,12 @@ export type TerminalsStore = {
         cols?: number,
         rows?: number
     ) => Promise<TerminalAnswer>;
-    startTask: (kind: UpdateTask, cols?: number, rows?: number) => Promise<TerminalAnswer>;
+    startTask: (
+        kind: UpdateTask,
+        root: string,
+        cols?: number,
+        rows?: number
+    ) => Promise<TerminalAnswer>;
     latex: (
         target: LatexTarget,
         main: string,
@@ -463,14 +468,16 @@ export function createTerminals(
     }
 
     /**
-     * Start one update skill as a Claude terminal; the server supplies its argv and hub directory.
+     * Start one update task of the hub named `root` as a Claude terminal; the server supplies its
+     * argv and the hub's folder.
      */
     async function startTask(
         kind: UpdateTask,
+        root: string,
         cols: number = COLS,
         rows: number = ROWS
     ): Promise<TerminalAnswer> {
-        return post({ action: 'task', kind, cols, rows });
+        return post({ action: 'task', kind, root, cols, rows });
     }
 
     /**

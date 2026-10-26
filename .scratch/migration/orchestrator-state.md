@@ -24,20 +24,6 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 
 ```yaml
 dispatch:          # steps in flight, up to six (Z632)
-- step: O86
-  brief_check: .scratch/migration/agents/reviews/O86-brief-check.md (a3bd147e859e9ce7f, claude-opus-5-5, 259309 tokens, 95 tool uses, 10 min 43 s)
-  base: bf27e33ff
-  worktree: .agents/worktrees/migration-O86
-  executor: agent
-  worker: claude:opus
-  session_id: a932a66494c50d411 (claude-opus-5-5)
-  launched: 2026-10-26
-  report: .scratch/migration/agents/reviews/O86-report.md
-  builder_usage: 77328 tokens, 340 tool uses, 59 min 35 s; round 1, after the pause: 352283 tokens, 5 tool uses, 7 min 3 s (the part before the pause ended by the stop tool, with no completion notice)
-  reviewer_report: .scratch/migration/agents/reviews/O86-refuter.md (ad0866bc88d7625f3, claude-opus-5-5, 280671 tokens, 59 tool uses, 16 min 10 s); over round 1: a30581466148faabc, claude-opus-5-5, 236475 tokens, 49 tool uses, 14 min 16 s
-  shared_paths: with O89, simple merges in separate lines: `config/text/views/boards/focus.yml` (O86 lines 85-90, O89 lines 1-10 and 130-140); the generated `docs/diagrams/*` with O85 and O89, regenerated at each landing.
-  round: 1
-  landing: not-started
 - step: O84
   brief_check: .scratch/migration/agents/reviews/O84-brief-check.md (a16be0c5fb7576829, claude-opus-5-5, 291709 tokens, 129 tool uses, 16 min 43 s)
   base: 65f5c83c2
@@ -654,6 +640,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-10-26 (O86 landed). O86 landed on main from base bf27e33ff (booking under its line in `plan.md`, landing report `agents/reviews/O86-landing.md`), checked in the gate (every command passed but two time-outs under load in files the step does not change, each passing alone) and on main (54 staged paths equal under `cmp` to the gate's file); the look taken on the scratch server on 8797 over two hubs, then the server stopped. In flight (1 of 6): O84 (building). Queued: O88 (/spec next), O87 (/spec next), O90 (after O88 and O87). Open items: 479, 480, 481.
 - 2026-10-26 (O89 landed; open items 479 restated, 480 and 481 added). O89 landed on main from base 1da23d50b (booking under its line in `plan.md`, landing report `agents/reviews/O89-landing.md`), checked in the gate (every command passed after the landing fix of the record cards' action words) and on main (80 staged paths equal under `cmp` to the gate's file); the look taken on the scratch server on 8797, Pillars first, the inbox thread not seen (no mail account in the scratch workspace). Axel corrected 479's premise (a venue finds its projects by the projects that name it, and so can a person, an organisation and a resource) and asked about booking rulings 470 to 478 and about `related:`: 479 restated, 480 (scheduling) and 481 (which side names the link) booked. In flight (2 of 6): O86 (round 1 refuted, landing next), O84 (building). Queued: O88 (/spec now), O87 (after O86), O90 (after O88 and O87). Open items: 479, 480, 481.
 - 2026-10-26 (O84 stopped on open item 465). O84's brief check (a16be0c5fb7576829, claude-opus-5-5) is saved at `agents/reviews/O84-brief-check.md` with each finding closed under "Closed"; the brief as closed is kept in the session's scratchpad (`O84-brief-after-check.md`) and comes back at the /spec after the ruling, with no second brief check. Axel ruled 464 (a): O90 booked after O87. O88 waits for O89, O87 for O86.
 - 2026-10-26 (O84's brief check running; O88 waits for O89). O84's brief `agents/briefs/O84.md` is written (choices Z1044, Z1045); its brief check runs on a16be0c5fb7576829 (claude-opus-5-5). /spec O88 under ruling 461 (b) found that O88 shares eight view files with O89 (`Projects.svelte`, `Venues.svelte`, `Leads.svelte`, `Radar.svelte`, `Bucket.svelte`, `Linkedin.svelte`, `Inbox.svelte`, `Pillars.svelte`), each with O88's heading within about ten lines of O89's card and both steps changing the same imports and head comment, so the merge is not simple and O88 waits for O89's landing; its entry is removed, no brief written. Axel ruled 463 (c), the board bar's Waiting on toggle and group; scheduling it as O90 is open item 464.

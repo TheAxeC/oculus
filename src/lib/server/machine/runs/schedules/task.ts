@@ -1,15 +1,17 @@
 // Layer 2, server. Start one of the four update tasks. The tray's press reaches it through the
 // terminal endpoint (pty/routes.ts) and a schedule's run (schedules/run.ts) calls it at a due time,
-// so both start the same ordinary interactive Claude session in the hub root.
+// so both start the same ordinary interactive Claude session in the root of the hub they name.
 //
-// A task is a file of the primary hub, `.oculus/tasks/<kind>.md`, that a Claude Code session
-// follows on its own. The task is `<claude> '<sentence>'`: the catalog's sentence naming that file
-// is the session's first message, passed as the positional argument, so every permission prompt
-// the CLI raises is answered in the terminal pane by the reader. A hub that holds no file for the
-// task is refused with `task-file-missing` and nothing starts. A schedule's Run unattended puts
-// `--dangerously-skip-permissions` in front of it, which runs the task with nobody asked; a press
-// never does. The start keeps no record: a press belongs to no schedule, and a schedule's run is
-// recorded by the watcher (schedules/watch.ts).
+// A task is a file of a hub, `.oculus/tasks/<kind>.md`, that a Claude Code session follows on its
+// own, and any hub of the open workspace may hold one: the tray offers the task of every hub that
+// holds its file (`offeredTasks`), and a press or a schedule names the hub whose task it runs, the
+// primary when it names none. The task is `<claude> '<sentence>'`: the catalog's sentence naming
+// that file is the session's first message, passed as the positional argument, so every permission
+// prompt the CLI raises is answered in the terminal pane by the reader. A hub that holds no file
+// for the task is refused with `task-file-missing`, naming the file and the hub, and nothing
+// starts. A schedule's Run unattended puts `--dangerously-skip-permissions` in front of it, which
+// runs the task with nobody asked; a press never does. The start keeps no record: a press belongs
+// to no schedule, and a schedule's run is recorded by the watcher (schedules/watch.ts).
 //
 // No print-mode flag is passed (`-p`, `--output-format stream-json`, `--verbose`, `--include-
 // partial-messages`), so a task is the interactive session the chat terminal already is, and a
@@ -17,17 +19,24 @@
 
 import { statSync } from 'node:fs';
 import { join } from 'node:path';
-import type { Terminal, TerminalRefusal } from '../../../../data/model/index.ts';
+import type { HubTask, Terminal, TerminalRefusal } from '../../../../data/model/index.ts';
 import { UPDATE_TASKS, type UpdateTask } from '../../../../data/helpers/run/tasks.ts';
+import type { OpenWorkspace } from '../../../files/workspace/open.ts';
 import { words } from '../../../core/words.ts';
 import { shellWord } from '../../pty/shell-word.ts';
 import { startTerminal, type StartOptions } from '../../pty/sessions.ts';
 import { TerminalRefused } from '../../pty/refusal.ts';
 
+/** The hubs of the open workspace a task runs in, read from it at the call. */
+export type TaskHubs = Pick<OpenWorkspace, 'primary' | 'primaryDir' | 'hubs'>;
+
+/** One hub of the open workspace: its name and its folder. */
+type HubFolder = TaskHubs['hubs'][number];
+
 /** What starts an update task, beyond the tmux options of every terminal start. */
 export type TaskStartOptions = StartOptions & {
-    /** The primary hub's folder the session starts in; null while the workspace has no primary. */
-    hub: string | null;
+    /** The hub whose task it is: its name, which a refusal names, and the folder it starts in. */
+    hub: HubFolder;
     /** The `claude` program, as `claude_bin` of the machine's configuration names it. */
     claudeBin: string;
     /** The terminal's grid: the page's size for a press, a fixed one for a scheduled run. */
@@ -59,9 +68,38 @@ function hasTaskFile(hub: string, kind: UpdateTask): boolean {
     }
 }
 
-/** The update tasks whose file the hub holds, in the order of UPDATE_TASKS; none without a hub. */
-export function tasksWithFile(hub: string | null): UpdateTask[] {
-    return hub === null ? [] : UPDATE_TASKS.filter((kind) => hasTaskFile(hub, kind));
+/**
+ * The update tasks the hubs hold: one pair per hub that holds the task's file, by task in the order
+ * of UPDATE_TASKS and within one task by hub, the primary first and the other hubs in the folders'
+ * order. Empty when no hub holds a task file, and null while the workspace holds no hub.
+ */
+export function offeredTasks(open: TaskHubs): HubTask[] | null {
+    if (open.hubs.length === 0) return null;
+    const hubs = [
+        ...open.hubs.filter((one) => one.name === open.primary),
+        ...open.hubs.filter((one) => one.name !== open.primary)
+    ];
+    return UPDATE_TASKS.flatMap((task) =>
+        hubs.filter((one) => hasTaskFile(one.dir, task)).map((one) => ({ task, hub: one.name }))
+    );
+}
+
+/**
+ * The hub a press or a schedule names: the primary for no name, else the hub of that name, compared
+ * as written. A name no hub of the workspace holds is refused with `hub-unknown` naming it, and no
+ * name with no primary with `no-primary`.
+ */
+export function namedHub(
+    open: TaskHubs,
+    name: string | undefined
+): { hub: HubFolder } | { refused: 'hub-unknown' | 'no-primary'; names: string[] } {
+    if (name !== undefined) {
+        const hub = open.hubs.find((one) => one.name === name);
+        return hub === undefined ? { refused: 'hub-unknown', names: [name] } : { hub };
+    }
+    if (open.primary === null || open.primaryDir === null)
+        return { refused: 'no-primary', names: [] };
+    return { hub: { name: open.primary, dir: open.primaryDir } };
 }
 
 /**
@@ -81,24 +119,24 @@ function taskCommand(
 }
 
 /**
- * Start one update task as a Claude terminal in the configured hub root. `skip` is the caller's:
- * a press passes false and a schedule its `unattended`. A refusal that names its cause comes back
- * as its word; any other failure is thrown for the caller to answer.
+ * Start one update task as a Claude terminal in the root of the hub `options.hub`. `skip` is the
+ * caller's: a press passes false and a schedule its `unattended`. A refusal that names its cause
+ * comes back as its word; any other failure is thrown for the caller to answer.
  */
 export async function startUpdateTask(
     kind: UpdateTask,
     skip: boolean,
     options: TaskStartOptions
 ): Promise<TaskStart> {
-    if (options.hub === null) return { refused: 'no-primary', names: [] };
-    if (!hasTaskFile(options.hub, kind)) {
-        return { refused: 'task-file-missing', names: [taskFile(kind)] };
+    const hub = options.hub;
+    if (!hasTaskFile(hub.dir, kind)) {
+        return { refused: 'task-file-missing', names: [taskFile(kind), hub.name] };
     }
     try {
         const terminal = await startTerminal(
             {
                 kind: 'claude',
-                cwd: options.hub,
+                cwd: hub.dir,
                 cols: options.size.cols,
                 rows: options.size.rows,
                 name: `task ${kind}`

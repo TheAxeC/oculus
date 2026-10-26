@@ -17,6 +17,7 @@ import {
 import { stopTerminal } from '../../../../../src/lib/server/machine/pty/sessions.ts';
 import type { SchedulesRouteOptions } from '../../../../../src/lib/server/machine/runs/schedules/routes.ts';
 import { runEntry } from '../../../../../src/lib/server/machine/runs/schedules/run.ts';
+import type { TaskHubs } from '../../../../../src/lib/server/machine/runs/schedules/task.ts';
 import {
     watchSchedules,
     type SchedulesOptions,
@@ -49,6 +50,10 @@ export type World = {
     repo: string;
     /** The hub folder of every run, a folder of the scratch folder no other path of it lies in. */
     hub: string;
+    /** A second hub of the scratch folder, holding no task file. */
+    other: string;
+    /** The open workspace's hubs: `hub` as the primary `A`, then `other` as `B`. */
+    hubs: TaskHubs;
 };
 
 /**
@@ -59,7 +64,7 @@ export function routeOptions(w: World, schedules: SchedulesWatcher): SchedulesRo
     return {
         files: () => w.files,
         rootsFor: () => [w.repo],
-        hubFor: () => w.hub,
+        hubsFor: () => w.hubs,
         text: () => TEXT,
         approvalsFor: () => w.approvals,
         writes: fsWrites(),
@@ -75,7 +80,8 @@ export function plantCommands(w: World, entries: string): void {
 
 /**
  * A scratch folder with its repository, the repository's command `sync` with its chain approved, a
- * hub holding the Lit Watch task file and no schedules file.
+ * primary hub holding the Lit Watch task file, a second hub holding no task file, and no schedules
+ * file.
  */
 export function world(): World {
     const dir = scratchDir('oculus-schedules-');
@@ -87,7 +93,17 @@ export function world(): World {
     const hub = join(dir, 'hub');
     mkdirSync(join(hub, '.oculus', 'tasks'), { recursive: true });
     writeFileSync(join(hub, '.oculus', 'tasks', 'litwatch.md'), '# Lit Watch\n');
-    const w = { files, approvals: join(dir, 'approvals.json'), repo, hub };
+    const other = join(dir, 'other');
+    mkdirSync(join(other, '.oculus'), { recursive: true });
+    const hubs = {
+        primary: 'A',
+        primaryDir: hub,
+        hubs: [
+            { name: 'A', dir: hub },
+            { name: 'B', dir: other }
+        ]
+    };
+    const w = { files, approvals: join(dir, 'approvals.json'), repo, hub, other, hubs };
     plantCommands(w, SYNC);
     const approved = approveTexts(w.approvals, [
         chainText(repo, [{ folder: '.', run: 'echo synced' }])
@@ -145,11 +161,11 @@ export function watcherOver(
     return watchSchedules(hub, {
         files: w.files,
         rootsFor,
-        hub: () => w.hub,
+        hubs: () => w.hubs,
         run: (entry, size) =>
             runEntry(entry, size, {
                 run: driver.run,
-                hub: w.hub,
+                hubs: w.hubs,
                 claudeBin: CLAUDE,
                 text: TEXT,
                 rootsFor,

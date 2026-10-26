@@ -4,8 +4,9 @@
 // server/root/watch/build.ts builds the hubs of a workspace as one portfolio from those steps and
 // the merge of snapshot/hubs/merge.ts.
 //
-// Server side only, because the sources read the filesystem. What comes back is JSON-safe and is
-// what the socket carries; the caller owns the version number and increments it on every rebuild.
+// Server side only, because the sources read the filesystem. What comes back is JSON-safe, and the
+// merge of the hubs' builds is what the socket carries; the caller owns the version number and
+// increments it on every rebuild.
 
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
@@ -94,6 +95,7 @@ import type {
     DocPresence,
     FeedFiles,
     Finding,
+    HubSnapshot,
     HubVocab,
     HubVocabs,
     Id,
@@ -345,10 +347,16 @@ function decks(
 }
 
 /**
- * The snapshot of one build, the schemas it was checked against and the index of the hub keys it
- * names and defines, for the editor.
+ * The build of one hub, or of the project folders that are no hub: its own snapshot, the schemas it
+ * was checked against and the index of the hub keys it names and defines, for the editor.
  */
-export type PortfolioBuild = { snapshot: Snapshot; schemas: SchemaSet; references: ReferenceIndex };
+export type HubBuild = { snapshot: HubSnapshot; schemas: SchemaSet; references: ReferenceIndex };
+
+/**
+ * The build of a workspace: the snapshot the merge of its hubs' builds gives, with the schemas and
+ * the reference index of every hub joined.
+ */
+export type PortfolioBuild = Omit<HubBuild, 'snapshot'> & { snapshot: Snapshot };
 
 /**
  * Where oculus's own config folder lies in the workspace: the folder on disk, and the workspace
@@ -470,12 +478,12 @@ type BuildOptions = {
 
 /**
  * The build of a hub as read: what is wrong with it, from validate and the schemas, the reference
- * index over its files and the snapshot normalise turns it into, the wire model with the findings
- * carried inside it and its records under the keys its files give them, which the merge of the hubs
- * of a workspace (`buildHubs` of server/root/watch/build.ts) gives their ids. A reference to a key
- * `others` holds is kept for the merge.
+ * index over its files and the hub's own snapshot normalise turns it into, with the findings
+ * carried inside it, its records under the keys its files give them and its own feeds, which the
+ * merge of the hubs of a workspace (`buildHubs` of server/root/watch/build.ts) gives their ids and
+ * the rows of `byHub`. A reference to a key `others` holds is kept for the merge.
  */
-export function builtHub(read: HubRead, options: BuildOptions): PortfolioBuild {
+export function builtHub(read: HubRead, options: BuildOptions): HubBuild {
     const { hub, root, config, raw } = read;
     const { engine } = options;
     const unread = unreadSources(raw, hub, config.registries);
@@ -547,7 +555,7 @@ export function buildFolderProjects(
     raw: RawPortfolio,
     config: PortfolioConfig,
     options: Omit<BuildOptions, 'checker' | 'workspace'>
-): PortfolioBuild {
+): HubBuild {
     const findings = sortFindings(raw.findings);
     return {
         snapshot: normalise(raw, findings, config.merged, options.version, options.others),

@@ -12,7 +12,7 @@ import { portfolioConfigFrom } from '../../../../src/lib/data/index.ts';
 import { buildOneHub } from '../../../fixtures/hubs/hub-build.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../../src/lib/data/sources/config.ts';
 import { findingText } from '../../../../src/lib/data/helpers/finding-text.ts';
-import type { Snapshot } from '../../../../src/lib/data/model/index.ts';
+import type { HubSnapshot } from '../../../../src/lib/data/model/index.ts';
 import { placeClones } from '../../../../src/lib/data/sources/clones.ts';
 import { originOf, sameAddress } from '../../../../src/lib/data/sources/origin.ts';
 import { it, plantFile, plantScratch, scratchDir, test } from '../../../fixtures/scratch.ts';
@@ -29,7 +29,7 @@ function clonedTwice(...dirs: string[]): string {
 }
 
 /** The messages of the findings a snapshot holds on a project's `repository.url`. */
-function urlFindings(snapshot: Snapshot): string[] {
+function urlFindings(snapshot: HubSnapshot): string[] {
     return snapshot.findings
         .filter((one) => one.key === 'repository.url')
         .map((one) => one.message);
@@ -132,7 +132,7 @@ describe('the clones of a project', () => {
     }
 
     /** The snapshot of that hub with the clones of its projects placed from these folders. */
-    function clonesOf(dirs: readonly string[]): Snapshot {
+    function clonesOf(dirs: readonly string[]): HubSnapshot {
         const hub = plantScratch('oculus-clones-hub-', {
             'projects/ideas/x/project.yml': `title: X\ntier: research\nstage: nascent\nrepository:\n  url: ${X}\n`,
             'projects/ideas/y/project.yml': 'title: Y\ntier: research\nstage: nascent\n'

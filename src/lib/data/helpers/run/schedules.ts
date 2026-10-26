@@ -7,12 +7,15 @@
 // (server/machine/runs/schedules/file.ts).
 //
 // An entry is `{ name, runs, when, paused?, unattended? }`. `runs` holds exactly one of `task` (an
-// update task), `command` (the name of a command of a repository's `.oculus/commands.yml`, with
-// that repository's `folder`) or `prompt` (the first message of a Claude session, with the
-// `folder` the session starts in). An entry that is not a map, or whose name or `runs` has no
-// readable shape, has no entry to edit; one whose shape reads but whose value is refused keeps its
-// entry, so its row can be edited, and says why it does not run. Of several problems an entry has,
-// the first in the order of the checks below is the one it says.
+// update task, with the `hub` whose task it is, the primary's when `hub` is absent), `command` (the
+// name of a command of a repository's `.oculus/commands.yml`, with that repository's `folder`) or
+// `prompt` (the first message of a Claude session, with the `folder` the session starts in). A
+// `hub` is a name as written, compared with the hubs' names by the server's disk checks, so text
+// that is empty or only white space, or a value that is not text, is `hub-wrong` here. An entry
+// that is not a map, or whose name or `runs` has no readable shape, has no entry to edit; one whose
+// shape reads but whose value is refused keeps its entry, so its row can be edited, and says why it
+// does not run. Of several problems an entry has, the first in the order of the checks below is the
+// one it says.
 
 import type {
     ScheduleEntry,
@@ -34,7 +37,11 @@ const SCHEDULE_NAME_MAX = 80;
 const ENTRY_KEYS = ['name', 'runs', 'when', 'paused', 'unattended'];
 
 /** The keys of `runs` for each of the three things a schedule runs. */
-const RUNS_KEYS = { task: ['task'], command: ['command', 'folder'], prompt: ['prompt', 'folder'] };
+const RUNS_KEYS = {
+    task: ['task', 'hub'],
+    command: ['command', 'folder'],
+    prompt: ['prompt', 'folder']
+};
 
 type Kind = keyof typeof RUNS_KEYS;
 
@@ -118,6 +125,17 @@ function readFolder(runs: Record<string, unknown>): { folder: string } | Schedul
     return path ? { folder: raw } : problem('folder-wrong', raw);
 }
 
+/**
+ * The hub a task's `runs` names: none when `hub` is absent, the text as written, or the problem
+ * with a value that is not text or is text that is empty or only white space.
+ */
+function readHub(runs: Record<string, unknown>): { hub?: string } | ScheduleProblem {
+    if (!Object.hasOwn(runs, 'hub')) return {};
+    const raw = byKey(runs, 'hub');
+    if (typeof raw !== 'string' || raw.trim() === '') return problem('hub-wrong', written(raw));
+    return { hub: raw };
+}
+
 /** What `runs` holds, with the first problem its values have; null when its shape does not read. */
 function readRuns(
     raw: unknown
@@ -133,7 +151,9 @@ function readRuns(
             const named = problem('update-task-unknown', written(task), UPDATE_TASKS.join(', '));
             return { target: { task: UPDATE_TASKS[0] }, problem: named };
         }
-        return { target: { task }, problem: keyProblem };
+        const hub = readHub(raw);
+        if ('word' in hub) return { target: { task }, problem: keyProblem ?? hub };
+        return { target: { task, ...hub }, problem: keyProblem };
     }
     const text = byKey(raw, kind);
     if (typeof text !== 'string' || (kind === 'command' && text.trim() === '')) return null;
@@ -179,16 +199,18 @@ function readFlag(
 
 /**
  * The keys of a raw entry whose value is there and does not read: the task of a `runs` that names
- * a task, when it is not an update task, and an `unattended` that is not true or false. The reader
- * gives each a default (the first task, off), which the entry shows but the file does not hold, so
- * the dialog opens such a key with no value chosen and a save writes the one chosen.
+ * a task, when it is not an update task, its hub when that is `hub-wrong`, and an `unattended`
+ * that is not true or false. The reader gives each a default (the first task, the primary's hub,
+ * off), which the entry shows but the file does not hold, so the dialog opens such a key with no
+ * value chosen and a save writes the one chosen.
  */
 export function unchosenKeys(raw: unknown): UnchosenKey[] {
     if (!isMap(raw)) return [];
     const keys: UnchosenKey[] = [];
     const runs = byKey(raw, 'runs');
-    if (isMap(runs) && kindOf(runs) === 'task' && !isUpdateTask(byKey(runs, 'task'))) {
-        keys.push('task');
+    if (isMap(runs) && kindOf(runs) === 'task') {
+        if (!isUpdateTask(byKey(runs, 'task'))) keys.push('task');
+        if ('word' in readHub(runs)) keys.push('hub');
     }
     const flag = byKey(raw, 'unattended');
     if (flag !== undefined && typeof flag !== 'boolean') keys.push('unattended');

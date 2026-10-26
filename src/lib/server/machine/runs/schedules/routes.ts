@@ -51,6 +51,7 @@ import {
     type Edit
 } from './file.ts';
 import { loadRecord, moveRecord, type RecordMove } from './record.ts';
+import type { TaskHubs } from './task.ts';
 import type { SchedulesWatcher } from './watch.ts';
 
 /** What the route needs of the process. */
@@ -59,8 +60,11 @@ export type SchedulesRouteOptions = {
     files: () => { schedules: string | null; record: string };
     /** The directories the file browser serves, read at the request. */
     rootsFor: () => string[];
-    /** The primary hub's folder, read at the request, or null with no primary. */
-    hubFor: () => string | null;
+    /**
+     * The open workspace's hubs, read at the request: the primary's folder, null with no primary,
+     * and the hubs' names, which a task entry's `hub` must be one of.
+     */
+    hubsFor: () => TaskHubs;
     /** The text catalog the token refusal is worded from, read when a refusal is made. */
     text: () => Record<string, string>;
     /** The approvals file a saved command entry's chain is approved in, read at the request. */
@@ -151,7 +155,9 @@ function checkSave(
     if (read.problem !== null) return read.problem;
     if (read.entry === null) return { word: 'entry-wrong', names: [] };
     const entry = read.entry;
-    const disk: Disk = { hub: options.hubFor(), roots: options.rootsFor() };
+    const open = options.hubsFor();
+    const hubs = open.hubs.map((one) => one.name);
+    const disk: Disk = { hub: open.primaryDir, roots: options.rootsFor(), hubs };
     const rows = readSchedules(files.schedules, disk);
     if (!rows.ok) return { word: 'schedules-unread', names: [] };
     if (at !== null && rows.rows[at]?.name !== (was ?? '')) {

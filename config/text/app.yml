@@ -223,6 +223,8 @@ text:
             problem_folder_missing: The folder {0} does not exist.
             problem_folder_not_served: The folder {0} lies neither in the hub nor in a root the file browser serves, so a prompt does not start there.
             problem_folder_wrong: The folder {0} must be hub, an absolute path or a path under ~/.
+            problem_hub_unknown: The open workspace holds no hub named "{0}", so the task does not run; name a hub of the workspace, or leave hub out for the primary's task.
+            problem_hub_wrong: 'The hub {0} must be the name of a hub of the workspace, written as text.'
             problem_key_unknown: '{0} is not a key of a schedule.'
             problem_name_missing: The schedule has no name.
             problem_name_twice: Two schedules are named {0}; neither runs until one is renamed.
@@ -295,8 +297,9 @@ text:
             last_none: 'Last run: none yet'
             last_post: 'Last post: {0}'
             next: 'Next: {0} ({1})'
-            no_files: 'The primary hub holds no task file, so no update task is offered; a task is the file .oculus/tasks/<task>.md of the hub, for litwatch, scout, inbox or linkedin, and the Templates tab of the Help page has a template of each.'
-            no_primary: The open workspace has no primary hub, so no update task is offered.
+            in_hub: '{0} ({1})'
+            no_files: 'No hub of the open workspace holds a task file, so no update task is offered; a task is the file .oculus/tasks/<task>.md of a hub, for litwatch, scout, inbox or linkedin, and the Templates tab of the Help page has a template of each.'
+            no_hub: The open workspace holds no hub, so no update task is offered.
             no_schedule: 'Next: no schedule'
             schedule: Schedule...
             scout_label: Scout
