@@ -40,7 +40,15 @@ dispatch:          # steps in flight, up to six (Z632)
   landing: not-started
 - step: O87
   brief_check: .scratch/migration/agents/reviews/O87-brief-check.md (a6e177511c7ad4a33, claude-opus-5-5, 234620 tokens, 75 tool uses, 10 min 4 s)
-  landing: preparing
+  base: 33780ceee
+  worktree: .agents/worktrees/migration-O87
+  executor: agent
+  worker: claude:opus
+  session_id: aa362921271953d08 (claude-opus-5-5)
+  launched: 2026-10-27
+  report: .scratch/migration/agents/reviews/O87-report.md
+  shared_paths: with O84, simple merges in separate lines: `config/options/sources.yml` (O84 189-196; O87 78-90), `docs/templates.md` (O84 372-512 and 1055-1065; O87 64-68, 274-278, 318-332), `src/lib/state/boards/focus/filter.ts` (O84 comments; O87 280-480), `tests/checks/config/config-folder.test.ts` (O84 its rows; O87 222-245), `docs/HELP.md` (O84 Doc text at 288 and 532; O87 294, 529, 538, 547); the generated `docs/diagrams/*`, regenerated at each landing.
+  landing: not-started
 - step: O94
   brief_check: "running: a0b48bbc141e6efce"
   landing: preparing
