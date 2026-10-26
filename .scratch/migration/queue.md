@@ -1,7 +1,7 @@
 In flight (3 of 6 slots in use):
-- O86 (the update tasks of every hub), built, review running.
+- O86 (the update tasks of every hub), reviewed, repair round 1 next.
 - O89 (one record card, one way to add a dated line), building.
-- O84 (who the user is), prepared, builder next.
+- O84 (who the user is), building.
 
 Queued (3):
 - O88 (one grouping heading), /spec after O89 lands.
