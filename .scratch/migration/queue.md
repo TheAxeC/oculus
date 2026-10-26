@@ -1,6 +1,6 @@
 In flight (2 of 6 slots in use):
 - O80 (Focus and the boards from config; rulings 388 to 391, 393, 394, 396, 402, Z1019 to Z1024), builder running, launched 2026-10-26.
-- O82 (the HPC poll's three failures, ssh, Slurm and other errors told apart; rulings 428, Z1026), builder running, launched 2026-10-26; shares `docs/apps.md` with O80 at different rows.
+- O82 (the HPC poll's three failures, ssh, Slurm and other errors told apart; rulings 428, Z1026), repair round 1 running (sacct and sinfo read as Slurm not answering; the poll's words required); shares `docs/apps.md` with O80 at different rows.
 
 Queued, in order (2 steps):
 - O79 (primary and foreign keys, `from:` renamed `foreign_key:`; rulings 392, 397, 398, 404), waits for O80's landing (shared files not simple to merge); rulings 425 (a), 426 and 427 (a) given.
