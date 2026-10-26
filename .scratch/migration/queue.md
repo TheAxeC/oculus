@@ -1,16 +1,14 @@
 In flight (1 of 6 slots in use):
-- O84 (who the user is), building.
+- O84 (who the user is), repair round 1.
 
-Queued (9):
-- O88 (one grouping heading, and the app theme that failed to load), /spec next.
+Queued (7):
+- O88 (one heading, one card grid, no intro paragraph, Pillars by kind, and the app theme that failed to load), /spec next.
 - O87 (the Focus band's positions and teaching), /spec next.
 - O90 (the board bar's Waiting on filter), /spec after O88 and O87.
-- O91 (people and their projects), /spec after O84 lands.
-- O92 (a collection's Add asks its fields), /spec after O90.
-- O93 (the dated lines and their Focus rows), /spec after O87.
-- O94 (the Focus Pillar filter and the waiting line), /spec after O93.
-- O95 (the collection bar as the board's), /spec after O92.
-- O96 (LinkedIn's Mark posted), /spec when a slot is free.
+- O91 (joint work onto the people file, and the projects on people's, organisations' and resources' cards), /spec after O84 lands.
+- O92 (the collection's Add and bar, and the Map's bar), /spec after O90.
+- O93 (Focus and the dated lines), /spec after O87.
+- O94 (LinkedIn's Mark posted), /spec when a slot is free.
 
 Waiting on a ruling: none.
 
