@@ -5263,3 +5263,4 @@ Ruling 432 puts `stale` on every failed poll whose Recent or Capacity table is o
 - Not chosen: (b) A new key `queueLive?: true` on a poll whose `squeue` answered. Pros: explicit. Cons: a third new public key beside `stale`, carrying what `lastOk` already says. The lazy option is (c), reading `stale` as the queue being live, which ruling 432 makes false: a full failure after a partial poll would show a frozen queue as live and send Recover's command to a cluster whose Slurm does not answer.
 
 Where it applies: O83. Booked in `plan.md` Rulings and in `agents/briefs/O83.md`.
+Builds on it: O83

@@ -153,3 +153,26 @@ The remaining ways to pass without the goal are:
 - `config/local.yml` and the hub's `.oculus/local.yml`: not opened, by instruction.
 
 Usage: af3b2b2dbfcd20aec, claude-opus-5-5, 200846 tokens, 49 tool uses, 8 min 15 s.
+
+## Closed (each finding's change to the brief, by the session)
+
+- Names, the readers outside the write list (the Focus command center's pill, the rail badge): named in premise 5 and in case 15's look; no change to their files.
+- Names, the comments the change makes false (`poll.ts:75-79`, `:232-235`, `:264-268`, `:440-446`; `model-sessions.ts:668`; `docs/apps.md:421`'s "each with the last good rows"; `Head.svelte:2-7` and `Hpc.svelte:21-26`; `failureWords`'s doc): premises 2, 4 and 5 name them, and items 1 to 4 ask each rewritten.
+- Names, "stale" meaning a late poll in `Head.svelte`: item 4 renames it `overdue`; verify 6 checks it.
+- The step line, "the last good poll" read per table: decision 1.
+- Premises, `hpcWords` keyed on `failureWords` and not on `status === 'ok'`: premise 5 rewritten.
+- Premises, O80's line of `docs/apps.md` is 452: premise 8 corrected.
+- Cases and checks 1, case 9 of the old brief: now case 10, expecting `slurm_down` with `sacct`'s line, not partial.
+- Cases and checks 2, the mark of an empty table cannot be drawn: item 4 draws a table `stale` names with its heading at 0 rows; decision 6 gives the heading's words; case 15 checks case 5's payload.
+- Cases and checks 5, the test's imports and fixture: premise 3 names them; the path list widens to `runs.test.ts:18-23`.
+- The question, the prewarm's positive half: case 3 asks the prewarm started once against the second answer's Recent rows, with `logPaths` and `prewarm: true`.
+- The question, case 14 of the old brief passes on the base: case 17 adds two malformed `stale` rows the change refuses.
+- Implied inputs, alternating failures: case 7.
+- Implied inputs, a window change while Recent is kept: decision 3 and case 12.
+- Implied inputs, `unconfigured` and back: item 1 names the third condition; case 11.
+- Implied inputs, a full failure after a partial poll: raised as open item 432, ruled Part 1 (a) by Axel; item 2 and case 9. The liveness of the queue that ruling then needs: open item 433, closed under self-rule as Z1028 (a); items 1, 3, 5 and 7.
+- Implied inputs, the quota read after a partial poll: case 2's last sentence.
+- Implied inputs, an answer after `close()` or a host change: item 1 places the partial path after the drop check; case 11.
+- Implied inputs, `sacct` answering empty then `sinfo` failing: case 14.
+- Implied inputs, the head bar's time: item 4 names `updated`, equal to `lastOk` on such a poll by ruling 433.
+- Dictated text, the never-read mark without "stale": raised as open item 432, ruled Part 2 (a) by Axel; item 6 dictates `stale_never: stale, not read since the server started`, held line by line: ASCII, plain, no dash, no 'not X but Y' construction, a YAML plain scalar.
