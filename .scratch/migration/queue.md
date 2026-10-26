@@ -1,15 +1,16 @@
-In flight (1 of 6 slots in use):
-- O78 (collections and registries by flag; rulings 386, 387, Z1009 to Z1016), building: builder launched 2026-10-26 at base e5ad5b79.
+In flight (0 of 6 slots in use):
+- none.
 
 Queued, in order (3 steps):
-- O79 (primary and foreign keys, `from:` renamed `foreign_key:`; rulings 392, 397, 398, 404), after O78.
-- O80 (Focus and the boards from config; rulings 388 to 391, 393, 394, 396, 402).
+- O79 (primary and foreign keys, `from:` renamed `foreign_key:`; rulings 392, 397, 398, 404), waiting on Axel's rulings on open items 415 and 416.
+- O80 (Focus and the boards from config; rulings 388 to 391, 393, 394, 396, 402), next.
 - O81 (the grouping heading and the Venues view; rulings 395, 399 to 401, 403), after O80.
 
 Owed looks:
 - none.
 
 Landed, newest first:
+- O78 (collections and registries by flag; rulings 386, 387, Z1009 to Z1018), 2026-10-26, c6c2657c.
 - O77 (the project card and the project page, the Focus lane card's facts, the Focus filter and the Hub list; rulings 352, 353, 356, 378 to 385, Z1007), 2026-10-25, a374362d.
 - O75 (the bar of a project board in two lines, its section headings and the list view), 2026-10-25, 1283d0ac.
 - O74 (the Focus career banner built from the command center's parts), 2026-10-25, a6d8e34e.
