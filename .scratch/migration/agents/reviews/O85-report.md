@@ -64,7 +64,7 @@ The first run (base 8d52965c) was handed back in round 0 and stands as ruled; it
 | 3. The page sends it | DONE | `writes.svelte.ts`, `shapes.ts`, `editors/writer.ts`, `write-files.ts`; tests of G28 and G96; no split needed, `writes.svelte.ts` is 876 lines |
 | 4. The row offers the hub | DONE | `chosen-hub.test.ts` rows; `row-writer.test.ts`, `editor-saved.test.ts` |
 | 5. The row shows the chosen hub's value | DONE | route, reader, `hubRow`; cases 2, 29, 30, 31 |
-| 6. Words | DONE | `config/text/server.yml` `primary_only`, `not_hub_key`; `config/text/views/system/workbench.yml` six `settings_hub_*`/`settings_pick_hub` keys |
+| 6. Words | DONE | `config/text/server.yml` `primary_only`; `config/text/views/system/workbench.yml` six `settings_hub_*`/`settings_pick_hub` keys |
 | 7. Tests | DONE | listed under "New tests"; one new file outside the named ones, for the size rule (see "Brief wrong or impossible") |
 | 8. Comments and schema description | DONE | see "Sentences that describe the behaviour" |
 | 9. Doc text | DONE | section "Doc text" |
@@ -93,7 +93,6 @@ Each failed on the unchanged tree (a scratch copy of the base's `src`, `config`,
 | same | lab whose settings file is gone, refused, and no file is made | G8 | proof | the same line and message |
 | same | lab whose settings file does not parse, refused | G8 | proof | the same line and message |
 | same | a key read from the primary alone, refused for lab | G8 | proof | `:456:20` `AssertionError: expected [ 'behavior.yml:slurm.resource' ] to deeply equal []` |
-| same | a key of the open workspace file, refused for lab | G8 | proof | `:456:20` `AssertionError: expected [ 'appearance.yml:code_theme' ] to deeply equal []` |
 | same | a folder of lab in a workspace with no primary, written into lab | G8 | proof | `:452:56` `AssertionError: expected [ [ { ...(2) } ], [] ] to deeply equal [ [], [ 'sources.yml:memories_dir' ] ]` (vitest prints `<horizontal ellipsis>(2)`) |
 | same | a key read from the primary alone, with no primary and lab named, refused | G8 | proof | `:456:52` `Error: text key not in config: server.workspace.primary_only` |
 | same | a key read from the primary alone, with no primary and no hub named, refused | G8 | audit | passed on the unchanged tree; the `no_primary` refusal it checks is behaviour the step keeps |

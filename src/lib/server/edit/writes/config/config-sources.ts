@@ -3,8 +3,9 @@
 // function), the languages and code themes the data layer holds (the code themes held to the
 // TextMate rules the checkout ships, data/places/code-rules.ts), and the domains, clusters, people
 // and slides of the portfolio this server last published. The domains, the clusters and the people
-// are the keys of the primary hub's records (`hubRecords`), since a setting such as `self` names a
-// record of the primary by the key its file gives it.
+// are the keys of the records of the hub the write lands in (`hubRecords`), the primary's unless
+// the write names another hub (config-write.ts), since a setting such as `self` names a record of
+// that hub by the key its file gives it.
 //
 // A list the server does not hold answers null, and the check of a value drawn from it is its type
 // alone. That is every portfolio list of a process that has published no portfolio yet, and the
@@ -26,9 +27,12 @@ import {
 
 /** What a write target holds that a list can be built from. */
 export type SourceInputs = {
-    /** The primary hub's folder, or null while the workspace has no primary. */
+    /**
+     * The folder of the hub the write lands in, the primary's unless the write names another, or
+     * null while the workspace has no primary and the write names no hub.
+     */
     hub: string | null;
-    /** The primary hub's name, or null while the workspace has no primary. */
+    /** The name of that hub, or null while the workspace has no primary and none is named. */
     primary: string | null;
     /**
      * The projects of the portfolio this server last published, none when it has published none.

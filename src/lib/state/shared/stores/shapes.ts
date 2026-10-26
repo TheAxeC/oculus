@@ -385,29 +385,36 @@ export type WritesStore = {
     writeRail: (rail: RailEntry[], said?: boolean) => Promise<WriteAnswer>;
     /**
      * Set one option of a defaults file, by the file's name and the dotted key path, in the file
-     * the user's value of it lives in; `copy` adds the key even when the value is the one in force.
+     * the user's value of it lives in; `copy` adds the key even when the value is the one in force,
+     * and `root` names the hub whose settings file a key each hub's own file is read for is
+     * written in, the primary's when it names none.
      */
     writeConfigKey: (
         file: string,
         key: string,
         value: unknown,
-        copy?: boolean
+        copy?: boolean,
+        root?: string
     ) => Promise<WriteAnswer>;
     /** Set one setting an app declares, by its whole key. */
     writeAppSetting: (key: string, value: unknown) => Promise<WriteAnswer>;
     /**
      * Set one list option or family of a defaults file whole, if `base` is still the value in
-     * force.
+     * force; `copy` and `root` are as for `writeConfigKey`.
      */
     writeConfigValue: (
         file: string,
         key: string,
         value: unknown,
         base: unknown,
-        copy?: boolean
+        copy?: boolean,
+        root?: string
     ) => Promise<WriteAnswer>;
-    /** Take one option out of the file the user's value of it lives in, back to oculus's value. */
-    resetConfig: (file: string, key: string) => Promise<WriteAnswer>;
+    /**
+     * Take one option out of the file the user's value of it lives in, back to oculus's value;
+     * `root` is as for `writeConfigKey`.
+     */
+    resetConfig: (file: string, key: string, root?: string) => Promise<WriteAnswer>;
     muteFinding: (signature: string, muted: boolean) => Promise<WriteAnswer>;
     addMemory: (name: string, data: string) => Promise<WriteAnswer>;
     newIdea: (fields: NewIdeaFields, root?: string) => Promise<WriteAnswer>;

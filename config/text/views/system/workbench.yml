@@ -217,6 +217,12 @@ text:
         settings_mismatch_toggle: 'The value in force is {0}, which is not true or false.'
         settings_missing: 'This setting has no value in force; it is set in {0}.'
         settings_hub_file_absent: '{0} is not there. A change to a setting of the hub creates it.'
+        settings_hub_choice: Hub
+        settings_hub_choice_tip: 'The hub whose .oculus/config.yml this setting is read from and written to'
+        settings_hub_choice_none: Pick a hub
+        settings_pick_hub: 'Pick the hub this setting is written to; nothing is written until a hub is picked.'
+        settings_hub_loading: 'Reading the settings of the hub {0}...'
+        settings_hub_failed: 'The settings of the hub {0} could not be read, so nothing is written: {1}'
         settings_network: 'Not written: the server could not be reached.'
         settings_no_workspace: 'This workspace is not saved to a file, so a change to these settings is refused until it is.'
         settings_no_primary: This workspace has no primary hub, so no file sets these keys and each of them shows oculus's value.

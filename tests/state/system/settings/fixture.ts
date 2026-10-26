@@ -1,19 +1,85 @@
 // Layer 2, test fixture. What the Settings state suites share: the real config with its words and
-// themes installed, the shipped options catalog.
+// themes installed, the shipped config and its options catalog, and the rows of a workspace of the
+// hubs `hub`, the primary, and `lab`, whose settings file relabels the stage `exploring`.
 
 import { engineDir, loadConfig, textCatalog } from '../../../../src/lib/data/sources/config.ts';
 import { catalogOf } from '../../../../src/lib/data/sources/config/catalog/options.ts';
+import { hubSlice } from '../../../../src/lib/data/sources/config/settings/hub-slice.ts';
 import { setAppearance } from '../../../../src/lib/state/shared/words/appearance.ts';
 import { vscodeRuleIds } from '../../../../src/lib/data/places/code-rules.ts';
 import { setCatalog } from '../../../../src/lib/state/shared/words/text.ts';
 import type { FsEntry } from '../../../../src/lib/state/sources/fs.ts';
+import { settingsGroups } from '../../../../src/lib/state/system/config/groups.ts';
+import type { ConfigRow, HubFile } from '../../../../src/lib/state/system/config/rows.ts';
+import {
+    withHubs,
+    type HubRead
+} from '../../../../src/lib/state/system/config/view/hub-settings.svelte.ts';
 
-const config = loadConfig(engineDir()).config;
+/** The merged config of oculus's own files, under no hub's settings. */
+export const config = loadConfig(engineDir()).config;
 
 export const shipped = catalogOf(config);
 
 setCatalog(textCatalog(config));
 setAppearance(config, vscodeRuleIds());
+
+/** A file's text as the file browser holds it, read unless `loading` says it is being read. */
+export const text = (body: string, more: { loading?: boolean } = {}) => ({
+    text: body,
+    truncated: false,
+    error: '',
+    loading: more.loading === true
+});
+
+/** The stages of the hub `lab`: oculus's, `exploring` relabelled. */
+const stages = config.stages as Record<string, Record<string, unknown>>;
+export const LAB_STAGES = { ...stages, exploring: { ...stages.exploring, label: 'Trying' } };
+
+/** Lab's settings file, which relabels `exploring`. */
+export const LAB_FILE = 'stages:\n  exploring: { label: Trying }\n';
+
+/** The slice of lab's merged settings the server answers. */
+export const LAB_SLICE = { hub: 'lab', config: hubSlice({ ...config, stages: LAB_STAGES }) };
+
+/** Lab's settings, read. */
+export const LAB_READ: HubRead = { state: 'ready', slice: LAB_SLICE };
+
+/** The row of the stages, and the pick of lab on it. */
+export const STAGES = 'catalogs/vocab.yml:stages';
+export const LAB_CHOSEN = { [STAGES]: 'lab' };
+
+/**
+ * What one case gives the rows: the hubs, the primary, the hub chosen per row, lab's read, lab's
+ * settings file and the primary's (`{}` unless named).
+ */
+export type HubCase = {
+    hubs: string[];
+    primary: string | null;
+    chosen?: Record<string, string>;
+    read?: HubRead;
+    file?: HubFile;
+    primaryFile?: string;
+};
+
+/** The row of one id over the shipped config, as the Settings view draws it for a case. */
+export function hubRowOf(id: string, one: HubCase): ConfigRow {
+    const groups = settingsGroups(shipped, config, {
+        hubFile: { text: text(one.primaryFile ?? '{}\n'), present: true },
+        workspace: null
+    });
+    const rows = withHubs(groups, {
+        hubs: one.hubs,
+        primary: one.primary,
+        chosen: one.chosen ?? {},
+        config,
+        read: () => one.read ?? LAB_READ,
+        file: () => one.file ?? { text: text(LAB_FILE), present: true }
+    }).flatMap((group) => group.sections.flatMap((section) => section.rows));
+    const row = rows.find((found) => found.id === id);
+    if (row?.kind !== 'config') throw new Error(`no row ${id}`);
+    return row;
+}
 
 /** A file the file browser lists. */
 export function file(name: string): FsEntry {

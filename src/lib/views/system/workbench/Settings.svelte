@@ -21,30 +21,37 @@
     // its default and the file and line of the user's value of it. A text, number, choice, toggle
     // or picker is written as it is changed or left, through the same write the History view
     // records and can undo; a list, a multi or a family is edited in its item (editors/) and
-    // written whole on Save. A write lands in the open workspace file's `settings:`, or in the
-    // primary hub's `.oculus/config.yml` for a key of the hub list; oculus's own files are never
-    // written.
+    // written whole on Save. A write lands in the open workspace file's `settings:`, or for a key
+    // of the hub list in a hub's `.oculus/config.yml`: the hub chosen on the row for a key each
+    // hub's own file is read for, the primary's otherwise; oculus's own files are never written.
     //
     // A row's value is the value in force, read from the merged configuration of the config
     // channel, so a write that the channel pushes back redraws it. The line of a key is read from
     // the user's files: the open workspace file, read through the hub folder that holds it, and the
     // primary hub's settings file, read through the primary's folder with the folders on its way
-    // listed (state/system/config/view/hub-file.ts); both are read again at each push. A file
-    // opens in an editor only through a folder of the workspace that holds it, and a defaults file
-    // through the read-only route over oculus's `config/` folder. The machine's own files are
-    // listed from the catalog, and the value in force of each key comes with the workspaces
-    // answer, so their text is not read here. The Catalogs, Schemas and Texts groups are made from
-    // the listings of their folders, which the same push re-reads. The lists the controls offer
-    // (the domains, the clusters, the views, the usage tiers, the theme classes, the hub's folders)
-    // are built here from the stores the page holds (editors/sources.ts); one that is not there yet
-    // is drawn as loading.
+    // listed (state/system/config/view/hub-file.ts); both are read again at each push. A row of a
+    // key each hub's own file is read for, in a workspace of more than one hub, offers the pick of
+    // its hub, kept per row while the tab is open and never saved; with a hub other than the
+    // primary chosen, its value and default are read from that hub's settings, which
+    // api/hub-settings answers, and its line from that hub's settings file, read through that
+    // hub's folder, each read again at each push (state/system/config/view/hub-settings.svelte.ts).
+    // A file opens in an editor only through a folder of the workspace that holds it, and a
+    // defaults file through the read-only route over oculus's `config/` folder. The machine's own
+    // files are listed from the catalog, and the value in force of each key comes with the
+    // workspaces answer, so their text is not read here. The Catalogs, Schemas and Texts groups
+    // are made from the listings of their folders, which the same push re-reads. The lists the
+    // controls offer (the domains, the clusters, the views, the usage tiers, the theme classes,
+    // the hub's folders) are built here from the stores the page holds (editors/sources.ts), a
+    // row with a hub other than the primary chosen offering that hub's folders and records; one
+    // that is not there yet is drawn as loading.
     //
     // The query, the text being typed in a box, the drafts of the list, multi and family editors
     // and the rail list being edited are the tab's instance state, so they are there again after
-    // a tab switch or a reload. The rail's Settings choice opens the tab with `reveal: 'rail'`:
-    // while that ask stands the rail row is drawn whatever the query, and once it is drawn the
-    // view clears a query that would have hidden it, waits for the list to be redrawn, scrolls the
-    // row into view and takes the ask out.
+    // a tab switch or a reload; a text and a draft made with a hub other than the primary chosen
+    // are kept under that hub as well. The rail's Settings choice opens the tab with
+    // `reveal: 'rail'`: while that ask stands the rail row is drawn whatever the query, and once
+    // it is drawn the view clears a query that would have hidden it, waits for the list to be
+    // redrawn, scrolls the row into view and takes the ask out.
     //
     // The table of contents is beside the list from 700 px and over. Under that the header offers a
     // toggle that shows it over the list; a press on one of its entries or Escape hides it again
@@ -64,15 +71,25 @@
     import { t } from '$lib/state/shared/words/text';
     import { appSettingRows } from '$lib/state/system/config/other-rows/app-rows';
     import { CATALOGS, SCHEMAS, workspaceFilePlace } from '$lib/state/system/config/config-files';
-    import { hasSavedDraft, withSavedDraft } from '$lib/state/system/config/editors/slots';
-    import { listsOf, type Folder } from '$lib/state/system/config/editors/sources';
+    import { hasSavedDraft, slotOf, withSavedDraft } from '$lib/state/system/config/editors/slots';
+    import { listsOf, type Folder, type Lists } from '$lib/state/system/config/editors/sources';
     import {
         RAIL_ROW,
         catalogOf,
         settingsGroups,
         tocOf,
-        type Group
+        type Group,
+        type Row
     } from '$lib/state/system/config/groups';
+    import { hubsTaking } from '$lib/state/shared/page/hubs';
+    import type { HubFile } from '$lib/state/system/config/rows';
+    import {
+        hubConfig,
+        hubReader,
+        hubSettingsUrl,
+        hubsRead,
+        withHubs
+    } from '$lib/state/system/config/view/hub-settings.svelte';
     import { searchGroups } from '$lib/state/system/config/search';
     import { contentsAfter, contentsPlace } from '$lib/state/system/config/view/contents';
     import { listedFiles } from '$lib/state/system/config/view/folders';
@@ -94,7 +111,7 @@
     const {
         appShell,
         entities: { config, message, portfolio, usage },
-        fs: { fileText, listing, primary, refresh, workspaces },
+        fs: { fileText, listing, primary, refresh, roots, workspaces },
         registry,
         layout: { instanceLayoutState, restateInstance },
         ui,
@@ -115,14 +132,48 @@
     /** The open workspace file's root and path, or null for the unsaved workspace. */
     const workspaceFile = $derived(workspaceFilePlace(workspaces()));
 
+    /** The hubs of the workspace, the primary first and the others in the workspace's order. */
+    const hubs = $derived(
+        hubsTaking(
+            roots()
+                .filter((one) => one.hub === true)
+                .map((one) => one.key),
+            hubRoot
+        )
+    );
+
+    /** The hub picked on each row, by row id: the view's own, never saved. */
+    let chosen = $state<Record<string, string>>({});
+
+    function choose(row: string, hub: string): void {
+        chosen = { ...chosen, [row]: hub };
+    }
+
+    // A hub that leaves the workspace leaves the picks of it, so its rows take the first choice.
+    $effect(() => {
+        const present = hubs;
+        untrack(() => {
+            const kept = Object.entries(chosen).filter(([, hub]) => present.includes(hub));
+            if (kept.length < Object.keys(chosen).length) chosen = Object.fromEntries(kept);
+        });
+    });
+
+    /** The hubs other than the primary whose settings the rows read. */
+    const others = $derived(hubsRead({ hubs, primary: hubRoot, chosen }));
+
+    const reader = hubReader((hub) => fetch(hubSettingsUrl(hub)));
+    $effect(() => () => reader.close());
+
     $effect(() => {
         refresh(OCULUS_CONFIG_ROOT, pushed);
         if (hubRoot !== null) refresh(hubRoot, pushed);
         const root = workspaceFile?.root ?? null;
         if (root !== null && root !== hubRoot) refresh(root, pushed);
+        for (const hub of others) if (hub !== root) refresh(hub, pushed);
+        reader.want(others, pushed);
     });
 
-    const writer = reactiveWriter(writeConfigKey, resetConfig, () => lists);
+    const writer = reactiveWriter(writeConfigKey, resetConfig, (row) => listsFor(row));
     $effect(() => () => writer.close());
 
     // A draft ends when the value in force is what it sent, another value, or a form the editor
@@ -133,40 +184,47 @@
         (row) =>
             ui.setInstanceState(
                 instance.id,
-                withSavedDraft(ui.instanceState(instance.id), row.file, row.key, null)
+                withSavedDraft(ui.instanceState(instance.id), slotOf(row), null)
             ),
-        (row) => hasSavedDraft(ui.instanceState(instance.id), row.file, row.key),
-        () => lists
+        (row) => hasSavedDraft(ui.instanceState(instance.id), slotOf(row)),
+        (row) => listsFor(row)
     );
     $effect(() => () => editors.close());
 
-    /** One hub folder as the file browser holds it, with the hidden and ignored entries too. */
-    function folder(path: string): Folder {
-        if (hubRoot === null) return { state: 'ready', entries: [] };
-        const held = listing(hubRoot, path, { hidden: true, ignored: true });
+    /** One folder of a hub as the file browser lists it, hidden and ignored entries included. */
+    function hubListing(root: string | null, path: string): ReturnType<typeof listing> {
+        if (root === null) return { entries: [], error: '', loading: false };
+        return listing(root, path, { hidden: true, ignored: true });
+    }
+
+    /** One folder of a hub as the controls read it: its entries, or why there are none yet. */
+    function folderIn(root: string | null, path: string): Folder {
+        const held = hubListing(root, path);
         if (held.error !== '') return { state: 'failed', error: held.error };
         if (held.loading) return { state: 'loading' };
         return { state: 'ready', entries: held.entries };
     }
 
-    /** One folder of the hub as the file browser lists it, hidden entries included. */
-    function hubListing(path: string): ReturnType<typeof listing> {
-        if (hubRoot === null) return { entries: [], error: '', loading: false };
-        return listing(hubRoot, path, { hidden: true, ignored: true });
-    }
-
     /** The text of a file that is not read. */
     const UNREAD = { text: '', truncated: false, error: '', loading: false };
 
-    /** One file of the hub, which a workspace with no primary does not have. */
-    function hubText(path: string): ReturnType<typeof fileText> {
-        if (hubRoot === null) return UNREAD;
-        return fileText(hubRoot, path);
+    /** One file of a hub, which a workspace with no primary does not have. */
+    function hubText(root: string | null, path: string): ReturnType<typeof fileText> {
+        if (root === null) return UNREAD;
+        return fileText(root, path);
+    }
+
+    /** The settings file of a hub, read through its folder. */
+    function settingsOf(root: string | null): HubFile {
+        return hubFileText(
+            (path) => hubListing(root, path),
+            (path) => hubText(root, path)
+        );
     }
 
     /** The user's files: the primary hub's settings file and the open workspace file. */
     const userFiles = $derived({
-        ...(hubRoot === null ? {} : { hubFile: hubFileText(hubListing, hubText) }),
+        ...(hubRoot === null ? {} : { hubFile: settingsOf(hubRoot) }),
         workspace:
             workspaceFile === null
                 ? null
@@ -182,15 +240,22 @@
     /** The body classes the theme sheets hold a block for, read once from the sheets. */
     const classes = themeClasses();
 
-    const lists = $derived.by(() => {
+    /** The merged configuration of the config channel, under the primary's settings. */
+    const merged = $derived(config()?.config ?? {});
+
+    /**
+     * The lists the controls draw from over a merged configuration, with the records and the
+     * folders of the hub `root` (the primary, or a hub chosen on a row).
+     */
+    function listsWith(over: Record<string, unknown>, root: string | null): Lists {
         const snapshot = portfolio();
         return listsOf({
-            config: config()?.config ?? {},
+            config: over,
             portfolio:
                 snapshot === null
                     ? null
                     : {
-                          primary: primary(),
+                          primary: root,
                           domains: snapshot.entities.domains,
                           resources: snapshot.entities.resources,
                           people: snapshot.entities.people,
@@ -201,40 +266,71 @@
             themeClasses: classes,
             codeThemeClasses: config()?.codeThemeClasses ?? [],
             offers: appShell.offers(),
-            folder
+            folder: (path) => folderIn(root, path)
         });
-    });
+    }
+
+    const lists = $derived(listsWith(merged, hubRoot));
+
+    /** The lists of each hub other than the primary the rows read, over its own settings. */
+    const hubLists = $derived(
+        new Map(
+            others.map((hub) => [
+                hub,
+                listsWith(hubConfig(merged, reader.read(hub)) ?? merged, hub)
+            ])
+        )
+    );
+
+    /** The lists a row's controls draw from: the chosen hub's for a row with one chosen. */
+    function listsFor(row: Row): Lists {
+        if (row.kind !== 'config' || row.hub === undefined) return lists;
+        return hubLists.get(row.hub) ?? lists;
+    }
 
     const query = $derived(settingsQuery(ui.instanceState(instance.id)));
     const revealing = $derived(settingsReveal(instanceLayoutState(instance.id)) === 'rail');
 
     const groups = $derived(
-        settingsGroups(
-            catalogOf(config()?.config ?? {}),
-            config()?.config ?? {},
-            userFiles,
+        withHubs(
+            settingsGroups(
+                catalogOf(merged),
+                merged,
+                userFiles,
+                {
+                    catalogs: listedFiles(CATALOGS, (path) => listing(OCULUS_CONFIG_ROOT, path)),
+                    schemas: listedFiles(SCHEMAS, (path) => listing(OCULUS_CONFIG_ROOT, path)),
+                    texts: listedFiles(TEXT, (path) => listing(OCULUS_CONFIG_ROOT, path))
+                },
+                appSettingRows(appShell.acting(), merged),
+                {
+                    primary: primary(),
+                    set: workspaces().machine.set,
+                    defaults: workspaces().machine.defaults,
+                    values: workspaces().machine.values,
+                    hubs: workspaces().machine.hubs,
+                    portRefused: workspaces().machine.portRefused
+                }
+            ),
             {
-                catalogs: listedFiles(CATALOGS, (path) => listing(OCULUS_CONFIG_ROOT, path)),
-                schemas: listedFiles(SCHEMAS, (path) => listing(OCULUS_CONFIG_ROOT, path)),
-                texts: listedFiles(TEXT, (path) => listing(OCULUS_CONFIG_ROOT, path))
-            },
-            appSettingRows(appShell.acting(), config()?.config ?? {}),
-            {
-                primary: primary(),
-                set: workspaces().machine.set,
-                defaults: workspaces().machine.defaults,
-                values: workspaces().machine.values,
-                hubs: workspaces().machine.hubs,
-                portRefused: workspaces().machine.portRefused
+                hubs,
+                primary: hubRoot,
+                chosen,
+                config: merged,
+                read: (hub) => reader.read(hub),
+                file: (hub) => settingsOf(hub)
             }
         )
     );
 
-    // The config channel's push moves a row's value; each editor learns the value now in force.
+    // The config channel's push moves a row's value; each editor learns the value now in force. A
+    // row that says why it writes nothing holds no value of its hub to learn yet.
     $effect(() => {
         const rows = groups.flatMap((group) => group.sections.flatMap((section) => section.rows));
         untrack(() => {
-            for (const row of rows) if (row.kind === 'config') editors.pushed(row);
+            for (const row of rows) {
+                if (row.kind === 'config' && row.blocked === undefined) editors.pushed(row);
+            }
         });
     });
 
@@ -353,7 +449,14 @@
                 <Contents entries={toc} current={top} onpick={scrollTo} />
             </nav>
             <div class="list" bind:this={list} onscroll={follow}>
-                <List groups={found.groups} id={instance.id} {writer} {editors} {lists} />
+                <List
+                    groups={found.groups}
+                    id={instance.id}
+                    {writer}
+                    {editors}
+                    {listsFor}
+                    onchoose={choose}
+                />
             </div>
         </div>
     </div>

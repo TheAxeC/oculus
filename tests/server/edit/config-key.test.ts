@@ -1,6 +1,7 @@
 // Layer 4, server test. The config-key writer: one option set at its place (the open workspace
-// file's `settings:`, or the primary hub's settings file for a key of the hub list), the refusals
-// that leave every file as it was, and the bytes a write keeps.
+// file's `settings:`, or for a key of the hub list the settings file of the hub the write names,
+// the primary's when it names none), the refusals that leave every file as it was, and the bytes a
+// write keeps.
 //
 // Every case runs over a scratch engine, a copy of the checkout's config/ folder
 // (tests/routes/edit/write-fixture.ts), and a scratch hub with a saved workspace file
@@ -26,10 +27,22 @@ import { describe, expect } from 'vitest';
 import { HUB_FILE } from '../../../src/lib/data/helpers/hub-names.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
 import { words } from '../../../src/lib/server/core/words.ts';
-import { writeConfigKey } from '../../../src/lib/server/edit/writes/config/config-key.ts';
+import type { WriteTarget } from '../../../src/lib/server/edit/writes.ts';
+import {
+    writeConfigKey,
+    type ConfigKeyOutcome
+} from '../../../src/lib/server/edit/writes/config/config-key.ts';
+import { configWrite } from '../../../src/lib/server/edit/writes/config/config-write.ts';
 import { plantSaved } from '../../fixtures/hubs/workspace.ts';
 import { it, scratchDir } from '../../fixtures/scratch.ts';
-import { defaultsFile, refusalOf, scratchEngine } from '../../routes/edit/write-fixture.ts';
+import {
+    LAB,
+    LAB_SETTINGS,
+    defaultsFile,
+    labTarget,
+    refusalOf,
+    scratchEngine
+} from '../../routes/edit/write-fixture.ts';
 import { linkedHub } from './writes-fixture.ts';
 
 const CATALOG = textCatalog(loadConfig(engineDir()).config);
@@ -302,6 +315,169 @@ describe('one value written at its place', { tags: ['slow'] }, () => {
         expect(readFileSync(workspace, 'utf8')).toBe(
             `${before}settings:\n  changes: { keep: 500 }\n`
         );
+    });
+});
+
+/** One config-key write as the page sends it, through the dispatch of the write route. */
+function sent(into: WriteTarget, body: Record<string, unknown>): ConfigKeyOutcome {
+    const answer = configWrite({ kind: 'config-key', ...body }, into);
+    if (answer === null || !('outcome' in answer)) throw new Error('the write was not answered');
+    return answer.outcome;
+}
+
+/** The settings file of a hub folder. */
+const settingsOf = (dir: string): string => join(dir, HUB_FILE);
+
+/**
+ * The writes that name a hub, one row per outcome: the target (`labTarget`, with or without a
+ * primary, and with what `lab`'s settings file holds), the body sent, and what the primary's and
+ * lab's settings files hold after, with the refusal or the file the record names.
+ */
+const NAMED: {
+    row: string;
+    primary?: false;
+    labFile?: string | null;
+    body: Record<string, unknown>;
+    refused?: (lab: string) => string;
+    hub: string;
+    lab: (before: string) => string | null;
+    records?: 'hub' | 'lab';
+}[] = [
+    {
+        row: "a folder of lab written into lab's settings file, the primary's left",
+        body: { file: 'sources.yml', key: 'memories_dir', value: 'pictures', root: LAB },
+        hub: '{}\n',
+        lab: (before) => `${before}memories_dir: pictures\n`,
+        records: 'lab'
+    },
+    {
+        row: 'a hub no workspace folder carries, refused',
+        body: { file: 'sources.yml', key: 'memories_dir', value: 'pictures', root: 'nowhere' },
+        refused: () => words(CATALOG, 'server.workspace.no_hub_named', 'nowhere'),
+        hub: '{}\n',
+        lab: (before) => before
+    },
+    {
+        row: 'an empty hub name, refused',
+        body: { file: 'sources.yml', key: 'memories_dir', value: 'pictures', root: '' },
+        refused: () => words(CATALOG, 'server.workspace.no_hub_named', ''),
+        hub: '{}\n',
+        lab: (before) => before
+    },
+    {
+        row: 'a hub name that is a path, refused',
+        body: { file: 'sources.yml', key: 'memories_dir', value: 'pictures', root: '../x' },
+        refused: () => words(CATALOG, 'server.workspace.no_hub_named', '../x'),
+        hub: '{}\n',
+        lab: (before) => before
+    },
+    {
+        row: 'a key read from the primary alone, refused for lab',
+        body: { file: 'behavior.yml', key: 'slurm.resource', value: 'other', root: LAB },
+        refused: () => words(CATALOG, 'server.workspace.primary_only', 'slurm.resource', LAB),
+        hub: '{}\n',
+        lab: (before) => before
+    },
+    {
+        row: 'lab whose settings file is gone, refused, and no file is made',
+        labFile: null,
+        body: { file: 'sources.yml', key: 'memories_dir', value: 'pictures', root: LAB },
+        refused: () => words(CATALOG, 'server.workspace.no_hub_named', LAB),
+        hub: '{}\n',
+        lab: () => null
+    },
+    {
+        row: 'lab whose settings file does not parse, refused',
+        labFile: 'stages: [\n',
+        body: { file: 'sources.yml', key: 'memories_dir', value: 'pictures', root: LAB },
+        refused: () => words(CATALOG, 'server.config_key.not_parsed'),
+        hub: '{}\n',
+        lab: (before) => before
+    },
+    {
+        row: 'a folder of lab in a workspace with no primary, written into lab',
+        primary: false,
+        body: { file: 'sources.yml', key: 'memories_dir', value: 'pictures', root: LAB },
+        hub: '{}\n',
+        lab: (before) => `${before}memories_dir: pictures\n`,
+        records: 'lab'
+    },
+    {
+        row: 'a key read from the primary alone, with no primary and lab named, refused',
+        primary: false,
+        body: { file: 'behavior.yml', key: 'slurm.resource', value: 'other', root: LAB },
+        refused: () => words(CATALOG, 'server.workspace.primary_only', 'slurm.resource', LAB),
+        hub: '{}\n',
+        lab: (before) => before
+    },
+    {
+        row: 'a key read from the primary alone, with no primary and no hub named, refused',
+        primary: false,
+        body: { file: 'behavior.yml', key: 'slurm.resource', value: 'other' },
+        refused: () => words(CATALOG, 'server.workspace.no_primary'),
+        hub: '{}\n',
+        lab: (before) => before
+    },
+    {
+        row: "Edit in a file with lab named: lab's value in force copied into lab's file",
+        body: {
+            file: 'sources.yml',
+            key: 'memories_dir',
+            value: '.oculus/memories',
+            root: LAB,
+            copy: true
+        },
+        hub: '{}\n',
+        lab: (before) => `${before}memories_dir: .oculus/memories\n`,
+        records: 'lab'
+    }
+];
+
+describe('a write that names a hub', { tags: ['slow'] }, () => {
+    it.each(NAMED)('$row', ({ primary, labFile, body, refused, hub, lab, records }) => {
+        const made = labTarget(labFile ?? LAB_SETTINGS, primary !== false);
+        mkdirSync(join(made.lab, '.oculus', 'memories'), { recursive: true });
+        if (labFile === null) rmSync(settingsOf(made.lab));
+        const before = textOf(settingsOf(made.lab)) ?? '';
+        const outcome = sent(made.into, body);
+        const field = `${String(body.file)}:${String(body.key)}`;
+        if (refused === undefined) {
+            expect([outcome.refused, outcome.changed]).toEqual([[], [field]]);
+            const file = settingsOf(records === 'lab' ? made.lab : made.hub);
+            expect(outcome.records?.map((one) => one.file)).toEqual([file]);
+        } else {
+            expect(refusalOf(outcome, field)).toBe(refused(made.lab));
+        }
+        expect(textOf(settingsOf(made.hub))).toBe(hub);
+        expect(textOf(settingsOf(made.lab))).toBe(lab(before));
+        expect(existsSync(join(made.hub, '..', 'x'))).toBe(false);
+    });
+
+    it('writes the primary alike for a body naming it and a body naming no hub', () => {
+        const named = labTarget();
+        const plain = labTarget();
+        for (const made of [named, plain]) mkdirSync(join(made.hub, 'pics'));
+        const body = { file: 'sources.yml', key: 'wallpaper_dir', value: 'pics' };
+        const one = sent(named.into, { ...body, root: 'hub' });
+        const two = sent(plain.into, body);
+        expect([one.changed, two.changed]).toEqual([
+            [`sources.yml:wallpaper_dir`],
+            [`sources.yml:wallpaper_dir`]
+        ]);
+        expect(one.records?.[0]?.file).toBe(settingsOf(named.hub));
+        expect(textOf(settingsOf(named.hub))).toBe(textOf(settingsOf(plain.hub)));
+        expect(textOf(settingsOf(named.lab))).toBe(LAB_SETTINGS);
+    });
+
+    it("refuses lab's settings file that is a link to a hub's .oculus/local.yml, and writes nothing", () => {
+        const made = labTarget();
+        const local = join(made.lab, '.oculus', 'local.yml');
+        writeFileSync(local, 'port: 8791\n');
+        rmSync(settingsOf(made.lab));
+        symlinkSync('local.yml', settingsOf(made.lab));
+        const body = { file: 'sources.yml', key: 'memories_dir', value: 'pictures', root: LAB };
+        expect(refusalOf(sent(made.into, body), 'sources.yml:memories_dir')).toBe(why('local'));
+        expect(readFileSync(local, 'utf8')).toBe('port: 8791\n');
     });
 });
 

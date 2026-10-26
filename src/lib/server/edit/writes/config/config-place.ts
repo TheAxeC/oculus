@@ -1,12 +1,15 @@
 // Layer 2, server. Where a Settings write of one option lands, and what it reads there.
 //
 // Oculus's own files under config/ are never written. A key of the hub list (data/helpers/
-// hub-names.ts) is written in the primary hub's settings file, `<hub>/.oculus/config.yml`, at the
-// key itself; any other option is written in the `settings:` map of the open workspace file, at
-// `settings.<key>`. With no primary hub a key of the hub list has no place, and with no workspace
-// file open (the unsaved workspace) no other option has one: the write is refused with the sentence
-// that says which (`placeRefusal`). The file at a place may not hold the key yet, and the hub's
-// settings file may not be there at all; the write then adds the key (config-checks.ts).
+// hub-names.ts) is written in a hub's settings file, `<hub>/.oculus/config.yml`, at the key itself:
+// the hub the write names for a key each hub's own file is read for (data/shapes/hub-keys.ts), the
+// primary when it names none (`layersOf`, `otherHubLayers`); any other option is written in the
+// `settings:` map of the open workspace file, at `settings.<key>`. With no hub to write a key of
+// the hub list has no place, and with no workspace file open (the unsaved workspace) no other
+// option has one: the write is refused with the sentence that says which (`placeRefusal`). The
+// file at a place may not hold the key yet, and the primary's settings file may not be there at
+// all; the write then adds the key (config-checks.ts). A hub other than the primary is a hub only
+// while its settings file is there, so a write naming one never makes that file.
 //
 // The merged configuration a write starts from is read over both layers (`loadLayers`): oculus's
 // files, the hub's settings file and the workspace file's `settings:`, as the server reads them.
@@ -16,6 +19,7 @@ import { basename, join } from 'node:path';
 import { parseDocument, isMap as isYamlMap, isScalar } from 'yaml';
 import { HUB_FILE, hubFileOf } from '../../../../data/helpers/hub-names.ts';
 import { LOCAL_NAME, loadConfig, textCatalog } from '../../../../data/sources/config.ts';
+import { isHubFolder } from '../../../../data/sources/manifests.ts';
 import type { ReplacedFile } from '../../../../data/sources/config.ts';
 import {
     catalogOf,
@@ -30,8 +34,9 @@ import type { Refusal } from '../../yaml/yaml-edit.ts';
 import type { ChangeRecord } from '../../../core/changes.ts';
 
 /**
- * The layers a write may land in: the primary hub's folder, none without a primary, and the open
- * workspace file, none for the unsaved workspace.
+ * The layers a write may land in: the folder of the hub it writes (the primary's, none without a
+ * primary, or the hub the write names), and the open workspace file, none for the unsaved
+ * workspace.
  */
 export type ConfigLayers = { hub?: string; workspace?: string };
 
@@ -167,6 +172,45 @@ export function isMachinePlace(place: Place, hubs: readonly string[]): boolean {
         place.path,
         hubs.map((dir) => ({ dir, hub: true }))
     );
+}
+
+/** Whether a hub name holds what a folder name of the workspace never holds: a path. */
+function pathLike(name: string): boolean {
+    return name === '' || name === '.' || name === '..' || /[\\/]/.test(name);
+}
+
+/**
+ * The layers of the hub other than the primary named `name`: its folder and the open workspace
+ * file, while the workspace holds a hub of that name and the hub's `.oculus/config.yml` is there,
+ * since a folder without it is no hub and a write never makes one. Null for an empty name, a name
+ * that holds path characters, and a name no other hub of the workspace has.
+ */
+export function otherHubLayers(
+    into: { workspace?: OpenWorkspace; hubs?: readonly { key: string; hub: string }[] },
+    name: string
+): ConfigLayers | null {
+    if (pathLike(name)) return null;
+    const found = (into.hubs ?? []).find((one) => one.key === name);
+    if (found === undefined || !isHubFolder(found.hub)) return null;
+    const file = into.workspace?.file ?? null;
+    return { hub: found.hub, ...(file === null ? {} : { workspace: file }) };
+}
+
+/**
+ * The layers of every hub of the workspace a Settings record may name the file of: the target's
+ * own first, then each other hub's (`otherHubLayers`), so an undo finds the hub whose file the
+ * record names among the hubs the workspace holds now.
+ */
+export function everyHubLayers(into: {
+    hub: string | null;
+    workspace?: OpenWorkspace;
+    hubs?: readonly { key: string; hub: string }[];
+}): { layers: ConfigLayers; own: boolean }[] {
+    const others = (into.hubs ?? []).flatMap((one) => {
+        const layers = otherHubLayers(into, one.key);
+        return layers === null ? [] : [{ layers, own: false }];
+    });
+    return [{ layers: layersOf(into), own: true }, ...others];
 }
 
 /** The folders of every hub of the workspace, whose `.oculus/local.yml` no config write reaches. */

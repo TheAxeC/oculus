@@ -11,8 +11,9 @@
 // machine's own file, a hub's `.oculus/local.yml` or a link to one, is refused before the file is
 // read.
 //
-// The value lands where config-place.ts places the key: a key of the hub list in the primary hub's
-// settings file and any other in the `settings:` map of the open workspace file. There the value
+// The value lands where config-place.ts places the key: a key of the hub list in the settings file
+// of the hub whose layers config-write.ts hands it, the primary's unless the write names another
+// hub, and any other in the `settings:` map of the open workspace file. There the value
 // the reader sees is written as what makes the merge give it back. A key laid over oculus's value
 // in oculus's place (data/sources/config/merge/in-place.ts), a vocab key of the hub's file and a
 // catalog of the workspace file, is written as the inverse of that merge: the words or rows the

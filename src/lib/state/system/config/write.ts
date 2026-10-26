@@ -7,6 +7,10 @@
 // each row the message, the value the control shows while the write is out and the last value
 // sent. It is a plain closure with no runes; the view hands it a callback that redraws.
 //
+// A row with a hub other than the primary chosen (`row.hub`) names that hub in its write and its
+// Reset, and what the sequence keeps for it is kept apart from the same key with another hub
+// chosen. A row that says why it writes nothing (`row.blocked`) sends nothing.
+//
 // A value that equals the one in force and equals the last value sent for the key is not sent. A
 // later write of a key supersedes an earlier one, so the answer of the earlier, arriving after,
 // changes nothing the later set. A view that is closed ignores every answer still on its way.
@@ -19,13 +23,30 @@ import type { Lists } from './editors/sources.ts';
 import { message, type Message } from './messages.ts';
 import type { ConfigRow } from './rows.ts';
 
-/** The write of one option: the client writes store's `writeConfigKey`. */
-export type WriteConfigKey = (file: string, key: string, value: unknown) => Promise<WriteAnswer>;
+/**
+ * The write of one option: the client writes store's `writeConfigKey`. `root` names the hub whose
+ * settings file takes it, and is left out for the primary.
+ */
+export type WriteConfigKey = (
+    file: string,
+    key: string,
+    value: unknown,
+    copy?: boolean,
+    root?: string
+) => Promise<WriteAnswer>;
 
-/** The reset of one option: the client writes store's `resetConfig`. */
-export type ResetConfig = (file: string, key: string) => Promise<WriteAnswer>;
+/** The reset of one option: the client writes store's `resetConfig`, `root` as for a write. */
+export type ResetConfig = (file: string, key: string, root?: string) => Promise<WriteAnswer>;
 
 export { type Committed } from './editors/fields.ts';
+
+/**
+ * The name the writes keep a row's state under: the row's id, with the hub its drafts are kept
+ * under when there is one (`row.slot`), so one key with two hubs chosen holds two states.
+ */
+export function heldKey(row: ConfigRow): string {
+    return row.slot === undefined ? row.id : JSON.stringify([row.id, row.slot]);
+}
 
 /**
  * The value a control's input makes for a row, or why none is: the rules of the row's control
@@ -70,13 +91,14 @@ export type RowWriter = {
 
 /**
  * Open the write sequence of a view. `changed` is called whenever what a row shows moves, and
- * `lists` answers the lists the controls draw from when a value is checked.
+ * `lists` answers the lists the controls of a row draw from when a value is checked, which are the
+ * chosen hub's for a row with a hub chosen.
  */
 export function createRowWriter(
     write: WriteConfigKey,
     reset: ResetConfig,
     changed: () => void,
-    lists: () => Lists
+    lists: (row: ConfigRow) => Lists
 ): RowWriter {
     const sequence = new Map<string, number>();
     const last = new Map<string, unknown>();
@@ -86,13 +108,23 @@ export function createRowWriter(
     /** Whether the sequence was closed, read afresh after every wait. */
     const stopped = (): boolean => closed;
 
+    /** The write or the reset of a row, naming the hub chosen on it unless that is the primary. */
+    function sendTo(row: ConfigRow, value: unknown, resetting: boolean): Promise<WriteAnswer> {
+        if (row.hub === undefined) {
+            return resetting ? reset(row.file, row.key) : write(row.file, row.key, value);
+        }
+        return resetting
+            ? reset(row.file, row.key, row.hub)
+            : write(row.file, row.key, value, false, row.hub);
+    }
+
     /**
      * Send a value, or with `resetting` the reset, which shows the default while it is out. A
      * reset is sent while the file holds the key, whatever the value in force is.
      */
     async function send(row: ConfigRow, value: unknown, resetting = false): Promise<void> {
-        if (closed) return;
-        const key = row.id;
+        if (closed || row.blocked !== undefined) return;
+        const key = heldKey(row);
         const sent = !last.has(key) || isEqual(last.get(key), value);
         if (resetting ? !row.own : isEqual(value, row.value) && sent) return;
         const turn = (sequence.get(key) ?? 0) + 1;
@@ -101,9 +133,7 @@ export function createRowWriter(
         showing.set(key, { value, base: row.value });
         saying.delete(key);
         changed();
-        const answer = resetting
-            ? await reset(row.file, row.key)
-            : await write(row.file, row.key, value);
+        const answer = await sendTo(row, value, resetting);
         if (stopped() || sequence.get(key) !== turn) return;
         const said = answered(answer, row);
         if (said !== null) {
@@ -114,32 +144,33 @@ export function createRowWriter(
     }
 
     async function submit(row: ConfigRow, input: string | boolean): Promise<void> {
-        if (closed) return;
-        const made = commit(row, input, lists());
+        if (closed || row.blocked !== undefined) return;
+        const made = commit(row, input, lists(row));
         if (made.write) return send(row, made.value);
         if (made.said !== undefined) {
-            saying.set(row.id, made.said);
+            saying.set(heldKey(row), made.said);
             changed();
         }
     }
 
     function shown(row: ConfigRow): unknown {
-        const held = showing.get(row.id);
+        const key = heldKey(row);
+        const held = showing.get(key);
         if (held === undefined) return undefined;
         if (!isEqual(held.base, row.value)) {
-            showing.delete(row.id);
+            showing.delete(key);
             return undefined;
         }
         return held.value;
     }
 
     function pending(row: ConfigRow): boolean {
-        const held = showing.get(row.id);
+        const held = showing.get(heldKey(row));
         return held !== undefined && isEqual(held.base, row.value);
     }
 
     function clear(row: ConfigRow): void {
-        if (saying.delete(row.id)) changed();
+        if (saying.delete(heldKey(row))) changed();
     }
 
     return {
@@ -147,7 +178,7 @@ export function createRowWriter(
         reset: (row) => send(row, row.default, true),
         shown,
         pending,
-        said: (row) => saying.get(row.id) ?? null,
+        said: (row) => saying.get(heldKey(row)) ?? null,
         clear,
         close: () => {
             closed = true;

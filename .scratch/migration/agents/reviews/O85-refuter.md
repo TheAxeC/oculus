@@ -182,3 +182,77 @@ Cases of the brief's "Cases", case 16 and case 20 as `agents/briefs/O85-cases.md
 - The quick list and check 2 load the worktree's `vite.config.ts` through vitest, as the brief's checks require; no other program that loads it was run.
 
 Reviewer usage: a0e17faa413580c97, claude-opus-5-5, 107756 tokens, 105 tool uses, 26 min 59 s.
+
+## Repair round 1, refuted
+
+All commands ran from the worktree root `.agents/worktrees/migration-O85` with `PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH`, in the foreground. The load average at the start was 4.84 7.21 8.49. `npm run diagrams` was not run, because it writes into the worktree (see "Declined to judge"). The round's delta was read as `diff -u` of each of the 18 snapshot files that differ from the worktree (`cmp` over the 57 paths of `files.txt`). No path outside `files.txt` changed in the round, apart from the ledger copies, which are the same as main's (`cmp`), and six diagram files that were rewritten with the same text.
+
+```
+$ npm run test:quick -- --base 8d52965c      (once; 2 min 37 s; only the last 40 lines were kept)
+ok      prettier (0.6 s): All matched files use Prettier code style!
+ok      ASCII gate (0.7 s)
+ok      svelte-kit sync (2.2 s)
+ok      eslint (2.4 s)
+ok      svelte-check (9.8 s): 1793036350938 COMPLETED 545 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest (97.3 s)
+ok      vitest checks (111.3 s)
+ok      vitest slow (154.8 s)
+test:quick: 157.2 s; every command passed
+
+$ npx vitest run <check 2's files> --reporter=dot      Tests 197 passed (197)
+$ the same with tests/routes/edit/undo/hub-settings.test.ts and --testTimeout 20000      Tests 200 passed (200)
+$ wc -l <the 46 changed and new files>      largest source writes.svelte.ts 876; largest component Settings.svelte 510
+$ sh utils/unused-exports.sh; diff with the base list      diff exit=0
+$ history grep over src config docs tests      exit=1 (nothing printed)
+$ the character-set gate over the 46 files      exit=0
+$ node round1-run.ts <worktree>      each refused with primary_only, nothing written, records 0; route answer keys ["hub","config"]
+$ node round1-reset.ts <unchanged> / <worktree> withRoot      before: refused "is not a map of keys"; after: the key comes out, the file holds its comment and {}, the next write replaces it, for A and for B
+$ config-key "a key read from the primary alone, wi..."      worktree 2 passed; unchanged tree 1 failed (text key not in config: server.workspace.primary_only)
+$ svelte-check full      0 ERRORS 0 WARNINGS; eslint on the ten files exit=0; folder-check and size-check exit=0
+```
+
+### Verdicts
+
+- Items 1 to 9: hold. Item 5: `unreadRow` (`view/hub-settings.svelte.ts:171-185`) gives a row with B chosen no value, default or line while B's slice is read or failed, `Item.svelte:327` draws no `Control` for it, `EditLink.edit` checks `blocked` first, the route answers `{ hub, config }`.
+- Cases 1 to 31: met (16 and 20 as `O85-cases.md` rules them; the looks of 1, 2, 4, 9, 10, 11 and 30 are the landing look).
+
+### 1. Spec
+
+none.
+
+### 2. Proof
+
+- `O85-report.md`, "New tests" row 96 and DONE row 6: the table still names the test "a key of the open workspace file, refused for lab" and the key `not_hub_key`, both removed in the round. Failure scenario: the landing books under G8 a test title and a catalog key the tree does not hold.
+
+### 3. Standards
+
+- `src/lib/state/system/config/view/gear.ts:1-3`: the head comment says Reset takes a value out of the open workspace file or the primary hub's settings file; since the step, a Reset with B chosen on a hub key takes it out of B's `.oculus/config.yml`. Failure scenario: a reader relies on the comment and writes hub-blind code again.
+- `tests/state/system/settings/editor-saved.test.ts:8-10,151,155`: "are read" names the read in progress (describe) and the read finished (it); the sibling tests say "are being read". Failure scenario: a reader of G96's Test line misreads the guarantee.
+- `O85-report.md`, "Repair round 1": no history-word grep quoted over the round's lines; the reviewer's grep has one hit, `editor-saved.test.ts:40`, judged not history.
+
+### 4. Behaviour
+
+none.
+
+### Declined to judge
+
+- `npm run diagrams` not run (it writes into the worktree); the three changed `.dot` sources agree with the round's import changes.
+- The before-runs of the round's three new tests not reproduced (that would revert the code under test); each read, and each fails without the round's change.
+- The `primary_only` sentence a hand-made body gets for a key of the open workspace file ("read from the primary hub's settings file alone") is false of that key; the orchestrator's call.
+- The new `editor-saved.test.ts` test renders `settings/Item.svelte` under G96; booking it is the landing's.
+- EditLink stays drawn and inert on a row that says why it writes nothing; the look's call.
+- The close question's Save while B is being read: unchanged by the round (read in `Editor.svelte:135-136`), not run.
+- The looks of cases 1, 2, 4, 9, 10, 11 and 30 and of an unread row: the landing look on TEST.
+- The bookings carried from the first run: G9's Test line, G96's Code line, the reconciling of `docs/data-map.md`.
+
+Reviewer usage: ae28be89d8e8cf281, claude-opus-5-5, 262691 tokens, 77 tool uses, 19 min 3 s.
+
+## Closed
+
+- Proof (report tables): fixed at landing; the G8 booking is written from the test titles in the tree, and the two stale rows of the saved `O85-report.md` are corrected.
+- Standards (`gear.ts:1-3`): fixed at landing, the head comment says Reset takes the value out of the file of the hub chosen.
+- Standards (`editor-saved.test.ts` titles): fixed at landing, "are read" becomes "are being read" in the describe and the head comment.
+- Standards (no history grep in the round section): closed, no change; the reviewer's grep over the round's lines has one hit, judged not history.
+- Declined (`primary_only` sentence false for a workspace-file key): fixed at landing, the sentence is reworded so it is true of every key outside the 37.
+- Declined (G96 booking of the view test): booked at landing under G96.
+- Declined (inert EditLink on an unread row): judged at the look on TEST.

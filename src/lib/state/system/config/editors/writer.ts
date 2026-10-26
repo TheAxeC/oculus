@@ -17,34 +17,44 @@
 // runes; the view hands it a callback that redraws, one that drops a draft, one that says whether
 // the tab holds a draft of a row, and the lists the draft's fields are checked against before it is
 // sent.
+//
+// A row with a hub other than the primary chosen (`row.hub`) names that hub in its Save and its
+// Reset, and what the sequence keeps for it, a write out included, is kept apart from the same key
+// with another hub chosen, so only a push of that hub's row ends it. A row that says why it writes
+// nothing (`row.blocked`) sends nothing.
 
 import { sameInOrder } from '../../../../data/helpers/guards.ts';
 import type { WriteAnswer } from '../../../shared/stores/shapes.ts';
 import { message, type Message } from '../messages.ts';
 import { writtenWhole, type ConfigRow } from '../rows.ts';
-import { answered, type ResetConfig } from '../write.ts';
+import { answered, heldKey, type ResetConfig } from '../write.ts';
 import { draftValue, type Draft } from './draft.ts';
 import type { Lists } from './sources.ts';
 import { drawsEditor } from './slots.ts';
 
-/** The write of one list or family: the client writes store's `writeConfigValue`. */
+/**
+ * The write of one list or family: the client writes store's `writeConfigValue`. `root` names the
+ * hub whose settings file takes it, and is left out for the primary.
+ */
 export type WriteConfigValue = (
     file: string,
     key: string,
     value: unknown,
-    base: unknown
+    base: unknown,
+    copy?: boolean,
+    root?: string
 ) => Promise<WriteAnswer>;
 
 /**
  * What the view gives the sequence: the reset, a redraw, the end of a row's draft, whether one is
- * held and the lists the controls draw from.
+ * held and the lists the controls of a row draw from, the chosen hub's for a row with one chosen.
  */
 export type EditorHooks = {
     reset: ResetConfig;
     changed: () => void;
     ended: (row: ConfigRow) => void;
     held: (row: ConfigRow) => boolean;
-    lists: () => Lists;
+    lists: (row: ConfigRow) => Lists;
 };
 
 /** The write sequence of the editors of a view. */
@@ -87,30 +97,41 @@ export function createEditorWriter(write: WriteConfigValue, hooks: EditorHooks):
     /** Whether the sequence was closed, read afresh after every wait. */
     const stopped = (): boolean => closed;
 
+    /** The Save or the Reset of a row, naming the hub chosen on it when that is not the primary. */
+    function sendTo(row: ConfigRow, value: unknown, resetting: boolean): Promise<WriteAnswer> {
+        if (row.hub === undefined) {
+            return resetting
+                ? hooks.reset(row.file, row.key)
+                : write(row.file, row.key, value, row.value);
+        }
+        return resetting
+            ? hooks.reset(row.file, row.key, row.hub)
+            : write(row.file, row.key, value, row.value, false, row.hub);
+    }
+
     /** Send a whole value, or with `resetting` the reset, whose value in force is the default. */
     async function send(row: ConfigRow, value: unknown, resetting = false): Promise<void> {
-        if (closed || out.has(row.id)) return;
+        const key = heldKey(row);
+        if (closed || row.blocked !== undefined || out.has(key)) return;
         turns += 1;
         const turn = turns;
-        out.set(row.id, { sent: value, base: row.value, turn });
-        landed.delete(row.id);
-        saying.delete(row.id);
-        taken.delete(row.id);
+        out.set(key, { sent: value, base: row.value, turn });
+        landed.delete(key);
+        saying.delete(key);
+        taken.delete(key);
         hooks.changed();
-        const answer = resetting
-            ? await hooks.reset(row.file, row.key)
-            : await write(row.file, row.key, value, row.value);
-        if (stopped() || out.get(row.id)?.turn !== turn) return;
+        const answer = await sendTo(row, value, resetting);
+        if (stopped() || out.get(key)?.turn !== turn) return;
         const said = answered(answer, row);
         if (said !== null) {
-            saying.set(row.id, said);
-            out.delete(row.id);
+            saying.set(key, said);
+            out.delete(key);
         } else {
-            const held = out.get(row.id);
-            out.delete(row.id);
+            const held = out.get(key);
+            out.delete(key);
             if (held !== undefined && answer.changed.length > 0) {
-                landed.set(row.id, held);
-                taken.add(row.id);
+                landed.set(key, held);
+                taken.add(key);
             }
             hooks.ended(row);
         }
@@ -118,7 +139,7 @@ export function createEditorWriter(write: WriteConfigValue, hooks: EditorHooks):
     }
 
     async function save(row: ConfigRow, draft: Draft): Promise<void> {
-        const made = draftValue(draft, row, hooks.lists());
+        const made = draftValue(draft, row, hooks.lists(row));
         if (!made.ok || sameInOrder(made.value, row.value)) return;
         return send(row, made.value);
     }
@@ -130,35 +151,36 @@ export function createEditorWriter(write: WriteConfigValue, hooks: EditorHooks):
 
     function pushed(row: ConfigRow): void {
         if (closed) return;
+        const key = heldKey(row);
         if (hooks.held(row) && !drawsEditor(row)) {
-            out.delete(row.id);
-            saying.set(row.id, message('draftDropped'));
+            out.delete(key);
+            saying.set(key, message('draftDropped'));
             hooks.ended(row);
             hooks.changed();
             return;
         }
-        const answeredFor = landed.get(row.id);
+        const answeredFor = landed.get(key);
         if (answeredFor !== undefined) {
             if (sameInOrder(row.value, answeredFor.base)) return;
-            landed.delete(row.id);
+            landed.delete(key);
             if (!sameInOrder(row.value, answeredFor.sent)) {
-                taken.delete(row.id);
-                saying.set(row.id, message('changedSince', row.file));
+                taken.delete(key);
+                saying.set(key, message('changedSince', row.file));
             }
             hooks.changed();
             return;
         }
-        const held = out.get(row.id);
+        const held = out.get(key);
         if (held === undefined) return;
         if (sameInOrder(row.value, held.sent)) {
-            out.delete(row.id);
-            taken.add(row.id);
+            out.delete(key);
+            taken.add(key);
             hooks.ended(row);
         } else if (sameInOrder(row.value, held.base)) {
             return;
         } else {
-            out.delete(row.id);
-            saying.set(row.id, message('changedSince', row.file));
+            out.delete(key);
+            saying.set(key, message('changedSince', row.file));
             hooks.ended(row);
         }
         hooks.changed();
@@ -168,13 +190,14 @@ export function createEditorWriter(write: WriteConfigValue, hooks: EditorHooks):
         save,
         reset,
         pushed,
-        sending: (row) => out.has(row.id),
-        shown: (row) => landed.get(row.id)?.sent,
-        said: (row) => saying.get(row.id) ?? null,
-        saved: (row) => taken.has(row.id),
+        sending: (row) => out.has(heldKey(row)),
+        shown: (row) => landed.get(heldKey(row))?.sent,
+        said: (row) => saying.get(heldKey(row)) ?? null,
+        saved: (row) => taken.has(heldKey(row)),
         clear: (row) => {
-            const said = saying.delete(row.id);
-            if (taken.delete(row.id) || said) hooks.changed();
+            const key = heldKey(row);
+            const said = saying.delete(key);
+            if (taken.delete(key) || said) hooks.changed();
         },
         close: () => {
             closed = true;

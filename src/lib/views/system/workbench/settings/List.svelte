@@ -22,7 +22,7 @@
     import { openTarget } from '$lib/state/system/config/config-files';
     import { sourceTabState } from '$lib/state/sessions/source/draft';
     import { t } from '$lib/state/shared/words/text';
-    import type { Group } from '$lib/state/system/config/groups';
+    import type { Group, Row } from '$lib/state/system/config/groups';
     import type { EditorWriter } from '$lib/state/system/config/editors/writer';
     import type { Lists } from '$lib/state/system/config/editors/sources';
     import type { RowWriter } from '$lib/state/system/config/write';
@@ -41,10 +41,13 @@
         id: string;
         writer: RowWriter;
         editors: EditorWriter;
-        lists: Lists;
+        /** The lists a row's controls draw from: the chosen hub's for a row with one chosen. */
+        listsFor: (row: Row) => Lists;
+        /** Pick the hub a row of a key each hub's own file is read for shows and writes. */
+        onchoose: (row: string, hub: string) => void;
     };
 
-    let { groups, id, writer, editors, lists }: Props = $props();
+    let { groups, id, writer, editors, listsFor, onchoose }: Props = $props();
 
     /** Where a file opens in a source tab: through the workspace folder that holds it, if any. */
     const targetOf = (root: string | null, file: string | null) =>
@@ -151,7 +154,7 @@
                             {/if}
                         </div>
                     {:else}
-                        <Item {row} {id} {writer} {editors} {lists} />
+                        <Item {row} {id} {writer} {editors} lists={listsFor(row)} {onchoose} />
                     {/if}
                 {/each}
             </div>

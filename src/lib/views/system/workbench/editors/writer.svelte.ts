@@ -14,14 +14,14 @@ import type { ResetConfig } from '$lib/state/system/config/write';
 
 /**
  * An editors' write sequence whose `sending`, `shown`, `said` and `saved` redraw whatever read
- * them.
+ * them. `lists` answers the lists a row's fields draw from.
  */
 export function reactiveEditors(
     write: WriteConfigValue,
     reset: ResetConfig,
     ended: (row: ConfigRow) => void,
     held: (row: ConfigRow) => boolean,
-    lists: () => Lists
+    lists: (row: ConfigRow) => Lists
 ): EditorWriter {
     let version = $state(0);
     const inner = createEditorWriter(write, {

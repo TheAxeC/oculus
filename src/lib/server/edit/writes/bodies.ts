@@ -212,7 +212,8 @@ export type RailWrite = {
  * One option of a defaults file set to a value: the file's name, the dotted key path and the value,
  * which the writer checks against the option's control. `copy` adds the key to the file it is
  * written in even when the value is the one in force, which Edit in a file sends before it opens
- * the file at the key.
+ * the file at the key. `root` names the hub whose `.oculus/config.yml` a key of the hub list each
+ * hub's own file is read for is written in (when it is absent, the primary).
  */
 export type ConfigKeyWrite = {
     kind: 'config-key';
@@ -220,13 +221,15 @@ export type ConfigKeyWrite = {
     key: string;
     value: unknown;
     copy?: true;
+    root?: string;
 };
 
 /**
  * One option's value taken out of the file it was set in, so oculus's own value is in force again:
- * the defaults file's name and the dotted key path.
+ * the defaults file's name, the dotted key path and the hub `root` names, as for a config-key
+ * write.
  */
-export type ConfigResetWrite = { kind: 'config-reset'; file: string; key: string };
+export type ConfigResetWrite = { kind: 'config-reset'; file: string; key: string; root?: string };
 
 /**
  * One setting an app declares set to a value: the setting's whole key and the value, which the
@@ -237,7 +240,7 @@ export type AppSettingWrite = { kind: 'app-setting'; key: string; value: unknown
 /**
  * One list option or one family of a defaults file set to a whole value: the file's name, the
  * dotted key path, the value, and the value the page read there (`base`), which must still be the
- * value in force for the write to land. `copy` is as for a config-key write.
+ * value in force for the write to land. `copy` and `root` are as for a config-key write.
  */
 export type ConfigValueWrite = {
     kind: 'config-value';
@@ -246,6 +249,7 @@ export type ConfigValueWrite = {
     value: unknown;
     base: unknown;
     copy?: true;
+    root?: string;
 };
 
 /** A string that is not empty, which is what every id, name and key of a body is. */
@@ -493,13 +497,15 @@ const configKeyShape = z.object({
     file: wordShape,
     key: wordShape,
     value: z.unknown(),
-    copy: z.literal(true).optional()
+    copy: z.literal(true).optional(),
+    root: z.string().optional()
 }) satisfies z.ZodType<ConfigKeyWrite>;
 
 const configResetShape = z.object({
     kind: z.literal('config-reset'),
     file: wordShape,
-    key: wordShape
+    key: wordShape,
+    root: z.string().optional()
 }) satisfies z.ZodType<ConfigResetWrite>;
 
 /** The `value` key must be there, whatever it holds; an absent one is not a write. */
@@ -516,7 +522,8 @@ const configValueShape = z.object({
     key: wordShape,
     value: z.unknown(),
     base: z.unknown(),
-    copy: z.literal(true).optional()
+    copy: z.literal(true).optional(),
+    root: z.string().optional()
 }) satisfies z.ZodType<ConfigValueWrite>;
 
 /** The body as a manifest write, or null when it is not one. */

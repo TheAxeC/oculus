@@ -52,6 +52,6 @@ export const workspaceFileShape = z.strictObject({
         .record(z.string(), z.unknown())
         .nullish()
         .describe(
-            "The reader's own values of oculus's options for this workspace, keyed as oculus's defaults files key them. A key of the hub list is set in the primary hub's .oculus/config.yml instead."
+            "The reader's own values of oculus's options for this workspace, keyed as oculus's defaults files key them. A key of the hub list is set in a hub's .oculus/config.yml instead: the primary's, or the one of the hub the Settings view names for a key each hub's own file is read for."
         )
 });

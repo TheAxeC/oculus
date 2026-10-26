@@ -128,6 +128,11 @@ const LAYERS = ['data', 'server', 'server/transcripts', 'state', 'ui', 'shell', 
 // of, the `secrets` folder of every hub and `~/.oculus`, which the relay refuses by and the page
 // refuses a tab by, so the two agree. `data/shapes/vocab-keys` reads the keys of a vocabulary key
 // of vocab.yml, which the schema check and the entry forms read the same way.
+// `data/shapes/hub-keys` names the keys of the hub list each hub's own settings file is read for,
+// and `data/sources/config/settings/hub-slice` the slice of one hub's merged settings they make:
+// the server's write refuses a hub other than the primary on any other key and answers the slice,
+// and the Settings view offers the hub on those rows alone and lays the slice over the primary's
+// config, by one list.
 // `data/helpers/hub-names` also holds which folders a project scan enters and whether a folder lies
 // in a scan folder: the scan reader, the server's check of a new project's folder and the page's
 // new-project form ask the same question, so they cannot disagree.
@@ -300,6 +305,7 @@ const ALLOWED: Record<string, string[]> = {
         'data/helpers/hub-names',
         'data/snapshot/place',
         'data/shapes/vocab-keys',
+        'data/shapes/hub-keys',
         'data/shapes/boards/**',
         'data/accounts/leads',
         'data/helpers/worktrees',
@@ -337,6 +343,7 @@ const ALLOWED: Record<string, string[]> = {
         'data/sources/config/catalog/latex-tables',
         'data/sources/config/catalog/options',
         'data/sources/config/catalog/value-rule',
+        'data/sources/config/settings/hub-slice',
         'data/places/hub-address',
         'data/prose/languages',
         'data/prose/literature',

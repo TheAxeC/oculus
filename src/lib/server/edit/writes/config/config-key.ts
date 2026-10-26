@@ -2,14 +2,15 @@
 // for a toggle, a number, a text, a choice, a glyph, a hue, a colour, a folder, a file or a path,
 // and the write every control of the shell that sets an option sends.
 //
-// The value lands where config-place.ts places the key: a key of the hub list in the primary hub's
-// settings file, any other in the `settings:` map of the open workspace file; oculus's own files
-// are never written. When the file holds the key as a plain or quoted value, the edit is over the
-// bytes through yaml-edit.ts's `replaceValue`, so the key's own line keeps its comment, its quote
-// style, its line end and every other byte of the file. When it does not hold the key, the write
-// adds it (config-checks.ts `insertKey`), creating a hub's settings file and its folder when they
-// are not there, and the undo takes the added text out and removes what the write made
-// (`takeOutAdded`).
+// The value lands where config-place.ts places the key: a key of the hub list in the settings file
+// of the hub whose layers config-write.ts hands it, the primary's unless the write names another
+// hub, any other in the `settings:` map of the open workspace file; oculus's own files are never
+// written. When the file holds the key as a plain or quoted value, the edit is over the bytes
+// through yaml-edit.ts's `replaceValue`, so the key's own line keeps its comment, its quote style,
+// its line end and every other byte of the file. When it does not hold the key, the write adds it
+// (config-checks.ts `insertKey`), creating the primary's settings file and its folder when they
+// are not there (another hub's is there, or the write names no hub of that name), and the undo
+// takes the added text out and removes what the write made (`takeOutAdded`).
 //
 // The options files (config/options/) decide what may be written: the file must be one of their
 // defaults files, the key one of their entries, the entry a single value with a control, and the

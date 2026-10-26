@@ -5,19 +5,21 @@
     // as the multi-picks of FieldControl.svelte), the problems of the draft named under them, the
     // sentence of a refusal, and Save and Discard while a draft is held.
     //
-    // The draft is the tab's instance state under the file and key (state/system/config/editors/
-    // slots.ts), so it is there again after a tab switch or a reload. An edit that leaves the draft
-    // equal to the file's puts the file's own back, which holds nothing. Save sends the whole value
-    // through the editors' write (state/system/config/editors/writer.ts); while the write is out
-    // the draft is shown and Save waits, and the answer that the file holds the value ends the
-    // draft, the value sent shown until the watcher's push of the file brings it. A draft started
-    // over a value the file no longer holds is named and cannot be saved, only discarded, since a
-    // Save would write over the other change. The save key on the tab (Cmd+S, Ctrl+S off macOS)
-    // saves a held draft when Save could be pressed, and so does the Save of a close question,
-    // which closes the tab once the write was taken. Once the file answers that it holds what was
-    // sent the editor says "Saved." until the next edit, as the rail list's Save does, and a list
-    // or family with no entry says so above its Add, so a saved empty family reads as one and not
-    // as a list that failed to draw.
+    // The draft is the tab's instance state under the row's slot (state/system/config/editors/
+    // slots.ts), its file and key and the hub chosen on it when that is not the primary, so it is
+    // there again after a tab switch or a reload, and a draft made with one hub chosen is drawn
+    // only while that hub is chosen. An edit that leaves the draft equal to the file's puts the
+    // file's own back, which holds nothing. Save sends the whole value through the editors' write
+    // (state/system/config/editors/writer.ts), naming the hub chosen on the row; while the write
+    // is out the draft is shown and Save waits, and the answer that the file holds the value ends
+    // the draft, the value sent shown until the watcher's push of the file brings it. A draft
+    // started over a value the file no longer holds is named and cannot be saved, only discarded,
+    // since a Save would write over the other change. The save key on the tab (Cmd+S, Ctrl+S off
+    // macOS) saves a held draft when Save could be pressed, and so does the Save of a close
+    // question, which closes the tab once the write was taken. Once the file answers that it holds
+    // what was sent the editor says "Saved." until the next edit, as the rail list's Save does, and
+    // a list or family with no entry says so above its Add, so a saved empty family reads as one
+    // and not as a list that failed to draw.
     //
     // The entries are drawn under a disclosure line (Fold.svelte) with the row's title and their
     // number, folded at first past five entries; the problems, the refusal and Save and Discard
@@ -37,7 +39,12 @@
         type Edit
     } from '$lib/state/system/config/editors/draft';
     import type { Lists } from '$lib/state/system/config/editors/sources';
-    import { savedBase, savedDraft, withSavedDraft } from '$lib/state/system/config/editors/slots';
+    import {
+        savedBase,
+        savedDraft,
+        slotOf,
+        withSavedDraft
+    } from '$lib/state/system/config/editors/slots';
     import type { EditorWriter } from '$lib/state/system/config/editors/writer';
     import { message } from '$lib/state/system/config/messages';
     import type { ConfigRow } from '$lib/state/system/config/rows';
@@ -79,7 +86,7 @@
 
     /** Whether the file now holds another value than the one the draft was started over. */
     const stale = $derived(
-        held !== undefined && movedFrom(savedBase(instanceState(id), row.file, row.key), current)
+        held !== undefined && movedFrom(savedBase(instanceState(id), slotOf(row)), current)
     );
 
     const sending = $derived(editors.sending(row));
@@ -108,11 +115,11 @@
                 ? withFold(kept, row.id, 'entries', false)
                 : kept;
         if (!isEdited(changed, current, lists)) {
-            setInstanceState(id, withSavedDraft(state, row.file, row.key, null));
+            setInstanceState(id, withSavedDraft(state, slotOf(row), null));
             return;
         }
-        const base = held === undefined ? current.value : savedBase(state, row.file, row.key);
-        setInstanceState(id, withSavedDraft(state, row.file, row.key, changed, base));
+        const base = held === undefined ? current.value : savedBase(state, slotOf(row));
+        setInstanceState(id, withSavedDraft(state, slotOf(row), changed, base));
     }
 
     /** How many Discards this editor has had, which a control's Add person compares. */
@@ -121,7 +128,7 @@
     function discard(): void {
         discards += 1;
         editors.clear(row);
-        setInstanceState(id, withSavedDraft(instanceState(id), row.file, row.key, null));
+        setInstanceState(id, withSavedDraft(instanceState(id), slotOf(row), null));
     }
 
     /** Send the draft; whether the write was taken. */

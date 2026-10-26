@@ -2,14 +2,15 @@
 // force is oculus's own again (config/defaults/). The Settings view's Reset sends it for a single
 // value, a list and a family alike.
 //
-// The place is config-place.ts's: the primary hub's settings file for a key of the hub list, the
-// open workspace file's `settings:` for any other. The key comes out of the map that holds it with
-// its lines (block-edit.ts rewrites that map, keeping every other byte), and a map the removal
-// leaves empty comes out with it, up to a key at the top of the file, whose lines are cut. A hub's
-// settings file that would hold nothing is left as the empty map, since that file is what makes the
-// folder a hub. The edited text must read back as the file with that one key out and pass the
-// checks a write passes (config-checks.ts) before anything is written. A key the file does not hold
-// writes nothing.
+// The place is config-place.ts's: for a key of the hub list the settings file of the hub the reset
+// names (config-write.ts), the primary's when it names none, and the open workspace file's
+// `settings:` for any other. The key comes out of the map that holds it with its lines
+// (block-edit.ts rewrites that map, keeping every other byte), and a map the removal leaves empty
+// comes out with it, up to a key at the top of the file, whose lines are cut. A hub's settings file
+// that would hold nothing, no text or comments alone, is left as the empty map after its comments,
+// since that file is what makes the folder a hub. The edited text must read back as the file with
+// that one key out and pass the checks a write passes (config-checks.ts) before anything is
+// written. A key the file does not hold writes nothing.
 //
 // The record carries the text the reset removed, and the undo puts it back where it stood when the
 // file still holds the text the reset left there, or else writes the key again with the value it
@@ -53,6 +54,17 @@ import {
 
 /** The text a hub's settings file holds when a reset leaves it with no key. */
 const EMPTY_MAP = '{}\n';
+
+/**
+ * A hub's settings file as a reset leaves it: the text as it is while it holds a key, the empty map
+ * for a file left with no text, and the empty map after the comments of a file left with comments
+ * alone, which would otherwise read as no map.
+ */
+function keptAsMap(edited: string): string {
+    if (edited.trim() === '') return EMPTY_MAP;
+    if (parseDocument(edited).contents !== null) return edited;
+    return `${edited}${edited.endsWith('\n') ? '' : '\n'}${EMPTY_MAP}`;
+}
 
 /** The pair of a map whose key is the segment, or undefined. */
 function pairOf(map: YAMLMap, segment: string): Pair | undefined {
@@ -126,7 +138,7 @@ export function resetConfig(
     }
     const removed = removeKey(source, place.at);
     if (removed === null) return refuse(words(text, 'server.config_value.unsupported'));
-    const edited = place.layer === 'hub' && removed.trim() === '' ? EMPTY_MAP : removed;
+    const edited = place.layer === 'hub' ? keptAsMap(removed) : removed;
     const back = readBack(source, edited);
     if (back === null || !isDeepStrictEqual(back.after, withoutKey(back.before, place.at, true))) {
         return refuse(words(text, 'server.config_key.not_kept'));

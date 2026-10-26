@@ -41,8 +41,9 @@ import { appSettingNow, undoAppSetting } from './config/app-setting.ts';
 import { configKeyNow, writeConfigKey } from './config/config-key.ts';
 import { configValueNow, putBackConfigValue, writeConfigValue } from './config/config-value.ts';
 import { takeOutAdded } from './config/config-checks.ts';
+import { readPerHub } from '../../../data/shapes/hub-keys.ts';
 import {
-    layersOf,
+    everyHubLayers,
     machineHubs,
     placeOf,
     type ConfigLayers,
@@ -100,15 +101,23 @@ function fileOf(change: Change): string {
 const CONFIG_KINDS: readonly string[] = ['config-key', 'config-value', 'config-reset', 'rail'];
 
 /**
- * The layers a record of a Settings write is taken back over: the target's, when the file the
- * record names is where the target places its key (the primary hub's settings file or the open
- * workspace file), and null otherwise, as for a record of another workspace file or of another
- * primary hub, which this target does not write.
+ * The layers a record of a Settings write is taken back over: those of the hub whose file the
+ * record names, among the hubs the open workspace holds now. That is the target's own, when the
+ * file is where the target places its key (the primary hub's settings file or the open workspace
+ * file), else another hub's, when the file is that hub's settings file and the key is one each
+ * hub's own file is read for (data/shapes/hub-keys.ts). Null otherwise: a record of another
+ * workspace file, of a hub that has left the workspace or whose settings file is gone, which this
+ * target does not write, so the undo answers it as gone. A record of a hub's file that changed
+ * since is found here and refused as moved by the check of what the file holds, as the primary's.
  */
 function recordLayers(into: WriteTarget, change: Change): ConfigLayers | null {
-    const layers = layersOf(into);
-    const place = placeOf(layers, change.key, change.field);
-    return place !== null && resolve(place.path) === fileOf(change) ? layers : null;
+    for (const { layers, own } of everyHubLayers(into)) {
+        if (!own && !readPerHub(change.key, change.field)) continue;
+        const place = placeOf(layers, change.key, change.field);
+        if (place === null || (!own && place.layer !== 'hub')) continue;
+        if (resolve(place.path) === fileOf(change)) return layers;
+    }
+    return null;
 }
 
 /** What the file at a Settings record's place holds now at its key, by the kind of the record. */

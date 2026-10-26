@@ -27,19 +27,33 @@
     // The editor of a row's entries and its Fields list are each drawn under a disclosure line
     // (editors/Fold.svelte), which the reader folds and unfolds; a folded row keeps its Modified
     // bar, its gear, its message lines and its default line, and Reset works on it unfolded or not.
+    //
+    // A row of a key each hub's own settings file is read for, in a workspace of more than one hub,
+    // draws the pick of its hub under the description, the primary first and chosen, or the empty
+    // choice while no hub is chosen (state/system/config/view/hub-settings.svelte.ts); a pick
+    // redraws the row as that hub holds it. A row that says why it writes nothing draws the
+    // sentence under its control. While the chosen hub's settings are being read or could not be
+    // read the row draws that sentence alone, with no control, value, Modified bar or line, and
+    // the draft or typed text kept for that hub is drawn again once they are read.
 
     import CodeText from '$lib/ui/display/text/CodeText.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import Select from '$lib/ui/forms/choice/Select.svelte';
     import { sourceTabState } from '$lib/state/sessions/source/draft';
     import { WALLPAPER_KEY } from '$lib/state/life/pictures/wallpapers.svelte';
     import { t } from '$lib/state/shared/words/text';
     import type { EditorWriter } from '$lib/state/system/config/editors/writer';
     import type { Lists } from '$lib/state/system/config/editors/sources';
-    import { drawsEditor, withSavedDraft } from '$lib/state/system/config/editors/slots';
+    import { drawsEditor, slotOf, withSavedDraft } from '$lib/state/system/config/editors/slots';
     import { PAGES_ROW, RAIL_ROW, WORKBENCH_ROW, type Row } from '$lib/state/system/config/groups';
     import { message } from '$lib/state/system/config/messages';
     import { LOCAL_PATH, hubFileTarget, openTarget } from '$lib/state/system/config/config-files';
-    import { mismatchMessage, placeOf, writtenWhole } from '$lib/state/system/config/rows';
+    import {
+        mismatchMessage,
+        placeName,
+        placeOf,
+        writtenWhole
+    } from '$lib/state/system/config/rows';
     import { settingsQuery, withTypedText } from '$lib/state/system/config/typed';
     import { foundInside, partTexts, type FoldPart } from '$lib/state/system/config/view/fold';
     import { gearEntries } from '$lib/state/system/config/view/gear';
@@ -68,9 +82,21 @@
         writer: RowWriter;
         editors: EditorWriter;
         lists: Lists;
+        /** Pick the hub a row of a key each hub's own file is read for shows and writes. */
+        onchoose: (row: string, hub: string) => void;
     };
 
-    let { row, id, writer, editors, lists }: Props = $props();
+    let { row, id, writer, editors, lists, onchoose }: Props = $props();
+
+    /** The hubs the row offers to pick, each by its name. */
+    const hubChoices = $derived(
+        row.kind === 'config' && row.choice !== undefined
+            ? row.choice.offered.map((hub) => ({ id: hub, label: hub }))
+            : []
+    );
+
+    /** The name the row's user file is shown under, the hub's before it for another hub. */
+    const named = $derived(row.kind === 'config' ? placeName(row) : null);
 
     /** Whether the clipboard refused the last copy of this setting's id. */
     let copyRefused = $state(false);
@@ -122,13 +148,15 @@
                 ...(copyRefused ? [t('workbench.settings_copy_refused')] : [])
             ];
         }
+        if (row.blocked !== undefined) found.push(said(row.blocked));
         if (
             row.state === 'missing' &&
+            row.unread === undefined &&
             writtenWhole(row.control) &&
             row.key !== WALLPAPER_KEY &&
-            row.place.path !== null
+            named !== null
         ) {
-            found.push(said(message('missing', row.place.path)));
+            found.push(said(message('missing', named)));
         }
         const mismatch = mismatchMessage(row);
         if (mismatch !== null) found.push(said(mismatch));
@@ -143,13 +171,15 @@
     function reset(): void {
         if (row.kind === 'app') {
             void writeAppSetting(row.setting.key, row.setting.default);
+        } else if (row.kind === 'config' && row.blocked !== undefined) {
+            return;
         } else if (row.kind === 'config' && writtenWhole(row.control)) {
             editors.clear(row);
-            ui.setInstanceState(id, withSavedDraft(ui.instanceState(id), row.file, row.key, null));
+            ui.setInstanceState(id, withSavedDraft(ui.instanceState(id), slotOf(row), null));
             void editors.reset(row);
         } else if (row.kind === 'config') {
             writer.clear(row);
-            ui.setInstanceState(id, withTypedText(ui.instanceState(id), row.file, row.key, null));
+            ui.setInstanceState(id, withTypedText(ui.instanceState(id), slotOf(row), null));
             void writer.reset(row);
         }
     }
@@ -211,6 +241,22 @@
     </div>
     {#if control !== 'toggle'}
         <p class="description"><CodeText text={row.help} /></p>
+    {/if}
+    {#if row.kind === 'config' && row.choice !== undefined}
+        {@const choice = row.choice}
+        <div class="hub" title={t('workbench.settings_hub_choice_tip')}>
+            <Select
+                value={choice.chosen ?? ''}
+                label={t('workbench.settings_hub_choice')}
+                empty={choice.chosen === undefined
+                    ? t('workbench.settings_hub_choice_none')
+                    : undefined}
+                choices={hubChoices}
+                onchange={(hub: string) => {
+                    if (hub !== '') onchoose(row.id, hub);
+                }}
+            />
+        </div>
     {/if}
     {#if row.kind === 'local'}
         <p class="path"><CodeText text={`\`${row.path}\``} /></p>
@@ -278,7 +324,7 @@
             <PagesReset />
         {:else if row.key === WALLPAPER_KEY}
             <WallpaperPicker {row} {writer} />
-        {:else if control !== 'workbench'}
+        {:else if control !== 'workbench' && row.unread === undefined}
             <Control {row} {id} {writer} {editors} {lists} />
         {/if}
         {#if row.kind === 'config' && row.key === 'editor.languages'}
@@ -301,16 +347,14 @@
             {#if row.default !== undefined && defaultWords(row) !== ''}
                 <span class="default">{defaultWords(row)}</span>
             {/if}
-            {#if row.own && row.place.path !== null && target === null}
+            {#if row.own && named !== null && target === null}
                 <span class="default">
-                    {t('workbench.settings_open_unavailable', row.place.path)}
+                    {t('workbench.settings_open_unavailable', named)}
                 </span>
-            {:else if row.own && row.place.path !== null}
+            {:else if row.own && named !== null}
                 <ToolButton
-                    label={row.line === undefined
-                        ? row.place.path
-                        : `${row.place.path}:${row.line}`}
-                    title={t('workbench.settings_edit_in_tip', row.place.path)}
+                    label={row.line === undefined ? named : `${named}:${row.line}`}
+                    title={t('workbench.settings_edit_in_tip', named)}
                     plain
                     onclick={open}
                 />
@@ -411,6 +455,12 @@
     .item:hover code,
     .item:focus-within code {
         background: var(--line);
+    }
+
+    .hub {
+        width: 220px;
+        max-width: 100%;
+        margin: 0 0 8px;
     }
 
     .said {

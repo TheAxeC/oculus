@@ -1,8 +1,10 @@
 // Layer 2, client state. Where a Settings tab keeps the drafts of its list and family editors: the
-// tab's instance state, under the key `editors`, one record per file and key, beside the unsent
-// field texts (typed.ts) without meeting them. A tab switch or a reload brings a draft back, and a
-// tab holding one holds unsaved work. What the state holds is read back through a schema: a record
-// that is not a draft is taken as none.
+// tab's instance state, under the key `editors`, one record per slot, beside the unsent field texts
+// (typed.ts) without meeting them. A slot is a file and key, and the hub chosen on the row when it
+// is not the primary in a workspace of more than one hub (`slotOf`), so a draft made with one hub
+// chosen is drawn, sent and ended only while that hub is chosen. A tab switch or a reload brings a
+// draft back, and a tab holding one holds unsaved work. What the state holds is read back through a
+// schema: a record that is not a draft is taken as none.
 
 import { z } from 'zod';
 import { draftOf, typedDraft, type Draft, type TextDraft } from './draft.ts';
@@ -48,15 +50,32 @@ const textDraftShape = z.object({
 }) satisfies z.ZodType<TextDraft>;
 
 /**
- * One held draft: the file and key it is for, the draft itself, whether its fields are typed
- * values (a draft without the mark is read from text), and the value the file held when the draft
- * was started, which tells a draft over a file that has since changed.
+ * Where a row's draft or typed text is kept: its file and key, and the hub chosen on it when that
+ * is not the primary in a workspace of more than one hub.
  */
-type Held = { file: string; key: string; draft: unknown; typed?: boolean; base?: unknown };
+export type Slot = { file: string; key: string; hub?: string };
+
+/** The slot of a row: its file and key, and the hub its drafts are kept under, if any. */
+export function slotOf(row: ConfigRow): Slot {
+    return { file: row.file, key: row.key, ...(row.slot === undefined ? {} : { hub: row.slot }) };
+}
+
+/** Whether a held record is the one of a slot: the same file, key and hub, or none of a hub. */
+export function inSlot(held: Slot, slot: Slot): boolean {
+    return held.file === slot.file && held.key === slot.key && held.hub === slot.hub;
+}
+
+/**
+ * One held draft: the slot it is for, the draft itself, whether its fields are typed values (a
+ * draft without the mark is read from text), and the value the file held when the draft was
+ * started, which tells a draft over a file that has since changed.
+ */
+type Held = Slot & { draft: unknown; typed?: boolean; base?: unknown };
 
 const heldShape = z.object({
     file: z.string(),
     key: z.string(),
+    hub: z.string().optional(),
     draft: z.unknown(),
     typed: z.boolean().optional(),
     base: z.unknown().optional()
@@ -88,38 +107,38 @@ function heldList(state: unknown): Held[] {
  * fields by the row's own catalog entry; a held record that is no draft of either form is none.
  */
 export function savedDraft(state: unknown, row: ConfigRow): Draft | undefined {
-    const one = heldList(state).find((held) => held.file === row.file && held.key === row.key);
+    const slot = slotOf(row);
+    const one = heldList(state).find((held) => inSlot(held, slot));
     if (one === undefined) return undefined;
     if (one.typed === true) return draftShape.safeParse(one.draft).data;
     const text = textDraftShape.safeParse(one.draft).data;
     return text === undefined ? undefined : typedDraft(text, row);
 }
 
-/** Whether a tab holds a draft for a file and key, of whatever form. */
-export function hasSavedDraft(state: unknown, file: string, key: string): boolean {
-    return heldList(state).some((one) => one.file === file && one.key === key);
+/** Whether a tab holds a draft for a slot, of whatever form. */
+export function hasSavedDraft(state: unknown, slot: Slot): boolean {
+    return heldList(state).some((one) => inSlot(one, slot));
 }
 
-/** The value the file held when the draft of a file and key was started, or undefined. */
-export function savedBase(state: unknown, file: string, key: string): unknown {
-    return heldList(state).find((one) => one.file === file && one.key === key)?.base;
+/** The value the file held when the draft of a slot was started, or undefined. */
+export function savedBase(state: unknown, slot: Slot): unknown {
+    return heldList(state).find((one) => inSlot(one, slot))?.base;
 }
 
 /**
- * A tab's state with the draft of a file and key set, or taken away when it is null. `base` is the
- * value the file holds as the draft is started, kept as it was given until the draft is replaced
- * by one given without it.
+ * A tab's state with the draft of a slot set, or taken away when it is null. `base` is the value
+ * the file holds as the draft is started, kept as it was given until the draft is replaced by one
+ * given without it.
  */
 export function withSavedDraft(
     state: unknown,
-    file: string,
-    key: string,
+    slot: Slot,
     draft: Draft | null,
     base?: unknown
 ): Record<string, unknown> {
     const next = { ...mapOf(state) };
-    const others = heldList(state).filter((one) => one.file !== file || one.key !== key);
-    const all = draft === null ? others : [...others, { file, key, draft, typed: true, base }];
+    const others = heldList(state).filter((one) => !inSlot(one, slot));
+    const all = draft === null ? others : [...others, { ...slot, draft, typed: true, base }];
     if (all.length === 0) delete next.editors;
     else next.editors = all;
     return next;

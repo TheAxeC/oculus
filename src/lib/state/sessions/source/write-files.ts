@@ -15,10 +15,10 @@
 // holds the Literature collection, else the one other hub's that does, under each hub's key of the
 // `literature` registry; with several hubs and none chosen it names no file, and the server refuses
 // the write with the sentence asking which hub. A Settings write lands where the server places it
-// (server/edit/writes/config/config-place.ts): a key of the hub list in the primary hub's settings
-// file, any other option, the rail and the audit's mute list in the open workspace file, which is
-// named under the workspace folder of its hub, so the unsaved workspace and a workspace file
-// outside every folder name none.
+// (server/edit/writes/config/config-place.ts): a key of the hub list in the settings file of the
+// hub the write names, the primary's when it names none, any other option, the rail and the
+// audit's mute list in the open workspace file, which is named under the workspace folder of its
+// hub, so the unsaved workspace and a workspace file outside every folder name none.
 
 import { fields } from '../../../data/helpers/guards.ts';
 import {
@@ -112,12 +112,19 @@ function inHub(path: string, look: FileLookups): ViewSource | null {
 }
 
 /**
- * The file a Settings write of the option `key` of the defaults file `file` lands in: the primary
- * hub's settings file for a key of the hub list, the open workspace file for any other.
+ * The file a Settings write of the option `key` of the defaults file `file` lands in: for a key of
+ * the hub list, the settings file of the hub `root` names, the primary's when it names none; the
+ * open workspace file for any other.
  */
-function settingsFile(file: string, key: string, look: FileLookups): ViewSource | null {
+function settingsFile(
+    file: string,
+    key: string,
+    root: string,
+    look: FileLookups
+): ViewSource | null {
     if (file === '' || key === '') return null;
-    return hubFileOf(key) === file ? inHub(HUB_FILE, look) : look.workspaceFile();
+    if (hubFileOf(key) !== file) return look.workspaceFile();
+    return root === '' ? inHub(HUB_FILE, look) : inRoot(root, HUB_FILE);
 }
 
 /**
@@ -236,7 +243,7 @@ export function writtenFile(
         case 'config-key':
         case 'config-value':
         case 'config-reset':
-            return settingsFile(text(body.file), text(body.key), look);
+            return settingsFile(text(body.file), text(body.key), text(body.root), look);
         case 'app-setting':
             return inHub(HUB_FILE, look);
         case 'undo':

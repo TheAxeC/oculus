@@ -1,40 +1,40 @@
 In flight (2 of 6 slots in use):
-- O85 (a hub's own settings set in Settings for any hub of the workspace, the primary first and chosen; rulings 440, 443, 444, Z1033, Z1034), built under its cases ruling (Z1035, Z1036); its review runs.
-- O86 (the update tasks of every hub), its /spec under way.
+- O86 (the update tasks of every hub), building.
+- O89 (one record card, one way to add a dated line), building.
 
-Queued, in order:
-- O88 (one heading: `GroupHead` the only grouping heading, owning its strip, rounding, margin and fold control; rulings 448, 449 (b), 455), built beside O89.
-- O89 (one record card and one way to add a dated line, Quick add included; rulings 450 to 456), built beside O88.
-- O84 (who the user is: `self` out of the workspace file and into the primary hub's `.oculus/local.yml`, the person in any hub; rulings 437, 438); `self` read from the primary hub's `.oculus/local.yml` (ruling 439 (b)); its /spec can run now that O79 has landed.
-- O87 (the Focus band's positions and teaching by stages, as Funding, and the dated subtasks and due follow-ups in Tasks; rulings 445, 446, 447); its /spec can run now that O81 has landed; O81 changed the same files: `vocab.yml`, its options file, `vocab.ts`, `vocab-keys.ts`, `focus.ts` and `Band.svelte`.
+Queued (3):
+- O88 (one grouping heading), stopped on open item 461.
+- O84 (who the user is), /spec next; open item 462 before its landing.
+- O87 (the Focus band's positions and teaching), /spec later.
 
 Owed looks: none.
 
 Landed, newest first:
-- O79 (primary and foreign keys, `from:` renamed `foreign_key:`; rulings 392, 397, 398, 404, 415, 416, 425 (a), 426, 427 (a), Z1038), 2026-10-26, 153f4f0b; the hub rewrite committed in the hub (dd97f7ec0).
-- O81 (the grouping heading, the Venues view by `venue_categories` and the track record's board; rulings 395, 399 to 401, 403, 423, 434, Z1031, Z1032), 2026-10-26, 4e0fbd48.
-- O83 (one Slurm table failing alone keeps the queue and Recover live; rulings 430, 432, 433), 2026-10-26, 9961e0d5.
-- O80 (Focus and the boards from config; rulings 388 to 391, 393, 394, 396, 402, Z1019 to Z1024), 2026-10-26, 39b7b688.
-- O82 (the HPC poll's three failures, ssh, Slurm and other errors told apart; rulings 428, Z1026), 2026-10-26, 2d06328f; open item 430 raised.
-- O78 (collections and registries by flag; rulings 386, 387, Z1009 to Z1018), 2026-10-26, c6c2657c.
-- O77 (the project card and the project page, the Focus lane card's facts, the Focus filter and the Hub list; rulings 352, 353, 356, 378 to 385, Z1007), 2026-10-25, a374362d.
-- O75 (the bar of a project board in two lines, its section headings and the list view), 2026-10-25, 1283d0ac.
+- O85 (a hub's own settings for any hub), 2026-10-26, the commit "Land O85".
+- O79 (primary and foreign keys), 2026-10-26, 153f4f0b; hub dd97f7ec0.
+- O81 (the grouping heading, the Venues view, the track record), 2026-10-26, 4e0fbd48.
+- O83 (one failing Slurm table keeps the queue live), 2026-10-26, 9961e0d5.
+- O80 (Focus and the boards from config), 2026-10-26, 39b7b688.
+- O82 (the HPC poll's three failures told apart), 2026-10-26, 2d06328f.
+- O78 (collections and registries by flag), 2026-10-26, c6c2657c.
+- O77 (the project card and page, the Focus filter, the Hub list), 2026-10-25, a374362d.
+- O75 (a project board's bar in two lines, the list view), 2026-10-25, 1283d0ac.
 - O74 (the Focus career banner built from the command center's parts), 2026-10-25, a6d8e34e.
 - O76 (the Pillars view's text made true and short), 2026-10-25, 0a1c3796.
 - O73 (a finding for a `manifest_fields:` row whose `from` names no list), 2026-10-25, 3df7754a.
 - O72 (the closest-word hint named only within half the word's length), 2026-10-25, 5a47cae5.
-- O69 (the bar of a project board reworked: the stage a facet of the Filter menu, the values in force as removable chips, Cards, List and Full titles in the header), 2026-10-25, 5d586dba.
-- O70 (the facts of a project card say what they are, lane icons, the venue as its own line; the career banner redrawn), 2026-10-25, 3ae06ff6.
-- O71 (the priority removed: the manifest field, `priority_levels`, the flames and the menu section), 2026-10-25, e66c2a4e.
-- O60 (each part of `config/` overridden where it belongs: a hub's words and form fields, the workspace's catalogs, interface words and display language), 2026-10-25, aa79b883.
-- O63 (the audit's hub conventions as one hub setting `audit:`), 2026-10-24, 9c42ab10; the hub rewrite committed in the hub (7ead4ba00).
-- O68 (the Focus lane card marks without the two-mark cap, the career banner redrawn), 2026-10-24, b0536bf5; the hub rewrite committed in the hub (bc98016fd).
-- O66 (the Gallery shows every word; the no-venue finding names the project's stage), 2026-10-24, 9914a5cc.
-- O55 (the project boards by kind, role and state; one list `categories:` read by the boards, the rail and the Archival band), 2026-10-24, 36d7ee3e; the hub rewrite committed in the hub (f4ef3afb5), the workspace repositories' manifests in their own repositories.
-- O67 (the stage decides the Focus lane; stage, chip and key words settled), 2026-10-23, c37d4ad0; the hub rewrite committed in the hub (21ee84855), the workspace repositories' manifests in their own repositories.
+- O69 (a project board's bar reworked), 2026-10-25, 5d586dba.
+- O70 (a project card's facts, lane icons, the venue line), 2026-10-25, 3ae06ff6.
+- O71 (the priority removed), 2026-10-25, e66c2a4e.
+- O60 (each part of `config/` overridden where it belongs), 2026-10-25, aa79b883.
+- O63 (the audit's conventions as one hub setting), 2026-10-24, 9c42ab10; hub 7ead4ba00.
+- O68 (Focus lane card marks, career banner), 2026-10-24, b0536bf5; hub bc98016fd.
+- O66 (the Gallery shows every word), 2026-10-24, 9914a5cc.
+- O55 (project boards by kind, role and state), 2026-10-24, 36d7ee3e; hub f4ef3afb5.
+- O67 (the stage decides the Focus lane), 2026-10-23, c37d4ad0; hub 21ee84855.
 - O39 (oculus in its own repository), 2026-10-23, closed by the desktop look C8.
-- O53 (a project's people by person keys), 2026-10-23, 952bd2f2; the hub's people rewrite committed in the hub (c34433e40).
-- O61 (one home for each vocabulary word), 2026-10-23, d66ddff0; the hub's data rewrite committed in the hub (02e22205a), the workspace repositories' manifests in their own repositories.
+- O53 (a project's people by person keys), 2026-10-23, 952bd2f2; hub c34433e40.
+- O61 (one home for each vocabulary word), 2026-10-23, d66ddff0; hub 02e22205a.
 - O56 (a new record asks which hub takes it), 2026-10-23, a06c1bf6.
 - O39 part F (the first frame paints the theme's ground), 2026-10-23, ab7512bc.
 - O65 (a scrolling status bar and VS Code's editor keys), 2026-10-23, 7b9b214d.

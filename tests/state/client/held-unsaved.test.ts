@@ -321,6 +321,47 @@ describe('a Settings write over a file a source tab holds unsaved text of', () =
         );
         expect(other.posted).toHaveLength(1);
     });
+
+    it("refuses a write that names the hub lab when the tab holds lab's settings file, and sends one to the primary", async () => {
+        const env = server({
+            roots: () => [
+                { key: 'hub', dir: HUB, real: HUB },
+                { key: 'lab', dir: '/work/lab', real: '/work/lab' }
+            ]
+        });
+        env.files.set('lab/.oculus/config.yml', 'stages: {}\n');
+        await env.source.loadSourceDraft('one', 'lab', '.oculus/config.yml');
+        env.source.editSourceDraft('one', 'stages: { idea: null }\n');
+        await env.settled();
+        const posted: unknown[] = [];
+        vi.stubGlobal('fetch', (_url: string, init?: { body?: string }) => {
+            posted.push(JSON.parse(String(init?.body)));
+            return Promise.resolve({
+                ok: true,
+                status: 200,
+                json: () => Promise.resolve({ ok: true, changed: [], refused: [] })
+            });
+        });
+        const writes = createWrites(
+            () => ({}),
+            (file) => env.source.unsavedFile(file.root, file.path),
+            { ...NO_LOOKUPS, primary: () => 'hub', workspaceFile: () => OPEN }
+        );
+        const held = [
+            await writes.writeConfigKey('sources.yml', 'memories_dir', 'x', false, 'lab'),
+            await writes.writeConfigValue('catalogs/vocab.yml', 'stages', {}, {}, false, 'lab'),
+            await writes.resetConfig('sources.yml', 'memories_dir', 'lab')
+        ];
+        expect(posted).toEqual([]);
+        expect(held.map((one) => one.error)).toEqual(
+            Array(3).fill(t('app.file_unsaved', 'config.yml'))
+        );
+        const primary = await writes.writeConfigKey('sources.yml', 'memories_dir', 'x');
+        expect(primary.ok).toBe(true);
+        expect(posted).toEqual([
+            { kind: 'config-key', file: 'sources.yml', key: 'memories_dir', value: 'x' }
+        ]);
+    });
 });
 
 describe('a write while the roots are not read and a source tab holds unsaved text', () => {

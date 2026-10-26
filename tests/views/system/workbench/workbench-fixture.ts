@@ -55,7 +55,7 @@ export function drawnItem(row: ConfigRow, client: ClientState, id: string): stri
         lists: () => lists
     });
     const { body } = render(Item, {
-        props: { row, id, writer, editors, lists },
+        props: { row, id, writer, editors, lists, onchoose: () => undefined },
         context: clientContext(client)
     });
     return body;

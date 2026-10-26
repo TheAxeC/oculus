@@ -19,11 +19,22 @@ import { describe, expect, vi } from 'vitest';
 import { parse } from 'yaml';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
 import { words } from '../../../src/lib/server/core/words.ts';
-import { loadLayers } from '../../../src/lib/server/edit/writes/config/config-place.ts';
+import type { WriteTarget } from '../../../src/lib/server/edit/writes.ts';
+import {
+    loadLayers,
+    type ConfigKeyOutcome
+} from '../../../src/lib/server/edit/writes/config/config-place.ts';
 import { writeConfigValue } from '../../../src/lib/server/edit/writes/config/config-value.ts';
+import { configWrite } from '../../../src/lib/server/edit/writes/config/config-write.ts';
 import { plantSaved } from '../../fixtures/hubs/workspace.ts';
 import { it, scratchDir } from '../../fixtures/scratch.ts';
-import { defaultsFile, refusalOf, scratchEngine } from '../../routes/edit/write-fixture.ts';
+import {
+    LAB,
+    defaultsFile,
+    labTarget,
+    refusalOf,
+    scratchEngine
+} from '../../routes/edit/write-fixture.ts';
 import { linkedHub } from './writes-fixture.ts';
 
 /** Every path the writer's module graph read through `readFileSync`, newest last. */
@@ -343,6 +354,119 @@ describe("an entry's ticker and skip written into the hub's list", { tags: ['slo
         expect(outcome.changed).toEqual([]);
         expect(outcome.refused.map((refused) => refused.reason)).toEqual([reason]);
         expect(readFileSync(one.workspace, 'utf8')).toBe(before);
+    });
+});
+
+/** A write of the dispatch of the write route, as the page sends it. */
+function dispatched(into: WriteTarget, body: Record<string, unknown>): ConfigKeyOutcome {
+    const answer = configWrite(body, into);
+    if (answer === null || !('outcome' in answer)) throw new Error('the write was not answered');
+    return answer.outcome;
+}
+
+/** The value in force at a key over a hub's own settings, as its merge gives it. */
+function hubValue(engine: string, dir: string, key: string): unknown {
+    return at(loadLayers(engine, { hub: dir }).config, key);
+}
+
+/** The settings file of a hub folder, parsed, or an empty map when it holds nothing. */
+function settingsMap(dir: string): unknown {
+    return parse(readFileSync(join(dir, '.oculus', 'config.yml'), 'utf8')) ?? {};
+}
+
+/**
+ * The lists and families written with `lab` named, one row per key of the hub list each hub's own
+ * file is read for: the value sent, made from lab's value in force, and what lab's file then holds
+ * at the key.
+ */
+const LAB_ROWS: {
+    row: string;
+    file: string;
+    key: string;
+    value: (held: unknown) => unknown;
+    holds: (stored: unknown) => void;
+}[] = [
+    {
+        row: 'a changed row of categories, by its key',
+        file: 'catalogs/vocab.yml',
+        key: 'categories',
+        value: (held) =>
+            (held as { key: string; label: string }[]).map((one) =>
+                one.key === 'idea' ? { ...one, label: 'Ideas' } : one
+            ),
+        holds: (stored) =>
+            expect(stored).toContainEqual(expect.objectContaining({ key: 'idea', label: 'Ideas' }))
+    },
+    {
+        row: 'a field added to the project form',
+        file: 'schemas/manifest-schema.yml',
+        key: 'manifest_fields',
+        value: () => [{ field: 'grant_id', label: 'Grant', type: 'text', section: 'Core' }],
+        holds: (stored) =>
+            expect(stored).toEqual([
+                { field: 'grant_id', label: 'Grant', type: 'text', section: 'Core' }
+            ])
+    },
+    {
+        row: "a scan folder that lab's folder alone holds",
+        file: 'sources.yml',
+        key: 'scan',
+        value: () => [{ dir: 'pictures' }],
+        holds: (stored) => expect(stored).toEqual([{ dir: 'pictures' }])
+    },
+    {
+        row: 'a file every project of lab must hold, under audit',
+        file: 'behavior.yml',
+        key: 'audit.required_files',
+        value: () => [{ file: 'README.md' }],
+        holds: (stored) => expect(stored).toEqual([{ file: 'README.md' }])
+    }
+];
+
+describe('a list or family written into the hub the write names', { tags: ['slow'] }, () => {
+    it.each(LAB_ROWS)(
+        "writes $row into lab's settings file and leaves the primary's",
+        ({ file, key, value, holds }) => {
+            const made = labTarget();
+            const held = hubValue(made.into.engine, made.lab, key);
+            const outcome = dispatched(made.into, {
+                kind: 'config-value',
+                file,
+                key,
+                value: value(held),
+                base: held,
+                root: LAB
+            });
+            expect([outcome.refused, outcome.changed]).toEqual([[], [`${file}:${key}`]]);
+            holds(at(settingsMap(made.lab), key));
+            expect(hubValue(made.into.engine, made.lab, key)).toEqual(value(held));
+            expect(readFileSync(join(made.hub, '.oculus', 'config.yml'), 'utf8')).toBe('{}\n');
+        }
+    );
+
+    it("refuses a base lab's merge does not give, and a lab file that does not parse", () => {
+        const made = labTarget();
+        const held = hubValue(made.into.engine, made.lab, 'scan');
+        const body = { kind: 'config-value', file: 'sources.yml', key: 'scan', root: LAB };
+        const stale = dispatched(made.into, { ...body, value: [{ dir: 'pictures' }], base: [] });
+        expect(refusalOf(stale, 'sources.yml:scan')).toBe(why('changed'));
+        writeFileSync(join(made.lab, '.oculus', 'config.yml'), 'scan: [\n');
+        const broken = dispatched(made.into, { ...body, value: [{ dir: 'pictures' }], base: held });
+        expect(refusalOf(broken, 'sources.yml:scan')).toBe(why('not_parsed'));
+        expect(readFileSync(join(made.lab, '.oculus', 'config.yml'), 'utf8')).toBe('scan: [\n');
+    });
+
+    it("resets a key lab's file sets, and answers a key it does not set with nothing changed", () => {
+        const made = labTarget('# the lab\nmemories_dir: pictures\n');
+        const body = { kind: 'config-reset', file: 'sources.yml', key: 'memories_dir' };
+        const reset = dispatched(made.into, { ...body, root: LAB });
+        expect(reset.changed).toEqual(['sources.yml:memories_dir']);
+        expect(readFileSync(join(made.lab, '.oculus', 'config.yml'), 'utf8')).toBe(
+            '# the lab\n{}\n'
+        );
+        const again = dispatched(made.into, { ...body, root: LAB });
+        expect([again.changed, again.refused, again.records]).toEqual([[], [], undefined]);
+        expect(readFileSync(join(made.hub, '.oculus', 'config.yml'), 'utf8')).toBe('{}\n');
     });
 });
 

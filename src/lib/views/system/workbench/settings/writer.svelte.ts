@@ -4,6 +4,7 @@
 // sent or answered.
 
 import type { Lists } from '$lib/state/system/config/editors/sources';
+import type { ConfigRow } from '$lib/state/system/config/rows';
 import {
     createRowWriter,
     type ResetConfig,
@@ -13,12 +14,12 @@ import {
 
 /**
  * A write sequence whose `shown`, `pending` and `said` redraw whatever read them when a write
- * moves.
+ * moves. `lists` answers the lists a row's control draws from.
  */
 export function reactiveWriter(
     write: WriteConfigKey,
     reset: ResetConfig,
-    lists: () => Lists
+    lists: (row: ConfigRow) => Lists
 ): RowWriter {
     let version = $state(0);
     const inner = createRowWriter(

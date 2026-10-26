@@ -257,7 +257,7 @@ The field flagged `primary_key: true` is the one a write finds the entry by, and
 
 A folder of the workspace that holds `.oculus/config.yml` is a hub of its own, and oculus merges it into the one portfolio.
 
-- Its `config.yml` paths are read from its own folder. Its `career_file`, `linkedin_dir` and `portfolio_deck` are not read. Its `audit:` holds its own projects to the conventions it names and checks them against its own website feed.
+- Its `config.yml` paths are read from its own folder. Its `portfolio_deck`, `career_file`, `bookmarks`, `schedules`, `apps_dir`, `wallpaper.image`, `docs`, `counts`, `slurm.resource`, `lint.writing_skip`, `lint.writing_glyphs` and `app_settings` are not read: those keys are read from the primary hub's file alone. Its `audit:` holds its own projects to the conventions it names and checks them against its own website feed.
 - Every record of every hub, the primary's included, has the id `<hub name>:<key>`. The files hold keys: a reference names the record of its key in its own hub, and else the record of the one other hub that holds the key; a key two other hubs hold and its own hub does not names no record, and the Audit reports it.
 - A change to a record goes to its own hub's file. A new record goes to a hub that could take it: a new project to any hub of the workspace, and a new entry (Add, Add Task, an application from a lead, Save to Literature) to a hub that holds its collection, named in its `collections:` or, for Literature, at the engine's path. When more than one hub could take it, the path asks which, the primary first in the list; when one could, the record goes there, primary or not.
 - A collection's view is shown when any hub of the workspace lists its key.

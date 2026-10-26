@@ -17,6 +17,7 @@ import {
     type UserFiles
 } from '../../../../src/lib/state/system/config/rows.ts';
 import type { Lists } from '../../../../src/lib/state/system/config/editors/sources.ts';
+import { message } from '../../../../src/lib/state/system/config/messages.ts';
 import { shipped } from './fixture.ts';
 
 const FILE = 'appearance.yml';
@@ -125,5 +126,89 @@ describe('Reset of a Settings row', () => {
     it('sends nothing for a key no file of the user holds', async () => {
         const row = rowOf('code_theme', { code_theme: 'tokens' }, workspace(''));
         expect(await resetOf(row)).toEqual({ writes: [], resets: [] });
+    });
+});
+
+/** Lists whose folders are being read, so a folder box's value is checked for its form alone. */
+const LOADING = { folder: () => ({ state: 'loading' }) } as unknown as Lists;
+
+describe('a Settings row with a hub chosen', () => {
+    /** The `memories_dir` row of the primary's file, which sets the key, as a row reads it. */
+    function primaryRow(): ConfigRow {
+        const row = fileRows(
+            'sources.yml',
+            shipped['sources.yml'],
+            { memories_dir: 'pictures' },
+            {
+                workspace: workspace(''),
+                hubFile: { text: text('memories_dir: pictures\n'), present: true }
+            }
+        ).rows.find((one) => one.key === 'memories_dir');
+        if (row === undefined) throw new Error('no memories_dir row');
+        return row;
+    }
+
+    /** The same row with the hub `lab` chosen. */
+    const labRow = (): ConfigRow => ({ ...primaryRow(), hub: 'lab', slot: 'lab' });
+
+    it("names lab in its write and its reset, and keeps lab's answer apart from the primary's", async () => {
+        let release = (): void => undefined;
+        const held = new Promise<void>((done) => (release = done));
+        const write = vi.fn(async (_file: string, _key: string, value: unknown) => {
+            if (value === 'held') await held;
+            return value === 'refused'
+                ? {
+                      ok: true,
+                      changed: [],
+                      refused: [{ field: 'sources.yml:memories_dir', reason: 'no' }]
+                  }
+                : { ok: true, changed: ['sources.yml:memories_dir'], refused: [] };
+        });
+        const reset = vi.fn((_file: string, _key: string) =>
+            Promise.resolve({ ok: true, changed: ['sources.yml:memories_dir'], refused: [] })
+        );
+        const listed: (string | undefined)[] = [];
+        const writer = createRowWriter(
+            write,
+            reset,
+            () => undefined,
+            (row) => {
+                listed.push(row.hub);
+                return LOADING;
+            }
+        );
+        await writer.submit(primaryRow(), 'refused');
+        expect(writer.said(primaryRow())?.key).toBe('workbench.settings_refused');
+        expect(writer.said(labRow())).toBeNull();
+        const out = writer.submit(primaryRow(), 'held');
+        expect([writer.pending(primaryRow()), writer.pending(labRow())]).toEqual([true, false]);
+        expect(writer.shown(labRow())).toBeUndefined();
+        release();
+        await out;
+        await writer.submit(labRow(), 'other');
+        await writer.reset(labRow());
+        expect(write.mock.calls.at(-1)).toEqual([
+            'sources.yml',
+            'memories_dir',
+            'other',
+            false,
+            'lab'
+        ]);
+        expect(reset.mock.calls).toEqual([['sources.yml', 'memories_dir', 'lab']]);
+        expect(listed).toEqual([undefined, undefined, 'lab']);
+    });
+
+    it('sends nothing for a row that says why it writes nothing', async () => {
+        const blocked = { ...labRow(), blocked: message('pickHub') };
+        expect(await resetOf(blocked)).toEqual({ writes: [], resets: [] });
+        const write = vi.fn(() => Promise.resolve({ ok: true, changed: [], refused: [] }));
+        const writer = createRowWriter(
+            write,
+            write,
+            () => undefined,
+            () => LOADING
+        );
+        await writer.submit(blocked, 'other');
+        expect(write).not.toHaveBeenCalled();
     });
 });

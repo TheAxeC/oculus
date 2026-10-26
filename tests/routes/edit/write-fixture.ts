@@ -531,6 +531,39 @@ export function configTarget(engine: string = scratchEngine(), settings = ''): P
     return { ...base, engine, workspace: plantSaved(base.hub, settings).open };
 }
 
+/** The name of the hub other than the primary that `labTarget` adds to the workspace. */
+export const LAB = 'lab';
+
+/** What `labTarget` makes: the target, and the folders of the primary hub and of `lab`. */
+export type LabTarget = { into: WriteTarget; hub: string; lab: string };
+
+/** Lab's settings file unless a case gives another: a comment and one key, which a map holds. */
+export const LAB_SETTINGS = '# the lab\nwallpaper_dir: pictures\n';
+
+/**
+ * The config target of a scratch engine with a second hub, `lab`: a folder under the system
+ * temporary directory holding `.oculus/config.yml` (`settings`) and a folder `pictures` of its own.
+ * With `primary` false the workspace has no primary, and the target lists both hubs as its other
+ * hubs, the primary's folder under the name `hub`.
+ */
+export function labTarget(settings = LAB_SETTINGS, primary = true): LabTarget {
+    const base = configTarget();
+    const lab = scratchDir('oculus-lab-');
+    for (const folder of ['.oculus', 'pictures']) {
+        expect(resolve(join(lab, folder)).startsWith(resolve(lab) + sep)).toBe(true);
+        mkdirSync(join(lab, folder), { recursive: true });
+    }
+    writeFileSync(join(lab, '.oculus', 'config.yml'), settings);
+    const second = { key: LAB, hub: lab, config: base.config };
+    if (primary) return { into: { ...base, hubs: [second] }, hub: base.hub, lab };
+    const first = { key: base.primary, hub: base.hub, config: base.config };
+    return {
+        into: { ...base, hub: null, primary: null, hubs: [first, second] },
+        hub: base.hub,
+        lab
+    };
+}
+
 /** The open workspace file of a target, which a Settings write of a non-hub option lands in. */
 export function workspaceFileOf(into: PrimaryTarget): string {
     const file = into.workspace?.file ?? null;

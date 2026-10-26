@@ -1351,7 +1351,7 @@
 </g>
 <!-- lib/server/edit/writes/config/config&#45;write.ts&#45;&gt;lib/server/edit/writes/config/config&#45;place.ts -->
 <g id="edge34" class="edge">
-<title>lib/server/edit/writes/config/config&#45;write.ts&#45;&gt;lib/server/edit/writes/config/config&#45;place.ts: layersOf, machineHubs</title>
+<title>lib/server/edit/writes/config/config&#45;write.ts&#45;&gt;lib/server/edit/writes/config/config&#45;place.ts: layersOf, machineHubs, otherHubLayers, refusing</title>
 <path fill="none" stroke="currentColor" d="M298.42,-11125.75C309.75,-11125.75 321.08,-11125.75 332.41,-11125.75 332.41,-11135.75 332.41,-11145.75 332.41,-11155.75 364.87,-11155.75 397.33,-11155.75 429.78,-11155.75"/>
 <polygon fill="currentColor" stroke="currentColor" points="429.7,-11157.85 435.7,-11155.75 429.7,-11153.65 429.7,-11157.85"/>
 </g>
@@ -2226,7 +2226,7 @@
 </g>
 <!-- lib/server/edit/writes/undo.ts&#45;&gt;lib/server/edit/writes/config/config&#45;place.ts -->
 <g id="edge104" class="edge">
-<title>lib/server/edit/writes/undo.ts&#45;&gt;lib/server/edit/writes/config/config&#45;place.ts: layersOf, machineHubs, placeOf</title>
+<title>lib/server/edit/writes/undo.ts&#45;&gt;lib/server/edit/writes/config/config&#45;place.ts: everyHubLayers, machineHubs, placeOf</title>
 <path fill="none" stroke="currentColor" d="M269.53,-8838.5C294.86,-8838.5 320.2,-8838.5 345.53,-8838.5 345.53,-8675.17 345.53,-8511.83 345.53,-8348.5 410.96,-8348.5 476.38,-8348.5 541.8,-8348.5"/>
 <polygon fill="currentColor" stroke="currentColor" points="541.64,-8350.6 547.64,-8348.5 541.64,-8346.4 541.64,-8350.6"/>
 </g>
@@ -2308,27 +2308,27 @@
 <path fill="none" stroke="currentColor" d="M269.53,-8774.5C278.86,-8774.5 288.2,-8774.5 297.53,-8774.5 297.53,-8505.83 297.53,-8237.17 297.53,-7968.5 381.07,-7968.5 464.6,-7968.5 548.14,-7968.5"/>
 <polygon fill="currentColor" stroke="currentColor" points="548.03,-7970.6 554.03,-7968.5 548.03,-7966.4 548.03,-7970.6"/>
 </g>
-<!-- ? src/lib/server/edit/writes/undo.ts:312 -->
+<!-- ? src/lib/server/edit/writes/undo.ts:321 -->
 <g id="node123" class="node">
-<title>? src/lib/server/edit/writes/undo.ts:312</title>
+<title>? src/lib/server/edit/writes/undo.ts:321</title>
 <polygon fill="none" stroke="currentColor" points="450.48,-7853.5 450.48,-7875.5 723.28,-7875.5 723.28,-7853.5 450.48,-7853.5"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="start" x="456.48" y="-7860.5" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/server/edit/writes/undo.ts:312 mapShape.safeParse(</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="start" x="456.48" y="-7860.5" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/server/edit/writes/undo.ts:321 mapShape.safeParse(</text>
 </g>
-<!-- lib/server/edit/writes/undo.ts&#45;&gt;? src/lib/server/edit/writes/undo.ts:312 -->
+<!-- lib/server/edit/writes/undo.ts&#45;&gt;? src/lib/server/edit/writes/undo.ts:321 -->
 <g id="edge93" class="edge">
-<title>lib/server/edit/writes/undo.ts&#45;&gt;? src/lib/server/edit/writes/undo.ts:312</title>
+<title>lib/server/edit/writes/undo.ts&#45;&gt;? src/lib/server/edit/writes/undo.ts:321</title>
 <path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M269.53,-8758.5C274.86,-8758.5 280.2,-8758.5 285.53,-8758.5 285.53,-8460.5 285.53,-8162.5 285.53,-7864.5 338.06,-7864.5 390.59,-7864.5 443.12,-7864.5"/>
 <polygon fill="currentColor" stroke="currentColor" points="442.98,-7866.6 448.98,-7864.5 442.98,-7862.4 442.98,-7866.6"/>
 </g>
-<!-- ? src/lib/server/edit/writes/undo.ts:492 -->
+<!-- ? src/lib/server/edit/writes/undo.ts:501 -->
 <g id="node124" class="node">
-<title>? src/lib/server/edit/writes/undo.ts:492</title>
+<title>? src/lib/server/edit/writes/undo.ts:501</title>
 <polygon fill="none" stroke="currentColor" points="433.53,-7889.5 433.53,-7911.5 740.23,-7911.5 740.23,-7889.5 433.53,-7889.5"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="start" x="439.53" y="-7896.5" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/server/edit/writes/undo.ts:492 workspaceValueShape.parse(</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="start" x="439.53" y="-7896.5" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/server/edit/writes/undo.ts:501 workspaceValueShape.parse(</text>
 </g>
-<!-- lib/server/edit/writes/undo.ts&#45;&gt;? src/lib/server/edit/writes/undo.ts:492 -->
+<!-- lib/server/edit/writes/undo.ts&#45;&gt;? src/lib/server/edit/writes/undo.ts:501 -->
 <g id="edge94" class="edge">
-<title>lib/server/edit/writes/undo.ts&#45;&gt;? src/lib/server/edit/writes/undo.ts:492</title>
+<title>lib/server/edit/writes/undo.ts&#45;&gt;? src/lib/server/edit/writes/undo.ts:501</title>
 <path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M269.53,-8766.5C276.86,-8766.5 284.2,-8766.5 291.53,-8766.5 291.53,-8477.83 291.53,-8189.17 291.53,-7900.5 336.43,-7900.5 381.33,-7900.5 426.23,-7900.5"/>
 <polygon fill="currentColor" stroke="currentColor" points="426.02,-7902.6 432.02,-7900.5 426.02,-7898.4 426.02,-7902.6"/>
 </g>
@@ -3742,15 +3742,15 @@
 <path fill="none" stroke="currentColor" d="M89.8,-3233C95.14,-3233 100.47,-3233 105.8,-3233 105.8,-3261 105.8,-3289 105.8,-3317 166.59,-3317 227.37,-3317 288.16,-3317"/>
 <polygon fill="currentColor" stroke="currentColor" points="288.13,-3319.1 294.13,-3317 288.13,-3314.9 288.13,-3319.1"/>
 </g>
-<!-- ? src/lib/server/edit/writes/config/config&#45;reset.ts:206 -->
+<!-- ? src/lib/server/edit/writes/config/config&#45;reset.ts:218 -->
 <g id="node250" class="node">
-<title>? src/lib/server/edit/writes/config/config&#45;reset.ts:206</title>
+<title>? src/lib/server/edit/writes/config/config&#45;reset.ts:218</title>
 <polygon fill="none" stroke="currentColor" points="157.8,-3094 157.8,-3116 508.96,-3116 508.96,-3094 157.8,-3094"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="start" x="163.8" y="-3101" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/server/edit/writes/config/config&#45;reset.ts:206 replacedShape.safeParse(</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="start" x="163.8" y="-3101" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/server/edit/writes/config/config&#45;reset.ts:218 replacedShape.safeParse(</text>
 </g>
-<!-- lib/server/edit/writes/config/config&#45;reset.ts&#45;&gt;? src/lib/server/edit/writes/config/config&#45;reset.ts:206 -->
+<!-- lib/server/edit/writes/config/config&#45;reset.ts&#45;&gt;? src/lib/server/edit/writes/config/config&#45;reset.ts:218 -->
 <g id="edge219" class="edge">
-<title>lib/server/edit/writes/config/config&#45;reset.ts&#45;&gt;? src/lib/server/edit/writes/config/config&#45;reset.ts:206</title>
+<title>lib/server/edit/writes/config/config&#45;reset.ts&#45;&gt;? src/lib/server/edit/writes/config/config&#45;reset.ts:218</title>
 <path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M89.8,-3185C103.14,-3185 116.47,-3185 129.8,-3185 129.8,-3158.33 129.8,-3131.67 129.8,-3105 136.74,-3105 143.69,-3105 150.63,-3105"/>
 <polygon fill="currentColor" stroke="currentColor" points="150.29,-3107.1 156.29,-3105 150.29,-3102.9 150.29,-3107.1"/>
 </g>
@@ -4096,15 +4096,15 @@
 <path fill="none" stroke="currentColor" d="M91.48,-2135.25C98.81,-2135.25 106.14,-2135.25 113.48,-2135.25 113.48,-2145.25 113.48,-2155.25 113.48,-2165.25 172.54,-2165.25 231.6,-2165.25 290.67,-2165.25"/>
 <polygon fill="currentColor" stroke="currentColor" points="290.65,-2167.35 296.65,-2165.25 290.65,-2163.15 290.65,-2167.35"/>
 </g>
-<!-- ? src/lib/server/edit/writes/config/config&#45;value.ts:292 -->
+<!-- ? src/lib/server/edit/writes/config/config&#45;value.ts:293 -->
 <g id="node281" class="node">
-<title>? src/lib/server/edit/writes/config/config&#45;value.ts:292</title>
+<title>? src/lib/server/edit/writes/config/config&#45;value.ts:293</title>
 <polygon fill="none" stroke="currentColor" points="159.48,-1910.25 159.48,-1932.25 512.32,-1932.25 512.32,-1910.25 159.48,-1910.25"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="start" x="165.48" y="-1917.25" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/server/edit/writes/config/config&#45;value.ts:292 replacedShape.safeParse(</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="start" x="165.48" y="-1917.25" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/server/edit/writes/config/config&#45;value.ts:293 replacedShape.safeParse(</text>
 </g>
-<!-- lib/server/edit/writes/config/config&#45;value.ts&#45;&gt;? src/lib/server/edit/writes/config/config&#45;value.ts:292 -->
+<!-- lib/server/edit/writes/config/config&#45;value.ts&#45;&gt;? src/lib/server/edit/writes/config/config&#45;value.ts:293 -->
 <g id="edge247" class="edge">
-<title>lib/server/edit/writes/config/config&#45;value.ts&#45;&gt;? src/lib/server/edit/writes/config/config&#45;value.ts:292</title>
+<title>lib/server/edit/writes/config/config&#45;value.ts&#45;&gt;? src/lib/server/edit/writes/config/config&#45;value.ts:293</title>
 <path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M91.48,-2087.25C96.81,-2087.25 102.14,-2087.25 107.48,-2087.25 107.48,-2031.92 107.48,-1976.58 107.48,-1921.25 122.38,-1921.25 137.28,-1921.25 152.18,-1921.25"/>
 <polygon fill="currentColor" stroke="currentColor" points="151.97,-1923.35 157.97,-1921.25 151.97,-1919.15 151.97,-1923.35"/>
 </g>

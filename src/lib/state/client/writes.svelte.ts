@@ -559,19 +559,27 @@ export function createWrites(
 
     /**
      * Set one option of a defaults file (`behavior.yml`) at the dotted `key` (`changes.keep`): the
-     * endpoint writes the value into the open workspace file's `settings:`, or into the primary
-     * hub's .oculus/config.yml for a key of the hub list, and answers a refusal as
-     * `refused: [{ field: '<file>:<key>', reason }]` with nothing written. `copy` adds the key even
-     * when the value is the one in force, which Edit in a file sends before it opens the file. The
-     * change is recorded in History and can be taken back.
+     * endpoint writes the value into the open workspace file's `settings:`, or for a key of the hub
+     * list into the .oculus/config.yml of the hub `root` names, the primary's when it names none,
+     * and answers a refusal as `refused: [{ field: '<file>:<key>', reason }]` with nothing written.
+     * `copy` adds the key even when the value is the one in force, which Edit in a file sends
+     * before it opens the file. The change is recorded in History and can be taken back.
      */
     async function writeConfigKey(
         file: string,
         key: string,
         value: unknown,
-        copy = false
+        copy = false,
+        root?: string
     ): Promise<WriteAnswer> {
-        return send({ kind: 'config-key', file, key, value, ...(copy ? { copy: true } : {}) });
+        return send({
+            kind: 'config-key',
+            file,
+            key,
+            value,
+            ...(copy ? { copy: true } : {}),
+            ...(root === undefined ? {} : { root })
+        });
     }
 
     /**
@@ -587,15 +595,16 @@ export function createWrites(
     /**
      * Set one list option or one family of a defaults file as a whole, in the file `writeConfigKey`
      * writes in, and refuse, writing nothing, unless the value in force is still `base` (the value
-     * the caller read). A refusal and `copy` are as for `writeConfigKey`. The change is recorded in
-     * History and can be taken back.
+     * the caller read). A refusal, `copy` and `root` are as for `writeConfigKey`. The change is
+     * recorded in History and can be taken back.
      */
     async function writeConfigValue(
         file: string,
         key: string,
         value: unknown,
         base: unknown,
-        copy = false
+        copy = false,
+        root?: string
     ): Promise<WriteAnswer> {
         return send({
             kind: 'config-value',
@@ -603,18 +612,18 @@ export function createWrites(
             key,
             value,
             base,
-            ...(copy ? { copy: true } : {})
+            ...(copy ? { copy: true } : {}),
+            ...(root === undefined ? {} : { root })
         });
     }
 
     /**
-     * Take one option out of the file the user's value of it lives in (the open workspace file's
-     * `settings:`, or the primary hub's .oculus/config.yml for a key of the hub list), so oculus's
-     * value is in force again. A refusal is answered as for `writeConfigKey`. The change is
-     * recorded in History and can be taken back.
+     * Take one option out of the file `writeConfigKey` writes it in, so oculus's value is in force
+     * again. A refusal and `root` are as for `writeConfigKey`. The change is recorded in History
+     * and can be taken back.
      */
-    async function resetConfig(file: string, key: string): Promise<WriteAnswer> {
-        return send({ kind: 'config-reset', file, key });
+    async function resetConfig(file: string, key: string, root?: string): Promise<WriteAnswer> {
+        return send({ kind: 'config-reset', file, key, ...(root === undefined ? {} : { root }) });
     }
 
     /**

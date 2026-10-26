@@ -524,6 +524,7 @@ text:
             which_hub: The workspace has several hubs and none of those that take this is the primary hub, so the write names no hub to go to; pick the hub to write it in, or name a hub as primary in the workspace file
             no_primary: The workspace has no primary hub, so there is nowhere to keep this; name a hub as primary in the workspace file
             no_primary_doc: The workspace has no primary hub, so there is no hub document to show
+            primary_only: "{0} is not one of a hub's own settings, so it is not set for the hub {1}"
             restart_key: '{0} is set to another value in the workspace just opened; the running server keeps its own value, and a restart takes the new one'
         write_route:
             no_collection: 'no collection {0}'

@@ -26,9 +26,10 @@
 // deck group's slides, audit-mute.ts for the audit's mute list, rail.ts for the rail list,
 // folders.ts for the open workspace's folders, config-key.ts for one option of oculus's defaults
 // files, config-value.ts for one list or family of one and config-reset.ts for taking one out
-// again, each written in the open workspace file or the primary hub's settings file
-// (config-place.ts). What an importer of this module needs of them is re-exported here, so an
-// importer may name this module or the one that holds the function.
+// again, each written in the open workspace file or a hub's settings file, the primary's or the
+// one of the hub the write names (config-place.ts, config-write.ts). What an importer of this
+// module needs of them is re-exported here, so an importer may name this module or the one that
+// holds the function.
 
 import { json } from '@sveltejs/kit';
 import { join, resolve } from 'node:path';

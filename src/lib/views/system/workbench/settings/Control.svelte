@@ -8,14 +8,16 @@
     // family with no value in force, which says so. A row set one value at a time with no value in
     // force draws its control empty, and a value given there writes the key.
     //
-    // A box keeps its unsent text in the tab's instance state under the file and key
-    // (state/system/config/typed.ts), writes it on Enter and on leaving the box, and drops it on
-    // Escape, and the save key on the tab (Cmd+S, Ctrl+S off macOS) and the Save of a close
-    // question write it too. The text is kept while the write is refused, so the reader mends it; a
-    // write that is accepted, or needs none, drops it. A pick or a toggle is written as it is made.
-    // While a write is out the control shows the value sent.
+    // A box keeps its unsent text in the tab's instance state under the row's slot, its file and
+    // key and the hub chosen on it when that is not the primary (state/system/config/typed.ts), so
+    // a text typed with one hub chosen is drawn again only with that hub chosen. It writes the text
+    // on Enter and on leaving the box, and drops it on Escape, and the save key on the tab (Cmd+S,
+    // Ctrl+S off macOS) and the Save of a close question write it too. The text is kept while the
+    // write is refused, so the reader mends it; a write that is accepted, or needs none, drops it.
+    // A pick or a toggle is written as it is made. While a write is out the control shows the value
+    // sent.
 
-    import { drawsEditor } from '$lib/state/system/config/editors/slots';
+    import { drawsEditor, slotOf } from '$lib/state/system/config/editors/slots';
     import {
         controlOf,
         readField,
@@ -67,18 +69,18 @@
     });
 
     /** The text being typed in the box, or undefined while it shows the value. */
-    const typed = $derived(typedText(instanceState(id), row.file, row.key));
+    const typed = $derived(typedText(instanceState(id), slotOf(row)));
 
     /** The text a write is out for, so Enter and the blur that follows it write once. */
     let settling: string | null = null;
 
     function type(next: string): void {
         writer.clear(row);
-        setInstanceState(id, withTypedText(instanceState(id), row.file, row.key, next));
+        setInstanceState(id, withTypedText(instanceState(id), slotOf(row), next));
     }
 
     function forget(): void {
-        setInstanceState(id, withTypedText(instanceState(id), row.file, row.key, null));
+        setInstanceState(id, withTypedText(instanceState(id), slotOf(row), null));
     }
 
     /** Write the typed text; whether the write was taken. */

@@ -4,9 +4,9 @@
 // config and the apps, and the file browser's listings of hub folders. The lists the merged
 // configuration alone holds are read through `configItems` of the options catalog's module, which
 // the server's write checks read as well, so the page and the server cannot disagree on them. The
-// domains, the clusters and the people are the keys of the primary hub's records (`hubRecords`),
-// each person drawn by their name, since a setting such as `self` names a record of the primary hub
-// by the key its file gives it.
+// domains, the clusters and the people are the keys of the records of the hub the lists are built
+// for (`hubRecords`), the primary's or a hub chosen on a Settings row, each person drawn by their
+// name, since a setting such as `self` names a record of that hub by the key its file gives it.
 //
 // A list that is not there yet answers `loading` (no snapshot, no usage payload, a listing in
 // flight) and one that could not be read answers `failed` with the reason, so a control says
@@ -47,7 +47,7 @@ export type ListInputs = {
     config: Record<string, unknown>;
     /** The snapshot's entities the lists read, or null before the first snapshot. */
     portfolio: {
-        /** The name of the primary hub, whose records a setting names; null for none. */
+        /** The name of the hub the lists are built for, whose records a setting names, or null. */
         primary: string | null;
         domains: Record<string, unknown>;
         resources: Record<string, unknown>;
@@ -112,8 +112,8 @@ function groupsOf(items: { id: string; group: string }[]): ReadonlyMap<string, s
 }
 
 /**
- * The people `own` of the primary hub, by key, each with the words its item is drawn under: the
- * person's name, or the key for an empty name. An item whose label equals another
+ * The people `own` of the hub the lists are built for, by key, each with the words its item is
+ * drawn under: the person's name, or the key for an empty name. An item whose label equals another
  * item's label is followed by its key, and this is repeated until no new item is keyed, since a
  * keyed label can equal another item's words; labels then differ unless two keys themselves read
  * as words followed by a key.

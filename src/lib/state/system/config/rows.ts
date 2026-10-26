@@ -3,22 +3,25 @@
 // drawn with is the entry's.
 //
 // A row shows the value in force, read from the merged configuration the page holds (oculus's
-// defaults file, then the primary hub's settings file, then the open workspace file's `settings:`),
-// and its default is the defaults file's value (the entry's `default`, which the options reader
-// fills from that file). It is Modified when the two differ by deep equality, a list item by item
-// and a family key by key. A row is `missing` when no layer gives the key a value, and `set`
-// otherwise. A value its control cannot show (a toggle holding "yes", a number holding "20" as
-// text) is kept as the layers have it and flagged `mismatch`, for the view to word. A word outside
-// the list a choice offers is not a mismatch: the lists come from the portfolio and the page, so
-// the view marks it where the list is known (editors/fields.ts).
+// defaults file, then the settings file of the hub the row reads, then the open workspace file's
+// `settings:`), and its default is the defaults file's value (the entry's `default`, which the
+// options reader fills from that file, as that hub's merge left it). It is Modified when the two
+// differ by deep equality, a list item by item and a family key by key. A row is `missing` when no
+// layer gives the key a value, and `set` otherwise. A value its control cannot show (a toggle
+// holding "yes", a number holding "20" as text) is kept as the layers have it and flagged
+// `mismatch`, for the view to word. A word outside the list a choice offers is not a mismatch: the
+// lists come from the portfolio and the page, so the view marks it where the list is known
+// (editors/fields.ts).
 //
-// The user's value of an option lives in one file, the row's place: the primary hub's settings
-// file, `.oculus/config.yml`, for a key of the hub list (data/helpers/hub-names.ts), the open
-// workspace file's `settings:` map for any other. The row says whether that file holds the key
-// (`own`, which is what Reset takes out) and the line of the key's name there. The file is parsed
-// once with `yaml`, and each key path is walked through the parsed map's own keys, so a segment
-// named like an object member (`__proto__`, `constructor`) reads the file's key or nothing; the
-// value in force is walked the same way through the merged configuration's own keys.
+// The user's value of an option lives in one file, the row's place: a hub's settings file,
+// `.oculus/config.yml`, for a key of the hub list (data/helpers/hub-names.ts), which is the hub the
+// row names for a key each hub's own file is read for and the primary otherwise
+// (view/hub-settings.svelte.ts), and the open workspace file's `settings:` map for any other. The
+// row says whether that file holds the key (`own`, which is what Reset takes out) and the line of
+// the key's name there. The file is parsed once with `yaml`, and each key path is walked through
+// the parsed map's own keys, so a segment named like an object member (`__proto__`, `constructor`)
+// reads the file's key or nothing; the value in force is walked the same way through the merged
+// configuration's own keys.
 //
 // The machine-local file's rows are made from the catalog alone, and its text is never a parameter.
 // Every sentence is a message (messages.ts) for the view to word; nothing here holds one.
@@ -62,11 +65,11 @@ export type RowBase = {
 };
 
 /**
- * The file a row's user value lives in: the primary hub's settings file (`hub`) or the open
- * workspace file (`workspace`). `root` and `path` are the served root and the path the file is read
- * and opened at, the root `PRIMARY_ROOT` for the hub's file; `root` is null when no folder of the
- * workspace serves the workspace file, and `path` null for the unsaved workspace, which has no
- * file. `present` says whether the file is there.
+ * The file a row's user value lives in: a hub's settings file (`hub`) or the open workspace file
+ * (`workspace`). `root` and `path` are the served root and the path the file is read and opened at,
+ * the root `PRIMARY_ROOT` for the primary's settings file and the hub's name for another hub's;
+ * `root` is null when no folder of the workspace serves the workspace file, and `path` null for the
+ * unsaved workspace, which has no file. `present` says whether the file is there.
  */
 type UserPlace = {
     layer: 'hub' | 'workspace';
@@ -103,6 +106,31 @@ export type ConfigRow = RowBase & {
      */
     ordered: boolean;
     place: UserPlace;
+    /**
+     * The hub a write of the row names (`root`): a hub other than the primary chosen on a row of a
+     * key each hub's own file is read for, or the one hub of a workspace whose hub is not the
+     * primary. Undefined for the primary's own value, which a write names no hub for.
+     */
+    hub?: string;
+    /**
+     * The hub the row's typed text, editor draft and write state are kept under: the hub chosen
+     * when it is not the primary in a workspace of more than one hub. Undefined otherwise, when
+     * they are kept under the file and key alone.
+     */
+    slot?: string;
+    /**
+     * The hubs the row offers to pick in a workspace of more than one hub, the primary first, with
+     * the one chosen, none while no hub is chosen; undefined on a row that offers no choice.
+     */
+    choice?: { offered: string[]; chosen: string | undefined };
+    /** Why the row writes nothing: no hub is picked, or the chosen hub's settings are not read. */
+    blocked?: Message;
+    /**
+     * Set while the settings of the hub chosen on the row are being read or could not be read: the
+     * row's value, default and line are not known, it draws none of them and no control, only why
+     * (`blocked`), and its place is that hub's settings file.
+     */
+    unread?: true;
 };
 
 /**
@@ -178,6 +206,17 @@ export type FileResult = {
 export function placeOf(row: ConfigRow): { root: string; file: string } | null {
     const { root, path } = row.place;
     return root === null || path === null ? null : { root, file: path };
+}
+
+/**
+ * The name a row's user file is shown under: its path, after the hub's name for the settings file
+ * of a hub other than the primary, so two hubs' `.oculus/config.yml` are told apart. Null for the
+ * unsaved workspace, which has no file.
+ */
+export function placeName(row: ConfigRow): string | null {
+    const { path } = row.place;
+    if (path === null) return null;
+    return row.hub === undefined || row.place.layer !== 'hub' ? path : `${row.hub}/${path}`;
 }
 
 /**
@@ -329,16 +368,17 @@ function parsed(
 function readUserFile(
     place: UserPlace,
     text: FileText,
-    prefix: string
+    prefix: string,
+    named = place.path ?? ''
 ): { read: ReadFile; result: UserFileResult } {
     const path = place.path ?? '';
     if (!place.present) {
         return {
             read: { place, parsed: null, prefix },
-            result: { path, present: false, status: 'rows', said: message('hubFileAbsent', path) }
+            result: { path, present: false, status: 'rows', said: message('hubFileAbsent', named) }
         };
     }
-    const made = parsed(path, text);
+    const made = parsed(named, text);
     if ('ok' in made) {
         return {
             read: { place, parsed: made.ok, prefix },
@@ -354,27 +394,35 @@ function readUserFile(
 /** The text of a file that is not read: nothing, with nothing to say. */
 const NO_TEXT: FileText = { text: '', truncated: false, error: '', loading: false };
 
-/** The user's two files of the rows: the primary hub's settings file and the workspace file. */
+/**
+ * The user's two files of the rows: a hub's settings file (the primary's, or the one of the hub
+ * `fileRows` names) and the workspace file.
+ */
 export type UserFiles = { hubFile?: HubFile; workspace: WorkspaceText };
 
 /**
  * The rows of one defaults file, in catalog order, over the merged configuration (`config`) and the
  * user's files. With no primary hub (`hubFile` not given) a key of the hub list has no file; with
  * the unsaved workspace (`workspace` null) no other key has one, and a write of it is refused.
+ * `hub` names the hub whose settings file `hubFile` is when it is not the primary: the rows of a
+ * key of the hub list are then that hub's, opened in its root, and a sentence about the file names
+ * the hub with it.
  */
 export function fileRows(
     file: string,
     entries: Record<string, CatalogEntry>,
     config: Record<string, unknown>,
-    user: UserFiles
+    user: UserFiles,
+    hub?: string
 ): FileResult {
     const hubPlace: UserPlace = {
         layer: 'hub',
-        root: user.hubFile === undefined ? null : PRIMARY_ROOT,
+        root: user.hubFile === undefined ? null : (hub ?? PRIMARY_ROOT),
         path: HUB_FILE,
         present: user.hubFile?.present === true
     };
-    const hubRead = readUserFile(hubPlace, user.hubFile?.text ?? NO_TEXT, '');
+    const named = hub === undefined ? HUB_FILE : `${hub}/${HUB_FILE}`;
+    const hubRead = readUserFile(hubPlace, user.hubFile?.text ?? NO_TEXT, '', named);
     const open = user.workspace;
     const workspacePlace: UserPlace = {
         layer: 'workspace',

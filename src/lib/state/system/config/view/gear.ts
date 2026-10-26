@@ -1,6 +1,6 @@
 // Layer 2, client state. What the gear of a Settings item offers. Reset Setting takes the user's
-// value of an option out of the file it lives in (the open workspace file, or the primary hub's
-// settings file for a key of the hub list), so the defaults file's value is in force again: it is
+// value of an option out of the file it lives in (the open workspace file, or, for a hub's own key,
+// the settings file of the hub chosen), so the defaults file's value is in force again: it is
 // offered on every row whose file holds the key, a list or a family as much as a single value.
 // Copy Setting ID is offered on a row of a defaults file and on a setting an app declares, which
 // alone have a key to copy. A setting an app declares is reset by writing its default.
