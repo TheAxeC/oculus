@@ -3,7 +3,7 @@
     // board, drawn with the command center's parts: its box, its two-column flow and its groups are
     // ui/display/ticker/TickerGroup.svelte's, with a purple left edge where the command center's is
     // red, and its heading is the row the command center and the tasks section draw theirs with
-    // (views/shared/card/FoldHead.svelte): the fold control, named "Fold Career" or "Unfold
+    // (views/shared/card/heads/FoldHead.svelte): the fold control, named "Fold Career" or "Unfold
     // Career", the banner's glyph and the word Career, and at the row's end the Edit control.
     //
     // Its groups are NEXT, GOAL, SITUATION, ORDER OF WORK and TRACK RECORD, in that order, each
@@ -21,7 +21,8 @@
     // does not hold it, the board's outcome line says so, naming the file. Such a row carries Edit
     // under the pointer, which opens the banner's editor on that section, and one Open link per web
     // address its words or tail hold, which opens the address in a new browser tab. A TRACK RECORD
-    // role row opens the first board of `boards:` that takes the role, and is plain when none does;
+    // role row opens the track record's board for its role, the projects its tail counts, one tab
+    // per role, so a second press activates the open tab (views/boards/projects/Projects.svelte);
     // Funding obtained opens the Funding view; these rows carry no button.
     //
     // The Edit control opens the editor of the career file's sections, built from the file's own
@@ -43,13 +44,12 @@
     import Confirm from '$lib/ui/controls/Confirm.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import TickerGroup, { box } from '$lib/ui/display/ticker/TickerGroup.svelte';
-    import FoldHead from '../../../shared/card/FoldHead.svelte';
+    import FoldHead from '../../../shared/card/heads/FoldHead.svelte';
     import EntryEditor from '../../../shared/forms/entry/edit/EntryEditor.svelte';
     import { pageFile } from '../../../shared/forms/entry/edit/page-file';
     import { openFound } from '../../../shared/forms/entry-file';
     import { careerRows, EDIT, linkOf } from './career-rows';
-    import { roleBoard, trackRecord } from '$lib/state/boards/career';
-    import { boardsGroup } from '$lib/state/boards/board';
+    import { trackRecord } from '$lib/state/boards/career';
     import { CAREER } from '$lib/state/forms/page-entry';
     import { findCareer } from '$lib/state/sessions/source/draft-entry';
     import { viewSourceFile } from '$lib/state/sessions/view-source';
@@ -64,7 +64,6 @@
         fs: { primary },
         layout: { openView },
         pages: { pageNamed },
-        registry: { viewFor },
         selectors: { configMap, registryKey }
     } = client;
 
@@ -83,11 +82,6 @@
     let { instance, now, open, ontoggle, onsaid }: Props = $props();
 
     const config = $derived(configMap());
-    /**
-     * The view group the board views are registered in, the page of the rail entry carrying
-     * `project_boards`, and no group when none carries it (routes/views.ts `registerBoards`).
-     */
-    const boardGroup = $derived(boardsGroup(config) ?? '');
     const snapshot = $derived(portfolio());
     const career = $derived(snapshot?.entities.career ?? null);
 
@@ -107,8 +101,6 @@
                   now,
                   record: trackRecord(snapshot, config, vocabOf),
                   editable: page !== null,
-                  boardOf: (role) =>
-                      roleBoard(config, role, (view) => viewFor(view)?.group === boardGroup),
                   funding: registryKey('funding')
               })
     );
@@ -157,13 +149,14 @@
 
     /**
      * A press on a row: the career file opened at the row's section, its sentence said when the
-     * file does not hold it; a role's board or the Funding view for a Track record row.
+     * file does not hold it; the role's track record board or the Funding view for a Track record
+     * row.
      */
     async function pick(id: string): Promise<void> {
         const target = rows?.targets[id];
         if (target === undefined) return;
         if (target.kind === 'view') {
-            openView(target.view);
+            openView(target.view, target.state);
             return;
         }
         if (careerFile === null) return;

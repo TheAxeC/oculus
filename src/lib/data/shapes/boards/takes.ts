@@ -3,17 +3,22 @@
 // list), `stages:`, `chips:` and `forms:` (word blocks, words.ts beside this file), `hub:` (a hub's
 // root) and `match:` (a manifest field to a list of values); a project is on the board when it
 // meets every key the board names. `role:` is applied only when the workspace names a `self`,
-// since without one no project has a role. The boards, the page's choice of the board a project
-// opens on, a board's offer of New project (state/boards/board/new-project.ts) and the audit's
-// finding of a project no board takes all read a board through this module, so a board takes the
-// same projects everywhere. A project's stage, chips, form and role are held to the words of its
-// own hub when the context gives them (`wordsOf`), and to the context's config otherwise.
+// since without one no project has a role. The track record's board (state/boards/board/presets.ts
+// `recordPreset`) is read through the same rule with one key no row of `boards:` names, `record`:
+// it takes a project only when its category is a record row of `categories:` and the user's role
+// on it is the board's role, so with no `self` it takes none. The boards, the page's choice of the
+// board a project opens on, a board's offer of New project (state/boards/board/new-project.ts) and
+// the audit's finding of a project no board takes all read a board through this module, so a
+// board takes the same projects everywhere. A project's stage, chips, form, category and role are
+// held to the words of its own hub when the context gives them (`wordsOf`), and to the context's
+// config otherwise.
 
 import type { Id, Project } from '../../model/index.ts';
 import { fields, isMap } from '../../helpers/guards.ts';
 import { keyOf, rootOf } from '../../helpers/hub-names.ts';
 import { readAs } from '../shapes.ts';
 import { blockHolds, blockOf, wordList, wordsShape, type WordBlock } from './words.ts';
+import { categoriesOf, categoryOf } from './categories.ts';
 import { roleOf, rolesOf, type PeopleOf, type Role } from './roles.ts';
 
 /** What one board takes, read out of its row; a key the row leaves out is null. */
@@ -25,6 +30,12 @@ export type BoardRule = {
     forms: WordBlock | null;
     hub: string | null;
     match: Record<string, string[]> | null;
+    /**
+     * The keys of the record rows of `categories:` a project's category must be one of, with the
+     * user's role on it one of `roles`, which no project has while no `self` is named: the take of
+     * the track record's board. No row of `boards:` names it, so a board read from one holds null.
+     */
+    record: string[] | null;
 };
 
 /** A text or a list of texts in a row, or null when the row leaves the key out. */
@@ -52,7 +63,8 @@ export function boardRuleOf(row: Record<string, unknown>): BoardRule {
         chips: Object.hasOwn(row, 'chips') ? blockOf(row.chips) : null,
         forms: Object.hasOwn(row, 'forms') ? blockOf(row.forms) : null,
         hub,
-        match: matchOf(row.match)
+        match: matchOf(row.match),
+        record: null
     };
 }
 
@@ -132,7 +144,12 @@ export function boardTakes(rule: BoardRule, project: Project, context: TakeConte
     const { config, roles } = takeWordsOf(context, rootOf(project));
     if (rule.tiers !== null && (project.tier === undefined || !rule.tiers.includes(project.tier)))
         return false;
-    if (rule.roles !== null && context.self.size > 0) {
+    if (rule.record !== null) {
+        const category = categoryOf(project, categoriesOf(config), config)?.key;
+        if (category === undefined || !rule.record.includes(category)) return false;
+        const role = projectRole(project, roles, context.self);
+        if (role === undefined || !(rule.roles ?? []).includes(role.key)) return false;
+    } else if (rule.roles !== null && context.self.size > 0) {
         const role = projectRole(project, roles, context.self);
         if (role === undefined || !rule.roles.includes(role.key)) return false;
     }

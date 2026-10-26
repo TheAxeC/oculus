@@ -275,6 +275,7 @@ describe('the collection a flag or a registry names', () => {
         venue_themes: [],
         data_themes: [],
         collections,
+        list: { file: '', value: collections },
         words: {}
     });
 

@@ -28,10 +28,11 @@
     // CareerPanel, CommandCenter, FocusFilter, Lanes, QuickAdd and Tasks), which are this view's
     // own and which nothing else may import. What is left here is the composition, the
     // awaiting-a-response box, and the one line that says what the last write answered, or what a
-    // press on a career row could not open. The career banner, the command center and the tasks
-    // section fold the same way, each by a control on its heading, and which of them is closed is
-    // kept in the tab's instance state, so a reload and a move of the tab keep it; all three start
-    // open.
+    // press on a career row could not open. The career banner, the command center, the tasks
+    // section, each cluster or lane section of the lanes and the band fold the same way, each by a
+    // control on its heading, and which of them is closed is kept in the tab's instance state
+    // under its key (state/boards/focus.ts `FoldKey`), so a reload and a move of the tab keep it;
+    // all of them start open.
     //
     // The header holds the Filter action (FocusFilter.svelte): Mine only, the Role, Tier and Hub
     // checklists, kept in the tab's instance state beside the folds. The page works the filter out
@@ -206,7 +207,7 @@
         openView('project', recordState(id, project === undefined ? keyOf(id) : labelOf(project)));
     }
 
-    /** Open or close one folded section, keeping the rest of the tab's state. */
+    /** Open or close one folded section or group, keeping the rest of the tab's state. */
     function fold(key: FoldKey): void {
         setInstanceState(instance.id, foldToggled(folds, key));
     }
@@ -301,7 +302,13 @@
                 {/if}
             {:else if section === 'band'}
                 {#if page !== null}
-                    <Band {now} cards={page.sections.band} hidden={page.hidden.band} />
+                    <Band
+                        {now}
+                        cards={page.sections.band}
+                        hidden={page.hidden.band}
+                        isOpen={(key: FoldKey) => foldOpen(folds, key)}
+                        ontoggle={fold}
+                    />
                 {/if}
             {:else if section === 'lanes'}
                 {#if board.length === 0 || projects.length === 0}
@@ -315,6 +322,8 @@
                     {known}
                     onproject={openProject}
                     onsaid={(text: string) => (said = text)}
+                    isOpen={(key: FoldKey) => foldOpen(folds, key)}
+                    ontoggle={fold}
                 />
             {/if}
         {/each}

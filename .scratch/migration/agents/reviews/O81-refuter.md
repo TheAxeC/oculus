@@ -391,3 +391,13 @@ none.
 - The first-run programs on the unchanged tree. `before.case.ts` imports exports the step removed, and the base copy has no setup to run it in. The first refutation compared its saved outputs with the report.
 
 Usage: ad19dc3160a25fdc1, claude-opus-5-5, 228877 tokens, 46 tool uses, 16 min 56 s
+
+## Closed
+
+- First run, Spec 1 (the Venues line of the Doc text placed after the **Data.** bullet's first line): closed in repair round 1, item 1; the round's review finds every quoted line an exact match and the Venues bullet placed after line 311.
+- First run, Spec 2 (the files O79 also changes, and the size of `hub-names.ts` with both steps on main): no change to O81; O81 lands first, and the split of `hub-names.ts` falls to O79's landing, booked in O79's dispatch entry.
+- First run, Standards 1 (`type VocabOf` repeating `WordsOf`): closed in repair round 1, item 2.
+- First run, Standards 2 (no table of edits to existing assertions): closed in repair round 1, item 3.
+- First run, Standards 3 (the verify list run three times) and Standards 4 (the history-word grep pattern): no change to the step; the round ran the list once, and the reviewer's grep of the added lines with the full pattern finds no history word.
+- First run, Behaviour 1 (the `list` field on the `config` channel, choice Z1032): closed in repair round 1, item 4.
+- Round 1, Standards 1 (five red files rerun in one run, not each alone): no change to the step, as the reviewer's verdict says; the reviewer's own run of the five passed 84 of 84.

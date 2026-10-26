@@ -1,10 +1,17 @@
-// Layer 2, client state. Pure venue filtering, project joins, tones and conference timing.
-// The view receives ready-to-draw groups and month columns, so its markup contains no data rules.
+// Layer 2, client state. Pure venue filtering, project joins, tones and conference timing, and the
+// sections of the Venues view, one per row of `venue_categories` of config/catalogs/vocab.yml and
+// one for the venues no row names. The view receives ready-to-draw sections and month columns, so
+// its markup contains no data rules and names no category.
 
 import { z } from 'zod';
 import type { Project, Venue } from '../../../data/model/index.ts';
 import { categoriesBy, isArchival } from '../../../data/shapes/boards/categories.ts';
-import { fieldItemsShape, readAs, searchRevealShape } from '../../../data/shapes/shapes.ts';
+import {
+    fieldItemsShape,
+    readAs,
+    rowsShape,
+    searchRevealShape
+} from '../../../data/shapes/shapes.ts';
 import { hasWord, recordWords, type WordsOf } from '../../../data/shapes/vocab-keys.ts';
 
 export type VenueUse = { projects: Project[]; concentrated: boolean };
@@ -22,8 +29,8 @@ export type VenueTimeline = { months: TimelineMonth[]; next: NextDeadline[]; cou
 export type VenuesState = {
     search: string;
     off: string[];
-    journalsOpen: boolean;
-    conferencesOpen: boolean;
+    /** The keys of the folded sections, the empty key for the "other" section. */
+    folded: string[];
     reveal?: string;
 };
 
@@ -158,8 +165,7 @@ export function venueSearch(venues: Venue[], words: string | string[]): Venue[] 
 /** The fields a Venues instance keeps, each read as absent when wrong. */
 const venuesStateShape = searchRevealShape.extend({
     off: fieldItemsShape,
-    journalsOpen: z.boolean().catch(true),
-    conferencesOpen: z.boolean().catch(true)
+    folded: fieldItemsShape
 });
 
 /** Saved state of one Venues instance, with defaults for malformed or absent fields. */
@@ -168,8 +174,7 @@ export function parseVenuesState(raw: unknown): VenuesState {
     const state: VenuesState = {
         search: held?.search ?? '',
         off: held?.off ?? [],
-        journalsOpen: held?.journalsOpen ?? true,
-        conferencesOpen: held?.conferencesOpen ?? true
+        folded: held?.folded ?? []
     };
     if (held?.reveal !== undefined) state.reveal = held.reveal;
     return state;
@@ -177,10 +182,50 @@ export function parseVenuesState(raw: unknown): VenuesState {
 
 export type { Project, Venue } from '../../../data/model/index.ts';
 
-/** The journals and the conferences among the venues given, each in the order given. */
-export function venuesByCategory(venues: Venue[]): { journals: Venue[]; conferences: Venue[] } {
-    return {
-        journals: venues.filter((venue) => venue.category === 'journal'),
-        conferences: venues.filter((venue) => venue.category === 'conference')
-    };
+/**
+ * One section of the Venues view: a row of `venue_categories` with the venues filed under it, or
+ * the "other" section, whose key is the empty text, of the venues no row names.
+ */
+export type VenueSection = { key: string; label: string; ribbon: boolean; venues: Venue[] };
+
+/**
+ * A row of `venue_categories` as the sections read it: a text key of at least one character, so
+ * none is the "other" section's, its label, the key when it names none, and its ribbon flag. The
+ * config check words a row of another form (data/shapes/catalog-files/vocab.ts).
+ */
+const sectionRowShape = z
+    .looseObject({
+        key: z.string().min(1),
+        label: z.unknown().optional(),
+        ribbon: z.unknown().optional()
+    })
+    .transform((row) => ({
+        key: row.key,
+        label: typeof row.label === 'string' && row.label !== '' ? row.label : row.key,
+        ribbon: row.ribbon === true
+    }));
+
+/**
+ * The sections of the Venues view over the venues given: one per row of `venue_categories` of the
+ * words given (the union of every hub's, state/shared/words/tones.ts `vocabOf`), in the list's
+ * order, each key once with the first row naming it, holding the venues whose `category` is its
+ * key; then the "other" section of the venues whose category no row names, none included. A value
+ * of the list that is no row reads as no section. Each section holds its venues in the order
+ * given, and a section that holds none is left out.
+ */
+export function venueSections(
+    venues: readonly Venue[],
+    words: Record<string, unknown>
+): VenueSection[] {
+    const rows = readAs(rowsShape(sectionRowShape), words.venue_categories) ?? [];
+    const named = new Set<string>();
+    const sections: VenueSection[] = [];
+    for (const row of rows) {
+        if (named.has(row.key)) continue;
+        named.add(row.key);
+        sections.push({ ...row, venues: venues.filter((venue) => venue.category === row.key) });
+    }
+    const other = venues.filter((venue) => !named.has(venue.category ?? ''));
+    sections.push({ key: '', label: '', ribbon: false, venues: other });
+    return sections.filter((section) => section.venues.length > 0);
 }

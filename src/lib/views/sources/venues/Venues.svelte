@@ -11,11 +11,17 @@
 </script>
 
 <script lang="ts">
-    // Layer 3, view. The venue catalogue: theme facets, journal cards and conference timing.
-    // Registry entities provide the display model while the matching collection provides editing.
+    // Layer 3, view. The venue catalogue: theme facets, and the venues' cards in one section per row
+    // of `venue_categories` that holds one, in the list's order, then an "other" section for the
+    // venues whose category no row names (state/sources/registries/venues.ts `venueSections`).
+    // Each section is headed by the heading every group of cards has
+    // (views/shared/card/heads/GroupHead.svelte) with its count, and folds by its control, which
+    // the tab keeps; a section whose row carries `ribbon: true` draws the month ribbon of its
+    // venues' deadlines and meetings over its cards, and a folded section draws neither. Registry
+    // entities provide the display model while the matching collection provides editing.
     //
     // Over a wallpaper each card and each month of the ribbon is its own surface; the head, the
-    // two disclosures and the ribbon's lines are read off a `Surface`.
+    // section headings and the ribbon's lines are read off a `Surface`.
 
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
@@ -24,7 +30,7 @@
     import Tag from '$lib/ui/controls/Tag.svelte';
     import Tooltip from '$lib/ui/menu/Tooltip.svelte';
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
-    import Disclosure from '$lib/ui/tree/Disclosure.svelte';
+    import GroupHead from '$lib/views/shared/card/heads/GroupHead.svelte';
     import RegistryTools from '$lib/views/shared/forms/registry/RegistryTools.svelte';
     import { registryFile } from '$lib/views/shared/forms/registry/registry-file.svelte';
     import RegistryHead from '$lib/views/shared/forms/registry/RegistryHead.svelte';
@@ -37,8 +43,8 @@
         parseVenuesState,
         realProjects,
         venueSearch,
+        venueSections,
         venueUsers,
-        venuesByCategory,
         type VenuesState
     } from '$lib/state/sources/registries/venues';
     import { cardCursor, storedState } from '$lib/state/workbench/layout/instance';
@@ -64,13 +70,19 @@
     const labelOf = $derived(themeLabeller(hubVocabs(), 'venue_themes'));
     const facets = $derived(themeFacets(allVenues, labelOf));
     const shown = $derived(applyThemeFacets(venueSearch(allVenues, held.search), held.off));
-    const byCategory = $derived(venuesByCategory(shown));
-    const journals = $derived(byCategory.journals);
-    const conferences = $derived(byCategory.conferences);
+    const sections = $derived(venueSections(shown, vocabOf()));
     const todayMonth = new Date().getMonth() + 1;
 
     function write(next: Partial<VenuesState>): void {
         setInstanceState(instance.id, storedState({ ...held, ...next }));
+    }
+
+    /** Fold a section, or unfold it, by its category's key. */
+    function toggleFold(key: string): void {
+        const folded = held.folded.includes(key)
+            ? held.folded.filter((one) => one !== key)
+            : [...held.folded, key];
+        write({ folded });
     }
 </script>
 
@@ -110,19 +122,27 @@
         {#if allVenues.length === 0}
             <Empty message={t('venues.empty')} />
         {:else}
-            {#if journals.length > 0}
-                <section>
-                    <Surface inline>
-                        <Disclosure
-                            count={journals.length}
-                            label={t('venues.journals')}
-                            expanded={held.journalsOpen}
-                            onclick={() => write({ journalsOpen: !held.journalsOpen })}
+            {#each sections as section (section.key)}
+                {@const words = section.key === '' ? t('venues.section_other') : section.label}
+                {@const open = !held.folded.includes(section.key)}
+                <section data-category={section.key}>
+                    <Surface>
+                        <GroupHead
+                            label={words}
+                            name={words}
+                            {open}
+                            ontoggle={() => toggleFold(section.key)}
+                            count={section.venues.length}
                         />
                     </Surface>
-                    {#if held.journalsOpen}
+                    {#if open}
+                        {#if section.ribbon}
+                            <div class="timeline">
+                                <Ribbon venues={section.venues} {todayMonth} />
+                            </div>
+                        {/if}
                         <div class="cards">
-                            {#each journals as venue (venue.id)}
+                            {#each section.venues as venue (venue.id)}
                                 {@const use = venueUsers(venue, allProjects, configMap(), vocabOf)}
                                 <Reveal
                                     id={venue.id}
@@ -146,48 +166,7 @@
                         </div>
                     {/if}
                 </section>
-            {/if}
-
-            {#if conferences.length > 0}
-                <section>
-                    <Surface inline>
-                        <Disclosure
-                            count={conferences.length}
-                            label={t('venues.conferences')}
-                            expanded={held.conferencesOpen}
-                            onclick={() => write({ conferencesOpen: !held.conferencesOpen })}
-                        />
-                    </Surface>
-                    {#if held.conferencesOpen}
-                        <div class="timeline">
-                            <Ribbon venues={conferences} {todayMonth} />
-                        </div>
-                        <div class="cards">
-                            {#each conferences as venue (venue.id)}
-                                {@const use = venueUsers(venue, allProjects, configMap(), vocabOf)}
-                                <Reveal
-                                    id={venue.id}
-                                    wanted={held.reveal}
-                                    onrevealed={() => write({ reveal: '' })}
-                                >
-                                    <VenueCard
-                                        {venue}
-                                        cursor={cursor === venue.id}
-                                        projects={use.projects}
-                                        concentrated={use.concentrated}
-                                        labels={labelOf(venue.root)}
-                                        entry={file.entryOf(venue.id)}
-                                        schema={file.schemaOf(venue.id)}
-                                        file={file.sourceOf(venue.id)}
-                                        fault={file.faultOf(venue.id)}
-                                        onsaid={file.say}
-                                    />
-                                </Reveal>
-                            {/each}
-                        </div>
-                    {/if}
-                </section>
-            {/if}
+            {/each}
         {/if}
     </div>
 </Pane>

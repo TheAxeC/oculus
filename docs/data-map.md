@@ -114,7 +114,7 @@ categories:               # the categories a project is filed under, each with i
 rail_color:               # the colour of a project board's rail count (the hub's value)
 leads_fit:                # the fit colours of the Position Leads (by word)
 data_access:              # the colour of a dataset's access chip (by word)
-venue_categories:         # the categories of venues, in order (whole)
+venue_categories:         # the categories of venues, rows { key, label, ribbon? }, in order (whole)
 venue_tiers:              # the tiers of venues, in order (whole)
 radar_buckets:            # the buckets of Lit Watch, in order (whole)
 manifest_fields:          # the fields the hub adds to the form of its own projects (by row)

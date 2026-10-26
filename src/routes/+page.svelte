@@ -43,6 +43,7 @@
     import { provideSpelling } from '$lib/ui/controls/text/spelling';
     import { createTipIds, provideTipIds } from '$lib/ui/menu/tip-ids';
     import {
+        collectionRefusals,
         pageBoards,
         pushedBoards,
         pushedCollections,
@@ -108,17 +109,20 @@
     });
 
     // The views, the collection views one per key of the `collections:` option and the project
-    // board views one per key of `boards:`, which the load function shipped with the catalog. It
-    // runs here in the script body rather than on mount: the pane tabs and the catalogue draw what
-    // the registry holds on the first render, and a view registered after it would be missing from
-    // that frame. The write token goes in with them, so the first write and the socket's first
-    // subscription both carry it, and so does the configuration this page was built from, which the
-    // socket keeps until a newer push, and the page state the load read, which the first frame's
-    // arrangement and view states come from. The page data is read once and not tracked; untrack
-    // says so, and is what keeps the read out of any effect.
+    // board views one per key of `boards:`, which the load function shipped with the catalog. The
+    // findings of the collections and the boards left out because a view holds their key go to the
+    // registry, each source's apart, which the Findings view lists. It runs here in the script body
+    // rather than on mount: the pane tabs and the catalogue draw what the registry holds on the
+    // first render, and a view registered after it would be missing from that frame. The write
+    // token goes in with them, so the first write and the socket's first subscription both carry
+    // it, and so does the configuration this page was built from, which the socket keeps until a
+    // newer push, and the page state the load read, which the first frame's arrangement and view
+    // states come from. The page data is read once and not tracked; untrack says so, and is what
+    // keeps the read out of any effect.
     untrack(() => {
         registerAll(client.registry);
         registerCollections(client.registry, data.collections);
+        client.registry.refuse('collections', collectionRefusals(data.hubs, data.text));
         registerBoards(client.registry, pageBoards(data.boards, data.text, data.collections));
         setToken(data.token);
         pageState.install(data.pageState);
@@ -158,7 +162,13 @@
         // A push whose `collections:` is missing or malformed names no keys, and registering none
         // would close every collection tab on every page; the registry follows a real list only.
         const keys = pushedCollections(pushed?.config, pushed?.hubs ?? null);
-        if (keys !== null) untrack(() => registerCollections(client.registry, keys));
+        if (keys !== null) {
+            untrack(() => {
+                registerCollections(client.registry, keys);
+                const refused = collectionRefusals(pushed?.hubs ?? null, pushed?.text ?? {});
+                client.registry.refuse('collections', refused);
+            });
+        }
         // The boards follow the push the same way, a `boards:` that is no map naming none.
         const boards = pushedBoards(pushed);
         if (pushed === null || boards === null) return;

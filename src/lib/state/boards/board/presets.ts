@@ -6,7 +6,9 @@
 // data/shapes/boards/. A board over the records of several hubs reads each project under the words
 // of its own hub, and draws its sections, slices, facets and stage order from the union of every
 // hub's words. This module holds no table of boards: the board views the page registers are read
-// from the same rows (`boardViews`), each named and drawn by the words its row names.
+// from the same rows (`boardViews`), each named and drawn by the words its row names. The one board
+// no row names is the track record's (`recordPreset`), which a role row of the Career banner opens
+// for its role.
 
 import { z } from 'zod';
 import type { Finding, Id, Project, Resource, Venue } from '../../../data/model/index.ts';
@@ -15,7 +17,7 @@ import { boardsGroup } from '../../../data/sources/config/rail.ts';
 // `str` here is the shared `text`: a config value of the wrong type reads as the empty string.
 import { focusSetting, text as str } from '../../../data/helpers/guards.ts';
 import { readAs, rowsShape, wordShape } from '../../../data/shapes/shapes.ts';
-import { vocabKeys } from '../../../data/shapes/vocab-keys.ts';
+import { vocabKeys, type WordsOf } from '../../../data/shapes/vocab-keys.ts';
 import { categoriesOf, type Category } from '../../../data/shapes/boards/categories.ts';
 import { rolesOf, type Role } from '../../../data/shapes/boards/roles.ts';
 import {
@@ -457,23 +459,10 @@ function cardsOf(row: Record<string, unknown>): CardsMode {
     return str(row.cards) === 'grid' ? 'grid' : 'sections';
 }
 
-/**
- * The preset of one view id, read out of its row of `boards` in the merged config; a view id the
- * map does not hold is its first board. A config that holds no board gives a board that names no
- * key and so takes every project, with no columns to name. A label mode other than `full` is the
- * short handle. `vocab` gives the words of the records of a hub, and the union of every hub's
- * words for none (state/shared/words/tones.ts, `vocabOf`); without it every project is read by the
- * merged config. Each hub's words are read once per preset.
- */
-export function presetFor(
-    view: string,
-    config: Record<string, unknown> = {},
-    vocab: (hub?: string) => Record<string, unknown> = () => config
-): BoardPreset {
-    const rows = boardRows(config);
-    const [id, row] = rows.find(([one]) => one === view) ?? rows.at(0) ?? [view, {}];
+/** The words of each hub a preset reads projects by, each hub's read once per preset. */
+function wordsReader(vocab: WordsOf): (hub?: string) => BoardWords {
     const read = new Map<string | undefined, BoardWords>();
-    const words = (hub?: string): BoardWords => {
+    return (hub) => {
         const held = read.get(hub);
         if (held !== undefined) return held;
         const own = vocab(hub);
@@ -481,19 +470,92 @@ export function presetFor(
         read.set(hub, made);
         return made;
     };
+}
+
+/**
+ * What a board's row says of how its projects are drawn: its list columns, its label mode, other
+ * than `full` being the short handle, and its search placeholder.
+ */
+function drawnBy(row: Record<string, unknown>): Pick<BoardPreset, 'columns' | 'labels' | 'search'> {
+    return {
+        columns: readAs(columnsShape, row.columns) ?? [],
+        labels: str(row.label_mode) === 'full' ? 'full' : 'short',
+        search: str(row.search)
+    };
+}
+
+/**
+ * The preset of one view id, read out of its row of `boards` in the merged config; a view id the
+ * map does not hold is its first board. A config that holds no board gives a board that names no
+ * key and so takes every project, with no columns to name. `vocab` gives the words of the records
+ * of a hub, and the union of every hub's words for none (state/shared/words/tones.ts, `vocabOf`);
+ * without it every project is read by the merged config.
+ */
+export function presetFor(
+    view: string,
+    config: Record<string, unknown> = {},
+    vocab: WordsOf = () => config
+): BoardPreset {
+    const rows = boardRows(config);
+    const [id, row] = rows.find(([one]) => one === view) ?? rows.at(0) ?? [view, {}];
+    const words = wordsReader(vocab);
     const union = words();
     return {
         id,
         rule: boardRuleOf(row),
-        columns: readAs(columnsShape, row.columns) ?? [],
+        ...drawnBy(row),
         categories: union.categories,
         roles: union.roles,
         stageOrder: vocabKeys(union.config.stages),
-        labels: str(row.label_mode) === 'full' ? 'full' : 'short',
         cards: cardsOf(row),
         config,
-        words,
-        search: str(row.search)
+        words
+    };
+}
+
+/**
+ * The view id of the track record's board, the one tab a role row of the Career banner's Track
+ * record opens for its role (views/boards/focus/career/career-rows.ts `recordRows`).
+ */
+export const RECORD_VIEW = 'track_record';
+
+/**
+ * The preset of the track record's board of one role: the projects whose category is a row of
+ * `categories:` carrying `record: true` and on which the user's role is `role`, read with the
+ * functions the track record counts with (state/boards/career.ts `trackRecord`), so each section
+ * holds the count of its line. Its sections are the record rows of every hub's words, in their
+ * order. It draws its projects as the first board of `boards:` other than one keyed with its own
+ * id does, by that row's columns, label mode and search placeholder. A `role` of null, a tab opened
+ * for no role, takes no project.
+ */
+export function recordPreset(
+    role: string | null,
+    config: Record<string, unknown> = {},
+    vocab: WordsOf = () => config
+): BoardPreset {
+    const words = wordsReader(vocab);
+    const union = words();
+    const records = union.categories.filter((category) => category.record);
+    const [, row] = boardRows(config).find(([id]) => id !== RECORD_VIEW) ?? [RECORD_VIEW, {}];
+    return {
+        id: RECORD_VIEW,
+        rule: {
+            tiers: null,
+            roles: role === null ? [] : [role],
+            stages: null,
+            chips: null,
+            forms: null,
+            hub: null,
+            match: null,
+            record: records.map((category) => category.key)
+        },
+        ...drawnBy(row),
+        categories: records,
+        roles: union.roles,
+        stageOrder: vocabKeys(union.config.stages),
+        cards: 'sections',
+        config,
+        words
     };
 }
 

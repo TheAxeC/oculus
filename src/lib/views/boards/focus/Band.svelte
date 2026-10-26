@@ -11,7 +11,15 @@
     // The cards are the entries the Focus filter keeps, which the board hands it with how many
     // each column hides; a column that had cards before the filter is drawn with its count and
     // what it hides, even when the filter leaves it none.
+    //
+    // The band is headed by the heading every group of cards has
+    // (views/shared/card/heads/GroupHead.svelte) in the muted text colour, with the count of the
+    // cards it draws, and folds by its control. Its fold is the Focus tab's, under the key
+    // `groupFold` gives the band, so a reload and a move of the tab keep it. Folded, its columns
+    // are hidden until found and stay mounted, so the browser's find-in-page searches their text,
+    // and a match inside them fires `beforematch`, which unfolds the band.
 
+    import GroupHead from '$lib/views/shared/card/heads/GroupHead.svelte';
     import LaneHead from './lanes/LaneHead.svelte';
     import Surface from '$lib/ui/frame/Surface.svelte';
     import LinkedText from '$lib/ui/display/text/LinkedText.svelte';
@@ -19,6 +27,7 @@
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import RootChip from '$lib/views/shared/card/RootChip.svelte';
     import { daysUntil, firstSentence } from '$lib/state/boards/board';
+    import { groupFold, type FoldKey } from '$lib/state/boards/focus';
     import {
         bandHasCards,
         stageItemCount,
@@ -42,9 +51,26 @@
         cards: BandCards;
         /** How many cards the Focus filter hides from each column. */
         hidden: { funding: number; jobs: number; teaching: number };
+        /** Whether a fold of the Focus tab is open, and the press that turns it over. */
+        isOpen: (key: FoldKey) => boolean;
+        ontoggle: (key: FoldKey) => void;
     };
 
-    let { now, cards, hidden }: Props = $props();
+    let { now, cards, hidden, isOpen, ontoggle }: Props = $props();
+
+    /** The band's fold, and whether it is open. */
+    const fold = groupFold('band');
+    const open = $derived(isOpen(fold));
+
+    /** How many cards the band draws, over its three columns. */
+    const count = $derived(
+        stageItemCount(cards.funding) + cards.applications.length + cards.education.length
+    );
+
+    /** Unfold the band when it is folded, as a find-in-page match inside it asks. */
+    function unfold(): void {
+        if (!open) ontoggle(fold);
+    }
 
     /** How much of a card's note the band shows. */
     const NOTE = 110;
@@ -127,11 +153,17 @@
 {/snippet}
 
 {#if anything}
-    <details class="cluster" open>
-        <summary>
-            <Surface inline>{t('focus.cards_group')}</Surface>
-        </summary>
-        <div class="lanes">
+    <section>
+        <Surface>
+            <GroupHead
+                label={t('focus.cards_group')}
+                name={t('focus.cards_group')}
+                {open}
+                ontoggle={() => ontoggle(fold)}
+                {count}
+            />
+        </Surface>
+        <div class="lanes" hidden={open ? false : 'until-found'} onbeforematch={unfold}>
             {#if cards.funding.length > 0 || hidden.funding > 0}
                 <div class="lane" style={`--tone: var(--c-${tones.funding})`} data-surface>
                     <LaneHead
@@ -177,28 +209,20 @@
                 hidden.teaching
             )}
         </div>
-    </details>
+    </section>
 {/if}
 
 <style>
-    summary {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        font-size: var(--fs-xs);
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        color: var(--accent-txt, var(--accent));
-        cursor: pointer;
-    }
-
     /* The columns fill the pane's width in as many as it holds, and one in a pane narrower than a
-       column. */
+       column. They stand 4px under the heading while they are shown, since columns hidden until
+       found still draw their margin. */
     .lanes {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(min(290px, 100%), 1fr));
         gap: 8px;
+    }
+
+    .lanes:not([hidden]) {
         margin-top: 4px;
     }
 

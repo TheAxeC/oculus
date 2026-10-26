@@ -364,6 +364,16 @@ function configFolder(engine: EngineConfigIn | null): EngineConfigFolder | null 
 type HubRead = { hub: string; root: string; config: PortfolioConfig; raw: RawPortfolio };
 
 /**
+ * The file a hub's `collections:` list was read from, which its findings are on: the hub's
+ * settings file when it names a list, oculus's sources.yml otherwise.
+ */
+function listFileOf(hub: string, config: PortfolioConfig): string {
+    return config.unnamed?.collections === true
+        ? engineFile(engineDir(), 'sources.yml')
+        : join(hub, HUB_FILE);
+}
+
+/**
  * Read the hub at `hub` under the name `root`, the name of the workspace folder its files are named
  * under: its manifests, registries, collections, feeds, career, documents and decks, with the
  * findings of their readers. `roots` are the directories whose `project.yml` or
@@ -389,16 +399,10 @@ export function readHub(
     const collections = readCollections(hub, read, config.text, (entry) =>
         unnamedCollection(unnamed, entry)
     );
-    // The list's own findings are on the file it was read from: the hub's settings file when it
-    // names a list, oculus's sources.yml otherwise.
-    const listFile =
-        config.unnamed?.collections === true
-            ? engineFile(engineDir(), 'sources.yml')
-            : join(hub, HUB_FILE);
     const listed = collectionListFindings(
         config.merged.collections,
         listWords(config.merged),
-        listFile,
+        listFileOf(hub, config),
         config.text
     );
     const feeds = readFeeds(hub, config.feeds, config.text, config.merged, unnamed?.feeds);
@@ -645,7 +649,9 @@ function hubWords(merged: Readonly<Record<string, unknown>>): Record<string, unk
  * none; its reader reports why. Its collections are the entries its own `collections:` names; a
  * hub whose settings name no list has the engine's list, and lists every entry of it when it holds
  * the `.oculus/data/` folder, else the entries whose file it holds. An entry that names no label
- * word carries its file's `title:`. Its `words` are those of the hub's merged config (`hubWords`).
+ * word carries its file's `title:`. Its `list` is the merged `collections:` as written, with the
+ * file its findings are on (`listFileOf`). Its `words` are those of the hub's merged config
+ * (`hubWords`).
  */
 export function hubVocabOf(hub: string, config: PortfolioConfig): HubVocab {
     const unnamed = heldUnnamed(hub, config.unnamed);
@@ -657,6 +663,7 @@ export function hubVocabOf(hub: string, config: PortfolioConfig): HubVocab {
         venue_themes: themeRows(hubMap(hub, config.registries.venues, config.text)),
         data_themes: themeRows(hubMap(hub, config.registries.datasets, config.text)),
         collections: held.map((file) => listedCollection(hub, file, config.text)),
+        list: { file: listFileOf(hub, config), value: config.merged.collections },
         words: hubWords(config.merged)
     };
 }

@@ -2,9 +2,15 @@
     // Layer 3, view partial of views/boards/focus/Focus.svelte. The lanes, grouped by the clusters
     // of `focus_clusters` in their order (state/boards/focus.ts `clusters`), and the cards on them:
     // a `columns` cluster draws its lanes side by side under its heading, the words and glyph its
-    // row names (its key when it names no words), muted when its row says so; a `full_width`
-    // cluster draws each of its lanes as a section of its own headed by the lane's label and the
-    // cluster's glyph. A lane naming no cluster of the list is drawn in none. A card is
+    // row names (its key when it names no words) in the muted text colour with the count of the
+    // cards on its lanes, its lanes muted when its row says so; a `full_width` cluster draws each
+    // of its lanes as a section of its own headed by the lane's label in the lane's colour, the
+    // cluster's glyph and the lane's count. Each heading is the one every group of cards has
+    // (views/shared/card/heads/GroupHead.svelte) and folds by its control; the fold is the Focus
+    // tab's, under the key `groupFold` gives the cluster or the lane, so a reload and a move of the
+    // tab keep it. Folded, a group's lanes are hidden until found and stay mounted, so the
+    // browser's find-in-page searches their cards, and a match inside them fires `beforematch`,
+    // which unfolds the group. A lane naming no cluster of the list is drawn in none. A card is
     // lanes/LaneCard.svelte, drawn from what this module works out for it: its status marks, its
     // facts (state/boards/focus.ts `laneFacts`), its deadline, the people it waits on or that it is
     // blocked, and its move menu. The projects on each lane are the ones the Focus filter keeps,
@@ -18,12 +24,13 @@
     // drag and a view has no business in it. The move menu stays beside the drag because it
     // provides the keyboard path.
 
+    import type { Snippet } from 'svelte';
     import { answerWords } from '$lib/views/shared/forms/answer-words';
+    import GroupHead from '$lib/views/shared/card/heads/GroupHead.svelte';
     import type { WriteAnswer } from '$lib/state/client/writes.svelte';
     import { waitedOn } from '$lib/state/boards/waiting';
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Surface from '$lib/ui/frame/Surface.svelte';
-    import Glyph from '$lib/ui/display/Glyph.svelte';
     import LaneCard from './LaneCard.svelte';
     import LaneHead from './LaneHead.svelte';
     import type { MenuItem } from '$lib/ui/menu/menu-items';
@@ -31,6 +38,7 @@
     import {
         clusters,
         focusLabel,
+        groupFold,
         laneFacts,
         laneMarks,
         isBlocked,
@@ -40,7 +48,7 @@
         hubMoveOnto,
         pausesCountdown,
         projectLane,
-        type Cluster,
+        type FoldKey,
         type Id,
         type Lane,
         type Project,
@@ -78,9 +86,21 @@
         };
         onproject: (id: Id) => void;
         onsaid: (said: string) => void;
+        /** Whether a fold of the Focus tab is open, and the press that turns it over. */
+        isOpen: (key: FoldKey) => boolean;
+        ontoggle: (key: FoldKey) => void;
     };
 
-    let { now, cursor, items, hidden, known, onproject, onsaid }: Props = $props();
+    let { now, cursor, items, hidden, known, onproject, onsaid, isOpen, ontoggle }: Props =
+        $props();
+
+    /** What a group's heading draws: its words, its glyph and hue where it has them, its count. */
+    type GroupWords = { label: string; glyph?: string; tone?: string; count: number };
+
+    /** Unfold a folded group, as a find-in-page match inside it asks. */
+    function unfold(fold: FoldKey): void {
+        if (!isOpen(fold)) ontoggle(fold);
+    }
 
     const config = $derived(configMap());
     const board = $derived(lanes(vocabOf()));
@@ -235,65 +255,82 @@
     </div>
 {/snippet}
 
-{#snippet heading(cluster: Cluster, words: string)}
-    <summary>
-        <Surface inline>
-            {#if cluster.glyph !== ''}
-                <Glyph name={t(cluster.glyph)} />
-            {/if}
-            {words}
+{#snippet group(fold: FoldKey, head: GroupWords, muted: boolean, one: boolean, body: Snippet)}
+    <section class="cluster" class:muted>
+        <Surface>
+            <GroupHead
+                label={head.label}
+                name={head.label}
+                glyph={head.glyph}
+                tone={head.tone}
+                open={isOpen(fold)}
+                ontoggle={() => ontoggle(fold)}
+                count={head.count}
+            />
         </Surface>
-    </summary>
+        <div
+            class="lanes"
+            class:one
+            hidden={isOpen(fold) ? false : 'until-found'}
+            onbeforematch={() => unfold(fold)}
+        >
+            {@render body()}
+        </div>
+    </section>
 {/snippet}
 
 {#each shown as cluster (cluster.key)}
     {@const inCluster = lanesIn(board, cluster.key)}
+    {@const glyph = cluster.glyph === '' ? undefined : t(cluster.glyph)}
     {#if cluster.layout === 'columns'}
         {#if inCluster.length > 0}
-            <details class="cluster" class:muted={cluster.muted} open>
-                <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-                {@render heading(cluster, cluster.label === '' ? cluster.key : t(cluster.label))}
-                <div class="lanes">
-                    {#each inCluster as one (one.key)}
-                        <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-                        {@render lane(one, items[one.key] ?? [], false)}
-                    {/each}
-                </div>
-            </details>
+            {@const label = cluster.label === '' ? cluster.key : t(cluster.label)}
+            {@const count = inCluster.reduce((sum, one) => sum + (items[one.key] ?? []).length, 0)}
+            {#snippet columns()}
+                {#each inCluster as one (one.key)}
+                    <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+                    {@render lane(one, items[one.key] ?? [], false)}
+                {/each}
+            {/snippet}
+            <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+            {@render group(
+                groupFold('cluster', cluster.key),
+                { label, glyph, count },
+                cluster.muted,
+                false,
+                columns
+            )}
         {/if}
     {:else}
         {#each inCluster as one (one.key)}
-            <details class="cluster" class:muted={cluster.muted} open>
+            {@const held = items[one.key] ?? []}
+            {#snippet wide()}
                 <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-                {@render heading(cluster, one.label)}
-                <div class="lanes one">
-                    <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-                    {@render lane(one, items[one.key] ?? [], true)}
-                </div>
-            </details>
+                {@render lane(one, held, true)}
+            {/snippet}
+            <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+            {@render group(
+                groupFold('lane', one.key),
+                { label: one.label, glyph, tone: one.tone, count: held.length },
+                cluster.muted,
+                true,
+                wide
+            )}
         {/each}
     {/if}
 {/each}
 
 <style>
-    summary {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        font-size: var(--fs-xs);
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        color: var(--accent-txt, var(--accent));
-        cursor: pointer;
-    }
-
     /* The lanes fill the pane's width in as many columns as it holds, and one column in a pane
-       narrower than a lane. */
+       narrower than a lane. They stand 4px under the heading while they are shown, since lanes
+       hidden until found still draw their margin. */
     .lanes {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(min(290px, 100%), 1fr));
         gap: 8px;
+    }
+
+    .lanes:not([hidden]) {
         margin-top: 4px;
     }
 

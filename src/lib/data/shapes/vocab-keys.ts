@@ -207,6 +207,7 @@ const UNION_FIELD: Readonly<Record<string, string>> = {
     roles: 'key',
     categories: 'key',
     venue_tiers: 'key',
+    venue_categories: 'key',
     radar_buckets: 'key',
     fund_stages: 'label',
     manifest_fields: 'field'

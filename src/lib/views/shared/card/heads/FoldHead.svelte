@@ -1,16 +1,14 @@
 <script lang="ts">
-    // Layer 3, view partial shared by the Focus board and the project boards. The heading row of a
-    // section that folds: the fold control, a bare button named "Fold <name>" or "Unfold <name>"
-    // with the fold glyph of the state, then the section's glyph, where it has one, and its title
-    // in bold, drawn in the section's hue where it has one, then its count as a badge, where it
-    // has one, then whatever the section puts at the end of the row. On Focus, the career banner
-    // (views/boards/focus/career/CareerPanel.svelte), the command center
-    // (views/boards/focus/CommandCenterView.svelte, its HPC pill at the end) and the tasks section
-    // (views/boards/focus/Tasks.svelte) draw their headings with it; on a project board each
-    // category's section of the cards and of the list does, in the category's colour with its
-    // count (views/boards/projects/Projects.svelte). So the fold controls, glyphs and titles stand
-    // at the same places and the same height, and their markup and their spacing are written here
-    // once.
+    // Layer 3, view partial of the Focus board. The heading row of a box that folds: the fold
+    // control, a bare button named "Fold <name>" or "Unfold <name>" with the fold glyph of the
+    // state, then the box's glyph, where it has one, and its title in bold, drawn in the box's hue
+    // where it has one, then its count as a badge, where it has one, then whatever the box puts at
+    // the end of the row. The career banner (views/boards/focus/career/CareerPanel.svelte), the
+    // command center (views/boards/focus/CommandCenterView.svelte, its HPC pill at the end) and the
+    // tasks section (views/boards/focus/Tasks.svelte) draw their headings with it, so their fold
+    // controls, glyphs and titles stand at the same places and the same height, and their markup
+    // and their spacing are written here once. A group of cards is headed by GroupHead.svelte
+    // beside it instead.
     //
     // The fold control, the glyph, the title and the count are one group that does not wrap: a
     // title longer than the pane is cut with an ellipsis on the fold control's line, so the row

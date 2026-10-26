@@ -346,8 +346,13 @@ options:
     venue_categories:
         heading: boards
         section: Vocabulary
-        help: "The categories a venue's category takes, in the order the Venues view offers them. A hub's list replaces oculus's whole."
-        control: list
+        help: "The categories a venue's category takes, in the order the venue form offers them and the Venues view draws a section for each. A venue whose category no row names is drawn under Other. A hub's list replaces oculus's whole."
+        fields:
+            key: the word a venue's category writes
+            label: the words the category's section of the Venues view is headed by
+            ribbon:
+                help: "on draws the month ribbon of the venues' deadlines and meetings over the category's section"
+                control: toggle
     venue_tiers:
         heading: boards
         section: Vocabulary

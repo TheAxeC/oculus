@@ -332,10 +332,15 @@ The hub's own settings. A key of oculus's `config/catalogs/vocab.yml` set here i
 #     - { key: lead, label: Lead, field: lead }
 #     - { key: student, label: Student, field: collaborators }
 
-# The categories a venue's category takes, in the order the Venues view offers them.
+# The categories a venue's category takes, in order: `key` the word a venue's category writes,
+# `label` the heading of its section of the Venues view and its word in the venue form, and
+# `ribbon: true` the month ribbon over that section.
 # venue_categories: []
 #   example:
-#   venue_categories: [journal, conference, workshop]
+#   venue_categories:
+#     - { key: journal, label: Journals }
+#     - { key: conference, label: Conferences, ribbon: true }
+#     - { key: workshop, label: Workshops, ribbon: true }
 
 # The tiers a venue's tier takes, best first, each with its colour and label.
 # venue_tiers: []

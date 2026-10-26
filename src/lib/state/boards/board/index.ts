@@ -14,6 +14,8 @@ export {
     daysUntil,
     firstSentence,
     presetFor,
+    RECORD_VIEW,
+    recordPreset,
     setting,
     shortWords,
     venueText
@@ -76,5 +78,4 @@ export {
     parseBoardState
 } from './state.ts';
 export { newProjectTier } from './new-project.ts';
-export { boardsGroup } from '../../../data/sources/config/rail.ts';
 export { entryRoles } from '../../../data/shapes/boards/roles.ts';

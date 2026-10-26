@@ -63,6 +63,8 @@ text:
         quick_deadline_tip: only the projects that carry a deadline
         quick_stale: stale
         quick_stale_tip: only the projects whose manifest is behind their documents
+        record_no_role: This tab was opened for no role. Press a role of the Career banner's Track record to open its projects.
+        record_title: '{0}: track record'
         repro_no: not reproduced
         repro_yes: reproduced
         search_default: Search
@@ -97,3 +99,5 @@ text:
         software_glyph: code
         supervision: Supervision
         supervision_glyph: teaching
+        track_record: Track record
+        track_record_glyph: book

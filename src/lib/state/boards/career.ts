@@ -1,18 +1,19 @@
-// Layer 2, client state. The Career banner's arithmetic: the days left to the next milestone, the
-// track record, the user's projects counted by the record rows of `categories:` for each role, and
-// the funding the user leads that was obtained, and the board a role's row of the track record
-// opens.
+// Layer 2, client state. The Career banner's arithmetic: the days left to the next milestone, and
+// the track record, the user's projects counted by the record rows of `categories:` for each role,
+// and the funding the user leads that was obtained.
 //
 // Pure over the snapshot, the merged config and the day the caller passes. A project's category and
 // role are read with the boards' own rule (data/shapes/boards/categories.ts `categoryOf`, takes.ts
-// `projectRole`), so the track record counts a project where every board files it, and a role's
-// board is read from `boards:` with the rule every board is read with (takes.ts `boardRuleOf`). The
-// words come from the catalog through `t`, and a category's and a role's words from their rows.
+// `projectRole`), so the track record counts a project where every board files it. A role's row
+// opens the track record's board for that role, whose rule takes a project by the same two
+// readings (state/boards/board/presets.ts `recordPreset`, takes.ts `boardTakes`), so its sections
+// hold the counts the row shows. The words come from the catalog through `t`, and a category's and
+// a role's words from their rows.
 
 import type { Id, Snapshot } from '../../data/model/index.ts';
 import { categoriesOf, categoryOf } from '../../data/shapes/boards/categories.ts';
 import { entryPeople, isLead, isSelfByKey, rolesOf } from '../../data/shapes/boards/roles.ts';
-import { boardRows, boardRuleOf, projectRole } from '../../data/shapes/boards/takes.ts';
+import { projectRole } from '../../data/shapes/boards/takes.ts';
 import { registryEntries, rootOf } from '../../data/helpers/hub-names.ts';
 import { str } from '../../data/helpers/guards.ts';
 import { wordFlag, type WordsOf } from '../../data/shapes/vocab-keys.ts';
@@ -105,21 +106,4 @@ export function trackRecord(
         );
     }).length;
     return held.length === 0 && funding === 0 ? null : { roles: held, funding };
-}
-
-/**
- * The board a role's row of the track record opens: the first key of the merged `boards:`, in its
- * order, whose `role` (a word or a list) holds the role's key and that `isBoard` says is a
- * registered board view; nothing when no board takes the role. A board that names no `role` holds
- * no role.
- */
-export function roleBoard(
-    config: Record<string, unknown>,
-    role: string,
-    isBoard: (view: string) => boolean
-): string | undefined {
-    const found = boardRows(config).find(
-        ([id, row]) => (boardRuleOf(row).roles ?? []).includes(role) && isBoard(id)
-    );
-    return found?.[0];
 }

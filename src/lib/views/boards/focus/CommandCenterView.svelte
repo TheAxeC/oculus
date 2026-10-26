@@ -15,7 +15,7 @@
     import { hasCommandRows, type Ticker as FocusTicker } from '$lib/state/boards/ticker';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
-    import FoldHead from '../../shared/card/FoldHead.svelte';
+    import FoldHead from '../../shared/card/heads/FoldHead.svelte';
     import { runHeading } from './rows';
 
     const {

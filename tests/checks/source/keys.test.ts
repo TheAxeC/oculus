@@ -155,8 +155,8 @@ const WHOLE_FINDING_KEY = /^(['"])findings\.[A-Za-z0-9_]+(?:\.[A-Za-z0-9_]+)+\1$
  * word the key their callers name as a whole literal in each call, which the reader scan holds, and
  * the open workspace's findings, which carry the key their readers
  * (lib/server/files/workspace/folders.ts, open.ts) named as a whole literal, and the findings of a
- * `collections:` list, which carry the key the list reader (lib/data/helpers/hub-names.ts) named as
- * a whole literal.
+ * `collections:` list (lib/data/helpers/hub-names.ts `listFindings`), which carry the key the list
+ * reader in the same file named as a whole literal.
  */
 const COMPUTED_FINDING_KEYS = [
     { file: 'lib/server/content/audit/rules.ts', key: 'key' },
@@ -165,7 +165,7 @@ const COMPUTED_FINDING_KEYS = [
     { file: 'lib/server/machine/apps/read/contributes/reader.ts', key: 'key' },
     { file: 'lib/server/machine/apps/read/across/stored.ts', key: 'text' },
     { file: 'lib/server/files/workspace/words.ts', key: 'one.id' },
-    { file: 'lib/data/sources/collections.ts', key: 'one.word' }
+    { file: 'lib/data/helpers/hub-names.ts', key: 'one.word' }
 ] as const;
 
 /** Every `findingText` call under `root` whose key is not one whole `findings.` literal. */

@@ -191,7 +191,7 @@ describe("the vocabulary a hub lays over oculus's", () => {
                 'focus_lanes: [ { key: run, label: Run, color: "#16a34a", cluster: now, stages: [exploring] } ]',
                 'roles: [ { key: lead, label: Lead, field: lead } ]',
                 'fund_stages: [ { label: Submitted, color: "#16a34a", statuses: [submitted] } ]',
-                'venue_categories: [journal]',
+                'venue_categories: [ { key: journal, label: Journals, ribbon: true } ]',
                 'venue_tiers: [ { key: core, color: "#7c3aed", label: core } ]',
                 'radar_buckets: [ { key: idea, glyph: purple, label: Ideas, color: "#7c5cff" } ]',
                 ''
@@ -203,7 +203,9 @@ describe("the vocabulary a hub lays over oculus's", () => {
         expect(read.config.fund_stages).toEqual([
             { label: 'Submitted', color: '#16a34a', statuses: ['submitted'] }
         ]);
-        expect(read.config.venue_categories).toEqual(['journal']);
+        expect(read.config.venue_categories).toEqual([
+            { key: 'journal', label: 'Journals', ribbon: true }
+        ]);
         expect(rowKeys(read.config, 'venue_tiers')).toEqual(['core']);
         expect(rowKeys(read.config, 'radar_buckets')).toEqual(['idea']);
     });

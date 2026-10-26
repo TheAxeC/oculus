@@ -6,8 +6,10 @@
 // draws them. A row of the career file (Next, Goal, a Situation fact, an Order of work task) names
 // the section of the file it opens at (state/sessions/source/draft-entry.ts `CareerAt`) and the
 // field of the file's schema its Edit opens the editor on. A Track record row names the view it
-// opens: a role's board, or the Funding view for Funding obtained; it carries no button, since
-// nothing of it is written in the career file. A row's glyph is its group's glyph.
+// opens: a role's row the track record's board, opened for the role with the role's key as its
+// `id` and "<role>: track record" as its tab's words, and Funding obtained the Funding view; it
+// carries no button, since nothing of it is written in the career file. A row's glyph is its
+// group's glyph.
 //
 // A row id starts `career:` and names what the row is, never its place among the drawn rows, so a
 // row whose neighbour goes keeps its id: `career:next`, `career:goal`, `career:situation:<label>`,
@@ -16,7 +18,7 @@
 
 import type { TickerAction, TickerRow } from '$lib/ui/display/ticker/ticker-rows';
 import { linkRuns } from '$lib/ui/html';
-import { daysUntil } from '$lib/state/boards/board';
+import { RECORD_VIEW, daysUntil } from '$lib/state/boards/board';
 import { daysLeft, type Career, type TrackRecord } from '$lib/state/boards/career';
 import { daysTone } from '$lib/state/boards/ticker';
 import type { CareerAt } from '$lib/state/sessions/source/draft-entry';
@@ -48,7 +50,12 @@ type CareerTarget =
           /** The field of the file's schema the row's Edit opens the editor on. */
           field: string;
       }
-    | { kind: 'view'; view: string };
+    | {
+          kind: 'view';
+          view: string;
+          /** The state the view is opened with, which names the one tab it is opened for. */
+          state?: Record<string, unknown>;
+      };
 
 /** One group of the banner: its heading, its rows, and the note line under them, if any. */
 type CareerGroup = {
@@ -74,8 +81,6 @@ export type CareerInput = {
     record: TrackRecord | null;
     /** Whether the banner has an editor, which the rows' Edit opens. */
     editable: boolean;
-    /** The board a role's row opens, nothing for a role no board takes. */
-    boardOf: (role: string) => string | undefined;
     /**
      * The view the Funding obtained row opens: the funding registry's, under the key the primary
      * hub gives it; the empty text leaves the row plain.
@@ -124,7 +129,7 @@ function nextTail(date: string | undefined, now: number): { tail?: string; tone?
 type Builder = {
     targets: Record<string, CareerTarget | undefined>;
     file: (row: TickerRow, target: CareerTarget) => TickerRow;
-    view: (row: TickerRow, view: string | undefined) => TickerRow;
+    view: (row: TickerRow, view: string | undefined, state?: Record<string, unknown>) => TickerRow;
 };
 
 /** The rows of the banner, built group by group with the index of what each row opens. */
@@ -139,10 +144,11 @@ function builder(input: CareerInput): Builder {
             const actions = [...edit, ...linkActions(row.label, row.tail ?? '')];
             return actions.length === 0 ? row : { ...row, actions };
         },
-        /** One row that opens a view, plain when it opens none. */
-        view(row: TickerRow, view: string | undefined): TickerRow {
+        /** One row that opens a view, with the state given, and plain when it opens none. */
+        view(row: TickerRow, view: string | undefined, state?: Record<string, unknown>): TickerRow {
             if (view === undefined) return { ...row, plain: true };
-            targets[row.id] = { kind: 'view', view };
+            targets[row.id] =
+                state === undefined ? { kind: 'view', view } : { kind: 'view', view, state };
             return row;
         }
     };
@@ -213,7 +219,8 @@ function orderRows(input: CareerInput, make: Builder, glyph: string): TickerRow[
 /**
  * One row per role of the track record, its tail the count of each record row the role has
  * projects in, `<count> <row label>`, joined by commas; then, when funding is obtained, the row
- * Funding obtained with its count. A role opens its board, and is plain when no board takes it.
+ * Funding obtained with its count. A role opens the track record's board for the role, one tab
+ * per role, which holds the projects its tail counts.
  */
 function recordRows(input: CareerInput, make: Builder, glyph: string): TickerRow[] {
     const record = input.record;
@@ -224,7 +231,8 @@ function recordRows(input: CareerInput, make: Builder, glyph: string): TickerRow
             .map((line) => t('focus.career_record_count', line.count, line.label))
             .join(', ');
         const row = { id: idOf('role', role.key), glyph, label: role.label, tail };
-        return make.view(row, input.boardOf(role.key));
+        const label = t('board.record_title', role.label);
+        return make.view(row, RECORD_VIEW, { id: role.key, label });
     });
     if (record.funding === 0) return roles;
     const funding = {

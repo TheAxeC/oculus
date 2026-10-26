@@ -1,6 +1,7 @@
-// Layer 1, data. Editable collections, generated feeds, the career record, and the vocabularies and
-// rules validate checks the portfolio's files against.
-// The portfolio aggregate imports these leaf types while data/model/index.ts is the facade.
+// Layer 1, data. Editable collections, generated feeds, the career record, the vocabularies and
+// rules validate checks the portfolio's files against, and the words each hub gives its own records
+// with the collections it lists. The portfolio aggregate imports these leaf types while
+// data/model/index.ts is the facade.
 
 import type { CollectionFile, Id, RawCollection, Rooted } from './model-entities.ts';
 
@@ -198,6 +199,53 @@ type CollectionPlace = {
 
 /** One entry of a `collections:` list with every field it sets. */
 export type CollectionEntry = CollectionFile & CollectionTraits & CollectionPlace;
+
+/**
+ * The words one hub gives its own records, read from its own files: the research `domains` (each
+ * key of its domains registry to the entry's colour and title as `label`; a colour not written
+ * `#rrggbb` is left out), and `venue_themes` and `data_themes`, the `{ key, label }` options of the
+ * `themes` field of its venue and dataset registries (a plain word is its own label), and the
+ * `collections` it lists: the entries its own `collections:` names, or, when its settings name no
+ * list, the entries of the engine's list whose file the hub holds at the engine's path, each with
+ * every field it sets and, when its `label:` names no word of the catalog, its file's `title:`
+ * (`ListedCollection`). `list` is that `collections:` list as written and the file it was read
+ * from, by which the page names the place of an entry whose key a view of oculus's holds. `words`
+ * is the merged value of each key of config/catalogs/vocab.yml a hub sets and of
+ * `manifest_fields`, under this hub's own settings: oculus's value with the hub's
+ * `.oculus/config.yml` laid over it.
+ */
+export type HubVocab = {
+    domains: Record<string, { color?: string; label: string }>;
+    venue_themes: { key: string; label: string }[];
+    data_themes: { key: string; label: string }[];
+    collections: ListedCollection[];
+    list: { file: string; value: unknown };
+    words: Record<string, unknown>;
+};
+
+/**
+ * One entry of a hub's `collections:` list as the page reads it: the entry's fields, and the
+ * `title:` of its file when its entry names no label word, which the view catalogue names its view
+ * by then.
+ */
+export type ListedCollection = CollectionEntry & { title?: string };
+
+/**
+ * The vocabulary of every hub the workspace holds, by the hub's name, and the name of the primary
+ * hub (null in a workspace with none). `order` is every name a record's hub can carry, in the order
+ * a list drawn over several hubs reads them: the primary, then the other hubs in the workspace's
+ * order, and in a workspace with no primary each folder that is no hub at its place among them.
+ * `own` is oculus's own words (the same keys as `words`), which the records of a folder that is no
+ * hub are read under, and `ownCollections` oculus's own `collections:` list
+ * (config/defaults/sources.yml), whose entry of a registry a hub's list that names none is read by.
+ */
+export type HubVocabs = {
+    primary: string | null;
+    lists: Record<string, HubVocab>;
+    order: string[];
+    own: Record<string, unknown>;
+    ownCollections: CollectionEntry[];
+};
 
 /**
  * A collection file as data/sources/collections.ts read it: the raw file, the traits its entry

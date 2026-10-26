@@ -468,7 +468,24 @@ export const vocabFileShape = z.strictObject({
     data_access: textMap
         .optional()
         .describe("The colour of a dataset's access chip, by its access word."),
-    venue_categories: z.array(text).optional().describe("The words a venue's category takes."),
+    venue_categories: z
+        .array(
+            z.strictObject({
+                key: text
+                    .min(1)
+                    .describe("The word a venue's `category` writes, which files it in the row."),
+                label: text.describe(
+                    "The words the row's section of the Venues view is headed by."
+                ),
+                ribbon: flag(
+                    "true draws the month ribbon of the venues' deadlines and meetings over the row's section."
+                )
+            })
+        )
+        .optional()
+        .describe(
+            "The categories a venue's `category` takes, in the order the Venues view draws their sections and the venue form offers them."
+        ),
     venue_tiers: z
         .array(keyed)
         .optional()

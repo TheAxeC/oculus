@@ -5,16 +5,14 @@ text:
         call: call
         conc: concentrated
         conc_tip: Two or more active or manuscript projects target this venue; the venue policy is to spread them
-        conferences: Conferences
         contact: contact
         deadline: deadline
         dist: ~{0}mo
         empty: No venues yet; add some to the hub's venues file.
         filters: Venue filters
         held: held
-        intro: "Journals and conferences, from the file the <code>venues</code> entry of the hub's collections list names. A conference's months are approximate, since its call and its dates move from year to year."
+        intro: "The venues of the file the <code>venues</code> entry of the hub's collections list names, one section per category of <code>venue_categories</code> and Other for the rest. The months of a ribbon are approximate, since a call and its dates move from year to year."
         jif: JIF {0}
-        journals: Journals
         leg_approx: months are approximate - hover a chip for the range
         leg_biennial: biennial
         leg_deadline: deadline
@@ -24,6 +22,7 @@ text:
         next: Next deadlines
         next_from: '(from {0}):'
         scopus: Scopus {0}
+        section_other: Other
         sep: ' | '
         show_in_files: Show in Files
         show_in_files_tip: select {0} in the Files view

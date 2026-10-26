@@ -676,10 +676,21 @@ export function portfolioProjects(snapshot: Snapshot | null): Project[] {
 }
 
 /**
- * The three sections of the Focus board that fold, the career banner, the command center and the
- * tasks, by the key their closed state is kept under.
+ * What of the Focus board folds, by the key its closed state is kept under: the career banner, the
+ * command center and the tasks by their names, and each group of cards by the key `groupFold`
+ * makes for it.
  */
-export type FoldKey = 'career' | 'command' | 'tasks';
+export type FoldKey =
+    'career' | 'command' | 'tasks' | 'band' | `cluster:${string}` | `lane:${string}`;
+
+/**
+ * The fold key of a group of cards on the Focus board: a `columns` cluster's is `cluster:<key>`, a
+ * lane's section of a `full_width` cluster `lane:<lane key>`, and the band's `band`. The prefixes
+ * keep a hub's cluster or lane key from naming the career banner, the command center or the tasks.
+ */
+export function groupFold(kind: 'cluster' | 'lane' | 'band', key = ''): FoldKey {
+    return kind === 'band' ? 'band' : `${kind}:${key}`;
+}
 
 /** The folded sections a Focus tab's saved state names as closed; a wrong value names none. */
 const closedShape = z.object({ closed: fieldItemsShape });

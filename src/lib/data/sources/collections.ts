@@ -19,6 +19,7 @@ import {
     COLLECTION_FLAGS,
     REGISTRY_SHAPES,
     collectionFiles,
+    listFindings,
     listProblems,
     type ListWords
 } from '../helpers/hub-names.ts';
@@ -62,11 +63,7 @@ export function collectionListFindings(
     file: string,
     catalog: TextCatalog
 ): Finding[] {
-    return listProblems(value, words).map((one) => ({
-        file,
-        key: `collections[${String(one.index)}].${one.field}`,
-        message: findingText(catalog, one.word, ...one.values)
-    }));
+    return listFindings(listProblems(value, words), file, catalog);
 }
 
 /** Oculus's own default paths: each collection's entry and the career file. */

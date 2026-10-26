@@ -7,8 +7,22 @@
     // where the board's row of `counts` says `rail: true`, gets the count of its cards in the rows
     // carrying `rail: true`, in the colour `rail_color` of vocab.yml gives, and 0 when none is in
     // such a row.
-    import type { BoardView } from '$lib/state/boards/board';
+    //
+    // The track record's board is the component's own view, registered once like any module's: a
+    // role row of the Career banner's Track record opens it for its role, so it is not listed in
+    // the view catalogue and has no count hooks, and the page keeps it registered through every
+    // push of `boards:` (routes/views.ts `registerBoards`).
+    import { RECORD_VIEW, type BoardView } from '$lib/state/boards/board';
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
+
+    export const registration: ViewRegistration = {
+        id: RECORD_VIEW,
+        label: 'views.track_record',
+        glyph: 'views.track_record_glyph',
+        group: '',
+        order: 0,
+        listed: false
+    };
 
     /** The registrations of the board views given, each with its count hooks. */
     export function boardRegistration(views: readonly BoardView[]): ViewRegistration[] {
@@ -28,6 +42,11 @@
     // mounted as, so every board tab is one component here, titled by the name its registration
     // carries. A board holds every project its keys in `boards:` meet, so one project may be on
     // several.
+    //
+    // The track record's board is the same component under its own view: one tab per role, the
+    // role's key the `id` of its state, titled "<role>: track record", holding the projects the
+    // role's row of the Track record counts (state/boards/board/presets.ts `recordPreset`). It
+    // holds none while the workspace names no `self`, and a tab opened with no role says so.
     //
     // The header holds New project, Cards and List, the one in force pressed, Full titles, pressed
     // while the board draws full titles, and, in list mode, Columns, a menu that shows or hides
@@ -50,10 +69,10 @@
     // The cards and the list are laid out in sections, one per row of `categories` holding a
     // project, in the list's order, and an "other" section last for the projects in no row, each
     // headed by the category's label in its colour with its count
-    // (views/shared/card/FoldHead.svelte); the heading stays at the top of the pane while its
-    // section scrolls under it, and a press on its fold control folds the section, which the board
-    // remembers. A board whose `cards:` says `grid` draws its cards and its list as one section
-    // with no heading. The list draws one table per section
+    // (views/shared/card/heads/GroupHead.svelte); the heading stays at the top of the pane while
+    // its section scrolls under it, and a press on its fold control folds the section, which the
+    // board remembers. A board whose `cards:` says `grid` draws its cards and its list as one
+    // section with no heading. The list draws one table per section
     // (views/boards/projects/BoardList.svelte).
     //
     // It joins nothing and counts nothing itself: the projects come from the board selector already
@@ -72,7 +91,7 @@
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import Card from '../../shared/card/project/ProjectCard.svelte';
-    import FoldHead from '../../shared/card/FoldHead.svelte';
+    import GroupHead from '../../shared/card/heads/GroupHead.svelte';
     import SaidBody from '../../shared/writes/SaidBody.svelte';
     import BoardList from './BoardList.svelte';
     import FilterBar from './FilterBar.svelte';
@@ -89,29 +108,45 @@
         offersMine,
         parseBoardState,
         pickCell,
+        recordPreset,
         sliceGroups,
         type BoardItem,
         type BoardMode,
         type BoardState,
         type QuickFilters
     } from '$lib/state/boards/board';
-    import { cardCursor, storedState } from '$lib/state/workbench/layout/instance';
+    import { cardCursor, instanceText, storedState } from '$lib/state/workbench/layout/instance';
     import { hubList } from '$lib/state/shared/page/hubs';
     import { t } from '$lib/state/shared/words/text';
-    import { toneOf } from '$lib/state/shared/words/tones';
+    import { toneOf, vocabOf } from '$lib/state/shared/words/tones';
     import { registrationLabel, type ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
 
     const {
         fs: { primary, roots },
         registry,
-        selectors: { board, boardPreset, boardStats, offersNewProject, selfNamed, staleLag },
+        selectors: {
+            board,
+            boardPreset,
+            boardStats,
+            configMap,
+            offersNewProject,
+            selfNamed,
+            staleLag
+        },
         ui: { instanceState, setInstanceState }
     } = useState();
 
     let { instance }: ViewProps = $props();
 
-    const preset = $derived(boardPreset(instance.view));
+    /** Whether this tab is the track record's board, and the key of the role it was opened for. */
+    const record = $derived(instance.view === RECORD_VIEW);
+    const role = $derived(instanceText(instance.state, 'id'));
+    const preset = $derived(
+        record
+            ? recordPreset(role === '' ? null : role, configMap(), vocabOf)
+            : boardPreset(instance.view)
+    );
     const cursor = $derived(cardCursor(instance.state));
     const items = $derived(board(preset));
     /** Whether the workspace names a `self`, which Mine only and the Role facet need. */
@@ -215,8 +250,15 @@
         });
     }
 
-    /** The board's own name, the one its registration carries, read from its `label:`. */
+    /**
+     * The board's own name, the one its registration carries, read from its `label:`; a track
+     * record tab's is its role's, by the role's words, or by its key when `roles:` holds it no more.
+     */
     function title(): string {
+        if (record && role !== '') {
+            const words = preset.roles.find((one) => one.key === role)?.label ?? role;
+            return t('board.record_title', words);
+        }
         const registered = registry.viewFor(instance.view);
         return registered === undefined ? instance.view : registrationLabel(registered);
     }
@@ -367,7 +409,7 @@
         <SaidBody
             {said}
             empty={shown.length === 0}
-            message={t('board.empty')}
+            message={record && role === '' ? t('board.record_no_role') : t('board.empty')}
             glyph={t('board.empty_glyph')}
         >
             {#if grid}
@@ -377,8 +419,8 @@
                 {#each sections as section (section.key)}
                     <section class="section" data-category={section.key}>
                         <div class="heading">
-                            <FoldHead
-                                title={sectionTitle(section.key, section.label)}
+                            <GroupHead
+                                label={sectionTitle(section.key, section.label)}
                                 name={sectionTitle(section.key, section.label)}
                                 open={!folded.has(section.key)}
                                 ontoggle={() => toggleFold(section.key)}

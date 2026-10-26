@@ -7,7 +7,9 @@ import type { Component } from 'svelte';
 import { z } from 'zod';
 import { appActive, appViewId } from '$lib/data/helpers/files/apps/apps';
 import { EDITOR_VIEW, PANEL_VIEW, contributedViewId } from '$lib/data/helpers/files/apps/views';
-import type { AppRow, ConfigPayload, HubVocabs, ListedCollection } from '$lib/data/model';
+import type { TextCatalog } from '$lib/data/helpers/finding-text';
+import { listFindings, viewIdProblems } from '$lib/data/helpers/hub-names';
+import type { AppRow, ConfigPayload, Finding, HubVocabs, ListedCollection } from '$lib/data/model';
 import { workspaceCollectionViews, type CollectionViews } from '$lib/data/snapshot/normalise';
 import { unplacedGroup } from '$lib/data/sources/config/rail';
 import { itemsShape, mapShape, readAs } from '$lib/data/shapes/shapes';
@@ -113,17 +115,20 @@ type BoardModule = ViewModule & {
  * Register the project board views given with the component that exports `boardRegistration`
  * (views/boards/projects/Projects.svelte), which gives each its count hooks, and unregister the
  * board views it drew that they no longer hold, closing their tabs, so a board taken out of
- * `boards:` leaves the rail, the catalogue and the panes with the push that took it out. The
- * findings of the boards left out are the registry's `refused`, which the Findings view lists.
+ * `boards:` leaves the rail, the catalogue and the panes with the push that took it out. The views
+ * the component registers as its own (the track record's board) are no board of `boards:` and stay
+ * registered. The findings of the boards left out are the registry's `refused` under `boards`,
+ * which the Findings view lists.
  */
 export function registerBoards(registry: RegistryStore, given: BoardViews): void {
-    registry.refuse(given.findings);
+    registry.refuse('boards', given.findings);
     const drawer = Object.values(viewModules).find(
         (one) => typeof (one as Partial<BoardModule>).boardRegistration === 'function'
     ) as BoardModule | undefined;
     if (drawer === undefined) return;
     const wanted = drawer.boardRegistration(given.views);
-    const ids = new Set(wanted.map((registration) => registration.id));
+    const own = drawer.registration === undefined ? [] : definitions(drawer.registration);
+    const ids = new Set([...wanted, ...own].map((registration) => registration.id));
     for (const registration of registry.views()) {
         if (registration.component === drawer.default && !ids.has(registration.id)) {
             registry.unregisterView(registration.id);
@@ -153,7 +158,8 @@ export function pushedCollections(pushed: unknown, hubs: HubVocabs | null): Coll
  * does (state/workbench/layout/tabs/left-out.ts); the tabs of any other key close with its view.
  *
  * A key that is the id of a view a module registers as its own is left out, so a `collections:`
- * entry named `debug` or `files` never replaces a built-in view.
+ * entry named `debug` or `files` never replaces a built-in view; `collectionRefusals` gives the
+ * findings of those entries.
  *
  * What a factory module registered last time is read back from the registry, as the registrations
  * drawn by that module's own component, so this module owns the collection registrations without
@@ -174,6 +180,26 @@ export function registerCollections(registry: RegistryStore, given: CollectionVi
         }
         registry.registerComponent(module.default, wanted);
     }
+}
+
+/**
+ * The findings of the `collections:` entries whose collection view `registerCollections` leaves out
+ * because a module registers a view of that id, one per entry of each hub's list
+ * (`HubVocab.list`) that the hub lists as a card list (`viewIdProblems`): the existing
+ * `findings.collections.view_id`, on the file the hub's list was read from at the entry's place.
+ * The server raises the same finding for a plain entry keyed by a registry's view and knows no
+ * other view id, so these are the page's to raise; it files them with the registry under
+ * `collections` (`refuse`), beside the findings of the boards it left out.
+ */
+export function collectionRefusals(hubs: HubVocabs | null, catalog: TextCatalog): Finding[] {
+    const builtIn = new Set(moduleViewIds());
+    return Object.values(hubs?.lists ?? {}).flatMap((vocab) => {
+        const listed = new Set(vocab.collections.map((entry) => entry.key));
+        const taken = viewIdProblems(vocab.list.value, builtIn).filter((one) =>
+            listed.has(one.values[0])
+        );
+        return listFindings(taken, vocab.list.file, catalog);
+    });
 }
 
 /** The badge glyphs of an app view: disabled, not approved, and kept approved. */

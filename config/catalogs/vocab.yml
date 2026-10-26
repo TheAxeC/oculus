@@ -268,8 +268,14 @@ rail_color: "#16a34a"
 data_access: { open: "#16a34a", registration: "#b45309", credentialed: "#dc2626", private: "#475569" }
 
 
+# Venue categories: the words a venue's `category:` (the venues registry) takes, in the order the venue form offers them and the Venues view draws one section per row. `key` is the word a venue writes, `label` the words its section is headed by, and `ribbon: true` draws the month ribbon of deadlines and meetings over the section. A venue whose category no row names is drawn under Other, after them. A hub's list replaces oculus's whole.
+venue_categories:
+  - { key: journal,    label: Journals }
+  - { key: conference, label: Conferences, ribbon: true }
+  - { key: thesis,     label: Theses }
+  - { key: meeting,    label: Meetings }
+
 # Venue prestige tiers: the controlled vocabulary + colours for a venue's `tier:` (the venues registry). A curated JUDGMENT, NOT derived from JIF (so AAAI/TSP read flagship with no JIF, and a wide JIF band isn't flattened into one label). Order = ranking (best first). The venues schema's `tier` takes its options from the ASSIGNABLE keys here; the Pillars tab colours its tier spread from these. `unrated` is the computed fallback (no venue / no tier), `assignable: false` so it's not offered as a choice.
-venue_categories: [journal, conference, thesis, meeting]
 venue_tiers:
   - { key: flagship,   color: "#7c3aed", label: "flagship" }
   - { key: strong,     color: "#0d9488", label: "strong" }

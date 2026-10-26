@@ -18,12 +18,14 @@
 
 import { z } from 'zod';
 import { byKey, isMap } from './guards.ts';
+import { findingText, type TextCatalog } from './finding-text.ts';
 import {
     COLLECTION_FLAGS,
     REGISTRY_WORDS,
     type Collection,
     type CollectionEntry,
     type CollectionFlag,
+    type Finding,
     type HubVocabs,
     type Id,
     type RegistryName,
@@ -297,8 +299,11 @@ export type ListWords = {
  */
 export type ListProblem = { index: number; field: string; word: string; values: string[] };
 
-/** A list as its entries with the fields that read, and the problems of those that do not. */
-type ReadList = { entries: CollectionEntry[]; problems: ListProblem[] };
+/**
+ * A list as its entries with the fields that read, the problems of those that do not, and the
+ * problems of the entries whose card-list view a view of oculus's modules holds the key of.
+ */
+type ReadList = { entries: CollectionEntry[]; problems: ListProblem[]; taken: ListProblem[] };
 
 /** Whether a value is one of the registry words. */
 function isRegistryWord(value: unknown): value is RegistryWord {
@@ -372,12 +377,14 @@ function entryOf(
  * A `collections:` list as its entries. A registry word an earlier entry already names, and a flag
  * of `SINGLE_FLAGS` an earlier entry already carries, is left off the later entry, the first being
  * the one read; a plain collection keyed by the id of the view of one of oculus's registries is
- * kept, and is a problem, since it gets no card-list view. Anything that is no list names no entry,
- * and an item with no text key or file is none.
+ * kept, and is a problem, since it gets no card-list view; so is, in `taken`, an entry drawn as a
+ * card list under a key `views` holds. Anything that is no list names no entry, and an item with no
+ * text key or file is none.
  */
-function readList(value: unknown, words?: ListWords): ReadList {
+function readList(value: unknown, words?: ListWords, views?: ReadonlySet<string>): ReadList {
     const entries: CollectionEntry[] = [];
     const problems: ListProblem[] = [];
+    const taken: ListProblem[] = [];
     // The key of the first entry that names each registry word, and that carries each single flag.
     const registries = new Map<string, string>();
     const flags = new Map<string, string>();
@@ -413,17 +420,44 @@ function readList(value: unknown, words?: ListWords): ReadList {
                 });
             }
         }
-        if (entry.registry === undefined && takesRegistryView(entry.key)) {
-            problems.push({
-                index,
-                field: 'key',
-                word: 'findings.collections.view_id',
-                values: [entry.key]
-            });
-        }
+        const viewId = {
+            index,
+            field: 'key',
+            word: 'findings.collections.view_id',
+            values: [entry.key]
+        };
+        if (entry.registry === undefined && takesRegistryView(entry.key)) problems.push(viewId);
+        else if (views?.has(entry.key) === true && hasCardList(entry)) taken.push(viewId);
         entries.push(entry);
     });
-    return { entries, problems };
+    return { entries, problems, taken };
+}
+
+/**
+ * The problems of the entries of a `collections:` list that would be drawn as a card list
+ * (`hasCardList`) under a key in `views`, the ids of the views oculus's modules register: such an
+ * entry gets no view, as a plain collection keyed by the view of one of oculus's registries gets
+ * none. Only the page knows those ids (routes/views.ts `moduleViewIds`), so it reads these and
+ * the server reads the rest (`listProblems`).
+ */
+export function viewIdProblems(value: unknown, views: ReadonlySet<string>): ListProblem[] {
+    return readList(value, undefined, views).taken;
+}
+
+/**
+ * The problems of a `collections:` list as findings on `file`, each at its entry's field and
+ * worded from the catalog.
+ */
+export function listFindings(
+    problems: readonly ListProblem[],
+    file: string,
+    catalog: TextCatalog
+): Finding[] {
+    return problems.map((one) => ({
+        file,
+        key: `collections[${String(one.index)}].${one.field}`,
+        message: findingText(catalog, one.word, ...one.values)
+    }));
 }
 
 /**

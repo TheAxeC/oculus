@@ -1,6 +1,6 @@
-# O79 builder report: handed back at the first run
+# O79 builder report: primary and foreign keys
 
-NOT done: nothing of "What to build" items 1 to 6 is built, no file of the step's write list is changed, and none of "Verify before you report" checks 1 to 8 ran. The step is handed back before any code change because case 15 cannot pass under the brief's own rules: item 1's finding for "an entry's `primary_key:` beside a schema flag", item 3's `primary_key: title` on oculus's own `leads` and `radar` entries of `config/defaults/sources.yml`, and item 4's `primary_key: true` on `title` in the hub's `leads.yml` and `radar.yml` schemas give the hub two findings, because the hub names no `collections:` list and reads oculus's own entries. Case 15 asks for "validates with no findings". The rule, the evidence and the options are in the section "The case the brief's rules get wrong".
+NOT done: check 1 is not met. Items 1 to 6 and all 23 cases are built and pass, but the one verify-list run after the last change exited 1: every stage passed except the slow tier, where 'the portfolio of several hubs > holds every record of both hubs, each under the name of its hub's folder' (`tests/data/hubs/hub-portfolio.test.ts`) timed out at its 20 s limit. Run alone it passes in about 2.6 s in the worktree and 2.1 to 2.5 s on the base copy (check 1 below). A judgment: the parallel run's load caused the timeout, not the change. The list was not run a second time, since the brief allows one run after the last change.
 
 ## Open items of the state file, verbatim
 
@@ -14,7 +14,17 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
 - none.
 ```
 
-## The case the brief's rules get wrong: case 15
+## The ruling carried
+
+`.scratch/migration/agents/briefs/O79-cases.md` rules five points, each built:
+
+1. Option (a) for case 15: oculus's own `leads` and `radar` entries of `config/defaults/sources.yml` carry no `primary_key:` (`grep -n "primary_key" config/defaults/sources.yml` prints only the head comments at `:32` and `:34`, which say what the key does and that "The entries below carry none, since they describe no file"); the demo hub's entries carry `primary_key: title` (`tests/fixtures/hubs/demo/.oculus/config.yml:24-25`); the hub rewrite and `docs/templates.md`'s leads and radar schemas flag `title`. Item 1's "beside" rule stands whole (schema-rules row "an entry's primary_key beside the schema's flag", writes-collection row "refuses every write to a file with an entry's primary_key beside the schema's flag (G8)"). Case 15 passes as written, and the two added after-runs are below (case 15 and case 15b).
+2. Case 18's data Add: `collectionText` (`src/lib/server/files/fs/collections.ts`) reads a file whose one key beside `schema:` holds nothing as an empty collection under that key; the comment says so. Case 18's after-run: `data | add {"key":"case-eighteen","name":"case-eighteen"} | found true | changed ["datasets"] | refused []` and `venues | add {"id":"case-eighteen","name":"case-eighteen"} | found true | changed ["entries"] | refused []`.
+3. 18 `schema:` blocks of `docs/templates.md` carry the flag: `awk '/^schema:/{s=1;f=0;next} s&&/^[a-z]/{print f; s=0} s&&/primary_key: true/{f++}' docs/templates.md | sort | uniq -c` prints `1 0` (the career file) and `18 1`.
+4. The readers outside the path list are changed and named in "Files with line counts", each with its reason.
+5. `REGISTRY_SHAPES` is changed inside `hub-names.ts:795-815`; its `idField` column is gone.
+
+### What the first run handed back: case 15
 
 The rules, as the brief states them:
 
@@ -67,48 +77,559 @@ Programs 1, 9, 10, 15 and 18 ran through `npx vitest run --config <scratchpad>/o
 22. Read. `recordChoices` (`schema.ts:223-244`) offers the entities of the snapshot's `people` table, joined across hubs by the registry, whatever each hub keys its people collection; each is stored by its own hub's key.
 23. Read. A venue with `id: ""` gives one finding, `findings.registries.entry_no_id` (`registries.ts:97-104`); `checkEntryIdentity` (`validate.ts:439-452`) checks the hub's venues by `name`, their first field, and no other rule sees the empty id. A venue with no `id` key also gives `findings.schema.required` where its schema marks `id` required, two findings.
 
+### What the first run said that the after-run corrects
+
+- Case 11's reading said a collection keyed `journals` carrying the venues registry "gets no `id` guard, and its entries are addressed by its first field". The new row 'edits a venue by its id when the hub keys the venues collection journals' passes on the unchanged tree (quoted below), so the unchanged tree already addressed that collection by `id`.
+- The first run's "Readers of the identity the brief's write list leaves out" and "Found by case 18's run" are now built under rulings 4 and 2.
+
 ## DONE / NOT DONE
 
-| Deliverable | State | Proof |
+### Items
+
+| Item | State | Proof |
 | --- | --- | --- |
-| The cases' first run, all 23 | DONE | the section above; programs 1, 9, 10, 15, 18 printed as quoted below |
-| Item 1, `primary_key: true` | NOT DONE | handed back at case 15; `git status --short` in the worktree prints nothing |
-| Item 2, `foreign_key:` and `display:` | NOT DONE | as above |
-| Item 3, oculus's and the demo hub's schemas | NOT DONE | as above |
-| Item 4, the hub rewrite section | NOT DONE | it depends on the ruling (option (b) changes its leads and radar lines) |
-| Item 5, docs and comments | NOT DONE | as above |
-| Item 6, tests | NOT DONE | as above |
-| Verify checks 1 to 8 | NOT DONE | not run; the verify list ran 0 times |
+| 1, `primary_key: true` | DONE | `primaryKeyOf` (`src/lib/data/model/model-collections.ts`) is the one function; check 4's grep below holds no `TITLE_FIELD`, `identityField`, `KEYED_FIELDS`, `idField`, `BOOKMARK_IDENTITY` or `NAME_FIELD`; the G56 and G8 rows below |
+| 2, `foreign_key:` and `display:` | DONE | check 5's greps below; the G132, G128, G66 and G56 rows below |
+| 3, oculus's and the demo hub's schemas | DONE | ruling points 1 and 3 above; case 1's after-run |
+| 4, the hub rewrite | DONE | section "Hub rewrite"; case 15 after-run |
+| 5, docs and comments | DONE | check 8 below; check 6 prints nothing |
+| 6, tests | DONE | the rows below, each run on the unchanged tree and after |
+
+### The cases after the change
+
+| Case | State | Proof |
+| --- | --- | --- |
+| 1 | DONE, two lines differ (see "wrong or impossible") | `diff case01.out.txt case01.after.txt`: the datasets choice line's source word `"datasets"` becomes `"data"` with the same five choices; definitions rise from 44 to 61 (statements 0 to 3, events 0 to 3, education 0 to 2, applications 0 to 2, joint-work 0 to 2, tasks 0 to 3, literature 0 to 2); references stay 114; every card heading, title, choice, edit, remove and Add line is the same |
+| 2 | DONE | choices.test 'shows a venue by its short, one with no short by its name, and stores its id (G132)' and 'shows a venue by its name when the venues schema ranks name 1 (G132)' |
+| 3 | DONE | schema-rules 'gives the findings of a schema that flags no primary key' (`findings.schema.key_none`); writes-collection 'refuses an edit, a reorder, an Add and a remove of a file with no primary key'; writes 'refuses an Add to a file whose schema flags no primary key (G8)' |
+| 4 | DONE | schema-rules '... a schema that flags two' (`key_two`, 'key, title'); writes-collection 'refuses every write to a file with two flagged fields (G8)' |
+| 5 | DONE | choices 'offers the events by their display and stores the key (G132)'; references "finds 'a select naming a collection that is no registry, an event by its key (G66)'" |
+| 6 | DONE | schema-rules '... a foreign key naming nothing' (`bad_foreign_key`); choices 'offers nothing for a key that names no collection (G132)' |
+| 7 | DONE | schema-rules '... a target of a foreign key whose schema ranks no field by display' (`display_none`), '... two fields of one display rank' (`display_twice`, 'title, note'), '... a display rank that is no whole number from 1' (`display_rank`, '0'); choices 'shows each entry by its primary key when the target schema ranks no field (G132)' |
+| 8 | DONE | schema-rules '... a from: left on a schema field'; `fieldOf` (`schema/field.ts:145`) reads `foreign_key` alone, so the field carries no target and offers its own options only |
+| 9 | DONE | case09 after-run with `O79_SOURCE_KEY='foreign_key: data'`: `findings on data.yml: 0`, `derived-from line: Built from synthgraph by code/prep.py`, `reference: synthgraph line 19 sources datasets`, the same as the first run |
+| 10 | DONE | writes-collection 'edits and removes a person by key, whose display is the name'; normalise 'heads a collection entry by its display field and addresses it by its primary key (G8)'; case10 after-run: `the primary key the feed writer addresses a lead by, read from the file and its entry: "title"`, `changed ["status"]` |
+| 11 | DONE | writes-collection 'addresses a venue by its id and writes the short name alone', 'renames a venue through its name and leaves its id', 'removes a venue by its id, the primary key that is not its first field', 'edits a venue by its id when the hub keys the venues collection journals' |
+| 12 | DONE | new-entry 'asks the primary key of venues and their required name (G8)' (`['id', 'name']`), 'asks the primary key of a collection keyed by key (G8)'; case18 after-run: the people Add box asks `key, name` |
+| 13 | DONE | manifest-fields 'adds a select whose foreign_key names the people, and words a row that writes from (G128)' |
+| 14 | DONE | rename "edits 'a flow sequence, a block sequence and a double-quoted scalar'": the joint-work `person` field, `foreign_key: people` (`tests/data/snapshot/reference-hub.ts:119`), changes `"amir"` to `"amir-2"` |
+| 15 | DONE | `OCULUS_TEST_HUB=<scratchpad>/o79-hub npx vitest run tests/checks/config/integrity.test.ts --testTimeout 0`: `Tests 14 passed (14)`, 'the real hub > validates with no findings 1884ms'; case15 after-run `schema lines holding from: 0`, `foreign keys naming nothing: 0`, one primary key per entries file; case15b: `findings on the leads file: 1`, the file's finding "the file has no schema and its collections entry names no primary_key, so no entry can be addressed and every write to one is refused" |
+| 16 | DONE | schema-rules '... a reference naming a venue by its name rather than its id' |
+| 17 | DONE | writes-collection 'adds, renames and removes a bookmark by its label, the primary key of its scaffold' |
+| 18 | DONE, see "wrong or impossible" for the five scan findings | case18 after-run: `findings on a file under .oculus: 0`; all 17 collections take an Add with nothing refused (data changes `["datasets"]`; venues, the other 13, leads and radar change `["entries"]`) |
+| 19 | DONE | schema-rules "... an entry's primary_key beside the schema's flag", '... a primary key on a tags field', '... a primary_key that is not true', '... a primary key on a field of a records field'; writes-collection 'refuses every write to a file with a flag on a tags field (G8)', '... a primary_key that is not true (G8)', "... an entry's primary_key beside the schema's flag (G8)" |
+| 20 | DONE | schema-rules '... an empty foreign key', '... a foreign key naming a collection whose file has no primary key'; choices 'offers nothing for an empty list (G132)', 'offers nothing for a collection whose file has no primary key (G132)' |
+| 21 | DONE | schema-rules 'gives a finding naming a collection keyed projects, whose key a foreign key reads as its own target' and the same for `vocab.x`; the manifests stay the target of `foreign_key: projects` (case 15's lines for `related`, `projects` and `project` each print "names a target") |
+| 22 | DONE | choices 'offers the people of two hubs that key the people registry people and persons, each by its own key (G132)' |
+| 23 | DONE | schema-rules 'gives one finding for a venue whose primary key is empty' |
+
+### The new rows on the unchanged tree, then after
+
+On the unchanged tree: the base copy `scratchpad/o79-base-run` (the base `src`, `config` and `utils`, this worktree's `tests`; `diff -rq <worktree>/tests <base-run>/tests` prints nothing), `npx vitest run <the 12 files> --testTimeout 60000`, the files `tests/state/forms/choices.test.ts`, `tests/data/sources/config/layers/manifest-fields.test.ts`, `tests/server/edit/writes.test.ts`, `tests/server/edit/writes-collection.test.ts`, `tests/state/forms/new-entry.test.ts`, `tests/state/forms/record-fields.test.ts`, `tests/data/snapshot/references.test.ts`, `tests/data/snapshot/schema-rules.test.ts`, `tests/data/snapshot/rename.test.ts`, `tests/state/forms/form-draft.test.ts`, `tests/server/edit/feeds.test.ts`, `tests/data/snapshot/normalise.test.ts`:
+
+```
+ Test Files  10 failed | 2 passed (12)
+      Tests  48 failed | 164 passed (212)
+```
+
+The failing new rows, as printed (`FAIL` and `x` lines):
+
+```
+FAIL tests/data/snapshot/schema-rules.test.ts [ tests/data/snapshot/schema-rules.test.ts ]
+AssertionError: the catalog holds findings.schema.key_none: expected undefined to be defined
+FAIL tests/server/edit/feeds.test.ts [ tests/server/edit/feeds.test.ts ]
+Error: Cannot find module '../../../src/lib/server/edit/feeds/radar.ts'
+x renames a venue through its name and leaves its id
+x refuses a cleared primary key and writes the other fields of the edit   -> expected [] to deeply equal [ 'short' ]
+x refuses an edit, a reorder, an Add and a remove of a file with no primary key   -> text key not in config: server.entries.no_primary_key
+x refuses every write to a file with two flagged fields (G8)
+x refuses every write to a file with a flag on a tags field (G8)
+x refuses every write to a file with a primary_key that is not true (G8)
+x refuses every write to a file with an entry's primary_key beside the schema's flag (G8)
+x shows a venue by its short, one with no short by its name, and stores its id (G132)   -> expected [] to deeply equal [ { id: 'jbi', label: 'JBI' }, ...(1) ]
+x shows a venue by its name when the venues schema ranks name 1 (G132)
+x offers the same venues when the hub keys the venues collection journals (G132)
+x offers the events by their display and stores the key (G132)   -> expected [] to deeply equal [ { id: 'talk', ...(1) } ]
+x shows each entry by its primary key when the target schema ranks no field (G132)   -> expected [] to deeply equal [ { id: 'talk', label: 'talk' } ]
+x offers a vocabulary list's words by their labels and stores the word's key (G132)   -> expected undefined to deeply equal { id: 'nascent', ...(1) }
+x offers the people of two hubs that key the people registry people and persons, each by its own key (G132)
+x words a row whose foreign_key names no collection, projects or vocab list and leaves it out (G128)
+x adds a select whose foreign_key names the people, and words a row that writes from (G128)
+x holds a foreign_key to the vocab lists of the hub's own values, and words one that names nothing (G128)
+x asks the primary key of a collection keyed by key (G8)
+x asks the primary key of venues and their required name (G8)
+x asks the key a file with no schema names (G8)   -> TypeError: (schema ?? []).find is not a function
+x asks only the required fields of a file with no primary key (G8)   -> expected [ 'title' ] to deeply equal [ 'name' ]
+x is written under the primary key and the display the schema flags (G8)
+x finds 'a select naming a collection that is ...'   (and 16 further references rows whose fixtures now write foreign_key:)
+x edits 'a flow sequence, a block sequence and...'   (and two further rename rows, same cause)
+x is the key of a collection keyed by key
+x is the id of venues, whose name is editable
+x is nothing for a file with no primary key
+x 'refuses a venue with an empty id'
+x 'refuses an Add to a file whose schema...'   -> expected [ 'entries' ] to deeply equal []
+x 'writes a venue from its name and its ...'
+```
+
+(The printed glyphs for a failing row and an arrow are written here as `x` and `->`.) New rows that pass on the unchanged tree, since they guard what it already did: choices 'offers nothing for ...' (3 rows), writes-collection 'removes a venue by its id, ...', 'edits and removes a person by key, ...', 'edits a venue by its id when the hub keys the venues collection journals', 'adds, renames and removes a bookmark by its label, ...', normalise 'heads a collection entry by its display field ...', form-draft 'does not count an edit of the field the manifest form flags as its primary key', rename's G67 venue row, and new-entry's addPerson row.
+
+After the change, scoped runs in the worktree, each green: `npx vitest run tests/server/edit/writes-collection.test.ts --reporter=verbose` `Tests 20 passed (20)`; `npx vitest run tests/state/forms/choices.test.ts tests/server/edit/writes-collection.test.ts` `Tests 28 passed (28)`; `npx vitest run tests/checks/source/keys.test.ts tests/server/edit/writes-collection.test.ts tests/data/snapshot/schema-rules.test.ts tests/server/edit/feeds.test.ts --testTimeout 0` `Tests 87 passed (87)`; `npx vitest run tests/data/snapshot/normalise.test.ts` `Tests 5 passed (5)`; and the verify list below, which runs every changed test file.
+
+### Checks 1 to 8
+
+| Check | State | Output |
+| --- | --- | --- |
+| 1, the verify list | NOT MET: exit 1, one slow test timed out | see below |
+| 2, the new rows on the unchanged tree and after | DONE | the section above |
+| 3, unused exports | DONE, no new unused export | see below |
+| 4, the identity grep | DONE, each hit named | see below |
+| 5, the `from:` greps | DONE, each hit named | see below |
+| 6, the history grep | DONE | prints nothing (`exit 1`) |
+| 7, case 15 | DONE | case 15's row above |
+| 8, the docs read | DONE, no departure found | see below |
+
+Check 1, run once after the last change: `npm run diagrams && git status --porcelain | awk '{print $2}' | grep -v '^\.scratch/' | xargs npm run test:quick --` (every changed path but the ledger), its summary lines:
+
+```
+ok      ASCII gate (1.6 s)
+ok      prettier (2.4 s): All matched files use Prettier code style!
+ok      svelte-kit sync (3.2 s)
+ok      eslint (19.1 s)
+ok      svelte-check (79.1 s): 1793023673910 COMPLETED 544 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest checks (217.0 s): Duration  199.06s (transform 142.73s, setup 0ms, import 373.53s, tests 364.76s, environment 3ms)
+ok      vitest (280.4 s): Duration  263.65s (transform 254.65s, setup 0ms, import 573.46s, tests 355.35s, environment 77.20s)
+FAILED  vitest slow (505.0 s)
+ FAIL  |unit| tests/data/hubs/hub-portfolio.test.ts > the portfolio of several hubs > holds every record of both hubs, each under the name of its hub's folder
+Error: Test timed out in 20000ms.
+ Test Files  1 failed | 79 passed (80)
+      Tests  1 failed | 715 passed | 220 skipped (936)
+test:quick: 508.2 s; failed: vitest slow
+test:quick: not covered: tests that reach no changed file within the import depth,
+            the build, the lint of unchanged files
+```
+
+The one failure is the 20 s time limit of the slow tier, in a run where the slow tests ran beside each other. Run alone, the case passes in the worktree and in the base copy at about the same time: `npx vitest run tests/data/hubs/hub-portfolio.test.ts --testTimeout 0 --reporter=verbose`, twice in each, the case's time: worktree `2619ms`, `2606ms`; base `2486ms`, `2115ms` (all 16 cases pass in each run). A judgment: the timeout is the load of the parallel run, not the change; a second run of the verify list at landing settles it. The list was not run a second time, since the brief asks for one run after the last change.
+
+Check 3, `diff <(sh utils/unused-exports.sh 2>&1) .agents/worktrees/O79-base/unused-exports.txt`, every line but the base's two knip `ERROR` lines and its `knip stopped` line:
+
+```
+< Unused exports (229)
+> Unused exports (230)
+< src/lib/server/edit/feeds/feeds.ts: linkedinFrontMatter
+> src/lib/server/edit/feeds/feeds.ts: feedFile, linkedinFrontMatter
+< src/lib/server/edit/writes.ts: coerce, createIdea, ..., collectionFile, writeFollowup, ...
+> src/lib/server/edit/writes.ts: coerce, createIdea, ..., collectionFile, identityField, writeFollowup, ...
+< src/lib/server/files/fs/bookmarks.ts: bookmarkKind
+< src/lib/server/files/fs/collections.ts: collectionFile
+> src/lib/server/files/fs/bookmarks.ts: BOOKMARK_IDENTITY, bookmarkKind
+> src/lib/server/files/fs/collections.ts: collectionFile, identityField
+< src/lib/state/boards/collection/index.ts: STATUS_FIELD, emptyCollectionState, kindOf, hasStatusField, statusValues
+> src/lib/state/boards/collection/index.ts: TITLE_FIELD, STATUS_FIELD, emptyCollectionState, PEOPLE_OPTIONS, kindOf, hasStatusField, statusValues
+> src/lib/state/forms/schema.ts: NOT_WRITTEN
+```
+
+(The two `writes.ts` lines are shortened here; they differ only by `identityField`.) Every difference is a name the base listed that is gone; no line of the new list is new.
+
+Check 4's hits, each kept:
+
+- `src/lib/ui/forms/Prompt.svelte:4`, `src/lib/server/machine/hpc/submit.ts:284`, `config/text/views/system/help.yml:7`: "first field" in prose about a dialog's focus, a job id and a Settings card, no entry identity.
+- `src/lib/state/forms/page-entry.ts:122`, `src/lib/state/forms/referrers.ts:143`: `registry === 'people'`, the registry word code may name (item 2).
+- `src/lib/server/git/deposit/deposit.ts:450`, `src/lib/state/system/config/editors/draft.ts:595`, `tests/server/edit/feeds.test.ts:381-383`, `tests/routes/git/git.test.ts:137`: `refused[0].field`, `cards[0]?.fields`, `ran[0].fields`, the first refusal or card, no schema position.
+- `src/lib/state/workbench/ui.svelte.ts:112-118`: a `WriteAnswer` constant of the workbench, not the `schema.ts` constant the brief removes (that one is gone).
+- `src/lib/data/snapshot/hubs/feeds.ts:5,25,38`: `FEED_IDENTITY = { linkedin: 'file' }`, kept by the brief.
+- `tests/server/edit/writes-collection.test.ts:114,285`, `tests/data/snapshot/rename.test.ts:124`: a comment and titles saying the venue's primary key is "not the first field".
+- `tests/server/edit/writes-collection.test.ts:362`: `one.key === 'people'` picks the people entry of the test's own settings to add `primary_key: 'key'` to it.
+
+Check 5's hits, each no schema field's key:
+
+- `config/schemas/manifest-schema.yml:16`, `src/lib/data/snapshot/references/specs.ts:15`, `src/lib/data/snapshot/schema/lists.ts:164`: comments naming `foreign_key:` and the options catalog's `from: people`.
+- `tests/fixtures/hubs/demo/.oculus/data/literature/literature.yml:18`, `docs/templates.md:1376`: "came from:" inside help text.
+- `docs/templates.md:1010`: the data field `from: [my-raw-eeg]` of a dataset entry (premise 6).
+- `config/options/sources.yml:195`: the options catalog's own `from: people` (premise 5).
+- `tests/data/snapshot/schema-rules.test.ts:621`, `tests/data/sources/config/layers/manifest-fields.test.ts:117`: rows that test that a `from:` left on a schema field or a `manifest_fields` row is a finding.
+
+Check 8: `git diff docs/templates.md docs/data-map.md docs/HELP.md docs/apps.md` read whole (99 lines added); each changed sentence is plain ASCII prose with no dash, quip, history or ruling id, and none departs from the rules file's prose rules.
 
 ## Files with line counts
 
-None changed. `git status --short` in the worktree prints nothing, and `diff -rq ../O79-base/src src`, `.../tests tests`, `.../config config -x local.yml` and `.../utils utils` print nothing. This report is the one file written under `.scratch/`.
+`git status --porcelain` lists 137 paths; every one but the ledger's two (`agents/briefs/O79-cases.md`, which came with the ruling, and this report) is below, with `wc -l`. The rules file's bounds: `src/lib/data/model/index.ts` 879 (bound 880), `Collection.svelte` 520 (bound 520). `docs/templates.md` (1512 at the base, 1517 now) and the generated `docs/diagrams/writes.*` were over 880 before the step. Folders: `src/lib/server/edit/feeds/` 5 items, `tests/state/forms/` 8.
+
+In the path list:
+
+| File | Lines |
+| --- | --- |
+| `config/defaults/sources.yml` | 119 |
+| `config/options/schemas/manifest-schema.yml` | 30 |
+| `config/options/sources.yml` | 196 |
+| `config/schemas/deck-schema.yml` | 32 |
+| `config/schemas/manifest-schema.yml` | 101 |
+| `config/text/findings.yml` | 471 |
+| `config/text/server.yml` | 534 |
+| `docs/apps.md` | 847 |
+| `docs/data-map.md` | 267 |
+| `docs/HELP.md` | 571 |
+| `docs/templates.md` | 1517 |
+| `src/lib/data/helpers/files/yaml/collection-text.ts` | 472 |
+| `src/lib/data/helpers/hub-names.ts` | 874 |
+| `src/lib/data/model/model-collections.ts` | 408 |
+| `src/lib/data/snapshot/hubs/feeds.ts` | 72 |
+| `src/lib/data/snapshot/hubs/references.ts` | 107 |
+| `src/lib/data/snapshot/normalise.ts` | 668 |
+| `src/lib/data/snapshot/references/build.ts` | 285 |
+| `src/lib/data/snapshot/references/specs.ts` | 163 |
+| `src/lib/data/snapshot/schema/field.ts` | 168 |
+| `src/lib/data/snapshot/schema/lists.ts` | 253 |
+| `src/lib/data/snapshot/schema/manifest.ts` | 182 |
+| `src/lib/data/snapshot/schema/record.ts` | 444 |
+| `src/lib/data/snapshot/validate.ts` | 557 |
+| `src/lib/data/sources/config/merge/hub-layer.ts` | 621 |
+| `src/lib/data/sources/documents/feeds.ts` | 174 |
+| `src/lib/data/sources/registries.ts` | 155 |
+| `src/lib/server/edit/entry-edit/entries.ts` | 391 |
+| `src/lib/server/edit/feeds/feeds.ts` | 670 |
+| `src/lib/server/edit/writes.ts` | 788 |
+| `src/lib/server/edit/writes/entries.ts` | 599 |
+| `src/lib/server/edit/writes/manifest.ts` | 742 |
+| `src/lib/server/edit/yaml/why.ts` | 71 |
+| `src/lib/server/files/fs/bookmarks.ts` | 149 |
+| `src/lib/server/files/fs/collections.ts` | 166 |
+| `src/lib/state/boards/collection/index.ts` | 759 |
+| `src/lib/state/client/writes.svelte.ts` | 867 |
+| `src/lib/state/forms/new-entry.ts` | 268 |
+| `src/lib/state/forms/page-entry.ts` | 392 |
+| `src/lib/state/forms/record-fields.ts` | 59 |
+| `src/lib/state/forms/schema.ts` | 604 |
+| `src/lib/views/boards/editor/Editor.svelte` | 324 |
+| `src/lib/views/feeds/literature/Literature.svelte` | 326 |
+| `src/lib/views/shared/forms/entry-file.ts` | 167 |
+| `src/lib/views/shared/forms/entry/edit/FieldControl.svelte` | 357 |
+| `src/lib/views/shared/forms/entry/edit/page-file.ts` | 60 |
+| `src/lib/views/shared/forms/entry/entry-add.ts` | 247 |
+| `src/lib/views/system/workbench/editors/FieldControl.svelte` | 509 |
+| `tests/fixtures/hubs/demo/.oculus/config.yml` | 39 |
+| `tests/fixtures/hubs/demo/.oculus/data/` (15 files: applications 21, education 20, events 45, funding 34, joint-work 35, tasks 34, literature 40, organisations 22, people 40, domains 17, pillars 15, data 44, resources 23, statements 31, venues 30) | as listed |
+| `tests/checks/source/catalog-file-keys.test.ts` | 76 |
+| `tests/data/hubs/hub-portfolio.test.ts` | 538 |
+| `tests/data/snapshot/normalise.test.ts` | 349 |
+| `tests/data/snapshot/reference-hub.ts` | 365 |
+| `tests/data/snapshot/references.test.ts` | 622 |
+| `tests/data/snapshot/rename.test.ts` | 467 |
+| `tests/data/snapshot/schema-rules.test.ts` | 685 |
+| `tests/data/sources/config/layers/manifest-fields.test.ts` | 166 |
+| `tests/routes/hubs/hub-writes.test.ts` | 859 |
+| `tests/server/edit/writes-collection.test.ts` | 407 |
+| `tests/server/edit/writes.test.ts` | 861 |
+| `tests/state/boards/board/board-rules.test.ts` | 865 |
+| `tests/state/forms/choices.test.ts` (new) | 199 |
+| `tests/state/forms/new-entry.test.ts` | 314 |
+| `tests/state/forms/record-fields.test.ts` | 16 |
+
+Outside the path list, each with the reason a change required it:
+
+| File | Lines | Reason |
+| --- | --- | --- |
+| `src/lib/views/shared/forms/entry/card/EntryCard.svelte` | 356 | ruling 4: `identityValue(entry)` reads the entry's id (its primary key), no schema position |
+| `src/lib/views/boards/collection/Collection.svelte` | 520 | ruling 4: the same for the cursor and the hub a write goes to; `identityFaults` and `fileOrder` by the primary key |
+| `src/lib/data/snapshot/hubs/merge.ts` | 382 | ruling 4: `collectionOf` walks `foreign_key:` targets by registry |
+| `src/lib/data/snapshot/schema/run.ts` | 573 | ruling 4: the primary-key and display findings |
+| `src/lib/data/snapshot/schema/static.ts` | 91 | ruling 4: `namesList` reads `foreign_key` |
+| `src/lib/data/shapes/catalog-files/manifest.ts` | 97 | ruling 4: the strict `manifestField` takes `primary_key`, `display`, `foreign_key` |
+| `src/lib/data/index.ts` | 786 | passes the collections list to `readRegistries` (`registryKeys`) and to `listedFields`, which now need the primary key the entry names |
+| `src/lib/data/model/index.ts` | 879 | exports `primaryKeyOf` and `displayFields`; `FromPicked` renamed `KeyPicked` |
+| `src/lib/data/model/model-entities.ts` | 738 | `RawRegistry.primaryKey`; comments that said `id` in venues, `key` elsewhere |
+| `src/lib/data/sources/collections.ts` | 218 | carries an entry's `primary_key:` into the collection's traits |
+| `src/lib/server/edit/entry-edit/render.ts` | 48 | comment: a new entry's primary key on the `- ` line |
+| `src/lib/server/edit/feeds/radar.ts` (new) | 229 | `addRadarEntry`, `removeRadarEntry` and `radarBucketKeys` moved out of `feeds.ts` (860 lines at the base, bound 880) by concern, so the feed file's primary-key reads fit; `feeds.ts` is 670 now |
+| `src/lib/server/edit/feeds/feed-route.ts` | 181 | imports the radar writers from `radar.ts` |
+| `src/lib/server/edit/feeds/literature.ts` | 293 | the Literature writer addresses a paper by the file's primary key, not a `KEY` constant, and refuses a file with none |
+| `src/lib/server/edit/writes/subtasks.ts` | 339 | a host collection with no primary key has no entry to address |
+| `src/lib/server/edit/writes/undo.ts` | 621 | undo of a feed entry and of a collection entry reads the primary key (`FEED_RULES` and `entryId` gone) |
+| `src/lib/server/machine/runs/seeds/task-seed.ts` | 206 | a task's title from its display (`entryTitleOf`), not `entry.title` |
+| `src/lib/state/client/context.ts`, `selectors.svelte.ts` | 854, 854 | `namesPeople` by the people registry; the project draft reads the manifest form's primary key (`NOT_WRITTEN` gone) |
+| `src/lib/state/feeds/literature/radar.ts` | 48 | comment names `radar.ts` |
+| `src/lib/state/sessions/source/draft-entry.ts` | 145 | an entry placed from a session draft goes under the file's primary key; the no-primary-key refusal's words |
+| `src/lib/views/boards/entry/Entry.svelte`, `src/lib/views/shared/forms/registry/registry-file.svelte.ts` | 387, 109 | `identityFaults` by the primary key |
+| `src/lib/views/boards/person/Person.svelte` | 426 | a joint-work row keyed by file and index, since an entry of a file with no primary key has an empty id |
+| `src/lib/views/shared/card/feed/lead-apply.ts` | 80 | passes the leads file's primary key to `placeEntry` |
+| `src/lib/views/shared/forms/entry/card/EntryFields.svelte`, `edit/EntryEditor.svelte`, `edit/EntryForm.svelte` | 291, 250, 136 | a field picks people by the target's registry (`namesPeople`), handed down as a prop |
+| `config/text/views/boards/collection.yml` | 72 | `collection.no_primary_key`, the words `blockedBy` (`entry-file.ts:160`) and a session draft give a file with no primary key |
+| `docs/diagrams/*.dot`, `*.svg` (12 files) | as listed above | regenerated by `npm run diagrams` |
+| `tests/data/snapshot/relation-shapes.test.ts`, `resources.test.ts`, `tests/data/sources/collections.test.ts`, `registries.test.ts`, `manifests/manifests.test.ts`, `tests/routes/edit/write-fixture.ts`, `undo/undo.test.ts`, `tests/routes/sessions/compose.test.ts`, `tests/server/core/changes.test.ts`, `tests/server/edit/literature.test.ts`, `writes-fixture.ts`, `tests/state/forms/page-entry.test.ts`, `tests/ui/html.dom.test.ts` | 159, 100, 494, 184, 777, 547, 866, 398, 565, 192, 213, 261, 137 | premise 9: fixture schemas given the flag (and `display:` where a heading reads it) so each test keeps its outcome |
+| `tests/server/edit/feeds.test.ts` | 456 | imports the radar writers from `radar.ts`; its radar fixtures are named by `primary_key: title` on the test's settings, since they have no schema |
+| `tests/state/forms/form-draft.test.ts` | 321 | `projectDraftTarget` takes the manifest fields; a row for the primary key the project form does not count as an edit |
 
 ## Judgment calls the brief left open
 
-None taken in code. For the first runs: case 15 ran over the hub copy without the rewrite; case 1's card heading is computed as `EntryCard.svelte:270` computes it (`entry.title === '' ? entry.id : entry.title`), since no exported function gives it; case 9 plants the hub's `retrieval` records field into the demo copy's `data.yml` schema, which the demo's has not.
+- A cleared primary key in an edit is a per-field refusal (`server.entries.key_empty`) and the edit's other fields are written, as a field of the wrong type is; a taken value still refuses the whole write. At the base a cleared venue `id` refused the whole write. Row: 'refuses a cleared primary key and writes the other fields of the edit'.
+- The reference index defines every entry of a keyed collection, so an event's key is a definition (case 5); case 1's definitions count rises from 44 to 61.
+- `identityValue` (`src/lib/state/boards/collection/index.ts`) stays as a name and reads the entry's id, with no first field and no title fallback.
+- A new entry is written with its primary key on the `- ` line (`renderEntry`): a venue Add writes `- id: newv` then `name: New V`, where the base wrote `name` first.
+- The hub rewrite gives the bookmarks file's `label` `display: 1` beside `primary_key: true`, so a bookmark's heading is its label; the brief's display list names no bookmarks rank.
+- The record of a venue name edit is keyed by the venue's `id` and carries no `was`, since the name is no longer the key.
+- The radar fixtures of the feed and undo tests are given a schema flagging `title`, or a settings entry naming it, so they keep their writes.
+- The reserved-key rows of schema-rules add the `projects` and `vocab.x` entries to oculus's merged collections, since the scratch hub reads oculus's list.
+- The new writes-collection rows take 170 to 380 ms each (`--reporter=verbose` above) and are not tagged slow, as the file's existing cases of the same cost are not.
 
 ## Host- or user-visible changes
 
-None: nothing was changed.
+Each needs the hub rewrite applied (the orchestrator's, at landing) for the real hub to show it.
+
+1. Venue headings and venue references (hub's Venues view, a project's Venue field, the Literature project picker of `Literature.svelte:97`). Before: a venue card is headed by its `name`; a venue choice shows `short`, else `name`, from a fixed field list. After: both show the filled field of the lowest `display:` rank, `short` (1) then `name` (2); the Literature picker shows a project by the project form's `display:` ranks (`projectDisplay`), `short` then `title`, where it showed `title`. To look: the Venues view with one venue that has a `short` and one that has none.
+2. A file with no primary key, or two (any collection view, e.g. Tasks after removing the flag). Before: entries addressed by the first field, every write allowed. After: the controls of its cards are off, with the reason "Writes are off: {file} has no primary key, so no entry of it can be addressed; flag one field of its schema with primary_key: true" (`blockedBy`, `entry-file.ts:160`), the Audit view lists the finding, and an edit, Add, reorder or remove is refused with the sentence naming the file.
+3. The Add box (any collection view's Add). Before: a venue asked `name, id`, a person `key` alone. After: the primary key and every required field in schema order: a person `key, name`, a task `key, title, status, lead`, a venue `name, id` (case 18's after-run lists each).
+4. The entry page (any keyed collection, e.g. a Task's page). Before: only a venue's `id` was shown fixed. After: every collection's primary key is shown and never written.
+5. Clearing the primary key in the entry editor (a Venue's page, empty the id and change `short`). Before: the whole write was refused. After: the id field is refused with its sentence and `short` is written.
+6. The YAML editor's links and rename (F2) on a key of a keyed collection that is no registry (an event's `key` in `events.yml`). Before: no definition, nothing to rename. After: the key is a definition and a field `foreign_key: events` naming it is a reference. Not looked at on a page.
+7. Audit view findings for a schema: a `from:` left on a field is the finding of a key no schema names; the new findings of items 1 and 2 (`key_none`, `key_two`, `key_beside`, `key_listed`, `key_not_true`, `key_nested`, `key_missing`, `bad_foreign_key`, `foreign_key_empty`, `foreign_key_unkeyed`, `display_none`, `display_rank`, `display_twice`, `reserved_key`).
+8. Settings, a hub's `manifest_fields` row: it takes `foreign_key:`; a row with `from:` is a finding and left out.
+9. Position Leads and Lit Watch of a hub that names no `collections:` list and whose leads or radar file has no schema: the finding of case 15b, and the lead and paper writes are refused. The real hub's files have schemas, flagged by the rewrite.
+10. Literature view's save of a paper to a Literature file with no primary key: refused with the no-primary-key sentence.
+11. A new hub from Make Folder a Hub: the Data view's Add works on the template's data file (before: no file read).
+12. The apps payload: a schema line carries `foreign_key` in place of `from` (`docs/apps.md`, the `collections` row).
+
+## Hub rewrite
+
+`diff -r -x local.yml ~/workspace/research-hub/.oculus <scratchpad>/o79-hub/.oculus` after the rewrite was applied to the scratch copy by Edit. Each line is the hub's line before (`<`) and after (`>`), at the hub's line numbers. `.oculus/data/academic/career.yml` is unchanged (a sections file, no primary key). Case 15 over this copy is green (above). One comment the orchestrator may also change at landing: `.oculus/data/academic/leads.yml:5` reads "`title` is the identity", which the flag now states as the primary key.
+
+### `.oculus/bookmarks.yml`
+```
+7c7
+<   - { field: label, type: text, label: Label, required: true, help: "The name the bookmark is listed and found by." }
+>   - { field: label, type: text, primary_key: true, display: 1, label: Label, required: true, help: "The name the bookmark is listed and found by." }
+```
+
+### `.oculus/data/academic/applications.yml`
+```
+7,8c7,8
+<   - { field: key, type: text, required: true, help: "The application's short name, unique in this file; a write and Edit in File address the entry by it." }
+<   - { field: title,   type: text,     required: true, help: "The name of the application." }
+>   - { field: key, type: text, primary_key: true, required: true, help: "The application's short name, unique in this file; a write and Edit in File address the entry by it." }
+>   - { field: title,   type: text,     display: 1, required: true, help: "The name of the application." }
+17c17
+<   - { field: related, type: tags,     from: projects, help: "Project ids" }
+>   - { field: related, type: tags,     foreign_key: projects, help: "Project ids" }
+19,21c19,21
+<   - { field: lead,          type: tags,     from: people, required: true, help: "Who leads it." }
+<   - { field: collaborators, type: tags,     from: people, help: "Who works on it with the lead." }
+<   - { field: supervisors,   type: tags,     from: people, help: "Who supervises it." }
+>   - { field: lead,          type: tags,     foreign_key: people, required: true, help: "Who leads it." }
+>   - { field: collaborators, type: tags,     foreign_key: people, help: "Who works on it with the lead." }
+>   - { field: supervisors,   type: tags,     foreign_key: people, help: "Who supervises it." }
+```
+
+### `.oculus/data/academic/education.yml`
+```
+7,8c7,8
+<   - { field: key, type: text, required: true, help: "The entry's short name, unique in this file; a write and Edit in File address the entry by it." }
+<   - { field: title,    type: text,     required: true, help: "The name of the course or programme." }
+>   - { field: key, type: text, primary_key: true, required: true, help: "The entry's short name, unique in this file; a write and Edit in File address the entry by it." }
+>   - { field: title,    type: text,     display: 1, required: true, help: "The name of the course or programme." }
+17,20c17,20
+<   - { field: related,  type: tags,     from: projects, help: "Project ids this relates to" }
+<   - { field: lead,          type: tags,     from: people, required: true, help: "Who leads it." }
+<   - { field: collaborators, type: tags,     from: people, help: "Who works on it with the lead." }
+<   - { field: supervisors,   type: tags,     from: people, help: "Who supervises it." }
+>   - { field: related,  type: tags,     foreign_key: projects, help: "Project ids this relates to" }
+>   - { field: lead,          type: tags,     foreign_key: people, required: true, help: "Who leads it." }
+>   - { field: collaborators, type: tags,     foreign_key: people, help: "Who works on it with the lead." }
+>   - { field: supervisors,   type: tags,     foreign_key: people, help: "Who supervises it." }
+```
+
+### `.oculus/data/academic/events.yml`
+```
+7,8c7,8
+<   - { field: key, type: text, required: true, help: "The event's short name, unique in this file; a write and Edit in File address the entry by it." }
+<   - { field: title,    type: text,     required: true, help: "The name of the event." }
+>   - { field: key, type: text, primary_key: true, required: true, help: "The event's short name, unique in this file; a write and Edit in File address the entry by it." }
+>   - { field: title,    type: text,     display: 1, required: true, help: "The name of the event." }
+18,21c18,21
+<   - { field: related,  type: tags,     from: projects, help: "Project ids" }
+<   - { field: lead,          type: tags,     from: people, required: true, help: "Who leads it." }
+<   - { field: collaborators, type: tags,     from: people, help: "Who works on it with the lead." }
+<   - { field: supervisors,   type: tags,     from: people, help: "Who supervises it." }
+>   - { field: related,  type: tags,     foreign_key: projects, help: "Project ids" }
+>   - { field: lead,          type: tags,     foreign_key: people, required: true, help: "Who leads it." }
+>   - { field: collaborators, type: tags,     foreign_key: people, help: "Who works on it with the lead." }
+>   - { field: supervisors,   type: tags,     foreign_key: people, help: "Who supervises it." }
+```
+
+### `.oculus/data/academic/funding.yml`
+```
+7,8c7,8
+<   - { field: key,       type: text, required: true, help: "Cross-link anchor (the funding: tag on manifests)" }
+<   - { field: title,     type: text,     required: true, help: "The name of the funding scheme or application." }
+>   - { field: key,       type: text, primary_key: true, required: true, help: "Cross-link anchor (the funding: tag on manifests)" }
+>   - { field: title,     type: text,     display: 1, required: true, help: "The name of the funding scheme or application." }
+10c10
+<   - { field: funder,    type: select,   from: organisations, help: "The organisation that funds the scheme, as a key of organisations.yml." }
+>   - { field: funder,    type: select,   foreign_key: organisations, help: "The organisation that funds the scheme, as a key of organisations.yml." }
+20,22c20,22
+<   - { field: lead,          type: tags,     from: people, required: true, help: "Who leads it." }
+<   - { field: collaborators, type: tags,     from: people, help: "Who works on it with the lead." }
+<   - { field: supervisors,   type: tags,     from: people, help: "Who supervises it." }
+>   - { field: lead,          type: tags,     foreign_key: people, required: true, help: "Who leads it." }
+>   - { field: collaborators, type: tags,     foreign_key: people, help: "Who works on it with the lead." }
+>   - { field: supervisors,   type: tags,     foreign_key: people, help: "Who supervises it." }
+```
+
+### `.oculus/data/academic/joint-work.yml`
+```
+9,11c9,11
+<   - { field: key,    type: text,     help: "short slug for this piece of work" }
+<   - { field: title,  type: text,     required: true, help: "what the work is, not who it is with" }
+<   - { field: person, type: select,   from: people, required: true, help: "The person's key in .oculus/data/people/people.yml." }
+>   - { field: key,    type: text,     primary_key: true, help: "short slug for this piece of work" }
+>   - { field: title,  type: text,     display: 1, required: true, help: "what the work is, not who it is with" }
+>   - { field: person, type: select,   foreign_key: people, required: true, help: "The person's key in .oculus/data/people/people.yml." }
+```
+
+### `.oculus/data/academic/leads.yml`
+```
+55c55
+<   - { field: title, label: "Title", type: text, help: "The name of the position." }
+>   - { field: title, label: "Title", type: text, primary_key: true, display: 1, help: "The name of the position." }
+```
+
+### `.oculus/data/academic/tasks.yml`
+```
+8,9c8,9
+<   - { field: key, type: text, required: true, help: "The task's short name, unique in this file; a write and Edit in File address the entry by it." }
+<   - { field: title,    type: text,     required: true, help: "What the task is." }
+>   - { field: key, type: text, primary_key: true, required: true, help: "The task's short name, unique in this file; a write and Edit in File address the entry by it." }
+>   - { field: title,    type: text,     display: 1, required: true, help: "What the task is." }
+15,17c15,17
+<   - { field: lead,          type: tags,     from: people, required: true, help: "Who leads it." }
+<   - { field: collaborators, type: tags,     from: people, help: "Who works on it with the lead." }
+<   - { field: supervisors,   type: tags,     from: people, help: "Who supervises it." }
+>   - { field: lead,          type: tags,     foreign_key: people, required: true, help: "Who leads it." }
+>   - { field: collaborators, type: tags,     foreign_key: people, help: "Who works on it with the lead." }
+>   - { field: supervisors,   type: tags,     foreign_key: people, help: "Who supervises it." }
+```
+
+### `.oculus/data/literature/literature.yml`
+```
+8,9c8,9
+<   - { field: key,      type: text,     required: true, label: "Citation key", help: "The paper's citation key: the first author's surname, the year and the first word of the title, with b, c and on added when the file holds it already." }
+<   - { field: title,    type: text,     help: "The paper's title. A paper saved from an address alone has none, and its title is filled in on the entry's page." }
+>   - { field: key,      type: text,     primary_key: true, required: true, label: "Citation key", help: "The paper's citation key: the first author's surname, the year and the first word of the title, with b, c and on added when the file holds it already." }
+>   - { field: title,    type: text,     display: 1, help: "The paper's title. A paper saved from an address alone has none, and its title is filled in on the entry's page." }
+17c17
+<   - { field: projects, type: tags,     from: projects, filter: true, help: "The projects the paper is read or cited for." }
+>   - { field: projects, type: tags,     foreign_key: projects, filter: true, help: "The projects the paper is read or cited for." }
+```
+
+### `.oculus/data/literature/radar.yml`
+```
+15c15
+<   - { field: title, type: text, required: true, help: "The paper's title." }
+>   - { field: title, type: text, primary_key: true, display: 1, required: true, help: "The paper's title." }
+20,21c20,21
+<   - { field: bucket, type: select, from: vocab.radar_buckets, required: true, help: "How the paper bears on the project: a pre-emption risk, a paper to cite or run as a baseline, an adjacent paper or an idea spark." }
+<   - { field: project, type: select, from: projects, help: "The project the sweep found the paper for." }
+>   - { field: bucket, type: select, foreign_key: vocab.radar_buckets, required: true, help: "How the paper bears on the project: a pre-emption risk, a paper to cite or run as a baseline, an adjacent paper or an idea spark." }
+>   - { field: project, type: select, foreign_key: projects, help: "The project the sweep found the paper for." }
+27c27
+<   - { field: maps_to, type: text, from: projects, help: "For an idea spark, the project the spark applies to, or new-idea-candidate when it fits none." }
+>   - { field: maps_to, type: text, foreign_key: projects, help: "For an idea spark, the project the spark applies to, or new-idea-candidate when it fits none." }
+```
+
+### `.oculus/data/people/organisations.yml`
+```
+7,8c7,8
+<   - { field: key,     type: text,   required: true, label: "Organisation key", help: "The organisation's key, used by a person's affiliations and a funding scheme's funder." }
+<   - { field: name,    type: text,   required: true, help: "The organisation's full name." }
+>   - { field: key,     type: text,   primary_key: true, required: true, label: "Organisation key", help: "The organisation's key, used by a person's affiliations and a funding scheme's funder." }
+>   - { field: name,    type: text,   display: 1, required: true, help: "The organisation's full name." }
+```
+
+### `.oculus/data/people/people.yml`
+```
+8,10c8,10
+<   - { field: key,          type: text,     required: true, label: "Person key", help: "The person's key, used by a project's collaborators and by joint work." }
+<   - { field: name,         type: text,     required: true, help: "The person's full name." }
+<   - { field: affiliations, type: tags,     from: organisations, help: "The organisations the person belongs to, as keys of organisations.yml, the primary first." }
+>   - { field: key,          type: text,     primary_key: true, required: true, label: "Person key", help: "The person's key, used by a project's collaborators and by joint work." }
+>   - { field: name,         type: text,     display: 1, required: true, help: "The person's full name." }
+>   - { field: affiliations, type: tags,     foreign_key: organisations, help: "The organisations the person belongs to, as keys of organisations.yml, the primary first." }
+```
+
+### `.oculus/data/pillars/domains.yml`
+```
+6,7c6,7
+<   - { field: key,   type: text,     required: true, label: "Domain key", help: "The domain's key, used by a project's domain field." }
+<   - { field: title, type: text,     required: true, help: "The domain's name." }
+>   - { field: key,   type: text,     primary_key: true, required: true, label: "Domain key", help: "The domain's key, used by a project's domain field." }
+>   - { field: title, type: text,     display: 1, required: true, help: "The domain's name." }
+```
+
+### `.oculus/data/pillars/pillars.yml`
+```
+29,30c29,30
+<   - { field: key,     type: text,     required: true, label: "Pillar key", help: "The pillar's key, used by a project's pillar list." }
+<   - { field: title,   type: text,     required: true, help: "The pillar's name." }
+>   - { field: key,     type: text,     primary_key: true, required: true, label: "Pillar key", help: "The pillar's key, used by a project's pillar list." }
+>   - { field: title,   type: text,     display: 1, required: true, help: "The pillar's name." }
+```
+
+### `.oculus/data/research/data.yml`
+```
+16,17c16,17
+<   - { field: key,         type: text,     required: true, label: "Dataset key", help: "The dataset's key, used by a project's datasets list." }
+<   - { field: name,        type: text,     required: true, help: "The dataset's full name." }
+>   - { field: key,         type: text,     primary_key: true, required: true, label: "Dataset key", help: "The dataset's key, used by a project's datasets list." }
+>   - { field: name,        type: text,     display: 1, required: true, help: "The dataset's full name." }
+23c23
+<   - { field: access,      type: select,   from: vocab.data_access, help: "How the data is obtained: open, behind a registration, credentialed (a data use agreement) or private." }
+>   - { field: access,      type: select,   foreign_key: vocab.data_access, help: "How the data is obtained: open, behind a registration, credentialed (a data use agreement) or private." }
+60c60
+<       - { field: from,       type: tags,   from: datasets, when: { kind: derived }, required: { when: { kind: derived } }, help: "The datasets the set is built from." }
+>       - { field: from,       type: tags,   foreign_key: data, when: { kind: derived }, required: { when: { kind: derived } }, help: "The datasets the set is built from." }
+```
+
+### `.oculus/data/research/resources.yml`
+```
+6,7c6,7
+<   - { field: key,    type: text,     required: true, label: "Resource key", help: "The resource's key, used by a project's compute list." }
+<   - { field: name,   type: text,     required: true, help: "The resource's name." }
+>   - { field: key,    type: text,     primary_key: true, required: true, label: "Resource key", help: "The resource's key, used by a project's compute list." }
+>   - { field: name,   type: text,     display: 1, required: true, help: "The resource's name." }
+```
+
+### `.oculus/data/research/statements.yml`
+```
+12,13c12,13
+<   - { field: key, type: text, required: true, help: "The text block's short name, unique in this file; a write and Edit in File address the entry by it." }
+<   - { field: title,     type: text,     required: true, help: "The name of the text block." }
+>   - { field: key, type: text, primary_key: true, required: true, help: "The text block's short name, unique in this file; a write and Edit in File address the entry by it." }
+>   - { field: title,     type: text,     display: 1, required: true, help: "The name of the text block." }
+```
+
+### `.oculus/data/research/venues.yml`
+```
+14,17c14,17
+<   - { field: name,           type: text,     required: true, label: "Venue name", help: "The venue's full name." }
+<   - { field: id,             type: text,     help: "The catalogue id that a project's venue names." }
+<   - { field: short,          type: text,     label: "Short name", help: "The venue's short name or acronym." }
+<   - { field: category,       type: select,   from: vocab.venue_categories, help: "The kind of venue: a journal, a conference, a thesis or a meeting." }
+>   - { field: name,           type: text,     display: 2, required: true, label: "Venue name", help: "The venue's full name." }
+>   - { field: id,             type: text,     primary_key: true, help: "The catalogue id that a project's venue names." }
+>   - { field: short,          type: text,     display: 1, label: "Short name", help: "The venue's short name or acronym." }
+>   - { field: category,       type: select,   foreign_key: vocab.venue_categories, help: "The kind of venue: a journal, a conference, a thesis or a meeting." }
+20c20
+<   - { field: tier,           type: select,   from: vocab.venue_tiers, help: "The prestige tier, curated by hand and not taken from the JIF." }
+>   - { field: tier,           type: select,   foreign_key: vocab.venue_tiers, help: "The prestige tier, curated by hand and not taken from the JIF." }
+```
 
 ## Anything in the brief that was wrong or impossible
 
-- Case 15 against items 1, 3 and 4, above.
-- Item 3: "Every `schema:` block of `docs/templates.md` (19) ... carries `primary_key: true` on its key field". The 19 blocks (`awk '/^## |^### /{h=$0} /^schema:/{print NR": "h}' docs/templates.md`) are the bookmarks file, 17 entries files and the career file (`:1467`, `### .oculus/data/academic/career.yml`), which item 1 gives no primary key; 18 blocks take the flag.
-- Premise 2's line range: `REGISTRY_SHAPES` is at `src/lib/data/helpers/hub-names.ts:801-814` at the base, not `795-814`.
-- Readers of the identity the brief's write list leaves out, which item 1 needs changed: `src/lib/views/shared/forms/entry/card/EntryCard.svelte:53,137` and `src/lib/views/boards/collection/Collection.svelte:71,290,453` (`identityValue`), `src/lib/data/snapshot/hubs/merge.ts` (`collectionOf` walks `throughSchema`, whose `RECORD_SOURCES` are registry words), `src/lib/data/snapshot/schema/record.ts` (`SCHEMA_FIELD`'s `from`), `run.ts`, `static.ts` (`namesList`), `src/lib/data/shapes/catalog-files/manifest.ts:26-44` (the strict `manifestField`, which refuses `primary_key`, `display` and `foreign_key` in `config/schemas/manifest-schema.yml` and in a `manifest_fields` row). `page-file.ts:22` holds a second `page.collection === 'leads'` beside `:43`.
-- Found by case 18's run, outside the step's rules: a new hub's data file from the template cannot take an Add (`data | add | no file read`), since `collectionText` takes an empty list key as a list only under `entries:`. The look of it on a page is not verified.
-
-## Limitations
-
-- The rewrite of the hub was not written; item 4's section waits on the ruling.
-- The svelte-kit sync wrote the worktree's `.svelte-kit/` folder, which git ignores (`.gitignore:2`).
-- The case-run programs import the worktree's modules by absolute path and need its `.svelte-kit/`; after the change, cases 1, 9 and 10 need their schema and entry wording read again (case 9's `O79_SOURCE_KEY` takes `foreign_key: data`).
+- Case 1 asks that the reference index's count of definitions be the same before and after, and case 5 asks that an event's key be a reference to the event's entry in the index. The second needs every keyed collection's entries to be definitions, so the count rises from 44 to 61 (case 1's after-run) and only the references count (114) stays.
+- Case 18 asks for no finding. The new hub from the templates gives five findings, all `scan | scan directory does not exist` for the five `projects/...` folders the template's `scan:` names and Make Folder a Hub does not create; `findings on a file under .oculus: 0`. The same five stood in the first run.
+- Case 1's datasets choice line names its source `"data"` in place of `"datasets"`, since item 3 makes the manifest schema's datasets field name the collection key `data`; its choices are the same.
+- Premise 2's line range and the 19 `schema:` blocks, both ruled (points 3 and 5).
 
 ## The case-run programs
 
-All lie in `/private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/o79/`, beside the config they run under. Each writes its lines to `caseNN.out.txt` there and nothing else outside its own scratch folder, which it removes; the scratch copy of the hub for case 15 (`scratchpad/o79-hub`, made with `cp -cR` of every top-level entry but `.git` and `.oculus`, and of every entry of `.oculus` but `local.yml`; `find <copy> -name local.yml | wc -l` printed 0) was removed before this report.
+All lie in `/private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/o79/`, beside the config they run under. Each writes its lines to `caseNN.out.txt` there and nothing else outside its own scratch folder, which it removes; the scratch copy of the hub for case 15 (`scratchpad/o79-hub`, made with `cp -cR` of every top-level entry but `.git` and `.oculus`, and of every entry of `.oculus` but `local.yml`; `find <copy> -name local.yml | wc -l` printed 0) was removed after the first run and made again for the after-run, where it stays. The sources below are the first run's; "The after-run programs" gives each change since.
 
 ### vitest.config.mts
 
@@ -976,11 +1497,321 @@ tasks | add {"key":"case-eighteen","title":"case-eighteen","status":"todo","lead
 literature | add {"key":"case-eighteen","title":"case-eighteen"} | found true | changed ["entries"] | refused []
 ```
 
-### Other commands that wrote files
+### Other commands of the first run that wrote files
 
 - `npx svelte-kit sync` in the worktree: wrote the git-ignored `.svelte-kit/`.
-- `cp -cR` of the hub into `scratchpad/o79-hub` (APFS clones, the hub's files untouched; `git status --short` in the hub printed the same five lines before and after) and `rm -rf` of that folder and of the scratchpad's vitest cache `scratchpad/o79/node_modules` before this report.
+- `cp -cR` of the hub into `scratchpad/o79-hub` (APFS clones, the hub's files untouched) and `rm -rf` of that folder and of the scratchpad's vitest cache `scratchpad/o79/node_modules`.
+
+## The after-run programs
+
+The same programs, run from the worktree's root with `O79_OUT=caseNN.after.txt npx vitest run --config <scratchpad>/o79/vitest.config.mts --root <scratchpad>/o79 caseNN` (case 9 also with `O79_SOURCE_KEY='foreign_key: data'`), each writing its lines to `caseNN.after.txt`; case 15b writes `case15b.out.txt`. Every after-run, and the integrity case of case 15, ran again after the last change of the tree, and each output file's `md5` before and after that run is the same (cases 1, 9, 10) or its text is the one quoted below (cases 15, 15b, 18). Case 15 ran over a fresh `scratchpad/o79-hub` (`cp -cR` of the hub without `.git` and without `.oculus/local.yml`; `find <copy> -name local.yml | wc -l` prints `0`) with the rewrite of "Hub rewrite" applied there by Edit. Each program's change from the source printed above, as `diff <first-run source> <after-run source>`:
+
+case01: the output file from `O79_OUT`; a field's source read as `foreign_key ?? from`; the id from `entryId` when the module still exports it, else `entryIdOf`:
+
+```
+13c13
+< const OUT = join(S, 'case01.out.txt');
+> const OUT = join(S, process.env.O79_OUT ?? 'case01.out.txt');
+93a94,95
+>         const sourceOf = (field: { from?: unknown; foreign_key?: unknown }): unknown =>
+>             field.foreign_key ?? field.from;
+103,104c105,106
+<             if (field.from === undefined && field.options === undefined) continue;
+<             say(`${field.field} | ${field.type} | ${JSON.stringify(field.from)} | ${choices(field)}`);
+>             if (sourceOf(field) === undefined && field.options === undefined) continue;
+>             say(`${field.field} | ${field.type} | ${JSON.stringify(sourceOf(field))} | ${choices(field)}`);
+111c113
+<                 if (field.from === undefined && field.options === undefined) continue;
+>                 if (sourceOf(field) === undefined && field.options === undefined) continue;
+113c115
+<                     `${one.id} | ${field.field} | ${field.type} | ${JSON.stringify(field.from)} | ${choices(field)}`
+>                     `${one.id} | ${field.field} | ${field.type} | ${JSON.stringify(sourceOf(field))} | ${choices(field)}`
+146,147c148,153
+<             const { entryId } = await import(`${W}/src/lib/server/files/fs/collections.ts`);
+<             const id = entryId(item, first.ident);
+>             const held = await import(`${W}/src/lib/server/files/fs/collections.ts`);
+>             const model = await import(`${W}/src/lib/data/model/index.ts`);
+>             const id =
+>                 'entryId' in held
+>                     ? held.entryId(item, first.ident)
+>                     : model.entryIdOf(item, first.ident);
+```
+
+case09 and case15: the output file from `O79_OUT` only.
+
+case10: the output file from `O79_OUT`; the planted `primary_key: title` skipped when the demo's entry carries it already; the field the writer addresses a lead by read from `readFeedFile(...).primary_key`:
+
+```
+26c26,28
+<         const after = before.replace(
+>         const carried = before.includes('registry: leads, primary_key: title');
+>         say(`the demo hub's leads entry already carries primary_key: title: ${carried}`);
+>         const after = carried ? before : before.replace(
+40c42,46
+<         say(`the field the feed writer addresses a lead by: ${JSON.stringify(feeds.FEED_RULES.leads)}`);
+>         say(
+>             'FEED_RULES' in feeds
+>                 ? `the field the feed writer addresses a lead by: ${JSON.stringify(feeds.FEED_RULES.leads)}`
+>                 : `the primary key the feed writer addresses a lead by, read from the file and its entry: ${JSON.stringify(feeds.readFeedFile(hub, config, 'leads')?.primary_key)}`
+>         );
+```
+
+case18: the output file from `O79_OUT`; a file with no primary key skipped; the fields the Add box asks printed; the findings on files under `.oculus` counted; an Add on the leads and radar feeds:
+
+```
+53a54,62
+>             if (held.ident === null) {
+>                 say(`${entry.key} | add | the file has no primary key`);
+>                 continue;
+>             }
+>             const forms = await import(`${W}/src/lib/state/forms/new-entry.ts`);
+>             if ('askFields' in forms && forms.askFields.length === 2) {
+>                 const asked = forms.askFields(held.schema, held.ident) as { field: string }[];
+>                 say(`${entry.key} | the Add box asks ${asked.map((one) => one.field).join(', ')}`);
+>             }
+67a77,88
+>         const inData = snapshot.findings.filter((one: { file: string }) =>
+>             one.file.startsWith(join(hub, '.oculus'))
+>         );
+>         say(`findings on a file under .oculus: ${inData.length}`);
+>         const feeds = await import(`${W}/src/lib/server/edit/feeds/feeds.ts`);
+>         const radar = await import(`${W}/src/lib/server/edit/feeds/radar.ts`);
+>         const lead = feeds.addLead(hub, config, { title: 'case-eighteen' });
+>         say(`leads | add {"title":"case-eighteen"} | found ${lead.found} | changed ${JSON.stringify(lead.changed)} | refused ${JSON.stringify(lead.refused)} | id ${JSON.stringify(lead.id)}`);
+>         const buckets = radar.radarBucketKeys(loaded.config) as string[];
+>         const paper = { title: 'case-eighteen', bucket: buckets[0] };
+>         const added = radar.addRadarEntry(hub, config, paper, buckets);
+>         say(`radar | add ${JSON.stringify(paper)} | found ${added.found} | changed ${JSON.stringify(added.changed)} | refused ${JSON.stringify(added.refused)} | id ${JSON.stringify(added.id)}`);
+```
+
+### case15b.case.ts (new)
+
+```ts
+// Case 15's second extra run of O79: a hub that names no `collections:` list, so it reads oculus's
+// own entries, whose leads file has no schema. Prints where its collections list comes from, the
+// leads entry it reads, and every finding of its build on the leads file. Writes only under the
+// scratchpad folder, removed at the end.
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { it } from '/Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O79/node_modules/vitest/dist/index.js';
+
+const W = '/Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O79';
+const S = '/private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/o79';
+const OUT = join(S, process.env.O79_OUT ?? 'case15b.out.txt');
+
+it('case 15b', async () => {
+    const { engineDir, loadConfig } = await import(`${W}/src/lib/data/sources/config.ts`);
+    const { portfolioConfigFrom } = await import(`${W}/src/lib/data/index.ts`);
+    const { buildOneHub } = await import(`${W}/tests/fixtures/hubs/hub-build.ts`);
+    const lines: string[] = [];
+    const say = (line: string): void => void lines.push(line);
+    const runs = mkdtempSync(join(S, 'runs-'));
+    try {
+        const hub = join(runs, 'bare');
+        mkdirSync(join(hub, '.oculus', 'data', 'academic'), { recursive: true });
+        writeFileSync(join(hub, '.oculus', 'config.yml'), 'scan: []\n');
+        const leads = join(hub, '.oculus', 'data', 'academic', 'leads.yml');
+        writeFileSync(leads, 'entries:\n  - { title: A postdoc, status: open }\n');
+        const loaded = loadConfig(engineDir(), { hub });
+        say(`the collections list comes from: ${loaded.from.collections ?? '(none)'}`);
+        const entry = (loaded.config.collections as Record<string, unknown>[]).find(
+            (one) => one.registry === 'leads'
+        );
+        say(`the leads entry: ${JSON.stringify(entry)}`);
+        const { snapshot } = buildOneHub(hub, portfolioConfigFrom(loaded.config, loaded.from));
+        const found = snapshot.findings.filter((one: { file: string }) => one.file === leads);
+        say(`findings on the leads file: ${found.length}`);
+        for (const one of found) say(`  ${one.file.slice(hub.length)} | ${one.key} | ${one.message}`);
+    } finally {
+        rmSync(runs, { recursive: true, force: true });
+        writeFileSync(OUT, `${lines.join('\n')}\n`);
+    }
+});
+```
+
+### What the after-runs printed
+
+case01.after.txt differs from case01.out.txt in these lines only (`diff case01.out.txt case01.after.txt`):
+
+```
+113c113
+< datasets | chips | "datasets" | node-traces:Node arrival traces::, probe-logs:Node probe logs::, stream-bench:Streaming anomaly benchmark::, synthgraph:Synthetic evolving-graph benchmark::, toy-embed:Toy embedding corpus::
+> datasets | chips | "data" | node-traces:Node arrival traces::, probe-logs:Node probe logs::, stream-bench:Streaming anomaly benchmark::, synthgraph:Synthetic evolving-graph benchmark::, toy-embed:Toy embedding corpus::
+146,152c146,152
+< demo/.oculus/data/research/statements.yml | references 0 | definitions 0
+< demo/.oculus/data/academic/events.yml | references 0 | definitions 0
+< demo/.oculus/data/academic/education.yml | references 0 | definitions 0
+< demo/.oculus/data/academic/applications.yml | references 0 | definitions 0
+< demo/.oculus/data/academic/joint-work.yml | references 2 | definitions 0
+< demo/.oculus/data/academic/tasks.yml | references 0 | definitions 0
+< demo/.oculus/data/literature/literature.yml | references 2 | definitions 0
+> demo/.oculus/data/research/statements.yml | references 0 | definitions 3
+> demo/.oculus/data/academic/events.yml | references 0 | definitions 3
+> demo/.oculus/data/academic/education.yml | references 0 | definitions 2
+> demo/.oculus/data/academic/applications.yml | references 0 | definitions 2
+> demo/.oculus/data/academic/joint-work.yml | references 2 | definitions 2
+> demo/.oculus/data/academic/tasks.yml | references 0 | definitions 3
+> demo/.oculus/data/literature/literature.yml | references 2 | definitions 2
+171c171
+< total | references 114 | definitions 44
+> total | references 114 | definitions 61
+```
+
+case09.after.txt:
+
+```
+== planted schema line: from, type tags, foreign_key: data
+retrieval: [{"kind":"derived","from":["synthgraph"],"script":"code/prep.py"}]
+derived-from line: Built from synthgraph by code/prep.py
+findings on data.yml: 0
+reference: synthgraph line 19 sources datasets
+reference: graphs line 25 sources options:.oculus/data/research/data.yml#themes
+reference: timeseries line 33 sources options:.oculus/data/research/data.yml#themes
+```
+
+case10.after.txt:
+
+```
+the demo hub's leads entry already carries primary_key: title: true
+settings entry rewritten: false
+findings on the hub's settings file: 0
+the leads entry as read: {"key":"leads","file":".oculus/data/academic/leads.yml","registry":"leads","primary_key":"title","ticker":{"category":"position"},"about":"files.make_collection_line_leads"}
+the primary key the feed writer addresses a lead by, read from the file and its entry: "title"
+writeFeedField(leads, "Postdoc, Robust ML", status, declined): found true | changed ["status"] | refused []
+the lead after the write: "Postdoc, Robust ML\"\n    inst: \"Meridian Institute\"\n    country: \"NL\"\n    typ: \"postdoc\"\n    focus: \"robustness, distribution shift\"\n    fit: reach\n    status: declined\n    deadline: \"2026-05-01\"\n    url: \"https://example"
+```
+
+case15.after.txt:
+
+```
+the collections list comes from: sources.yml
+  entry leads | file .oculus/data/academic/leads.yml | primary_key undefined
+  entry radar | file .oculus/data/literature/radar.yml | primary_key undefined
+.oculus/data/academic/applications.yml | foreign_key on related | projects | names a target
+.oculus/data/academic/applications.yml | foreign_key on lead | people | names a target
+.oculus/data/academic/applications.yml | foreign_key on collaborators | people | names a target
+.oculus/data/academic/applications.yml | foreign_key on supervisors | people | names a target
+.oculus/data/academic/applications.yml | primary keys: key
+.oculus/data/academic/career.yml | primary keys: none
+.oculus/data/academic/education.yml | foreign_key on related | projects | names a target
+.oculus/data/academic/education.yml | foreign_key on lead | people | names a target
+.oculus/data/academic/education.yml | foreign_key on collaborators | people | names a target
+.oculus/data/academic/education.yml | foreign_key on supervisors | people | names a target
+.oculus/data/academic/education.yml | primary keys: key
+.oculus/data/academic/events.yml | foreign_key on related | projects | names a target
+.oculus/data/academic/events.yml | foreign_key on lead | people | names a target
+.oculus/data/academic/events.yml | foreign_key on collaborators | people | names a target
+.oculus/data/academic/events.yml | foreign_key on supervisors | people | names a target
+.oculus/data/academic/events.yml | primary keys: key
+.oculus/data/academic/funding.yml | foreign_key on funder | organisations | names a target
+.oculus/data/academic/funding.yml | foreign_key on lead | people | names a target
+.oculus/data/academic/funding.yml | foreign_key on collaborators | people | names a target
+.oculus/data/academic/funding.yml | foreign_key on supervisors | people | names a target
+.oculus/data/academic/funding.yml | primary keys: key
+.oculus/data/academic/joint-work.yml | foreign_key on person | people | names a target
+.oculus/data/academic/joint-work.yml | primary keys: key
+.oculus/data/academic/leads.yml | primary keys: title
+.oculus/data/academic/tasks.yml | foreign_key on lead | people | names a target
+.oculus/data/academic/tasks.yml | foreign_key on collaborators | people | names a target
+.oculus/data/academic/tasks.yml | foreign_key on supervisors | people | names a target
+.oculus/data/academic/tasks.yml | primary keys: key
+.oculus/data/literature/literature.yml | foreign_key on projects | projects | names a target
+.oculus/data/literature/literature.yml | primary keys: key
+.oculus/data/literature/radar.yml | foreign_key on bucket | vocab.radar_buckets | names a target
+.oculus/data/literature/radar.yml | foreign_key on project | projects | names a target
+.oculus/data/literature/radar.yml | foreign_key on maps_to | projects | names a target
+.oculus/data/literature/radar.yml | primary keys: title
+.oculus/data/people/organisations.yml | primary keys: key
+.oculus/data/people/people.yml | foreign_key on affiliations | organisations | names a target
+.oculus/data/people/people.yml | primary keys: key
+.oculus/data/pillars/domains.yml | primary keys: key
+.oculus/data/pillars/pillars.yml | primary keys: key
+.oculus/data/research/data.yml | foreign_key on access | vocab.data_access | names a target
+.oculus/data/research/data.yml | foreign_key on retrieval.from | data | names a target
+.oculus/data/research/data.yml | primary keys: key
+.oculus/data/research/resources.yml | primary keys: key
+.oculus/data/research/statements.yml | primary keys: key
+.oculus/data/research/venues.yml | foreign_key on category | vocab.venue_categories | names a target
+.oculus/data/research/venues.yml | foreign_key on tier | vocab.venue_tiers | names a target
+.oculus/data/research/venues.yml | primary keys: id
+.oculus/bookmarks.yml | primary keys: label
+schema lines holding from: 0
+foreign keys naming nothing: 0
+```
+
+case15b.out.txt:
+
+```
+the collections list comes from: sources.yml
+the leads entry: {"key":"leads","file":".oculus/data/academic/leads.yml","registry":"leads","ticker":{"category":"position"},"about":"files.make_collection_line_leads"}
+findings on the leads file: 1
+  /.oculus/data/academic/leads.yml |  | the file has no schema and its collections entry names no primary_key, so no entry can be addressed and every write to one is refused
+```
+
+case18.after.txt:
+
+```
+collections offered: data, venues, pillars, domains, statements, people, organisations, resources, funding, events, education, applications, joint-work, tasks, literature, leads, radar
+findings: 5
+  /projects/active | scan | scan directory does not exist
+  /projects/archive | scan | scan directory does not exist
+  /projects/coauthor | scan | scan directory does not exist
+  /projects/ideas | scan | scan directory does not exist
+  /projects/manuscripts | scan | scan directory does not exist
+data | the Add box asks key, name
+data | add {"key":"case-eighteen","name":"case-eighteen"} | found true | changed ["datasets"] | refused []
+venues | the Add box asks name, id
+venues | add {"id":"case-eighteen","name":"case-eighteen"} | found true | changed ["entries"] | refused []
+pillars | the Add box asks key, title
+pillars | add {"key":"case-eighteen","title":"case-eighteen"} | found true | changed ["entries"] | refused []
+domains | the Add box asks key, title
+domains | add {"key":"case-eighteen","title":"case-eighteen"} | found true | changed ["entries"] | refused []
+statements | the Add box asks key, title, status
+statements | add {"key":"case-eighteen","title":"case-eighteen","status":"draft"} | found true | changed ["entries"] | refused []
+people | the Add box asks key, name
+people | add {"key":"case-eighteen","name":"case-eighteen"} | found true | changed ["entries"] | refused []
+organisations | the Add box asks key, name, kind
+organisations | add {"key":"case-eighteen","name":"case-eighteen","kind":"university"} | found true | changed ["entries"] | refused []
+resources | the Add box asks key, name, kind
+resources | add {"key":"case-eighteen","name":"case-eighteen","kind":"cluster"} | found true | changed ["entries"] | refused []
+funding | the Add box asks key, title, status, lead
+funding | add {"key":"case-eighteen","title":"case-eighteen","status":"in-prep","lead":"case-eighteen"} | found true | changed ["entries"] | refused []
+events | the Add box asks key, title, role, status, lead
+events | add {"key":"case-eighteen","title":"case-eighteen","role":"present","status":"upcoming","lead":"case-eighteen"} | found true | changed ["entries"] | refused []
+education | the Add box asks key, title, status, lead
+education | add {"key":"case-eighteen","title":"case-eighteen","status":"planned","lead":"case-eighteen"} | found true | changed ["entries"] | refused []
+applications | the Add box asks key, title, status, lead
+applications | add {"key":"case-eighteen","title":"case-eighteen","status":"not-applied","lead":"case-eighteen"} | found true | changed ["entries"] | refused []
+joint-work | the Add box asks key, title, person, status
+joint-work | add {"key":"case-eighteen","title":"case-eighteen","person":"case-eighteen","status":"exploring"} | found true | changed ["entries"] | refused []
+tasks | the Add box asks key, title, status, lead
+tasks | add {"key":"case-eighteen","title":"case-eighteen","status":"todo","lead":"case-eighteen"} | found true | changed ["entries"] | refused []
+literature | the Add box asks key, title
+literature | add {"key":"case-eighteen","title":"case-eighteen"} | found true | changed ["entries"] | refused []
+findings on a file under .oculus: 0
+leads | add {"title":"case-eighteen"} | found true | changed ["entries"] | refused [] | id "case-eighteen"
+radar | add {"title":"case-eighteen","bucket":"preemption"} | found true | changed ["entries"] | refused [] | id "case-eighteen"
+```
+
+### Every program and file written, after the first run
+
+- In the worktree, by Edit or Write: the 135 paths of "Files with line counts", and this report.
+- `scratchpad/o79/case01.case.ts`, `case09.case.ts`, `case10.case.ts`, `case15.case.ts`, `case18.case.ts` (edited by Edit as above) and `case15b.case.ts` (new, by Write).
+- `scratchpad/o79/case01.after.txt`, `case09.after.txt`, `case10.after.txt`, `case15.after.txt`, `case18.after.txt`, `case15b.out.txt`: each program's own output.
+- `scratchpad/o79/run-a.txt`: a vitest run's output, written by a shell redirect while working (not a case-run program's output); `scratchpad/o79/testlist.txt`, a list of test paths, written by a shell redirect and deleted.
+- `scratchpad/o79/node_modules/`: the vitest cache of the case runs.
+- `scratchpad/o79/pretty-run.ts`: a copy of `src/lib/data/snapshot/schema/run.ts` (its head comment is that file's) taken to read prettier's output of it.
+- `scratchpad/o79-hub/`: the scratch copy of the hub for case 15, with the rewrite applied by Edit; no `local.yml`.
+- `scratchpad/o79-base-run/`: the base copy for the first runs of the new rows (`cp` of the base copy's `src`, `config` and `utils`, the worktree's `tests`, `docs`, `assets`, `.oculus`, `package.json`, `tsconfig.json`, `vite.config.ts`, and its own `.svelte-kit/` from `svelte-kit sync`; `node_modules` a symlink to the worktree's); `find <it> -name local.yml -not -path "*/node_modules/*" | wc -l` prints `0`. The changed test files were copied into it by `cp` before each run.
+- `npm run diagrams` rewrote the 12 files under `docs/diagrams/`; `svelte-kit sync` the worktree's `.svelte-kit/`.
 
 ## Runs of the verify list and whole-suite commands
 
-The verify list (`npm run diagrams && npm run test:quick`) ran 0 times. No whole-suite command ran. The one test file of the worktree run was `tests/checks/config/integrity.test.ts`, once, over the scratch copy of the hub, for case 15.
+The verify list ran four times; no whole-suite command ran.
+
+1. After the code was built: stopped by me during its vitest stage to add a test (its ASCII gate, prettier and svelte-kit sync had printed ok).
+2. After that test: its paths reached `test:quick` as one argument (`test:quick: 1 changed file(s), from the given paths`, `0 test file(s)`), so it ran no test; svelte-check `0 ERRORS 0 WARNINGS`.
+3. With every changed path given: eslint failed on four lines of `specs.ts`, `lists.ts`, `run.ts` and `entries.ts`, `tests/checks/source/keys.test.ts` failed on computed text keys in `radar.ts` and `run.ts`, and one writes-collection row timed out at 5 s; each was fixed, and rows were added for cases 4, 7, 10, 11, 17 and 19.
+4. After the last change: quoted under check 1, every stage ok but the slow tier, where one case of `tests/data/hubs/hub-portfolio.test.ts` timed out at 20 s.
+
+Test files run alone while working: scoped `npx vitest run tests/<file>` runs, all in the background or with a time limit; `tests/checks/config/integrity.test.ts` over the scratch hub for case 15.

@@ -248,12 +248,16 @@ export type RegistryStore = {
     viewFor: (id: ViewId) => Registration | undefined;
     views: () => Registration[];
     /**
-     * The config findings of the views the page left out of the registry, a project board whose key
-     * is the id of another view among them, which the Findings view lists with the others.
+     * The config findings of the views the page left out of the registry, a project board or a
+     * collection whose key is the id of another view among them, which the Findings view lists with
+     * the others: those of every source, in the order the sources were first refused.
      */
     refused: () => Finding[];
-    /** Replace those findings, as the page does each time it registers the views they are of. */
-    refuse: (found: readonly Finding[]) => void;
+    /**
+     * Replace the findings of one source of views (`boards`, `collections`), as the page does each
+     * time it registers the views of that source, keeping every other source's.
+     */
+    refuse: (source: string, found: readonly Finding[]) => void;
 };
 
 export function createRegistry(layout: LayoutStore): RegistryStore {
@@ -301,13 +305,12 @@ export function createRegistry(layout: LayoutStore): RegistryStore {
         return [...registry.values()];
     }
 
-    /** The findings of the views the page left out, by their place in the last `refuse`. */
-    const refusals = new SvelteMap<number, Finding>();
+    /** The findings of the views the page left out, by the source of views they are of. */
+    const refusals = new SvelteMap<string, readonly Finding[]>();
 
-    /** Replace the findings of the views the page left out. */
-    function refuse(found: readonly Finding[]): void {
-        refusals.clear();
-        found.forEach((finding, at) => refusals.set(at, finding));
+    /** Replace the findings of the views of one source the page left out. */
+    function refuse(source: string, found: readonly Finding[]): void {
+        refusals.set(source, [...found]);
     }
 
     return {
@@ -317,7 +320,7 @@ export function createRegistry(layout: LayoutStore): RegistryStore {
         dropView,
         viewFor,
         views,
-        refused: () => [...refusals.values()],
+        refused: () => [...refusals.values()].flat(),
         refuse
     };
 }
