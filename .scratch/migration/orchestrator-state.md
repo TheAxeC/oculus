@@ -33,8 +33,12 @@ dispatch:          # steps in flight, up to six (Z632)
   session_id: a1c591e9512282600 (claude-opus-5-5)
   launched: 2026-10-26
   report: .scratch/migration/agents/reviews/O80-report.md
+  builder_usage: first run of the cases, handed back on case 17: 281008 tokens, 75 tool uses, 16 min 58 s
   round: 0
   landing: not-started
+- step: O79
+  brief_check: "running: a1f2ea95e545e0ba6"
+  landing: preparing
 ```
 
 ## The standing demands (from Axel, in force)
@@ -183,6 +187,7 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
 
 
 ## Closed items
+- 424 (2026-10-26, O80's first run of the cases, case 17: a board keyed as a module view id has no source on the server): written in full in `choices.md` Z1025 with its options, the tree's facts and the lazy option named; closed in automode with (b), booked in `plan.md` Rulings and in `agents/briefs/O80-cases.md`.
 - 416 (2026-10-26, O79's /spec, one flagged field cannot show a short name with the full name as fallback): ruled (b) by Axel, a `display:` rank, and the missing `short` names written; booked in `plan.md` Rulings and on O79's line.
 - 415 (2026-10-26, O79's /spec, the flag `label: true` collides with the words key `label:`): ruled (b) by Axel, the flag named `display:`; booked in `plan.md` Rulings and on O79's line.
 - 422 (2026-10-26, O80's /spec, the rail page key `projects` written in code as the boards' group): written in full in `choices.md` Z1024 with its options, the tree's facts and the lazy option named; closed in automode with (a), booked in `plan.md` Rulings and on O80's line.
@@ -596,6 +601,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-10-26 (O80's case 17 ruled). The builder handed back case 17 before any change (report saved in `agents/reviews/O80-report.md`); closed under self-rule Z1025 (b), ruled in `agents/briefs/O80-cases.md` with the four paths the change needs; the builder resumed with it. O79's brief check runs (a1f2ea95e545e0ba6). In flight (2 of 6): O80 (build), O79 (brief check). Open items: 423.
 - 2026-10-26 (415 and 416 ruled; O80 resumed). Axel ruled 415 (b) and 416 (b), with the missing `short` names written in O79's hub rewrite; booked in `plan.md` Rulings and on O79's line. Open item 423 reworded after his question. O80's builder a1c591e9512282600 resumed. In flight (1 of 6): O80 (build). Next: /spec O79. Open items: 423.
 - 2026-10-26 (O80's builder paused at Axel's word). Builder a1c591e9512282600 stopped before changing any file (`git status --short` in `.agents/worktrees/migration-O80` prints nothing; no report). It is resumed with the runner's message tool on its id when Axel says so. In flight (1 of 6): O80 (build paused). Open items: 415, 416, 423.
 - 2026-10-26 (O80 launched). The brief `agents/briefs/O80.md` was checked (a7ff83e77970b8a37, claude-opus-5-5) and every finding closed in it (`agents/reviews/O80-brief-check.md`, Closed); prepared at ee0f4259; open item 423 raised (the order of `boards:` in `boardItemOf` and `roleBoard`, kind 6, outside O80's rulings). Builder a1c591e9512282600 (claude-opus-5-5) runs in `.agents/worktrees/migration-O80`. In flight (1 of 6): O80 (build). Next: the report, /refute O80, /land O80; then O81. Open items: 415, 416, 423.

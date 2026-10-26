@@ -2788,6 +2788,7 @@ Independent of each other; two may run side by side under R9's rule when their b
 - Z1024 (2026-10-26, O80's /spec, open item 422, the orchestrator, automode): (a), a rail entry carries `project_boards: true` (set on Projects) and the boards are registered in its group, the career panel reading the same; none or two flagged is a finding; the word `projects` left in code was the lazy option (the orchestrator, `choices.md` Z1024) (self-rule).
 - Open item 415 (2026-10-26): (b), the flag ruling 398 names is `display:` on a schema field, and `label:` keeps the field's words. (c), `label:` taking words or `true`, was the lazy option (Axel: "415 (b)") (the user).
 - Open item 416 (2026-10-26): (b), the flag carries a rank, `display: 1` on the field shown first and `display: 2` and on for the fallbacks, and a reference shows the first filled field by rank; venues and projects rank `short` 1 and `name` or `title` 2; the 47 venues and 20 projects of the hub with no `short` get one, written in the hub with O79's hub rewrite. (c), the primary key as the fallback, was the lazy option (Axel: "416 (b) (but also, those 47 venues and 20 projects need short names)") (the user).
+- Z1025 (2026-10-26, O80's first run of the cases, open item 424, the orchestrator, automode): (b), a board keyed as a module view id is a finding the page makes, the config payload gaining its `from` map and `allFindings` the page's config findings; the board left out with no finding was the lazy option (the orchestrator, `choices.md` Z1025) (self-rule).
 
 ## Agents
 

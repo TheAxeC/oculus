@@ -5236,3 +5236,12 @@ The project boards are registered in the group `'projects'` (`src/lib/views/boar
 - Not chosen: (b) a `group:` on each `boards:` entry, which lets one board stray from the others with nothing gained; (c) the group taken from the arrangement that pins the `projects` view. The lazy option is (d) the word left in code.
 
 Where it applies: O80. Booked in `plan.md` Rulings.
+
+## Z1025 (2026-10-26, O80's first run of the cases, open item 424, a board keyed as a module view id, the orchestrator, automode): where the finding is made
+
+Case 17 of O80's brief asks for a finding when a `boards:` key equals a view id a module registers (`focus`). The builder handed it back (`agents/reviews/O80-report.md`, "The case handed back: case 17"): the module view ids exist only in `src/routes/views.ts:58` (`import.meta.glob`), `boardsFindings` runs on the server, and the boundary table (`tests/checks/tree/boundaries.test.ts:346-347`) lets neither data nor server import the routes or the views; the config payload (`src/lib/data/model/index.ts:267-277`) carries no `from` map, so a finding made on the page cannot name its file.
+
+- Chosen: (b) the page makes the finding: the board-views function is given the module view ids and returns a finding for each clash, naming the board, and the board is not registered; the config payload gains the `from` map; `allFindings` takes the page's config findings as a fourth source.
+- Not chosen: (c) the module view ids written into config, a second list kept in step with the modules by hand. The lazy option is (a), the board left out of the registration with no finding, which drops the finding the case asks for.
+
+Where it applies: O80. Booked in `plan.md` Rulings and in `agents/briefs/O80-cases.md`.
