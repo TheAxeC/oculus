@@ -1,5 +1,5 @@
 In flight (1 of 6 slots in use):
-- O80 (Focus and the boards from config; rulings 388 to 391, 393, 394, 396, 402, Z1019 to Z1024), builder running, launched 2026-10-26.
+- O80 (Focus and the boards from config; rulings 388 to 391, 393, 394, 396, 402, Z1019 to Z1024), builder paused at Axel's word before any change, launched 2026-10-26.
 
 Queued, in order (2 steps):
 - O79 (primary and foreign keys, `from:` renamed `foreign_key:`; rulings 392, 397, 398, 404), waiting on Axel's rulings on open items 415 and 416.
