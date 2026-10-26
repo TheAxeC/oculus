@@ -38,7 +38,17 @@ dispatch:          # steps in flight, up to six (Z632)
   round: 0
   landing: not-started
 - step: O79
-  landing: preparing
+  brief_check: .scratch/migration/agents/reviews/O79-brief-check.md (a1f2ea95e545e0ba6, claude-opus-5-5, 286519 tokens, 102 tool uses, 15 min 30 s)
+  base: a11f9f14
+  worktree: .agents/worktrees/migration-O79
+  executor: agent
+  worker: claude:opus
+  session_id: aed0feff241baf1c1 (claude-opus-5-5)
+  launched: 2026-10-26
+  report: .scratch/migration/agents/reviews/O79-report.md
+  shared_paths: `docs/apps.md` (O79 the `collections` row at line 410, O83 the `hpc` row at line 421), `docs/HELP.md` (O79 the paragraphs on a schema's fields and an entry's identity, O83 the Live HPC paragraph at line 320), `src/lib/data/model/index.ts` (O79 the exports of model-collections.ts, O83 the exports of model-sessions.ts), and the generated `docs/diagrams/` files, each with migration step O83; simple, since the hunks are apart and the diagrams are regenerated with `npm run diagrams` at each landing
+  round: 0
+  landing: not-started
 ```
 
 ## The standing demands (from Axel, in force)
