@@ -5245,3 +5245,12 @@ Case 17 of O80's brief asks for a finding when a `boards:` key equals a view id 
 - Not chosen: (c) the module view ids written into config, a second list kept in step with the modules by hand. The lazy option is (a), the board left out of the registration with no finding, which drops the finding the case asks for.
 
 Where it applies: O80. Booked in `plan.md` Rulings and in `agents/briefs/O80-cases.md`.
+
+## Z1026 (2026-10-26, O82's /spec, open item 429, the status word of a poll Slurm did not answer, the orchestrator, automode): the word in the HPC payload
+
+Ruling 428 has the HPC poll tell three failures apart: ssh not connecting, Slurm not answering, any other error. The payload's `status` (`HpcStatus`, `src/lib/data/model/model-sessions.ts:619`) has `starting`, `ok`, `unreachable`, `error` and `unconfigured`, and apps read it (`docs/apps.md:421`), so the second failure needs a word of the public payload.
+
+- Chosen: (a) a new status word `slurm_down`, added to `HpcStatus` and to `docs/apps.md:421`; `unreachable` then means ssh did not connect, `error` anything else.
+- Not chosen: (b) `error` kept with a new key `cause: ssh | slurm` beside it, which an app must read two keys for. The lazy option is (c), `unreachable` kept for both with only the hint telling them apart, which leaves an app unable to tell them apart.
+
+Where it applies: O82. Booked in `plan.md` Rulings and in `agents/briefs/O82.md`.

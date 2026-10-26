@@ -1,9 +1,10 @@
 In flight (1 of 6 slots in use):
 - O80 (Focus and the boards from config; rulings 388 to 391, 393, 394, 396, 402, Z1019 to Z1024), builder running, launched 2026-10-26.
 
-Queued, in order (2 steps):
-- O79 (primary and foreign keys, `from:` renamed `foreign_key:`; rulings 392, 397, 398, 404), stopped at /spec on open item 425 (a test entry for the choices a reference field offers), waiting for Axel.
-- O81 (the grouping heading and the Venues view; rulings 395, 399 to 401, 403), after O80.
+Queued, in order (3 steps):
+- O79 (primary and foreign keys, `from:` renamed `foreign_key:`; rulings 392, 397, 398, 404), waits for O80's landing (shared files not simple to merge); rulings 425 (a), 426 and 427 (a) given.
+- O81 (the grouping heading and the Venues view; rulings 395, 399 to 401, 403, 423), after O80.
+- O82 (the HPC poll's three failures, ssh, Slurm and other errors told apart; ruling 428), after O81.
 
 Owed looks:
 - none.
