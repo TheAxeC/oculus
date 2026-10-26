@@ -34,7 +34,7 @@ dispatch:          # steps in flight, up to six (Z632)
   launched: 2026-10-26
   report: .scratch/migration/agents/reviews/O83-report.md
   builder_usage: 223645 tokens, 210 tool uses, 51 min 17 s; round 1: 360398 tokens, 87 tool uses, 23 min 41 s
-  reviewer_report: .scratch/migration/agents/reviews/O83-refuter.md (ab4bfee70ce043d23, claude-opus-5-5, 289742 tokens, 64 tool uses, 17 min 33 s); over round 1: running: a6221f55f7830ecdd, claude-opus-5-5
+  reviewer_report: .scratch/migration/agents/reviews/O83-refuter.md (ab4bfee70ce043d23, claude-opus-5-5, 289742 tokens, 64 tool uses, 17 min 33 s); over round 1: a6221f55f7830ecdd, claude-opus-5-5, 211425 tokens, 41 tool uses, 11 min 40 s
   shared_paths: `src/lib/state/client/shapes/payloads.ts` (O83 lines 52-68, O80 lines 35-40), `src/lib/state/workbench/navigation/status.ts` (O83 lines 179-198, O80 lines 394-430), `docs/apps.md` (O83 line 421, O80 line 452), each with migration step O80; simple, since the hunks are apart and neither changes the other's lines
   round: 1
   landing: not-started
@@ -60,6 +60,7 @@ dispatch:          # steps in flight, up to six (Z632)
   session_id: a88ba93357e1b0941 (claude-opus-5-5)
   launched: 2026-10-26
   report: .scratch/migration/agents/reviews/O81-report.md
+  builder_usage: 312064 tokens, 102 tool uses, 17 min 53 s (first run, handed back at cases 18, 26 and 28)
   shared_paths: `tests/state/boards/board/board-rules.test.ts` (O81 the describe 'New project on a board', O79 rows of other describes), with migration step O79; `docs/HELP.md`, `docs/data-map.md` and `docs/templates.md` are left to O79 and O83 and reach O81 only as its report's Doc text, applied at its landing; simple, since the hunks are apart
   round: 0
   landing: not-started
@@ -631,6 +632,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-10-26 (O83 round 1 refuted; O81 cases ruled; Z1031). The review over O83's round 1 (a6221f55f7830ecdd, claude-opus-5-5) is appended to `agents/reviews/O83-refuter.md` and recorded under reviewer_report; its findings go to the landing. O81's builder handed back cases 18, 26 and 28 at its first run, before any change (report saved in `agents/reviews/O81-report.md`, usage under builder_usage); ruled inside the step in `agents/briefs/O81-cases.md` under Z1031 (automode), copied into the worktree, and the same builder resumed. O79 building. Open items: none.
 - 2026-10-26 (O80 landed). O80 (Focus and the boards from config) landed on main, its booking and four agents in `plan.md`, the landing report `agents/reviews/O80-landing.md`; the review over round 1 closed under its Closed heading (the builder's rewrap programs under the ruling "Unapproved builder scripts", the `focus_clusters` checks fixed at landing); G13 and G124 gain the step's test titles in `agents/guarded.md`; the look on a scratch server on 8797 (cases 12 and 18) put back and stopped. O83's builder reported (`agents/reviews/O83-report.md`, usage under builder_usage). In flight (1 of 6): O83 (built, review next). Next: /refute O83; /spec O79 (its premises re-checked against O80 on main), then O81. Open items: none.
 - 2026-10-26 (O80 round 1 under review). O80's builder finished repair round 1 (report section "# Repair round 1" saved in `agents/reviews/O80-report.md`, usage under builder_usage); the run of /refute over the round started on reviewer a3e9023399798e534 (ordo-high, served claude-opus-5-5). In flight (2 of 6): O80 (round 1 under review), O83 (building). Next: the round's refutation, its findings fixed at landing or raised to Axel, /land O80. Open items: none.
 - 2026-10-26 (O83 launched). O83's brief `agents/briefs/O83.md` rewritten under rulings 430, 432 and 433, the brief check's findings closed under its Closed heading; preparation commit 4614443b is the base; worktree `.agents/worktrees/migration-O83` with `npm ci` and `svelte-kit sync`; base copy `.agents/worktrees/O83-base` with `unused-exports.txt` (341 lines); builder aba67cb9db035ffee launched on ordo-high, served claude-opus-5-5. Shared paths with O80, simple to merge: `payloads.ts`, `status.ts`, `docs/apps.md`. In flight (2 of 6): O80 (repair round 1), O83 (building). Next: each builder's report, /refute, /land; then /spec O79 after O80's landing, and O81. Open items: none.

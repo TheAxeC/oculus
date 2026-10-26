@@ -1,7 +1,7 @@
 In flight (3 of 6 slots in use):
-- O83 (one Slurm table failing alone keeps the queue and Recover live; rulings 430, 432, 433), round 1 built, under review over the round.
+- O83 (one Slurm table failing alone keeps the queue and Recover live; rulings 430, 432, 433), round 1 refuted, landing next.
 - O79 (primary and foreign keys, `from:` renamed `foreign_key:`; rulings 392, 397, 398, 404, 415, 416, 425 (a), 426, 427 (a)), building under the cases ruling after its first run.
-- O81 (the grouping heading, the Venues view by `venue_categories` and the track record's board; rulings 395, 399 to 401, 403, 423, 434), building.
+- O81 (the grouping heading, the Venues view by `venue_categories` and the track record's board; rulings 395, 399 to 401, 403, 423, 434, Z1031), building under the cases ruling after its first run.
 
 Queued, in order: none.
 

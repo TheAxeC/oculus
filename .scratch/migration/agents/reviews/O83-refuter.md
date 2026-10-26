@@ -139,3 +139,186 @@ Cases of the brief's "Cases" (each from reading the code and the builder's `o83-
 - `tests/server/machine/apps/tools/languages.test.ts`'s red line in verify 1: a file the step does not change; not rerun, per the rules file.
 
 Reviewer usage: ab4bfee70ce043d23, claude-opus-5-5, 289742 tokens, 64 tool uses, 17 min 33 s.
+
+# Repair round 1, refuted
+
+This review wrote one file, contrary to its brief: the round delta at /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/delta.txt, made by a shell redirect. It is outside the worktree and the ledger. No other file was written, and no git command was run except `git diff 4614443b`, `git status --short` and `git show`.
+
+```
+# Verify 1, from the worktree root, PATH with node v24.21.0:
+# (npm run diagrams && npm run test:quick -- --base 4614443b) 2>&1 | grep -E '^(ok|FAILED)|test:quick|Tests |Test Files| FAIL |Error:'
+> oculus@0.1.0 test:quick
+test:quick: 25 changed file(s), from git since 4614443b
+test:quick: 273 test file(s)
+ok      ASCII gate (0.6 s)
+ok      prettier (0.7 s): All matched files use Prettier code style!
+ok      svelte-kit sync (2.6 s)
+ok      eslint (54.7 s)
+ok      svelte-check (70.6 s): 1793016042199 COMPLETED 544 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest checks (144.8 s): Duration  133.59s (transform 93.37s, setup 0ms, import 251.24s, tests 225.41s, environment 3ms)
+ok      vitest (197.6 s): Duration  188.56s (transform 197.10s, setup 0ms, import 361.96s, tests 299.29s, environment 36.56s)
+ok      vitest slow (240.7 s): Duration  231.81s (transform 15.63s, setup 0ms, import 181.83s, tests 731.54s, environment 23ms)
+test:quick: 243.5 s; every command passed
+test:quick: not covered: tests that reach no changed file within the import depth,
+(25 files: the 23 tracked paths of `git status --short` and two untracked ledger files, the round brief and the report; `git status --short | wc -l` after the run gives 25, so `npm run diagrams` changed nothing)
+
+# npx vitest run tests/server/machine/runs/recover/runs.test.ts
+ Test Files  1 passed (1)
+      Tests  16 passed (16)
+
+# Check 4: diff ../O83-base/unused-exports.txt <(sh utils/unused-exports.sh 2>&1)
+diff exit 0
+Unused exports (230)
+
+# Check 5: grep -rn "status === 'ok'\|status !== 'ok'" src/lib/state/system/machine/hpc src/lib/views/system/machine/hpc src/lib/server/machine/hpc/poll.ts
+src/lib/state/system/machine/hpc/hpc.ts:52:    if (status === 'starting' || status === 'ok' || status === 'unconfigured') return null;
+src/lib/views/system/machine/hpc/Hpc.svelte:112:        {:else if data && data.status !== 'ok'}
+src/lib/views/system/machine/hpc/Head.svelte:49:        if (data?.status !== 'ok') return false;
+src/lib/views/system/machine/hpc/Head.svelte:82:        if (data.status !== 'ok') return [];
+src/lib/views/system/machine/hpc/Head.svelte:103:        <span class:ok={data?.status === 'ok'} class:bad={failed}>
+
+# Check 6: grep -n 'stale' src/lib/views/system/machine/hpc/Head.svelte
+exit 1
+
+# Check 7: grep -rn 'Z10[0-9][0-9]\|ruling 4[0-9][0-9]\|\bO8[0-9]\b' src config docs tests --exclude=local.yml
+exit 1
+
+# Check 8: LC_ALL=C grep -n '[^ -~]' $(git diff 4614443b --name-only) .scratch/migration/agents/reviews/O83-report.md
+exit 1
+
+# Commands the round's report quotes as evidence:
+# npx vitest run tests/checks/source/keys.test.ts
+ Test Files  1 passed (1)
+      Tests  11 passed (11)
+# awk 'length > 100' over poll.ts, worktree and base copy
+src/lib/server/machine/hpc/poll.ts:129: 188
+../O83-base/src/lib/server/machine/hpc/poll.ts:122: 188
+# git diff 4614443b -- docs/apps.md docs/HELP.md | grep '^@@'   (in place of the quoted `git diff -U0`, a form this review may not run)
+@@ -317,7 +317,7 @@ Views opened for one thing, and not in the catalogue: ...
+@@ -418,7 +418,7 @@ Every record carries `root`, the name of its hub, and has the id `<hub>:<key>`, ...
+# grep -rn "hpcTip\|hpc_tip_ended" ../O83-base/src ../O83-base/tests ../O83-base/config --exclude=local.yml
+exit 1
+# wc -l of the files the round changes
+     639 src/lib/server/machine/hpc/poll.ts
+     615 src/lib/state/workbench/navigation/status.ts
+     452 src/lib/shell/status/StatusBar.svelte
+     247 config/text/statusbar.yml
+     162 src/lib/views/system/machine/hpc/Hpc.svelte
+     160 src/lib/views/system/machine/hpc/Recent.svelte
+     181 src/lib/views/system/machine/hpc/Capacity.svelte
+     557 tests/server/machine/runs/recover/runs.test.ts
+     847 docs/apps.md
+     570 docs/HELP.md
+     155 src/lib/views/system/machine/hpc/Jobs.svelte
+(as the report's table)
+# The history-word grep over the round's added lines (grep '^+' of the delta | grep -i -E "before|used to|no longer|still|always has been|always had|as before|previously|the step adds|after this package lands|O8[0-9]|Z10|ruling")
+one hit: the HELP.md Live HPC line, whose "before it runs" is the existing Submit sentence. As the report says.
+# Not run: the case-run program (`cases.config.mts`, `tests/cases.test.ts`) and `base.config.mts`, deleted (no `o83` folder in the scratchpad, `ls -la`); `npx vitest run tests/data/hubs/hub-portfolio.test.ts`, a file the step does not change.
+```
+
+### Verdicts
+
+Items of the brief's "What to build":
+
+- 1: holds. In `poll.ts` the round changes only comments: the delta's hunks are at `:256-259`, `:296-297`, `:302-305` and `:327-331`. `partialAnswer` (`:222-229`) and the poll body (`:412-465`), read in full, do what the item says, as the first run found.
+- 2: holds. `docs/apps.md:421` now gives the meaning of `null`. `model-sessions.ts` and `payloads.ts` are not changed by the round.
+- 3: holds. `queueIsCurrent` (`model-sessions.ts:696-700`) is read by `hpc.svelte.ts:32,39,49`, `failureWords` (`hpc.ts:53`), `status.ts:197`, `Hpc.svelte:62` and `Head.svelte:69`.
+- 4: violated in one state, see Spec R1. Elsewhere it holds as round item 6 amends it. The head bar is unchanged. Jobs, Recent and Log get `live` (`Hpc.svelte:126,129,137`). Login gets no reason while the queue is live (`:132`). A heading drawn at 0 rows under its mark has no body (`Recent.svelte:102-106`, `Capacity.svelte:81-104`).
+- 5: holds. `hpcWords` (`status.ts:186-199`) is not changed by the round. The tooltip now goes through `hpcTip` (`status.ts:206-208`, `StatusBar.svelte:292`).
+- 6: holds. `hpc.yml:91-93` is not changed by the round.
+- 7: holds. `recover()` returns unless `queueIsCurrent(held)` (`poll.ts:573`). G115's rows are at `runs.test.ts:532-555`, and my run passes 16 of 16. Proof R1 names what the rows still cannot tell apart.
+
+Cases:
+
+- 1 to 7 and 10 to 14: met. The round changes no code these cases run, since its `poll.ts` hunks are comments only. The evidence of the first run stands: the builder's `o83-final-run.log`, whose block the first review found equal to the report's.
+- 8: met. For the first row, my run of G115's test passes. By reading, the `squeueFailed` and `unreachable` rows assert that nothing is sent and nothing is taken (`:532-540`), and `poll.ts:573` gives that result.
+- 9: met. The Recent rows of case 9 come from t1 and are not empty, so `Hpc.svelte:128` still draws Recent, with "stale, from" and t1, under the `slurm_down_msg` box.
+- 15: met, by reading and by the builder's string render after the round ("case 5's payload": `Recent (finished) - 0 stale, not read since the server started`, with 0 tables in the section). The screen is the look on landing.
+- 16: met. `hpcWords` is unchanged by the round.
+- 17: met. `payloads.ts` is unchanged by the round.
+
+Items of the round's brief:
+
+- 1: holds. The section "Commands and files outside the brief (item 1)" (report lines 1269-1293) names the program, its config, the `node_modules` link, the eight files written by redirect and the two whole-suite runs, each with its time.
+- 2: holds. The `squeueFailed` row is at `runs.test.ts:491-497`, and the rows that expect nothing are at `:532-540`. My run after the change passes 16 of 16. The quoted run on the base copy fails at `:548`, the partial row, which comes after the new rows. By reading, base `poll.ts:500` (`if (held?.status !== 'ok') return;`) sends nothing on `slurm_down`. The base run's alias stays faithful: `grep -ln '\$lib'` over the base copy's `server/machine/hpc/*.ts`, `server/core/channels.ts` and `data/model/*.ts` exits 1. Proof R1 applies to this item.
+- 3: holds. The four comments are at `poll.ts:256-259`, `:296-297`, `:302-305` and `:327-331`, each rewrapped as a whole paragraph, with inner lines 96 to 100 columns wide (awk).
+- 4: holds. See `docs/apps.md:421`.
+- 5: holds. `docs/HELP.md:320` gains the clause, and nothing else on the line changes (delta). See Standards R2.
+- 6: (a) holds for Jobs and Recent. `Hpc.svelte:125-130` draws each of them only when `live` is true or the section has rows. The builder's render after the round shows no empty-queue sentence and no Recent section in the scenario of the first review. Capacity and Quota go further than the item asks: Spec R1. (b) holds. See `Recent.svelte:102-106` and `Capacity.svelte:81-104`. The render shows case 5's Recent with 0 tables, and `stale: { sinfo: null }` with no meters grid, no sinfo fold and no table.
+- 7: holds. `hpcTip` uses `hpc_tip` for words that end in no sentence mark and `hpc_tip_ended` (`statusbar.yml:72`, `'{0} Open Live HPC.'`) for words that do. By reading the catalog, each state reads one mark before "Open Live HPC.":
+  - `queue_summary` and `host_no_cluster` end in no mark;
+  - `slurm_down_msg`, `slurm_partial_msg` and `error_msg` end in ".";
+  - `unreachable_msg` ends in "?";
+  - `polling` ends in "...".
+
+  No sentence in the catalog changed.
+
+### 1. Spec
+
+- Spec R1. The gates in `src/lib/views/system/machine/hpc/Hpc.svelte:119-124` go further than item 6 asks, and in one state they break brief item 4.
+
+  ```
+  {#if data && (live || data.sinfo.length > 0)}
+      <Capacity rows={data.sinfo} stale={data.stale?.sinfo} {held} onheld={keepHeld} />
+  {/if}
+  {#if data && (live || data.quota.length > 0)}
+      <Quota rows={data.quota} />
+  {/if}
+  ```
+
+  - **What is wrong.** Round item 6(a) changes the gate for Jobs and for Recent, and names no other section. Brief item 4 says that "for every payload carrying `stale`, whatever its status", each table `stale` names is drawn with its heading even with no rows. The round also drops the `stale.sinfo` gate from Capacity, and splits Quota from Capacity. As a result, Capacity with `stale.sinfo` set and 0 rows is no longer drawn when the queue is not current. The builder names the Capacity change as a judgment call (report line 903). The Quota split is stated only as "Jobs and Quota draw what they drew". That sentence is true of the components but not of their gates: under a failure with sinfo rows and no quota, the base drew an empty Quota section and the tree now draws none.
+  - **Failure scenario.** The first poll after start answers with `sinfo` code 124, which gives `stale: { sinfo: null }` and `sinfo: []`. Then ssh drops. Before the round the page showed "CLUSTER CAPACITY (0 PARTITIONS) stale, not read since the server started" under the `unreachable` box, and now it shows no Capacity section, against item 4 as written.
+  - **For the orchestrator.** It rules either way at landing: extend 6(a)'s ruling to Capacity (the same shape as Recent) and record that, or restore the `stale.sinfo` gate for Capacity.
+  - **Verdict.** Item 4 is violated (one state), and round item 6(a) goes beyond its finding.
+
+### 2. Proof
+
+- Proof R1. G115's rows still cannot tell `lastOk === updated` apart from "`lastOk` is present". The rows are at `tests/server/machine/runs/recover/runs.test.ts:532-540`, inside `ask` (`:498-529`):
+
+  ```
+  [squeueFailed, 'slurm_down'],
+  [unreachable, 'unreachable']
+  ...
+  await watcher.refresh();
+  ```
+
+  - **What is wrong.** Each `ask` builds a new watcher and runs one poll. In the `squeueFailed` row `lastOk` is therefore absent, so the row tells the predicate apart from a gate on the status word, as round item 2 asked. Read the four rows against `queueIsCurrent` written as `payload.status === 'ok' || payload.lastOk !== undefined`, and every assertion still holds. The case the first review named has no row: case 9, a good poll and then `squeue` exit 1, where `lastOk` comes from the earlier poll and `updated` is later.
+  - **Failure scenario.** With such a predicate, after a good poll and a second poll whose `squeue` exits 1, `recover()` sends Recover's command to a Slurm that does not answer, and G115's test stays green.
+  - **Fix at landing.** One more row whose `ask` runs `batch`, then `squeueFailed`, and expects `sent` and `take` to be empty.
+  - **Verdict.** None: round item 2 and brief item 7 hold as written.
+
+### 3. Standards
+
+- Standards R1. The head comment at `src/lib/views/system/machine/hpc/Hpc.svelte:28-30` reads: "While the queue is not this poll's, each section is drawn only when it holds kept rows, so no empty queue or empty table is shown for a cluster that did not answer."
+  - **What is wrong.** The Login node section is drawn under every failure with its reason (`:131-133`), and so is the Log (`:134`). Neither depends on kept rows, so "each section" is false for them. The rule is the rules file's "What every package obeys": a sentence in a head comment that the change makes false.
+  - **Failure scenario.** A maintainer applies the stated rule to Login and hides the failure reason when there are no rows.
+  - **Fix at landing.** Write "Capacity, Quota, Jobs and Recent are each drawn only when ...".
+  - **Verdict.** None.
+- Standards R2. The clause added at `docs/HELP.md:320` reads: "...or "stale, not read since the server started"; the mark stays on that table through later failed polls while the table is older than the queue."
+  - **What is wrong.** With round item 6(a), a table that has no rows is not drawn while the queue is not this poll's (`Hpc.svelte:125-130`). The "not read since the server started" table is such a table, so its mark disappears at the next failed poll. The clause holds only for a table that has rows. Round items 5 and 6(a) both asked for what they produce, and their meeting point is what makes the sentence false.
+  - **Failure scenario.** A reader's first poll fails `sacct`, then ssh drops. The guide says the mark stays, and the page shows no Recent section.
+  - **Fix at landing.** Add "while it has rows".
+  - **Verdict.** None.
+
+### 4. Behaviour
+
+- Behaviour R1. The report's look list and judgment call 8 still describe the tree before the round, and one change from the base is given without its before.
+  - **What is wrong.** Four places in the report's first part are no longer true. The round section says only that "Line numbers in the sections above are those of the first build":
+    - Judgment call 8 (report line 329) says a table `stale` names "is drawn with its mark on a failed payload whose queue is not live too".
+    - The look bullets say the Recent table under `null` is "the section drawn with no rows", and that after a later failed poll "the table keeps its red mark" (lines 340-341).
+    - The status-bar bullet gives the After tooltip as "...marked stale.. Open Live HPC." (line 342).
+    - The first item under Limitations describes the double full stop as unchanged (line 353).
+
+    In addition, the base drew Jobs whenever it kept Recent rows, through its gate `data.jobs.length > 0 || data.recent.length > 0`, so a failure with Recent rows kept and no kept jobs showed "No jobs in the queue for you right now." That Jobs section is now gone. The round brief's "as on the base" does not hold for that state. The round's before-and-after has the first build as its before, not the base, and does not show this state.
+  - **Failure scenario.** At the look on landing, the orchestrator reads the screen against the old lines. It expects ".." in the tooltip and a 0-row Recent heading under an `unreachable` box. It judges a correct screen wrong, or misses the removed Jobs section, which it was never told about.
+  - **Fix.** Rewrite those lines of the look list at landing.
+  - **Verdict.** None.
+
+### Declined to judge
+
+- **The case-run program and `base.config.mts` were not rerun.** The builder deleted them, and this review writes no file. They are judged by reading their quoted source, by reading the code they reach, and by the quoted output.
+- **The times of the two whole-suite runs (about 11:17 and 11:22) and of the `o83-diff.txt` file.** These are the builder's statements. Its transcript would settle them.
+- **The red lines of `tests/data/hubs/hub-portfolio.test.ts` in the round's first verify run.** The step does not change that file, so under the rules file it was not rerun.
+- **What the screen shows: the tone, the capitals, the Focus pill, the rail badge and the tooltip as drawn.** The look on landing settles these.
+
+Reviewer usage: a6221f55f7830ecdd, claude-opus-5-5, 211425 tokens, 41 tool uses, 11 min 40 s.

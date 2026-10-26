@@ -5284,3 +5284,13 @@ O81's brief check found two things the step's own requirements need outside its 
 
 Where it applies: O81. Booked in `agents/briefs/O81.md` (items 4 and 6, premises 17 and 18, the paths) and `agents/reviews/O81-brief-check.md` (Closed).
 Builds on it: O81
+
+## Z1031 (2026-10-26, O81's first run, three cases handed back before any change, the orchestrator, automode): the record take in `BoardRule`, case 28's finding, the venue form's labels
+
+O81's builder ran every case on the unchanged tree and handed back three points (`agents/reviews/O81-report.md`). The record board's projects and its New project answer are both read from `preset.rule` by `boardTakes`, which applies `roles` only while a `self` is named, so a rule taking the role and nothing else offers New project and takes 115 projects with no `self` (cases 18 and 26). The brief's premise 13 said a `collections:` entry keyed with a module view's id is left out with a finding; `registerCollections` drops it silently (case 28). And with `venue_categories` as rows the venue form shows each row's label.
+
+- Chosen: (a) `BoardRule` gains `record: string[] | null`, null on every `boards:` row, set by the record preset to the record rows' keys, and `boardTakes` then takes only a project in a record row on which the user holds the role, nothing with no `self`; case 28 gives the existing `findings.collections.view_id` for every module view's id, raised so that no caller's findings replace another's and with no second hand-written list of view ids; the form reads each row's label, the value staying the key.
+- Not chosen: (c) a new finding word for case 28, when the existing one already says what happens; a second word field for the form, which ruling 434 did not name. The lazy option is (b): filtering after `boardItems` and hiding New project by the view's id, the exception item 6 forbids, and dropping case 28's finding.
+
+Where it applies: O81. Booked in `agents/briefs/O81-cases.md`.
+Builds on it: O81
