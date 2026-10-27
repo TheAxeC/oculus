@@ -4,7 +4,7 @@ In flight (3 of 6 slots in use):
 - O98 (accounts and connections, rulings 507 to 510 and 516): building, builder launched 2026-10-27, base 54304adb4.
 
 Queued:
-- O99 (every setting edited in Settings and a form for every file that is no setting, rulings 519 to 522): next to start, before O97.
+- O99 (every setting edited in Settings and a form for every file that is no setting, rulings 519 to 522): waits for O98 to land, since both change `config/options/local.yml` and the This machine part of Settings (`src/lib/state/system/config/`, `src/lib/views/system/workbench/settings/`), which do not merge simply; then next, before O97.
 - O97 (the journal browser from configuration and one configurable reader, rulings 509, 511, 517 and 518): after O99.
 
 Waiting on a ruling: none. Open item 523 (O95's unapproved case-run program) is Axel's and is settled at O95's landing.
