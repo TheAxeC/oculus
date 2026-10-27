@@ -2,8 +2,9 @@
 // name and drawn in the facet's hue, a choice per value with its words, its count, its hue and
 // whether it is picked; the words of the button that opens a group, which carry its picks; the
 // slices folded off the bar's second line as groups headed by their category; and the words of the
-// counts the controls carry (the deadline toggle, the Situation badge, the Venue mark, the end of
-// the second line); and the cells of the list's Columns menu, with which of them are drawn.
+// counts the controls carry (the deadline toggle, the waiting toggle, the Situation badge, the
+// Venue mark, the end of the second line); and the cells of the list's Columns menu, with which of
+// them are drawn.
 //
 // It is apart from the views so the grouping, the counts and the words can be read without a DOM:
 // a group's list is drawn only once it is opened, which a server rendering never does.
@@ -46,7 +47,7 @@ export type FilterChoice = {
 export type FilterGroup = { id: string; heading: string; tone: string; items: FilterChoice[] };
 
 /** The facets whose group buttons line 1 of the bar draws, in its order; More holds the rest. */
-export const LINE_FACETS = ['form', 'status', 'role', 'year', 'domain', 'venue', 'hub'];
+export const LINE_FACETS = ['form', 'status', 'role', 'year', 'domain', 'venue', 'waiting', 'hub'];
 
 /**
  * A facet's heading. The keys are literal so tests/checks/source/keys.test.ts can see every one of
@@ -59,6 +60,7 @@ export function facetHeading(facet: string): string {
     if (facet === 'year') return t('board.facet_year');
     if (facet === 'domain') return t('board.facet_domain');
     if (facet === 'venue') return t('board.facet_venue');
+    if (facet === 'waiting') return t('board.facet_waiting');
     if (facet === 'hub') return t('board.facet_hub');
     if (facet === 'pillar') return t('board.facet_pillar');
     if (facet === 'funding') return t('board.facet_funding');
@@ -225,6 +227,14 @@ export function sliceChoices(
 /** The words of the deadline toggle: "deadline" and how many of the board's projects are dated. */
 export function deadlineWords(stats: BoardStats): string {
     return t('board.quick_deadline', stats.dated);
+}
+
+/**
+ * The words of the waiting toggle: "waiting" and how many of the board's projects wait on someone
+ * or something.
+ */
+export function waitingWords(stats: BoardStats): string {
+    return t('board.quick_waiting', stats.waiting);
 }
 
 /** The Situation button's red badge, "2 blocked", and the empty string while none is blocked. */

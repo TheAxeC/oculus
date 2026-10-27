@@ -19,6 +19,7 @@ import {
     type TakeContext
 } from '../../../data/shapes/boards/takes.ts';
 import { personNames } from '../person.ts';
+import { waitedOn } from '../waiting.ts';
 import { sliceValue, sliceWord } from './facets.ts';
 import { selfIds, shownTeam, teamOf } from './team.ts';
 import {
@@ -165,6 +166,7 @@ function itemOf(
         year: project.year === undefined ? '' : String(project.year),
         sessions: sessionsOf(project),
         chips: project.form === undefined ? project.chips : [project.form, ...project.chips],
+        waiting: waitedOn(project.waitingOn, people.names, entities.projects),
         related: relatedTags(project, snapshot)
     };
     return { ...item, haystack: haystack(project, item, teamOf(project).map(person)) };

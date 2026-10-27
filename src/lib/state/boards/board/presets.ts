@@ -26,6 +26,7 @@ import {
     type BoardRule,
     type TakeWords
 } from '../../../data/shapes/boards/takes.ts';
+import type { WaitedOn } from '../waiting.ts';
 
 /** The value a facet gives what has none: no year, no funding, no compute, no code deposit. */
 export const NONE = '__none__';
@@ -178,6 +179,12 @@ export type BoardItem = {
      * The Form and Situation facets read the form and the chips apart, from `project`.
      */
     chips: string[];
+    /**
+     * The values of the project's `waiting-on:` as state/boards/waiting.ts `waitedOn` gives them:
+     * trimmed, the empty ones left out, each once, each named and with what it names. The card's
+     * WAITING ON line draws them, and the bar's waiting toggle and Waiting on group filter by them.
+     */
+    waiting: WaitedOn[];
     /** Everything the search reads, lower case, one string. */
     haystack: string;
     /** The projects a project's `related:` names, and those whose `related:` names it. */
@@ -206,6 +213,8 @@ export type BoardState = {
     stale: boolean;
     /** The quick filter: only the projects that carry a deadline. */
     dated: boolean;
+    /** The quick filter: only the projects waiting on someone or something. */
+    waiting: boolean;
     /**
      * Mine only: only the projects whose role fields name the user and those naming no one. On
      * until the reader switches it off; drawn while a person is marked as the user, and applied
@@ -229,6 +238,8 @@ export type BoardStats = {
     blocked: number;
     /** How many carry a deadline. */
     dated: number;
+    /** How many wait on someone or something: their `waiting` is not empty. */
+    waiting: number;
     /** `venue_conc_warn` under `focus:` of config/defaults/behavior.yml. */
     warnAt: number;
     /** The venues that many projects at a stage flagged `live` aim at, most aimed at first. */
@@ -243,10 +254,15 @@ export type VenueCount = {
     count: number;
 };
 
-/** The quick filters applyFilters is given beside the facets: stale, deadline and Mine only. */
+/**
+ * The quick filters applyFilters is given beside the facets: stale, deadline, waiting and Mine
+ * only.
+ */
 export type QuickFilters = {
     stale?: boolean;
     dated?: boolean;
+    /** Waiting: only the items whose `waiting` is not empty. */
+    waiting?: boolean;
     /** Mine only: only the items whose `mine` is true. */
     mine?: boolean;
     /**
@@ -268,6 +284,7 @@ export const FACETS = [
     'year',
     'domain',
     'venue',
+    'waiting',
     'hub',
     'pillar',
     'funding',

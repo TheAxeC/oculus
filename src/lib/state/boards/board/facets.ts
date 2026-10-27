@@ -4,13 +4,14 @@
 // the same rule the filter keeps a project by.
 //
 // A value that names a record of a hub (a domain, a venue, a pillar, a funding scheme, a dataset, a
-// resource) is that record's key, its internal id with the hub's name off: on a workspace of two
-// hubs one key of both is one value of its group, its count the sum of both hubs' projects, and one
-// filter picks the projects of both. The words are the ones a project card draws for the record,
-// which items.ts gives by the key. The card view's sections, one per category, are cut here too,
-// and so are the slices of the bar's second line, each the projects of one category at one stage
-// or, for a category whose row has a `forms:` block, of one form: a slice is the slice facet's
-// value laid out, and a project is in one slice at most.
+// resource, a person or a project waited on) is that record's key, its internal id with the hub's
+// name off: on a workspace of two hubs one key of both is one value of its group, its count the sum
+// of both hubs' projects, and one filter picks the projects of both. A waited-on value that names
+// no record is its words as written. The words are the ones a project card draws for the
+// record, which items.ts gives by the key. The card view's sections, one per category, are cut here
+// too, and so are the slices of the bar's second line, each the projects of one category at one
+// stage or, for a category whose row has a `forms:` block, of one form: a slice is the slice
+// facet's value laid out, and a project is in one slice at most.
 
 import { byKey } from '../../../data/helpers/guards.ts';
 import { keyOf } from '../../../data/helpers/hub-names.ts';
@@ -41,6 +42,7 @@ import {
     type QuickFilters
 } from './presets.ts';
 import { applyFilters, facetValues } from './state.ts';
+import { waitingValue } from '../waiting.ts';
 
 /** The words, the hue and the place of each record value, from the first item that carries it. */
 type Recorded = Map<string, { label: string; order: number; tone?: string }>;
@@ -67,11 +69,19 @@ const RECORDS: Record<string, (item: BoardItem) => Recorded> = {
     funding: (item) =>
         new Map(item.funding.map((tag) => [keyOf(tag.id), { label: tag.label, order: 0 }])),
     dataset: (item) =>
-        new Map(item.datasets.map((tag) => [keyOf(tag.id), { label: tag.label, order: 0 }]))
+        new Map(item.datasets.map((tag) => [keyOf(tag.id), { label: tag.label, order: 0 }])),
+    waiting: (item) => {
+        const recorded: Recorded = new Map();
+        for (const one of item.waiting) {
+            const value = waitingValue(one);
+            if (!recorded.has(value)) recorded.set(value, { label: one.label, order: 0 });
+        }
+        return recorded;
+    }
 };
 
 /** The facets whose values read by the words of the record they name. */
-const NAMED_RECORDS = ['compute', 'venue', 'pillar', 'funding', 'dataset'];
+const NAMED_RECORDS = ['compute', 'venue', 'pillar', 'funding', 'dataset', 'waiting'];
 
 /** The record values of one facet over the items, each kept as the first item gives it. */
 function recordValues(items: BoardItem[], facet: string): Recorded {
@@ -86,8 +96,9 @@ function recordValues(items: BoardItem[], facet: string): Recorded {
 
 /**
  * The words a facet value carries, for the values that are data rather than vocabulary. A compute
- * value reads by the resource's name `recorded` holds, a venue by its short name, and a pillar, a
- * funding scheme and a dataset by the words a card draws for them, each as itself without one.
+ * value reads by the resource's name `recorded` holds, a venue by its short name, a pillar, a
+ * funding scheme and a dataset by the words a card draws for them, and a waited-on value by the
+ * words the card's WAITING ON line draws for it, each as itself without one.
  */
 export function facetLabel(
     facet: string,
@@ -144,14 +155,14 @@ function orderValues(
     if (facet === 'sessions') return SESSIONS_VALUES.filter(has);
     const values = [...counts.keys()].filter(has);
     // A year axis reads newest first; every other free facet reads by weight, and by its own value
-    // where two weigh the same, a venue by its short name, so the order does not depend on the
-    // order the projects were read in.
+    // where two weigh the same, a venue by its short name and a waited-on value by its words, so
+    // the order does not depend on the order the projects were read in.
     if (facet === 'year') {
         const years = values.filter((value) => value !== NONE).sort((a, b) => b.localeCompare(a));
         return values.includes(NONE) ? [...years, NONE] : years;
     }
     const words = (value: string): string =>
-        facet === 'venue' ? (recorded.get(value)?.label ?? value) : value;
+        facet === 'venue' || facet === 'waiting' ? (recorded.get(value)?.label ?? value) : value;
     const named = values.filter((value) => value !== NONE);
     named.sort(
         (a, b) => (counts.get(b) ?? 0) - (counts.get(a) ?? 0) || words(a).localeCompare(words(b))

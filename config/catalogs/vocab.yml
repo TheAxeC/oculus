@@ -234,6 +234,7 @@ facet_tones:
   sessions: cyan
   status: purple
   venue: amber
+  waiting: red
   year: slate
 
 

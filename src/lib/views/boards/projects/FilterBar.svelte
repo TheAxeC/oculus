@@ -1,14 +1,17 @@
 <script lang="ts">
     // Layer 3, view partial of views/boards/projects/Projects.svelte. Line 1 of a project board's
     // bar: the search; the stale toggle; the deadline toggle with how many of the board's projects
-    // carry a deadline ("deadline 3"); Mine only, drawn while a person is marked as the user and
-    // drawn disabled, its tip saying every project here is the user's, where it would change
-    // nothing; then one group button per facet that has values, Form, Situation, Role, Year,
-    // Domain, Venue and Hub (while the workspace has more than one hub), each reading its picks
-    // ("Form: journal article +1") and opening its values (PickMenu.svelte); then More, which holds
-    // the other facets as headed sections. The Situation button carries a red badge while projects
-    // are blocked, and the Venue button an amber mark while a venue reaches the warning, its tip
-    // naming the venue.
+    // carry a deadline ("deadline 3"); the waiting toggle, drawn with the waiting glyph, with how
+    // many of them wait on someone or something ("waiting 1"), which keeps only those projects;
+    // Mine only, drawn while a person is marked as the user and drawn disabled, its tip saying
+    // every project here is the user's, where it would change nothing; then one group button per
+    // facet that has values, Form, Situation, Role, Year, Domain, Venue, Waiting on (each person
+    // and project the board's projects wait on, and each value that names neither, by its words)
+    // and Hub (while the workspace has more than one hub), each reading its picks ("Form: journal
+    // article +1") and opening its values (PickMenu.svelte); then More, which holds the other
+    // facets as headed sections. The Situation button carries a red badge while projects are
+    // blocked, and the Venue button an amber mark while a venue reaches the warning, its tip naming
+    // the venue.
     //
     // The line is one line at any pane width: the group buttons that do not fit beside the
     // controls before them go into More, last in, first out, the search keeping `SEARCH_MIN`;
@@ -32,6 +35,7 @@
         groupWords,
         moreWords,
         venueWarning,
+        waitingWords,
         type BoardState,
         type BoardStats,
         type FilterGroup
@@ -134,6 +138,13 @@
             glyph={t('project.card.deadline_glyph')}
             pressed={held.dated}
             onclick={() => onwrite({ dated: !held.dated })}
+        />
+        <Chip
+            label={waitingWords(stats)}
+            title={t('board.quick_waiting_tip')}
+            glyph={t('project.card.waiting_glyph')}
+            pressed={held.waiting}
+            onclick={() => onwrite({ waiting: !held.waiting })}
         />
         {#if named}
             <Chip

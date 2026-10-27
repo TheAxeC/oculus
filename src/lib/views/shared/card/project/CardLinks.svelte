@@ -10,9 +10,9 @@
     // The waiting kind is the project's `waiting-on:`, each value named by state/boards/waiting.ts
     // as the Focus board's strip and lane cards name it, in red with the waiting glyph on every
     // tag: a person opens the Person view as a TEAM tag does, a project opens it as a RELATED tag
-    // does, and a value that names neither is its key with no press. The blocked kind is one red
-    // tag with the words of `project.helper.blocked_external`, drawn while one of the project's
-    // chips carries the flag `blocked`. A project that is both draws both lines.
+    // does, and a value that names neither is drawn as written with no press. The blocked kind is
+    // one red tag with the words of `project.helper.blocked_external`, drawn while one of the
+    // project's chips carries the flag `blocked`. A project that is both draws both lines.
     //
     // The team kind is the project's people (state/boards/board/team.ts): the people of its `lead:`
     // first, then those of its `collaborators:`, then those of its `supervisors:`, without the

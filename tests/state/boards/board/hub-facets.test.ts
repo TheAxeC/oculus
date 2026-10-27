@@ -1,10 +1,10 @@
 // Layer 2, client-state tests. The group lists of the Projects board's bar on a workspace of two
 // hubs (state/boards/board/facets.ts, facets, over the values state.ts's facetValues reads): a
-// domain and a resource that both hubs' projects name are one row each, counted over both hubs,
-// and a filter on that row keeps both hubs' projects (state.ts, applyFilters). With another
-// facet's value in force, the shared domain is counted over both hubs' projects that value leaves,
-// and the Domain list keeps every value the board holds, at 0 where none is left. The items are
-// synthetic and hold only what the facets read, their `slice` empty since the preset has no
+// domain, a resource and a waited-on person that both hubs' projects name are one row each, counted
+// over both hubs, and a filter on that row keeps both hubs' projects (state.ts, applyFilters). With
+// another facet's value in force, the shared domain is counted over both hubs' projects that value
+// leaves, and the Domain list keeps every value the board holds, at 0 where none is left. The items
+// are synthetic and hold only what the facets read, their `slice` empty since the preset has no
 // categories; the second hub's ids carry its prefix, as the merged portfolio gives them.
 //
 // It does not cover the group lists drawing the rows, which the look does.
@@ -15,7 +15,8 @@ import { facets } from '../../../../src/lib/state/boards/board/facets.ts';
 import { applyFilters } from '../../../../src/lib/state/boards/board/state.ts';
 
 /**
- * A project of the primary hub, or of `root`, in the domain `methods` on the resource `utwente`.
+ * A project of the primary hub, or of `root`, in the domain `methods` on the resource `utwente`,
+ * waiting on the person `amir`.
  */
 function item(id: string, root?: string): BoardItem {
     const key = (one: string): string => (root === undefined ? one : `${root}:${one}`);
@@ -35,6 +36,7 @@ function item(id: string, root?: string): BoardItem {
         reproduced: false,
         code: '',
         sessions: 'none',
+        waiting: [{ id: key('amir'), label: 'Amir', kind: 'person' }],
         haystack: ''
     } as unknown as BoardItem;
 }
@@ -48,10 +50,16 @@ describe('the group lists on a workspace of two hubs', () => {
         const rows = (key: string) => found.find((facet) => facet.key === key)?.values;
         expect(rows('domain')).toEqual([{ value: 'methods', label: 'methods', count: 2 }]);
         expect(rows('compute')).toEqual([{ value: 'utwente', label: 'UTwente HPC', count: 2 }]);
+        expect(rows('waiting')).toEqual([{ value: 'amir', label: 'Amir', count: 2 }]);
     });
 
     it("keeps both hubs' projects under a filter on that value", () => {
-        const kept = applyFilters(ITEMS, { domain: ['methods'], compute: ['utwente'] }, '');
+        const other: BoardItem = {
+            ...item('three'),
+            waiting: [{ id: 'zed', label: 'Zed', kind: 'person' }]
+        };
+        const filters = { domain: ['methods'], compute: ['utwente'], waiting: ['amir'] };
+        const kept = applyFilters([...ITEMS, other], filters, '');
         expect(kept.map((one) => one.id)).toEqual(['one', 'look-hub2:two']);
     });
 

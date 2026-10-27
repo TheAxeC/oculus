@@ -23,18 +23,7 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 ```
 
 ```yaml
-dispatch:          # steps in flight, up to six (Z632)
-- step: O90
-  brief_check: .scratch/migration/agents/reviews/O90-brief-check.md (ac1a6cbad4e5cb3e9, claude-opus-5-5, 217625 tokens, 67 tool uses, 8 min 49 s)
-  base: 9f55cd701
-  worktree: .agents/worktrees/migration-O90
-  executor: agent
-  worker: claude:opus
-  session_id: aae26928d468b78b8 (claude-opus-5-5)
-  launched: 2026-10-27
-  report: .scratch/migration/agents/reviews/O90-report.md
-  round: 0
-  landing: not-started
+dispatch: []      # steps in flight, up to six (Z632)
 ```
 
 ## The standing demands (from Axel, in force)
@@ -646,6 +635,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-10-27 (O90 landed). O90 landed on main (the landing commit; booking in `plan.md` under O90, landing report `agents/reviews/O90-landing.md`): the board bar's `waiting <n>` toggle and Waiting on group, checked in the gate (every command passed) and on main (23 staged paths equal under `cmp` to the gate's file); the look taken on localhost:8790, Axel's page left on Settings as he had it. Next: /spec O92. In flight (0 of 6): none. Open items: none.
 - 2026-10-27 (O90 building). O90's brief `agents/briefs/O90.md` written from main at 38481ec63 and checked (`agents/reviews/O90-brief-check.md`, ac1a6cbad4e5cb3e9, claude-opus-5-5), every finding closed in the brief under the report's Closed heading; preparation commit 9f55cd701 is the base; worktree `.agents/worktrees/migration-O90` with `npm ci` and `svelte-kit sync`; base copy `.agents/worktrees/O90-base/` with `unused-exports.txt`; builder aae26928d468b78b8 (claude-opus-5-5). O92 waits for O90's landing: it moves and reshapes `FilterBar.svelte`, which O90 edits, a merge beyond a few named functions, so the two run in sequence. Next: O90's review and landing, then /spec O92. In flight (1 of 6): O90. Open items: none.
 - 2026-10-27 (O91 landed). O91 landed on main (the landing commit; booking in `plan.md` under O91, landing report `agents/reviews/O91-landing.md`), with the research hub's commit 6e868b885 carrying ruling 489 (b): the people file's `work`, `tags` and `note`, `joint-work.yml` deleted. The look on 8790 closed the Academic Life page's saved "Unknown view: joint-work" tab. Next: /spec O90, then /spec O92. In flight (0 of 6): none. Open items: none.
 - 2026-10-27 (O88 landed). O88 landed on main (the landing commit; booking in `plan.md` under O88, landing report `agents/reviews/O88-landing.md`), with the research hub's commit removing `intro:` from its 11 files and making the pillars `kind` a select on `pillar_kinds`. Next: /land O91 with the hub commit carrying `work` (ruling 489 (b)), then /spec O90, then /spec O92. In flight (1 of 6): O91. Open items: none.

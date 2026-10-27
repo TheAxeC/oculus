@@ -569,8 +569,9 @@ export function laneFacts(
  * Idea lane's, with oculus's clusters) is in none. For each, the people named in `waiting-on:`
  * first, then the venue holding it when its stage carries `pauses_countdown` in `stages`
  * (submitted). The blocked tally counts the projects on a lane that carry a chip with `blocked` in
- * `chips`, whatever else the project is waiting for. A `waiting-on:` value is a people key or
- * another project's id, drawn by waiting.ts. The grants are the funding schemes and the
+ * `chips`, whatever else the project is waiting for. A `waiting-on:` value is the internal id of
+ * a person or another project, or its words as written when it names neither, drawn by
+ * waiting.ts. The grants are the funding schemes and the
  * applications the entries of the collections flagged `awaiting` whose status carries
  * `deadline_met` in `statuses` of their own hub's words. A waited-on project is named from `known`,
  * every project of the portfolio, when the snapshot holds only the projects a filter keeps, and

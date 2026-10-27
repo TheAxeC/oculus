@@ -19,15 +19,16 @@ export const VENUE_WARN = 4;
 
 /**
  * The counts a project board's controls carry: how many projects it holds, which line 2 of its bar
- * ends with; how many carry a deadline, which the deadline toggle reads; how many are blocked (a
+ * ends with; how many carry a deadline, which the deadline toggle reads; how many wait on someone
+ * or something (their `waiting` not empty), which the waiting toggle reads; how many are blocked (a
  * chip whose word of `chips` carries `blocked`), the Situation button's badge; and the venues that
- * `venue_conc_warn` of `focus:` or more of its projects at a stage flagged `live` aim at, the
- * Venue button's mark, counted as the Focus venue-load line counts them. The counts are over the
- * board's own projects, before any filter, so they say what the board is rather than what is on
- * screen. A venue is counted by its name, so the one journal catalogued in two hubs of the
- * workspace is one venue with the papers of both, and carries the registry's short name. `config`
- * gives the settings, and `wordsOf` the words a project's stage and chips are read by, those of
- * the project's hub.
+ * `venue_conc_warn` of `focus:` or more of its projects at a stage flagged `live` aim at, the Venue
+ * button's mark, counted as the Focus venue-load line counts them. The counts are over the board's
+ * own projects, before any filter, so they say what the board is rather than what is on screen. A
+ * venue is counted by its name, so the one journal catalogued in two hubs of the workspace is one
+ * venue with the papers of both, and carries the registry's short name. `config` gives the
+ * settings, and `wordsOf` the words a project's stage and chips are read by, those of the project's
+ * hub.
  */
 export function stats(
     items: BoardItem[],
@@ -39,10 +40,12 @@ export function stats(
     const counts = new Map<string, { id: Id; count: number }>();
     let blocked = 0;
     let dated = 0;
+    let waiting = 0;
     for (const item of items) {
         const words = wordsOf(rootOf(item.project));
         if (anyWord(words, 'chips', 'blocked', item.project.chips)) blocked += 1;
         if (item.project.deadline !== undefined && item.project.deadline !== '') dated += 1;
+        if (item.waiting.length > 0) waiting += 1;
         const id = item.venue?.id;
         if (id === undefined || !hasWord(words, 'stages', 'live', item.project.stage)) continue;
         const name = byKey(venues, id)?.name ?? keyOf(id);
@@ -61,6 +64,7 @@ export function stats(
         projects: items.length,
         blocked,
         dated,
+        waiting,
         warnAt,
         venues: rows.map(({ id, short, count }) => ({ id, short, count }))
     };

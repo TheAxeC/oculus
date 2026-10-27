@@ -35,6 +35,7 @@ text:
         facet_sessions: Sessions
         facet_status: Situation
         facet_venue: Venue
+        facet_waiting: Waiting on
         facet_year: Year
         filter_clear: Clear all
         filters: Board filters
@@ -63,6 +64,8 @@ text:
         quick_deadline_tip: only the projects that carry a deadline
         quick_stale: stale
         quick_stale_tip: only the projects whose manifest is behind their documents
+        quick_waiting: waiting {0}
+        quick_waiting_tip: only the projects waiting on someone or something
         record_no_role: This tab was opened for no role. Press a role of the Career banner's Track record to open its projects.
         record_title: '{0}: track record'
         repro_no: not reproduced

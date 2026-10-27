@@ -23,6 +23,7 @@ import {
     type LabelMode,
     type QuickFilters
 } from './presets.ts';
+import { waitingValue } from '../waiting.ts';
 
 /** The `stale_lag_days` of `focus:` when the config names none. */
 export const STALE_LAG = 1;
@@ -30,7 +31,10 @@ export const STALE_LAG = 1;
 /**
  * The values one item carries for one facet. A project with no stage is in no slice, so it is under
  * no value of the slice facet; the Situation facet (`status`) reads the project's own chips and the
- * Form facet its form, apart; a venue is its key, so a venue two hubs catalogue is one value.
+ * Form facet its form, apart; a venue is its key, so a venue two hubs catalogue is one value; and
+ * the Waiting on facet (`waiting`) holds each value of the item's `waiting` once, by
+ * state/boards/waiting.ts `waitingValue`, a person or a project by its key and a value that names
+ * neither as it is written.
  */
 export function facetValues(item: BoardItem, facet: string): string[] {
     const ids = (tags: { id: string }[]): string[] => tags.map((tag) => keyOf(tag.id));
@@ -47,6 +51,8 @@ export function facetValues(item: BoardItem, facet: string): string[] {
             return item.domain === null ? [] : [keyOf(item.domain.id)];
         case 'venue':
             return item.venue === null ? [] : [keyOf(item.venue.id)];
+        case 'waiting':
+            return [...new Set(item.waiting.map(waitingValue))];
         case 'hub':
             return rootOf(item.project) === '' ? [] : [rootOf(item.project)];
         case 'pillar':
@@ -76,7 +82,10 @@ export function isStale(item: BoardItem, lag: number = STALE_LAG): boolean {
     return days !== undefined && days >= lag;
 }
 
-/** Apply facet, text, stale, dated and Mine only controls to board items. */
+/**
+ * Apply facet, text, stale, dated, waiting and Mine only controls to board items. The waiting
+ * control keeps the items whose `waiting` is not empty.
+ */
 export function applyFilters(
     items: BoardItem[],
     filters: Record<string, string[]>,
@@ -88,6 +97,7 @@ export function applyFilters(
     return items.filter((item) => {
         if (quick.stale === true && !isStale(item, lag)) return false;
         if (quick.dated === true && (item.project.deadline ?? '') === '') return false;
+        if (quick.waiting === true && item.waiting.length === 0) return false;
         if (quick.mine === true && !item.mine) return false;
         for (const facet of FACETS) {
             const selected = byKey(filters, facet);
@@ -139,6 +149,7 @@ export function emptyBoardState(labels: LabelMode = 'short'): BoardState {
         labels,
         stale: false,
         dated: false,
+        waiting: false,
         mine: true,
         folded: []
     };
@@ -151,6 +162,7 @@ const boardStateShape = z.object({
     search: optionalTextShape,
     stale: z.boolean().catch(false),
     dated: z.boolean().catch(false),
+    waiting: z.boolean().catch(false),
     mine: z.boolean().catch(true),
     more: recordItemsShape,
     folded: fieldItemsShape,
@@ -180,6 +192,7 @@ export function parseBoardState(
     if (held.search !== undefined) state.search = held.search;
     state.stale = held.stale;
     state.dated = held.dated;
+    state.waiting = held.waiting;
     state.mine = held.mine;
     state.more = held.more;
     state.folded = held.folded;

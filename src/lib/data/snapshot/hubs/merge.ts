@@ -150,9 +150,18 @@ function projectOf(one: Project, own: string, resolve: Resolve): Project {
         collaborators: idsOf(one.collaborators, at('people', 'collaborators')),
         supervisors: idsOf(one.supervisors, at('people', 'supervisors')),
         resourceIds: idsOf(one.resourceIds, at('resources', 'compute')),
-        // A name of `waiting-on` is a person's key, a project's or the words of someone the hub
-        // keeps no record of, which stay as they are.
-        waitingOn: one.waitingOn.map((key) => resolve(['people', 'projects'], key, waiting) ?? key)
+        // Each name of `waiting-on` is read trimmed, an empty one left out and one listed again
+        // kept at its first place, so ` amir ` names the person `amir` names. A name resolves to a
+        // person or a project of the hubs; the words of someone the hubs keep no record of are
+        // kept as written, trimmed.
+        waitingOn: [
+            ...new Set(
+                one.waitingOn
+                    .map((key) => key.trim())
+                    .filter((key) => key !== '')
+                    .map((key) => resolve(['people', 'projects'], key, waiting) ?? key)
+            )
+        ]
     };
     if (venueId === null) delete out.venueId;
     else out.venueId = venueId;

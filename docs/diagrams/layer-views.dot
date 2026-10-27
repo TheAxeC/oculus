@@ -47,7 +47,7 @@ digraph layer_views {
         "folder views/system to layer state" [label="211", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder views/system to layer ui" [label="191", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder views/shared to layer data" [label="5", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
-        "folder views/shared to layer state" [label="394", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+        "folder views/shared to layer state" [label="392", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder views/shared to layer ui" [label="193", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
     }
     "layer state from folder views/academic" [label="state", style=dashed];

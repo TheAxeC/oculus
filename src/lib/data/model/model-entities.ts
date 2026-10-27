@@ -378,9 +378,10 @@ export type Project = Rooted & {
     ideas: string[];
     deadline?: string;
     /**
-     * What the project waits for before it moves, the manifest's `waiting-on:`. An entry is a key
-     * of the people registry or the id of another project, and nothing else; validate
-     * reports a value that is neither, and the Focus strip draws each by the name it resolves to.
+     * What the project waits for before it moves, the manifest's `waiting-on:`, each value read
+     * trimmed and once, an empty one left out. An entry is the internal id of the person or the
+     * project it names, or its words as written when it names neither, which validate reports;
+     * the Focus strip draws each by the name it resolves to.
      */
     waitingOn: Id[];
     /**

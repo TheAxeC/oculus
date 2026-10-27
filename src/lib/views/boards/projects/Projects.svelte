@@ -60,8 +60,9 @@
     // the Role group and Mine only, and a card whose lead is the user carries the Lead badge;
     // Mine only, on by default, is applied only where one of the board's projects is one it does
     // not keep, and drawn disabled elsewhere. Without a `self` it draws none of them. While the
-    // workspace has more than one hub, line 1 draws the Hub group after Venue, a project's hub
-    // being its `root`; with one hub it draws none, and a hub picked earlier narrows nothing.
+    // workspace has more than one hub, line 1 draws the Hub group after Venue and Waiting on, a
+    // project's hub being its `root`; with one hub it draws none, and a hub picked earlier narrows
+    // nothing.
     //
     // Every card is drawn closed; its title, its Open project page action and Enter on the
     // keyboard cursor open the project page beside the board (ProjectCard.svelte).
@@ -173,6 +174,7 @@
     const quick: QuickFilters = $derived({
         stale: held.stale,
         dated: held.dated,
+        waiting: held.waiting,
         mine: mineApplies && held.mine,
         staleLag: lag
     });

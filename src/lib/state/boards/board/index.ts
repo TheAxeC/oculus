@@ -62,7 +62,8 @@ export {
     shownWords,
     sliceChoices,
     valueLabel,
-    venueWarning
+    venueWarning,
+    waitingWords
 } from './filter-menu.ts';
 export type { FilterChoice, FilterGroup, ListCell } from './filter-menu.ts';
 export { VENUE_WARN, disseminated, humanSize, stats } from './stats.ts';

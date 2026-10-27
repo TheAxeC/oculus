@@ -48,8 +48,6 @@
     import { isStale, newestDocDate, type BoardItem } from '$lib/state/boards/board';
     import { isBlocked } from '$lib/state/boards/focus';
     import { contextText } from '$lib/state/boards/project-context';
-    import { personNames } from '$lib/state/boards/person';
-    import { waitedOn } from '$lib/state/boards/waiting';
     import { groupProjects } from '$lib/state/boards/structure/cross-links';
     import { chipGlyphName, chipLabel, vocabOf } from '$lib/state/shared/words/tones';
     import { t } from '$lib/state/shared/words/text';
@@ -119,12 +117,6 @@
     /** The words of the project's own hub, which its deadline and its BLOCKED line are read in. */
     const words = $derived(vocabOf(rootOf(item.project)));
     const due = $derived(deadline(item.project, now, t, words));
-    /** The values of the project's `waiting-on:`, each named and with what it names. */
-    const waiting = $derived(
-        snapshot === null
-            ? []
-            : waitedOn(item.project.waitingOn, personNames(snapshot), snapshot.entities.projects)
-    );
     const blocked = $derived(isBlocked(item.project, words));
     /** The projects the project is related to, grouped as the strip at the foot draws them. */
     const related = $derived(
@@ -379,7 +371,7 @@
 {/snippet}
 
 {#snippet lines()}
-    <CardLinks {item} {waiting} {blocked} related={unlisted} />
+    <CardLinks {item} waiting={item.waiting} {blocked} related={unlisted} />
     <CardSessions {item} />
 {/snippet}
 
