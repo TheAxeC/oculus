@@ -1,5 +1,5 @@
 In flight (1 of 6 slots in use):
-- O92 (the collection's Add and bar, and the Map's bar), repair round 1 running.
+- O92 (the collection's Add and bar, and the Map's bar), repair round 1 built, under review.
 
 Queued (4):
 - O98 (accounts and connections: several clusters, git signed in from Account setup, failures told apart), beside O92, stopped at its /spec on open item 508.
