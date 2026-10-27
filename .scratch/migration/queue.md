@@ -1,11 +1,11 @@
 In flight (0 of 6 slots in use): none.
 
-Queued (3):
+Queued (2):
 - O95 (Focus, what a press opens), its /spec next, now that O92 has landed.
 - O96 (the cards' project strip: its filters and its groups by category), its /spec next, now that O92 has landed.
-- O97 (the journal browser from configuration, the hub naming the UT's: the venues' fee line and a journal search view, and one configurable reader that also serves the literature and Recover sources, ruling 509), its /spec next, now that O92 has landed.
 
 Waiting on a ruling:
+- O97 (the journal browser from configuration, the hub naming the UT's, and one configurable reader that also serves the literature and Recover sources, ruling 509): stopped at its /spec on open item 511 (the library's robots.txt, the HTML parser, the configuration's shape); prepared again once 511 is ruled.
 - O98 (accounts and connections: several clusters, git signed in from Account setup, failures told apart, the calendar and mail addresses from configuration, ruling 509): blocked at its third stop before its build, open item 510 (six choices); prepared again once a ruling on 510 rewrites its line.
 
 Landing next: none.

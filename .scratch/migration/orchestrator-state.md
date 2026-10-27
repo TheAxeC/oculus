@@ -24,6 +24,12 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 
 ```yaml
 dispatch:          # steps in flight, up to six (Z632)
+- step: O95
+  brief_check: "running: ac93e98b3cfcb9328"
+  landing: preparing
+- step: O96
+  brief_check: "running: ad36c99e52ba380ff"
+  landing: preparing
 ```
 
 ## The standing demands (from Axel, in force)
@@ -172,7 +178,51 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
   - (5) Which hub's rows are read. What the tree shows: `slurm.resource` is read from the primary hub alone (`docs/data-map.md:262`); `local.yml`'s account rows are joined over every hub (`src/lib/data/sources/config/machine.ts:54-55`). (a) `sign_in`, `connections.failures`, `clusters.key_type`, `clusters.key_file` and the `clusters:` rows are all read from the primary hub alone, as `slurm.resource` is; the same key in another hub is a finding naming that hub. Pros: a token's addresses and a cluster's user and key come from the one hub whose clusters are polled; a second hub can never send a token elsewhere. Cons: a row kept in a second hub's files does nothing. (b) The four hub keys from the primary alone, and the `clusters:` rows joined over every hub's `local.yml`, the primary's first by resource, as the account rows are. Pros: the rows behave as the account rows do. Cons: a row in another hub's `local.yml` decides the user and the key for the primary hub's cluster. Recommended: (a). Neither is the lazy option.
   - (6) What the landing writes into the research hub's `.oculus/config.yml`. What the tree shows: oculus ships none of the rows (rulings 508 2 (a), 509), so a hub with none set refuses Connect and stops the mail and calendar refresh, and tells no failure apart. (a) The landing writes, beside `slurm.resource: [utwente]`: the `sign_in` rows `google` and `microsoft` with the addresses and scopes now in `oauth.ts:122-142` and the calendar, mail and `mail_link` addresses now in `calendar/google.ts:20`, `calendar/microsoft.ts:23`, `mail/google.ts:28,69` and `mail/microsoft.ts:38`; a `github` row with GitHub's device-code, token, user and register addresses and the credential address `https://github.com`; `connections.failures` rows for ssh's "Permission denied (publickey)", "Could not resolve hostname", "No route to host" and "Host key verification failed" and git's "Authentication failed"; `clusters.key_type: ed25519` and `clusters.key_file: ~/.ssh/id_{type}_{resource}`; `recover.node_download` with the address now in `recover/cluster.ts:308`. The values are quoted in the landing report and committed in the hub. Pros: nothing in use stops at the landing. Cons: the values are written into Axel's hub by the orchestrator. (b) The landing writes only `slurm.resource: [utwente]`, and Axel fills the rest in Settings. Pros: every value is Axel's own. Cons: Connect, mail and calendar stop until he fills them. Recommended: (a). The lazy option: (b).
   - Kind: corrections and extensions of ruled text (1, 2, 3) and user-visible choices no ruling names (4, 5, 6), raised in one stop as the /spec skill's brief check 4 says.
-
+- 511 (2026-10-27, O97's /spec, the checks its step line asks for before the brief): three choices O97 needs before its brief. What the checks show: the UT Journal Browser (`https://library.wur.nl/WebQuery/utbrowser`) shows its records without a login ("Records 1 - 20 / 49030"; the page carries a log-in dialog, "Please log in to use this service", that does not hide them); it answers HTML alone, its export being an in-page dialog of at most 500 titles with no stated format; and `https://library.wur.nl/robots.txt` says, under `User-agent: *`, "Disallow: /WebQuery" and "Disallow: /WebQuery*& # no searches". The readers O97 replaces answer JSON (OpenAlex, Crossref, Semantic Scholar, Europe PMC, Web of Science, Scopus, Zenodo, Figshare, DANDI, Hugging Face, TCIA, Kaggle, Synapse), XML through `fast-xml-parser` (PubMed's two-request chain, arXiv's Atom) and one HTML listing read by a hand-written pattern (GEO, `src/lib/server/machine/runs/recover/sources/geo.ts:34`); oculus has no HTML parser at run time (`jsdom` 30.1.1 is a dev dependency, `package.json:52`).
+  - (1) The library's robots.txt against the browser. (a) oculus asks the configured browser only on a reader's press, one request per press: a search of the view (b) and a "Read from the browser" press on a venue's card, which writes the ISSN's fee line and open-access status into that venue's entry in `venues.yml`, the card drawing the stored values; no request runs in the background, at start or on a refresh, and every request carries a User-Agent naming oculus. Pros: oculus then behaves as the person using the browser does, which is what robots.txt does not address (it is written for crawlers, RFC 9309); the fee line and the search work for the UT as soon as O97 lands. Cons: the requests still reach a path whose robots.txt says "no searches"; whether the library's terms of use allow it is not verified. (b) O97 builds the same configurable reader and both views, and the hub's `venues.browser` row for the UT is written only once the library agrees in writing; asking the library is a message on your behalf, sent by you or by me on your yes. Pros: no request goes against the library's stated wish. Cons: the UT fee line and the journal search stay empty until the library answers, and may never come. Recommended: (a), as my judgment that a press-driven, person-paced reader is not the crawling robots.txt addresses. Neither is the lazy option; the lazy option, not offered, is dropping the browser from O97.
+  - (2) How an HTML answer is read, under `libraries: check`. A row of format `html` names, per field, a CSS selector and the attribute or text it reads. (a) `cheerio` 1.2.0 (MIT, the cheeriojs project, last published 2026-07-17, eleven dependencies), built on `parse5`, the spec-conformant HTML parser, so a library's malformed markup parses as a browser parses it; it also replaces GEO's hand-written pattern. (b) `node-html-parser` 9.0.5 (MIT, last published 2026-10-19), a lenient parser with no spec conformance and fewer dependencies. Pros of (a): the same tree a browser builds, the selector a reader copies from the browser's inspector works as written. Cons of (a): a larger dependency tree. Pros of (b): small and fast. Cons of (b): on markup it repairs differently from a browser, a selector copied from the inspector can match nothing. Recommended: (a). The lazy option, not offered: patterns written by hand per field.
+  - (3) The configuration's shape. Every row lives in the hub's `.oculus/config.yml` beside the feature that reads it, as ruling 509 says: `venues.browser` (one row; none set shows no browser), `literature.sources` (a list), `recover.sources` (a list) and `links` (a list of `{ key, address }`). A row of any of the three reader lists has the same keys: `key`, `name`, `format` (`json`, `xml`, `html`), `address` with `{name}` holes, `query` (what each search term maps to), `paging` (offset or page parameter, size parameter, the sizes offered), `filters` and `sorts` (each a label and the parameters it sends), `auth` (the header or parameter that carries a key, and the `downloads` row it reads), `records` (where the list of hits is) and `fields` (each field's path or selector, with a named generic operation where one is needed: `inverted_index`, `strip`, `first_byte_size`, `checksum_file`, `then` for a two-request chain). Worked rows, the UT selectors read off the page at the build:
+    ```yaml
+    venues:
+      browser:
+        key: utbrowser
+        name: UT Journal Browser
+        format: html
+        address: https://library.wur.nl/WebQuery/utbrowser
+        query: { words: title }
+        paging: { offset: wq_ofs, size: wq_max, sizes: [20, 50, 100] }
+        filters:
+          - { label: APC, params: { wq_flt: journal/apc, wq_val: "{value}" } }
+          - { label: Open access, params: { wq_flt: journal/oa-status, wq_val: "{value}" } }
+        sorts:
+          - { label: CiteScore, params: { wq_srt_desc: citescore } }
+          - { label: Title, params: { wq_srt_asc: journal/title } }
+        records: "<hit row selector>"
+        fields: { title: "<selector>", issn: "<selector>", publisher: "<selector>", fee: "<selector>", open_access: { select: "<selector>", attr: alt } }
+    literature:
+      sources:
+        - key: openalex
+          name: OpenAlex
+          format: json
+          address: https://api.openalex.org/works
+          query: { words: { filter: "title_and_abstract.search:{words}" }, doi: { filter: "doi:{doi}" } }
+          paging: { page: page, size: per-page }
+          auth: { param: api_key }
+          records: results
+          fields: { title: title, doi: doi, year: publication_year, cited: cited_by_count, abstract: { path: abstract_inverted_index, op: inverted_index } }
+    recover:
+      sources:
+        - key: zenodo
+          name: Zenodo
+          format: json
+          address: "https://zenodo.org/api/records/{record}"
+          records: files
+          fields: { name: key, size: size, checksum: { path: checksum, op: strip, prefix: "md5:", kind: md5 }, url: links.self }
+    links:
+      - { key: doi, address: "https://doi.org/{id}" }
+    ```
+    (a) Field paths as dotted paths with `[]` for a list (`authorships[].author.display_name`) and CSS selectors for HTML, each transform a named generic operation the code holds. Pros: one small path syntax a reader writes by eye; every transform has a name a reader can look up in the help. Cons: a transform not on the list needs a code change. (b) Field paths as JMESPath expressions (the `jmespath` package), CSS selectors for HTML, the named operations kept for what JMESPath cannot express (the inverted index, the first-byte size, the checksum file). Pros: projections and filters written in the row, without a code change. Cons: a second expression language next to CSS selectors, one more dependency, and rows a reader cannot read at a glance. Recommended: (a). Neither is the lazy option.
+  - Kind: a check that goes against the step (1), a library choice (2) and a user-visible shape (3), raised in one stop as the step line asks.
 
 ## Closed items
 - 509 (2026-10-27): ruled by Axel, 1 (a), 2 (b); every web address written in oculus's code moves into the hub's configuration beside the feature that reads it, and one configurable reader built in O97 serves the journal browser, the literature sources and the Recover sources; booked in `plan.md` Rulings and on O98's and O97's lines.
