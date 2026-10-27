@@ -32,7 +32,7 @@ dispatch:          # steps in flight, up to six (Z632)
   worker: claude:opus
   session_id: a8009799d26d93fad (claude-opus-5-5)
   launched: 2026-10-27
-  builder_usage: round 0 hand-back 270291 tokens, 64 tool uses, 8 min 52 s
+  builder_usage: round 0 hand-back 270291 tokens, 64 tool uses, 8 min 52 s; build after the round-0 ruling 260477 tokens, 226 tool uses, 42 min 32 s
   round: 0
   report: .scratch/migration/agents/reviews/O95-report.md
   landing: not-started
@@ -46,8 +46,22 @@ dispatch:          # steps in flight, up to six (Z632)
   session_id: aa748bdc618193c9a (claude-opus-5-5)
   launched: 2026-10-27
   report: .scratch/migration/agents/reviews/O96-report.md
+  builder_usage: 155519 tokens, 229 tool uses, 46 min 1 s
+  reviewer_report: "running: aba0d8dc3c0d0853c (claude-opus-5-5)"
   landing: not-started
 - step: O98
+  brief_check: "agents/reviews/O98-brief-check.md (a5d4f9a13f2831178, claude-opus-5-5, 236369 tokens, 81 tool uses, 13 min 47 s)"
+  base: 54304adb4
+  worktree: .agents/worktrees/migration-O98
+  executor: agent
+  worker: claude:opus
+  session_id: a8cc0514e57924553 (claude-opus-5-5)
+  launched: 2026-10-27
+  report: .scratch/migration/agents/reviews/O98-report.md
+  round: 0
+  shared_paths: with O95 and O96, `docs/HELP.md` (O98 the Live HPC, Recover, Account setup, Settings, Source Control and local.yml lines, 252, 258, 315-324, 337, 532, 553 and 585 among them; O95 line 294; O96 lines 277, 296 and 301; separate lines, simple merges) and the generated `docs/diagrams/*`, regenerated at each landing.
+  landing: not-started
+- step: O97
   landing: preparing
 ```
 
