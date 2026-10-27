@@ -14,7 +14,7 @@ Waiting on a ruling: none.
 Owed looks: none.
 
 Landed, newest first:
-- O84 (who the user is), 2026-10-27, landing commit being made; hub 5a7e8e025.
+- O84 (who the user is), 2026-10-27, 813bf6e6; hub 5a7e8e025.
 - O86 (the update tasks of every hub), 2026-10-26, bf60e137.
 - O89 (one record card, one way to add a dated line), 2026-10-26, 7f7249ab.
 - O85 (a hub's own settings for any hub), 2026-10-26, 467be69c.

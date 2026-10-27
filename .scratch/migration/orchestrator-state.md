@@ -52,6 +52,8 @@ dispatch:          # steps in flight, up to six (Z632)
   shared_paths: with O84, `config/text/server.yml` (O84 under `server.config_key.*`; O94 lines 330-340), and `docs/HELP.md` (O84 Doc text at 288 and 532; O94 332); with O87, `docs/HELP.md` (O87 294, 529, 538, 547) and `docs/templates.md` (O87 64-68, 274-278, 318-332; O94 664-691); the generated `docs/diagrams/*`, regenerated at each landing; simple merges in separate lines.
   landing: not-started
 - step: O88
+  brief_check: .scratch/migration/agents/reviews/O88-brief-check.md (ab3a4af18b70f6cab, claude-opus-5-5, 201882 tokens, 80 tool uses, 9 min 22 s; not run again after rulings 461 and 487, as /spec says)
+  shared_paths: with O87, judged simple merges resolved at landing: `src/lib/views/boards/focus/Band.svelte` (O87 the three columns inside the `.lanes` body; O88 the heading and the wrapper around that body: O87's body is kept inside O88's wrapper), `config/catalogs/vocab.yml`, `config/options/catalogs/vocab.yml`, `src/lib/data/shapes/catalog-files/vocab.ts`, `src/lib/data/shapes/vocab-keys.ts`, `src/lib/data/shapes/hub-keys.ts`, `src/lib/data/sources/config/merge/in-place.ts`, `src/lib/data/helpers/hub-names.ts`, `tests/checks/config/config-folder.test.ts` and `tests/data/sources/config/layers/hub-vocab.test.ts` (each step adds its own list key, `position_stages` and `teaching_stages` against `pillar_kinds`, in separate entries), `docs/templates.md` (disjoint lines); with O94, `docs/templates.md` (disjoint lines); with both, the generated `docs/diagrams/*`, regenerated at each landing.
   landing: preparing
 ```
 
