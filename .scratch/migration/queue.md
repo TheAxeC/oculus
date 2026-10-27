@@ -1,8 +1,8 @@
-In flight (0 of 6 slots in use): none.
+In flight (2 of 6 slots in use):
+- O95 (Focus, what a press opens): building, builder launched 2026-10-27, base 046e0debc.
+- O96 (the cards' project strip: its filters and its groups by category): building, builder launched 2026-10-27, base 909f79d53.
 
-Queued (2):
-- O95 (Focus, what a press opens), its /spec next, now that O92 has landed.
-- O96 (the cards' project strip: its filters and its groups by category), its /spec next, now that O92 has landed.
+Queued (0): none.
 
 Waiting on a ruling:
 - O97 (the journal browser from configuration, the hub naming the UT's, and one configurable reader that also serves the literature and Recover sources, ruling 509): stopped at its /spec on open item 511 (the library's robots.txt, the HTML parser, the configuration's shape); prepared again once 511 is ruled.
