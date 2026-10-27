@@ -208,3 +208,205 @@ Cases of the brief's "Cases":
 - Whether to lower the html-sites floor (Spec 2): it is the user's call.
 
 Reviewer usage: abdef2fd8ccb0c728, claude-opus-5-5, 153511 tokens, 130 tool uses, 20 min 24 s.
+
+# Repair round 1, refuted
+
+```
+Every command below was run from ~/workspace/oculus/.agents/worktrees/migration-O88 with PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH. The only git commands were `git diff 85a826ca6`, `git status --short` (run once with `-uall` added, also read-only) and `git show 85a826ca6:<path>`.
+
+$ npm run diagrams && npm run docs:palette && npm run test:quick -- --base 85a826ca6     (run once, in the foreground; log at <scratchpad>/verify.log; exit 1)
+test:quick: 148 changed file(s), from git since 85a826ca6
+test:quick: 241 test file(s)
+ok      prettier (0.6 s): All matched files use Prettier code style!
+ok      ASCII gate (0.6 s)
+ok      svelte-kit sync (2.3 s)
+ok      eslint (1.9 s)
+ok      svelte-check (8.0 s): 1793071901281 COMPLETED 550 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest (123.2 s): Duration  115.74s (transform 75.36s, setup 0ms, import 189.73s, tests 245.51s, environment 7.31s)
+FAILED  vitest checks (130.9 s)
+ FAIL  |unit| tests/checks/source/html-sites.test.ts > every {@html} site > is one of the sites this file knows about
+AssertionError: expected 33 to be greater than or equal to 34
+ Test Files  1 failed | 14 passed (15)
+      Tests  1 failed | 251 passed | 9 skipped (261)
+ok      vitest slow (189.3 s): Duration  181.86s (transform 11.00s, setup 0ms, import 94.43s, tests 626.32s, environment 12ms)
+test:quick: 191.8 s; failed: vitest checks
+   -> The one red is the html-sites floor, open item 490, as the round brief expects.
+   -> shasum of docs/diagrams/* and docs/palette.md taken before and after the run: identical. `git status --short | wc -l` gives 144 before and after.
+
+$ sh utils/unused-exports.sh > <scratchpad>/unused.txt ; diff ../O88-base/unused-exports.txt <scratchpad>/unused.txt
+unused exit 0
+diff exit 0     (nothing printed, so no export was added)
+
+$ LC_ALL=C perl -ne '<the ASCII gate of spec.md>' <the 29 paths changed in the round> .scratch/migration/agents/reviews/O88-report.md
+(nothing printed) ascii exit 0
+$ LC_ALL=C grep -n '[^ -~]' .scratch/migration/agents/reviews/O88-report.md
+(nothing printed) grep exit 1
+
+The commands the round report quotes as evidence:
+$ grep -rn "foldedWith\|withInstanceKey(.*'folded'" src/lib/views src/lib/shell
+src/lib/views/shared/card/pane-fold.ts:9:   (comment)
+src/lib/views/shared/card/pane-fold.ts:17:  (import)
+src/lib/views/shared/card/pane-fold.ts:48:  (toggle)
+src/lib/views/shared/card/pane-fold.ts:49:  (toggle)
+src/lib/views/boards/entry/Entry.svelte:196:            restateInstance(instance.id, withInstanceKey(moved, 'folded', folded));
+   -> identical to the report's "after" block.
+$ grep -rn ":global(h4)" src/lib/views
+src/lib/views/shared/prose/Markdown.svelte:249:    .doc :global(h4) {
+src/lib/views/shared/prose/Markdown.svelte:266:    .doc :global(h4) {
+src/lib/views/sessions/transcript/Transcript.svelte:312:    .doc :global(h4) {
+   -> identical to the report. `git show 85a826ca6:<each file> | grep -n ":global(h4)"` prints the same three lines at the base, and none in Catalogue.svelte at the base.
+$ npx prettier --check <the round's 25 files> -> All matched files use Prettier code style!
+$ npx eslint <the round's 25 files> -> nothing printed, exit 0
+$ git status --short docs -> the 12 docs/diagrams files and docs/templates.md, as the report says
+$ grep -n reveal src/lib/views/boards/projects/*.svelte -> exit 1, nothing printed
+$ grep -n "GroupHead\|folded" src/lib/views/boards/collection/Collection.svelte -> exit 1, nothing printed
+$ sed -n <line>p for each file:line of the round's three corrections -> every line is as quoted:
+   Radar.svelte:113, Venues.svelte:93, Pillars.svelte:107 and Linkedin.svelte:119 each `$effect(() => folds.open(...))`
+   Inbox.svelte:136 `write({ triagedOpen: true })` and :139 `folds.open(...)`
+   List.svelte:70 `export async function unfold(target: string)`; Settings.svelte:385 and :412 `await drawn?.unfold(...)`
+   page-entry.ts:105-108 `revealState`
+   Collection.svelte:440-441; palette.ts:235; CommandCenter.svelte:239 `openView('inbox')`
+   lines.ts:267; Linkedin.svelte:237 and :267; Inbox.svelte:265
+   at the base, Linkedin.svelte:218 and :248, Inbox.svelte:228 and lines.ts:230
+$ sed -n 55,125p tests/checks/imports/order.ts -> the state order and the inner order of state/shared, as the "wrong or impossible" correction quotes them
+
+The case runs the report quotes, run again:
+$ npx vitest run --config <scratchpad>/caserun/o88.config.mts --silent false --reporter verbose
+ Test Files  1 passed (1) / Tests  3 passed (3); every `case` line is identical to the builder's <scratchpad>/caserun/o88-after-final.out (sorted diff, exit 0)
+$ npx vitest run tests/data/sources/config/layers/hub-vocab.test.ts -t "pillar kinds" --reporter=verbose
+ <check mark> |unit| ... > replaces oculus's pillar kinds whole 196ms ; Tests  1 passed | 16 skipped (17)
+$ node <scratchpad>/caserun/case21.mts <worktree> pillar_kinds  (and venue_categories)
+ the empty key: findings ["/scratch/lab/.oculus/config.yml | pillar_kinds.0.key | pillar_kinds.0.key is not a value this key takes"]; two rows with one key: findings []; venue_categories gives the same two results
+
+The reviewer's own reads of the round's delta:
+- The round's delta was taken as files.txt says: `diff -u` of the snapshot against the worktree for each of its 145 paths. 35 differ. The paths changed now that files.txt does not list are only the three .scratch files: O88-cases.md, O88-round1.md and O88-report.md.
+- Word check over the 13 files the round only rewrapped: the words of the removed and added comment lines are compared after stripping the comment prefix. All 13 print "same words", so no word changed.
+- Short-line scan, read-only, over every comment line the whole diff adds, `//`, ` * ` and multi-line `/* */`. A line is listed when the next line's first word would fit after it within 100 columns. One line is listed: src/lib/ui/controls/confirm/Confirm.svelte:7. That is base text the step moved without editing.
+- History-word grep over the lines the round added: two hits, html.ts "sanitised before it is returned" and Linkedin.svelte "before it is scrolled to". Both use "before" for time inside a sentence. Neither compares with an earlier state of the code.
+- Size: every changed component is at or under 520 lines and every source file at or under 880. Slides.svelte is 447, Projects.svelte 453 and Catalogue.svelte 417. `ls src/lib/ui/controls | wc -l` gives 10.
+```
+
+### Verdicts
+
+Items of the brief's "What to build", over the whole diff since 85a826ca6:
+
+- 1: holds. GroupHead is at `src/lib/ui/controls/heads/GroupHead.svelte`, where ruling R1 puts it; lines 84-204 were read.
+  - It draws the `section` with the rest attributes and the sticky `h3.strip` (`top: 0`, `z-index: 2`, `margin: 0 0 8px`, `--input-radius`, `--panel`).
+  - Over a wallpaper the strip takes `--panel-on-wall` with the blur, and in a free float it takes the float's fill.
+  - The body uses `hidden="until-found"` with `onbeforematch`, the label is cut with an ellipsis, and the `actions` snippet is drawn.
+  - The round changed only one comment there.
+- 2: holds. The one reader and toggle are in `state/shared/page/folds.ts`. The orchestrator accepted that placement (round brief opening), and the report now gives it under "What in the brief was wrong or impossible". After the round, every view folds through `usePaneFold` (20 users) or `stateFolds` (7 views); round case 1 below.
+- 3: holds. The reveal unfolds were checked line by line (above). `revealState` still opens Expired and Dismissed. No search write touches `folded`.
+- 4: holds. Grep 7 prints 15 lines, each a heading item 7 keeps (Calendar, Presenter, the present parts, Timeline, ApprovalPanel, NoticeCentre, UpdateTray's title, ScheduleDialog). The round adds no frame around a heading.
+- 5: holds. SubHead is read whole. The Catalogue now puts it in `<div class="subhead">` (round item 3).
+- 6: holds by reading the users of GroupHead and the fold helpers. What each one draws is the look on landing.
+- 7: holds. `git diff 85a826ca6 --stat` over Tasks, CommandCenterView and CareerPanel shows only import and comment lines (5 insertions, 5 deletions).
+- 8: holds. `appearance.svelte.ts:92` reads `let unloaded = $state.raw({`.
+- 9: holds. `git diff --stat` over Section.svelte, Notes.svelte, Changes.svelte and AppSourceGroup.svelte prints nothing.
+- 10: holds. `CardGrid.svelte:34-36` holds `repeat(auto-fill, minmax(min(320px, 100%), 1fr))`, `gap: 10px` and `align-items: stretch`. Grep 9 finds no card-list grid in the views of item 10.
+- 11: holds. Grep 10 finds no reader of the hub's `intro:` and no removed key, apart from the G5 sample strings in `html-sites.test.ts:257-267`. Removing the intros turns the html-sites floor red; that is open item 490, not a finding of this round.
+- 12: holds. The case runs for 19 and 21 and the G126 row reproduce (above).
+- 13: holds. `config/text/views/feeds/leads.yml:25` reads `expired_sec: Expired / actioned`.
+- 14: holds as far as a read settles it. The wording is declined below.
+
+Cases of the brief's "Cases":
+
+- 1 to 5 (the strip, the wallpaper, tinted panes and floats, sticky headings, the headings side by side): not verifiable here. The look on landing settles them. By reading, GroupHead's styles are as item 1 says.
+- 6 (fold and reload): met by reading the writes. After the round:
+  - the seven views of round item 1 write through `usePaneFold.toggle`, which is `withInstanceKey(state, 'folded', ...)`;
+  - Projects and Slides write through `stateFolds` into their own state;
+  - the Audit's `keep` keeps `folded` (`Audit.svelte:131-133`).
+  - The reload itself is the look on landing.
+- 7 (the reader of `folded`): met. The case run reproduced.
+- 8 (search with a bucket folded): met by reading.
+- 9 (reveal into a folded group): met by reading the lines the corrected row names. The look on landing settles the rest.
+- 10 (find-in-page): met by reading GroupHead's `onbeforematch`; the look on landing settles it on Venues.
+- 11 (a deck dropped on a folded Slides group): met by reading. The drop attributes go to GroupHead's `section`, and the round leaves `ondragover` and `ondrop` on it (`Slides.svelte:294-296`).
+- 12 (Dismissed, Expired, the run log, Triaged, Muted): met by reading; look on landing.
+- 13 (Career, Command center, Tasks): met (item 7).
+- 14 (a long label): met by reading `.name`; look on landing.
+- 15 (keyboard): met by reading FoldControl. The round changed its comment only.
+- 16 (card grids): met by reading CardGrid and grep 9; look on landing.
+- 17 (no intros, counts in the bar): met by reading; look on landing.
+- 18 (a hub file holding `intro:`): met as ruling R2 rules it. The case run gives `findings.schema.not_declared intro` and `collection intro: undefined`.
+- 19 (`lineKinds`): met. The case run reproduced.
+- 20 (the G126 row): met. It is green now; the red on the unchanged tree is quoted in the report.
+- 21 (an empty key and a duplicate key): met as ruling R3 rules it. The empty key is refused as for `venue_categories`. The duplicate gives no finding until O87's merge lands.
+- 22 (the theme): met by reading `$state.raw`. The console is the look on landing.
+
+Items of the round brief:
+
+- R-1 (one fold toggle, reused): holds.
+  - Gallery, AccountSetup, Catalogue, Usage, Keys, Project and Audit each replace their `folded` read and `toggleFold` with `usePaneFold()`, and the Audit's `keep('folded', ...)` is gone.
+  - Projects (`:196-199`) and Slides (`:134-137`) fold through `stateFolds`, writing through `write({ folded })` and `setInstanceState(instance.id, { ...held, folded })`, the same writes as before the round.
+  - The keys are unchanged in every diff.
+  - `usePaneFold` reads the id that `TabView.svelte:42` provides as `() => instance.id`, the id each view used before. No other component imports the seven views; the one `Project.svelte` importer found is `present/parts/Project.svelte`, a different file.
+  - The head comments of the nine views and of `pane-fold.ts` say how each keeps its folds. pane-fold's two lists match the users found: the `grep -rln usePaneFold` and `grep -rln stateFolds` lists.
+- R-2 (comments rewrapped): holds.
+  - The five places the review named are rewrapped, and 13 more paragraphs of the step's own diff.
+  - The word check prints "same words" for each.
+  - The reviewer's short-line scan of the whole diff lists only `Confirm.svelte:7`, base text that was moved.
+  - The method used to find the paragraphs is Finding 1.
+- R-3 (the Catalogue's sub-heading row): holds. `Catalogue.svelte:296-298` wraps SubHead in `<div class="subhead">`. The style at `:390-392` names `.subhead`, and no `:global(h4)` is left in the Catalogue.
+- R-4 (the report): holds. The corrected case 9 row, the three behaviour changes with their before and after, and the placement under "wrong or impossible" are appended, and every file:line in them reads as quoted.
+
+Cases of the round brief:
+
+- 1: met. The grep prints only `pane-fold.ts` and `Entry.svelte:196`. The report quotes the first run on the starting tree, which shows the nine views.
+- 2: met by reading each view's diff. The reload is the look on landing.
+- 3: partial. The Catalogue's hit is gone. The grep still prints three lines, Markdown.svelte:249 and :266 and Transcript.svelte:312, which were already there at the base and on the round's starting tree. Finding 2.
+- 4: met. The case runs reproduce, the G126 row passes, and the verification list is green apart from open item 490.
+
+### Findings
+
+- Finding 1 (spec). `.scratch/migration/agents/reviews/O88-report.md`, Round 1 item 2: "A read-only scan lists ... The scan is `<scratchpad>/caserun/short-comments.sh`, and it writes nothing. Each paragraph it listed was rewrapped whole by a greedy fill at 100 columns (`<scratchpad>/caserun/fill.sh` prints the fill; the change is made with Edit)".
+  - What is wrong, the scripts: both are scripts written for the step. The brief does not build them and no line of `plan.md`'s Rulings approves them. The brief's "Paths this step writes" allows no script "other than a case-run program as spec.md allows", and these run no case of the brief.
+  - What is wrong, the sources: the report gives their paths but not their source, which spec.md asks for any program the report relies on. The reviewer could read them only because they sit in this session's scratchpad.
+  - What is wrong, the git commands: `short-comments.sh` runs `git ls-files --others --exclude-standard -- src tests config` and `git cat-file -e "$base:$f"` after `cd "$1"`. spec.md "Where you work" bans both for a builder; it names `ls-files` and allows only `git status`, `git diff` and `git show`. The round report says "This round ran no command that writes a file in the worktree other than Edit and Write" and does not name these git commands.
+  - Neither script wrote a file. Every edit they led to is a comment rewrap made with Edit, and the reviewer's word check and short-line scan confirm those edits independently of the scripts.
+  - The disposition is the orchestrator's. The skill's "Finding dispositions" raises an unapproved script to the user. The state file's standing demand closes such a finding in automode under the ruling "Unapproved builder scripts", which is worded for programs that edit files.
+  - Failure scenario: a later reviewer cannot rerun a scan the report relies on from the report alone, and the step ran git commands the rules file bans in the worktree without the report saying so.
+  - Verdict: none. Round item 2 holds on the reviewer's own checks.
+- Finding 2 (spec, a premise of the round brief). `.scratch/migration/agents/briefs/O88-round1.md`, Cases 3: "`grep -rn ":global(h4)" src/lib/views` prints nothing. On the starting tree it prints `Catalogue.svelte:397`."
+  - What is wrong: on the base and on the round's starting tree the grep also prints `Markdown.svelte:249` and `:266` and `Transcript.svelte:312` (`git show 85a826ca6:<file> | grep -n`). Each styles the `h4` of sanitised Markdown drawn through `{@html}` inside the view's own `.doc` element (Markdown.svelte:233, Transcript.svelte:205). No primitive draws that `h4`, so the rule of round item 3 does not reach it.
+  - The builder handed this back with that reason, and the reviewer judges the handback correct. Nothing in the diff is wrong. The case text needs correcting.
+  - Failure scenario: a reader of the round brief takes the three remaining hits for an unfinished item 3 and asks for a change to the Markdown and transcript styles that no rule calls for.
+  - Verdict: case 3 of the round, partial.
+- Finding 3 (proof, minor). The report's "Round 1" section, "Verification".
+  - The history-word grep: spec.md "What every package obeys" asks for a grep of the edited comment lines for history words, quoted in the report with each hit judged. The round report quotes none, though the round edits about 30 comment paragraphs.
+  - The ASCII gate: it is quoted as `perl -ne 'print ... if /[^\x00-\x7F]/'`, which lets tabs and control characters through. spec.md's gate is `[^\x20-\x7E\n]`.
+  - The reviewer ran both in the rules file's form. The history grep's two hits are each "before" used for time inside a sentence. The gate prints nothing. No decision rests on either omission.
+  - Failure scenario: a history word or a tab in a rewrapped comment would not have been caught by the checks the report quotes.
+  - Verdict: none.
+
+The first review's findings, as the round leaves them:
+
+- Spec 1 (the placement of the fold helpers): accepted by the orchestrator, and the report now gives it under "wrong or impossible".
+- Spec 2 (the floor): open item 490.
+- Spec 3 (the paths outside the brief): accepted.
+- Proof 1 (the case 9 row): closed; the corrected row reproduces.
+- Standards 1 (the toggle written six times): closed; round case 1.
+- Standards 2 (the comments not rewrapped): closed; the reviewer's scan and the word check.
+- Standards 3 (the Catalogue styling SubHead's tag): closed; round case 3 as far as the Catalogue goes.
+- Behaviour 1 to 3: closed by the appended "before and after" rows.
+- None of these is closed by removing a check. No fix reaches beyond its finding: every file the round changed is in the round's list or in the step's paths, and the rewraps outside the round's list are the sweep round item 2 asks for.
+
+### Declined to judge
+
+- Every look-on-landing case (1 to 5, and the visual halves of 6, 8 to 12, 14 to 17 and 22). The rules forbid starting a server here, so the orchestrator's look on the scratch server settles them, the nine round-1 views' fold and reload included.
+- The html-sites floor (`tests/checks/source/html-sites.test.ts:242`): open item 490, the user's call.
+- The wording of the "Doc text" entries and the "Hub text" rules. The orchestrator applies them at landing, and the hub may not be read.
+- Whether `short-comments.sh` was actually run in the worktree. Only the transcript settles it; the script's `cd "$1"` and the report's wording say it was.
+- The diff view's own fold toggle: `toggleFolded` in `src/lib/state/sources/repositories/repositories.ts:215`, used by `Diff.svelte:456`. It is at the base already, it folds the diff-file tree rows that ruling 488 keeps out of GroupHead, and the step touches Diff.svelte only for an import. Whether "a fold exists once" should reach it is outside the round's list.
+- Whether the Update tray keeps its folds while the page lives. A read of `UpdateTray.svelte` alone does not settle whether the tray stays mounted between openings.
+
+Reviewer usage: abb41ebe58d461405, claude-opus-5-5, 263698 tokens, 73 tool uses, 14 min 26 s.
+
+## Closed
+
+- First review, Spec 1 and Spec 3 (the placements outside the brief): accepted by the orchestrator, as the round brief says; the report gives the reasons.
+- First review, Spec 2 (the html-sites floor): open item 490, ruled by Axel before landing.
+- First review, Proof 1, Standards 1-3 and Behaviour 1-3: closed in repair round 1, as the review over the round finds.
+- Round 1, Finding 1 (two scan scripts in the scratchpad, `short-comments.sh` and `fill.sh`, unapproved, and the git commands `ls-files` and `cat-file` they ran in the worktree): closed in automode under the ruling "Unapproved builder scripts" (`plan.md` Rulings), the breach recorded in the booking. Neither script wrote a file; every edit they led to is a comment rewrap made with Edit, and the reviewer's word check (same words in all 13 rewrapped files) and short-line scan confirm those edits independently. No repair round remains, so the builder's list of commands is taken from this finding.
+- Round 1, Finding 2 (round case 3's grep also prints the three `:global(h4)` rules of `Markdown.svelte` and `Transcript.svelte`): the case's wording was the orchestrator's error; those rules style rendered Markdown inside the view's own element and no primitive. The case as meant, the Catalogue, is met. Nothing in the diff changes.
+- Round 1, Finding 3 (the report quotes no history-word grep, and an ASCII gate wider than spec.md's): closed by the reviewer's own runs in the rules file's form, which print nothing to fix.
