@@ -167,7 +167,9 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
+
 ## Closed items
+- 509 (2026-10-27): ruled by Axel, 1 (a), 2 (b); every web address written in oculus's code moves into the hub's configuration beside the feature that reads it, and one configurable reader built in O97 serves the journal browser, the literature sources and the Recover sources; booked in `plan.md` Rulings and on O98's and O97's lines.
 - 508 (2026-10-27): ruled by Axel, 1 (a), 2 (a); the HPC item, pill and badge one each with the counts summed; the sign-in rows, the key settings and the failure rows in the hub's `.oculus/config.yml`, nothing shipped; booked in `plan.md` Rulings and on O98's line.
 - 507 (2026-10-27): ruled by Axel, 1 (a), 2 (a), 3 (a), 4 (a), 5 (b); the clusters as a `clusters:` list of rows in `local.yml`, the key made with no passphrase and put on the cluster over one password login, the GitHub sign-in by the reader's own OAuth App and the device flow, the token handed to every git oculus starts by a credential helper, the device flow written by hand; booked in `plan.md` Rulings and on O98's line.
 - 506 (2026-10-27): ruled by Axel, (a); O98 prepared now and built beside O92, O95, O96 and O97 together once O92 has landed; booked in `plan.md` Rulings, O98's line moved before O95's.
