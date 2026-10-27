@@ -1,7 +1,7 @@
 In flight (3 of 6 slots in use):
 - O88 (one heading, one card grid, no intro paragraph, Pillars by kind, and the app theme that failed to load), built (base 85a826ca6); one red left, the html-sites floor (open item 490); review running (abdef2fd8ccb0c728, claude-opus-5-5).
 - O91 (joint work onto the people file, and the projects on people's, organisations' and resources' cards), built (base eeafcd4cb); reviewed (agents/reviews/O91-refuter.md): no spec, proof or behaviour finding, two comment-wrap findings (docs/templates.md:61-73, RecordCard.svelte:23) fixed at landing; no repair round. Ready for /land, which waits on open item 489, since its hub commit is part of the landing.
-- O93 (Focus and the dated lines: people on a line, Done on a follow-up, Remove on Focus rows, the Pillar filter, the red waiting line), /spec: brief written (agents/briefs/O93.md), brief checked (agents/reviews/O93-brief-check.md, every finding closed in the brief); worktree being prepared, builder next.
+- O93 (Focus and the dated lines: people on a line, Done on a follow-up, Remove on Focus rows, the Pillar filter, the red waiting line), /spec: brief written (agents/briefs/O93.md), brief checked (agents/reviews/O93-brief-check.md, every finding closed in the brief); builder running (a64178b18c7109ef5, claude-opus-5-5, base 46657382a).
 
 Queued (2):
 - O90 (the board bar's Waiting on filter), /spec after O88.
