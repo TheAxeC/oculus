@@ -43,7 +43,6 @@ Each data file is named by its entry in `collections:` of `.oculus/config.yml`, 
 | `statements` | none | `.oculus/data/research/statements.yml` | a reusable manuscript statement | `key` | Statements |
 | `funding` | `funding` | `.oculus/data/academic/funding.yml` | a grant application or programme | `key` | Funding |
 | `events` | none | `.oculus/data/academic/events.yml` | a talk, visit or conference | `key` | Talks & Events |
-| `joint-work` | none | `.oculus/data/academic/joint-work.yml` | a piece of work with one person | `key` | Joint work, Person |
 | `education` | none | `.oculus/data/academic/education.yml` | a course, supervision or service role | `key` | Education & Service |
 | `applications` | none | `.oculus/data/academic/applications.yml` | a position application | `key` | Applications |
 | `tasks` | none | `.oculus/data/academic/tasks.yml` | a task | `key` | Tasks |
@@ -66,10 +65,10 @@ A duplicate or empty primary key is a finding, and so is a file whose schema fla
 | Position Leads | Incoming | the `leads` feed |
 | Literature search, Lit Watch, Literature | Literature | the search over the literature sources, the `radar` feed, and the `literature` file |
 | LinkedIn | Incoming | the folder `linkedin_dir` names |
-| Funding, Talks & Events, Education & Service, Applications, Joint work, Tasks, Memories | Academic Life | their files, and the photo wall's pictures |
+| Funding, Talks & Events, Education & Service, Applications, Tasks, Memories | Academic Life | their files, and the photo wall's pictures |
 | Pillars, Domains, Map | Pillars | the pillars and domains, and the projects that name them |
 | Venues, Data, Statements, People, Organisations, Resources | Registries | their files |
-| Person | opened from a person's name | one person, with their organisations, joint work and projects |
+| Person | opened from a person's name | one person, with their organisations and projects |
 | Entry | opened from a card's title | one entry, its editor and what refers to it |
 | Present | Present | a deck folder |
 | Audit | System | the rules over projects and files, and the conventions the hub's `audit:` sets: the files and headings a project must hold, the folders a stage is kept under, and the website's publications feed against the projects |
@@ -179,8 +178,6 @@ people:
   affiliations: [organisations key]
 funding:
   funder: organisations key
-joint-work:
-  person: people key
 events, education, applications:
   related: [a project]
 funding, events, education, applications, tasks:

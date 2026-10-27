@@ -85,7 +85,6 @@ Every registered view is listed by its words.
 | Talks & Events | events |
 | Education & Service | education |
 | Applications | applications |
-| Joint work | joint-work |
 | Tasks | tasks |
 | Literature | literature |
 | Projects | projects |

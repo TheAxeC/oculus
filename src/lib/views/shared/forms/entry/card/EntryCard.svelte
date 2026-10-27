@@ -2,9 +2,12 @@
     // Layer 3, shared view partial. One entry of one collection file as the record card
     // (views/shared/card/record/RecordCard.svelte): the grip it is dragged by, the Lead badge, the
     // status chip, the fields the file's own schema names, its subtasks and follow-up notes, and
-    // the strip of the projects that name the entry at the foot. The collection view draws one per
-    // entry, and the entry's page draws one open, with no grip, so the card lives here and not
-    // under either view. The fields are EntryFields.svelte, which says how each field is drawn.
+    // the strip of the projects that name the entry at the foot: a scheme's, an organisation's, a
+    // resource's or the entry's `related:` list's, and for a person one labelled strip per role
+    // (state/boards/structure/cross-links.ts, `crossLinks` and `roleLinks`). The collection view
+    // draws one per entry, and the entry's page draws one open, with no grip, so the card lives
+    // here and not under either view. The fields are EntryFields.svelte, which says how each field
+    // is drawn.
     //
     // Nothing here knows what a scheme or an event is. Every action is one call of the write path,
     // except the `extra` ones the collection passes in (Start Agent on a task's card).
@@ -52,7 +55,7 @@
         type Project,
         type SchemaField
     } from '$lib/state/boards/collection';
-    import { crossLinks } from '$lib/state/boards/structure/cross-links';
+    import { crossLinks, roleLinks } from '$lib/state/boards/structure/cross-links';
     import { rootOf } from '$lib/state/shared/page/hubs';
     import type { ViewSource } from '$lib/state/sessions/view-source';
     import { statusTone, vocabOf } from '$lib/state/shared/words/tones';
@@ -179,8 +182,12 @@
         collectionsOfKey(collection).find((one) => rootOf(one) === rootOf(entry))
     );
     const people = $derived(Object.values(portfolio()?.entities.people ?? {}));
-    /** The projects that name the entry, the strip at the card's foot. */
-    const groups = $derived(crossLinks(entry, held, projects, people, configMap(), vocabOf));
+    /** A person's strips at the card's foot, one per role; null for an entry of any other kind. */
+    const rows = $derived(roleLinks(entry, held, projects, configMap(), vocabOf));
+    /** The projects that name any other entry, the one strip at the card's foot. */
+    const groups = $derived(
+        rows === null ? crossLinks(entry, held, projects, people, configMap(), vocabOf) : []
+    );
 
     /**
      * One Show in Files action per hub path the entry's `link`, `url` or `folder` names, and Open
@@ -309,6 +316,7 @@
         {meta}
         {lines}
         {groups}
+        rows={rows ?? undefined}
         deleting={deleting
             ? { collection, id: entry.id, onclose: () => (deleting = false) }
             : undefined}

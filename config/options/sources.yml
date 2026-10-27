@@ -103,9 +103,6 @@ options:
             tasks:
                 help: Add Task, Start Agent on a task card, the task hub list and the task lines read this file; on two entries the first is read
                 control: toggle
-            joint_work:
-                help: a person's joint work, the relation rows, the cross-links and the referrers read this file
-                control: toggle
             ticker:
                 help: 'the lines of the file: its dated entries in the command center, and every line of the file flagged tasks in the Tasks section; with none the file gives no lines'
                 holds: record

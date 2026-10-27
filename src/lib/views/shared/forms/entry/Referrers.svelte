@@ -1,12 +1,12 @@
 <script lang="ts">
     // Layer 3, shared view partial. What refers to a record, each as a link that opens it: the
     // projects whose manifest names a pillar, a domain, a venue, a dataset, a funding scheme or a
-    // resource, the people and funding schemes that name an organisation, the projects and joint
-    // work that name a person, and the setting that names a resource. The page of such a record
-    // draws it below the editor, and the question that asks before the record is deleted names the
-    // same things (state/forms/referrers.ts is the one answer to what they are). The list is the
-    // group every grouping of a view is drawn as (ui/controls/heads/GroupHead.svelte), folded under
-    // the key `referrers` in the tab's state (views/shared/card/pane-fold.ts), its body read off a
+    // resource, the people and funding schemes that name an organisation, the projects that name a
+    // person, and the setting that names a resource. The page of such a record draws it below the
+    // editor, and the question that asks before the record is deleted names the same things
+    // (state/forms/referrers.ts is the one answer to what they are). The list is the group every
+    // grouping of a view is drawn as (ui/controls/heads/GroupHead.svelte), folded under the key
+    // `referrers` in the tab's state (views/shared/card/pane-fold.ts), its body read off a
     // `Surface` over a wallpaper.
 
     import Empty from '$lib/ui/frame/Empty.svelte';
@@ -36,13 +36,13 @@
         if (one.kind === 'project') openView('project', recordState(one.id, one.label));
         else if (one.kind === 'person') openView('person', recordState(one.id, one.label));
         else if (one.kind === 'funding') {
-            openPage(registryKey('funding', addressOfId(one.id).hub), one);
-        } else if (one.collection !== undefined) openPage(one.collection, one);
-    }
-
-    function openPage(collection: string, one: Referrer): void {
-        const page = pageView(collection, one.id, one.label);
-        openView(page.view, page.state);
+            const page = pageView(
+                registryKey('funding', addressOfId(one.id).hub),
+                one.id,
+                one.label
+            );
+            openView(page.view, page.state);
+        }
     }
 </script>
 

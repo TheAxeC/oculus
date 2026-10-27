@@ -9,6 +9,9 @@ schema:
   - { field: orcid,        type: text }
   - { field: email,        type: text }
   - { field: links,        type: tags }
+  - { field: work,         type: text,     help: "What the work with the person is about." }
+  - { field: tags,         type: tags,     help: "Words that describe the person and the work with them." }
+  - { field: note,         type: textarea, help: "Free notes on the person and the work with them." }
   - { field: folder,       type: text,     help: "hub-relative folder of a student's supervision files" }
 
 entries:
@@ -16,11 +19,17 @@ entries:
     name: "Ana Rivera"
     affiliations: ["northwood-university"]
     role: "co-supervisor (streaming systems)"
+    work: "Streaming systems, the anomaly-detection benchmark"
+    tags: [streaming, systems]
+    note: "Co-supervises the streaming-anomaly project; shared benchmark harness."
 
   - key: "chen-graph"
     name: "Wei Chen"
     affiliations: ["meridian-institute"]
     role: "co-author (graph transfer)"
+    work: "Graph learning, the transfer and bandits line"
+    tags: [graphs, exploratory]
+    note: "Early conversations about a joint workshop paper."
 
   - key: "dana-example"
     name: "Dr. Dana Example"

@@ -176,8 +176,6 @@ export type Relations = {
      * person of its team.
      */
     projectPerson: [Id, Id][];
-    /** An entry of the joint-work collection and the person its `person:` names. */
-    jointWorkPerson: [Id, Id][];
     /** A person and each organisation their `affiliations:` name. */
     personOrganisation: [Id, Id][];
     /** A funding scheme and the organisation its `funder:` names. */

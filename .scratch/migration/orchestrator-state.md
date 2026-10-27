@@ -23,21 +23,7 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 ```
 
 ```yaml
-dispatch:          # steps in flight, up to six (Z632)
-- step: O91
-  brief_check: .scratch/migration/agents/reviews/O91-brief-check.md (a9938b4abd405e606, claude-opus-5-5, 228428 tokens, 71 tool uses, 11 min 7 s)
-  shared_paths: with O87, judged simple merges resolved at landing: `docs/HELP.md:547`, `config/options/behavior.yml:161` and `docs/templates.md:66` (O87 rewrites each and keeps joint work; O91 drops joint work: the second landing keeps O87's words without the flag and the collection), `config/options/sources.yml` (O87 78-90 and 105-115; O91 106-108, the flag's row), `docs/templates.md` (O87 64-68, 274-278, 318-332; O91 87, 94, 1064-1088, 1233-1258), `docs/HELP.md` (O87 294, 529, 538; O91 52, 236, 301); with O88, `tests/fixtures/hubs/demo/.oculus/data/academic/joint-work.yml` (O88 removes its `intro:`; O91 deletes the file: the deletion stands), `src/lib/views/boards/person/Person.svelte` and `src/lib/views/shared/forms/entry/Referrers.svelte` (O88 the heading component; O91 the joint-work block, button and head comment), `src/lib/data/snapshot/normalise.ts`, `src/lib/data/model/model-collections.ts`, `tests/data/sources/collections.test.ts` and `docs/templates.md` (separate lines); with O94, `docs/templates.md` (O94 664-691) and `docs/HELP.md` (O94 332); with all three, the generated `docs/diagrams/*` and `docs/palette.md`, regenerated at each landing.
-  base: eeafcd4cb
-  worktree: .agents/worktrees/migration-O91
-  executor: agent
-  worker: claude:opus
-  session_id: aee7e1a854ae78fa0 (claude-opus-5-5)
-  launched: 2026-10-27
-  report: .scratch/migration/agents/reviews/O91-report.md
-  builder_usage: 261710 tokens, 353 tool uses, 69 min 39 s
-  reviewer_report: "agents/reviews/O91-refuter.md (a9b1c10a67c74430a, claude-opus-5-5, 304973 tokens, 100 tool uses, 28 min 53 s)"
-  round: 0
-  landing: cherry-picking
+dispatch: []      # steps in flight, up to six (Z632)
 ```
 
 ## The standing demands (from Axel, in force)
@@ -649,6 +635,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-10-27 (O91 landed). O91 landed on main (the landing commit; booking in `plan.md` under O91, landing report `agents/reviews/O91-landing.md`), with the research hub's commit 6e868b885 carrying ruling 489 (b): the people file's `work`, `tags` and `note`, `joint-work.yml` deleted. The look on 8790 closed the Academic Life page's saved "Unknown view: joint-work" tab. Next: /spec O90, then /spec O92. In flight (0 of 6): none. Open items: none.
 - 2026-10-27 (O88 landed). O88 landed on main (the landing commit; booking in `plan.md` under O88, landing report `agents/reviews/O88-landing.md`), with the research hub's commit removing `intro:` from its 11 files and making the pillars `kind` a select on `pillar_kinds`. Next: /land O91 with the hub commit carrying `work` (ruling 489 (b)), then /spec O90, then /spec O92. In flight (1 of 6): O91. Open items: none.
 - 2026-10-27 (489 ruled; go). Axel ruled 489 (b), booked in `plan.md` Rulings, and said to go on. Next: /land O88 (the floor 33, ruling 490), then /land O91 with the hub commit carrying `work`. In flight (2 of 6): O88, O91. Open items: none.
 - 2026-10-27 (490 ruled; 489 under discussion). Axel ruled 490 (a), booked in `plan.md` Rulings: the html-sites floor becomes 33 at O88's landing. On 489 he asked whether (b) is better and asked to discuss before continuing; nothing is dispatched or landed until he says to go on. In flight (2 of 6): O88 (ready for /land, held), O91 (landing waits on 489). Open items: 489.

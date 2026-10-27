@@ -254,7 +254,7 @@ describe("the answer to a request on self of the primary hub's local.yml", () =>
         expect(changedUris(answer)).toEqual(
             [
                 pageUri('hub', PEOPLE),
-                pageUri('hub', '.oculus/data/academic/joint-work.yml'),
+                pageUri('hub', '.oculus/data/research/statements.yml'),
                 pageUri('hub', 'projects/active/alpha/project.yml'),
                 pageUri('hub', '.oculus/local.yml')
             ].sort()

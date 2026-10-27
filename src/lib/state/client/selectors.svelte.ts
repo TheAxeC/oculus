@@ -540,9 +540,9 @@ export function createSelectors(
 
     /**
      * Every project of the snapshot, in the order the scan found them. The collection view joins
-     * the entries of a file to them: which projects name a funding scheme or an entry's `related:`
-     * id, whose team holds a joint work's person, which of them no scheme covers, and what each of
-     * them says about its own code.
+     * the entries of a file to them: which projects name a funding scheme, a resource or an entry's
+     * `related:` id, which name a person in a role, whose team holds a person of an organisation,
+     * which of them no scheme covers, and what each of them says about its own code.
      */
     function projects(): Project[] {
         const snapshot = entities.portfolio();

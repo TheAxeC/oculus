@@ -57,8 +57,6 @@ text:
         applications: Applications
         applications_glyph: inbox
         collection_glyph: list
-        joint-work: Joint work
-        joint-work_glyph: collab
         education: Education & Service
         education_glyph: teaching
         events: Talks & Events

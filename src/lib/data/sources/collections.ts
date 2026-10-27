@@ -5,11 +5,11 @@
 // more.
 //
 // A collection is a hub file of like records: datasets, statements, funding schemes, talks,
-// teaching, applications, joint work, tasks or repositories. An entry of the list says what its
-// file is beside its key and path (data/helpers/hub-names.ts reads the list): the registry it is,
-// the features that read it, what Disseminated in leaves out of it and how the ticker reads it,
-// which the collection read here carries. The registries are also carried as entities; the file of
-// the `datasets` registry lists its records under `datasets:` and every other collection under
+// teaching, applications, tasks or repositories. An entry of the list says what its file is beside
+// its key and path (data/helpers/hub-names.ts reads the list): the registry it is, the features
+// that read it, what Disseminated in leaves out of it and how the ticker reads it, which the
+// collection read here carries. The registries are also carried as entities; the file of the
+// `datasets` registry lists its records under `datasets:` and every other collection under
 // `entries:`.
 
 import { join } from 'node:path';

@@ -229,7 +229,6 @@ describe('the collection a flag or a registry names', () => {
         },
         { key: 'courses', file: 'courses.yml', band_teaching: true, dissemination: true },
         { key: 'todo', file: 'todo.yml', tasks: true },
-        { key: 'collab', file: 'collab.yml', joint_work: true },
         { key: 'outlets', file: 'outlets.yml', registry: 'venues' },
         { key: 'sets', file: 'sets.yml', registry: 'datasets' },
         { key: 'positions', file: 'positions.yml', registry: 'leads' },
@@ -300,8 +299,7 @@ describe('the collection a flag or a registry names', () => {
             'dissemination',
             ['hub:jobs', 'hub:courses', 'lab:talks']
         ],
-        ['Add Task, the task seed and the task lines', 'tasks', ['hub:todo']],
-        ["a person's joint work and the cross-links", 'joint_work', ['hub:collab']]
+        ['Add Task, the task seed and the task lines', 'tasks', ['hub:todo']]
     ])('%s reads the collections flagged %s', (_feature, flag, ids) => {
         expect(flaggedCollections(COLLECTIONS, flag).map((one) => one.id)).toEqual(ids);
     });

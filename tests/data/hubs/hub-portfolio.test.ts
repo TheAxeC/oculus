@@ -13,7 +13,7 @@
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect } from 'vitest';
-import { bareId } from '../../../src/lib/data/helpers/hub-names.ts';
+import { bareId, holdersOf, resolvedId } from '../../../src/lib/data/helpers/hub-names.ts';
 import { portfolioConfigFrom } from '../../../src/lib/data/index.ts';
 import { buildOneHub } from '../../fixtures/hubs/hub-build.ts';
 import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
@@ -59,6 +59,25 @@ function builds(from: ReturnType<typeof copies>): {
         'hub'
     ).snapshot;
     return { first, alone, merged };
+}
+
+/**
+ * The demo hub's funding file in the folder `dir` given a `lead` field that takes keys of the
+ * people registry, and its scheme `ecf` the lead `person`; the file's path.
+ */
+function plantLead(dir: string, person: string): string {
+    const file = join(dir, '.oculus', 'data', 'academic', 'funding.yml');
+    const text = readFileSync(file, 'utf8');
+    const note = '  - { field: note,      type: textarea }\n';
+    const declared = text.replace(
+        note,
+        `${note}  - { field: lead, type: tags, foreign_key: people }\n`
+    );
+    const planted = declared.replace('    key: ecf\n', `    key: ecf\n    lead: [${person}]\n`);
+    expect(declared).not.toBe(text);
+    expect(planted).not.toBe(declared);
+    writeFileSync(file, planted);
+    return file;
 }
 
 /** A finding as the fields a reader of the Findings view sees. */
@@ -198,6 +217,8 @@ describe('the portfolio of several hubs', () => {
             );
             expect(declared).not.toBe(schema);
             writeFileSync(events, declared);
+            plantLead(from.hub, 'rivera-lab');
+            plantLead(from.lab, 'rivera-lab');
             const { merged } = builds(from);
             const entry = (collection: string, key: string): Entry => {
                 const found = merged.entities.collections[collection].entries.find(
@@ -208,8 +229,8 @@ describe('the portfolio of several hubs', () => {
             };
             expect(Object.keys(merged.entities.people)).toContain('hub:rivera-lab');
             expect(Object.keys(merged.entities.people)).toContain('lab:rivera-lab');
-            expect(entry('hub:joint-work', 'rivera-lab').fields.person).toBe('rivera-lab');
-            expect(entry('lab:joint-work', 'rivera-lab').fields.person).toBe('rivera-lab');
+            expect(entry('hub:funding', 'ecf').fields.lead).toEqual(['rivera-lab']);
+            expect(entry('lab:funding', 'ecf').fields.lead).toEqual(['rivera-lab']);
             const talk = 'streaming-anomaly-detection-at-scale';
             expect(entry('lab:events', talk).fields.related).toEqual(['streaming-anomaly']);
             expect(entry('lab:events', talk).fields.tags).toEqual(['talk', 'streaming']);
@@ -230,24 +251,18 @@ describe('the portfolio of several hubs', () => {
                     '\nentries:\n  - key: ghost\n    name: Ghost\n'
                 )
             );
-            const work = join(from.lab, '.oculus', 'data', 'academic', 'joint-work.yml');
-            const text = readFileSync(work, 'utf8');
-            const named = text.replace('person: "rivera-lab"', 'person: "ghost"');
-            expect(named).not.toBe(text);
-            writeFileSync(work, named);
+            const funding = plantLead(from.lab, 'ghost');
             const { merged } = builds(from);
-            const held = merged.entities.collections['lab:joint-work'].entries.find(
-                (one) => one.fields.key === 'rivera-lab'
+            const held = merged.entities.collections['lab:funding'].entries.find(
+                (one) => one.fields.key === 'ecf'
             );
-            expect(held?.fields.person).toBe('ghost');
+            expect(held?.fields.lead).toEqual(['ghost']);
             expect(merged.entities.people['hub:ghost']).toBeDefined();
             expect(merged.entities.people['lab:ghost']).toBeUndefined();
-            expect(merged.relations.jointWorkPerson).toContainEqual([
-                'lab:rivera-lab',
-                'hub:ghost'
-            ]);
+            const holders = holdersOf(Object.values(merged.entities.people));
+            expect(resolvedId(holders, 'lab', 'ghost')).toBe('hub:ghost');
             const unknown = merged.findings.filter(
-                (one) => one.file === work && one.message.includes('ghost')
+                (one) => one.file === funding && one.message.includes('ghost')
             );
             expect(unknown).toEqual([]);
         }

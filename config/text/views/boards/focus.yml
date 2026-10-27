@@ -36,7 +36,6 @@ text:
             conference_call_approx: call closes ~{0}
             days: days
             days_ago: '{0}d ago'
-            dlcat_collab: joint work
             dlcat_conference: conference calls
             dlcat_event_label: talks & events
             dlcat_funding: funding
@@ -47,7 +46,6 @@ text:
             emails: emails to reply / act on
             funding_deadline: funding deadline in {0}d
             generic_in: '{0} in {1}d'
-            glyph_collab: collab
             glyph_conference: conference
             glyph_event: events
             glyph_followup: followup
@@ -98,7 +96,6 @@ text:
             venue_count: '{0} x{1}'
             venue_load_tail: (>={0} in flight; consider spreading)
             word_application: application
-            word_collaboration: joint work
             word_commitment: commitment
             word_conference: conference call
             word_event: event

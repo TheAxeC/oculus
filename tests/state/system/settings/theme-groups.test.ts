@@ -405,8 +405,7 @@ describe('the people of the choice self', () => {
                     name,
                     affiliations: [],
                     links: [],
-                    projectIds: [],
-                    jointWorkIds: []
+                    projectIds: []
                 }
             ]);
         const held = Object.fromEntries([

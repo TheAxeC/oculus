@@ -155,9 +155,6 @@ export const ENTITY_KINDS = [
     'collections'
 ];
 
-/** The field of a joint-work entry that names its person. */
-const PERSON_FIELD = 'person';
-
 /** A finite number: NaN and Infinity are not JSON-safe and are dropped with them. */
 const numberShape = z.number();
 
@@ -377,8 +374,7 @@ function person(entry: RawRegistryEntry): Person {
         email: str(entry.email),
         links: strings(entry.links),
         folder: str(entry.folder),
-        projectIds: [],
-        jointWorkIds: []
+        projectIds: []
     });
 }
 
@@ -557,23 +553,6 @@ function collection(raw: ReadCollection): Collection {
 }
 
 /**
- * Every entry of the collections flagged `joint_work` that names a person, as the pair the relation
- * is built from, with the file the entry stands in. An entry with no `person:` field, or one whose
- * value is not a string, is no pair here and is a finding of validate's; it is not repaired.
- */
-export function jointWorkRows(collections: Collection[]): { id: Id; person: Id; file: string }[] {
-    const held = collections.filter((one) => one.joint_work === true);
-    const rows: { id: Id; person: Id; file: string }[] = [];
-    for (const one of held.flatMap((collection) => collection.entries)) {
-        const key = str(one.fields[PERSON_FIELD]);
-        if (key !== undefined && key.length > 0) {
-            rows.push({ id: one.id, person: key, file: one.file });
-        }
-    }
-    return rows;
-}
-
-/**
  * The feeds, already the summary sources/documents/feeds.ts made of them. They are copied rather
  * than passed through so that the snapshot owns its own objects, which is what every other entity
  * here does.
@@ -638,8 +617,7 @@ export function normalise(
 
     const tables = linked(
         { projects, datasets, pillars, domains, schemes, people, organisations },
-        known,
-        jointWorkRows(collections)
+        known
     );
 
     return {

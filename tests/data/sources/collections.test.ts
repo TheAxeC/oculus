@@ -34,7 +34,7 @@ const VOCAB_FILE = '/hub/.oculus/config.yml';
 const FILES: CollectionEntry[] = [
     { key: 'data', file: '.oculus/data/research/data.yml' },
     { key: 'events', file: '.oculus/data/academic/events.yml' },
-    { key: 'joint-work', file: '.oculus/data/academic/joint-work.yml' },
+    { key: 'collaborations', file: '.oculus/data/academic/collaborations.yml' },
     { key: 'tasks', file: '.oculus/data/academic/tasks.yml' },
     { key: 'tools', file: '.oculus/data/research/tools.yml' },
     { key: 'missing', file: 'nowhere/gone.yml' },
@@ -85,7 +85,7 @@ function buildHub(): string {
     );
     write(
         hub,
-        '.oculus/data/academic/joint-work.yml',
+        '.oculus/data/academic/collaborations.yml',
         [
             'title: Collaborations',
             'entries:',

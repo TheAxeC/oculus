@@ -1,4 +1,4 @@
-# Oculus text owned by the person view, the tab one human opens as. The view is opened from a person of a project card's team, a joint-work entry, the Map's node and a card of the People view, so its words name what the reader came from: the organisation, the joint work, the projects, the projects waiting on the person, a student's supervision folder and the editor of the registry entry.
+# Oculus text owned by the person view, the tab one human opens as. The view is opened from a person of a project card's team, a field of an entry that names a person, the Map's node and a card of the People view, so its words name what the reader came from: the organisation, the projects, the projects waiting on the person, a student's supervision folder and the editor of the registry entry.
 text:
     views:
         person: Person
@@ -22,10 +22,6 @@ text:
         orcid: ORCID
         email: Email
         link: Link
-        joint_work: Joint work
-        no_joint_work: No entry of the joint-work file names this person yet.
-        open_joint_work: Joint work
-        open_joint_work_tip: Open the Joint work view, where these entries are edited.
         editor: Edit
         delete_tip: 'Delete {0}'
         projects: Projects

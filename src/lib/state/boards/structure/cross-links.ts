@@ -1,20 +1,18 @@
 // Layer 2, client state. The projects that name one entry of a collection, grouped as the
-// portfolio groups projects everywhere (in flight, done, ideas), the projects at one stage as one
-// group (the Archival card's), and the live projects no funding scheme covers, which the Funding
-// tab draws as one card. Pure joins of the snapshot, like the Pillars and Domains joins beside it,
-// so they are checked without a browser. A project's stage and chips are read under the words of
-// its own hub when the caller gives them (`wordsOf`).
+// portfolio groups projects everywhere (in flight, done, ideas): one strip for a funding scheme, an
+// organisation, a resource and an entry's `related:` list, and one labelled strip per role for a
+// person (`roleLinks`); the projects at one stage as one group (the Archival card's); and the live
+// projects no funding scheme covers, which the Funding tab draws as one card. Pure joins of the
+// snapshot, like the Pillars and Domains joins beside it, so they are checked without a browser. A
+// project's stage and chips, and a person's roles, are read under the words of their own hub when
+// the caller gives them (`wordsOf`).
 
-import { z } from 'zod';
 import { anyWord, hasWord, wordNumber, type WordsOf } from '../../../data/shapes/vocab-keys.ts';
-import { bareId, holdersOf, resolvedId, rootOf } from '../../../data/helpers/hub-names.ts';
-import { readAs } from '../../../data/shapes/shapes.ts';
-import type { Collection, Entry, Person, Project } from '../../../data/model/index.ts';
+import { holdersOf, resolvedId, rootOf } from '../../../data/helpers/hub-names.ts';
+import { rolesOf } from '../../../data/shapes/boards/roles.ts';
+import type { Collection, Entry, Id, Person, Project } from '../../../data/model/index.ts';
 import { teamOf } from '../board/team.ts';
 import { listWords } from '../collection/index.ts';
-
-/** A string and nothing else, for the person a joint work's entry names. */
-const stringShape = z.string();
 
 /** One member of a cross-link group. Its project stage remains visible inside the broader group. */
 type CrossMember = { id: string; label: string; stage: string };
@@ -63,37 +61,53 @@ function stageOf(project: Project): string {
 }
 
 /**
+ * The projects whose team (state/boards/board/team.ts: `lead:`, `collaborators:` and
+ * `supervisors:`) holds a person whose `affiliations` hold the organisation `organisation`, each
+ * project once however many of its people the organisation holds.
+ */
+function affiliatedTo(
+    organisation: Id,
+    projects: Project[],
+    people: readonly Pick<Person, 'id' | 'affiliations'>[]
+): Project[] {
+    const members = new Set(
+        people.filter((one) => one.affiliations.includes(organisation)).map((one) => one.id)
+    );
+    return projects.filter((project) => teamOf(project).some((id) => members.has(id)));
+}
+
+/**
  * The projects that name one entry, grouped by stage with a count each.
  *
- * Which projects those are is the collection's own question and has three answers: an entry of the
+ * Which projects those are is the collection's own question and has four answers: an entry of the
  * collection whose entry names the `funding` registry is a scheme, named by the manifests'
- * `funding:` tags; an entry of a collection flagged `joint_work` is a joint work, named by the
- * projects whose team (`lead:`, `collaborators:` and `supervisors:`, state/boards/board/team.ts)
- * holds its person; and every other collection has no project-side inverse, so it is the entry's
- * own `related:` list of keys. `collection` is the collection of the entry's own hub that holds
- * it, none when the snapshot holds no such collection. A key of the entry's file names the record
- * its hub resolves it to, the entry's own hub first, then the one other hub that holds it
- * (`resolvedId`); `people` are the people of the snapshot, which a joint work's person is resolved
- * among. A related key no project of the snapshot resolves is left out rather than drawn as a dead
- * link. Each project is grouped under its own hub's words when `wordsOf` gives them
- * (`groupProjects`).
+ * `funding:` tags; an entry of the `organisations` registry is an organisation, named by the
+ * projects whose team holds a person affiliated to it (`affiliatedTo`, among `people`, the people
+ * of the snapshot); an entry of the `resources` registry is a resource, named by the manifests'
+ * `compute:`; and every other collection has no project-side inverse, so it is the entry's own
+ * `related:` list of keys. A person's projects are drawn one strip per role (`roleLinks`).
+ * `collection` is the collection of the entry's own hub that holds it, none when the snapshot holds
+ * no such collection. An entry of a registry has the id of its record, which every reference of a
+ * manifest is resolved to. A key of the entry's `related:` names the project its hub resolves it
+ * to, the entry's own hub first, then the one other hub that holds it (`resolvedId`), and one no
+ * project of the snapshot resolves is left out rather than drawn as a dead link. Each project is
+ * grouped under its own hub's words when `wordsOf` gives them (`groupProjects`).
  */
 export function crossLinks(
     entry: Entry,
-    collection: Pick<Collection, 'registry' | 'joint_work'> | undefined,
+    collection: Pick<Collection, 'registry'> | undefined,
     projects: Project[],
-    people: readonly Person[],
+    people: readonly Pick<Person, 'id' | 'affiliations'>[],
     config: Record<string, unknown>,
     wordsOf?: WordsOf
 ): CrossGroup[] {
     let named: Project[];
     if (collection?.registry === 'funding') {
         named = projects.filter((project) => project.fundingIds.includes(entry.id));
-    } else if (collection?.joint_work === true) {
-        const own = readAs(stringShape, entry.fields.person);
-        const key = own ?? bareId(entry);
-        const person = resolvedId(holdersOf(people), rootOf(entry), key);
-        named = projects.filter((project) => person !== null && teamOf(project).includes(person));
+    } else if (collection?.registry === 'organisations') {
+        named = affiliatedTo(entry.id, projects, people);
+    } else if (collection?.registry === 'resources') {
+        named = projects.filter((project) => project.resourceIds.includes(entry.id));
     } else {
         const held = holdersOf(projects);
         named = listWords(entry.fields.related)
@@ -102,6 +116,49 @@ export function crossLinks(
             .filter((project): project is Project => project !== undefined);
     }
     return groupProjects(named, config, wordsOf);
+}
+
+/** The lists of a manifest that hold person ids, each the `field` of a row of `roles:`. */
+const ROLE_FIELDS = ['lead', 'supervisors', 'collaborators'] as const;
+
+/** One of the lists of a manifest that hold person ids. */
+type RoleField = (typeof ROLE_FIELDS)[number];
+
+/** The manifest list a role's `field` names, or null for a field that is none of them. */
+function roleField(field: string | undefined): RoleField | null {
+    return ROLE_FIELDS.find((one) => one === field) ?? null;
+}
+
+/** One labelled strip: the key it is told apart by, the words it is headed by, and its groups. */
+export type StripRow = { key: string; label: string; groups: CrossGroup[] };
+
+/**
+ * The strips of a person's card: one per row of `roles:` whose `field` is `lead`, `supervisors`
+ * or `collaborators`, in the order of `roles:`, each holding the projects whose list of that name
+ * holds the person, grouped as `groupProjects` groups them and headed by the role's `label`. The
+ * roles are read under the words of the person's hub when `wordsOf` gives them. A role whose field
+ * is none of the three draws no strip, since no other field of a manifest holds person ids, and a
+ * role with no project in any group draws none; a person on two lists of one project is in both
+ * strips. Null for an entry of a collection whose entry names no `people` registry, whose card
+ * draws the one strip of `crossLinks`.
+ */
+export function roleLinks(
+    entry: Entry,
+    collection: Pick<Collection, 'registry'> | undefined,
+    projects: Project[],
+    config: Record<string, unknown>,
+    wordsOf?: WordsOf
+): StripRow[] | null {
+    if (collection?.registry !== 'people') return null;
+    const rows: StripRow[] = [];
+    for (const role of rolesOf(wordsOf?.(rootOf(entry)) ?? config)) {
+        const field = roleField(role.field);
+        if (field === null) continue;
+        const named = projects.filter((project) => project[field].includes(entry.id));
+        const groups = groupProjects(named, config, wordsOf);
+        if (groups.length > 0) rows.push({ key: role.key, label: role.label, groups });
+    }
+    return rows;
 }
 
 /** The three groups the portfolio groups projects in by their stage's flags. */

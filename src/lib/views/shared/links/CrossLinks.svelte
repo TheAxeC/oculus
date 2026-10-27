@@ -1,10 +1,12 @@
 <script lang="ts">
-    // Layer 3, shared view partial. The project strip at the foot of a record card
+    // Layer 3, shared view partial. One project strip at the foot of a record card
     // (views/shared/card/record/RecordCard.svelte, which hands it the groups): project cross-links
     // grouped as in flight, done and ideas, each group nesting its members under their own project
     // stage, or grouped by one stage each (the Archival card's), headed by the stage's words and
     // glyph with its members directly under it. Each group is a disclosure with its count, and each
-    // member opens its tab. A strip handed `oneOpen` keeps one group open at a time.
+    // member opens its tab. A strip handed `oneOpen` keeps one group open at a time. A strip handed
+    // a `label` draws it before its groups: a person's card draws one strip per role, each headed
+    // by the role's label (state/boards/structure/cross-links.ts, `roleLinks`).
 
     import Tag from '$lib/ui/controls/Tag.svelte';
     import Disclosure from '$lib/ui/tree/Disclosure.svelte';
@@ -28,9 +30,11 @@
         groups: CrossGroup[];
         /** Keep one group open at a time, opening one closing the other (the Archival card's). */
         oneOpen?: boolean;
+        /** The words the strip is headed by, drawn before its groups; none draws no heading. */
+        label?: string;
     };
 
-    let { groups, oneOpen = false }: Props = $props();
+    let { groups, oneOpen = false, label: heading }: Props = $props();
     let opened = $state(new Set<string>());
 
     function isOpen(key: string): boolean {
@@ -65,6 +69,9 @@
 </script>
 
 <div class="groups">
+    {#if heading !== undefined}
+        <span class="heading">{heading}</span>
+    {/if}
     {#each groups as group (groupKey(group))}
         <div class="group" data-project-group={groupKey(group)}>
             <span class="group-head">
@@ -125,6 +132,17 @@
 
     .groups {
         margin-top: 8px;
+    }
+
+    /* A strip's heading, the role a person's card draws it for, on the line of its groups' heads,
+       in the small bold muted words a block's heading is drawn in. */
+    .heading {
+        display: inline-flex;
+        align-items: center;
+        min-height: calc(var(--tree-row) * var(--text-scale, 1));
+        font-size: var(--fs-xs);
+        font-weight: 700;
+        color: var(--muted-txt, var(--muted));
     }
 
     /* A group's head and a type's line are one row of the tree's height. */

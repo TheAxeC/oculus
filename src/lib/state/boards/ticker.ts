@@ -302,9 +302,9 @@ export function ticker(
     }
 
     /**
-     * The entries of every other collection whose entry gives a `ticker:` (talks, teaching, tasks,
-     * positions and joint work on the shipped list): one rule over every file, the category being
-     * the one that `ticker:` gives. The funding and venues registries' lines are their own loops'.
+     * The entries of every other collection whose entry gives a `ticker:` (talks, teaching, tasks
+     * and positions on the shipped list): one rule over every file, the category being the one that
+     * `ticker:` gives. The funding and venues registries' lines are their own loops'.
      * An entry of the file flagged `tasks` is work the reader set down, so it is a line of the
      * tasks section whatever its date, with no horizon; another file's dated entry is a line of the
      * command center inside the horizon.

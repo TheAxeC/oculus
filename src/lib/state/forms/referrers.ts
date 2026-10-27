@@ -1,26 +1,19 @@
 // Layer 2, client state. What refers to a record: the projects whose manifest names a pillar, a
 // domain, a venue, a dataset, a funding scheme or a resource; the people and funding schemes that
 // name an organisation; the projects that name a person in their `lead:`, `collaborators:`,
-// `supervisors:` or `waiting-on:` and the joint work that names one; and the `slurm.resource`
-// setting that names a resource. A record's page lists them and the question that asks before a
-// delete names them, so both read this one answer.
+// `supervisors:` or `waiting-on:`; and the `slurm.resource` setting that names a resource. A
+// record's page lists them and the question that asks before a delete names them, so both read
+// this one answer.
 //
 // Pure over the snapshot and the merged configuration it is given. Every join goes through the ids
 // of the merged portfolio, each the record's hub and its key, so a reference names the record it
 // resolved to in its own hub or in the one other hub that holds its key, and a record of one hub is
 // never taken for the record of the same key in another. A collection whose entries nothing refers
 // to (a statement, an event) has no referrers. Which kind of record an entry is comes from the
-// registry its collection's entry names in its hub's `collections:` list, and the joint work from
-// the collections flagged `joint_work`.
+// registry its collection's entry names in its hub's `collections:` list.
 
 import { byKey, isMap } from '../../data/helpers/guards.ts';
-import {
-    addressOfId,
-    bareId,
-    flaggedCollections,
-    hubId,
-    type RegistryWord
-} from '../../data/helpers/hub-names.ts';
+import { addressOfId, bareId, hubId, type RegistryWord } from '../../data/helpers/hub-names.ts';
 import type { Collection, Project, Snapshot } from '../../data/model/index.ts';
 
 /** The settings of behavior.yml that name a resource. */
@@ -45,12 +38,10 @@ export function listsReferrers(collection: Pick<Collection, 'registry'> | null):
 
 /** One thing that refers to a record, and what opens it. */
 export type Referrer = {
-    kind: 'project' | 'person' | 'funding' | 'entry' | 'setting';
-    /** The project, person, funding scheme or entry id, or the dotted setting. */
+    kind: 'project' | 'person' | 'funding' | 'setting';
+    /** The project, person or funding scheme id, or the dotted setting. */
     id: string;
     label: string;
-    /** The collection of an `entry` referrer. */
-    collection?: string;
 };
 
 /** The words a project is named by: its short name, else its title. */
@@ -76,23 +67,10 @@ function settingOf(config: Record<string, unknown>, key: string, field: string):
 
 /**
  * The referrers a person has: the projects of whose team they are (their `lead:`, their
- * `collaborators:` and their `supervisors:`), the projects waiting on them, and their joint work.
+ * `collaborators:` and their `supervisors:`) and the projects waiting on them.
  */
 function personReferrers(snapshot: Snapshot, id: string): Referrer[] {
-    const person = byKey(snapshot.entities.people, id);
-    const joint = new Set(person?.jointWorkIds ?? []);
-    const entries = flaggedCollections(snapshot.entities.collections, 'joint_work').flatMap(
-        (collection) =>
-            collection.entries
-                .filter((entry) => joint.has(entry.id))
-                .map((entry): Referrer => ({
-                    kind: 'entry',
-                    id: entry.id,
-                    label: entry.title === '' ? bareId(entry) : entry.title,
-                    collection: bareId(collection)
-                }))
-    );
-    const projects = projectsWhere(
+    return projectsWhere(
         snapshot,
         (project) =>
             project.lead.includes(id) ||
@@ -100,7 +78,6 @@ function personReferrers(snapshot: Snapshot, id: string): Referrer[] {
             project.supervisors.includes(id) ||
             project.waitingOn.includes(id)
     );
-    return [...projects, ...entries];
 }
 
 /** The referrers an organisation has: the people affiliated to it and the schemes it funds. */

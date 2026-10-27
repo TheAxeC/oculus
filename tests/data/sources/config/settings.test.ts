@@ -799,9 +799,9 @@ describe('chatContext', () => {
         collections: LIST,
         ...held
     });
-    /** The five keys of oculus's default chat_context a hub's own collections list holds. */
-    const FIVE = ['funding', 'events', 'education', 'applications', 'joint-work'];
-    const FIVE_LIST = `collections:\n${FIVE.map((key) => `  - { key: ${key}, file: ${key}.yml }\n`).join('')}`;
+    /** Oculus's default chat_context keys but tasks, which a hub's own collections list holds. */
+    const KEPT = ['funding', 'events', 'education', 'applications'];
+    const KEPT_LIST = `collections:\n${KEPT.map((key) => `  - { key: ${key}, file: ${key}.yml }\n`).join('')}`;
     /** The merged map `loadConfig` reads for a planted hub whose settings file holds `text`. */
     const planted = (text: string) => (): Record<string, unknown> =>
         loadConfig(engineDir(), {
@@ -847,11 +847,11 @@ describe('chatContext', () => {
             false
         ],
         ['a list that is no list', synthetic({ collections: 'funding' }), [], [], false],
-        ['a hub whose list leaves out tasks', planted(FIVE_LIST), FIVE, [], false],
+        ['a hub whose list leaves out tasks', planted(KEPT_LIST), KEPT, [], false],
         [
             'a hub whose list leaves out tasks, writing 3',
-            planted(`${FIVE_LIST}chat_context: 3\n`),
-            FIVE,
+            planted(`${KEPT_LIST}chat_context: 3\n`),
+            KEPT,
             WORDS,
             true
         ]

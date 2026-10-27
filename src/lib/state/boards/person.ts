@@ -1,9 +1,9 @@
 // Layer 2, client state. One person, joined to everything the hub knows about them: the registry
-// entry, the organisations they are affiliated to, the joint work that names them, the projects of
-// whose team they are (whose `lead:`, `collaborators:` or `supervisors:` name them), the projects
-// whose `waiting-on:` names them, and a student's supervision folder; what the person's "this is
-// me" button can do, which the key `self` of the primary hub's `local.yml` decides
-// (`selfStanding`); and the names of the people a dated line names (`lineNames`).
+// entry, the organisations they are affiliated to, the projects of whose team they are (whose
+// `lead:`, `collaborators:` or `supervisors:` name them), the projects whose `waiting-on:` names
+// them, and a student's supervision folder; what the person's "this is me" button can do, which the
+// key `self` of the primary hub's `local.yml` decides (`selfStanding`); and the names of the people
+// a dated line names (`lineNames`).
 //
 // Pure, so the Person view is tested without a browser: every join reads the snapshot it is given
 // and nothing else. The joins go through the relation tables rather than by scanning, since the
@@ -11,7 +11,6 @@
 // could disagree with them.
 
 import type {
-    Entry,
     Id,
     LinePeople,
     Organisation,
@@ -21,13 +20,7 @@ import type {
 } from '../../data/model/index.ts';
 import { byKey } from '../../data/helpers/guards.ts';
 import { LINE_PEOPLE } from '../../data/shapes/shapes.ts';
-import {
-    flaggedEntries,
-    holdersOf,
-    keyOf,
-    resolveKey,
-    rootOf
-} from '../../data/helpers/hub-names.ts';
+import { holdersOf, keyOf, resolveKey, rootOf } from '../../data/helpers/hub-names.ts';
 
 /**
  * One person and what they are joined to; every join is empty for an id the registry does not hold.
@@ -36,8 +29,6 @@ export type PersonJoin = {
     person: Person | null;
     /** The organisations the entry names, in its own order, so the primary one is first. */
     organisations: Organisation[];
-    /** The joint-work entries whose `person:` names this person, in the file's order. */
-    jointWork: Entry[];
     /** The projects whose `lead:`, `collaborators:` or `supervisors:` name this person. */
     projects: Project[];
     /** The projects whose `waiting-on:` names this person, by project id. */
@@ -95,26 +86,13 @@ export function personName(snapshot: Snapshot | null, id: Id): string {
     return held === undefined || held.name === '' ? keyOf(id) : held.name;
 }
 
-/**
- * The joint-work entries naming one person, those of the collections flagged `joint_work` of every
- * hub, in the order the collection files write them.
- */
-function jointWorkOf(snapshot: Snapshot, id: Id): Entry[] {
-    const entries = flaggedEntries(snapshot.entities.collections, 'joint_work');
-    const ids = new Set(
-        snapshot.relations.jointWorkPerson.filter((pair) => pair[1] === id).map((pair) => pair[0])
-    );
-    return entries.filter((entry) => ids.has(entry.id));
-}
-
-/** One person, by their id, joined to their organisations, joint work, projects and folder. */
+/** One person, by their id, joined to their organisations, projects and folder. */
 export function personJoin(snapshot: Snapshot | null, id: Id): PersonJoin {
     const person = snapshot === null ? undefined : byKey(snapshot.entities.people, id);
     if (snapshot === null || person === undefined) {
         return {
             person: null,
             organisations: [],
-            jointWork: [],
             projects: [],
             waitingOn: [],
             folder: ''
@@ -129,7 +107,6 @@ export function personJoin(snapshot: Snapshot | null, id: Id): PersonJoin {
     return {
         person,
         organisations,
-        jointWork: jointWorkOf(snapshot, id),
         projects,
         waitingOn: Object.values(snapshot.entities.projects).filter((project) =>
             project.waitingOn.includes(id)

@@ -58,20 +58,20 @@ The hub's own settings. A key of oculus's `config/catalogs/vocab.yml` set here i
 # The folder of the hub's own deck, opened by the Present view when no deck is named.
 # portfolio_deck: deck
 
-# The hub's data files, one entry each, a `key` and a `file`, and fields that say what the file
-# is and which features read it, so a hub keys its files as it likes: `registry:` the registry or
+# The hub's data files, one entry each, a `key` and a `file`, and fields that say what the file is
+# and which features read it, so a hub keys its files as it likes: `registry:` the registry or
 # feed it is (datasets, venues, pillars, domains, funding, people, organisations, resources,
 # literature, leads, radar); the flags `band_positions`, `band_teaching`, `awaiting`,
-# `open_badge`, `lead_applications`, `dissemination` (with `dissemination_skip:`), `tasks` and
-# `joint_work`; `ticker:` the word of `ticker_categories` its lines carry, naming the command
-# center group of its dated lines, with `undated: true` for open work with no date (the lines of
-# the file flagged `tasks` are Tasks lines, dated or not); `group:`, `order:`, `label:`, `glyph:`
-# and `about:`, its place in the view catalogue and the dotted keys of its name, glyph and line in
-# Make Folder a Hub; and `primary_key:`, the field an entry is found by, for a file with no
-# `schema:` only, since a schema flags its own. The domains registry holds each domain's colour
-# and label and which domains expect a dataset; the venues and datasets registries hold their
-# theme words as the options of their `themes` field. A file the list leaves out has no view, and
-# Make Folder a Hub writes the ticked entries as they stand here.
+# `open_badge`, `lead_applications`, `dissemination` (with `dissemination_skip:`) and `tasks`;
+# `ticker:` the word of `ticker_categories` its lines carry, naming the command center group of
+# its dated lines, with `undated: true` for open work with no date (the lines of the file flagged
+# `tasks` are Tasks lines, dated or not); `group:`, `order:`, `label:`, `glyph:` and `about:`, its
+# place in the view catalogue and the dotted keys of its name, glyph and line in Make Folder a
+# Hub; and `primary_key:`, the field an entry is found by, for a file with no `schema:` only,
+# since a schema flags its own. The domains registry holds each domain's colour and label and
+# which domains expect a dataset; the venues and datasets registries hold their theme words as the
+# options of their `themes` field. A file the list leaves out has no view, and Make Folder a Hub
+# writes the ticked entries as they stand here.
 # collections:
 #   - { key: data, file: ".oculus/data/research/data.yml", registry: datasets, about: files.make_collection_line_data }
 #   - { key: venues, file: ".oculus/data/research/venues.yml", registry: venues, ticker: { category: conference }, about: files.make_collection_line_venues }
@@ -85,14 +85,13 @@ The hub's own settings. A key of oculus's `config/catalogs/vocab.yml` set here i
 #   - { key: events, file: ".oculus/data/academic/events.yml", dissemination: true, dissemination_skip: { role: attend }, ticker: { category: event }, group: academic, order: 1, label: views.events, glyph: views.events_glyph, about: files.make_collection_line_events }
 #   - { key: education, file: ".oculus/data/academic/education.yml", band_teaching: true, dissemination: true, ticker: { category: teaching }, group: academic, order: 2, label: views.education, glyph: views.education_glyph, about: files.make_collection_line_education }
 #   - { key: applications, file: ".oculus/data/academic/applications.yml", band_positions: true, awaiting: true, open_badge: true, lead_applications: true, dissemination: true, ticker: { category: position }, group: academic, order: 3, label: views.applications, glyph: views.applications_glyph, about: files.make_collection_line_applications }
-#   - { key: joint-work, file: ".oculus/data/academic/joint-work.yml", joint_work: true, ticker: { category: collab }, group: academic, order: 4, label: views.joint-work, glyph: views.joint-work_glyph, about: files.make_collection_line_joint_work }
 #   - { key: tasks, file: ".oculus/data/academic/tasks.yml", tasks: true, ticker: { category: task, undated: true }, group: academic, order: 5, label: views.tasks, glyph: views.tasks_glyph, about: files.make_collection_line_tasks }
 #   - { key: literature, file: ".oculus/data/literature/literature.yml", registry: literature, group: literature, order: 2, label: views.literature, glyph: views.literature_glyph, about: files.make_collection_line_literature }
 #   - { key: leads, file: ".oculus/data/academic/leads.yml", registry: leads, ticker: { category: position }, about: files.make_collection_line_leads }
 #   - { key: radar, file: ".oculus/data/literature/radar.yml", registry: radar, about: files.make_collection_line_radar }
 
 # The keys of the collections list whose files a chat's index holds for this hub, in this order.
-# chat_context: [funding, events, education, applications, joint-work, tasks]
+# chat_context: [funding, events, education, applications, tasks]
 
 # A website's LinkedIn posts folder, read by the LinkedIn view. None by default.
 # linkedin_dir: path/to/_linkedin
@@ -1100,6 +1099,9 @@ schema:
   - { field: orcid,        type: text,     help: "ORCID." }
   - { field: email,        type: text,     help: "Email address." }
   - { field: links,        type: tags,     help: "Web addresses." }
+  - { field: work,         type: text,     help: "What the work with the person is about." }
+  - { field: tags,         type: tags,     help: "Words that describe the person and the work with them." }
+  - { field: note,         type: textarea, help: "Free notes on the person and the work with them." }
   - { field: folder,       type: text,     help: "A student's supervision folder." }
 entries:
 #  - key: me                      # required
@@ -1109,6 +1111,8 @@ entries:
 #    orcid: 0000-0000-0000-0000
 #    email: you@example.org
 #    links: []
+#    tags: []
+#    note: ""
 #    folder: ""                   # a student's supervision folder
 ```
 
@@ -1253,32 +1257,6 @@ entries:
 #    lead: [my-key]               # required; people keys
 #    collaborators: []            # people keys
 #    supervisors: []              # people keys
-```
-
-### .oculus/data/academic/joint-work.yml
-
-```yaml
-title: Joint work
-schema:
-  - { field: key,      type: text,     primary_key: true, help: "Short name." }
-  - { field: title,    type: text,     display: 1, required: true, help: "What the work is." }
-  - { field: person,   type: select,   foreign_key: people, required: true, help: "The person's key." }
-  - { field: status,   type: select,   options: [exploring, active, completed], required: true, help: "Where it stands." }
-  - { field: meta,     type: metalist, help: "Label and value rows." }
-  - { field: tags,     type: tags,     help: "Filter words." }
-  - { field: note,     type: textarea, help: "Notes." }
-  - { field: deadline, type: date,     help: "Shows on Focus while live." }
-  - { field: followup, type: text,     help: "A standing reminder." }
-entries:
-#  - key: paper-with-sam          # required
-#    title: "A paper with Sam"    # required
-#    person: sam                  # required; a person key
-#    status: active               # required: exploring, active or completed
-#    meta: []
-#    tags: []
-#    note: ""
-#    deadline: YYYY-MM-DD
-#    followup: ""
 ```
 
 ### .oculus/data/academic/education.yml

@@ -158,7 +158,7 @@ options:
     focus.deadline_horizon_days:
         heading: boards
         section: Thresholds and horizons
-        help: How many days ahead the Command Center lists a dated item, among them a project's submission deadline, a funding scheme's deadline, a conference call with an exact date, and the dated entries of talks, teaching, positions and joint work. The tasks file's entries are lines of the Tasks section whatever their date.
+        help: How many days ahead the Command Center lists a dated item, among them a project's submission deadline, a funding scheme's deadline, a conference call with an exact date, and the dated entries of talks, teaching and positions. The tasks file's entries are lines of the Tasks section whatever their date.
         control: number
     focus.leads_horizon_days:
         heading: boards

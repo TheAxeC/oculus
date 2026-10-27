@@ -1,15 +1,16 @@
-In flight (1 of 6 slots in use):
-- O91 (joint work onto the people file, and the projects on people's, organisations' and resources' cards), built (base eeafcd4cb); reviewed (agents/reviews/O91-refuter.md): no spec, proof or behaviour finding, two comment-wrap findings (docs/templates.md:61-73, RecordCard.svelte:23) fixed at landing; no repair round. Ready for /land after O88's commit; ruling 489 (b) puts the joint-work titles in a new people field `work`, written by the hub commit of its landing.
+In flight (0 of 6 slots in use): none.
 
 Queued (2):
-- O90 (the board bar's Waiting on filter), /spec after O91's landing.
+- O90 (the board bar's Waiting on filter), /spec next.
 - O92 (the collection's Add and bar, and the Map's bar), /spec after O90.
 
-Waiting on a ruling: nothing. Landing now: O88 (its landing commit being made, with the fixes the look on localhost:8790 found). Landing next: O91 (the titles as `work`, ruling 489 (b)).
+Waiting on a ruling: nothing. Landing next: none.
 
 Owed looks: none.
 
 Landed, newest first:
+- O91 (joint work onto the people file, and the projects on people's, organisations' and resources' cards), 2026-10-27, landing commit being made; hub 6e868b885.
+- O88 (one heading, one card grid, no intro paragraph, Pillars by kind, and the app theme that failed to load), 2026-10-27, e3c6f005; hub 7b3271054.
 - O93 (Focus and the dated lines: people on a line, Done on a follow-up, Remove on Focus rows, the Pillar filter, the red waiting line), 2026-10-27, f9d6ac48.
 - O87 (the Focus band's positions and teaching, and the dated lines in Tasks), 2026-10-27, 744de6aa.
 - O94 (LinkedIn's Mark posted), 2026-10-27, 8dbb9021; hub 34232a90b.

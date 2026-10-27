@@ -19,9 +19,10 @@
     // (`lines`), the text (`text`), the kind's own blocks (`blocks`), the dated lines (Subtasks,
     // then Follow-ups, then the deadline form), and the foot: the strip of the projects the record
     // lists (views/shared/links/CrossLinks.svelte), from `projects` grouped as everywhere or from
-    // the `groups` a kind makes itself, then the kind's own `foot`. A kind that draws the dated
-    // lines inside a block of its own, the project page's right column, hands `details`, which is
-    // given them. A kind that hands `deleting` has the question before a delete
+    // the `groups` a kind makes itself, or in its place one labelled strip per row of `rows` (a
+    // person's card, one per role), then the kind's own `foot`. A kind that draws the dated lines
+    // inside a block of its own, the project page's right column, hands `details`, which is given
+    // them. A kind that hands `deleting` has the question before a delete
     // (views/shared/forms/entry/DeleteAsk.svelte) asked under the card for that entry.
     //
     // The Add run of the menu is this card's, from `dated`: Follow-up and Subtask where a line can
@@ -60,7 +61,11 @@
     } from './record-menu';
     import type { WriteAnswer } from '$lib/state/client/writes.svelte';
     import type { Project } from '$lib/state/boards/collection';
-    import { groupProjects, type CrossGroup } from '$lib/state/boards/structure/cross-links';
+    import {
+        groupProjects,
+        type CrossGroup,
+        type StripRow
+    } from '$lib/state/boards/structure/cross-links';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
     import { vocabOf } from '$lib/state/shared/words/tones';
@@ -107,6 +112,11 @@
         projects?: Project[];
         /** The strip's groups, for a kind that groups its projects itself. */
         groups?: CrossGroup[];
+        /**
+         * Labelled strips drawn in place of the one strip, each headed by its label; none drawn
+         * for an empty list.
+         */
+        rows?: StripRow[];
         /** Keep one group of the strip open at a time. */
         oneOpen?: boolean;
         /** What the foot draws after the strip. */
@@ -140,6 +150,7 @@
         details,
         projects,
         groups,
+        rows,
         oneOpen = false,
         foot,
         deleting
@@ -296,7 +307,11 @@
                 <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
                 {@render datedLines()}
             {/if}
-            {#if linked.length > 0}
+            {#if rows !== undefined}
+                {#each rows as row (row.key)}
+                    <CrossLinks groups={row.groups} label={row.label} {oneOpen} />
+                {/each}
+            {:else if linked.length > 0}
                 <CrossLinks groups={linked} {oneOpen} />
             {/if}
             {@render foot?.()}

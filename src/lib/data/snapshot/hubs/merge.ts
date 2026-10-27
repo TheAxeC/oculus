@@ -33,7 +33,7 @@ import type {
     RegistryName,
     Snapshot
 } from '../../model/index.ts';
-import { byId, jointWorkRows } from '../normalise.ts';
+import { byId } from '../normalise.ts';
 import { linked } from '../normalise-parts/links.ts';
 import { sortFindings } from '../validate.ts';
 import { targetRegistry } from '../schema/lists.ts';
@@ -359,14 +359,6 @@ export function mergeHubs(parts: readonly HubPart[], text: TextCatalog, version:
         career:
             parts.map((part) => part.snapshot.entities.career).find((one) => one !== null) ?? null
     };
-    const jointWork = parts.flatMap((part) => {
-        const held = Object.values(part.snapshot.entities.collections);
-        return jointWorkRows(held).flatMap((row) => {
-            const where = { file: row.file, key: row.id, field: 'person' };
-            const person = of(part)(['people'], row.person, where);
-            return person === null ? [] : [{ id: hubId(part.key, row.id), person }];
-        });
-    });
     const known = Object.fromEntries(
         SOURCES.map((source) => [source, new Set(Object.keys(entities[source]))])
     );
@@ -380,8 +372,7 @@ export function mergeHubs(parts: readonly HubPart[], text: TextCatalog, version:
             people: Object.values(people),
             organisations: Object.values(entities.organisations)
         },
-        known,
-        jointWork
+        known
     );
     return {
         version,

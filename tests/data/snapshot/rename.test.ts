@@ -107,8 +107,8 @@ const AMIR_RENAMED: Texts = {
         'key: amir',
         'key: amir-2'
     ),
-    'hub:.oculus/data/academic/joint-work.yml': HUB_FILES[
-        '.oculus/data/academic/joint-work.yml'
+    'hub:.oculus/data/research/statements.yml': HUB_FILES[
+        '.oculus/data/research/statements.yml'
     ].replace('"amir"', '"amir-2"'),
     'hub:projects/active/alpha/project.yml': ALPHA.replace(
         'waiting-on: [amir, beta]',
@@ -211,8 +211,8 @@ const EDITED: Edited[] = [
             'hub:.oculus/data/people/people.yml': HUB_FILES[
                 '.oculus/data/people/people.yml'
             ].replace('key: amir', 'key: amir-2'),
-            'hub:.oculus/data/academic/joint-work.yml': HUB_FILES[
-                '.oculus/data/academic/joint-work.yml'
+            'hub:.oculus/data/research/statements.yml': HUB_FILES[
+                '.oculus/data/research/statements.yml'
             ].replace('"amir"', '"amir-2"'),
             'hub:projects/active/alpha/project.yml': ALPHA.replace(
                 'waiting-on: [amir, beta]',

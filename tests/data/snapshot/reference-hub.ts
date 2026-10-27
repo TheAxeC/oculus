@@ -114,7 +114,7 @@ export const HUB_FILES: Record<string, string> = {
         '  - { name: Grant without a key }',
         ''
     ].join('\n'),
-    '.oculus/data/academic/joint-work.yml': [
+    '.oculus/data/research/statements.yml': [
         'schema:',
         '  - { field: key, type: text, primary_key: true, help: The slug. }',
         '  - { field: person, type: select, foreign_key: people, required: true, help: The person. }',

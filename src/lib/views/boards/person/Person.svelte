@@ -1,7 +1,7 @@
 <script module lang="ts">
-    // Layer 3, view registration. A person opens from a tag of a project card's team, a joint-work
-    // entry and the Map's node, and is not listed in the view catalogue: opened bare it can only
-    // report that it was opened for nobody.
+    // Layer 3, view registration. A person opens from a tag of a project card's team, a field of an
+    // entry that names a person, the Map's node and a card of the People view, and is not listed in
+    // the view catalogue: opened bare it can only report that it was opened for nobody.
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
     export const registration: ViewRegistration = {
         id: 'person',
@@ -14,14 +14,13 @@
 </script>
 
 <script lang="ts">
-    // Layer 3, view. One human as their own tab, drawn from the five joins state/boards/person.ts
-    // makes: the registry entry, the organisations they are affiliated to, the joint work whose
-    // `person:` is this key, the projects of whose team they are (whose `lead:`, `collaborators:`
-    // or `supervisors:` name them), the projects whose `waiting-on:` names them, and a student's
-    // supervision folder.
+    // Layer 3, view. One human as their own tab, drawn from the four joins state/boards/person.ts
+    // makes: the registry entry, the organisations they are affiliated to, the projects of whose
+    // team they are (whose `lead:`, `collaborators:` or `supervisors:` name them), the projects
+    // whose `waiting-on:` names them, and a student's supervision folder.
     // Below the joins is the editor of the person's registry entry, built from the people file's
-    // own `schema:`, and Delete, which asks first and names every project and joint-work entry that
-    // refers to the person.
+    // own `schema:`, and Delete, which asks first and names every project that refers to the
+    // person.
     //
     // One instance per person, and the person it is for is the `key` in its instance state, the way
     // the project tab reads its own `id`.
@@ -33,10 +32,10 @@
     // file store rather than carrying it in the snapshot and opens a file in the source tab exactly
     // as a file browser row does; the entry page draws it for the folder an entry's link names.
     //
-    // Joint work, Projects, Waiting on, the folder and the editor are each the group every grouping
-    // of a view is drawn as (ui/controls/heads/GroupHead.svelte), the folder's controls as its
-    // `actions`, and each folds by its block key (`joint-work`, `projects`, `waiting-on`, `folder`,
-    // `editor`) under `folded` of the tab's state (views/shared/card/pane-fold.ts).
+    // Projects, Waiting on, the folder and the editor are each the group every grouping of a view
+    // is drawn as (ui/controls/heads/GroupHead.svelte), the folder's controls as its `actions`, and
+    // each folds by its block key (`projects`, `waiting-on`, `folder`, `editor`) under `folded` of
+    // the tab's state (views/shared/card/pane-fold.ts).
     //
     // A person of any hub has a "this is me" button, pressed on the person the key `self` of the
     // primary hub's `.oculus/local.yml` names; pressing it on another person writes that person's
@@ -49,7 +48,6 @@
     import Empty from '$lib/ui/frame/Empty.svelte';
     import GroupHead from '$lib/ui/controls/heads/GroupHead.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
-    import Tag from '$lib/ui/controls/Tag.svelte';
     import LinkedText from '$lib/ui/display/text/LinkedText.svelte';
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
@@ -61,11 +59,10 @@
     import SourceButton from '../../shared/links/SourceButton.svelte';
     import { hubPathsOf } from '$lib/state/boards/collection';
     import { personJoin, selfStanding, type PersonJoin } from '$lib/state/boards/person';
-    import { optionalText } from '$lib/data/shapes/shapes';
     import { recordState, stateRecord } from '$lib/state/shared/page/records';
     import { t } from '$lib/state/shared/words/text';
     import { viewSourceFile } from '$lib/state/sessions/view-source';
-    import { addressOfId, bareId, fileUnder, keyOf, rootOf } from '$lib/state/shared/page/hubs';
+    import { addressOfId, fileUnder, keyOf, rootOf } from '$lib/state/shared/page/hubs';
     import RootChip from '../../shared/card/RootChip.svelte';
     import { usePaneFold } from '../../shared/card/pane-fold';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
@@ -77,7 +74,7 @@
         fs: { primary, roots },
         layout: { openView },
         pages: { pageOf },
-        selectors: { configMap, flaggedCollections, registryKey },
+        selectors: { configMap, registryKey },
         source: { unsavedFile },
         ui: { setSelf }
     } = client;
@@ -148,11 +145,6 @@
             : t('person.organisation_line', held.name, parts.join(t('person.sep')));
     }
 
-    /** The joint-work entries with the status each carries: its text, and nothing for any other. */
-    const jointWork = $derived(
-        join.jointWork.map((entry) => ({ entry, status: optionalText(entry.fields.status) }))
-    );
-
     /**
      * The words on the tab and in the header: the person's name as the page holds it, a saved name
      * included before the snapshot shows it, their key until it is known.
@@ -201,30 +193,11 @@
     function openProject(id: string, label: string): void {
         openView('project', recordState(id, label));
     }
-
-    /**
-     * Open the joint-work collection, where the entries drawn here are edited: the collection
-     * flagged `joint_work` of the person's hub, else the first hub's.
-     */
-    function openJointWork(): void {
-        const held = flaggedCollections('joint_work');
-        const own = held.find((one) => rootOf(one) === hub) ?? held.at(0);
-        if (own !== undefined) openView(bareId(own));
-    }
 </script>
 
 <Pane title={title === '' ? t('person.nobody') : title} tinted>
     {#snippet toolbar()}
         <Toolbar label={t('person.toolbar')} overflow>
-            {#if join.jointWork.length > 0}
-                <ToolButton
-                    bare
-                    label={t('person.open_joint_work')}
-                    glyph="collab"
-                    title={t('person.open_joint_work_tip')}
-                    onclick={openJointWork}
-                />
-            {/if}
             {#if page !== null}
                 <ToolButton
                     bare
@@ -271,28 +244,6 @@
                     {/each}
                 </dl>
             {/if}
-
-            <GroupHead
-                data-block="joint-work"
-                label={t('person.joint_work')}
-                open={fold.open('joint-work')}
-                ontoggle={() => fold.toggle('joint-work')}
-            >
-                {#if join.jointWork.length === 0}
-                    <Empty message={t('person.no_joint_work')} />
-                {:else}
-                    <ul class="rows">
-                        {#each jointWork as { entry, status } (`${entry.file}:${entry.index}`)}
-                            <li>
-                                <span class="what">{entry.title}</span>
-                                {#if status !== undefined}
-                                    <Tag label={status} />
-                                {/if}
-                            </li>
-                        {/each}
-                    </ul>
-                {/if}
-            </GroupHead>
 
             <GroupHead
                 data-block="projects"
@@ -450,11 +401,6 @@
         min-width: 0;
         min-height: calc(var(--tree-row) * var(--text-scale, 1));
         font-size: var(--fs-md);
-    }
-
-    .what {
-        min-width: 0;
-        overflow-wrap: anywhere;
     }
 
     /* A project and a file open from their name, drawn as a link: the accent colour, an underline

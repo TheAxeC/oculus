@@ -74,7 +74,7 @@ function heldBy(dir: string, file: string): boolean {
 }
 
 /** A collection file whose `person` field takes a key of the people registry. */
-const PERSON_FIELD_FILE = `title: Joint work
+const PERSON_FIELD_FILE = `title: Statements
 schema:
   - { field: key, type: text, primary_key: true }
   - { field: title, type: text, display: 1 }
@@ -436,9 +436,9 @@ describe('a write to a record of the second hub', () => {
     it('writes a field that names a record of the second hub without the hub key (G8)', async () => {
         const { into, first, lab } = twoHubs();
         for (const hub of [first, lab]) {
-            mkdirSync(join(hub, '.oculus', 'data', 'academic'), { recursive: true });
+            mkdirSync(join(hub, '.oculus', 'data', 'research'), { recursive: true });
             writeFileSync(
-                join(hub, '.oculus', 'data', 'academic', 'joint-work.yml'),
+                join(hub, '.oculus', 'data', 'research', 'statements.yml'),
                 PERSON_FIELD_FILE
             );
         }
@@ -446,7 +446,7 @@ describe('a write to a record of the second hub', () => {
         const response = await handleWrite(
             request({
                 kind: 'entry',
-                collection: 'joint-work',
+                collection: 'statements',
                 id: 'lab:rivera-lab',
                 fields: { person: 'lab:chen-graph' }
             }),
@@ -455,7 +455,7 @@ describe('a write to a record of the second hub', () => {
         );
         expect(response.status).toBe(200);
         expect(differing(before.first, filesOf(first))).toEqual([]);
-        const file = '.oculus/data/academic/joint-work.yml';
+        const file = '.oculus/data/research/statements.yml';
         expect(differing(before.lab, filesOf(lab))).toEqual([file]);
         const written = filesOf(lab).get(file) ?? '';
         const entries = (parse(written) as { entries: { key: string; person: string }[] }).entries;

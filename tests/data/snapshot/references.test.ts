@@ -71,7 +71,7 @@ const ALPHA = HUB_FILES['projects/active/alpha/project.yml'];
 /** behavior.yml as a tab holds it with a heading line typed above its keys. */
 const BEHAVIOR_WITH_HEADING = `# The cluster.\n${ENGINE_FILES['defaults/behavior.yml']}`;
 
-/** A joint-work file whose `target` takes the keys of the source the `kind` of its record picks. */
+/** A statements file whose `target` takes the keys of the source the `kind` of its record picks. */
 const PICKED = [
     'schema:',
     '  - { field: key, type: text, primary_key: true, help: The slug. }',
@@ -123,7 +123,7 @@ const ROWS: Row[] = [
         key: 'amir',
         targets: ['hub:.oculus/data/people/people.yml:5'],
         references: [
-            'hub:.oculus/data/academic/joint-work.yml:5:13',
+            'hub:.oculus/data/research/statements.yml:5:13',
             'hub:projects/active/alpha/project.yml:6:13',
             'hub:projects/active/alpha/project.yml:7:16'
         ]
@@ -147,7 +147,7 @@ const ROWS: Row[] = [
         key: 'amir',
         targets: ['hub:.oculus/data/people/people.yml:5'],
         references: [
-            'hub:.oculus/data/academic/joint-work.yml:5:13',
+            'hub:.oculus/data/research/statements.yml:5:13',
             'hub:projects/active/alpha/project.yml:6:13',
             'hub:projects/active/alpha/project.yml:7:16',
             'hub:side-projects/idea/project.yml:3:16'
@@ -183,13 +183,13 @@ const ROWS: Row[] = [
         references: ['hub:.oculus/data/people/people.yml:7:19']
     },
     {
-        name: 'a double-quoted select, the person of a joint-work entry',
-        at: ['hub', '.oculus/data/academic/joint-work.yml', 5, 13],
+        name: 'a double-quoted select, the person of a statements entry',
+        at: ['hub', '.oculus/data/research/statements.yml', 5, 13],
         kind: 'reference',
         key: 'amir',
         targets: ['hub:.oculus/data/people/people.yml:5'],
         references: [
-            'hub:.oculus/data/academic/joint-work.yml:5:13',
+            'hub:.oculus/data/research/statements.yml:5:13',
             'hub:projects/active/alpha/project.yml:6:13',
             'hub:projects/active/alpha/project.yml:7:16'
         ]
@@ -402,27 +402,27 @@ const ROWS: Row[] = [
     },
     {
         name: 'a from picked by another field of the record, the person source',
-        at: ['hub', '.oculus/data/academic/joint-work.yml', 5, 36],
-        hub: { '.oculus/data/academic/joint-work.yml': PICKED },
+        at: ['hub', '.oculus/data/research/statements.yml', 5, 36],
+        hub: { '.oculus/data/research/statements.yml': PICKED },
         kind: 'reference',
         key: 'amir',
         targets: ['hub:.oculus/data/people/people.yml:5'],
         references: [
-            'hub:.oculus/data/academic/joint-work.yml:5:36',
+            'hub:.oculus/data/research/statements.yml:5:36',
             'hub:projects/active/alpha/project.yml:6:13',
             'hub:projects/active/alpha/project.yml:7:16'
         ]
     },
     {
         name: 'a from picked by another field of the record, the organisation source',
-        at: ['hub', '.oculus/data/academic/joint-work.yml', 6, 33],
-        hub: { '.oculus/data/academic/joint-work.yml': PICKED },
+        at: ['hub', '.oculus/data/research/statements.yml', 6, 33],
+        hub: { '.oculus/data/research/statements.yml': PICKED },
         kind: 'reference',
         key: 'utwente',
         targets: ['hub:.oculus/data/people/organisations.yml:4'],
         references: [
-            'hub:.oculus/data/academic/joint-work.yml:6:33',
-            'hub:.oculus/data/people/people.yml:7:19'
+            'hub:.oculus/data/people/people.yml:7:19',
+            'hub:.oculus/data/research/statements.yml:6:33'
         ]
     },
     {

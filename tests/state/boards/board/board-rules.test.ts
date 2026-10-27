@@ -221,7 +221,6 @@ describe("a board's items, the Mine only filter and the Role facet", () => {
             affiliations: [],
             links: [],
             projectIds: [],
-            jointWorkIds: [],
             self: true
         };
         const people = { 'lab:kim': person };

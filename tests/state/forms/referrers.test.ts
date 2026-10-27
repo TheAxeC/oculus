@@ -31,24 +31,12 @@ const projects = [
     fixtureProject({ id: 'sketch', title: 'Sketch', lead: ['lena'] })
 ];
 
-/** The collection flagged `joint_work`, whose entries name a person. */
-const jointWork: Collection = {
-    id: 'joint-work',
-    title: 'Joint work',
-    file: '/hub/.oculus/data/academic/joint-work.yml',
-    joint_work: true,
-    entries: [
-        { id: 'paper-a', title: 'Paper A', fields: {}, file: '', index: 0 },
-        { id: 'paper-b', title: '', fields: {}, file: '', index: 1 }
-    ]
-};
-
 /** A registry's collection under the key `id`, its entry naming `registry`; the joins read none. */
 function registry(id: string, word: Collection['registry']): [string, Collection] {
     return [id, { id, title: id, file: `/hub/${id}.yml`, registry: word, entries: [] }];
 }
 
-/** The collections of the snapshot: the registries, one keyed otherwise, and the joint work. */
+/** The collections of the snapshot: the registries, one keyed otherwise, and a plain one. */
 const collections: Record<string, Collection> = Object.fromEntries([
     registry('pillars', 'pillars'),
     registry('domains', 'domains'),
@@ -59,8 +47,7 @@ const collections: Record<string, Collection> = Object.fromEntries([
     registry('organisations', 'organisations'),
     registry('resources', 'resources'),
     registry('outlets', 'venues'),
-    ['statements', { id: 'statements', title: 'Statements', file: '', entries: [] }],
-    ['joint-work', jointWork]
+    ['statements', { id: 'statements', title: 'Statements', file: '', entries: [] }]
 ]);
 
 const snapshot = {
@@ -71,15 +58,13 @@ const snapshot = {
                 id: 'wim',
                 name: 'Wim',
                 affiliations: ['kuleuven'],
-                links: [],
-                jointWorkIds: ['paper-b']
+                links: []
             },
             an: {
                 id: 'an',
                 name: '',
                 affiliations: ['kuleuven', 'ut'],
-                links: [],
-                jointWorkIds: []
+                links: []
             }
         },
         funding: {
@@ -116,14 +101,12 @@ describe('referrersOf', () => {
         expect(ids(collection, id)).toEqual(expected);
     });
 
-    it('names for a person the projects with them as collaborator or awaited, and the joint work', () => {
+    it('names for a person the projects with them as collaborator or awaited', () => {
         const referrers = referrersOf(snapshot, config, 'people', 'wim');
         expect(referrers.map((one) => `${one.kind}:${one.id}`)).toEqual([
             'project:raw-pls',
-            'project:hccnet',
-            'entry:paper-b'
+            'project:hccnet'
         ]);
-        expect(referrers.at(-1)).toMatchObject({ label: 'paper-b', collection: 'joint-work' });
     });
 
     it('names for an organisation the people affiliated and the schemes it funds', () => {

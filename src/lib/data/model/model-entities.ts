@@ -640,8 +640,8 @@ export type Domain = Rooted & {
 
 /**
  * One human, from the people registry. It is the entity a manifest's `lead:`, `collaborators:` and
- * `supervisors:`, a joint work's `person:` and a `waiting-on:` value name, so a person's name is
- * written once and every surface that draws one reads it here.
+ * `supervisors:` and a `waiting-on:` value name, so a person's name is written once and every
+ * surface that draws one reads it here.
  *
  * `affiliations` are keys of the organisation registry rather than the organisations themselves,
  * which is what keeps the pair JSON-safe: a person points at organisations and an organisation
@@ -678,10 +678,6 @@ export type Person = Rooted & {
      * whose team the person is; filled from the other side of the relation.
      */
     projectIds: Id[];
-    /**
-     * Entries of every collection flagged `joint_work` whose `person:` is this key, by entry id.
-     */
-    jointWorkIds: Id[];
 };
 
 /**

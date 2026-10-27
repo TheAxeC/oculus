@@ -29,7 +29,7 @@ export type RegistryWord = (typeof REGISTRY_WORDS)[number];
 /**
  * The flags a `collections:` entry sets to true, each the feature that reads its file: the Focus
  * band's positions and teaching columns, the Awaiting box, the open count and green badge, where a
- * lead's applied press writes, Disseminated in, the task features and joint work.
+ * lead's applied press writes, Disseminated in and the task features.
  */
 export const COLLECTION_FLAGS = [
     'band_positions',
@@ -38,8 +38,7 @@ export const COLLECTION_FLAGS = [
     'open_badge',
     'lead_applications',
     'dissemination',
-    'tasks',
-    'joint_work'
+    'tasks'
 ] as const;
 
 /** One flag of a `collections:` entry. */

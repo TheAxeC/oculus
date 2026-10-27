@@ -36,12 +36,10 @@ function sources(table: [Id, Id][], to: Id): Id[] {
     return table.filter((pair) => pair[1] === to).map((pair) => pair[0]);
 }
 
-/** What the four person and organisation tables are built from, beside the projects themselves. */
+/** What the two organisation tables are built from, beside the projects themselves. */
 type Sides = {
     people: Person[];
     schemes: Funding[];
-    /** The entries of the joint-work collection, each with the person key its record names. */
-    jointWork: { id: Id; person: Id }[];
 };
 
 /**
@@ -67,7 +65,6 @@ function relations(
     const relatedTable: [Id, Id][] = [];
     const fundingPillar: [Id, Id][] = [];
     const projectPerson: [Id, Id][] = [];
-    const jointWorkPerson: [Id, Id][] = [];
     const personOrganisation: [Id, Id][] = [];
     const fundingOrganisation: [Id, Id][] = [];
 
@@ -101,9 +98,6 @@ function relations(
         }
     }
 
-    for (const entry of sides.jointWork) {
-        if (entities.people.has(entry.person)) jointWorkPerson.push([entry.id, entry.person]);
-    }
     for (const one of sides.people) {
         for (const key of one.affiliations) {
             if (entities.organisations.has(key)) personOrganisation.push([one.id, key]);
@@ -124,7 +118,6 @@ function relations(
         projectRelated: pairs(relatedTable),
         fundingPillar: pairs(fundingPillar),
         projectPerson: pairs(projectPerson),
-        jointWorkPerson: pairs(jointWorkPerson),
         personOrganisation: pairs(personOrganisation),
         fundingOrganisation: pairs(fundingOrganisation)
     };
@@ -145,16 +138,11 @@ export type Linked = {
  * The relation tables of the records, each record's id lists filled from them: a project keeps the
  * references `known` holds, a scheme its funder and a person its organisations when `known` holds
  * them, and every other list is the other side of a table. `known` holds the ids of each kind of
- * record by its source name; `jointWork` the entries of the joint-work collection, each with the id
- * of the person it names.
+ * record by its source name.
  */
-export function linked(
-    records: Linked,
-    known: Record<string, ReadonlySet<Id>>,
-    jointWork: { id: Id; person: Id }[]
-): Relations {
+export function linked(records: Linked, known: Record<string, ReadonlySet<Id>>): Relations {
     const { projects, datasets, pillars, domains, schemes, people, organisations } = records;
-    const tables = relations(projects, known, { people, schemes, jointWork });
+    const tables = relations(projects, known, { people, schemes });
 
     for (const item of projects) {
         item.relatedIds = targets(tables.projectRelated, item.id);
@@ -183,7 +171,6 @@ export function linked(
     }
     for (const item of people) {
         item.projectIds = sources(tables.projectPerson, item.id);
-        item.jointWorkIds = sources(tables.jointWorkPerson, item.id);
         item.affiliations = item.affiliations.filter((key) => known.organisations.has(key));
     }
     for (const item of organisations) {

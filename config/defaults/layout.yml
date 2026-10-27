@@ -113,7 +113,6 @@ arrangements:
         - { view: events, pinned: true }
         - { view: education, pinned: true }
         - { view: applications, pinned: true }
-        - { view: joint-work, pinned: true }
         - { view: tasks, pinned: true }
         - { view: memories, pinned: true }
   pillars:
@@ -332,7 +331,6 @@ counts:
   applications: { tab: true, rail: true }
   funding:      { match: [in-prep, submitted], label: undecided, tab: true, rail: true }
   education:    { match: [ongoing], label: ongoing, tab: true, rail: true }
-  joint-work:   { match: [exploring], label: exploring, tab: true, rail: true }
   tasks:        { match: [todo, doing], label: open, tone: amber, tab: true, rail: true }
   events:       { match: [upcoming], label: upcoming, tab: true, rail: true }
 
