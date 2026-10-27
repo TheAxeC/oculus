@@ -12,8 +12,12 @@
 // entry stands: a null or a removal naming an entry oculus does not hold, `removed` holding
 // anything but true, and two rows naming one key (none of the two is applied). A row with no key to
 // tell it by comes after oculus's rows as it is, and the reader of the list says what is wrong with
-// it. The hub layer (hub-layer.ts) also takes a word the hub's values no longer give out of the
-// lists that name it.
+// it. The rows of a list replaced whole are told apart by their `key`, or by their `label` in a
+// list of the Focus band's stages, which has no key: a row naming the key of an earlier row is a
+// problem naming its place, and oculus's list stands. The hub layer (hub-layer.ts) lets oculus's
+// list stand too when a row of such a list is not of the shape oculus's file takes, and takes a
+// word the hub's values no longer give out of the lists that name it. `focus_clusters` is applied
+// as written, since its reader (sections/vocab.ts) takes it row by row.
 //
 // The inverse is here too: the value a settings file holds for a value the reader sees, so the
 // merge over oculus's value gives the seen value back. It holds only the entries the reader
@@ -32,11 +36,20 @@ import type { PendingFinding } from './text.ts';
 const REMOVED = 'removed';
 
 /**
- * How one key is laid over oculus's value: a map by its keys, rows by a field, a list whole, or a
- * colour that replaces oculus's.
+ * How one key is laid over oculus's value: a map by its keys, rows by a field, a list whole, its
+ * rows told apart by `field` when it names one, or a colour that replaces oculus's.
  */
 export type InPlace =
-    { kind: 'map' } | { kind: 'rows'; field: string } | { kind: 'whole' } | { kind: 'colour' };
+    | { kind: 'map' }
+    | { kind: 'rows'; field: string }
+    | { kind: 'whole'; field?: string }
+    | { kind: 'colour' };
+
+/**
+ * What of a value laid in place cannot be applied: a problem of a merge by key, or a row of a list
+ * replaced whole naming the key `entry` an earlier row names, at the index `at` of the list.
+ */
+type InPlaceProblem = OverrideProblem | { kind: 'repeated_row'; entry: string; at: number };
 
 /** The kind of value a key's shape takes, named by a value that is not of it. */
 export type WrongKind = 'map' | 'list' | 'colour';
@@ -44,11 +57,20 @@ export type WrongKind = 'map' | 'list' | 'colour';
 /** A map merged by its keys. */
 const MAP: InPlace = { kind: 'map' };
 
-/** A list replaced whole. */
-const WHOLE: InPlace = { kind: 'whole' };
+/** A list replaced whole, its rows told apart by their `key`. */
+const WHOLE: InPlace = { kind: 'whole', field: 'key' };
 
 /** A colour, written `#rrggbb`, that replaces oculus's. */
 const COLOUR: InPlace = { kind: 'colour' };
+
+/** A list of the Focus band's stages, replaced whole, its rows told apart by their `label`. */
+const STAGES: InPlace = { kind: 'whole', field: 'label' };
+
+/**
+ * A list replaced whole and applied as written, since its reader takes it row by row and says what
+ * is wrong with a row it leaves out (`focus_clusters`, sections/vocab.ts).
+ */
+const READ_BY_ROW: InPlace = { kind: 'whole' };
 
 /**
  * The keys of config/catalogs/vocab.yml a hub's settings file sets, every key of the file, each
@@ -61,9 +83,11 @@ export const VOCAB_SHAPES: Readonly<Record<string, InPlace>> = {
     chips: MAP,
     statuses: MAP,
     lead_statuses: MAP,
-    focus_clusters: WHOLE,
+    focus_clusters: READ_BY_ROW,
     focus_lanes: WHOLE,
-    fund_stages: WHOLE,
+    fund_stages: STAGES,
+    position_stages: STAGES,
+    teaching_stages: STAGES,
     focus_lane_tones: MAP,
     facet_tones: MAP,
     tiers: MAP,
@@ -101,15 +125,25 @@ export function inPlaceOf(key: string): InPlace | undefined {
 
 /**
  * The finding of one entry a merge could not apply: `key` is the finding's key and `name` the key
- * of the value the sentence names, with the entry's own key beside it.
+ * of the value the sentence names, with the entry's own key beside it. A row naming the key of an
+ * earlier row is named by its own place, `name` and its index.
  */
 export function problemFinding(
     file: string,
     key: string,
     name: string,
-    problem: OverrideProblem
+    problem: InPlaceProblem
 ): PendingFinding {
     const entry = problem.entry;
+    if (problem.kind === 'repeated_row') {
+        const place = `${name}.${problem.at}`;
+        return {
+            file,
+            key: place,
+            words: (catalog) =>
+                findingText(catalog, 'findings.config.settings_row_repeated', place, entry)
+        };
+    }
     const words = {
         removed_value: (catalog: TextCatalog) =>
             findingText(catalog, 'findings.config.settings_removed_value', name, entry),
@@ -174,6 +208,23 @@ function mergeMapInPlace(
 }
 
 /**
+ * The rows of a list that name the key `field` of an earlier row, one problem each with the key and
+ * the row's index, in the list's order.
+ */
+function repeatedRows(rows: readonly unknown[], field: string): InPlaceProblem[] {
+    const seen = new Set<string>();
+    return rows.flatMap((row, at): InPlaceProblem[] => {
+        const key = rowKey(row, field);
+        if (key === null) return [];
+        if (!seen.has(key)) {
+            seen.add(key);
+            return [];
+        }
+        return [{ kind: 'repeated_row', entry: key, at }];
+    });
+}
+
+/**
  * A list of rows laid over oculus's list by the field `field`: oculus's rows in oculus's order,
  * each replaced by the row written for its key or taken out by a removal, then the new rows and
  * the rows with no key in the order written.
@@ -185,14 +236,7 @@ function mergeRowsInPlace(
 ): Merged<unknown[]> {
     const problems: OverrideProblem[] = [];
     const held = new Set(oculus.flatMap((row) => rowKey(row, field) ?? []));
-    const seen = new Set<string>();
-    const twice = new Set<string>();
-    for (const row of over) {
-        const key = rowKey(row, field);
-        if (key === null) continue;
-        if (seen.has(key)) twice.add(key);
-        seen.add(key);
-    }
+    const twice = new Set(repeatedRows(over, field).map((one) => one.entry));
     for (const key of twice) problems.push({ kind: 'repeated', entry: key });
     const named = new Map<string, unknown>();
     const tail: unknown[] = [];
@@ -226,13 +270,14 @@ function mergeRowsInPlace(
 /**
  * A value laid over oculus's by its shape, or `wrong` naming the kind of value the shape takes when
  * the value is not of it: a map for a map, a list for rows and for a list replaced whole, a colour
- * written `#rrggbb` for a colour.
+ * written `#rrggbb` for a colour. A list replaced whole two of whose rows name one key is oculus's
+ * value, with a problem for each row that names an earlier row's key.
  */
 export function layInPlace(
     shape: InPlace,
     oculus: unknown,
     value: unknown
-): Merged<unknown> | { wrong: WrongKind } {
+): { value: unknown; problems: InPlaceProblem[] } | { wrong: WrongKind } {
     if (shape.kind === 'colour') {
         const written = typeof value === 'string' && HEX_COLOUR.test(value);
         return written ? { value, problems: [] } : { wrong: 'colour' };
@@ -242,7 +287,10 @@ export function layInPlace(
         return mergeMapInPlace(isMap(oculus) ? oculus : {}, value);
     }
     if (!Array.isArray(value)) return { wrong: 'list' };
-    if (shape.kind === 'whole') return { value, problems: [] };
+    if (shape.kind === 'whole') {
+        const problems = shape.field === undefined ? [] : repeatedRows(value, shape.field);
+        return { value: problems.length > 0 ? oculus : value, problems };
+    }
     return mergeRowsInPlace(Array.isArray(oculus) ? oculus : [], value, shape.field);
 }
 

@@ -1,6 +1,9 @@
 <script lang="ts">
-    // Layer 3, view partial of views/boards/focus/Focus.svelte. The command center: the urgency
-    // ticker, in two columns under one heading, with the buttons each line can be acted on by.
+    // Layer 3, view partial of views/boards/focus/Focus.svelte. The command center: the dates the
+    // records hold (a paper's or a grant's deadline, a call, a lead's closing day, a dated entry),
+    // overdue or ahead, with the snoozed, attention and refresh lines, in two columns under one
+    // heading, with the buttons each line can be acted on by. The follow-ups, the subtasks and the
+    // tasks file's entries are the tasks section's, dated or not.
     //
     // It counts nothing. The groups are the ticker the board hands it and state/feeds/feeds.ts's
     // attention and refresh lines over the portfolio the board hands it, both of the records the
@@ -9,10 +12,9 @@
     // it can be written to (`kind` and `target`), and this file turns the two into a sentence
     // through the text catalog, the sentence chosen by what the line was read from (its target's
     // kind) and the noun by its category's word of `ticker_categories`; the target also becomes
-    // buttons, and what one writes, in
-    // views/boards/focus/rows.ts, which the tasks section draws its rows with too. Lead and
-    // attention lines open their views; refresh lines ask the shell for the Update tray through the
-    // ui store.
+    // buttons, and what one writes, in views/boards/focus/rows.ts, which the tasks section draws
+    // its rows with too. Lead and attention lines open their views; refresh lines ask the shell for
+    // the Update tray through the ui store.
     //
     // The right of the heading row holds the live HPC pill: the running and pending counts from
     // state/system/machine/hpc/hpc.svelte.ts, drawn only while the cluster answers and the queue is
@@ -21,7 +23,6 @@
     import type { TickerRow } from '$lib/ui/display/ticker/ticker-rows';
     import {
         deadlinesByCategory,
-        runsByKind,
         tickerCategories,
         venueWarn,
         type TickerItem
@@ -30,7 +31,7 @@
     import { attention, refresh } from '$lib/state/feeds/feeds';
     import { t } from '$lib/state/shared/words/text';
     import { instanceMap, recordField } from '$lib/state/workbench/layout';
-    import { act, dateTail, fileBlock, openLine, rowMaker, type SectionProps } from './rows';
+    import { act, fileBlock, openLine, rowMaker, type SectionProps } from './rows';
     import CommandCenterView from './CommandCenterView.svelte';
     import { useState } from '$lib/state/client/use';
     import { vocabOf } from '$lib/state/shared/words/tones';
@@ -132,11 +133,6 @@
     /** Everything the strip draws, and the line each row came from, by the row's own id. */
     const view = $derived.by(() => {
         const { index, row, kept } = rowMaker('r', fileBlock(client));
-        const byKind = (lines: TickerItem[]): { kind: string; rows: TickerRow[] }[] =>
-            runsByKind(lines).map((run) => ({
-                kind: run.kind,
-                rows: run.lines.map((line) => row(line, dateTail(line)))
-            }));
         const groups = deadlinesByCategory(week?.deadlines ?? [], categories).map((one) => ({
             category: one.category.key,
             label: t(one.category.label ?? 'focus.command.kind_other'),
@@ -147,8 +143,6 @@
             kept,
             overdue: (week?.overdue ?? []).map((line) => row(line, overdueTail(line))),
             categories: groups,
-            subtaskDated: byKind(week?.subtasks ?? []),
-            followups: (week?.followups ?? []).map((line) => row(line, '')),
             snoozed: (week?.snoozed ?? []).map((line) => row(line, ''))
         };
     });

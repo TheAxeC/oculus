@@ -213,7 +213,7 @@ const statusWord = z.strictObject({
         "The status ends an entry's deadline on the deadline radar; the status is compared trimmed and in lower case."
     ),
     deadline_met: flag(
-        "The status ends a funding entry's or another entry's own deadline, so it leaves the deadline radar, and a funding entry carrying it is listed in the Focus board's awaiting box; compared trimmed and in lower case."
+        "The status ends a funding entry's or another entry's own deadline, so it leaves the deadline radar, and a funding entry carrying it is listed in the Focus board's awaiting box under Grants, an entry of a file flagged `awaiting` under Applications; compared trimmed and in lower case."
     ),
     live_subtasks: flag(
         "A status with `closes_deadline` under which an entry's subtasks and follow-up notes stay on the radar; compared trimmed and in lower case."
@@ -331,14 +331,17 @@ const categoryRow = z.strictObject({
     )
 });
 
-/** One stage of the funding pipeline. */
-const fundStage = z.strictObject({
-    label: text.describe('The words the stage is drawn with in the Focus Funding column.'),
+/**
+ * One stage stacked inside a column of the Focus band, the row of `fund_stages`, `position_stages`
+ * and `teaching_stages` alike.
+ */
+const bandStage = z.strictObject({
+    label: text.describe('The words the stage is drawn with in its Focus column.'),
     color: colour.optional().describe('The colour the stage is drawn in.'),
     statuses: z
         .array(text)
         .optional()
-        .describe('The statuses of a funding entry that place it in this stage.')
+        .describe('The statuses of an entry that place it in this stage.')
 });
 
 /**
@@ -416,10 +419,22 @@ export const vocabFileShape = z.strictObject({
             'The lanes of the Focus board, in their order, each with its words, colour and cluster, the stages or the chips that put a project on it, and what a move onto it writes.'
         ),
     fund_stages: z
-        .array(fundStage)
+        .array(bandStage)
         .optional()
         .describe(
             'The stages stacked inside the Focus Funding column, each with the statuses it matches.'
+        ),
+    position_stages: z
+        .array(bandStage)
+        .optional()
+        .describe(
+            'The stages stacked inside the Focus Job applications column, each with the statuses it matches.'
+        ),
+    teaching_stages: z
+        .array(bandStage)
+        .optional()
+        .describe(
+            'The stages stacked inside the Focus Teaching & supervision column, each with the statuses it matches.'
         ),
     focus_lane_tones: textMap
         .optional()

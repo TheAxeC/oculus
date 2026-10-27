@@ -63,9 +63,10 @@ The hub's own settings. A key of oculus's `config/catalogs/vocab.yml` set here i
 # feed it is (datasets, venues, pillars, domains, funding, people, organisations, resources,
 # literature, leads, radar); the flags `band_positions`, `band_teaching`, `awaiting`,
 # `open_badge`, `lead_applications`, `dissemination` (with `dissemination_skip:`), `tasks` and
-# `joint_work`; `ticker:` the word of `ticker_categories` its command center lines carry, with
-# `undated: true` for open work with no date; `group:`, `order:`, `label:`, `glyph:` and
-# `about:`, its place in the view catalogue and the dotted keys of its name, glyph and line in
+# `joint_work`; `ticker:` the word of `ticker_categories` its lines carry, naming the command
+# center group of its dated lines, with `undated: true` for open work with no date (the lines of
+# the file flagged `tasks` are Tasks lines, dated or not); `group:`, `order:`, `label:`, `glyph:`
+# and `about:`, its place in the view catalogue and the dotted keys of its name, glyph and line in
 # Make Folder a Hub; and `primary_key:`, the field an entry is found by, for a file with no
 # `schema:` only, since a schema flags its own. The domains registry holds each domain's colour
 # and label and which domains expect a dataset; the venues and datasets registries hold their
@@ -276,7 +277,8 @@ The hub's own settings. A key of oculus's `config/catalogs/vocab.yml` set here i
 # The command center's deadline groups, in the order it draws them, each with the dotted keys of the
 # words of its heading, its glyph and the noun of a line's due and overdue sentences; the one word
 # `manifests: true` marks is the group of the projects' own deadlines. A collection's `ticker:`
-# names the group its lines carry.
+# names the command center group its dated lines are drawn in; the lines of the file flagged
+# `tasks` are Tasks lines, dated or not, and take only their glyph from it.
 # ticker_categories: {}
 #   example:
 #   ticker_categories:
@@ -297,7 +299,9 @@ The hub's own settings. A key of oculus's `config/catalogs/vocab.yml` set here i
 # rail_color: "#16a34a"
 
 # The lists below are replaced whole, since their order is their meaning: set here, the list is
-# this hub's in full.
+# this hub's in full. A row of the wrong kind, or two rows naming one `key` (one `label` in a list
+# of stages), is a finding, and oculus's list stands; `focus_clusters` is read row by row, such a
+# row being a finding and not read.
 
 # The clusters the Focus board groups its lanes in, in drawing order, each with the dotted keys of
 # the words of its heading (`label`) and its glyph (`glyph`), whether it is drawn muted, its
@@ -324,6 +328,19 @@ The hub's own settings. A key of oculus's `config/catalogs/vocab.yml` set here i
 #   example:
 #   fund_stages:
 #     - { label: "Submitted", color: "#16a34a", statuses: [submitted, under-review] }
+
+# The stages stacked inside the Focus Job applications column, each with the statuses it matches.
+# position_stages: []
+#   example:
+#   position_stages:
+#     - { label: "Applied", color: "#0891b2", statuses: [applied] }
+
+# The stages stacked inside the Focus Teaching & supervision column, each with the statuses it
+# matches.
+# teaching_stages: []
+#   example:
+#   teaching_stages:
+#     - { label: "Ongoing", color: "#16a34a", statuses: [ongoing] }
 
 # The roles a person holds on a project, in the order the project form offers them, each with the
 # manifest field that lists its people.

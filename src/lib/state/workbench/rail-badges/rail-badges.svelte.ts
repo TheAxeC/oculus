@@ -9,7 +9,7 @@
 // (`countFlags`): the rail sums the views whose row says `rail: true`, Talks & Events among them,
 // and no list of views in code decides it.
 
-import { focusSetting, scalar } from '../../../data/helpers/guards.ts';
+import { focusSetting } from '../../../data/helpers/guards.ts';
 import type { EntitiesStore } from '../../shared/stores/shapes.ts';
 import type { FeedsStore, FeedState } from '../../feeds/feeds.svelte.ts';
 import type { AuditStore } from '../../system/audit.svelte.ts';
@@ -26,8 +26,9 @@ import { statusTone, toneOf } from '../../shared/words/tones.ts';
 import { countRow, countText, leadsDue, linkedinOverdue, matchedEntries } from './rail-badges.ts';
 import { railCount } from '../../../data/shapes/boards/categories.ts';
 import type { BoardItem, BoardPreset } from '../../boards/board/index.ts';
-import { focusWords } from '../../boards/focus.ts';
+import { stagedEntries } from '../../boards/focus/focus-lanes.ts';
 import type { Collection, GitState } from '../../../data/model/index.ts';
+import type { WordsOf } from '../../../data/shapes/vocab-keys.ts';
 
 /** One coloured count drawn as a cell on a pane tab. `color` is a theme hue name. */
 export type BadgeCell = { count: number; color: string; label: string };
@@ -118,14 +119,19 @@ export type RailBadgesStore = {
 
 /**
  * What the badges read of the selectors: the configuration, one board by its preset, one
- * collection, and the repositories of the list with their states. The selectors store in
- * state/client, the folder above this one, satisfies it.
+ * collection, the collections of one key with the words of each hub, and the repositories of the
+ * list with their states. The selectors store in state/client, the folder above this one,
+ * satisfies it.
  */
 export type BadgeSelectors = {
     configMap: () => Record<string, unknown>;
     boardPreset: (view: string) => BoardPreset;
     board: (preset: BoardPreset) => BoardItem[];
     collectionOf: (key: string) => Collection | null;
+    /** The collections of one key across the hubs, the primary hub's first. */
+    collectionsOfKey: (key: string) => Collection[];
+    /** The words a record of a hub is read under, and every hub's words for none. */
+    vocabOf: WordsOf;
     /** The repositories of the Repositories list, each with the root that shows it. */
     repositories: () => readonly { shown: string }[];
     gitFor: (workspace: string) => GitState | null;
@@ -265,16 +271,19 @@ export function createRailBadges(
     }
 
     /**
-     * The entries of the collection `key`, one flagged `open_badge`, whose status is in
-     * `applications_open` under `focus:`, the ones the Focus band shows, which are urgent rather
-     * than a count of a `counts` row's `match`.
+     * The entries of the collection `key` of every hub, one flagged `open_badge`, that a stage of
+     * `position_stages` holds, read by each hub's own words as the Focus band's positions column
+     * reads them (`stagedEntries`), which are urgent rather than a count of a `counts` row's
+     * `match`. An entry two stages hold is counted once, and the Focus filter narrows nothing here.
      */
     function openCount(key: string): number {
-        const entries = selectors.collectionOf(key)?.entries ?? [];
-        const open = focusWords(selectors.configMap(), 'applications_open');
-        return entries.filter((entry) =>
-            open.includes(scalar(entry.fields.status).trim().toLowerCase())
-        ).length;
+        const stages = stagedEntries(
+            selectors.collectionsOfKey(key),
+            'position_stages',
+            selectors.configMap(),
+            selectors.vocabOf
+        );
+        return new Set(stages.flatMap((stage) => stage.held.map((one) => one.entry))).size;
     }
 
     /** Audit findings the reader has not parked, which is what the Audit view opens on. */

@@ -384,11 +384,3 @@ export async function act(
     if (answer.changed.length === 0 && refused !== '') return t('editor.failed', refused);
     return t('editor.saved', answer.changed.join(', '));
 }
-
-/**
- * The heading of one run of subtasks: the kind of what holds the checklist, and "other" for a
- * checklist whose holder names no kind.
- */
-export function runHeading(run: { kind: string }): string {
-    return run.kind === '' ? t('focus.command.kind_other') : run.kind;
-}

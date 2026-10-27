@@ -1,7 +1,9 @@
 <script lang="ts">
     // Layer 3, view partial of views/boards/focus/Focus.svelte. The band above the lanes: the
-    // durable work that is not a project. Three columns, the grants stacked by the stage their
-    // status names, the job applications still out for an answer, and this year's teaching.
+    // durable work that is not a project. Three columns, drawn alike by one snippet, each headed by
+    // the count of its cards and stacked by the stages of its list: the grants by `fund_stages`,
+    // the job applications by `position_stages` and the teaching by `teaching_stages`, a stage
+    // drawn as a block in its colour under its label.
     //
     // Every card opens its collection tab and sets that tab's transient reveal id, so the exact
     // entry scrolls into view and flashes after the view opens. A card of an entry of a hub but the
@@ -32,7 +34,8 @@
         bandHasCards,
         stageItemCount,
         type Band as BandCards,
-        type BandItem
+        type BandItem,
+        type BandStage
     } from '$lib/state/boards/focus/focus-lanes';
     import { daysTone } from '$lib/state/boards/ticker';
     import { namedTone, toneOf } from '$lib/state/shared/words/tones';
@@ -64,7 +67,9 @@
 
     /** How many cards the band draws, over its three columns. */
     const count = $derived(
-        stageItemCount(cards.funding) + cards.applications.length + cards.education.length
+        stageItemCount(cards.funding) +
+            stageItemCount(cards.applications) +
+            stageItemCount(cards.education)
     );
 
     /** Unfold the band when it is folded, as a find-in-page match inside it asks. */
@@ -135,17 +140,22 @@
     glyph: string,
     sub: string,
     tone: string,
-    rows: BandItem[],
+    stages: BandStage[],
     gone: number
 )}
-    {#if rows.length + gone > 0}
+    {#if stages.length + gone > 0}
         <div class="lane" style={`--tone: var(--c-${tone})`} data-surface>
-            <LaneHead {label} {glyph} count={rows.length} {tone} hidden={gone} />
+            <LaneHead {label} {glyph} count={stageItemCount(stages)} {tone} hidden={gone} />
             <p class="lane-sub">{sub}</p>
             <div class="lane-body">
-                {#each rows as item, at (`${at}:${item.title}`)}
-                    <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-                    {@render entry(item, glyph)}
+                {#each stages as stage (stage.label)}
+                    <div class="stage-block" style={`--stage: var(--c-${toneOf(stage.color)})`}>
+                        <p class="stage">{stage.label}</p>
+                        {#each stage.items as item, at (`${at}:${item.title}`)}
+                            <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+                            {@render entry(item, glyph)}
+                        {/each}
+                    </div>
                 {/each}
             </div>
         </div>
@@ -164,32 +174,15 @@
             />
         </Surface>
         <div class="lanes" hidden={open ? false : 'until-found'} onbeforematch={unfold}>
-            {#if cards.funding.length > 0 || hidden.funding > 0}
-                <div class="lane" style={`--tone: var(--c-${tones.funding})`} data-surface>
-                    <LaneHead
-                        label={t('focus.funding_lane')}
-                        glyph={t('focus.funding_glyph')}
-                        count={stageItemCount(cards.funding)}
-                        tone={tones.funding}
-                        hidden={hidden.funding}
-                    />
-                    <p class="lane-sub">{t('focus.funding_sub')}</p>
-                    <div class="lane-body">
-                        {#each cards.funding as stage (stage.label)}
-                            <div
-                                class="stage-block"
-                                style={`--stage: var(--c-${toneOf(stage.color)})`}
-                            >
-                                <p class="stage">{stage.label}</p>
-                                {#each stage.items as item, at (`${at}:${item.title}`)}
-                                    <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-                                    {@render entry(item, t('focus.funding_glyph'))}
-                                {/each}
-                            </div>
-                        {/each}
-                    </div>
-                </div>
-            {/if}
+            <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+            {@render column(
+                t('focus.funding_lane'),
+                t('focus.funding_glyph'),
+                t('focus.funding_sub'),
+                tones.funding,
+                cards.funding,
+                hidden.funding
+            )}
             <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
             {@render column(
                 t('focus.jobs_lane'),

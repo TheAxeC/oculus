@@ -210,6 +210,8 @@ const UNION_FIELD: Readonly<Record<string, string>> = {
     venue_categories: 'key',
     radar_buckets: 'key',
     fund_stages: 'label',
+    position_stages: 'label',
+    teaching_stages: 'label',
     manifest_fields: 'field'
 };
 

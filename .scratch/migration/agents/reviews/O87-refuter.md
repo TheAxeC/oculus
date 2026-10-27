@@ -222,3 +222,224 @@ B1. **Unstated change to the Snoozed group.** A snoozed entry of the tasks file 
 - I did not rerun `uptime` and the builder's time-out load figures: no decision rests on them, and my `npm run test:quick` passed with no time-out.
 
 Reviewer usage: a362e1e25ae8483be, claude-opus-5-5, 274255 tokens, 83 tool uses, 19 min 44 s
+
+# Repair round 1, refuted
+
+The round closes every first-review finding it was sent, with one exception. A list holding both a repeated key and a row of the wrong kind now reports only the repeated key, which breaks G126 and round item 1 for that one input. There are also two smaller findings: the report does not give its count of `test:quick` runs, and the visible effect on five existing lists has no view-level before and after for the look. Every other item and case holds or is met on my rerun.
+
+The commands below ran from `~/workspace/oculus/.agents/worktrees/migration-O87`. No file in the repository or in any worktree was written by me. `test:quick` runs `svelte-kit sync`, which regenerates the worktree's ignored `.svelte-kit` folder. I saved three command outputs to read them, in the session scratchpad folder `/private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/o87r1`: `delta.txt`, `newpaths.txt` and `quick.log`. `npm run diagrams` was not run because it writes `docs/diagrams/*`; `tests/checks/diagrams/diagrams.test.ts`, which computes staleness in memory, stood in for it.
+
+```
+$ uptime   (before the first run)
+load averages: 19.76 14.09 13.12
+$ npm run test:quick -- --base 33780ceee          (first run)
+ FAIL  |unit| tests/server/edit/config-value.test.ts > a hub's word written into the hub's settings file > deletes the row of a word the hub added once the reader removes it
+Error: Test timed out in 20000ms.
+ FAIL  |unit| tests/routes/edit/undo/undo.test.ts > taking a change back > writes the project of a folder of the workspace inside 'a second hub' ... 'a field of the manifest editor'
+Error: Test timed out in 20000ms.
+(also a 20 s time-out at tests/server/edit/config-key.test.ts:456)
+ Test Files  4 failed | 34 passed (38)
+      Tests  6 failed | 412 passed | 128 skipped (546)
+test:quick: 558.3 s; failed: vitest, vitest slow
+
+$ uptime   (before the second run)
+load averages: 17.94 18.32 16.20
+$ npm run test:quick -- --base 33780ceee          (second run, the whole list again)
+test:quick: 33 changed file(s), from git since 33780ceee
+test:quick: 150 test file(s)
+ok      ASCII gate (1.6 s)
+ok      prettier (1.7 s): All matched files use Prettier code style!
+ok      svelte-kit sync (11.4 s): /Users/axelfaes/workspace/research-hub/.oculus/local.yml: ignoring unknown key(s) self
+ok      svelte-check (61.4 s): 1793065446847 COMPLETED 548 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      eslint (77.1 s)
+ok      vitest (173.5 s): Duration  159.59s (...)
+ok      vitest checks (186.6 s): Duration  172.07s (...)
+ok      vitest slow (215.4 s): Duration  201.87s (...)
+test:quick: 227.1 s; every command passed
+
+$ npx vitest run tests/data/sources/config/layers/hub-vocab.test.ts tests/checks/config/config-folder.test.ts tests/data/sources/config/layers/catalogs.test.ts
+ Test Files  3 passed (3)
+      Tests  60 passed | 2 skipped (62)
+$ npx vitest run tests/data/sources/config/layers/hub-vocab.test.ts --reporter verbose
+(all 25 rows passed, among them the 8 rows "words a row of '<key>' of the wrong kind and a second row naming one key, oculus's list standing" for focus_lanes, roles, fund_stages, position_stages, teaching_stages, venue_categories, venue_tiers, radar_buckets, and "reads a row of teaching_stages with no statuses")
+      Tests  25 passed (25)
+$ npx vitest run tests/data/shapes/catalog-files/vocab.test.ts tests/checks/diagrams/diagrams.test.ts --testTimeout 0
+ Test Files  2 passed (2)
+      Tests  60 passed (60)
+
+$ ASCII gate of spec.md over the 14 files the round changed (in-place.ts, hub-layer.ts, findings.yml, hub-vocab.test.ts, Focus.svelte, config/defaults/sources.yml, config/options/sources.yml, vocab.ts, HELP.md, config/catalogs/vocab.yml, config/options/catalogs/vocab.yml, templates.md, writes.dot, writes.svg) and O87-report.md
+ascii exit 0   (nothing printed)
+$ grep -rn "applications_open\|education_open\|applications_sent\|grp_subtask_dl_label\|subtaskDated" src config docs tests --exclude=local.yml
+grep3 exit 1   (nothing printed)
+$ grep -rln "position_stages\|teaching_stages" src config docs tests --exclude=local.yml
+config/catalogs/vocab.yml, config/options/catalogs/vocab.yml, config/options/sources.yml, docs/HELP.md, docs/templates.md, src/lib/data/helpers/hub-names.ts, src/lib/data/shapes/catalog-files/vocab.ts, src/lib/data/shapes/hub-keys.ts, src/lib/data/shapes/vocab-keys.ts, src/lib/data/sources/config/merge/in-place.ts, src/lib/state/boards/focus/focus-lanes.ts, src/lib/state/workbench/rail-badges/rail-badges.svelte.ts, src/lib/views/boards/focus/Band.svelte, tests/checks/config/config-folder.test.ts, tests/data/sources/config/layers/hub-vocab.test.ts
+$ sh utils/unused-exports.sh 2>/dev/null | diff ../O87-base/unused-exports.txt -
+unused diff exit 0
+
+$ the round's delta: for each path of migration-O87-round-1/files.txt, cmp of the snapshot copy against the worktree's file
+CHANGED: config/catalogs/vocab.yml, config/options/catalogs/vocab.yml, config/options/sources.yml, docs/HELP.md, docs/diagrams/writes.dot, docs/diagrams/writes.svg, docs/templates.md, src/lib/data/shapes/catalog-files/vocab.ts, src/lib/data/sources/config/merge/in-place.ts, tests/data/sources/config/layers/hub-vocab.test.ts
+changed now but not in files.txt (read as their part of git diff 33780ceee): config/defaults/sources.yml, config/text/findings.yml, src/lib/data/sources/config/merge/hub-layer.ts, src/lib/views/boards/focus/Focus.svelte
+unchanged in the round: focus-lanes.ts, ticker.ts, focus.ts, filter.ts, rail-badges.svelte.ts, Band.svelte, Tasks.svelte, CommandCenter*.svelte, rows.ts and the other files.txt paths
+
+$ claims the report quotes, rerun:
+git show 33780ceee:src/lib/data/sources/config/merge/in-place.ts | diff - ../migration-O87-round-1/src/lib/data/sources/config/merge/in-place.ts
+66a67,68
+>     position_stages: WHOLE,
+>     teaching_stages: WHOLE,
+git show 33780ceee:config/catalogs/vocab.yml | grep -c "position_stages\|teaching_stages"
+0
+tests/data/shapes/catalog-files/vocab.test.ts lines 79, 99, 123, 149 are the four focus_clusters row-by-row tests the report names (titles read).
+History-word grep of spec.md:44 over every added line of git diff 33780ceee -- src tests config: only hits are "a word the hub's values >>no longer<< give" (4 lines), the merge's own wording, none history.
+
+$ the round's cases and the step's cases, through node on stdin (no file written), against the worktree:
+R1 ["teaching_stages.0.color | teaching_stages.0.color must be a text"] oculus true
+R2 ["position_stages.1 | position_stages.1 names Open, which an earlier row names; none of the list is applied and oculus's list stands"] [{"label":"Active",...},{"label":"Applied",...}]
+R3 ["venue_categories.1 | venue_categories.1 names a, which an earlier row names; none of the list is applied and oculus's list stands"] oculus true
+FC wrong ["focus_clusters.0.label | focus_clusters.0.label must be a text","focus_clusters.0.layout | ..."] oculus false
+lanes stage twice ["focus_lanes.1.stages | focus_lanes.1.stages is not a value this key takes"] oculus true
+lanes unknown field ["focus_lanes.0.extra | key focus_lanes.0.extra is not a key this file takes"] oculus true
+wrong row + removal ["position_stages.0.color | position_stages.0.color must be a text"] [{"label":"Active",...,"statuses":["active"]},{"label":"Applied",...,"statuses":[]}]
+both ["position_stages.1 | position_stages.1 names Open, which an earlier row names; none of the list is applied and oculus's list stands"]
+CASE 1/2 Active[Job Active] Applied[Job Applied] count 2
+CASE 9 badge 2
+CASE 3 Ongoing[Course Ongoing] Planned[Course Planned]
+CASE 4 [] Open[Job Open]
+CASE 5 Active[A active, B live]
+CASE 6 [] flat[] 0 Ongoing[Course Ongoing]
+CASE 7 ["teaching_stages.1.color | teaching_stages.1.color must be a text"] Ongoing[Course Ongoing] Planned[Course Planned]
+CASE 8 [] One[Job Active] Two[Job Active] 2
+CASE 20 badge 1
+CASE 10 ["App applied","App submitted"] CASE 21 ["Scheme applied"]
+CASE 12 [".../main.yml | settings.focus.nope | focus.nope is not an option; it is not applied"] [".../main.yml | settings.focus.applications_open | focus.applications_open is not an option; it is not applied"] undefined
+CASE 13 followups ["P13 - Follow yesterday (-1, red)","P13 - Follow undated (undated)"] subtasks ["P13: Sub 2 ago (-2, red)","P13: Sub in 3 (3, amber)"] tasks ["Task in 5 (5, amber)","Task in 200 (200)","Task undated (undated)"]
+CASE 13/14/23 overdue ["Grant past 2 (-2, red)"] deadlines ["Paper14 (10, amber)","Joint in 5 (5, amber)"] keys overdue,deadlines,tasks,venueLoad,snoozed,behind,unplaced
+CASE 15 ["P15: Snoozed sub (4, amber)"] []
+CASE 16 ["P16: Sub in 3 (3, amber)"] hidden.tasks 1 kept []
+CASE 17 ["Task in 5 (5, amber)","Task in 200 (200)","P17 (undated)","Task undated (undated)"] []
+CASE 18 badge 2 column 2
+CASE 19 badge 1
+CASE 22 hub ["B applied"] hidden.awaiting 1
+CASE 24 drawn false ["P24 - Follow yesterday (-1, red)","P24: Sub in 3 (3, amber)"]
+```
+
+### Verdicts
+
+Items of the step brief's "What to build", for the whole diff since 33780ceee:
+
+- 1: holds. The 15 files of the grep above hold every registration item 1 lists. The shared row shape `bandStage` and the `STAGES` shape in `in-place.ts:66` read the three stage keys alike.
+- 2: holds. Rerun cases 1, 3, 5, 6 and 8 match. `focus-lanes.ts` and `Band.svelte` are unchanged in the round (cmp against the snapshot).
+- 3: holds. Rerun cases 9, 18, 19 and 20 match.
+- 4: holds. Rerun cases 10, 21 and 22 match. The `deadline_met` description at `vocab.ts:215-217` now names the application in the Awaiting box.
+- 5: holds. The removed-key grep prints nothing, case 12 matches, and the G126 row at `hub-vocab.test.ts:160-167` passes.
+- 6: holds. Rerun cases 13 to 17, 23 and 24 match. `ticker.ts` is unchanged in the round.
+- 7: holds. The `Focus.svelte:18-25` head comment, `config/defaults/sources.yml:31`, `config/options/sources.yml:110` and `:114` and the `docs/HELP.md:294` snooze sentence are rewritten. `docs/data-map.md` gets the report's Doc text, plus the extra sentence under "For the orchestrator" 3.
+
+Cases of the step brief's "Cases":
+
+- 1: met, rerun line `CASE 1/2`. The look is at landing.
+- 2: met, rerun line `CASE 1/2`.
+- 3: met, rerun line `CASE 3`. The look is at landing.
+- 4: met, rerun line `CASE 4` and the passing G126 row "replaces the lists whose order is their meaning whole".
+- 5: met, rerun line `CASE 5`.
+- 6: met, rerun line `CASE 6`.
+- 7: met as the round ruled. The finding `teaching_stages.1.color must be a text` is given and oculus's list stands. A bare row gives no finding (the passing row "reads a row of teaching_stages with no statuses").
+- 8: met, rerun line `CASE 8`.
+- 9: met, rerun line `CASE 9`.
+- 10: met, rerun line `CASE 10`. The look is at landing.
+- 11: met, the passing row at `hub-vocab.test.ts:160-167`.
+- 12: met, rerun line `CASE 12`.
+- 13: met, rerun line `CASE 13`. The look is at landing.
+- 14: met, rerun line `CASE 13/14/23`.
+- 15: met, rerun line `CASE 15`.
+- 16: met, rerun line `CASE 16`.
+- 17: met, rerun line `CASE 17`.
+- 18: met, rerun line `CASE 18`.
+- 19: met, rerun line `CASE 19`.
+- 20: met, rerun lines `CASE 8` and `CASE 20`.
+- 21: met, rerun line `CASE 21`.
+- 22: met for the hub untick (rerun line `CASE 22`). The Mine-only half was not rerun (see "Declined to judge").
+- 23: met, rerun line `CASE 13/14/23`.
+- 24: met at unit level, rerun line `CASE 24`. The look on a scratch hub is at landing.
+
+Items of the round brief:
+
+- 1: violated for one input, finding F1 (Spec). For a list with a row of the wrong kind and no repeated key, it holds: rerun R1, the probes "lanes stage twice" and "lanes unknown field", and the 8 passing G126 rows.
+- 2: holds. Rerun R2 and R3 and the 8 G126 rows. The rule lives in `layInPlace` (`in-place.ts:290-293`) for every whole list that has a `field`, so O88's `pillar_kinds` gets it by registration.
+- 3: holds. `hub-vocab.test.ts:228-299` has one row per key of the round's set, each with both inputs. The failure of each row on the base is quoted in the report from a scratch copy of the base. `focus_clusters` is left out, matching the round's own list and G126's.
+- 4: holds. The four sentences are rewritten, and each new sentence agrees with the code I read (`ticker.ts` snooze pushes, `focus.ts:198`, `CommandCenter.svelte`).
+- 5: holds, with finding F2 on the run count. The report gives the probe account, the `templates.md:279` hunk, the failing `config-folder.test.ts` lines, the before/after table (checked against the hunk headers of `git diff 33780ceee -- hub-vocab.test.ts`), the three greps and B1.
+
+Cases of the round brief:
+
+- 1: met, rerun R1.
+- 2: met, rerun R2.
+- 3: met, rerun R3.
+- 4: met, every rerun step case above.
+
+### Findings
+
+- **F1 (Spec): a repeated key hides the wrong-kind findings of the same list.**
+  - Place: `src/lib/data/sources/config/merge/hub-layer.ts:67-69` with `src/lib/data/sources/config/merge/in-place.ts:290-293`:
+    ```
+    if (laid.problems.some((problem) => problem.kind === 'repeated_row')) {
+        return { value: laid.value, wrong: true };
+    }
+    ```
+    ```
+    if (shape.kind === 'whole') {
+        const problems = shape.field === undefined ? [] : repeatedRows(value, shape.field);
+        return { value: problems.length > 0 ? oculus : value, problems };
+    }
+    ```
+  - What is wrong: when a hub's whole list repeats a key, the value laid is oculus's list. The shape check at `hub-layer.ts:604` (`for (const issue of shapeIssues(name, own))`) therefore reads oculus's rows and never the hub's.
+    - A row of the wrong kind in that same list gives no finding.
+    - G126 (`guarded.md:189`) says "two rows naming one key and a value of the wrong kind are findings naming the file and the dotted key".
+    - Round item 1 says such a row "gives that finding".
+    - My probe: `position_stages: [ { label: Open, color: 5, statuses: [active] }, { label: Open, color: "#000000", statuses: [applied] }, { label: Third, color: "#111111", statuses: 7 } ]` prints only `["position_stages.1 | position_stages.1 names Open, ...oculus's list stands"]`. The findings for `position_stages.0.color` and `position_stages.2.statuses` are missing.
+    - On the base, both wrong-kind findings were given.
+    - No G126 row covers a list holding both faults.
+  - Failure scenario: a hub writes that list. The user fixes the repeated label, reloads, and only then sees the two other faults, one at a time across reloads. The findings list never shows everything wrong with the file at once.
+  - Verdict: round item 1 violated for this input.
+
+- **F2 (Standards): the report does not say how many times the list ran.**
+  - Place: report "Round 1", "Verification", `O87-report.md:956`: "Run once after the last change, from the worktree's root." Against that, `O87-report.md:998` ("For the orchestrator" 1): "Four tests of `tests/data/shapes/catalog-files/vocab.test.ts` ... failed in a quick-list run with `focus_clusters` under the rules".
+  - What is wrong: `spec.md:26` says "The report states how many times you ran the list". The report counts only the run after the last change, and mentions an earlier run of the list in this round only in passing.
+  - Failure scenario: the orchestrator books the round's runs from the report and cannot tell whether a run beyond what `spec.md:26` allows took place.
+  - Verdict: none.
+
+- **F3 (Behaviour): the change to five existing lists has no before and after for the look.**
+  - Place: `src/lib/data/sources/config/merge/hub-layer.ts:604-611`:
+    ```
+    if (shape.kind !== 'whole' || shape.field === undefined) continue;
+    applied[head] = valueAt(config, head);
+    Reflect.deleteProperty(hubValues, head);
+    ```
+    with `in-place.ts:292`, against the report's "B1, before and after", the round's only before/after.
+  - What a user sees change: a hub's `focus_lanes`, `roles`, `venue_categories`, `venue_tiers`, `radar_buckets` or `fund_stages` holding any row the shape refuses, or repeating a key, was applied with a finding on the base. It is now replaced by oculus's list.
+    - Examples of a refused row: a stage held by two lanes, an unknown field, a `label` that is no text.
+    - Views that change: the Focus lanes, the Role facet, the Venues sections and tiers, the Lit Watch radar buckets and the Funding column.
+    - The report shows the effect only at config level (the T rows, "oculus stands false" then "true"). It names no view, state or difference for the look, as `spec.md:60` asks.
+    - `grep -n "^focus_lanes\|^roles\|^venue_categories\|^venue_tiers\|^radar_buckets\|^fund_stages\|^focus_clusters" ~/workspace/research-hub/.oculus/config.yml` prints nothing, so the user's own hub is not affected today.
+  - Failure scenario: a hub has `focus_lanes` with `exploring` in two lanes. On the base its own lanes are drawn on Focus with a finding. After the change, oculus's ten lanes are drawn, and the landing report has no row telling the orchestrator to expect this.
+  - Verdict: none. The change is what round item 1 asks for.
+
+### Declined to judge
+
+- **The output filter.** The brief's "Verify before you report" says to pipe each output through the filter the rules file names. `.scratch/migration/agents/spec.md` names no output filter (a grep of "filter" in it hits nothing), so the commands ran as written and only their result lines are quoted.
+- **`npm run diagrams`.** Not run, since it writes `docs/diagrams/*`. `tests/checks/diagrams/diagrams.test.ts` passed in its place.
+- **The first run's red lines.** The first `test:quick` run went red only on 20 s time-outs: `config-key.test.ts:456`, `config-value.test.ts:241`, `undo.test.ts:416` and one more row in a fourth file (6 tests in 4 files), at a load average of 19.76. The whole list passed on the second run at 17.94.
+- **The round's G126 rows and the `config-folder.test.ts` rows on the unchanged tree.** Not rerun, since that needs the test files copied into a base tree, which is a file write. I judged them by reading. My base read gives no `position_stages` or `teaching_stages` in `config/catalogs/vocab.yml`. The base `in-place.ts` differs from the snapshot only by the two `VOCAB_SHAPES` lines, which agrees with the quoted failures.
+- **Case 22, Mine only.** The Mine-only half and B1 were not rerun. B1's code path (`ticker.ts`) is byte-identical to the snapshot the first review reran.
+- **`from[path]` for a list reverted to oculus's.** `hub-layer.ts` still sets `from[path]` to the hub file, as it already did on the base for a value of the wrong kind. What Settings draws for such a key cannot be settled without a page, and a reviewer runs none.
+- **G126's text at `guarded.md:189`.** It lacks `position_stages` and `teaching_stages` and says nothing of `focus_clusters` being read row by row. The brief leaves that line to the orchestrator at landing, so it is not judged as a defect of the step.
+- **Whether the builder ran other commands than its report lists.** Not checked: I did not read the builder's transcript.
+- **The looks.** Cases 1, 3, 10, 13 and 24 and B1 were not looked at: a reviewer runs no page.
+
+Reviewer usage: af7af79de6701e01c, claude-opus-5-5, 260077 tokens, 67 tool uses, 27 min 44 s.
+
+## Closed
+
+- The first review's findings (Spec S1 to S6, Proof P1 to P3, Standards T1 to T6, Behaviour B1): sent in repair round 1 (`agents/briefs/O87-round1.md`); the review over round 1 found each closed, round item 1 aside for one input (F1 below).
+- F1 (Spec), a repeated key hiding the rows of the wrong kind of the same list: fixed at landing in `src/lib/data/sources/config/merge/hub-layer.ts`, `vocabValue` marking such a list `refused` and the shape check reading the hub's own rows of it, oculus's list still standing; the new row "words each row of the wrong kind of a list two of whose rows name one key, oculus's list standing" of `tests/data/sources/config/layers/hub-vocab.test.ts`, red on the round's code, passes; the `focus_lanes` row of the round's table expects the lane finding the fix lets through. G126 in `agents/guarded.md` names it.
+- F2 (Standards), the report's count of its runs: the booking states it from the builder's transcript, four runs of the verify list in round 1 where `spec.md:26` allows one after the last change and one more after a red line in a changed file; nothing the landing rests on comes from the runs before the last.
+- F3 (Behaviour), the visible effect on the lists replaced whole: looked at on the scratch server, a hub's `focus_lanes` with a stage in two lanes drawing oculus's lanes with the finding `focus_lanes.1.stages is not a value this key takes`; the before and after are in the booking.

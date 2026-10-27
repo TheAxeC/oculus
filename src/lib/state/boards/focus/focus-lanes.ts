@@ -2,8 +2,9 @@
 // manifests behind their docs and the projects no lane shows, work in flight or ideas of the
 // Projects and Personal boards. All values are derived from the supplied snapshot and config; the
 // view resolves configured colours through toneOf. A record is read under the words of its own hub
-// when `wordsOf` (data/shapes/vocab-keys.ts) gives them: a project's stage, and the `fund_stages`
-// row of the grant's hub its status falls in; the band's columns are those of every hub's words.
+// when `wordsOf` (data/shapes/vocab-keys.ts) gives them: a project's stage, and the row of
+// `fund_stages`, `position_stages` or `teaching_stages` of the entry's hub its status falls in; the
+// stages of the band's columns are those of every hub's words.
 
 import { z } from 'zod';
 import type { Collection, Entry, Id, Project, Snapshot } from '../../../data/model/index.ts';
@@ -12,8 +13,7 @@ import {
     bareId,
     flaggedCollections,
     registryCollections,
-    rootOf,
-    type CollectionFlag
+    rootOf
 } from '../../../data/helpers/hub-names.ts';
 import { hasWord, type WordsOf } from '../../../data/shapes/vocab-keys.ts';
 import {
@@ -23,7 +23,7 @@ import {
     rowsShape,
     wordShape
 } from '../../../data/shapes/shapes.ts';
-import { closesDeadline, deadlineMet, focusWords, labelOf } from '../focus.ts';
+import { closesDeadline, deadlineMet, labelOf } from '../focus.ts';
 
 /** How many project links an attention row of projects draws before its "(+N more)". */
 const ROW_LINKS = 4;
@@ -79,19 +79,22 @@ export type BandItem = {
     root?: string;
 };
 
-/** One stage stacked inside the funding column of the band. */
+/** One stage stacked inside a column of the band. */
 export type BandStage = {
     label: string;
     color: string;
     items: BandItem[];
 };
 
-/** The band: grant applications by stage, positions out for an answer, teaching this year. */
+/**
+ * The band: grants, job applications and teaching, each column stacked by the stages of its list
+ * (`fund_stages`, `position_stages`, `teaching_stages`).
+ */
 export type Band = {
     tones: { funding: string; jobs: string; teaching: string };
     funding: BandStage[];
-    applications: BandItem[];
-    education: BandItem[];
+    applications: BandStage[];
+    education: BandStage[];
 };
 
 /**
@@ -125,7 +128,10 @@ export function manifestsBehind(
     };
 }
 
-/** One row of `fund_stages`: its words and the statuses it gathers, lowercased. */
+/** The lists of stages of config/catalogs/vocab.yml the band's three columns stack cards by. */
+type StageList = 'fund_stages' | 'position_stages' | 'teaching_stages';
+
+/** One row of a list of stages: its words and the statuses it gathers, lowercased. */
 const stageShape = z
     .object({ label: wordShape, color: wordShape, statuses: fieldItemsShape })
     .transform((row) => ({
@@ -136,11 +142,48 @@ const stageShape = z
 
 const stagesShape = rowsShape(stageShape);
 
-/** The stages of `fund_stages`, and the statuses each one gathers. */
-function fundStages(
-    config: Record<string, unknown>
-): { label: string; color: string; statuses: string[] }[] {
-    return readAs(stagesShape, config.fund_stages) ?? [];
+/** One row of a list of stages as read. */
+type Stage = z.infer<typeof stageShape>;
+
+/** The stages of the list `list` of `words`, and the statuses each one gathers. */
+function stagesIn(words: Record<string, unknown>, list: StageList): Stage[] {
+    return readAs(stagesShape, words[list]) ?? [];
+}
+
+/** An entry of a collection, with the key its collection has in its hub. */
+type KeyedEntry = { entry: Entry; key: string };
+
+/** One stage of a list of stages and the entries it holds, in the order the collections give. */
+type HeldStage = { label: string; color: string; held: KeyedEntry[] };
+
+/**
+ * The stages of the list `list` of every hub's words (`wordsOf()`), each holding the entries of
+ * `collections` whose status the row of the same label in their own hub's words names, and a stage
+ * holding nothing left out. An entry whose status two rows name is held by both. The config is the
+ * words of every record when no `wordsOf` is given.
+ */
+export function stagedEntries(
+    collections: readonly Collection[],
+    list: StageList,
+    config: Record<string, unknown>,
+    wordsOf?: WordsOf
+): HeldStage[] {
+    const entries = keyedEntries(collections);
+    const read = new Map<string, Stage[]>();
+    const stagesOf = (hub: string): Stage[] => {
+        const held = read.get(hub) ?? stagesIn(wordsOf?.(hub) ?? config, list);
+        read.set(hub, held);
+        return held;
+    };
+    const out: HeldStage[] = [];
+    for (const stage of stagesIn(wordsOf?.() ?? config, list)) {
+        const held = entries.filter(({ entry }) => {
+            const own = stagesOf(rootOf(entry)).find((one) => one.label === stage.label);
+            return (own?.statuses ?? []).includes(str(entry.fields.status).trim().toLowerCase());
+        });
+        if (held.length > 0) out.push({ label: stage.label, color: stage.color, held });
+    }
+    return out;
 }
 
 /** The `focus_lane_tones` of the band: a colour for each column, empty where none is named. */
@@ -174,17 +217,16 @@ function bandItem(entry: Entry, key: string, words: Record<string, unknown>): Ba
 }
 
 /** The entries of the collections given, each with the key its collection has in its hub. */
-function keyedEntries(held: readonly Collection[]): { entry: Entry; key: string }[] {
+function keyedEntries(held: readonly Collection[]): KeyedEntry[] {
     return held.flatMap((one) => one.entries.map((entry) => ({ entry, key: bareId(one) })));
 }
 
 /**
- * The band above the lanes: the durable work that is not a project. Grants, the entries of each
- * hub's collection whose entry names the `funding` registry, stack by the stage their status names,
- * a stage of `fund_stages` of every hub's words holding the grants whose status the row of the
- * same label of their own hub's words names; positions are the entries of the collections flagged
- * `band_positions` whose status is in `applications_open` under `focus:`, and teaching those of
- * the collections flagged `band_teaching` whose status is in `education_open` there.
+ * The band above the lanes: the durable work that is not a project, three columns each stacked by
+ * the stages of its list (`stagedEntries`). Grants are the entries of each hub's collection whose
+ * entry names the `funding` registry, stacked by `fund_stages`; positions the entries of the
+ * collections flagged `band_positions`, by `position_stages`; teaching those of the collections
+ * flagged `band_teaching`, by `teaching_stages`. The cards of a stage sort by `bandOrder`.
  */
 export function collectionLanes(
     snapshot: Snapshot,
@@ -192,37 +234,24 @@ export function collectionLanes(
     wordsOf?: WordsOf
 ): Band {
     const collections = snapshot.entities.collections;
-    const grants = keyedEntries(registryCollections(collections, 'funding'));
-    const funding: BandStage[] = [];
-    const read = new Map<string, ReturnType<typeof fundStages>>();
-    const stagesOf = (hub: string): ReturnType<typeof fundStages> => {
-        const held = read.get(hub) ?? fundStages(wordsOf?.(hub) ?? config);
-        read.set(hub, held);
-        return held;
-    };
     const words = wordsOf?.() ?? config;
     /** The words of an entry's own hub, the config where no `wordsOf` is given. */
     const wordsAt = (entry: Entry): Record<string, unknown> => wordsOf?.(rootOf(entry)) ?? config;
-    for (const stage of fundStages(words)) {
-        const items = grants
-            .filter(({ entry }) => {
-                const own = stagesOf(rootOf(entry)).find((one) => one.label === stage.label);
-                return (own?.statuses ?? []).includes(
-                    str(entry.fields.status).trim().toLowerCase()
-                );
-            })
-            .map(({ entry, key }) => bandItem(entry, key, wordsAt(entry)))
-            .sort(bandOrder);
-        if (items.length > 0) funding.push({ label: stage.label, color: stage.color, items });
-    }
-    /** The cards of the entries of the collections flagged `flag` whose status `statuses` holds. */
-    const column = (flag: CollectionFlag, statuses: string[]): BandItem[] =>
-        keyedEntries(flaggedCollections(collections, flag))
-            .filter(({ entry }) => statuses.includes(str(entry.fields.status).trim().toLowerCase()))
-            .map(({ entry, key }) => bandItem(entry, key, wordsAt(entry)))
-            .sort(bandOrder);
-    const applications = column('band_positions', focusWords(config, 'applications_open'));
-    const education = column('band_teaching', focusWords(config, 'education_open'));
+    /** The stages of the list `list` over the collections given, each with its cards. */
+    const column = (held: readonly Collection[], list: StageList): BandStage[] =>
+        stagedEntries(held, list, config, wordsOf).map((stage) => ({
+            label: stage.label,
+            color: stage.color,
+            items: stage.held
+                .map(({ entry, key }) => bandItem(entry, key, wordsAt(entry)))
+                .sort(bandOrder)
+        }));
+    const funding = column(registryCollections(collections, 'funding'), 'fund_stages');
+    const applications = column(
+        flaggedCollections(collections, 'band_positions'),
+        'position_stages'
+    );
+    const education = column(flaggedCollections(collections, 'band_teaching'), 'teaching_stages');
     const tones = readAs(tonesShape, words.focus_lane_tones) ?? {
         funding: '',
         jobs: '',
@@ -274,7 +303,7 @@ export function stageItemCount(stages: BandStage[]): number {
     return stages.reduce((sum, stage) => sum + stage.items.length, 0);
 }
 
-/** Whether the band holds any card at all: a grant at some stage, an application or a course. */
+/** Whether the band holds any card at all: a grant, an application or a course at some stage. */
 export function bandHasCards(band: Band): boolean {
     return band.funding.length + band.applications.length + band.education.length > 0;
 }

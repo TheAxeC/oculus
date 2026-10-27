@@ -1,11 +1,13 @@
 <script lang="ts">
     // Layer 3, focus view partial. Command-center groups and their actions live here because visual
-    // grouping changes independently of ticker calculation and writes. The groups and the box they
-    // stand in, with its red left edge, are drawn by ui/display/ticker/TickerGroup.svelte, which
-    // the career banner draws with too, so their look is written there once; this file keeps the
-    // look of its own content, the Needs attention group's lines of projects behind their documents
-    // and of projects no lane shows. The heading row ends with how many rows the Focus filter
-    // hides, when it hides any, and the live HPC pill.
+    // grouping changes independently of ticker calculation and writes. The groups are Overdue,
+    // Needs attention, Deadlines & dates, Refresh live data and Snoozed: the dates the records hold
+    // and the lines of the feeds, the follow-ups and the subtasks being the tasks section's. The
+    // groups and the box they stand in, with its red left edge, are drawn by
+    // ui/display/ticker/TickerGroup.svelte, which the career banner draws with too, so their look
+    // is written there once; this file keeps the look of its own content, the Needs attention
+    // group's lines of projects behind their documents and of projects no lane shows. The heading
+    // row ends with how many rows the Focus filter hides, when it hides any, and the live HPC pill.
 
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import TickerGroup, { box } from '$lib/ui/display/ticker/TickerGroup.svelte';
@@ -16,20 +18,16 @@
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
     import FoldHead from '../../shared/card/heads/FoldHead.svelte';
-    import { runHeading } from './rows';
 
     const {
         layout: { openView },
         hpc: { pillText }
     } = useState();
 
-    type RowGroup = { kind: string; rows: TickerRow[] };
     type ViewRows = {
         overdue: TickerRow[];
         /** Each deadline category's rows, under the heading its word names. */
         categories: { category: string; label: string; rows: TickerRow[] }[];
-        subtaskDated: RowGroup[];
-        followups: TickerRow[];
         snoozed: TickerRow[];
         /** The button each row keeps drawn while its others wait for the pointer. */
         kept: (row: TickerRow) => string | undefined;
@@ -76,8 +74,6 @@
                 {
                     overdue: view.overdue,
                     categories: view.categories,
-                    subtaskDated: view.subtaskDated,
-                    followups: view.followups,
                     snoozed: view.snoozed,
                     attention: attentionRows,
                     refresh: refreshRows
@@ -139,21 +135,6 @@
             {label}
             {glyph}
             runs={[{ key: label, rows }]}
-            {onpick}
-            {onaction}
-            reveal
-            kept={view.kept}
-            {marked}
-        />
-    {/if}
-{/snippet}
-
-{#snippet kindGroups(label: string, glyph: string, groups: RowGroup[])}
-    {#if groups.length > 0}
-        <TickerGroup
-            {label}
-            {glyph}
-            runs={groups.map((one) => ({ key: one.kind, note: runHeading(one), rows: one.rows }))}
             {onpick}
             {onaction}
             reveal
@@ -239,18 +220,6 @@
                 {marked}
             />
         {/if}
-        <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-        {@render kindGroups(
-            t('focus.command.grp_subtask_dl_label'),
-            t('focus.command.grp_subtask_glyph'),
-            view.subtaskDated
-        )}
-        <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-        {@render group(
-            t('focus.command.grp_followups_label'),
-            t('focus.command.grp_followups_glyph'),
-            view.followups
-        )}
         {#if refreshRows.length > 0}
             <TickerGroup
                 label={t('focus.command.grp_refresh_label')}

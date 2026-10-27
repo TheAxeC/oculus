@@ -228,6 +228,8 @@ describe("oculus's own config directory", () => {
             'focus_clusters',
             'focus_lanes',
             'fund_stages',
+            'position_stages',
+            'teaching_stages',
             'focus_lane_tones',
             'ticker_categories',
             'facet_tones',

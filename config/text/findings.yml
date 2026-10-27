@@ -147,6 +147,7 @@ text:
             settings_removed_unknown: "{0} takes {1} out, which oculus's list does not hold"
             settings_null_unknown: "{0} sets {1} to null, which oculus's map does not hold"
             settings_repeated: "{0} names {1} in more than one entry; none of them is applied and oculus's entry stands"
+            settings_row_repeated: "{0} names {1}, which an earlier row names; none of the list is applied and oculus's list stands"
             settings_text_unknown: "{0} is not a key of oculus's text catalog; it is not applied"
             locale_unknown: '{0} names {1}, a display language no approved and enabled app contributes; English is used'
             manifest_field_none: '{0} names no field; the row is left out'

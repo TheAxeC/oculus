@@ -158,7 +158,7 @@ options:
     focus.deadline_horizon_days:
         heading: boards
         section: Thresholds and horizons
-        help: How many days ahead the week's ticker lists a dated item, among them a project's submission deadline, a funding scheme's deadline, a conference call with an exact date, and the dated entries of talks, teaching, tasks, positions and joint work.
+        help: How many days ahead the Command Center lists a dated item, among them a project's submission deadline, a funding scheme's deadline, a conference call with an exact date, and the dated entries of talks, teaching, positions and joint work. The tasks file's entries are lines of the Tasks section whatever their date.
         control: number
     focus.leads_horizon_days:
         heading: boards
@@ -180,24 +180,6 @@ options:
         section: Thresholds and horizons
         help: Days since the newest LinkedIn post beyond which the Focus board raises its LinkedIn line and the LinkedIn rail entry shows its red mark.
         control: number
-    focus.applications_open:
-        heading: boards
-        section: Command center
-        help: The statuses of an Applications entry that is open, compared without regard to case. The Focus board's positions column shows those entries and the Applications tab counts them.
-        control: multi
-        from: entry_statuses
-    focus.education_open:
-        heading: boards
-        section: Command center
-        help: The statuses of an education entry that is running, compared without regard to case. The Focus board's teaching column shows those entries.
-        control: multi
-        from: entry_statuses
-    focus.applications_sent:
-        heading: boards
-        section: Command center
-        help: The statuses of an Applications entry that is out for a decision, compared without regard to case. The Focus board's Awaiting box lists those entries under Applications.
-        control: multi
-        from: entry_statuses
     file_index.enabled:
         heading: boards
         section: File finder

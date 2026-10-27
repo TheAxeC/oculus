@@ -157,13 +157,14 @@ describe("the vocabulary a hub lays over oculus's", () => {
             const boards = roles.config.boards as Record<string, Record<string, unknown>>;
             expect(boards.supervision.role).toEqual([]);
             expect(boards.projects.role).toBe('lead');
-            const stray = withHub(
-                'statuses: { applied: null }\nfocus: { applications_sent: [x] }\n'
-            );
-            expect(everything(stray)).toEqual([
-                `${FILE} | focus | key focus is not one the hub's settings file takes; it is not applied`
-            ]);
-            expect((stray.config.focus as Record<string, unknown>).applications_sent).toEqual([]);
+            const applied = withHub('statuses: { applied: null }\n');
+            expect(everything(applied)).toEqual([]);
+            const positions = applied.config.position_stages as Record<string, unknown>[];
+            expect(positions.find((one) => one.label === 'Applied')).toEqual({
+                label: 'Applied',
+                color: '#0891b2',
+                statuses: []
+            });
             const skip = withHub('tiers: { personal: null }\n');
             expect(everything(skip)).toEqual([]);
             expect(skip.config.research_audit).toEqual({ skip_tiers: [] });
@@ -191,6 +192,8 @@ describe("the vocabulary a hub lays over oculus's", () => {
                 'focus_lanes: [ { key: run, label: Run, color: "#16a34a", cluster: now, stages: [exploring] } ]',
                 'roles: [ { key: lead, label: Lead, field: lead } ]',
                 'fund_stages: [ { label: Submitted, color: "#16a34a", statuses: [submitted] } ]',
+                'position_stages: [ { label: Open, color: "#16a34a", statuses: [open] } ]',
+                'teaching_stages: [ { label: Running, color: "#16a34a", statuses: [ongoing] } ]',
                 'venue_categories: [ { key: journal, label: Journals, ribbon: true } ]',
                 'venue_tiers: [ { key: core, color: "#7c3aed", label: core } ]',
                 'radar_buckets: [ { key: idea, glyph: purple, label: Ideas, color: "#7c5cff" } ]',
@@ -203,11 +206,110 @@ describe("the vocabulary a hub lays over oculus's", () => {
         expect(read.config.fund_stages).toEqual([
             { label: 'Submitted', color: '#16a34a', statuses: ['submitted'] }
         ]);
+        expect(read.config.position_stages).toEqual([
+            { label: 'Open', color: '#16a34a', statuses: ['open'] }
+        ]);
+        expect(read.config.teaching_stages).toEqual([
+            { label: 'Running', color: '#16a34a', statuses: ['ongoing'] }
+        ]);
         expect(read.config.venue_categories).toEqual([
             { key: 'journal', label: 'Journals', ribbon: true }
         ]);
         expect(rowKeys(read.config, 'venue_tiers')).toEqual(['core']);
         expect(rowKeys(read.config, 'radar_buckets')).toEqual(['idea']);
+    });
+
+    it('reads a row of teaching_stages with no statuses', () => {
+        const bare = withHub('teaching_stages: [ { label: Running, color: "#16a34a" } ]\n');
+        expect(said(bare)).toEqual([]);
+        expect(bare.config.teaching_stages).toEqual([{ label: 'Running', color: '#16a34a' }]);
+    });
+
+    it.for([
+        {
+            key: 'focus_lanes',
+            name: 'run',
+            row: '{ key: run, label: Run, color: "#16a34a", cluster: now, stages: [exploring] }',
+            wrong: '{ key: run, label: 5, color: "#16a34a", cluster: now, stages: [exploring] }',
+            field: 'label',
+            also: ['focus_lanes.1.stages | focus_lanes.1.stages is not a value this key takes']
+        },
+        {
+            key: 'roles',
+            name: 'lead',
+            row: '{ key: lead, label: Lead, field: lead }',
+            wrong: '{ key: lead, label: 5, field: lead }',
+            field: 'label'
+        },
+        {
+            key: 'fund_stages',
+            name: 'Open',
+            row: '{ label: Open, color: "#16a34a", statuses: [active] }',
+            wrong: '{ label: Bad, color: 5, statuses: [planned] }',
+            field: 'color'
+        },
+        {
+            key: 'position_stages',
+            name: 'Open',
+            row: '{ label: Open, color: "#16a34a", statuses: [active] }',
+            wrong: '{ label: Bad, color: 5, statuses: [planned] }',
+            field: 'color'
+        },
+        {
+            key: 'teaching_stages',
+            name: 'Open',
+            row: '{ label: Open, color: "#16a34a", statuses: [active] }',
+            wrong: '{ label: Bad, color: 5, statuses: [planned] }',
+            field: 'color'
+        },
+        {
+            key: 'venue_categories',
+            name: 'a',
+            row: '{ key: a, label: Journals }',
+            wrong: '{ key: a, label: 5 }',
+            field: 'label'
+        },
+        {
+            key: 'venue_tiers',
+            name: 'core',
+            row: '{ key: core, color: "#7c3aed", label: core }',
+            wrong: '{ key: core, color: "#7c3aed", label: 5 }',
+            field: 'label'
+        },
+        {
+            key: 'radar_buckets',
+            name: 'idea',
+            row: '{ key: idea, glyph: purple, label: Ideas, color: "#7c5cff" }',
+            wrong: '{ key: idea, glyph: purple, label: 5, color: "#7c5cff" }',
+            field: 'label'
+        }
+    ])(
+        "words a row of $key of the wrong kind and a second row naming one key, oculus's list standing",
+        ({ key, name, row, wrong, field, also = [] }) => {
+            const bad = withHub(`${key}: [ ${wrong} ]\n`);
+            expect(said(bad)).toEqual([
+                `${FILE} | ${key}.0.${field} | ${key}.0.${field} must be a text`
+            ]);
+            expect(bad.config[key]).toEqual(OCULUS[key]);
+            const twice = withHub(`${key}: [ ${row}, ${row} ]\n`);
+            expect(said(twice)).toEqual([
+                `${FILE} | ${key}.1 | ${key}.1 names ${name}, which an earlier row names; none of the list is applied and oculus's list stands`,
+                ...also.map((line) => `${FILE} | ${line}`)
+            ]);
+            expect(twice.config[key]).toEqual(OCULUS[key]);
+        }
+    );
+
+    it("words each row of the wrong kind of a list two of whose rows name one key, oculus's list standing", () => {
+        const read = withHub(
+            'position_stages: [ { label: Open, color: 5, statuses: [active] }, { label: Open, color: "#000000", statuses: [applied] }, { label: Third, color: "#111111", statuses: 7 } ]\n'
+        );
+        expect(said(read)).toEqual([
+            `${FILE} | position_stages.1 | position_stages.1 names Open, which an earlier row names; none of the list is applied and oculus's list stands`,
+            `${FILE} | position_stages.0.color | position_stages.0.color must be a text`,
+            `${FILE} | position_stages.2.statuses | position_stages.2.statuses must be a list`
+        ]);
+        expect(read.config.position_stages).toEqual(OCULUS.position_stages);
     });
 
     it("replaces oculus's Focus clusters whole", () => {

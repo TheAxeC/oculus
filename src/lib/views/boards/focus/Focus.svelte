@@ -15,12 +15,14 @@
     // Layer 3, view. The landing board, one page of sections drawn top to bottom in the order
     // `focus.sections` of config/defaults/behavior.yml lists them (`drawnSections`), each of the
     // board's own words for the sections it knows how to draw: `career` the career banner,
-    // `command_center` the command center of everything with a date, `tasks` the tasks section of
-    // the open work that carries none, `quick_add` the quick add, `awaiting` the box of what is out
-    // for an answer, `band` the band of durable work that is not a project, and `lanes` the lanes
-    // each project's stage and chips put it on, with the message of a board with no project. A
-    // section the list leaves out is not drawn. The said line is drawn after the quick add, and at
-    // the top of the board when the list leaves the quick add out.
+    // `command_center` the command center of the dates the records hold, the snoozed lines and the
+    // attention and refresh lines, `tasks` the tasks section of the work the reader set down (the
+    // follow-ups, the subtasks and the entries of the tasks file, dated or not), `quick_add` the
+    // quick add, `awaiting` the box of what is out for an answer, `band` the band of durable work
+    // that is not a project, and `lanes` the lanes each project's stage and chips put it on, with
+    // the message of a board with no project. A section the list leaves out is not drawn. The said
+    // line is drawn after the quick add, and at the top of the board when the list leaves the quick
+    // add out.
     //
     // It counts nothing and draws little. The arithmetic is the pure functions of
     // state/boards/focus.ts, state/boards/focus/filter.ts, state/feeds/feeds.ts and

@@ -25,6 +25,8 @@ export const OWN_HUB_KEYS: readonly string[] = [
     'focus_clusters',
     'focus_lanes',
     'fund_stages',
+    'position_stages',
+    'teaching_stages',
     'focus_lane_tones',
     'facet_tones',
     'tiers',

@@ -2,17 +2,19 @@
 // the keys of HUB_LIST (data/helpers/hub-names.ts), which describe the hub rather than the reader.
 // A key of config/catalogs/vocab.yml is laid over oculus's value by its shape (in-place.ts): a map
 // by its words in oculus's place, `categories` by its rows' `key`, and the lists whose order is
-// their meaning whole. A word the hub's values no longer give, taken out with `<word>: null` or by
-// a list replaced whole, also leaves every word list that names it, each option and each field of
-// an option's rows the options catalog describes with a `from` naming that list: in oculus's own
-// values, a row left with no word stays, a board's one-word `tier` or `role` becomes an empty list
-// and a Focus lane's `move_writes` loses the word; in a list or row the hub wrote, each such word
-// is one finding naming the hub's file at the word's place there. The options' defaults lose the
-// word the same way. `manifest_fields`, the fields the hub adds to the project form, is read row by
-// row here: a row is a field of `manifest_schema` under the key `field` it adds to project.yml, and
-// a row that would change a field oculus's form has, that the form cannot draw, or whose
-// `foreign_key:` names no collection of the hub, `projects` or vocab list once the hub's own values
-// are laid in, is left out. Every other key replaces oculus's value whole.
+// their meaning whole, oculus's list standing when a row is of the wrong kind or two rows name one
+// key, save `focus_clusters`, which its reader takes row by row. A word the hub's values no longer
+// give, taken out with `<word>: null` or by a list replaced whole, also leaves every word list that
+// names it, each option and each field of an option's rows the options catalog describes with a
+// `from` naming that list: in oculus's own values, a row left with no word stays, a board's
+// one-word `tier` or `role` becomes an empty list and a Focus lane's `move_writes` loses the word;
+// in a list or row the hub wrote, each such word is one finding naming the hub's file at the
+// word's place there. The options' defaults lose the word the same way. `manifest_fields`, the
+// fields the hub adds to the project form, is read row by row here: a row is a field of
+// `manifest_schema` under the key `field` it adds to project.yml, and a row that would change a
+// field oculus's form has, that the form cannot draw, or whose `foreign_key:` names no collection
+// of the hub, `projects` or vocab list once the hub's own values are laid in, is left out. Every
+// other key replaces oculus's value whole.
 
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -41,7 +43,9 @@ import { setAt, valueAt } from './tree.ts';
 /**
  * A value the hub's settings file holds for a key of oculus's vocabulary, laid over oculus's by
  * the key's shape, with the finding of each part that cannot be applied, oculus's entry standing
- * for it; a value of the wrong kind leaves oculus's value whole. Undefined for a key merged whole.
+ * for it; a value of the wrong kind, and a list replaced whole two of whose rows name one key,
+ * leave oculus's value whole, the second marked `refused` so its rows are still read for their
+ * kind. Undefined for a key merged whole.
  */
 function vocabValue(
     path: string,
@@ -49,7 +53,7 @@ function vocabValue(
     value: unknown,
     file: string,
     pending: PendingFinding[]
-): { value: unknown; wrong?: true } | undefined {
+): { value: unknown; wrong?: true; refused?: true } | undefined {
     if (!Object.hasOwn(VOCAB_SHAPES, path)) return undefined;
     const shape = VOCAB_SHAPES[path];
     const laid = layInPlace(shape, oculus, value);
@@ -60,6 +64,9 @@ function vocabValue(
     for (const problem of laid.problems) {
         const key = shape.kind === 'map' ? `${path}.${problem.entry}` : path;
         pending.push(problemFinding(file, key, path, problem));
+    }
+    if (laid.problems.some((problem) => problem.kind === 'repeated_row')) {
+        return { value: laid.value, wrong: true, refused: true };
     }
     return { value: laid.value };
 }
@@ -516,11 +523,12 @@ function rowsNamingLists(
  * nothing of it is applied; a file that is empty, is no map or does not parse (a key twice
  * included) is a finding and oculus's values stand. The file is not required, and a hub without it
  * adds nothing. The merged values are checked against the shape of oculus's file their key belongs
- * to. The rows of `manifest_fields` whose `foreign_key:` names no list are taken out once the hub's
- * values are laid in, so a list the hub adds counts. `from` names the hub's file for every key it
- * set, and for a map of the vocabulary, oculus's file for each of oculus's words the merged map
- * holds and the hub did not write. `text` is the file's text to read instead of the disk, null for
- * the file removed.
+ * to, and a list of the vocabulary replaced whole holding a row that shape refuses is not applied,
+ * oculus's list standing, save `focus_clusters`, which its reader takes row by row. The rows of
+ * `manifest_fields` whose `foreign_key:` names no list are taken out once the hub's values are laid
+ * in, so a list the hub adds counts. `from` names the hub's file for every key it set, and for a
+ * map of the vocabulary, oculus's file for each of oculus's words the merged map holds and the hub
+ * did not write. `text` is the file's text to read instead of the disk, null for the file removed.
  */
 export function mergeHub(
     hub: string,
@@ -574,28 +582,37 @@ export function mergeHub(
     walk(top, '');
     const applied: Record<string, unknown> = {};
     const hubValues: Record<string, unknown> = {};
+    const refused: Record<string, unknown> = {};
     let fields: TakenRow[] | undefined;
     for (const path of listed) {
         const value = valueAt(written, path);
         if (value === undefined) continue;
         const oculus = valueAt(config, path);
-        let laid: { value: unknown; wrong?: true };
+        let laid: { value: unknown; wrong?: true; refused?: true };
         if (path === MANIFEST_FIELDS_KEY) {
             fields = readManifestFields(value, config, file, pending);
             laid = { value: fields.map((one) => one.row) };
         } else laid = vocabValue(path, oculus, value, file, pending) ?? { value };
         setAt(applied, path, laid.value);
         if (laid.wrong === undefined) setAt(hubValues, path, value);
+        if (laid.refused !== undefined) setAt(refused, path, value);
     }
     const files = [...new Set(listed.map((key) => hubFileOf(key) ?? ''))];
     for (const name of files) {
         const own: Record<string, unknown> = {};
         for (const key of listed.filter((one) => hubFileOf(one) === name)) {
             const head = key.split('.')[0];
-            if (head in applied) own[head] = applied[head];
+            if (head in refused) own[head] = refused[head];
+            else if (head in applied) own[head] = applied[head];
         }
         for (const issue of shapeIssues(name, own)) {
             pending.push({ file, key: issue.key, words: (catalog) => issueText(catalog, issue) });
+            const head = issue.key.split('.')[0];
+            if (!Object.hasOwn(VOCAB_SHAPES, head) || !Object.hasOwn(hubValues, head)) continue;
+            const shape = VOCAB_SHAPES[head];
+            if (shape.kind !== 'whole' || shape.field === undefined) continue;
+            applied[head] = valueAt(config, head);
+            Reflect.deleteProperty(hubValues, head);
         }
     }
     const before = sourceWords(config);

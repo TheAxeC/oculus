@@ -77,16 +77,16 @@ options:
                         radar
                     ]
             band_positions:
-                help: the Focus band's positions column lists the file's open entries
+                help: the Focus band's positions column stacks the file's entries by the stages of position_stages
                 control: toggle
             band_teaching:
-                help: the Focus band's teaching column lists the file's running entries
+                help: the Focus band's teaching column stacks the file's entries by the stages of teaching_stages
                 control: toggle
             awaiting:
-                help: the Awaiting box lists the file's entries that are out for a decision
+                help: the Awaiting box lists the file's entries whose status carries deadline_met
                 control: toggle
             open_badge:
-                help: the file's view counts its open entries and draws them as a green badge
+                help: the file's view counts its entries a stage of position_stages holds and draws them as a green badge
                 control: toggle
             lead_applications:
                 help: a lead's applied press writes the application into this file; on two entries the first is read
@@ -107,11 +107,11 @@ options:
                 help: a person's joint work, the relation rows, the cross-links and the referrers read this file
                 control: toggle
             ticker:
-                help: "the command center's lines of the file; with none the file gives no lines"
+                help: 'the lines of the file: its dated entries in the command center, and every line of the file flagged tasks in the Tasks section; with none the file gives no lines'
                 holds: record
                 fields:
                     category:
-                        help: the word of ticker_categories the lines carry, which decides their group, glyph and words
+                        help: the word of ticker_categories the lines carry, which decides their command center group, glyph and words; the lines of the file flagged tasks are Tasks lines and take only their glyph from it
                         control: choice
                         from: ticker_categories
                     undated:

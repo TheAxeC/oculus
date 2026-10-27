@@ -16,7 +16,7 @@ import { z } from 'zod';
 import type { Id, Project, Snapshot, Venue } from '../../data/model/index.ts';
 // `str` here is the shared `text`: a config or entry value of the wrong type reads as the empty
 // string. The alias also keeps the name off the several `const text` locals in this file.
-import { byKey, focusBlock, strings, text as str } from '../../data/helpers/guards.ts';
+import { byKey, text as str } from '../../data/helpers/guards.ts';
 import { flaggedEntries, rootOf } from '../../data/helpers/hub-names.ts';
 import {
     anyWord,
@@ -570,11 +570,11 @@ export function laneFacts(
  * first, then the venue holding it when its stage carries `pauses_countdown` in `stages`
  * (submitted). The blocked tally counts the projects on a lane that carry a chip with `blocked` in
  * `chips`, whatever else the project is waiting for. A `waiting-on:` value is a people key or
- * another project's id, drawn by waiting.ts. The applications are the entries of the collections
- * flagged `awaiting` whose status is in `applications_sent` under `focus:` of
- * config/defaults/behavior.yml. A waited-on project is named from `known`, every project of the
- * portfolio, when the snapshot holds only the projects a filter keeps, and from the snapshot's own
- * projects without it.
+ * another project's id, drawn by waiting.ts. The grants are the funding schemes and the
+ * applications the entries of the collections flagged `awaiting` whose status carries
+ * `deadline_met` in `statuses` of their own hub's words. A waited-on project is named from `known`,
+ * every project of the portfolio, when the snapshot holds only the projects a filter keeps, and
+ * from the snapshot's own projects without it.
  */
 export function waiting(
     snapshot: Snapshot,
@@ -621,9 +621,8 @@ export function waiting(
         .filter((scheme) => deadlineMet(wordsAt(scheme), scheme.status ?? ''))
         .map((scheme) => scheme.title)
         .sort();
-    const sent = focusWords(config, 'applications_sent');
     const applications = flaggedEntries(snapshot.entities.collections, 'awaiting')
-        .filter((entry) => sent.includes(str(entry.fields.status).trim().toLowerCase()))
+        .filter((entry) => deadlineMet(wordsAt(entry), str(entry.fields.status)))
         .map((entry) => entry.title)
         .sort();
     return { people: tallies(people), venues: tallies(held), blocked, grants, applications };
@@ -655,14 +654,6 @@ export function liveProjects(
     return projects.filter(
         (one) => !hasWord(wordsOf?.(rootOf(one)) ?? config, 'stages', 'terminal', one.stage)
     );
-}
-
-/**
- * The list of status words under `focus:` of config/defaults/behavior.yml at a key, trimmed and in
- * lower case, which is how an entry's status is compared with them; none if absent.
- */
-export function focusWords(config: Record<string, unknown>, key: string): string[] {
-    return strings(focusBlock(config)[key]).map((word) => word.trim().toLowerCase());
 }
 
 /** The lanes of one cluster, in the board's order. */

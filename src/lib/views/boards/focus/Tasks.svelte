@@ -1,13 +1,16 @@
 <script lang="ts">
-    // Layer 3, view partial of views/boards/focus/Focus.svelte. The tasks section: the open work
-    // that carries no date, in the same two columns as the command center above it and with the
-    // same buttons.
+    // Layer 3, view partial of views/boards/focus/Focus.svelte. The tasks section: the work the
+    // reader set down, the due follow-ups, the open subtasks and the open entries of the tasks
+    // file, dated or not, and the records' undated lines, in the same two columns as the command
+    // center above it and with the same buttons. A dated row carries how far off its date is as its
+    // tail ("in 3d", "3d ago") and the tone of its days, as a command center row does.
     //
     // It counts nothing. The lines are state/boards/ticker.ts's `tasks` list, already in the order
-    // the three groups are drawn in; the rows, their buttons and what a button writes are
-    // views/boards/focus/rows.ts, which the command center draws its own rows with. A group with no
-    // line draws nothing, and a section with no group at all draws nothing either, unless the
-    // Focus filter hides lines of it, which its heading row then says ("3 hidden").
+    // the three groups are drawn in, the dated lines of each first; the rows, their buttons and
+    // what a button writes are views/boards/focus/rows.ts, which the command center draws its own
+    // rows with. A group with no line draws nothing, and a section with no group at all draws
+    // nothing either, unless the Focus filter hides lines of it, which its heading row then says
+    // ("3 hidden").
 
     import RootChip from '$lib/views/shared/card/RootChip.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
@@ -16,7 +19,7 @@
     import { hasTasks, taskGroups, type TickerItem } from '$lib/state/boards/ticker';
     import { t } from '$lib/state/shared/words/text';
     import FoldHead from '../../shared/card/heads/FoldHead.svelte';
-    import { act, fileBlock, openLine, rowMaker, type SectionProps } from './rows';
+    import { act, dateTail, fileBlock, openLine, rowMaker, type SectionProps } from './rows';
     import { useState } from '$lib/state/client/use';
 
     const client = useState();
@@ -34,7 +37,8 @@
     /** The three groups of rows, and the line each row came from, by the row's own id. */
     const view = $derived.by(() => {
         const { index, row, kept } = rowMaker('t', fileBlock(client));
-        const rows = (group: TickerItem[]): TickerRow[] => group.map((line) => row(line, ''));
+        const rows = (group: TickerItem[]): TickerRow[] =>
+            group.map((line) => row(line, dateTail(line)));
         return {
             index,
             kept,

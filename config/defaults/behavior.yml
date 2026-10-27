@@ -34,7 +34,7 @@ audit:
 
 
 # === The Focus board =========================================================
-# The sections it draws, its horizons, thresholds and cadences, and the lists of statuses its command center and its columns read.
+# The sections it draws, its horizons, thresholds and cadences; the statuses its band and its Awaiting box read are the words of catalogs/vocab.yml.
 focus:
   # The sections the Focus board draws, in drawing order, each one of career, command_center, tasks, quick_add, awaiting, band and lanes; a section not listed is not drawn. The line saying what a quick add did is drawn after quick_add, or at the top of the board without it, and the message of a board with no project is part of lanes.
   sections: [career, command_center, tasks, quick_add, awaiting, band, lanes]
@@ -55,11 +55,6 @@ focus:
 
   venue_conc_warn: 4  # "venue load" Focus nudge when >= N in-flight papers target one venue
   linkedin_cadence_days: 30   # nudge/red badge when it's been longer than this since the last post
-
-  # The entry statuses the Focus columns and counts read, compared without regard to case: the applications the positions column shows and the Applications tab counts, the teaching the teaching column shows, and the applications the Awaiting box lists as out for a decision.
-  applications_open: [active]
-  education_open: [ongoing]
-  applications_sent: [applied]
 
 
 # === Per-project file finder ================================================

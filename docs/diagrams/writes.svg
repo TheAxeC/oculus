@@ -2913,39 +2913,39 @@
 <path fill="none" stroke="currentColor" stroke-dasharray="1,5" d="M79.25,-6042.5C88.58,-6042.5 97.91,-6042.5 107.25,-6042.5 107.25,-6042.17 107.25,-6041.83 107.25,-6041.5 176.49,-6041.5 245.73,-6041.5 314.98,-6041.5"/>
 <polygon fill="currentColor" stroke="currentColor" points="314.91,-6043.6 320.91,-6041.5 314.91,-6039.4 314.91,-6043.6"/>
 </g>
-<!-- ? src/lib/data/sources/config/merge/hub&#45;layer.ts:114 -->
+<!-- ? src/lib/data/sources/config/merge/hub&#45;layer.ts:121 -->
 <g id="node176" class="node">
-<title>? src/lib/data/sources/config/merge/hub&#45;layer.ts:114</title>
+<title>? src/lib/data/sources/config/merge/hub&#45;layer.ts:121</title>
 <polygon fill="none" stroke="currentColor" points="194.69,-5621.5 194.69,-5643.5 504.15,-5643.5 504.15,-5621.5 194.69,-5621.5"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="start" x="200.69" y="-5628.5" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/data/sources/config/merge/hub&#45;layer.ts:114 SOURCES.filter(</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="start" x="200.69" y="-5628.5" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/data/sources/config/merge/hub&#45;layer.ts:121 SOURCES.filter(</text>
 </g>
-<!-- lib/data/sources/config/merge/hub&#45;layer.ts&#45;&gt;? src/lib/data/sources/config/merge/hub&#45;layer.ts:114 -->
+<!-- lib/data/sources/config/merge/hub&#45;layer.ts&#45;&gt;? src/lib/data/sources/config/merge/hub&#45;layer.ts:121 -->
 <g id="edge153" class="edge">
-<title>lib/data/sources/config/merge/hub&#45;layer.ts&#45;&gt;? src/lib/data/sources/config/merge/hub&#45;layer.ts:114</title>
+<title>lib/data/sources/config/merge/hub&#45;layer.ts&#45;&gt;? src/lib/data/sources/config/merge/hub&#45;layer.ts:121</title>
 <path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M79.25,-5970.5C84.58,-5970.5 89.91,-5970.5 95.25,-5970.5 95.25,-5857.83 95.25,-5745.17 95.25,-5632.5 125.98,-5632.5 156.72,-5632.5 187.46,-5632.5"/>
 <polygon fill="currentColor" stroke="currentColor" points="187.18,-5634.6 193.18,-5632.5 187.18,-5630.4 187.18,-5634.6"/>
 </g>
-<!-- ? src/lib/data/sources/config/merge/hub&#45;layer.ts:457 -->
+<!-- ? src/lib/data/sources/config/merge/hub&#45;layer.ts:464 -->
 <g id="node177" class="node">
-<title>? src/lib/data/sources/config/merge/hub&#45;layer.ts:457</title>
+<title>? src/lib/data/sources/config/merge/hub&#45;layer.ts:464</title>
 <polygon fill="none" stroke="currentColor" points="165.25,-5657.5 165.25,-5679.5 533.59,-5679.5 533.59,-5657.5 165.25,-5657.5"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="start" x="171.25" y="-5664.5" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/data/sources/config/merge/hub&#45;layer.ts:457 MANIFEST_WIDGETS.some(</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="start" x="171.25" y="-5664.5" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/data/sources/config/merge/hub&#45;layer.ts:464 MANIFEST_WIDGETS.some(</text>
 </g>
-<!-- lib/data/sources/config/merge/hub&#45;layer.ts&#45;&gt;? src/lib/data/sources/config/merge/hub&#45;layer.ts:457 -->
+<!-- lib/data/sources/config/merge/hub&#45;layer.ts&#45;&gt;? src/lib/data/sources/config/merge/hub&#45;layer.ts:464 -->
 <g id="edge154" class="edge">
-<title>lib/data/sources/config/merge/hub&#45;layer.ts&#45;&gt;? src/lib/data/sources/config/merge/hub&#45;layer.ts:457</title>
+<title>lib/data/sources/config/merge/hub&#45;layer.ts&#45;&gt;? src/lib/data/sources/config/merge/hub&#45;layer.ts:464</title>
 <path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M79.25,-5978.5C86.58,-5978.5 93.91,-5978.5 101.25,-5978.5 101.25,-5875.17 101.25,-5771.83 101.25,-5668.5 120.08,-5668.5 138.92,-5668.5 157.76,-5668.5"/>
 <polygon fill="currentColor" stroke="currentColor" points="157.74,-5670.6 163.74,-5668.5 157.74,-5666.4 157.74,-5670.6"/>
 </g>
-<!-- ? src/lib/data/sources/config/merge/hub&#45;layer.ts:463 -->
+<!-- ? src/lib/data/sources/config/merge/hub&#45;layer.ts:470 -->
 <g id="node178" class="node">
-<title>? src/lib/data/sources/config/merge/hub&#45;layer.ts:463</title>
+<title>? src/lib/data/sources/config/merge/hub&#45;layer.ts:470</title>
 <polygon fill="none" stroke="currentColor" points="166.62,-5693.5 166.62,-5715.5 532.22,-5715.5 532.22,-5693.5 166.62,-5693.5"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="start" x="172.62" y="-5700.5" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/data/sources/config/merge/hub&#45;layer.ts:463 manifestFieldRow.safeParse(</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="start" x="172.62" y="-5700.5" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/data/sources/config/merge/hub&#45;layer.ts:470 manifestFieldRow.safeParse(</text>
 </g>
-<!-- lib/data/sources/config/merge/hub&#45;layer.ts&#45;&gt;? src/lib/data/sources/config/merge/hub&#45;layer.ts:463 -->
+<!-- lib/data/sources/config/merge/hub&#45;layer.ts&#45;&gt;? src/lib/data/sources/config/merge/hub&#45;layer.ts:470 -->
 <g id="edge155" class="edge">
-<title>lib/data/sources/config/merge/hub&#45;layer.ts&#45;&gt;? src/lib/data/sources/config/merge/hub&#45;layer.ts:463</title>
+<title>lib/data/sources/config/merge/hub&#45;layer.ts&#45;&gt;? src/lib/data/sources/config/merge/hub&#45;layer.ts:470</title>
 <path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M79.25,-5986.5C92.58,-5986.5 105.91,-5986.5 119.25,-5986.5 119.25,-5892.5 119.25,-5798.5 119.25,-5704.5 132.54,-5704.5 145.84,-5704.5 159.13,-5704.5"/>
 <polygon fill="currentColor" stroke="currentColor" points="159.11,-5706.6 165.11,-5704.5 159.11,-5702.4 159.11,-5706.6"/>
 </g>
@@ -3447,51 +3447,51 @@
 <path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M105.67,-4417C141.81,-4417 177.95,-4417 214.09,-4417 214.09,-4463.67 214.09,-4510.33 214.09,-4557 254.16,-4557 294.23,-4557 334.31,-4557"/>
 <polygon fill="currentColor" stroke="currentColor" points="334.3,-4559.1 340.3,-4557 334.3,-4554.9 334.3,-4559.1"/>
 </g>
-<!-- ? src/lib/data/shapes/catalog&#45;files/vocab.ts:336 -->
+<!-- ? src/lib/data/shapes/catalog&#45;files/vocab.ts:339 -->
 <g id="node224" class="node">
-<title>? src/lib/data/shapes/catalog&#45;files/vocab.ts:336</title>
+<title>? src/lib/data/shapes/catalog&#45;files/vocab.ts:339</title>
 <polygon fill="none" stroke="currentColor" points="340.43,-4582 340.43,-4604 613.23,-4604 613.23,-4582 340.43,-4582"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="start" x="346.43" y="-4589" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/data/shapes/catalog&#45;files/vocab.ts:336 text.describe(</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="start" x="346.43" y="-4589" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/data/shapes/catalog&#45;files/vocab.ts:339 text.describe(</text>
 </g>
-<!-- lib/data/shapes/catalog&#45;files/vocab.ts&#45;&gt;? src/lib/data/shapes/catalog&#45;files/vocab.ts:336 -->
+<!-- lib/data/shapes/catalog&#45;files/vocab.ts&#45;&gt;? src/lib/data/shapes/catalog&#45;files/vocab.ts:339 -->
 <g id="edge201" class="edge">
-<title>lib/data/shapes/catalog&#45;files/vocab.ts&#45;&gt;? src/lib/data/shapes/catalog&#45;files/vocab.ts:336</title>
+<title>lib/data/shapes/catalog&#45;files/vocab.ts&#45;&gt;? src/lib/data/shapes/catalog&#45;files/vocab.ts:339</title>
 <path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M105.67,-4425C139.81,-4425 173.95,-4425 208.09,-4425 208.09,-4481 208.09,-4537 208.09,-4593 249.83,-4593 291.56,-4593 333.3,-4593"/>
 <polygon fill="currentColor" stroke="currentColor" points="332.92,-4595.1 338.92,-4593 332.92,-4590.9 332.92,-4595.1"/>
 </g>
-<!-- ? src/lib/data/shapes/catalog&#45;files/vocab.ts:337 -->
+<!-- ? src/lib/data/shapes/catalog&#45;files/vocab.ts:340 -->
 <g id="node225" class="node">
-<title>? src/lib/data/shapes/catalog&#45;files/vocab.ts:337</title>
+<title>? src/lib/data/shapes/catalog&#45;files/vocab.ts:340</title>
 <polygon fill="none" stroke="currentColor" points="336.25,-4618 336.25,-4640 617.41,-4640 617.41,-4618 336.25,-4618"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="start" x="342.25" y="-4625" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/data/shapes/catalog&#45;files/vocab.ts:337 colour.optional(</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="start" x="342.25" y="-4625" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/data/shapes/catalog&#45;files/vocab.ts:340 colour.optional(</text>
 </g>
-<!-- lib/data/shapes/catalog&#45;files/vocab.ts&#45;&gt;? src/lib/data/shapes/catalog&#45;files/vocab.ts:337 -->
+<!-- lib/data/shapes/catalog&#45;files/vocab.ts&#45;&gt;? src/lib/data/shapes/catalog&#45;files/vocab.ts:340 -->
 <g id="edge202" class="edge">
-<title>lib/data/shapes/catalog&#45;files/vocab.ts&#45;&gt;? src/lib/data/shapes/catalog&#45;files/vocab.ts:337</title>
+<title>lib/data/shapes/catalog&#45;files/vocab.ts&#45;&gt;? src/lib/data/shapes/catalog&#45;files/vocab.ts:340</title>
 <path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M105.67,-4433C137.81,-4433 169.95,-4433 202.09,-4433 202.09,-4498.33 202.09,-4563.67 202.09,-4629 244.33,-4629 286.57,-4629 328.8,-4629"/>
 <polygon fill="currentColor" stroke="currentColor" points="328.75,-4631.1 334.75,-4629 328.75,-4626.9 328.75,-4631.1"/>
 </g>
-<!-- ? src/lib/data/shapes/catalog&#45;files/vocab.ts:467 -->
+<!-- ? src/lib/data/shapes/catalog&#45;files/vocab.ts:482 -->
 <g id="node226" class="node">
-<title>? src/lib/data/shapes/catalog&#45;files/vocab.ts:467</title>
+<title>? src/lib/data/shapes/catalog&#45;files/vocab.ts:482</title>
 <polygon fill="none" stroke="currentColor" points="332.09,-4654 332.09,-4676 621.57,-4676 621.57,-4654 332.09,-4654"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="start" x="338.09" y="-4661" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/data/shapes/catalog&#45;files/vocab.ts:467 textMap.optional(</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="start" x="338.09" y="-4661" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/data/shapes/catalog&#45;files/vocab.ts:482 textMap.optional(</text>
 </g>
-<!-- lib/data/shapes/catalog&#45;files/vocab.ts&#45;&gt;? src/lib/data/shapes/catalog&#45;files/vocab.ts:467 -->
+<!-- lib/data/shapes/catalog&#45;files/vocab.ts&#45;&gt;? src/lib/data/shapes/catalog&#45;files/vocab.ts:482 -->
 <g id="edge203" class="edge">
-<title>lib/data/shapes/catalog&#45;files/vocab.ts&#45;&gt;? src/lib/data/shapes/catalog&#45;files/vocab.ts:467</title>
+<title>lib/data/shapes/catalog&#45;files/vocab.ts&#45;&gt;? src/lib/data/shapes/catalog&#45;files/vocab.ts:482</title>
 <path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M105.67,-4441C135.81,-4441 165.95,-4441 196.09,-4441 196.09,-4515.67 196.09,-4590.33 196.09,-4665 238.95,-4665 281.82,-4665 324.68,-4665"/>
 <polygon fill="currentColor" stroke="currentColor" points="324.58,-4667.1 330.58,-4665 324.58,-4662.9 324.58,-4667.1"/>
 </g>
-<!-- ? src/lib/data/shapes/catalog&#45;files/vocab.ts:477 -->
+<!-- ? src/lib/data/shapes/catalog&#45;files/vocab.ts:492 -->
 <g id="node227" class="node">
-<title>? src/lib/data/shapes/catalog&#45;files/vocab.ts:477</title>
+<title>? src/lib/data/shapes/catalog&#45;files/vocab.ts:492</title>
 <polygon fill="none" stroke="currentColor" points="340.43,-4690 340.43,-4712 613.23,-4712 613.23,-4690 340.43,-4690"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="start" x="346.43" y="-4697" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/data/shapes/catalog&#45;files/vocab.ts:477 text.describe(</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="start" x="346.43" y="-4697" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/data/shapes/catalog&#45;files/vocab.ts:492 text.describe(</text>
 </g>
-<!-- lib/data/shapes/catalog&#45;files/vocab.ts&#45;&gt;? src/lib/data/shapes/catalog&#45;files/vocab.ts:477 -->
+<!-- lib/data/shapes/catalog&#45;files/vocab.ts&#45;&gt;? src/lib/data/shapes/catalog&#45;files/vocab.ts:492 -->
 <g id="edge204" class="edge">
-<title>lib/data/shapes/catalog&#45;files/vocab.ts&#45;&gt;? src/lib/data/shapes/catalog&#45;files/vocab.ts:477</title>
+<title>lib/data/shapes/catalog&#45;files/vocab.ts&#45;&gt;? src/lib/data/shapes/catalog&#45;files/vocab.ts:492</title>
 <path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M105.67,-4449C133.81,-4449 161.95,-4449 190.09,-4449 190.09,-4533 190.09,-4617 190.09,-4701 237.75,-4701 285.41,-4701 333.07,-4701"/>
 <polygon fill="currentColor" stroke="currentColor" points="332.92,-4703.1 338.92,-4701 332.92,-4698.9 332.92,-4703.1"/>
 </g>
@@ -4683,15 +4683,15 @@
 <polygon fill="none" stroke="currentColor" points="57.59,-108 57.59,-130 114.17,-130 114.17,-108 57.59,-108"/>
 <text fill="currentColor" xml:space="preserve" text-anchor="start" x="62.59" y="-115" font-family="Helvetica,Arial,sans-serif" font-size="10.00">in&#45;place.ts</text>
 </g>
-<!-- ? src/lib/data/sources/config/merge/in&#45;place.ts:237 -->
+<!-- ? src/lib/data/sources/config/merge/in&#45;place.ts:282 -->
 <g id="node334" class="node">
-<title>? src/lib/data/sources/config/merge/in&#45;place.ts:237</title>
+<title>? src/lib/data/sources/config/merge/in&#45;place.ts:282</title>
 <polygon fill="none" stroke="currentColor" points="196.75,-108 196.75,-130 516.21,-130 516.21,-108 196.75,-108"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="start" x="202.75" y="-115" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/data/sources/config/merge/in&#45;place.ts:237 HEX_COLOUR.test(</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="start" x="202.75" y="-115" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/data/sources/config/merge/in&#45;place.ts:282 HEX_COLOUR.test(</text>
 </g>
-<!-- lib/data/sources/config/merge/in&#45;place.ts&#45;&gt;? src/lib/data/sources/config/merge/in&#45;place.ts:237 -->
+<!-- lib/data/sources/config/merge/in&#45;place.ts&#45;&gt;? src/lib/data/sources/config/merge/in&#45;place.ts:282 -->
 <g id="edge297" class="edge">
-<title>lib/data/sources/config/merge/in&#45;place.ts&#45;&gt;? src/lib/data/sources/config/merge/in&#45;place.ts:237</title>
+<title>lib/data/sources/config/merge/in&#45;place.ts&#45;&gt;? src/lib/data/sources/config/merge/in&#45;place.ts:282</title>
 <path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M114.16,-119C136.36,-119 158.55,-119 180.75,-119 183.65,-119 186.55,-119 189.45,-119"/>
 <polygon fill="currentColor" stroke="currentColor" points="189.24,-121.1 195.24,-119 189.24,-116.9 189.24,-121.1"/>
 </g>

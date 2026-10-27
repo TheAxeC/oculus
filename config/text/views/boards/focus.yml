@@ -63,11 +63,9 @@ text:
             grp_deadlines_glyph: deadline
             grp_deadlines_label: Deadlines & dates
             grp_followups_glyph: followup
-            grp_followups_label: Follow-ups
             grp_overdue_glyph: overdue
             grp_overdue_label: Overdue
             grp_refresh_label: Refresh live data
-            grp_subtask_dl_label: Subtask deadlines
             grp_subtask_glyph: pin
             in_days: in {0}d
             in_months: in {0} months
@@ -126,7 +124,7 @@ text:
         in_days: in {0}d
         jobs_glyph: scout
         jobs_lane: Job applications
-        jobs_sub: positions awaiting outcome
+        jobs_sub: job applications
         mine_all: Everything here is yours
         move_to: Move to
         next: Next
@@ -147,7 +145,7 @@ text:
             heading_glyph: tasks
         teaching_glyph: teaching
         teaching_lane: Teaching & supervision
-        teaching_sub: this academic year
+        teaching_sub: running and planned
         today: today
         toolbar: Focus controls
         unfold: Unfold {0}

@@ -135,18 +135,21 @@ export function venueWarn(config: Record<string, unknown>): number {
 export type TickerLists = Pick<HubVocabs, 'lists' | 'ownCollections'> | null;
 
 /**
- * What the ticker answers. Each list is already in the order it is shown in. A line that carries a
- * date is on one of the dated lists and a line that carries none is on `tasks`, which is the split
- * the board draws: the command center is what is dated, the tasks section is what is open work.
+ * What the ticker answers. Each list is already in the order it is shown in. The lists split the
+ * lines by who sets the date, which is the split the board draws: the command center holds the
+ * dates of the records (`overdue`, `deadlines`, `snoozed`), and the tasks section holds the work
+ * the reader set down (`tasks`), with its date when it has one.
  */
 export type Ticker = {
+    /** The records' dates that have passed, the most overdue first. */
     overdue: TickerItem[];
+    /** The records' dates to come, by category and then by date. */
     deadlines: TickerItem[];
-    /** The due follow-up notes that carry a date, oldest due first. */
-    followups: TickerItem[];
-    /** The open subtasks that carry a deadline, grouped by the kind of what holds them. */
-    subtasks: TickerItem[];
-    /** The undated work: the follow-ups, then the open subtasks, then the open task entries. */
+    /**
+     * The tasks section's lines: the due follow-ups, then the open subtasks, then the open entries
+     * of the file flagged `tasks` and the records' undated lines. In each of the three the dated
+     * lines come first by date, the most overdue first, then the undated ones.
+     */
     tasks: TickerItem[];
     venueLoad: Tally[];
     snoozed: TickerItem[];
@@ -178,7 +181,9 @@ export function collectionStatuses(collection: Collection | undefined): string[]
  * record's stage and status are read under the words of its own hub when `wordsOf` gives them; the
  * categories are those of every hub's words (`wordsOf()`). The funding schemes, the leads and the
  * venues' calls are found through `lists`, each record by the entry its own hub reads the registry
- * by, whose `ticker:` gives the category its lines carry.
+ * by, whose `ticker:` gives the category its lines carry. A date a record holds is a line of the
+ * command center inside `deadline_horizon_days`; a follow-up, a subtask and an entry of the file
+ * flagged `tasks` are lines of the tasks section, with their date and whatever it is.
  */
 export function ticker(
     snapshot: Snapshot,
@@ -214,8 +219,8 @@ export function ticker(
 
     const overdue: TickerItem[] = [];
     const dated: { category: string; line: TickerItem }[] = [];
-    const followups: TickerItem[] = [];
     const subtasks: TickerItem[] = [];
+    const datedTasks: TickerItem[] = [];
     const openEntries: TickerItem[] = [];
     const asleep: TickerItem[] = [];
 
@@ -298,6 +303,9 @@ export function ticker(
      * The entries of every other collection whose entry gives a `ticker:` (talks, teaching, tasks,
      * positions and joint work on the shipped list): one rule over every file, the category being
      * the one that `ticker:` gives. The funding and venues registries' lines are their own loops'.
+     * An entry of the file flagged `tasks` is work the reader set down, so it is a line of the
+     * tasks section whatever its date, with no horizon; another file's dated entry is a line of the
+     * command center inside the horizon.
      */
     for (const collection of Object.values(collections)) {
         const source = collection.ticker;
@@ -306,7 +314,8 @@ export function ticker(
         const key = bareId(collection);
         const category = source.category;
         const statuses = collectionStatuses(collection);
-        const task = collection.tasks === true ? { task: true as const } : {};
+        const isTasks = collection.tasks === true;
+        const task = isTasks ? { task: true as const } : {};
         for (const entry of collection.entries) {
             const status = str(entry.fields.status);
             if (closesDeadline(at(entry), status) || deadlineMet(at(entry), status)) continue;
@@ -315,7 +324,7 @@ export function ticker(
             // open work rather than a date, so it is a task line; an undated entry of any other
             // file names no moment and is on no list at all.
             if (days === null && source.undated !== true) continue;
-            if (days !== null && days > horizon) continue;
+            if (days !== null && days > horizon && !isTasks) continue;
             const line = item(category, glyphOf(categories, category), entry.title, days, {
                 entry: key,
                 status,
@@ -327,6 +336,7 @@ export function ticker(
                 continue;
             }
             if (days === null) openEntries.push(line);
+            else if (isTasks) datedTasks.push(line);
             else if (days < 0) overdue.push({ ...line, glyph: overdueGlyph });
             else dated.push({ category, line });
         }
@@ -450,9 +460,6 @@ export function ticker(
             }
         }
     }
-    notes.sort((a, b) => (a.days ?? 1) - (b.days ?? 1));
-    followups.push(...notes.filter((one) => one.days !== null).map((one) => one.line));
-    const openNotes = notes.filter((one) => one.days === null).map((one) => one.line);
 
     /**
      * Subtasks: a project's, and an entry's unless its parent is genuinely closed. A manifest names
@@ -510,11 +517,8 @@ export function ticker(
             }
         }
     }
-    subtasks.sort(
-        (a, b) =>
-            (a.kind < b.kind ? -1 : a.kind > b.kind ? 1 : 0) ||
-            (a.days ?? Number.MAX_SAFE_INTEGER) - (b.days ?? Number.MAX_SAFE_INTEGER)
-    );
+    // The undated subtasks keep the order of the kind of what holds them.
+    subtasks.sort((a, b) => (a.kind < b.kind ? -1 : a.kind > b.kind ? 1 : 0));
 
     overdue.sort((a, b) => (a.days ?? 0) - (b.days ?? 0));
     dated.sort(
@@ -526,9 +530,11 @@ export function ticker(
     return {
         overdue,
         deadlines: dated.map((one) => one.line),
-        followups,
-        subtasks: subtasks.filter((one) => one.days !== null),
-        tasks: [...openNotes, ...subtasks.filter((one) => one.days === null), ...openEntries],
+        tasks: [
+            ...datedFirst(notes.map((one) => one.line)),
+            ...datedFirst(subtasks),
+            ...datedFirst([...datedTasks, ...openEntries])
+        ],
         venueLoad: venueLoad(liveProjects, snapshot.entities.venues, warn),
         snoozed: asleep,
         behind: manifestsBehind(liveProjects, config, wordsOf),
@@ -595,16 +601,13 @@ export function daysTone(days: number | null): string | undefined {
 }
 
 /**
- * The lines in runs of one kind each, in the order given: a kind met again opens a new run.
+ * The lines with a date first, by date and the most overdue first, then the lines with none in the
+ * order given; two lines of one date keep their order.
  */
-export function runsByKind(lines: TickerItem[]): { kind: string; lines: TickerItem[] }[] {
-    const runs: { kind: string; lines: TickerItem[] }[] = [];
-    for (const line of lines) {
-        const held = runs.at(-1);
-        if (held?.kind !== line.kind) runs.push({ kind: line.kind, lines: [line] });
-        else held.lines.push(line);
-    }
-    return runs;
+function datedFirst(lines: readonly TickerItem[]): TickerItem[] {
+    const withDate = lines.filter((line) => line.days !== null);
+    withDate.sort((a, b) => (a.days ?? 0) - (b.days ?? 0));
+    return [...withDate, ...lines.filter((line) => line.days === null)];
 }
 
 /** The deadlines under each category, in the categories' order, a category with none left out. */
@@ -628,9 +631,9 @@ export type TaskGroups = {
 };
 
 /**
- * The tasks section's lines by group: a subtask carries the key of its own line, and a follow-up
- * says so in its kind, which is what a scheme's note has instead of a target; every other line is
- * a task.
+ * The tasks section's lines by group, each group in the order `tasks` gives, its dated lines first:
+ * a subtask carries the key of its own line, and a follow-up says so in its kind, which is what a
+ * scheme's note has instead of a target; every other line is a task.
  */
 export function taskGroups(lines: readonly TickerItem[]): TaskGroups {
     const groups: TaskGroups = { followups: [], subtasks: [], tasks: [] };
@@ -652,7 +655,7 @@ export function hasTasks(groups: TaskGroups): boolean {
  * whatever a view draws a row as is a list here.
  */
 export type CommandGroups = Record<
-    'overdue' | 'categories' | 'subtaskDated' | 'followups' | 'snoozed' | 'attention' | 'refresh',
+    'overdue' | 'categories' | 'snoozed' | 'attention' | 'refresh',
     readonly unknown[]
 >;
 

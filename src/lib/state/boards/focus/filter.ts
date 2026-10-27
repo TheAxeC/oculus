@@ -45,7 +45,6 @@ import { fieldItemsShape, mapShape, readAs } from '../../../data/shapes/shapes.t
 import type { WordsOf } from '../../../data/shapes/vocab-keys.ts';
 import {
     deadlineMet,
-    focusWords,
     laneItems,
     lanes,
     tierWords,
@@ -289,8 +288,6 @@ function hubLines(week: Ticker, rule: Rule): Ticker {
         ...week,
         overdue: week.overdue.filter(keeps),
         deadlines: week.deadlines.filter(keeps),
-        followups: week.followups.filter(keeps),
-        subtasks: week.subtasks.filter(keeps),
         tasks: week.tasks.filter(keeps),
         snoozed: week.snoozed.filter(keeps)
     };
@@ -344,9 +341,9 @@ function awaitingTotal(strip: Waiting): number {
 
 /**
  * How many rows the kept sections lack against the whole ones. The command center counts its
- * dated, follow-up, subtask and snoozed lines, its venue-load rows and the projects its rows of
- * manifests behind and of projects on no lane name; the tasks section its lines; the awaiting box
- * the names it lists; each lane and each column of the band its cards.
+ * overdue, dated and snoozed lines, its venue-load rows and the projects its rows of manifests
+ * behind and of projects on no lane name; the tasks section its lines, dated or not; the awaiting
+ * box the names it lists; each lane and each column of the band its cards.
  */
 function hiddenOf(whole: FocusSections, kept: FocusSections): FocusHidden {
     const lines = (pick: (week: Ticker) => TickerItem[]): number =>
@@ -354,8 +351,6 @@ function hiddenOf(whole: FocusSections, kept: FocusSections): FocusHidden {
     const command =
         lines((week) => week.overdue) +
         lines((week) => week.deadlines) +
-        lines((week) => week.followups) +
-        lines((week) => week.subtasks) +
         lines((week) => week.snoozed) +
         missing(whole.week.venueLoad, kept.week.venueLoad, (one) => one.id ?? one.label) +
         (whole.week.behind?.count ?? 0) -
@@ -375,8 +370,8 @@ function hiddenOf(whole: FocusSections, kept: FocusSections): FocusHidden {
         lanes: laneHidden,
         band: {
             funding: stageItemCount(whole.band.funding) - stageItemCount(kept.band.funding),
-            jobs: whole.band.applications.length - kept.band.applications.length,
-            teaching: whole.band.education.length - kept.band.education.length
+            jobs: stageItemCount(whole.band.applications) - stageItemCount(kept.band.applications),
+            teaching: stageItemCount(whole.band.education) - stageItemCount(kept.band.education)
         }
     };
 }
@@ -433,14 +428,7 @@ function mineWouldHide(
     if (Object.values(whole.lanes).some((lane) => lane.some(project))) return true;
     if (unplaced(projects, config, scope.wordsOf).some(project)) return true;
     const week = whole.week;
-    const lines = [
-        ...week.overdue,
-        ...week.deadlines,
-        ...week.followups,
-        ...week.subtasks,
-        ...week.tasks,
-        ...week.snoozed
-    ];
+    const lines = [...week.overdue, ...week.deadlines, ...week.tasks, ...week.snoozed];
     // A scheme's follow-up names the collection of its hub whose entry names the funding registry.
     const ofFunding = (collection: string, root: string): boolean =>
         byKey(held.collections, hubId(root, collection))?.registry === 'funding';
@@ -461,20 +449,19 @@ function mineWouldHide(
     };
     if (lines.some(hidesLine)) return true;
     const band = whole.band;
-    const cards = [...band.funding.flatMap((stage) => stage.items), ...band.applications];
-    if ([...cards, ...band.education].some((card) => entry(card.entry, card.root ?? '', card.id))) {
-        return true;
-    }
+    const cards = [...band.funding, ...band.applications, ...band.education].flatMap(
+        (stage) => stage.items
+    );
+    if (cards.some((card) => entry(card.entry, card.root ?? '', card.id))) return true;
     const at = (record: { root?: string }): Record<string, unknown> =>
         scope.wordsOf(rootOf(record));
     const grants = Object.values(held.funding).filter((one) =>
         deadlineMet(at(one), one.status ?? '')
     );
     if (grants.some(scheme)) return true;
-    const sent = focusWords(config, 'applications_sent');
     return flaggedCollections(held.collections, 'awaiting').some((collection) =>
         collection.entries
-            .filter((one) => sent.includes(str(one.fields.status).trim().toLowerCase()))
+            .filter((one) => deadlineMet(at(one), str(one.fields.status)))
             .some((one) => entry(bareId(collection), rootOf(one), one.id))
     );
 }
