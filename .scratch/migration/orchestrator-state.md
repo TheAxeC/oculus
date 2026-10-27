@@ -33,24 +33,10 @@ dispatch:          # steps in flight, up to six (Z632)
   session_id: aa362921271953d08 (claude-opus-5-5)
   launched: 2026-10-27
   report: .scratch/migration/agents/reviews/O87-report.md
-  builder_usage: 220811 tokens, 275 tool uses, 50 min 37 s
+  builder_usage: 220811 tokens, 275 tool uses, 50 min 37 s; round 1: 237156 tokens, 213 tool uses, 43 min 28 s
   round: 1 (agents/briefs/O87-round1.md: a wrong-kind or repeated stage row a finding with oculus's list standing, the G126 rows, the sentences made false, the report)
   reviewer_report: .scratch/migration/agents/reviews/O87-refuter.md (a362e1e25ae8483be, claude-opus-5-5, 274255 tokens, 83 tool uses, 19 min 44 s)
   shared_paths: with O84, simple merges in separate lines: `config/options/sources.yml` (O84 189-196; O87 78-90), `docs/templates.md` (O84 372-512 and 1055-1065; O87 64-68, 274-278, 318-332), `src/lib/state/boards/focus/filter.ts` (O84 comments; O87 280-480), `tests/checks/config/config-folder.test.ts` (O84 its rows; O87 222-245), `docs/HELP.md` (O84 Doc text at 288 and 532; O87 294, 529, 538, 547); the generated `docs/diagrams/*`, regenerated at each landing.
-  landing: not-started
-- step: O94
-  brief_check: .scratch/migration/agents/reviews/O94-brief-check.md (a0b48bbc141e6efce, claude-opus-5-5, 183761 tokens, 49 tool uses, 8 min 7 s)
-  base: 5c3847a33
-  worktree: .agents/worktrees/migration-O94
-  executor: agent
-  worker: claude:opus
-  session_id: a842e39268dc6aed0 (claude-opus-5-5)
-  launched: 2026-10-27
-  report: .scratch/migration/agents/reviews/O94-report.md
-  round: 1 (agents/briefs/O94-round1.md: the tree's front matter rule, no idea a sidecar, a name after xx-, a failed write renamed back, the report; round 0 the cases ruled, agents/briefs/O94-cases.md)
-  builder_usage: hand-back of the first run: 133375 tokens, 23 tool uses, 8 min 52 s; after the round-0 ruling: 231386 tokens, 102 tool uses, 35 min 34 s; round 1: 328755 tokens, 79 tool uses, 16 min 10 s
-  reviewer_report: .scratch/migration/agents/reviews/O94-refuter.md (a3d20902e374d2dd1, claude-opus-5-5, 209441 tokens, 56 tool uses, 17 min 47 s); over round 1: running: aaadd9a0ced9cd29d (claude-opus-5-5)
-  shared_paths: with O84, `config/text/server.yml` (O84 under `server.config_key.*`; O94 lines 330-340), and `docs/HELP.md` (O84 Doc text at 288 and 532; O94 332); with O87, `docs/HELP.md` (O87 294, 529, 538, 547) and `docs/templates.md` (O87 64-68, 274-278, 318-332; O94 664-691); the generated `docs/diagrams/*`, regenerated at each landing; simple merges in separate lines.
   landing: not-started
 - step: O88
   brief_check: .scratch/migration/agents/reviews/O88-brief-check.md (ab3a4af18b70f6cab, claude-opus-5-5, 201882 tokens, 80 tool uses, 9 min 22 s; not run again after rulings 461 and 487, as /spec says)
@@ -694,6 +680,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-10-27 (O94 landed; O91 launched; O87 round 1 built). O94 landed on main (booking under its line in `plan.md`, landing report `agents/reviews/O94-landing.md`), hub commit 34232a90b for `.oculus/tasks/linkedin.md`; the review over round 1 closed under "Closed" in `agents/reviews/O94-refuter.md`, its findings fixed at landing. O91's brief check closed in the brief (`agents/reviews/O91-brief-check.md` "Closed"), its builder aee7e1a854ae78fa0 (claude-opus-5-5) launched at base eeafcd4cb; open item 489 (the ten joint-work titles) booked for its hub commit. O87's round 1 built (report saved, usage under builder_usage); the review over the round is next. In flight (3 of 6): O87 round 1 built, review next; O88 building after its cases ruling; O91 building. Open items: 489.
 - 2026-10-27 (O84 landed; O87 and O94 built, both under review). O84 landed on main from base 65f5c83c2 (booking under its line in `plan.md`, landing report `agents/reviews/O84-landing.md`), checked in the gate (one svelte-check error in a test main gained after the base, fixed at landing; vitest time-outs under load in 21 files, each passing alone) and on main (116 staged paths equal under `cmp` to the gate's file); the look taken on the scratch server on 8797, then the server stopped. Ruling 462 carried out: `self: axel-faes` written to the hub's `.oculus/local.yml` by O84's own write, printing nothing of it, and taken out of the workspace file in hub commit 5a7e8e025. O87's report (aa362921271953d08) and O94's report (a842e39268dc6aed0) are saved; their reviews run (O87 a362e1e25ae8483be, O94 a3d20902e374d2dd1, both claude-opus-5-5). O88's brief is written with its brief check's findings closed; its preparation is next, on main with O84. In flight (3 of 6): O87 (review), O94 (review), O88 (preparing). Queued: O90, O91 (now unblocked), O92, O93. Open items: none.
 - 2026-10-26 (O84 reviewed; round 1 sent). The review of O84 (aa3b772655f6267cf, claude-opus-5-5) is saved in `agents/reviews/O84-refuter.md` and recorded under reviewer_report. Round 1 (`agents/briefs/O84-round1.md`, copied into the worktree; snapshot `.agents/worktrees/migration-O84-round-1` with `files.txt`) carries Spec 1 (the refusal names the key, `localProblemAdded` kept by the orchestrator's ruling), Standards 1 to 4, and the report items; Spec 2 is ruled a wrong premise of the brief (a hub's secrets folder is `<hub>/secrets`, still refused). O88's /spec is writing its brief. In flight (2 of 6): O84 (round 1), O88 (preparing). Open items: none.
 - 2026-10-26 (ruling 482; open items 483 to 486). Axel ruled 482 (a): steps O91 to O96 merged into O91 to O94 in `plan.md`, O91 renamed. His points on cards of unequal size, the intro texts, the Pillars kinds and the Map bar are open items 483 to 486. O84 is under review (reviewer aa3b772655f6267cf). The /spec of O88 stopped in its preflight at Axel's word and wrote nothing; Axel then ruled 483 to 486 (a), booked on O88's and O92's lines; no open item is left, and the /spec of O88 runs again.

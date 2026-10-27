@@ -97,13 +97,17 @@ export function snippet(body: unknown): string {
     return `${chars.slice(0, end).join('')}...`;
 }
 
-/** Coerce the folder feed and split it into filename-ordered ideas and newest-first posts. */
+/**
+ * Coerce the folder feed and split it into filename-ordered ideas and newest-first posts. An entry
+ * is an idea when the feed marks it one (`idea: true`): the server marks a file by the name rule
+ * Mark posted promotes by, so the view offers the button on exactly the files the write accepts.
+ */
 export function splitPosts(entries: (Record<string, unknown> | null)[]): SplitLinkedin {
     const parsed = entries
         .filter((entry): entry is Record<string, unknown> => entry !== null)
         .map((entry): LinkedinEntry | null => {
             const file = text(entry, 'file');
-            const idea = file.startsWith('xx-');
+            const idea = entry.idea === true;
             if (!idea && !/^\d+-/.test(file)) return null;
             const root = text(entry, 'root');
             return {

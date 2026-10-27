@@ -73,6 +73,13 @@ date: 2026-08-20
 body
 `;
 
+const NEWEST = `---
+title: The newest post, its suffix in capitals
+date: 2026-09-02
+---
+body
+`;
+
 const IDEA = `---
 title: An unposted idea
 date: 2026-12-31
@@ -86,7 +93,12 @@ describe('the three feeds, all present', () => {
         '.oculus/data/literature/radar.yml': RADAR,
         'site/_linkedin/01-a.md': POST,
         'site/_linkedin/02-b.md': NEWER,
+        'site/_linkedin/03-c.MD': NEWEST,
         'site/_linkedin/xx-idea.md': IDEA
+    });
+
+    it("takes the newest posted date, a post whose suffix is .MD among them and an idea's left out", () => {
+        expect(read.feeds.linkedin).toEqual({ lastPost: '2026-09-02' });
     });
 
     it('keeps the live leads with the ISO date inside their deadline text, dismissed ones out', () => {

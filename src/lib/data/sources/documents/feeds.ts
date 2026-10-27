@@ -111,7 +111,8 @@ function radar(
 }
 
 /**
- * The LinkedIn pipeline: the newest `date:` among the posted files. A file whose name starts `xx`
+ * The LinkedIn pipeline: the newest `date:` among the posted files, each a name ending in `.md` in
+ * any case, as the LinkedIn view and Mark posted read the suffix. A file whose name starts `xx`
  * is an unposted idea and carries no date that counts. The folder lives in the website repository
  * beside the hub, which is a separate checkout, so an absent folder is the ordinary case.
  */
@@ -125,7 +126,7 @@ function linkedin(dir: string, catalog: TextCatalog, findings: Finding[]): Feeds
     }
     const dates: string[] = [];
     for (const name of names.sort()) {
-        if (!name.endsWith('.md') || name.startsWith('xx')) continue;
+        if (!/\.md$/i.test(name) || name.startsWith('xx')) continue;
         let text: string;
         try {
             text = readFileSync(join(dir, name), 'utf8');

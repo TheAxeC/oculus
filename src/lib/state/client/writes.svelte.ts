@@ -517,7 +517,8 @@ export function createWrites(
 
     /**
      * Rename one LinkedIn idea, named by its internal id, and its same-basename sidecars as the
-     * next numbered post, in the folder of the hub the idea is of.
+     * next numbered post, in the folder of the hub the idea is of, and set the post's `date:` to
+     * the day of the press and its `publish:` to `True`.
      */
     async function markPosted(id: string): Promise<WriteAnswer> {
         return send({ kind: 'linkedin-post', id });

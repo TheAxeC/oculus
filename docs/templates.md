@@ -664,20 +664,18 @@ End with the number of threads on the plate and the count of each `kind` written
 
 ### .oculus/tasks/linkedin.md
 
-LinkedIn says whether a post is due and drafts one into the posts folder, which the LinkedIn view draws.
+LinkedIn drafts a post into the posts folder, which the LinkedIn view draws; the view's Mark posted records the post once it is made.
 
 ```markdown
-# LinkedIn: post nudge and draft
+# LinkedIn: draft a post
 
-This file is the whole instruction for one run of the LinkedIn update task. The posts are the folder `linkedin_dir` of `.oculus/config.yml` names: `NN-<slug>.md` is a post made, with `title`, `date`, `category` and `publish` in its front matter, and `xx-<slug>.md` an idea. This task drafts; it never posts.
+This file is the whole instruction for one run of the LinkedIn update task. The posts are the folder `linkedin_dir` of `.oculus/config.yml` names: `NN-<slug>.md` is a post made, with `title`, `date`, `category` and `publish` in its front matter, and `xx-<slug>.md` an idea. This task drafts and never posts; the LinkedIn view's Mark posted records a post once it is made.
 
 ## Steps
 
-1. Count the days since the `date:` of the newest posted file, against `linkedin_cadence_days` of `focus:` in oculus's `behavior.yml` (30 by default), and say whether a post is due.
-2. Pick a topic: the most timely `xx-` idea, or a real milestone of a project (read its `project.yml` and `README.md`).
-3. Draft the post in <the voice and the length to write in>, and show it for review.
-4. On request, save the draft as `xx-<slug>.md` with `publish: False`.
-5. When the post is made, rename the file to the next `NN-<slug>.md` and set `date:` to the day it was posted and `publish: True`.
+1. Pick a topic: the most timely `xx-` idea, or a real milestone of a project (read its `project.yml` and `README.md`).
+2. Draft the post in <the voice and the length to write in>, and show it for review.
+3. On request, save the draft as `xx-<slug>.md` with `publish: False`.
 
 ## Guardrails
 
@@ -687,7 +685,7 @@ This file is the whole instruction for one run of the LinkedIn update task. The 
 
 ## Finish
 
-End with the days since the last post against the target, and the path of any file written or renamed.
+End with the path of any file written.
 ```
 
 ## project.yml

@@ -372,7 +372,10 @@ export type WritesStore = {
         root?: string
     ) => Promise<WriteAnswer>;
     addLinkedinIdea: (fields: Record<string, unknown>) => Promise<WriteAnswer>;
-    /** Promote one LinkedIn idea, named by its internal id, to the next numbered post. */
+    /**
+     * Rename one LinkedIn idea, named by its internal id, to the next numbered post, and set its
+     * `date:` to the day of the press and its `publish:` to `True`.
+     */
     markPosted: (id: string) => Promise<WriteAnswer>;
     writeDeckSlides: (
         deck: { root: string; path: string },

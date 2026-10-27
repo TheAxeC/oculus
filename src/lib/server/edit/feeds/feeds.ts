@@ -18,6 +18,7 @@ import { openWord } from '../../../data/accounts/leads.ts';
 import { localDate } from '../../../data/helpers/dates.ts';
 import { isMap, scalar, slugOf } from '../../../data/helpers/guards.ts';
 import { ideaStub } from '../../../data/prose/linkedin-idea.ts';
+import { splitFrontmatter } from '../../../data/sources/documents/docs.ts';
 import { feedPrimaryKey } from '../../../data/helpers/hub-names.ts';
 import { primaryKeyOf } from '../../../data/model/index.ts';
 import { keyFaultOf } from '../../../data/model/model-collections.ts';
@@ -173,16 +174,18 @@ export function buildFeeds(hub: string | null, config: PortfolioConfig): FeedsPa
 }
 
 /**
- * One small Markdown front matter block and the prose after its closing fence. A key the block does
- * not hold is not in the answer, so every reader of one falls back for itself.
+ * One small Markdown front matter block and the prose after its closing fence. The block is the
+ * one the tree's split, `splitFrontmatter`, finds, the same block Mark posted dates, so the view
+ * lists a front matter exactly where the write can date one. A key the block does not hold is not
+ * in the answer, so every reader of one falls back for itself.
  */
 export function linkedinFrontMatter(
     source: string
 ): Record<string, string | undefined> & { body: string } {
-    const matched = /^\s*---\s*\r?\n([\s\S]*?)\r?\n---(?:\r?\n)?/.exec(source);
+    const { block, body } = splitFrontmatter(source);
     const fields: Record<string, string> = {};
-    if (matched !== null) {
-        for (const line of matched[1].split(/\r?\n/)) {
+    if (block !== null) {
+        for (const line of block.split(/\r?\n/)) {
             const split = line.indexOf(':');
             if (split < 0) continue;
             const key = line.slice(0, split).trim();
@@ -200,17 +203,27 @@ export function linkedinFrontMatter(
     }
     return {
         ...fields,
-        body: (matched === null ? source : source.slice(matched[0].length)).trim()
+        body: body.trim()
     };
 }
 
-/** A flat LinkedIn post or idea filename, with a case-insensitive Markdown suffix. */
+/**
+ * Whether a file's base name is a LinkedIn idea: `xx-`, at least one character, then `.md` in any
+ * case, with no path separator. The folder's feed marks each entry by it (`idea`), the LinkedIn
+ * view offers Mark posted on the entries so marked, and Mark posted promotes only such a file.
+ */
+function isLinkedinIdea(name: string): boolean {
+    return /^xx-[^/\\]+\.[mM][dD]$/.test(name);
+}
+
+/**
+ * A flat LinkedIn post or idea filename, with a case-insensitive Markdown suffix: an idea by
+ * `isLinkedinIdea`, or a name that starts with a number and a dash.
+ */
 export function isLinkedinFile(file: string | null): boolean {
     return (
         file !== null &&
-        !/[/\\]/.test(file) &&
-        /\.md$/i.test(file) &&
-        (file.startsWith('xx-') || /^\d+-/.test(file))
+        (isLinkedinIdea(file) || (!/[/\\]/.test(file) && /\.md$/i.test(file) && /^\d+-/.test(file)))
     );
 }
 
@@ -230,7 +243,7 @@ function readLinkedinFolder(folder: string, config: PortfolioConfig): FeedRead {
                 date: parsed.date ?? '',
                 category: parsed.category ?? '',
                 body: parsed.body,
-                idea: file.startsWith('xx-')
+                idea: isLinkedinIdea(file)
             };
         });
     return {
@@ -305,15 +318,113 @@ export function addLinkedinIdea(
     };
 }
 
-/** Rename an idea and each same-basename sidecar to the next numbered post basename. */
+/**
+ * A front matter line whose key, at column 0, is exactly `date` or exactly `publish`, bare or in
+ * quotes; `published:` and an indented `date:` are not one.
+ */
+const POST_KEY = /^(["']?)(date|publish)\1[ \t]*:(?=[ \t]|$)/;
+
+/**
+ * The text of an idea once posted on `day`. The front matter is the block the tree's split,
+ * `splitFrontmatter`, finds, the one the LinkedIn view reads through `linkedinFrontMatter`: an
+ * opening `---` line at the very start, a closing `---` or `...` line, each fence followed by
+ * spaces or tabs only, and lines that may end in CRLF. In it, each `date` and `publish` line is
+ * replaced by `date: <day>` and `publish: True`, and a key the block lacks is added at its end,
+ * before the closing fence, `publish` first, as the idea stub orders them. A replaced line keeps
+ * its own line end and an added line takes the opening fence's, so a CRLF file stays CRLF. Every
+ * other byte stays as it was: the fences, the other lines, and the body with its own `date:`
+ * lines. Null when the split finds no block, a file that opens with a byte order mark included.
+ */
+function postedText(text: string, day: string): string | null {
+    const { block, body } = splitFrontmatter(text);
+    if (block === null) return null;
+    const open = text.slice(0, text.indexOf('\n') + 1);
+    const close = text.slice(open.length + block.length, text.length - body.length);
+    const end = open.endsWith('\r\n') ? '\r\n' : '\n';
+    const seen = new Set<string>();
+    const lines = (block === '' ? [] : block.split(/(?<=\n)/)).map((line) => {
+        const content = line.replace(/\r?\n$/, '');
+        const key = POST_KEY.exec(content)?.[2];
+        if (key === undefined) return line;
+        seen.add(key);
+        return `${key === 'date' ? `date: ${day}` : 'publish: True'}${line.slice(content.length)}`;
+    });
+    const added = [
+        ...(seen.has('publish') ? [] : [`publish: True${end}`]),
+        ...(seen.has('date') ? [] : [`date: ${day}${end}`])
+    ];
+    return [open, ...lines, ...added, close, body].join('');
+}
+
+/**
+ * Whether a posted text's front matter reads back with `date` the day and `publish` true. The block
+ * is parsed here rather than by `parseFrontmatter`, which refuses a key written twice; such a key
+ * reads back, since `postedText` gave both of its lines the same value.
+ */
+function readsPosted(text: string, day: string): boolean {
+    const { block } = splitFrontmatter(text);
+    if (block === null) return false;
+    try {
+        const held: unknown = parse(block, { uniqueKeys: false });
+        return isMap(held) && held.date === day && held.publish === true;
+    } catch {
+        return false;
+    }
+}
+
+/**
+ * Undo a promotion that stopped part way: each moved sidecar renamed back, the post's text
+ * written back when it differs from the idea's, and the post renamed back to the idea's name. Each
+ * step runs whatever the step before it did, so a step that throws still leaves the others done;
+ * its error is dropped, since the caller passes on the error that stopped the promotion, which
+ * names the cause.
+ */
+function putIdeaBack(
+    folder: string,
+    moving: readonly string[],
+    targets: readonly string[],
+    moved: readonly number[],
+    post: string,
+    source: string,
+    before: string
+): void {
+    const steps = [
+        ...[...moved]
+            .reverse()
+            .map((at) => () => renameSync(join(folder, targets[at]), join(folder, moving[at]))),
+        () => {
+            if (readFileSync(post, 'utf8') !== before) writeTextAtomic(post, before);
+        },
+        () => renameSync(post, source)
+    ];
+    for (const step of steps) {
+        try {
+            step();
+        } catch {
+            // The next step still runs; the promotion's own error reaches the page.
+        }
+    }
+}
+
+/**
+ * Promote an idea to the next numbered post: the idea is renamed, its front matter given the day
+ * of the press as `date:` and `True` as `publish:`, then each same-basename sidecar is renamed. An
+ * idea is a base name `isLinkedinIdea` accepts, the rule the LinkedIn view offers the button by. A
+ * sidecar is a file whose name is the idea's without `.md` followed by a dot, unless that name is
+ * itself an idea, which is never moved with another. Every refusal is decided before any file
+ * moves. The idea is renamed first and written in place, so the post keeps the idea's file mode
+ * and the idea and the post are never both listed. When the write or a sidecar's rename throws,
+ * the moved sidecars are renamed back, the post's old text is written back and the post is renamed
+ * back to the idea's name, so the folder is as it was before the press, and the error that stopped
+ * the promotion is passed on.
+ */
 export function markLinkedinPosted(
     hub: string,
     config: PortfolioConfig,
     fileValue: unknown
 ): WriteOutcome {
     const file = typeof fileValue === 'string' ? basename(fileValue) : '';
-    const matched = /^xx-([a-z0-9]+(?:-[a-z0-9]+)*)\.md$/.exec(file);
-    if (matched === null || file !== fileValue) {
+    if (!isLinkedinIdea(file) || file !== fileValue) {
         return outcome(
             [],
             [{ field: 'file', reason: words(config.text, 'server.feeds.post_needs_idea') }]
@@ -331,23 +442,44 @@ export function markLinkedinPosted(
         return number === null ? value : Math.max(value, Number(number[1]));
     }, 0);
     const prefix = String(highest + 1).padStart(2, '0');
-    const stem = `xx-${matched[1]}`;
-    const moving = names.filter((name) => name === file || name.startsWith(`${stem}.`));
-    const targets = moving.map((name) => `${prefix}-${name.slice(3)}`);
+    const stem = file.slice(0, -'.md'.length);
+    const moving = names.filter(
+        (name) => name === file || (name.startsWith(`${stem}.`) && !isLinkedinIdea(name))
+    );
+    const targets = moving.map((name) => `${prefix}-${name.slice('xx-'.length)}`);
+    const refusal = (reason: string): WriteOutcome => outcome([], [{ field: 'file', reason }]);
+    // The highest number of the folder sets the next, so a target exists only when a file was made
+    // between the listing and this check.
     if (targets.some((name) => existsSync(join(folder, name)))) {
-        return outcome(
-            [],
-            [{ field: 'file', reason: words(config.text, 'server.feeds.post_exists') }]
-        );
+        return refusal(words(config.text, 'server.feeds.post_exists'));
     }
-    moving.forEach((name, at) => renameSync(join(folder, name), join(folder, targets[at])));
-    // A promotion renames the idea and its sidecars; there is no writer that renames them back, so
-    // the record names both lists and offers no way back.
+    const day = localDate(Date.now());
+    const before = readFileSync(source, 'utf8');
+    const after = postedText(before, day);
+    if (after === null) return refusal(words(config.text, 'server.feeds.post_no_front_matter'));
+    if (!readsPosted(after, day)) return refusal(words(config.text, 'server.feeds.post_not_dated'));
+    const post = join(folder, targets[moving.indexOf(file)]);
+    renameSync(source, post);
+    const moved: number[] = [];
+    try {
+        if (after !== before) writeTextAtomic(post, after);
+        moving.forEach((name, at) => {
+            if (name === file) return;
+            renameSync(join(folder, name), join(folder, targets[at]));
+            moved.push(at);
+        });
+    } catch (error) {
+        putIdeaBack(folder, moving, targets, moved, post, source, before);
+        throw error;
+    }
+    // A promotion renames the idea and its sidecars and dates the post; there is no writer that
+    // renames them back or restores the old front matter, so the record names both lists of names
+    // and offers no way back.
     return {
         ...outcome(['file']),
         records: [
             {
-                file: join(folder, targets[moving.indexOf(file)]),
+                file: post,
                 key: file,
                 field: 'entries',
                 before: moving,

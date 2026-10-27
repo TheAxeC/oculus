@@ -1,6 +1,5 @@
-In flight (4 of 6 slots in use):
-- O87 (the Focus band's positions and teaching, and the dated lines in Tasks), repair round 1 building (agents/briefs/O87-round1.md).
-- O94 (LinkedIn's Mark posted), repair round 1 built; review over the round running.
+In flight (3 of 6 slots in use):
+- O87 (the Focus band's positions and teaching, and the dated lines in Tasks), repair round 1 built; review over the round next, after O94's landing commit.
 - O88 (one heading, one card grid, no intro paragraph, Pillars by kind, and the app theme that failed to load), building after the round-0 ruling of its cases (agents/briefs/O88-cases.md; base 85a826ca6).
 - O91 (joint work onto the people file, and the projects on people's, organisations' and resources' cards), building (base eeafcd4cb). Its hub commit at landing waits on open item 489.
 
@@ -14,6 +13,7 @@ Waiting on a ruling: open item 489 (the ten joint-work titles), for O91's hub co
 Owed looks: none.
 
 Landed, newest first:
+- O94 (LinkedIn's Mark posted), 2026-10-27; hub 34232a90b.
 - O84 (who the user is), 2026-10-27, 813bf6e6; hub 5a7e8e025.
 - O86 (the update tasks of every hub), 2026-10-26, bf60e137.
 - O89 (one record card, one way to add a dated line), 2026-10-26, 7f7249ab.

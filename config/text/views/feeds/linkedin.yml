@@ -15,13 +15,13 @@ text:
         idea_tag: idea
         ideas_hdr: Ideas ({0})
         markpost: Mark posted
-        markpost_tip: mark posted - rename xx- to the next number
+        markpost_tip: rename to the next number, set date to today and publish to True
         no_dates: no dated posts
         no_folder: The LinkedIn folder {0} is not in the hub.
         no_ideas: No ideas yet.
         no_posts: No posts yet.
         nudge: 'Run LinkedIn from the Update tray to draft one; a ready idea:'
-        ontrack: last post {0}d ago - on track
+        ontrack: last post {0}d ago, on track
         overdue: '{0} days since last post (target: every {1}d)'
         postdue: Post-due.
         posted_hdr: Posted ({0})

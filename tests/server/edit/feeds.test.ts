@@ -3,14 +3,15 @@
 // A case that takes 100 ms or more in a run of its own, starts a process or waits on a timer is
 // tagged slow.
 
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join, resolve, sep } from 'node:path';
 import { parse } from 'yaml';
-import { describe, expect } from 'vitest';
+import { describe, expect, vi } from 'vitest';
 import {
     addLead,
     addLinkedinIdea,
     deleteFeedEntry,
+    linkedinFrontMatter,
     markLinkedinPosted,
     writeFeedField
 } from '../../../src/lib/server/edit/feeds/feeds.ts';
@@ -21,6 +22,18 @@ import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
 import { words } from '../../../src/lib/server/core/words.ts';
 import type { FeedKind, PortfolioConfig } from '../../../src/lib/data/model/index.ts';
 import { it, scratchDir } from '../../fixtures/scratch.ts';
+
+// The atomic writer and the rename as they are, each wrapped so that a row can make one call
+// throw, so a write or a sidecar's rename that fails after the idea's rename is met without
+// breaking a disk.
+vi.mock('../../../src/lib/server/core/json.ts', async (original) => {
+    const actual = await original<typeof import('../../../src/lib/server/core/json.ts')>();
+    return { ...actual, writeTextAtomic: vi.fn(actual.writeTextAtomic) };
+});
+vi.mock('node:fs', async (original) => {
+    const actual = await original<typeof import('node:fs')>();
+    return { ...actual, renameSync: vi.fn(actual.renameSync) };
+});
 
 const FILES: Record<FeedKind, string> = {
     radar: 'fixture/radar.yml',
@@ -89,6 +102,256 @@ function fixture(): { hub: string; config: PortfolioConfig } {
     return { hub, config };
 }
 
+/** The names of the fixture's LinkedIn folder, sorted. */
+const FOLDER = [
+    '01-A-reflection.md',
+    'README.md',
+    'draft-another.md',
+    'xx-easy-problems.jpeg',
+    'xx-easy-problems.md'
+];
+
+/** The fixture's folder once `xx-easy-problems` and its sidecar are the post numbered 02. */
+const POSTED = [
+    '01-A-reflection.md',
+    '02-easy-problems.jpeg',
+    '02-easy-problems.md',
+    'README.md',
+    'draft-another.md'
+];
+
+/** The moment every row of the Mark posted table presses the button, at local noon. */
+const PRESSED = new Date(2026, 9, 27, 12);
+
+/**
+ * One Mark posted of the table: the idea's name, the text written into it (the fixture's own when
+ * none) and the files planted beside it, then the numbered post with its whole text or the key of
+ * the refusal. `names` is the folder after the press, sorted. Every row presses the button on the
+ * day `PRESSED` fixes.
+ */
+type PostRow = {
+    name: string;
+    idea: string;
+    text?: string;
+    plant?: Record<string, string>;
+    post?: { file: string; text: string };
+    refused?: string;
+    names: string[];
+};
+
+/**
+ * One Mark posted that fails after the idea's rename: the message of the error thrown by the write
+ * of the post's text, or by the rename of the sidecar `on` names when it is given.
+ */
+type ThrowRow = { name: string; throws: string; on?: string };
+
+const THROW_ROWS: ThrowRow[] = [
+    { name: 'a text that cannot be written after the rename', throws: 'the disk is full' },
+    {
+        name: "a sidecar that cannot be renamed after the post's text is written",
+        throws: 'the sidecar is locked',
+        on: 'xx-easy-problems.jpeg'
+    }
+];
+
+/**
+ * The Mark posted writer loaded afresh with the wrapped writer and rename it then reads. A run that
+ * shares its modules between files (npm run test:quick) may have loaded the writer for another
+ * file with the real ones, which a row could not then make throw.
+ */
+async function freshWriter() {
+    vi.resetModules();
+    const json = await import('../../../src/lib/server/core/json.ts');
+    const fs = await import('node:fs');
+    const feeds = await import('../../../src/lib/server/edit/feeds/feeds.ts');
+    return {
+        write: vi.mocked(json.writeTextAtomic),
+        rename: vi.mocked(fs.renameSync),
+        mark: feeds.markLinkedinPosted
+    };
+}
+
+const POST_ROWS: PostRow[] = [
+    {
+        name: "the fixture's idea, its date replaced and publish added",
+        idea: 'xx-easy-problems.md',
+        post: {
+            file: '02-easy-problems.md',
+            text: '---\ntitle: "Easy problems"\ncategory: research\ndate: 2026-10-27\npublish: True\n---\n\nIdea body.\n'
+        },
+        names: POSTED
+    },
+    {
+        name: "the stub's front matter with publish: False",
+        idea: 'xx-easy-problems.md',
+        text: '---\nlayout: post\ntitle: "Stub"\ncategory: "research"\npublish: False\ndate: 2026-08-04\n---\n\nBody.\n',
+        post: {
+            file: '02-easy-problems.md',
+            text: '---\nlayout: post\ntitle: "Stub"\ncategory: "research"\npublish: True\ndate: 2026-10-27\n---\n\nBody.\n'
+        },
+        names: POSTED
+    },
+    {
+        name: 'a quoted date',
+        idea: 'xx-easy-problems.md',
+        text: '---\ntitle: "T"\npublish: True\ndate: "2025-02-12"\n---\n\nBody.\n',
+        post: {
+            file: '02-easy-problems.md',
+            text: '---\ntitle: "T"\npublish: True\ndate: 2026-10-27\n---\n\nBody.\n'
+        },
+        names: POSTED
+    },
+    {
+        name: 'a quoted date key',
+        idea: 'xx-easy-problems.md',
+        text: '---\ntitle: "T"\n"publish": False\n"date": 2025-02-12\n---\n\nBody.\n',
+        post: {
+            file: '02-easy-problems.md',
+            text: '---\ntitle: "T"\npublish: True\ndate: 2026-10-27\n---\n\nBody.\n'
+        },
+        names: POSTED
+    },
+    {
+        name: 'a date line in the body',
+        idea: 'xx-easy-problems.md',
+        text: '---\ntitle: "T"\npublish: True\ndate: 2026-09-12\n---\n\ndate: 2020-01-01\n',
+        post: {
+            file: '02-easy-problems.md',
+            text: '---\ntitle: "T"\npublish: True\ndate: 2026-10-27\n---\n\ndate: 2020-01-01\n'
+        },
+        names: POSTED
+    },
+    {
+        name: 'no front matter',
+        idea: 'xx-easy-problems.md',
+        text: 'Idea body.\n',
+        refused: 'server.feeds.post_no_front_matter',
+        names: FOLDER
+    },
+    {
+        name: 'a front matter that holds publish: True and the day',
+        idea: 'xx-easy-problems.md',
+        text: '---\nlayout: post\ntitle: "Done"\ncategory: "research"\npublish: True\ndate: 2026-10-27\n---\n\nBody.\n',
+        post: {
+            file: '02-easy-problems.md',
+            text: '---\nlayout: post\ntitle: "Done"\ncategory: "research"\npublish: True\ndate: 2026-10-27\n---\n\nBody.\n'
+        },
+        names: POSTED
+    },
+    {
+        name: 'a date line written twice',
+        idea: 'xx-easy-problems.md',
+        text: '---\ntitle: "T"\ndate: 2025-02-12\npublish: False\ndate: 2025-02-12\n---\n\nBody.\n',
+        post: {
+            file: '02-easy-problems.md',
+            text: '---\ntitle: "T"\ndate: 2026-10-27\npublish: True\ndate: 2026-10-27\n---\n\nBody.\n'
+        },
+        names: POSTED
+    },
+    {
+        name: 'a front matter with neither key',
+        idea: 'xx-easy-problems.md',
+        text: '---\ntitle: "T"\n---\n',
+        post: {
+            file: '02-easy-problems.md',
+            text: '---\ntitle: "T"\npublish: True\ndate: 2026-10-27\n---\n'
+        },
+        names: POSTED
+    },
+    {
+        name: 'a front matter that never closes',
+        idea: 'xx-easy-problems.md',
+        text: '---\ntitle: "T"\n\nBody.\n',
+        refused: 'server.feeds.post_no_front_matter',
+        names: FOLDER
+    },
+    {
+        name: 'a front matter that does not parse',
+        idea: 'xx-easy-problems.md',
+        text: '---\ntitle: "T\ndate: 2025-02-12\n---\n\nBody.\n',
+        refused: 'server.feeds.post_not_dated',
+        names: FOLDER
+    },
+    {
+        name: 'an idea name with capitals',
+        idea: 'xx-leadingAIinHealth.md',
+        text: '---\ntitle: "Leading AI"\npublish: True\ndate: 2025-02-12\n---\n\nBody.\n',
+        post: {
+            file: '02-leadingAIinHealth.md',
+            text: '---\ntitle: "Leading AI"\npublish: True\ndate: 2026-10-27\n---\n\nBody.\n'
+        },
+        names: [...FOLDER, '02-leadingAIinHealth.md'].sort()
+    },
+    {
+        name: 'a published: key beside the date',
+        idea: 'xx-easy-problems.md',
+        text: '---\ntitle: "T"\npublished: false\ndate: 2025-02-12\n---\n\nBody.\n',
+        post: {
+            file: '02-easy-problems.md',
+            text: '---\ntitle: "T"\npublished: false\ndate: 2026-10-27\npublish: True\n---\n\nBody.\n'
+        },
+        names: POSTED
+    },
+    {
+        name: 'fence lines with trailing blanks',
+        idea: 'xx-easy-problems.md',
+        text: '---\t\ntitle: "T"\ndate: 2025-02-12\n--- \n\nBody.\n',
+        post: {
+            file: '02-easy-problems.md',
+            text: '---\t\ntitle: "T"\ndate: 2026-10-27\npublish: True\n--- \n\nBody.\n'
+        },
+        names: POSTED
+    },
+    {
+        name: 'a front matter closed by ...',
+        idea: 'xx-easy-problems.md',
+        text: '---\ntitle: "T"\npublish: False\ndate: 2025-02-12\n...\n\nBody.\n',
+        post: {
+            file: '02-easy-problems.md',
+            text: '---\ntitle: "T"\npublish: True\ndate: 2026-10-27\n...\n\nBody.\n'
+        },
+        names: POSTED
+    },
+    {
+        name: 'CRLF line ends',
+        idea: 'xx-easy-problems.md',
+        text: '---\r\ntitle: "T"\r\npublish: False\r\ndate: 2025-02-12\r\n---\r\n\r\nBody.\r\n',
+        post: {
+            file: '02-easy-problems.md',
+            text: '---\r\ntitle: "T"\r\npublish: True\r\ndate: 2026-10-27\r\n---\r\n\r\nBody.\r\n'
+        },
+        names: POSTED
+    },
+    {
+        name: 'CRLF line ends and neither key',
+        idea: 'xx-easy-problems.md',
+        text: '---\r\ntitle: "T"\r\n---\r\n',
+        post: {
+            file: '02-easy-problems.md',
+            text: '---\r\ntitle: "T"\r\npublish: True\r\ndate: 2026-10-27\r\n---\r\n'
+        },
+        names: POSTED
+    },
+    {
+        name: 'an idea beside another idea whose name starts with its own',
+        idea: 'xx-a.md',
+        text: '---\ntitle: "A"\n---\n',
+        plant: { 'xx-a.png': 'image', 'xx-a.b.md': '---\ntitle: "B"\n---\n' },
+        post: {
+            file: '02-a.md',
+            text: '---\ntitle: "A"\npublish: True\ndate: 2026-10-27\n---\n'
+        },
+        names: [...FOLDER, '02-a.md', '02-a.png', 'xx-a.b.md'].sort()
+    },
+    {
+        name: 'xx-.md, which names no idea',
+        idea: 'xx-.md',
+        text: '---\ntitle: "T"\n---\n',
+        refused: 'server.feeds.post_needs_idea',
+        names: [...FOLDER, 'xx-.md'].sort()
+    }
+];
+
 describe('feed writes', () => {
     it(
         'adds a dated LinkedIn idea with a safe slug and numbered collision suffix',
@@ -119,6 +382,29 @@ describe('feed writes', () => {
         }
     );
 
+    it.each([
+        {
+            name: 'a block closed by ...',
+            text: '---\ntitle: "T"\ndate: 2026-10-27\n...\nbody\n',
+            date: '2026-10-27'
+        },
+        {
+            name: 'a blank line before the fence',
+            text: '\n---\ntitle: "T"\ndate: 2025-02-12\n---\nbody\n',
+            date: undefined
+        },
+        {
+            name: 'a byte order mark',
+            text: `${String.fromCharCode(0xfeff)}---\ntitle: "T"\ndate: 2025-02-12\n---\nbody\n`,
+            date: undefined
+        }
+    ])(
+        'the LinkedIn view reads the front matter Mark posted can date, and no other: $name',
+        (row) => {
+            expect(linkedinFrontMatter(row.text).date).toBe(row.date);
+        }
+    );
+
     it('promotes an idea past 01-A and moves its same-basename sidecar', () => {
         const into = fixture();
         const folder = join(into.hub, FILES.linkedin);
@@ -142,6 +428,75 @@ describe('feed writes', () => {
         expect(existsSync(join(folder, 'xx-easy-problems.md'))).toBe(false);
         expect(existsSync(join(folder, 'xx-easy-problems.jpeg'))).toBe(false);
     });
+
+    it.each(POST_ROWS)(
+        'marks an idea posted with the day pressed and publish: True, or refuses and moves nothing: $name',
+        (row) => {
+            const into = fixture();
+            const folder = join(into.hub, FILES.linkedin);
+            const idea = join(folder, row.idea);
+            if (row.text !== undefined) writeFileSync(idea, row.text);
+            for (const [name, body] of Object.entries(row.plant ?? {})) {
+                writeFileSync(join(folder, name), body);
+            }
+            const text = readFileSync(idea, 'utf8');
+            vi.useFakeTimers({ toFake: ['Date'] });
+            try {
+                vi.setSystemTime(PRESSED);
+                const outcome = markLinkedinPosted(into.hub, into.config, row.idea);
+                expect(readdirSync(folder).sort()).toEqual(row.names);
+                if (row.post === undefined) {
+                    expect(outcome).toEqual({
+                        found: true,
+                        changed: [],
+                        refused: [
+                            { field: 'file', reason: words(into.config.text, row.refused ?? '') }
+                        ]
+                    });
+                    expect(readFileSync(idea, 'utf8')).toBe(text);
+                } else {
+                    expect(outcome.refused).toEqual([]);
+                    expect(readFileSync(join(folder, row.post.file), 'utf8')).toBe(row.post.text);
+                }
+            } finally {
+                vi.useRealTimers();
+            }
+        }
+    );
+
+    it.each(THROW_ROWS)(
+        'puts the folder back as it was and passes the error on when a step after the rename throws: $name',
+        async (row) => {
+            const into = fixture();
+            const folder = join(into.hub, FILES.linkedin);
+            const idea = join(folder, 'xx-easy-problems.md');
+            const text = readFileSync(idea, 'utf8');
+            const fresh = await freshWriter();
+            const error = new Error(row.throws);
+            const on = row.on;
+            try {
+                if (on === undefined) {
+                    fresh.write.mockImplementationOnce(() => {
+                        throw error;
+                    });
+                } else {
+                    const rename = fresh.rename.getMockImplementation();
+                    fresh.rename.mockImplementation((from, to) => {
+                        if (String(from).endsWith(on)) throw error;
+                        rename?.(from, to);
+                    });
+                }
+                expect(() => fresh.mark(into.hub, into.config, 'xx-easy-problems.md')).toThrow(
+                    row.throws
+                );
+                expect(readdirSync(folder).sort()).toEqual(FOLDER);
+                expect(readFileSync(idea, 'utf8')).toBe(text);
+            } finally {
+                fresh.write.mockReset();
+                fresh.rename.mockReset();
+            }
+        }
+    );
 
     it('adds a lead in schema order with date and status defaults', () => {
         const into = fixture();

@@ -64,15 +64,15 @@ text:
             feed-delete: Delete a feed item, asking you first.
             lead-add: Add a lead.
             radar-add: Add a paper to the radar.
-            linkedin-idea: Move a LinkedIn idea, asking you first.
-            linkedin-post: Move a LinkedIn post, asking you first.
+            linkedin-idea: Add a LinkedIn idea, asking you first.
+            linkedin-post: Mark a LinkedIn idea as posted, asking you first.
             new-idea: Create an idea project, asking you first.
         ask:
             delete-entry: delete an entry of a collection
             feed-delete: delete a feed item
             new-idea: create an idea project
-            linkedin-idea: move a LinkedIn idea
-            linkedin-post: move a LinkedIn post
+            linkedin-idea: add a LinkedIn idea
+            linkedin-post: mark a LinkedIn idea as posted
         changed: This app changed since you approved it. Read what it asks for again and approve it to run it.
         load_failed: The app did not answer in time.
         approve_failed: 'The approval was not saved: {0}'

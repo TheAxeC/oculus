@@ -335,6 +335,8 @@ text:
             path_outside: 'The {0} feed path is outside the hub.'
             post_exists: The numbered LinkedIn post exists already.
             post_needs_idea: A LinkedIn post must name an xx-*.md idea.
+            post_no_front_matter: The LinkedIn idea has no front matter between two --- lines.
+            post_not_dated: "The LinkedIn idea's front matter did not read back with the new date and publish: True."
             relevance_unknown: The relevance is high, med or low.
         fork:
             name: fork of {0}
