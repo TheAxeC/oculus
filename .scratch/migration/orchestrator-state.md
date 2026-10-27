@@ -202,7 +202,7 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
-- 517 (2026-10-27, O97's /spec, the second stop): the shapes ruling 511 leaves unnamed, in full with their options under O97's Step 0 in `plan.md`: (1) the request keys of a reader row beyond ruling 511's eleven ((a) named keys, with worked rows for every literature and Recover source, recommended; (b) request templates in a template language); (2) the venue fields the browser fills ((a) `issn`, `fee`, `open_access` on the entry, recommended; (b) `issn` and a `browser:` map keyed by the browser); (3) how the rows are edited in Settings ((a) a `yaml` control in Monaco checked against the row's JSON Schema, recommended; (b) nested forms). The lazy option of each, not offered, is named there. Status: all three parts are Axel's; nothing picked automatically.
+- 517 (2026-10-27, O97's /spec, the second stop): (1) and (2) ruled by Axel, (a) each, booked in `plan.md` Rulings; (3) open: how the service rows are edited in Settings. Axel rejected (a), a YAML editor per row in Settings, and (b), nested forms; raised again with (c), Settings showing each service's everyday settings (on or off, the key row, the address) and an "Edit in .oculus/config.yml" control opening the row's request part in a source tab, checked there by a schema O97 adds for the file, recommended. Status: (3) is Axel's; nothing picked automatically.
 
 
 ## Closed items
