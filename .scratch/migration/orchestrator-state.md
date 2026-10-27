@@ -33,9 +33,9 @@ dispatch:          # steps in flight, up to six (Z632)
   session_id: a8009799d26d93fad (claude-opus-5-5)
   launched: 2026-10-27
   builder_usage: round 0 hand-back 270291 tokens, 64 tool uses, 8 min 52 s; build after the round-0 ruling 260477 tokens, 226 tool uses, 42 min 32 s
-  round: 0
+  round: 1
   report: .scratch/migration/agents/reviews/O95-report.md
-  reviewer_report: "running: a2941302c62abd230 (claude-opus-5-5)"
+  reviewer_report: "agents/reviews/O95-refuter.md (a2941302c62abd230, claude-opus-5-5, tokens not read, 82 tool uses, 20 min 42 s)"
   landing: not-started
 - step: O96
   brief_check: "agents/reviews/O96-brief-check.md (ad36c99e52ba380ff, claude-opus-5-5, 234840 tokens, 61 tool uses, 8 min 47 s)"
@@ -203,10 +203,10 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
-- 517 (2026-10-27, O97's /spec, the second stop): (1) and (2) ruled by Axel, (a) each, booked in `plan.md` Rulings; (3) rejected by Axel in all its options and raised again as open item 518.
-
+- 523 (2026-10-27, O95's review, finding S1): O95's builder wrote a case-run program in its scratchpad, with no approval in `plan.md` Rulings, and its report gives that program's output as the first run of cases 1 to 8 on the unchanged tree; the program is removed, so it cannot be rerun. Options: (a) the program's output is not used; cases 1 to 8 rest on the G124 rows, which pass on the step's tree and which the reviewer read as failing without the behaviour, and the booking says no first run on the unchanged tree exists for them; (b) the program is approved after the fact and its output kept as the first run. Pros of (a): nothing unapproved is used. Cons of (a): the cases have no recorded run on the unchanged tree. Pros of (b): the first run stays on record. Cons of (b): the record is the output of a program nobody can rerun. Recommended: (a). Lazy option: (b). Status: Axel's.
 
 ## Closed items
+- 517 (2026-10-27): (1) and (2) ruled by Axel, (a) each, booked in `plan.md` Rulings; (3) raised again as 518, which Axel ruled.
 - 518 (2026-10-27): ruled by Axel, (1) (a), (2) (b); booked in `plan.md` Rulings.
 - 519 (2026-10-27): ruled by Axel, (a); O99 booked before O97 in `plan.md` and in Rulings.
 - 520 (2026-10-27): ruled by Axel, (a) and (b) together; booked in `plan.md` Rulings.

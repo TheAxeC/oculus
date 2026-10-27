@@ -1,0 +1,14 @@
+# O95 repair round 1
+
+The review is `agents/reviews/O95-refuter.md`. Each item below is a ruling; do it, run the checks of your brief's "Verify before you report" again for the files you change, and append "## Repair round 1" to your report with each item's change and the quoted check lines. Run no whole-suite command. Never revert, remove or break code to watch a test fail: a run before a change is a run on your current tree before you make that change.
+
+1. Ruling 513 (a). A name of the Awaiting box counts its distinct projects: a project is counted once however many of its `waiting-on:` values give that name. Add a G124 row of one project naming one person twice, which expects that person's name to count 1. Run the row on your current tree before the change and after, and quote both runs.
+2. B1. The Awaiting box must draw two awaited entries that share a key, or that have no primary key, without throwing. In `src/lib/views/boards/focus/Focus.svelte`, the inner loop `{#each row.names as name, at (name.key)}` is keyed by the name's position (`(at)`), since a row's names are a fixed list drawn whole. Remove the `key` field that `entryName` and `boardName` give a name, and the comment above it ("Two collections of one hub may each hold an entry of one key."), when nothing else reads it.
+3. T1. In `src/routes/views.ts`, the comment of `registerBoards` names both views the component registers as its own: the track record's board and the Awaiting board. Rewrap the edited paragraph as a whole at 100 columns.
+4. T2. In `tests/state/boards/board/board-new-project.test.ts:353`, the title drops "case 7: " and keeps the behaviour: "a venue name counts and holds only the projects the Focus filter keeps". No other test title changes.
+5. B2, B3 and B4. In your report's "Before and after", add each of these with its view, its state, a before and an after:
+   - B2: a funding scheme's subtask line in the Tasks section of Focus. Before: plain text, and a press opened nothing. After: a press opens the scheme's entry page. Under the Hub filter, the line hides when its hub is unticked, and the Tasks heading's hidden count includes it. Correct the existing line that names "a follow-up or subtask line of an entry or a scheme" under the command center with "before, the collection's view", so it says which lines it covers.
+   - B3: two awaited entries of one title in the Awaiting box. Before: "Title (2)". After: "Title, Title", two buttons.
+   - B4: a long name in the Awaiting box in a narrow Focus pane. Before: the plain text could break inside a name. After: each name is one button and moves whole to the next line.
+6. S2. State in plain words in the report how many times the verify list ran in all, and which run's lines the report quotes.
+7. S1 and P1 need no work in this round. The case-run program's output is not used (open item 523), and the rows of G124 are judged by reading.
