@@ -190,7 +190,11 @@ All on the Focus board of the research hub, Awaiting box and command center visi
 - Open the view "Awaiting" from the palette (case 11): the board draws "This tab was opened for no name of the Awaiting box. Press a name of Focus's Awaiting box to open its projects." and no projects.
 - With an Awaiting tab open, move one of its projects to `revision` (case 12): it leaves the tab; when the last leaves, the empty board's message.
 - Applications and Grants names (case 13): before, plain titles; after, a press opens the entry's page (the funding scheme's page for a grant); with two hubs, a name of the non-primary hub reads "Title (hub)"; an entry with an empty title reads its id.
-- Command center (cases 14, 15, 18, 19): a funding deadline line, a dated talk's line, a conference call line, a follow-up or subtask line of an entry or a scheme, a snoozed entry line: before, the collection's view (Funding, Talks, Venues); after, the entry's page (a person page for the people registry). A Needs-attention venue line: before, the Venues view at the venue; after, the venue's page. A project's follow-up line: the project tab, unchanged. A venue id naming no registry venue, or a scheme in a hub with no funding collection: the collection's view, unchanged.
+- Command center and Tasks section (cases 14, 15, 18, 19): a funding deadline line, a dated talk's line, a conference call line, a follow-up line of an entry or a scheme, a subtask line of an entry, a snoozed entry line: before, the collection's view (Funding, Talks, Venues); after, the entry's page (a person page for the people registry). A funding scheme's subtask line is the next item.
+- Tasks section of Focus, a funding scheme with an open subtask (B2): before, the subtask line was plain text and a press opened nothing. After, a press opens the scheme's entry page. With the Hub filter on and the scheme's hub unticked, the line hides, and the Tasks heading's hidden count includes it.
+- Awaiting box, two awaited applications (or grants) of one title in one hub (B3): before, one name "Title (2)". After, "Title, Title", two buttons, each opening its own entry's page.
+- Awaiting box, a long name in a narrow Focus pane (B4): before, the plain text could break inside a name. After, each name is one button and moves whole to the next line.
+- Awaiting box, one project whose `waiting-on:` names one person twice (round 1, item 1): before, "Maryam (2)". After, "Maryam", counting that project once. A Needs-attention venue line: before, the Venues view at the venue; after, the venue's page. A project's follow-up line: the project tab, unchanged. A venue id naming no registry venue, or a scheme in a hub with no funding collection: the collection's view, unchanged.
 - Tasks section (case 16): a tasks-file entry's line opens its entry page, before the tasks collection's view.
 - Band (case 17): a card's title in Funding, Job applications or Teaching & supervision opens the entry's page, before the collection's view scrolled to the entry.
 - `docs/palette.md` (case 20): a new row `| Awaiting | awaiting_board |` after the track record's.
@@ -223,3 +227,53 @@ Their replacements:
 ```
 
 Nothing of mine is running: the background `test:quick` run has ended and `ps -ax -o pid,command | grep migration-O95` shows no process.
+
+## Repair round 1
+
+Items 1 to 6 of `.scratch/migration/agents/briefs/O95-round1.md` are done; item 7 needed no work.
+
+1. Ruling 513 (a). A name of the Awaiting box counts its distinct projects. In `src/lib/state/boards/focus.ts`, `Counts` is a `Map<string, Set<Id>>`; `countUnder` adds the project's id to the name's set; `tallies` gives `count: held.size` with the comment "each name counting its distinct projects". The comment of `waiting` says "A tally counts each project once, however many of its `waiting-on:` values give the tally's name", and the paragraph is rewrapped at 100 columns. `docs/HELP.md:294` says "a name that counts more than one project carries their number, as in "BSPC (2)", a project counted once however many of its `waiting-on:` values give the name." New G124 row in `tests/state/boards/board/board-new-project.test.ts`, describe "the Awaiting box's board": 'a person one project names twice counts that project once', expecting the strip's people `[{ label: 'Maryam', count: 1, ids: ['a'] }]`.
+   - Run on the current tree before the change, `npx vitest run tests/state/boards/board/board-new-project.test.ts -t "counts that project once"`:
+     ```
+     <multiplication sign> a person one project names twice counts that project once 10ms
+     FAIL  |unit| tests/state/boards/board/board-new-project.test.ts > the Awaiting box's board > a person one project names twice counts that project once
+     AssertionError: expected [ { label: 'Maryam', count: 2, <ellipsis>(1) } ] to deeply equal [ { label: 'Maryam', count: 1, <ellipsis>(1) } ]
+     -     "count": 1,
+     +     "count": 2,
+     Tests  1 failed | 33 skipped (34)
+     ```
+     (`<ellipsis>` stands for the ellipsis character vitest prints.)
+   - The same command after the change: `Test Files  1 passed (1)`, `Tests  1 passed | 33 skipped (34)`.
+2. B1. In `src/lib/views/boards/focus/Focus.svelte`, the inner loop is `{#each row.names as name, at (at)}`. `BoxName` is `{ text; press }`; the `key` field is gone from `boardName`, `entryName` and the Blocked name, and the comment "Two collections of one hub may each hold an entry of one key." is gone with it; nothing else read `key` of a name (`grep -n "key" src/lib/views/boards/focus/Focus.svelte` shows only the rows' own `key` and the fold keys).
+3. T1. `src/routes/views.ts`, the comment of `registerBoards` reads "The views the component registers as its own (the track record's board and the Awaiting board) are no board of `boards:` and stay registered.", the paragraph rewrapped at 100 columns.
+4. T2. `tests/state/boards/board/board-new-project.test.ts:353` is titled 'a venue name counts and holds only the projects the Focus filter keeps'. No other title changed.
+5. B2, B3, B4: added to "Before and after", with the command center line corrected to name the lines it covers ("a follow-up line of an entry or a scheme, a subtask line of an entry"); the count change of item 1 is there too.
+6. How many times the verify list ran. Before the first hand-back, the command of Verify 1 (`npm run diagrams && npm run docs:palette && npm run test:quick -- <files>`) was started five times. The first two were stopped by me before they finished, the first to add the case 7 row, the second once its eslint step had printed an unused import in `board-rules.test.ts`. The third finished red: `vitest checks` failed on `tests/checks/source/keys.test.ts` ("uses literals except at the documented computed prefixes", the computed `t(ROW_WORDS[row])` in `Focus.svelte`, now the `rowWords` function with literal keys) and `vitest` on one timeout in `file-undo.test.ts`. The fourth finished red on 11 timeouts and no assertion (named in the DONE table). The fifth finished green; its lines are the ones the DONE table quotes. Verify 2 to 9 ran once each before the first hand-back, as the table quotes them. In this round Verify 1 ran once more, over the files this round changes, and its lines are quoted below.
+
+The checks of the brief's "Verify before you report" for the files this round changes (`src/lib/state/boards/focus.ts`, `src/lib/views/boards/focus/Focus.svelte`, `src/routes/views.ts`, `tests/state/boards/board/board-new-project.test.ts`, `docs/HELP.md`):
+
+- Verify 1, `npm run diagrams && npm run docs:palette && npm run test:quick -- src/lib/state/boards/focus.ts src/lib/views/boards/focus/Focus.svelte src/routes/views.ts tests/state/boards/board/board-new-project.test.ts docs/HELP.md`, exit 0:
+  ```
+  test:quick: 5 changed file(s), from the given paths
+  test:quick: 16 test file(s)
+  ok      svelte-kit sync (3.7 s)
+  ok      prettier (3.7 s): All matched files use Prettier code style!
+  ok      ASCII gate (4.1 s)
+  ok      svelte-check (37.4 s): 1793132024469 COMPLETED 551 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+  ok      eslint (42.1 s)
+  ok      vitest checks (57.2 s): Duration  47.02s (transform 43.45s, setup 0ms, import 103.79s, tests 68.54s, environment 3ms)
+  ok      vitest (60.4 s): Duration  50.41s (transform 93.06s, setup 0ms, import 112.35s, tests 9.93s, environment 2ms)
+  test:quick: 64.1 s; every command passed
+  ```
+  The 16 test files include `board-new-project.test.ts`, `board-rules.test.ts`, `keys.test.ts`, `comment-width.test.ts`, `history.test.ts` and `size.test.ts`. Not covered, as it prints: tests that reach no changed file within the import depth other than the checks under `tests/checks/source` and `tests/checks/tree`, the build, the lint of unchanged files. `npm run diagrams` and `npm run docs:palette` rewrote no file beyond those `git status --short docs/` already listed.
+- Verify 2, the ASCII gate over the five files: printed nothing, `ascii exit 0`.
+- Verify 3, `npx vitest run tests/state/boards/board/board-new-project.test.ts tests/state/boards/board/board-rules.test.ts`: `Tests  119 passed (119)`.
+- Verify 4, `wc -l`: `766 src/lib/state/boards/focus.ts`, `468 src/lib/views/boards/focus/Focus.svelte`, `348 src/routes/views.ts`, `369 tests/state/boards/board/board-new-project.test.ts`.
+- Verify 5, `grep -n "open the Funding view, a conference call opens the Venues view" docs/HELP.md`: nothing, `verify5 exit 1`.
+- Verify 7: the new sentences (the `waiting` and `tallies` comments, the `registerBoards` comment, the HELP sentence, the test title) are ASCII with no dash or spaced hyphen; no departure found.
+- Verify 8, `sh utils/unused-exports.sh` against `.agents/worktrees/O95-base/unused-exports.txt`: `diff exit 0`, no difference.
+- Verify 9, the added lines of `git diff -U0` over `focus.ts`, `Focus.svelte`, `views.ts` grepped for `before|used to|no longer|still|previously|anymore|formerly|was|were|old|O9[0-9]|step|item [0-9]|20[0-9][0-9]-|replaced|instead|ruling|reverted|case [0-9]`: `history grep exit 1`, no hit; the new test file's titles were read, and the one new title holds none.
+
+Doc text, replacing the one given above: G124's rule sentence ends "The Awaiting box's board of a name takes exactly the projects that name counts on the Focus page under the Focus filter its tab carries, each once, and offers no New project; a name of the Awaiting box counts its distinct projects, a project counted once however many of its `waiting-on:` values give the name." The Code and Test lines stay as given above.
+
+Nothing of mine is running: the round's `test:quick` has ended.

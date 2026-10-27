@@ -3,8 +3,10 @@
     // one card of its own, drawn as the record card (views/shared/card/record/RecordCard.svelte):
     // the projects no scheme of the file covers, as the project strip at its foot, each opening its
     // project tab, which the collection draws after its cards, or above its list, while its bar
-    // keeps it: no Status slice picked, or the No funding slice among those picked. The card has no
-    // action, so no menu of its own.
+    // keeps it: no Status slice picked, or the No funding slice among those picked, and, while a
+    // group of the bar's Projects section has a pick, a project of the card the picks leave. The
+    // collection hands it the projects the picks leave, which its strip and its count are of. The
+    // card has no action, so no menu of its own.
 
     import Tag from '$lib/ui/controls/Tag.svelte';
     import RecordCard from '$lib/views/shared/card/record/RecordCard.svelte';
@@ -12,7 +14,7 @@
     import { t } from '$lib/state/shared/words/text';
 
     type Props = {
-        /** The projects no scheme covers. */
+        /** The projects no scheme covers that the picks of the bar's Projects section leave. */
         unfunded: Project[];
         /** Whether keyboard navigation has selected this card. */
         cursor: boolean;

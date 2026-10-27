@@ -143,7 +143,7 @@ export function anyWord(
  * The whole number a word, compared as written, carries for a field of a vocabulary map, or null
  * when it carries none: a stage's place in the Archival band (`dead` of `stages`).
  */
-export function wordNumber(
+function wordNumber(
     config: Record<string, unknown>,
     key: string,
     field: string,

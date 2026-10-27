@@ -26,7 +26,7 @@ options:
                 help: the colour the stage is drawn in
                 control: colour
             idea:
-                help: the idea group, the cross-link group of ideas and the Focus board's unplaced projects
+                help: the idea group and the Focus board's unplaced projects
                 control: toggle
             live:
                 help: the in-flight group, which the audit's rules over in-flight work, the pillar cards and the Funding tab read
@@ -344,7 +344,7 @@ options:
                 help: a board gives the rail the count of its projects in such rows, drawn in rail_color
                 control: toggle
             archival:
-                help: the Pillars view's Archival band; such a project is left out of the use counts and the members of a pillar and a domain
+                help: the Pillars view's Archival band; such a project is left out of the use counts, the members of a pillar and a domain and the project strip at a card's foot
                 control: toggle
     rail_color:
         heading: boards

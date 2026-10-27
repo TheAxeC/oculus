@@ -18,12 +18,13 @@
     // The body draws, each only when the kind fills it: the facts row (`facts`), the labelled lines
     // (`lines`), the text (`text`), the kind's own blocks (`blocks`), the dated lines (Subtasks,
     // then Follow-ups, then the deadline form), and the foot: the strip of the projects the record
-    // lists (views/shared/links/CrossLinks.svelte), from `projects` grouped as everywhere or from
-    // the `groups` a kind makes itself, or in its place one labelled strip per row of `rows` (a
-    // person's card, one per role), then the kind's own `foot`. A kind that draws the dated lines
-    // inside a block of its own, the project page's right column, hands `details`, which is given
-    // them. A kind that hands `deleting` has the question before a delete
-    // (views/shared/forms/entry/DeleteAsk.svelte) asked under the card for that entry.
+    // lists (views/shared/links/CrossLinks.svelte), from `projects` grouped by the rows of
+    // `categories:` (state/boards/structure/cross-links.ts `groupProjects`) or from the `groups` a
+    // kind makes itself, or in its place one labelled strip per row of `rows` (a person's card, one
+    // per role), then the kind's own `foot`. A kind that draws the dated lines inside a block of
+    // its own, the project page's right column, hands `details`, which is given them. A kind that
+    // hands `deleting` has the question before a delete (views/shared/forms/entry/DeleteAsk.svelte)
+    // asked under the card for that entry.
     //
     // The Add run of the menu is this card's, from `dated`: Follow-up and Subtask where a line can
     // hang under the record (`target`), or where the line goes to a record picked on the card
@@ -108,7 +109,7 @@
         blocks?: Snippet;
         /** Draw the kind's block that holds the dated lines, given them. */
         details?: Snippet<[Snippet]>;
-        /** The projects the record lists, drawn as the strip at the foot, grouped as everywhere. */
+        /** The projects the record lists, drawn as the strip at the foot, grouped by category. */
         projects?: Project[];
         /** The strip's groups, for a kind that groups its projects itself. */
         groups?: CrossGroup[];

@@ -1,12 +1,15 @@
 <script lang="ts">
     // Layer 3, shared view partial. One project strip at the foot of a record card
     // (views/shared/card/record/RecordCard.svelte, which hands it the groups): project cross-links
-    // grouped as in flight, done and ideas, each group nesting its members under their own project
-    // stage, or grouped by one stage each (the Archival card's), headed by the stage's words and
-    // glyph with its members directly under it. Each group is a disclosure with its count, and each
-    // member opens its tab. A strip handed `oneOpen` keeps one group open at a time. A strip handed
-    // a `label` draws it before its groups: a person's card draws one strip per role, each headed
-    // by the role's label (state/boards/structure/cross-links.ts, `roleLinks`).
+    // grouped by the rows of `categories:` (state/boards/structure/cross-links.ts,
+    // `groupProjects`), each group headed by its row's label in its row's colour, as a project
+    // board's section is, and nesting its members under their own project stage; or grouped by one
+    // stage each (the Archival card's), headed by the stage's words and glyph with its members
+    // directly under it. A category's group carries no glyph, since a row names none. Each group is
+    // a disclosure with its count, a group holding a blocked project carries the warning glyph, and
+    // each member opens its tab. A strip handed `oneOpen` keeps one group open at a time. A strip
+    // handed a `label` draws it before its groups: a person's card draws one strip per role, each
+    // headed by the role's label (`roleLinks`).
 
     import Tag from '$lib/ui/controls/Tag.svelte';
     import Disclosure from '$lib/ui/tree/Disclosure.svelte';
@@ -17,7 +20,7 @@
         membersByStage,
         type CrossGroup
     } from '$lib/state/boards/structure/cross-links';
-    import { t } from '$lib/state/shared/words/text';
+    import { toneOf } from '$lib/state/shared/words/tones';
     import { useState } from '$lib/state/client/use';
     import { recordState } from '$lib/state/shared/page/records';
 
@@ -50,21 +53,18 @@
         opened = next;
     }
 
-    /** The group's label: its stage's words, else the catalogued words, one idea singular. */
+    /** The group's label: its stage's words, else its row's. */
     function label(group: CrossGroup): string {
-        if (group.stage !== undefined) return group.stage.label;
-        if (group.type === 'in-flight') return t('project.helper.xlink_in_flight');
-        if (group.type === 'done') return t('project.helper.xlink_done');
-        if (group.count === 1) return t('project.helper.xlink_idea');
-        return t('project.helper.xlink_ideas');
+        return group.stage?.label ?? group.category?.label ?? '';
     }
 
-    /** The glyph of one group: its stage's, else the name its catalogued word holds. */
-    function glyph(group: CrossGroup): string {
-        if (group.stage !== undefined) return group.stage.glyph;
-        if (group.type === 'in-flight') return t('project.helper.xlink_in_flight_glyph');
-        if (group.type === 'done') return t('project.helper.xlink_done_glyph');
-        return t('project.helper.xlink_idea_glyph');
+    /**
+     * The hue a category's group is drawn in: its row's colour, and none for a row that names none
+     * or for a stage's group, as a board draws a section's heading.
+     */
+    function tone(group: CrossGroup): string | undefined {
+        const color = group.category?.color ?? '';
+        return color === '' ? undefined : toneOf(color);
     }
 </script>
 
@@ -75,11 +75,14 @@
     {#each groups as group (groupKey(group))}
         <div class="group" data-project-group={groupKey(group)}>
             <span class="group-head">
-                <Glyph name={glyph(group)} />
+                {#if group.stage !== undefined}
+                    <Glyph name={group.stage.glyph} />
+                {/if}
                 <Disclosure
                     count={group.count}
                     label={label(group)}
                     expanded={isOpen(groupKey(group))}
+                    tone={tone(group)}
                     onclick={() => toggle(groupKey(group))}
                 />
                 {#if group.warn}
@@ -92,7 +95,7 @@
                 <div class="members">
                     {#each membersByStage(group) as kind (kind.stage)}
                         <div class="kind" data-project-kind={kind.stage}>
-                            {#if group.stage === undefined}
+                            {#if group.stage === undefined && kind.stage !== ''}
                                 <Tag label={kind.stage} />
                             {/if}
                             {#each kind.members as member (member.id)}

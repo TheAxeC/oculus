@@ -149,3 +149,142 @@ B4. Name wrapping: stated without a state to look at. Place: report `:177`, "A l
 - Whether the builder's first run of the list came after its last change: only the builder's transcript would settle it.
 - Whether a funding scheme's id (`funding()`, `normalise.ts:479`, the registry key or else the title) equals the id of its entry in the hub's funding collection (`entryIdOf`, the primary key). If they differ for a scheme, a grant name and a funding line fall back to plain text or the Funding view. The look at landing (cases 13 and 14) on the real hub, or a fixture with both, would settle it.
 - Look cases 9 to 19: they need the running server, which this review does not start.
+
+## Repair round 1, refuted
+
+Step O95, worktree `.agents/worktrees/migration-O95`, base `046e0debc`, round snapshot `.agents/worktrees/migration-O95-round-1/`.
+
+The round changed four of the paths in `files.txt`: `docs/HELP.md` (line 294), `src/lib/state/boards/focus.ts`, `src/lib/views/boards/focus/Focus.svelte` and `tests/state/boards/board/board-new-project.test.ts`. It also changed one path that `files.txt` does not list: `src/routes/views.ts`, which has one comment hunk in `git diff 046e0debc`. The worktree's `.scratch/migration/agents/briefs/O95.md` differs from the base, but `diff` against main's copy printed nothing, so it is the orchestrator's copy and is not part of the builder's diff.
+
+The rules file names no output filter. The Verify 1 output below was taken from the run's log with `grep -E "^(ok|FAILED|test:quick)|Test Files|Tests  "`.
+
+```
+(worktree root, PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH)
+cat docs/diagrams/* docs/palette.md | md5   -> dbf14e9405177d509318526dbeaa55a5 (before and after Verify 1)
+git status --short | md5                    -> dbc57e201a6f9c0bce3d2d1bbd6d143b (before and after Verify 1)
+
+Verify 1: npm run diagrams && npm run docs:palette && npm run test:quick -- src/lib/state/boards/focus.ts src/lib/views/boards/focus/Focus.svelte src/routes/views.ts tests/state/boards/board/board-new-project.test.ts docs/HELP.md
+exit 0
+test:quick: 5 changed file(s), from the given paths
+test:quick: 16 test file(s)
+ok      prettier (1.7 s): All matched files use Prettier code style!
+ok      ASCII gate (2.2 s)
+ok      svelte-kit sync (4.2 s)
+ok      eslint (19.4 s)
+ok      svelte-check (34.2 s): 1793132407343 COMPLETED 551 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest (80.4 s): Duration  71.44s (transform 128.38s, setup 0ms, import 150.44s, tests 7.38s, environment 2ms)
+ok      vitest checks (83.1 s): Duration  73.97s (transform 44.98s, setup 0ms, import 158.30s, tests 101.95s, environment 3ms)
+test:quick: 87.3 s; every command passed
+test:quick: not covered: tests that reach no changed file within the import depth,
+(the picked files include board-new-project.test.ts: changed, board-rules.test.ts: imports at depth 1, keys.test.ts, comment-width.test.ts, history.test.ts, size.test.ts)
+
+Verify 2: printf '%s\0' <the five files> | xargs -0 env LC_ALL=C perl -ne '...'
+(no output)  ascii exit 0
+
+Verify 3: npx vitest run tests/state/boards/board/board-new-project.test.ts tests/state/boards/board/board-rules.test.ts
+ Test Files  2 passed (2)
+      Tests  119 passed (119)
+npx vitest run tests/state/boards/board/board-rules.test.ts
+ Test Files  1 passed (1)
+      Tests  85 passed (85)
+
+Verify 4: wc -l
+     766 src/lib/state/boards/focus.ts
+     468 src/lib/views/boards/focus/Focus.svelte
+     348 src/routes/views.ts
+     369 tests/state/boards/board/board-new-project.test.ts
+     587 docs/HELP.md
+
+Verify 5: grep -n "open the Funding view, a conference call opens the Venues view" docs/HELP.md
+(no output)  verify5 exit 1
+
+Verify 8: sh utils/unused-exports.sh > <scratchpad>/ue.txt; diff ../O95-base/unused-exports.txt <scratchpad>/ue.txt
+(no output)  diff exit 0
+
+Verify 9: git diff -U0 046e0debc -- focus.ts Focus.svelte views.ts | added lines | grep -iwE 'before|used to|no longer|still|previously|anymore|formerly|was|were|old|O9[0-9]|step|item [0-9]|20[0-9][0-9]-|replaced|instead|ruling|reverted|case [0-9]'
+(no output)  history grep -w exit 1
+(without -w the same grep hits only "holds"/"holding", e.g. "+ * the portfolio, when the snapshot holds only the projects a filter keeps, and from the")
+grep -n "case [0-9]" tests/state/boards/board/board-new-project.test.ts
+102:            name: 'case 8: several tiers with the default among them write the default',
+108:            name: 'case 8: several tiers without the default offer no New project',
+178:    ])('case 26: with self naming the primary kim, $name', (row) => {
+(all three moved unchanged from board-rules.test.ts; line 353 now reads 'a venue name counts and holds only the projects the Focus filter keeps')
+
+Round report, item 1 "after": npx vitest run tests/state/boards/board/board-new-project.test.ts -t "counts that project once"
+ Test Files  1 passed (1)
+      Tests  1 passed | 33 skipped (34)
+
+Round report, item 2: grep -n "key" src/lib/views/boards/focus/Focus.svelte
+36 (fold comment), 73 and 279 (keyOf), 235/240/245/250/255 (row keys), 283-284 (fold), 367 and 369 (row.key), 388 and 404 (fold): no name key is left.
+```
+
+### Verdicts
+
+Items of "What to build", for the whole diff since the base:
+
+- 1: holds. The B1 finding is closed: `Focus.svelte:370` reads `{#each row.names as name, at (at)}`, and `BoxName` is `{ text: string; press: (() => void) | null }`. `boardName`, `entryName` and the Blocked name no longer give a key, and the "Two collections of one hub..." comment is gone. Read in `Focus.svelte:170-262`, the names are still `ToolButton plain`, the count is still in the name, a grant whose hub has no funding collection is still plain text, and an empty title still shows the id.
+- 2: holds. `Projects.svelte:19-36` registers `AWAITING_VIEW` with `listed: false`. `filter.ts` has `awaitingTab` with `id` `${row}:${name}`, `awaitingTabOf` (null for a state that does not parse) and `awaitingTake`, which computes over `focusPage`. `views.ts` `registerBoards` keeps the own registrations. The config words are at `projects.yml:4-5` and `:97-98`, and `docs/palette.md:29` lists the view.
+- 3: holds, read from `rows.ts` `entryPage`, `venuePage`, `linePage` and `openLine`, and from `Tasks.svelte` `pick`. The round did not change these.
+- 4: holds, read from `Band.svelte` `openEntry`. The round did not change it.
+- 5: holds. The `HELP.md:294` sentence and the `waiting` and `tallies` comments match ruling 513. The `views.ts` comment now names both views (T1). Standards finding 1 below is about the rewrap and does not falsify any sentence.
+- 6: holds under ruling 523 (a). The rows are judged by reading. Every row of the describe "the Awaiting box's board" imports `awaitingTab`, `awaitingTake` and `awaitingPreset`, which do not exist at the base. The new count row asserts `count: 1`; the round report quotes it failing with `count: 2` on the tree before the change. The booking records that cases 1 to 8 have no run on the base.
+
+Cases:
+
+- 1: met. Row 'the venue BSPC' takes `['a','b']`, and row "is offered on no Awaiting box's board" checks that no New project is offered. The tab, its title and the second press are left to the look.
+- 2: met. Row 'no venue' takes `['c']`. The title is left to the look.
+- 3: met (row 'the person Maryam').
+- 4: met (row 'the project Bee').
+- 5: met (row 'a waited-on value naming neither ...').
+- 6: met (row 'Blocked, ...', with project `c` at `published`).
+- 7: met (the table row with `tiers: ['software']`, and the row at `:353` that asserts count 1 and ids `['a']`).
+- 8: met. The table row 'the person Maryam, whom one project names twice' takes `['a']`, and the new row 'a person one project names twice counts that project once' expects `[{ label: 'Maryam', count: 1, ids: ['a'] }]`, which ruling 513 (a) asks for.
+- 9 to 12: not verifiable (look). Read against the diff, `openBoard` writes `mine: filter.mine`, the take is recomputed from `portfolio()`, and `awaitingTabOf` returns null and the board draws `board.awaiting_none`.
+- 13: not verifiable (look). Read against the diff the behaviour is consistent, and the duplicate-key throw (B1) is closed.
+- 14 to 19: not verifiable (look). Read against the diff, consistent.
+- 20: met (run). The md5 of `docs/palette.md` was unchanged by `npm run docs:palette`, `docs/palette.md:29` reads `| Awaiting | awaiting_board |`, and `palette.test.ts` is among the checks that test:quick ran green.
+
+### Findings
+
+**1. Spec**
+
+none
+
+**2. Proof**
+
+- `.scratch/migration/agents/reviews/O95-report.md`, the sections "Files with line counts", "What in the brief was wrong or impossible", "The ruling this build follows" item 5 and "The cases' first run" case 8.
+  - Quoted: "| `src/lib/state/boards/focus.ts` | 690 | 763 |", "| `src/lib/views/boards/focus/Focus.svelte` | 395 | 474 |", "| `tests/state/boards/board/board-new-project.test.ts` | new | 362 |", "`src/routes/views.ts` and `tests/state/boards/board/board-fixture.ts` are on the paths and needed no change", "The tally's count is unchanged by this step (open item 513, booked on main)", and "The count 2 is unchanged by the step (ruling 5) and no row asserts it".
+  - What is wrong: after the round these statements are false. `wc -l` gives 766, 468 and 369. `views.ts` is changed (`git diff 046e0debc -- src/routes/views.ts`, one hunk) and is missing from the file table. The count is now changed, and a row asserts it.
+  - The rules file (Working rules, "A report states the end state ... Every count, line count ... is taken after your last change; a figure from before it is taken again or removed") and its "Where you work" rule (the file table holds every changed path) both require these to be corrected. The "## Repair round 1" section gives the new counts for the five files, but the earlier text that contradicts it was left in place.
+  - Failure scenario: a landing booking or `G124` text built from the report's file table and judgment sections names `views.ts` as unchanged, says the tally count is unchanged, and carries the stale line counts.
+  - Verdict: none (report text only).
+
+**3. Standards**
+
+- Comment rewrap at 100 columns, in two places:
+  - `src/routes/views.ts:119-120`: " * the component registers as its own (the track record's board and the Awaiting board) are no" (94 columns), followed by " * board of `boards:` and stay registered. ...". The next word "board" would bring the line to exactly 100.
+  - `src/lib/state/boards/focus.ts:637-638`: " * the portfolio, when the snapshot holds only the projects a filter keeps, and from the" (88 columns), followed by " * snapshot's own projects without it.". "snapshot's" would fit at 99. The same paragraph's `:628` (97 columns, "... drawn by waiting.ts.") could also take the next word "A".
+  - What is wrong: the rules file ("What every package obeys": "A comment edited by the step is rewrapped as a whole paragraph at 100 columns, so no line inside a sentence ends short") and round item 3 ("Rewrap the edited paragraph as a whole at 100 columns") require each line to be filled before breaking. The round report says both paragraphs were "rewrapped at 100 columns". `tests/checks/source/comment-width.test.ts` checks only for lines over 100, so its green result does not cover this.
+  - Failure scenario: a reader sees a short line in the middle of a sentence, which the convention exists to prevent. Each fix is a one-word move.
+  - Verdict: none (item 5 holds; this is a convention breach to fix at landing).
+
+**4. Behaviour**
+
+- `src/lib/state/focus/filter.ts:491-500` and `:530`, `awaitingTotal`, which sums `one.count` over `strip.people` and `strip.venues`, used for `hidden.awaiting`. The box heading draws it through `t('focus.hidden', ...)` at `Focus.svelte:361-363`.
+  - What is wrong: ruling 513's change also changes the Awaiting box's "N hidden" heading. A project whose `waiting-on:` names one person twice and which the Focus filter hides used to add 2 to the hidden count and now adds 1. The report's "Before and after" states only the name change ("before, "Maryam (2)". After, "Maryam"") and does not mention the hidden count.
+  - Failure scenario: at the look on landing nobody hides such a project under the Focus filter, so the heading going from "2 hidden" to "1 hidden" is never checked.
+  - Verdict: none (a missing before/after line).
+- `O95-report.md`, "Before and after", the bullet "Awaiting box, one project whose `waiting-on:` names one person twice (round 1, item 1): ... A Needs-attention venue line: before, the Venues view at the venue; after, the venue's page. A project's follow-up line: ... A venue id naming no registry venue, or a scheme in a hub with no funding collection: the collection's view, unchanged."
+  - What is wrong: the lines for the command center's Needs-attention venue line, the project follow-up line and the unresolved line (cases 14, 15 and 19) now sit inside the Awaiting box bullet for item 1.
+  - Failure scenario: someone working through the bullets at the look looks for those three lines in the Awaiting box instead of the command center and skips them.
+  - Verdict: none.
+
+### Declined to judge
+
+- The round report's "before the change" run of the new row (`count: 2`). Reproducing it would mean taking the change out of the tree, which the brief and the rules file forbid. The row was read instead: it asserts `count: 1`, and the per-value `countUnder` of the snapshot copy would give 2.
+- Runs of cases 1 to 8 on the base. Ruling 523 (a) sets them aside, and they would need a checkout of `046e0debc` (`git worktree add` or `git checkout`), outside the three allowed git commands.
+- The worktree's change to `.scratch/migration/agents/briefs/O95.md`. It equals main's copy, so it is the orchestrator's sync, and whether the landing's cherry-pick carries it is the orchestrator's decision.
+- Look cases 9 to 19 and the before/after lines for B2, B3 and B4. They need the running server at the look on landing.
+- Whether the builder's single round run of Verify 1 came after its last edit. Only the builder's transcript would settle it. The tree I ran on passes the same command.
+
+Reviewer usage: a93342c9c8025f2d6, claude-opus-5-5, 193784 tokens, 49 tool uses, 7 min 48 s

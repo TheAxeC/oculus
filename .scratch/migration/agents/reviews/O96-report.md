@@ -760,9 +760,200 @@ The diagrams changed by `npm run diagrams` alone: three edge counts, `state/boar
 - A scheme's entry page opened while the Funding tab has a pick. After: the whole strip, unnarrowed.
 - The People view under a Category pick. After: each role strip narrowed, a person with every role strip empty hidden.
 - A view whose entries hold no project. After: no Projects section in More.
+- The warning mark on a strip's group. Before: only the in-flight group carried it, for a blocked project at a `live` stage; a blocked project at `nascent` marked no group. After: any group holding a blocked project carries it: a blocked `nascent` project marks the idea group, a blocked `submitted` one the in-review group (case 4: `[in review 1 colour=#0ea5e9 WARN: blk-sub@submitted] ... | [idea 1 colour=#7c5cff WARN: blk-nas@nascent]`). State: a funding scheme whose blocked projects stand at those stages.
+- The counts of the bar under a Projects pick. Before: no Projects pick existed, and the entry groups' counts, line 2's status slice counts and the No funding slice's count were taken over the entries the entry picks, the search and Mine only leave. After: with a Projects pick, the entry groups and the status slices count only the entries the pick leaves, and the No funding slice counts the projects no scheme covers that the pick leaves. Case 21: Funder `{nwo=3, fwo=1}` without a pick, `{nwo=2, fwo=0}` under Category "in flight". Case 9 on the same entries: status `[["active",3],["closed",1],["no-funding",1]]` after Clear all, `[["active",1],["closed",0],["no-funding",1]]` under Category "in flight". Case 24: the No funding slice's count is 0 under Category "idea". State: the Funding view, More, Projects, Category "in flight", then "idea".
 
 ## Anything in the brief that was wrong or impossible
 
 - The paths list does not hold `src/lib/data/shapes/vocab-keys.ts`, and the step had to change it. `groupProjects` was the only caller of `wordNumber` outside its own file; once it no longer calls it, `wordNumber` is an unused export, which check 7 refuses. The change is `export function wordNumber(` to `function wordNumber(`; `grep -rn "wordNumber" src` now prints only `vocab-keys.ts:146` (the definition) and `:171` (its use inside the file).
 - Found, not changed, outside the paths: `tests/checks/tree/allow-styling.ts:25`, `:29` and `:33` cite `CrossLinks.svelte:169` and `:163` for the `:global(.label)` and `:global(.tip)` rules; those rules were at `:187` and `:181` on the base copy and are at `:190` and `:184` now (`grep -n ":global(.label)\|:global(.tip)"` on both). The `line:` keys the check matches are unchanged and still match.
 - Nothing else in the brief was wrong.
+
+## Repair round 1
+
+Every item of `.scratch/migration/agents/briefs/O96-round1.md` is done: items 1 to 4 changed what they name, and item 5 needed no change.
+
+### Item 1 (T1): two comment paragraphs rewrapped at 100 columns
+
+- `src/lib/state/boards/structure/cross-links.ts` lines 1-10, the head comment: rewrapped as one paragraph, every word kept; still 10 lines.
+- `src/lib/views/shared/card/record/RecordCard.svelte` lines 18-27, the paragraph "The body draws, ...": rewrapped as one paragraph, every word kept; still 10 lines.
+
+The rewrap ran as a word-for-word join and wrap at 100 columns (97 after `// `, 93 after `    // `), with an assert that the words before and after are the same. No other comment was changed.
+
+### Item 2 (T2): the "other" group named
+
+In `groupProjects`:
+
+```ts
+    const otherGroup = held.get('');
+    const groups = [
+        ...order.flatMap((row) => held.get(row.key) ?? []),
+        ...[...held].flatMap(([key, group]) => (key === '' || listed(key) ? [] : [group])),
+        ...(otherGroup === undefined ? [] : [otherGroup])
+    ];
+```
+
+The case program's output on the changed tree is unchanged by items 1 to 3: `diff` of its `case` lines against the earlier run prints only the one line added for item 4 (`> case 9 Clear all   status counts [["active",3],["closed",1],["no-funding",1]]`).
+
+### Item 3 (B1): no stage tag for a project with no stage
+
+`src/lib/views/shared/links/CrossLinks.svelte`, in the members of a category's group:
+
+```svelte
+                            {#if group.stage === undefined && kind.stage !== ''}
+                                <Tag label={kind.stage} />
+```
+
+Case 17 is extended into a drawn case: `groupProjects` on one project with no stage, then `CrossLinks.svelte` mounted in jsdom inside the page's tooltip group, its group opened by a click on the disclosure, then whether the members' kind holds a `.tag`. The command, from the worktree root: `npx vitest run --config <scratchpad>/caserun/strip.config.mts --root $PWD case17`.
+
+Run on the tree before the change (the empty tag present):
+
+```
+ RUN  v4.1.11 /Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O96
+case 17 groups: other 1
+case 17 kind data-project-kind="" stage tag drawn: true
+case 17 tag markup: <span class="tag svelte-138vb85"> <span class="label svelte-138vb85"></span></span>
+case 17 member buttons: nostage nostage
+ Test Files  1 passed (1)
+      Tests  1 passed (1)
+   Start at  21:12:20
+   Duration  9.34s (transform 4.40s, setup 0ms, import 8.63s, tests 44ms, environment 591ms)
+```
+
+Run after the change:
+
+```
+ RUN  v4.1.11 /Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O96
+case 17 groups: other 1
+case 17 kind data-project-kind="" stage tag drawn: false
+case 17 member buttons: nostage nostage
+ Test Files  1 passed (1)
+      Tests  1 passed (1)
+   Start at  21:13:02
+   Duration  15.48s (transform 8.82s, setup 0ms, import 14.44s, tests 101ms, environment 846ms)
+```
+
+The config (environment `jsdom`, the browser conditions, svelte inlined, as the `client` project resolves):
+
+```ts
+import base from '/Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O96/vite.config.ts';
+
+const SCRATCH = '/private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/caserun/dom';
+
+export default async (env: { mode: string; command: string }) => {
+    const made = await (base as unknown as (e: unknown) => Promise<Record<string, any>>)(env);
+    const test = { ...made.test };
+    delete test.projects;
+    test.environment = 'jsdom';
+    test.dir = SCRATCH;
+    test.include = ['*.test.ts'];
+    test.maxWorkers = 1;
+    test.server = { deps: { inline: [/svelte/] } };
+    return { ...made, resolve: { ...(made.resolve ?? {}), conditions: ['browser'] }, test };
+};
+```
+
+The host (`Host.svelte`):
+
+```svelte
+<script lang="ts">
+    import { setContext } from 'svelte';
+    import TooltipGroup from '/Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O96/src/lib/ui/menu/TooltipGroup.svelte';
+    import CrossLinks from '/Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O96/src/lib/views/shared/links/CrossLinks.svelte';
+    import { STATE_KEY } from '/Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O96/src/lib/state/client/use.ts';
+    import { TIP_KEY, createTipIds } from '/Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O96/src/lib/ui/menu/tip-ids.ts';
+    import { createClientState } from '/Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O96/src/lib/state/client/context.ts';
+    import type { CrossGroup } from '/Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O96/src/lib/state/boards/structure/cross-links.ts';
+
+    let { groups }: { groups: CrossGroup[] } = $props();
+    setContext(STATE_KEY, createClientState());
+    setContext(TIP_KEY, createTipIds());
+</script>
+
+<TooltipGroup>
+    <CrossLinks {groups} />
+</TooltipGroup>
+```
+
+The case (`case17.test.ts`):
+
+```ts
+// Case 17 drawn: a project with no stage, grouped by groupProjects, drawn by CrossLinks.svelte (inside the
+// page's tooltip group, Host.svelte) with its group opened; prints the members' markup and whether a stage tag is drawn.
+import { flushSync, mount, unmount } from 'svelte';
+import { expect, it } from 'vitest';
+import { engineDir, glyphCatalog, loadConfig, textCatalog } from '/Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O96/src/lib/data/sources/config.ts';
+import { setCatalog, setGlyphs } from '/Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O96/src/lib/state/shared/words/text.ts';
+import { groupProjects } from '/Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O96/src/lib/state/boards/structure/cross-links.ts';
+import Host from './Host.svelte';
+
+const out: string[] = [];
+const say = (line: string): void => void out.push(line);
+const loaded = loadConfig(engineDir()).config;
+setCatalog(textCatalog(loaded));
+setGlyphs(glyphCatalog(loaded));
+
+it('case 17 drawn', () => {
+    const config = loaded as Record<string, unknown>;
+    const project = { id: 'nostage', title: 'nostage', stage: '', form: '', chips: [], tier: 'research' } as any;
+    const groups = groupProjects([project], config);
+    const target = document.createElement('div');
+    document.body.append(target);
+    const view = mount(Host, { target, props: { groups } });
+    flushSync();
+    (target.querySelector('button.disclosure') as HTMLButtonElement).click();
+    flushSync();
+    const kinds = [...target.querySelectorAll('.kind')];
+    say('case 17 groups: ' + groups.map((g) => g.category?.label + ' ' + g.count).join(', '));
+    for (const kind of kinds) {
+        say('case 17 kind data-project-kind="' + kind.getAttribute('data-project-kind') + '" stage tag drawn: ' + (kind.querySelector('.tag') !== null));
+        const tag = kind.querySelector('.tag');
+        if (tag !== null) say('case 17 tag markup: ' + tag.outerHTML.replace(/<!---->/g, ''));
+    }
+    say('case 17 member buttons: ' + [...target.querySelectorAll('.member')].map((m) => m.textContent?.trim()).join(', '));
+    process.stdout.write(`${out.join('\n')}\n`);
+    expect(target.querySelectorAll('.member').length).toBe(1);
+    unmount(view);
+});
+```
+
+Nothing of the three files is in the worktree.
+
+### Item 4 (B2): visible changes added
+
+Two entries were added to "Visible changes, for the look at landing" above: the warning mark on any group holding a blocked project, and the bar's counts under a Projects pick, each with its before, its after and the case lines that show it. The status counts after Clear all come from one line added to the case program (case 9), whose run printed `case 9 Clear all   status counts [["active",3],["closed",1],["no-funding",1]]`.
+
+### Item 5 (S1)
+
+No change: no whole-suite command ran in this round.
+
+### Checks over the files this round changes
+
+The files are `cross-links.ts`, `RecordCard.svelte`, `CrossLinks.svelte` and this report.
+
+- Check 1, `npm run diagrams && npm run test:quick`, exit 0:
+
+```
+test:quick: 25 changed file(s), from git since HEAD
+test:quick: 53 test file(s)
+ok      ASCII gate (6.5 s)
+ok      svelte-kit sync (6.5 s)
+ok      prettier (6.5 s): All matched files use Prettier code style!
+ok      svelte-check (78.8 s): 1793132128340 COMPLETED 551 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      eslint (103.4 s)
+ok      vitest slow (143.6 s): Duration  135.05s (transform 28.22s, setup 0ms, import 96.90s, tests 240.19s, environment 4ms)
+ok      vitest (146.0 s): Duration  137.74s (transform 103.29s, setup 0ms, import 186.33s, tests 184.82s, environment 2.69s)
+ok      vitest checks (147.2 s): Duration  138.76s (transform 129.43s, setup 0ms, import 298.08s, tests 185.47s, environment 4ms)
+test:quick: 154.7 s; every command passed
+```
+
+  The 25 changed files are the 23 of the step plus the two untracked files under `.scratch/` (this report and the round brief). `vitest slow`, red in the step's second run on the `hub-portfolio.test.ts` timeout, is green in this run (load average after it: 14.71).
+- Check 2, the ASCII gate over the three files: printed nothing, `exit=0`.
+- Check 3: `grep -rn "in-flight'\|'ideas'\|'done'" ...` printed nothing, `exit=1`; `grep -rn "xlink_" src config` printed nothing, `exit=1`.
+- Check 4: `356 cross-links.ts`, `361 RecordCard.svelte`, `201 CrossLinks.svelte`.
+- Check 7: `sh utils/unused-exports.sh` exit 0; `diff` with `O96-base/unused-exports.txt` printed nothing, `diff exit=0`.
+- Check 8: the history-word grep over the added lines of the three files printed 6 lines: "told apart by" (`told`), three `new Set`/`new Map` code lines, and "the question before a delete" and "draws it before its groups" (places, not time). No history.
+- Check 9: printed nothing, `exit=1`.
+- The comment width: `awk 'length > 100'` over `cross-links.ts` and `RecordCard.svelte` prints only `RecordCard.svelte:308`, `:325` and `:329`, markup lines that stand at `:307`, `:324` and `:328` on the base copy at the same widths (139, 131, 127).
+- The character-set scan of this report, `LC_ALL=C perl -ne 'print "$.:$_" if /[^\x20-\x7E\n]/' O96-report.md`: printed nothing.
+

@@ -1,6 +1,9 @@
 <script lang="ts">
     // Layer 3, primitive. A compact disclosure control on the same surface as a Chip. It keeps the
     // count, label and open state separate so grouped links read as a group rather than an action.
+    // A control handed a hue (`tone`) draws its count, its label and its marker in that hue's text
+    // colour, as a group's heading is drawn in its category's colour
+    // (ui/controls/heads/GroupHead.svelte); one handed none draws them in the muted text colour.
 
     import Glyph from '../display/Glyph.svelte';
 
@@ -9,12 +12,21 @@
         label: string;
         expanded: boolean;
         onclick: (event: MouseEvent) => void;
+        /** A hue name the control's words are drawn in, or nothing for the muted colour. */
+        tone?: string;
     };
 
-    let { count, label, expanded, onclick }: Props = $props();
+    let { count, label, expanded, onclick, tone }: Props = $props();
 </script>
 
-<button type="button" class="disclosure" class:open={expanded} aria-expanded={expanded} {onclick}>
+<button
+    type="button"
+    class="disclosure"
+    class:open={expanded}
+    aria-expanded={expanded}
+    style={tone === undefined ? undefined : `--disclosure-tone: var(--c-${tone}-txt)`}
+    {onclick}
+>
     <strong class="count">{count}</strong>
     <span class="label">{label}</span>
     <span class="marker">
@@ -33,7 +45,9 @@
         border: 1px solid var(--line);
         border-radius: var(--radius-pill);
         background: var(--chip);
-        color: var(--muted-txt, var(--muted));
+        /* The hue the control is handed, its own property so a hue an enclosing card or chip sets
+           does not reach it. */
+        color: var(--disclosure-tone, var(--muted-txt, var(--muted)));
         font: inherit;
         font-size: var(--fs-xs);
         line-height: calc(11px * var(--text-scale, 1));

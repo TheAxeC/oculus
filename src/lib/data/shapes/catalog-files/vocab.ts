@@ -145,13 +145,13 @@ const stageWord = z.strictObject({
             "The colour of a project at the stage wherever it is drawn: its board card, the Map, the Present view's project chip."
         ),
     idea: flag(
-        "The idea group: the cross-link group of ideas, and the Focus board's unplaced projects, which list a project of any tier at such a stage that no lane takes. The Idea lane holds only `nascent`."
+        "The idea group: the Focus board's unplaced projects, which list a project of any tier at such a stage that no lane takes. The Idea lane holds only `nascent`."
     ),
     live: flag(
         "The in-flight group: the audit's rules over in-flight work, the Focus board's unplaced projects and manifests behind, a pillar card's in-flight count and tier strip, a venue's concentration marker and the Funding tab's card of unfunded work."
     ),
     terminal: flag(
-        'The done group, a done or closed outcome: the cross-link group of done projects, the boards that take or leave out done work by it, quick add, which offers no such project, and the Focus chip lanes, which hold none; the audit lists such a project that carries a chip of a chip lane.'
+        'The done group, a done or closed outcome: the boards that take or leave out done work by it, quick add, which offers no such project, and the Focus chip lanes, which hold none; the audit lists such a project that carries a chip of a chip lane.'
     ),
     dead: z
         .number()
@@ -159,7 +159,7 @@ const stageWord = z.strictObject({
         .min(1)
         .optional()
         .describe(
-            "A dead outcome, as its place in the Pillars view's Archival band from 1: the band lists its groups in that order. The `dead-ends` row of `categories` takes these stages, and the cross-link groups leave a project at such a stage out."
+            "A dead outcome, as its place in the Pillars view's Archival band from 1: the band lists its groups in that order. The `dead-ends` row of `categories` takes these stages."
         ),
     on_map: flag(
         'A stage that keeps a Pillars or Domains card awake: a card none of whose members is at such a stage is dormant.'
@@ -198,7 +198,7 @@ const chipWord = z.strictObject({
     label: text.optional().describe('The words the chip is drawn with on a card and in the form.'),
     icon: text.optional().describe('The glyph name the chip is drawn with.'),
     blocked: flag(
-        "A chip the Focus board's awaiting box counts as blocked and a project board counts in the red badge of its Situation button, which the wait line of a board card and of a lane card says, and which flags the cross-link group of in-flight projects it is in; a project's chips are compared as written."
+        "A chip the Focus board's awaiting box counts as blocked and a project board counts in the red badge of its Situation button, which the wait line of a board card and of a lane card says, and which flags the group of a card's project strip it is in; a project's chips are compared as written."
     )
 });
 
@@ -327,7 +327,7 @@ const categoryRow = z.strictObject({
         'A board gives the rail the count of its projects in such rows, drawn in `rail_color`.'
     ),
     archival: flag(
-        "The Pillars view's Archival band: such a project is no real work, left out of a venue's use counts, the Orphans card and a pillar's and a domain's members."
+        "The Pillars view's Archival band: such a project is no real work, left out of a venue's use counts, the Orphans card, a pillar's and a domain's members and the project strip at a card's foot, which groups its projects by these rows."
     )
 });
 

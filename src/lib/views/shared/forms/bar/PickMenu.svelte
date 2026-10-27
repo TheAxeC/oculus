@@ -8,6 +8,9 @@
     // search field at its top, then the values, each with a dot in its hue, its words and its
     // count; a picked value is ticked and its words are drawn filled in its hue, and the Venue list
     // draws behind each count a bar as long as the count is against the largest count of the list.
+    // A list handed a `section` draws one heading over the run of its groups the section names (a
+    // collection's Projects section in More), above the first of them, each group of the run
+    // keeping its own heading under it.
     // Typing filters the values by their words, over every heading; the arrows move; a press or
     // Enter picks or unpicks a value, and the list stays open, so several are picked in one go.
     // Escape and a press outside close it and give the focus back to the button.
@@ -44,9 +47,19 @@
         badge?: string;
         /** The words of an amber mark beside the button, its tip, or the empty string for none. */
         warning?: string;
+        /** One heading over the run of groups `ids` names, for a headed list; none for none. */
+        section?: { heading: string; ids: readonly string[] };
     };
 
-    let { label, groups, headed = false, onpick, badge = '', warning = '' }: Props = $props();
+    let {
+        label,
+        groups,
+        headed = false,
+        onpick,
+        badge = '',
+        warning = '',
+        section
+    }: Props = $props();
 
     /** Whether the list is open, and what is typed in its search field. */
     let open = $state(false);
@@ -62,6 +75,9 @@
             }))
             .filter((group) => group.items.length > 0);
     });
+
+    /** The id of the first group shown of the section's run, which the section heading is over. */
+    const sectionStart = $derived(shown.find((group) => section?.ids.includes(group.id))?.id);
 
     /** The search starts empty each time the list opens. */
     function changed(next: boolean): void {
@@ -137,6 +153,9 @@
                                     {#snippet child({ props: list })}
                                         <div {...list} class="values">
                                             {#each shown as group (group.id)}
+                                                {#if headed && group.id === sectionStart}
+                                                    <span class="section">{section?.heading}</span>
+                                                {/if}
                                                 {#if headed}
                                                     <Command.Group value={`group:${group.id}`}>
                                                         <Command.GroupHeading>
@@ -216,6 +235,21 @@
         text-transform: uppercase;
         letter-spacing: 0.04em;
         color: var(--tone, var(--muted-txt, var(--muted)));
+    }
+
+    /* The heading over a run of groups: a rule above it parts the run from the groups before it,
+       and its words are drawn in the ink colour at a group heading's size, so it reads as the
+       heading of the group headings under it. */
+    .section {
+        display: block;
+        margin-top: 4px;
+        padding: 8px 6px 0;
+        border-top: 1px solid var(--line);
+        font-size: var(--fs-xs);
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--ink-txt, var(--ink));
     }
 
     /* A value's row in a menu's look: the words first for the reader of a row's text, then the

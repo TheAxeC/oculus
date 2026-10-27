@@ -50,10 +50,10 @@ palette:
   "#475569": c-slate
 
 # The stages a project's work is at, keyed by the manifest's `stage`, in the order a board's slices, the Map and the project form list stages in: the idea group (nascent, scoping), the in-flight group (de-risking to revision) and the done group (published to stopped). `label` is the words the stage is drawn with on a card, the Present view's idea cards and the form, `icon` the glyph name a chip of the stage carries (a key of glyphs.yml), and `color` the colour of a project at the stage wherever it is drawn (its board card, the Map, the Present view's project chip). The flags say what a stage decides, each compared with the manifest's `stage` as written (`hasWord`), and a stage without a flag is not one of them:
-# - `idea`: the idea group: the cross-link group of ideas, and the Focus board's unplaced projects, which list a project of any tier at such a stage that no lane takes. The Idea lane holds only `nascent`.
+# - `idea`: the idea group: the Focus board's unplaced projects, which list a project of any tier at such a stage that no lane takes. The Idea lane holds only `nascent`.
 # - `live`: the in-flight group: the audit's rules over in-flight work (results, datasets, the ELI5), the Focus board's unplaced projects and manifests behind, a pillar card's in-flight count and tier strip, a venue's concentration marker and the Funding tab's card of unfunded work.
-# - `terminal`: the done group, a done or closed outcome: the cross-link group of done projects, the boards that take or leave out done work by it (`stages: { flags: [terminal] }` in layout.yml), quick add, which offers no such project, and the Focus chip lanes, which hold none; the audit lists such a project that carries a chip of a chip lane.
-# - `dead`: a dead outcome, written as a whole number from 1 that is the stage's place in the Pillars view's Archival band, whose groups go in that order. The `dead-ends` row of `categories:` below takes these stages, and the cross-link groups leave a project at such a stage out.
+# - `terminal`: the done group, a done or closed outcome: the boards that take or leave out done work by it (`stages: { flags: [terminal] }` in layout.yml), quick add, which offers no such project, and the Focus chip lanes, which hold none; the audit lists such a project that carries a chip of a chip lane.
+# - `dead`: a dead outcome, written as a whole number from 1 that is the stage's place in the Pillars view's Archival band, whose groups go in that order. The `dead-ends` row of `categories:` below takes these stages.
 # - `on_map`: a stage that keeps a Pillars or Domains card awake: a card none of whose members is at such a stage is dormant.
 # - `placed`: a stage that has a venue, so the audit asks for one.
 # - `public`, `negative`, `dead_end`: the publication kind a stage gives in the audit of the website's publications, whose sections are the rows of `audit.website.kinds` in the hub's .oculus/config.yml.
@@ -87,7 +87,7 @@ forms:
 
 
 # The chips a project's manifest picks for its `status.chips`, the situation of the work, in the order the project form offers them. A chip is drawn on a card after the stage and the form, with its `label` and its `icon` (a key of glyphs.yml); a chip carries no colour. A stage word or a form written as a chip is a finding of the hub check, since each has its own field. The one flag, and a chip without it is not one:
-# - `blocked`: a chip the Focus board's awaiting box counts as blocked and a project board counts in the red badge of its Situation button, which the wait line of a board card and of a lane card says, and which flags the cross-link group of in-flight projects it is in; a project's chips are compared as written (`anyWord`).
+# - `blocked`: a chip the Focus board's awaiting box counts as blocked and a project board counts in the red badge of its Situation button, which the wait line of a board card and of a lane card says, and which flags the group of a card's project strip it is in; a project's chips are compared as written (`anyWord`).
 chips:
   blocked:          { label: "blocked (external)", icon: purple, blocked: true }
   parked:           { label: "parked (not being worked)", icon: black }
@@ -261,7 +261,7 @@ roles:
 # The categories a project is filed under on every board, in order: a project's category is the first row whose `stages:` and `forms:` blocks it meets, each block with the lists `words` (one of the project's words is listed), `not_words` (none is), `flags` (its word carries one of the flags) and `not_flags` (it carries none), and a project no row holds has none. A board shows the rows that hold at least one of its projects, in this order: its sections, the slices of its bar and the counts of its tab. Every row names the `color` it is drawn in; a row without one is a finding naming the row, and is drawn in no colour. The flags:
 # - `record`: the row is a record of the work's output.
 # - `rail`: a board gives the rail the count of its projects in such rows, drawn in `rail_color` below.
-# - `archival`: the Pillars view's Archival band, which groups these projects by the `dead` number of their stage; such a project is no real work, so a venue's use counts, the Orphans card and a pillar's and a domain's members leave it out.
+# - `archival`: the Pillars view's Archival band, which groups these projects by the `dead` number of their stage; such a project is no real work, so a venue's use counts, the Orphans card, a pillar's and a domain's members and the project strip at a card's foot, which groups its projects by these rows, leave it out.
 categories:
   - { key: in-review,     label: "in review",     stages: { words: [submitted] }, color: "#0ea5e9", record: true }
   - { key: in-flight,     label: "in flight",     stages: { flags: [live] }, color: "#16a34a", record: true, rail: true }

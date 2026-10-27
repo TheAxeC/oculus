@@ -8,7 +8,9 @@
     // (`mine`); then one group button per group `line` names, in that order, each reading its picks
     // ("Form: journal article +1") and opening its values (PickMenu.svelte); then More, which holds
     // the groups `line` does not name as headed sections. A group button carries the red badge and
-    // the amber mark the caller gives it by its id (`badges`: a board's Situation and Venue).
+    // the amber mark the caller gives it by its id (`badges`: a board's Situation and Venue). A
+    // caller's `section` names a run of the groups More holds, which More lists last under one
+    // heading over their own (a collection's Projects section).
     //
     // The line is one line at any pane width: the group buttons that do not fit beside the
     // controls before them go into More, last in, first out, the search keeping `SEARCH_MIN`;
@@ -55,6 +57,8 @@
         badges?: Partial<Record<string, Badge>>;
         /** Adds or takes out one value of one group, as a pick in a group's list does. */
         ontoggle: (group: string, value: string) => void;
+        /** One heading More draws over the groups `ids` names, which it lists last. */
+        section?: { heading: string; ids: readonly string[] };
     };
 
     let {
@@ -70,7 +74,8 @@
         groups,
         line: lineIds,
         badges = {},
-        ontoggle
+        ontoggle,
+        section
     }: Props = $props();
 
     /** The narrowest the search box is drawn while group buttons are folded into More. */
@@ -92,7 +97,13 @@
     let moreWidth = MORE_GUESS;
 
     const folded = $derived(shown === null ? [] : lineGroups.slice(shown));
-    const moreGroups = $derived([...folded, ...ownGroups]);
+    /** Whether a group is of the section's run, which More lists after the rest. */
+    const inSection = (group: FilterGroup): boolean => section?.ids.includes(group.id) ?? false;
+    const moreGroups = $derived([
+        ...folded,
+        ...ownGroups.filter((group) => !inSection(group)),
+        ...ownGroups.filter(inSection)
+    ]);
 
     /** The first badge, or the first mark, of the folded groups that carry one, for More. */
     function foldedMark(kind: keyof Badge): string {
@@ -160,6 +171,7 @@
                 label={moreWords(moreGroups)}
                 groups={moreGroups}
                 headed
+                {section}
                 onpick={ontoggle}
                 badge={foldedMark('badge')}
                 warning={foldedMark('warning')}

@@ -1,6 +1,5 @@
-In flight (3 of 6 slots in use):
-- O95 (Focus, what a press opens): built; reviewed (`agents/reviews/O95-refuter.md`); repair round 1 sent (`agents/briefs/O95-round1.md`), carrying ruling 513 (a).
-- O96 (the cards' project strip: its filters and its groups by category): built; reviewed (`agents/reviews/O96-refuter.md`); repair round 1 sent (`agents/briefs/O96-round1.md`).
+In flight (2 of 6 slots in use):
+- O95 (Focus, what a press opens): built; repair round 1 built and reviewed (`agents/reviews/O95-refuter.md`); landing next.
 - O98 (accounts and connections, rulings 507 to 510 and 516): building, builder launched 2026-10-27, base 54304adb4.
 
 Queued:
@@ -9,11 +8,12 @@ Queued:
 
 Waiting on a ruling: none.
 
-Landing next: O96, then O95, after their reviews.
+Landing next: O95.
 
-Owed looks: O95 and O96 at their landings, on 8790.
+Owed looks: O95 at its landing, on 8790.
 
 Landed, newest first:
+- O96 (the cards' project strip: its filters and its groups by category), 2026-10-27, landing commit.
 - O92 (the collection's Add and bar, and the Map's bar), 2026-10-27, 0414282f.
 - O90 (the board bar's Waiting on toggle and group), 2026-10-27, c72f0fcb.
 - O91 (joint work onto the people file, and the projects on people's, organisations' and resources' cards), 2026-10-27, 38481ec6; hub 6e868b885.

@@ -4,10 +4,11 @@
     // status chip, the fields the file's own schema names, its subtasks and follow-up notes, and
     // the strip of the projects that name the entry at the foot: a scheme's, an organisation's, a
     // resource's or the entry's `related:` list's, and for a person one labelled strip per role
-    // (state/boards/structure/cross-links.ts, `crossLinks` and `roleLinks`). The collection view
-    // draws one per entry, and the entry's page draws one open, with no grip, so the card lives
-    // here and not under either view. The fields are EntryFields.svelte, which says how each field
-    // is drawn.
+    // (state/boards/structure/cross-links.ts, `crossLinks` and `roleLinks`), grouped by the rows
+    // of `categories:`. The collection view draws one per entry, its strip narrowed to the projects
+    // the picks of its bar's Projects section keep (`keeps`), and the entry's page draws one open,
+    // with no grip and the whole strip, so the card lives here and not under either view. The
+    // fields are EntryFields.svelte, which says how each field is drawn.
     //
     // Nothing here knows what a scheme or an event is. Every action is one call of the write path,
     // except the `extra` ones the collection passes in (Start Agent on a task's card).
@@ -55,7 +56,7 @@
         type Project,
         type SchemaField
     } from '$lib/state/boards/collection';
-    import { crossLinks, roleLinks } from '$lib/state/boards/structure/cross-links';
+    import { crossLinks, roleLinks, type Keeps } from '$lib/state/boards/structure/cross-links';
     import { rootOf } from '$lib/state/shared/page/hubs';
     import type { ViewSource } from '$lib/state/sessions/view-source';
     import { statusTone, vocabOf } from '$lib/state/shared/words/tones';
@@ -110,6 +111,8 @@
         extra?: CardAction[];
         /** Whether the card carries the Lead badge: the entry's lead is the user. */
         lead?: boolean;
+        /** The projects the strip at the foot draws; a card handed none draws every one. */
+        keeps?: Keeps;
     };
 
     let {
@@ -128,7 +131,8 @@
         onmore,
         onpage,
         extra = [],
-        lead = false
+        lead = false,
+        keeps
     }: Props = $props();
 
     const status = $derived(entryStatus(entry));
@@ -183,10 +187,10 @@
     );
     const people = $derived(Object.values(portfolio()?.entities.people ?? {}));
     /** A person's strips at the card's foot, one per role; null for an entry of any other kind. */
-    const rows = $derived(roleLinks(entry, held, projects, configMap(), vocabOf));
+    const rows = $derived(roleLinks(entry, held, projects, configMap(), vocabOf, keeps));
     /** The projects that name any other entry, the one strip at the card's foot. */
     const groups = $derived(
-        rows === null ? crossLinks(entry, held, projects, people, configMap(), vocabOf) : []
+        rows === null ? crossLinks(entry, held, projects, people, configMap(), vocabOf, keeps) : []
     );
 
     /**

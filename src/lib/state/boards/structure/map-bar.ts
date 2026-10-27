@@ -11,7 +11,9 @@
 // with stages picked it keeps the projects at those stages. Its picks are stored under
 // `filters.stage`, which `applyFilters` does not read, so the stage rule is applied here. Every
 // count is taken over what the other filters leave, the Stage group's under every filter but its
-// own, the other groups' over the projects the stage rule keeps.
+// own, the other groups' over the projects the stage rule keeps. The Stage group's listing
+// (`stageGroup`) is also the Stage group of a collection's Projects section in More
+// (state/boards/collection/bar.ts), which applies no stage rule of its own.
 
 import type { Snapshot } from '../../../data/model/index.ts';
 import { byKey } from '../../../data/helpers/guards.ts';
@@ -123,7 +125,7 @@ function stageKeeps(
  * them; each counted over `counted`, drawn in its stage's hue, its words cut at the first " (" with
  * its whole words in its tip.
  */
-function stageGroup(
+export function stageGroup(
     items: BoardItem[],
     counted: BoardItem[],
     order: readonly string[],

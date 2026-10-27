@@ -36,6 +36,8 @@ text:
         no_funding_sub: Active and manuscript projects with no scheme attached.
         pin_glyph: pin
         pin_to_top: Pin to Top
+        project_category: Category
+        projects: Projects
         reorder_hint: drag to reorder
         search: Search {0} ...
         show_in_files: Show in Files

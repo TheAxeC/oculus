@@ -39,7 +39,10 @@
     // projects have no scheme, how many entries are shown, and Clear all. A pick keeps the entries
     // that hold it, none picked keeps every entry, and each count is taken over what the other
     // filters leave, as on a project board; the rules are state/boards/collection/bar.ts's, the
-    // picks the tab's instance state beside the search.
+    // picks the tab's instance state beside the search. A view whose cards draw a project strip
+    // holds in More a Projects section (Category, Stage, Form, Tier, Role and Pillar, the projects
+    // read as the Map reads them, as items of its preset): a pick narrows each card's strip, the
+    // No funding card's too, and hides a card it leaves with no project, in list mode the row.
     //
     // A collection whose `schema:` declares a field a row of `roles:` is read from (`lead`,
     // `collaborators`, `supervisors`) draws, while a person is marked as the user, the Mine only
@@ -85,11 +88,21 @@
         statusFacets,
         type CollectionMode,
         type CollectionState,
-        type Entry
+        type Entry,
+        type Project
     } from '$lib/state/boards/collection';
-    import { STATUS_FACET, collectionBar, entryCountWords } from '$lib/state/boards/collection/bar';
-    import { withPick } from '$lib/state/boards/board';
-    import { unfundedBy } from '$lib/state/boards/structure/cross-links';
+    import {
+        STATUS_FACET,
+        collectionBar,
+        entryCountWords,
+        type Strips
+    } from '$lib/state/boards/collection/bar';
+    import { mapPreset, withPick, type BoardItem } from '$lib/state/boards/board';
+    import {
+        drawnProjects,
+        stripProjects,
+        unfundedBy
+    } from '$lib/state/boards/structure/cross-links';
     import { pageView } from '$lib/state/forms/page-entry';
     import { cardCursor, storedState } from '$lib/state/workbench/layout/instance';
     import { t } from '$lib/state/shared/words/text';
@@ -102,10 +115,11 @@
 
     const client = useState();
     const {
+        entities: { portfolio },
         layout: { openView },
         terminals: { composeAt },
         fs: { primary, roots },
-        selectors: { collectionOf, collectionsOfKey, configMap, projects, selfPeople },
+        selectors: { board, collectionOf, collectionsOfKey, configMap, projects, selfPeople },
         source: { unsavedFile },
         ui: { cardMoveRequested, instanceState, setInstanceState },
         writes: { reorderEntries, writeToken }
@@ -155,6 +169,29 @@
             ? unfundedBy(joined.fundedProjects(all), joined.funded, configMap(), vocabOf)
             : []
     );
+    /** The projects each card draws at its foot, as items of the Map's preset, every project's. */
+    const strips = $derived.by((): Strips => {
+        const preset = mapPreset(configMap(), vocabOf);
+        const items = new Map(board(preset).map((item) => [item.id, item]));
+        const people = Object.values(portfolio()?.entities.people ?? {});
+        const itemsOf = (some: Project[]): BoardItem[] =>
+            some.flatMap((one) => items.get(one.id) ?? []);
+        const drawn = new Map(
+            parts.flatMap((part) =>
+                part.collection.entries.map((entry): [Entry, BoardItem[]] => [
+                    entry,
+                    itemsOf(
+                        stripProjects(entry, part.collection, all, people, configMap(), vocabOf)
+                    )
+                ])
+            )
+        );
+        return {
+            of: (entry) => drawn.get(entry) ?? [],
+            unfunded: itemsOf(drawnProjects(unfunded, configMap(), vocabOf)),
+            preset
+        };
+    });
     /** The bar's groups and slices with their counts, and what it keeps. */
     const filtered = $derived(
         collectionBar({
@@ -166,9 +203,12 @@
             config: configMap(),
             self: selfPeople(),
             hubs,
-            noFunding: unfunded.length
+            noFunding: unfunded.length,
+            strips
         })
     );
+    /** The No funding card's projects the picks of the Projects section leave. */
+    const unfundedShown = $derived(unfunded.filter(filtered.strip));
     const shown = $derived(
         parts.flatMap((part) =>
             pinnedFirst(part.collection.entries)
@@ -380,6 +420,7 @@
         onmine={() => write({ mine: !held.mine })}
         groups={filtered.groups}
         line={filtered.line}
+        section={filtered.section}
         ontoggle={toggleFilter}
     />
     <SliceLine
@@ -407,7 +448,7 @@
             {#if held.mode === 'list'}
                 {#if filtered.card}
                     <CardGrid role="list">
-                        <NoFundingCard {unfunded} cursor={cursor === NO_FUNDING} />
+                        <NoFundingCard unfunded={unfundedShown} cursor={cursor === NO_FUNDING} />
                     </CardGrid>
                 {/if}
                 <EntryList
@@ -438,6 +479,7 @@
                                 ondropon={drop}
                                 onsaid={(words: string) => (said = words)}
                                 lead={filtered.lead(entry)}
+                                keeps={filtered.strip}
                                 more={held.more.includes(entry.id)}
                                 onmore={() => toggleMore(entry.id)}
                                 onpage={() => openPage(entry)}
@@ -460,7 +502,7 @@
                         </Reveal>
                     {/each}
                     {#if filtered.card}
-                        <NoFundingCard {unfunded} cursor={cursor === NO_FUNDING} />
+                        <NoFundingCard unfunded={unfundedShown} cursor={cursor === NO_FUNDING} />
                     {/if}
                 </CardGrid>
             {/if}
