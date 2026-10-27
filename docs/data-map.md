@@ -77,7 +77,7 @@ A duplicate or empty primary key is a finding, and so is a file whose schema fla
 
 ## The hub's settings
 
-`.oculus/config.yml` may set these 51 keys and no others; any other key is a finding and is not applied. A key of `vocab.yml` is laid over oculus's value by its shape: a map word by word, a word the hub names replacing oculus's in oculus's place, a new word coming after oculus's and `<word>: null` taking one out; `categories` row by row by `key`, `{ key: <key>, removed: true }` taking a row out; `focus_clusters`, `focus_lanes`, `fund_stages`, `position_stages`, `teaching_stages`, `roles`, `venue_categories`, `venue_tiers` and `radar_buckets` whole; and `rail_color` by the hub's value in place of oculus's. A list replaced whole other than `focus_clusters` with a row of the wrong kind, or with two rows naming one `key` (one `label` in a list of stages), is a finding naming the hub's file and the row's place, and oculus's list stands; `focus_clusters` is read row by row, a row of the wrong kind or naming the key of an earlier row being a finding and not read. A word the hub's values no longer give, taken out with `<word>: null` or left out of a list the hub replaces whole such as `roles`, is also taken out of every word list that names it, each option and each field of an option's rows that the options of `config/options/` describe with a `from` naming that list (a category's stage words, a Focus lane's stages and chips and the words of its `move_writes`, a funding, position or teaching stage's statuses, a count's `match`, a board's `tier` and `role`, `research_audit`'s `skip_tiers`): in oculus's own values a row left with no word stays and a single word of a field that takes a list becomes an empty list, and in a list or a row the hub writes itself each such word is a finding naming the hub's file at the word's place there, and the word is not read. `manifest_fields` adds its rows to the form of the hub's own projects. Any other key set here replaces oculus's value whole. The hub's records are drawn in its own words. The defaults and a comment on each are in the `config.yml` template.
+`.oculus/config.yml` may set these 52 keys and no others; any other key is a finding and is not applied. A key of `vocab.yml` is laid over oculus's value by its shape: a map word by word, a word the hub names replacing oculus's in oculus's place, a new word coming after oculus's and `<word>: null` taking one out; `categories` row by row by `key`, `{ key: <key>, removed: true }` taking a row out; `focus_clusters`, `focus_lanes`, `fund_stages`, `position_stages`, `teaching_stages`, `roles`, `venue_categories`, `pillar_kinds`, `venue_tiers` and `radar_buckets` whole; and `rail_color` by the hub's value in place of oculus's. A list replaced whole other than `focus_clusters` with a row of the wrong kind, or with two rows naming one `key` (one `label` in a list of stages), is a finding naming the hub's file and the row's place, and oculus's list stands; `focus_clusters` is read row by row, a row of the wrong kind or naming the key of an earlier row being a finding and not read. A word the hub's values no longer give, taken out with `<word>: null` or left out of a list the hub replaces whole such as `roles`, is also taken out of every word list that names it, each option and each field of an option's rows that the options of `config/options/` describe with a `from` naming that list (a category's stage words, a Focus lane's stages and chips and the words of its `move_writes`, a funding, position or teaching stage's statuses, a count's `match`, a board's `tier` and `role`, `research_audit`'s `skip_tiers`): in oculus's own values a row left with no word stays and a single word of a field that takes a list becomes an empty list, and in a list or a row the hub writes itself each such word is a finding naming the hub's file at the word's place there, and the word is not read. `manifest_fields` adds its rows to the form of the hub's own projects. Any other key set here replaces oculus's value whole. The hub's records are drawn in its own words. The defaults and a comment on each are in the `config.yml` template.
 
 ```yaml
 scan:                     # the folders projects are found in
@@ -117,6 +117,7 @@ rail_color:               # the colour of a project board's rail count (the hub'
 leads_fit:                # the fit colours of the Position Leads (by word)
 data_access:              # the colour of a dataset's access chip (by word)
 venue_categories:         # the categories of venues, rows { key, label, ribbon? }, in order (whole)
+pillar_kinds:             # the kinds of pillar lines, rows { key, label, color }, in order (whole)
 venue_tiers:              # the tiers of venues, in order (whole)
 radar_buckets:            # the buckets of Lit Watch, in order (whole)
 manifest_fields:          # the fields the hub adds to the form of its own projects (by row)
@@ -188,6 +189,8 @@ venues:
   category: vocab venue_categories
   tier: vocab venue_tiers
   themes: [an option of the themes field]
+pillars:
+  kind: vocab pillar_kinds
 data:
   access: vocab data_access
   themes: [an option of the themes field]

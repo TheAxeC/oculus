@@ -8,7 +8,7 @@
     // restarts, or drops the question. The form is opened and closed through the store too, so it
     // stands on the modal ground and not inside the view that opened it.
 
-    import Confirm from '$lib/ui/controls/Confirm.svelte';
+    import Confirm from '$lib/ui/controls/confirm/Confirm.svelte';
     import CommandForm from './CommandForm.svelte';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';

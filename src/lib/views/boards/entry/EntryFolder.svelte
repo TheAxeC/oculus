@@ -9,14 +9,20 @@
     // draws. The chosen document is kept in the view instance's state beside the entry's unsaved
     // edits, which choosing leaves where they are.
     //
-    // Over a wallpaper each section is read off a `Surface`, so a document's code blocks paint no
-    // surface of their own on it.
+    // Documents, Files and Sessions are each the group every grouping of a view is drawn as
+    // (ui/controls/heads/GroupHead.svelte), the folder's controls as the Files group's `actions`,
+    // and each folds by its block key (`documents`, `files`, `sessions`) under `folded` of the
+    // tab's state (views/shared/card/pane-fold.ts). Over a wallpaper each group's body is read off
+    // a `Surface`, so a document's code blocks paint no surface of their own on it.
 
+    import type { Snippet } from 'svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
+    import GroupHead from '$lib/ui/controls/heads/GroupHead.svelte';
     import Surface from '$lib/ui/frame/Surface.svelte';
     import Segment from '$lib/ui/controls/segment/Segment.svelte';
     import type { SegmentItem } from '$lib/ui/controls/segment/segment-items';
     import FolderFiles from '../../shared/links/FolderFiles.svelte';
+    import { usePaneFold } from '../../shared/card/pane-fold';
     import Markdown from '../../shared/prose/Markdown.svelte';
     import SessionRow from '../../shared/sessions/SessionRow.svelte';
     import { absoluteOf } from '$lib/state/workbench/navigation/pages';
@@ -43,6 +49,9 @@
     };
 
     let { instance, hub, folder, reading }: Props = $props();
+
+    /** Which of the folder's groups are open, kept in the tab's state. */
+    const fold = usePaneFold();
 
     const files = $derived(folder === undefined ? null : listing(hub, folder));
     const names = $derived(
@@ -75,9 +84,13 @@
 {:else if folder === undefined}
     <Empty message={t('entry.no_folder')} glyph={t('entry.none_glyph')} />
 {:else}
-    <Surface>
-        <section class="block">
-            <h3 class="heading">{t('entry.documents')}</h3>
+    <GroupHead
+        data-block="documents"
+        label={t('entry.documents')}
+        open={fold.open('documents')}
+        ontoggle={() => fold.toggle('documents')}
+    >
+        <Surface>
             {#if shown === null}
                 <Empty
                     message={files?.loading === true ? t('entry.reading') : t('entry.no_documents')}
@@ -96,22 +109,32 @@
                     failed={t('entry.doc_failed', shown.error)}
                 />
             {/if}
-        </section>
-    </Surface>
+        </Surface>
+    </GroupHead>
 
-    <Surface>
-        <section class="block files">
-            <FolderFiles {folder} root={hub}>
-                {#snippet heading()}
-                    <h3 class="heading">{t('entry.files', folder)}</h3>
-                {/snippet}
-            </FolderFiles>
-        </section>
-    </Surface>
+    <FolderFiles {folder} root={hub}>
+        {#snippet heading(controls: Snippet, body: Snippet)}
+            <GroupHead
+                data-block="files"
+                label={t('entry.files', folder)}
+                open={fold.open('files')}
+                ontoggle={() => fold.toggle('files')}
+                actions={controls}
+            >
+                <Surface>
+                    {@render body()}
+                </Surface>
+            </GroupHead>
+        {/snippet}
+    </FolderFiles>
 
-    <Surface>
-        <section class="block">
-            <h3 class="heading">{t('entry.sessions')}</h3>
+    <GroupHead
+        data-block="sessions"
+        label={t('entry.sessions')}
+        open={fold.open('sessions')}
+        ontoggle={() => fold.toggle('sessions')}
+    >
+        <Surface>
             {#if rows.length === 0}
                 <Empty message={t('entry.no_sessions')} glyph={t('entry.none_glyph')} />
             {:else}
@@ -119,31 +142,6 @@
                     <SessionRow entry={row} {now} />
                 {/each}
             {/if}
-        </section>
-    </Surface>
+        </Surface>
+    </GroupHead>
 {/if}
-
-<style>
-    .block {
-        min-width: 0;
-    }
-
-    .heading {
-        margin: 0 0 6px;
-        font-size: var(--fs-xs);
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
-        color: var(--accent-txt, var(--accent));
-    }
-
-    /* The Files heading sits in FolderFiles' centred row with the control, so the row carries the
-       space below it. */
-    .files .heading {
-        margin: 0;
-    }
-
-    .files :global(.head) {
-        margin-bottom: 6px;
-    }
-</style>

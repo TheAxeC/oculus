@@ -33,12 +33,18 @@
     // entry) and, since it is handed neither a grip nor a title opener, with the long fields whole
     // and the title as words.
     //
+    // The editor, the referrers and the folder's blocks are each the group every grouping of a view
+    // is drawn as (ui/controls/heads/GroupHead.svelte), folded by its block key (`editor`,
+    // `referrers`, `documents`, `files`, `sessions`) under `folded` of the tab's state
+    // (views/shared/card/pane-fold.ts); a save that moves the tab to a new key keeps the folds.
+    //
     // A toolbar action opens the workbench of the entry's folder with this page in its documents
     // pane (state/workbench/layout/open/float/folder-opener.ts). Whether the entry has a folder is
     // the file store's listing of the folder that holds its link, as the card decides it, so the
     // blocks come and go with the folder.
 
     import Empty from '$lib/ui/frame/Empty.svelte';
+    import GroupHead from '$lib/ui/controls/heads/GroupHead.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Surface from '$lib/ui/frame/Surface.svelte';
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
@@ -51,6 +57,7 @@
     import EntryEditor from '../../shared/forms/entry/edit/EntryEditor.svelte';
     import { pageFault, pageFile } from '../../shared/forms/entry/edit/page-file';
     import Referrers from '../../shared/forms/entry/Referrers.svelte';
+    import { usePaneFold } from '../../shared/card/pane-fold';
     import { taskCardActions } from '$lib/views/shared/forms/entry/task-card';
     import { literatureCardActions } from '$lib/views/shared/card/feed/literature-card';
     import { blockedBy } from '../../shared/forms/entry-file';
@@ -71,7 +78,8 @@
     import { listsReferrers, referrersOf } from '$lib/state/forms/referrers';
     import { dirOf } from '$lib/state/sources/repositories/change-tree';
     import { keyOf, rootOf } from '$lib/state/shared/page/hubs';
-    import { instanceText } from '$lib/state/workbench/layout/instance';
+    import { instanceFolded } from '$lib/state/shared/page/folds';
+    import { instanceText, withInstanceKey } from '$lib/state/workbench/layout/instance';
     import { stateRecord } from '$lib/state/shared/page/records';
     import { t } from '$lib/state/shared/words/text';
     import { registrationLabel, type ViewProps } from '$lib/state/workbench/navigation/registry';
@@ -94,6 +102,9 @@
     } = client;
 
     let { instance }: ViewProps = $props();
+
+    /** Which of the page's blocks are open, kept in the tab's state. */
+    const fold = usePaneFold();
 
     /**
      * The collection (or feed) and the internal id of the entry this instance was opened for, the
@@ -176,11 +187,13 @@
     );
 
     // A save that gave the entry a new key or a new title moves the tab to them, so the page and
-    // the tab's title follow the saved words from the first frame.
+    // the tab's title follow the saved words from the first frame, the folded blocks kept.
     $effect(() => {
         if (page === null) return;
         if (page.key !== key || page.title !== instanceText(instance.state, 'label')) {
-            restateInstance(instance.id, entryPageState(collectionKey, page.key, page.title));
+            const moved = entryPageState(collectionKey, page.key, page.title);
+            const folded = instanceFolded(instance.state);
+            restateInstance(instance.id, withInstanceKey(moved, 'folded', folded));
         }
     });
 
@@ -330,17 +343,19 @@
                 />
             {/if}
 
-            <Surface>
-                <section class="block">
-                    <h3 class="heading">{t('entry.editor')}</h3>
+            <GroupHead
+                data-block="editor"
+                label={t('entry.editor')}
+                open={fold.open('editor')}
+                ontoggle={() => fold.toggle('editor')}
+            >
+                <Surface>
                     <EntryEditor {page} instance={instance.id} {file} {fault} />
-                </section>
-            </Surface>
+                </Surface>
+            </GroupHead>
 
             {#if referred}
-                <Surface>
-                    <Referrers {referrers} />
-                </Surface>
+                <Referrers {referrers} />
             {/if}
 
             {#if entry !== null && hub !== null && link !== undefined}
@@ -364,19 +379,6 @@
         display: flex;
         flex-direction: column;
         gap: 12px;
-    }
-
-    .block {
-        min-width: 0;
-    }
-
-    .heading {
-        margin: 0 0 6px;
-        font-size: var(--fs-xs);
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
-        color: var(--accent-txt, var(--accent));
     }
 
     .said {

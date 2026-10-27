@@ -2,8 +2,6 @@
 text:
     slides:
         already_in: '{0} is already in {1}'
-        count: '{0} slides'
-        count_one: 1 slide
         down: down
         down_tip: move {0} one place later
         drag_glyph: grip
@@ -17,7 +15,6 @@ text:
         failed_network: The save did not reach the server.
         failed_other: The deck was not saved.
         failed_read: 'The deck could not be read: {0}'
-        intro: The order lists what the deck shows, entry by entry; drag or step an entry to move it. A group lists the decks whose slides it shows, in the order it shows them. Tick a deck to add it to the group, untick it to take it out, and drag or step a ticked deck to move it, or drag it onto another group. A deck marked found is on the group because the group discovers decks.
         kind_candidate: found, not in the group
         kind_conflict: 'found by {0} too; tick it to put it in this group'
         kind_found: found by the group

@@ -1,11 +1,11 @@
 # Oculus text owned by the data view and the Recover view.
 text:
     data:
+        count: '{0} datasets ({1})'
+        count_one: '1 dataset ({0})'
         empty: No datasets yet; add some to the hub's data file.
         fetch: Fetch
         filters: Dataset filters
-        intro: "{0} datasets ({1}). Provenance and the sources each set comes back from, from the file the <code>data</code> entry of the hub's collections list names. A set whose sources are all downloads has a Recover control."
-        intro_one: "1 dataset ({0}). Provenance and the sources the set comes back from, from the file the <code>data</code> entry of the hub's collections list names. A set whose sources are all downloads has a Recover control."
         modality_facet: Modality
         path: Folder
         recover: Recover

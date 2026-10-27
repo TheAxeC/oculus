@@ -13,7 +13,7 @@
     // Folder control are the caller's: a tree given none draws none.
 
     import type { Snippet } from 'svelte';
-    import Confirm from '$lib/ui/controls/Confirm.svelte';
+    import Confirm from '$lib/ui/controls/confirm/Confirm.svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
     import type { TreeNav } from '$lib/ui/tree/tree-keys';
     import { openRow } from './opening';

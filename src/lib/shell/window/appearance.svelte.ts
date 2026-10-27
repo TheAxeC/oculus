@@ -85,9 +85,11 @@ export function useAppearance(
     const firstFile = firstDrawFile(files);
     /**
      * The app themes whose file the page could not get, under the offers they were found missing
-     * from: at the start those the first load carries no file of, then each whose load failed.
+     * from: at the start those the first load carries no file of, then each whose load failed. It
+     * is raw state, replaced whole, so `offers` is the offers array itself and compares equal to
+     * the list the shell acts on while that list is unchanged.
      */
-    let unloaded = $state({
+    let unloaded = $state.raw({
         offers: appShell.offers(),
         names: Object.entries(files())
             .filter(([, file]) => file === null)

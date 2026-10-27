@@ -75,7 +75,7 @@
     import { createTabMenu } from './strip/tab-menu-state.svelte';
     import { caretSymbols, crumbPicked, tabCrumbs, type Crumb } from './strip/tab-crumbs';
     import { provideTabActions } from '$lib/ui/tabs/tab-actions.svelte';
-    import CloseQuestion from '$lib/ui/controls/CloseQuestion.svelte';
+    import CloseQuestion from '$lib/ui/controls/confirm/CloseQuestion.svelte';
     import type { MenuItem } from '$lib/ui/menu/menu-items';
     import type { Tab } from '$lib/ui/tabs/tab-strip';
     import { markAt } from '$lib/state/workbench/drag.svelte';

@@ -1,18 +1,28 @@
 <script lang="ts">
-    // Layer 3, view partial. Finished jobs stay collapsed and show memory and CPU efficiency tones
-    // with an on-demand log action, drawn while the pointer is over the row or the focus is inside
-    // it. Rows older than the queue carry the stale mark in the heading, which is drawn even with
-    // no rows, so the mark shows; with no rows the section holds no table.
+    // Layer 3, view partial. Finished jobs are the group every grouping of a view is drawn as
+    // (ui/controls/heads/GroupHead.svelte), headed with their count and folded in a new pane, the
+    // fold standing as the pane holds it. They show memory and CPU efficiency tones with an
+    // on-demand log action, drawn while the pointer is over the row or the focus is inside it. Rows
+    // older than the queue carry the stale mark at the right end of the heading, which is drawn
+    // even with no rows, so the mark shows; with no rows the group holds no table.
+    import GroupHead from '$lib/ui/controls/heads/GroupHead.svelte';
+    import StaleMark from './StaleMark.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
     import Table from '$lib/ui/display/table/Table.svelte';
     import { type Column, cellText } from '$lib/ui/display/table/table-rows';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import { efficiencyTone, staleWords, type HpcRecent } from '$lib/state/system/machine/hpc/hpc';
+    import {
+        efficiencyTone,
+        type HpcRecent,
+        type HpcViewState
+    } from '$lib/state/system/machine/hpc/hpc';
     import { t } from '$lib/state/shared/words/text';
     let {
         rows,
         stale,
         live,
+        held,
+        onheld,
         onlog
     }: {
         rows: HpcRecent[];
@@ -26,6 +36,10 @@
          * and not pressable.
          */
         live: boolean;
+        /** The folds as this pane holds them. */
+        held: HpcViewState;
+        /** Keep the folds' new state in the pane's instance state. */
+        onheld: (next: HpcViewState) => void;
         onlog: (id: string) => void;
     } = $props();
     const columns: Column[] = [
@@ -92,43 +106,25 @@
     {/if}
 {/snippet}
 {#if rows.length || stale !== undefined}
-    <details>
-        <summary>
-            {t('hpc.recent_summary', rows.length)}
-            {#if stale !== undefined}
-                <span class="stale">{staleWords(stale)}</span>
-            {/if}
-        </summary>
+    <GroupHead
+        data-recent
+        label={t('hpc.recent_title')}
+        count={rows.length}
+        open={held.recent}
+        ontoggle={() => onheld({ ...held, recent: !held.recent })}
+    >
+        {#snippet actions()}
+            <StaleMark {stale} />
+        {/snippet}
         {#if rows.length}
             <div class="scroll">
                 <Table {columns} rows={tableRows} rowKey="id" {cell} />
             </div>
         {/if}
-    </details>
+    </GroupHead>
 {/if}
 
 <style>
-    /* The section's heading. */
-    summary {
-        cursor: pointer;
-        font-size: var(--fs-xs);
-        font-weight: 700;
-        text-transform: uppercase;
-        color: var(--muted-txt, var(--muted));
-    }
-
-    summary:focus-visible {
-        outline: 1px solid var(--accent);
-        outline-offset: 1px;
-    }
-
-    /* The mark of rows older than the queue, in the failure tone and in its own words' case. */
-    .stale {
-        margin-inline-start: 6px;
-        color: var(--c-red-d-txt);
-        text-transform: none;
-    }
-
     /* A table wider than the pane scrolls inside its own box. */
     .scroll {
         min-width: 0;

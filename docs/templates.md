@@ -360,6 +360,16 @@ The hub's own settings. A key of oculus's `config/catalogs/vocab.yml` set here i
 #     - { key: conference, label: Conferences, ribbon: true }
 #     - { key: workshop, label: Workshops, ribbon: true }
 
+# The kinds a pillar line's `kind` takes, in order: `key` the word a line's kind writes, `label`
+# the heading of its section of the Pillars view, and `color` the hue of that heading. A line
+# whose kind names no row is drawn under Other.
+# pillar_kinds: []
+#   example:
+#   pillar_kinds:
+#     - { key: pillar, label: Pillar, color: "#2563eb" }
+#     - { key: provisional, label: Provisional, color: "#d97706" }
+#     - { key: offpillar, label: Off-pillar, color: "#9ca3af" }
+
 # The tiers a venue's tier takes, best first, each with its colour and label.
 # venue_tiers: []
 #   example:
@@ -886,7 +896,7 @@ bridge: 1
 
 ## The hub's data files
 
-Every data file has the same shape: an optional `title:` and `intro:`, a `schema:` that lists its fields, and the entries. The one field of the schema flagged `primary_key: true` is the one an entry is found by: every entry holds a value there, no two entries hold the same one, and a reference to the entry from another file stores it. A schema that flags no field, or two, is a finding, and its entries are drawn but take no edit, Add or remove. The fields carrying `display:` ranks are what a card heading and a reference to the entry show: the filled field of the lowest rank, else the primary key. Each template ends with one entry, commented, holding every field; uncomment it and fill it in.
+Every data file has the same shape: an optional `title:`, a `schema:` that lists its fields, and the entries. The one field of the schema flagged `primary_key: true` is the one an entry is found by: every entry holds a value there, no two entries hold the same one, and a reference to the entry from another file stores it. A schema that flags no field, or two, is a finding, and its entries are drawn but take no edit, Add or remove. The fields carrying `display:` ranks are what a card heading and a reference to the entry show: the filled field of the lowest rank, else the primary key. Each template ends with one entry, commented, holding every field; uncomment it and fill it in.
 
 A new entry is written into the file of the hub that lists its collection. With more than one hub listing the collection, Add asks which hub's file takes it, and the `new-entry` write names that hub by its `root`; an app's `new-entry` reaches the primary hub alone.
 
@@ -1043,7 +1053,7 @@ title: Pillars
 schema:
   - { field: key,     type: text,     primary_key: true, required: true, help: "The pillar's key, used by a project's pillars." }
   - { field: title,   type: text,     display: 1, required: true, help: "Name." }
-  - { field: kind,    type: text,     help: "pillar, provisional or offpillar." }
+  - { field: kind,    type: select,   foreign_key: vocab.pillar_kinds, help: "The line's kind, a key of pillar_kinds." }
   - { field: goal,    type: textarea, help: "One-line aim." }
   - { field: color,   type: text,     help: "A hex colour of the palette." }
   - { field: funding, type: text,     help: "Granted support only." }
@@ -1051,7 +1061,7 @@ schema:
 entries:
 #  - key: tensor                  # required; what a project's pillars name
 #    title: "Tensor methods"      # required
-#    kind: pillar                 # pillar, provisional or offpillar
+#    kind: pillar                 # a key of pillar_kinds: pillar, provisional or offpillar
 #    goal: ""
 #    color: "#2563eb"
 #    funding: ""                  # granted support only
@@ -1386,7 +1396,6 @@ The papers kept for reading and citing. Save to Literature on a card of the Lite
 
 ```yaml
 title: Literature
-intro: "Papers kept for reading and citing."
 schema:
   - { field: key,      type: text,     primary_key: true, required: true, help: "The citation key: the first author's surname, the year and the first word of the title." }
   - { field: title,    type: text,     display: 1, required: true, help: "The paper's title." }

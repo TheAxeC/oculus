@@ -5,7 +5,7 @@
     // and for the Svelte and Vite configuration, LintConfigRows.svelte for the ESLint
     // configuration.
 
-    import Confirm from '$lib/ui/controls/Confirm.svelte';
+    import Confirm from '$lib/ui/controls/confirm/Confirm.svelte';
     import { t } from '$lib/state/shared/words/text';
 
     type Props = {

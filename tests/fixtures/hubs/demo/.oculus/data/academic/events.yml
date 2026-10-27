@@ -2,7 +2,6 @@
 # `related:` id feed each project's "Disseminated in". Edit in served mode on the Talks & Events tab.
 # Each entry has a `key`, its short name, unique in this file; a write and Edit in File address the entry by it.
 title: Talks & Events
-intro: "Talks given and events attended. A `present` talk with a `related:` project id shows on that project's card as 'Disseminated in'."
 schema:
   - { field: key, type: text, primary_key: true, required: true, help: "The event's short name, unique in this file; a write and Edit in File address the entry by it." }
   - { field: title,    type: text,     display: 1, required: true }

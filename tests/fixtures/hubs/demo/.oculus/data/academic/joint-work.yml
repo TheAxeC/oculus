@@ -3,7 +3,6 @@
 # with. A project's `collaborators:` names people keys, not entries of this file.
 # `related:` ids cross-link to the project cards the work feeds.
 title: Joint work
-intro: "The work I have going with each person, and where it stands. Who each person is lives in the people registry; status = exploring / active / completed."
 # Form schema: field -> type / options / required / help. Drives the add/edit modal.
 schema:
   - { field: key,    type: text,     primary_key: true, help: "short slug for this piece of work" }

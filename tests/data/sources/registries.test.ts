@@ -51,7 +51,6 @@ function buildHub(): string {
         hub,
         REGISTRY_FILES.datasets,
         [
-            'intro: the local caches',
             'schema: [{ field: key, type: text, primary_key: true }]',
             'datasets:',
             '  - { key: mimic, name: MIMIC-IV, source: https://example.invalid/mimic }',

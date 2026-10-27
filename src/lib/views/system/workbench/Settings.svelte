@@ -56,7 +56,8 @@
     // The table of contents is beside the list from 700 px and over. Under that the header offers a
     // toggle that shows it over the list; a press on one of its entries or Escape hides it again
     // (state/system/config/view/contents.ts). The heading at the top of the list is the table's
-    // selected row.
+    // selected row. A press on an entry, and the rail's reveal, first open the folded group the
+    // entry or the row is in (List's `unfold`); a heading inside a folded group is never the top.
     //
     // The partials are in settings/: Header (search, count, filter, the table's toggle), Contents
     // (table of contents), List (groups and sections, with the line of each file under a heading),
@@ -359,11 +360,13 @@
     /** The id of the heading at the top of the list. */
     let top = $state('');
 
-    /** The headings of the list in the order drawn. */
+    /** The groups and sections, which open the folded group a scroll goes into. */
+    let drawn: { unfold: (target: string) => Promise<void> } | undefined = $state();
+
+    /** The headings of the list in the order drawn, those inside a folded group left out. */
     function headings(): HTMLElement[] {
-        return list === undefined
-            ? []
-            : [...list.querySelectorAll<HTMLElement>('[data-toc-target]')];
+        const all = list?.querySelectorAll<HTMLElement>('[data-toc-target]') ?? [];
+        return [...all].filter((heading) => heading.checkVisibility());
     }
 
     /** Make the heading at the top of the list the table's selected row. */
@@ -378,7 +381,8 @@
         top = at;
     }
 
-    function scrollTo(id: string): void {
+    async function scrollTo(id: string): Promise<void> {
+        await drawn?.unfold(id);
         headings()
             .find((heading) => heading.dataset.tocTarget === id)
             ?.scrollIntoView({ block: 'start' });
@@ -405,6 +409,7 @@
     async function showRail(area: HTMLElement, hidden: boolean): Promise<void> {
         if (hidden) setQuery('');
         await tick();
+        await drawn?.unfold(RAIL_ROW);
         area.querySelector<HTMLElement>(`[data-setting="${RAIL_ROW}"]`)?.scrollIntoView({
             block: 'start'
         });
@@ -446,10 +451,11 @@
                 class:over={place.over}
                 aria-label={t('workbench.settings_contents')}
             >
-                <Contents entries={toc} current={top} onpick={scrollTo} />
+                <Contents entries={toc} current={top} onpick={(id: string) => void scrollTo(id)} />
             </nav>
             <div class="list" bind:this={list} onscroll={follow}>
                 <List
+                    bind:this={drawn}
                     groups={found.groups}
                     id={instance.id}
                     {writer}
@@ -488,10 +494,11 @@
         display: none;
     }
 
-    /* Under 700 px the table is drawn over the list, from the top-left of the body. */
+    /* Under 700 px the table is drawn over the list, from the top-left of the body, above the
+       list's sticky group strips (ui/controls/heads/GroupHead.svelte, `z-index: 2`). */
     .contents.over {
         position: absolute;
-        z-index: 2;
+        z-index: 3;
         top: 0;
         bottom: 0;
         left: 0;

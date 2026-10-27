@@ -25,7 +25,7 @@
     // card (views/shared/forms/dated/RecordPick.svelte) among `projects` and the entries of the
     // collections, "What" starting with the thread's subject; a thread has no Deadline.
 
-    import Confirm from '$lib/ui/controls/Confirm.svelte';
+    import Confirm from '$lib/ui/controls/confirm/Confirm.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
     import TextArea from '$lib/ui/forms/TextArea.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';

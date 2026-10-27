@@ -6,6 +6,7 @@ import type { Project } from '../../data/model/index.ts';
 import { byKey, slugOf } from '../../data/helpers/guards.ts';
 import { holdersOf, resolvedId } from '../../data/helpers/hub-names.ts';
 import { feedRoot } from '../shared/page/idents.ts';
+import { instanceFolded } from '../shared/page/folds.ts';
 import {
     readAs,
     rowsShape,
@@ -21,7 +22,13 @@ const SLUG_MAX = 40;
 export type RadarEntry = Record<string, unknown>;
 export type RadarBucket = { key: string; glyph: string; label: string; color: string };
 export type RadarGroup = { bucket: RadarBucket; entries: RadarEntry[] };
-export type RadarState = { search: string; dismissedOpen: boolean; reveal?: string };
+export type RadarState = {
+    search: string;
+    dismissedOpen: boolean;
+    /** The keys of the folded buckets, the empty key for a bucket row whose key is empty. */
+    folded: string[];
+    reveal?: string;
+};
 
 /** One bucket row of the vocabulary: four texts, and nothing else of the row. */
 const radarBucketShape = z.object({
@@ -130,7 +137,8 @@ export function parseRadarState(raw: unknown): RadarState {
     const held = readAs(radarStateShape, raw);
     const state: RadarState = {
         search: held?.search ?? '',
-        dismissedOpen: held?.dismissedOpen ?? false
+        dismissedOpen: held?.dismissedOpen ?? false,
+        folded: instanceFolded(raw)
     };
     if (held?.reveal !== undefined) state.reveal = held.reveal;
     return state;

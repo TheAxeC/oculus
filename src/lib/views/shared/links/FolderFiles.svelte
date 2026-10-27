@@ -3,8 +3,11 @@
     // controls that open a Files tab rooted at the folder and the workbench of the folder, and the
     // folder's files, each a row that opens the file in a source tab as a file browser row does.
     // The person page draws a student's supervision folder with it and the entry page draws the
-    // folder an entry's link names. The heading is a snippet the page draws in its own element, so
-    // the block takes the look of the other headings of the page it is on.
+    // folder an entry's link names. The heading is a snippet the page draws, handed the controls
+    // and the files as two snippets: the page draws them as a group
+    // (ui/controls/heads/GroupHead.svelte), the controls as its `actions` and the files as its
+    // body, folded as the page keeps its other blocks, so the block reads as the other groups of
+    // the page it is on.
     //
     // The folder is listed through the file store rather than carried in the snapshot, because the
     // snapshot holds the portfolio's YAML and not what is in a folder, and the store lists it
@@ -32,8 +35,8 @@
     type Props = {
         /** The folder as a path of the hub, or undefined for a folder the hub does not hold. */
         folder: string | undefined;
-        /** The block's heading, drawn by the caller in the style of its page's headings. */
-        heading: Snippet;
+        /** The block's heading, drawn by the caller around the controls and the files. */
+        heading: Snippet<[controls: Snippet, body: Snippet]>;
         /** The key of the hub that holds the folder. */
         root: string;
     };
@@ -50,32 +53,34 @@
     }
 </script>
 
-<div class="folder" data-folder={folder}>
-    <div class="head">
-        {@render heading()}
-        {#if folder !== undefined}
+{@render heading(controls, body)}
+
+{#snippet controls()}
+    {#if folder !== undefined}
+        <ToolButton
+            label={t('folder_files.show_in_files')}
+            title={t('folder_files.show_in_files_tip', folder)}
+            glyph="show_in_files"
+            compact
+            onclick={() => {
+                showFolderInFiles(folder, root);
+            }}
+        />
+        {#if folders.served(root)}
             <ToolButton
-                label={t('folder_files.show_in_files')}
-                title={t('folder_files.show_in_files_tip', folder)}
-                glyph="show_in_files"
+                label={t('folder_files.open_workbench')}
+                title={t('folder_files.open_workbench_tip', folder)}
+                glyph="app_view"
                 compact
                 onclick={() => {
-                    showFolderInFiles(folder, root);
+                    folders.open({ root, path: folder });
                 }}
             />
-            {#if folders.served(root)}
-                <ToolButton
-                    label={t('folder_files.open_workbench')}
-                    title={t('folder_files.open_workbench_tip', folder)}
-                    glyph="app_view"
-                    compact
-                    onclick={() => {
-                        folders.open({ root, path: folder });
-                    }}
-                />
-            {/if}
         {/if}
-    </div>
+    {/if}
+{/snippet}
+
+{#snippet body()}
     {#if files === null}
         <Empty message={t('folder_files.outside')} glyph="warn" />
     {:else if files.loading}
@@ -101,17 +106,9 @@
             {/each}
         </ul>
     {/if}
-</div>
+{/snippet}
 
 <style>
-    /* The heading carries the control that opens the folder in a Files tab. */
-    .head {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        min-height: calc(var(--tree-row) * var(--text-scale, 1));
-    }
-
     .rows {
         display: flex;
         flex-direction: column;

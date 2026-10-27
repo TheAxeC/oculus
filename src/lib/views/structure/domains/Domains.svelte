@@ -12,17 +12,17 @@
 
 <script lang="ts">
     // Layer 3, view. The application-domain board over populated registry entries and real-project
-    // membership, with Add and Edit in File, which open the registry file.
+    // membership, its cards in the shared card grid (views/shared/card/record/CardGrid.svelte),
+    // with Add and Edit in File, which open the registry file.
 
     import Pane from '$lib/ui/frame/Pane.svelte';
     import DomainCard from '$lib/views/structure/domains/DomainCard.svelte';
     import RegistryHead from '$lib/views/shared/forms/registry/RegistryHead.svelte';
-    import Intro from '$lib/views/shared/prose/Intro.svelte';
     import RegistryTools from '$lib/views/shared/forms/registry/RegistryTools.svelte';
     import { registryFile } from '$lib/views/shared/forms/registry/registry-file.svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
+    import CardGrid from '$lib/views/shared/card/record/CardGrid.svelte';
     import Reveal from '$lib/views/shared/card/Reveal.svelte';
-    import { inlineMarkdown } from '$lib/ui/html';
     import { cardCursor, storedState } from '$lib/state/workbench/layout/instance';
     import {
         domainsWithMembers,
@@ -59,15 +59,11 @@
 
 <Pane title={t('views.domains')} toolbar={tools}>
     <div class="domains-view" data-instance={instance.id}>
-        <RegistryHead {file}>
-            {#snippet intro()}
-                <Intro html={inlineMarkdown(t('domains.intro'))} trusted />
-            {/snippet}
-        </RegistryHead>
+        <RegistryHead {file} />
         {#if shown.length === 0}
             <Empty message={t('domains.empty')} />
         {:else}
-            <div class="cards">
+            <CardGrid>
                 {#each shown as item (item.domain.id)}
                     <Reveal
                         id={item.domain.id}
@@ -86,20 +82,17 @@
                         />
                     </Reveal>
                 {/each}
-            </div>
+            </CardGrid>
         {/if}
     </div>
 </Pane>
 
 <style>
+    /* The said line and the cards, 8px apart. */
     .domains-view {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
         min-width: 0;
-    }
-
-    .cards {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(min(290px, 100%), 1fr));
-        gap: 10px;
-        margin-top: 10px;
     }
 </style>

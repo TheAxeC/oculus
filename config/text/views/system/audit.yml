@@ -37,7 +37,6 @@ text:
         findings_note: "A bad id, an unknown chip and every other error in the files themselves are the Findings view's, and are not repeated here."
         msg_markers: '{0} open markers, the first "{1}"'
         msg_markers_one: 'one open marker, "{1}"'
-        msg_intro_marker: 'intro: "{0}"'
         msg_entry_marker: 'open marker: "{0}"'
         msg_no_venue: at the stage {0}, which carries a venue, but no venue
         msg_missing_field: 'missing `{0}`'

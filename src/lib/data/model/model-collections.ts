@@ -367,7 +367,6 @@ export type Collection = Rooted &
         /** The key from the `collections:` list, `funding` or `events`. */
         id: Id;
         title: string;
-        intro?: string;
         /** Absolute path of the collection file. */
         file: string;
         /**

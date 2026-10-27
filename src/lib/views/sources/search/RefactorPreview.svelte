@@ -29,7 +29,7 @@
     // Continue drops the first. With nothing pending the view says what to do to see one. An Apply
     // that was refused says why under the header, and the preview stays for another try.
 
-    import Confirm from '$lib/ui/controls/Confirm.svelte';
+    import Confirm from '$lib/ui/controls/confirm/Confirm.svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';

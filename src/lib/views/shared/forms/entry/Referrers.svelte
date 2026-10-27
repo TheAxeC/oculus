@@ -4,9 +4,14 @@
     // resource, the people and funding schemes that name an organisation, the projects and joint
     // work that name a person, and the setting that names a resource. The page of such a record
     // draws it below the editor, and the question that asks before the record is deleted names the
-    // same things (state/forms/referrers.ts is the one answer to what they are).
+    // same things (state/forms/referrers.ts is the one answer to what they are). The list is the
+    // group every grouping of a view is drawn as (ui/controls/heads/GroupHead.svelte), folded under
+    // the key `referrers` in the tab's state (views/shared/card/pane-fold.ts), its body read off a
+    // `Surface` over a wallpaper.
 
     import Empty from '$lib/ui/frame/Empty.svelte';
+    import GroupHead from '$lib/ui/controls/heads/GroupHead.svelte';
+    import Surface from '$lib/ui/frame/Surface.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { pageView } from '$lib/state/forms/page-entry';
     import type { Referrer } from '$lib/state/forms/referrers';
@@ -14,6 +19,7 @@
     import { useState } from '$lib/state/client/use';
     import { recordState } from '$lib/state/shared/page/records';
     import { addressOfId } from '$lib/state/shared/page/hubs';
+    import { usePaneFold } from '../../card/pane-fold';
 
     const {
         layout: { openView },
@@ -21,6 +27,9 @@
     } = useState();
 
     let { referrers }: { referrers: Referrer[] } = $props();
+
+    /** Whether the list is open, kept in the tab's state. */
+    const fold = usePaneFold();
 
     /** Open a referrer as the tab its kind has; a setting is a name and opens nothing. */
     function open(one: Referrer): void {
@@ -37,41 +46,40 @@
     }
 </script>
 
-<section class="block" data-block="referrers">
-    <h3>{t('entry_form.referrers')}</h3>
-    {#if referrers.length === 0}
-        <Empty message={t('entry_form.no_referrers')} />
-    {:else}
-        <ul class="rows">
-            {#each referrers as one (`${one.kind}:${one.id}`)}
-                <li>
-                    {#if one.kind === 'setting'}
-                        <span class="what">{t('entry_form.referrer_setting', one.label)}</span>
-                    {:else}
-                        <span class="link">
-                            <ToolButton
-                                plain
-                                cut
-                                label={one.label}
-                                title={t('entry_form.referrer_open', one.label)}
-                                onclick={() => open(one)}
-                            />
-                        </span>
-                    {/if}
-                </li>
-            {/each}
-        </ul>
-    {/if}
-</section>
+<GroupHead
+    data-block="referrers"
+    label={t('entry_form.referrers')}
+    open={fold.open('referrers')}
+    ontoggle={() => fold.toggle('referrers')}
+>
+    <Surface>
+        {#if referrers.length === 0}
+            <Empty message={t('entry_form.no_referrers')} />
+        {:else}
+            <ul class="rows">
+                {#each referrers as one (`${one.kind}:${one.id}`)}
+                    <li>
+                        {#if one.kind === 'setting'}
+                            <span class="what">{t('entry_form.referrer_setting', one.label)}</span>
+                        {:else}
+                            <span class="link">
+                                <ToolButton
+                                    plain
+                                    cut
+                                    label={one.label}
+                                    title={t('entry_form.referrer_open', one.label)}
+                                    onclick={() => open(one)}
+                                />
+                            </span>
+                        {/if}
+                    </li>
+                {/each}
+            </ul>
+        {/if}
+    </Surface>
+</GroupHead>
 
 <style>
-    .block h3 {
-        margin: 0 0 4px;
-        font-size: var(--fs-xs);
-        font-weight: 700;
-        color: var(--muted-txt, var(--muted));
-    }
-
     .rows {
         display: flex;
         flex-direction: column;

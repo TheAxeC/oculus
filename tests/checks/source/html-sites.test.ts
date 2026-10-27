@@ -239,7 +239,7 @@ describe('every {@html} site', () => {
         const counted = svelteFiles(LIB).flatMap((file) =>
             htmlSites(readFileSync(join(LIB, file), 'utf8'))
         );
-        expect(counted.length).toBeGreaterThanOrEqual(34);
+        expect(counted.length).toBeGreaterThanOrEqual(33);
     });
 
     it('marks as catalog text only an Intro whose words are a catalog line', () => {

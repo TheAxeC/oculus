@@ -10,7 +10,7 @@
     // list is drawn again under the sentence that says so until the reader acts, and a file that
     // cannot be read has its sentence and nothing to approve.
 
-    import Confirm from '$lib/ui/controls/Confirm.svelte';
+    import Confirm from '$lib/ui/controls/confirm/Confirm.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import Modal from '$lib/ui/frame/Modal.svelte';
     import { t } from '$lib/state/shared/words/text';

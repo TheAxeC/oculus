@@ -119,7 +119,12 @@
     {/if}
 {/snippet}
 
-<div class:dormant={isDormant(projects, configMap(), vocabOf)} class:muted data-pillar={line.id}>
+<div
+    class="slot"
+    class:dormant={isDormant(projects, configMap(), vocabOf)}
+    class:muted
+    data-pillar={line.id}
+>
     <RecordCard
         id={line.id}
         {cursor}
@@ -141,6 +146,14 @@
 </div>
 
 <style>
+    /* The slot fills its grid cell and the record card fills the slot, so the cards of one row are
+       one height and no empty cell is left under a short one. */
+    .slot {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+    }
+
     /* An off-pillar line and a dormant line, one with no member at a stage on the map, are faded;
        while the pointer is over one or the keyboard focus is inside it the fade lifts, so the line
        being read is read at full strength. */

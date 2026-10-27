@@ -142,16 +142,6 @@ export function markers(input: AuditInput, add: (f: Raised) => void): void {
         }
     }
     for (const collection of input.collections) {
-        const intro = collection.intro ?? '';
-        if (intro !== '' && markerCount(intro) > 0) {
-            add({
-                scope: bareId(collection),
-                where: relative(input.hub, collection.file),
-                kind: 'todo',
-                file: fileOf(input.hub, collection.file),
-                ...sentence('audit.msg_intro_marker', firstMarker(intro))
-            });
-        }
         for (const entry of collection.entries) {
             const blob = stringify(entry.fields);
             if (markerCount(blob) === 0) continue;

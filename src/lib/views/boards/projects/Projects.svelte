@@ -69,11 +69,13 @@
     // The cards and the list are laid out in sections, one per row of `categories` holding a
     // project, in the list's order, and an "other" section last for the projects in no row, each
     // headed by the category's label in its colour with its count
-    // (views/shared/card/heads/GroupHead.svelte); the heading stays at the top of the pane while
-    // its section scrolls under it, and a press on its fold control folds the section, which the
-    // board remembers. A board whose `cards:` says `grid` draws its cards and its list as one
-    // section with no heading. The list draws one table per section
-    // (views/boards/projects/BoardList.svelte).
+    // (ui/controls/heads/GroupHead.svelte), which draws the section, its heading that stays at the
+    // top of the pane while the section scrolls under it, and its fold; a press on the fold control
+    // folds the section, which the board remembers under `folded` of its state, written with the
+    // rest of that state through the folds of state/shared/page/folds.ts (`stateFolds`). A board
+    // whose `cards:` says `grid` draws its cards and its list as one section with no heading. The
+    // cards are drawn in the shared card grid (views/shared/card/record/CardGrid.svelte), the list
+    // as one table per section (views/boards/projects/BoardList.svelte).
     //
     // It joins nothing and counts nothing itself: the projects come from the board selector already
     // joined, and the facets, the slices, the groups, the filters, the counts on the controls and
@@ -90,8 +92,9 @@
     import Surface from '$lib/ui/frame/Surface.svelte';
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import GroupHead from '$lib/ui/controls/heads/GroupHead.svelte';
     import Card from '../../shared/card/project/ProjectCard.svelte';
-    import GroupHead from '../../shared/card/heads/GroupHead.svelte';
+    import CardGrid from '../../shared/card/record/CardGrid.svelte';
     import SaidBody from '../../shared/writes/SaidBody.svelte';
     import BoardList from './BoardList.svelte';
     import FilterBar from './FilterBar.svelte';
@@ -115,6 +118,7 @@
         type BoardState,
         type QuickFilters
     } from '$lib/state/boards/board';
+    import { stateFolds } from '$lib/state/shared/page/folds';
     import { cardCursor, instanceText, storedState } from '$lib/state/workbench/layout/instance';
     import { hubList } from '$lib/state/shared/page/hubs';
     import { t } from '$lib/state/shared/words/text';
@@ -188,6 +192,11 @@
     const grid = $derived(preset.cards === 'grid');
     const sections = $derived(cardSections(shown, preset));
     const folded = $derived(new Set(held.folded));
+    /** The presses that fold and unfold a section, by its category's key. */
+    const folds = stateFolds(
+        () => held.folded,
+        (folded) => write({ folded })
+    );
     const cells = $derived(listCells(preset.columns, held.columns));
     /** The counts on the controls, over the board's projects before any filter. */
     const strip = $derived(boardStats(items));
@@ -239,15 +248,6 @@
     function toggleMore(id: string): void {
         const open = held.more.includes(id);
         write({ more: open ? held.more.filter((one) => one !== id) : [...held.more, id] });
-    }
-
-    /** Fold a section, or unfold it, by its category's key. */
-    function toggleFold(key: string): void {
-        write({
-            folded: folded.has(key)
-                ? held.folded.filter((one) => one !== key)
-                : [...held.folded, key]
-        });
     }
 
     /**
@@ -307,12 +307,12 @@
             <BoardList items={part} {cells} {label} />
         </Surface>
     {:else}
-        <div class="cards">
+        <CardGrid>
             {#each part as item (item.id)}
                 <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
                 {@render card(item)}
             {/each}
-        </div>
+        </CardGrid>
     {/if}
 {/snippet}
 
@@ -417,60 +417,32 @@
                 <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
                 {@render projects(shown)}
             {:else}
-                {#each sections as section (section.key)}
-                    <section class="section" data-category={section.key}>
-                        <div class="heading">
-                            <GroupHead
-                                label={sectionTitle(section.key, section.label)}
-                                name={sectionTitle(section.key, section.label)}
-                                open={!folded.has(section.key)}
-                                ontoggle={() => toggleFold(section.key)}
-                                tone={section.color === '' ? undefined : toneOf(section.color)}
-                                count={section.items.length}
-                            />
-                        </div>
-                        {#if !folded.has(section.key)}
+                <div class="sections">
+                    {#each sections as section (section.key)}
+                        <GroupHead
+                            data-category={section.key}
+                            label={sectionTitle(section.key, section.label)}
+                            open={!folded.has(section.key)}
+                            ontoggle={() => folds.toggle(section.key)}
+                            tone={section.color === '' ? undefined : toneOf(section.color)}
+                            count={section.items.length}
+                        >
                             <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
                             {@render projects(section.items)}
-                        {/if}
-                    </section>
-                {/each}
+                        </GroupHead>
+                    {/each}
+                </div>
             {/if}
         </SaidBody>
     </div>
 </Pane>
 
 <style>
-    /* A section of the cards or the list: the projects of one category under a heading in the
-       category's colour, which carries the count. */
-    .section + .section {
-        margin-top: 14px;
-    }
-
-    /* The heading stays at the top of the pane's body while its section scrolls under it, on the
-       pane's own background, so the cards do not read through it. */
-    .heading {
-        position: sticky;
-        top: 0;
-        z-index: 2;
-        padding: 2px 0 6px;
-        background: var(--panel);
-    }
-
-    /* Over a wallpaper the heading is the strip of `tokens.css` that keeps a mix of its own, the
-       panel at the wallpaper's opacity, as a table's header row that stays is. */
-    :global(body.wall) .heading {
-        background: var(--panel-on-wall);
-        backdrop-filter: blur(var(--wall-blur));
-    }
-
-    /* The cards of one row stretch to the row's height, in file order, so no empty cell is left
-       under a short card and nothing is reordered to fill one. */
-    .cards {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(min(320px, 100%), 1fr));
-        gap: 10px;
-        align-items: stretch;
+    /* The sections of the cards or the list, one per category, 14px apart. */
+    .sections {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
     }
 
     /* The terminal shape: the folder's name is the only monospace text in a card by default, so

@@ -13,26 +13,33 @@
 
 <script lang="ts">
     // Layer 3, view. Lit Watch reads the radar socket feed, groups live papers by vocabulary, and
-    // keeps search and the dismissed-section disclosure in this view instance's saved state. Add
+    // keeps the search, the folded buckets and the Dismissed fold in this view instance's saved
+    // state. Each bucket and Dismissed is the group every grouping of a view is drawn as
+    // (ui/controls/heads/GroupHead.svelte, through Bucket.svelte for a bucket), and its cards are
+    // drawn in the shared card grid (views/shared/card/record/CardGrid.svelte). A bucket folds by
+    // its key under `folded`, Dismissed by `dismissedOpen`, which starts closed; a search leaves
+    // every fold as it is, and a heading's count is the papers the search leaves. A paper asked to
+    // be revealed opens its folded bucket before it is scrolled to. The bar's right end holds how
+    // many papers the radar tracks and the date of the last sweep, as a board shows its count. Add
     // asks the new paper's title, address and bucket, writes it to the radar file of the primary
     // hub (else the first) and opens the paper's page, where the rest is filled in.
     //
-    // Over a wallpaper each card is its own surface and a bucket's heading is a solid button; the
-    // intro and the said line are read off a `Surface`.
+    // Over a wallpaper each card is its own surface; the said line is read off a `Surface`.
 
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Surface from '$lib/ui/frame/Surface.svelte';
+    import GroupHead from '$lib/ui/controls/heads/GroupHead.svelte';
     import Search from '$lib/ui/controls/text/Search.svelte';
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import SourceToolbar from '../../shared/links/SourceToolbar.svelte';
     import AddAsk from '../../shared/forms/entry/AddAsk.svelte';
     import AddButton from '../../shared/forms/AddButton.svelte';
     import { paperAsk, type Ask } from '../../shared/forms/entry/entry-add';
     import Bucket from './Bucket.svelte';
+    import FeedFile from '../../shared/card/feed/FeedFile.svelte';
     import RadarCard from '../../shared/card/feed/RadarCard.svelte';
-    import RadarIntro from './RadarIntro.svelte';
+    import CardGrid from '../../shared/card/record/CardGrid.svelte';
     import Reveal from '../../shared/card/Reveal.svelte';
     import {
         dismissedSplit,
@@ -45,6 +52,7 @@
     } from '$lib/state/feeds/radar';
     import { asText } from '$lib/state/forms/schema';
     import { t } from '$lib/state/shared/words/text';
+    import { stateFolds } from '$lib/state/shared/page/folds';
     import { cardCursor, storedState } from '$lib/state/workbench/layout/instance';
     import { feedIdents } from '$lib/state/shared/page/idents';
     import { viewSourceFile } from '$lib/state/sessions/view-source';
@@ -75,6 +83,11 @@
     const searchedLive = $derived(radarSearch(live, held.search));
     const searchedDismissed = $derived(sortBucket(radarSearch(dismissed, held.search)));
     const groups = $derived(filledBuckets(searchedLive, buckets));
+    /** The presses that fold and unfold a bucket, by its key. */
+    const folds = stateFolds(
+        () => held.folded,
+        (folded) => write({ folded })
+    );
     const lastRun = $derived(data?.meta.last_run ?? '');
     const identOf = $derived(feedIdents('radar', data?.entries ?? []));
     /** The feed file this view is drawn from, offered once the feed says the file is there. */
@@ -89,6 +102,15 @@
     function write(next: Partial<RadarState>): void {
         setInstanceState(instance.id, storedState({ ...held, ...next }));
     }
+
+    /** The bucket of the paper asked to be revealed, which is unfolded so its card is shown. */
+    const revealedBucket = $derived(
+        (held.reveal ?? '') === ''
+            ? undefined
+            : groups.find((one) => one.entries.some((entry) => identOf(entry) === held.reveal))
+                  ?.bucket.key
+    );
+    $effect(() => folds.open(revealedBucket));
 </script>
 
 {#snippet tools()}
@@ -105,6 +127,11 @@
             placeholder={t('radar.search')}
             oninput={(search: string) => write({ search })}
         />
+        {#if data !== null && !data.missing && data.error === undefined}
+            <span class="count">
+                {t('radar.tracked', live.length, asText(lastRun) || t('radar.no_date'))}
+            </span>
+        {/if}
     </Toolbar>
 {/snippet}
 
@@ -112,15 +139,7 @@
 
 <Pane title={t('views.radar')} toolbar={source === null ? undefined : tools} {bar}>
     <div class="radar" data-instance={instance.id}>
-        {#if data === null}
-            <Empty message={t('app.waiting')} glyph="litwatch" />
-        {:else if data.missing}
-            <Empty message={t('radar.no_file', data.file)} glyph="warn" />
-        {:else if data.error !== undefined}
-            <Empty message={t('radar.feed_error', data.file, data.error)} glyph="warn" />
-        {:else}
-            <RadarIntro {buckets} tracked={live.length} lastRun={asText(lastRun)} />
-
+        <FeedFile {data} glyph="litwatch" missing={t('radar.no_file', data?.file ?? '')}>
             {#if said !== ''}
                 <Surface>
                     <p class="said">{said}</p>
@@ -138,46 +157,46 @@
                     reveal={held.reveal}
                     onrevealed={() => write({ reveal: '' })}
                     onsaid={(words: string) => (said = words)}
+                    open={!held.folded.includes(group.bucket.key)}
+                    ontoggle={() => folds.toggle(group.bucket.key)}
                 />
             {/each}
 
             {#if searchedDismissed.length > 0}
-                <section class="dismissed">
-                    <ToolButton
-                        label={t('radar.count', t('radar.dismissed_sec'), searchedDismissed.length)}
-                        glyph="dismiss"
-                        active={held.dismissedOpen}
-                        onclick={() => write({ dismissedOpen: !held.dismissedOpen })}
-                    />
-                    {#if held.dismissedOpen}
-                        <div class="cards">
-                            {#each searchedDismissed as entry, at (`${asText(entry.title)}:${at}`)}
-                                {@const ident = identOf(entry)}
-                                <Reveal
+                <GroupHead
+                    label={t('radar.dismissed_sec')}
+                    glyph="dismiss"
+                    count={searchedDismissed.length}
+                    open={held.dismissedOpen}
+                    ontoggle={() => write({ dismissedOpen: !held.dismissedOpen })}
+                >
+                    <CardGrid>
+                        {#each searchedDismissed as entry, at (`${asText(entry.title)}:${at}`)}
+                            {@const ident = identOf(entry)}
+                            <Reveal
+                                id={ident}
+                                wanted={held.dismissedOpen ? held.reveal : ''}
+                                onrevealed={() => write({ reveal: '' })}
+                            >
+                                <RadarCard
+                                    {entry}
                                     id={ident}
-                                    wanted={held.reveal}
-                                    onrevealed={() => write({ reveal: '' })}
-                                >
-                                    <RadarCard
-                                        {entry}
-                                        id={ident}
-                                        cursor={cursor === ident}
-                                        {lastRun}
-                                        {projects}
-                                        dismissed
-                                        onsaid={(words: string) => (said = words)}
-                                    />
-                                </Reveal>
-                            {/each}
-                        </div>
-                    {/if}
-                </section>
+                                    cursor={cursor === ident}
+                                    {lastRun}
+                                    {projects}
+                                    dismissed
+                                    onsaid={(words: string) => (said = words)}
+                                />
+                            </Reveal>
+                        {/each}
+                    </CardGrid>
+                </GroupHead>
             {/if}
 
             {#if groups.length === 0 && searchedDismissed.length === 0}
                 <Empty message={t('radar.empty')} glyph="litwatch" />
             {/if}
-        {/if}
+        </FeedFile>
     </div>
 </Pane>
 
@@ -193,8 +212,7 @@
     /* A part on a `Surface` is the grid's item through the Surface's box over a wallpaper and by
        itself without one (`display: contents`), so both shrink to the column. */
     .radar > :global(*),
-    .radar > :global([data-surface]) > :global(*),
-    .cards > :global(*) {
+    .radar > :global([data-surface]) > :global(*) {
         min-width: 0;
     }
 
@@ -202,15 +220,11 @@
         margin: 0;
     }
 
-    .dismissed {
-        padding-top: 8px;
-        border-top: 1px solid var(--line);
-    }
-
-    .cards {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(min(340px, 100%), 1fr));
-        gap: 8px;
-        margin-top: 8px;
+    /* The count at the bar's right end, as a board draws its count. */
+    .count {
+        margin-left: auto;
+        font-size: var(--fs-xs);
+        white-space: nowrap;
+        color: var(--muted-txt, var(--muted));
     }
 </style>

@@ -11,18 +11,19 @@
 </script>
 
 <script lang="ts">
-    // Layer 3, view. The dataset registry: its access summary, search, modality facets, cards, and
-    // Add and Edit in File, which open the registry file. Registry entities display while its
-    // collection handles writes.
+    // Layer 3, view. The dataset registry: search, modality facets and, at the bar's right end, the
+    // count of the datasets with their access summary, as a board shows its count; the cards in the
+    // shared card grid (views/shared/card/record/CardGrid.svelte); and Add and Edit in File, which
+    // open the registry file. Registry entities display while its collection handles writes.
 
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Search from '$lib/ui/controls/text/Search.svelte';
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
-    import Intro from '../../shared/prose/Intro.svelte';
     import RegistryTools from '$lib/views/shared/forms/registry/RegistryTools.svelte';
     import { registryFile } from '$lib/views/shared/forms/registry/registry-file.svelte';
     import RegistryHead from '$lib/views/shared/forms/registry/RegistryHead.svelte';
+    import CardGrid from '$lib/views/shared/card/record/CardGrid.svelte';
     import Reveal from '$lib/views/shared/card/Reveal.svelte';
     import ThemeFacets from '$lib/views/shared/forms/ThemeFacets.svelte';
     import DatasetCard from '$lib/views/sources/data/DatasetCard.svelte';
@@ -83,27 +84,22 @@
             off={held.off}
             onchange={(off: string[]) => write({ off })}
         />
+        <span class="count">
+            {allDatasets.length === 1
+                ? t('data.count_one', accessSummary(allDatasets))
+                : t('data.count', allDatasets.length, accessSummary(allDatasets))}
+        </span>
     </Toolbar>
 {/snippet}
 
 <Pane title={t('views.data')} toolbar={tools} {bar}>
     <div class="data" data-instance={instance.id}>
-        <RegistryHead {file}>
-            {#snippet intro()}
-                <Intro
-                    lines={[
-                        allDatasets.length === 1
-                            ? t('data.intro_one', accessSummary(allDatasets))
-                            : t('data.intro', allDatasets.length, accessSummary(allDatasets))
-                    ]}
-                />
-            {/snippet}
-        </RegistryHead>
+        <RegistryHead {file} />
 
         {#if allDatasets.length === 0}
             <Empty message={t('data.empty')} />
         {:else}
-            <div class="cards">
+            <CardGrid>
                 {#each shown as dataset (dataset.id)}
                     <Reveal
                         id={dataset.id}
@@ -122,19 +118,25 @@
                         />
                     </Reveal>
                 {/each}
-            </div>
+            </CardGrid>
         {/if}
     </div>
 </Pane>
 
 <style>
+    /* The said line and the cards, 8px apart. */
     .data {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
         min-width: 0;
     }
 
-    .cards {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(min(320px, 100%), 1fr));
-        gap: 10px;
+    /* The count at the bar's right end, as a board draws its count. */
+    .count {
+        margin-left: auto;
+        font-size: var(--fs-xs);
+        white-space: nowrap;
+        color: var(--muted-txt, var(--muted));
     }
 </style>

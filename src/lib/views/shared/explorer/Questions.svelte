@@ -8,7 +8,7 @@
     // state the answer hands on. It holds nothing of its own: the view that asked draws it while it
     // has a question and stops when the answer has come back.
 
-    import Confirm from '$lib/ui/controls/Confirm.svelte';
+    import Confirm from '$lib/ui/controls/confirm/Confirm.svelte';
     import { t } from '$lib/state/shared/words/text';
     import { askedWords, type AskedQuestion } from './tree/menu/row-ops';
 

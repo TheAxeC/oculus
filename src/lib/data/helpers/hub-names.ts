@@ -688,10 +688,10 @@ export function offerAlong(
  * not applied. A key of config/catalogs/vocab.yml is laid over oculus's value by its shape
  * (data/sources/config/merge/in-place.ts): a map by its words in oculus's place, `categories` by
  * its rows' `key`, `focus_clusters`, `focus_lanes`, `fund_stages`, `position_stages`,
- * `teaching_stages`, `roles`, `venue_categories`, `venue_tiers` and `radar_buckets` whole, and
- * `rail_color` as a colour written `#rrggbb`; `manifest_fields`, the fields the hub adds to the
- * project form, is read row by row; every other key replaces oculus's value whole. They are the
- * keys that describe this hub rather than the engine: its folders and the files of its records,
+ * `teaching_stages`, `roles`, `venue_categories`, `pillar_kinds`, `venue_tiers` and `radar_buckets`
+ * whole, and `rail_color` as a colour written `#rrggbb`; `manifest_fields`, the fields the hub adds
+ * to the project form, is read row by row; every other key replaces oculus's value whole. They are
+ * the keys that describe this hub rather than the engine: its folders and the files of its records,
  * which of its records a chat's index holds, where the reader's bookmarks, the schedules and the
  * machine's apps are kept, the cluster its jobs run on, the files its writing rules skip or let
  * draw arrows, the conventions its audit holds its projects to (`audit:`: the files and sections it
@@ -736,6 +736,7 @@ const HUB_LIST: readonly { key: string; file: string }[] = [
     { key: 'leads_fit', file: 'catalogs/vocab.yml' },
     { key: 'data_access', file: 'catalogs/vocab.yml' },
     { key: 'venue_categories', file: 'catalogs/vocab.yml' },
+    { key: 'pillar_kinds', file: 'catalogs/vocab.yml' },
     { key: 'venue_tiers', file: 'catalogs/vocab.yml' },
     { key: 'radar_buckets', file: 'catalogs/vocab.yml' },
     { key: 'ticker_categories', file: 'catalogs/vocab.yml' },

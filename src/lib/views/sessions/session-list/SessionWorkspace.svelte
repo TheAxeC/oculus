@@ -1,12 +1,18 @@
 <script lang="ts">
-    // Layer 3, sessions view partial. One workspace's group of the sessions list: a side-bar
-    // section header with the workspace's name and count, then its rows. A row is VS Code's agent
-    // session item, two lines 3px in from the row's edges (40 px): an 18 px line with the state at
-    // the left and the title, and a 16 px line with the agent, the model, how long ago it last
-    // moved, the files it changed and its prompts. The model and the age are left out when the
-    // session has none, and the whole line is cut with an ellipsis where the pane ends. A row
-    // being renamed holds the title's field in place of the title and is as high as that field.
+    // Layer 3, sessions view partial. One workspace's group of the sessions list: the group every
+    // grouping of a view is drawn as (ui/controls/heads/GroupHead.svelte), headed with the
+    // workspace's name and count and its folder under the pointer, then its rows. The group folds
+    // by its key in the list's pane state (views/shared/card/pane-fold.ts), the workspace without a
+    // folder under the empty key.
+    //
+    // A row is VS Code's agent session item, two lines 3px in from the row's edges (40 px): an 18
+    // px line with the state at the left and the title, and a 16 px line with the agent, the model,
+    // how long ago it last moved, the files it changed and its prompts. The model and the age are
+    // left out when the session has none, and the whole line is cut with an ellipsis where the pane
+    // ends. A row being renamed holds the title's field in place of the title and is as high as
+    // that field.
 
+    import GroupHead from '$lib/ui/controls/heads/GroupHead.svelte';
     import RowButton from '$lib/ui/controls/RowButton.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
     import TextInput from '$lib/ui/forms/TextInput.svelte';
@@ -17,11 +23,13 @@
     import { ago, rowState, type ListGroup, type ListStateKey } from '$lib/state/sessions/folds';
     import { t } from '$lib/state/shared/words/text';
     import { sessionRowItems, stateLabel } from './session-list';
+    import { usePaneFold } from '$lib/views/shared/card/pane-fold';
     import { useState } from '$lib/state/client/use';
 
     const {
         selection: { selected }
     } = useState();
+    const fold = usePaneFold();
 
     type Props = {
         group: ListGroup;
@@ -200,48 +208,26 @@
     </div>
 {/snippet}
 
-<section class="group" data-session-group={group.key}>
-    <h3 class="head" title={group.key}>
-        <span class="nm">{group.name === '' ? t('sessions.no_workspace') : group.name}</span>
-        <span class="n">{group.rows.length}</span>
-    </h3>
-    {#each group.rows as entry (entry.id)}
-        <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-        {@render row(entry)}{/each}
-</section>
+<GroupHead
+    data-session-group={group.key}
+    label={group.name === '' ? t('sessions.no_workspace') : group.name}
+    tip={group.key === '' ? undefined : group.key}
+    count={group.rows.length}
+    open={fold.open(group.key)}
+    ontoggle={() => fold.toggle(group.key)}
+>
+    <div class="rows">
+        {#each group.rows as entry (entry.id)}
+            <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+            {@render row(entry)}{/each}
+    </div>
+</GroupHead>
 
 <style>
-    .group {
+    .rows {
         display: flex;
         flex-direction: column;
         min-width: 0;
-    }
-
-    /* A side-bar section header: the name in small capitals on a line of the row height. */
-    .head {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        height: calc(var(--tree-row) * var(--text-scale, 1));
-        margin: 0;
-        padding: 0 8px;
-        color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-xs);
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
-    }
-
-    .head .nm {
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-    }
-
-    .head .n {
-        margin-left: auto;
-        font-family: var(--font-num);
-        font-weight: 400;
     }
 
     /* The row's menu is drawn while the pointer is on the row, the focus is inside it, it is the

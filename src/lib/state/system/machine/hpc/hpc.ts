@@ -111,19 +111,24 @@ export function partitionMeters(rows: HpcPartition[]): PartitionMeter[] {
 }
 
 /**
- * What a Live HPC pane keeps of its own: whether its capacity section is open, and whether the
- * sinfo table under the meters is open. Both are the reader's, per pane, and go when the tab
- * closes.
+ * What a Live HPC pane keeps of its own: whether its capacity, finished jobs and Login node groups
+ * are open, and whether the sinfo table under the meters is open. Each is the reader's, per pane,
+ * and goes when the tab closes.
  */
-export type HpcViewState = { capacity: boolean; sinfo: boolean };
+export type HpcViewState = { capacity: boolean; sinfo: boolean; recent: boolean; login: boolean };
 
-/** The folds a new pane shows: the capacity open, since it is the glance, and the table closed. */
-const HPC_DEFAULTS: HpcViewState = { capacity: true, sinfo: false };
+/**
+ * The folds a new pane shows: the capacity open, since it is the glance, and the sinfo table, the
+ * finished jobs and the Login node section closed.
+ */
+const HPC_DEFAULTS: HpcViewState = { capacity: true, sinfo: false, recent: false, login: false };
 
 /** The held state of a Live HPC pane: each missing or non-boolean key is read as its default. */
 const hpcStateShape = z.object({
     capacity: z.boolean().catch(HPC_DEFAULTS.capacity),
-    sinfo: z.boolean().catch(HPC_DEFAULTS.sinfo)
+    sinfo: z.boolean().catch(HPC_DEFAULTS.sinfo),
+    recent: z.boolean().catch(HPC_DEFAULTS.recent),
+    login: z.boolean().catch(HPC_DEFAULTS.login)
 }) satisfies z.ZodType<HpcViewState>;
 
 /** The held state of a Live HPC pane, each missing or non-boolean key read as its default. */

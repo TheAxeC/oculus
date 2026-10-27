@@ -1,7 +1,6 @@
 # Literature: the papers kept for reading and citing, one entry per paper, drawn by the Literature view. Save to Literature on a card of the Literature search or of Lit Watch writes an entry, and so does Add on the Literature view, which looks a DOI, an arXiv or a PubMed address up through the search's sources. `key` is the citation key oculus makes from the first author's surname, the year and the first word of the title, and Copy BibTeX writes it as the BibTeX key. The `schema:` block drives the fields a new entry is built with, the editor's completion and marks, the type check of a write and the filters of the view (`filter: true`).
 
 title: Literature
-intro: "Papers kept for reading and citing, saved from the Literature search, Lit Watch or by hand."
 
 # Schema: field -> type / options / required / help.
 schema:

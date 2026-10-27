@@ -26,7 +26,7 @@
     // `leads_fit` and `palette`, in the words of the lead's own hub.
 
     import Tag from '$lib/ui/controls/Tag.svelte';
-    import Confirm from '$lib/ui/controls/Confirm.svelte';
+    import Confirm from '$lib/ui/controls/confirm/Confirm.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import { inlineMarkdown } from '$lib/ui/html';
     import { createCardMath } from '$lib/views/shared/latex/card-math.svelte';
@@ -299,7 +299,7 @@
                 <Tag label={country} />
             {/if}
             {#if type !== ''}
-                <Tag label={type} />
+                <Tag label={type} wrap />
             {/if}
         </div>
     {/if}
@@ -377,7 +377,6 @@
     }
 
     .deadline,
-    .chips,
     .posting a {
         display: inline-flex;
         align-items: center;
@@ -402,7 +401,14 @@
         overflow-wrap: anywhere;
     }
 
+    /* The country and the post type, in a row as wide as the card: the type is a sentence, which
+       wraps inside the card rather than widening it past its column. */
     .chips {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 4px;
+        min-width: 0;
         margin-top: 6px;
     }
 

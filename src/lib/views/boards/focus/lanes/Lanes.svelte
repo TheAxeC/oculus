@@ -5,20 +5,20 @@
     // row names (its key when it names no words) in the muted text colour with the count of the
     // cards on its lanes, its lanes muted when its row says so; a `full_width` cluster draws each
     // of its lanes as a section of its own headed by the lane's label in the lane's colour, the
-    // cluster's glyph and the lane's count. Each heading is the one every group of cards has
-    // (views/shared/card/heads/GroupHead.svelte) and folds by its control; the fold is the Focus
-    // tab's, under the key `groupFold` gives the cluster or the lane, so a reload and a move of the
-    // tab keep it. Folded, a group's lanes are hidden until found and stay mounted, so the
-    // browser's find-in-page searches their cards, and a match inside them fires `beforematch`,
-    // which unfolds the group. A lane naming no cluster of the list is drawn in none. A card is
-    // lanes/LaneCard.svelte, drawn from what this module works out for it: its status marks, its
-    // facts (state/boards/focus.ts `laneFacts`), its deadline, the people it waits on or that it is
-    // blocked, and its move menu. The projects on each lane are the ones the Focus filter keeps,
-    // which the board hands it with how many each lane hides. Which lane a card sits on, which
-    // marks it draws there and what a move writes are state/boards/focus.ts's projectLane,
-    // laneMarks and hubMoveOnto, so a drop and the menu write the same fields. The board's lanes
-    // are the lanes of every hub of the workspace; a card sits on, and moves to, the lane of its
-    // own hub's lanes with the same key, read under its own hub's words.
+    // cluster's glyph and the lane's count. Each is the group every grouping of a view is drawn as
+    // (ui/controls/heads/GroupHead.svelte) and folds by its control; the fold is the Focus tab's,
+    // under the key `groupFold` gives the cluster or the lane, so a reload and a move of the tab
+    // keep it. Folded, a group's lanes are hidden until found and stay mounted, so the browser's
+    // find-in-page searches their cards, and a match inside them unfolds the group. A lane naming
+    // no cluster of the list is drawn in none. A card is lanes/LaneCard.svelte, drawn from what
+    // this module works out for it: its status marks, its facts (state/boards/focus.ts
+    // `laneFacts`), its deadline, the people it waits on or that it is blocked, and its move menu.
+    // The projects on each lane are the ones the Focus filter keeps, which the board hands it with
+    // how many each lane hides. Which lane a card sits on, which marks it draws there and what a
+    // move writes are state/boards/focus.ts's projectLane, laneMarks and hubMoveOnto, so a drop and
+    // the menu write the same fields. The board's lanes are the lanes of every hub of the
+    // workspace; a card sits on, and moves to, the lane of its own hub's lanes with the same key,
+    // read under its own hub's words.
     //
     // The drag is the card's own HTML5 events. state/workbench/drag.svelte.ts is the shell's pane
     // drag and a view has no business in it. The move menu stays beside the drag because it
@@ -26,11 +26,10 @@
 
     import type { Snippet } from 'svelte';
     import { answerWords } from '$lib/views/shared/forms/answer-words';
-    import GroupHead from '$lib/views/shared/card/heads/GroupHead.svelte';
+    import GroupHead from '$lib/ui/controls/heads/GroupHead.svelte';
     import type { WriteAnswer } from '$lib/state/client/writes.svelte';
     import { waitedOn } from '$lib/state/boards/waiting';
     import Empty from '$lib/ui/frame/Empty.svelte';
-    import Surface from '$lib/ui/frame/Surface.svelte';
     import LaneCard from './LaneCard.svelte';
     import LaneHead from './LaneHead.svelte';
     import type { MenuItem } from '$lib/ui/menu/menu-items';
@@ -96,11 +95,6 @@
 
     /** What a group's heading draws: its words, its glyph and hue where it has them, its count. */
     type GroupWords = { label: string; glyph?: string; tone?: string; count: number };
-
-    /** Unfold a folded group, as a find-in-page match inside it asks. */
-    function unfold(fold: FoldKey): void {
-        if (!isOpen(fold)) ontoggle(fold);
-    }
 
     const config = $derived(configMap());
     const board = $derived(lanes(vocabOf()));
@@ -256,27 +250,18 @@
 {/snippet}
 
 {#snippet group(fold: FoldKey, head: GroupWords, muted: boolean, one: boolean, body: Snippet)}
-    <section class="cluster" class:muted>
-        <Surface>
-            <GroupHead
-                label={head.label}
-                name={head.label}
-                glyph={head.glyph}
-                tone={head.tone}
-                open={isOpen(fold)}
-                ontoggle={() => ontoggle(fold)}
-                count={head.count}
-            />
-        </Surface>
-        <div
-            class="lanes"
-            class:one
-            hidden={isOpen(fold) ? false : 'until-found'}
-            onbeforematch={() => unfold(fold)}
-        >
+    <GroupHead
+        label={head.label}
+        glyph={head.glyph}
+        tone={head.tone}
+        open={isOpen(fold)}
+        ontoggle={() => ontoggle(fold)}
+        count={head.count}
+    >
+        <div class="lanes" class:one class:muted>
             {@render body()}
         </div>
-    </section>
+    </GroupHead>
 {/snippet}
 
 {#each shown as cluster (cluster.key)}
@@ -322,16 +307,11 @@
 
 <style>
     /* The lanes fill the pane's width in as many columns as it holds, and one column in a pane
-       narrower than a lane. They stand 4px under the heading while they are shown, since lanes
-       hidden until found still draw their margin. */
+       narrower than a lane. */
     .lanes {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(min(290px, 100%), 1fr));
         gap: 8px;
-    }
-
-    .lanes:not([hidden]) {
-        margin-top: 4px;
     }
 
     .lanes.one {
@@ -368,8 +348,8 @@
 
     /* A lane of a muted cluster fades its body and its sub-line; its header keeps full opacity,
        since the header pair is measured opaque. */
-    .cluster.muted .lane-sub,
-    .cluster.muted .lane-body {
+    .lanes.muted .lane-sub,
+    .lanes.muted .lane-body {
         opacity: 0.9;
     }
 

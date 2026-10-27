@@ -3,6 +3,7 @@
 
 import { scalar } from '../../data/helpers/guards.ts';
 import { readAs, searchRevealShape, textOrNumberShape } from '../../data/shapes/shapes.ts';
+import { instanceFolded } from '../shared/page/folds.ts';
 
 export { localDate } from '../../data/helpers/dates.ts';
 
@@ -21,6 +22,8 @@ export type LinkedinEntry = {
 
 export type LinkedinState = {
     search: string;
+    /** The keys of the folded sections: `ideas` and `posted`. */
+    folded: string[];
     /** The palette destination, cleared by the view after it scrolls and flashes the card. */
     reveal?: string;
 };
@@ -150,7 +153,7 @@ export function linkedinSearch(entries: LinkedinEntry[], search: string): Linked
 /** Read the search and the palette destination from one view instance. */
 export function parseLinkedinState(raw: unknown): LinkedinState {
     const held = readAs(searchRevealShape, raw);
-    const state: LinkedinState = { search: held?.search ?? '' };
+    const state: LinkedinState = { search: held?.search ?? '', folded: instanceFolded(raw) };
     if (held?.reveal !== undefined) state.reveal = held.reveal;
     return state;
 }

@@ -11,7 +11,6 @@ text:
         empty: No venues yet; add some to the hub's venues file.
         filters: Venue filters
         held: held
-        intro: "The venues of the file the <code>venues</code> entry of the hub's collections list names, one section per category of <code>venue_categories</code> and Other for the rest. The months of a ribbon are approximate, since a call and its dates move from year to year."
         jif: JIF {0}
         leg_approx: months are approximate - hover a chip for the range
         leg_biennial: biennial

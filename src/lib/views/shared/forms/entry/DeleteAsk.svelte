@@ -6,7 +6,7 @@
     // view, and the delete is a row of History that Undo takes back. A refusal of the write is
     // handed to `onsaid` as a sentence.
 
-    import Confirm from '$lib/ui/controls/Confirm.svelte';
+    import Confirm from '$lib/ui/controls/confirm/Confirm.svelte';
     import { deletePage } from '$lib/state/forms/entry-save';
     import { referrersOf } from '$lib/state/forms/referrers';
     import { refusalWords } from '../answer-words';

@@ -37,6 +37,7 @@ export const OWN_HUB_KEYS: readonly string[] = [
     'leads_fit',
     'data_access',
     'venue_categories',
+    'pillar_kinds',
     'venue_tiers',
     'radar_buckets',
     'ticker_categories',

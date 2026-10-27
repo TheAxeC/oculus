@@ -14,8 +14,13 @@
 </script>
 
 <script lang="ts">
-    // Layer 3, view. Position Leads reads its socket feed, splits live from expired entries,
-    // and keeps search plus the expired and run-log disclosures in this view instance's state.
+    // Layer 3, view. Position Leads reads its socket feed, splits live from expired entries, and
+    // keeps search plus the Expired and run-log folds in this view instance's state (`expiredOpen`,
+    // `runlogOpen`, each starting closed). The live cards and the expired ones are drawn in the
+    // shared card grid (views/shared/card/record/CardGrid.svelte); Expired and the run log are each
+    // the group every grouping of a view is drawn as (ui/controls/heads/GroupHead.svelte), Expired
+    // with the count of the expired leads the search leaves. The bar's right end holds the count of
+    // the live leads, as a board shows its count.
     //
     // Add asks the new lead's title, writes the lead to the leads file of the primary hub (else the
     // first), dated today, and opens the lead's page, where the rest is filled in. A lead's title
@@ -25,8 +30,8 @@
     // The controls that write the leads file are disabled while a source tab holds unsaved text of
     // it.
     //
-    // Over a wallpaper each card is its own surface; the intro, the said line and the run log are
-    // read off a `Surface`.
+    // Over a wallpaper each card is its own surface; the said line and the run log are read off a
+    // `Surface`.
 
     import Chip from '$lib/ui/controls/Chip.svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
@@ -35,11 +40,13 @@
     import Search from '$lib/ui/controls/text/Search.svelte';
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import FeedFile from '../../shared/card/feed/FeedFile.svelte';
     import LeadCard from '../../shared/card/feed/LeadCard.svelte';
     import AddAsk from '../../shared/forms/entry/AddAsk.svelte';
     import { leadAsk, type Ask } from '../../shared/forms/entry/entry-add';
     import { blockedBy } from '../../shared/forms/entry-file';
-    import Intro from '../../shared/prose/Intro.svelte';
+    import GroupHead from '$lib/ui/controls/heads/GroupHead.svelte';
+    import CardGrid from '../../shared/card/record/CardGrid.svelte';
     import Reveal from '../../shared/card/Reveal.svelte';
     import SourceToolbar from '../../shared/links/SourceToolbar.svelte';
     import { inlineMarkdown } from '$lib/ui/html';
@@ -169,6 +176,9 @@
                 onclick={() => write(showing(!held.showDeclined))}
             />
         {/if}
+        {#if data !== null && !data.missing && data.error === undefined}
+            <span class="count">{t('leads.count', split.live.length)}</span>
+        {/if}
     </Toolbar>
 {/snippet}
 
@@ -176,21 +186,7 @@
 
 <Pane title={t('views.leads')} toolbar={tools} {bar}>
     <div class="leads" data-instance={instance.id}>
-        {#if data === null}
-            <Empty message={t('app.waiting')} glyph="scout" />
-        {:else if data.missing}
-            <Empty message={t('leads.no_file')} glyph="warn" />
-        {:else if data.error !== undefined}
-            <Empty message={t('radar.feed_error', data.file, data.error)} glyph="warn" />
-        {:else}
-            <Intro
-                html={t(
-                    'leads.intro',
-                    split.live.length,
-                    split.expired.length > 0 ? t('leads.exp_note', split.expired.length) : ''
-                )}
-            />
-
+        <FeedFile {data} glyph="scout" missing={t('leads.no_file')}>
             {#if said !== ''}
                 <Surface>
                     <p class="said">{said}</p>
@@ -198,7 +194,7 @@
             {/if}
 
             {#if split.live.length > 0}
-                <div class="cards">
+                <CardGrid>
                     {#each live as entry, at (`${asText(entry.title)}:${at}`)}
                         <Reveal
                             id={identOf(entry)}
@@ -215,75 +211,68 @@
                             />
                         </Reveal>
                     {/each}
-                </div>
+                </CardGrid>
             {:else}
                 <Empty message={t('leads.empty')} glyph="scout" />
             {/if}
 
             {#if split.expired.length > 0}
-                <section class="disclosure">
-                    <ToolButton
-                        label={t('leads.expired_sec', expired.length)}
-                        glyph="deadline"
-                        active={held.expiredOpen}
-                        expanded={held.expiredOpen}
-                        onclick={() => write({ expiredOpen: !held.expiredOpen })}
-                    />
-                    {#if held.expiredOpen}
-                        <div class="cards">
-                            {#each expired as entry, at (`${asText(entry.title)}:${at}`)}
-                                <Reveal
-                                    id={identOf(entry)}
-                                    wanted={held.reveal}
-                                    onrevealed={() => write({ reveal: '' })}
-                                >
-                                    <LeadCard
-                                        {entry}
-                                        cursor={cursor === leadOf(entry)}
-                                        expired
-                                        onsaid={(words: string) => (said = words)}
-                                        beside={instance.id}
-                                        onpage={() => openPage(entry)}
-                                        {blocked}
-                                    />
-                                </Reveal>
-                            {/each}
-                        </div>
-                    {/if}
-                </section>
+                <GroupHead
+                    label={t('leads.expired_sec')}
+                    glyph="deadline"
+                    count={expired.length}
+                    open={held.expiredOpen}
+                    ontoggle={() => write({ expiredOpen: !held.expiredOpen })}
+                >
+                    <CardGrid>
+                        {#each expired as entry, at (`${asText(entry.title)}:${at}`)}
+                            <Reveal
+                                id={identOf(entry)}
+                                wanted={held.expiredOpen ? held.reveal : ''}
+                                onrevealed={() => write({ reveal: '' })}
+                            >
+                                <LeadCard
+                                    {entry}
+                                    cursor={cursor === leadOf(entry)}
+                                    expired
+                                    onsaid={(words: string) => (said = words)}
+                                    beside={instance.id}
+                                    onpage={() => openPage(entry)}
+                                    {blocked}
+                                />
+                            </Reveal>
+                        {/each}
+                    </CardGrid>
+                </GroupHead>
             {/if}
 
             {#if log.length > 0}
-                <section class="disclosure">
-                    <ToolButton
-                        label={t('leads.runlog')}
-                        glyph="scout"
-                        active={held.runlogOpen}
-                        expanded={held.runlogOpen}
-                        onclick={() => write({ runlogOpen: !held.runlogOpen })}
-                    />
-                    {#if held.runlogOpen}
-                        <Surface>
-                            <ul class="runlog">
-                                {#each shownLog as line, at (`${at}:${line}`)}
-                                    <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
-                                    <li>{@html inlineMarkdown(line, cardMath(line))}</li>
-                                {/each}
-                            </ul>
-                        </Surface>
-                        {#if log.length > LOG_LINES}
-                            <ToolButton
-                                label={held.logAll
-                                    ? t('leads.log_fewer')
-                                    : t('leads.log_all', log.length)}
-                                active={held.logAll}
-                                onclick={() => write({ logAll: !held.logAll })}
-                            />
-                        {/if}
+                <GroupHead
+                    label={t('leads.runlog')}
+                    glyph="scout"
+                    open={held.runlogOpen}
+                    ontoggle={() => write({ runlogOpen: !held.runlogOpen })}
+                >
+                    <Surface>
+                        <ul class="runlog">
+                            {#each shownLog as line, at (`${at}:${line}`)}
+                                <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
+                                <li>{@html inlineMarkdown(line, cardMath(line))}</li>
+                            {/each}
+                        </ul>
+                    </Surface>
+                    {#if log.length > LOG_LINES}
+                        <ToolButton
+                            label={held.logAll
+                                ? t('leads.log_fewer')
+                                : t('leads.log_all', log.length)}
+                            active={held.logAll}
+                            onclick={() => write({ logAll: !held.logAll })}
+                        />
                     {/if}
-                </section>
+                </GroupHead>
             {/if}
-        {/if}
+        </FeedFile>
     </div>
 </Pane>
 
@@ -299,8 +288,7 @@
     /* A part on a `Surface` is the grid's item through the Surface's box over a wallpaper and by
        itself without one (`display: contents`), so both shrink to the column. */
     .leads > :global(*),
-    .leads > :global([data-surface]) > :global(*),
-    .cards > :global(*) {
+    .leads > :global([data-surface]) > :global(*) {
         min-width: 0;
     }
 
@@ -309,22 +297,18 @@
         color: var(--muted-txt, var(--muted));
     }
 
-    .cards {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(min(340px, 100%), 1fr));
-        gap: 8px;
-        margin-top: 8px;
-    }
-
-    .disclosure {
-        padding-top: 8px;
-        border-top: 1px solid var(--line);
+    /* The count at the bar's right end, as a board draws its count. */
+    .count {
+        margin-left: auto;
+        font-size: var(--fs-xs);
+        white-space: nowrap;
+        color: var(--muted-txt, var(--muted));
     }
 
     .runlog {
         display: grid;
         gap: 6px;
-        margin: 8px 0 0;
+        margin: 0;
         padding-left: 24px;
         color: var(--muted-txt, var(--muted));
         font-size: var(--fs-sm);

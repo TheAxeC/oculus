@@ -3,8 +3,12 @@
     // controls change independently of transcript-backed session rows. Every terminal oculus runs
     // is a row, those no Terminal tab owns among them; a press selects it and shows it in the tab
     // that owns it, or takes it into the Terminal tab of the page on screen (the terminals store's
-    // `showTerminal`).
+    // `showTerminal`). The rows are the group every grouping of a view is drawn as
+    // (ui/controls/heads/GroupHead.svelte), headed Terminals with their count, and fold under the
+    // key `terminals` in the list's pane state (views/shared/card/pane-fold.ts); a workspace
+    // group's key is its folder's path, so the two never meet.
 
+    import GroupHead from '$lib/ui/controls/heads/GroupHead.svelte';
     import RowButton from '$lib/ui/controls/RowButton.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
@@ -19,12 +23,17 @@
     } from '$lib/state/sessions/terminals.svelte';
     import { t } from '$lib/state/shared/words/text';
     import { terminalRowItems } from './session-list';
+    import { usePaneFold } from '$lib/views/shared/card/pane-fold';
     import { useState } from '$lib/state/client/use';
 
     const {
         selection: { select, selected },
         terminals: { showTerminal }
     } = useState();
+    const fold = usePaneFold();
+
+    /** The key the Terminals group folds under. */
+    const TERMINALS_FOLD = 'terminals';
 
     type Props = {
         entries: Terminal[];
@@ -100,49 +109,26 @@
 {/snippet}
 
 {#if entries.length > 0}
-    <section class="group" data-terminal-group>
-        <h3 class="head">
-            <span class="nm">{t('sessions.terminals')}</span>
-            <span class="n">{entries.length}</span>
-        </h3>
-        {#each entries as entry (entry.id)}
-            <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-            {@render row(entry)}{/each}
-    </section>
+    <GroupHead
+        data-terminal-group
+        label={t('sessions.terminals')}
+        count={entries.length}
+        open={fold.open(TERMINALS_FOLD)}
+        ontoggle={() => fold.toggle(TERMINALS_FOLD)}
+    >
+        <div class="rows">
+            {#each entries as entry (entry.id)}
+                <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+                {@render row(entry)}{/each}
+        </div>
+    </GroupHead>
 {/if}
 
 <style>
-    .group {
+    .rows {
         display: flex;
         flex-direction: column;
         min-width: 0;
-    }
-
-    /* A side-bar section header, as the session groups above draw theirs. */
-    .head {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        height: calc(var(--tree-row) * var(--text-scale, 1));
-        margin: 0;
-        padding: 0 8px;
-        color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-xs);
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
-    }
-
-    .head .nm {
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-    }
-
-    .head .n {
-        margin-left: auto;
-        font-family: var(--font-num);
-        font-weight: 400;
     }
 
     /* The row's controls are drawn while the pointer is on the row, the focus is inside it, it is

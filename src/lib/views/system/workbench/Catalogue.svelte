@@ -32,8 +32,12 @@
     // place in its strip kept, in the catalogue's own pane too. A unique view another page or a
     // float holds is shown there by the menu, and a drop carries it to where it is dropped.
     //
-    // A view an app contributes is listed under the title of its container, drawn as a subtitle
-    // above the run of views that share it.
+    // Each group is the group every grouping of a view is drawn as
+    // (ui/controls/heads/GroupHead.svelte), headed with its glyph and label and with its key chord
+    // at the line's right end; it folds by its label under `folded` of the pane's state, through
+    // the pane's folds (views/shared/card/pane-fold.ts), so two groups of one label fold together.
+    // A view an app contributes is listed under the title of its container, drawn as a sub-heading
+    // (ui/controls/heads/SubHead.svelte) on a row of its own above the run of views that share it.
     //
     // The sections and the keys are the fold of state/workbench/navigation/catalogue.ts, the same
     // one the shell's keyboard counts its chords over, so the key drawn beside an entry is the key
@@ -47,7 +51,8 @@
 
     import ContextMenu from '$lib/ui/menu/ContextMenu.svelte';
     import Chip from '$lib/ui/controls/Chip.svelte';
-    import Glyph from '$lib/ui/display/Glyph.svelte';
+    import GroupHead from '$lib/ui/controls/heads/GroupHead.svelte';
+    import SubHead from '$lib/ui/controls/heads/SubHead.svelte';
     import type { MenuItem } from '$lib/ui/menu/menu-items';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
@@ -65,7 +70,8 @@
         readChord,
         listedViews,
         readGroups,
-        type DocEntry
+        type DocEntry,
+        type Section
     } from '$lib/state/workbench/navigation/catalogue';
     import { chordDocs, railPages } from '$lib/state/workbench/navigation/rail';
     import { THRESHOLD, type Point } from '$lib/state/workbench/drag.svelte';
@@ -78,6 +84,7 @@
         type ViewProps
     } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
+    import { usePaneFold } from '$lib/views/shared/card/pane-fold';
 
     const client = useState();
     const {
@@ -100,6 +107,9 @@
     } = client;
 
     let { instance }: ViewProps = $props();
+
+    /** The folds of the groups, by label, kept in the pane's state. */
+    const fold = usePaneFold();
 
     /** The view a configured hub document opens in, one instance per path. */
     const DOC_VIEW = 'doc';
@@ -236,108 +246,121 @@
         <p class="hint">{t('workbench.catalogue_hint')}</p>
         <!-- Keyed by position: two config groups may carry the same label. -->
         {#each sections as section, index (index)}
-            <section class="group" data-group={section.label ?? ''}>
-                {#if section.label !== null}
-                    <h3>
-                        <Glyph name={groupGlyph(section)} />
-                        <span>{section.label}</span>
+            {#if section.label === null}
+                <div data-group="">
+                    <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+                    {@render entries(section)}
+                </div>
+            {:else}
+                {@const label = section.label}
+                <GroupHead
+                    data-group={label}
+                    {label}
+                    glyph={groupGlyph(section)}
+                    open={fold.open(label)}
+                    ontoggle={() => fold.toggle(label)}
+                >
+                    {#snippet actions()}
                         {#if section.chord !== undefined}
                             <span class="chord">{section.chord}</span>
                         {/if}
-                    </h3>
-                {/if}
-                <div class="entries">
-                    {#each section.items as view, at (view.id)}
-                        {@const subtitle = registrationHeading(view)}
-                        {#if subtitle !== '' && subtitle !== registrationHeading(section.items[at - 1] ?? {})}
-                            <h4>{subtitle}</h4>
-                        {/if}
-                        {@const badge = badgeOf(view, client)}
-                        {@const key = keyOf(order, view.id)}
-                        {@const label = registrationLabel(view)}
-                        <ContextMenu
-                            {label}
-                            items={itemsOf(view.id)}
-                            onpick={(pick: string) => picked(view.id, pick)}
-                        >
-                            <!-- A drag starts on the entry; its button is pressed as it is. -->
-                            <!-- svelte-ignore a11y_no_static_element_interactions -->
-                            <div
-                                class="entry"
-                                onpointerdown={(event) => press(view.id, undefined, label, event)}
-                            >
-                                <ToolButton
-                                    {label}
-                                    title={hint(label, view.id)}
-                                    glyph={registrationGlyph(view)}
-                                    dataView={view.id}
-                                    onclick={(event: MouseEvent) => open(view.id, undefined, event)}
-                                />
-                                {#if key !== ''}
-                                    <span class="key" aria-hidden="true">{key}</span>
-                                {/if}
-                                {#if badge.glyph !== '' || badge.text !== ''}
-                                    <span class="badge" title={badge.title} aria-hidden="true">
-                                        <Chip
-                                            label={badge.text}
-                                            glyph={badge.glyph}
-                                            tone={badge.tone}
-                                            filled
-                                        />
-                                    </span>
-                                {/if}
-                            </div>
-                        </ContextMenu>
-                    {/each}
-                    {#each section.docs as entry (docPick(entry))}
-                        {@const key = keyOf(order, docPick(entry))}
-                        {@const state = docState(entry)}
-                        <ContextMenu
-                            label={entry.label}
-                            items={hereItems}
-                            onpick={(pick: string) => openHere(DOC_VIEW, state, pick)}
-                        >
-                            <!-- svelte-ignore a11y_no_static_element_interactions -->
-                            <div
-                                class="entry"
-                                onpointerdown={(event) =>
-                                    press(DOC_VIEW, state, entry.label, event)}
-                            >
-                                <ToolButton
-                                    label={entry.label}
-                                    title={hint(entry.label, docPick(entry))}
-                                    glyph={t('views.doc_glyph')}
-                                    dataDoc={entry.path}
-                                    onclick={(event: MouseEvent) => void openDoc(entry, event)}
-                                />
-                                {#if key !== ''}
-                                    <span class="key" aria-hidden="true">{key}</span>
-                                {/if}
-                            </div>
-                        </ContextMenu>
-                    {/each}
-                    {#if section.items.some((view) => view.group === APPS_GROUP)}
-                        <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-                        {@render addApp()}
-                    {/if}
-                </div>
-            </section>
+                    {/snippet}
+                    <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+                    {@render entries(section)}
+                </GroupHead>
+            {/if}
         {/each}
         {#if !appsListed && appsGroup !== undefined}
-            <section class="group" data-group={appsGroup.label}>
-                <h3>
-                    <Glyph name={appsGroup.glyph ?? ''} />
-                    <span>{appsGroup.label}</span>
-                </h3>
+            <GroupHead
+                data-group={appsGroup.label}
+                label={appsGroup.label}
+                glyph={appsGroup.glyph}
+                open={fold.open(appsGroup.label)}
+                ontoggle={() => fold.toggle(appsGroup.label)}
+            >
                 <div class="entries">
                     <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
                     {@render addApp()}
                 </div>
-            </section>
+            </GroupHead>
         {/if}
     </div>
 </Pane>
 <AskConfirm asking={asked} onclose={() => (asked = null)} />
+
+{#snippet entries(section: Section)}
+    <div class="entries">
+        {#each section.items as view, at (view.id)}
+            {@const subtitle = registrationHeading(view)}
+            {#if subtitle !== '' && subtitle !== registrationHeading(section.items[at - 1] ?? {})}
+                <div class="subhead">
+                    <SubHead label={subtitle} />
+                </div>
+            {/if}
+            {@const badge = badgeOf(view, client)}
+            {@const key = keyOf(order, view.id)}
+            {@const label = registrationLabel(view)}
+            <ContextMenu
+                {label}
+                items={itemsOf(view.id)}
+                onpick={(pick: string) => picked(view.id, pick)}
+            >
+                <!-- A drag starts on the entry; its button is pressed as it is. -->
+                <!-- svelte-ignore a11y_no_static_element_interactions -->
+                <div
+                    class="entry"
+                    onpointerdown={(event) => press(view.id, undefined, label, event)}
+                >
+                    <ToolButton
+                        {label}
+                        title={hint(label, view.id)}
+                        glyph={registrationGlyph(view)}
+                        dataView={view.id}
+                        onclick={(event: MouseEvent) => open(view.id, undefined, event)}
+                    />
+                    {#if key !== ''}
+                        <span class="key" aria-hidden="true">{key}</span>
+                    {/if}
+                    {#if badge.glyph !== '' || badge.text !== ''}
+                        <span class="badge" title={badge.title} aria-hidden="true">
+                            <Chip label={badge.text} glyph={badge.glyph} tone={badge.tone} filled />
+                        </span>
+                    {/if}
+                </div>
+            </ContextMenu>
+        {/each}
+        {#each section.docs as entry (docPick(entry))}
+            {@const key = keyOf(order, docPick(entry))}
+            {@const state = docState(entry)}
+            <ContextMenu
+                label={entry.label}
+                items={hereItems}
+                onpick={(pick: string) => openHere(DOC_VIEW, state, pick)}
+            >
+                <!-- svelte-ignore a11y_no_static_element_interactions -->
+                <div
+                    class="entry"
+                    onpointerdown={(event) => press(DOC_VIEW, state, entry.label, event)}
+                >
+                    <ToolButton
+                        label={entry.label}
+                        title={hint(entry.label, docPick(entry))}
+                        glyph={t('views.doc_glyph')}
+                        dataDoc={entry.path}
+                        onclick={(event: MouseEvent) => void openDoc(entry, event)}
+                    />
+                    {#if key !== ''}
+                        <span class="key" aria-hidden="true">{key}</span>
+                    {/if}
+                </div>
+            </ContextMenu>
+        {/each}
+        {#if section.items.some((view) => view.group === APPS_GROUP)}
+            <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+            {@render addApp()}
+        {/if}
+    </div>
+{/snippet}
 
 {#snippet addApp()}
     <ToolButton
@@ -364,24 +387,9 @@
         font-size: var(--fs-sm);
     }
 
-    h3 {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        margin: 0 0 6px;
-        font-size: var(--fs-xs);
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
-        color: var(--muted-txt, var(--muted));
-    }
-
-    h4 {
+    /* A sub-heading's row takes a line of its own above the run of entries it heads. */
+    .subhead {
         flex-basis: 100%;
-        margin: 4px 0 0;
-        font-size: var(--fs-xs);
-        font-weight: 600;
-        color: var(--muted-txt, var(--muted));
     }
 
     .chord,

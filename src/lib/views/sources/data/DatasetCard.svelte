@@ -200,6 +200,14 @@
 </div>
 
 <style>
+    /* The slot fills its grid cell and the record card fills the slot, so the cards of one row are
+       one height and no empty cell is left under a short one. */
+    .slot {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+    }
+
     .meta,
     .tags,
     .note {
@@ -226,6 +234,14 @@
 
     .description {
         margin-bottom: 0;
+    }
+
+    /* A path, a file pattern or an address is one unbroken word, which breaks at the card's edge
+       rather than widening the card past its column. */
+    .description,
+    .note > span {
+        min-width: 0;
+        overflow-wrap: anywhere;
     }
 
     .links a {

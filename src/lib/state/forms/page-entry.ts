@@ -97,8 +97,10 @@ export function entryPageState(
 
 /**
  * The state a collection or feed view is given to reveal the entry of the internal id `id`: the
- * entry by its hub and its key, and the disclosure the entry may sit behind opened, since a card
- * that is not mounted cannot be scrolled to.
+ * entry by its hub and its key, and the group the entry may sit behind opened where that group
+ * folds by a flag of its own (Expired, Dismissed), since a card hidden in a folded group cannot be
+ * scrolled to. A group that folds by its key under `folded` (a Lit Watch bucket, a Venues section)
+ * is opened by the view itself when it is asked to reveal a card inside it.
  */
 export function revealState(collection: string, id: string): Record<string, unknown> {
     const reveal = addressOfId(id);

@@ -13,7 +13,13 @@
     // names the row to ask about. While any press runs every control of the section is disabled;
     // the Run now pressed also draws the sync glyph turning before its words until the start is
     // answered, and no glyph at rest.
+    //
+    // The section is the group every grouping of a view is drawn as
+    // (ui/controls/heads/GroupHead.svelte), with Add at its heading's right end. The tray has no
+    // pane state, so the tray holds whether the section is folded for the life of the page,
+    // unsaved.
 
+    import GroupHead from '$lib/ui/controls/heads/GroupHead.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
@@ -27,9 +33,12 @@
         onsaid: (text: string) => void;
         /** Ask whether to delete the row at that position, named as the page read it. */
         ondelete: (at: number, name: string) => void;
+        /** Whether the section is open, and the press of its fold control; the tray holds it. */
+        open: boolean;
+        ontoggle: () => void;
     };
 
-    let { onshow, onsaid, ondelete }: Props = $props();
+    let { onshow, onsaid, ondelete, open, ontoggle }: Props = $props();
     let busy = $state(false);
     /** The key of the row whose Run now is waiting for its start to be answered, or null. */
     let starting: string | null = $state(null);
@@ -58,105 +67,112 @@
     }
 </script>
 
-<section class="schedules" aria-label={t('app.schedules.heading')} data-schedules>
-    <header>
-        <h3>{t('app.schedules.heading')}</h3>
+<GroupHead
+    data-schedules
+    aria-label={t('app.schedules.heading')}
+    label={t('app.schedules.heading')}
+    {open}
+    {ontoggle}
+>
+    {#snippet actions()}
         <ToolButton
             label={t('app.schedules.add')}
             onclick={() => schedule.openDialog({})}
             disabled={busy}
         />
-    </header>
-    {#each schedule.unread() as line (line)}
-        <p class="said" data-schedule-unread>{line}</p>
-    {/each}
-    {#if schedule.none() !== ''}
-        <p class="note" data-schedule-none>{schedule.none()}</p>
-    {/if}
-    <ul class="rows">
-        {#each rows as row (row.key)}
-            <li class="row" data-schedule={row.name} data-paused={row.paused || undefined}>
-                <div class="line">
-                    {#if row.name !== ''}
-                        <strong class="name">{row.name}</strong>
-                    {/if}
-                    {#if row.what !== ''}
-                        <span class="what">{row.what}</span>
-                    {/if}
-                    {#if row.pattern !== ''}
-                        <code class="pattern">{row.pattern}</code>
-                    {/if}
-                    {#if row.paused}
-                        <span class="paused" data-paused-mark>{t('app.schedules.paused')}</span>
-                    {/if}
-                </div>
-                {#if row.problem !== ''}
-                    <p class="said" data-schedule-problem>{row.problem}</p>
-                {/if}
-                {#if row.next !== ''}
-                    <span class="next" data-next>{row.next}</span>
-                {/if}
-                {#if row.runs.length > 0}
-                    <ul class="runs">
-                        {#each row.runs as run (run.key)}
-                            <li data-run>
-                                {#if run.terminal !== null}
-                                    {@const id = run.terminal.id}
-                                    <ToolButton
-                                        label={run.text}
-                                        compact
-                                        onclick={() => onshow(id)}
-                                    />
-                                {:else}
-                                    <span>{run.text}</span>
-                                {/if}
-                            </li>
-                        {/each}
-                    </ul>
-                {/if}
-                <div class="actions">
-                    {#if row.readable}
-                        <ToolButton
-                            label={t('app.schedules.edit')}
-                            compact
-                            disabled={busy}
-                            onclick={() => schedule.openDialog({ at: row.at })}
-                        />
+    {/snippet}
+    <div class="schedules">
+        {#each schedule.unread() as line (line)}
+            <p class="said" data-schedule-unread>{line}</p>
+        {/each}
+        {#if schedule.none() !== ''}
+            <p class="note" data-schedule-none>{schedule.none()}</p>
+        {/if}
+        <ul class="rows">
+            {#each rows as row (row.key)}
+                <li class="row" data-schedule={row.name} data-paused={row.paused || undefined}>
+                    <div class="line">
+                        {#if row.name !== ''}
+                            <strong class="name">{row.name}</strong>
+                        {/if}
+                        {#if row.what !== ''}
+                            <span class="what">{row.what}</span>
+                        {/if}
+                        {#if row.pattern !== ''}
+                            <code class="pattern">{row.pattern}</code>
+                        {/if}
                         {#if row.paused}
+                            <span class="paused" data-paused-mark>{t('app.schedules.paused')}</span>
+                        {/if}
+                    </div>
+                    {#if row.problem !== ''}
+                        <p class="said" data-schedule-problem>{row.problem}</p>
+                    {/if}
+                    {#if row.next !== ''}
+                        <span class="next" data-next>{row.next}</span>
+                    {/if}
+                    {#if row.runs.length > 0}
+                        <ul class="runs">
+                            {#each row.runs as run (run.key)}
+                                <li data-run>
+                                    {#if run.terminal !== null}
+                                        {@const id = run.terminal.id}
+                                        <ToolButton
+                                            label={run.text}
+                                            compact
+                                            onclick={() => onshow(id)}
+                                        />
+                                    {:else}
+                                        <span>{run.text}</span>
+                                    {/if}
+                                </li>
+                            {/each}
+                        </ul>
+                    {/if}
+                    <div class="actions">
+                        {#if row.readable}
                             <ToolButton
-                                label={t('app.schedules.resume')}
+                                label={t('app.schedules.edit')}
                                 compact
                                 disabled={busy}
-                                onclick={() => press(() => schedule.resume(row))}
+                                onclick={() => schedule.openDialog({ at: row.at })}
                             />
-                        {:else}
+                            {#if row.paused}
+                                <ToolButton
+                                    label={t('app.schedules.resume')}
+                                    compact
+                                    disabled={busy}
+                                    onclick={() => press(() => schedule.resume(row))}
+                                />
+                            {:else}
+                                <ToolButton
+                                    label={t('app.schedules.pause')}
+                                    compact
+                                    disabled={busy}
+                                    onclick={() => press(() => schedule.pause(row))}
+                                />
+                            {/if}
                             <ToolButton
-                                label={t('app.schedules.pause')}
-                                compact
+                                label={t('app.schedules.run_now')}
+                                glyph={starting === row.key ? 'sync' : undefined}
+                                turning={starting === row.key}
+                                compact={starting !== row.key}
                                 disabled={busy}
-                                onclick={() => press(() => schedule.pause(row))}
+                                onclick={() => runNow(row)}
                             />
                         {/if}
                         <ToolButton
-                            label={t('app.schedules.run_now')}
-                            glyph={starting === row.key ? 'sync' : undefined}
-                            turning={starting === row.key}
-                            compact={starting !== row.key}
+                            label={t('app.schedules.delete')}
+                            compact
                             disabled={busy}
-                            onclick={() => runNow(row)}
+                            onclick={() => ondelete(row.at, row.name)}
                         />
-                    {/if}
-                    <ToolButton
-                        label={t('app.schedules.delete')}
-                        compact
-                        disabled={busy}
-                        onclick={() => ondelete(row.at, row.name)}
-                    />
-                </div>
-            </li>
-        {/each}
-    </ul>
-</section>
+                    </div>
+                </li>
+            {/each}
+        </ul>
+    </div>
+</GroupHead>
 
 <style>
     .schedules {
@@ -164,21 +180,9 @@
         gap: 6px;
     }
 
-    header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 8px;
-    }
-
-    h3,
     .said,
     .note {
         margin: 0;
-    }
-
-    h3 {
-        font-size: var(--fs-md);
     }
 
     .rows,

@@ -120,8 +120,8 @@ describe('pageView', () => {
 describe('revealState', () => {
     it.each([
         ['an entry of a collection', 'venues', {}],
-        ['a lead, whose expired disclosure opens', 'leads', { expiredOpen: true }],
-        ['a paper, whose dismissed disclosure opens', 'radar', { dismissedOpen: true }]
+        ['a lead, whose Expired group opens', 'leads', { expiredOpen: true }],
+        ['a paper, whose Dismissed group opens', 'radar', { dismissedOpen: true }]
     ])('%s', (_name, collectionKey, state) => {
         expect(revealState(collectionKey, 'hub:k')).toEqual({
             reveal: { hub: 'hub', key: 'k' },

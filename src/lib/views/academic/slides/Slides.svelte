@@ -33,6 +33,13 @@
     // discovering groups both find is drawn as a conflict; neither is skipped in silence. A deck
     // whose `present.yml` cannot be read is not written to: the file is shown as unreadable.
     //
+    // The order and each group is the group every grouping of a view is drawn as
+    // (ui/controls/heads/GroupHead.svelte), a group headed by its name and the number of its decks.
+    // Each folds by its control, a group by its name after `group:` and the order by `order`, under
+    // `folded` of the pane's state, read from the parsed state and written with the rest of it
+    // through the folds of state/shared/page/folds.ts (`stateFolds`); every write of the state
+    // keeps it. A folded group stays a drop target, so a deck dropped on its heading joins it.
+    //
     // It is a tab and not a dialog: oculus has no modal for content, and Escape does nothing here.
 
     import Empty from '$lib/ui/frame/Empty.svelte';
@@ -40,7 +47,7 @@
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
     import Checkbox from '$lib/ui/forms/Checkbox.svelte';
-    import Intro from '../../shared/prose/Intro.svelte';
+    import GroupHead from '$lib/ui/controls/heads/GroupHead.svelte';
     import Order from './Order.svelte';
     import Steps from './Steps.svelte';
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
@@ -63,6 +70,7 @@
         type SlideWork
     } from '$lib/state/life/slides';
     import { deckFile, deckLabel, deckRefOf } from '$lib/state/life/present';
+    import { stateFolds } from '$lib/state/shared/page/folds';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
@@ -112,6 +120,21 @@
     function keep(next: SlideWork, words: string, order: string[] = arranged): void {
         setInstanceState(instance.id, { ...held, work: next, order, at: signature, said: words });
     }
+
+    /**
+     * The key the order folds by, and the key a group folds by: its name after `group:`, so a group
+     * whose name is `order` folds apart from the order.
+     */
+    const ORDER_FOLD = 'order';
+    function groupFold(name: string): string {
+        return `group:${name}`;
+    }
+
+    /** The presses that fold and unfold the order or a group, by its key. */
+    const folds = stateFolds(
+        () => held.folded,
+        (folded) => setInstanceState(instance.id, { ...held, folded })
+    );
 
     /** Put one deck on the group or take it off, which is what a row's box says. */
     function pick(group: string, list: string[], name: string, on: boolean): void {
@@ -249,31 +272,31 @@
         {:else if groups.length === 0 && entries.length === 0}
             <Empty message={t('slides.empty', deck.path)} glyph={t('slides.empty_glyph')} />
         {:else}
-            <Intro html={t('slides.intro')} trusted />
             {#if entries.length > 0}
-                <Order rows={orderRows(entries, tokens)} {busy} onmove={moveEntry} />
+                <Order
+                    rows={orderRows(entries, tokens)}
+                    {busy}
+                    onmove={moveEntry}
+                    open={!held.folded.includes(ORDER_FOLD)}
+                    ontoggle={() => folds.toggle(ORDER_FOLD)}
+                />
             {/if}
             {#each groups as group (group.name)}
                 {@const list = listOf(group, work)}
                 {@const rows = groupRows(group, list)}
-                <section
-                    class="group"
+                <GroupHead
                     data-group={group.name}
                     aria-label={group.name}
+                    label={group.name}
+                    count={group.count}
+                    open={!held.folded.includes(groupFold(group.name))}
+                    ontoggle={() => folds.toggle(groupFold(group.name))}
                     ondragover={(event: DragEvent) => event.preventDefault()}
                     ondrop={(event: DragEvent) => {
                         event.preventDefault();
                         drop(group.name, list, '');
                     }}
                 >
-                    <h3 class="name">
-                        {group.name}
-                        <span class="count"
-                            >{group.count === 1
-                                ? t('slides.count_one')
-                                : t('slides.count', String(group.count))}</span
-                        >
-                    </h3>
                     <div class="rows" role="list" inert={busy}>
                         {#each rows as row (row.name)}
                             {@const at = list.indexOf(row.name)}
@@ -339,7 +362,7 @@
                             </div>
                         {/each}
                     </div>
-                </section>
+                </GroupHead>
             {/each}
         {/if}
     </div>
@@ -372,19 +395,6 @@
         min-height: calc(var(--tree-row) * var(--text-scale, 1));
         border-radius: var(--radius-sm);
         padding: 0 6px;
-    }
-
-    .name {
-        margin: 0 0 4px;
-        font-size: var(--fs-md);
-        font-weight: 700;
-    }
-
-    .count {
-        color: var(--muted-txt, var(--muted));
-        font-family: var(--font-num);
-        font-size: var(--fs-sm);
-        font-weight: 400;
     }
 
     .row.off {

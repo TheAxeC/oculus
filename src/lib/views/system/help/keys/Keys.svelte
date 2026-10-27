@@ -19,7 +19,13 @@
     // code that binds each key (rows.ts), so a key bound or freed changes the list with it. The
     // workbench's keys are resolved with the rail's chords as the workbench counts them, and the
     // editor's are read once Monaco has loaded, the list saying so until then.
+    //
+    // Each section is the group every grouping of a view is drawn as
+    // (ui/controls/heads/GroupHead.svelte), headed with its label; it folds by its group under
+    // `folded` of the pane's state through the pane's folds (views/shared/card/pane-fold.ts), and a
+    // search leaves a folded section folded.
 
+    import GroupHead from '$lib/ui/controls/heads/GroupHead.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Search from '$lib/ui/controls/text/Search.svelte';
     import { t } from '$lib/state/shared/words/text';
@@ -35,6 +41,7 @@
     import { chordDocs, railPages } from '$lib/state/workbench/navigation/rail';
     import { registrationLabel, type ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
+    import { usePaneFold } from '$lib/views/shared/card/pane-fold';
     import {
         appRows,
         editorRows,
@@ -54,6 +61,9 @@
     } = client;
 
     let { instance }: ViewProps = $props();
+
+    /** The folds of the sections, by group, kept in the pane's state. */
+    const fold = usePaneFold();
 
     const mac = onMac();
     const app = client.desktop !== undefined;
@@ -121,8 +131,11 @@
             <p class="note">{t('keys.editor_failed', editor.error)}</p>
         {/if}
         {#each groups as section (section.group)}
-            <section>
-                <h3>{groupLabel(section.group)}</h3>
+            <GroupHead
+                label={groupLabel(section.group)}
+                open={fold.open(section.group)}
+                ontoggle={() => fold.toggle(section.group)}
+            >
                 <dl>
                     {#each section.rows as row (`${row.keys.join(' ')}:${row.meaning}`)}
                         <dt>
@@ -131,7 +144,7 @@
                         <dd>{row.meaning}</dd>
                     {/each}
                 </dl>
-            </section>
+            </GroupHead>
         {:else}
             <p class="note">{t('keys.empty', search.trim())}</p>
         {/each}
@@ -140,19 +153,13 @@
 
 <style>
     .view {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
         height: 100%;
         overflow: auto;
         padding: 8px 16px 16px;
         box-sizing: border-box;
-    }
-
-    h3 {
-        margin: 12px 0 4px;
-        color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-xs);
-        font-weight: 700;
-        letter-spacing: 0.04em;
-        text-transform: uppercase;
     }
 
     dl {
@@ -181,7 +188,7 @@
     }
 
     .note {
-        margin: 8px 0;
+        margin: 0;
         color: var(--muted-txt, var(--muted));
     }
 </style>

@@ -5,7 +5,7 @@
     // are drawn while the pointer is over the row or the focus is inside it.
     import Tag from '$lib/ui/controls/Tag.svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
-    import Confirm from '$lib/ui/controls/Confirm.svelte';
+    import Confirm from '$lib/ui/controls/confirm/Confirm.svelte';
     import Meter from '$lib/ui/display/meters/Meter.svelte';
     import Table from '$lib/ui/display/table/Table.svelte';
     import { type Column, cellText } from '$lib/ui/display/table/table-rows';

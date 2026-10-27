@@ -9,7 +9,12 @@
     // The table is the ui/ primitive with a cell snippet, since a row's kind (a folder, a language
     // inside one, the total) is what decides how its cells are drawn. It sits in a box of its own
     // that scrolls sideways, so a narrow pane scrolls the table rather than the view past its edge.
+    //
+    // The block is the group every grouping of a view is drawn as
+    // (ui/controls/heads/GroupHead.svelte), folded under the key `lines` in the tab's state
+    // (views/shared/card/pane-fold.ts).
 
+    import GroupHead from '$lib/ui/controls/heads/GroupHead.svelte';
     import Table from '$lib/ui/display/table/Table.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import type { Column } from '$lib/ui/display/table/table-rows';
@@ -23,10 +28,14 @@
     import { grouped, stamp } from '$lib/state/shared/words/format';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
+    import { usePaneFold } from '$lib/views/shared/card/pane-fold';
 
     const {
         lines: { lines, recount }
     } = useState();
+
+    /** Whether the block is open, kept in the tab's state. */
+    const fold = usePaneFold();
 
     const held = $derived(lines());
 
@@ -96,8 +105,12 @@
     }
 </script>
 
-<section class="lines">
-    <h3>{t('status.lines_title')}</h3>
+<GroupHead
+    data-lines
+    label={t('status.lines_title')}
+    open={fold.open('lines')}
+    ontoggle={() => fold.toggle('lines')}
+>
     <p class="help">{t('status.lines_help')}</p>
     <div class="controls">
         <span class="said" class:failed={held.error !== '' && !held.loading}>
@@ -121,23 +134,11 @@
             </Table>
         </div>
     {/if}
-</section>
+</GroupHead>
 
 <style>
-    .lines {
-        min-width: 0;
-        margin-top: 16px;
-        border-top: 1px solid var(--line);
-        padding-top: 10px;
-    }
-
-    h3 {
-        margin: 0;
-        font-size: var(--fs-md);
-        font-weight: 700;
-    }
-
     .help {
+        margin: 0 0 6px;
         color: var(--muted-txt, var(--muted));
     }
 

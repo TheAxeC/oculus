@@ -44,7 +44,7 @@
     // and any other draws what git holds now, new conflicts or the answer that the path is no
     // longer in conflict.
 
-    import Confirm from '$lib/ui/controls/Confirm.svelte';
+    import Confirm from '$lib/ui/controls/confirm/Confirm.svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Editor from '$lib/ui/controls/editor/Editor.svelte';

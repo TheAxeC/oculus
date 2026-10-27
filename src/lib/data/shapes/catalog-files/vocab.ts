@@ -501,6 +501,24 @@ export const vocabFileShape = z.strictObject({
         .describe(
             "The categories a venue's `category` takes, in the order the Venues view draws their sections and the venue form offers them."
         ),
+    pillar_kinds: z
+        .array(
+            z.strictObject({
+                key: text
+                    .min(1)
+                    .describe("The word a pillar line's `kind` writes, which files it in the row."),
+                label: text.describe(
+                    "The words the row's section of the Pillars view is headed by."
+                ),
+                color: colour
+                    .optional()
+                    .describe("The colour the row's heading is drawn in, a hex the palette maps.")
+            })
+        )
+        .optional()
+        .describe(
+            "The kinds a pillar line's `kind` takes, in the order the Pillars view draws their sections."
+        ),
     venue_tiers: z
         .array(keyed)
         .optional()

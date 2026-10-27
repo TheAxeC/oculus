@@ -157,10 +157,10 @@ export type RawEntry = {
 };
 
 /**
- * One collection as read: the file it came from, its entries in file order, and every top-level
- * key other than its record list untouched as `meta` (`title`, `intro` and `schema` are the ones
- * the hub's collection files carry). Of the five files carried as both entities and collections,
- * data uses the `datasets:` record list and the other four use `entries:`.
+ * One collection as read: the file it came from, its entries in file order, and every top-level key
+ * other than its record list untouched as `meta` (`title` and `schema` are the ones the hub's
+ * collection files carry). Of the five files carried as both entities and collections, data uses
+ * the `datasets:` record list and the other four use `entries:`.
  */
 export type RawCollection = {
     /** The key the caller asked for the file under, from the `collections:` list. */

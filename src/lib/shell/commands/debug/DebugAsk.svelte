@@ -6,7 +6,7 @@
     // the confirmation of aborting a launch by stopping the command's terminal. The debug store
     // holds the one question; a yes or a no is handed back to it.
 
-    import Confirm from '$lib/ui/controls/Confirm.svelte';
+    import Confirm from '$lib/ui/controls/confirm/Confirm.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import Modal from '$lib/ui/frame/Modal.svelte';
     import { t } from '$lib/state/shared/words/text';

@@ -29,15 +29,22 @@
     // table draws one row per hue those words wear. A word added to any of the three lists of
     // config/catalogs/vocab.yml appears here with nothing written in this file.
     //
-    // Over a wallpaper each sample card is its own surface, and every other section is read off a
-    // `Surface`. The table is drawn on none: its header row stays over its rows as the pane scrolls
-    // (`stays`), so the header row and the rows carry the surface themselves and nothing is drawn
-    // behind the header row.
+    // Each of the eight sections is the group every grouping of a view is drawn as
+    // (ui/controls/heads/GroupHead.svelte) and folds by its key, kept under `folded` of the pane's
+    // state through the pane's folds (views/shared/card/pane-fold.ts); the lists inside Chips and
+    // Tags are headed by a sub-heading (ui/controls/heads/SubHead.svelte).
+    //
+    // Over a wallpaper each sample card is its own surface, and every other section's body is read
+    // off a `Surface`. The table is drawn on none: its header row stays over its rows, under the
+    // group's strip, as the pane scrolls (`stays`), so the header row and the rows carry the
+    // surface themselves and nothing is drawn behind the header row.
 
     import Card from '$lib/ui/frame/Card.svelte';
     import Chip from '$lib/ui/controls/Chip.svelte';
-    import Confirm from '$lib/ui/controls/Confirm.svelte';
+    import Confirm from '$lib/ui/controls/confirm/Confirm.svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
+    import GroupHead from '$lib/ui/controls/heads/GroupHead.svelte';
+    import SubHead from '$lib/ui/controls/heads/SubHead.svelte';
     import Meter from '$lib/ui/display/meters/Meter.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Search from '$lib/ui/controls/text/Search.svelte';
@@ -67,6 +74,7 @@
         statusAction,
         type RecordAction
     } from '$lib/views/shared/card/record/record-menu';
+    import { usePaneFold } from '$lib/views/shared/card/pane-fold';
     import { portfolioProjects } from '$lib/state/boards/focus';
     import { useState } from '$lib/state/client/use';
 
@@ -76,6 +84,8 @@
 
     let { instance }: ViewProps = $props();
     const cursor = $derived(cardCursor(instance.state));
+    /** The folds of the sections, by key, kept in the pane's state. */
+    const fold = usePaneFold();
 
     /** A word as the chips and the tags draw it. */
     function sample(key: string): Sample {
@@ -236,10 +246,11 @@
 
 <Pane title={t('gallery.title')} toolbar={tools} {bar}>
     <div class="gallery" data-instance={instance.id}>
-        <section>
-            <Surface>
-                <h3>{t('gallery.cards')}</h3>
-            </Surface>
+        <GroupHead
+            label={t('gallery.cards')}
+            open={fold.open('cards')}
+            ontoggle={() => fold.toggle('cards')}
+        >
             <div class="cards">
                 <Card id="plain" cursor={cursor === 'plain'} title={t('gallery.card_plain')}>
                     {#snippet meta()}
@@ -280,41 +291,54 @@
                     projects={sampleProjects}
                 />
             </div>
-        </section>
+        </GroupHead>
 
-        <Surface>
-            <section>
-                <h3>{t('gallery.chips')}</h3>
+        <GroupHead
+            label={t('gallery.chips')}
+            open={fold.open('chips')}
+            ontoggle={() => fold.toggle('chips')}
+        >
+            <Surface>
                 {#each groups as group (group.list)}
-                    <h4>{group.heading}</h4>
-                    {#if form !== 'filled'}
-                        <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-                        {@render chipRow(group.words, false)}
-                    {/if}
-                    {#if form !== 'outline'}
-                        <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-                        {@render chipRow(group.words, true)}
-                    {/if}
+                    <div class="words">
+                        <SubHead label={group.heading} />
+                        {#if form !== 'filled'}
+                            <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+                            {@render chipRow(group.words, false)}
+                        {/if}
+                        {#if form !== 'outline'}
+                            <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+                            {@render chipRow(group.words, true)}
+                        {/if}
+                    </div>
                 {/each}
-            </section>
-        </Surface>
+            </Surface>
+        </GroupHead>
 
-        <Surface>
-            <section>
-                <h3>{t('gallery.tags')}</h3>
+        <GroupHead
+            label={t('gallery.tags')}
+            open={fold.open('tags')}
+            ontoggle={() => fold.toggle('tags')}
+        >
+            <Surface>
                 <!-- The same words without the capsule and without a hue, which is what everything
                      a surface lists that is not a status word is drawn as. -->
                 {#each groups as group (group.list)}
-                    <h4>{group.heading}</h4>
-                    <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-                    {@render tagRow(group.words)}
+                    <div class="words">
+                        <SubHead label={group.heading} />
+                        <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+                        {@render tagRow(group.words)}
+                    </div>
                 {/each}
-            </section>
-        </Surface>
+            </Surface>
+        </GroupHead>
 
-        <Surface>
-            <section>
-                <h3>{t('gallery.meters')}</h3>
+        <GroupHead
+            label={t('gallery.meters')}
+            open={fold.open('meters')}
+            ontoggle={() => fold.toggle('meters')}
+        >
+            <Surface>
                 <div class="meters">
                     {#each leading as row (row.tone)}
                         <Meter
@@ -325,19 +349,23 @@
                         />
                     {/each}
                 </div>
-            </section>
-        </Surface>
-
-        <section>
-            <Surface>
-                <h3>{t('gallery.table')}</h3>
             </Surface>
-            <Table {columns} rows={shown} rowKey="tone" {cell} sortable stays />
-        </section>
+        </GroupHead>
 
-        <Surface>
-            <section>
-                <h3>{t('gallery.confirm')}</h3>
+        <GroupHead
+            label={t('gallery.table')}
+            open={fold.open('table')}
+            ontoggle={() => fold.toggle('table')}
+        >
+            <Table {columns} rows={shown} rowKey="tone" {cell} sortable stays />
+        </GroupHead>
+
+        <GroupHead
+            label={t('gallery.confirm')}
+            open={fold.open('confirm')}
+            ontoggle={() => fold.toggle('confirm')}
+        >
+            <Surface>
                 <ToolButton label={t('gallery.confirm_open')} onclick={() => (asking = true)} />
                 {#if asking}
                     <Confirm
@@ -349,12 +377,15 @@
                         oncancel={() => (asking = false)}
                     />
                 {/if}
-            </section>
-        </Surface>
+            </Surface>
+        </GroupHead>
 
-        <Surface>
-            <section>
-                <h3>{t('gallery.ticker')}</h3>
+        <GroupHead
+            label={t('gallery.ticker')}
+            open={fold.open('ticker')}
+            ontoggle={() => fold.toggle('ticker')}
+        >
+            <Surface>
                 <Ticker
                     rows={leading.map((row) => ({
                         id: row.tone,
@@ -364,15 +395,18 @@
                         tone: row.tone
                     }))}
                 />
-            </section>
-        </Surface>
+            </Surface>
+        </GroupHead>
 
-        <Surface>
-            <section>
-                <h3>{t('gallery.empty')}</h3>
+        <GroupHead
+            label={t('gallery.empty')}
+            open={fold.open('empty')}
+            ontoggle={() => fold.toggle('empty')}
+        >
+            <Surface>
                 <Empty message={t('gallery.empty_message')} glyph={t('gallery.empty_glyph')} />
-            </section>
-        </Surface>
+            </Surface>
+        </GroupHead>
     </div>
 </Pane>
 
@@ -383,23 +417,9 @@
         gap: 18px;
     }
 
-    h3 {
-        margin: 0 0 8px;
-        font-size: var(--fs-xs);
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        color: var(--accent-txt, var(--accent));
-    }
-
-    h4 {
-        margin: 12px 0 6px;
-        font-size: var(--fs-xs);
-        font-weight: 600;
-    }
-
-    h3 + h4 {
-        margin-top: 0;
+    /* One list's words under its sub-heading, the next list 12 px below. */
+    .words + .words {
+        margin-top: 12px;
     }
 
     .cards {

@@ -1,6 +1,7 @@
 // Layer 2, client state. Pure joins for the Pillars and Domains views: the registry lines in the
-// order their collection file lists them, membership, portfolio status, the venue tiers the config
-// names and their counts, and the archival groups. The views receive ready-to-draw lists. A
+// order their collection file lists them, their sections by `pillar_kinds`, membership, portfolio
+// status, the venue tiers the config names and their counts, and the archival groups, and the
+// Pillars view's saved state with its folded sections. The views receive ready-to-draw lists. A
 // project is read under the words of its own hub when the caller gives them (`wordsOf`), and a list
 // over several hubs (the tiers, the Archival band's stages) is drawn from every hub's words.
 
@@ -22,6 +23,7 @@ import {
     type WordsOf
 } from '../../../data/shapes/vocab-keys.ts';
 import { realProjects } from '../../sources/registries/venues.ts';
+import { instanceFolded } from '../../shared/page/folds.ts';
 
 export type { Domain, Pillar, Project, Venue } from '../../../data/model/index.ts';
 
@@ -32,7 +34,7 @@ export type { Domain, Pillar, Project, Venue } from '../../../data/model/index.t
 export type TierRow = { key: string; label: string; color?: string; fallback?: boolean };
 export type TierCount = TierRow & { count: number };
 export type ArchiveGroup = { stage: string; count: number; projects: Project[] };
-export type PillarsState = { reveal?: string };
+export type PillarsState = { reveal?: string; folded: string[] };
 export type DomainsState = { reveal?: string };
 
 /** The palette destination a saved state names, absent unless it is a non-empty text. */
@@ -44,9 +46,9 @@ function parseRevealState(raw: unknown): { reveal?: string } {
     return reveal === undefined ? {} : { reveal };
 }
 
-/** Saved state of one Pillars instance. */
+/** Saved state of one Pillars instance: its palette destination and its folded sections. */
 export function parsePillarsState(raw: unknown): PillarsState {
-    return parseRevealState(raw);
+    return { ...parseRevealState(raw), folded: instanceFolded(raw) };
 }
 
 /** Saved state of one Domains instance. */
@@ -220,17 +222,51 @@ export function domainsWithMembers(
         .filter((item) => item.projects.length > 0);
 }
 
-/** The pillars proper, the provisional lines and the off-pillar lines, each in the order given. */
-export function lineKinds(lines: Pillar[]): {
-    pillars: Pillar[];
-    provisional: Pillar[];
-    offpillar: Pillar[];
-} {
-    return {
-        pillars: lines.filter((line) => !['provisional', 'offpillar'].includes(line.kind ?? '')),
-        provisional: lines.filter((line) => line.kind === 'provisional'),
-        offpillar: lines.filter((line) => line.kind === 'offpillar')
-    };
+/**
+ * One section of the Pillars view: a row of `pillar_kinds` with the lines of its kind, or the Other
+ * section, whose key is the empty text, of the lines whose kind no row names. `color` is the row's
+ * colour as written, the empty text for a row without one and for Other.
+ */
+export type KindSection = { key: string; label: string; color: string; lines: Pillar[] };
+
+/**
+ * A row of `pillar_kinds` as the sections read it: a text key of at least one character, so none is
+ * the Other section's, its label, the key when it names none, and its colour. The config check
+ * words a row of another form (data/shapes/catalog-files/vocab.ts).
+ */
+const kindRowShape = z
+    .looseObject({
+        key: z.string().min(1),
+        label: z.unknown().optional(),
+        color: z.unknown().optional()
+    })
+    .transform((row) => ({
+        key: row.key,
+        label: typeof row.label === 'string' && row.label !== '' ? row.label : row.key,
+        color: typeof row.color === 'string' ? row.color : ''
+    }));
+
+/**
+ * The sections of the Pillars view over the lines given: one per row of `pillar_kinds` of the words
+ * given (the union of every hub's, state/shared/words/tones.ts `vocabOf`), in the list's order,
+ * each key once with the first row naming it, holding the lines whose `kind` is its key; then the
+ * Other section of the lines whose kind no row names, a line with no kind among them. A value of
+ * the list that is no row reads as no section. Each section holds its lines in the order given, and
+ * a section that holds none is kept, since the view draws the Orphans card in the first row's
+ * section and the Archival card in the section of `offpillar` whatever lines they hold.
+ */
+export function lineKinds(lines: readonly Pillar[], words: Record<string, unknown>): KindSection[] {
+    const rows = readAs(rowsShape(kindRowShape), words.pillar_kinds) ?? [];
+    const named = new Set<string>();
+    const sections: KindSection[] = [];
+    for (const row of rows) {
+        if (named.has(row.key)) continue;
+        named.add(row.key);
+        sections.push({ ...row, lines: lines.filter((line) => line.kind === row.key) });
+    }
+    const other = lines.filter((line) => !named.has(line.kind ?? ''));
+    sections.push({ key: '', label: '', color: '', lines: other });
+    return sections;
 }
 
 /**

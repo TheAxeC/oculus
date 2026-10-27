@@ -5,7 +5,7 @@
     // Cancel, as every question raised by something other than the reader does. Messages that are
     // not modal are notifications, which the requests store posts itself.
 
-    import Confirm from '$lib/ui/controls/Confirm.svelte';
+    import Confirm from '$lib/ui/controls/confirm/Confirm.svelte';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
 

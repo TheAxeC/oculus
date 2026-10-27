@@ -40,13 +40,19 @@
     // hub (state/forms/new-entry.ts, `addPerson`), since a key the manifest writes resolves in its
     // own hub first; the person's key is then an edit of the field like any pick. A Revert while
     // the write is out leaves the field as the Revert left it (`unlessReverted`).
+    //
+    // Each section is the group every grouping of a view is drawn as
+    // (ui/controls/heads/GroupHead.svelte), headed with its name and folded by it under `folded` of
+    // the tab's state (views/shared/card/pane-fold.ts), beside the edits the draft keeps there.
 
     import Tag from '$lib/ui/controls/Tag.svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
+    import GroupHead from '$lib/ui/controls/heads/GroupHead.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import EntryForm from '../../shared/forms/entry/edit/EntryForm.svelte';
+    import { usePaneFold } from '../../shared/card/pane-fold';
     import {
         editDiffers,
         fieldsOfSection,
@@ -82,6 +88,9 @@
     } = client;
 
     let { instance }: ViewProps = $props();
+
+    /** Which of the form's sections are open, kept in the tab's state. */
+    const fold = usePaneFold();
 
     /** The kind of draft the project editor keeps (state/client/context.ts names its target). */
     const DRAFT_KIND = 'project';
@@ -258,8 +267,12 @@
             {#each sections as section (section)}
                 {@const own = fieldsOfSection(fields, section)}
                 {#if own.length > 0}
-                    <section class="group">
-                        <h3 class="heading">{section}</h3>
+                    <GroupHead
+                        data-section={section}
+                        label={section}
+                        open={fold.open(section)}
+                        ontoggle={() => fold.toggle(section)}
+                    >
                         <EntryForm
                             fields={own}
                             valueOf={(one: FormField) => valueOf(one.field)}
@@ -271,7 +284,7 @@
                             addPerson={addTo(rootOf(project))}
                             people={(target: string) => namesPeople(target, rootOf(project))}
                         />
-                    </section>
+                    </GroupHead>
                 {/if}
             {/each}
             {#if result.length > 0}
@@ -286,23 +299,15 @@
 </Pane>
 
 <style>
-    .group {
-        margin-bottom: 12px;
+    .editor {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
     }
 
     /* The status words close the bar. */
     .status {
         margin-left: auto;
-    }
-
-    .heading {
-        margin: 0 0 4px;
-        font-size: var(--fs-xs);
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
-        color: var(--accent-txt, var(--accent));
-        border-bottom: 1px solid var(--line);
     }
 
     .result {
@@ -315,10 +320,5 @@
 
     .line {
         display: block;
-    }
-
-    :global(body.rice) .heading {
-        text-transform: none;
-        letter-spacing: 0.06em;
     }
 </style>

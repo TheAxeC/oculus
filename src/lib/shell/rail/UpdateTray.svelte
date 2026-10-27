@@ -25,8 +25,13 @@
     // closes it, and a dialog raised over it (the delete confirmation, the schedule dialog) takes
     // the first Escape, so the tray stays open behind it and the next Escape closes it. A press on
     // the ground beside it closes it, and a schedule dialog left open goes with it.
+    //
+    // Schedules and Tasks are each the group every grouping of a view is drawn as
+    // (ui/controls/heads/GroupHead.svelte). The tray has no pane state, so it holds whether each of
+    // the two is open for the life of the page, across its closing and opening, and saves nothing.
 
-    import Confirm from '$lib/ui/controls/Confirm.svelte';
+    import Confirm from '$lib/ui/controls/confirm/Confirm.svelte';
+    import GroupHead from '$lib/ui/controls/heads/GroupHead.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import Modal from '$lib/ui/frame/Modal.svelte';
     import ScheduleDialog from './ScheduleDialog.svelte';
@@ -49,6 +54,9 @@
     };
 
     let { open, onclose }: Props = $props();
+    /** Whether the Schedules section and the Tasks section are open, for the life of the page. */
+    let schedulesOpen = $state(true);
+    let tasksOpen = $state(true);
     /** The key of the row whose start is awaited, its task and its hub. */
     let running: string | null = $state(null);
     let chatting = $state(false);
@@ -156,55 +164,64 @@
                     onshow={show}
                     onsaid={(text: string) => (said = text)}
                     ondelete={(at: number, name: string) => (deleting = { at, name })}
+                    open={schedulesOpen}
+                    ontoggle={() => (schedulesOpen = !schedulesOpen)}
                 />
-                <section class="tasks" aria-label={t('app.tasks.tasks')}>
-                    <h3>{t('app.tasks.tasks')}</h3>
-                    {#if schedule.noTasks() !== ''}
-                        <p class="none">{schedule.noTasks()}</p>
-                    {/if}
-                    {#each tasks as task (task.key)}
-                        <div class="task" data-task={task.kind} data-hub={task.hub}>
+                <GroupHead
+                    data-tasks
+                    aria-label={t('app.tasks.tasks')}
+                    label={t('app.tasks.tasks')}
+                    open={tasksOpen}
+                    ontoggle={() => (tasksOpen = !tasksOpen)}
+                >
+                    <div class="tasks">
+                        {#if schedule.noTasks() !== ''}
+                            <p class="none">{schedule.noTasks()}</p>
+                        {/if}
+                        {#each tasks as task (task.key)}
+                            <div class="task" data-task={task.kind} data-hub={task.hub}>
+                                <ToolButton
+                                    label={task.label}
+                                    title={task.note}
+                                    glyph={running === task.key ? 'sync' : undefined}
+                                    turning={running === task.key}
+                                    active={running === task.key}
+                                    disabled={running !== null || chatting}
+                                    onclick={() => start(task)}
+                                />
+                                <span class="last">{lastLine(task.kind, task.last)}</span>
+                                <span class="sep" aria-hidden="true">{t('sessions.meta_sep')}</span>
+                                <span class="next" data-next>{task.next}</span>
+                                <ToolButton
+                                    label={t('app.tasks.schedule')}
+                                    compact
+                                    onclick={() =>
+                                        schedule.openDialog({
+                                            task: task.kind,
+                                            hub: task.hub,
+                                            name: task.label
+                                        })}
+                                />
+                                {#if task.kind === 'inbox'}
+                                    <span class="note">
+                                        <Glyph name="info" />
+                                        {task.note}
+                                    </span>
+                                {/if}
+                            </div>
+                        {/each}
+                        <div class="task" data-task="chat">
                             <ToolButton
-                                label={task.label}
-                                title={task.note}
-                                glyph={running === task.key ? 'sync' : undefined}
-                                turning={running === task.key}
-                                active={running === task.key}
+                                label={t('app.chat')}
+                                glyph="chat"
+                                title={t('server.chat.seed_portfolio')}
+                                active={chatting}
                                 disabled={running !== null || chatting}
-                                onclick={() => start(task)}
+                                onclick={chat}
                             />
-                            <span class="last">{lastLine(task.kind, task.last)}</span>
-                            <span class="sep" aria-hidden="true">{t('sessions.meta_sep')}</span>
-                            <span class="next" data-next>{task.next}</span>
-                            <ToolButton
-                                label={t('app.tasks.schedule')}
-                                compact
-                                onclick={() =>
-                                    schedule.openDialog({
-                                        task: task.kind,
-                                        hub: task.hub,
-                                        name: task.label
-                                    })}
-                            />
-                            {#if task.kind === 'inbox'}
-                                <span class="note">
-                                    <Glyph name="info" />
-                                    {task.note}
-                                </span>
-                            {/if}
                         </div>
-                    {/each}
-                    <div class="task" data-task="chat">
-                        <ToolButton
-                            label={t('app.chat')}
-                            glyph="chat"
-                            title={t('server.chat.seed_portfolio')}
-                            active={chatting}
-                            disabled={running !== null || chatting}
-                            onclick={chat}
-                        />
                     </div>
-                </section>
+                </GroupHead>
                 {#if said !== ''}
                     <p class="said">{said}</p>
                 {/if}
@@ -241,9 +258,12 @@
         box-shadow: var(--shadow);
     }
 
-    /* The tray floats over a pane, so it keeps more of its colour than the pane does. */
+    /* The tray floats over a pane, so it keeps more of its colour than the pane does. A group's
+       sticky strip inside it paints the panel share of a wallpaper layer, which here is the tray's
+       own fill, so what scrolls under the strip stays hidden. */
     :global(body.wall) .tray {
-        background: color-mix(in srgb, var(--panel) var(--wall-popover), transparent);
+        --panel-on-wall: color-mix(in srgb, var(--panel) var(--wall-popover), transparent);
+        background: var(--panel-on-wall);
         backdrop-filter: blur(var(--wall-blur));
     }
 
@@ -259,14 +279,12 @@
     }
 
     h2,
-    h3,
     .none,
     .said {
         margin: 0;
     }
 
-    h2,
-    h3 {
+    h2 {
         font-size: var(--fs-md);
     }
 

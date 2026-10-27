@@ -3,8 +3,9 @@
 // A file is one of two kinds. Most hold a list of like records under `entries:` (the data registry
 // under `datasets:`), and the `schema:` block describes one record. The career file and the files
 // of oculus's own schema folder hold a fixed set of top-level sections instead, and their `schema:`
-// block (or `<name>_schema:` key) describes those sections. Both kinds may hold `title:`, `intro:`,
-// `meta:` and the `schema:` block itself, which is checked against the field vocabulary.
+// block (or `<name>_schema:` key) describes those sections. Both kinds may hold `title:`, `meta:`
+// and the `schema:` block itself, which is checked against the field vocabulary; any other key
+// beside the records is a key the schema does not declare.
 //
 // Three fields are written into the entries of a collection by oculus itself and are declared by
 // no file: `snooze` (a day, or a flag), `subtasks` (a list of lines) and `followup` (a list of
@@ -23,7 +24,6 @@ export type FileKind = 'entries' | 'sections';
 function frame(): Record<string, JsonSchema> {
     return {
         title: { type: TEXT_TYPES, description: 'The name the file is listed under.' },
-        intro: { type: TEXT_TYPES, description: 'A paragraph shown above the records.' },
         meta: { description: 'Facts about the file as a whole, such as the date of its last run.' },
         schema: SCHEMA_BLOCK
     };

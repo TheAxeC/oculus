@@ -54,8 +54,8 @@ function write(hub: string, rel: string, body: string): void {
 }
 
 /**
- * A hub with a collection keyed by `title`, one keyed by `key`, one with no title or intro, one
- * holding an entry that is not a map, one file absent from disk, and one whose `entries` is a map.
+ * A hub with a collection keyed by `title`, one keyed by `key`, one with no title, one holding an
+ * entry that is not a map, one file absent from disk, and one whose `entries` is a map.
  */
 function buildHub(): string {
     const hub = scratch();
@@ -63,7 +63,6 @@ function buildHub(): string {
         hub,
         '.oculus/data/research/data.yml',
         [
-            'intro: dataset registry',
             'schema:',
             '  - { field: key, type: text, primary_key: true }',
             'datasets:',
@@ -76,7 +75,6 @@ function buildHub(): string {
         '.oculus/data/academic/events.yml',
         [
             'title: Talks & Events',
-            'intro: where the work was shown',
             'schema:',
             '  - { field: title, type: text, primary_key: true }',
             'entries:',
@@ -90,15 +88,13 @@ function buildHub(): string {
         '.oculus/data/academic/joint-work.yml',
         [
             'title: Collaborations',
-            'intro: who the work is with',
             'entries:',
             '  - { key: linkoping, title: Linkoping, since: 2024 }',
             '  - { key: leuven, title: Leuven }',
             ''
         ].join('\n')
     );
-    // No title and no intro: meta is the schema alone, as the hub's
-    // .oculus/data/academic/tasks.yml has it.
+    // No title: meta is the schema alone, as the hub's .oculus/data/academic/tasks.yml has it.
     write(
         hub,
         '.oculus/data/academic/tasks.yml',

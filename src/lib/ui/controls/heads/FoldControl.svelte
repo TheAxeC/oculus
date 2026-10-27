@@ -1,6 +1,6 @@
 <script lang="ts">
-    // Layer 3, view partial of the headings beside it (GroupHead.svelte and FoldHead.svelte). The
-    // fold control a heading that folds starts with: a bare button named "Fold <name>" or "Unfold
+    // Layer 3, primitive of the headings beside it (GroupHead.svelte and FoldHead.svelte). The fold
+    // control a heading that folds starts with: a bare button named "Fold <name>" or "Unfold
     // <name>" with the fold glyph of the state, written once so both headings name and draw it
     // alike.
 

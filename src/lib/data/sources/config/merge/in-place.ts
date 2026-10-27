@@ -98,6 +98,7 @@ export const VOCAB_SHAPES: Readonly<Record<string, InPlace>> = {
     leads_fit: MAP,
     data_access: MAP,
     venue_categories: WHOLE,
+    pillar_kinds: WHOLE,
     venue_tiers: WHOLE,
     radar_buckets: WHOLE,
     ticker_categories: MAP

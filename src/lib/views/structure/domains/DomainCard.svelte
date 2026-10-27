@@ -55,7 +55,7 @@
     {/if}
 {/snippet}
 
-<div class:dormant={isDormant(projects, configMap(), vocabOf)} data-domain={domain.id}>
+<div class="slot" class:dormant={isDormant(projects, configMap(), vocabOf)} data-domain={domain.id}>
     <RecordCard
         id={domain.id}
         {cursor}
@@ -76,6 +76,14 @@
 </div>
 
 <style>
+    /* The slot fills its grid cell and the record card fills the slot, so the cards of one row are
+       one height and no empty cell is left under a short one. */
+    .slot {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+    }
+
     /* A dormant domain is faded as archival; while the pointer is over it or the keyboard focus is
        inside it the fade lifts, so it is read at full strength. */
     .dormant {

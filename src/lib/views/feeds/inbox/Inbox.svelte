@@ -23,20 +23,24 @@
     // says so and offers the Add form in its place.
     //
     // Everything drawn here comes from the `inbox` channel, so the view holds no copy of the plate
-    // and a publish redraws it. Search and the triaged disclosure are this view instance's own
-    // state; the note, the answer and the archive are writes through the mail endpoint. Each
-    // section is one column of cards, read top to bottom, and a card names its account only while
-    // more than one mail account is configured.
+    // and a publish redraws it. Search, the folded sections and the Triaged fold are this view
+    // instance's own state; the note, the answer and the archive are writes through the mail
+    // endpoint. Each section and Triaged is the group every grouping of a view is drawn as
+    // (ui/controls/heads/GroupHead.svelte), headed with its count; a section folds by its kind
+    // under `folded` (`unsorted`, `reply`, `action`, `info`), Triaged by `triagedOpen`, which
+    // starts closed, and a thread asked to be revealed opens its folded section before it is
+    // scrolled to. Each section is one column of cards, read top to bottom, and a card names its
+    // account only while more than one mail account is configured.
     //
-    // Over a wallpaper each card is its own surface; the account rows, the add form, the said line
-    // and each section's heading are read off a `Surface`.
+    // Over a wallpaper each card is its own surface; the account rows, the add form and the said
+    // line are read off a `Surface`.
 
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Surface from '$lib/ui/frame/Surface.svelte';
+    import GroupHead from '$lib/ui/controls/heads/GroupHead.svelte';
     import Search from '$lib/ui/controls/text/Search.svelte';
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import AccountActions from '../../shared/forms/accounts/AccountActions.svelte';
     import AccountList from '../../shared/forms/accounts/AccountList.svelte';
     import AddAccount from '../../shared/forms/accounts/AddAccount.svelte';
@@ -56,6 +60,7 @@
     import { liveProjects, portfolioProjects } from '$lib/state/boards/focus';
     import { t } from '$lib/state/shared/words/text';
     import { vocabOf } from '$lib/state/shared/words/tones';
+    import { stateFolds } from '$lib/state/shared/page/folds';
     import { cardCursor, storedState } from '$lib/state/workbench/layout/instance';
     import { useState } from '$lib/state/client/use';
 
@@ -107,6 +112,33 @@
         setInstanceState(instance.id, storedState({ ...held, ...next }));
     }
 
+    /** The sections by their keys, each with the threads the search leaves. */
+    const groups = $derived([
+        { key: 'unsorted', label: t('inbox.sec_unsorted'), threads: unsorted },
+        { key: 'reply', label: t('inbox.sec_reply'), threads: replies },
+        { key: 'action', label: t('inbox.sec_action'), threads: actions },
+        { key: 'info', label: t('inbox.sec_info'), threads: info }
+    ]);
+    /** The presses that fold and unfold a section, by its kind. */
+    const folds = stateFolds(
+        () => held.folded,
+        (folded) => write({ folded })
+    );
+
+    /**
+     * The section of the thread asked to be revealed, unfolded so its card is shown to scroll to,
+     * and Triaged opened for a triaged thread.
+     */
+    $effect(() => {
+        const wanted = held.reveal ?? '';
+        if (wanted === '') return;
+        if (!held.triagedOpen && triaged.some((thread) => thread.id === wanted)) {
+            write({ triagedOpen: true });
+            return;
+        }
+        folds.open(groups.find((one) => one.threads.some((thread) => thread.id === wanted))?.key);
+    });
+
     /** Open or close one thread's draft editor, which is this view instance's own state. */
     function showDraft(thread: InboxThread, open: boolean): void {
         const rest = held.drafts.filter((one) => one !== thread.id);
@@ -144,8 +176,12 @@
     </div>
 {/snippet}
 
-{#snippet card(thread: InboxThread)}
-    <Reveal id={thread.id} wanted={held.reveal} onrevealed={() => write({ reveal: '' })}>
+{#snippet card(thread: InboxThread, open: boolean)}
+    <Reveal
+        id={thread.id}
+        wanted={open ? held.reveal : ''}
+        onrevealed={() => write({ reveal: '' })}
+    >
         <InboxCard
             {thread}
             id={thread.id}
@@ -164,19 +200,23 @@
     </Reveal>
 {/snippet}
 
-{#snippet section(label: string, threads: InboxThread[])}
+{#snippet section(key: string, label: string, threads: InboxThread[])}
     {#if threads.length > 0}
-        <section class="group">
-            <Surface>
-                <h3>{label} ({threads.length})</h3>
-            </Surface>
+        {@const open = !held.folded.includes(key)}
+        <GroupHead
+            data-section={key}
+            {label}
+            count={threads.length}
+            {open}
+            ontoggle={() => folds.toggle(key)}
+        >
             <div class="cards">
                 {#each threads as thread (thread.id)}
                     <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-                    {@render card(thread)}
+                    {@render card(thread, open)}
                 {/each}
             </div>
-        </section>
+        </GroupHead>
     {/if}
 {/snippet}
 
@@ -209,37 +249,30 @@
                 </Surface>
             {/if}
 
-            <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-            {@render section(t('inbox.sec_unsorted'), unsorted)}
-            <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-            {@render section(t('inbox.sec_reply'), replies)}
-            <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-            {@render section(t('inbox.sec_action'), actions)}
-            <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-            {@render section(t('inbox.sec_info'), info)}
+            {#each groups as group (group.key)}
+                <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+                {@render section(group.key, group.label, group.threads)}
+            {/each}
 
             {#if liveCount === 0}
                 <Empty message={t('inbox.clear')} glyph="done" />
             {/if}
 
             {#if sections.triaged.length > 0}
-                <section class="triaged">
-                    <ToolButton
-                        label={`${t('inbox.triaged_sec')} (${sections.triaged.length})`}
-                        glyph="done"
-                        active={held.triagedOpen}
-                        expanded={held.triagedOpen}
-                        onclick={() => write({ triagedOpen: !held.triagedOpen })}
-                    />
-                    {#if held.triagedOpen && triaged.length > 0}
-                        <div class="cards">
-                            {#each triaged as thread (thread.id)}
-                                <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-                                {@render card(thread)}
-                            {/each}
-                        </div>
-                    {/if}
-                </section>
+                <GroupHead
+                    label={t('inbox.triaged_sec')}
+                    glyph="done"
+                    count={triaged.length}
+                    open={held.triagedOpen}
+                    ontoggle={() => write({ triagedOpen: !held.triagedOpen })}
+                >
+                    <div class="cards">
+                        {#each triaged as thread (thread.id)}
+                            <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+                            {@render card(thread, held.triagedOpen)}
+                        {/each}
+                    </div>
+                </GroupHead>
             {/if}
         {/if}
     </div>
@@ -274,24 +307,10 @@
         color: var(--muted-txt, var(--muted));
     }
 
-    .group h3 {
-        margin: 0;
-        color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-xs);
-        font-weight: 700;
-        text-transform: uppercase;
-    }
-
     /* One column, so the cards read top to bottom in the order the section sorted them. */
     .cards {
         display: flex;
         flex-direction: column;
         gap: 8px;
-        margin-top: 8px;
-    }
-
-    .triaged {
-        padding-top: 8px;
-        border-top: 1px solid var(--line);
     }
 </style>

@@ -55,7 +55,7 @@
     // asked for.
 
     import { onDestroy, untrack } from 'svelte';
-    import Confirm from '$lib/ui/controls/Confirm.svelte';
+    import Confirm from '$lib/ui/controls/confirm/Confirm.svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';

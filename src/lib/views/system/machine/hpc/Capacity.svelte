@@ -1,15 +1,18 @@
 <script lang="ts">
     // Layer 3, view partial. Partition rows aggregate sinfo into idle, mixed, and allocated
-    // segments while retaining the full source table. The meters and the table fold as one section,
-    // and the table folds again inside it; both folds stand as the pane holds them. Rows older than
-    // the queue carry the stale mark in the heading, which is drawn even with no rows, so the mark
-    // shows; with no rows the section holds no meters and no sinfo table.
+    // segments while retaining the full source table. The meters and the table are the group every
+    // grouping of a view is drawn as (ui/controls/heads/GroupHead.svelte), headed Cluster capacity
+    // with the count of partitions, and the table folds again inside it; both folds stand as the
+    // pane holds them. Rows older than the queue carry the stale mark at the right end of the
+    // heading, which is drawn even with no rows, so the mark shows; with no rows the group holds no
+    // meters and no sinfo table.
+    import GroupHead from '$lib/ui/controls/heads/GroupHead.svelte';
+    import StaleMark from './StaleMark.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
     import Table from '$lib/ui/display/table/Table.svelte';
     import type { Column } from '$lib/ui/display/table/table-rows';
     import {
         partitionMeters,
-        staleWords,
         toggledHpcState,
         type HpcPartition,
         type HpcViewState
@@ -44,26 +47,17 @@
         { key: 'gres', label: t('hpc.col_gres') }
     ];
 
-    /** The capacity section's heading: one partition, or that many partitions. */
-    function title(count: number): string {
-        return count === 1 ? t('hpc.capacity_title_one') : t('hpc.capacity_title', count);
-    }
-
     /** The sinfo table's summary: one row, or that many rows. */
     function summary(count: number): string {
         return count === 1 ? t('hpc.capacity_summary_one') : t('hpc.capacity_summary', count);
     }
 
     /**
-     * Keep a fold's new state. The toggle the `open` attribute itself fires finds the fold already
-     * as held and writes nothing; `toggle` does not bubble, so the inner fold's never reaches here
-     * for the outer one.
+     * Keep the sinfo table's new fold. The toggle the `open` attribute itself fires finds the fold
+     * already as held and writes nothing.
      */
-    function toggled(
-        key: keyof HpcViewState,
-        event: Event & { currentTarget: HTMLDetailsElement }
-    ): void {
-        const next = toggledHpcState(held, key, event.currentTarget.open);
+    function toggled(event: Event & { currentTarget: HTMLDetailsElement }): void {
+        const next = toggledHpcState(held, 'sinfo', event.currentTarget.open);
         if (next !== null) onheld(next);
     }
 </script>
@@ -71,13 +65,16 @@
 <!-- A grid of small meters, several to a row, so twenty partitions do not push the queue off the
      screen: the queue is what the view is opened for, and the capacity is the glance above it. -->
 {#if meters.length || stale !== undefined}
-    <details class="capacity" open={held.capacity} ontoggle={(event) => toggled('capacity', event)}>
-        <summary class="title">
-            {title(meters.length)}
-            {#if stale !== undefined}
-                <span class="stale">{staleWords(stale)}</span>
-            {/if}
-        </summary>
+    <GroupHead
+        data-capacity
+        label={t('hpc.capacity_title')}
+        count={meters.length}
+        open={held.capacity}
+        ontoggle={() => onheld({ ...held, capacity: !held.capacity })}
+    >
+        {#snippet actions()}
+            <StaleMark {stale} />
+        {/snippet}
         {#if rows.length}
             <div class="meters">
                 {#each meters as meter (meter.name)}
@@ -95,25 +92,23 @@
                     </div>
                 {/each}
             </div>
-            <details class="sinfo" open={held.sinfo} ontoggle={(event) => toggled('sinfo', event)}>
+            <details class="sinfo" open={held.sinfo} ontoggle={toggled}>
                 <summary>{summary(rows.length)}</summary>
                 <div class="scroll">
                     <Table {columns} rows={tableRows} rowKey="key" />
                 </div>
             </details>
         {/if}
-    </details>
+    </GroupHead>
 {/if}
 
 <style>
+    /* The meters, with the space between them and the sinfo table under them. */
     .meters {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(min(230px, 100%), 1fr));
         gap: 4px 16px;
-    }
-    /* The view's own gap between its parts, kept inside the capacity fold. */
-    .capacity > .meters {
-        margin-block: 10px;
+        margin-bottom: 10px;
     }
     .meter {
         display: flex;
@@ -152,22 +147,10 @@
     .allocated {
         background: var(--c-red);
     }
-    /* The section's heading is the outer summary; the inner one is a disclosure's words. */
+    /* The sinfo table's disclosure words. */
     summary {
         cursor: pointer;
         font-size: var(--fs-sm);
-    }
-    summary.title {
-        font-size: var(--fs-xs);
-        font-weight: 700;
-        text-transform: uppercase;
-        color: var(--muted-txt, var(--muted));
-    }
-    /* The mark of rows older than the queue, in the failure tone and in its own words' case. */
-    .stale {
-        margin-inline-start: 6px;
-        color: var(--c-red-d-txt);
-        text-transform: none;
     }
     summary:focus-visible {
         outline: 1px solid var(--accent);

@@ -29,7 +29,7 @@
     import type { TreeNav } from '$lib/ui/tree/tree-keys';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
-    import CloseQuestion from '$lib/ui/controls/CloseQuestion.svelte';
+    import CloseQuestion from '$lib/ui/controls/confirm/CloseQuestion.svelte';
     import {
         dirtyIds,
         editorDrop,

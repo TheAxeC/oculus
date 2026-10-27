@@ -14,27 +14,28 @@
     // Layer 3, view. The venue catalogue: theme facets, and the venues' cards in one section per
     // row of `venue_categories` that holds one, in the list's order, then an "other" section for
     // the venues whose category no row names (state/sources/registries/venues.ts `venueSections`).
-    // Each section is headed by the heading every group of cards has
-    // (views/shared/card/heads/GroupHead.svelte) with its count, and folds by its control, which
-    // the tab keeps; a section whose row carries `ribbon: true` draws the month ribbon of its
-    // venues' deadlines and meetings over its cards, and a folded section draws neither. Registry
-    // entities provide the display model while the matching collection provides editing.
+    // Each section is the group every grouping of a view is drawn as
+    // (ui/controls/heads/GroupHead.svelte), headed with its count, and folds by its control, which
+    // the tab keeps under `folded`; a section whose row carries `ribbon: true` draws the month
+    // ribbon of its venues' deadlines and meetings over its cards, which are drawn in the shared
+    // card grid (views/shared/card/record/CardGrid.svelte). A venue asked to be revealed opens its
+    // folded section before it is scrolled to. Registry entities provide the display model while
+    // the matching collection provides editing.
     //
-    // Over a wallpaper each card and each month of the ribbon is its own surface; the head, the
-    // section headings and the ribbon's lines are read off a `Surface`.
+    // Over a wallpaper each card and each month of the ribbon is its own surface; the head and the
+    // ribbon's lines are read off a `Surface`.
 
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
-    import Surface from '$lib/ui/frame/Surface.svelte';
     import Search from '$lib/ui/controls/text/Search.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
     import Tooltip from '$lib/ui/menu/Tooltip.svelte';
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
-    import GroupHead from '$lib/views/shared/card/heads/GroupHead.svelte';
+    import GroupHead from '$lib/ui/controls/heads/GroupHead.svelte';
     import RegistryTools from '$lib/views/shared/forms/registry/RegistryTools.svelte';
     import { registryFile } from '$lib/views/shared/forms/registry/registry-file.svelte';
     import RegistryHead from '$lib/views/shared/forms/registry/RegistryHead.svelte';
-    import Intro from '$lib/views/shared/prose/Intro.svelte';
+    import CardGrid from '$lib/views/shared/card/record/CardGrid.svelte';
     import Reveal from '$lib/views/shared/card/Reveal.svelte';
     import ThemeFacets from '$lib/views/shared/forms/ThemeFacets.svelte';
     import Ribbon from '$lib/views/sources/venues/Ribbon.svelte';
@@ -47,6 +48,7 @@
         venueUsers,
         type VenuesState
     } from '$lib/state/sources/registries/venues';
+    import { stateFolds } from '$lib/state/shared/page/folds';
     import { cardCursor, storedState } from '$lib/state/workbench/layout/instance';
     import { applyThemeFacets, themeFacets, themeLabeller } from '$lib/state/shared/words/themes';
     import { t } from '$lib/state/shared/words/text';
@@ -71,19 +73,24 @@
     const facets = $derived(themeFacets(allVenues, labelOf));
     const shown = $derived(applyThemeFacets(venueSearch(allVenues, held.search), held.off));
     const sections = $derived(venueSections(shown, vocabOf()));
+    /** The presses that fold and unfold a section, by its category's key. */
+    const folds = stateFolds(
+        () => held.folded,
+        (folded) => write({ folded })
+    );
     const todayMonth = new Date().getMonth() + 1;
 
     function write(next: Partial<VenuesState>): void {
         setInstanceState(instance.id, storedState({ ...held, ...next }));
     }
 
-    /** Fold a section, or unfold it, by its category's key. */
-    function toggleFold(key: string): void {
-        const folded = held.folded.includes(key)
-            ? held.folded.filter((one) => one !== key)
-            : [...held.folded, key];
-        write({ folded });
-    }
+    /** The section of the venue asked to be revealed, which is unfolded so its card is shown. */
+    const revealedSection = $derived(
+        held.reveal === ''
+            ? undefined
+            : sections.find((one) => one.venues.some((venue) => venue.id === held.reveal))?.key
+    );
+    $effect(() => folds.open(revealedSection));
 </script>
 
 {#snippet tools()}
@@ -113,11 +120,7 @@
 
 <Pane title={t('views.venues')} toolbar={tools} {bar}>
     <div class="venues" data-instance={instance.id}>
-        <RegistryHead {file} spaced>
-            {#snippet intro()}
-                <Intro html={t('venues.intro')} trusted />
-            {/snippet}
-        </RegistryHead>
+        <RegistryHead {file} />
 
         {#if allVenues.length === 0}
             <Empty message={t('venues.empty')} />
@@ -125,63 +128,59 @@
             {#each sections as section (section.key)}
                 {@const words = section.key === '' ? t('venues.section_other') : section.label}
                 {@const open = !held.folded.includes(section.key)}
-                <section data-category={section.key}>
-                    <Surface>
-                        <GroupHead
-                            label={words}
-                            name={words}
-                            {open}
-                            ontoggle={() => toggleFold(section.key)}
-                            count={section.venues.length}
-                        />
-                    </Surface>
-                    {#if open}
-                        {#if section.ribbon}
-                            <div class="timeline">
-                                <Ribbon venues={section.venues} {todayMonth} />
-                            </div>
-                        {/if}
-                        <div class="cards">
-                            {#each section.venues as venue (venue.id)}
-                                {@const use = venueUsers(venue, allProjects, configMap(), vocabOf)}
-                                <Reveal
-                                    id={venue.id}
-                                    wanted={held.reveal}
-                                    onrevealed={() => write({ reveal: '' })}
-                                >
-                                    <VenueCard
-                                        {venue}
-                                        cursor={cursor === venue.id}
-                                        projects={use.projects}
-                                        concentrated={use.concentrated}
-                                        labels={labelOf(venue.root)}
-                                        entry={file.entryOf(venue.id)}
-                                        schema={file.schemaOf(venue.id)}
-                                        file={file.sourceOf(venue.id)}
-                                        fault={file.faultOf(venue.id)}
-                                        onsaid={file.say}
-                                    />
-                                </Reveal>
-                            {/each}
+                <GroupHead
+                    data-category={section.key}
+                    label={words}
+                    {open}
+                    ontoggle={() => folds.toggle(section.key)}
+                    count={section.venues.length}
+                >
+                    {#if section.ribbon}
+                        <div class="timeline">
+                            <Ribbon venues={section.venues} {todayMonth} />
                         </div>
                     {/if}
-                </section>
+                    <CardGrid>
+                        {#each section.venues as venue (venue.id)}
+                            {@const use = venueUsers(venue, allProjects, configMap(), vocabOf)}
+                            <Reveal
+                                id={venue.id}
+                                wanted={open ? held.reveal : ''}
+                                onrevealed={() => write({ reveal: '' })}
+                            >
+                                <VenueCard
+                                    {venue}
+                                    cursor={cursor === venue.id}
+                                    projects={use.projects}
+                                    concentrated={use.concentrated}
+                                    labels={labelOf(venue.root)}
+                                    entry={file.entryOf(venue.id)}
+                                    schema={file.schemaOf(venue.id)}
+                                    file={file.sourceOf(venue.id)}
+                                    fault={file.faultOf(venue.id)}
+                                    onsaid={file.say}
+                                />
+                            </Reveal>
+                        {/each}
+                    </CardGrid>
+                </GroupHead>
             {/each}
         {/if}
     </div>
 </Pane>
 
 <style>
+    /* The head and the sections, 12px apart. */
     .venues {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
         min-width: 0;
     }
 
-    section {
-        margin-top: 12px;
-    }
-
+    /* The ribbon stands 8px over the cards of its section. */
     .timeline {
-        margin-top: 8px;
+        margin-bottom: 8px;
         overflow-x: auto;
     }
 
@@ -189,15 +188,7 @@
        the ribbon's surface reaches past its words as padding, and gives it back as margin: the
        ribbon stays where it is and its surface is drawn whole. */
     :global(body.wall) .timeline {
-        margin: 4px -8px 0;
+        margin: 0 -8px 4px;
         padding: 4px 8px;
-    }
-
-    .cards {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(min(320px, 100%), 1fr));
-        gap: 10px;
-        align-items: start;
-        margin-top: 8px;
     }
 </style>

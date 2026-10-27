@@ -3,7 +3,7 @@
     // board, drawn with the command center's parts: its box, its two-column flow and its groups are
     // ui/display/ticker/TickerGroup.svelte's, with a purple left edge where the command center's is
     // red, and its heading is the row the command center and the tasks section draw theirs with
-    // (views/shared/card/heads/FoldHead.svelte): the fold control, named "Fold Career" or "Unfold
+    // (ui/controls/heads/FoldHead.svelte): the fold control, named "Fold Career" or "Unfold
     // Career", the banner's glyph and the word Career, and at the row's end the Edit control.
     //
     // Its groups are NEXT, GOAL, SITUATION, ORDER OF WORK and TRACK RECORD, in that order, each
@@ -41,10 +41,10 @@
     // ordinary case for a hub that keeps no career plan, and the board then starts at the command
     // center.
 
-    import Confirm from '$lib/ui/controls/Confirm.svelte';
+    import Confirm from '$lib/ui/controls/confirm/Confirm.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import TickerGroup, { box } from '$lib/ui/display/ticker/TickerGroup.svelte';
-    import FoldHead from '../../../shared/card/heads/FoldHead.svelte';
+    import FoldHead from '$lib/ui/controls/heads/FoldHead.svelte';
     import EntryEditor from '../../../shared/forms/entry/edit/EntryEditor.svelte';
     import { pageFile } from '../../../shared/forms/entry/edit/page-file';
     import { openFound } from '../../../shared/forms/entry-file';

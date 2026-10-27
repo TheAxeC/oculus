@@ -3,9 +3,13 @@
     // control that copies it. The block is built here, by state/sessions/hooks.ts, from the address
     // the page was served on, so what a reader installs posts to the server that drew it. An origin
     // the caller could not read leaves the section out, since a block that posts nowhere helps
-    // nobody.
+    // nobody. The section is the group every grouping of a view is drawn as
+    // (ui/controls/heads/GroupHead.svelte), folded under the key `hooks` in the tab's state
+    // (views/shared/card/pane-fold.ts).
 
+    import GroupHead from '$lib/ui/controls/heads/GroupHead.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import { usePaneFold } from '$lib/views/shared/card/pane-fold';
     import { hooksSnippet } from '$lib/state/sessions/hooks';
     import { t } from '$lib/state/shared/words/text';
 
@@ -17,6 +21,9 @@
     };
 
     let { origin }: Props = $props();
+
+    /** Whether the section is open, kept in the tab's state. */
+    const fold = usePaneFold();
 
     const snippet = $derived(hooksSnippet(origin));
 
@@ -39,8 +46,12 @@
 </script>
 
 {#if origin !== ''}
-    <section class="hooks">
-        <h3>{t('status.hooks_title')}</h3>
+    <GroupHead
+        data-hooks
+        label={t('status.hooks_title')}
+        open={fold.open('hooks')}
+        ontoggle={() => fold.toggle('hooks')}
+    >
         <p>{t('status.hooks_help')}</p>
         <pre>{snippet}</pre>
         <div class="controls">
@@ -49,23 +60,12 @@
                 <span class="said">{said}</span>
             {/if}
         </div>
-    </section>
+    </GroupHead>
 {/if}
 
 <style>
-    .hooks {
-        margin-top: 16px;
-        border-top: 1px solid var(--line);
-        padding-top: 10px;
-    }
-
-    h3 {
-        margin: 0;
-        font-size: var(--fs-md);
-        font-weight: 700;
-    }
-
     p {
+        margin: 0 0 6px;
         color: var(--muted-txt, var(--muted));
     }
 

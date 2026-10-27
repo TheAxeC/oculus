@@ -6,7 +6,7 @@
     // close the question and change nothing (state/sources/clone/clone-after.svelte.ts). Every step
     // stands at the palette's level, as the name box does, so none dims the page.
 
-    import Confirm from '$lib/ui/controls/Confirm.svelte';
+    import Confirm from '$lib/ui/controls/confirm/Confirm.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import Modal from '$lib/ui/frame/Modal.svelte';
     import TextInput from '$lib/ui/forms/TextInput.svelte';

@@ -29,10 +29,16 @@
     // cadence turns nothing. The card draws its controls only under the pointer or the focus, so
     // while a press waits the control is held drawn on its card, turning, until the answer.
     //
-    // Over a wallpaper each account's card is its own surface, and the history under them is read
-    // off a `Surface`; its table's header row scrolls with the table and paints nothing.
+    // An account's live sessions and the history are each the group every grouping of a view is
+    // drawn as (ui/controls/heads/GroupHead.svelte), folded under `folded` of the pane's state
+    // through the pane's folds (views/shared/card/pane-fold.ts), the live sessions by
+    // `live:<tool>:<account>` and the history by `history`.
+    //
+    // Over a wallpaper each account's card is its own surface, and the history's body is read off a
+    // `Surface`; its table's header row scrolls with the table and paints nothing.
 
     import Card from '$lib/ui/frame/Card.svelte';
+    import GroupHead from '$lib/ui/controls/heads/GroupHead.svelte';
     import Surface from '$lib/ui/frame/Surface.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
     import RootChip from '../../../shared/card/RootChip.svelte';
@@ -56,6 +62,7 @@
         type UsageWindow
     } from '$lib/state/system/machine/usage/usage';
     import { useState } from '$lib/state/client/use';
+    import { usePaneFold } from '$lib/views/shared/card/pane-fold';
 
     const {
         entities: { config, usage },
@@ -65,6 +72,9 @@
     let { instance }: ViewProps = $props();
     const data = $derived(usage());
     const cursor = $derived(cardCursor(instance.state));
+
+    /** The folds of the groups, by key, kept in the pane's state. */
+    const fold = usePaneFold();
     /** Minutes between two refreshes, and 0 until the config channel has delivered the cadence. */
     const cadence = $derived(refreshCadence(config()?.config));
 
@@ -224,8 +234,14 @@
                                 </div>
                             {/if}
                             {#if account.live.length}
-                                <section class="live">
-                                    <h3>{t('usage.live')}</h3>
+                                {@const live = `live:${accountId(account)}`}
+                                <GroupHead
+                                    data-live
+                                    label={t('usage.live')}
+                                    count={account.live.length}
+                                    open={fold.open(live)}
+                                    ontoggle={() => fold.toggle(live)}
+                                >
                                     {#each account.live as session (session.sessionId)}
                                         <div class="live-row">
                                             <span>{session.model}</span>
@@ -254,7 +270,7 @@
                                             <span>{nameOf(session.cwd)}</span>
                                         </div>
                                     {/each}
-                                </section>
+                                </GroupHead>
                             {/if}
                         {:else if account.tool === 'claude'}
                             <Empty message={t('usage.no_line')} glyph="circle_empty" />
@@ -271,9 +287,13 @@
             <Empty message={t('usage.no_accounts')} glyph="circle_empty" />
         {/if}
         {#if data}
-            <Surface>
-                <section class="history">
-                    <h2>{t('usage.history')}</h2>
+            <GroupHead
+                data-history
+                label={t('usage.history')}
+                open={fold.open('history')}
+                ontoggle={() => fold.toggle('history')}
+            >
+                <Surface>
                     {#if data.days.length}
                         <div class="scroller">
                             <Table
@@ -285,8 +305,8 @@
                     {:else}
                         <Empty message={t('usage.no_history')} glyph="circle_empty" />
                     {/if}
-                </section>
-            </Surface>
+                </Surface>
+            </GroupHead>
         {/if}
     </div>
 </Pane>
@@ -310,6 +330,11 @@
         gap: 8px;
     }
 
+    /* The live sessions' group stands 10 px under the windows. */
+    .windows + :global([data-live]) {
+        margin-top: 10px;
+    }
+
     .window {
         display: grid;
         grid-template-columns: 72px minmax(0, 1fr);
@@ -325,19 +350,6 @@
         margin: 6px 0 0;
         color: var(--muted-txt, var(--muted));
         font-size: var(--fs-sm);
-    }
-
-    .live {
-        margin-top: 10px;
-    }
-
-    .live h3,
-    .history h2 {
-        margin: 0 0 6px;
-        font-size: var(--fs-xs);
-        font-weight: 700;
-        text-transform: uppercase;
-        color: var(--muted-txt, var(--muted));
     }
 
     /* A live session is a row of facts: one line of the tree's row height, growing by whole lines
@@ -373,10 +385,6 @@
 
     .act.held {
         display: inline-flex;
-    }
-
-    .history {
-        min-width: 0;
     }
 
     /* The table scrolls inside this box, so a narrow pane scrolls the table and not itself. */

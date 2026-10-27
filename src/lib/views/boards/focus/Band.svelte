@@ -14,16 +14,15 @@
     // each column hides; a column that had cards before the filter is drawn with its count and
     // what it hides, even when the filter leaves it none.
     //
-    // The band is headed by the heading every group of cards has
-    // (views/shared/card/heads/GroupHead.svelte) in the muted text colour, with the count of the
+    // The band is the group every grouping of a view is drawn as
+    // (ui/controls/heads/GroupHead.svelte), headed in the muted text colour with the count of the
     // cards it draws, and folds by its control. Its fold is the Focus tab's, under the key
     // `groupFold` gives the band, so a reload and a move of the tab keep it. Folded, its columns
     // are hidden until found and stay mounted, so the browser's find-in-page searches their text,
-    // and a match inside them fires `beforematch`, which unfolds the band.
+    // and a match inside them unfolds the band.
 
-    import GroupHead from '$lib/views/shared/card/heads/GroupHead.svelte';
+    import GroupHead from '$lib/ui/controls/heads/GroupHead.svelte';
     import LaneHead from './lanes/LaneHead.svelte';
-    import Surface from '$lib/ui/frame/Surface.svelte';
     import LinkedText from '$lib/ui/display/text/LinkedText.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
@@ -71,11 +70,6 @@
             stageItemCount(cards.applications) +
             stageItemCount(cards.education)
     );
-
-    /** Unfold the band when it is folded, as a find-in-page match inside it asks. */
-    function unfold(): void {
-        if (!open) ontoggle(fold);
-    }
 
     /** How much of a card's note the band shows. */
     const NOTE = 110;
@@ -163,17 +157,8 @@
 {/snippet}
 
 {#if anything}
-    <section>
-        <Surface>
-            <GroupHead
-                label={t('focus.cards_group')}
-                name={t('focus.cards_group')}
-                {open}
-                ontoggle={() => ontoggle(fold)}
-                {count}
-            />
-        </Surface>
-        <div class="lanes" hidden={open ? false : 'until-found'} onbeforematch={unfold}>
+    <GroupHead label={t('focus.cards_group')} {open} ontoggle={() => ontoggle(fold)} {count}>
+        <div class="lanes">
             <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
             {@render column(
                 t('focus.funding_lane'),
@@ -202,21 +187,16 @@
                 hidden.teaching
             )}
         </div>
-    </section>
+    </GroupHead>
 {/if}
 
 <style>
     /* The columns fill the pane's width in as many as it holds, and one in a pane narrower than a
-       column. They stand 4px under the heading while they are shown, since columns hidden until
-       found still draw their margin. */
+       column. */
     .lanes {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(min(290px, 100%), 1fr));
         gap: 8px;
-    }
-
-    .lanes:not([hidden]) {
-        margin-top: 4px;
     }
 
     .lane {

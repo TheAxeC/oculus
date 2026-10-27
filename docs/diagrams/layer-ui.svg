@@ -189,7 +189,7 @@
 <g id="node23" class="node">
 <title>folder ui/controls to folder ui/display</title>
 <polygon fill="none" stroke="none" points="122.1,-565.64 111.9,-565.64 111.9,-553.16 122.1,-553.16 122.1,-565.64"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="117" y="-557" font-family="Helvetica,Arial,sans-serif" font-size="8.00">3</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="117" y="-557" font-family="Helvetica,Arial,sans-serif" font-size="8.00">5</text>
 </g>
 <!-- folder ui/controls&#45;&gt;folder ui/controls to folder ui/display -->
 <g id="edge35" class="edge">
@@ -244,7 +244,7 @@
 <g id="node28" class="node">
 <title>folder ui/controls to layer state</title>
 <polygon fill="none" stroke="none" points="122.1,-782.36 111.9,-782.36 111.9,-769.88 122.1,-769.88 122.1,-782.36"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="117" y="-773.72" font-family="Helvetica,Arial,sans-serif" font-size="8.00">5</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="117" y="-773.72" font-family="Helvetica,Arial,sans-serif" font-size="8.00">6</text>
 </g>
 <!-- folder ui/controls&#45;&gt;folder ui/controls to layer state -->
 <g id="edge45" class="edge">

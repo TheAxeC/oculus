@@ -44,6 +44,7 @@
     import { t } from '$lib/state/shared/words/text';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
+    import { instanceMap } from '$lib/state/workbench/layout/instance';
     import Empty from '$lib/ui/frame/Empty.svelte';
     import {
         failureWords,
@@ -61,11 +62,14 @@
     const data = $derived(queue());
     /** Whether the queue on screen is this poll's, so the controls asking the cluster are live. */
     const live = $derived(data !== null && queueIsCurrent(data));
-    /** The capacity folds as this pane holds them. */
+    /** The folds of the capacity, the finished jobs and the Login node as this pane holds them. */
     const held = $derived(parseHpcState(instanceState(instance.id)));
-    /** Keep the folds' new state in this pane's instance state, which goes when the tab closes. */
+    /**
+     * Keep the folds' new state in this pane's instance state, which goes when the tab closes;
+     * every other key it holds (the disk quota's fold) is kept.
+     */
     function keepHeld(next: HpcViewState): void {
-        setInstanceState(instance.id, next);
+        setInstanceState(instance.id, { ...instanceMap(instanceState(instance.id)), ...next });
     }
     let logId = $state('');
     let logStatus = $state('');
@@ -127,10 +131,21 @@
             <Jobs rows={data.jobs} {live} onlog={showLog} oncancel={cancel} />
         {/if}
         {#if data && (live || data.recent.length > 0 || data.stale?.recent !== undefined)}
-            <Recent rows={data.recent} stale={data.stale?.recent} {live} onlog={showLog} />
+            <Recent
+                rows={data.recent}
+                stale={data.stale?.recent}
+                {live}
+                {held}
+                onheld={keepHeld}
+                onlog={showLog}
+            />
         {/if}
         {#if data && data.status !== 'unconfigured' && data.status !== 'starting'}
-            <Login reason={live ? '' : failureMessage(data)} />
+            <Login
+                reason={live ? '' : failureMessage(data)}
+                open={held.login}
+                ontoggle={() => keepHeld({ ...held, login: !held.login })}
+            />
         {/if}
         {#if logId}
             <Log

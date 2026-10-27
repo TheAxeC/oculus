@@ -1,17 +1,16 @@
-In flight (3 of 6 slots in use):
-- O88 (one heading, one card grid, no intro paragraph, Pillars by kind, and the app theme that failed to load), built (base 85a826ca6); one red left, the html-sites floor (open item 490); reviewed (agents/reviews/O88-refuter.md); repair round 1 built (one fold toggle reused by every view, comment rewraps, the Catalogue's sub-heading row, the report's corrections); reviewed over round 1 (agents/reviews/O88-refuter.md, every finding closed). Ready for /land, which waits on open item 490.
-- O91 (joint work onto the people file, and the projects on people's, organisations' and resources' cards), built (base eeafcd4cb); reviewed (agents/reviews/O91-refuter.md): no spec, proof or behaviour finding, two comment-wrap findings (docs/templates.md:61-73, RecordCard.svelte:23) fixed at landing; no repair round. Ready for /land, which waits on open item 489, since its hub commit is part of the landing.
+In flight (1 of 6 slots in use):
+- O91 (joint work onto the people file, and the projects on people's, organisations' and resources' cards), built (base eeafcd4cb); reviewed (agents/reviews/O91-refuter.md): no spec, proof or behaviour finding, two comment-wrap findings (docs/templates.md:61-73, RecordCard.svelte:23) fixed at landing; no repair round. Ready for /land after O88's commit; ruling 489 (b) puts the joint-work titles in a new people field `work`, written by the hub commit of its landing.
 
 Queued (2):
-- O90 (the board bar's Waiting on filter), /spec after O88.
+- O90 (the board bar's Waiting on filter), /spec after O91's landing.
 - O92 (the collection's Add and bar, and the Map's bar), /spec after O90.
 
-Waiting on a ruling: open item 489 (the ten joint-work titles), for O91's hub commit at landing; open item 490 (the html-sites floor), for O88's landing.
+Waiting on a ruling: nothing. Landing now: O88 (its landing commit being made, with the fixes the look on localhost:8790 found). Landing next: O91 (the titles as `work`, ruling 489 (b)).
 
 Owed looks: none.
 
 Landed, newest first:
-- O93 (Focus and the dated lines: people on a line, Done on a follow-up, Remove on Focus rows, the Pillar filter, the red waiting line), 2026-10-27, landing commit.
+- O93 (Focus and the dated lines: people on a line, Done on a follow-up, Remove on Focus rows, the Pillar filter, the red waiting line), 2026-10-27, f9d6ac48.
 - O87 (the Focus band's positions and teaching, and the dated lines in Tasks), 2026-10-27, 744de6aa.
 - O94 (LinkedIn's Mark posted), 2026-10-27, 8dbb9021; hub 34232a90b.
 - O84 (who the user is), 2026-10-27, 813bf6e6; hub 5a7e8e025.

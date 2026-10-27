@@ -266,6 +266,14 @@
 </div>
 
 <style>
+    /* The slot fills its grid cell and the record card fills the slot, so the cards of one row are
+       one height and no empty cell is left under a short one. */
+    .slot {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+    }
+
     .meta,
     .themes {
         display: flex;

@@ -8,11 +8,12 @@
 </script>
 
 <script lang="ts">
-    // Layer 3, view. One collection file as its own tab: the file's title and intro, a search over
-    // every word an entry holds and a facet bar of the statuses the file uses (both in the bar
-    // under the header), an Add that asks the new entry's name and opens its page, and one card per
-    // entry, the pinned ones first. The title of a card opens the entry's page, the `entry` view's
-    // tab, where the entry is edited and deleted.
+    // Layer 3, view. One collection file as its own tab: the file's title, a search over every word
+    // an entry holds and a facet bar of the statuses the file uses (both in the bar under the
+    // header), an Add that asks the new entry's name and opens its page, and one card per entry,
+    // the pinned ones first, in the shared card grid (views/shared/card/record/CardGrid.svelte).
+    // The title of a card opens the entry's page, the `entry` view's tab, where the entry is edited
+    // and deleted.
     //
     // It is registered once per collection view the page is given and reads which collection it is
     // from the id of the instance it was mounted as, exactly as Projects.svelte reads which board
@@ -56,12 +57,10 @@
     import AddButton from '../../shared/forms/AddButton.svelte';
     import { collectionAsk, literatureAsk, type Ask } from '../../shared/forms/entry/entry-add';
     import { blockedBy } from '../../shared/forms/entry-file';
-    import Intro from '../../shared/prose/Intro.svelte';
+    import CardGrid from '../../shared/card/record/CardGrid.svelte';
     import Reveal from '../../shared/card/Reveal.svelte';
     import SaidBody from '../../shared/writes/SaidBody.svelte';
     import SourceButton from '../../shared/links/SourceButton.svelte';
-    import { inlineMarkdown } from '$lib/ui/html';
-    import { createCardMath } from '$lib/views/shared/latex/card-math.svelte';
     import {
         NO_FUNDING,
         applyCollectionFilters,
@@ -104,9 +103,6 @@
     } = client;
 
     let { instance }: ViewProps = $props();
-
-    /** How this component's Markdown fields draw their formulas, once KaTeX is in. */
-    const cardMath = createCardMath();
 
     /** The collection key, which is the id the view was registered under. */
     const key = $derived(instance.view);
@@ -432,16 +428,12 @@
 
 <Pane title={title()} toolbar={tools} {bar}>
     <div class="collection" data-instance={instance.id} data-collection={instance.view}>
-        {#if collection?.intro}
-            <Intro html={inlineMarkdown(collection.intro, cardMath(collection.intro))} />
-        {/if}
-
         <SaidBody
             {said}
             empty={shown.length === 0 && unfunded.length === 0}
             message={t('collection.empty')}
         >
-            <div class="cards" role="list">
+            <CardGrid role="list">
                 {#each shown as { entry, part } (`${rootOf(entry)}:${entry.index}`)}
                     <Reveal
                         id={entry.id}
@@ -485,7 +477,7 @@
                 {#if unfunded.length > 0 && !held.hidden.includes(NO_FUNDING)}
                     <NoFundingCard {unfunded} cursor={cursor === NO_FUNDING} />
                 {/if}
-            </div>
+            </CardGrid>
         </SaidBody>
     </div>
 </Pane>
@@ -497,24 +489,5 @@
         text-transform: uppercase;
         letter-spacing: 0.04em;
         color: var(--accent-txt, var(--accent));
-    }
-
-    /* The cards of one row stretch to the row's height, in file order, so no empty cell is left
-       under a short card and nothing is reordered to fill one. A card sits inside its reveal box,
-       which is stretched with it. */
-    .cards {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(min(320px, 100%), 1fr));
-        gap: 10px;
-        align-items: stretch;
-    }
-
-    .cards > :global([data-reveal]) {
-        display: flex;
-        flex-direction: column;
-    }
-
-    .cards > :global([data-reveal] > [data-entry]) {
-        flex: 1 1 auto;
     }
 </style>

@@ -7,7 +7,13 @@
     // nothing itself. The rows are the `app-hosts` channel's; they carry the size of the output
     // and no text, so an open output is read from the server when it opens and again each time the
     // size in its row changes.
+    //
+    // The rows are the group every grouping of a view is drawn as
+    // (ui/controls/heads/GroupHead.svelte), headed with their count and folded under the key
+    // `hosts` in the pane's state (views/shared/card/pane-fold.ts).
+    import GroupHead from '$lib/ui/controls/heads/GroupHead.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import { usePaneFold } from '$lib/views/shared/card/pane-fold';
     import { stamp } from '$lib/state/shared/words/format';
     import { t } from '$lib/state/shared/words/text';
     import type { AppHostRow } from '$lib/state/system/apps/apps.svelte';
@@ -22,6 +28,9 @@
         onoutput: (app: string) => Promise<string[] | null>;
     };
     let { rows, onstop, onrestart, onapprove, onoutput }: Props = $props();
+
+    /** Whether the group is open, kept in the pane's state. */
+    const fold = usePaneFold();
 
     /** The apps whose output is open. */
     let shown: string[] = $state([]);
@@ -68,54 +77,65 @@
     }
 </script>
 
-<section class="hosts" data-app-hosts>
-    <h3>{t('processes.hosts_title')}</h3>
-    {#each rows as row (row.app)}
-        <div class="host" data-host={row.app}>
-            <div class="line">
-                <span class="name">{nameOf(row)}</span>
-                {#if row.pid > 0}
-                    <span class="meta">{t('processes.host_pid', row.pid.toString())}</span>
-                    <span class="meta">{t('processes.host_started', stamp(row.started))}</span>
+<GroupHead
+    data-app-hosts
+    label={t('processes.hosts_title')}
+    count={rows.length}
+    open={fold.open('hosts')}
+    ontoggle={() => fold.toggle('hosts')}
+>
+    <div class="hosts">
+        {#each rows as row (row.app)}
+            <div class="host" data-host={row.app}>
+                <div class="line">
+                    <span class="name">{nameOf(row)}</span>
+                    {#if row.pid > 0}
+                        <span class="meta">{t('processes.host_pid', row.pid.toString())}</span>
+                        <span class="meta">{t('processes.host_started', stamp(row.started))}</span>
+                    {/if}
+                    <span class="state">{stateOf(row)}</span>
+                    <span class="actions">
+                        {#if row.state === 'running' || row.state === 'starting'}
+                            <ToolButton
+                                small
+                                label={t('processes.stop')}
+                                onclick={() => onstop(row)}
+                            />
+                        {/if}
+                        {#if row.state === 'ended'}
+                            <ToolButton
+                                small
+                                label={t('processes.host_restart')}
+                                onclick={() => onrestart(row)}
+                            />
+                        {/if}
+                        {#if row.state === 'waiting' && row.waiting === 'approval'}
+                            <ToolButton
+                                small
+                                label={t('processes.host_approve')}
+                                onclick={() => onapprove(row)}
+                            />
+                        {/if}
+                        <ToolButton
+                            small
+                            label={shown.includes(row.app)
+                                ? t('processes.host_output_hide')
+                                : t('processes.host_output_show')}
+                            onclick={() => toggle(row)}
+                        />
+                    </span>
+                </div>
+                {#if shown.includes(row.app)}
+                    {#if (lines[row.app] ?? []).length === 0}
+                        <p class="empty">{t('processes.host_output_empty')}</p>
+                    {:else}
+                        <pre class="output">{(lines[row.app] ?? []).join('\n')}</pre>
+                    {/if}
                 {/if}
-                <span class="state">{stateOf(row)}</span>
-                <span class="actions">
-                    {#if row.state === 'running' || row.state === 'starting'}
-                        <ToolButton small label={t('processes.stop')} onclick={() => onstop(row)} />
-                    {/if}
-                    {#if row.state === 'ended'}
-                        <ToolButton
-                            small
-                            label={t('processes.host_restart')}
-                            onclick={() => onrestart(row)}
-                        />
-                    {/if}
-                    {#if row.state === 'waiting' && row.waiting === 'approval'}
-                        <ToolButton
-                            small
-                            label={t('processes.host_approve')}
-                            onclick={() => onapprove(row)}
-                        />
-                    {/if}
-                    <ToolButton
-                        small
-                        label={shown.includes(row.app)
-                            ? t('processes.host_output_hide')
-                            : t('processes.host_output_show')}
-                        onclick={() => toggle(row)}
-                    />
-                </span>
             </div>
-            {#if shown.includes(row.app)}
-                {#if (lines[row.app] ?? []).length === 0}
-                    <p class="empty">{t('processes.host_output_empty')}</p>
-                {:else}
-                    <pre class="output">{(lines[row.app] ?? []).join('\n')}</pre>
-                {/if}
-            {/if}
-        </div>
-    {/each}
-</section>
+        {/each}
+    </div>
+</GroupHead>
 
 <style>
     .hosts {
@@ -123,15 +143,6 @@
         flex-direction: column;
         gap: 6px;
         min-width: 0;
-    }
-
-    h3 {
-        margin: 0;
-        font-size: var(--fs-xs);
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
-        color: var(--muted-txt, var(--muted));
     }
 
     .line {

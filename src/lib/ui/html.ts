@@ -455,12 +455,12 @@ export function sanitiseGraph(svg: string): string {
 }
 
 /**
- * One field of Markdown as the HTML a card draws it with. The intro, the note and the funding
- * statement are one paragraph and a link or two in the hub's files, so this is the inline renderer:
- * a block renderer would only wrap each of them in a `<p>` the card's own markup already gives
- * them. What the file holds is somebody's text, so the result is sanitised before it is returned,
- * which is what covers every card that draws a value this way. Its `$...$` formulas are typeset
- * once `math` is given, as a document's are, and drawn as their source until then.
+ * One field of Markdown as the HTML a card draws it with. A note and a funding statement are one
+ * paragraph and a link or two in the hub's files, so this is the inline renderer: a block renderer
+ * would only wrap each of them in a `<p>` the card's own markup already gives them. What the file
+ * holds is somebody's text, so the result is sanitised before it is returned, which is what covers
+ * every card that draws a value this way. Its `$...$` formulas are typeset once `math` is given, as
+ * a document's are, and drawn as their source until then.
  */
 export function inlineMarkdown(text: string, math: MathDrawing | null = null): string {
     if (math === null) return sanitise(marked.parseInline(text, { async: false }));

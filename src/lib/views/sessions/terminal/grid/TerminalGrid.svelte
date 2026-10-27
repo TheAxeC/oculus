@@ -49,7 +49,7 @@
     // its own follows the `terminal:` cursor, Option and copy settings (grid-look.ts).
 
     import SteerBox from '$lib/views/shared/sessions/SteerBox.svelte';
-    import Confirm from '$lib/ui/controls/Confirm.svelte';
+    import Confirm from '$lib/ui/controls/confirm/Confirm.svelte';
     import { titleStripper } from '$lib/state/sessions/terminals.svelte';
     import { keptViewport } from './kept-viewport';
     import { FILE_DRAG } from '$lib/state/sources/fs';

@@ -23,7 +23,7 @@
     import type { TickerRow } from '$lib/ui/display/ticker/ticker-rows';
     import { hasTasks, taskGroups, type TickerItem } from '$lib/state/boards/ticker';
     import { t } from '$lib/state/shared/words/text';
-    import FoldHead from '../../shared/card/heads/FoldHead.svelte';
+    import FoldHead from '$lib/ui/controls/heads/FoldHead.svelte';
     import DeleteAsk from '../../shared/forms/entry/DeleteAsk.svelte';
     import {
         act,

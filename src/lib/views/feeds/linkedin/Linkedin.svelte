@@ -15,8 +15,13 @@
 
 <script lang="ts">
     // Layer 3, view. LinkedIn reads its Markdown-folder feed, draws posting cadence and two card
-    // sections, and keeps its search in this view instance's saved state. Add asks for the title
-    // and the category in a prompt, writes the idea file and opens it at its body.
+    // sections, Ideas and Posted, and keeps its search and its folded sections in this view
+    // instance's saved state. Each section is the group every grouping of a view is drawn as
+    // (ui/controls/heads/GroupHead.svelte), headed with the count of the posts the search leaves,
+    // folded by `ideas` or `posted` under `folded`, its cards in the shared card grid
+    // (views/shared/card/record/CardGrid.svelte); a post asked to be revealed opens its folded
+    // section before it is scrolled to. Add asks for the title and the category in a prompt, writes
+    // the idea file and opens it at its body.
     //
     // It carries no toolbar control over its own source, which the four views drawn from one file
     // do: `linkedin_dir` names a folder of one Markdown file per post and no index, so there is no
@@ -24,12 +29,15 @@
     // is the way into the text from here.
     //
     // Over a wallpaper each card is its own surface and the amber nudge paints its own opaque box;
-    // the intro, the said line and each section's heading are read off a `Surface`.
+    // the cadence line and the said line are read off a `Surface`.
 
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Surface from '$lib/ui/frame/Surface.svelte';
+    import GroupHead from '$lib/ui/controls/heads/GroupHead.svelte';
+    import CardGrid from '../../shared/card/record/CardGrid.svelte';
+    import FeedFile from '../../shared/card/feed/FeedFile.svelte';
     import Search from '$lib/ui/controls/text/Search.svelte';
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
@@ -55,6 +63,7 @@
     import { addressOfId, rootOf } from '$lib/state/shared/page/hubs';
     import { IDEA_BODY_LINE } from '$lib/data/prose/linkedin-idea';
     import { t } from '$lib/state/shared/words/text';
+    import { stateFolds } from '$lib/state/shared/page/folds';
     import { cardCursor, storedState } from '$lib/state/workbench/layout/instance';
     import { feedIdents } from '$lib/state/shared/page/idents';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
@@ -82,6 +91,11 @@
         data?.cadenceDays === undefined ? 'no-dates' : cadence(days, data.cadenceDays)
     );
     const picked = $derived(pickIdea(split.ideas, today));
+    /** The presses that fold and unfold a section, `ideas` or `posted`. */
+    const folds = stateFolds(
+        () => held.folded,
+        (folded) => write({ folded })
+    );
     let said = $state('');
 
     /** The folder of the hub a post is of: the folder of that hub's feed. */
@@ -94,6 +108,15 @@
     function write(next: Partial<LinkedinState>): void {
         setInstanceState(instance.id, storedState({ ...held, ...next }));
     }
+
+    /** The section of the post asked to be revealed, which is unfolded so its card is shown. */
+    const revealedSection = $derived.by(() => {
+        const wanted = held.reveal ?? '';
+        if (wanted === '') return undefined;
+        if (ideas.some((entry) => identOf(entry) === wanted)) return 'ideas';
+        return posts.some((entry) => identOf(entry) === wanted) ? 'posted' : undefined;
+    });
+    $effect(() => folds.open(revealedSection));
 
     /** The question Add asks, held while the prompt is open. */
     let prompting: PromptRequest | null = $state(null);
@@ -166,15 +189,12 @@
 
 <Pane title={t('views.linkedin')} toolbar={tools} {bar}>
     <div class="linkedin" data-instance={instance.id}>
-        {#if data === null}
-            <Empty message={t('app.waiting')} glyph="linkedin" />
-        {:else if data.missing && data.file === ''}
-            <Empty message={t('linkedin.unnamed')} glyph="linkedin" />
-        {:else if data.missing}
-            <Empty message={t('linkedin.no_folder', data.file)} glyph="warn" />
-        {:else if data.error !== undefined}
-            <Empty message={t('radar.feed_error', data.file, data.error)} glyph="warn" />
-        {:else}
+        <FeedFile
+            {data}
+            glyph="linkedin"
+            missing={t('linkedin.no_folder', data?.file ?? '')}
+            unnamed={t('linkedin.unnamed')}
+        >
             <Intro>
                 <span
                     class="cadence"
@@ -186,7 +206,7 @@
                         <span>{t('linkedin.no_dates')}</span>
                     {:else if status === 'overdue'}
                         <Glyph name="warn" />
-                        <span>{t('linkedin.overdue', days ?? '', data.cadenceDays ?? '')}</span>
+                        <span>{t('linkedin.overdue', days ?? '', data?.cadenceDays ?? '')}</span>
                     {:else}
                         <span>{t('linkedin.ontrack', days ?? '')}</span>
                     {/if}
@@ -211,19 +231,19 @@
                 </Surface>
             {/if}
 
-            <section>
-                <Surface>
-                    <h3>
-                        <Glyph name="idea" />
-                        <span>{t('linkedin.ideas_hdr', split.ideas.length)}</span>
-                    </h3>
-                </Surface>
+            <GroupHead
+                label={t('linkedin.ideas_hdr')}
+                glyph="idea"
+                count={ideas.length}
+                open={!held.folded.includes('ideas')}
+                ontoggle={() => folds.toggle('ideas')}
+            >
                 {#if ideas.length > 0}
-                    <div class="cards" data-linkedin-section="ideas">
+                    <CardGrid data-linkedin-section="ideas">
                         {#each ideas as entry (identOf(entry))}
                             <Reveal
                                 id={identOf(entry)}
-                                wanted={held.reveal}
+                                wanted={held.folded.includes('ideas') ? '' : held.reveal}
                                 onrevealed={() => write({ reveal: '' })}
                             >
                                 <PostCard
@@ -235,25 +255,25 @@
                                 />
                             </Reveal>
                         {/each}
-                    </div>
+                    </CardGrid>
                 {:else if split.ideas.length === 0}
                     <Empty message={t('linkedin.no_ideas')} glyph="idea" />
                 {/if}
-            </section>
+            </GroupHead>
 
-            <section>
-                <Surface>
-                    <h3>
-                        <Glyph name="done" />
-                        <span>{t('linkedin.posted_hdr', split.posts.length)}</span>
-                    </h3>
-                </Surface>
+            <GroupHead
+                label={t('linkedin.posted_hdr')}
+                glyph="done"
+                count={posts.length}
+                open={!held.folded.includes('posted')}
+                ontoggle={() => folds.toggle('posted')}
+            >
                 {#if posts.length > 0}
-                    <div class="cards" data-linkedin-section="posted">
+                    <CardGrid data-linkedin-section="posted">
                         {#each posts as entry (identOf(entry))}
                             <Reveal
                                 id={identOf(entry)}
-                                wanted={held.reveal}
+                                wanted={held.folded.includes('posted') ? '' : held.reveal}
                                 onrevealed={() => write({ reveal: '' })}
                             >
                                 <PostCard
@@ -266,12 +286,12 @@
                                 />
                             </Reveal>
                         {/each}
-                    </div>
+                    </CardGrid>
                 {:else if split.posts.length === 0}
                     <Empty message={t('linkedin.no_posts')} glyph="done" />
                 {/if}
-            </section>
-        {/if}
+            </GroupHead>
+        </FeedFile>
     </div>
 </Pane>
 
@@ -295,8 +315,7 @@
     /* A part on a `Surface` is the grid's item through the Surface's box over a wallpaper and by
        itself without one (`display: contents`), so both shrink to the column. */
     .linkedin > :global(*),
-    .linkedin > :global([data-surface]) > :global(*),
-    .cards > :global(*) {
+    .linkedin > :global([data-surface]) > :global(*) {
         min-width: 0;
     }
 
@@ -332,29 +351,8 @@
         margin-right: 4px;
     }
 
-    .said,
-    h3 {
-        margin: 0;
-    }
-
     .said {
+        margin: 0;
         color: var(--muted-txt, var(--muted));
-    }
-
-    h3 {
-        display: flex;
-        align-items: center;
-        gap: 4px;
-        color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-xs);
-        font-weight: 700;
-        text-transform: uppercase;
-    }
-
-    .cards {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(min(340px, 100%), 1fr));
-        gap: 8px;
-        margin-top: 8px;
     }
 </style>

@@ -240,6 +240,7 @@ describe("oculus's own config directory", () => {
             'rail_color',
             'data_access',
             'venue_categories',
+            'pillar_kinds',
             'venue_tiers',
             'radar_buckets'
         ]

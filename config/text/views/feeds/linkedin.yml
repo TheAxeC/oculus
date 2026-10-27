@@ -13,7 +13,7 @@ text:
         form_category_help: e.g. reflection / mentorship / research
         form_title: Post title
         idea_tag: idea
-        ideas_hdr: Ideas ({0})
+        ideas_hdr: Ideas
         markpost: Mark posted
         markpost_tip: rename to the next number, set date to today and publish to True
         no_dates: no dated posts
@@ -24,7 +24,7 @@ text:
         ontrack: last post {0}d ago, on track
         overdue: '{0} days since last post (target: every {1}d)'
         postdue: Post-due.
-        posted_hdr: Posted ({0})
+        posted_hdr: Posted
         search: Search posts & ideas ...
         toolbar: LinkedIn actions
         unnamed: The hub names no LinkedIn folder. Set linkedin_dir in the hub's .oculus/config.yml to name one.

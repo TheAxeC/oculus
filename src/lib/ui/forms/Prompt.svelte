@@ -1,11 +1,11 @@
 <script lang="ts">
     // Layer 3, primitive. A dialog that asks for a line or two of text before a write: a stash's
     // message, a tag's name and message. It stands on the modal ground ui/frame/Modal.svelte draws
-    // and is modal as ui/controls/Confirm.svelte is: focus on the first field, Enter answers yes,
-    // Escape cancels, Tab stays inside, and a press on the ground behind it cancels. The fields are
-    // TextInput.svelte beside it, so the prompt holds only what has been typed until it answers,
-    // and nothing once it is gone. A pick the request marks required keeps the yes off, and Enter
-    // answering nothing, while it holds its empty choice.
+    // and is modal as ui/controls/confirm/Confirm.svelte is: focus on the first field, Enter
+    // answers yes, Escape cancels, Tab stays inside, and a press on the ground behind it cancels.
+    // The fields are TextInput.svelte beside it, so the prompt holds only what has been typed until
+    // it answers, and nothing once it is gone. A pick the request marks required keeps the yes off,
+    // and Enter answering nothing, while it holds its empty choice.
 
     import Modal from '../frame/Modal.svelte';
     import Select from './choice/Select.svelte';

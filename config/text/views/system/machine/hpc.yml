@@ -10,8 +10,7 @@ text:
         capacity_label: '{0} partition capacity'
         capacity_summary: sinfo table ({0} rows)
         capacity_summary_one: sinfo table (1 row)
-        capacity_title: Cluster capacity ({0} partitions)
-        capacity_title_one: Cluster capacity (1 partition)
+        capacity_title: Cluster capacity
         close: close
         col_actions: Actions
         col_avail: Avail
@@ -83,7 +82,7 @@ text:
         polling: polling cluster...
         queue_empty: queue empty
         queue_summary: '{0} running | {1} pending | {2} total'
-        recent_summary: Recent (finished) - {0}
+        recent_title: Recent (finished)
         refresh_now: Refresh now
         retrying: retrying every {0}m
         slurm_down: Slurm down

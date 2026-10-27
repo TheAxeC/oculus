@@ -13,6 +13,7 @@
 import { z } from 'zod';
 import { ageOf, mailKey } from '../../data/accounts/mail.ts';
 import { fieldItemsShape, readAs, searchRevealShape } from '../../data/shapes/shapes.ts';
+import { instanceFolded } from '../shared/page/folds.ts';
 import { t } from '../shared/words/text.ts';
 export { ageOf, mailKey } from '../../data/accounts/mail.ts';
 export type { Age } from '../../data/accounts/mail.ts';
@@ -42,6 +43,8 @@ export type InboxState = {
      * own, so an open editor survives a publish and two panes of the same view do not share it.
      */
     drafts: string[];
+    /** The keys of the folded sections: `unsorted`, `reply`, `action` and `info`. */
+    folded: string[];
     /** The palette destination, cleared by the view after it scrolls and flashes the card. */
     reveal?: string;
 };
@@ -150,13 +153,14 @@ export function archiveConfirm(thread: InboxThread, account: string): string {
     return t('inbox.archive_confirm', recipientOf(thread), account);
 }
 
-/** Read search and the triaged disclosure from one view instance. */
+/** Read search, the Triaged fold and the folded sections from one view instance. */
 export function parseInboxState(raw: unknown): InboxState {
     const held = readAs(inboxStateShape, raw) ?? { search: '', triagedOpen: false, drafts: [] };
     const state: InboxState = {
         search: held.search,
         triagedOpen: held.triagedOpen,
-        drafts: held.drafts
+        drafts: held.drafts,
+        folded: instanceFolded(raw)
     };
     if (held.reveal !== undefined) state.reveal = held.reveal;
     return state;

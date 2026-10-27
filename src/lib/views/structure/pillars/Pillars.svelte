@@ -11,23 +11,31 @@
 </script>
 
 <script lang="ts">
-    // Layer 3, view. The Pillars board over registry lines and real-project membership, followed by
-    // provisional lines, off-pillar lines and archival provenance.
+    // Layer 3, view. The Pillars board over registry lines and real-project membership, in one
+    // section per row of `pillar_kinds`, in the list's order, then an Other section for the lines
+    // whose kind no row names (state/boards/structure/lines.ts `lineKinds`). Each section is the
+    // group every grouping of a view is drawn as (ui/controls/heads/GroupHead.svelte), headed by
+    // the row's label in its colour with the count of its lines, and folds by its control, which
+    // the tab keeps under `folded`; its cards are drawn in the shared card grid
+    // (views/shared/card/record/CardGrid.svelte). The Orphans card is drawn in the first row's
+    // section and the Archival card, while a project is archived, in the section of `offpillar`, or
+    // under Other when the list holds no such row; a section with no line and neither card is not
+    // drawn. An off-pillar line's card is muted. A line asked to be revealed opens its folded
+    // section before it is scrolled to.
     //
-    // Over a wallpaper each card is its own surface; the head and each section's heading and note
-    // are read off a `Surface`.
+    // Over a wallpaper each card is its own surface.
 
     import Pane from '$lib/ui/frame/Pane.svelte';
-    import Surface from '$lib/ui/frame/Surface.svelte';
+    import GroupHead from '$lib/ui/controls/heads/GroupHead.svelte';
     import RegistryHead from '$lib/views/shared/forms/registry/RegistryHead.svelte';
-    import Intro from '$lib/views/shared/prose/Intro.svelte';
     import RegistryTools from '$lib/views/shared/forms/registry/RegistryTools.svelte';
     import { registryFile } from '$lib/views/shared/forms/registry/registry-file.svelte';
+    import CardGrid from '$lib/views/shared/card/record/CardGrid.svelte';
     import Reveal from '$lib/views/shared/card/Reveal.svelte';
     import ArchivalCard from '$lib/views/structure/pillars/ArchivalCard.svelte';
     import LineCard from '$lib/views/structure/pillars/LineCard.svelte';
     import OrphansCard from '$lib/views/structure/pillars/OrphansCard.svelte';
-    import { inlineMarkdown } from '$lib/ui/html';
+    import { stateFolds } from '$lib/state/shared/page/folds';
     import { cardCursor, storedState } from '$lib/state/workbench/layout/instance';
     import {
         archival,
@@ -42,7 +50,7 @@
     import { t } from '$lib/state/shared/words/text';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
-    import { vocabOf } from '$lib/state/shared/words/tones';
+    import { toneOf, vocabOf } from '$lib/state/shared/words/tones';
 
     const client = useState();
     const {
@@ -54,6 +62,8 @@
     let { instance }: ViewProps = $props();
     const ORPHANS_CARD = 'pillars:orphans';
     const ARCHIVAL_CARD = 'pillars:archival';
+    /** The kind whose section holds the Archival card when the list holds it. */
+    const OFFPILLAR = 'offpillar';
     const held = $derived(parsePillarsState(instanceState(instance.id)));
     const cursor = $derived(cardCursor(instance.state));
     const file = registryFile(client, 'pillars');
@@ -61,17 +71,40 @@
     const allProjects = $derived(projects());
     const config = $derived(configMap());
     const allVenues = $derived(venues());
-    const kinds = $derived(lineKinds(lines));
-    const pillars = $derived(kinds.pillars);
-    const provisional = $derived(kinds.provisional);
-    const offpillar = $derived(kinds.offpillar);
+    const kinds = $derived(lineKinds(lines, vocabOf()));
+    /** The presses that fold and unfold a section, by its kind's key. */
+    const folds = stateFolds(
+        () => held.folded,
+        (folded) => write({ folded })
+    );
     const unmatched = $derived(orphans(lines, allProjects, config, vocabOf));
     const archived = $derived(archival(allProjects, config, vocabOf));
     const tiers = $derived(venueTiers(vocabOf().venue_tiers));
+    /** The key of the section the Orphans card is drawn in: the first row's, else Other's. */
+    const orphansAt = $derived(kinds[0]?.key ?? '');
+    /** The key of the section the Archival card is drawn in: `offpillar`'s, else Other's. */
+    const archivalAt = $derived(kinds.some((kind) => kind.key === OFFPILLAR) ? OFFPILLAR : '');
+    /** The sections drawn: those with a line, and those holding the Orphans or Archival card. */
+    const shown = $derived(
+        kinds.filter(
+            (kind) =>
+                kind.lines.length > 0 ||
+                kind.key === orphansAt ||
+                (kind.key === archivalAt && archived.length > 0)
+        )
+    );
 
     function write(next: Partial<PillarsState>): void {
         setInstanceState(instance.id, storedState({ ...held, ...next }));
     }
+
+    /** The section of the line asked to be revealed, which is unfolded so its card is shown. */
+    const revealedKind = $derived(
+        (held.reveal ?? '') === ''
+            ? undefined
+            : kinds.find((one) => one.lines.some((line) => line.id === held.reveal))?.key
+    );
+    $effect(() => folds.open(revealedKind));
 </script>
 
 {#snippet tools()}
@@ -80,44 +113,23 @@
 
 <Pane title={t('views.pillars')} toolbar={tools}>
     <div class="pillars-view" data-instance={instance.id}>
-        <RegistryHead {file} spaced>
-            {#snippet intro()}
-                <Intro html={inlineMarkdown(t('pillars.intro'))} trusted />
-            {/snippet}
-        </RegistryHead>
+        <RegistryHead {file} />
 
-        <div class="cards">
-            {#each pillars as line (line.id)}
-                <Reveal id={line.id} wanted={held.reveal} onrevealed={() => write({ reveal: '' })}>
-                    <LineCard
-                        {line}
-                        cursor={cursor === line.id}
-                        projects={lineMembers(line, allProjects, config, vocabOf)}
-                        venues={allVenues}
-                        {tiers}
-                        entry={file.entryOf(line.id)}
-                        schema={file.schemaOf(line.id)}
-                        file={file.sourceOf(line.id)}
-                        fault={file.faultOf(line.id)}
-                        onsaid={file.say}
-                    />
-                </Reveal>
-            {/each}
-            <OrphansCard id={ORPHANS_CARD} cursor={cursor === ORPHANS_CARD} projects={unmatched} />
-        </div>
-
-        {#if provisional.length > 0}
-            <section>
-                <Surface>
-                    <h3>{t('pillars.provisional_h')}</h3>
-                    <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
-                    <p class="note">{@html inlineMarkdown(t('pillars.provisional_note'))}</p>
-                </Surface>
-                <div class="cards">
-                    {#each provisional as line (line.id)}
+        {#each shown as kind (kind.key)}
+            {@const open = !held.folded.includes(kind.key)}
+            <GroupHead
+                data-kind={kind.key}
+                label={kind.key === '' ? t('pillars.kind_other') : kind.label}
+                {open}
+                ontoggle={() => folds.toggle(kind.key)}
+                tone={kind.color === '' ? undefined : toneOf(kind.color)}
+                count={kind.lines.length}
+            >
+                <CardGrid>
+                    {#each kind.lines as line (line.id)}
                         <Reveal
                             id={line.id}
-                            wanted={held.reveal}
+                            wanted={open ? held.reveal : ''}
                             onrevealed={() => write({ reveal: '' })}
                         >
                             <LineCard
@@ -128,86 +140,39 @@
                                 {tiers}
                                 entry={file.entryOf(line.id)}
                                 schema={file.schemaOf(line.id)}
+                                muted={kind.key === OFFPILLAR}
                                 file={file.sourceOf(line.id)}
                                 fault={file.faultOf(line.id)}
                                 onsaid={file.say}
                             />
                         </Reveal>
                     {/each}
-                </div>
-            </section>
-        {/if}
-
-        {#if offpillar.length > 0 || archived.length > 0}
-            <section>
-                <Surface>
-                    <h3>{t('pillars.offpillar_h')}</h3>
-                    <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
-                    <p class="note">{@html inlineMarkdown(t('pillars.offpillar_note'))}</p>
-                </Surface>
-                <div class="cards">
-                    {#each offpillar as line (line.id)}
-                        <Reveal
-                            id={line.id}
-                            wanted={held.reveal}
-                            onrevealed={() => write({ reveal: '' })}
-                        >
-                            <LineCard
-                                {line}
-                                cursor={cursor === line.id}
-                                projects={lineMembers(line, allProjects, config, vocabOf)}
-                                venues={allVenues}
-                                {tiers}
-                                entry={file.entryOf(line.id)}
-                                schema={file.schemaOf(line.id)}
-                                muted
-                                file={file.sourceOf(line.id)}
-                                fault={file.faultOf(line.id)}
-                                onsaid={file.say}
-                            />
-                        </Reveal>
-                    {/each}
-                    {#if archived.length > 0}
+                    {#if kind.key === orphansAt}
+                        <OrphansCard
+                            id={ORPHANS_CARD}
+                            cursor={cursor === ORPHANS_CARD}
+                            projects={unmatched}
+                        />
+                    {/if}
+                    {#if kind.key === archivalAt && archived.length > 0}
                         <ArchivalCard
                             id={ARCHIVAL_CARD}
                             cursor={cursor === ARCHIVAL_CARD}
                             groups={archived}
                         />
                     {/if}
-                </div>
-            </section>
-        {/if}
+                </CardGrid>
+            </GroupHead>
+        {/each}
     </div>
 </Pane>
 
 <style>
+    /* The said line and the sections, 12px apart. */
     .pillars-view {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
         min-width: 0;
-    }
-
-    .cards {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(min(290px, 100%), 1fr));
-        gap: 10px;
-        margin-top: 10px;
-    }
-
-    section {
-        margin-top: 18px;
-    }
-
-    h3 {
-        margin: 0;
-        color: var(--ink-txt, var(--ink));
-        font-size: var(--fs-xs);
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
-    }
-
-    .note {
-        margin: 6px 0 0;
-        color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-md);
     }
 </style>

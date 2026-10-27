@@ -46,11 +46,16 @@
     // Each session working in the folder is views/shared/sessions/SessionRow.svelte, the row the
     // entry page draws for the sessions in its folder too.
     //
-    // Over a wallpaper the card is its own surface, and the status line and each section after it
-    // are read off a `Surface`, so a document's code blocks paint no surface of their own there.
+    // The LaTeX panel, the documents and the sessions are each the group every grouping of a view
+    // is drawn as (ui/controls/heads/GroupHead.svelte), folded by its key (`latex`, `documents`,
+    // `sessions`) under `folded` of the tab's state through the pane's folds
+    // (views/shared/card/pane-fold.ts); choosing a document keeps the folds. Over a wallpaper the
+    // card is its own surface, and the status line and each group's body are read off a `Surface`,
+    // so a document's code blocks paint no surface of their own there.
 
     import Tag from '$lib/ui/controls/Tag.svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
+    import GroupHead from '$lib/ui/controls/heads/GroupHead.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Surface from '$lib/ui/frame/Surface.svelte';
     import Segment from '$lib/ui/controls/segment/Segment.svelte';
@@ -61,8 +66,13 @@
     import SessionRow from '../../shared/sessions/SessionRow.svelte';
     import { absentDocs, markdownDocNames } from '$lib/state/boards/board';
     import { folderOf } from '$lib/state/client/selectors.svelte';
-    import { cardCursor, instanceChoice } from '$lib/state/workbench/layout/instance';
-    import { recordField, stateRecord } from '$lib/state/shared/page/records';
+    import {
+        cardCursor,
+        instanceChoice,
+        withInstanceKey
+    } from '$lib/state/workbench/layout/instance';
+    import { usePaneFold } from '../../shared/card/pane-fold';
+    import { stateRecord } from '$lib/state/shared/page/records';
     import { t } from '$lib/state/shared/words/text';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
@@ -97,9 +107,13 @@
     /** Read once, so the stamps of one rendering all agree on what day it is. */
     const now = Date.now();
 
+    /** Choose a document, every other key of the tab's state (its folds among them) kept. */
     function choose(name: string): void {
-        setInstanceState(instance.id, { ...recordField(id), doc: name });
+        setInstanceState(instance.id, withInstanceKey(instanceState(instance.id), 'doc', name));
     }
+
+    /** The folds of the blocks, by key (`latex`, `documents`, `sessions`). */
+    const fold = usePaneFold();
 
     const documents: SegmentItem[] = $derived(names.map((name) => ({ id: name, label: name })));
 
@@ -146,9 +160,13 @@
 
             <Latex {id} />
 
-            <Surface>
-                <section class="block">
-                    <h3 class="heading">{t('project.documents')}</h3>
+            <GroupHead
+                data-block="documents"
+                label={t('project.documents')}
+                open={fold.open('documents')}
+                ontoggle={() => fold.toggle('documents')}
+            >
+                <Surface>
                     {#if absent.length > 0}
                         <div class="absent" data-absent-docs>
                             {#each absent as doc (doc.name)}
@@ -174,12 +192,16 @@
                             failed={t('project.doc_failed', shown.error)}
                         />
                     {/if}
-                </section>
-            </Surface>
+                </Surface>
+            </GroupHead>
 
-            <Surface>
-                <section class="block">
-                    <h3 class="heading">{t('project.sessions')}</h3>
+            <GroupHead
+                data-block="sessions"
+                label={t('project.sessions')}
+                open={fold.open('sessions')}
+                ontoggle={() => fold.toggle('sessions')}
+            >
+                <Surface>
                     {#if rows.length === 0}
                         <Empty message={t('project.no_sessions')} glyph={t('project.none_glyph')} />
                     {:else}
@@ -187,8 +209,8 @@
                             <SessionRow {entry} {now} />
                         {/each}
                     {/if}
-                </section>
-            </Surface>
+                </Surface>
+            </GroupHead>
         {/if}
     </div>
 </Pane>
@@ -200,24 +222,11 @@
         gap: 12px;
     }
 
-    .block {
-        min-width: 0;
-    }
-
     .absent {
         display: flex;
         flex-wrap: wrap;
         gap: 4px;
         margin-bottom: 6px;
-    }
-
-    .heading {
-        margin: 0 0 6px;
-        font-size: var(--fs-xs);
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
-        color: var(--accent-txt, var(--accent));
     }
 
     .said {

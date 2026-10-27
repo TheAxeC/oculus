@@ -55,7 +55,7 @@ function collection(key: string, items: Record<string, unknown>[]): ReadCollecti
     return {
         key,
         file,
-        meta: { title: key.toUpperCase(), intro: 'about it' },
+        meta: { title: key.toUpperCase() },
         entries: items.map((fields, index) => ({ ...fields, provenance: { file, index } })),
         index: 0
     };
@@ -240,7 +240,6 @@ function portfolio(): RawPortfolio {
                     }
                 ]),
                 meta: {
-                    intro: 'dataset registry',
                     schema: [
                         { field: 'key', type: 'text', primary_key: true },
                         { field: 'retrieval', type: 'records' }

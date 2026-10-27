@@ -32,6 +32,13 @@
     // muted section at the end with the control that brings it back. A parked finding is still
     // true; muting only says the reader has chosen to leave it.
     //
+    // Each section and the muted one is the group every grouping of a view is drawn as
+    // (ui/controls/heads/GroupHead.svelte), headed with its count. A section folds by its kind
+    // under `folded` of the pane's state, through the pane's folds
+    // (views/shared/card/pane-fold.ts), the muted one by `showMuted`, which starts closed; every
+    // write of the pane's state keeps its other keys. A folded section's rows stay mounted but
+    // hidden, so the shell's arrow keys, which step over the rows shown, skip them.
+    //
     // Each section is a list of rows drawn as the Findings view draws its rows: one line of the
     // tree's row height, growing by whole lines when the words wrap, with the fill of a tree row
     // under the pointer. A row is the scope in the row's main words, the chip of the hub the
@@ -47,7 +54,7 @@
     // are not repeated here.
 
     import CodeText from '$lib/ui/display/text/CodeText.svelte';
-    import Disclosure from '$lib/ui/tree/Disclosure.svelte';
+    import GroupHead from '$lib/ui/controls/heads/GroupHead.svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Search from '$lib/ui/controls/text/Search.svelte';
@@ -58,8 +65,14 @@
     import { auditSearch, cardIds, findingsOfKind, muteMessage } from '$lib/state/system/audit';
     import { rootOf } from '$lib/state/shared/page/hubs';
     import { useState } from '$lib/state/client/use';
-    import { cardCursor, instanceFlag, instanceText } from '$lib/state/workbench/layout/instance';
+    import {
+        cardCursor,
+        instanceFlag,
+        instanceText,
+        withInstanceKey
+    } from '$lib/state/workbench/layout/instance';
     import { openSourceFile } from '../../shared/links/source-file';
+    import { usePaneFold } from '../../shared/card/pane-fold';
     import type { AuditFinding } from '$lib/state/system/audit.svelte';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
 
@@ -77,6 +90,8 @@
     const raw = $derived(instanceState(instance.id));
     const search = $derived(instanceText(raw, 'search'));
     const showMuted = $derived(instanceFlag(raw, 'showMuted'));
+    /** The folds of the sections, by kind, kept in the pane's state. */
+    const fold = usePaneFold();
 
     /** What the last mute failed with, and the empty string when the last one was written. */
     let failed = $state('');
@@ -112,12 +127,17 @@
         }))
     );
 
+    /** Set one key of the pane's state, every other key kept. */
+    function keep(key: string, value: unknown): void {
+        setInstanceState(instance.id, withInstanceKey(instanceState(instance.id), key, value));
+    }
+
     function typed(value: string): void {
-        setInstanceState(instance.id, { search: value, showMuted });
+        keep('search', value);
     }
 
     function toggleMuted(): void {
-        setInstanceState(instance.id, { search, showMuted: !showMuted });
+        keep('showMuted', !showMuted);
     }
 
     /** Park one finding, or bring it back. */
@@ -192,37 +212,37 @@
         {/if}
         {#each sections as section (section.kind)}
             {#if section.items.length > 0}
-                <section class="group" data-section={section.kind}>
-                    <h3>
-                        <span class="name">{section.label}</span>
-                        <span class="count">{section.items.length}</span>
-                    </h3>
+                <GroupHead
+                    data-section={section.kind}
+                    label={section.label}
+                    count={section.items.length}
+                    open={fold.open(section.kind)}
+                    ontoggle={() => fold.toggle(section.kind)}
+                >
                     <ul>
                         {#each section.items as finding (ids.get(finding))}
                             <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
                             {@render row(finding, false)}
                         {/each}
                     </ul>
-                </section>
+                </GroupHead>
             {/if}
         {/each}
         {#if hidden.length > 0}
-            <section class="group" data-section="muted">
-                <Disclosure
-                    count={hidden.length}
-                    label={t('audit.muted')}
-                    expanded={showMuted}
-                    onclick={toggleMuted}
-                />
-                {#if showMuted}
-                    <ul>
-                        {#each hidden as finding (ids.get(finding))}
-                            <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-                            {@render row(finding, true)}
-                        {/each}
-                    </ul>
-                {/if}
-            </section>
+            <GroupHead
+                data-section="muted"
+                label={t('audit.muted')}
+                count={hidden.length}
+                open={showMuted}
+                ontoggle={toggleMuted}
+            >
+                <ul>
+                    {#each hidden as finding (ids.get(finding))}
+                        <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+                        {@render row(finding, true)}
+                    {/each}
+                </ul>
+            </GroupHead>
         {/if}
         <p class="note">
             <span>{t('audit.findings_note')}</span>
@@ -242,29 +262,6 @@
         flex-direction: column;
         gap: 12px;
         min-width: 0;
-    }
-
-    .group {
-        display: flex;
-        flex-direction: column;
-        gap: 6px;
-        min-width: 0;
-    }
-
-    h3 {
-        display: flex;
-        align-items: baseline;
-        gap: 6px;
-        margin: 0;
-        font-size: var(--fs-xs);
-        font-weight: 700;
-        text-transform: uppercase;
-        color: var(--muted-txt, var(--muted));
-    }
-
-    .count {
-        font-family: var(--font-num);
-        font-size: var(--fs-sm);
     }
 
     ul {

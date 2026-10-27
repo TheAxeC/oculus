@@ -21,8 +21,14 @@
     // The redirect addresses and the scopes are the server's answer (GET /api/connect), read from
     // the constants the connect flow uses, so what the page asks the reader to register is what the
     // server sends. The page draws whether a provider is set up and never a saved half.
+    //
+    // Each provider is the group every grouping of a view is drawn as
+    // (ui/controls/heads/GroupHead.svelte), its ready tag at the heading's right end, folded by the
+    // provider's key under `folded` of the pane's state through the pane's folds
+    // (views/shared/card/pane-fold.ts).
 
     import Empty from '$lib/ui/frame/Empty.svelte';
+    import GroupHead from '$lib/ui/controls/heads/GroupHead.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
@@ -34,11 +40,15 @@
     import { scopesOf, type ConnectProvider } from '$lib/state/life/accounts';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
+    import { usePaneFold } from '$lib/views/shared/card/pane-fold';
 
     const {
         accounts: { loadSetup, setup, setupFailed, waiting }
     } = useState();
     let { instance }: ViewProps = $props();
+
+    /** The folds of the providers, by key, kept in the pane's state. */
+    const fold = usePaneFold();
 
     $effect(() => {
         void loadSetup();
@@ -55,16 +65,13 @@
     }
 </script>
 
-{#snippet heading(provider: ConnectProvider, words: string)}
-    <h3>
-        {words}
-        {#if held !== null}
-            <Tag
-                label={held.ready[provider] ? t('accounts.ready') : t('accounts.not_ready')}
-                tone={held.ready[provider] ? 'green' : 'amber'}
-            />
-        {/if}
-    </h3>
+{#snippet ready(provider: ConnectProvider)}
+    {#if held !== null}
+        <Tag
+            label={held.ready[provider] ? t('accounts.ready') : t('accounts.not_ready')}
+            tone={held.ready[provider] ? 'green' : 'amber'}
+        />
+    {/if}
 {/snippet}
 
 <Pane title={t('views.account_setup')} tinted>
@@ -86,21 +93,39 @@
         {:else if held === null}
             <Intro html={t('accounts.reading')} trusted />
         {:else}
-            <section data-provider="google">
-                <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-                {@render heading('google', t('accounts.google_heading'))}
-                <GoogleSteps scopes={scopesOf(held, 'google')} />
-                <HalfForm provider="google" named={named('google')} />
-            </section>
-            <section data-provider="microsoft">
-                <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-                {@render heading('microsoft', t('accounts.microsoft_heading'))}
-                <MicrosoftSteps
-                    redirects={[held.redirects.calendar, held.redirects.mail]}
-                    permissions={scopesOf(held, 'microsoft')}
-                />
-                <HalfForm provider="microsoft" named={named('microsoft')} />
-            </section>
+            <GroupHead
+                data-provider="google"
+                label={t('accounts.google_heading')}
+                open={fold.open('google')}
+                ontoggle={() => fold.toggle('google')}
+            >
+                {#snippet actions()}
+                    <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+                    {@render ready('google')}
+                {/snippet}
+                <div class="provider">
+                    <GoogleSteps scopes={scopesOf(held, 'google')} />
+                    <HalfForm provider="google" named={named('google')} />
+                </div>
+            </GroupHead>
+            <GroupHead
+                data-provider="microsoft"
+                label={t('accounts.microsoft_heading')}
+                open={fold.open('microsoft')}
+                ontoggle={() => fold.toggle('microsoft')}
+            >
+                {#snippet actions()}
+                    <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+                    {@render ready('microsoft')}
+                {/snippet}
+                <div class="provider">
+                    <MicrosoftSteps
+                        redirects={[held.redirects.calendar, held.redirects.mail]}
+                        permissions={scopesOf(held, 'microsoft')}
+                    />
+                    <HalfForm provider="microsoft" named={named('microsoft')} />
+                </div>
+            </GroupHead>
         {/if}
     </div>
 </Pane>
@@ -116,18 +141,8 @@
         color: var(--ink-txt, var(--ink));
         font-size: var(--fs-md);
     }
-    section {
+    .provider {
         display: grid;
         gap: 10px;
-        padding-top: 10px;
-        border-top: 1px solid var(--line);
-    }
-    h3 {
-        display: flex;
-        gap: 8px;
-        align-items: center;
-        margin: 0;
-        font-size: var(--fs-md);
-        font-weight: 700;
     }
 </style>

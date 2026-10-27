@@ -12,24 +12,22 @@
 </script>
 
 <script lang="ts">
-    // Layer 3, view. The relationship-map heading and visibility controls around the pure graph
+    // Layer 3, view. The relationship map's legend and visibility controls around the pure graph
     // built from the current portfolio snapshot. The pane keeps the start seed Graphviz's neato
     // lays its node set out from, as `start: { key, seed }` in its own instance state, so a page
     // saved with a map draws the same picture again; the re-tune control saves the next seed.
     //
     // The header holds the two icon actions, link mode and re-tune. The bar holds the filters and
-    // the visibility toggles (Controls.svelte), and the body the heading, the legend
-    // (Legend.svelte) and the graph, drawn by views/shared/graph/Graph.svelte, which the Notes
-    // Graph draws too; what a node opens (node-view.ts) and the related edge a link writes
-    // (edge-write.ts) are the Map's.
+    // the visibility toggles (Controls.svelte), and the body the legend (Legend.svelte) and the
+    // graph, drawn by views/shared/graph/Graph.svelte, which the Notes Graph draws too; what a node
+    // opens (node-view.ts) and the related edge a link writes (edge-write.ts) are the Map's.
     //
-    // Over a wallpaper the graph's canvas is its own surface, and the heading with the legend is
-    // read off one `Surface` above it.
+    // Over a wallpaper the graph's canvas is its own surface, and the legend is read off a
+    // `Surface` above it.
 
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Surface from '$lib/ui/frame/Surface.svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
-    import Glyph from '$lib/ui/display/Glyph.svelte';
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import Controls from '$lib/views/structure/map/Controls.svelte';
@@ -182,20 +180,11 @@
 <Pane title={t('views.map')} toolbar={tools} {bar}>
     <div class="map" data-instance={instance.id}>
         <Surface>
-            <div class="top">
-                <div class="head">
-                    <span class="shape">
-                        <Glyph name={t('map.line_glyph')} />
-                        <Glyph name={t('map.project_glyph')} />
-                    </span>
-                    <span>{t('map.head')}</span>
-                </div>
-                <Legend
-                    stages={stageFilters
-                        .filter((item) => item.shown && item.count > 0)
-                        .map((item) => item.stage)}
-                />
-            </div>
+            <Legend
+                stages={stageFilters
+                    .filter((item) => item.shown && item.count > 0)
+                    .map((item) => item.stage)}
+            />
         </Surface>
         {#if !hasRelationships}
             <Empty message={t('map.empty')} glyph={t('map.empty_glyph')} />
@@ -216,30 +205,13 @@
 </Pane>
 
 <style>
-    /* The head and the legend take their own height and the graph takes the rest, so the graph
-       fills the body whatever the bar above it needs. */
-    .map,
-    .top {
+    /* The legend takes its own height and the graph takes the rest, so the graph fills the body
+       whatever the bar above it needs. */
+    .map {
         display: flex;
         flex-direction: column;
         gap: 8px;
         min-width: 0;
-    }
-
-    .map {
         height: 100%;
-    }
-
-    .head {
-        display: flex;
-        align-items: center;
-        gap: 7px;
-        color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-sm);
-    }
-
-    .shape {
-        color: var(--accent-txt, var(--accent));
-        white-space: nowrap;
     }
 </style>

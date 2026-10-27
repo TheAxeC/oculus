@@ -9,7 +9,7 @@
     // question over unsaved text answers `save` to its Save. Nothing is drawn while neither holds a
     // message.
 
-    import CloseQuestion from '$lib/ui/controls/CloseQuestion.svelte';
+    import CloseQuestion from '$lib/ui/controls/confirm/CloseQuestion.svelte';
 
     /**
      * A close waiting on its dialog: the words it asks, the page a yes closes, its unsaved tabs,

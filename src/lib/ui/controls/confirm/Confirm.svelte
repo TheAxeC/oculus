@@ -20,7 +20,7 @@
     // the keyboard again when its tab shows; the keyboard comes back to the control it was raised
     // from when it goes, as the ground says.
 
-    import Modal from '../frame/Modal.svelte';
+    import Modal from '../../frame/Modal.svelte';
 
     type Props = {
         /** What is about to happen, in the caller's own words, already translated. */

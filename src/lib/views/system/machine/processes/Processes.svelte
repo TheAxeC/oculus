@@ -34,6 +34,7 @@
     import { clock } from '$lib/state/shared/words/format';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
+    import { withInstanceKey } from '$lib/state/workbench/layout/instance';
     import {
         parseProcessesState,
         pressed,
@@ -55,8 +56,10 @@
     const sort = $derived(parseProcessesState(instanceState(instance.id)).sort);
     let asking: Ask | null = $state(null);
 
+    /** Sort by a column, every other key of the pane's state (the app hosts' fold) kept. */
     function sortBy(key: ProcessesSort['key']): void {
-        setInstanceState(instance.id, { sort: pressed(sort, key) });
+        const next = pressed(sort, key);
+        setInstanceState(instance.id, withInstanceKey(instanceState(instance.id), 'sort', next));
     }
 </script>
 

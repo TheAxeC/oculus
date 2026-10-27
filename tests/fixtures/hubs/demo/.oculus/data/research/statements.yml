@@ -2,7 +2,6 @@
 # Paste the verbatim `statement:` into a manuscript. Edit in served mode on the Statements tab.
 # Each entry has a `key`, its short name, unique in this file; a write and Edit in File address the entry by it.
 title: Statements
-intro: "Reusable boilerplate: short bio, funding acknowledgments, data-availability statements. Copy the verbatim text into a paper."
 schema:
   - { field: key, type: text, primary_key: true, required: true, help: "The text block's short name, unique in this file; a write and Edit in File address the entry by it." }
   - { field: title,     type: text,     display: 1, required: true }

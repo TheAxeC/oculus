@@ -4,7 +4,7 @@
     // id, since the id is deleted with the file and the account's provider is then not set up for
     // it any more. A published calendar link's file keeps its link, which is deleted with it.
 
-    import Confirm from '$lib/ui/controls/Confirm.svelte';
+    import Confirm from '$lib/ui/controls/confirm/Confirm.svelte';
     import { t } from '$lib/state/shared/words/text';
 
     type Props = {

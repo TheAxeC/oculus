@@ -1,7 +1,6 @@
 # Oculus text owned by the radar view.
 text:
     radar:
-        count: '{0} ({1})'
         delete_tip: delete this paper (removes the entry)
         dismiss: Dismiss
         dismiss_tip: dismiss from the radar
@@ -11,15 +10,6 @@ text:
         filters: Radar filters
         idea: Idea
         idea_tip: scaffold an idea from this spark
-        intro_adjacent: adjacent
-        intro_cite: cite/baseline
-        intro_cross: plus cross-pollination
-        intro_lead: <b>New-paper radar</b> across active &amp; manuscript projects
-        intro_preempt: pre-emption
-        intro_refresh: refresh by running Lit Watch from the Update tray.
-        intro_sparks: <b>idea sparks</b> tied to the ideas folder.
-        intro_sweep: last sweep <b>{0}</b>
-        intro_tracked: '{0} tracked'
         new: NEW
         new_idea_candidate: new idea candidate
         no_date: '-'
@@ -30,6 +20,7 @@ text:
         search: Search radar | title | venue | project | why ...
         threatens: 'threatens: {0}'
         toolbar: Radar actions
+        tracked: '{0} tracked, last sweep {1}'
         untitled: (untitled)
     views:
         radar: Lit Watch

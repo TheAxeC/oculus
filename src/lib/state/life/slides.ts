@@ -1,6 +1,6 @@
 // Layer 2, client state, pure. The Slides view's own state: for each group of a deck, the list of
 // deck names the reader has ticked and ordered, the deck's `order:` as the reader has arranged it,
-// and the line the status region is showing.
+// the line the status region is showing, and the groups the reader folded.
 //
 // It is here rather than inside the component because it is what the view is: a tick and a move are
 // answers over a list, and a pure answer is a plain call in a test rather than a rendered page.
@@ -18,6 +18,7 @@
 import { z } from 'zod';
 import { mapOfShape, readAs, stringItemsShape } from '../../data/shapes/shapes.ts';
 import { movedOrder } from '../boards/collection/index.ts';
+import { instanceFolded } from '../shared/page/folds.ts';
 import { t } from '../shared/words/text.ts';
 import type { DeckGroup, DeckOrderEntry } from '../../data/model/index.ts';
 
@@ -35,6 +36,8 @@ export type SlidesState = {
     at: string;
     /** What the status region is showing, already translated; empty for nothing. */
     said: string;
+    /** The folded groups, each by its name after `group:`, and the order's list under `order`. */
+    folded: string[];
 };
 
 /** What a write answered, as much of it as the status line depends on. */
@@ -62,7 +65,8 @@ export function parseSlidesState(value: unknown): SlidesState {
         work: held?.work ?? {},
         order: held?.order ?? [],
         at: held?.at ?? '',
-        said: held?.said ?? ''
+        said: held?.said ?? '',
+        folded: instanceFolded(value)
     };
 }
 

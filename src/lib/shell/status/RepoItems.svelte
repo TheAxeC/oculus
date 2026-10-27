@@ -29,7 +29,7 @@
     // still under the system's reduce-motion setting. The page says which of those actions runs
     // (`git.running`, asked for those actions alone), as it does the writes.
 
-    import Confirm from '$lib/ui/controls/Confirm.svelte';
+    import Confirm from '$lib/ui/controls/confirm/Confirm.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import type { MenuGroup, MenuItem } from '$lib/ui/menu/menu-items';

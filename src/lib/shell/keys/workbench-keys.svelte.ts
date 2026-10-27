@@ -384,11 +384,15 @@ export function createWorkbenchKeys(options: Options): WorkbenchKeys {
         );
     }
 
-    /** The visible cards in one pane, in DOM order for cursor movement. */
+    /**
+     * The visible cards in one pane, in DOM order for cursor movement. A card of a folded group is
+     * mounted but hidden until found, which leaves it a box in the layout, so it is told apart by
+     * `checkVisibility`, which also answers false under `display: none`.
+     */
     function cards(pane: HTMLElement | null): CardElement[] {
         if (pane === null) return [];
         return [...pane.querySelectorAll<HTMLElement>('[data-card]')]
-            .filter((card) => card.offsetParent !== null)
+            .filter((card) => card.checkVisibility())
             .map((element) => ({ id: element.dataset.card ?? '', element }))
             .filter((card) => card.id !== '');
     }

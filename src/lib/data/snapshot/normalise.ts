@@ -548,7 +548,6 @@ function collection(raw: ReadCollection): Collection {
         ...traits,
         id: key,
         title: str(meta.title) ?? key,
-        intro: str(meta.intro),
         file,
         schema,
         primary_key: primaryKey ?? undefined,

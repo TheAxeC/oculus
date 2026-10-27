@@ -85,8 +85,10 @@
         {/if}
         <p>{t('app.sessions', records.length, live)}</p>
         <p>{t('app.git', workspaces)}</p>
-        <LineCounts />
-        <Hooks origin={servedOrigin()} />
+        <div class="groups">
+            <LineCounts />
+            <Hooks origin={servedOrigin()} />
+        </div>
     </div>
 </Pane>
 
@@ -113,5 +115,13 @@
     ul {
         margin: 0;
         padding-left: 18px;
+    }
+
+    /* The line counts and the hooks, two groups 16 px below the facts and apart. */
+    .groups {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        margin-top: 16px;
     }
 </style>

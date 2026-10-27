@@ -312,6 +312,12 @@ describe("the vocabulary a hub lays over oculus's", () => {
         expect(read.config.position_stages).toEqual(OCULUS.position_stages);
     });
 
+    it("replaces oculus's pillar kinds whole", () => {
+        const read = withHub('pillar_kinds: [ { key: core, label: Core } ]\n');
+        expect(said(read)).toEqual([]);
+        expect(read.config.pillar_kinds).toEqual([{ key: 'core', label: 'Core' }]);
+    });
+
     it("replaces oculus's Focus clusters whole", () => {
         const read = withHub(
             [

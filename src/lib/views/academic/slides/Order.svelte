@@ -3,8 +3,11 @@
     // its name and the title of its first slide, a group's slides by the group's name, a summary or
     // a grid by its kind, its group and its title. A row is dragged to another place in the list or
     // stepped one place with the controls; the list's own state is the Slides view's, which writes
-    // the order at Save with the lists of the groups.
+    // the order at Save with the lists of the groups. It is the group every grouping of a view is
+    // drawn as (ui/controls/heads/GroupHead.svelte), headed Order, and folds by its control; the
+    // Slides view keeps the fold.
 
+    import GroupHead from '$lib/ui/controls/heads/GroupHead.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import Steps from './Steps.svelte';
     import { t } from '$lib/state/shared/words/text';
@@ -13,7 +16,9 @@
     let {
         rows,
         busy,
-        onmove
+        onmove,
+        open,
+        ontoggle
     }: {
         /** The entries in the order the reader arranged them. */
         rows: DeckOrderEntry[];
@@ -21,6 +26,9 @@
         busy: boolean;
         /** Move the entry with this token to a place in the list. */
         onmove: (token: string, to: number) => void;
+        /** Whether the order is open, and the press of its fold control. */
+        open: boolean;
+        ontoggle: () => void;
     } = $props();
 
     /** The row being dragged, and the row whose grip was pressed, by token. */
@@ -44,8 +52,7 @@
     }
 </script>
 
-<section class="order" data-order aria-label={t('slides.order')}>
-    <h3 class="name">{t('slides.order')}</h3>
+<GroupHead data-order aria-label={t('slides.order')} label={t('slides.order')} {open} {ontoggle}>
     <div class="rows" role="list" inert={busy}>
         {#each rows as row, at (row.token)}
             <div
@@ -84,7 +91,7 @@
             </div>
         {/each}
     </div>
-</section>
+</GroupHead>
 
 <style>
     .rows {
@@ -112,12 +119,6 @@
     .row.dragging {
         outline: 1px solid var(--accent);
         outline-offset: -1px;
-    }
-
-    .name {
-        margin: 0 0 4px;
-        font-size: var(--fs-md);
-        font-weight: 700;
     }
 
     .grip {

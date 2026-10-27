@@ -18,15 +18,14 @@ text:
             reopen_none: no status of this hub's lead_statuses carries default_lead, or more than one does, so there is no word to reopen the lead with
         add: + add lead
         add_tip: add a position lead
+        count: '{0} live'
         declined: declined {0}
         empty: No live leads; run Scout from the Update tray.
-        exp_note: '| {0} expired (hidden)'
         expired: expired
-        expired_sec: Expired / actioned ({0}) - hidden
+        expired_sec: Expired / actioned
         filters: Lead filters
         fit_none: '-'
         hide_declined: Hide declined ({0})
-        intro: Academic openings - auto-scouted (BE/NL/LU). {0} live{1} | fit chip = strong / moderate / reach.
         no_deadline: no deadline
         no_file: No leads file configured.
         posting: Posting

@@ -4,14 +4,17 @@
     // not show them. Each row is a dataset's fetch with its hub, the bytes its folder holds of what
     // the sources list, the rate those bytes grow at, its state and Stop.
     //
-    // The section is a fold that starts shut. The sessions are the server's push (the `recover`
-    // channel the page already holds), read on the login node by Live HPC's own poll and once a
-    // minute while a Recover run on the cluster is followed, the server measuring the rate between
-    // the last two readings; opening the fold asks nothing. Before the first reading, while Live
-    // HPC's last poll had no answer, the section shows Live HPC's reason.
+    // The section is the group every grouping of a view is drawn as
+    // (ui/controls/heads/GroupHead.svelte), folded in a new pane, its fold standing as Live HPC's
+    // pane holds it. The sessions are the server's push (the `recover` channel the page already
+    // holds), read on the login node by Live HPC's own poll and once a minute while a Recover run
+    // on the cluster is followed, the server measuring the rate between the last two readings;
+    // opening the fold asks nothing. Before the first reading, while Live HPC's last poll had no
+    // answer, the section shows Live HPC's reason.
+    import GroupHead from '$lib/ui/controls/heads/GroupHead.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import Confirm from '$lib/ui/controls/Confirm.svelte';
+    import Confirm from '$lib/ui/controls/confirm/Confirm.svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Table from '$lib/ui/display/table/Table.svelte';
     import { type Column, cellText } from '$lib/ui/display/table/table-rows';
@@ -23,8 +26,17 @@
         type RecoverSession
     } from '$lib/state/system/machine/recover-words';
 
-    /** Live HPC's words for why its last poll had no answer, or empty when it had one. */
-    let { reason = '' }: { reason?: string } = $props();
+    let {
+        reason = '',
+        open,
+        ontoggle
+    }: {
+        /** Live HPC's words for why its last poll had no answer, or empty when it had one. */
+        reason?: string;
+        /** Whether the section is open, and the press of its fold control. */
+        open: boolean;
+        ontoggle: () => void;
+    } = $props();
 
     const {
         recover: { sessions, act }
@@ -99,8 +111,7 @@
     {/if}
 {/snippet}
 
-<details class="login">
-    <summary class="title">{t('hpc.login_title')}</summary>
+<GroupHead data-login label={t('hpc.login_title')} {open} {ontoggle}>
     {#if held === null && reason !== ''}
         <Empty error message={reason} />
     {:else if held === null}
@@ -115,7 +126,7 @@
     {#if outcome !== ''}
         <p class="outcome">{outcome}</p>
     {/if}
-</details>
+</GroupHead>
 
 {#if asking}
     <Confirm
@@ -132,24 +143,6 @@
 {/if}
 
 <style>
-    .login {
-        min-width: 0;
-    }
-
-    .title {
-        cursor: pointer;
-        font-size: var(--fs-xs);
-        font-weight: 700;
-        text-transform: uppercase;
-        color: var(--muted-txt);
-        margin-bottom: 6px;
-    }
-
-    .title:focus-visible {
-        outline: 1px solid var(--accent);
-        outline-offset: 1px;
-    }
-
     /* A table wider than the pane scrolls inside its own box. */
     .scroll {
         min-width: 0;

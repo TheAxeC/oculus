@@ -2,7 +2,6 @@
 text:
     domains:
         empty: No domains.
-        intro: "Projects by <b>application domain</b>, the field, in the colour of their cards, from the file the <code>domains</code> entry of the hub's collections list names. Pillars group the same projects by method."
     views:
         domains: Domains
         domains_glyph: circle_filled

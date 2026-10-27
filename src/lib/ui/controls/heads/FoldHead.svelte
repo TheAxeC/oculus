@@ -1,5 +1,5 @@
 <script lang="ts">
-    // Layer 3, view partial of the Focus board. The heading row of a box that folds: the fold
+    // Layer 3, primitive, drawn by the Focus board. The heading row of a box that folds: the fold
     // control (FoldControl.svelte beside it), a bare button named "Fold <name>" or "Unfold <name>"
     // with the fold glyph of the state, then the box's glyph, where it has one, and its title in
     // bold, drawn in the box's hue where it has one, then its count as a badge, where it has one,

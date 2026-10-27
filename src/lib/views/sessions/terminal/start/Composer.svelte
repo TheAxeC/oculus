@@ -32,7 +32,7 @@
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import AgentFindings from './AgentFindings.svelte';
     import AgentPickers from './AgentPickers.svelte';
-    import Confirm from '$lib/ui/controls/Confirm.svelte';
+    import Confirm from '$lib/ui/controls/confirm/Confirm.svelte';
     import AttachPicker from './AttachPicker.svelte';
     import SeedApproval from './SeedApproval.svelte';
     import TaskBlock from './TaskBlock.svelte';

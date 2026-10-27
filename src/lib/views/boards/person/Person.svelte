@@ -33,6 +33,11 @@
     // file store rather than carrying it in the snapshot and opens a file in the source tab exactly
     // as a file browser row does; the entry page draws it for the folder an entry's link names.
     //
+    // Joint work, Projects, Waiting on, the folder and the editor are each the group every grouping
+    // of a view is drawn as (ui/controls/heads/GroupHead.svelte), the folder's controls as its
+    // `actions`, and each folds by its block key (`joint-work`, `projects`, `waiting-on`, `folder`,
+    // `editor`) under `folded` of the tab's state (views/shared/card/pane-fold.ts).
+    //
     // A person of any hub has a "this is me" button, pressed on the person the key `self` of the
     // primary hub's `.oculus/local.yml` names; pressing it on another person writes that person's
     // key there (state/workbench/ui.svelte.ts, `setSelf`). The key is read from the primary hub, so
@@ -40,7 +45,9 @@
     // person first or names nobody, and in a workspace with no primary hub (state/boards/person.ts,
     // `selfStanding`). A person of another hub has the chip of their hub beside it.
 
+    import type { Snippet } from 'svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
+    import GroupHead from '$lib/ui/controls/heads/GroupHead.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
     import LinkedText from '$lib/ui/display/text/LinkedText.svelte';
@@ -60,6 +67,7 @@
     import { viewSourceFile } from '$lib/state/sessions/view-source';
     import { addressOfId, bareId, fileUnder, keyOf, rootOf } from '$lib/state/shared/page/hubs';
     import RootChip from '../../shared/card/RootChip.svelte';
+    import { usePaneFold } from '../../shared/card/pane-fold';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
 
@@ -75,6 +83,9 @@
     } = client;
 
     let { instance }: ViewProps = $props();
+
+    /** Which of the page's blocks are open, kept in the tab's state. */
+    const fold = usePaneFold();
 
     /** The person this instance was opened for, from the state the tag handed openView. */
     const key = $derived(stateRecord(instance.state));
@@ -261,8 +272,12 @@
                 </dl>
             {/if}
 
-            <section class="block" data-block="joint-work">
-                <h3>{t('person.joint_work')}</h3>
+            <GroupHead
+                data-block="joint-work"
+                label={t('person.joint_work')}
+                open={fold.open('joint-work')}
+                ontoggle={() => fold.toggle('joint-work')}
+            >
                 {#if join.jointWork.length === 0}
                     <Empty message={t('person.no_joint_work')} />
                 {:else}
@@ -277,10 +292,14 @@
                         {/each}
                     </ul>
                 {/if}
-            </section>
+            </GroupHead>
 
-            <section class="block" data-block="projects">
-                <h3>{t('person.projects')}</h3>
+            <GroupHead
+                data-block="projects"
+                label={t('person.projects')}
+                open={fold.open('projects')}
+                ontoggle={() => fold.toggle('projects')}
+            >
                 {#if join.projects.length === 0}
                     <Empty message={t('person.no_projects')} />
                 {:else}
@@ -302,10 +321,14 @@
                         {/each}
                     </ul>
                 {/if}
-            </section>
+            </GroupHead>
 
-            <section class="block" data-block="waiting-on">
-                <h3>{t('person.waiting_on')}</h3>
+            <GroupHead
+                data-block="waiting-on"
+                label={t('person.waiting_on')}
+                open={fold.open('waiting-on')}
+                ontoggle={() => fold.toggle('waiting-on')}
+            >
                 {#if join.waitingOn.length === 0}
                     <Empty message={t('person.no_waiting_on')} />
                 {:else}
@@ -327,26 +350,36 @@
                         {/each}
                     </ul>
                 {/if}
-            </section>
+            </GroupHead>
 
             {#if folder !== ''}
-                <section class="block" data-block="folder">
-                    <FolderFiles folder={folderPath} root={hub}>
-                        {#snippet heading()}
-                            <h3>{t('person.folder', folder)}</h3>
-                        {/snippet}
-                    </FolderFiles>
-                </section>
+                <FolderFiles folder={folderPath} root={hub}>
+                    {#snippet heading(controls: Snippet, body: Snippet)}
+                        <GroupHead
+                            data-block="folder"
+                            label={t('person.folder', folder)}
+                            open={fold.open('folder')}
+                            ontoggle={() => fold.toggle('folder')}
+                            actions={controls}
+                        >
+                            {@render body()}
+                        </GroupHead>
+                    {/snippet}
+                </FolderFiles>
             {/if}
 
             {#if said !== ''}
                 <p class="self">{said}</p>
             {/if}
             {#if page !== null}
-                <section class="block" data-block="editor">
-                    <h3>{t('person.editor')}</h3>
+                <GroupHead
+                    data-block="editor"
+                    label={t('person.editor')}
+                    open={fold.open('editor')}
+                    ontoggle={() => fold.toggle('editor')}
+                >
                     <EntryEditor {page} instance={instance.id} file={editFile} {fault} />
-                </section>
+                </GroupHead>
             {/if}
         </div>
     {/if}
@@ -400,17 +433,6 @@
         margin: 0;
         min-width: 0;
         overflow-wrap: anywhere;
-    }
-
-    .block h3 {
-        margin: 0 0 4px;
-        font-size: var(--fs-xs);
-        font-weight: 700;
-        color: var(--muted-txt, var(--muted));
-    }
-
-    [data-block='folder'] h3 {
-        margin: 0;
     }
 
     .rows {

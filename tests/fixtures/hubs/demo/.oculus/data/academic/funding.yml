@@ -1,7 +1,6 @@
 # Funding pipeline -> the Funding tab. One entry per application or funded programme.
 # Each entry has a `key`, unique in this file, which a new entry needs; a manifest's `funding:` tag names it.
 title: Funding
-intro: "Grant applications and the programmes this work sits inside. (Example data.)"
 schema:
   - { field: key,       type: text, primary_key: true, required: true, help: "funding: tag the projects use" }
   - { field: title,     type: text,   display: 1, required: true }
