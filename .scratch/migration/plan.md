@@ -929,6 +929,255 @@ One line per package: the status mark, the id, the title, and where the rest is 
       (a) Field paths as dotted paths with `[]` for a list (`authorships[].author.display_name`) and CSS selectors for HTML, each transform a named generic operation the code holds. Pros: one small path syntax a reader writes by eye; every transform has a name a reader can look up in the help. Cons: a transform not on the list needs a code change. (b) Field paths as JMESPath expressions (the `jmespath` package), CSS selectors for HTML, the named operations kept for what JMESPath cannot express (the inverted index, the first-byte size, the checksum file). Pros: projections and filters written in the row, without a code change. Cons: a second expression language next to CSS selectors, one more dependency, and rows a reader cannot read at a glance. Recommended: (a). Neither is the lazy option.
     - Kind: a check that goes against the step (1), a library choice (2) and a user-visible shape (3), raised in one stop as the step line asks.
   - Ruled 2026-10-27: 511 (1) (a), (2) (a), (3) (a) (ruling 511).
+  - Step 0, stopped at /spec 2026-10-27, the second stop: open item 517 (2026-10-27, O97's /spec, the shapes ruling 511 leaves unnamed): the services O97 moves into rows need keys beyond the eleven ruling 511 names, the venues need field names, and the rows need a Settings control; all three are shapes a reader of the hub sees, so they are raised before the brief. What the reading shows: the eight literature sources build their requests three ways, OpenAlex one `filter` parameter of clauses joined by commas (`src/lib/server/content/literature/sources/openalex.ts:104-117`), PubMed, Europe PMC, arXiv, Web of Science and Scopus one query text of clauses joined by " AND " (`pubmed.ts:147-162`, `europe-pmc.ts:87-99`, `arxiv.ts:80-88`, `wos.ts:74-84`, `scopus.ts:110-124`), Crossref and Semantic Scholar one parameter per term (`crossref.ts:106-114`, `semantic-scholar.ts:93-109`); they page five ways, by an offset (Crossref, Semantic Scholar, PubMed's `retstart`, arXiv's `start`, Scopus's `start`), by a page number (OpenAlex, Web of Science, figshare's `page` from 1, `figshare.ts:47-48`), by a cursor the answer names (Europe PMC's `nextCursorMark`, `europe-pmc.ts:104-115`; Synapse's `nextPageToken` sent in a POST body, `tokened.ts:138-164`), by an address the answer names (DANDI's `next`, `dandi.ts:46-57`) and by the `Link` header (Hugging Face, `huggingface.ts:29-32`); Web of Science and Scopus cap a page at 50 and 25 (`wos.ts:23`, `scopus.ts:24`); PubMed asks twice, the ids then the records (`pubmed.ts:166-194`), figshare and DANDI once more per item, and Synapse walks folders to a depth of 8 (`tokened.ts:99`, `tokened.ts:127-164`); the sources wait 0, 1000, 3000, or 340 ms without a key and 100 ms with one between requests (`pubmed.ts:250`), and a 429 is read through `Retry-After` and OpenAlex's `x-ratelimit-reset` and `x-ratelimit-remaining` (`src/lib/server/content/literature/ask.ts:69-80`); Scopus sends a second secret, the institutional token, as `X-ELS-Insttoken` (`scopus.ts:135`); PhysioNet, Kaggle and Synapse sign in from the `downloads` rows (`physionet.ts:53`, `tokened.ts:50`, `tokened.ts:171`); the hub's `venues.yml` has a `schema:` of twenty fields and no ISSN, fee or open-access field; Settings has eleven controls (`config/options/behavior.yml`: choice, file, list, multi, number, parked, path, text, toggle, words, and rows with `fields:`), none of which edits a map inside a row, while a reader row holds maps two and three levels deep; oculus already ships `monaco-editor` 0.57.0 (`package.json:106`) and writes JSON Schemas of its zod shapes (`src/lib/data/snapshot/schema/json.ts`).
+    - (1) The request keys of a reader row, beyond ruling 511's eleven. (a) Named keys, each a generic mechanism with no service in the code:
+      - `query` maps each term of oculus's literature form (`words`, `doi`, `years`, `type`, `open_access`, `venue`, `author`, `min_cited`) to `{ param, text }`, the parameter it goes in and its text with holes (`{words}`, `{doi}`, `{from}`, `{to}`, `{value}`, and the computed holes `{from-1}`, `{to+1}`, `{value-1}`); `join` names, per parameter, what its clauses are joined by; a term left empty sends nothing; `skip_when` lists the terms that make the source sit a search out (arXiv's `venue` and `min_cited`), and a term the row neither maps nor lists is not sent, as today;
+      - `query.doi` may instead name `address` (Crossref's `/works/{doi}`, Semantic Scholar's `/DOI:{doi}`) and `match`, a pattern whose capture is the value sent (arXiv's `10.48550/arXiv.(.+)`);
+      - the text operations `quote` (double quotes dropped) and `plain` (quotes and brackets dropped) on a hole, as `{venue|quote}`;
+      - `types` maps each of oculus's document types to the value the source is asked and answers with; `types_only: true` makes the source sit out a search for a type it does not list (arXiv, preprints alone);
+      - `paging.kind` is `offset`, `page` (with `first`), `cursor` (the answer's field, the parameter or body key it is sent as, and `start`), `next` (the answer's field holding the next address) or `link` (the `Link` header's `rel="next"`); `paging.max` caps a page; `paging.total` is the answer's path to the count of hits; a page shorter than asked ends the paging;
+      - `params`, the fixed parameters sent with every request of the row (OpenAlex's and Crossref's `select`, PubMed's `db`, `retmode`, `sort` and `tool`, Web of Science's `db` and `sortField`, arXiv's `sortBy` and `sortOrder`, Scopus's `sort`, Semantic Scholar's `fields`);
+      - `method: post` and `body`, a map with holes;
+      - `then`, a list of follow-up requests, each its own address, format, records and fields, with `ids` (a request for the ids of the request before it, joined by commas, PubMed's efetch), `for_each` (one request per record, figshare's articles, DANDI's assets, Synapse's file handles) or `recurse` (a record whose field names a folder repeats the request with the child's id, `max_depth: 8`, Synapse);
+      - `pace: { gap, gap_with_key }` in milliseconds, and `wait: { retry_after, reset, remaining }`, the header names a 429 is read from;
+      - `auth` as a list, each entry a header or parameter and the `downloads` row it reads, with `basic: true` for a user and secret sent as Basic (PhysioNet), so Scopus's key and token are two entries; `contact` names the parameter the contact address `literature.mailto` of `local.yml` is sent as (OpenAlex and Crossref `mailto`, PubMed `email`);
+      - the operations added to ruling 511's five: `join` (a list's values, or a name's parts such as `[given, family]`, joined by a separator), `date` (date parts, or a date with a month name such as PubMed's `2024 Mar`, read as a date), `https` (an `http:` address read as `https:`, Scopus's record link), `first` (the first of a list), `match` (a pattern's capture), `exists` (true when the path holds a value) and `link` (an address built from a `links:` row and an id).
+      Worked rows (each literature source, each Recover source; the UT browser's row is ruling 511's):
+      ```yaml
+      literature:
+        sources:
+          - key: openalex
+            name: OpenAlex
+            format: json
+            address: https://api.openalex.org/works
+            query:
+              words: { param: filter, text: "title_and_abstract.search:{words}" }
+              doi: { param: filter, text: "doi:{doi}" }
+              years: { param: filter, text: "publication_year:{from}-{to}" }
+              type: { param: filter, text: "type:{value}" }
+              open_access: { param: filter, text: "is_oa:true" }
+              min_cited: { param: filter, text: "cited_by_count:>{value-1}" }
+              author: { param: filter, text: "raw_author_name.search:{value}" }
+            join: { filter: "," }
+            types: { article: article, review: review, preprint: preprint, conference: conference-paper, book: book, chapter: book-chapter }
+            paging: { kind: page, param: page, first: 1, size: per-page, total: meta.count }
+            pace: { gap: 0 }
+            wait: { retry_after: retry-after, reset: x-ratelimit-reset, remaining: x-ratelimit-remaining }
+            auth: [{ param: api_key, row: openalex }]
+            contact: mailto
+            records: results
+            fields: { title: display_name, doi: doi, year: publication_year, type: type, cited: cited_by_count, open_access: open_access.is_oa, authors: { path: "authorships[].author.display_name" }, abstract: { path: abstract_inverted_index, op: inverted_index } }
+          - key: crossref
+            name: Crossref
+            format: json
+            address: https://api.crossref.org/works
+            query:
+              words: { param: query.bibliographic, text: "{words}" }
+              doi: { address: "https://api.crossref.org/works/{doi}" }
+              years: { param: filter, text: "from-pub-date:{from},until-pub-date:{to}" }
+              type: { param: filter, text: "type:{value}" }
+              author: { param: query.author, text: "{value}" }
+              venue: { param: query.container-title, text: "{value}" }
+            join: { filter: "," }
+            paging: { kind: offset, param: offset, size: rows, total: message.total-results }
+            pace: { gap: 1000 }
+            contact: mailto
+            records: message.items
+            fields: { title: { path: "title[]", op: first }, doi: DOI, year: { path: "issued.date-parts", op: date }, authors: { path: "author[]", op: join, parts: [given, family] }, url: { op: link, link: doi, id: DOI } }
+          - key: semantic_scholar
+            name: Semantic Scholar
+            format: json
+            address: https://api.semanticscholar.org/graph/v1/paper/search
+            query:
+              words: { param: query, text: "{words}" }
+              doi: { address: "https://api.semanticscholar.org/graph/v1/paper/DOI:{doi}" }
+              years: { param: year, text: "{from}-{to}" }
+              type: { param: publicationTypes, text: "{value}" }
+              open_access: { param: openAccessPdf, text: "" }
+              min_cited: { param: minCitationCount, text: "{value}" }
+              venue: { param: venue, text: "{value}" }
+            paging: { kind: offset, param: offset, size: limit, total: total }
+            pace: { gap: 1000 }
+            auth: [{ header: x-api-key, row: semantic_scholar }]
+            records: data
+            fields: { title: title, doi: externalIds.DOI, year: year, cited: citationCount, open_access: { path: openAccessPdf, op: exists }, bibtex: citationStyles.bibtex }
+          - key: pubmed
+            name: PubMed
+            format: json
+            address: https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&retmode=json
+            query:
+              words: { param: term, text: "{words}" }
+              doi: { param: term, text: "{doi}[doi]" }
+              years: { param: term, text: "{from}:{to}[dp]" }
+              type: { param: term, text: "{value}[pt]" }
+              open_access: { param: term, text: "free full text[sb]" }
+              venue: { param: term, text: "\"{venue|quote}\"[ta]" }
+              author: { param: term, text: "{author|plain}[au]" }
+            join: { term: " AND " }
+            paging: { kind: offset, param: retstart, size: retmax, total: esearchresult.count }
+            pace: { gap: 340, gap_with_key: 100 }
+            auth: [{ param: api_key, row: ncbi }]
+            contact: email
+            records: esearchresult.idlist
+            then:
+              - address: https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&retmode=xml
+                ids: id
+                format: xml
+                records: "PubmedArticleSet.PubmedArticle[]"
+                fields: { title: MedlineCitation.Article.ArticleTitle, abstract: { path: "MedlineCitation.Article.Abstract.AbstractText[]", op: join, by: " " }, authors: { path: "MedlineCitation.Article.AuthorList.Author[]", op: join, parts: [ForeName, LastName] }, url: { op: link, link: pubmed, id: MedlineCitation.PMID } }
+          - key: europe_pmc
+            name: Europe PMC
+            format: json
+            address: https://www.ebi.ac.uk/europepmc/webservices/rest/search?format=json&resultType=core
+            query:
+              words: { param: query, text: "TITLE_ABS:({words})" }
+              doi: { param: query, text: "DOI:\"{doi}\"" }
+              years: { param: query, text: "PUB_YEAR:[{from} TO {to}]" }
+              type: { param: query, text: "{value}" }
+              open_access: { param: query, text: "OPEN_ACCESS:y" }
+              venue: { param: query, text: "JOURNAL:\"{venue|quote}\"" }
+              author: { param: query, text: "AUTH:\"{author|quote}\"" }
+            join: { query: " AND " }
+            paging: { kind: cursor, param: cursorMark, start: "*", from: nextCursorMark, size: pageSize, total: hitCount }
+            records: resultList.result
+            fields: { title: title, doi: doi, year: pubYear, cited: citedByCount, url: { op: link, link: europepmc, id: id } }
+          - key: arxiv
+            name: arXiv
+            format: xml
+            address: https://export.arxiv.org/api/query
+            query:
+              words: { param: search_query, text: "all:{words}" }
+              doi: { param: id_list, match: "^10\\.48550/arXiv\\.(.+)$" }
+              years: { param: search_query, text: "submittedDate:[{from}01010000 TO {to}12312359]" }
+              author: { param: search_query, text: "au:{author|quote}" }
+            join: { search_query: " AND " }
+            skip_when: [venue, min_cited]
+            types: { preprint: "" }
+            types_only: true
+            paging: { kind: offset, param: start, size: max_results, total: "feed.opensearch:totalResults" }
+            pace: { gap: 3000 }
+            records: "feed.entry[]"
+            fields: { title: title, year: { path: published, op: date }, url: { op: link, link: arxiv, id: id }, pdf: { op: link, link: arxiv_pdf, id: id } }
+          - key: wos
+            name: Web of Science
+            format: json
+            address: https://api.clarivate.com/apis/wos-starter/v1/documents
+            query:
+              words: { param: q, text: "TS=({words})" }
+              doi: { param: q, text: "DO=({doi})" }
+              years: { param: q, text: "PY={from}-{to}" }
+              type: { param: q, text: "DT=({value})" }
+              venue: { param: q, text: "SO=({venue|plain})" }
+              author: { param: q, text: "AU=({author|plain})" }
+            join: { q: " AND " }
+            paging: { kind: page, param: page, first: 1, size: limit, max: 50, total: metadata.total }
+            auth: [{ header: X-ApiKey, row: wos }]
+            records: hits
+            fields: { title: title, doi: identifiers.doi, year: source.publishYear }
+          - key: scopus
+            name: Scopus
+            format: json
+            address: https://api.elsevier.com/content/search/scopus
+            query:
+              words: { param: query, text: "TITLE-ABS-KEY({words})" }
+              doi: { param: query, text: "DOI({doi})" }
+              years: { param: query, text: "PUBYEAR > {from-1} AND PUBYEAR < {to+1}" }
+              type: { param: query, text: "DOCTYPE({value})" }
+              open_access: { param: query, text: "OPENACCESS(1)" }
+              venue: { param: query, text: "SRCTITLE({venue|plain})" }
+              author: { param: query, text: "AUTH({author|plain})" }
+            join: { query: " AND " }
+            paging: { kind: offset, param: start, size: count, max: 25, total: "search-results.opensearch:totalResults" }
+            auth: [{ header: X-ELS-APIKey, row: scopus }, { header: X-ELS-Insttoken, row: scopus-insttoken }]
+            records: "search-results.entry[]"
+            fields: { title: "dc:title", doi: "prism:doi", url: { path: "link[].@href", op: https } }
+      recover:
+        sources:
+          - key: figshare
+            name: figshare
+            format: json
+            address: "https://api.figshare.com/v2/collections/{collection}/articles"
+            paging: { kind: page, param: page, first: 1, size: page_size }
+            records: "[]"
+            then:
+              - { address: "https://api.figshare.com/v2/articles/{id}", for_each: id, records: files, fields: { name: name, size: size, checksum: { path: computed_md5, kind: md5 }, url: download_url } }
+          - key: dandi
+            name: DANDI
+            format: json
+            address: "https://api.dandiarchive.org/api/dandisets/{dandiset}/versions/{version}/assets/"
+            paging: { kind: next, from: next, size: page_size }
+            records: results
+            fields: { name: path, size: size, url: "https://api.dandiarchive.org/api/assets/{asset_id}/download/" }
+            then:
+              - { address: "https://api.dandiarchive.org/api/assets/{asset_id}/", for_each: asset_id, fields: { checksum: { path: "digest.dandi:sha2-256", kind: sha256 } } }
+          - key: tcia
+            name: TCIA
+            format: json
+            address: "https://services.cancerimagingarchive.net/nbia-api/services/v1/getSeries?Collection={collection}&format=json"
+            records: "[]"
+            fields: { name: SeriesInstanceUID, url: "https://services.cancerimagingarchive.net/nbia-api/services/v1/getImage?SeriesInstanceUID={SeriesInstanceUID}" }
+          - key: stanford
+            name: Stanford Digital Repository
+            format: json
+            address: "https://purl.stanford.edu/{druid}.json"
+            records: "structural.contains[].structural.contains[]"
+            fields: { name: filename, size: size, checksum: { path: "digests[type=md5].digest", kind: md5 }, url: "https://stacks.stanford.edu/file/druid:{druid}/{filename}" }
+          - key: geo
+            name: GEO
+            format: html
+            address: "https://ftp.ncbi.nlm.nih.gov/geo/series/{accession|series}/{accession}/suppl/"
+            records: "pre a"
+            fields: { name: text, url: { attr: href }, size: { op: first_byte_size } }
+          - key: huggingface
+            name: Hugging Face
+            format: json
+            address: "https://huggingface.co/api/datasets/{repo}/tree/main?recursive=true&limit=100"
+            paging: { kind: link }
+            records: "[]"
+            fields: { name: path, size: size, checksum: { path: lfs.oid, kind: sha256 }, url: "https://huggingface.co/datasets/{repo}/resolve/main/{path}" }
+          - key: physionet
+            name: PhysioNet
+            format: text
+            address: "https://physionet.org/files/{project}/{version}/SHA256SUMS.txt"
+            auth: [{ basic: true, row: physionet }]
+            fields: { op: checksum_file, kind: sha256, url: "https://physionet.org/files/{project}/{version}/{name}", size: { op: first_byte_size } }
+            archive: { address: "https://physionet.org/content/{project}/get-zip/{version}/", size: { op: first_byte_size } }
+          - key: kaggle
+            name: Kaggle
+            format: json
+            address: "https://www.kaggle.com/api/v1/datasets/list/{owner}/{slug}"
+            auth: [{ basic: true, row: kaggle }]
+            archive: { address: "https://www.kaggle.com/api/v1/datasets/download/{owner}/{slug}", name: "{slug}.zip", size: { op: first_byte_size } }
+          - key: synapse
+            name: Synapse
+            format: json
+            address: https://repo-prod.prod.sagebase.org/repo/v1/entity/children
+            method: post
+            body: { parentId: "{id}", includeTypes: [file, folder] }
+            paging: { kind: cursor, param: nextPageToken, in: body, from: nextPageToken }
+            auth: [{ header: Authorization, prefix: "Bearer ", row: synapse }]
+            records: page
+            recurse: { when: { type: org.sagebionetworks.repo.model.Folder }, id: id, folder: name, max_depth: 8 }
+            then:
+              - { address: "https://repo-prod.prod.sagebase.org/repo/v1/entity/{id}/filehandles", for_each: id, records: list, fields: { name: fileName, size: contentSize, checksum: { path: contentMd5, kind: md5 }, url: "https://repo-prod.prod.sagebase.org/repo/v1/entity/{id}/file" } }
+          - key: url
+            name: Address
+            format: none
+            fields: { url: "{url}", checksum: { path: sha256, kind: sha256, else: { path: md5, kind: md5 } }, size: { op: first_byte_size } }
+      links:
+        - { key: doi, address: "https://doi.org/{id}" }
+        - { key: arxiv, address: "https://arxiv.org/abs/{id}" }
+        - { key: arxiv_pdf, address: "https://arxiv.org/pdf/{id}" }
+        - { key: pubmed, address: "https://pubmed.ncbi.nlm.nih.gov/{id}/" }
+        - { key: europepmc, address: "https://europepmc.org/article/MED/{id}" }
+        - { key: scholar, address: "https://scholar.google.com/scholar?q={id}" }
+        - { key: shellcheck, address: "https://www.shellcheck.net/wiki/{id}" }
+      ```
+      The response paths and selectors of these rows are written from the readers' zod shapes at the build and run against each service then; the keys are what this part asks. Pros of (a): every key reads as what it does, a reader finds each in the help, and a mistake shows as an unknown or missing key the moment the row is saved, through the row's JSON Schema. Cons of (a): a service that needs a mechanism not on the list needs a code change to add a named key or operation. (b) A row is a list of request templates in one template language (such as Handlebars, its version checked at the brief under `libraries: check`): the query, paging and chains written as text with conditionals and loops over the form's terms and the previous answer (`{{#if open_access}}is_oa:true{{/if}}`). Pros of (b): a new mechanism is written in the row with no code change; fewer named keys. Cons of (b): logic inside strings that no schema checks, so a mistake shows only when a search runs; a reader reads code in YAML; one more dependency. Recommended: (a). Neither is the lazy option; the lazy option, not offered, is keeping a service's query building, paging or chain in code, which ruling 509 (2) (b) rules out.
+    - (2) The venue fields the browser fills. (a) Three fields on a venue's entry in `venues.yml`: `issn`, a list (a journal's print and electronic ISSN), `fee` (the browser's fee label as read, such as "100% APC discount for UT authors") and `open_access` (the browser's open-access status as read), each added to the file's `schema:` list with its help, written into the hub at the landing. Pros: flat fields, read and edited like the other twenty; the card draws two lines from them. Cons: the labels are one library's; a hub that later names another browser keeps the old labels until each venue is read again. (b) `issn` as in (a), and a `browser:` map keyed by the browser's key, `{ utbrowser: { fee, open_access, read } }`, `read` being the date of the read. Pros: each library's labels kept apart, and the date shows how old a label is. Cons: a map inside every venue entry, while ruling 511 sets one browser per hub, so the map holds one key; the Venues editor then needs the map control of part (3). Recommended: (a). Neither is the lazy option; the lazy option, not offered, is the ISSN alone with the fee and open-access status read on every draw of a card, which ruling 511 (1) (a) rules out.
+    - (3) How the rows are edited in Settings. (a) A `yaml` control: each row of `venues.browser`, `literature.sources`, `recover.sources` and `links` shown as one entry of a list with add, remove and order, its text edited in the Monaco editor oculus ships, checked against the row's JSON Schema as it is typed, with completion of the keys and the help of each key on hover, and saved only when it checks. Pros: every key of a three-level row is reachable; the help of each key is where it is typed; a row is the same text in Settings, in `.oculus/config.yml` and in these worked rows. Cons: the person editing writes YAML. (b) A `form` control: each map inside a row a group of fields, each list a table of rows, every key with its own control and help line in `config/options/behavior.yml`, and maps with free keys (`query`, `fields`, `join`, `types`) given add-key rows. Pros: no YAML; the same look as the rest of Settings. Cons: some forty keys each need a control and a help line, groups three deep in the Settings pane, and a twenty-line row takes many presses to enter. Recommended: (a), as my judgment that a row three levels deep is read and checked faster as text with per-key help than as nested forms. Neither is the lazy option; the lazy option, not offered, is rows edited only in the file, which ruling 509 rules out.
+    - What follows from rulings 509 and 511, with no choice in it, built by O97: the six keys `literature.wos_key`, `literature.scopus_key`, `literature.scopus_insttoken`, `literature.openalex_key`, `literature.semantic_scholar_key` and `literature.ncbi_key` leave `config/options/local.yml`, and each source's key is a `downloads` row named by its `auth` (ruling 511 (3)); with no migration code, a source whose row is not yet in `downloads` says its key is missing and where it is set, and the values are entered in Settings' downloads rows; `literature.mailto` stays in `local.yml`, as it names no service; the words `literature.source_<service>` and the fixed lists `LITERATURE_SOURCES` and the Recover kinds give way to the rows' `key` and `name`; the hub's `data.yml` already names the kinds in its `schema:` (`when: kind in [...]`), so a Recover row's key is the `kind` an entry names and the entry's fields fill the row's holes.
+    - Kind: a user-visible shape (1), (2) and (3), raised in one stop. Status: all three parts are yours to rule; nothing was picked automatically.
 - Removed by Remote and group dropped (Axel, 2026-10-09): O34 remote access (a rented server behind Caddy and oauth2-proxy), with O33's Z273 widening (server setup, the per-machine split of `~/.oculus` and `config/local.yml`, the remote calendar and mail login, the sync control).
 - Removed by Remote and group dropped (Axel, 2026-10-09): O35 oculus on macOS, Linux and Windows; its Linux part, with Windows through WSL2, is part (3) of O33.
 - Removed by Remote and group dropped (Axel, 2026-10-09): O36 a second person in the hub.

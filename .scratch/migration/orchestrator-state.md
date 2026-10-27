@@ -35,6 +35,7 @@ dispatch:          # steps in flight, up to six (Z632)
   builder_usage: round 0 hand-back 270291 tokens, 64 tool uses, 8 min 52 s; build after the round-0 ruling 260477 tokens, 226 tool uses, 42 min 32 s
   round: 0
   report: .scratch/migration/agents/reviews/O95-report.md
+  reviewer_report: "running: a2941302c62abd230 (claude-opus-5-5)"
   landing: not-started
 - step: O96
   brief_check: "agents/reviews/O96-brief-check.md (ad36c99e52ba380ff, claude-opus-5-5, 234840 tokens, 61 tool uses, 8 min 47 s)"
@@ -61,8 +62,6 @@ dispatch:          # steps in flight, up to six (Z632)
   round: 0
   shared_paths: with O95 and O96, `docs/HELP.md` (O98 the Live HPC, Recover, Account setup, Settings, Source Control and local.yml lines, 252, 258, 315-324, 337, 532, 553 and 585 among them; O95 line 294; O96 lines 277, 296 and 301; separate lines, simple merges) and the generated `docs/diagrams/*`, regenerated at each landing.
   landing: not-started
-- step: O97
-  landing: preparing
 ```
 
 ## The standing demands (from Axel, in force)
@@ -202,6 +201,8 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 ## Open items (only what Axel must rule on; every report tells him these in plain words, decisions first, until he has ruled)
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
+
+- 517 (2026-10-27, O97's /spec, the second stop): the shapes ruling 511 leaves unnamed, in full with their options under O97's Step 0 in `plan.md`: (1) the request keys of a reader row beyond ruling 511's eleven ((a) named keys, with worked rows for every literature and Recover source, recommended; (b) request templates in a template language); (2) the venue fields the browser fills ((a) `issn`, `fee`, `open_access` on the entry, recommended; (b) `issn` and a `browser:` map keyed by the browser); (3) how the rows are edited in Settings ((a) a `yaml` control in Monaco checked against the row's JSON Schema, recommended; (b) nested forms). The lazy option of each, not offered, is named there. Status: all three parts are Axel's; nothing picked automatically.
 
 
 ## Closed items
@@ -701,6 +702,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-10-27 (O95, O96 under review; O98 building; O97 stopped on 517). O95's reviewer a2941302c62abd230 and O96's reviewer aba0d8dc3c0d0853c (both claude-opus-5-5) are running; O95's repair round 1 carries ruling 513 (a) with the review's findings. O98's builder a8cc0514e57924553 (claude-opus-5-5) is building from base 54304adb4. O97 stopped at its /spec a second time on open item 517 (the request keys of a reader row, the venue fields, the Settings control), booked under O97's Step 0 in `plan.md`; its preparing entry is removed and no worktree was made. In flight (3 of 6): O95, O96, O98. Next: each reviewer's report, O95's round 1, /refute and /land with the looks on 8790; O97's /spec again on Axel's ruling of 517. Open items: 517 (O97).
 - 2026-10-27 (O95 and O96 building; O97 and O98 waiting on rulings). O97 stopped at its /spec on open item 511 (the library's robots.txt, the HTML parser, the configuration's shape), commit 845599572. O95 prepared at base 046e0debc (brief check `agents/reviews/O95-brief-check.md`, ac93e98b3cfcb9328), every finding closed in the brief under Closed, Z1050 (open item 512) widening its paths to `docs/palette.md` and `ticker-lines.ts`, open item 513 raised (the tally's count); worktree `.agents/worktrees/migration-O95`, base copy `.agents/worktrees/O95-base/` (341 lines of unused exports); builder a8009799d26d93fad (claude-opus-5-5). O96 prepared at base 909f79d53 (brief check `agents/reviews/O96-brief-check.md`, ad36c99e52ba380ff), every finding closed under Closed, Z1051 (open item 514) widening its paths; worktree `.agents/worktrees/migration-O96`, base copy `.agents/worktrees/O96-base/` (341 lines); builder aa748bdc618193c9a (claude-opus-5-5); shared paths with O95: `docs/HELP.md` (separate lines) and `docs/diagrams/*`. At O95's landing: G124's Code and Test lines from its report's Doc text. In flight (2 of 6): O95, O96. Next: each report, /refute, /land with the looks on 8790. Open items: 510 (O98), 511 (O97), 513 (O95's tally count).
 - 2026-10-27 (O92 landed; O98's brief check back). O92 landed on main (the landing commit; booking in `plan.md` under O92, landing report `agents/reviews/O92-landing.md`), checked in the gate (every command passed after B1, S1, St1, St2 and St3 fixed at landing and a prettier and a comment-width line closed there) and on main (staged diff equal to the gate's under `cmp`), and looked at on localhost:8790; G134 written into `agents/guarded.md`. O98's brief check (`agents/reviews/O98-brief-check.md`, a5d4f9a13f2831178, claude-opus-5-5) is saved and its findings are not yet closed in the brief; its /spec goes on from there. Axel asked for a pause before another agent is launched: no agent is launched until he says go. Next: close O98's brief-check findings in its brief, and the /spec of O95, O96 and O97, each before any launch only on Axel's go.
 - 2026-10-27 (O92 repair round 1; O98 stopped at /spec on 508). O92's review (`agents/reviews/O92-refuter.md`, a30959dfc24838389, claude-opus-5-5) saved; round 1 (`agents/briefs/O92-round1.md`) sent to builder afca7f28cc1fce52c, snapshot `.agents/worktrees/migration-O92-round-1`. At O92's landing: G134 added to `agents/guarded.md` with its Test line naming the describe 'what a collection Add asks and writes', the case 37 correction, the spec.md:65 breach, the git reads outside spec.md:33 and the `docs/data-map.md:110` line (Axel's unstaged hunks left unstaged). Ruling 507 booked; O98's /spec rechecked its premises and stopped on open item 508 (the `hpc` channel, the status bar and pill, Submit's and Recover's cluster, the tests G135); no brief, no worktree. In flight (1 of 6): O92. Next: O92's round report, /refute over round 1, /land O92 with the looks on 8790; Axel's ruling on 508, then /spec O98 (its brief check runs then). Open items: 508.
