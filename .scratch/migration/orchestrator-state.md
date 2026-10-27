@@ -62,7 +62,8 @@ dispatch:          # steps in flight, up to six (Z632)
   session_id: a08d61da6d5e84ade (claude-opus-5-5)
   launched: 2026-10-27
   report: .scratch/migration/agents/reviews/O88-report.md
-  round: 0
+  round: 0 (cases ruled, agents/briefs/O88-cases.md: the heading components into ui/, intro a schema finding, pillar_kinds as venue_categories)
+  builder_usage: hand-back of the first run: 342022 tokens, 100 tool uses, 12 min 42 s
   landing: not-started
 - step: O91
   landing: preparing
