@@ -33,6 +33,7 @@ dispatch:          # steps in flight, up to six (Z632)
   session_id: a8cc0514e57924553 (claude-opus-5-5)
   launched: 2026-10-27
   report: .scratch/migration/agents/reviews/O98-report.md
+  builder_usage: 327915 tokens, 2155 tool uses, 4 h 9 min 32 s
   round: 0
   shared_paths: with O95 and O96, `docs/HELP.md` (O98 the Live HPC, Recover, Account setup, Settings, Source Control and local.yml lines, 252, 258, 315-324, 337, 532, 553 and 585 among them; O95 line 294; O96 lines 277, 296 and 301; separate lines, simple merges) and the generated `docs/diagrams/*`, regenerated at each landing.
   landing: not-started
@@ -175,6 +176,8 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 ## Open items (only what Axel must rule on; every report tells him these in plain words, decisions first, until he has ruled)
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
+
+- 525 (2026-10-27), O98's review started outside `/refute`. **What it is about:** the session dispatched O98's reviewer ace99e5278712884d (claude-opus-5-5, the configured model, `ordo-high`) by hand, in the form `/refute`'s Steps 1 gives, without invoking the `refute` skill first. The rule "a skill's work is done by invoking the skill" says such work is discarded and done again through the skill; the rule "never stop an agent without Axel's word" says the session may not stop the reviewer to do so. **Options:** (a) let the reviewer finish, discard its report, then invoke `/refute migration O98` for a fresh reviewer; pros: both rules kept, the review on file is one the skill dispatched; cons: one extra review run (about 200k tokens, 20 to 40 minutes). (b) stop the reviewer now on your word and invoke `/refute migration O98`; pros: no wasted run; cons: needs your word to stop it. (c) keep this reviewer's report as O98's review; pros: no extra run; cons: breaks the invoke-the-skill rule. **Recommendation:** (b), since it ends the cause at the least cost, and (a) if you prefer the reviewer left running. **Lazy option:** (c). **Status:** waiting on your ruling; O98's landing waits for its review.
 
 
 ## Closed items
