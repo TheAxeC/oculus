@@ -29,6 +29,8 @@ Make Folder a Hub..., in the Files view's menu of a folder, writes `.oculus/conf
 
 ## Data files
 
+A record that owns a folder of work, such as a paper, a tool or a study, is a project: its manifest is a `project.yml` at the folder's top or in its `.oculus/`, found by `scan:`, so it moves, is archived and is deleted with its folder. Any other record is an entry of one of the files below, since it has no folder of its own and a list keeps the entries' order and keys in one file; an entry whose work does sit in a folder, such as an application's, names that folder in `link:`.
+
 Each data file is named by its entry in `collections:` of `.oculus/config.yml`, a key and a file relative to the hub, and the entry's fields say what the file is: `registry:` the registry or feed it is, the flags of the features that read it, `ticker:` the category of its lines, which names the command center group of its dated lines (the lines of the file flagged `tasks` are lines of the Tasks section, dated or not), `group:`, `order:`, `label:`, `glyph:` and `about:` where its view sits and the words it is drawn with, and `primary_key:` the field an entry is found by, for a file with no `schema:` only. A hub keys its files as it likes. The table gives oculus's own list (`config/defaults/sources.yml`): the key and default file the templates and Make Folder a Hub use, and the registry each entry names. Each file lists its entries under `entries:` (the `data` file under `datasets:`) and opens with a `schema:` block that declares every field and flags its primary key with `primary_key: true`. A collection the hub does not list has no view: its tab is left out of its page, and the pane says which key is missing.
 
 | Key | Registry | Default file | One entry is | Primary key | View |
@@ -202,6 +204,8 @@ deck present.yml:
   groups.<name>.slides: [a project]
 ```
 
+A link between a project and another record is written on one side only. A project names what it belongs to: its venue, domain, pillars, funding, datasets, compute and people. A record that is about projects names them: an event, a teaching entry or an application in its `related:`, a literature entry in its `projects:`, a Lit Watch paper in its `project:`. The view of either side finds the other by reading the side that names it.
+
 The vocabulary keeps each word in one list: a project's `stage:` is a word of `stages`, its `form:` a word of `forms` and each of its `status.chips` a word of `chips`; a collection entry's `status` is a word of `statuses` and a Position Lead's a word of `lead_statuses`; a project's `tier:` is a word of `tiers`, and its category on the boards is the first row of `categories` whose `stages` and `forms` blocks hold it. A status that is no word of its list is a finding naming the closest word of the list when that word is within half the written word's length in single-letter changes, rounded down, and a stage word or a form written as a chip is a finding naming the field it belongs in.
 
 One key of `config.yml` names a primary key and is not checked by the Findings view: `slurm.resource` is a `resources` key of an entry with `kind: cluster` and a `host`; Live HPC says which condition fails.
@@ -263,6 +267,21 @@ A folder of the workspace that holds `.oculus/config.yml` is a hub of its own, a
 - Every record of every hub, the primary's included, has the id `<hub name>:<key>`. The files hold keys: a reference names the record of its key in its own hub, and else the record of the one other hub that holds the key; a key two other hubs hold and its own hub does not names no record, and the Audit reports it.
 - A change to a record goes to its own hub's file. A new record goes to a hub that could take it: a new project to any hub of the workspace, and a new entry (Add, Add Task, an application from a lead, Save to Literature) to a hub that holds its collection, named in its `collections:` or, for Literature, at the engine's path. When more than one hub could take it, the path asks which, the primary first in the list; when one could, the record goes there, primary or not.
 - A collection's view is shown when any hub of the workspace lists its key.
+
+## The primary hub
+
+The workspace file's `primary:` names one of its hubs. Its records are kept and resolved like any other hub's; what is specific to it is what belongs to the person and the machine rather than to one body of work, which oculus reads from the primary alone:
+
+- This machine's values: only the primary's `.oculus/local.yml` is read (the port, who you are (`self`), `hpc_host`, the programs, the calendar, mail and download accounts, the Literature keys), its account rows joined over every hub's file.
+- Who you are: the "this is me" button is drawn on the primary's people.
+- The person's own files: `.oculus/bookmarks.yml`, `.oculus/schedules.yml`, the update tasks under `.oculus/tasks/`, the machine apps under `.oculus/apps/` (or the folder its `apps_dir` names) and their values under `app_settings` of its `config.yml`.
+- Twelve keys of a hub's `config.yml` are read from the primary's alone: `portfolio_deck`, `career_file`, `bookmarks`, `schedules`, `apps_dir`, `app_settings`, `wallpaper.image`, `docs`, `counts`, `slurm.resource`, `lint.writing_skip` and `lint.writing_glyphs`.
+- Settings writes those twelve keys to the primary's `config.yml`; any other key of a hub's `config.yml` it writes to the hub the row names, the primary first and chosen.
+- `slurm.resource` resolves in the primary first, then in the one other hub that holds the key.
+- Where a new record goes: when more than one hub could take it, the path lists the primary first and selected; New Note on the Notes head writes into the primary; an app writes records to the primary alone.
+- Word order: a list drawn over the records of several hubs holds the primary's words first, and the records of a folder that is no hub are the primary's.
+
+In a workspace with no primary hub, Settings refuses the twelve keys and writes a hub's other keys only once a hub is picked, an update task and an app's new record are refused, and no schedule runs.
 
 ## Repositories below a hub
 
