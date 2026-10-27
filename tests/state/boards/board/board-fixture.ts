@@ -1,6 +1,6 @@
 // Layer 2, client-state test fixture. The shipped config and the synthetic projects the board rule
-// tables run over: the merged config and its text catalog, the person the workspace setting `self`
-// names, the projects of the cases, a snapshot holding projects with or without that person, and
+// tables run over: the merged config and its text catalog, the user (the person marked `self:
+// true`), the projects of the cases, a snapshot holding projects with or without that person, and
 // the shipped config with other boards in `boards:`. One copy, so board-rules.test.ts says only its
 // rows.
 
@@ -11,7 +11,7 @@ import { NO_FEEDS, fixtureProject } from '../../../fixtures/entities-fixture.ts'
 export const { config: CONFIG } = loadConfig(engineDir());
 export const CATALOG = textCatalog(CONFIG);
 
-/** The person the workspace setting `self` names. */
+/** The user, the person marked `self: true`. */
 export const SELF = 'axel-faes';
 export const MINE: ReadonlySet<Id> = new Set([SELF]);
 export const NOBODY: ReadonlySet<Id> = new Set();

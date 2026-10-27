@@ -15,16 +15,28 @@
 // The options files (config/options/) decide what may be written: the file must be one of their
 // defaults files, the key one of their entries, the entry a single value with a control, and the
 // value one that control takes (config-fit.ts). The machine's own file, a hub's `.oculus/local.yml`
-// or a link to one, is refused before the file is read. The checks that stand between the edited
-// text and the file are config-checks.ts's, which config-value.ts runs as well.
+// or a link to one, is refused before the file is read, but for the user's key `self` of the
+// primary hub's file (`writeSelf`): its value is checked against the people whose key resolves to
+// them from the primary (config-sources.ts), and it is written over the bytes as any key is, the
+// file made at mode 600 when it is not there and named in the hub's `.oculus/.gitignore`, so it
+// stays out of git. A refusal of it names the cause: a sentence of `server.config_key`, which
+// quotes no text of the file, or for an edit that would leave a key the machine does not read, the
+// sentence `checkLocal` gives for that key, which may name a label the file holds. The checks that
+// stand between the edited text and the file are config-checks.ts's, which config-value.ts runs as
+// well.
 //
 // The function is synchronous from the read of the file to its write, which is what lets two
 // writes made at once both land: each reads the file the other has already written.
 
+import { dirname, join } from 'node:path';
 import { isDeepStrictEqual } from 'node:util';
 import { isAlias, isMap as isYamlMap, isScalar, parseDocument } from 'yaml';
 import type { Scalar } from 'yaml';
-import { LOCAL_NAME } from '../../../../data/sources/config.ts';
+import { LOCAL_NAME, localFile } from '../../../../data/sources/config.ts';
+import { readLocalText } from '../../../../data/sources/config/local.ts';
+import type { ReplacedText } from '../../../core/changes.ts';
+import { writeTextAtomic } from '../../../core/json.ts';
+import { readBack } from '../../list-edit.ts';
 import { catalogOf, type CatalogEntry } from '../../../../data/sources/config/catalog/options.ts';
 import { words } from '../../../core/words.ts';
 import { replaceValue } from '../../yaml/yaml-edit.ts';
@@ -32,17 +44,30 @@ import { REFUSALS, why } from '../../yaml/why.ts';
 import type { Why } from '../../yaml/why.ts';
 import { isCollection, leafProblem } from './config-fit.ts';
 import { sourcesFor, type SourceInputs } from './config-sources.ts';
-import { insertKey, kept, mergedAt, refusedBy, written } from './config-checks.ts';
+import {
+    cutTopPair,
+    insertKey,
+    kept,
+    localProblemAdded,
+    mergedAt,
+    refusedBy,
+    replacedText,
+    withoutKey,
+    written
+} from './config-checks.ts';
 import {
     absentIn,
     blockLevels,
+    heldText,
     isMachinePlace,
+    isUserKey,
     opening,
     optionNow,
     optionOf,
     placeOf,
     placeRefusal,
     placeText,
+    refusing,
     type ConfigKeyOutcome,
     type ConfigLayers,
     type OptionNow
@@ -119,13 +144,22 @@ export function writeConfigKey(
     copy = false
 ): ConfigKeyOutcome {
     const { before, text, refuse } = opening(engine, file, key, layers);
-    if (file === LOCAL_NAME) return refuse(words(text, 'server.config_key.local'));
+    if (file === LOCAL_NAME && !isUserKey(file, key)) {
+        return refuse(words(text, 'server.config_key.local'));
+    }
     const entry = optionOf(catalogOf(before.config), file, key);
     if (entry === null) return refuse(words(text, 'server.config_key.no_entry'));
     if (!single(entry)) return refuse(words(text, 'server.config_key.not_single'));
     const place = placeOf(layers, file, key);
     if (place === null) return refuse(placeRefusal(text, file, key));
     const wanted = Object.is(value, -0) ? 0 : value;
+    if (place.layer === 'local' && layers.hub !== undefined) {
+        const sources = inputs === undefined ? null : sourcesFor(inputs, before.config);
+        const unfit = leafProblem(entry, selfHeld(place.path), wanted, { text, sources });
+        if (unfit !== null) return refuse(unfit);
+        if (typeof wanted !== 'string') return refuse(words(text, 'server.config_key.not_text'));
+        return selfOutcome(file, key, writeSelf(layers.hub, wanted, copy), text);
+    }
 
     if (isMachinePlace(place, hubs)) return refuse(words(text, 'server.config_key.local'));
     const onDisk = placeText(place);
@@ -174,4 +208,195 @@ export function writeConfigKey(
         adding ? source : undefined,
         adding
     );
+}
+
+/**
+ * Why a write of the user's key was refused: a sentence of `server.config_key` each, or for an edit
+ * that would leave a key the machine does not read, the reader's sentence naming that key.
+ */
+type SelfRefusal =
+    | { refused: 'not_parsed' | 'not_in_file' | 'not_kept' }
+    | { refused: 'local_check'; reason: string };
+
+/**
+ * A write of the user's key done: the file, the value it held at `self` before (the empty text for
+ * none) and after (null for a key taken out), the text the edit replaced, and the file when the
+ * write made it (none for an edit in place, the empty list for a key added to a file that was
+ * there).
+ */
+type SelfWritten = {
+    path: string;
+    before: unknown;
+    after: string | null;
+    replaced: ReplacedText | null;
+    created?: string[];
+};
+
+/**
+ * The value `self` holds in a `local.yml` now, the empty text for none or a file that is not there.
+ */
+function selfHeld(path: string): unknown {
+    const text = heldText(path) ?? '';
+    const found = locate(text, 'self');
+    return found.kind === 'found' ? found.node.value : '';
+}
+
+/** The line a hub's `.oculus/.gitignore` names the machine's own file with. */
+const IGNORED = LOCAL_NAME;
+
+/**
+ * Name `local.yml` in the `.gitignore` of the folder that holds it: the file made with that one
+ * line when it is not there, the line added when the file does not name it, and nothing written
+ * when a line of it does.
+ */
+function ignoreLocal(folder: string): void {
+    const path = join(folder, '.gitignore');
+    const held = heldText(path);
+    if (held === null) {
+        writeTextAtomic(path, `${IGNORED}\n`);
+        return;
+    }
+    if (held.split(/\r?\n/).some((line) => line.trim() === IGNORED)) return;
+    const lead = held === '' || held.endsWith('\n') ? held : `${held}\n`;
+    writeTextAtomic(path, `${lead}${IGNORED}\n`);
+}
+
+/**
+ * The edited text of a `local.yml` with `self` set to `key`, or taken out for null: over the bytes
+ * of its value when the file holds it as a plain or quoted value, added at the end when it holds
+ * no `self`, and its lines cut for a removal. Null when there is nothing to change, unless `copy`
+ * asks for a key the file does not hold to be added with the value it equals.
+ */
+function selfEdit(
+    source: string,
+    key: string | null,
+    copy: boolean
+): { edited: string; before: unknown } | SelfRefusal | null {
+    const doc = parseDocument(source);
+    if (doc.errors.length > 0 || (doc.contents !== null && !isYamlMap(doc.contents))) {
+        return { refused: 'not_parsed' };
+    }
+    const absent = absentIn(source, 'self');
+    if (key === null) {
+        if (absent) return null;
+        const pair = isYamlMap(doc.contents)
+            ? doc.contents.items.find((item) => isScalar(item.key) && item.key.value === 'self')
+            : undefined;
+        const edited = pair === undefined ? null : cutTopPair(source, pair);
+        const back = edited === null ? null : readBack(source, edited);
+        if (edited === null || back === null) return { refused: 'not_kept' };
+        if (!isDeepStrictEqual(back.after, withoutKey(back.before, 'self', false))) {
+            return { refused: 'not_kept' };
+        }
+        return { edited, before: back.before.self };
+    }
+    const found = locate(source, 'self');
+    if (found.kind === 'missing' && !absent) return { refused: 'not_in_file' };
+    const before = found.kind === 'found' ? found.node.value : '';
+    if (before === key && !(copy && absent)) return null;
+    let edited: string | null;
+    if (found.kind === 'found') {
+        const plain = replaceValue(source, found.node, key);
+        edited = 'text' in plain ? plain.text : null;
+        if (edited === null || !kept(source, edited, 'self', key)) {
+            const quoted = replaceValue(source, found.node, key, 'QUOTE_DOUBLE');
+            edited = 'text' in quoted ? quoted.text : null;
+        }
+    } else {
+        edited = insertKey(source, 'self', key, 0);
+    }
+    if (edited === null || !kept(source, edited, 'self', key)) return { refused: 'not_kept' };
+    return { edited, before };
+}
+
+/**
+ * Set the user's key `self` in the `local.yml` of the hub at `hub` to `key`, or take it out for
+ * null, and keep every other byte: the edit must read back as the file with that one key changed,
+ * the machine's reader must read the key back as `key` (the empty text once it is out) and give no
+ * problem the file did not give, and only then is the file written, keeping its mode. A file that
+ * is not there is made at mode 600 and named in the hub's `.oculus/.gitignore`. A refusal names
+ * its cause, and for a problem the edit adds carries the reader's sentence naming that key; null is
+ * a write with nothing to change. The value is not checked against the people: the caller does that
+ * (`writeConfigKey`). A file that cannot be read or written throws.
+ */
+export function writeSelf(
+    hub: string,
+    key: string | null,
+    copy = false
+): SelfWritten | SelfRefusal | null {
+    const path = localFile(hub);
+    const onDisk = heldText(path);
+    const source = onDisk ?? '';
+    const edit = selfEdit(source, key, copy);
+    if (edit === null || 'refused' in edit) return edit;
+    const { edited } = edit;
+    if (readLocalText(edited, hub).config.self !== (key ?? '')) return { refused: 'not_kept' };
+    const problem = localProblemAdded(source, edited);
+    if (problem !== null) return { refused: 'local_check', reason: problem };
+    writeTextAtomic(path, edited, 0o600);
+    if (onDisk === null) ignoreLocal(dirname(path));
+    const added = key !== null && absentIn(source, 'self');
+    return {
+        path,
+        before: edit.before,
+        after: key,
+        replaced: replacedText(source, edited),
+        ...(added ? { created: onDisk === null ? [path] : [] } : {})
+    };
+}
+
+/** The sentence of a refusal of a write of the user's key. */
+function selfRefusal(refusal: SelfRefusal, text: Record<string, string>): string {
+    switch (refusal.refused) {
+        case 'not_parsed':
+            return words(text, 'server.config_key.not_parsed');
+        case 'not_in_file':
+            return words(text, 'server.config_key.not_in_file');
+        case 'not_kept':
+            return words(text, 'server.config_key.not_kept');
+        case 'local_check':
+            return refusal.reason;
+    }
+}
+
+/** The answer of a write of the user's key, as every config write answers. */
+function selfOutcome(
+    file: string,
+    key: string,
+    done: ReturnType<typeof writeSelf>,
+    text: Record<string, string>
+): ConfigKeyOutcome {
+    if (done === null) return { changed: [], refused: [] };
+    if ('refused' in done) {
+        return refusing(file, key)(selfRefusal(done, text));
+    }
+    return {
+        changed: [`${file}:${key}`],
+        refused: [],
+        records: [
+            {
+                file: done.path,
+                key: file,
+                field: key,
+                before: done.before,
+                after: done.after,
+                undo: 'field',
+                ...(done.replaced === null ? {} : { replaced: done.replaced }),
+                ...(done.created === undefined ? {} : { created: done.created })
+            }
+        ]
+    };
+}
+
+/**
+ * Take the user's key out of the primary's `local.yml` for a Reset: the answer as every config
+ * write answers, with nothing changed for a file that holds no `self`.
+ */
+export function resetSelf(
+    file: string,
+    key: string,
+    hub: string,
+    text: Record<string, string>
+): ConfigKeyOutcome {
+    return selfOutcome(file, key, writeSelf(hub, null), text);
 }

@@ -20,11 +20,12 @@
 //
 // The scan reads the disk (a document's text, whether a folder is there), so it runs once per
 // rebuild in the portfolio watcher and never per request. It is pure over its arguments: the hub
-// path, the hub's projects and collections of the merged snapshot, the people the workspace
-// setting `self` names, the rules read out of the configuration, the hub's `audit:` setting, and
-// the text catalog the messages are written in. Each hub is scanned with its name as `root`, which
-// marks its findings and, for a hub other than the primary, prefixes the scope its signatures read,
-// and with its own setting, so each hub's website feed is checked against its own projects.
+// path, the hub's projects and collections of the merged snapshot, the user (the person marked
+// `self: true`, whom the key `self` of the primary hub's `local.yml` names), the rules read out of
+// the configuration, the hub's `audit:` setting, and the text catalog the messages are written in.
+// Each hub is scanned with its name as `root`, which marks its findings and, for a hub other than
+// the primary, prefixes the scope its signatures read, and with its own setting, so each hub's
+// website feed is checked against its own projects.
 
 import type { AuditFinding, AuditKind } from '../../../data/model/index.ts';
 import {

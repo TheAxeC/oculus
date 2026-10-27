@@ -215,3 +215,52 @@ describe("a write to the machine's local.yml", { tags: ['slow'] }, () => {
         expect(existsSync(join(into.hub, '.oculus', 'local.yml'))).toBe(false);
     });
 });
+
+/**
+ * People of three hubs as the published portfolio holds them: ada of the primary, kim of two
+ * others.
+ */
+const PEOPLE: Record<string, unknown> = {
+    'hub:ada': { id: 'hub:ada', root: 'hub', name: 'Ada' },
+    'lab:kim': { id: 'lab:kim', root: 'lab', name: 'Kim' },
+    'lab2:kim': { id: 'lab2:kim', root: 'lab2', name: 'Kim' },
+    'lab:lee': { id: 'lab:lee', root: 'lab', name: 'Lee' }
+};
+
+describe("the user's key written through the route", { tags: ['slow'] }, () => {
+    /** A target whose published people are PEOPLE. */
+    const peopled = (): PrimaryTarget => ({
+        ...configTarget(),
+        entities: (kind) => (kind === 'people' ? PEOPLE : null)
+    });
+
+    it.each([
+        { row: 'zed, a key no hub holds', value: 'zed' },
+        { row: 'kim, a key two hubs other than the primary hold', value: 'kim' }
+    ])('refuses $row by the value check, and writes nothing (case 17)', async ({ value }) => {
+        const into = peopled();
+        const response = await send(into, 'local.yml', 'self', value);
+        const body = (await response.json()) as { refused?: { reason: string }[] };
+        const text = textCatalog(loadConfig(into.engine).config);
+        const sentence = words(text, 'server.config_key.not_in_source', 'people');
+        expect((body.refused ?? []).map((one) => one.reason)).toEqual([sentence]);
+        expect(existsSync(join(into.hub, '.oculus', 'local.yml'))).toBe(false);
+        expect(changesOf(into)).toEqual([]);
+    });
+
+    it('writes lee, a key one hub other than the primary holds, and logs the key and its two values (case 17)', async () => {
+        const into = peopled();
+        const response = await send(into, 'local.yml', 'self', 'lee');
+        expect(response.status).toBe(200);
+        const file = join(into.hub, '.oculus', 'local.yml');
+        expect(readFileSync(file, 'utf8')).toBe('self: lee\n');
+        const [change] = changesOf(into);
+        expect([change.kind, change.file, change.key, change.field]).toEqual([
+            'config-key',
+            file,
+            'local.yml',
+            'self'
+        ]);
+        expect([change.before, change.after]).toEqual(['', 'lee']);
+    });
+});

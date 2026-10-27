@@ -3,10 +3,10 @@
 // key is the answer to `prepareRename`, so the page shows it at the caret, and `rename` gives it
 // again; a refusal that depends on the new key is the answer to `rename` alone. A setting of the
 // open workspace file that names a key of the primary hub is answered against the primary hub's
-// keys, wherever the file lies. The index is the planted hub of
-// tests/data/snapshot/reference-hub.ts, the page's view is built here with the open document, the
-// disk read and the tabs of another window as each case needs them, and the sentences are the
-// checkout's own catalog (tests/server/text.ts).
+// keys, wherever the file lies, and so is `self` of the primary hub's own `.oculus/local.yml`. The
+// index is the planted hub of tests/data/snapshot/reference-hub.ts, the page's view is built here
+// with the open document, the disk read and the tabs of another window as each case needs them, and
+// the sentences are the checkout's own catalog (tests/server/text.ts).
 //
 // What this does NOT cover: the edit a rename returns (tests/data/snapshot/rename.test.ts), and
 // where the page shows an error (tests/ui/controls/editor/lsp-transport.test.ts).
@@ -22,6 +22,7 @@ import { words } from '../../../../../src/lib/server/core/words.ts';
 import { it } from '../../../../fixtures/scratch.ts';
 import {
     HUB_FILES,
+    LOCAL_TEXT,
     plantHub,
     WORKSPACE_FILE,
     WORKSPACE_TEXT,
@@ -33,8 +34,13 @@ const ALPHA = 'projects/active/alpha/project.yml';
 const VENUE_AT = { line: 3, character: 10 };
 const PEOPLE = '.oculus/data/people/people.yml';
 
-/** The value of `self` in the planted workspace file, and the key `amir` in the people file. */
-const SELF_AT = { line: 5, character: 9 };
+/** The value of `slurm.resource` in the planted workspace file, and the cluster `hpc`. */
+const SETTING_AT = { line: 5, character: 21 };
+const HPC_DEFINED = { start: { line: 4, character: 11 }, end: { line: 4, character: 14 } };
+const RESOURCES = '.oculus/data/research/resources.yml';
+
+/** The value of `self` in the planted `local.yml`, and the key `amir` in the people file. */
+const SELF_AT = { line: 2, character: 6 };
 const AMIR_DEFINED = { start: { line: 5, character: 9 }, end: { line: 5, character: 13 } };
 
 /** What the page holds and the disk gives, which a case changes. */
@@ -202,40 +208,66 @@ describe('the answer to a request on a setting of the open workspace file', () =
         ['the folder of the primary hub', 'hub' as const],
         ['another workspace folder', 'lab' as const]
     ])(
-        "goes from the setting self of the open workspace file in %s to the primary hub's person",
+        "goes from the setting slurm.resource of the open workspace file in %s to the primary hub's cluster",
         (_name, folder) => {
             const hub = plantHub({}, {}, { workspace: { text: WORKSPACE_TEXT, folder } });
             const file = folder === 'lab' ? `lab:${WORKSPACE_FILE}` : WORKSPACE_FILE;
-            const answer = ask(hub, 'textDocument/definition', SELF_AT, {}, file);
+            const answer = ask(hub, 'textDocument/definition', SETTING_AT, {}, file);
             expect(answer).toMatchObject({
-                result: [{ targetUri: pageUri('hub', PEOPLE), targetRange: AMIR_DEFINED }]
+                result: [{ targetUri: pageUri('hub', RESOURCES), targetRange: HPC_DEFINED }]
             });
         }
     );
 
-    it("renames from the open workspace file of another workspace folder the primary hub's person", () => {
+    it("renames from the open workspace file of another workspace folder the primary hub's cluster", () => {
         const hub = plantHub({}, {}, { workspace: { text: WORKSPACE_TEXT, folder: 'lab' } });
         const answer = ask(
             hub,
             'textDocument/rename',
-            SELF_AT,
+            SETTING_AT,
             {},
             `lab:${WORKSPACE_FILE}`,
-            'amir-2'
+            'hpc-2'
         );
-        const result = answer !== undefined && 'result' in answer ? answer.result : null;
-        const changed = (
-            result as { documentChanges?: { textDocument: { uri: string } }[] } | null
-        )?.documentChanges
-            ?.map((one) => one.textDocument.uri)
-            .sort();
-        expect(changed).toEqual(
+        expect(changedUris(answer)).toEqual(
             [
-                pageUri('hub', PEOPLE),
-                pageUri('hub', '.oculus/data/academic/joint-work.yml'),
-                pageUri('hub', 'projects/active/alpha/project.yml'),
+                pageUri('hub', RESOURCES),
+                pageUri('engine', 'defaults/behavior.yml'),
                 pageUri('lab', WORKSPACE_FILE)
             ].sort()
         );
     });
 });
+
+describe("the answer to a request on self of the primary hub's local.yml", () => {
+    it("goes from self of the primary hub's local.yml to the person it names (case 25)", () => {
+        const hub = plantHub({ '.oculus/local.yml': LOCAL_TEXT });
+        const answer = ask(hub, 'textDocument/definition', SELF_AT, {}, '.oculus/local.yml');
+        expect(answer).toMatchObject({
+            result: [{ targetUri: pageUri('hub', PEOPLE), targetRange: AMIR_DEFINED }]
+        });
+    });
+
+    it("renames from self of the primary hub's local.yml the person, and that file with it (case 23)", () => {
+        const hub = plantHub({ '.oculus/local.yml': LOCAL_TEXT });
+        const answer = ask(hub, 'textDocument/rename', SELF_AT, {}, '.oculus/local.yml', 'amir-2');
+        expect(changedUris(answer)).toEqual(
+            [
+                pageUri('hub', PEOPLE),
+                pageUri('hub', '.oculus/data/academic/joint-work.yml'),
+                pageUri('hub', 'projects/active/alpha/project.yml'),
+                pageUri('hub', '.oculus/local.yml')
+            ].sort()
+        );
+    });
+});
+
+/** The pages a rename's answer edits, sorted, or undefined for an answer with no edit. */
+function changedUris(answer: PageAnswer | undefined): string[] | undefined {
+    const result = answer !== undefined && 'result' in answer ? answer.result : null;
+    return (
+        result as { documentChanges?: { textDocument: { uri: string } }[] } | null
+    )?.documentChanges
+        ?.map((one) => one.textDocument.uri)
+        .sort();
+}

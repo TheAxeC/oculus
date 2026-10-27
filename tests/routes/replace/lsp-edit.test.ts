@@ -49,9 +49,9 @@ describe('what an lsp-edit writes', () => {
         expect(bytes(w, 'b.txt').toString()).toBe('bar\n');
     });
 
-    it("writes the edit of a note of a hub's notes folder, and refuses a file of another .oculus folder as outside", async () => {
+    it("writes the edit of a note of a hub's notes folder, and refuses a file of a dot folder inside .oculus as outside", async () => {
         const note = '.oculus/notes/sub/A.md';
-        const other = '.oculus/workspaces/x.md';
+        const other = '.oculus/.cache/x.md';
         const w = replaceWorld({ [note]: 'foo [[Kickoff]]\n', [other]: 'foo\n' });
         const edits = [lspEdit([0, 6], [0, 13], 'Plan')];
         const written = await lspEditPost(w, [lspFile(note, 'foo [[Kickoff]]\n', edits)]);
@@ -60,6 +60,44 @@ describe('what an lsp-edit writes', () => {
         const refused = await lspEditPost(w, [lspFile(other, 'foo\n', edits)]);
         expect(refused.body).toMatchObject({ ok: false, error: 'outside', failed: `hub/${other}` });
         expect(bytes(w, other).toString()).toBe('foo\n');
+    });
+});
+
+describe("an lsp-edit of a hub's own .oculus folder (case 28)", () => {
+    const PEOPLE = '.oculus/data/people/people.yml';
+    const LOCAL = '.oculus/local.yml';
+    const people = 'entries:\n  - key: amir\n';
+    const local = 'port: 8791\nself: amir\n';
+
+    it("writes the people file and local.yml of the hub's .oculus folder, local.yml checked as a save of it is", async () => {
+        const w = replaceWorld({ [PEOPLE]: people, [LOCAL]: local });
+        const answer = await lspEditPost(w, [
+            lspFile(PEOPLE, people, [lspEdit([1, 9], [1, 13], 'amir-2')]),
+            lspFile(LOCAL, local, [lspEdit([1, 6], [1, 10], 'amir-2')])
+        ]);
+        expect(answer.body).toEqual({ ok: true, paths: [`hub/${PEOPLE}`, `hub/${LOCAL}`] });
+        expect(bytes(w, PEOPLE).toString()).toBe('entries:\n  - key: amir-2\n');
+        expect(bytes(w, LOCAL).toString()).toBe('port: 8791\nself: amir-2\n');
+    });
+
+    it('refuses an edit whose local.yml would not read, with the reason, and writes neither file', async () => {
+        const w = replaceWorld({ [PEOPLE]: people, [LOCAL]: local });
+        const answer = await lspEditPost(w, [
+            lspFile(PEOPLE, people, [lspEdit([1, 9], [1, 13], 'amir-2')]),
+            lspFile(LOCAL, local, [lspEdit([0, 6], [0, 10], 'many')])
+        ]);
+        expect(answer).toEqual({
+            status: 400,
+            body: {
+                ok: false,
+                error: 'local',
+                reason: 'local.yml: port must be an integer',
+                done: [],
+                failed: `hub/${LOCAL}`
+            }
+        });
+        expect([bytes(w, PEOPLE).toString(), bytes(w, LOCAL).toString()]).toEqual([people, local]);
+        expect(records(w)).toEqual([]);
     });
 });
 

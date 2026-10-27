@@ -5,7 +5,8 @@
 // `entry_statuses`) is a place a key is written. A defaults file of oculus (config/defaults/) that
 // has such an option is read as a record of those places; a file with none is not read. The open
 // workspace file's `settings:` is read with the places of every such file together, since it keys
-// its settings as they do.
+// its settings as they do. The primary hub's own `.oculus/local.yml` is read by the places of the
+// options of local.yml, which are `self` alone: the person it names.
 //
 // The fields of a family are walked as schemas/options.ts walks them (a list of records, or a map
 // from its `key` to a record, a list or one value), so what the editor checks and what the index
@@ -13,6 +14,7 @@
 
 import { VOCAB_SOURCE, recordOf } from '../../../../snapshot/references/specs.ts';
 import type { FieldNode, OptionFile } from '../../../../snapshot/references/model.ts';
+import { ROOT_FOLDER } from '../../../../helpers/hub-names.ts';
 import { DEFAULTS_DIR } from '../../folder.ts';
 import { LOCAL_NAME } from '../../local.ts';
 import { SETTINGS_KEY } from '../../merge/workspace-layer.ts';
@@ -116,7 +118,8 @@ function optionsRecord(entries: Record<string, CatalogEntry>): FieldNode | null 
 
 /**
  * The defaults files whose options name a hub key, each by its path under config/ with the node
- * that reads it. A hub's local.yml has no defaults file, so its options name no file here.
+ * that reads it. A hub's local.yml has no defaults file, so its options name no file here; the
+ * primary hub's own file is `localNode`'s.
  */
 export function optionFiles(catalog: Catalog): OptionFile[] {
     const files: OptionFile[] = [];
@@ -140,4 +143,14 @@ export function settingsNode(catalog: Catalog): FieldNode | null {
     }
     const settings = optionsRecord(entries);
     return settings === null ? null : recordOf({ [SETTINGS_KEY]: settings });
+}
+
+/**
+ * A hub's own `.oculus/local.yml`, by its path in the hub, with the node of the options of
+ * local.yml that name a hub key, or null when none does. The index reads it for the primary hub
+ * alone, since the primary's file is the one whose `self` is read.
+ */
+export function localNode(catalog: Catalog): OptionFile | null {
+    const spec = optionsRecord(catalog[LOCAL_NAME] ?? {});
+    return spec === null ? null : { path: `${ROOT_FOLDER}/${LOCAL_NAME}`, spec };
 }

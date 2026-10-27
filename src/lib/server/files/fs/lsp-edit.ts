@@ -10,15 +10,18 @@
 // the page: every file is read and checked before any is written, and a request that fails a check
 // writes nothing. The checks are made per file in the order `outside` (a root not served, a path
 // out of it, a path under a `node_modules` folder or a folder whose name starts with a dot other
-// than a hub's notes folder `.oculus/notes/` and the folders under it, or a file in the `secrets`
-// folder of every hub or in `~/.oculus`, none of which is ever edited here), `missing`, `denied`
+// than a hub's own `.oculus/` folder, or a file in the `secrets` folder of every hub or in
+// `~/.oculus`, none of which is ever edited here), `missing`, `denied`
 // (the file's mode locks it), `binary` (a NUL byte in the first 8 KB), `too_large` (over the most a
 // copy of the operation's kind is kept for, 5 MB for `lsp-edit` and 256 KB for `writing-fix`, as
 // the file is and as the edit would leave it), `changed` (the bytes are not the ones the edit was
 // computed for, or a range names a line the file lacks), and after `changed` `binary` again for a
 // file with a NUL byte anywhere or bytes that are not UTF-8 throughout (the whole-file rule of
-// data/helpers/files/text-kind.ts). A file named twice, no file at all, or two ranges of a file
-// that overlap is `not-an-action`.
+// data/helpers/files/text-kind.ts), and last `local` for a hub's `.oculus/local.yml` (the machine's
+// own file, recognised by server/files/workspace/machine-file.ts) the edit would leave with a key
+// the machine does not read, refused with the reader's sentence for it as a save of the file is
+// (data/sources/config/local.ts's checkLocal). A file named twice, no file at all, or two ranges of
+// a file that overlap is `not-an-action`.
 //
 // Each file is then written once: its copy is kept in the local history first, under the kind of
 // the operation that writes it (`lsp-edit` or `writing-fix`), the new text is written through the
@@ -30,12 +33,14 @@
 import { readFileSync } from 'node:fs';
 import type { FileStamp, LspEditFile, OpsAnswer } from '../../../data/file-ops.ts';
 import { isWholeText } from '../../../data/helpers/files/text-kind.ts';
-import { inHiddenFolder } from '../../../data/prose/markdown/note-names.ts';
+import { outsideEdits } from '../../../data/prose/markdown/note-names.ts';
+import { LOCAL_NAME, checkLocal } from '../../../data/sources/config.ts';
 import { applyTextEdits } from '../../../data/prose/text-edits.ts';
 import { hashOf, splitMark, withMark } from '../../core/file-bytes.ts';
 import { writeBytesAtomic } from '../../core/json.ts';
 import { under } from '../../core/paths.ts';
 import { resolveRootPath, type Root } from '../files.ts';
+import { namesMachineFile } from '../workspace/machine-file.ts';
 import { stampOf } from './file-changes.ts';
 import { copyLimit, keepCopy } from './history.ts';
 import { fail, readChecked, refused, type Fail } from './operations/replace.ts';
@@ -57,10 +62,17 @@ export type LspEditOperation = 'lsp-edit' | 'writing-fix';
 /** One file read, checked and its new bytes made, not yet written. */
 type Planned = { name: string; real: string; before: Buffer; after: Buffer };
 
+/** A machine's file the edit would leave with a key it does not read, and the reader's sentence. */
+type LocalFail = { ok: false; error: 'local'; reason: string };
+
 /** One file of the request, read and checked, with the bytes its edit makes. */
-function plan(scope: LspEditScope, file: LspEditFile, operation: LspEditOperation): Planned | Fail {
+function plan(
+    scope: LspEditScope,
+    file: LspEditFile,
+    operation: LspEditOperation
+): Planned | LocalFail | Fail {
     const hub = scope.roots.find((one) => one.key === file.root)?.hub === true;
-    if (inHiddenFolder(file.path, hub)) return fail('outside');
+    if (outsideEdits(file.path, hub)) return fail('outside');
     const found = resolveRootPath(scope.roots, file.root, file.path);
     if ('path' in found && under(found.path, scope.withheld)) return fail('outside');
     const limit = copyLimit(operation);
@@ -74,6 +86,10 @@ function plan(scope: LspEditScope, file: LspEditFile, operation: LspEditOperatio
     if (!edited.ok) return fail(edited.reason === 'overlap' ? 'not-an-action' : 'changed');
     const after = withMark(Buffer.from(edited.text, 'utf8'), marked);
     if (after.length > limit) return fail('too_large');
+    if (namesMachineFile(read.real, scope.roots)) {
+        const reason = checkLocal(edited.text, LOCAL_NAME);
+        if (reason !== null) return { ok: false, error: 'local', reason };
+    }
     return { name: `${file.root}/${file.path}`, real: read.real, before: bytes, after };
 }
 
@@ -132,7 +148,14 @@ export function lspEditFiles(
     for (const file of files) {
         const one = plan(scope, file, operation);
         if (refused(one)) {
-            return { ok: false, error: one.error, done: [], failed: `${file.root}/${file.path}` };
+            const reason = 'reason' in one ? { reason: one.reason } : {};
+            return {
+                ok: false,
+                error: one.error,
+                ...reason,
+                done: [],
+                failed: `${file.root}/${file.path}`
+            };
         }
         planned.push(one);
     }

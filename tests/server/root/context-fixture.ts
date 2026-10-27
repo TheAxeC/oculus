@@ -41,7 +41,8 @@ export function contextFixture(overrides: Partial<ServerContext> = {}): ServerCo
         accounts: [],
         calendars: [],
         mail: [],
-        downloads: []
+        downloads: [],
+        self: ''
     };
     const terminals = overrides.terminals ?? new Terminals(hub, { driver: idleDriver(), poll: 0 });
     const relay =

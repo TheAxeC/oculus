@@ -30,7 +30,7 @@
 // both may import.
 
 import { byKey, isMap, str, strings } from '../../../helpers/guards.ts';
-import { keyOf } from '../../../helpers/hub-names.ts';
+import { holdersOf, keyOf, resolvedId } from '../../../helpers/hub-names.ts';
 import {
     CONTROLS,
     FLAG_SOURCES,
@@ -566,6 +566,33 @@ export function hubRecords<T>(records: Record<string, T>, hub: string | null): R
         own[keyOf(one.id)] = one;
     }
     return own;
+}
+
+/**
+ * The records of an entity map of the merged portfolio that a key read from the hub `primary`
+ * names, by that key, which is how the key `self` of the primary's `local.yml` names its person:
+ * the primary's own record of each key it holds, and the record of the one other hub that holds a
+ * key the primary does not. A key two or more other hubs hold names none. None while the workspace
+ * has no primary. The Settings choice of `self` and the server's check of a write of it both read
+ * this.
+ */
+export function resolvedRecords<T>(
+    records: Record<string, T>,
+    primary: string | null
+): Record<string, T> {
+    if (primary === null) return {};
+    const rooted = Object.values(records).flatMap((one) =>
+        isMap(one) && typeof one.id === 'string' && typeof one.root === 'string'
+            ? [{ record: one, id: one.id, root: one.root }]
+            : []
+    );
+    const holders = holdersOf(rooted);
+    const named: Record<string, T> = {};
+    for (const one of rooted) {
+        const key = keyOf(one.id);
+        if (resolvedId(holders, primary, key) === one.id) named[key] = one.record;
+    }
+    return named;
 }
 
 /** The keys of the resources of one kind in an entity map, which the page and the server list. */

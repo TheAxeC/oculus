@@ -2,11 +2,12 @@
 // rename of a hub key: one file of each kind that names a key or defines one, an engine folder
 // holding the configuration files the index reads (`defaults/behavior.yml`, `defaults/sources.yml`
 // and `catalogs/vocab.yml`), and where a row asks for one, the open workspace file, in the hub or
-// in a second workspace folder `lab`.
+// in a second workspace folder `lab`. The hub is built as a workspace's primary hub is, so a
+// `.oculus/local.yml` a row plants is read for its `self`.
 // The texts are synthetic; none of them is a file of the hub.
 
-import { portfolioConfigFrom } from '../../../src/lib/data/index.ts';
-import { buildOneHub } from '../../fixtures/hubs/hub-build.ts';
+import { builtHub, portfolioConfigFrom, readHub } from '../../../src/lib/data/index.ts';
+import { createChecker } from '../../../src/lib/data/snapshot/schema/check.ts';
 import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
 import {
     graphOf,
@@ -257,15 +258,27 @@ export type PlantOptions = {
 /** Where a planted workspace file lies in its folder, in the folder of a hub's workspace files. */
 export const WORKSPACE_FILE = '.oculus/workspaces/lab.yml';
 
-/** A workspace file whose setting `self` names the person `amir`, with bytes around it to keep. */
+/**
+ * A workspace file whose setting `slurm.resource` names the cluster `hpc`, with bytes around it to
+ * keep.
+ */
 export const WORKSPACE_TEXT = [
     'folders:',
     '  - { name: hub, path: ~/hub }',
     'primary: hub',
     '# what this workspace sets',
     'settings:',
-    '  self: amir   # who I am',
+    '  slurm: { resource: hpc }   # the cluster',
     '  code_theme: vscode-dark-2026',
+    ''
+].join('\n');
+
+/** The hub's own `local.yml`, whose `self` names the person `amir`, with other keys to keep. */
+export const LOCAL_TEXT = [
+    '# this machine',
+    'port: 8791',
+    'self: amir   # me',
+    'claude_bin: claude',
     ''
 ].join('\n');
 
@@ -313,22 +326,22 @@ export function plantHub(
     const held = inHub
         ? { root: HUB_FOLDER, path: CONFIG_IN_HUB }
         : { root: CONFIG_FOLDER, path: '' };
-    const index = buildOneHub(
-        hub,
-        config,
-        0,
-        [],
-        undefined,
-        { dir: engine, held: [held] },
-        HUB_FOLDER,
-        options.workspace === undefined
-            ? null
-            : {
-                  file: join(lab ?? hub, WORKSPACE_FILE),
-                  root: lab === null ? HUB_FOLDER : LAB_FOLDER,
-                  path: WORKSPACE_FILE
-              }
-    ).references;
+    // The hub is built as the primary is, so its own `.oculus/local.yml` is read for `self`.
+    const index = builtHub(readHub(hub, config, [], HUB_FOLDER), {
+        version: 0,
+        checker: createChecker(),
+        engine: { dir: engine, held: [held] },
+        workspace:
+            options.workspace === undefined
+                ? null
+                : {
+                      file: join(lab ?? hub, WORKSPACE_FILE),
+                      root: lab === null ? HUB_FOLDER : LAB_FOLDER,
+                      path: WORKSPACE_FILE
+                  },
+        others: {},
+        local: true
+    }).references;
     const roots = [
         { key: HUB_FOLDER, dir: hub },
         ...(inHub ? [] : [{ key: CONFIG_FOLDER, dir: engine }]),

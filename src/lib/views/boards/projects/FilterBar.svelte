@@ -1,7 +1,7 @@
 <script lang="ts">
     // Layer 3, view partial of views/boards/projects/Projects.svelte. Line 1 of a project board's
     // bar: the search; the stale toggle; the deadline toggle with how many of the board's projects
-    // carry a deadline ("deadline 3"); Mine only, drawn while the workspace names a `self` and
+    // carry a deadline ("deadline 3"); Mine only, drawn while a person is marked as the user and
     // drawn disabled, its tip saying every project here is the user's, where it would change
     // nothing; then one group button per facet that has values, Form, Situation, Role, Year,
     // Domain, Venue and Hub (while the workspace has more than one hub), each reading its picks
@@ -47,7 +47,7 @@
         groups: FilterGroup[];
         /** The counts the controls carry, over the board's projects before any filter. */
         stats: BoardStats;
-        /** Whether the workspace names a `self`, which draws Mine only. */
+        /** Whether a person is marked as the user, which draws Mine only. */
         named: boolean;
         /** Whether Mine only changes the board, which is where it is pressable and applied. */
         mine: boolean;

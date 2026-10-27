@@ -25,13 +25,14 @@
     // the list the control draws from is still being read the held value is shown as the one item,
     // with the sentence that the list is loading; a list that could not be read says so.
     //
-    // A choice whose catalog `from` is the people registry alone (the setting `self`) offers Add
-    // person, as a person field of a form does (views/shared/forms/entry/edit/FieldControl.svelte):
-    // a typed name that is the display or the key of no person of the primary hub is written to the
-    // primary hub's people registry, whose people the setting names (state/forms/new-entry.ts,
-    // `addPerson`), and the new key is picked. Its refusal is said under the control; while its
-    // write is out the choice is not offered again, and a control gone before it answers, or a
-    // control of a draft discarded before it answers (`discards`), picks nothing.
+    // A choice whose catalog `from` is the people registry alone (the key `self` of `local.yml`)
+    // offers Add person, as a person field of a form does
+    // (views/shared/forms/entry/edit/FieldControl.svelte): a typed name that is the display or the
+    // key of no person of the people registries is written to the primary hub's people registry
+    // (state/forms/new-entry.ts, `addPerson`), and the new key is picked. Its refusal is said under
+    // the control; while its write is out the choice is not offered again, and a control gone
+    // before it answers, or a control of a draft discarded before it answers (`discards`), picks
+    // nothing.
 
     import Checkbox from '$lib/ui/forms/Checkbox.svelte';
     import GlyphSelect from '$lib/ui/forms/choice/GlyphSelect.svelte';

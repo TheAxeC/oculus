@@ -32,7 +32,7 @@
     // and ranges the tab's instance state beside the search.
     //
     // A collection whose `schema:` declares a field a row of `roles:` is read from (`lead`,
-    // `collaborators`, `supervisors`) draws, while the workspace names a `self`, the Mine only
+    // `collaborators`, `supervisors`) draws, while a person is marked as the user, the Mine only
     // toggle, on by default, keeping the entries that name the user in one of those fields and
     // those that name no one; the Role facet, every row of `roles:` with its count; and the Lead
     // badge on an entry whose lead is the user. The rule is data/shapes/boards/roles.ts's, the one

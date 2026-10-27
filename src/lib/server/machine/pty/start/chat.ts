@@ -26,9 +26,9 @@ export type ChatOptions = StartOptions & {
     /** A project in the latest portfolio snapshot. Tests provide the snapshot source they own. */
     projectFor?: (id: string) => ChatProject | null;
     /**
-     * The name of the person the workspace setting `self` names, the user, or null when it names
-     * nobody or the person has no name. The instruction names the user by it, and by the catalog's
-     * words for the user when it is null.
+     * The name of the user, the person the key `self` of the primary hub's `local.yml` names, or
+     * null when it names nobody or the person has no name. The instruction names the user by it,
+     * and by the catalog's words for the user when it is null.
      */
     userFor?: () => string | null;
     /**

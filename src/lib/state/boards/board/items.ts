@@ -1,10 +1,10 @@
 // Layer 2, client state. Board item construction and sorting live here because project joins change
 // independently of filters, facets and statistics. A project's people are read as its team, its
 // lead, its collaborators, then its supervisors (team.ts beside this file): the card's team tags
-// and the list's With column leave out the person the workspace setting `self` names, and the
-// search reads the whole team. Which projects a board holds, a card's category and the user's role
-// on a project are read by data/shapes/boards/, the rules the audit reads too, each under the words
-// of the project's own hub; the cards sort by the stage order of every hub's words.
+// and the list's With column leave out the user (the person marked `self: true`), and the search
+// reads the whole team. Which projects a board holds, a card's category and the user's role on a
+// project are read by data/shapes/boards/, the rules the audit reads too, each under the words of
+// the project's own hub; the cards sort by the stage order of every hub's words.
 
 import { byKey } from '../../../data/helpers/guards.ts';
 import { keyOf, rootOf } from '../../../data/helpers/hub-names.ts';

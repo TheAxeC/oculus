@@ -12,10 +12,13 @@
 // or the finding's words, so the Settings view shows what to repair.
 //
 // A write lands in the hub's settings file or in the workspace file's `settings:`
-// (config-place.ts). The file, or the key in it, may not exist yet: the write then adds the key
-// under the deepest map of its path the file holds, or at the end of the file, creating a hub's
-// settings file and its folder, and records what it made (`created`) with the text it added
-// (`replaced`), which the undo takes out again (`takeOutAdded`).
+// (config-place.ts), or for the user's key in the primary hub's `local.yml`, which no loadConfig
+// reads: an edit of it is refused when the machine's reader (data/sources/config/local.ts) gives a
+// problem with the edited text that it did not give with the file as it is, with the reader's
+// sentence naming that key (`localProblemAdded`). The file, or the key in it, may not exist yet:
+// the write then adds the key under the deepest map of its path the file holds, or at the end of
+// the file, creating a hub's settings file and its folder, and records what it made (`created`)
+// with the text it added (`replaced`), which the undo takes out again (`takeOutAdded`).
 //
 // The setting readers of behavior.yml are in neither list. A wrong value of a setting is read as
 // oculus's value and is a finding of its own (`settingFindings`), and a write is refused for a
@@ -29,7 +32,14 @@ import { Document, isMap as isYamlMap, isScalar, isSeq, parseDocument, visit } f
 import type { Pair, YAMLMap, YAMLSeq } from 'yaml';
 import { z } from 'zod';
 import { HUB_FILE } from '../../../../data/helpers/hub-names.ts';
-import { loadConfig, textCatalog, type ConfigWhere } from '../../../../data/sources/config.ts';
+import {
+    LOCAL_NAME,
+    loadConfig,
+    localSentence,
+    textCatalog,
+    type ConfigWhere
+} from '../../../../data/sources/config.ts';
+import { readLocalText, type LocalProblem } from '../../../../data/sources/config/local.ts';
 import { READER_FINDINGS } from '../../../../data/sources/config/sections/findings.ts';
 import type { Finding } from '../../../../data/model/index.ts';
 import { docsFindings } from '../../../content/docs.ts';
@@ -37,7 +47,7 @@ import type { ReplacedText } from '../../../core/changes.ts';
 import { writeTextAtomic } from '../../../core/json.ts';
 import { readBack } from '../../list-edit.ts';
 import { setBlock } from '../../block-edit.ts';
-import { lineEnd } from '../../block-source.ts';
+import { lineEnd, lineStart } from '../../block-source.ts';
 import {
     loadLayers,
     placeOf,
@@ -132,8 +142,21 @@ function editedLoad(
 }
 
 /**
+ * The sentence `checkLocal` gives for the first problem the machine's reader gives with the edited
+ * text of a hub's `local.yml`, by its key and kind, that it does not give with `source`, so the
+ * sentence names that key; null when the edit adds no problem.
+ */
+export function localProblemAdded(source: string, edited: string): string | null {
+    const named = (one: LocalProblem): string => `${one.key} ${one.kind}`;
+    const held = new Set(readLocalText(source, '').problems.map(named));
+    const added = readLocalText(edited, '').problems.find((one) => !held.has(named(one)));
+    return added === undefined ? null : localSentence(added, LOCAL_NAME);
+}
+
+/**
  * The reason the merged configuration holding the edited file at a place is refused, or null when
- * it is not. `before` is the merge over the layers as the files stand.
+ * it is not. `before` is the merge over the layers as the files stand. The primary's `local.yml`
+ * is no layer of the merge, and is checked by `localProblemAdded` against the file as it is.
  */
 export function refusedBy(
     engine: string,
@@ -142,6 +165,7 @@ export function refusedBy(
     edited: string,
     before: ReturnType<typeof loadConfig>
 ): string | null {
+    if (place.layer === 'local') return localProblemAdded(placeText(place) ?? '', edited);
     const after = editedLoad(engine, layers, place, edited);
     const known = new Set(before.findings.map((finding) => finding.message));
     const added = after.findings.find((finding) => !known.has(finding.message));
@@ -222,6 +246,18 @@ export function replacedLines(source: string, edited: string): ReplacedText | nu
         before: source.slice(start, end),
         after: edited.slice(start, edited.length - keptAfter)
     };
+}
+
+/** The text with the lines of one top-level pair cut, from its key's line to its value's last. */
+export function cutTopPair(source: string, pair: Pair): string | null {
+    const key = (pair.key as { range?: [number, number, number] }).range;
+    if (key === undefined) return null;
+    const value = (pair.value as { range?: [number, number, number] } | null)?.range;
+    const last = value === undefined ? key[1] : Math.max(key[1], value[1] - 1);
+    const from = lineStart(source, key[0]);
+    const end = lineEnd(source, last);
+    const to = source[end] === '\r' ? end + 2 : source[end] === '\n' ? end + 1 : end;
+    return `${source.slice(0, from)}${source.slice(to)}`;
 }
 
 /**
@@ -463,12 +499,12 @@ const addedShape = z.object({ offset: z.int().min(0), before: z.string(), after:
 
 /**
  * Take back a write that added a key to the file at its place: the text it added is taken out again
- * where it stands, and a hub's settings file and the folders the write made are removed once they
- * hold nothing else. It applies only when the file still holds the added text at the offset the
- * record names; the result must read as the file with that one key out, and pass the checks a write
- * passes. Null for a record without the text, a layer that is not there and a file that has moved
- * on. The outcome records the removal like a write, with the value taken out as `before` and no
- * value as `after`, so the removal is itself taken back by writing the value in.
+ * where it stands, and a hub's settings file or `local.yml` and the folders the write made are
+ * removed once they hold nothing else. It applies only when the file still holds the added text at
+ * the offset the record names; the result must read as the file with that one key out, and pass the
+ * checks a write passes. Null for a record without the text, a layer that is not there and a file
+ * that has moved on. The outcome records the removal like a write, with the value taken out as
+ * `before` and no value as `after`, so the removal is itself taken back by writing the value in.
  *
  * `made` is the paths the record says the write made, as absolute paths.
  */
@@ -496,7 +532,7 @@ export function takeOutAdded(
     const loaded = loadLayers(engine, layers);
     const reason = refusedBy(engine, layers, place, edited, loaded);
     if (reason !== null) return { changed: [], refused: [{ field: `${file}:${key}`, reason }] };
-    const gone = place.layer === 'hub' && edited.trim() === '' && made.includes(place.path);
+    const gone = place.layer !== 'workspace' && edited.trim() === '' && made.includes(place.path);
     if (gone) removeMade(place.path, made);
     else writeTextAtomic(place.path, edited);
     return {

@@ -43,7 +43,7 @@ import { message, type Message } from './messages.ts';
 import type { FileRow, Listed } from './view/folders.ts';
 import {
     fileRows,
-    localRows,
+    machineRows,
     type ConfigRow,
     type FileResult,
     type FileStatus,
@@ -423,7 +423,7 @@ export function settingsGroups(
             about: machine.primary === null ? t('workbench.settings_machine_no_primary') : '',
             lines: [machineLine()],
             said: null,
-            sections: sectionsOf(MACHINE_GROUP, localRows(catalog[LOCAL_NAME], machine))
+            sections: sectionsOf(MACHINE_GROUP, machineRows(catalog[LOCAL_NAME], machine))
         });
     }
     if (folders !== undefined) {

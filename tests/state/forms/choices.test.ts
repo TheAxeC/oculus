@@ -88,7 +88,7 @@ function built(files: Record<string, string>, labFiles?: Record<string, string>)
               })();
     const primary = { key: 'hub', dir: hub, portfolio, workspace: null };
     const order = ['hub', ...others.map((one) => one.key)];
-    const read = { primary, others, config: portfolio, order };
+    const read = { primary, others, config: portfolio, order, self: '' };
     const { snapshot } = buildHubs(read, 0, createChecker(), null);
     return { snapshot, config: loaded.config, root: 'hub' };
 }

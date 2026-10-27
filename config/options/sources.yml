@@ -186,11 +186,4 @@ options:
         min: 0
         max: 3
         whole: true
-    self:
-        heading: sources
-        section: People
-        help: 'Your own person key in the people registry of the primary hub. The Person page draws its this is me button pressed on that person, and the portfolio chat names them as its user. It is set in the open workspace file, in its settings:, from this row or from the button on a Person page. Empty marks nobody; a key that names no person of the people registry is a finding.'
-        control: choice
-        empty: nobody is marked as you
-        from: people
 groups: {}

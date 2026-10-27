@@ -7,7 +7,7 @@
 // whether Mine only is on, and the unticked `roles`, `tiers` and `hubs`, so a role, a tier or a hub
 // added later starts ticked. Mine only keeps a record `isMine` keeps; an unticked role hides the
 // records whose role (`roleOf`) it is, a role with no field never being one of the list; both read
-// a record's role fields only while the workspace names a `self`, and a collection entry's only
+// a record's role fields only while a person is marked as the user, and a collection entry's only
 // where its file's `schema:` declares one. An unticked tier hides the projects of that tier and
 // nothing else. An unticked hub hides every record whose `root` names it, and only while the
 // workspace has more than one hub (`hubList` of state/shared/page/hubs.ts). The career banner and
@@ -98,9 +98,9 @@ export function filterLists(words: Record<string, unknown>): {
 }
 
 /**
- * What the filter is read against: the ids of the people the workspace setting `self` names (none
- * when it names no one), the hubs the Hub list names (none while the workspace has one), and the
- * words of each hub, which give the roles a record of that hub is read under.
+ * What the filter is read against: the ids of the people marked `self: true`, the user (none when
+ * no one is marked), the hubs the Hub list names (none while the workspace has one), and the words
+ * of each hub, which give the roles a record of that hub is read under.
  */
 export type FilterScope = {
     self: ReadonlySet<Id>;

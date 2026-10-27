@@ -9,14 +9,15 @@
     // offers a Folder field and sends the tier of the hub chosen and the folder with the write; Lit
     // Watch gives none, and the server creates the project in the default tier, the one word of
     // `tiers` carrying `default`. A board gives its `role:` keys too, null when it names none, and
-    // the write names the user, the person the workspace setting `self` names, in the field of the
-    // first of them that has one; a board naming no `role:` and Lit Watch name the user in the
-    // field of the first row of `roles:` with one, its lead. The roles are those of the hub chosen:
-    // the page holds each hub's lists, and the server writes the hub's one stage carrying
-    // `new_idea`. A board draws the form only when its rule takes the project this write makes in
-    // some hub, so the new project is on the board it was made on. With no `self`, no person is
-    // named. The Folder starts with the tier's `new_project_dir` entry of the primary while the
-    // primary is chosen, and empty for another hub, whose `new_project_dir` the page does not hold,
+    // the write names the user, the person marked as the user, in the field of the first of them
+    // that has one; a board naming no `role:` and Lit Watch name the user in the field of the first
+    // row of `roles:` with one, its lead. The roles are those of the hub chosen: the page holds
+    // each hub's lists, and the server writes the hub's one stage carrying `new_idea`. A board
+    // draws the form only when its rule takes the project this write makes in some hub, so the new
+    // project is on the board it was made on. With nobody marked, and in a hub where the user's key
+    // names another person or nobody, no person is named (state/boards/board/new-project.ts). The
+    // Folder starts with the tier's `new_project_dir` entry of the primary while the primary is
+    // chosen, and empty for another hub, whose `new_project_dir` the page does not hold,
     // being a setting and not a list; an empty Folder sends no folder, so the server takes the
     // `new_project_dir` of the tier in the settings of the hub written to, and a hub that names
     // none for it refuses, said here. A change of hub starts the Folder again from that hub's value

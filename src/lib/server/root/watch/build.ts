@@ -24,10 +24,12 @@ import {
 } from '../../../data/index.ts';
 import type { PortfolioConfig, RegistryName } from '../../../data/model/index.ts';
 import { mergeHubs, type HubPart } from '../../../data/snapshot/hubs/merge.ts';
+import { markSelf } from '../../../data/snapshot/hubs/self.ts';
 import type { SettingsFile } from '../../../data/snapshot/references/build.ts';
 import type { Checker } from '../../../data/snapshot/schema/check.ts';
-import { REGISTRIES, hubLists } from '../../../data/snapshot/schema/lists.ts';
+import { REGISTRIES, hubLists, unreadSources } from '../../../data/snapshot/schema/lists.ts';
 import { shapeSchema } from '../../../data/snapshot/schema/json.ts';
+import { localFile } from '../../../data/sources/config/local.ts';
 import {
     joinedSchemas,
     scopedSchemas,
@@ -63,13 +65,15 @@ type PrimaryHub = HubRoot & { portfolio: PortfolioConfig; workspace: SettingsFil
 /**
  * A workspace as its build reads it: the primary hub, or null for none; every other hub, read with
  * its own settings; the settings the project folders of a workspace with no primary are read with,
- * whose `repositories` name them; and the names of the workspace's folders in its order.
+ * whose `repositories` name them; the names of the workspace's folders in its order; and the key
+ * `self` of the primary's `.oculus/local.yml`, empty for none.
  */
 export type WorkspaceRead = {
     primary: PrimaryHub | null;
     others: readonly OtherHub[];
     config: PortfolioConfig;
     order: readonly string[];
+    self: string;
 };
 
 /** The keys of one build's records by source, for the other hubs' builds to resolve against. */
@@ -125,7 +129,9 @@ function folderParts(build: HubBuild): HubPart[] {
  * with no primary are built together and merged one part per folder, the folder's name its hub. The
  * YAML server's schemas and reference index join each hub's, the primary's as they are and another
  * hub's under its own name. The primary hub alone reads the workspace's repositories, its settings
- * file and oculus's own config folder `engine`.
+ * file, its own `.oculus/local.yml` for the index and oculus's own config folder `engine`. The user
+ * is marked once over the merge, the person the key `self` of the primary's `local.yml` names as
+ * the primary resolves it (snapshot/hubs/self.ts).
  */
 export function buildHubs(
     read: WorkspaceRead,
@@ -166,7 +172,8 @@ export function buildHubs(
             checker,
             engine: one === hubs[0] && primary !== null ? engine : null,
             workspace: one.workspace,
-            others: othersOf(lists, at)
+            others: othersOf(lists, at),
+            local: one === hubs[0] && primary !== null
         })
     }));
     const folderBuild =
@@ -189,10 +196,27 @@ export function buildHubs(
         const at = read.order.indexOf(part.key);
         return at < 0 ? read.order.length : at;
     };
-    const snapshot = mergeHubs(
+    const text = (primary?.portfolio ?? read.config).text;
+    const merged = mergeHubs(
         [...parts].sort((one, other) => place(one) - place(other)),
-        (primary?.portfolio ?? read.config).text,
+        text,
         version
+    );
+    const snapshot = markSelf(
+        merged,
+        {
+            primary: primary?.key ?? null,
+            key: read.self,
+            file: primary === null ? '' : localFile(primary.dir),
+            order: read.order,
+            read: hubs.every(
+                (one) =>
+                    !unreadSources(one.read.raw, one.read.hub, one.portfolio.registries).has(
+                        'people'
+                    )
+            )
+        },
+        text
     );
     const sets = built.map(({ one, build }) =>
         one === hubs[0] && primary !== null ? build.schemas : scopedSchemas(one.key, build.schemas)

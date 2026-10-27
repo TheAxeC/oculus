@@ -14,6 +14,7 @@
 // tagged slow.
 
 import {
+    chmodSync,
     existsSync,
     mkdirSync,
     readFileSync,
@@ -26,12 +27,16 @@ import { join } from 'node:path';
 import { describe, expect } from 'vitest';
 import { HUB_FILE } from '../../../src/lib/data/helpers/hub-names.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
+import { checkLocal, localFile } from '../../../src/lib/data/sources/config/local.ts';
 import { words } from '../../../src/lib/server/core/words.ts';
 import type { WriteTarget } from '../../../src/lib/server/edit/writes.ts';
 import {
     writeConfigKey,
+    writeSelf,
     type ConfigKeyOutcome
 } from '../../../src/lib/server/edit/writes/config/config-key.ts';
+import { localProblemAdded } from '../../../src/lib/server/edit/writes/config/config-checks.ts';
+import { resetConfig } from '../../../src/lib/server/edit/writes/config/config-reset.ts';
 import { configWrite } from '../../../src/lib/server/edit/writes/config/config-write.ts';
 import { plantSaved } from '../../fixtures/hubs/workspace.ts';
 import { it, scratchDir } from '../../fixtures/scratch.ts';
@@ -530,5 +535,167 @@ describe("the machine's own file", { tags: ['slow'] }, () => {
         );
         expect(refusalOf(outcome, 'appearance.yml:code_theme')).toBe(why('local'));
         expect(readFileSync(local, 'utf8')).toBe('port: 8791\n');
+    });
+});
+
+/** The primary's `local.yml` a case of the user's key starts from: comments and other keys. */
+const LOCAL_HELD = '# this machine\nport: 8791  # the port\nself: ada  # me\nclaude_bin: claude\n';
+
+/** A world whose primary hub's `local.yml` holds `text` at mode 600, or no such file. */
+function localWorld(text?: string): World & { file: string } {
+    const at = world('');
+    const file = localFile(at.hub);
+    if (text !== undefined) {
+        writeFileSync(file, text);
+        chmodSync(file, 0o600);
+    }
+    return { ...at, file };
+}
+
+/** The layers of a world: its hub and its workspace file. */
+function layersIn(at: World): { hub: string; workspace?: string } {
+    return { hub: at.hub, ...(at.workspace === null ? {} : { workspace: at.workspace }) };
+}
+
+/** The permission bits of a file. */
+function modeOf(file: string): number {
+    return statSync(file).mode & 0o777;
+}
+
+describe("the user's key in the primary hub's local.yml", { tags: ['slow'] }, () => {
+    it('changes the one scalar of self, keeps every other byte and the mode, and records the two values (case 11)', () => {
+        const at = localWorld(LOCAL_HELD);
+        const outcome = writeConfigKey(at.engine, 'local.yml', 'self', 'bob', layersIn(at));
+        const after = LOCAL_HELD.replace('self: ada', 'self: bob');
+        expect([outcome.changed, outcome.refused]).toEqual([['local.yml:self'], []]);
+        expect(readFileSync(at.file, 'utf8')).toBe(after);
+        expect(checkLocal(after)).toBeNull();
+        expect(modeOf(at.file)).toBe(0o600);
+        expect(outcome.records).toEqual([
+            {
+                file: at.file,
+                key: 'local.yml',
+                field: 'self',
+                before: 'ada',
+                after: 'bob',
+                undo: 'field',
+                replaced: { offset: LOCAL_HELD.indexOf('ada'), before: 'ada', after: 'bob' }
+            }
+        ]);
+    });
+
+    it('adds self to a file without it, every other byte and the mode kept (case 12)', () => {
+        const text = '# this machine\nport: 8791\n';
+        const at = localWorld(text);
+        const outcome = writeConfigKey(at.engine, 'local.yml', 'self', 'bob', layersIn(at));
+        expect(readFileSync(at.file, 'utf8')).toBe(`${text}self: bob\n`);
+        expect(modeOf(at.file)).toBe(0o600);
+        expect(outcome.records).toEqual([
+            {
+                file: at.file,
+                key: 'local.yml',
+                field: 'self',
+                before: '',
+                after: 'bob',
+                undo: 'field',
+                replaced: { offset: text.length, before: '', after: 'self: bob\n' },
+                created: []
+            }
+        ]);
+    });
+
+    it.each([
+        { row: 'no .gitignore, which is made', ignore: null, after: 'local.yml\n' },
+        {
+            row: 'a .gitignore without local.yml, which gains the line',
+            ignore: 'node_modules\n',
+            after: 'node_modules\nlocal.yml\n'
+        },
+        {
+            row: 'a .gitignore naming local.yml, which is left as it is',
+            ignore: '# out of git\nlocal.yml\n',
+            after: '# out of git\nlocal.yml\n'
+        }
+    ])(
+        'makes a missing local.yml at mode 600 holding self, with $row (case 12)',
+        ({ ignore, after }) => {
+            const at = localWorld();
+            const gitignore = join(at.hub, '.oculus', '.gitignore');
+            if (ignore !== null) writeFileSync(gitignore, ignore);
+            const outcome = writeConfigKey(at.engine, 'local.yml', 'self', 'bob', layersIn(at));
+            expect(readFileSync(at.file, 'utf8')).toBe('self: bob\n');
+            expect(modeOf(at.file)).toBe(0o600);
+            expect(readFileSync(gitignore, 'utf8')).toBe(after);
+            expect(outcome.records?.map((one) => one.created)).toEqual([[at.file]]);
+        }
+    );
+
+    it('takes self out on Reset, every other byte kept, the record holding the removed line alone (case 13)', () => {
+        const at = localWorld(LOCAL_HELD);
+        const outcome = resetConfig(at.engine, 'local.yml', 'self', layersIn(at));
+        const line = 'self: ada  # me\n';
+        expect(readFileSync(at.file, 'utf8')).toBe(LOCAL_HELD.replace(line, ''));
+        expect(outcome.records).toEqual([
+            {
+                file: at.file,
+                key: 'local.yml',
+                field: 'self',
+                before: 'ada',
+                after: null,
+                undo: 'field',
+                replaced: { offset: LOCAL_HELD.indexOf(line), before: line, after: '' }
+            }
+        ]);
+    });
+
+    it('refuses the write and the reset of self with no primary hub, and writes nothing (case 9)', () => {
+        const at = localWorld(LOCAL_HELD);
+        const layers = at.workspace === null ? {} : { workspace: at.workspace };
+        const written = writeConfigKey(at.engine, 'local.yml', 'self', 'bob', layers);
+        const reset = resetConfig(at.engine, 'local.yml', 'self', layers);
+        const sentence = words(CATALOG, 'server.workspace.no_primary');
+        expect(refusalOf(written, 'local.yml:self')).toBe(sentence);
+        expect(refusalOf(reset, 'local.yml:self')).toBe(sentence);
+        expect(readFileSync(at.file, 'utf8')).toBe(LOCAL_HELD);
+    });
+
+    it('refuses self with a root naming a hub other than the primary, and writes nothing (case 15)', () => {
+        const made = labTarget();
+        const body = { file: 'local.yml', key: 'self', value: 'kim', root: LAB };
+        const sentence = words(CATALOG, 'server.workspace.primary_only', 'self', LAB);
+        expect(refusalOf(sent(made.into, body), 'local.yml:self')).toBe(sentence);
+        expect(existsSync(localFile(made.lab))).toBe(false);
+        expect(existsSync(localFile(made.hub))).toBe(false);
+    });
+
+    it('refuses self over a local.yml that does not parse, and leaves it as it is (case 16)', () => {
+        const text = 'self: [ada\nport: 8791\n';
+        const at = localWorld(text);
+        const outcome = writeConfigKey(at.engine, 'local.yml', 'self', 'bob', layersIn(at));
+        expect(refusalOf(outcome, 'local.yml:self')).toBe(why('not_parsed'));
+        expect(readFileSync(at.file, 'utf8')).toBe(text);
+    });
+
+    it('answers a local.yml that does not parse with a refusal that holds no text of the file (case 34)', () => {
+        const text = 'self: [ada\nsecret_word: hunter2\n';
+        const at = localWorld(text);
+        expect(writeSelf(at.hub, 'bob')).toEqual({ refused: 'not_parsed' });
+        expect(readFileSync(at.file, 'utf8')).toBe(text);
+    });
+
+    it('writes self over a local.yml holding a key the machine does not read, that key left as it was', () => {
+        const text = 'port: x\n';
+        const at = localWorld(text);
+        const outcome = writeConfigKey(at.engine, 'local.yml', 'self', 'bob', layersIn(at));
+        expect([outcome.changed, outcome.refused]).toEqual([['local.yml:self'], []]);
+        expect(readFileSync(at.file, 'utf8')).toBe(`${text}self: bob\n`);
+    });
+
+    it("answers an edit of local.yml that would break a key with the reader's sentence naming that key", () => {
+        const source = 'port: x\n';
+        const edited = 'port: x\nself: [bob]\n';
+        expect(localProblemAdded(source, edited)).toBe(checkLocal('self: [bob]\n'));
+        expect(localProblemAdded(source, edited)).toBe('local.yml: self must be a person key');
+        expect(localProblemAdded(source, 'port: x\nself: bob\n')).toBeNull();
     });
 });

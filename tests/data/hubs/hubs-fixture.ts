@@ -10,6 +10,7 @@ import { cpSync } from 'node:fs';
 import { join } from 'node:path';
 import { portfolioConfigFrom } from '../../../src/lib/data/index.ts';
 import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
+import { readMachine } from '../../../src/lib/data/sources/config/machine.ts';
 import type { AuditPayload, FeedsPayload, Snapshot } from '../../../src/lib/data/model/index.ts';
 import type { ReferenceIndex } from '../../../src/lib/data/snapshot/references/model.ts';
 import type { SchemaSet } from '../../../src/lib/data/snapshot/schema/set.ts';
@@ -46,8 +47,11 @@ export function copyHub(base: string, name: string): string {
 /** What the watcher published for a hub on its first build. */
 export type Published = { snapshot: Snapshot; audit: AuditPayload; feeds: FeedsPayload };
 
-/** The channels of the watcher's first build over a workspace, with the build options given;
- * the watcher is closed after the build. */
+/**
+ * The channels of the watcher's first build over a workspace, with the build options given; the
+ * watcher is closed after the build. The user's key is read as the server reads it, from the
+ * primary hub's `local.yml` at the build.
+ */
 export function watchedOnce(workspace: Workspace, options: WatchOptions = {}): Hub {
     const channels = new Hub();
     const watcher = watchPortfolio(
@@ -59,7 +63,11 @@ export function watchedOnce(workspace: Workspace, options: WatchOptions = {}): H
             open: () => workspace.open(),
             settings: (dir) => loadConfig(engineDir(), { hub: dir }),
             defaults: () => loadConfig(engineDir()),
-            problems: () => []
+            problems: () => [],
+            self: () => {
+                const open = workspace.open();
+                return readMachine(open.hubs, open.primary).config.self;
+            }
         },
         { debounce: 20, ...options }
     );

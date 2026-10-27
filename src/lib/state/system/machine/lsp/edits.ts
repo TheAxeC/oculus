@@ -22,8 +22,9 @@
 //
 // The plan refuses the whole edit, with the notice that names the file, when
 // - a file is a library file, outside the served roots, under a `node_modules` or dot folder other
-//   than a hub's notes folder `.oculus/notes/` (data/prose/markdown/note-names.ts's
-//   inHiddenFolder), or in the `secrets` folder of every hub or `~/.oculus`,
+//   than a hub's own `.oculus/` folder and the folders under it that are neither
+//   (data/prose/markdown/note-names.ts's outsideEdits), or in the `secrets` folder of every hub or
+//   `~/.oculus`,
 // - the roots are not read yet and a source tab is open, so no tab can be told from a file,
 // - an entry creates, renames or deletes a file, or one file is named twice,
 // - a file it names is open in a tab of another page (asked of the relay), whether or not a tab of
@@ -47,7 +48,9 @@
 // refuses when a tab's draft changed while the files were posted (after, the files stay written,
 // History undoes them, and the tabs are left as typed), and when the server refuses what it was
 // asked to write. The hash an `lsp-edit` file carries is that of the bytes the plan read, which the
-// server checks again as it writes, so a file that moved since the plan is refused by the server.
+// server checks again as it writes, so a file that moved since the plan is refused by the server,
+// as is a hub's `local.yml` the edit would leave with a key the machine does not read, with the
+// reader's sentence.
 
 import { WRITE_MAX_MEGABYTES, type LspEditFile } from '../../../../data/file-ops.ts';
 import {
@@ -57,7 +60,7 @@ import {
 } from '../../../../data/helpers/files/paths.ts';
 import type { LspPlace } from '../../../../data/model/index.ts';
 import { libraryOf, placeOf } from '../../../../data/prose/lsp-addresses.ts';
-import { inHiddenFolder, inNotes, isNote } from '../../../../data/prose/markdown/note-names.ts';
+import { inNotes, isNote, outsideEdits } from '../../../../data/prose/markdown/note-names.ts';
 import {
     RENAME_ANNOTATION,
     applyTextEdits,
@@ -226,8 +229,8 @@ export function noteRenameOf(
 /**
  * The files a workspace edit names with the edits of each, or the refusal: an entry that creates,
  * renames or deletes a file, an address that is a library file or is no file of the page, a file
- * under a `node_modules` folder or a dot folder but a hub's notes folder (`hubs` the keys of the
- * roots that are hubs), or a file `withheld` names.
+ * under a `node_modules` folder or a dot folder but a hub's own `.oculus` folder (`hubs` the keys
+ * of the roots that are hubs), or a file `withheld` names.
  */
 function namedBy(
     edit: unknown,
@@ -240,7 +243,7 @@ function namedBy(
         if (libraryOf(address) !== null)
             return refuse('lsp_edit_library', libraryOf(address)?.name ?? '');
         const place = placeOf(address);
-        const hidden = place !== null && inHiddenFolder(place.path, hubs.includes(place.root));
+        const hidden = place !== null && outsideEdits(place.path, hubs.includes(place.root));
         if (place === null || hidden || withheld(place)) return refuse('lsp_edit_outside', address);
         const key = nameOf(place);
         // A file named twice is refused as the server refuses it, so the answer does not depend on
@@ -302,6 +305,7 @@ function refusedWrite(outcome: Extract<Outcome, { ok: false }>, first: string): 
     if (done > 0) return refuse('lsp_edit_partial', name, String(done));
     if (outcome.error === 'outside') return refuse('lsp_edit_outside', name);
     if (outcome.error === 'changed') return refuse('lsp_edit_changed', name);
+    if (outcome.error === 'local') return refuse('lsp_edit_local', name, outcome.reason ?? '');
     return refuse('lsp_edit_failed', name);
 }
 

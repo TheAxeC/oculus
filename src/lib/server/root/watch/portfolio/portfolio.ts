@@ -108,6 +108,11 @@ export type WatchPaths = {
     /** The problems the machine's `local.yml` files had when they were last read. */
     problems: () => MachineProblem[];
     /**
+     * The key `self` of the primary hub's `local.yml` in force, empty for none, read at every
+     * rebuild: the person it names is marked as the user.
+     */
+    self: () => string;
+    /**
      * Call the listener when the open workspace moves, which is a rebuild that reads it again; the
      * answer takes the listener away.
      */
@@ -669,7 +674,8 @@ export function watchPortfolio(
                               },
                     others,
                     config: portfolio,
-                    order: workspace.folders.map((one) => one.name)
+                    order: workspace.folders.map((one) => one.name),
+                    self: paths.self()
                 },
                 version,
                 checker,

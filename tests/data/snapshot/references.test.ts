@@ -571,7 +571,9 @@ function workspaceAt(where: Where): Workspace {
     const listed = folders.map((one) => `  - { name: ${one.name}, path: ${one.dir} }`);
     writeFileSync(
         file,
-        ['folders:', ...listed, 'primary: hub', 'settings:', '  self: dana-example', ''].join('\n')
+        ['folders:', ...listed, 'primary: hub', 'settings:', '  slurm: { resource: hpc }', ''].join(
+            '\n'
+        )
     );
     const state = scratchDir('oculus-workspace-state-');
     writeState(state, { open: file, recent: [file], unsaved: { folders: [] } });
@@ -601,12 +603,12 @@ describe('the open workspace file in the reference index', { tags: ['slow'] }, (
         {
             name: 'the file under the primary hub, for a file in its folder',
             where: 'primary',
-            scans: [{ root: 'hub', path: WORKSPACE, of: undefined, named: ['dana-example'] }]
+            scans: [{ root: 'hub', path: WORKSPACE, of: undefined, named: ['hpc'] }]
         },
         {
             name: 'the file under another folder, naming the primary hub, for a file in that folder',
             where: 'other folder',
-            scans: [{ root: 'lab', path: WORKSPACE, of: 'hub', named: ['dana-example'] }]
+            scans: [{ root: 'lab', path: WORKSPACE, of: 'hub', named: ['hpc'] }]
         }
     ])('scans $name', (row) => {
         const scans = watchedIndex(workspaceAt(row.where))
@@ -616,6 +618,39 @@ describe('the open workspace file in the reference index', { tags: ['slow'] }, (
                 path: one.file.path,
                 of: one.of,
                 named: one.references.map((place) => place.value)
+            }));
+        expect(scans).toEqual(row.scans);
+    });
+});
+
+/** The `local.yml` of the primary a row plants: other keys around `self`. */
+const LOCAL_TEXT = 'port: 8791\nself: dana-example  # me\nclaude_bin: claude\n';
+
+describe("the primary hub's local.yml in the reference index", { tags: ['slow'] }, () => {
+    it.each<{ name: string; primary?: string; scans: object[] }>([
+        {
+            name: "self of the primary's file alone, under the primary's name, and no other key",
+            primary: 'hub',
+            scans: [{ root: 'hub', path: '.oculus/local.yml', named: ['dana-example'], defines: 0 }]
+        },
+        { name: 'no local.yml in a workspace with no primary', scans: [] }
+    ])('scans $name (case 23)', (row) => {
+        const base = scratchDir('oculus-local-index-');
+        const hub = plantHubFolder(join(base, 'hub'));
+        const lab = plantHubFolder(join(base, 'lab'));
+        writeFileSync(join(hub, '.oculus', 'local.yml'), LOCAL_TEXT);
+        writeFileSync(join(lab, '.oculus', 'local.yml'), 'self: dana-example\n');
+        const folders = [
+            { name: 'hub', dir: hub },
+            { name: 'lab', dir: lab }
+        ];
+        const scans = watchedIndex(workspaceWith(folders, row.primary))
+            .files.filter((one) => one.file.path === '.oculus/local.yml')
+            .map((one) => ({
+                root: one.file.root,
+                path: one.file.path,
+                named: one.references.map((place) => place.value),
+                defines: one.definitions.length
             }));
         expect(scans).toEqual(row.scans);
     });

@@ -5458,3 +5458,14 @@ Main also fails `tests/checks/diagrams/palette.test.ts` (`docs/palette.md` lists
 
 Where it applies: O89 round 1, which also builds ruling 467 (a), the selection that makes each landing run these checks.
 Builds on it: O89
+
+## Z1048 (2026-10-27, /spec O88, the orchestrator, automode): the side-bar sections and tree rows that fold
+
+Rulings 448 (a) and 461 (b) make `GroupHead` the only code for a grouping heading of a view. Besides the views those rulings name, the tree has headings that fold in the side bars and trees: the stacked sections of the Files view and the Session view (`views/shared/explorer/sections/Section.svelte`, `views/sources/files/sections/Notes.svelte`), the Changes groups of Source Control (`repositories/changes/Changes.svelte`) and of an app's source control (`repositories/apps/AppSourceGroup.svelte`), the LaTeX panel's Math Symbols groups and Structure sections (`academic/latex/Symbols.svelte`, `Structure.svelte`), the sessions list's Customizations rows (`session-list/Customizations.svelte`), and the rows of the References, Problems, commit-file and diff-file trees.
+
+- Chosen: (a) they stay as they are. Each is a side-bar section head with its own actions and drag, or a row of a tree with its twistie, both drawn as VS Code draws them in those places, and none heads a group of a view's cards or lists. O88's brief names each with this reason.
+- Not chosen: (b) they draw `GroupHead` too, which would put a card view's sticky strip into VS Code's side bars and trees and break their parity with VS Code.
+- The lazy option: none; both options cost the same to write into the brief.
+
+Where it applies: O88. Booked in `plan.md` Rulings (open item 488) and O88's line.
+Builds on it: O88

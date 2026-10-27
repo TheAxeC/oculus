@@ -104,7 +104,7 @@ function archivedAt(project: Project, config: Record<string, unknown>): string |
 /**
  * Build only nodes reached by visible projects and only edges whose two ends are visible. With the
  * people option a node and an edge are drawn for each person of a project's team, its lead, its
- * collaborators and its supervisors, except the person the workspace setting `self` names
+ * collaborators and its supervisors, except the user, the person marked `self: true`
  * (board/team.ts).
  */
 export function buildGraph(

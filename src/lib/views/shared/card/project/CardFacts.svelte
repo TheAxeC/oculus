@@ -1,7 +1,7 @@
 <script lang="ts">
     // Layer 3, shared view. The top row of a project card: the facts that say what the project is,
     // each a glyph and its words, in this order: the Lead badge while the project's `lead:` names
-    // the person the workspace setting `self` names, the Focus lane it sits on among its own hub's
+    // the user (the person marked `self: true`), the Focus lane it sits on among its own hub's
     // lanes, its form and its chips with their words and glyphs of `forms` and `chips` of its hub's
     // words, its code status, whether it is reproduced, its compute resources, and last the name of
     // its folder with the folder glyph. The stage is the card's filled chip, drawn by

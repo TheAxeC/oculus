@@ -130,8 +130,7 @@ export type BoardItem = {
     /**
      * The project's team as the views show it, each person by their name: the people of its
      * `lead:`, then those of its `collaborators:`, then those of its `supervisors:`, each once,
-     * without the person the workspace setting `self` names (team.ts beside this file,
-     * `shownTeam`).
+     * without the user, the person marked `self: true` (team.ts beside this file, `shownTeam`).
      */
     team: BoardTag[];
     /** The team as one line (`teamLine`), which the list's With column draws. */
@@ -148,7 +147,7 @@ export type BoardItem = {
     slice: string;
     /**
      * The key of the user's role on the project (`roles` of vocab.yml), or the empty string when
-     * it has none or the workspace names no `self`.
+     * it has none or no person is marked as the user.
      */
     role: string;
     /**
@@ -158,7 +157,7 @@ export type BoardItem = {
     lead: boolean;
     /**
      * Whether Mine only keeps the project: its role fields name the user, or it names no one; true
-     * for every project when the workspace names no `self`.
+     * for every project when no person is marked as the user.
      */
     mine: boolean;
     /** The code deposit's status, or the empty string when the manifest names none. */
@@ -209,8 +208,8 @@ export type BoardState = {
     dated: boolean;
     /**
      * Mine only: only the projects whose role fields name the user and those naming no one. On
-     * until the reader switches it off; drawn while the workspace names a `self`, and applied only
-     * where one of the board's projects is one it does not keep (state.ts, `offersMine`).
+     * until the reader switches it off; drawn while a person is marked as the user, and applied
+     * only where one of the board's projects is one it does not keep (state.ts, `offersMine`).
      */
     mine: boolean;
     /** The keys of the folded sections, the empty key for the "other" section. */

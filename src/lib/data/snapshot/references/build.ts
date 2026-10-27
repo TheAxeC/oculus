@@ -11,8 +11,10 @@
 // The open workspace file is read too, for its `settings:`: each key there is an option of a
 // defaults file, so its places are the options catalog's own, under `settings`. Its values name
 // keys of the primary hub wherever the file lies, so its scan says so (`of`), and a rename of a key
-// a setting names, the person `self` names among them, rewrites the setting. The unsaved workspace
-// has no file, and nothing is read for it.
+// a setting names rewrites the setting. The unsaved workspace has no file, and nothing is read for
+// it. The primary hub's own `.oculus/local.yml` is read for the options of local.yml that name a
+// hub key, which are `self` alone, so a rename of the person `self` names rewrites that key and no
+// other byte of the file; another hub's `local.yml` is never read.
 //
 // What a file defines: a file of entries of the hub's `collections:` its entries' primary keys, as
 // keys of the registry the collection carries or, for one that carries none, of the collection's
@@ -88,6 +90,11 @@ export type ReferenceSources = {
     workspace?: SettingsFile | null;
     /** The node that reads the workspace file's `settings:`, read from the catalog. */
     settings?: FieldNode | null;
+    /**
+     * The primary hub's own `local.yml`, by its path in the hub, with the node that reads it; null
+     * for a build of another hub and for a catalog whose local.yml options name no hub key.
+     */
+    local?: OptionFile | null;
     /** The file name of a deck. */
     deckFile: string;
     /** The text of a file, or undefined when it cannot be read; the disk by default. */
@@ -275,11 +282,27 @@ function workspaceScans(
     return [held.root === sources.root ? scan : { ...scan, of: sources.root }];
 }
 
+/** The scan of the primary hub's own `local.yml`, none for another hub or a file that is gone. */
+function localScans(
+    sources: ReferenceSources,
+    read: (file: string) => string | undefined
+): FileScan[] {
+    const local = sources.local ?? null;
+    const text = local === null ? undefined : read(join(sources.hub, local.path));
+    if (local === null || text === undefined) return [];
+    return [scanText({ root: sources.root, path: local.path }, text, reads(local.spec))];
+}
+
 /** The reference index of one build. */
 export function buildReferences(sources: ReferenceSources): ReferenceIndex {
     const read = sources.readFile ?? readDisk;
     const scans = hubScans(sources, read);
     return {
-        files: [...scans, ...workspaceScans(sources, read), ...engineScans(sources, scans, read)]
+        files: [
+            ...scans,
+            ...localScans(sources, read),
+            ...workspaceScans(sources, read),
+            ...engineScans(sources, scans, read)
+        ]
     };
 }

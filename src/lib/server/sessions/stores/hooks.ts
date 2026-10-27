@@ -147,9 +147,9 @@ export function entities(
 }
 
 /**
- * The name of the person the workspace setting `self` names, the user, whom the last published
- * `portfolio` payload marks `self: true`, or null when none is marked, the name is empty or no
- * payload was published.
+ * The name of the user, the person the key `self` of the primary hub's `local.yml` names, whom the
+ * last published `portfolio` payload marks `self: true`, or null when none is marked, the name is
+ * empty or no payload was published.
  */
 export function selfName(hub: HubLike): string | null {
     const people = entityMap(hub, 'people');

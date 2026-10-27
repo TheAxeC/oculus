@@ -9,6 +9,12 @@ options:
         control: number
         whole: true
         help: The port the oculus server listens on, bound to 127.0.0.1. It must be a whole number. Without it, or with a value that is not one, the port is the server's default, 8790 unless the server was started with another. Only the primary hub's file sets it. The server moves to a port written to the file at once, and stays on the port it listens on when that port cannot be used.
+    self:
+        section: You
+        help: "Your own person: the key of a person of the people registry of any hub. It is read from the primary hub's file only, and resolved from the primary hub: the primary's person of that key, else the person of the one other hub that holds it. The Person page draws its this is me button pressed on that person, and the portfolio chat names them as its user. It is set from this row or from the button on a Person page, and stays out of git with the rest of the file. Empty or without it nobody is marked; a key no hub holds, or one that two hubs other than the primary hold, marks nobody and is a finding. A change is read again at once."
+        control: choice
+        empty: nobody is marked as you
+        from: people
     hpc_host:
         section: HPC host
         help: This machine's ssh alias for the Live HPC view. It takes precedence over the host of the cluster that slurm.resource of behavior.yml names. A change is read again at once.

@@ -82,7 +82,7 @@ digraph layers {
     "routes to themes" [label="5", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02", pos="728.81,189.41!"];
     "routes to ui" [label="13", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02", pos="430.29,117.41!"];
     "routes to views" [label="5", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02", pos="302.79,91.41!"];
-    "server to data" [label="550", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02", pos="1600.37,211.41!"];
+    "server to data" [label="556", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02", pos="1600.37,211.41!"];
     "shell to data" [label="13", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02", pos="578.02,175.41!"];
     "shell to state" [label="190", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02", pos="578.02,149.41!"];
     "shell to ui" [label="114", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02", pos="578.02,123.41!"];

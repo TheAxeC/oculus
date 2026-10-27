@@ -3,9 +3,11 @@
 // those of one of the files, so any spelling of the path, a link included, names it, and a hub's
 // `.oculus` folder listed as a workspace folder of its own does not make the file another one. The
 // modules that ask here are the source tab's key check on a save or create (`source.ts`), the
-// bytes a save writes (`source-bytes.ts`), an app's reach (`apps/reach/private.ts`), an app's
-// language server (`lsp/relay/relay-apps.ts`) and the place of a Settings write
-// (`edit/writes/config/config-place.ts`).
+// bytes a save writes (`source-bytes.ts`), the `lsp-edit` operation's check of a `local.yml` it
+// would write (`fs/lsp-edit.ts`), an app's reach (`apps/reach/private.ts`), an app's language
+// server (`lsp/relay/relay-apps.ts`) and the place of a Settings write
+// (`edit/writes/config/config-place.ts`), which leaves the file to one Settings write: the user's
+// key `self` of the primary's, which `writeSelf` (`edit/writes/config/config-key.ts`) writes.
 
 import { statSync } from 'node:fs';
 import { join } from 'node:path';

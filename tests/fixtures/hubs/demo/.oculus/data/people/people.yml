@@ -1,4 +1,4 @@
-# People - one entry per human the hub names: a person a project's `lead:`, `collaborators:` or `waiting-on:` points at, a student whose supervision folder is under education/, and the user of a workspace that names them `self`. A person's facts live here and nowhere else, so a name is written once and every card, tag and map node that draws one reads it from this file.
+# People - one entry per human the hub names: a person a project's `lead:`, `collaborators:` or `waiting-on:` points at, a student whose supervision folder is under education/, and the user, whom the key `self` of the primary hub's `.oculus/local.yml` names. A person's facts live here and nowhere else, so a name is written once and every card, tag and map node that draws one reads it from this file.
 # `affiliations:` are keys of .oculus/data/people/organisations.yml, never free strings, the primary first.
 
 schema:

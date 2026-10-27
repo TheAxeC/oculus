@@ -999,17 +999,18 @@ placeText, refusing", pos="e,171.18,3529.00 87.03,3503.00 92.37,3503.00 97.70,35
     subgraph "cluster_37. lost" {
         bb="149.80,3094.00,516.96,3154.00"; lp="185.49,3142.80";
         label="not placed"; style=dashed;
-        "37. ? src/lib/server/edit/writes/config/config-reset.ts:218" [shape=plain, label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD><TABLE BORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD PORT="i0" WIDTH="1" HEIGHT="8" FIXEDSIZE="TRUE"></TD></TR></TABLE></TD><TD CELLPADDING="4">src/lib/server/edit/writes/config/config-reset.ts:218 replacedShape.safeParse(</TD></TR></TABLE>>, pos="333.38,3113.00!"];
+        "37. ? src/lib/server/edit/writes/config/config-reset.ts:215" [shape=plain, label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD><TABLE BORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD PORT="i0" WIDTH="1" HEIGHT="8" FIXEDSIZE="TRUE"></TD></TR></TABLE></TD><TD CELLPADDING="4">src/lib/server/edit/writes/config/config-reset.ts:215 replacedShape.safeParse(</TD></TR></TABLE>>, pos="333.38,3113.00!"];
     }
-    "37. lib/server/edit/writes/config/config-reset.ts" -> "37. ? src/lib/server/edit/writes/config/config-reset.ts:218" [style=dashed, pos="e,157.80,3113.00 89.80,3193.00 103.14,3193.00 116.47,3193.00 129.80,3193.00 129.80,3166.33 129.80,3139.67 129.80,3113.00 136.74,3113.00 143.69,3113.00 150.63,3113.00"];
-    "37. lib/server/edit/writes/config/config-reset.ts" -> "37. lib/server/edit/writes/config/config-checks.ts" [tooltip="mergedAt, putBack, refusedBy
-withoutKey, written", pos="e,292.03,3176.00 89.80,3201.00 107.14,3201.00 124.47,3201.00 141.80,3201.00 141.80,3192.67 141.80,3184.33 141.80,3176.00 189.45,3176.00 237.10,3176.00 284.76,3176.00"];
+    "37. lib/server/edit/writes/config/config-reset.ts" -> "37. ? src/lib/server/edit/writes/config/config-reset.ts:215" [style=dashed, pos="e,157.80,3113.00 89.80,3193.00 103.14,3193.00 116.47,3193.00 129.80,3193.00 129.80,3166.33 129.80,3139.67 129.80,3113.00 136.74,3113.00 143.69,3113.00 150.63,3113.00"];
+    "37. lib/server/edit/writes/config/config-reset.ts" -> "37. lib/server/edit/writes/config/config-checks.ts" [tooltip="cutTopPair, mergedAt, putBack
+refusedBy, withoutKey, written", pos="e,292.03,3176.00 89.80,3201.00 107.14,3201.00 124.47,3201.00 141.80,3201.00 141.80,3192.67 141.80,3184.33 141.80,3176.00 189.45,3176.00 237.10,3176.00 284.76,3176.00"];
     "37. lib/server/edit/writes/config/config-reset.ts" -> "37. lib/server/edit/writes/config/config-checks.ts" [tooltip="replacedShape", style=dotted, pos="e,292.03,3186.00 89.80,3209.00 105.14,3209.00 120.47,3209.00 135.80,3209.00 135.80,3201.33 135.80,3193.67 135.80,3186.00 185.47,3186.00 235.13,3186.00 284.80,3186.00"];
     "37. lib/server/edit/writes/config/config-reset.ts" -> "37. lib/server/edit/writes/config/config-fit.ts" [tooltip="isCollection", pos="e,303.70,3217.00 89.80,3217.00 101.14,3217.00 112.47,3217.00 123.80,3217.00 181.30,3217.00 238.80,3217.00 296.29,3217.00"];
-    "37. lib/server/edit/writes/config/config-reset.ts" -> "37. lib/server/edit/writes/config/config-key.ts" [tooltip="writeConfigKey", pos="e,299.81,3253.00 89.80,3225.00 99.14,3225.00 108.47,3225.00 117.80,3225.00 117.80,3234.33 117.80,3243.67 117.80,3253.00 176.05,3253.00 234.29,3253.00 292.53,3253.00"];
-    "37. lib/server/edit/writes/config/config-reset.ts" -> "37. lib/server/edit/writes/config/config-place.ts" [tooltip="absentIn, isMachinePlace, loadLayers
-opening, optionNow, optionOf
-placeOf, placeRefusal, placeText", pos="e,295.64,3289.00 89.80,3233.00 97.14,3233.00 104.47,3233.00 111.80,3233.00 111.80,3251.67 111.80,3270.33 111.80,3289.00 170.59,3289.00 229.38,3289.00 288.17,3289.00"];
+    "37. lib/server/edit/writes/config/config-reset.ts" -> "37. lib/server/edit/writes/config/config-key.ts" [tooltip="resetSelf, writeConfigKey", pos="e,299.81,3253.00 89.80,3225.00 99.14,3225.00 108.47,3225.00 117.80,3225.00 117.80,3234.33 117.80,3243.67 117.80,3253.00 176.05,3253.00 234.29,3253.00 292.53,3253.00"];
+    "37. lib/server/edit/writes/config/config-reset.ts" -> "37. lib/server/edit/writes/config/config-place.ts" [tooltip="absentIn, isMachinePlace, isUserKey
+loadLayers, opening, optionNow
+optionOf, placeOf, placeRefusal
+placeText", pos="e,295.64,3289.00 89.80,3233.00 97.14,3233.00 104.47,3233.00 111.80,3233.00 111.80,3251.67 111.80,3270.33 111.80,3289.00 170.59,3289.00 229.38,3289.00 288.17,3289.00"];
     "37. lib/server/edit/writes/config/config-reset.ts" -> "37. lib/server/edit/writes/config/config-value.ts" [tooltip="writeConfigValue", pos="e,295.64,3325.00 89.80,3241.00 95.14,3241.00 100.47,3241.00 105.80,3241.00 105.80,3269.00 105.80,3297.00 105.80,3325.00 166.59,3325.00 227.37,3325.00 288.16,3325.00"];
     subgraph "cluster_38. lib/server/content/deck" {
         bb="95.71,2922.00,231.77,2982.00"; lp="163.74,2970.80";
@@ -1110,20 +1111,28 @@ placeOf, placeRefusal, placeText", pos="e,295.64,3289.00 89.80,3233.00 97.14,323
     "41. lib/server/edit/feeds/feeds.ts" -> "41. lib/server/edit/writes/config/config-checks.ts" [tooltip="putBack, replacedLines", pos="e,208.89,2293.00 82.53,2413.00 107.71,2413.00 132.88,2413.00 158.05,2413.00 158.05,2373.00 158.05,2333.00 158.05,2293.00 172.50,2293.00 186.95,2293.00 201.40,2293.00"];
     "41. lib/server/edit/feeds/feeds.ts" -> "41. lib/server/edit/writes/entries.ts" [tooltip="noPrimaryKey, saved, sharedRefusal
 typeRefusals", pos="e,223.24,2361.00 82.53,2421.00 109.71,2421.00 136.88,2421.00 164.05,2421.00 164.05,2401.00 164.05,2381.00 164.05,2361.00 181.29,2361.00 198.53,2361.00 215.77,2361.00"];
-    subgraph "cluster_42. lib/server/edit/writes/config" {
-        bb="441.68,2510.00,651.51,2642.00"; lp="520.37,2630.80";
-        label="lib/server/edit/writes/config"; style=solid;
-        "42. lib/server/edit/writes/config/config-checks.ts" [shape=box, style=dashed, margin=0.0139, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD><TABLE BORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD PORT="i0" WIDTH="1" HEIGHT="8" FIXEDSIZE="TRUE"></TD></TR></TABLE></TD><TD CELLPADDING="4">config-checks.ts</TD></TR></TABLE>>, pos="602.16,2529.00!"];
-        "42. lib/server/edit/writes/config/config-fit.ts" [shape=box, style=dashed, margin=0.0139, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD><TABLE BORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD PORT="i0" WIDTH="1" HEIGHT="8" FIXEDSIZE="TRUE"></TD></TR></TABLE></TD><TD CELLPADDING="4">config-fit.ts</TD></TR></TABLE>>, pos="602.16,2565.00!"];
-        "42. lib/server/edit/writes/config/config-key.ts" [shape=plain, label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD CELLPADDING="4">config-key.ts</TD><TD><TABLE BORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD PORT="o0" WIDTH="1" HEIGHT="8" FIXEDSIZE="TRUE"></TD></TR><TR><TD PORT="o1" WIDTH="1" HEIGHT="8" FIXEDSIZE="TRUE"></TD></TR><TR><TD PORT="o2" WIDTH="1" HEIGHT="8" FIXEDSIZE="TRUE"></TD></TR></TABLE></TD></TR></TABLE>>, pos="483.25,2565.00!"];
-        "42. lib/server/edit/writes/config/config-place.ts" [shape=box, style=dashed, margin=0.0139, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD><TABLE BORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD PORT="i0" WIDTH="1" HEIGHT="8" FIXEDSIZE="TRUE"></TD></TR></TABLE></TD><TD CELLPADDING="4">config-place.ts</TD></TR></TABLE>>, pos="602.16,2601.00!"];
+    subgraph "cluster_42. lib/server/core" {
+        bb="562.98,2442.00,654.34,2502.00"; lp="608.66,2490.80";
+        label="lib/server/core"; style=solid;
+        "42. lib/server/core/json.ts" [shape=box, style=dashed, margin=0.0139, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD><TABLE BORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD PORT="i0" WIDTH="1" HEIGHT="8" FIXEDSIZE="TRUE"></TD></TR></TABLE></TD><TD CELLPADDING="4">json.ts</TD></TR></TABLE>>, pos="608.16,2461.00!"];
     }
-    "42. lib/server/edit/writes/config/config-key.ts" -> "42. lib/server/edit/writes/config/config-checks.ts" [tooltip="insertKey, kept, mergedAt
-refusedBy, written", pos="e,560.81,2529.00 516.81,2557.00 526.15,2557.00 535.48,2557.00 544.81,2557.00 544.81,2547.67 544.81,2538.33 544.81,2529.00 547.69,2529.00 550.57,2529.00 553.45,2529.00"];
-    "42. lib/server/edit/writes/config/config-key.ts" -> "42. lib/server/edit/writes/config/config-fit.ts" [tooltip="isCollection, leafProblem", pos="e,572.49,2565.00 516.81,2565.00 524.15,2565.00 531.48,2565.00 538.81,2565.00 547.61,2565.00 556.42,2565.00 565.22,2565.00"];
-    "42. lib/server/edit/writes/config/config-key.ts" -> "42. lib/server/edit/writes/config/config-place.ts" [tooltip="absentIn, blockLevels, isMachinePlace
-opening, optionNow, optionOf
-placeOf, placeRefusal, placeText", pos="e,564.42,2601.00 516.81,2573.00 522.15,2573.00 527.48,2573.00 532.81,2573.00 532.81,2582.33 532.81,2591.67 532.81,2601.00 540.85,2601.00 548.88,2601.00 556.92,2601.00"];
+    subgraph "cluster_42. lib/server/edit/writes/config" {
+        bb="441.68,2510.00,657.51,2642.00"; lp="520.37,2630.80";
+        label="lib/server/edit/writes/config"; style=solid;
+        "42. lib/server/edit/writes/config/config-checks.ts" [shape=box, style=dashed, margin=0.0139, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD><TABLE BORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD PORT="i0" WIDTH="1" HEIGHT="8" FIXEDSIZE="TRUE"></TD></TR></TABLE></TD><TD CELLPADDING="4">config-checks.ts</TD></TR></TABLE>>, pos="608.16,2529.00!"];
+        "42. lib/server/edit/writes/config/config-fit.ts" [shape=box, style=dashed, margin=0.0139, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD><TABLE BORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD PORT="i0" WIDTH="1" HEIGHT="8" FIXEDSIZE="TRUE"></TD></TR></TABLE></TD><TD CELLPADDING="4">config-fit.ts</TD></TR></TABLE>>, pos="608.16,2565.00!"];
+        "42. lib/server/edit/writes/config/config-key.ts" [shape=plain, label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD CELLPADDING="4">config-key.ts</TD><TD><TABLE BORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD PORT="o0" WIDTH="1" HEIGHT="8" FIXEDSIZE="TRUE"></TD></TR><TR><TD PORT="o1" WIDTH="1" HEIGHT="8" FIXEDSIZE="TRUE"></TD></TR><TR><TD PORT="o2" WIDTH="1" HEIGHT="8" FIXEDSIZE="TRUE"></TD></TR><TR><TD PORT="o3" WIDTH="1" HEIGHT="8" FIXEDSIZE="TRUE"></TD></TR></TABLE></TD></TR></TABLE>>, pos="483.25,2548.00!"];
+        "42. lib/server/edit/writes/config/config-place.ts" [shape=box, style=dashed, margin=0.0139, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD><TABLE BORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD PORT="i0" WIDTH="1" HEIGHT="8" FIXEDSIZE="TRUE"></TD></TR></TABLE></TD><TD CELLPADDING="4">config-place.ts</TD></TR></TABLE>>, pos="608.16,2601.00!"];
+    }
+    "42. lib/server/edit/writes/config/config-key.ts" -> "42. lib/server/core/json.ts" [tooltip="writeTextAtomic", pos="e,581.16,2461.00 516.81,2536.00 526.15,2536.00 535.48,2536.00 544.81,2536.00 544.81,2511.00 544.81,2486.00 544.81,2461.00 554.48,2461.00 564.14,2461.00 573.80,2461.00"];
+    "42. lib/server/edit/writes/config/config-key.ts" -> "42. lib/server/edit/writes/config/config-checks.ts" [tooltip="cutTopPair, insertKey, kept
+localProblemAdded, mergedAt, refusedBy
+replacedText, withoutKey, written", pos="e,566.81,2529.00 516.81,2544.00 528.15,2544.00 539.48,2544.00 550.81,2544.00 550.81,2539.00 550.81,2534.00 550.81,2529.00 553.66,2529.00 556.50,2529.00 559.35,2529.00"];
+    "42. lib/server/edit/writes/config/config-key.ts" -> "42. lib/server/edit/writes/config/config-fit.ts" [tooltip="isCollection, leafProblem", pos="e,578.49,2565.00 516.81,2552.00 524.15,2552.00 531.48,2552.00 538.81,2552.00 538.81,2556.33 538.81,2560.67 538.81,2565.00 549.66,2565.00 560.51,2565.00 571.36,2565.00"];
+    "42. lib/server/edit/writes/config/config-key.ts" -> "42. lib/server/edit/writes/config/config-place.ts" [tooltip="absentIn, blockLevels, heldText
+isMachinePlace, isUserKey, opening
+optionNow, optionOf, placeOf
+placeRefusal, placeText, refusing", pos="e,570.42,2601.00 516.81,2560.00 522.15,2560.00 527.48,2560.00 532.81,2560.00 532.81,2573.67 532.81,2587.33 532.81,2601.00 542.97,2601.00 553.13,2601.00 563.28,2601.00"];
     subgraph "cluster_43. lib/data/sources/config/merge" {
         bb="250.02,1978.25,422.77,2074.25"; lp="336.40,2063.05";
         label="lib/data/sources/config/merge"; style=solid;
@@ -1259,11 +1268,11 @@ removeMade", pos="e,422.20,1641.50 352.75,1647.50 368.09,1647.50 383.42,1647.50 
     subgraph "cluster_49. lost" {
         bb="478.28,1083.75,730.92,1179.75"; lp="513.97,1168.55";
         label="not placed"; style=dashed;
-        "49. ? src/lib/data/index.ts:260" [shape=plain, label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD><TABLE BORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD PORT="i0" WIDTH="1" HEIGHT="8" FIXEDSIZE="TRUE"></TD></TR></TABLE></TD><TD CELLPADDING="4">src/lib/data/index.ts:260 REGISTRY_NAMES.filter(</TD></TR></TABLE>>, pos="604.60,1102.75!"];
-        "49. ? src/lib/data/index.ts:261" [shape=plain, label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD><TABLE BORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD PORT="i0" WIDTH="1" HEIGHT="8" FIXEDSIZE="TRUE"></TD></TR></TABLE></TD><TD CELLPADDING="4">src/lib/data/index.ts:261 FEED_REGISTRIES.filter(</TD></TR></TABLE>>, pos="604.60,1138.75!"];
+        "49. ? src/lib/data/index.ts:264" [shape=plain, label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD><TABLE BORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD PORT="i0" WIDTH="1" HEIGHT="8" FIXEDSIZE="TRUE"></TD></TR></TABLE></TD><TD CELLPADDING="4">src/lib/data/index.ts:264 REGISTRY_NAMES.filter(</TD></TR></TABLE>>, pos="604.60,1102.75!"];
+        "49. ? src/lib/data/index.ts:265" [shape=plain, label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD><TABLE BORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD PORT="i0" WIDTH="1" HEIGHT="8" FIXEDSIZE="TRUE"></TD></TR></TABLE></TD><TD CELLPADDING="4">src/lib/data/index.ts:265 FEED_REGISTRIES.filter(</TD></TR></TABLE>>, pos="604.60,1138.75!"];
     }
-    "49. lib/data/index.ts" -> "49. ? src/lib/data/index.ts:260" [style=dashed, pos="e,486.56,1102.75 436.28,1160.75 445.62,1160.75 454.95,1160.75 464.28,1160.75 464.28,1141.42 464.28,1122.08 464.28,1102.75 469.26,1102.75 474.24,1102.75 479.23,1102.75"];
-    "49. lib/data/index.ts" -> "49. ? src/lib/data/index.ts:261" [style=dashed, pos="e,486.28,1138.75 436.28,1168.75 447.62,1168.75 458.95,1168.75 470.28,1168.75 470.28,1158.75 470.28,1148.75 470.28,1138.75 473.23,1138.75 476.17,1138.75 479.11,1138.75"];
+    "49. lib/data/index.ts" -> "49. ? src/lib/data/index.ts:264" [style=dashed, pos="e,486.56,1102.75 436.28,1160.75 445.62,1160.75 454.95,1160.75 464.28,1160.75 464.28,1141.42 464.28,1122.08 464.28,1102.75 469.26,1102.75 474.24,1102.75 479.23,1102.75"];
+    "49. lib/data/index.ts" -> "49. ? src/lib/data/index.ts:265" [style=dashed, pos="e,486.28,1138.75 436.28,1168.75 447.62,1168.75 458.95,1168.75 470.28,1168.75 470.28,1158.75 470.28,1148.75 470.28,1138.75 473.23,1138.75 476.17,1138.75 479.11,1138.75"];
     "49. lib/data/index.ts" -> "49. lib/data/sources/collections.ts" [tooltip="engineDefaults, listWords", pos="e,570.48,1274.75 436.28,1184.75 441.62,1184.75 446.95,1184.75 452.28,1184.75 452.28,1214.75 452.28,1244.75 452.28,1274.75 489.28,1274.75 526.28,1274.75 563.28,1274.75"];
     "49. lib/data/index.ts" -> "49. lib/data/sources/config/merge/text.ts" [tooltip="textCatalog", pos="e,577.60,1206.75 436.28,1176.75 443.62,1176.75 450.95,1176.75 458.28,1176.75 458.28,1186.75 458.28,1196.75 458.28,1206.75 495.67,1206.75 533.05,1206.75 570.43,1206.75"];
     subgraph "cluster_50. lib/data/snapshot/schema" {

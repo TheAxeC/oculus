@@ -598,14 +598,15 @@ function reachesInside(folder: string, hub: string, scans: string[]): boolean {
  * `default`, under that tier's `new_project_dir`, and is refused as naming no tier when no word
  * carries it or several do. `fields.role_field` is the field of the first of the board's `role:`
  * keys that has one, or of the first row of `roles:` that has one for a board naming no `role:` and
- * for Lit Watch, and `fields.self` the key of the person the workspace setting `self` names: the
- * manifest names that person in that field (`lead: [<self>]` on a lead board). A board offers the
- * write only when its rule takes the project it makes, so the new project is on the board it was
- * made on. A bad id, an id a project already holds, a tier that is no word of `tiers` or has no
- * words, a role field that is no field of `roles`, a hub that names no folder for the tier, an
- * empty folder, a folder outside every scan folder, a folder inside a project and a folder that is
- * already there are all refused, so nothing existing is ever written over. The outcome's `id` is
- * the new project's id.
+ * for Lit Watch, and `fields.self` the key of the user, the person the key `self` of the primary
+ * hub's `local.yml` names, as it resolves in the hub written to (new-project.ts): the manifest
+ * names that person in that field (`lead: [<self>]` on a lead board). A board offers the write only
+ * when its rule takes the project it makes, so the new project is on the board it was made on. A
+ * bad id, an id a project already holds, a tier that is no word of `tiers` or has no words, a role
+ * field that is no field of `roles`, a hub that names no folder for the tier, an empty folder, a
+ * folder outside every scan folder, a folder inside a project and a folder that is already there
+ * are all refused, so nothing existing is ever written over. The outcome's `id` is the new
+ * project's id.
  */
 export function createIdea(
     hub: string,

@@ -86,7 +86,7 @@ text:
             task_required: 'The task type {0} requires the property {1}, so the entry is left out'
             task_type_unknown: 'No app that acts defines the task type {0}, so the entry is left out'
         config_key:
-            local: a hub's .oculus/local.yml is the machine's own file and is not written from here
+            local: a hub's .oculus/local.yml is the machine's own file, and no key of it but self, in the primary hub's file, is written from here
             no_entry: The options catalog has no option of that name in a tracked config file
             no_workspace: No workspace file is open, so there is no file to keep this setting in; save the workspace to a file first
             not_single: This option is a list or a family, so it is not set one key at a time

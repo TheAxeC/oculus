@@ -93,7 +93,8 @@ export type OpsRefusal =
     | 'binary'
     | 'search-failed'
     | 'changed'
-    | 'marker';
+    | 'marker'
+    | 'local';
 
 /** Every refusal word, for a map that must name each of them. */
 export const OPS_REFUSALS: readonly OpsRefusal[] = [
@@ -114,7 +115,8 @@ export const OPS_REFUSALS: readonly OpsRefusal[] = [
     'binary',
     'search-failed',
     'changed',
-    'marker'
+    'marker',
+    'local'
 ];
 
 /** A file or folder as an operation names it: a served root's key and a path under it. */
@@ -214,7 +216,17 @@ export type Reread = { root: string; path: string; hits: RereadHit[]; failed?: b
  */
 export type OpsAnswer =
     | { ok: true; path?: string; paths?: string[]; rereads?: Reread[] }
-    | { ok: false; error: OpsRefusal; done?: string[]; failed?: string; rereads?: Reread[] };
+    | {
+          ok: false;
+          error: OpsRefusal;
+          /**
+           * The machine reader's sentence of a `local` refusal, naming the key it would not read.
+           */
+          reason?: string;
+          done?: string[];
+          failed?: string;
+          rereads?: Reread[];
+      };
 
 /**
  * What a typed name comes to: the segments it makes and whether any has whitespace at an end (a

@@ -2,10 +2,12 @@
 // the server reads them: the config-derived ones through options.ts (the page reads the same
 // function), the languages and code themes the data layer holds (the code themes held to the
 // TextMate rules the checkout ships, data/places/code-rules.ts), and the domains, clusters, people
-// and slides of the portfolio this server last published. The domains, the clusters and the people
-// are the keys of the records of the hub the write lands in (`hubRecords`), the primary's unless
-// the write names another hub (config-write.ts), since a setting such as `self` names a record of
-// that hub by the key its file gives it.
+// and slides of the portfolio this server last published. The domains and the clusters are the keys
+// of the records of the hub the write lands in (`hubRecords`), the primary's unless the write names
+// another hub (config-write.ts), since a setting names a record of that hub by the key its file
+// gives it. The people are the keys that name a person when read from the primary hub
+// (`resolvedRecords`), the primary's own and those of the one other hub that holds a key, since
+// the key `self` of the primary's `local.yml` is resolved from the primary against every hub.
 //
 // A list the server does not hold answers null, and the check of a value drawn from it is its type
 // alone. That is every portfolio list of a process that has published no portfolio yet, and the
@@ -20,6 +22,7 @@ import { registered } from '../../../../data/prose/languages.ts';
 import {
     configItems,
     hubRecords,
+    resolvedRecords,
     resourcesOfKind,
     slideTagClasses,
     type Source
@@ -72,7 +75,9 @@ export function sourcesFor(inputs: SourceInputs, config: Record<string, unknown>
             }
             case 'people': {
                 const people = inputs.entities?.('people') ?? null;
-                return people === null ? null : Object.keys(hubRecords(people, inputs.primary));
+                return people === null
+                    ? null
+                    : Object.keys(resolvedRecords(people, inputs.primary));
             }
             case 'slide_tags': {
                 const projects = inputs.projects();

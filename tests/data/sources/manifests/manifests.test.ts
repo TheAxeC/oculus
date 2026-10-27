@@ -44,7 +44,8 @@ function built(
             : [readOtherHub({ key: 'lab', dir: lab }, loadConfig(engineDir(), { hub: lab }))];
     const order = open.folders.map((one) => one.name);
     const primary = { key: 'hub', dir: hub, portfolio, workspace: null };
-    return buildHubs({ primary, others, config, order }, 0, createChecker(), null).snapshot;
+    return buildHubs({ primary, others, config, order, self: '' }, 0, createChecker(), null)
+        .snapshot;
 }
 
 /** The hub every row is read over: two registries at oculus's own paths, and three projects. */

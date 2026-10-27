@@ -1,16 +1,16 @@
 // Layer 2, client-state tests. Which boards a project is on, its category and the user's role on
 // it, read from the shipped vocabulary and boards: a project is on every board whose keys it meets
 // (data/shapes/boards/takes.ts), in the category of the first row of `categories:` holding it
-// (categories.ts), and its role is the first row of `roles:` whose field holds the person the
-// workspace setting `self` names (roles.ts). One table per unit: the boards that take a project,
-// the category, the role with the Lead badge and Mine only, the board items with the Mine only
-// filter and the Role facet, the card sections, the rail count, the Archival band with the real
-// projects and the Orphans card, the Focus lanes with their clusters and the moves onto them, the
-// audit's placement findings, the board keys with the config check, a saved slice filter, New
-// project with the tier it writes and the track record boards that offer none, and the roles of a
-// collection. The projects are synthetic, made by board-fixture.ts with the shipped config; the
-// collection is planted in a scratch hub and built through buildOneHub. The board views registered
-// from `boards:` are board-views.test.ts's.
+// (categories.ts), and its role is the first row of `roles:` whose field holds the user, the person
+// marked `self: true` (roles.ts). One table per unit: the boards that take a project, the category,
+// the role with the Lead badge and Mine only, the board items with the Mine only filter and the
+// Role facet, the card sections, the rail count, the Archival band with the real projects and the
+// Orphans card, the Focus lanes with their clusters and the moves onto them, the audit's placement
+// findings, the board keys with the config check, a saved slice filter, New project with the tier
+// it writes and the track record boards that offer none, and the roles of a collection. The
+// projects are synthetic, made by board-fixture.ts with the shipped config; the collection is
+// planted in a scratch hub and built through buildOneHub. The board views registered from `boards:`
+// are board-views.test.ts's.
 //
 // It does not cover the views drawing the toggle, the badge, the facet or the sections, which the
 // look does.
@@ -18,9 +18,9 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import type { AuditFinding, Pillar } from '../../../../src/lib/data/model/index.ts';
+import type { AuditFinding, Id, Pillar } from '../../../../src/lib/data/model/index.ts';
 import { portfolioConfigFrom } from '../../../../src/lib/data/index.ts';
-import { HUB_FILE } from '../../../../src/lib/data/helpers/hub-names.ts';
+import { HUB_FILE, holdersOf } from '../../../../src/lib/data/helpers/hub-names.ts';
 import { createIdea } from '../../../../src/lib/server/edit/writes/manifest.ts';
 import { findingText } from '../../../../src/lib/data/helpers/finding-text.ts';
 import { engineDir, loadConfig } from '../../../../src/lib/data/sources/config.ts';
@@ -209,6 +209,25 @@ describe("a board's items, the Mine only filter and the Role facet", () => {
         const items = boardItems(snapshotOf(ALL), presetFor('coauthor', CONFIG));
         expect(applyFilters(items, {}, '', { mine: true }).map((one) => one.id)).toEqual([]);
         expect(applyFilters(items, {}, '', { mine: false }).map((one) => one.id)).toEqual(['c2']);
+    });
+
+    it("case 27: Mine only keeps a project naming the user who is another hub's person", () => {
+        const kim = project('kim', { tier: 'research', lead: ['lab:kim'], stage: 'revision' });
+        const base = snapshotOf([kim], false);
+        const person = {
+            id: 'lab:kim',
+            root: 'lab',
+            name: 'Kim',
+            affiliations: [],
+            links: [],
+            projectIds: [],
+            jointWorkIds: [],
+            self: true
+        };
+        const people = { 'lab:kim': person };
+        const snapshot = { ...base, entities: { ...base.entities, people } };
+        const items = boardItems(snapshot, presetFor('projects', CONFIG));
+        expect(applyFilters(items, {}, '', { mine: true }).map((one) => one.id)).toEqual(['kim']);
     });
 
     it('case 8: the Role facet lists every role, the supervisor counted', () => {
@@ -697,6 +716,25 @@ describe('New project on a board', () => {
         const rule = presetFor(row.board, CONFIG).rule;
         const person = newProjectPerson(rolesOf(CONFIG), rule.roles, MINE);
         expect(person).toEqual({ role_field: row.field, self: SELF });
+    });
+
+    it.each([
+        { name: 'offers none for lab, which holds its own kim', labKim: true, person: null },
+        {
+            name: 'offers it for lab, which holds no kim, naming kim as lead',
+            labKim: false,
+            person: { role_field: 'lead', self: 'kim' }
+        }
+    ])('case 26: with self naming the primary kim, $name', (row) => {
+        const self: ReadonlySet<Id> = new Set(['hub:kim']);
+        const ids = ['hub:kim', ...(row.labKim ? ['lab:kim'] : [])];
+        const holders = holdersOf(ids.map((id) => ({ id, root: id.split(':')[0] })));
+        const context = { ...takeContext(CONFIG, self), people: { holders, primary: 'hub' } };
+        const rule = presetFor('projects', CONFIG).rule;
+        const where = { hub: 'lab', holders };
+        expect(offersNewProject(rule, context, 'lab')).toBe(row.person !== null);
+        expect(newProjectPerson(rolesOf(CONFIG), rule.roles, self, where)).toEqual(row.person);
+        expect(offersNewProject(rule, context, 'hub')).toBe(true);
     });
 
     scratchIt(

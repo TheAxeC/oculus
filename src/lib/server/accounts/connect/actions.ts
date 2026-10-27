@@ -1,13 +1,14 @@
 // Layer 2, server. What the calendar endpoint and the mail endpoint do alike: start a consent, add
 // an account and start its consent at once, remove an account, and take the provider's redirect.
 //
-// Adding and removing are the one write oculus makes to the machine's own `.oculus/local.yml`: an
-// Add writes the primary hub's file, and a Remove writes the file of the hub the row is marked
-// with. Both run behind the process's write chain, read the file fresh inside it, edit its one list
-// through connect/rows.ts, which keeps every comment and byte outside the row and refuses a text
-// the machine file would not read back, and write it whole through a temporary file and a rename.
-// The server then reads the account lists again, so the routes and the pollers hold the new list
-// without a restart.
+// Adding and removing are the account writes to the machine's own `.oculus/local.yml`, beside the
+// Settings write of the user's key `self` (`writeSelf`, edit/writes/config/config-key.ts) and the
+// `lsp-edit` operation (files/fs/lsp-edit.ts): an Add writes the primary hub's file, and a Remove
+// writes the file of the hub the row is marked with. Both run behind the process's write chain,
+// read the file fresh inside it, edit its one list through connect/rows.ts, which keeps every
+// comment and byte outside the row and refuses a text the machine file would not read back, and
+// write it whole through a temporary file and a rename. The server then reads the account lists
+// again, so the routes and the pollers hold the new list without a restart.
 //
 // A refusal the page words itself is answered as a code: `provider`, `label` or `taken` for the
 // account the page named, `link` for a published calendar link that is missing or is not an

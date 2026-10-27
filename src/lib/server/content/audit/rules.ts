@@ -62,7 +62,7 @@ export type AuditRules = {
     roles: Role[];
     /**
      * The ids of the boards of `boards:` that take a project, in the file's order, with the ids
-     * of the people the workspace setting `self` names.
+     * of the user, the person the key `self` of the primary hub's `local.yml` names.
      */
     boardsOf: (project: Project, self: ReadonlySet<Id>) => string[];
     /** The stages that should have a public entry on the website, the stages carrying `public`. */
@@ -205,9 +205,9 @@ export function signatureOf(
  * What the scan is run over: the hub on disk, its name `root` and whether it is the workspace's
  * primary, its records of the merged snapshot, whose references are resolved across the hubs, the
  * hubs that hold each project key (`held`), which an entry's `related` key resolves against, the
- * ids of the people the workspace setting `self` names, which a project's role and its boards are
- * read with, the rules, the hub's own `audit:` setting (setting.ts) and the words. Each hub is
- * held to its own setting, its website feed included.
+ * ids of the user, the person the key `self` of the primary hub's `local.yml` names, which a
+ * project's role and its boards are read with, the rules, the hub's own `audit:` setting
+ * (setting.ts) and the words. Each hub is held to its own setting, its website feed included.
  */
 export type AuditInput = {
     hub: string;

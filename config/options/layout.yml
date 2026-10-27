@@ -142,7 +142,7 @@ options:
                 control: multi
                 from: tiers
             role:
-                help: the role, or the list of roles, the user has on the projects the board takes, the first row of roles whose field holds the person self names; not applied when the workspace names no self
+                help: the role, or the list of roles, the user has on the projects the board takes, the first row of roles whose field holds the user, the person self in the primary hub's local.yml names; not applied when it names nobody
                 control: multi
                 from: roles
             stages:

@@ -363,17 +363,11 @@ function pillar(entry: RawRegistryEntry): Pillar {
     });
 }
 
-/** The person key the workspace setting `self` names in a merged config, empty for none. */
-export function selfKey(merged: Record<string, unknown>): string {
-    return str(merged.self) ?? '';
-}
-
 /**
- * One human. `self` is true on the person whose key is `user`, the key the workspace setting `self`
- * names, and carried only then, so the wire says which person is the user and says nothing at all
- * about everybody else.
+ * One human. The user's mark `self` is set once the hubs are merged (hubs/self.ts), so a person
+ * read here carries none.
  */
-function person(entry: RawRegistryEntry, user: string): Person {
+function person(entry: RawRegistryEntry): Person {
     return compact({
         id: entry.key,
         name: str(entry.name) ?? '',
@@ -383,7 +377,6 @@ function person(entry: RawRegistryEntry, user: string): Person {
         email: str(entry.email),
         links: strings(entry.links),
         folder: str(entry.folder),
-        self: user !== '' && entry.key === user ? true : undefined,
         projectIds: [],
         jointWorkIds: []
     });
@@ -599,10 +592,10 @@ function feeds(raw: RawFeeds): RawFeeds {
  * One hub's own snapshot, which the merge of the hubs (hubs/merge.ts) turns into the snapshot the
  * socket carries. `version` is the caller's, monotonic and incremented by the watcher on every
  * rebuild; `findings` is what validate returned, carried as it stands; `merged` is the hub's merged
- * config, whose `tiers` the projects and whose `self` the people are read with. `others` holds the
- * keys the other hubs of the workspace hold, by source: a reference to one of them is kept beside
- * the references to the hub's own records, so the merge of the hubs (hubs/merge.ts) resolves it,
- * and a reference no hub holds is left out.
+ * config, whose `tiers` the projects are read with. `others` holds the keys the other hubs of the
+ * workspace hold, by source: a reference to one of them is kept beside the references to the hub's
+ * own records, so the merge of the hubs (hubs/merge.ts) resolves it, and a reference no hub holds
+ * is left out.
  */
 export function normalise(
     raw: RawPortfolio,
@@ -625,8 +618,7 @@ export function normalise(
     const schemes = raw.registries.funding.entries
         .map(funding)
         .filter((scheme) => scheme.id.length > 0);
-    const user = selfKey(merged);
-    const people = withId(raw.registries.people.entries).map((entry) => person(entry, user));
+    const people = withId(raw.registries.people.entries).map(person);
     const organisations = withId(raw.registries.organisations.entries).map(organisation);
     const resources = keptResources(raw.registries.resources.entries).map(resource);
     const collections = Object.keys(raw.collections).map((key) => collection(raw.collections[key]));

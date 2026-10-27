@@ -11,14 +11,19 @@
 // all; the write then adds the key (config-checks.ts). A hub other than the primary is a hub only
 // while its settings file is there, so a write naming one never makes that file.
 //
+// The machine's own file, a hub's `.oculus/local.yml`, takes one key from a Settings write: the
+// user's key `self`, in the primary hub's file (`isUserKey`), which may not be there yet either.
+// With no primary it has no place. Every other key of the file is the machine's own and has none.
+//
 // The merged configuration a write starts from is read over both layers (`loadLayers`): oculus's
 // files, the hub's settings file and the workspace file's `settings:`, as the server reads them.
 
 import { readFileSync, rmSync, rmdirSync } from 'node:fs';
 import { basename, join } from 'node:path';
 import { parseDocument, isMap as isYamlMap, isScalar } from 'yaml';
-import { HUB_FILE, hubFileOf } from '../../../../data/helpers/hub-names.ts';
+import { HUB_FILE, USER_KEY, hubFileOf } from '../../../../data/helpers/hub-names.ts';
 import { LOCAL_NAME, loadConfig, textCatalog } from '../../../../data/sources/config.ts';
+import { localFile } from '../../../../data/sources/config/local.ts';
 import { isHubFolder } from '../../../../data/sources/manifests.ts';
 import type { ReplacedFile } from '../../../../data/sources/config.ts';
 import {
@@ -41,11 +46,16 @@ import type { ChangeRecord } from '../../../core/changes.ts';
 export type ConfigLayers = { hub?: string; workspace?: string };
 
 /**
- * Where a write of one option lands: the hub's settings file or the workspace file, its path, and
- * the dotted key path in it (`code_theme` in the hub's file, `settings.code_theme` in the
- * workspace file).
+ * Where a write of one option lands: the hub's settings file, the workspace file or the primary
+ * hub's `local.yml`, its path, and the dotted key path in it (`code_theme` in the hub's file,
+ * `settings.code_theme` in the workspace file, `self` in `local.yml`).
  */
-export type Place = { layer: 'hub' | 'workspace'; path: string; at: string };
+export type Place = { layer: 'hub' | 'workspace' | 'local'; path: string; at: string };
+
+/** Whether an option is the user's key `self` of `local.yml`, the one key of it a write sets. */
+export function isUserKey(file: string, key: string): boolean {
+    return file === LOCAL_NAME && key === USER_KEY;
+}
 
 /** What a config write answers with: what it changed, or the one refusal and its reason. */
 export type ConfigKeyOutcome = {
@@ -115,11 +125,16 @@ export function opening(
 }
 
 /**
- * The place a write of one option of `file` lands in: the hub's settings file for a key of the hub
- * list of `file`, the workspace file's `settings:` for any other, and null when that layer is not
- * there.
+ * The place a write of one option of `file` lands in: the `local.yml` of the hub of the layers for
+ * the user's key, the hub's settings file for a key of the hub list of `file`, the workspace
+ * file's `settings:` for any other, and null when that layer is not there.
  */
 export function placeOf(layers: ConfigLayers, file: string, key: string): Place | null {
+    if (isUserKey(file, key)) {
+        return layers.hub === undefined
+            ? null
+            : { layer: 'local', path: localFile(layers.hub), at: key };
+    }
     if (hubFileOf(key) === file) {
         return layers.hub === undefined
             ? null
@@ -141,31 +156,37 @@ export function blockLevels(place: Place): number {
 
 /** The sentence a write with no place is refused with: no primary hub, or no workspace file. */
 export function placeRefusal(text: Record<string, string>, file: string, key: string): string {
-    return hubFileOf(key) === file
+    return hubFileOf(key) === file || isUserKey(file, key)
         ? words(text, 'server.workspace.no_primary')
         : words(text, 'server.config_key.no_workspace');
 }
 
-/**
- * The text of the file at a place. The settings file of a hub that is not there answers null, since
- * a hub without it is a hub that sets nothing; a workspace file that is not there throws, as it is
- * the file the workspace was opened from.
- */
-export function placeText(place: Place): string | null {
+/** The text of a file, or null when it is not there; any other failure of the read throws. */
+export function heldText(path: string): string | null {
     try {
-        return readFileSync(place.path, 'utf8');
+        return readFileSync(path, 'utf8');
     } catch (error) {
-        if (place.layer === 'hub' && (error as NodeJS.ErrnoException).code === 'ENOENT') {
-            return null;
-        }
+        if ((error as NodeJS.ErrnoException).code === 'ENOENT') return null;
         throw error;
     }
 }
 
 /**
+ * The text of the file at a place. The settings file of a hub that is not there answers null, since
+ * a hub without it is a hub that sets nothing, and so does a `local.yml` that is not there, which
+ * sets no key of the machine; a workspace file that is not there throws, as it is the file the
+ * workspace was opened from.
+ */
+export function placeText(place: Place): string | null {
+    return place.layer === 'workspace' ? readFileSync(place.path, 'utf8') : heldText(place.path);
+}
+
+/**
  * Whether the file at a place is one of the machine's `local.yml` files (a hub's
  * `.oculus/local.yml`), by its device and inode: a link from a settings file to one of them leads
- * to it, and no write lands there.
+ * to it, and no write of a settings file or the workspace file lands there. The Settings write of
+ * the file is `writeSelf`'s (config-key.ts), of the user's key in the primary's alone, and the
+ * `lsp-edit` operation (files/fs/lsp-edit.ts) writes one only when the machine's reader reads it.
  */
 export function isMachinePlace(place: Place, hubs: readonly string[]): boolean {
     return isMachineFile(
@@ -213,7 +234,10 @@ export function everyHubLayers(into: {
     return [{ layers: layersOf(into), own: true }, ...others];
 }
 
-/** The folders of every hub of the workspace, whose `.oculus/local.yml` no config write reaches. */
+/**
+ * The folders of every hub of the workspace, whose `.oculus/local.yml` no settings-file or
+ * workspace-file write reaches.
+ */
 export function machineHubs(into: {
     hub: string | null;
     hubs?: readonly { hub: string }[];
@@ -252,9 +276,14 @@ export function absentIn(source: string, key: string): boolean {
  * The catalog's entry for one option of one tracked file, or null. The file is compared as the
  * whole string against the catalog's own keys, which name a defaults file (`appearance.yml`) or a
  * file of a subfolder of the options folder (`catalogs/vocab.yml`), and the key looked up as an own
- * key, so any other path, a reserved name and the machine's own file are none of them an option.
+ * key, so any other path and a reserved name are none of them an option. Of the machine's own
+ * file, the user's key alone is.
  */
 export function optionOf(catalog: Catalog, file: string, key: string): CatalogEntry | null {
+    if (isUserKey(file, key)) {
+        const entries = Object.hasOwn(catalog, LOCAL_NAME) ? catalog[LOCAL_NAME] : {};
+        return Object.hasOwn(entries, key) ? entries[key] : null;
+    }
     if (file === LOCAL_NAME || basename(file) === LOCAL_NAME) return null;
     if (!Object.hasOwn(catalog, file)) return null;
     const entries = catalog[file];

@@ -101,12 +101,12 @@ export function applyFilters(
 
 /**
  * The facet values that narrow the board: every value in force, and the role values only while the
- * workspace names a `self` (`named`), which is while the bar offers the Role group. A role saved
- * with no `self` named is kept in the saved state and narrows nothing, since without a `self` no
- * project has a role and no control could take the value out. The hub values narrow the board only
- * while the bar draws the Hub group, which is while the workspace has more than one hub (`hubs`,
- * the hubs the group lists, empty while it is not drawn), so a workspace that drops to one hub is
- * not narrowed by a pick made while it had two.
+ * user is marked (`named`), which is while the bar offers the Role group. A role saved with no user
+ * marked is kept in the saved state and narrows nothing, since without a `self` no project has a
+ * role and no control could take the value out. The hub values narrow the board only while the bar
+ * draws the Hub group, which is while the workspace has more than one hub (`hubs`, the hubs the
+ * group lists, empty while it is not drawn), so a workspace that drops to one hub is not narrowed
+ * by a pick made while it had two.
  */
 export function appliedFilters(
     filters: Record<string, string[]>,
@@ -121,9 +121,9 @@ export function appliedFilters(
 }
 
 /**
- * Whether Mine only changes the board: the workspace names a `self` (`named`) and one of the
+ * Whether Mine only changes the board: a person is marked as the user (`named`) and one of the
  * board's projects, read before any filter, is one Mine only does not keep. The toggle is drawn
- * while a `self` is named and applied only where this holds; elsewhere it is drawn disabled.
+ * while the user is marked and applied only where this holds; elsewhere it is drawn disabled.
  */
 export function offersMine(items: BoardItem[], named: boolean): boolean {
     return named && items.some((item) => !item.mine);

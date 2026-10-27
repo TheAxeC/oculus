@@ -317,6 +317,7 @@ export function createServerContext(
                 language,
                 held: heldFindings,
                 problems: () => machine.held().problems,
+                self: () => local.self,
                 follow: followWorkspace
             },
             {
@@ -719,6 +720,7 @@ export function createServerContext(
         if (closed) return;
         const heldBefore = machine.heldBack().map((one) => one.file);
         const setBefore = machine.held().set;
+        const selfBefore = local.self;
         const problemsBefore = machine.held().problems;
         const read = machine.refresh(true);
         if (read.unread !== null) {
@@ -746,9 +748,9 @@ export function createServerContext(
         }
         // A key held at its running value is a finding of the Findings view, and so is a key that
         // agrees again: the portfolio watcher builds the config payload over it once more. The
-        // Settings view shows which keys the primary's file sets, so a page is told to read the
-        // workspaces again when that list moved.
-        if (!isDeepStrictEqual(setBefore, machine.held().set)) {
+        // Settings view shows which keys the primary's file sets, and the user's key, which the
+        // Person page writes too, so a page is told to read the workspaces again when either moved.
+        if (!isDeepStrictEqual(setBefore, machine.held().set) || selfBefore !== local.self) {
             hub.publish('files', { root: '', workspaces: true } satisfies FilesPayload);
         }
         const heldNow = machine.heldBack().map((one) => one.file);

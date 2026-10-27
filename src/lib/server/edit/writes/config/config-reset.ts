@@ -12,6 +12,9 @@
 // that one key out and pass the checks a write passes (config-checks.ts) before anything is
 // written. A key the file does not hold writes nothing.
 //
+// The user's key `self` of the primary hub's `local.yml` is reset by taking its lines out of that
+// file (config-key.ts `resetSelf`); no other key of a `local.yml` is.
+//
 // The record carries the text the reset removed, and the undo puts it back where it stood when the
 // file still holds the text the reset left there, or else writes the key again with the value it
 // held (`restoreReset`).
@@ -25,8 +28,8 @@ import { catalogOf } from '../../../../data/sources/config/catalog/options.ts';
 import { words } from '../../../core/words.ts';
 import { readBack } from '../../list-edit.ts';
 import { setBlock } from '../../block-edit.ts';
-import { lineEnd, lineStart } from '../../block-source.ts';
 import {
+    cutTopPair,
     mergedAt,
     putBack,
     refusedBy,
@@ -35,11 +38,12 @@ import {
     written
 } from './config-checks.ts';
 import { isCollection } from './config-fit.ts';
-import { writeConfigKey } from './config-key.ts';
+import { resetSelf, writeConfigKey } from './config-key.ts';
 import { writeConfigValue } from './config-value.ts';
 import {
     absentIn,
     isMachinePlace,
+    isUserKey,
     loadLayers,
     opening,
     optionNow,
@@ -69,18 +73,6 @@ function keptAsMap(edited: string): string {
 /** The pair of a map whose key is the segment, or undefined. */
 function pairOf(map: YAMLMap, segment: string): Pair | undefined {
     return map.items.find((item) => isScalar(item.key) && item.key.value === segment);
-}
-
-/** The text with the lines of one top-level pair cut, from its key's line to its value's last. */
-function cutTopPair(source: string, pair: Pair): string | null {
-    const key = (pair.key as { range?: [number, number, number] }).range;
-    if (key === undefined) return null;
-    const value = (pair.value as { range?: [number, number, number] } | null)?.range;
-    const last = value === undefined ? key[1] : Math.max(key[1], value[1] - 1);
-    const from = lineStart(source, key[0]);
-    const end = lineEnd(source, last);
-    const to = source[end] === '\r' ? end + 2 : source[end] === '\n' ? end + 1 : end;
-    return `${source.slice(0, from)}${source.slice(to)}`;
 }
 
 /**
@@ -124,12 +116,17 @@ export function resetConfig(
     hubs: readonly string[] = []
 ): ConfigKeyOutcome {
     const { before, text, refuse } = opening(engine, file, key, layers);
-    if (file === LOCAL_NAME) return refuse(words(text, 'server.config_key.local'));
+    if (file === LOCAL_NAME && !isUserKey(file, key)) {
+        return refuse(words(text, 'server.config_key.local'));
+    }
     if (optionOf(catalogOf(before.config), file, key) === null) {
         return refuse(words(text, 'server.config_key.no_entry'));
     }
     const place = placeOf(layers, file, key);
     if (place === null) return refuse(placeRefusal(text, file, key));
+    if (place.layer === 'local' && layers.hub !== undefined) {
+        return resetSelf(file, key, layers.hub, text);
+    }
     if (isMachinePlace(place, hubs)) return refuse(words(text, 'server.config_key.local'));
     const source = placeText(place);
     if (source === null || absentIn(source, place.at)) return { changed: [], refused: [] };
@@ -218,7 +215,8 @@ function putBackReset(
     const replaced = replacedShape.safeParse(record.replaced);
     if (!replaced.success) return null;
     const place = placeOf(layers, file, key);
-    if (place === null || isMachinePlace(place, hubs)) return null;
+    if (place === null) return null;
+    if (place.layer !== 'local' && isMachinePlace(place, hubs)) return null;
     const source = placeText(place);
     if (source === null || !absentIn(source, place.at)) return null;
     const edited = putBack(source, replaced.data);

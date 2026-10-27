@@ -33,10 +33,12 @@
     // file store rather than carrying it in the snapshot and opens a file in the source tab exactly
     // as a file browser row does; the entry page draws it for the folder an entry's link names.
     //
-    // A person of the primary hub has a "this is me" button, pressed on the person the workspace
-    // setting `self` names; pressing it on another person writes that person's key to `self`
-    // through the Settings write path (state/workbench/ui.svelte.ts, `setSelf`). A person of
-    // another hub has none, since the setting names a person of the primary hub.
+    // A person of any hub has a "this is me" button, pressed on the person the key `self` of the
+    // primary hub's `.oculus/local.yml` names; pressing it on another person writes that person's
+    // key there (state/workbench/ui.svelte.ts, `setSelf`). The key is read from the primary hub, so
+    // the button is drawn disabled, with a tip that says why, on a person whose key names another
+    // person first or names nobody, and in a workspace with no primary hub (state/boards/person.ts,
+    // `selfStanding`). A person of another hub has the chip of their hub beside it.
 
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
@@ -51,7 +53,7 @@
     import FolderFiles from '../../shared/links/FolderFiles.svelte';
     import SourceButton from '../../shared/links/SourceButton.svelte';
     import { hubPathsOf } from '$lib/state/boards/collection';
-    import { personJoin, type PersonJoin } from '$lib/state/boards/person';
+    import { personJoin, selfStanding, type PersonJoin } from '$lib/state/boards/person';
     import { optionalText } from '$lib/data/shapes/shapes';
     import { recordState, stateRecord } from '$lib/state/shared/page/records';
     import { t } from '$lib/state/shared/words/text';
@@ -147,19 +149,40 @@
     const title = $derived(page?.title ?? (join.person === null ? keyOf(key) : join.person.name));
 
     /**
-     * Whether this person is the user, the one the workspace setting `self` names: the flag of the
-     * published portfolio, so a write on its way shows the state before it until the portfolio
-     * that carries it arrives.
+     * Whether this person is the user, the one the key `self` of the primary hub's `local.yml`
+     * names: the flag of the published portfolio, so a write on its way shows the state before it
+     * until the portfolio that carries it arrives.
      */
     const isSelf = $derived(join.person?.self === true);
 
+    /** What this person's button can do, from where the key resolves from the primary hub. */
+    const standing = $derived(
+        join.person === null ? null : selfStanding(portfolio(), join.person, primary())
+    );
+
+    /** The tip of the button: what a press writes, who is marked, or why it writes nothing. */
+    const selfTip = $derived.by(() => {
+        const person = join.person;
+        if (person === null || standing === null) return '';
+        const personKey = keyOf(person.id);
+        if (standing.kind === 'no_primary') return t('person.self_no_primary_tip');
+        if (standing.kind === 'named') {
+            return t('person.self_named_tip', personKey, standing.name, standing.hub);
+        }
+        if (standing.kind === 'ambiguous') {
+            return t('person.self_ambiguous_tip', personKey, standing.hubs.join(t('person.sep')));
+        }
+        return isSelf ? t('person.self_held_tip', title) : t('person.self_tip', title, personKey);
+    });
+
     /**
-     * Make this person the user by writing their key to `self` through the Settings write path; on
-     * the person already marked nothing is written, and clearing the setting is the Settings row's.
+     * Make this person the user by writing their key to `self` of the primary hub's `local.yml`;
+     * on the person already marked, and on one the key does not resolve to, nothing is written, and
+     * clearing the key is the Settings row's.
      */
     function markSelf(): void {
         const person = join.person;
-        if (person === null || hub !== primary() || isSelf) return;
+        if (person === null || standing?.kind !== 'mark' || isSelf) return;
         setSelf(keyOf(person.id));
     }
 
@@ -214,24 +237,20 @@
         />
     {:else}
         <div class="person" data-person={join.person.id}>
-            {#if hub !== primary()}
-                <p class="self">
+            <p class="self">
+                {#if hub !== primary()}
                     <RootChip record={join.person} />
-                </p>
-            {:else}
-                <p class="self">
-                    <ToolButton
-                        label={t('person.self')}
-                        glyph="star"
-                        pressed={isSelf}
-                        active={isSelf}
-                        title={isSelf
-                            ? t('person.self_held_tip', title)
-                            : t('person.self_tip', title, keyOf(join.person.id))}
-                        onclick={markSelf}
-                    />
-                </p>
-            {/if}
+                {/if}
+                <ToolButton
+                    label={t('person.self')}
+                    glyph="star"
+                    pressed={isSelf}
+                    active={isSelf}
+                    disabled={standing?.kind !== 'mark'}
+                    title={selfTip}
+                    onclick={markSelf}
+                />
+            </p>
 
             {#if facts.length > 0}
                 <dl class="facts">
@@ -349,7 +368,12 @@
         gap: 14px;
     }
 
+    /* The hub chip of a person of another hub stands on the button's line, before it. */
     .self {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px;
         margin: 0;
     }
 

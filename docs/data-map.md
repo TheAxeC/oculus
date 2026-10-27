@@ -211,7 +211,7 @@ A project is named by its folder name. Fields that name a path are not keys: an 
 - `venues`: `deadline_month` and `held_month` only when `category: conference`.
 - `events`: `link` is required when `role: present`.
 - `funding`: `statement` is required when `status` is `awarded` or `contributing`.
-- `people`: the workspace setting `self` names the key of one entry, the user's own; a key no entry carries is a finding.
+- `people`: the key `self` of the primary hub's `.oculus/local.yml` names the key of one entry of any hub, the user's own, read from the primary hub first; a key no hub's entry carries, or one two hubs other than the primary carry, is a finding on that file.
 - `resources`: `host` is needed for `slurm.resource` to poll the cluster.
 - `radar`: an `idea` entry carries `motif`, `maps_to` and `idea_spark`; the other buckets carry `project`, `relevance` and `why`, and a `preemption` entry also `threatens`.
 - `project.yml`: `followup:` is a list of notes, each `{ do, after }`, and a note's `after` hides it until that date. The Focus lane is no key: a project sits on the lane of `focus_lanes` whose `stages` holds its `stage`, or on Blocked or Backburner when its `status.chips` carry `blocked` or `parked`, and the Idea lane holds `nascent` projects of any tier. A project at a stage carrying `terminal` sits on no chip lane.

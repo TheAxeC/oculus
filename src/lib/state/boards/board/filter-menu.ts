@@ -133,8 +133,8 @@ function choicesOf(
 
 /**
  * Every facet of the bar's groups as a group of choices: the facets of `counted` in the order of
- * `FACETS`, the slices left to line 2, the role facet left out while the workspace names no
- * `self` (`named`) and the hub facet while the workspace has one hub (`hubs`, the hubs the group
+ * `FACETS`, the slices left to line 2, the role facet left out while no person is marked as the
+ * user (`named`) and the hub facet while the workspace has one hub (`hubs`, the hubs the group
  * lists, empty then). A picked value the board's projects do not hold is listed at 0 after the
  * values they hold, by the words its facet gives it, which is the value itself where the config
  * names none, so every value that narrows the board can be taken out in its group's list; a facet

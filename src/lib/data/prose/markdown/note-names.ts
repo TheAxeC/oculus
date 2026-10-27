@@ -17,6 +17,9 @@
 /** The folder of a hub that holds its notes, as a path under the hub. */
 export const NOTES_FOLDER = '.oculus/notes';
 
+/** The folder of a hub that holds its own files: its notes, settings, data and `local.yml`. */
+const HUB_OWN_FOLDER = '.oculus';
+
 /** The extension every note is written under. */
 export const NOTE_SUFFIX = '.md';
 
@@ -140,7 +143,7 @@ export function noteTitle(path: string): string {
 
 /**
  * Whether a path under a root lies in a folder whose name starts with a dot, or in
- * `node_modules`, the folders no language server's edit or file event reaches, with one exception:
+ * `node_modules`, the folders no language server's file event reaches, with one exception:
  * a hub's notes folder and every folder under it that is not a dot folder itself. `hub` says
  * whether the root is a hub; a folder that is not one holds no notes.
  */
@@ -153,5 +156,23 @@ export function inHiddenFolder(pathInRoot: string, hub: boolean): boolean {
     const notes = hub && own.every((part, at) => folders[at] === part);
     return folders
         .slice(notes ? own.length : 0)
+        .some((part) => part === 'node_modules' || part.startsWith('.') || part === '..');
+}
+
+/**
+ * Whether a path under a root lies where no edit a language server asks for is made: a folder whose
+ * name starts with a dot, or `node_modules`, with one exception: a hub's own `.oculus` folder and
+ * every folder under it that is not a dot folder or `node_modules` itself, which hold the hub's
+ * notes and the files a rename of a hub key reaches (its data files, its settings and the primary's
+ * `local.yml`). `hub` says whether the root is a hub; a folder that is not one has no such folder.
+ */
+export function outsideEdits(pathInRoot: string, hub: boolean): boolean {
+    const folders = pathInRoot
+        .split(/[/\\]/)
+        .filter((one) => one !== '')
+        .slice(0, -1);
+    const own = hub && folders[0] === HUB_OWN_FOLDER;
+    return folders
+        .slice(own ? 1 : 0)
         .some((part) => part === 'node_modules' || part.startsWith('.') || part === '..');
 }

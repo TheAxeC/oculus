@@ -597,6 +597,12 @@ export const REPOSITORY_FILES = [
 export const LOCAL_FILE = `${ROOT_FOLDER}/local.yml`;
 
 /**
+ * The one key of the machine's own file a Settings write sets: the user's key, which names the
+ * user's own person. The server places the write by it and the Settings view draws its row apart.
+ */
+export const USER_KEY = 'self';
+
+/**
  * The hub files Make Folder a Hub... may write besides `config.yml`, by the name its request and
  * its dialog give each choice, with the files each choice writes: `local.yml` with the
  * `.gitignore` that keeps it out of git, and `schedules.yml`.

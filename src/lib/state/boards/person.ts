@@ -1,7 +1,9 @@
 // Layer 2, client state. One person, joined to everything the hub knows about them: the registry
 // entry, the organisations they are affiliated to, the joint work that names them, the projects of
 // whose team they are (whose `lead:`, `collaborators:` or `supervisors:` name them), the projects
-// whose `waiting-on:` names them, and a student's supervision folder.
+// whose `waiting-on:` names them, and a student's supervision folder; and what the person's "this
+// is me" button can do, which the key `self` of the primary hub's `local.yml` decides
+// (`selfStanding`).
 //
 // Pure, so the Person view is tested without a browser: every join reads the snapshot it is given
 // and nothing else. The joins go through the relation tables rather than by scanning, since the
@@ -10,7 +12,13 @@
 
 import type { Entry, Id, Organisation, Person, Project, Snapshot } from '../../data/model/index.ts';
 import { byKey } from '../../data/helpers/guards.ts';
-import { flaggedEntries, keyOf } from '../../data/helpers/hub-names.ts';
+import {
+    flaggedEntries,
+    holdersOf,
+    keyOf,
+    resolveKey,
+    rootOf
+} from '../../data/helpers/hub-names.ts';
 
 /**
  * One person and what they are joined to; every join is empty for an id the registry does not hold.
@@ -91,5 +99,40 @@ export function personJoin(snapshot: Snapshot | null, id: Id): PersonJoin {
             project.waitingOn.includes(id)
         ),
         folder: person.folder ?? ''
+    };
+}
+
+/**
+ * What a person's "this is me" button can do. The key `self` of the primary hub's `local.yml` is
+ * read from the primary hub, as every reference is (data/snapshot/hubs/self.ts), so the person's
+ * key marks them only when it resolves to them from there: `mark`, a press writing the key; `named`
+ * when the key names another person first, the primary's own or the one other hub's, with their
+ * name and hub; `ambiguous` when two or more hubs other than the primary hold the key, which then
+ * names nobody, with those hubs; and `no_primary` in a workspace with no primary hub, which has no
+ * `local.yml` to write.
+ */
+export type SelfStanding =
+    | { kind: 'mark' }
+    | { kind: 'named'; name: string; hub: string }
+    | { kind: 'ambiguous'; hubs: readonly string[] }
+    | { kind: 'no_primary' };
+
+/** What the "this is me" button of `person` can do, with `primary` the primary hub's name. */
+export function selfStanding(
+    snapshot: Snapshot | null,
+    person: Person,
+    primary: string | null
+): SelfStanding {
+    if (primary === null) return { kind: 'no_primary' };
+    const people = snapshot?.entities.people ?? {};
+    const found = resolveKey(holdersOf(Object.values(people)), primary, keyOf(person.id));
+    if (found === null) return { kind: 'mark' };
+    if ('hubs' in found) return { kind: 'ambiguous', hubs: found.hubs };
+    if (found.id === person.id) return { kind: 'mark' };
+    const other = byKey(people, found.id);
+    return {
+        kind: 'named',
+        name: personName(snapshot, found.id),
+        hub: other === undefined ? primary : rootOf(other)
     };
 }

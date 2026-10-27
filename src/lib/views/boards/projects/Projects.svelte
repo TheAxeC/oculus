@@ -46,7 +46,7 @@
     // The track record's board is the same component under its own view: one tab per role, the
     // role's key the `id` of its state, titled "<role>: track record", holding the projects the
     // role's row of the Track record counts (state/boards/board/presets.ts `recordPreset`). It
-    // holds none while the workspace names no `self`, and a tab opened with no role says so.
+    // holds none while no person is marked as the user, and a tab opened with no role says so.
     //
     // The header holds New project, Cards and List, the one in force pressed, Full titles, pressed
     // while the board draws full titles, and, in list mode, Columns, a menu that shows or hides
@@ -56,7 +56,7 @@
     // shipped boards. Line 1 of the bar is the search, the toggles and the group buttons
     // (views/boards/projects/FilterBar.svelte); line 2 the slices, each the projects of one
     // category at one stage or form, how many projects are shown, and Clear all
-    // (views/boards/projects/SliceLine.svelte). While the workspace names a `self`, the bar draws
+    // (views/boards/projects/SliceLine.svelte). While a person is marked as the user, the bar draws
     // the Role group and Mine only, and a card whose lead is the user carries the Lead badge;
     // Mine only, on by default, is applied only where one of the board's projects is one it does
     // not keep, and drawn disabled elsewhere. Without a `self` it draws none of them. While the
@@ -149,7 +149,7 @@
     );
     const cursor = $derived(cardCursor(instance.state));
     const items = $derived(board(preset));
-    /** Whether the workspace names a `self`, which Mine only and the Role facet need. */
+    /** Whether a person is marked as the user, which Mine only and the Role facet need. */
     const named = $derived(selfNamed());
     /** Whether Mine only changes the board, which is where it is applied. */
     const mineApplies = $derived(offersMine(items, named));

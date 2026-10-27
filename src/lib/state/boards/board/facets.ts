@@ -241,7 +241,7 @@ function without(filters: Record<string, string[]>, facet: string): Record<strin
  * not narrow its counts; given none, it is how many of the board's projects carry it. A facet with
  * one value is offered as that one value: a filter that selects everything is still the board
  * saying what its one value is, and the reader can read it. The role facet is offered only while
- * the workspace names a `self` (`named`), since without one no project has a role. The hub facet
+ * a person is marked as the user (`named`), since without one no project has a role. The hub facet
  * is offered only while the workspace has more than one hub, and lists the hubs of `hubs` (their
  * names, in the workspace's order, empty with one hub) whether or not a project of the board is of
  * it, each named by itself. A value with a hue of its own carries it: a slice its slice's, a

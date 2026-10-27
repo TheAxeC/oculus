@@ -40,8 +40,9 @@ function lineOf(row: { hub?: string; [field: string]: unknown }): string {
 }
 
 /**
- * The keys with one value, each with the text of its value in force; the port is `listening`, and
- * a literature key or token that holds a value is `hidden`.
+ * The keys with one value, each with the text of its value in force; the port is `listening`, the
+ * user's key `self` is the key as written, and a literature key or token that holds a value is
+ * `hidden`.
  */
 function scalarsOf(
     config: LocalConfig,
@@ -51,6 +52,7 @@ function scalarsOf(
     const literature = config.literature;
     return [
         ['port', String(listening)],
+        ['self', config.self],
         ...[...PROGRAM_KEYS, ...STATE_PATHS].map(([key, field]): [string, string | undefined] => [
             key,
             config[field]

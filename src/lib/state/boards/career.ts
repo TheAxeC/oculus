@@ -53,7 +53,7 @@ type RoleRecord = { key: string; label: string; lines: RecordLine[] };
 export type TrackRecord = { roles: RoleRecord[]; funding: number };
 
 /**
- * The track record of the user the workspace setting `self` names, over every project and every
+ * The track record of the user, the person marked `self: true`, over every project and every
  * funding entry of the snapshot, which holds every hub of the workspace; the funding entries are
  * those of each hub's collection whose entry names the `funding` registry. For each role of
  * `roles:` that has a field, in the roles' order, one line per row of `categories:` carrying

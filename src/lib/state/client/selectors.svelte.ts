@@ -34,11 +34,13 @@ import type { HubVocabs } from '../../data/model/index.ts';
 import {
     collectionsOf,
     flaggedCollections as flaggedOf,
+    holdersOf,
     hubId,
     registryCollections as registryOf,
     registryKeyOf,
     rootOf,
     type CollectionFlag,
+    type Holders,
     type RegistryWord
 } from '../../data/helpers/hub-names.ts';
 import { readAs } from '../../data/shapes/shapes.ts';
@@ -191,11 +193,11 @@ export type SelectorsStore = {
     boardPreset: (view: string) => BoardPreset;
     board: (preset: BoardPreset) => BoardItem[];
     /**
-     * Whether the workspace names a `self` (a person with `self: true`): only then is a Mine only
+     * Whether a person is marked as the user (`self: true`): only then is a Mine only
      * toggle, a Lead badge or a Role facet drawn, on a board or a collection.
      */
     selfNamed: () => boolean;
-    /** The ids of the people the workspace setting `self` names. */
+    /** The ids of the people marked as the user (data/snapshot/hubs/self.ts). */
     selfPeople: () => Set<Id>;
     boardStats: (items: BoardItem[]) => BoardStats;
     staleLag: () => number;
@@ -205,7 +207,8 @@ export type SelectorsStore = {
     /**
      * The user and the field a new project names them in, read from the role keys given (a
      * board's `role:`), or from every row of `roles:` when the keys are null (a board naming no
-     * `role:`, and Lit Watch), among the roles of the hub `hub` the project is written to.
+     * `role:`, and Lit Watch), among the roles of the hub `hub` the project is written to, the
+     * primary when absent; none where the user's key does not resolve there to the user.
      */
     newProjectPerson: (keys: readonly string[] | null, hub?: string) => NewProjectPerson | null;
     /**
@@ -363,7 +366,12 @@ export function createSelectors(
         return snapshot === null ? [] : boardItems(snapshot, preset, sessionsOf);
     }
 
-    /** The ids of the people the workspace setting `self` names, none before the first snapshot. */
+    /** The hubs that hold each person key of the published portfolio. */
+    function holders(): Holders {
+        return holdersOf(Object.values(entities.portfolio()?.entities.people ?? {}));
+    }
+
+    /** The ids of the people marked as the user, none before the first snapshot. */
     function selfPeople(): Set<Id> {
         return selfIds(entities.portfolio());
     }
@@ -808,10 +816,19 @@ export function createSelectors(
         disseminatedFor,
         domainChoices,
         newProjectFolder: (tier) => folderOfNewProjects(configMap(), tier),
-        newProjectPerson: (keys, hub) =>
-            personOfNewProjects(rolesOf(vocabOf(hub)), keys, selfIds(entities.portfolio())),
+        newProjectPerson: (keys, hub) => {
+            const primary = workspace().primary;
+            const where =
+                primary === null ? undefined : { hub: hub ?? primary, holders: holders() };
+            const self = selfIds(entities.portfolio());
+            return personOfNewProjects(rolesOf(vocabOf(hub)), keys, self, where);
+        },
         offersNewProject: (preset, hub) => {
-            const context = takeContextOf(preset, selfIds(entities.portfolio()));
+            const primary = workspace().primary;
+            const context = {
+                ...takeContextOf(preset, selfIds(entities.portfolio())),
+                ...(primary === null ? {} : { people: { holders: holders(), primary } })
+            };
             if (hub !== undefined) return offersOfNewProjects(preset.rule, context, hub);
             const hubs = Object.keys(hubVocabs()?.lists ?? {});
             if (hubs.length === 0) return offersOfNewProjects(preset.rule, context);

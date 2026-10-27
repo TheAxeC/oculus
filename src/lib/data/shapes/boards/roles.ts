@@ -1,10 +1,11 @@
 // Layer 1, data, pure. The roles of `roles:` in config/catalogs/vocab.yml, highest first, and the
-// user's role on a project or a collection entry: the first row whose `field` holds a person the
-// workspace setting `self` names, else the first row without a field when the record names people
-// in any role's field, else none. Mine only keeps a record whose role fields hold the user, and a
-// record that names no one. The project boards, the collection views (whose entries name people
-// by key, read with `entryPeople` and `isSelfByKey`), the career banner's track record, the audit
-// and the New project write read the roles through this module, so a role is decided by one rule.
+// user's role on a project or a collection entry: the first row whose `field` holds the user, the
+// person marked `self: true` (data/snapshot/hubs/self.ts), else the first row without a field when
+// the record names people in any role's field, else none. Mine only keeps a record whose role
+// fields hold the user, and a record that names no one. The project boards, the collection views
+// (whose entries name people by key, read with `entryPeople` and `isSelfByKey`), the career
+// banner's track record, the audit and the New project write read the roles through this module, so
+// a role is decided by one rule.
 
 import { z } from 'zod';
 import type { Id, Person } from '../../model/index.ts';
@@ -41,7 +42,10 @@ export function rolesOf(config: Record<string, unknown>): Role[] {
     });
 }
 
-/** The ids of the people the workspace setting `self` names: those with `self: true`. */
+/**
+ * The ids of the people marked `self: true`: the user, whom the key `self` of the primary hub's
+ * `local.yml` names, or nobody.
+ */
 export function selfOf(people: readonly Pick<Person, 'id' | 'self'>[]): Set<Id> {
     return new Set(people.filter((one) => one.self === true).map((one) => one.id));
 }
@@ -179,8 +183,8 @@ type Fielded = { fields: Record<string, unknown> };
 /** What a collection view draws of the roles, over the files of one collection key. */
 type EntryRoles = {
     /**
-     * Whether the Mine only toggle, the Role facet and the Lead badge are drawn: the workspace
-     * names a `self` and a file's `schema:` declares a field of a role.
+     * Whether the Mine only toggle, the Role facet and the Lead badge are drawn: a person is
+     * marked as the user and a file's `schema:` declares a field of a role.
      */
     drawn: boolean;
     /** The Role facet over every entry, each row of `roles:` with its count; [] when not drawn. */

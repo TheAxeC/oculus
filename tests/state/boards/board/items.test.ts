@@ -31,7 +31,7 @@ describe('the related tags of a board item', () => {
             scan: [{ dir: 'projects/ideas' }, { dir: 'side-projects', optional: true }]
         };
         const primary = { key: 'hub', dir: hub, portfolio, workspace: null };
-        const read = { primary, others: [], config: portfolio, order: ['hub'] };
+        const read = { primary, others: [], config: portfolio, order: ['hub'], self: '' };
         const { snapshot } = buildHubs(read, 0, createChecker(), null);
         const project = snapshot.entities.projects['hub:mine'];
         const item = boardItemFor(snapshot, project, presetFor(row.board, config));

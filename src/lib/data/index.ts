@@ -66,7 +66,7 @@ import {
     scanRules
 } from './sources/config/settings/scan.ts';
 import { fieldsOf } from './snapshot/schema/field.ts';
-import { normalise, selfKey } from './snapshot/normalise.ts';
+import { normalise } from './snapshot/normalise.ts';
 import { sortFindings, validate, withoutValidated } from './snapshot/validate.ts';
 import type { Checker } from './snapshot/schema/check.ts';
 import { REGISTRIES, unreadSources } from './snapshot/schema/lists.ts';
@@ -81,7 +81,11 @@ import {
 } from './snapshot/schema/set.ts';
 import { engineSchemas } from './sources/config/catalog/schemas/engine.ts';
 import { catalogOf } from './sources/config/catalog/options.ts';
-import { optionFiles, settingsNode } from './sources/config/catalog/schemas/references.ts';
+import {
+    localNode,
+    optionFiles,
+    settingsNode
+} from './sources/config/catalog/schemas/references.ts';
 import { DECK_FILE } from './sources/deck/read.ts';
 import {
     buildReferences,
@@ -474,6 +478,11 @@ type BuildOptions = {
     workspace: SettingsFile | null;
     /** The keys the other hubs of the workspace hold, by source. */
     others: Readonly<Record<string, readonly string[]>>;
+    /**
+     * Whether the hub is the workspace's primary, whose own `.oculus/local.yml` the index reads for
+     * `self`; false when absent.
+     */
+    local?: boolean;
 };
 
 /**
@@ -492,12 +501,7 @@ export function builtHub(read: HubRead, options: BuildOptions): HubBuild {
         ...validate(raw, {
             vocab: config.vocab,
             listed: listedFields(config.schema, unread, config.collections),
-            text: config.text,
-            self: {
-                key: selfKey(config.merged),
-                file: join(hub, config.registries.people),
-                read: !unread.has('people')
-            }
+            text: config.text
         }),
         ...withoutValidated(run.findings, raw, config.vocab)
     ]);
@@ -513,6 +517,7 @@ export function builtHub(read: HubRead, options: BuildOptions): HubBuild {
         options: optionFiles(catalog),
         workspace: options.workspace,
         settings: settingsNode(catalog),
+        local: options.local === true ? localNode(catalog) : null,
         deckFile: DECK_FILE
     });
     return {

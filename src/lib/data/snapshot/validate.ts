@@ -16,7 +16,6 @@ import type {
     RawManifest,
     RawPortfolio,
     RegistryName,
-    SelfCheck,
     ValidationRules,
     Vocabulary
 } from '../model/index.ts';
@@ -444,27 +443,6 @@ function checkEntryIdentity(raw: RawPortfolio, catalog: TextCatalog, findings: F
     }
 }
 
-/**
- * The workspace setting `self` names a person of the people registry, which is how the hub knows
- * which person is the user: a key no entry carries marks nobody, and is one finding on the people
- * file. An empty setting is no finding, and a people file that did not read gives none, since its
- * own finding names the cause.
- */
-function checkSelf(
-    raw: RawPortfolio,
-    self: SelfCheck | undefined,
-    catalog: TextCatalog,
-    findings: Finding[]
-): void {
-    if (self === undefined || self.key === '' || !self.read) return;
-    if (raw.registries.people.entries.some((entry) => entry.key === self.key)) return;
-    findings.push({
-        file: self.file,
-        key: 'entries',
-        message: findingText(catalog, 'findings.validate.self_unknown', self.key)
-    });
-}
-
 /** The two texts of a funding entry the acknowledgment check reads, the empty text when wrong. */
 const fundingRowShape = z.object({ status: wordShape, title: wordShape });
 
@@ -545,7 +523,6 @@ export function validate(raw: RawPortfolio, rules: ValidationRules): Finding[] {
         checkManifestStage(manifest, rules.vocab, catalog, findings);
     }
     checkFolderNames(raw, catalog, findings);
-    checkSelf(raw, rules.self, catalog, findings);
     checkResources(raw, catalog, findings);
     checkDatasetSources(raw, catalog, findings);
     checkFundingStatements(raw, rules.vocab.acknowledged, catalog, findings);

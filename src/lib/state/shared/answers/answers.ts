@@ -61,6 +61,8 @@ export function refusalSentence(word: OpsRefusal, t: Say = catalogText): string 
             return t('files.refused_changed');
         case 'marker':
             return t('files.refused_marker');
+        case 'local':
+            return t('files.refused_local');
     }
 }
 

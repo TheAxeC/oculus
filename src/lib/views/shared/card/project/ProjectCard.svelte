@@ -29,7 +29,7 @@
     // names, a repository's own Files root for a project read from a repository. The project view
     // passes `deposit` for every project, a project read from a repository included. The team is
     // the TEAM row of tags (CardLinks.svelte) alone, and a project whose `lead:` names the person
-    // the workspace setting `self` names carries the Lead badge.
+    // marked `self: true`, the user, carries the Lead badge.
     import type { Snippet } from 'svelte';
     import Chip from '$lib/ui/controls/Chip.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';

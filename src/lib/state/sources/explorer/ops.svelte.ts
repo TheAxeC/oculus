@@ -88,6 +88,8 @@ export type Outcome =
     | {
           ok: false;
           error: OpsRefusal | 'network';
+          /** The machine reader's sentence of a `local` refusal. */
+          reason?: string;
           done?: string[];
           failed?: string;
           rereads?: unknown;
@@ -263,6 +265,7 @@ function outcomeOf(posted: Posted): Outcome {
     return {
         ok: false,
         error,
+        ...(typeof body.reason === 'string' ? { reason: body.reason } : {}),
         done,
         failed,
         ...(body.rereads === undefined ? {} : { rereads: body.rereads })

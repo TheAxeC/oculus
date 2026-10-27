@@ -24,20 +24,6 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 
 ```yaml
 dispatch:          # steps in flight, up to six (Z632)
-- step: O84
-  brief_check: .scratch/migration/agents/reviews/O84-brief-check.md (a16be0c5fb7576829, claude-opus-5-5, 291709 tokens, 129 tool uses, 16 min 43 s)
-  base: 65f5c83c2
-  worktree: .agents/worktrees/migration-O84
-  executor: agent
-  worker: claude:opus
-  session_id: a6b9bb9efcca75eff (claude-opus-5-5)
-  launched: 2026-10-26
-  report: .scratch/migration/agents/reviews/O84-report.md
-  builder_usage: 360226 tokens, 327 tool uses, 114 min 30 s; round 1: 346893 tokens, 129 tool uses, 36 min 30 s
-  reviewer_report: .scratch/migration/agents/reviews/O84-refuter.md (aa3b772655f6267cf, claude-opus-5-5, 111375 tokens, 116 tool uses, 23 min 38 s)
-  shared_paths: with O86, simple merges in separate lines: `src/lib/data/snapshot/hubs/merge.ts` (O86 lines 16-19 and `feedsOf`; O84 a new paragraph after line 19 or a new file), `normalise.ts` (O86 41 and 588-597; O84 360-395, 601, 620-635), `src/lib/data/model/index.ts` (O86 725; O84 43), `model-collections.ts` (O86 411-450; O84 490-510), `src/lib/server/root/context.ts` (O86 383-390 and 810-816; O84 295-330), `docs/templates.md` (O86 530-548; O84 372-512 and 1055-1065); with O89, `config/defaults/sources.yml` (O89 line 34; O84 lines 5 and 82); the generated `docs/diagrams/*` with O86 and O89, regenerated at each landing.
-  round: 1
-  landing: not-started
 - step: O87
   brief_check: .scratch/migration/agents/reviews/O87-brief-check.md (a6e177511c7ad4a33, claude-opus-5-5, 234620 tokens, 75 tool uses, 10 min 4 s)
   base: 33780ceee
@@ -47,6 +33,8 @@ dispatch:          # steps in flight, up to six (Z632)
   session_id: aa362921271953d08 (claude-opus-5-5)
   launched: 2026-10-27
   report: .scratch/migration/agents/reviews/O87-report.md
+  builder_usage: 220811 tokens, 275 tool uses, 50 min 37 s
+  reviewer_report: running: a362e1e25ae8483be (claude-opus-5-5)
   shared_paths: with O84, simple merges in separate lines: `config/options/sources.yml` (O84 189-196; O87 78-90), `docs/templates.md` (O84 372-512 and 1055-1065; O87 64-68, 274-278, 318-332), `src/lib/state/boards/focus/filter.ts` (O84 comments; O87 280-480), `tests/checks/config/config-folder.test.ts` (O84 its rows; O87 222-245), `docs/HELP.md` (O84 Doc text at 288 and 532; O87 294, 529, 538, 547); the generated `docs/diagrams/*`, regenerated at each landing.
   landing: not-started
 - step: O94
@@ -59,7 +47,8 @@ dispatch:          # steps in flight, up to six (Z632)
   launched: 2026-10-27
   report: .scratch/migration/agents/reviews/O94-report.md
   round: 0 (cases ruled, agents/briefs/O94-cases.md: case 7 dropped, read-back with uniqueKeys false)
-  builder_usage: hand-back of the first run: 133375 tokens, 23 tool uses, 8 min 52 s
+  builder_usage: hand-back of the first run: 133375 tokens, 23 tool uses, 8 min 52 s; after the round-0 ruling: 231386 tokens, 102 tool uses, 35 min 34 s
+  reviewer_report: running: a3d20902e374d2dd1 (claude-opus-5-5)
   shared_paths: with O84, `config/text/server.yml` (O84 under `server.config_key.*`; O94 lines 330-340), and `docs/HELP.md` (O84 Doc text at 288 and 532; O94 332); with O87, `docs/HELP.md` (O87 294, 529, 538, 547) and `docs/templates.md` (O87 64-68, 274-278, 318-332; O94 664-691); the generated `docs/diagrams/*`, regenerated at each landing; simple merges in separate lines.
   landing: not-started
 - step: O88
@@ -206,6 +195,7 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
 
 
 ## Closed items
+- 488 (2026-10-27, /spec O88, the side-bar sections and tree rows that fold): written in full in `choices.md` Z1048 with its options and the lazy option named; closed in automode with (a), they keep their own heads; booked in `plan.md` Rulings and on O88's line.
 - 486 (2026-10-26): ruled by Axel, (a); the Map's bar as the board's, built within O92; booked in `plan.md` Rulings and on O92's line.
 - 485 (2026-10-26): ruled by Axel, (a); `pillar_kinds:` in vocab.yml and the Pillars sections by kind, built within O88; booked in `plan.md` Rulings and on O88's line.
 - 484 (2026-10-26): ruled by Axel, (a); no intro paragraph, hub `intro:` and oculus's view intros removed, built within O88; booked in `plan.md` Rulings and on O88's line.
@@ -673,6 +663,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-10-27 (O84 landed; O87 and O94 built, both under review). O84 landed on main from base 65f5c83c2 (booking under its line in `plan.md`, landing report `agents/reviews/O84-landing.md`), checked in the gate (one svelte-check error in a test main gained after the base, fixed at landing; vitest time-outs under load in 21 files, each passing alone) and on main (116 staged paths equal under `cmp` to the gate's file); the look taken on the scratch server on 8797, then the server stopped. Ruling 462 carried out: `self: axel-faes` written to the hub's `.oculus/local.yml` by O84's own write, printing nothing of it, and taken out of the workspace file in hub commit 5a7e8e025. O87's report (aa362921271953d08) and O94's report (a842e39268dc6aed0) are saved; their reviews run (O87 a362e1e25ae8483be, O94 a3d20902e374d2dd1, both claude-opus-5-5). O88's brief is written with its brief check's findings closed; its preparation is next, on main with O84. In flight (3 of 6): O87 (review), O94 (review), O88 (preparing). Queued: O90, O91 (now unblocked), O92, O93. Open items: none.
 - 2026-10-26 (O84 reviewed; round 1 sent). The review of O84 (aa3b772655f6267cf, claude-opus-5-5) is saved in `agents/reviews/O84-refuter.md` and recorded under reviewer_report. Round 1 (`agents/briefs/O84-round1.md`, copied into the worktree; snapshot `.agents/worktrees/migration-O84-round-1` with `files.txt`) carries Spec 1 (the refusal names the key, `localProblemAdded` kept by the orchestrator's ruling), Standards 1 to 4, and the report items; Spec 2 is ruled a wrong premise of the brief (a hub's secrets folder is `<hub>/secrets`, still refused). O88's /spec is writing its brief. In flight (2 of 6): O84 (round 1), O88 (preparing). Open items: none.
 - 2026-10-26 (ruling 482; open items 483 to 486). Axel ruled 482 (a): steps O91 to O96 merged into O91 to O94 in `plan.md`, O91 renamed. His points on cards of unequal size, the intro texts, the Pillars kinds and the Map bar are open items 483 to 486. O84 is under review (reviewer aa3b772655f6267cf). The /spec of O88 stopped in its preflight at Axel's word and wrote nothing; Axel then ruled 483 to 486 (a), booked on O88's and O92's lines; no open item is left, and the /spec of O88 runs again.
 - 2026-10-26 (rulings 479 to 481; steps O91 to O96 booked; the proxy warning traced). Axel ruled 479 (b), 480 (a) and 481 (a), booked in `plan.md` Rulings; steps O91 to O96 added after O90; his question on fewer steps is open item 482. The rule of 481 is written in `docs/data-map.md` "Keys and links", uncommitted with that file's other new sections. The `state_proxy_equality_mismatch` warning was traced with a console probe in the gate's `src/app.html` (taken out again, the gate clean): `appearance.svelte.ts:119` compares the `$state` proxy of `unloaded.offers` with the raw offers; the fix is folded into O88's line (ruling "Proxy warning"). The scratch server is stopped. In flight (1 of 6): O84 (building). Queued: O88 and O87 (/spec next), O90, O91 to O96. Open items: 482.

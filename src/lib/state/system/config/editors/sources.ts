@@ -4,9 +4,12 @@
 // config and the apps, and the file browser's listings of hub folders. The lists the merged
 // configuration alone holds are read through `configItems` of the options catalog's module, which
 // the server's write checks read as well, so the page and the server cannot disagree on them. The
-// domains, the clusters and the people are the keys of the records of the hub the lists are built
-// for (`hubRecords`), the primary's or a hub chosen on a Settings row, each person drawn by their
-// name, since a setting such as `self` names a record of that hub by the key its file gives it.
+// domains and the clusters are the keys of the records of the hub the lists are built for
+// (`hubRecords`), the primary's or a hub chosen on a Settings row, since a setting names a record
+// of that hub by the key its file gives it. The people are the keys that name a person when read
+// from the primary hub (`resolvedRecords`, which the server's check reads too), since the key
+// `self` of the primary's `local.yml` is resolved from the primary against every hub: each is drawn
+// by their name, a person of another hub followed by that hub's name.
 //
 // A list that is not there yet answers `loading` (no snapshot, no usage payload, a listing in
 // flight) and one that could not be read answers `failed` with the reason, so a control says
@@ -21,6 +24,7 @@ import {
     configItems,
     hubRecords,
     hueNames,
+    resolvedRecords,
     resourcesOfKind,
     slideTagClasses,
     type Source
@@ -112,17 +116,22 @@ function groupsOf(items: { id: string; group: string }[]): ReadonlyMap<string, s
 }
 
 /**
- * The people `own` of the hub the lists are built for, by key, each with the words its item is
- * drawn under: the person's name, or the key for an empty name. An item whose label equals another
+ * The people `named`, by the key that names each from the primary hub `primary`, each with the
+ * words its item is drawn under: the person's name, or the key for an empty name, followed by the
+ * hub's name for a person of a hub other than the primary. An item whose label equals another
  * item's label is followed by its key, and this is repeated until no new item is keyed, since a
  * keyed label can equal another item's words; labels then differ unless two keys themselves read
  * as words followed by a key.
  */
-function ownPeople(people: Record<string, Person>): { id: string; label: string }[] {
-    const own = Object.entries(people).map(([id, one]) => ({
-        id,
-        words: one.name === '' ? id : one.name
-    }));
+function namedPeople(
+    named: Record<string, Person>,
+    primary: string | null
+): { id: string; label: string }[] {
+    const own = Object.entries(named).map(([id, one]) => {
+        const words = one.name === '' ? id : one.name;
+        const root = one.root ?? primary;
+        return { id, words: root === primary ? words : t('person.of_hub', words, root ?? '') };
+    });
     const keyed = new Set<string>();
     const labelOf = (one: { id: string; words: string }): string =>
         keyed.has(one.id) ? t('person.named_key', one.words, one.id) : one.words;
@@ -144,7 +153,8 @@ export function listsOf(inputs: ListInputs): Lists {
     const code = codeThemes(config, inputs.codeThemeClasses);
     const ui = themes(inputs.offers);
     const primary = portfolio?.primary ?? null;
-    const people = portfolio === null ? [] : ownPeople(hubRecords(portfolio.people, primary));
+    const people =
+        portfolio === null ? [] : namedPeople(resolvedRecords(portfolio.people, primary), primary);
     const none: ReadonlyMap<string, string> = new Map();
     const labels: Partial<Record<Source, ReadonlyMap<string, string>>> = {
         file_icon_themes: new Map(

@@ -11,9 +11,10 @@
 // Settings view's choice field reads it (editors/fields.ts `poolOf`), and split by the rule its
 // list draws by (`choiceGroups`).
 //
-// The choice `self` offers the people of the primary hub by the key their file gives them, and no
-// person of another hub; it draws each by name, by key when the name is empty, and as name and key
-// when its words would read like another item's.
+// The choice `self` of local.yml offers the people of every hub whose key resolves to them from the
+// primary hub: the primary's own, and a person of another hub whose key the primary and no third
+// hub holds, drawn with that hub's name after its words. It draws each by name, by key when the
+// name is empty, and as its words and key when they would read like another item's.
 //
 // It does not cover the choice as the view draws it, which the look does.
 
@@ -388,11 +389,12 @@ describe('the groups of the code theme choice', () => {
 describe('the people of the choice self', () => {
     /**
      * The words the choice `self` draws each person by, over people of the primary hub `lab` given
-     * as key and name, and the people of the hub `other` given the same way.
+     * as key and name, and the people of the hubs `other` and `third` given the same way.
      */
     function drawnPeople(
         people: Record<string, string>,
-        others: Record<string, string> = {}
+        others: Record<string, string> = {},
+        thirds: Record<string, string> = {}
     ): string[] {
         const of = (root: string, given: Record<string, string>): [string, Person][] =>
             Object.entries(given).map(([key, name]): [string, Person] => [
@@ -407,7 +409,11 @@ describe('the people of the choice self', () => {
                     jointWorkIds: []
                 }
             ]);
-        const held = Object.fromEntries([...of('lab', people), ...of('other', others)]);
+        const held = Object.fromEntries([
+            ...of('lab', people),
+            ...of('other', others),
+            ...of('third', thirds)
+        ]);
         const lists = listsOf({
             config,
             portfolio: { primary: 'lab', domains: {}, resources: {}, people: held, projects: [] },
@@ -418,7 +424,7 @@ describe('the people of the choice self', () => {
             offers: NONE,
             folder: () => ({ state: 'ready', entries: [] })
         });
-        const pool = poolOf(shipped['sources.yml'].self, {}, lists);
+        const pool = poolOf(shipped['local.yml'].self, {}, lists);
         return pool.items.map((id) => pool.labels.get(id) ?? id);
     }
 
@@ -438,7 +444,23 @@ describe('the people of the choice self', () => {
         expect(drawnPeople(row.people)).toEqual(row.drawn);
     });
 
-    it('offers the people of the primary hub by key, and no person of another hub', () => {
-        expect(drawnPeople({ ada: 'Ada' }, { bob: 'Bob', ada: 'Ada' })).toEqual(['Ada']);
+    it("offers a person of another hub whose key resolves to them from the primary, with that hub's name, and no person whose key the primary or a third hub holds (case 19)", () => {
+        expect(
+            drawnPeople({ ada: 'Ada' }, { bob: 'Bob', ada: 'Ada', kim: 'Kim' }, { kim: 'Kim' })
+        ).toEqual(['Ada', 'Bob (other)']);
     });
+
+    it.each<{ people: Record<string, string>; others: Record<string, string>; drawn: string[] }>([
+        { people: { k1: 'Kim' }, others: { k2: 'Kim' }, drawn: ['Kim', 'Kim (other)'] },
+        {
+            people: { x: 'Kim (other)' },
+            others: { k2: 'Kim' },
+            drawn: ['Kim (other) (x)', 'Kim (other) (k2)']
+        }
+    ])(
+        'draws a person of another hub named like a person of the primary apart: $drawn (case 20)',
+        (row) => {
+            expect(drawnPeople(row.people, row.others)).toEqual(row.drawn);
+        }
+    );
 });

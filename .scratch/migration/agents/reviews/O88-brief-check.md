@@ -211,3 +211,27 @@ Agent usage: ab3a4af18b70f6cab, claude-opus-5-5, 201882 tokens, 80 tool uses, 9 
 ## Closed
 
 - 5.4, with 2.1 and 6.3: raised as open item 461, the stop of /spec O88. Every other finding is closed in the brief by the /spec after the ruling, as the `spec` skill's "Steps / The brief check" 4 says of a /spec run after a stop.
+- Every other finding is closed in the brief `agents/briefs/O88.md` written by the /spec after rulings 461, 483 to 485, 487 and 488:
+  - 1.1 and 6.6: item 3, a reveal opens the group of its card; `revealState`'s comment rewritten; `page-entry.ts` in the paths; case 9.
+  - 1.2 and 6.5: item 6 (Position Leads), the run log is a `GroupHead` too and the `disclosure` class goes; the live cards keep their own spacing through `CardGrid` (item 10).
+  - 1.3: the `allow-duplication.txt` reason is checked by no test; the orchestrator rereads it at landing.
+  - 2.1 and 6.4: item 6 draws the Leads run log and the Slides Order section with `GroupHead`.
+  - 3.1: the `Disclosure` path is `src/lib/ui/tree/Disclosure.svelte` in "What is on the tree".
+  - 3.2: every line number re-read on main at 74e179bad.
+  - 3.3: the guarded claim is shown by `grep -c "GroupHead\|FoldHead"` (0).
+  - 3.4: the tinted panes, the Audit's whole-state write, the Slides state file, `Order.svelte`, the shared `.disclosure` and the two fold mechanisms are in "What is on the tree".
+  - 4.1: every case names reading, a unit run or the look on landing; the builder runs no page.
+  - 4.2: case 13 is checked by reading that the diff holds no file of `FoldHead` or its users.
+  - 4.3, 5.1, 6.1 and 6.2: item 1 paints the fill of the surface the strip sits on inside a tinted pane or a float; case 3.
+  - 4.4: case 5 lists the views by name.
+  - 4.5: the Read list names the state files, the catalogs, `instance.ts`, `Pane.svelte`, `FloatLayer.svelte` and the views.
+  - 4.6 and 6.7: item 2 names the one saved key `folded` and the five flags kept; a state with no `folded` reads as nothing folded.
+  - 5.2: item 4 removes the Audit's `.group` gap.
+  - 5.3: item 6 (Slides) draws Order with `GroupHead`.
+  - 5.5: Verify 7 to 9 grep every heading, fold control and card grid of the views and the shell after the change.
+  - 6.8: item 2 and case 7 (an unknown key, a duplicated key, the empty key).
+  - 6.9 and 6.10: item 6 makes every write of the Audit's and the Slides' pane state keep `folded`; case 6.
+  - 6.11: the rice face is the view's own and is not part of the heading's measures; case 5 compares the strip, the rounding, the space, the control, the label size and the colour rule.
+  - 6.12: item 6 (Lit Watch), a bucket with no glyph or an unknown colour.
+  - 6.13: decision 4, `hidden="until-found"` for every group.
+  - 8.1: item 13 dictates the label `Expired / actioned`.

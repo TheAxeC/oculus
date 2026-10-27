@@ -238,6 +238,7 @@ text:
         refused_gone: That workspace file is gone. It is taken off the recent list.
         refused_into_itself: A folder cannot be put inside itself.
         refused_invalid_name: That is not a name a file or folder can have.
+        refused_local: The change would leave a key of local.yml that the machine does not read.
         refused_marker: The file or the replace text holds a character the search keeps for itself.
         refused_missing: It is not there any more.
         refused_name_held: A workspace file of that name is already there.

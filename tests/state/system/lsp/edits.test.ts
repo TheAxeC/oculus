@@ -9,6 +9,10 @@
 // over the write limit or not UTF-8 text is refused with a sentence of its own, and so is any edit
 // while the roots are not read and a tab is open, since no tab can then be told from the file.
 //
+// A file of a hub's own `.oculus` folder is posted, a `local.yml` among them, whose check is the
+// server's (tests/routes/replace/lsp-edit.test.ts); a nested dot folder or `node_modules` there,
+// and the `.oculus` folder of a root that is no hub, are refused as outside.
+//
 // The page is a set of recording parts: the tabs' drafts, the answer of the relay about another
 // page's tabs, the disk's text and hash of a file and the post of `lsp-edit`. A tab is edited only
 // through the part that replaces its draft, so the calls of that part are what is read.
@@ -55,6 +59,8 @@ function page(options: {
     withheld?: LspEditsParts['withheld'];
     /** What the disk gives of a closed file; its text and hash by default. */
     read?: ReturnType<LspEditsParts['read']>;
+    /** What the server answers the post with; every file written by default. */
+    answer?: Outcome;
 }): Page {
     const drafts = options.drafts ?? {};
     const made: Page = { parts: null as never, written: [], edited: [] };
@@ -75,7 +81,7 @@ function page(options: {
         write: (files) => {
             made.written.push(files);
             options.afterWrite?.();
-            return Promise.resolve({ ok: true, paths: [] } satisfies Outcome);
+            return Promise.resolve(options.answer ?? ({ ok: true, paths: [] } satisfies Outcome));
         },
         roots: () => options.roots ?? [{ key: 'hub', dir: '/work/hub', real: '/work/hub' }],
         withheld: options.withheld ?? (() => false)
@@ -154,6 +160,56 @@ describe('the edit a language server asks for', () => {
             outcome: { notice: 'lsp_edit_outside' }
         });
         expect([open.edited, open.written]).toEqual([[], []]);
+    });
+
+    it("posts the files of a hub's own .oculus folder, its local.yml among them, and refuses a nested dot folder and node_modules there (case 28)", async () => {
+        const open = page({
+            roots: [{ key: 'hub', dir: '/work/hub', real: '/work/hub', hub: true }]
+        });
+        const edits = createLspEdits(open.parts);
+        const people = pageUri({ root: 'hub', path: '.oculus/data/people/people.yml' });
+        const local = pageUri({ root: 'hub', path: '.oculus/local.yml' });
+        const nested = pageUri({ root: 'hub', path: '.oculus/.cache/a.yml' });
+        const modules = pageUri({ root: 'hub', path: '.oculus/node_modules/a.yml' });
+        for (const address of [nested, modules]) {
+            expect(await edits.apply(rename(people, address))).toMatchObject({
+                applied: false,
+                notice: 'lsp_edit_outside',
+                words: [address]
+            });
+        }
+        expect(open.written).toEqual([]);
+        expect(await edits.apply(rename(people, local))).toEqual({ applied: true });
+        expect(open.written.map((files) => files.map((one) => [one.root, one.path]))).toEqual([
+            [
+                ['hub', '.oculus/data/people/people.yml'],
+                ['hub', '.oculus/local.yml']
+            ]
+        ]);
+    });
+
+    it("tells the server's refusal of a local.yml the edit would leave with a key the machine does not read, with the reader's sentence (case 28)", async () => {
+        const local = pageUri({ root: 'hub', path: '.oculus/local.yml' });
+        const reason = 'local.yml: port must be an integer';
+        const open = page({
+            roots: [{ key: 'hub', dir: '/work/hub', real: '/work/hub', hub: true }],
+            answer: { ok: false, error: 'local', reason, done: [], failed: 'hub/.oculus/local.yml' }
+        });
+        expect(await createLspEdits(open.parts).apply(rename(local))).toEqual({
+            applied: false,
+            notice: 'lsp_edit_local',
+            words: ['hub/.oculus/local.yml', reason]
+        });
+    });
+
+    it('refuses a file of the .oculus folder of a root that is no hub (case 28)', async () => {
+        const open = page({ roots: [{ key: 'repo', dir: '/work/repo', real: '/work/repo' }] });
+        const address = pageUri({ root: 'repo', path: '.oculus/local.yml' });
+        expect(await createLspEdits(open.parts).apply(rename(address))).toMatchObject({
+            applied: false,
+            notice: 'lsp_edit_outside'
+        });
+        expect(open.written).toEqual([]);
     });
 
     it('refuses an entry that creates, renames or deletes a file', async () => {

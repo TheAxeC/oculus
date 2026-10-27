@@ -217,6 +217,7 @@ export const LSP_EDIT_NOTICES = [
     'lsp_edit_failed',
     'lsp_edit_gone',
     'lsp_edit_library',
+    'lsp_edit_local',
     'lsp_edit_not_text',
     'lsp_edit_outside',
     'lsp_edit_partial',

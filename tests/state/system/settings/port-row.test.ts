@@ -11,7 +11,11 @@ import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { localDefaults, type LocalConfig } from '../../../../src/lib/data/sources/config.ts';
 import { createPortMover } from '../../../../src/lib/server/root/process/context/port.ts';
 import { machineValues } from '../../../../src/lib/server/root/process/context/machine-values.ts';
-import { localRows } from '../../../../src/lib/state/system/config/rows.ts';
+import {
+    machineRows,
+    type ConfigRow,
+    type LocalRow
+} from '../../../../src/lib/state/system/config/rows.ts';
 import { said } from '../../../../src/lib/views/system/workbench/settings/said.ts';
 import { installRealText } from '../../../views/shared/real-text.ts';
 import { shipped } from './fixture.ts';
@@ -23,6 +27,10 @@ afterEach(() => {
 });
 
 const REASON = 'the port is in use';
+
+/** Whether a row of This machine is the Port row, which writes nothing. */
+const isPort = (row: LocalRow | ConfigRow): row is LocalRow =>
+    row.kind === 'local' && row.key === 'port';
 
 describe('the Port row of a server whose move was refused', () => {
     it('shows the port the server listens on and the refusal', async () => {
@@ -44,7 +52,7 @@ describe('the Port row of a server whose move was refused', () => {
         const defaults = { port: '8790' };
         const { values, hubs } = machineValues(read, local.port, ['port'], defaults, {}, 'set');
         expect(values.port).toBe('8798');
-        const rows = localRows(shipped['local.yml'], {
+        const rows = machineRows(shipped['local.yml'], {
             primary: 'lab',
             set: ['port'],
             defaults,
@@ -52,7 +60,7 @@ describe('the Port row of a server whose move was refused', () => {
             hubs,
             portRefused: mover.refused()
         });
-        const port = rows.find((row) => row.key === 'port');
+        const port = rows.find(isPort);
         expect(port?.lines).toEqual(['8798']);
         const sentence = port?.refused === null || port === undefined ? '' : said(port.refused);
         const log = String(logged.mock.calls[0]?.[0] ?? '');
@@ -67,7 +75,7 @@ describe('the Port row of a server whose move was refused', () => {
     });
 
     it('says nothing when no move was refused', () => {
-        const rows = localRows(shipped['local.yml'], {
+        const rows = machineRows(shipped['local.yml'], {
             primary: 'lab',
             set: ['port'],
             defaults: { port: '8790' },
@@ -75,6 +83,6 @@ describe('the Port row of a server whose move was refused', () => {
             hubs: {},
             portRefused: null
         });
-        expect(rows.find((row) => row.key === 'port')?.refused).toBeNull();
+        expect(rows.find(isPort)?.refused).toBeNull();
     });
 });

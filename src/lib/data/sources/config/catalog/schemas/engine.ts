@@ -256,14 +256,22 @@ function workspaceSchema(catalog: Catalog, groups: Groups, lists: OptionLists): 
 export function engineSchemas(raw: RawPortfolio, config: PortfolioConfig): NamedSchema[] {
     const merged = config.merged;
     const lists: OptionLists = { merged, items: optionSource(raw, config) };
+    // The user's key of a `local.yml` names a person of any hub, resolved from the primary, so the
+    // file's schema holds it as text and not to the people of the hub this build reads; a key no
+    // hub holds is the finding of the merge (data/snapshot/hubs/self.ts).
+    const localLists: OptionLists = {
+        merged,
+        items: (source) => (source === 'people' ? null : lists.items(source))
+    };
     const { catalog, groups } = readCatalog(merged);
     const found: NamedSchema[] = [];
     for (const [file, entries] of Object.entries(catalog)) {
         const extra: Record<string, JsonSchema> =
             file === 'behavior.yml' ? { [APP_SETTINGS_KEY]: appSettingsSchema() } : {};
+        const held = file === LOCAL_NAME ? localLists : lists;
         found.push({
             name: `config/${file.replace(/\.yml$/, '')}`,
-            schema: optionsSchema(entries, lists, extra, groups[file] ?? {}),
+            schema: optionsSchema(entries, held, extra, groups[file] ?? {}),
             rule: file === LOCAL_NAME ? localRule() : configRule(`${DEFAULTS_DIR}/${file}`)
         });
     }

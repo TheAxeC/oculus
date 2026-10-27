@@ -1,8 +1,8 @@
 // Layer 2, client state tests. The "This machine" section of the Settings view over the shipped
 // catalog of `local.yml`: each key is listed with whether the primary hub's file sets it (by name)
 // and the default in force where it does not; a workspace with no primary shows every default and
-// says so; the line that opens the file targets the primary's `.oculus/local.yml` through the
-// primary's folder and nothing else.
+// says so, the user's row `self` among them writing nothing and saying why; the line that opens the
+// file targets the primary's `.oculus/local.yml` through the primary's folder and nothing else.
 //
 // What this does NOT cover: how the section draws these lines (seen at the look), and the server's
 // answer (tests/routes/hubs/machine-answer.test.ts).
@@ -10,7 +10,7 @@
 import { describe, expect, it } from 'vitest';
 import { openTarget } from '../../../../src/lib/state/system/config/config-files.ts';
 import { settingsGroups } from '../../../../src/lib/state/system/config/groups.ts';
-import type { LocalRow } from '../../../../src/lib/state/system/config/rows.ts';
+import type { ConfigRow, LocalRow } from '../../../../src/lib/state/system/config/rows.ts';
 import { shipped } from './fixture.ts';
 
 const DEFAULTS = { port: '8790', hpc_host: 'the cluster host', claude_bin: 'claude' };
@@ -20,7 +20,7 @@ function machineGroup(machine: Parameters<typeof settingsGroups>[5]) {
     const groups = settingsGroups(shipped, {}, { workspace: null }, undefined, [], machine);
     const group = groups.find((one) => one.id === 'machine');
     if (group === undefined) throw new Error('the machine group is missing');
-    const rows = group.sections.flatMap((section) => section.rows) as LocalRow[];
+    const rows = group.sections.flatMap((section) => section.rows) as (LocalRow | ConfigRow)[];
     return { group, rows, byKey: (key: string) => rows.find((row) => row.key === key) };
 }
 
@@ -53,7 +53,7 @@ describe('the "This machine" section', () => {
     });
 
     it('shows every default and says there is no primary when the workspace has none', () => {
-        const { rows, group } = machineGroup({
+        const { rows, group, byKey } = machineGroup({
             primary: null,
             set: ['port'],
             defaults: DEFAULTS,
@@ -61,8 +61,13 @@ describe('the "This machine" section', () => {
             hubs: {},
             portRefused: null
         });
-        expect(rows.every((row) => row.setIn === null)).toBe(true);
-        expect(rows.find((row) => row.key === 'port')?.fallback).toBe('8790');
+        const local = rows.filter((row): row is LocalRow => row.kind === 'local');
+        expect(local.every((row) => row.setIn === null)).toBe(true);
+        expect(local.find((row) => row.key === 'port')?.fallback).toBe('8790');
+        expect(byKey('self')).toMatchObject({
+            own: false,
+            blocked: { key: 'workbench.settings_no_primary' }
+        });
         expect(group.about).not.toBe('');
     });
 

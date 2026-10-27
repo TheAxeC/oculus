@@ -377,6 +377,10 @@ This machine's own values. Keep the file out of git. Oculus reads the keys from 
 # The port the server listens on. Read when the server starts.
 # port: 8790
 
+# The key of your own person, which the Person page's "this is me" button writes: a person of any
+# hub, read from this hub's people first.
+# self: me
+
 # This machine's ssh alias for the cluster. Takes precedence over the cluster entry's host.
 # hpc_host: ""
 
@@ -499,10 +503,7 @@ primary: my-hub
 # `locale` is the display language: `en`, or the languageId of a display language an approved,
 # enabled app contributes. `text` replaces words of the interface by the dotted key of oculus's
 # text catalog, over the display language and over oculus's English words.
-# `self` is the key of your own entry in the primary hub's people file, which the Person page's
-# "this is me" button and the portfolio chat read.
 # settings:
-#   self: me
 #   code_theme: vscode-dark-2026
 #   terminal: { font_px: 14 }
 #   rail:
@@ -1062,7 +1063,7 @@ entries:
 
 ### .oculus/data/people/people.yml
 
-Your own entry is the one whose key the workspace setting `self` names (see `workspaces/<name>.yml`).
+Your own entry is the one whose key `self` names in the primary hub's `.oculus/local.yml`; it may be in any hub of the workspace.
 
 ```yaml
 title: People

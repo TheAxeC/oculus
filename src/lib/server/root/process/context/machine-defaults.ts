@@ -41,6 +41,7 @@ export function machineDefaults(text: Record<string, string>): Record<string, st
     const noKey = words(text, 'server.machine_default.no_key');
     return {
         port: String(DEFAULT_PORT),
+        self: defaults.self,
         hpc_host: noHost,
         sessions_cache: defaultCachePath(),
         sessions_overrides: defaultOverridesPath(),

@@ -24,7 +24,10 @@
 // configuration's own keys.
 //
 // The machine-local file's rows are made from the catalog alone, and its text is never a parameter.
-// Every sentence is a message (messages.ts) for the view to word; nothing here holds one.
+// They show what the server sent of the files and write nothing, but for the user's key `self`
+// (`machineRows`): a row of the primary hub's `local.yml` that writes, its value in force and
+// whether the file sets it being what the server sent. Every sentence is a message (messages.ts)
+// for the view to word; nothing here holds one.
 
 import { isEqual } from 'lodash-es';
 import {
@@ -36,7 +39,7 @@ import {
     type Pair
 } from 'yaml';
 import { z } from 'zod';
-import { HUB_FILE, hubKeysOf } from '../../../data/helpers/hub-names.ts';
+import { HUB_FILE, USER_KEY, hubKeysOf } from '../../../data/helpers/hub-names.ts';
 import type {
     CatalogEntry,
     Control,
@@ -44,7 +47,7 @@ import type {
 } from '../../../data/sources/config/catalog/options.ts';
 import type { FileText } from '../../sources/fs-transport.ts';
 import { PRIMARY_ROOT } from './config-files.ts';
-import { LOCAL_NAME } from './config-files.ts';
+import { LOCAL_NAME, LOCAL_PATH } from './config-files.ts';
 import { readField } from './editors/fields.ts';
 import { message, type Message } from './messages.ts';
 
@@ -65,14 +68,16 @@ export type RowBase = {
 };
 
 /**
- * The file a row's user value lives in: a hub's settings file (`hub`) or the open workspace file
- * (`workspace`). `root` and `path` are the served root and the path the file is read and opened at,
- * the root `PRIMARY_ROOT` for the primary's settings file and the hub's name for another hub's;
+ * The file a row's user value lives in: a hub's settings file (`hub`), the open workspace file
+ * (`workspace`) or, for the user's key, the primary hub's `local.yml` (`local`). `root` and `path`
+ * are the served root and the path the file is read and opened at, the root `PRIMARY_ROOT` for the
+ * primary's settings file and `local.yml` and the hub's name for another hub's settings file;
  * `root` is null when no folder of the workspace serves the workspace file, and `path` null for the
- * unsaved workspace, which has no file. `present` says whether the file is there.
+ * unsaved workspace, which has no workspace file, and for a workspace with no primary, which has no
+ * `local.yml` to write. `present` says whether the file is there.
  */
 type UserPlace = {
-    layer: 'hub' | 'workspace';
+    layer: 'hub' | 'workspace' | 'local';
     root: string | null;
     path: string | null;
     present: boolean;
@@ -452,15 +457,13 @@ export function fileRows(
 }
 
 /**
- * The rows of the machine's own file, from its catalog entries and what is known of the files.
- * With no primary no one-per-oculus key is set and each shows its default; a joined list shows the
- * rows of every hub's file whatever the primary is.
+ * The rows of the machine's own file that write nothing, every key but the user's, from its catalog
+ * entries and what is known of the files. With no primary no one-per-oculus key is set and each
+ * shows its default; a joined list shows the rows of every hub's file whatever the primary is.
  */
-export function localRows(
-    entries: Record<string, CatalogEntry>,
-    machine: MachineState
-): LocalRow[] {
-    return Object.entries(entries).map(([key, entry]) => ({
+function localRows(entries: Record<string, CatalogEntry>, machine: MachineState): LocalRow[] {
+    const shown = Object.entries(entries).filter(([key]) => key !== USER_KEY);
+    return shown.map(([key, entry]) => ({
         kind: 'local',
         id: `${LOCAL_NAME}:${key}`,
         file: LOCAL_NAME,
@@ -476,6 +479,61 @@ export function localRows(
         hubs: Object.hasOwn(machine.hubs, key) ? [...machine.hubs[key]] : [],
         refused: key === 'port' ? portRefusal(machine) : null
     }));
+}
+
+/**
+ * The row of the user's key `self` of the primary hub's `local.yml`, which writes: its value in
+ * force and whether the file sets it are what the server sent, its default the server's default of
+ * the key (nobody), and its place the primary's `local.yml`. With no primary it writes nothing and
+ * says why.
+ */
+function userRow(key: string, entry: CatalogEntry, machine: MachineState): ConfigRow {
+    const fallback = Object.hasOwn(machine.defaults, key) ? machine.defaults[key] : '';
+    const value = Object.hasOwn(machine.values, key) ? machine.values[key] : undefined;
+    const primary = machine.primary !== null;
+    const own = primary && machine.set.includes(key);
+    return {
+        kind: 'config',
+        id: `${LOCAL_NAME}:${key}`,
+        file: LOCAL_NAME,
+        key,
+        path: key,
+        title: titleOf(key),
+        help: entry.help,
+        section: sectionOf(key, entry.section),
+        control: entry.control ?? 'text',
+        entry,
+        fields: {},
+        default: fallback,
+        value: value ?? fallback,
+        line: undefined,
+        own,
+        state: value === undefined ? 'missing' : 'set',
+        mismatch: false,
+        ordered: true,
+        modified: value !== undefined && value !== fallback,
+        place: {
+            layer: 'local',
+            root: primary ? PRIMARY_ROOT : null,
+            path: primary ? LOCAL_PATH : null,
+            present: own
+        },
+        ...(primary ? {} : { blocked: message('noPrimary') })
+    };
+}
+
+/**
+ * The rows of the machine's own file in its catalog's order: the user's key as a row that writes
+ * (`userRow`), and every other key as a row that writes nothing (`localRows`).
+ */
+export function machineRows(
+    entries: Record<string, CatalogEntry>,
+    machine: MachineState
+): (LocalRow | ConfigRow)[] {
+    const local = new Map(localRows(entries, machine).map((row) => [row.key, row]));
+    return Object.entries(entries).map(
+        ([key, entry]) => local.get(key) ?? userRow(key, entry, machine)
+    );
 }
 
 /**

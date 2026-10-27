@@ -9,14 +9,16 @@
 // The look is the options' (state/shared/words/appearance.ts, `configuredLook`): the `theme`,
 // `text_size`, `rice`, `wallpaper.show`, `crt.on`, `code_theme` and `terminal.font_px` options of
 // the appearance defaults and the `status_bar` and `editor.suggest_details` options of the behavior
-// defaults, as the open workspace file sets them or oculus's defaults hold them; it also writes the
-// `self` option of the sources defaults, who the user is, which the Person page sets. A control
-// that changes one writes the option through the Settings write path, so every page of the server
-// shows the new value from the config push that follows the write. Until that push arrives, the
-// value written is held over the configured one (`pending`), so the control answers at once; a
-// write that does not land drops it, and the writes store says why. With no workspace file open
-// (the unsaved workspace) a control writes nothing and the page offers Save Workspace instead
-// (`noWorkspace`).
+// defaults, as the open workspace file sets them or oculus's defaults hold them. A control that
+// changes one writes the option through the Settings write path, so every page of the server shows
+// the new value from the config push that follows the write. Until that push arrives, the value
+// written is held over the configured one (`pending`), so the control answers at once; a write that
+// does not land drops it, and the writes store says why. With no workspace file open (the unsaved
+// workspace) a control writes nothing and the page offers Save Workspace instead (`noWorkspace`).
+//
+// It also writes who the user is, the key `self` of the primary hub's `.oculus/local.yml`, which
+// the Person page sets (`setSelf`): through the config key write of that file, in a saved workspace
+// and an unsaved one alike, since the file is the primary's and no workspace file holds the key.
 //
 // The records are the page state's view states (state/shared/stores/page-state.svelte.ts), which
 // the server keeps in `views.json` of the state folder: every page of the server sees a record
@@ -118,10 +120,11 @@ const NO_WRITES: OptionWrites = {
     resetConfig: () => Promise.resolve(NOT_WRITTEN)
 };
 
-/** The appearance, behavior and sources defaults files, by the names the writes take. */
+/** The appearance and behavior defaults files, by the names the writes take. */
 const APPEARANCE = 'appearance.yml';
 const BEHAVIOR = 'behavior.yml';
-const SOURCES = 'sources.yml';
+/** The machine's own file, whose key `self` alone a write sets, in the primary hub's copy. */
+const LOCAL = 'local.yml';
 
 /**
  * A value written and not yet in the config the page holds: the value, and the configuration's
@@ -179,7 +182,10 @@ export type UiStore = CloseHooks & {
     setStatusRepository: (root: string | null) => void;
     /** Write the reader's choice of the suggest list's description panel. */
     setSuggestDetails: (shown: boolean) => void;
-    /** Write the user's own person key to the `self` option; an empty key writes nothing. */
+    /**
+     * Write the user's own person key to `self` of the primary hub's `local.yml`; an empty key
+     * writes nothing.
+     */
     setSelf: (key: string) => void;
     setPaneStrip: (key: PaneStripKey, value: string) => void;
     /** Write the file icon theme to the `file_icons` option, for every page. */
@@ -450,13 +456,14 @@ export function createUi(given: Partial<UiDeps> = {}): UiStore {
     }
 
     /**
-     * Write who the user is, the key of their own person, to the `self` option of the sources
-     * defaults, which the open workspace file holds. Clearing it is the Settings row's, so an empty
-     * key writes nothing.
+     * Write who the user is, the key of their own person, to `self` of the primary hub's
+     * `local.yml`. The file is the machine's and no layer of the workspace, so the write is sent in
+     * an unsaved workspace too, with no offer to save it; the server refuses it with no primary.
+     * Clearing it is the Settings row's, so an empty key writes nothing.
      */
     function setSelf(key: string): void {
         if (key === '') return;
-        void writeOption(SOURCES, 'self', key);
+        void deps.writes.writeConfigKey(LOCAL, 'self', key);
     }
 
     /** What a view instance wants remembered. */

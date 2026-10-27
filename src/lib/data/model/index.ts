@@ -40,7 +40,7 @@ import type {
 
 export type { FeedData, FeedEntry, FeedKind } from './model-collections.ts';
 export type { HubVocab, HubVocabs, ListedCollection } from './model-collections.ts';
-export type { KeyFault, SelfCheck, ValidationRules, Vocabulary } from './model-collections.ts';
+export type { KeyFault, ValidationRules, Vocabulary } from './model-collections.ts';
 
 /** A project's own deck as the snapshot carries it: where it is, and the tag classes it uses. */
 export type RawDeck = {

@@ -645,7 +645,10 @@ export type Person = Rooted & {
     links: string[];
     /** A student's supervision folder, hub-relative, whose files the Person view lists. */
     folder?: string;
-    /** True on the person the workspace setting `self` names; absent on every other. */
+    /**
+     * True on the user, the person the key `self` of the primary hub's `local.yml` names
+     * (data/snapshot/hubs/self.ts); absent on every other.
+     */
     self?: boolean;
     /**
      * Absolute path of the people file of the hub the person was read from, set by the merge of the

@@ -359,7 +359,8 @@ text:
             schema_malformed: schema {0} is not a list of maps naming a field and a type
             identity_empty: has no {0}
             identity_shared: two entries share the {0} {1}
-            self_unknown: 'the workspace setting self names {0}, a key no entry of the people file carries, so nobody is marked as you'
+            self_unknown: "self of the primary hub's local.yml names {0}, a key no person of any hub carries, so nobody is marked as you"
+            self_ambiguous: "self of the primary hub's local.yml names {0}, a key the primary does not hold and the hubs {1} each hold, so nobody is marked as you"
             resource_reserved: 'key {0} is reserved, so the entry is left out'
             source_left_out: 'source {1} of the dataset {0}, of kind {2}, does not read as a source of its kind (a field missing or malformed, or given without the one it needs), so it is left out and Recover does not run the set'
             funding_no_statement: funding entry {0} is {1} and has no statement

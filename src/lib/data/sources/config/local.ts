@@ -1,7 +1,7 @@
 // Layer 1, data. This machine's own values: the `local.yml` in a hub's `.oculus/` folder, read by
-// readLocal alone and never merged into the shared map, so a machine's paths, port and accounts
-// stay its own (data/sources/config/machine.ts joins the files of the hubs of a workspace). Every
-// key has a default. A key whose value the file gets wrong takes its default and is a problem
+// readLocal alone and never merged into the shared map, so a machine's paths, port, accounts and
+// user stay its own (data/sources/config/machine.ts joins the files of the hubs of a workspace).
+// Every key has a default. A key whose value the file gets wrong takes its default and is a problem
 // naming the key, a row of a list that fails is left out and is a problem naming the row, and a
 // file that does not read at all is every default and one problem: no read throws, so the server
 // starts and every other key is applied.
@@ -41,6 +41,11 @@ type LiteratureKeys = {
 export type LocalConfig = {
     /** Port the oculus server listens on, bound to 127.0.0.1. */
     port: number;
+    /**
+     * The user's own person key, `self` in the file, resolved from the primary hub against the
+     * people of every hub (data/snapshot/hubs/self.ts); empty when the file names nobody.
+     */
+    self: string;
     /** Per-machine ssh alias for the Live HPC view. */
     hpcHost?: string;
     /**
@@ -158,6 +163,7 @@ export const LOCAL_NAME = 'local.yml';
 /** The keys local.yml may carry, which readLocal reads and the options catalog describes. */
 export const LOCAL_KEYS = [
     'port',
+    'self',
     'hpc_host',
     'sessions_cache',
     'sessions_overrides',
@@ -190,10 +196,14 @@ export const LITERATURE_KEYS = [
     ['mailto', 'mailto']
 ] as const;
 
-/** The defaults: the port is 8790, and Claude and the rite debug adapter are resolved on PATH. */
+/**
+ * The defaults: the port is 8790, nobody is the user, and Claude and the rite debug adapter are
+ * resolved on PATH.
+ */
 export function localDefaults(): LocalConfig {
     return {
         port: DEFAULT_PORT,
+        self: '',
         claudeBin: 'claude',
         riteDapBin: 'rite_dap',
         accounts: [
@@ -552,6 +562,12 @@ export function readLocalText(text: string, base: string, hub?: string): LocalRe
         const value = filledAt(record, key);
         if (value === undefined) problems.push(wrong(key, 'a non-empty string'));
         else config[field] = value;
+    }
+    // Empty marks nobody and is no problem; whether a person of any hub holds the key is read once
+    // the hubs are merged (data/snapshot/hubs/self.ts).
+    if (record.self !== undefined) {
+        if (typeof record.self !== 'string') problems.push(wrong('self', 'a person key'));
+        else config.self = record.self;
     }
     // Empty is the default folder and no problem; whether the label is a Claude row's is read
     // after every hub's accounts are joined (data/sources/config/machine.ts).

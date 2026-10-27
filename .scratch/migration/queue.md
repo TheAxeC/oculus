@@ -1,12 +1,11 @@
-In flight (4 of 6 slots in use):
-- O84 (who the user is), review over repair round 1 running.
-- O87 (the Focus band's positions and teaching, and the dated lines in Tasks), building.
-- O94 (LinkedIn's Mark posted), building after its two cases were ruled (case 7 dropped, the read-back allows a key written twice).
-- O88 (one heading, one card grid, no intro paragraph, Pillars by kind, and the app theme that failed to load), /spec: brief being written (487 ruled (b)).
+In flight (3 of 6 slots in use):
+- O87 (the Focus band's positions and teaching, and the dated lines in Tasks), built; review running.
+- O94 (LinkedIn's Mark posted), built; review running.
+- O88 (one heading, one card grid, no intro paragraph, Pillars by kind, and the app theme that failed to load), /spec: brief written and its brief check's findings closed; preparation next.
 
 Queued (4):
 - O90 (the board bar's Waiting on filter), /spec after O88 and O87.
-- O91 (joint work onto the people file, and the projects on people's, organisations' and resources' cards), /spec after O84 lands.
+- O91 (joint work onto the people file, and the projects on people's, organisations' and resources' cards), /spec next (O84 landed).
 - O92 (the collection's Add and bar, and the Map's bar), /spec after O90.
 - O93 (Focus and the dated lines), /spec after O87.
 
@@ -15,6 +14,7 @@ Waiting on a ruling: none.
 Owed looks: none.
 
 Landed, newest first:
+- O84 (who the user is), 2026-10-27, landing commit being made; hub 5a7e8e025.
 - O86 (the update tasks of every hub), 2026-10-26, bf60e137.
 - O89 (one record card, one way to add a dated line), 2026-10-26, 7f7249ab.
 - O85 (a hub's own settings for any hub), 2026-10-26, 467be69c.

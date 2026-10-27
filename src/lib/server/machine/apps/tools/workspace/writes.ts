@@ -42,7 +42,8 @@ const WORDS: Record<OpsRefusal, string> = {
     binary: 'denied',
     'search-failed': 'denied',
     changed: 'denied',
-    marker: 'denied'
+    marker: 'denied',
+    local: 'denied'
 };
 
 /** The path of the folder a path of a root lies in, `''` for the root itself. */

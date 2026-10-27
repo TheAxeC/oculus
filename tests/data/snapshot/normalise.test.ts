@@ -342,29 +342,3 @@ describe('normalise, the field mapping', () => {
         });
     });
 });
-
-describe('normalise, the person the setting `self` names', () => {
-    /** The fixture's people, the one besides `someone` carrying `self: true` on its entry. */
-    function withSelfEntry(): RawPortfolio {
-        const raw = portfolio();
-        return {
-            ...raw,
-            registries: {
-                ...raw.registries,
-                people: entries('people', [
-                    { key: 'someone', name: 'Someone Else' },
-                    { key: 'nobody-home', name: 'Nobody Home', self: true }
-                ])
-            }
-        };
-    }
-
-    it.each([
-        { self: 'someone', marked: ['someone'] },
-        { self: '', marked: [] }
-    ])('marks $marked for the setting self $self, and no entry for its own self: true', (row) => {
-        const people = normalise(withSelfEntry(), [], { self: row.self }).entities.people;
-        const marked = Object.values(people).flatMap((one) => (one.self === true ? [one.id] : []));
-        expect(marked).toEqual(row.marked);
-    });
-});

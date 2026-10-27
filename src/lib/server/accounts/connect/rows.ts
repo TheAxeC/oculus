@@ -1,5 +1,8 @@
-// Layer 2, server. The one edit oculus makes to the machine's own `.oculus/local.yml` of a hub: one
-// account row added to, or taken from, its `calendars:` or `mail:` list.
+// Layer 2, server. The edit of the account rows of the machine's own `.oculus/local.yml` of a hub:
+// one account row added to, or taken from, its `calendars:` or `mail:` list. The file is written
+// besides by a Settings write of the user's key `self` in the primary's file (`writeSelf`,
+// edit/writes/config/config-key.ts), by the `lsp-edit` operation (files/fs/lsp-edit.ts) and by a
+// save of the source tab, each checked by the same reader.
 //
 // The file is the reader's own, hand-written, with comments and a layout of its own, so it is never
 // serialised whole. parseDocument gives every node its byte range in the source, and the edit

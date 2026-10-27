@@ -55,7 +55,7 @@ function read(hub: string, folders: FolderSpec[], others: FolderSpec[] = []): Re
     const order = ['hub', ...[...others, ...folders].map((one) => one.name)];
     const primary = { key: 'hub', dir: hub, portfolio, workspace: null };
     const built = buildHubs(
-        { primary, others: read, config: portfolio, order },
+        { primary, others: read, config: portfolio, order, self: '' },
         0,
         createChecker(),
         null

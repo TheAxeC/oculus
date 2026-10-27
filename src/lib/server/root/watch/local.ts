@@ -107,6 +107,7 @@ export function changedPaths(held: PerOculus, next: PerOculus): (keyof PerOculus
 /** Every key of the machine's own values, as the context holds it. */
 const FIELDS: (keyof LocalConfig)[] = [
     'port',
+    'self',
     'hpcHost',
     'sessionsCache',
     'sessionsOverrides',
@@ -159,6 +160,7 @@ export type WatcherName = (typeof WATCHERS)[number];
 /** The watchers built directly from a key; the ones built from those follow in `rebuiltBy`. */
 const BUILT_FROM: Partial<Record<ChangedKey, WatcherName[]>> = {
     workspace: ['usageRefresh', 'bookmarks', 'schedules'],
+    self: ['portfolio'],
     accounts: ['sessions', 'usageRefresh'],
     sessionsCache: ['sessions'],
     sessionsOverrides: ['sessions'],

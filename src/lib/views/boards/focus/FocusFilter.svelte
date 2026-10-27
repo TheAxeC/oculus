@@ -3,7 +3,7 @@
     // pane's header: a bare glyph button, drawn pressed while the filter hides a row of the page,
     // that opens a list which stays open on a pick, as a project board's group lists do
     // (views/boards/projects/PickMenu.svelte). The list holds Mine only, then the Role checklist
-    // (the roles of `roles:` that have a field), while the workspace names a `self`; the Tier
+    // (the roles of `roles:` that have a field), while a person is marked as the user; the Tier
     // checklist (the words of `tiers:`); and the Hub checklist while the workspace has more than
     // one hub. Mine only is drawn disabled, with a tip that says why, while it would hide no row.
     // Every pick hands the whole choice back; the rule that applies it is
@@ -28,7 +28,7 @@
     type Props = {
         /** The choice in force. */
         filter: FocusFilter;
-        /** Whether the workspace names a `self`, which draws Mine only and the Role checklist. */
+        /** Whether a person is marked as the user, which draws Mine only and the Role checklist. */
         named: boolean;
         /** The roles of `roles:` that have a field, each by its key and its words. */
         roles: { key: string; label: string }[];

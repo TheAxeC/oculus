@@ -163,3 +163,242 @@ Cases of the brief's "Cases":
 - The People section of the Sources heading leaving Settings: base config/options/sources.yml:191 shows `self` as its only option, so the section goes with the move; this is not a finding.
 
 Reviewer usage: aa3b772655f6267cf, claude-opus-5-5, 111375 tokens, 116 tool uses, 23 min 38 s.
+
+## Repair round 1, refuted
+
+Reviewer of O84 repair round 1. Worktree `/Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O84`, base 65f5c83c2. I changed nothing. The only git commands I ran were `git diff 65f5c83c2`, `git status --short` and `git show 65f5c83c2:<path>`, each from inside the worktree. After my runs, `git status --short` matched the list I took before them (116 entries; `diff` printed nothing).
+
+**Round delta.** I ran `diff -u` of the snapshot against the worktree for each path in `files.txt`. 21 paths changed in this round:
+- config/text/server.yml
+- docs/diagrams/layer-server.dot, layer-server.svg, writes.dot, writes.svg
+- src/lib/data/file-ops.ts, model/model-collections.ts, snapshot/hubs/self.ts
+- src/lib/server/edit/writes/config/config-checks.ts, config-key.ts, config-place.ts
+- src/lib/state/boards/focus/filter.ts, src/lib/state/system/config/rows.ts
+- Person.svelte, Projects.svelte, ProjectCard.svelte
+- five test files, plus tests/data/hubs/self.test.ts
+
+Four paths changed now that `files.txt` does not list:
+- src/lib/data/helpers/hub-names.ts
+- src/lib/server/accounts/connect/actions.ts
+- src/lib/server/accounts/connect/rows.ts
+- src/lib/server/files/workspace/machine-file.ts
+
+Two untracked ledger files are also present: `.scratch/migration/agents/briefs/O84-round1.md` and `agents/reviews/O84-report.md`. Every hunk of the delta maps to a round item (see Spec 1).
+
+### Verification lines (rerun from the worktree root)
+
+```
+npm run test:quick -- --base 65f5c83c2        (verify 1 without `npm run diagrams`, see Declined to judge)
+test:quick: 116 changed file(s), from git since 65f5c83c2
+test:quick: 319 test file(s)
+ok      prettier (3.2 s): All matched files use Prettier code style!
+ok      ASCII gate (3.2 s)
+ok      svelte-kit sync (5.8 s)
+ok      eslint (69.5 s)
+ok      svelte-check (100.9 s): 1793056893687 COMPLETED 546 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest checks (226.7 s): Duration  204.92s (transform 143.12s, setup 0ms, import 404.78s, tests 300.16s, environment 3ms)
+ok      vitest (279.8 s): Duration  262.56s (transform 300.85s, setup 0ms, import 508.21s, tests 430.41s, environment 65.02s)
+ok      vitest slow (366.7 s): Duration  349.54s (transform 24.71s, setup 0ms, import 222.20s, tests 1156.37s, environment 21ms)
+test:quick: 373.1 s; every command passed
+exit 0
+
+npx vitest run tests/data/snapshot/ tests/data/hubs/ tests/server/edit/config-key.test.ts tests/routes/edit/undo/ tests/state/system/settings/ tests/state/boards/board/ tests/server/machine/lsp/adapters/hub-keys.test.ts tests/checks/config/config-folder.test.ts --testTimeout 20000        (verify 2)
+ Test Files  30 passed (30)
+      Tests  549 passed | 2 skipped (551)
+
+npx vitest run tests/routes/edit/config-key.test.ts tests/state/system/lsp/edits.test.ts tests/routes/replace/lsp-edit.test.ts tests/checks/tree/boundaries.test.ts --testTimeout 20000        (the report's second list)
+ Test Files  4 passed (4)
+      Tests  51 passed (51)
+
+npx vitest run tests/server/edit/config-key.test.ts -t "would break a key|holding a key the machine does not read" --testTimeout 20000        (the two R1 rows)
+ Test Files  1 passed (1)
+      Tests  2 passed | 34 skipped (36)
+
+npx vitest run tests/checks/source/comment-width.test.ts        (the report's first section, point 5)
+ Test Files  1 failed (1)
+      Tests  1 failed | 1 passed (2)
+listing: src/lib/data/sources/collections.ts:4, src/lib/data/sources/config/sections/vocab.ts:75, src/lib/views/boards/focus/lanes/LaneCard.svelte:14, src/lib/views/shared/card/feed/SaveToLiterature.svelte:8, src/lib/views/shared/card/heads/GroupHead.svelte:28, src/lib/views/shared/forms/entry/card/EntryFields.svelte:96, src/lib/views/sources/venues/Venues.svelte:14, tests/data/sources/config/catalog/options-schema.test.ts:2, tests/state/system/settings/editor-saved.test.ts:10
+(each file is absent from `git status --short`; `git show 65f5c83c2:<file>` gives each line the same length, 101, or 113 for LaneCard.svelte:14; so the red is on the base, as the report says)
+
+R2, the report's awk over the 93 changed .ts/.js/.mjs/.svelte/.sh/.css files (the same list as the builder's changed-width.txt; `diff` printed nothing):
+awk '/^[[:space:]]*(\/\/|\/\*|\*|<!--)/ && !/eslint-disable|eslint-enable|prettier-ignore|svelte-ignore|@ts-expect-error/ && length > 100 {print FILENAME":"FNR": "length}' $(cat changed-width.txt)
+(nothing printed; exit 0. Without the length filter set to 100 the same awk counts 2575 comment lines over 95, so it does read the files)
+
+R3: grep -rn "USER_KEY = " src
+src/lib/data/helpers/hub-names.ts:603:export const USER_KEY = 'self';
+
+grep -rn local_check src config tests docs --exclude=local.yml
+src/lib/server/edit/writes/config/config-key.ts:219:    | { refused: 'local_check'; reason: string };
+src/lib/server/edit/writes/config/config-key.ts:335:    if (problem !== null) return { refused: 'local_check', reason: problem };
+src/lib/server/edit/writes/config/config-key.ts:357:        case 'local_check':
+
+grep -n 'edits.test' .scratch/migration/agents/guarded.md        (in the worktree and in the main checkout alike)
+12, 72 and 161 printed, each line naming `tests/state/system/lsp/edits.test.ts` (entries G2, G8, G67); the report's correction holds
+
+grep -c writeSelf tests/routes/edit/undo/user-key.test.ts  -> 0
+grep -rln writeSelf tests  -> tests/server/edit/config-key.test.ts
+wc -l tests/server/machine/lsp/adapters/hub-keys.test.ts  -> 273
+
+sh utils/unused-exports.sh (exit 0), diffed with .agents/worktrees/O84-base/unused-exports.txt        (verify 5)
+1c1
+< Unused exports (229)
+---
+> Unused exports (230)
+15c15
+< src/lib/data/sources/config/local.ts: LOCAL_KEYS, readLocalText
+---
+> src/lib/data/sources/config/local.ts: LOCAL_KEYS
+49a50
+> src/lib/server/edit/writes/config/config-key.ts: writeSelf
+
+grep -rn 'Z10[0-9][0-9]\|ruling 4[0-9][0-9]\|\bO8[0-9]\b' src config docs tests --exclude=local.yml        (verify 6)
+(nothing printed; exit 1)
+
+spec.md's perl ASCII gate over every path of `git status --short` but local.yml (through xargs), and LC_ALL=C grep -n '[^ -~]' over the report        (verify 7)
+(nothing printed by either; exit 0 and exit 1)
+
+verify 8 grep: the same hits as the report, except that the tree has tests/server/root/process/config-cache.test.ts at 177 where the report gives 176
+
+wc -l (verify 3): no source file over 880 (largest selectors.svelte.ts 871, context.ts 842, hub-names.ts 828); no component over 520 (Collection.svelte 520, its base count); config-key.ts 402, config-place.ts 323, config-checks.ts 552
+
+git diff 65f5c83c2 -- src/lib/server/root/context.ts | grep '^@@'
+@@ -317,6 +317,7 @@   @@ -719,6 +720,7 @@   @@ -746,9 +748,9 @@
+```
+
+### Item verdicts: brief's "What to build", over the whole diff since the base
+- 1: holds.
+- 2: holds.
+- 3: holds.
+- 4: holds. The refusal of a `self` write now gives `checkLocal`'s sentence through `localSentence` (config-checks.ts:149-154, config-key.ts:334-335, 357-358). `server.config_key.local_check` is removed. Keeping `localProblemAdded` is the orchestrator's ruling, and the report names it as judgment call 14. See Spec 3 on the branch no input reaches.
+- 5: holds.
+- 6: holds. The tip now joins with `t('person.sep')` (Person.svelte:173).
+- 7: holds.
+- 8: holds. Case 28's folder was ruled a wrong premise.
+- 9: holds, except one sentence the change makes false (Standards 1).
+- 10: holds. The guarded entries G2 and G8 already name edits.test.ts.
+
+### Item verdicts: the round's "What to change"
+- 1: holds.
+- 2: holds. R2's awk prints nothing. Every rewrap I measured replaces a line of 101 to 127 columns, with the words unchanged. hub-names.ts:142 was 101 columns on the base, and the file is changed in this round for `USER_KEY`.
+- 3: holds for the three named sentences, plus actions.ts:4-11, which the grep found. One more false sentence remains (Standards 1).
+- 4: holds, with a departure the report names. `heldText` (config-place.ts:165) is the one reader for `placeText` and config-key.ts, and its behaviour is unchanged on every branch. `USER_KEY` is in hub-names.ts, not local.ts. Checked: local.ts:9 imports `node:fs`, and rows.ts is client state.
+- 5: holds.
+- 6: holds. Report only, under "What in the brief was wrong".
+- 7: partial (Standards 2).
+
+### Case verdicts
+- 1-5: met (self.test.ts rows; verify 2 passes).
+- 6: met (audit rows).
+- 7, 8: met.
+- 9: met.
+- 10: met (slow tier passes).
+- 11-13: met.
+- 14-18: met.
+- 19: not verifiable by a run. The look is at landing; theme-groups.test.ts passes.
+- 20: met.
+- 21: not verifiable by a run (a look).
+- 22: not verifiable by a run (a look).
+- 23-25: met.
+- 26: met.
+- 27: met.
+- 28: met under the ruling that `.oculus/secrets/` was a wrong premise.
+- 29: met by reading ui.svelte.ts:464-467. `setSelf` sends `writeConfigKey(LOCAL, 'self', key)` with no `writeOption`.
+- 30: met.
+- 31: met.
+- 32: met.
+- 33: met by reading engine.ts:262-265. `localLists` answers null for `people`.
+- 34: met.
+- R1: partial (Spec 3).
+- R2: met.
+- R3: met.
+
+## 1. Spec
+
+**Spec 1: the report does not list the inline-program commands one by one.**
+- Place: O84-report.md:5.
+- Quoted: "counts 94 Bash commands that wrote files (an inline `python3` program writing with `open(p,'w')`, or `sed -i`) ... Every other change in the files table below, and later changes to those three new files, were made by such inline programs, by `npx prettier --write` ..., and by `npm run diagrams`".
+- What is wrong: the ruling "Unapproved builder scripts" (plan.md:2741) asks the builder to list every such command and the files it changed. The report gives a count and one statement covering all files. It does not say which round-1 hunks came from which program. The round brief also says "You write no script beyond what this round builds", and the report says the round's code changes were made the same way ("in both rounds").
+- Failure scenario: the orchestrator cannot narrow its read to the hunks a program wrote. Every hunk of the round delta has to be read instead: the 21 changed paths of `files.txt` and the four new paths.
+- My read of the delta: every hunk maps to a round item.
+  - server.yml, config-checks.ts, config-key.ts: item 1 (with the dropped `words` import).
+  - Rewraps in file-ops.ts, model-collections.ts, filter.ts, Projects.svelte, ProjectCard.svelte, rename.test.ts, routes config-key.test.ts, hub-keys.test.ts, self.ts, self.test.ts and hub-names.ts:142: item 2.
+  - rows.ts, actions.ts, machine-file.ts and the `isMachinePlace` comment: item 3.
+  - `heldText` and `USER_KEY`: item 4.
+  - Person.svelte: item 5.
+  - tests/server/edit/config-key.test.ts: R1.
+  - The diagram files: regeneration.
+  - No hunk is outside the round's items.
+- Verdict: none. The ruling closes this at booking.
+
+**Spec 2: the builder ran git commands spec.md forbids.**
+- Place: O84-report.md:11.
+- Quoted: "A `git log -1` of the base and a `git -C <main checkout> log --oneline -1 main` were run once, both read-only."
+- What is wrong: spec.md:33 allows a builder only `git status`, `git diff` and `git show`, and names `log` and `git -C` as forbidden. The report states the breach itself.
+- Failure scenario: none observed; both commands only read.
+- Verdict: none. It is recorded for the booking.
+
+**Spec 3: R1's second row tests the helper, not a `writeSelf` refusal, and the refusal branch has no input that reaches it.**
+- Place: tests/server/edit/config-key.test.ts:692-698. Quoted: "expect(localProblemAdded(source, edited)).toBe(checkLocal('self: [bob]\n'));"
+- Branch: config-key.ts:334-335. Quoted: "const problem = localProblemAdded(source, edited); if (problem !== null) return { refused: 'local_check', reason: problem };"
+- What R1 asks: a `writeSelf` row that is refused, names the key, writes nothing, and goes red before item 1. The row calls `localProblemAdded` directly and asserts nothing about the file.
+- The builder's reason holds by my reading:
+  - `selfEdit` requires `kept(source, edited, 'self', key)` (config-checks.ts:107-120): the edited text must read back as the original with `self` set to the string written.
+  - The reader raises a `self` problem only for a value that is not a string (local.ts:568-570).
+  - So no `self` write can add a problem, and the refusal branch and `selfRefusal`'s `local_check` case (config-key.ts:357-358) are code that no input reaches.
+- The red-before-item-1 claim agrees with the snapshot by reading: the snapshot's `localProblemAdded` returns a boolean, which gives "expected true to be 'local.yml: self must be a person key'".
+- Failure scenario: a reader of G8's proposed sentence (report:676) takes the refusal of a `self` write as tested end to end, when its proof is a test of the helper alone. The unreachable branch then stays in `writeSelf` with no case that can show it.
+- Verdict: R1 partial. The orchestrator rules whether the branch stays as a guard or goes.
+
+## 2. Proof
+
+- Place: O84-report.md:320-335 (verify 8).
+- Quoted: "tests/server/root/process/config-cache.test.ts:176: ..."
+- What is wrong: the tree prints line 177. The list is also reworded rather than printed: icons.yml:4 is given as "(the catalog laid over oculus's ...)" where grep prints "# The workspace sets this catalog in its file's settings:, ...". Round item 7 asks for the list run once after the last change, and the first review raised the same line number.
+- Failure scenario: a reader comparing the quoted output with a rerun finds lines that do not match and cannot tell whether the tree changed.
+- No decision rests on it.
+- Verdict: none.
+
+## 3. Standards
+
+**Standards 1: one more sentence the change makes false.**
+- Place: src/lib/server/edit/writes/config/config-place.ts:237.
+- Quoted: "/** The folders of every hub of the workspace, whose `.oculus/local.yml` no config write reaches. */"
+- What is wrong: since the step, the config key write and the config reset reach the primary hub's `.oculus/local.yml` through `writeSelf`/`resetSelf`. The comment on `isMachinePlace` just above (lines 185-190) was rewritten to say so; this one was not. spec.md treats a sentence the change makes false as a defect, and round item 3 asked for a grep of exactly this kind of sentence.
+- Failure scenario: a reader of `machineHubs` concludes that no config write touches any hub's `local.yml`, and adds a guard or a caller on that belief. The guard would then block, or miss, the `self` write.
+- Verdict: item 9 and round item 3, fix at landing (for example "whose `.oculus/local.yml` no settings-file or workspace-file write reaches").
+
+**Standards 2: the history-word and reuse greps are summarised, not quoted.**
+- Place: O84-report.md:82-90 and 92-108.
+- Quoted: "645 lines read, 29 hits. ... Each of the 29 says what the code does now:" followed by six categories.
+- What is wrong: round item 7 asks for each grep "quoted with its hits judged".
+  - The history-word grep is described in prose, not given as a command line, and none of the 29 hits is quoted.
+  - The reuse table gives no command.
+  - I read the builder's own file `/private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/o84/history-hits.txt` (29 lines). Every hit describes current behaviour ("before" as a held value, "moved" as the undo's answer, "until that push arrives"), and none is a plan id, a date or a session.
+- Failure scenario: the orchestrator cannot check the judgment from the report alone.
+- Verdict: round item 7 partial (minor).
+
+## 4. Behaviour
+
+none
+
+## Declined to judge
+
+- `npm run diagrams`, part of verify 1: it writes under docs/diagrams, which I may not change. So I did not compare the round's diagram changes (layer-server.dot label 51 to 50; writes.dot) with a fresh regeneration.
+- A run of the R1 second row on the tree before item 1: it would need the test copied into a copy of the round snapshot, which I may not make. I judged it by reading the snapshot's `localProblemAdded`, which returns a boolean.
+- The report's commands that run another git command: `git log -1` of the base and `git -C <main checkout> log --oneline -1 main` (report:11). Not run.
+- The report's count of 94 file-writing Bash commands, taken from the transcript `agent-a6b9bb9efcca75eff.jsonl`: I was not given the transcript to read.
+- The looks of cases 19, 21 and 22: they need the page drawn, and I may not start a server.
+- The nine comment-width lines on the base, in files the step does not change: they are outside the round, which limits item 2 to changed files. I confirmed only that they are base lines.
+
+Reviewer usage: a5ac8523126cb8c96, claude-opus-5-5, 225057 tokens, 58 tool uses, 11 min 57 s.
+
+## Closed
+
+The findings of the run over repair round 1, each closed at landing:
+
+- Spec 1 (the inline-program commands not listed one by one): closed by the ruling "Unapproved builder scripts" (plan.md:2741). The orchestrator read every hunk of the round delta; each maps to a round item, as the reviewer's own read also found. The breach is recorded in the booking.
+- Spec 2 (`git log -1` and `git -C <main checkout> log` run by the builder): recorded in the booking. Both commands only read, and nothing in the tree came from them.
+- Spec 3 (the `local_check` refusal branch of `writeSelf` that no `self` write reaches): the branch stays as a guard. The brief's item 4 and round item 1 asked for it, and a later reader rule that raises a problem for a string `self` (for example a check against the people) would otherwise let a `self` write leave a `local.yml` the machine does not read, which costs a broken configuration. G8 in `agents/guarded.md` names the row "answers an edit of local.yml that would break a key with the reader's sentence naming that key" as a test of the reader's check (`localProblemAdded`) alone, with the reason that no `self` value the write keeps adds a problem, so no reader of G8 takes the refusal as tested end to end.
+- Proof (report line 176 for 177 of config-cache.test.ts, and a reworded grep line): no decision rests on it; the report is the record and is not changed.
+- Standards 1 (`config-place.ts:237`, "no config write reaches"): fixed on main at landing. The comment reads "whose `.oculus/local.yml` no settings-file or workspace-file write reaches".
+- Standards 2 (the history-word and reuse greps summarised): report only; no file of the tree changes for it.

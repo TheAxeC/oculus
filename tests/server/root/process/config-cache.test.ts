@@ -43,7 +43,8 @@ function serving(files: Record<string, string>, hubFiles: Record<string, string>
         accounts: [],
         calendars: [],
         mail: [],
-        downloads: []
+        downloads: [],
+        self: ''
     };
     const state = plantState([{ name: 'hub', dir: hub }], 'hub');
     const context = contextFixture({

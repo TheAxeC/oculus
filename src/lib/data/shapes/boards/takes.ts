@@ -2,16 +2,16 @@
 // board names `tier:` (a word of `tiers:` or a list), and may name `role:` (a key of `roles:` or a
 // list), `stages:`, `chips:` and `forms:` (word blocks, words.ts beside this file), `hub:` (a hub's
 // root) and `match:` (a manifest field to a list of values); a project is on the board when it
-// meets every key the board names. `role:` is applied only when the workspace names a `self`,
+// meets every key the board names. `role:` is applied only when a person is marked as the user,
 // since without one no project has a role. The track record's board (state/boards/board/presets.ts
 // `recordPreset`) is read through the same rule with one key no row of `boards:` names, `record`:
-// it takes a project only when its category is a record row of `categories:` and the user's role
-// on it is the board's role, so with no `self` it takes none. The boards, the page's choice of the
+// it takes a project only when its category is a record row of `categories:` and the user's role on
+// it is the board's role, so with no `self` it takes none. The boards, the page's choice of the
 // board a project opens on, a board's offer of New project (state/boards/board/new-project.ts) and
-// the audit's finding of a project no board takes all read a board through this module, so a
-// board takes the same projects everywhere. A project's stage, chips, form, category and role are
-// held to the words of its own hub when the context gives them (`wordsOf`), and to the context's
-// config otherwise.
+// the audit's finding of a project no board takes all read a board through this module, so a board
+// takes the same projects everywhere. A project's stage, chips, form, category and role are held to
+// the words of its own hub when the context gives them (`wordsOf`), and to the context's config
+// otherwise.
 
 import type { Id, Project } from '../../model/index.ts';
 import { fields, isMap } from '../../helpers/guards.ts';

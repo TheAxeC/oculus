@@ -16,7 +16,7 @@
     //
     // The team kind is the project's people (state/boards/board/team.ts): the people of its `lead:`
     // first, then those of its `collaborators:`, then those of its `supervisors:`, without the
-    // person the workspace setting `self` names, each opening the Person view for its own key.
+    // user (the person marked `self: true`), each opening the Person view for its own key.
     //
     // The related kind is the link between two projects, read both ways: the projects a project's
     // `related:` names and those whose `related:` names it, so a paper lists the software that
