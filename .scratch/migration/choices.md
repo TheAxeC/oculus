@@ -5480,3 +5480,28 @@ The brief check of O92 (`agents/reviews/O92-brief-check.md`, Names) found two co
 
 Where it applies: O92's brief. Booked in `plan.md` Rulings (open item 499) and the state file's closed log.
 Builds on it: O92
+
+
+## Z1050 (2026-10-27, O95's brief check, the orchestrator, automode): two paths the step needs outside its list
+
+The brief check of O95 (`agents/reviews/O95-brief-check.md`, Names, findings 1.1 and 1.2) found that the step's new view makes the committed `docs/palette.md` stale (it lists every registered view and `tests/checks/diagrams/palette.test.ts` checks it), and that `src/lib/state/boards/board/ticker-lines.ts:22-24` says "a venue's call opens the Venues view", which the step makes false. Neither changes what the step builds: one is a generated page, the other a comment.
+
+- Chosen: (a) the brief's paths gain `docs/palette.md` (written by `npm run docs:palette`, added to Verify 1) and `ticker-lines.ts`, whose comment says what a venue's call now opens.
+- Not chosen: (b) the paths stay; the palette check goes red and the comment stays false after the step.
+- The lazy option: (b).
+
+Where it applies: O95's brief. Booked in `plan.md` Rulings (open item 512) and the state file's closed log.
+Builds on it: O95
+
+
+## Z1051 (2026-10-27, O96's brief check, the orchestrator, automode): the files O96 needs outside its list
+
+The brief check of O96 (`agents/reviews/O96-brief-check.md`, findings F1.1, F3.2 to F3.4 and F6.2) found that the step cannot be done inside its paths: sentences it makes false in `config/catalogs/vocab.yml` (lines 53, 55, 56, 90, 264), `config/options/catalogs/vocab.yml` (29, 347), `src/lib/data/shapes/catalog-files/vocab.ts` (148, 154, 162, 201, 330) and `CardLinks.svelte:24-26`; the heading's colour, which `Disclosure.svelte` cannot take; the Map's Stage group and board facets, which the Projects section reuses from `map-bar.ts`; and the No funding card, a card of the Funding view whose strip the step's line narrows. Each widening keeps a sentence true, reuses code that exists, or reaches a card the line already names; none adds a requirement.
+
+- Chosen: (a) the brief's paths gain those lines and files, `Disclosure.svelte` an optional tone prop, `map-bar.ts` the export of `stageGroup`'s listing, and `NoFundingCard.svelte` the narrowing every card gets.
+- Not chosen: (b) the paths stay; the sentences stay false, the Stage and category groups are written a second time inside `bar.ts`, the heading is drawn uncoloured, and the No funding card ignores the picks.
+- The lazy option: (b).
+
+Where it applies: O96's brief. Booked in `plan.md` Rulings (open item 514) and the state file's closed log.
+Builds on it: O96
+

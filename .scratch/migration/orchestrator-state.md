@@ -26,9 +26,15 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 dispatch:          # steps in flight, up to six (Z632)
 - step: O95
   brief_check: "agents/reviews/O95-brief-check.md (ac93e98b3cfcb9328, claude-opus-5-5, 208248 tokens, 66 tool uses, 9 min 2 s)"
-  landing: preparing
+  base: 046e0debc
+  worktree: .agents/worktrees/migration-O95
+  executor: agent
+  worker: claude:opus
+  report: .scratch/migration/agents/reviews/O95-report.md
+  landing: not-started
 - step: O96
-  brief_check: "running: ad36c99e52ba380ff"
+  brief_check: "agents/reviews/O96-brief-check.md (ad36c99e52ba380ff, claude-opus-5-5, 234840 tokens, 61 tool uses, 8 min 47 s)"
+  shared_paths: with O95, `docs/HELP.md` (O95 line 294; O96 lines 277, 296 and 301) and the generated `docs/diagrams/*`, regenerated at each landing; simple merges in separate lines.
   landing: preparing
 ```
 
@@ -223,8 +229,15 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
     ```
     (a) Field paths as dotted paths with `[]` for a list (`authorships[].author.display_name`) and CSS selectors for HTML, each transform a named generic operation the code holds. Pros: one small path syntax a reader writes by eye; every transform has a name a reader can look up in the help. Cons: a transform not on the list needs a code change. (b) Field paths as JMESPath expressions (the `jmespath` package), CSS selectors for HTML, the named operations kept for what JMESPath cannot express (the inverted index, the first-byte size, the checksum file). Pros: projections and filters written in the row, without a code change. Cons: a second expression language next to CSS selectors, one more dependency, and rows a reader cannot read at a glance. Recommended: (a). Neither is the lazy option.
   - Kind: a check that goes against the step (1), a library choice (2) and a user-visible shape (3), raised in one stop as the step line asks.
+- 513 (2026-10-27, O95's brief check, implied input 5): the Awaiting box counts a project once per `waiting-on:` value, so a project whose `waiting-on:` names one value twice, or names two values that `waitingLabel` draws as the same words (`src/lib/state/boards/waiting.ts:17-29`, `src/lib/state/boards/focus.ts:596-601`), reads "(2)" under one name while the name's board, which O95 builds to hold each project once, draws one card. Changing the count is beyond O95's line, so O95's brief leaves it as it is.
+  - (a) The count becomes the number of distinct projects under the name, folded into O95 and sent with its repair round 1, with a G124 row of one project naming one person twice. Pros: the name's count and its board always agree. Cons: O95's round carries a part its line does not name.
+  - (b) The count stays a count of values. Pros: no change. Cons: in that case the name reads "(2)" and its board draws one project.
+  - Recommended: (a), as my judgment that a count of projects is what the box says it counts. The lazy option: (b).
+  - Status: Axel's to rule; nothing picked automatically.
 
 ## Closed items
+- 512 (2026-10-27, O95's brief check, two paths outside the list): written in full in `choices.md` Z1050 with its options and the lazy option named; closed in automode with (a), the paths gain `docs/palette.md` and `ticker-lines.ts`; booked in `plan.md` Rulings.
+- 514 (2026-10-27, O96's brief check, the files outside the list): written in full in `choices.md` Z1051 with its options and the lazy option named; closed in automode with (a); booked in `plan.md` Rulings.
 - 509 (2026-10-27): ruled by Axel, 1 (a), 2 (b); every web address written in oculus's code moves into the hub's configuration beside the feature that reads it, and one configurable reader built in O97 serves the journal browser, the literature sources and the Recover sources; booked in `plan.md` Rulings and on O98's and O97's lines.
 - 508 (2026-10-27): ruled by Axel, 1 (a), 2 (a); the HPC item, pill and badge one each with the counts summed; the sign-in rows, the key settings and the failure rows in the hub's `.oculus/config.yml`, nothing shipped; booked in `plan.md` Rulings and on O98's line.
 - 507 (2026-10-27): ruled by Axel, 1 (a), 2 (a), 3 (a), 4 (a), 5 (b); the clusters as a `clusters:` list of rows in `local.yml`, the key made with no passphrase and put on the cluster over one password login, the GitHub sign-in by the reader's own OAuth App and the device flow, the token handed to every git oculus starts by a credential helper, the device flow written by hand; booked in `plan.md` Rulings and on O98's line.
