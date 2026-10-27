@@ -54,6 +54,13 @@ dispatch:          # steps in flight, up to six (Z632)
 - step: O88
   brief_check: .scratch/migration/agents/reviews/O88-brief-check.md (ab3a4af18b70f6cab, claude-opus-5-5, 201882 tokens, 80 tool uses, 9 min 22 s; not run again after rulings 461 and 487, as /spec says)
   shared_paths: with O87, judged simple merges resolved at landing: `src/lib/views/boards/focus/Band.svelte` (O87 the three columns inside the `.lanes` body; O88 the heading and the wrapper around that body: O87's body is kept inside O88's wrapper), `config/catalogs/vocab.yml`, `config/options/catalogs/vocab.yml`, `src/lib/data/shapes/catalog-files/vocab.ts`, `src/lib/data/shapes/vocab-keys.ts`, `src/lib/data/shapes/hub-keys.ts`, `src/lib/data/sources/config/merge/in-place.ts`, `src/lib/data/helpers/hub-names.ts`, `tests/checks/config/config-folder.test.ts` and `tests/data/sources/config/layers/hub-vocab.test.ts` (each step adds its own list key, `position_stages` and `teaching_stages` against `pillar_kinds`, in separate entries), `docs/templates.md` (disjoint lines); with O94, `docs/templates.md` (disjoint lines); with both, the generated `docs/diagrams/*`, regenerated at each landing.
+  base: 85a826ca6
+  worktree: .agents/worktrees/migration-O88
+  executor: agent
+  worker: claude:opus
+  session_id: a08d61da6d5e84ade (claude-opus-5-5)
+  launched: 2026-10-27
+  report: .scratch/migration/agents/reviews/O88-report.md
   landing: preparing
 ```
 

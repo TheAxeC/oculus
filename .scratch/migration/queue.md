@@ -1,7 +1,7 @@
 In flight (3 of 6 slots in use):
 - O87 (the Focus band's positions and teaching, and the dated lines in Tasks), built; review running.
 - O94 (LinkedIn's Mark posted), built; review running.
-- O88 (one heading, one card grid, no intro paragraph, Pillars by kind, and the app theme that failed to load), /spec: brief written and its brief check's findings closed; preparation next.
+- O88 (one heading, one card grid, no intro paragraph, Pillars by kind, and the app theme that failed to load), building (base 85a826ca6).
 
 Queued (4):
 - O90 (the board bar's Waiting on filter), /spec after O88 and O87.
