@@ -1,15 +1,15 @@
-In flight (0 of 6 slots in use): none.
+In flight (1 of 6 slots in use):
+- O90 (the board bar's Waiting on filter), /spec: brief written, brief check running.
 
-Queued (2):
-- O90 (the board bar's Waiting on filter), /spec next.
-- O92 (the collection's Add and bar, and the Map's bar), /spec after O90.
+Queued (1):
+- O92 (the collection's Add and bar, and the Map's bar), /spec after O90 lands: it moves and reshapes the bar partials O90 edits (FilterBar.svelte), so the two run in sequence.
 
 Waiting on a ruling: nothing. Landing next: none.
 
 Owed looks: none.
 
 Landed, newest first:
-- O91 (joint work onto the people file, and the projects on people's, organisations' and resources' cards), 2026-10-27, landing commit being made; hub 6e868b885.
+- O91 (joint work onto the people file, and the projects on people's, organisations' and resources' cards), 2026-10-27, 38481ec6; hub 6e868b885.
 - O88 (one heading, one card grid, no intro paragraph, Pillars by kind, and the app theme that failed to load), 2026-10-27, e3c6f005; hub 7b3271054.
 - O93 (Focus and the dated lines: people on a line, Done on a follow-up, Remove on Focus rows, the Pillar filter, the red waiting line), 2026-10-27, f9d6ac48.
 - O87 (the Focus band's positions and teaching, and the dated lines in Tasks), 2026-10-27, 744de6aa.
