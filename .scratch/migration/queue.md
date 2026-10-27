@@ -1,14 +1,16 @@
 In flight (0 of 6 slots in use): none.
 
-Queued (1):
-- O92 (the collection's Add and bar, and the Map's bar), /spec next.
+Queued (3):
+- O92 (the collection's Add and bar, and the Map's bar), stopped at /spec on open item 498; /spec O92 again after the ruling.
+- O95 (Focus, what a press opens), after O92.
+- O96 (the cards' project strip: its filters and its groups by category), after O92.
 
-Waiting on a ruling: nothing. Landing next: none.
+Waiting on a ruling: 498 (O92: the guarded entry for the Add's tests). Landing next: none.
 
 Owed looks: none.
 
 Landed, newest first:
-- O90 (the board bar's Waiting on toggle and group), 2026-10-27, 2d72ff55.
+- O90 (the board bar's Waiting on toggle and group), 2026-10-27, c72f0fcb.
 - O91 (joint work onto the people file, and the projects on people's, organisations' and resources' cards), 2026-10-27, 38481ec6; hub 6e868b885.
 - O88 (one heading, one card grid, no intro paragraph, Pillars by kind, and the app theme that failed to load), 2026-10-27, e3c6f005; hub 7b3271054.
 - O93 (Focus and the dated lines: people on a line, Done on a follow-up, Remove on Focus rows, the Pillar filter, the red waiting line), 2026-10-27, f9d6ac48.
