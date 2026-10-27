@@ -48,6 +48,7 @@ dispatch:          # steps in flight, up to six (Z632)
   launched: 2026-10-27
   report: .scratch/migration/agents/reviews/O96-report.md
   builder_usage: 155519 tokens, 229 tool uses, 46 min 1 s
+  round: 1
   reviewer_report: "agents/reviews/O96-refuter.md (aba0d8dc3c0d0853c, claude-opus-5-5, 239441 tokens, 74 tool uses, 16 min 44 s)"
   landing: not-started
 - step: O98
