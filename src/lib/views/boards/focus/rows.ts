@@ -28,13 +28,14 @@ import {
     type TickerItem,
     type TickerTarget
 } from '$lib/state/boards/ticker';
+import type { Id, Venue } from '$lib/state/boards/focus';
+import { pageView } from '$lib/state/forms/page-entry';
 import type { TaskRef, TerminalsStore } from '$lib/state/sessions/terminals.svelte';
-import type { LayoutStore } from '$lib/state/workbench/layout.svelte';
 import { t } from '$lib/state/shared/words/text';
 import type { WriteAnswer, WritesStore } from '$lib/state/client/writes.svelte';
 import type { ClientState } from '$lib/state/client/context';
 import { viewSourceFile, type ViewSource } from '$lib/state/sessions/view-source';
-import { fileUnder, rootOf } from '$lib/state/shared/page/hubs';
+import { bareId, fileUnder, rootOf } from '$lib/state/shared/page/hubs';
 import { blockedBy } from '$lib/views/shared/forms/entry-file';
 
 /** What the command center and the tasks section are each given by the board that draws them. */
@@ -228,7 +229,7 @@ function unsnooze(): TickerAction {
  * project, an entry or a scheme is snoozed; an entry also gets the lifecycle statuses of its own
  * collection, minus the one it is in, and a task entry Remove after its other buttons; a
  * follow-up's Done marks its note done and its Remove takes the note out. A lead opens the Leads
- * view but carries no write, and neither does a conference call, which opens the Venues view,
+ * view but carries no write, and neither does a conference call, which opens its venue's page,
  * since the venue registry's schema has no status field to write.
  */
 export function actionsFor(line: TickerItem): TickerAction[] | undefined {
@@ -341,17 +342,92 @@ export function rowMaker(prefix: string, blocked: (line: TickerItem) => string =
     };
 }
 
+/** A view to open and the state it is opened with: the page of one entry. */
+export type EntryPage = { view: string; state: Record<string, string> };
+
+/** The collections of every hub under one key, which an entry's page is resolved among. */
+type CollectionsOf = ClientState['selectors']['collectionsOfKey'];
+
+/** What the page of an entry a line names is read from: the collections, the venue registry. */
+export type PageLookup = {
+    collections: CollectionsOf;
+    /** The key the hub `hub` gives the venues registry, the empty text when it names none. */
+    venuesKey: (hub: string) => string;
+    venues: Record<Id, Venue>;
+};
+
+/** The lookup of a client: its collections by key, its venue registry and its venues. */
+export function pageLookup(client: Pick<ClientState, 'selectors' | 'entities'>): PageLookup {
+    return {
+        collections: client.selectors.collectionsOfKey,
+        venuesKey: (hub) => client.selectors.registryKey('venues', hub),
+        venues: client.entities.portfolio()?.entities.venues ?? {}
+    };
+}
+
 /**
- * A ticker line opens what it names: a project's tab, or the view of its collection (a funding
- * scheme's the Funding view, a conference call's the Venues view).
+ * The page of the entry `id` of the collection of the key `key` in the hub `root`, as a card's
+ * title opens it (views/boards/collection/Collection.svelte `openPage`): the person page for an
+ * entry of the `people` registry, the entry page otherwise, named by the entry's title or by its
+ * id when it has none. Null when that hub holds no collection of the key or the collection no such
+ * entry, the entry being found by its key in its hub.
+ */
+export function entryPage(
+    key: string,
+    root: string,
+    id: string,
+    collections: CollectionsOf
+): EntryPage | null {
+    const home = collections(key).find((one) => rootOf(one) === root);
+    const wanted = bareId({ id, root });
+    const entry = home?.entries.find((one) => bareId(one) === wanted);
+    if (home === undefined || entry === undefined) return null;
+    return pageView(key, entry.id, entry.title === '' ? entry.id : entry.title, home.registry);
+}
+
+/**
+ * The page of the venue of the registry id `id`: its entry of the venues registry of its own hub,
+ * named by the venue's name. Null when no venue has the id or its hub names no venues registry.
+ */
+export function venuePage(id: string, lookup: PageLookup): EntryPage | null {
+    const venue = Object.hasOwn(lookup.venues, id) ? lookup.venues[id] : undefined;
+    if (venue === undefined) return null;
+    const key = lookup.venuesKey(rootOf(venue));
+    return key === '' ? null : pageView(key, venue.id, venue.name === '' ? venue.id : venue.name);
+}
+
+/**
+ * The page of the collection entry a line names, and null for a line that names none: a line of a
+ * project (`id`), a lead, or a target with no collection. A funding scheme's line, an entry's line
+ * and the follow-up and subtask lines of either name their record by its id and the key of its
+ * collection in the line's hub; a conference call names its venue.
+ */
+function linePage(line: TickerItem, lookup: PageLookup): EntryPage | null {
+    const target = line.target;
+    if (line.id !== undefined || target === undefined) return null;
+    if (target.kind === 'venue') return venuePage(target.id, lookup);
+    if (target.kind === 'lead' || target.collection === undefined) return null;
+    return entryPage(target.collection, line.root ?? '', target.id, lookup.collections);
+}
+
+/**
+ * A ticker line opens what it names: a project's tab; the page of the collection entry it names,
+ * as a card's title opens it (`linePage`: a funding scheme's, a dated entry's, the record of a
+ * follow-up or a subtask, a conference call's venue); and, for a line whose entry's page cannot be
+ * resolved, the view of its collection.
  */
 export function openLine(
-    layout: LayoutStore,
+    client: Pick<ClientState, 'layout' | 'selectors' | 'entities'>,
     line: TickerItem,
     onproject: (id: string) => void
 ): void {
-    if (line.id !== undefined) onproject(line.id);
-    else if (line.entry !== undefined) layout.openView(line.entry);
+    if (line.id !== undefined) {
+        onproject(line.id);
+        return;
+    }
+    const page = linePage(line, pageLookup(client));
+    if (page !== null) client.layout.openView(page.view, page.state);
+    else if (line.entry !== undefined) client.layout.openView(line.entry);
 }
 
 /** What one snooze button writes: an ISO date a week or a month out, or the hidden flag. */

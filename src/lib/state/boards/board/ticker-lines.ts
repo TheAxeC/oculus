@@ -21,7 +21,7 @@ import { daysUntil } from './index.ts';
  * its lifecycle buttons, a line carrying a `subtask` key is ticked, reopened, snoozed or deleted, a
  * `followup` note is marked done or taken out of its list, a snoozed line is woken, and a `lead`
  * and a `venue` carry none: a lead's line opens the Leads view, where its actions are, and a
- * venue's call opens the Venues view.
+ * venue's call opens the venue's page.
  *
  * Keeping the words out is what lets one view draw every group: the buttons are the write path's
  * vocabulary and the sentences are the text catalogs', and neither of them is here.
@@ -51,8 +51,8 @@ export type TickerTarget = {
 /**
  * One line of the ticker. `kind` says what it is, which the view turns into words; `days` is whole
  * days to the date, negative when it has passed and null when the line carries no date. At most one
- * of `id` (a project) and `entry` (the collection key of an entry) is set, and a line with neither
- * is not something the board can open.
+ * of `id` (a project) and `entry` (the key of the collection holding the line's record, an entry, a
+ * funding scheme or a venue) is set, and a line with neither is not something the board can open.
  */
 export type TickerItem = {
     kind: string;

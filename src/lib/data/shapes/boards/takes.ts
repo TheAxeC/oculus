@@ -6,12 +6,14 @@
 // since without one no project has a role. The track record's board (state/boards/board/presets.ts
 // `recordPreset`) is read through the same rule with one key no row of `boards:` names, `record`:
 // it takes a project only when its category is a record row of `categories:` and the user's role on
-// it is the board's role, so with no `self` it takes none. The boards, the page's choice of the
-// board a project opens on, a board's offer of New project (state/boards/board/new-project.ts) and
-// the audit's finding of a project no board takes all read a board through this module, so a board
-// takes the same projects everywhere. A project's stage, chips, form, category and role are held to
-// the words of its own hub when the context gives them (`wordsOf`), and to the context's config
-// otherwise.
+// it is the board's role, so with no `self` it takes none. The Awaiting box's board
+// (state/boards/board/presets.ts `awaitingPreset`) is read through it too, with the key `ids`, the
+// projects the pressed name of the box counts, which no row names either. The boards, the page's
+// choice of the board a project opens on, a board's offer of New project
+// (state/boards/board/new-project.ts) and the audit's finding of a project no board takes all read
+// a board through this module, so a board takes the same projects everywhere. A project's stage,
+// chips, form, category and role are held to the words of its own hub when the context gives them
+// (`wordsOf`), and to the context's config otherwise.
 
 import type { Id, Project } from '../../model/index.ts';
 import { fields, isMap } from '../../helpers/guards.ts';
@@ -36,6 +38,12 @@ export type BoardRule = {
      * the track record's board. No row of `boards:` names it, so a board read from one holds null.
      */
     record: string[] | null;
+    /**
+     * The ids of the projects the board holds, and no other: the take of the Awaiting box's board,
+     * the projects one name of the box counts. No row of `boards:` names it, so a board read from
+     * one holds null, and a project the board's New project writes is never among them.
+     */
+    ids: string[] | null;
 };
 
 /** A text or a list of texts in a row, or null when the row leaves the key out. */
@@ -64,7 +72,8 @@ export function boardRuleOf(row: Record<string, unknown>): BoardRule {
         forms: Object.hasOwn(row, 'forms') ? blockOf(row.forms) : null,
         hub,
         match: matchOf(row.match),
-        record: null
+        record: null,
+        ids: null
     };
 }
 
@@ -142,6 +151,7 @@ export function takeWordsOf(context: TakeContext, hub: string): TakeWords {
 /** Whether a project meets every key of a board's rule, under the words of the project's hub. */
 export function boardTakes(rule: BoardRule, project: Project, context: TakeContext): boolean {
     const { config, roles } = takeWordsOf(context, rootOf(project));
+    if (rule.ids !== null && !rule.ids.includes(project.id)) return false;
     if (rule.tiers !== null && (project.tier === undefined || !rule.tiers.includes(project.tier)))
         return false;
     if (rule.record !== null) {

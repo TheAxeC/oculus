@@ -13,11 +13,16 @@
 // without it; the board's lanes are those of the union of every hub's words.
 
 import { z } from 'zod';
-import type { Id, Project, Snapshot, Venue } from '../../data/model/index.ts';
+import type { Collection, Id, Project, Snapshot, Venue } from '../../data/model/index.ts';
 // `str` here is the shared `text`: a config or entry value of the wrong type reads as the empty
 // string. The alias also keeps the name off the several `const text` locals in this file.
 import { byKey, text as str } from '../../data/helpers/guards.ts';
-import { flaggedEntries, rootOf } from '../../data/helpers/hub-names.ts';
+import {
+    bareId,
+    flaggedCollections,
+    registryCollection,
+    rootOf
+} from '../../data/helpers/hub-names.ts';
 import {
     anyWord,
     hasWord,
@@ -137,17 +142,48 @@ export type Lane = {
 export type Tally = { id?: string; label: string; count: number };
 
 /**
- * The awaiting-a-response box: who you chase, what you wait on, and how much is simply blocked.
+ * A name of the awaiting box with its count and the ids of the projects it counts, each project
+ * once, which the box's board of that name takes (`awaitedIds`).
+ */
+export type Awaited = Tally & { ids: Id[] };
+
+/**
+ * A grant or an application the awaiting box names: its id, its title, its hub, and the key in
+ * that hub of the collection holding it, absent for a grant whose hub holds no funding collection.
+ */
+export type AwaitedEntry = { id: Id; title: string; root?: string; collection?: string };
+
+/**
+ * The awaiting-a-response box: who you chase, what you wait on, and which projects are simply
+ * blocked.
  */
 export type Waiting = {
-    people: Tally[];
-    venues: Tally[];
-    blocked: number;
+    people: Awaited[];
+    venues: Awaited[];
+    /** The ids of the blocked projects, whose number the box draws. */
+    blocked: Id[];
     /** Grants whose status says the application is in and the answer is not. */
-    grants: string[];
+    grants: AwaitedEntry[];
     /** Job applications out for a decision. */
-    applications: string[];
+    applications: AwaitedEntry[];
 };
+
+/** The rows of the awaiting box whose names open a board of the projects they count. */
+export const AWAITING_ROWS = ['review', 'people', 'blocked'] as const;
+
+/** One of `AWAITING_ROWS`. */
+export type AwaitingRow = (typeof AWAITING_ROWS)[number];
+
+/**
+ * The ids of the projects one name of the awaiting box counts: the blocked projects for `blocked`,
+ * and for `review` and `people` the projects of the tally of that row whose label is `name`, none
+ * when the row holds no such tally.
+ */
+export function awaitedIds(strip: Waiting, row: AwaitingRow, name: string): Id[] {
+    if (row === 'blocked') return strip.blocked;
+    const named = row === 'review' ? strip.venues : strip.people;
+    return named.find((one) => one.label === name)?.ids ?? [];
+}
 
 /** One flag of a word of `statuses`, over the status as the data writes it. */
 export function statusFlag(config: Record<string, unknown>, status: string, flag: string): boolean {
@@ -494,11 +530,42 @@ export function unplaced(
     });
 }
 
-/** A tally sorted the way the awaiting box reads it: the biggest first, then alphabetically. */
-function tallies(counts: Record<string, number>): Tally[] {
-    return Object.entries(counts)
-        .map(([label, count]) => ({ label, count }))
+/** The projects the awaiting box counts under each name, each once. */
+type Counts = Map<string, Set<Id>>;
+
+/** Count a project under a name, once however many times it gives that name. */
+function countUnder(counts: Counts, label: string, id: Id): void {
+    const held = counts.get(label) ?? new Set<Id>();
+    held.add(id);
+    counts.set(label, held);
+}
+
+/**
+ * The tallies of the awaiting box, each name counting its distinct projects, sorted the way the box
+ * reads them: the biggest first, then alphabetically.
+ */
+function tallies(counts: Counts): Awaited[] {
+    return [...counts.entries()]
+        .map(([label, held]) => ({ label, count: held.size, ids: [...held] }))
         .sort((a, b) => b.count - a.count || (a.label < b.label ? -1 : 1));
+}
+
+/** An entry the awaiting box names, in the collection of the key `collection` of its hub. */
+function awaitedEntry(
+    record: { id: Id; title: string; root?: string },
+    collection: Collection | undefined
+): AwaitedEntry {
+    return {
+        id: record.id,
+        title: record.title,
+        ...(record.root === undefined ? {} : { root: record.root }),
+        ...(collection === undefined ? {} : { collection: bareId(collection) })
+    };
+}
+
+/** Entries the awaiting box names, by title. */
+function byTitle(one: AwaitedEntry, two: AwaitedEntry): number {
+    return one.title < two.title ? -1 : one.title > two.title ? 1 : 0;
 }
 
 /** A venue's short name, and its full name when the registry gives it no short one. */
@@ -556,14 +623,19 @@ export function laneFacts(
  * cluster carrying `awaiting: true`, so a project on no lane or on a lane of another cluster (the
  * Idea lane's, with oculus's clusters) is in none. For each, the people named in `waiting-on:`
  * first, then the venue holding it when its stage carries `pauses_countdown` in `stages`
- * (submitted). The blocked tally counts the projects on a lane that carry a chip with `blocked` in
- * `chips`, whatever else the project is waiting for. A `waiting-on:` value is the internal id of
- * a person or another project, or its words as written when it names neither, drawn by
- * waiting.ts. The grants are the funding schemes and the
- * applications the entries of the collections flagged `awaiting` whose status carries
- * `deadline_met` in `statuses` of their own hub's words. A waited-on project is named from `known`,
- * every project of the portfolio, when the snapshot holds only the projects a filter keeps, and
- * from the snapshot's own projects without it.
+ * (submitted). The blocked projects are those on a lane that carry a chip with `blocked` in
+ * `chips`, whatever else the project is waiting for. A `waiting-on:` value is the internal id of a
+ * person or another project, or its words as written when it names neither, drawn by waiting.ts. A
+ * tally counts each project once, however many of its `waiting-on:` values give the tally's name,
+ * and keeps the ids of the projects it counts: those ids are what the box's board of that name
+ * takes, so a press on a name of the box opens a board of exactly the projects it counts. The
+ * grants are the funding schemes and the applications the entries of the collections flagged
+ * `awaiting` whose status carries `deadline_met` in `statuses` of their own hub's words, sorted by
+ * title, each with its id, its hub and the key of its collection in that hub (for a scheme, the
+ * collection of its hub naming the `funding` registry, absent when the hub has none), which a press
+ * on its name opens the page of. A waited-on project is named from `known`, every project of the
+ * portfolio, when the snapshot holds only the projects a filter keeps, and from the snapshot's own
+ * projects without it.
  */
 export function waiting(
     snapshot: Snapshot,
@@ -585,35 +657,39 @@ export function waiting(
             .flatMap((lane) => items[lane.key] ?? [])
             .map((project) => project.id)
     );
-    const people: Record<string, number> = {};
-    const held: Record<string, number> = {};
-    let blocked = 0;
+    const people: Counts = new Map();
+    const held: Counts = new Map();
+    const blocked: Id[] = [];
     for (const project of Object.values(projects)) {
         // A blocked project that is also waiting on somebody is blocked as well as waited on.
         if (!onLanes.has(project.id)) continue;
         const words = wordsAt(project);
-        if (isBlocked(project, words)) blocked += 1;
+        if (isBlocked(project, words)) blocked.push(project.id);
         if (project.waitingOn.length > 0) {
             for (const key of project.waitingOn) {
-                const name = waitingLabel(key, names, known ?? projects);
-                people[name] = (people[name] ?? 0) + 1;
+                countUnder(people, waitingLabel(key, names, known ?? projects), project.id);
             }
             continue;
         }
         if (pausesCountdown(project, words)) {
             const venue = project.venueId === undefined ? undefined : venues[project.venueId];
-            const name = venueLabel(venue);
-            held[name] = (held[name] ?? 0) + 1;
+            countUnder(held, venueLabel(venue), project.id);
         }
     }
+    const collections = snapshot.entities.collections;
     const grants = Object.values(snapshot.entities.funding)
         .filter((scheme) => deadlineMet(wordsAt(scheme), scheme.status ?? ''))
-        .map((scheme) => scheme.title)
-        .sort();
-    const applications = flaggedEntries(snapshot.entities.collections, 'awaiting')
-        .filter((entry) => deadlineMet(wordsAt(entry), str(entry.fields.status)))
-        .map((entry) => entry.title)
-        .sort();
+        .map((scheme) =>
+            awaitedEntry(scheme, registryCollection(collections, 'funding', rootOf(scheme)))
+        )
+        .sort(byTitle);
+    const applications = flaggedCollections(collections, 'awaiting')
+        .flatMap((collection) =>
+            collection.entries
+                .filter((entry) => deadlineMet(wordsAt(entry), str(entry.fields.status)))
+                .map((entry) => awaitedEntry(entry, collection))
+        )
+        .sort(byTitle);
     return { people: tallies(people), venues: tallies(held), blocked, grants, applications };
 }
 

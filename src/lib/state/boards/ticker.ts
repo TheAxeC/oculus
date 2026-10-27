@@ -216,7 +216,10 @@ export function ticker(
         const category = entryOf(record, registry)?.ticker?.category;
         return category !== undefined && words.includes(category) ? category : undefined;
     };
-    /** The key of the hub's funding collection, whose view a scheme's line opens. */
+    /**
+     * The key of the hub's funding collection, whose entry's page a scheme's line opens, and whose
+     * view it opens when that page cannot be found.
+     */
     const fundingKey = (record: Rooted): string | undefined => entryOf(record, 'funding')?.key;
 
     const overdue: TickerItem[] = [];
@@ -273,9 +276,9 @@ export function ticker(
 
     /**
      * A grant still waiting to be written. A submitted one has met its date and stops nagging. The
-     * schemes are a registry entity rather than a collection (normalise leaves the collection out,
-     * since the registry already carries the file), and a line of one opens the view of the
-     * collection its hub keeps the schemes in. The category is the one the `ticker:` of the entry
+     * schemes are a registry entity, and a line of one names the collection its hub keeps the
+     * schemes in, so a press on it opens the scheme's entry page in that collection
+     * (views/boards/focus/rows.ts `openLine`). The category is the one the `ticker:` of the entry
      * the scheme's hub reads the funding registry by gives.
      */
     for (const scheme of Object.values(snapshot.entities.funding)) {
@@ -369,8 +372,8 @@ export function ticker(
 
     /**
      * A conference's open call, by its exact date or, with none, by its usual month, which opens
-     * the Venues view. The category is the one the `ticker:` of the entry the venue's hub reads the
-     * venues registry by gives.
+     * the venue's page, and the Venues view when its hub names no venues registry. The category is
+     * the one the `ticker:` of the entry the venue's hub reads the venues registry by gives.
      */
     const venuesView = REGISTRY_VIEWS.venues;
     for (const venue of Object.values(snapshot.entities.venues)) {
@@ -496,13 +499,14 @@ export function ticker(
         const status = scheme.status ?? '';
         if (closesDeadline(at(scheme), status) && !statusFlag(at(scheme), status, 'live_subtasks'))
             continue;
+        const key = fundingKey(scheme);
         for (const line of subtaskLines(
             scheme.subtasks,
             scheme.title,
             'funding',
             now,
-            rootMark(scheme),
-            { kind: 'funding', id: scheme.id, collection: fundingKey(scheme) },
+            { entry: key, ...rootMark(scheme) },
+            { kind: 'funding', id: scheme.id, collection: key },
             marked(scheme)
         )) {
             if (line.snoozed) asleep.push(line);

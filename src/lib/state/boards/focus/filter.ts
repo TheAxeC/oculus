@@ -60,13 +60,17 @@ import { wordsShape } from '../../../data/shapes/boards/words.ts';
 import { fieldItemsShape, mapShape, readAs } from '../../../data/shapes/shapes.ts';
 import type { WordsOf } from '../../../data/shapes/vocab-keys.ts';
 import { t } from '../../shared/words/text.ts';
+import { z } from 'zod';
 import {
+    AWAITING_ROWS,
+    awaitedIds,
     deadlineMet,
     laneItems,
     lanes,
     tierWords,
     unplaced,
     waiting,
+    type AwaitingRow,
     type TierWord,
     type Waiting
 } from '../focus.ts';
@@ -490,7 +494,7 @@ function awaitingTotal(strip: Waiting): number {
     return (
         sum(strip.people) +
         sum(strip.venues) +
-        strip.blocked +
+        strip.blocked.length +
         strip.grants.length +
         strip.applications.length
     );
@@ -666,4 +670,61 @@ export function focusPage(
     const sections = { ...made, week: hubLines(week, rule) };
     const hidden = hiddenOf(whole, sections);
     return { snapshot: held, sections, hidden, hides: hiddenTotal(hidden) > 0, mineHides };
+}
+
+/**
+ * The state of a tab of the Awaiting box's board: the row of the box (`review`, `people` or
+ * `blocked`), the name pressed in it as `waiting` keys its tally (the empty text for Blocked and
+ * for the projects with no venue), the tab's title as `label`, which is what names a tab, the
+ * Focus filter in force at the press, and the tab's identity `<row>:<name>`, so a second press on
+ * one name brings its tab forward with the filter of that press.
+ */
+export type AwaitingTab = {
+    id: string;
+    row: AwaitingRow;
+    name: string;
+    label: string;
+    filter: FocusFilter;
+};
+
+/** The fields of a saved tab state of the board; its `filter` is read by `focusFilter`. */
+const awaitingTabShape = z.object({
+    row: z.enum(AWAITING_ROWS),
+    name: z.string(),
+    label: z.string()
+});
+
+/** The tab state a press on a name of the box opens the board with. */
+export function awaitingTab(
+    row: AwaitingRow,
+    name: string,
+    label: string,
+    filter: FocusFilter
+): AwaitingTab {
+    return { id: `${row}:${name}`, row, name, label, filter };
+}
+
+/**
+ * The tab state a tab of the board holds, and null for a tab opened with none or with one that
+ * does not parse (from the palette, or a saved layout), which takes no project.
+ */
+export function awaitingTabOf(state: unknown): AwaitingTab | null {
+    const held = readAs(awaitingTabShape, state);
+    return held === null ? null : awaitingTab(held.row, held.name, held.label, focusFilter(state));
+}
+
+/**
+ * The projects a tab of the board takes: the ids the name it was opened for counts
+ * (`awaitedIds`), over the Focus page under the filter the tab carries (`focusPage`), so the board
+ * holds what the name counts and, computed from the live portfolio each time, follows it.
+ */
+export function awaitingTake(
+    snapshot: Snapshot,
+    config: Record<string, unknown>,
+    now: number,
+    tab: AwaitingTab,
+    scope: FilterScope
+): Id[] {
+    const strip = focusPage(snapshot, config, now, tab.filter, scope).sections.strip;
+    return awaitedIds(strip, tab.row, tab.name);
 }

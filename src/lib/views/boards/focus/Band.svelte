@@ -5,10 +5,11 @@
     // the job applications by `position_stages` and the teaching by `teaching_stages`, a stage
     // drawn as a block in its colour under its label.
     //
-    // Every card opens its collection tab and sets that tab's transient reveal id, so the exact
-    // entry scrolls into view and flashes after the view opens. A card of an entry of a hub but the
-    // primary carries the hub's chip after its title, as the Command center's rows do. A web
-    // address written in a card's note is a link (ui/display/text/LinkedText.svelte).
+    // A press on a card's title opens its entry's page, as a card title of its collection does
+    // (views/boards/focus/rows.ts `entryPage`): the person page for an entry of the `people`
+    // registry, the entry page otherwise. A card of an entry of a hub but the primary carries the
+    // hub's chip after its title, as the Command center's rows do. A web address written in a
+    // card's note is a link (ui/display/text/LinkedText.svelte).
     //
     // The cards are the entries the Focus filter keeps, which the board hands it with how many
     // each column hides; a column that had cards before the filter is drawn with its count and
@@ -39,12 +40,12 @@
     import { daysTone } from '$lib/state/boards/ticker';
     import { namedTone, toneOf } from '$lib/state/shared/words/tones';
     import { t } from '$lib/state/shared/words/text';
-    import { instanceMap, recordField } from '$lib/state/workbench/layout';
     import { useState } from '$lib/state/client/use';
+    import { entryPage } from './rows';
 
     const {
         layout: { openView },
-        ui: { instanceState, setInstanceState }
+        selectors: { collectionsOfKey }
     } = useState();
 
     type Props = {
@@ -94,14 +95,14 @@
         return daysUntil(item.deadline ?? '', now);
     }
 
-    /** Open the collection and ask it to reveal the exact entry this card names. */
-    function reveal(item: BandItem): void {
-        const instance = openView(item.entry);
-        setInstanceState(instance, {
-            ...instanceMap(instanceState(instance)),
-            reveal: recordField(item.id),
-            search: ''
-        });
+    /**
+     * Open the page of the entry this card names, and its collection's view when the entry's page
+     * cannot be found in its hub.
+     */
+    function openEntry(item: BandItem): void {
+        const page = entryPage(item.entry, item.root ?? '', item.id, collectionsOfKey);
+        if (page === null) openView(item.entry);
+        else openView(page.view, page.state);
     }
 </script>
 
@@ -110,7 +111,7 @@
     <div class="entry">
         <div class="entry-h">
             <span class="entry-name">
-                <ToolButton plain cut label={item.title} {glyph} onclick={() => reveal(item)} />
+                <ToolButton plain cut label={item.title} {glyph} onclick={() => openEntry(item)} />
             </span>
             <RootChip record={item} />
             {#if days !== null}

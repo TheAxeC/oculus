@@ -65,10 +65,15 @@
 
     const anything = $derived(hasTasks(lines) || hidden > 0);
 
+    /**
+     * A line opens what it names (rows.ts `openLine`): a project's tab, or the page of the
+     * collection entry it names, a task of the tasks file or the record of a follow-up or a
+     * subtask.
+     */
     function pick(id: string): void {
         const line = view.index[id];
         if (line !== undefined) {
-            openLine(client.layout, line, onproject);
+            openLine(client, line, onproject);
         }
     }
 

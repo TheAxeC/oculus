@@ -1,6 +1,8 @@
 # Oculus text owned by the projects view.
 text:
     board:
+        awaiting_none: This tab was opened for no name of the Awaiting box. Press a name of Focus's Awaiting box to open its projects.
+        awaiting_title: '{0}: {1}'
         blocked_badge: '{0} blocked'
         cell_domain: Domain
         cell_funding: Funding
@@ -92,6 +94,8 @@ text:
     views:
         archive: Archive
         archive_glyph: archived
+        awaiting_board: Awaiting
+        awaiting_board_glyph: waiting
         board_glyph: paper
         coauthor: Coauthor
         coauthor_glyph: author

@@ -2,6 +2,8 @@
 // modules keep their implementation constants private to the folder.
 
 export {
+    AWAITING_VIEW,
+    awaitingPreset,
     DEADLINE_SOON,
     boardIds,
     boardViews,

@@ -6,24 +6,19 @@
 // the role with the Lead badge and Mine only, the board items with the Mine only filter and the
 // Role facet, the card sections, the rail count, the Archival band with the real projects and the
 // Orphans card, the Focus lanes with their clusters and the moves onto them, the audit's placement
-// findings, the board keys with the config check, a saved slice filter, New project with the tier
-// it writes and the track record boards that offer none, and the roles of a collection. The
-// projects are synthetic, made by board-fixture.ts with the shipped config; the collection is
-// planted in a scratch hub and built through buildOneHub. The board views registered from `boards:`
-// are board-views.test.ts's.
+// findings, the board keys with the config check, a saved slice filter, and the roles of a
+// collection. The projects are synthetic, made by board-fixture.ts with the shipped config; the
+// collection is planted in a scratch hub and built through buildOneHub. The board views registered
+// from `boards:` are board-views.test.ts's, and New project with the boards that offer it is
+// board-new-project.test.ts's.
 //
 // It does not cover the views drawing the toggle, the badge, the facet or the sections, which the
 // look does.
 
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import type { AuditFinding, Id, Pillar } from '../../../../src/lib/data/model/index.ts';
+import type { AuditFinding, Pillar } from '../../../../src/lib/data/model/index.ts';
 import { portfolioConfigFrom } from '../../../../src/lib/data/index.ts';
-import { HUB_FILE, holdersOf } from '../../../../src/lib/data/helpers/hub-names.ts';
-import { createIdea } from '../../../../src/lib/server/edit/writes/manifest.ts';
 import { findingText } from '../../../../src/lib/data/helpers/finding-text.ts';
-import { engineDir, loadConfig } from '../../../../src/lib/data/sources/config.ts';
 import { boardsFindings } from '../../../../src/lib/data/sources/config/sections/boards.ts';
 import {
     categoriesOf,
@@ -51,20 +46,13 @@ import {
 } from '../../../../src/lib/server/content/audit/rules.ts';
 import {
     applyFilters,
-    boardIds,
     boardItems,
     cardSections,
     facets,
     parseBoardState,
     presetFor,
-    recordPreset,
     sliceGroups
 } from '../../../../src/lib/state/boards/board/index.ts';
-import {
-    newProjectPerson,
-    newProjectTier,
-    offersNewProject
-} from '../../../../src/lib/state/boards/board/new-project.ts';
 import {
     clusters,
     hubMovable,
@@ -601,192 +589,6 @@ describe('a saved slice filter', () => {
         expect(held.filters).toEqual({ slice: ['in-review/submitted'] });
         expect(applyFilters(items, held.filters, '').map((one) => one.id)).toEqual(['sub']);
     });
-});
-
-describe('New project on a board', () => {
-    it.each([
-        { name: 'with self named', self: MINE },
-        { name: 'with no self', self: NOBODY }
-    ])('is offered on the boards that take the project it writes, $name', (row) => {
-        const offered = boardIds(CONFIG).filter((id) =>
-            offersNewProject(presetFor(id, CONFIG).rule, takeContext(CONFIG, row.self))
-        );
-        expect(offered).toEqual(['projects', 'supervision', 'coauthor', 'personal', 'software']);
-    });
-
-    it.each([
-        { name: 'with self named', self: MINE },
-        { name: 'with no self', self: NOBODY }
-    ])("is offered on no role's track record board, $name", (row) => {
-        const offered = rolesOf(CONFIG).filter((role) =>
-            offersNewProject(recordPreset(role.key, CONFIG).rule, takeContext(CONFIG, row.self))
-        );
-        expect(offered).toEqual([]);
-    });
-
-    it("leaves a role's track record board without a project while no self is named", () => {
-        const projects = ['c1', 'c2', 'c3', 'c8'].map((id) => project(id));
-        const preset = recordPreset('lead', CONFIG);
-        const taken = (self: boolean) =>
-            boardItems(snapshotOf(projects, self), preset).map((one) => one.id);
-        expect(taken(true)).toEqual(['c1', 'c3']);
-        expect(taken(false)).toEqual([]);
-    });
-
-    /** The shipped config with the tiers of `tiers` carrying `default`, and coauthor's `tier`. */
-    function withTiers(defaults: string[], tier: unknown): Record<string, unknown> {
-        const tiers = Object.fromEntries(
-            Object.entries(CONFIG.tiers as Record<string, Record<string, unknown>>).map(
-                ([word, row]) => [word, { ...row, default: defaults.includes(word) }]
-            )
-        );
-        const boards = CONFIG.boards as Record<string, Record<string, unknown>>;
-        const coauthor: Record<string, unknown> = { ...boards.coauthor, tier };
-        if (tier === undefined) delete coauthor.tier;
-        return { ...CONFIG, tiers, boards: { ...boards, coauthor } };
-    }
-
-    it.each([
-        {
-            name: 'case 8: several tiers with the default among them write the default',
-            defaults: ['research'],
-            tier: ['research', 'personal'],
-            writes: 'research'
-        },
-        {
-            name: 'case 8: several tiers without the default offer no New project',
-            defaults: ['research'],
-            tier: ['personal', 'software'],
-            writes: undefined
-        },
-        {
-            name: 'one tier writes it whatever the default',
-            defaults: [],
-            tier: 'personal',
-            writes: 'personal'
-        },
-        {
-            name: 'no tier writes the default',
-            defaults: ['research'],
-            tier: undefined,
-            writes: 'research'
-        },
-        {
-            name: 'no tier and no default offer no New project',
-            defaults: [],
-            tier: undefined,
-            writes: undefined
-        },
-        {
-            name: 'no tier and two defaults offer no New project',
-            defaults: ['research', 'personal'],
-            tier: undefined,
-            writes: undefined
-        }
-    ])('$name', (row) => {
-        const config = withTiers(row.defaults, row.tier);
-        const rule = presetFor('coauthor', config).rule;
-        expect(newProjectTier(rule, config)).toEqual(row.writes);
-        const offered = offersNewProject(rule, takeContext(config, MINE));
-        expect(offered).toBe(row.writes !== undefined);
-    });
-
-    it.each([
-        { name: 'the role lead', keys: ['lead'], field: 'lead' },
-        { name: 'the role supervisor', keys: ['supervisor'], field: 'supervisors' },
-        {
-            name: 'the roles collaborator and other',
-            keys: ['collaborator', 'other'],
-            field: 'collaborators'
-        },
-        { name: 'no role: key, every row in order', keys: null, field: 'lead' },
-        { name: 'roles with no field', keys: ['other'], field: null }
-    ])('names the user, for a board naming $name', (row) => {
-        const person = newProjectPerson(rolesOf(CONFIG), row.keys, MINE);
-        expect(person).toEqual(row.field === null ? null : { role_field: row.field, self: SELF });
-        expect(newProjectPerson(rolesOf(CONFIG), row.keys, NOBODY)).toBeNull();
-    });
-
-    it.each([
-        { board: 'personal', field: 'lead' },
-        { board: 'software', field: 'lead' },
-        { board: 'supervision', field: 'supervisors' }
-    ])('names the user on $board from the shipped board row', (row) => {
-        const rule = presetFor(row.board, CONFIG).rule;
-        const person = newProjectPerson(rolesOf(CONFIG), rule.roles, MINE);
-        expect(person).toEqual({ role_field: row.field, self: SELF });
-    });
-
-    it.each([
-        { name: 'offers none for lab, which holds its own kim', labKim: true, person: null },
-        {
-            name: 'offers it for lab, which holds no kim, naming kim as lead',
-            labKim: false,
-            person: { role_field: 'lead', self: 'kim' }
-        }
-    ])('case 26: with self naming the primary kim, $name', (row) => {
-        const self: ReadonlySet<Id> = new Set(['hub:kim']);
-        const ids = ['hub:kim', ...(row.labKim ? ['lab:kim'] : [])];
-        const holders = holdersOf(ids.map((id) => ({ id, root: id.split(':')[0] })));
-        const context = { ...takeContext(CONFIG, self), people: { holders, primary: 'hub' } };
-        const rule = presetFor('projects', CONFIG).rule;
-        const where = { hub: 'lab', holders };
-        expect(offersNewProject(rule, context, 'lab')).toBe(row.person !== null);
-        expect(newProjectPerson(rolesOf(CONFIG), rule.roles, self, where)).toEqual(row.person);
-        expect(offersNewProject(rule, context, 'hub')).toBe(true);
-    });
-
-    scratchIt(
-        "reads the stage written and the boards that offer it in the chosen hub's words",
-        () => {
-            // `home` keeps `nascent` with no `new_idea` and adds `shelved`, a terminal stage
-            // carrying it, so a new project of `home` is written at `shelved` and sits on the
-            // archive board.
-            const settings = [
-                'scan: [ { dir: projects/ideas } ]',
-                'new_project_dir: { research: projects/ideas }',
-                'stages:',
-                '  nascent: { label: nascent, icon: white, color: "#7c5cff", idea: true, on_map: true }',
-                '  shelved: { label: shelved, icon: done, color: "#9ca3af", terminal: true, new_idea: true }',
-                ''
-            ].join('\n');
-            const home = plantScratch('oculus-board-home-', { [HUB_FILE]: settings }, [
-                'projects/ideas'
-            ]);
-            const read = loadConfig(engineDir(), { hub: home });
-            expect(read.findings).toEqual([]);
-            const homeWords = { config: read.config, roles: rolesOf(read.config) };
-            const context = {
-                ...takeContext(CONFIG, MINE),
-                wordsOf: (hub: string) => (hub === 'home' ? homeWords : takeContext(CONFIG, MINE))
-            };
-            const offered = (hub?: string) =>
-                boardIds(CONFIG).filter((id) =>
-                    offersNewProject(presetFor(id, CONFIG).rule, context, hub)
-                );
-            expect(offered()).toEqual([
-                'projects',
-                'supervision',
-                'coauthor',
-                'personal',
-                'software'
-            ]);
-            expect(offered('home')).toEqual([
-                'supervision',
-                'coauthor',
-                'archive',
-                'personal',
-                'software'
-            ]);
-            const out = createIdea(home, portfolioConfigFrom(read.config, read.from), {
-                id: 'new-idea',
-                tier: 'research'
-            });
-            expect(out.refused).toEqual([]);
-            const written = readFileSync(join(home, 'projects/ideas/new-idea/project.yml'), 'utf8');
-            expect(written).toContain('\nstage: shelved\n');
-        }
-    );
 });
 
 describe('the roles of a collection', () => {

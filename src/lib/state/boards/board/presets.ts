@@ -6,10 +6,11 @@
 // data/shapes/boards/. A board over the records of several hubs reads each project under the words
 // of its own hub, and draws its sections, slices, facets and stage order from the union of every
 // hub's words. This module holds no table of boards: the board views the page registers are read
-// from the same rows (`boardViews`), each named and drawn by the words its row names. Two presets
+// from the same rows (`boardViews`), each named and drawn by the words its row names. Three presets
 // no row names: the track record's (`recordPreset`), which a role row of the Career banner opens
-// for its role, and the Map's (`mapPreset`), which takes every project of every hub for the Map's
-// bar.
+// for its role, the Awaiting box's board (`awaitingPreset`), which a name of the Focus board's
+// Awaiting box opens for the projects it counts, and the Map's (`mapPreset`), which takes every
+// project of every hub for the Map's bar.
 
 import { z } from 'zod';
 import type { Finding, Id, Project, Resource, Venue } from '../../../data/model/index.ts';
@@ -565,10 +566,57 @@ export function recordPreset(
             forms: null,
             hub: null,
             match: null,
-            record: records.map((category) => category.key)
+            record: records.map((category) => category.key),
+            ids: null
         },
         ...drawnBy(row),
         categories: records,
+        roles: union.roles,
+        stageOrder: vocabKeys(union.config.stages),
+        cards: 'sections',
+        config,
+        words
+    };
+}
+
+/**
+ * The view id of the Awaiting box's board, the one tab a name of the Focus board's Awaiting box
+ * opens for that name (views/boards/focus/Focus.svelte).
+ */
+export const AWAITING_VIEW = 'awaiting_board';
+
+/**
+ * The preset of the Awaiting box's board of one name: exactly the projects of `ids`, the projects
+ * the name counts (state/boards/focus/filter.ts `awaitingTake`), whatever boards exist; no project
+ * the board's New project would write is among them, so it offers none. Its sections are the rows
+ * of `categories:` of every hub's words, as a board of `boards:` draws them, and it draws its
+ * projects as the first board of `boards:` other than one keyed with its own id does, by that row's
+ * columns, label mode and search placeholder. An empty `ids`, a tab opened for no name, takes no
+ * project.
+ */
+export function awaitingPreset(
+    ids: readonly Id[],
+    config: Record<string, unknown> = {},
+    vocab: WordsOf = () => config
+): BoardPreset {
+    const words = wordsReader(vocab);
+    const union = words();
+    const [, row] = boardRows(config).find(([id]) => id !== AWAITING_VIEW) ?? [AWAITING_VIEW, {}];
+    return {
+        id: AWAITING_VIEW,
+        rule: {
+            tiers: null,
+            roles: null,
+            stages: null,
+            chips: null,
+            forms: null,
+            hub: null,
+            match: null,
+            record: null,
+            ids: [...ids]
+        },
+        ...drawnBy(row),
+        categories: union.categories,
         roles: union.roles,
         stageOrder: vocabKeys(union.config.stages),
         cards: 'sections',
@@ -602,7 +650,8 @@ export function mapPreset(
             forms: null,
             hub: null,
             match: null,
-            record: null
+            record: null,
+            ids: null
         },
         ...drawnBy({}),
         categories: union.categories,

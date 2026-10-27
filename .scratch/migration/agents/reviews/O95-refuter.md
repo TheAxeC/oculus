@@ -288,3 +288,20 @@ none
 - Whether the builder's single round run of Verify 1 came after its last edit. Only the builder's transcript would settle it. The tree I ran on passes the same command.
 
 Reviewer usage: a93342c9c8025f2d6, claude-opus-5-5, 193784 tokens, 49 tool uses, 7 min 48 s
+
+## Closed
+
+First run:
+- S1 (the case-run program written without approval): raised as open item 523 and ruled (a) by Axel: the program's output is not used; cases 1 to 8 rest on the G124 rows and their reading, and no first run on the unchanged tree is recorded for them.
+- S2 (the verify list ran more than once): closed in round 1 item 6; the report states the runs in plain words.
+- P1 (no quoted failure of the G124 rows on the unchanged tree): closed by ruling 523 (a); the rows were read as failing without the behaviour.
+- T1 (the `registerBoards` comment named one own view): closed in round 1 item 3.
+- T2 (a test title naming "case 7"): closed in round 1 item 4.
+- B1 (the Awaiting box throws on two entries of one key): closed in round 1 item 2, the inner loop keyed by position.
+- B2, B3 and B4 (before and after missing): closed in round 1 item 5.
+
+Review over round 1:
+- Proof 1 (the report's file table, line counts and judgment sections stale after the round): closed in the booking, which states the counts after the round (`focus.ts` 766, `Focus.svelte` 468, `board-new-project.test.ts` 369 lines), `src/routes/views.ts` as changed, and the tally counting distinct projects under ruling 513 (a).
+- Standards 1 (two comment paragraphs not filled to 100 columns): fixed at landing, the `registerBoards` comment of `src/routes/views.ts` and the `waiting` comment of `src/lib/state/boards/focus.ts` refilled with no word changed.
+- Behaviour 1 (the Awaiting box's hidden count now counts a project once): closed in the booking, which states the before and after; the look on 8790 covers the box.
+- Behaviour 2 (three command center lines placed inside the Awaiting box bullet): closed at the look, which reads the command center lines where they are drawn.

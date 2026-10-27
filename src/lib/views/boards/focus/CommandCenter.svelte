@@ -13,8 +13,13 @@
     // through the text catalog, the sentence chosen by what the line was read from (its target's
     // kind) and the noun by its category's word of `ticker_categories`; the target also becomes
     // buttons, and what one writes, in views/boards/focus/rows.ts, which the tasks section draws
-    // its rows with too. Lead and attention lines open their views; refresh lines ask the shell for
-    // the Update tray through the ui store.
+    // its rows with too. A line naming a project opens its tab, and a line naming a collection
+    // entry (a funding scheme, a dated entry, a conference call's venue) the entry's page, as a
+    // card's title does (rows.ts `openLine`), the collection's view when that page cannot be
+    // found; a lead line reveals the lead in the Leads view; the inbox and LinkedIn lines open
+    // their views, and a venue line of Needs attention the venue's page, the Venues view revealing
+    // it when no registry venue has its id; refresh lines ask the shell for the Update tray through
+    // the ui store.
     //
     // The right of the heading row holds the live HPC pill: the running and pending counts from
     // state/system/machine/hpc/hpc.svelte.ts, drawn only while the cluster answers and the queue is
@@ -31,7 +36,15 @@
     import { attention, refresh } from '$lib/state/feeds/feeds';
     import { t } from '$lib/state/shared/words/text';
     import { instanceMap, recordField } from '$lib/state/workbench/layout';
-    import { act, fileBlock, openLine, rowMaker, type SectionProps } from './rows';
+    import {
+        act,
+        fileBlock,
+        openLine,
+        pageLookup,
+        rowMaker,
+        venuePage,
+        type SectionProps
+    } from './rows';
     import CommandCenterView from './CommandCenterView.svelte';
     import { useState } from '$lib/state/client/use';
     import { vocabOf } from '$lib/state/shared/words/tones';
@@ -147,7 +160,10 @@
         };
     });
 
-    /** The "needs attention" rows: a count, its words, and the view each line opens. */
+    /**
+     * The "needs attention" rows: a count, its words, and what each line opens, a view or a
+     * venue's page.
+     */
     const attentionView = $derived.by(() => {
         const index: Record<string, (typeof needs)[number] | undefined> = {};
         const rows = needs.map((one, at): TickerRow => {
@@ -219,21 +235,29 @@
         });
     }
 
-    /** A ticker line opens what it names: a lead's view, a project's tab, or the file's own tab. */
+    /**
+     * A ticker line opens what it names: a lead revealed in the Leads view, and any other line as
+     * `openLine` opens it, a project's tab or the page of the collection entry it names.
+     */
     function pick(id: string): void {
         const line = view.index[id];
         if (line === undefined) return;
         if (line.target?.kind === 'lead') reveal('leads', line.target.id, true);
-        else openLine(client.layout, line, onproject);
+        else openLine(client, line, onproject);
     }
 
-    /** Open the view named by one attention line, revealing the exact venue when it names one. */
+    /**
+     * Open the view named by one attention line: a venue line opens the venue's page, of the id the
+     * line names, and reveals it in the Venues view when no registry venue has that id.
+     */
     function pickAttention(id: string): void {
         const line = attentionView.index[id];
         if (line?.kind === 'inbox') openView('inbox');
         else if (line?.kind === 'linkedin') openView('linkedin');
         else if (line?.kind === 'venue' && line.id !== undefined) {
-            reveal('venues', line.id);
+            const page = venuePage(line.id, pageLookup(client));
+            if (page === null) reveal('venues', line.id);
+            else openView(page.view, page.state);
         }
     }
 

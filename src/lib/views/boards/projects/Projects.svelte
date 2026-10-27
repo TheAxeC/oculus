@@ -8,21 +8,32 @@
     // carrying `rail: true`, in the colour `rail_color` of vocab.yml gives, and 0 when none is in
     // such a row.
     //
-    // The track record's board is the component's own view, registered once like any module's: a
-    // role row of the Career banner's Track record opens it for its role, so it is not listed in
-    // the view catalogue and has no count hooks, and the page keeps it registered through every
-    // push of `boards:` (routes/views.ts `registerBoards`).
-    import { RECORD_VIEW, type BoardView } from '$lib/state/boards/board';
+    // The track record's board and the Awaiting box's board are the component's own views,
+    // registered once like any module's: a role row of the Career banner's Track record opens the
+    // first for its role, and a name of the Focus board's Awaiting box the second for that name, so
+    // neither is listed in the view catalogue or has count hooks, and the page keeps both
+    // registered through every push of `boards:` (routes/views.ts `registerBoards`).
+    import { AWAITING_VIEW, RECORD_VIEW, type BoardView } from '$lib/state/boards/board';
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
 
-    export const registration: ViewRegistration = {
-        id: RECORD_VIEW,
-        label: 'views.track_record',
-        glyph: 'views.track_record_glyph',
-        group: '',
-        order: 0,
-        listed: false
-    };
+    export const registration: ViewRegistration[] = [
+        {
+            id: RECORD_VIEW,
+            label: 'views.track_record',
+            glyph: 'views.track_record_glyph',
+            group: '',
+            order: 0,
+            listed: false
+        },
+        {
+            id: AWAITING_VIEW,
+            label: 'views.awaiting_board',
+            glyph: 'views.awaiting_board_glyph',
+            group: '',
+            order: 0,
+            listed: false
+        }
+    ];
 
     /** The registrations of the board views given, each with its count hooks. */
     export function boardRegistration(views: readonly BoardView[]): ViewRegistration[] {
@@ -47,6 +58,13 @@
     // role's key the `id` of its state, titled "<role>: track record", holding the projects the
     // role's row of the Track record counts (state/boards/board/presets.ts `recordPreset`). It
     // holds none while no person is marked as the user, and a tab opened with no role says so.
+    //
+    // The Awaiting box's board is the same component under a view of its own: one tab per name of
+    // the box, its state the row, the name, the title (`label`) and the Focus filter of the press
+    // (state/boards/focus/filter.ts `AwaitingTab`), holding exactly the projects the name counts
+    // under that filter, worked out from the live portfolio each time it is drawn (`awaitingTake`,
+    // `awaitingPreset`), so a project that stops waiting leaves it. It offers no New project, and a
+    // tab opened with no such state says so.
     //
     // The header holds New project, Cards and List (views/shared/forms/bar/ModeButtons.svelte), the
     // one in force pressed, Full titles, pressed while the board draws full titles, and, in list
@@ -109,6 +127,7 @@
         LINE_FACETS,
         appliedFilters,
         applyFilters,
+        awaitingPreset,
         blockedBadge,
         cardSections,
         deadlineWords,
@@ -130,6 +149,7 @@
         type BoardState,
         type QuickFilters
     } from '$lib/state/boards/board';
+    import { awaitingTabOf, awaitingTake } from '$lib/state/boards/focus/filter';
     import { stateFolds } from '$lib/state/shared/page/folds';
     import { cardCursor, instanceText, storedState } from '$lib/state/workbench/layout/instance';
     import { hubList } from '$lib/state/shared/page/hubs';
@@ -139,6 +159,8 @@
     import { useState } from '$lib/state/client/use';
 
     const {
+        clock: { minuteNow, startMinuteClock },
+        entities: { portfolio },
         fs: { primary, roots },
         registry,
         selectors: {
@@ -146,8 +168,10 @@
             boardPreset,
             boardStats,
             configMap,
+            hubVocabs,
             offersNewProject,
             selfNamed,
+            selfPeople,
             staleLag
         },
         ui: { instanceState, setInstanceState }
@@ -158,10 +182,28 @@
     /** Whether this tab is the track record's board, and the key of the role it was opened for. */
     const record = $derived(instance.view === RECORD_VIEW);
     const role = $derived(instanceText(instance.state, 'id'));
+    /** Whether this tab is the Awaiting box's board, and the name it was opened for, if any. */
+    const transient = $derived(instance.view === AWAITING_VIEW);
+    const awaiting = $derived(transient ? awaitingTabOf(instance.state) : null);
+    /** The hubs the Hub group lists, none while the workspace has one hub. */
+    const hubs = $derived(hubList(roots(), primary()));
+
+    // The Awaiting box's board counts its projects with the minute clock, as the Focus page does.
+    $effect(() => (transient ? startMinuteClock() : undefined));
+
+    /** The projects the Awaiting box's name counts now, none for a tab opened for no name. */
+    const awaited = $derived.by(() => {
+        const snapshot = portfolio();
+        if (awaiting === null || snapshot === null) return [];
+        const scope = { self: selfPeople(), hubs, wordsOf: vocabOf, lists: hubVocabs() };
+        return awaitingTake(snapshot, configMap(), minuteNow(), awaiting, scope);
+    });
     const preset = $derived(
         record
             ? recordPreset(role === '' ? null : role, configMap(), vocabOf)
-            : boardPreset(instance.view)
+            : transient
+              ? awaitingPreset(awaited, configMap(), vocabOf)
+              : boardPreset(instance.view)
     );
     const cursor = $derived(cardCursor(instance.state));
     const items = $derived(board(preset));
@@ -189,8 +231,6 @@
         mine: mineApplies && held.mine,
         staleLag: lag
     });
-    /** The hubs the Hub group lists, none while the workspace has one hub. */
-    const hubs = $derived(hubList(roots(), primary()));
     /**
      * The facet values that narrow the board, which leave out a role while no `self` is named and
      * a hub while the Hub group is not drawn.
@@ -251,9 +291,10 @@
     /**
      * The board's own name, the one its registration carries, read from its `label:`; a track
      * record tab's is its role's, by the role's words, or by its key when `roles:` holds it no
-     * more.
+     * more; an Awaiting box's board's is the title its state carries.
      */
     function title(): string {
+        if (awaiting !== null) return awaiting.label;
         if (record && role !== '') {
             const words = preset.roles.find((one) => one.key === role)?.label ?? role;
             return t('board.record_title', words);
@@ -428,7 +469,11 @@
         <SaidBody
             {said}
             empty={shown.length === 0}
-            message={record && role === '' ? t('board.record_no_role') : t('board.empty')}
+            message={record && role === ''
+                ? t('board.record_no_role')
+                : transient && awaiting === null
+                  ? t('board.awaiting_none')
+                  : t('board.empty')}
             glyph={t('board.empty_glyph')}
         >
             {#if grid}

@@ -156,6 +156,8 @@ text:
         wait_blocked: Blocked
         wait_count: '{0} ({1})'
         wait_grants: Grants
+        wait_in_hub: '{0} ({1})'
+        wait_join: ', '
         wait_people: Waiting on
         wait_review: Under review
         warn_glyph: warn

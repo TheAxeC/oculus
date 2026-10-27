@@ -42,6 +42,14 @@
     // awaiting box, the band and the lanes the records it keeps and how many rows each hides; the
     // career banner and the quick add read the whole portfolio.
     //
+    // Every name of the awaiting box is a button. A name of Applications or Grants opens its
+    // entry's page, as a card title of its collection does, and is plain words when its hub holds
+    // no collection to find that page in. A name of Under review or Waiting on, and Blocked's
+    // count, opens the box's board (views/boards/projects/Projects.svelte, the view
+    // `awaiting_board`): one tab per name, titled by the row's label and the name, holding exactly
+    // the projects the name counts under the filter in force at the press, which its tab state
+    // carries.
+    //
     // Over a wallpaper the banner, the command center, the tasks, the band's lanes and the lanes
     // are each a surface of their own; the awaiting box and the said line are read off a
     // `Surface`.
@@ -50,6 +58,7 @@
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Surface from '$lib/ui/frame/Surface.svelte';
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
+    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import Band from './Band.svelte';
     import CareerPanel from './career/CareerPanel.svelte';
     import CommandCenter from './CommandCenter.svelte';
@@ -57,7 +66,9 @@
     import Lanes from './lanes/Lanes.svelte';
     import QuickAdd from './QuickAdd.svelte';
     import Tasks from './Tasks.svelte';
-    import { cardCursor } from '$lib/state/workbench/layout/instance';
+    import { entryPage } from './rows';
+    import { AWAITING_VIEW } from '$lib/state/boards/board';
+    import { cardCursor, instanceMap } from '$lib/state/workbench/layout/instance';
     import { recordState } from '$lib/state/shared/page/records';
     import { hubList, keyOf } from '$lib/state/shared/page/hubs';
     import {
@@ -68,10 +79,14 @@
         lanes,
         liveProjects,
         portfolioProjects,
+        type AwaitedEntry,
+        type Awaited,
+        type AwaitingRow,
         type FoldKey,
         type Id
     } from '$lib/state/boards/focus';
     import {
+        awaitingTab,
         filterLists,
         focusFilter,
         focusPage,
@@ -88,7 +103,7 @@
     const {
         clock: { minuteNow, startMinuteClock },
         fs: { primary, roots },
-        selectors: { configMap, hubVocabs, selfPeople },
+        selectors: { collectionsOfKey, configMap, hubVocabs, selfPeople },
         entities: { portfolio },
         layout: { openView },
         ui: { instanceState, setInstanceState }
@@ -156,10 +171,56 @@
         return count > 1 ? t('focus.wait_count', label, count) : label;
     }
 
-    /** A list of names with each name once, in the order it first comes, counted as above. */
-    function countedNames(names: readonly string[]): string[] {
-        const labels = [...new Set(names)];
-        return labels.map((label) => counted(label, names.filter((one) => one === label).length));
+    /** One name of the box: its words, and what a press opens, null for plain words. */
+    type BoxName = { text: string; press: (() => void) | null };
+
+    /** The label of a row whose names open the box's board, as the box draws it. */
+    function rowWords(row: AwaitingRow): string {
+        if (row === 'review') return t('focus.wait_review');
+        if (row === 'people') return t('focus.wait_people');
+        return t('focus.wait_blocked');
+    }
+
+    /** The words of a name of a row that opens the board: the venue-unset words for no venue. */
+    function nameWords(row: AwaitingRow, name: string): string {
+        return row === 'review' && name === '' ? t('focus.venue_unset') : name;
+    }
+
+    /**
+     * Open the box's board of one name, titled by the row's label and the name ("Under review:
+     * BSPC"), Blocked by its label alone, with the Focus filter in force now, so it holds what the
+     * name counts. A second press on the name brings its tab forward with the filter of that press,
+     * and the board's Mine only is set to the filter's each time.
+     */
+    function openBoard(row: AwaitingRow, name: string): void {
+        const words = rowWords(row);
+        const label =
+            row === 'blocked' ? words : t('board.awaiting_title', words, nameWords(row, name));
+        const id = openView(AWAITING_VIEW, awaitingTab(row, name, label, filter));
+        setInstanceState(id, { ...instanceMap(instanceState(id)), mine: filter.mine });
+    }
+
+    /** A name of a tally that opens the box's board of the projects it counts. */
+    function boardName(row: AwaitingRow, one: Awaited): BoxName {
+        const text = counted(nameWords(row, one.label), one.count);
+        return { text, press: () => openBoard(row, one.label) };
+    }
+
+    /**
+     * A grant or an application, named by its title or by its id when it has none, its hub's name
+     * after it for a hub other than the primary while the workspace has more than one; a press
+     * opens its entry's page, and one whose page cannot be found is plain words.
+     */
+    function entryName(entry: AwaitedEntry): BoxName {
+        const title = entry.title === '' ? entry.id : entry.title;
+        const root = entry.root ?? '';
+        const shown = hubs.length > 0 && root !== (primary() ?? '');
+        const text = shown ? t('focus.wait_in_hub', title, root) : title;
+        const page =
+            entry.collection === undefined
+                ? null
+                : entryPage(entry.collection, root, entry.id, collectionsOfKey);
+        return { text, press: page === null ? null : () => openView(page.view, page.state) };
     }
 
     /**
@@ -173,29 +234,35 @@
                   {
                       key: 'people',
                       label: t('focus.wait_people'),
-                      names: strip.people.map((one) => counted(one.label, one.count))
+                      names: strip.people.map((one) => boardName('people', one))
                   },
                   {
                       key: 'review',
                       label: t('focus.wait_review'),
-                      names: strip.venues.map((one) =>
-                          counted(one.label === '' ? t('focus.venue_unset') : one.label, one.count)
-                      )
+                      names: strip.venues.map((one) => boardName('review', one))
                   },
                   {
                       key: 'apps',
                       label: t('focus.wait_apps'),
-                      names: countedNames(strip.applications)
+                      names: strip.applications.map(entryName)
                   },
                   {
                       key: 'grants',
                       label: t('focus.wait_grants'),
-                      names: countedNames(strip.grants)
+                      names: strip.grants.map(entryName)
                   },
                   {
                       key: 'blocked',
                       label: t('focus.wait_blocked'),
-                      names: strip.blocked > 0 ? [String(strip.blocked)] : []
+                      names:
+                          strip.blocked.length > 0
+                              ? [
+                                    {
+                                        text: String(strip.blocked.length),
+                                        press: () => openBoard('blocked', '')
+                                    }
+                                ]
+                              : []
                   }
               ].filter((row) => row.names.length > 0)
     );
@@ -300,7 +367,13 @@
                             {#each awaiting as row (row.key)}
                                 <span class="wait-lbl">{row.label}</span>
                                 <span class="wait-names" class:blocked={row.key === 'blocked'}
-                                    >{row.names.join(', ')}</span
+                                    >{#each row.names as name, at (at)}{#if at > 0}{t(
+                                                'focus.wait_join'
+                                            )}{/if}{#if name.press === null}{name.text}{:else}<ToolButton
+                                                plain
+                                                label={name.text}
+                                                onclick={name.press}
+                                            />{/if}{/each}</span
                                 >
                             {/each}
                         </section>

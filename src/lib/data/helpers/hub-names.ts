@@ -201,14 +201,6 @@ export function flaggedCollections(
     return inListOrder(Object.values(collections).filter((one) => one[flag] === true));
 }
 
-/** The entries of every collection carrying the flag, joined in `flaggedCollections`' order. */
-export function flaggedEntries(
-    collections: Record<Id, Collection>,
-    flag: CollectionFlag
-): Collection['entries'] {
-    return flaggedCollections(collections, flag).flatMap((one) => one.entries);
-}
-
 /** The collection of every hub whose entry names the registry, in the portfolio's order. */
 export function registryCollections(
     collections: Record<Id, Collection>,

@@ -67,7 +67,7 @@ export function unplacedRow(missing: Project[]): Unplaced | null {
 export type BandItem = {
     id: string;
     title: string;
-    /** The key, in the entry's own hub, of the collection view whose entry the card reveals. */
+    /** The key, in the entry's own hub, of the collection whose entry's page the card opens. */
     entry: string;
     deadline?: string;
     /**
