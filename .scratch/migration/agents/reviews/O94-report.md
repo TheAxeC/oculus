@@ -217,3 +217,175 @@ End with the path of any file written or refreshed.
 The line for G8's Test entry in `agents/guarded.md`, to sit after 'promotes an idea past 01-A and moves its same-basename sidecar':
 
 `tests/server/edit/feeds.test.ts`, 'marks an idea posted with the day pressed and publish: True, or refuses and moves nothing: $name', every row
+
+## Round 1
+
+Everything in the round brief `agents/briefs/O94-round1.md` is done. Two points supersede what the sections above say. First, the round-0 sharp edges "`xx-.md` is accepted", "an idea `xx-a.b.md` is moved as a sidecar" and "a throw after the rename leaves a numbered post with its old text" are fixed. Second, the round-0 rule "first line exactly `---`, closing line exactly `---`, CR refused" is replaced by the tree's split.
+
+### Items
+
+1. **The tree's front matter rule. DONE.**
+   - The reuse grep was `grep -rn "splitFrontmatter\|FRONTMATTER\b\|FRONT_MATTER\|parseFrontmatter" src tests`. Its hits:
+     - `src/lib/data/sources/documents/docs.ts:58` (`FRONTMATTER`) and `:64` (`splitFrontmatter`).
+     - `src/lib/data/sources/documents/docs.ts:116` (`parseFrontmatter`).
+     - `src/lib/data/prose/markdown/note-links.ts:37` (`FRONT_MATTER`, which takes no `...` closer and no blanks after a fence).
+     - `src/lib/views/shared/prose/RenderedMarkdown.svelte:83`.
+     - The callers `deck/split.ts:115`, `deck/outline.ts:61`, `lint/writing/folder.ts:112` and `lint/writing/markdown.ts:403`.
+   - What is reused: `postedText` and `readsPosted` in `src/lib/server/edit/feeds/feeds.ts` call `splitFrontmatter` and are built on its block. `docs.ts` is unchanged and exports nothing new. The opening fence is the text up to the first line feed. The closing fence is what lies between the block and the body. The block is replaced line by line: each line keeps its own line end, and an added line takes the opening fence's line end.
+   - What is not reused: `parseFrontmatter`. It parses without `uniqueKeys: false` and would refuse a key written twice (Ruling B). `readsPosted`'s doc comment says so.
+   - A byte order mark is still refused, since `splitFrontmatter` finds no block behind one.
+2. **An idea is never another idea's sidecar. DONE.** `moving` in `markLinkedinPosted` keeps a name that starts with the stem and a dot only when `isLinkedinIdea(name)` is false. The doc comment of `markLinkedinPosted` says so.
+3. **`xx-.md` is no idea, one rule for the view and the server. DONE.**
+   - `isLinkedinIdea` in `feeds.ts` is `/^xx-[^/\\]+\.[mM][dD]$/`: at least one character after `xx-`, then `.md` in any case.
+   - It is used in three places in `feeds.ts`: by `markLinkedinPosted`, by `isLinkedinFile` (which lists the folder and which the portfolio watcher reads), and by `readLinkedinFolder`, which marks each entry `idea`.
+   - `splitPosts` (`src/lib/state/feeds/linkedin.ts:106`) now reads that mark (`entry.idea === true`) in place of `file.startsWith('xx-')`. The button and the write therefore decide by the one function.
+   - A shared module was not used. `tests/checks/tree/boundaries.test.ts` does not let `state/` import `data/prose/linkedin-idea`; the run of the list printed `"state/feeds/linkedin.ts imports data/prose/linkedin-idea"`. Allowing it would mean an edit to the check's allow list, so the view reads the server's mark instead.
+   - The view part has no unit test: G8 is the only entry the change touches, and it covers writes (spec.md:59). Its proof is the look on landing.
+4. **A throw after the rename renames back. DONE.** `writeTextAtomic` runs in a `try`. On a throw, `renameSync(post, source)` runs and the error is thrown on. The doc comment of `markLinkedinPosted` says so in place of the old sentence.
+5. **The case-run program's folders. DONE.**
+   - `rm -rf` of the three folders. `ls -d` of each then printed `No such file or directory`, `ls exit 1`.
+   - This round's only extra run used the base copy (item 6). The files placed there are all removed: links to `node_modules`, `vite.config.ts`, `package.json`, `tsconfig.json` and `.svelte-kit`, and the test file `tests/server/edit/o94-rows.test.ts`. `ls -a` of the base copy then printed `. .. config src tests unused-exports.txt utils`.
+6. **The report. DONE.** See the sections below.
+
+### The cases' first run on the round's starting tree
+
+The rows were added to the table before any change to `src`. The command was `npx vitest run tests/server/edit/feeds.test.ts -t "marks an idea posted" --reporter=verbose`, and its count line was `Tests  7 failed | 13 passed | 9 skipped (29)`. The 13 passing rows were the 13 rows of the step and its cases ruling. The seven new rows:
+
+1. 'fence lines with trailing blanks' (`---<tab>` opening, `--- ` closing): FAIL, refused, the folder unchanged: `- "02-easy-problems.jpeg"`, `- "02-easy-problems.md"`, `+ "xx-easy-problems.jpeg"`, `+ "xx-easy-problems.md"`.
+2. 'a front matter closed by ...': FAIL, the same folder diff (refused).
+3. 'CRLF line ends': FAIL, the same folder diff (refused). I added 'CRLF line ends and neither key' for the added lines of item 1. It also failed, with the same diff.
+4. 'an idea beside another idea whose name starts with its own': FAIL, `+ "02-a.b.md"`, `- "xx-a.b.md"`.
+5. 'xx-.md, which names no idea': FAIL, `+ "02-.md"`, `- "xx-.md"`.
+6. 'a text that cannot be written after the rename': FAIL, `+ "02-easy-problems.md"`, `- "xx-easy-problems.md"`. The post stayed numbered with its old text.
+7. The step's rows: all 13 passed, as quoted.
+
+### The first run on the unchanged tree, from the base copy
+
+I copied the current test file into the base copy as `tests/server/edit/o94-rows.test.ts` and linked in the worktree's `node_modules`, `vite.config.ts`, `package.json`, `tsconfig.json` and `.svelte-kit`. I then ran `npx vitest run tests/server/edit/o94-rows.test.ts -t "marks an idea posted|promotes an idea" --reporter=verbose` from the base copy, against the base source, and removed the files afterwards (item 5). Its count line, whole:
+
+```
+      Tests  18 failed | 3 passed | 8 skipped (29)
+```
+
+The 21 tests that ran are 'promotes an idea past 01-A and moves its same-basename sidecar' and the table's 20 rows. Each row's result:
+
+- PASS 'promotes an idea past 01-A and moves its same-basename sidecar'
+- FAIL 'the fixture's idea, its date replaced and publish added'
+- FAIL 'the stub's front matter with publish: False'
+- FAIL 'a quoted date'
+- FAIL 'a quoted date key'
+- FAIL 'a date line in the body'
+- FAIL 'no front matter' (renamed: `+ "02-easy-problems.jpeg"`, `+ "02-easy-problems.md"`)
+- PASS 'a front matter that holds publish: True and the day'
+- FAIL 'a date line written twice'
+- FAIL 'a front matter with neither key'
+- FAIL 'a front matter that never closes' (renamed)
+- FAIL 'a front matter that does not parse' (renamed)
+- FAIL 'an idea name with capitals'
+- FAIL 'a published: key beside the date'
+- FAIL 'fence lines with trailing blanks'
+- FAIL 'a front matter closed by ...'
+- FAIL 'CRLF line ends'
+- FAIL 'CRLF line ends and neither key'
+- FAIL 'an idea beside another idea whose name starts with its own'
+- PASS 'xx-.md, which names no idea' (the base name rule `[a-z0-9]+` already refused it; the round-0 rule accepted it)
+- FAIL 'a text that cannot be written after the rename' (`expected [Function] to throw an error`)
+
+### Results
+
+| Case | Result | Proof |
+| --- | --- | --- |
+| 1. closing `--- ` | met | PASS 'fence lines with trailing blanks' |
+| 2. `...` closer | met | PASS 'a front matter closed by ...' |
+| 3. CRLF | met | PASS 'CRLF line ends', PASS 'CRLF line ends and neither key' |
+| 4. `xx-a.b.md` keeps its name | met | PASS 'an idea beside another idea whose name starts with its own' |
+| 5. `xx-.md` refused | met for the write; the view part by reading `splitPosts` and `readLinkedinFolder`, and the look on landing | PASS 'xx-.md, which names no idea' |
+| 6. throw after the rename | met | PASS 'a text that cannot be written after the rename' |
+| 7. the step's rows | met | all 13 PASS, run below |
+
+Row 6 makes the next `writeTextAtomic` throw through a pass-through `vi.mock` of `src/lib/server/core/json.ts` at the head of the test file. It is the one module mock of the file, and every other call goes to the real writer.
+
+### Verification
+
+I ran the list twice this round. The first run was red in `tests/checks/tree/boundaries.test.ts` (`"state/feeds/linkedin.ts imports data/prose/linkedin-idea"`). After the change of item 3, `npx vitest run tests/server/edit/feeds.test.ts tests/checks/tree/boundaries.test.ts` printed `Tests  40 passed (40)`, and then the list ran once more.
+
+`npm run diagrams && npm run test:quick`:
+
+```
+test:quick: 17 changed file(s), from git since HEAD
+test:quick: 66 test file(s)
+ok      prettier (2.1 s): All matched files use Prettier code style!
+ok      ASCII gate (2.4 s)
+ok      svelte-kit sync (6.9 s): /Users/axelfaes/workspace/research-hub/.oculus/local.yml: ignoring unknown key(s) self
+ok      vitest slow (46.0 s): Duration  36.56s (transform 15.69s, setup 0ms, import 43.38s, tests 43.43s, environment 1ms)
+ok      eslint (76.7 s)
+ok      svelte-check (93.7 s): 1793061452302 COMPLETED 548 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest checks (112.1 s): Duration  102.87s (transform 85.90s, setup 0ms, import 209.73s, tests 160.97s, environment 4ms)
+ok      vitest (115.8 s): Duration  106.58s (transform 197.52s, setup 0ms, import 369.59s, tests 21.83s, environment 9.95s)
+test:quick: 122.9 s; every command passed
+```
+
+The line `ignoring unknown key(s) self` is printed by the tree's own reader (`src/lib/data/sources/config/local.ts:642`) while `svelte-kit sync` loads the config. No file of this step calls that reader (`grep -n "loadLocal\|local.ts"` over `feeds.ts`, `json.ts`, `docs.ts` and the test file finds none), and I did not read the file it names.
+
+`npm run diagrams` rewrote `docs/diagrams/layers.dot`/`.svg` and `layer-server.dot`/`.svg`. The counts of server-to-data imports moved from 128 to 129 and from 550 to 551, for the new import of `docs.ts`.
+
+`npx vitest run tests/server/edit/feeds.test.ts tests/routes/hubs/hub-writes.test.ts --reporter=verbose`: `Test Files  2 passed (2)`, `Tests  76 passed (76)`. Every row of the table passed, as did 'promotes an idea past 01-A and moves its same-basename sidecar' and the five LinkedIn rows of `hub-writes.test.ts`.
+
+The ASCII gate over the round's changed files and this report printed nothing; its exit status is in the hand-back.
+
+Other checks:
+- `sh utils/unused-exports.sh 2>/dev/null | diff O94-base/unused-exports.txt -`: no output, `unused diff exit 0`. `isLinkedinIdea` is module-local.
+- `wc -l`: `766 src/lib/server/edit/feeds/feeds.ts`, `156 src/lib/state/feeds/linkedin.ts`, `741 tests/server/edit/feeds.test.ts`.
+- The history-word grep over the added lines hit `before` six times, each naming an order or a variable ("before the closing fence", "before any file moves", "as it was before the press", and the variables `before` and `after`).
+- No existing assertion was edited: the only base lines the test file changes are its two import lines.
+
+### Files
+
+`git diff --numstat` (added, removed):
+- `src/lib/server/edit/feeds/feeds.ts`: 110, 19
+- `src/lib/state/feeds/linkedin.ts`: 6, 2
+- `tests/server/edit/feeds.test.ts`: 291, 2
+- `src/lib/state/client/writes.svelte.ts`: 2, 1
+- `src/lib/state/shared/stores/shapes.ts`: 4, 1
+- `config/text/server.yml`: 2, 0
+- `config/text/views/apps/apps.yml`: 4, 4
+- `config/text/views/feeds/linkedin.yml`: 2, 2
+- `docs/HELP.md`: 1, 1
+- `docs/templates.md`: 7, 9
+- `docs/diagrams/layers.dot` and `.svg`: 1, 1 each
+- `docs/diagrams/layer-server.dot` and `.svg`: 1, 1 each
+
+Every path is on the step's or the round's write list. `src/lib/data/sources/documents/docs.ts` is unchanged.
+
+### spec.md:72
+
+- **New keys.** The step adds the catalog keys `server.feeds.post_no_front_matter` and `server.feeds.post_not_dated`.
+  - Neither is empty.
+  - Each is unique in the `feeds` group of `config/text/server.yml`, beside `post_exists` and `post_needs_idea`.
+  - Neither collides with a configured or reserved key. The keys check's 'has a reader for every catalog key' and the one-file-per-group rule pass in the list above.
+  - The entry field `idea` is not new: `readLinkedinFolder` already sent it, and the view now reads it.
+- **Asynchronous paths.** `markLinkedinPosted` is synchronous from its first `existsSync` to its return, so two presses run one after the other in the server. The second finds no `xx-` source and answers `found: false`, which the route answers with `server.write_route.no_idea_file` and 404 (`feed-route.ts:175-176`). A page closed while the request is in flight changes nothing on the server: the write completes and its answer is dropped. No write supersedes another, since there is no queue and no timer.
+
+### Host- and user-visible changes, added this round
+
+Each is seen on TEST's LinkedIn view with a scratch hub's folder in the state named.
+
+- **A front matter that does not parse** (an unclosed quote in `title:`). Before (base): Mark posted renamed it, text unchanged. After: refused with "The LinkedIn idea's front matter did not read back with the new date and publish: True.", nothing moved.
+- **A front matter that never closes, or a file that opens with a byte order mark.** Before (base): renamed. After: refused with "The LinkedIn idea has no front matter between two --- lines.", nothing moved.
+- **The name rule.** Before (base): only `xx-` followed by lower-case letters, digits and single dashes, then `.md`. After: any base name `xx-<at least one character>.md`, the suffix in any case. Underscores, dots and capitals are accepted, and `xx-foo.MD` becomes `NN-foo.MD`. Before, such an idea was listed with Mark posted, and the press was refused with "A LinkedIn post must name an xx-*.md idea.".
+- **Fences with trailing blanks, a `...` closer, or CRLF line ends.** After: promoted and dated, the fences kept as written and a CRLF file left CRLF. With the round-0 code these were refused; on base they were renamed undated.
+- **An idea `xx-a.b.md` beside `xx-a.md`.** Before: Mark posted on `xx-a.md` also renamed `xx-a.b.md` to `NN-a.b.md`. After: `xx-a.b.md` keeps its name and stays under Ideas.
+- **A file named `xx-.md`.** Before (base): listed under Ideas, with Mark posted refused. After: not listed in the LinkedIn view at all, since `isLinkedinFile` takes it neither as an idea nor as a post. A change to it does not refresh the view (`portfolio.ts:566`).
+- **A failed write after the rename** (for example a full disk). After: the idea is back under Ideas with its own name and text, and the press shows the error.
+- **The Update tray's LinkedIn task**, once the Doc text lands: it no longer reports the days since the last post and no longer renames a post on request. The template in `docs/templates.md` changes the same way.
+
+### Limitations
+
+- A throw from one of the sidecar renames, after the post was written, leaves a dated post with some sidecars still under their `xx-` names. Item 4 names the write of the text only, so this is unchanged.
+- If renaming the post back itself throws, that rename's error is the one passed on, and the post stays numbered with its old text.
+- The view's half of case 5 has no unit test (see item 3); the look on landing is its proof.
+- Two choices of this round could be reversed:
+  - The suffix is case-insensitive, matching `isLinkedinFile`, so every file the view lists as an idea is one Mark posted accepts.
+  - `xx-.md` is dropped from the listing.
+
+The line for G8's Test entry is unchanged: `tests/server/edit/feeds.test.ts`, 'marks an idea posted with the day pressed and publish: True, or refuses and moves nothing: $name', every row.

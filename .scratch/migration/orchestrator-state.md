@@ -48,8 +48,8 @@ dispatch:          # steps in flight, up to six (Z632)
   launched: 2026-10-27
   report: .scratch/migration/agents/reviews/O94-report.md
   round: 1 (agents/briefs/O94-round1.md: the tree's front matter rule, no idea a sidecar, a name after xx-, a failed write renamed back, the report; round 0 the cases ruled, agents/briefs/O94-cases.md)
-  builder_usage: hand-back of the first run: 133375 tokens, 23 tool uses, 8 min 52 s; after the round-0 ruling: 231386 tokens, 102 tool uses, 35 min 34 s
-  reviewer_report: .scratch/migration/agents/reviews/O94-refuter.md (a3d20902e374d2dd1, claude-opus-5-5, 209441 tokens, 56 tool uses, 17 min 47 s)
+  builder_usage: hand-back of the first run: 133375 tokens, 23 tool uses, 8 min 52 s; after the round-0 ruling: 231386 tokens, 102 tool uses, 35 min 34 s; round 1: 328755 tokens, 79 tool uses, 16 min 10 s
+  reviewer_report: .scratch/migration/agents/reviews/O94-refuter.md (a3d20902e374d2dd1, claude-opus-5-5, 209441 tokens, 56 tool uses, 17 min 47 s); over round 1: running: aaadd9a0ced9cd29d (claude-opus-5-5)
   shared_paths: with O84, `config/text/server.yml` (O84 under `server.config_key.*`; O94 lines 330-340), and `docs/HELP.md` (O84 Doc text at 288 and 532; O94 332); with O87, `docs/HELP.md` (O87 294, 529, 538, 547) and `docs/templates.md` (O87 64-68, 274-278, 318-332; O94 664-691); the generated `docs/diagrams/*`, regenerated at each landing; simple merges in separate lines.
   landing: not-started
 - step: O88
@@ -66,6 +66,8 @@ dispatch:          # steps in flight, up to six (Z632)
   builder_usage: hand-back of the first run: 342022 tokens, 100 tool uses, 12 min 42 s
   landing: not-started
 - step: O91
+  brief_check: .scratch/migration/agents/reviews/O91-brief-check.md (a9938b4abd405e606, claude-opus-5-5, 228428 tokens, 71 tool uses, 11 min 7 s)
+  shared_paths: with O87, judged simple merges resolved at landing: `docs/HELP.md:547`, `config/options/behavior.yml:161` and `docs/templates.md:66` (O87 rewrites each and keeps joint work; O91 drops joint work: the second landing keeps O87's words without the flag and the collection), `config/options/sources.yml` (O87 78-90 and 105-115; O91 106-108, the flag's row), `docs/templates.md` (O87 64-68, 274-278, 318-332; O91 87, 94, 1064-1088, 1233-1258), `docs/HELP.md` (O87 294, 529, 538; O91 52, 236, 301); with O88, `tests/fixtures/hubs/demo/.oculus/data/academic/joint-work.yml` (O88 removes its `intro:`; O91 deletes the file: the deletion stands), `src/lib/views/boards/person/Person.svelte` and `src/lib/views/shared/forms/entry/Referrers.svelte` (O88 the heading component; O91 the joint-work block, button and head comment), `src/lib/data/snapshot/normalise.ts`, `src/lib/data/model/model-collections.ts`, `tests/data/sources/collections.test.ts` and `docs/templates.md` (separate lines); with O94, `docs/templates.md` (O94 664-691) and `docs/HELP.md` (O94 332); with all three, the generated `docs/diagrams/*` and `docs/palette.md`, regenerated at each landing.
   landing: preparing
 ```
 
@@ -206,6 +208,13 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 ## Open items (only what Axel must rule on; every report tells him these in plain words, decisions first, until he has ruled)
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
+
+- 489 (2026-10-27, /spec O91, the orchestrator; kind 2 of self-rule, it deletes data, so it waits for Axel). What it is about: each of the ten entries of the research hub's `.oculus/data/academic/joint-work.yml` has a `title` you wrote (for example moreau "Privacy-preserving ML for health & genomics", van-hulle "Neuro & psychophysiology (ECoG / BCI)", naesens "Transplant nephrology - federated, interpretable outcome prediction"). Ruling 470 (a) moves only `note` and `tags` onto the person in `people.yml` and deletes the file, so the ten titles would be deleted. Most titles restate the note, but some hold words the note does not (moreau's "genomics", van-hulle's "psychophysiology"). The other fields carry nothing: `status` is `active` in all ten, and no entry has `meta`, `deadline` or `followup`.
+  - (a) Each title is kept as the first sentence of that person's `note`: "<title>. <note>". Pros: nothing you wrote is lost; no new field in the people schema; the note stays the one place for the work with that person. Cons: the moved note is no longer byte for byte the old note; a terse title reads as a heading inside prose.
+  - (b) The people schema gains a third field, `work` (text, "What the work with the person is about."), holding the title. Pros: the title is kept as written, apart from the note. Cons: a new field on every person for one line that the note mostly repeats, and one more schema key than ruling 470 named.
+  - (c) The titles are deleted with the file, as ruling 470's words read. Pros: no extra work, the ruling's text carried out literally. Cons: deletes text you wrote that the notes do not hold. This is the lazy option.
+  - Recommendation: (a). It loses nothing, and it adds no schema key for content the note already mostly holds. (b) keeps the titles too, but adds a field to every person for little gain.
+  - Scheduling: inside O91, in the hub commit at its landing; the builder works meanwhile, since the hub text is the orchestrator's. O91 lands only after the ruling.
 
 
 ## Closed items
