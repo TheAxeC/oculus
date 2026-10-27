@@ -23,7 +23,10 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 ```
 
 ```yaml
-dispatch: []      # steps in flight, up to six (Z632)
+dispatch:          # steps in flight, up to six (Z632)
+- step: O92
+  landing: preparing
+  brief_check: .scratch/migration/agents/reviews/O92-brief-check.md (a6eefc8dc6b4ef0cb, claude-opus-5-5, 285982 tokens, 78 tool uses, 10 min 45 s)
 ```
 
 ## The standing demands (from Axel, in force)
@@ -164,8 +167,6 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
-- 498 (2026-10-27, O92's /spec, the brief check's finding 4, `agents/reviews/O92-brief-check.md`): O92 changes what a collection's Add writes: a picked field as its id, a multi-picked field as its list of ids, a field not required and left empty left out, and a key written only to the hub whose choices offered it. A wrong answer there writes wrong data into a hub's file, so the change needs a test, and `agents/spec.md:59` lets a builder write a test only under an entry of `agents/guarded.md` and makes a step that needs a new entry stop and ask. No entry names `tests/views/shared/forms/entry-add.test.ts` (`grep -n "entry-add" .scratch/migration/agents/guarded.md` prints nothing), though its head comment cites G8, whose Test line names other files. (a) A new entry G134 under "Your work is not lost or misplaced": "A collection's Add writes what it asked and nothing else: a picked field as its id, a multi-picked field as its list of ids, a typed field trimmed, a field not required and left empty left out; it writes to the one hub that names the collection, or to the hub asked, and a key only to the hub whose choices offered it; a required field left unanswered keeps the yes off." Code: `src/lib/views/shared/forms/entry/entry-add.ts`, `src/lib/ui/forms/prompt.ts` (`answered`). Test: `tests/views/shared/forms/entry-add.test.ts`, every row, its existing rows on which hub an Add writes to among them, and the file's head comment cites G134. Pros: the Add's writes stay guarded after the step; the existing test file gets the entry it lacks. Cons: one more entry in `guarded.md`. (b) The new rows under G8, its Test line naming the file. Pros: no new entry. Cons: G8 guarantees that a write changes only the file and key it names; what the Add puts in the body is another guarantee, so G8 would cover two things. (c) No test: the Add is checked by the case runs the builder's report quotes and by the look on landing. Pros: `guarded.md` unchanged. Cons: after the step nothing guards the Add's writes; a later change that writes a list as text or a key to the wrong hub is found only when a file goes wrong. (c) is the lazy option. Not offered: tests for the collection's bar, the Map's filtering or the Tier facet, since a wrong count or filter writes nothing, and the test rule allows a test only where a failure costs something. Recommended (a), a judgment: it guards the one part of the step that writes, under one guarantee. Kind: a stop of `/spec` ("A brief check finding the brief cannot absorb"); the closed brief is kept at the session's scratch copy and `/spec O92` writes it again after the ruling, with no second brief check.
-
 ## Closed items
 - 489 (2026-10-27): ruled by Axel, (b); the ten titles move onto the people file as a new field `work`, in O91's hub commit, with its `docs/templates.md` row; booked in `plan.md` Rulings.
 - 490 (2026-10-27): ruled by Axel, (a); the html-sites floor becomes 33, changed at O88's landing; booked in `plan.md` Rulings.
@@ -176,6 +177,7 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
 - 495 (2026-10-27): ruled by Axel, (a); command center and tasks rows open the entry's page; scheduled as O95 (ruling 497); booked in `plan.md` Rulings.
 - 496 (2026-10-27): ruled by Axel, (a); band rows open the entry's page; scheduled as O95 (ruling 497); booked in `plan.md` Rulings.
 - 497 (2026-10-27): ruled by Axel, (a); 492 to 496 scheduled as O95 (494, 495, 496) and O96 (492, 493) after O92; booked in `plan.md` Rulings and as the two steps.
+- 498 (2026-10-27): ruled by Axel, (a); a new guarded entry G134 under "Your work is not lost or misplaced": a collection's Add writes what it asked and nothing else (a picked field as its id, a multi-picked field as its list of ids, a typed field trimmed, a field not required and left empty left out; it writes to the one hub that names the collection, or to the hub asked, and a key only to the hub whose choices offered it; a required field left unanswered keeps the yes off); Code `src/lib/views/shared/forms/entry/entry-add.ts` and `src/lib/ui/forms/prompt.ts` (`answered`); Test `tests/views/shared/forms/entry-add.test.ts`, every row, the file's head comment citing G134; the entry added to `agents/guarded.md` at O92's landing; booked in `plan.md` Rulings and on O92's line; (c) was the lazy option.
 - 488 (2026-10-27, /spec O88, the side-bar sections and tree rows that fold): written in full in `choices.md` Z1048 with its options and the lazy option named; closed in automode with (a), they keep their own heads; booked in `plan.md` Rulings and on O88's line.
 - 486 (2026-10-26): ruled by Axel, (a); the Map's bar as the board's, built within O92; booked in `plan.md` Rulings and on O92's line.
 - 485 (2026-10-26): ruled by Axel, (a); `pillar_kinds:` in vocab.yml and the Pillars sections by kind, built within O88; booked in `plan.md` Rulings and on O88's line.
