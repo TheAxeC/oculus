@@ -1,16 +1,21 @@
 <script lang="ts">
     // Layer 3, primitive. A dialog that asks for a line or two of text before a write: a stash's
-    // message, a tag's name and message. It stands on the modal ground ui/frame/Modal.svelte draws
-    // and is modal as ui/controls/confirm/Confirm.svelte is: focus on the first field, Enter
-    // answers yes, Escape cancels, Tab stays inside, and a press on the ground behind it cancels.
-    // The fields are TextInput.svelte beside it, so the prompt holds only what has been typed until
-    // it answers, and nothing once it is gone. A pick the request marks required keeps the yes off,
-    // and Enter answering nothing, while it holds its empty choice.
+    // message, a tag's name and message, the fields of a new entry. It stands on the modal ground
+    // ui/frame/Modal.svelte draws and is modal as ui/controls/confirm/Confirm.svelte is: focus on
+    // the first field, Enter answers yes, Escape cancels, Tab stays inside, and a press on the
+    // ground behind it cancels. A field is a typed line (TextInput.svelte beside it), a pick of one
+    // choice (choice/Select.svelte) or a multi-pick of several (choice/MultiSelect.svelte, drawn
+    // with the request's `pickWords`, no free text taken), so the prompt holds only what has been
+    // typed and picked until it answers, and nothing once it is gone. Whether the yes is on is
+    // prompt.ts's `answered`: a field the request marks required keeps it off, and Enter answering
+    // nothing, while it is unanswered: a typed line holding only spaces, a pick its empty choice,
+    // a multi-pick no pick.
 
     import Modal from '../frame/Modal.svelte';
+    import MultiSelect from './choice/MultiSelect.svelte';
     import Select from './choice/Select.svelte';
     import TextInput from './TextInput.svelte';
-    import type { PromptRequest } from './prompt';
+    import { answered, type PromptRequest } from './prompt';
 
     type Props = {
         request: PromptRequest;
@@ -22,54 +27,76 @@
     let { request, cancel, oncancel }: Props = $props();
 
     let box: HTMLDivElement | undefined = $state();
-    // The fields begin with what the request holds, once; after that what is typed is the prompt's.
+    // The fields begin with what the request holds, once; after that what is typed and picked is
+    // the prompt's.
     // svelte-ignore state_referenced_locally
     let values = $state(request.fields.map((field) => field.value));
+    // svelte-ignore state_referenced_locally
+    let picks = $state(request.fields.map((field) => [...(field.picked ?? [])]));
 
-    /** Whether a pick the prompt requires holds the empty choice, which keeps the yes off. */
-    const unanswered = $derived(
-        request.fields.some((field, at) => field.required === true && values[at] === '')
-    );
+    /** Whether the fields hold what the yes needs. */
+    const ready = $derived(answered(request.fields, values, picks));
 
-    function answered(event: SubmitEvent): void {
+    function submitted(event: SubmitEvent): void {
         event.preventDefault();
-        if (unanswered) return;
-        request.act([...values]);
+        if (!ready) return;
+        request.act(
+            [...values],
+            picks.map((one) => [...one])
+        );
     }
 </script>
 
 <Modal onclose={oncancel} onopen={() => box?.querySelector('input')?.focus()}>
     {#snippet children(props)}
         <div {...props} class="box" aria-label={request.message} bind:this={box}>
-            <form class="form" onsubmit={answered}>
+            <form class="form" onsubmit={submitted}>
                 <p class="message">{request.message}</p>
                 {#if (request.detail ?? '') !== ''}
                     <p class="detail">{request.detail}</p>
                 {/if}
                 {#each request.fields as field, at (at)}
-                    <label class="field">
-                        <span class="name">{field.label}</span>
-                        {#if field.choices !== undefined}
-                            <Select
-                                value={values[at]}
+                    {#if field.picked !== undefined && field.choices !== undefined && request.pickWords !== undefined}
+                        {@const words = request.pickWords}
+                        <div class="field">
+                            <span class="name">{field.label}</span>
+                            <MultiSelect
+                                values={picks[at]}
                                 label={field.label}
-                                empty={field.empty}
                                 choices={field.choices}
-                                onchange={(next: string) => (values[at] = next)}
+                                onchange={(next: string[]) => (picks[at] = next)}
+                                search={words.search}
+                                remove={words.remove}
+                                removeGlyph={words.removeGlyph}
+                                none={words.none}
+                                more={words.more}
                             />
-                        {:else}
-                            <TextInput
-                                value={values[at]}
-                                label={field.label}
-                                placeholder={field.placeholder}
-                                oninput={(next: string) => (values[at] = next)}
-                            />
-                        {/if}
-                    </label>
+                        </div>
+                    {:else}
+                        <label class="field">
+                            <span class="name">{field.label}</span>
+                            {#if field.choices !== undefined}
+                                <Select
+                                    value={values[at]}
+                                    label={field.label}
+                                    empty={field.empty}
+                                    choices={field.choices}
+                                    onchange={(next: string) => (values[at] = next)}
+                                />
+                            {:else}
+                                <TextInput
+                                    value={values[at]}
+                                    label={field.label}
+                                    placeholder={field.placeholder}
+                                    oninput={(next: string) => (values[at] = next)}
+                                />
+                            {/if}
+                        </label>
+                    {/if}
                 {/each}
                 <div class="row">
                     <button type="button" class="cancel" onclick={oncancel}>{cancel}</button>
-                    <button type="submit" class="yes" disabled={unanswered}>
+                    <button type="submit" class="yes" disabled={!ready}>
                         {request.verb}
                     </button>
                 </div>

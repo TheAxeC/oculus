@@ -13,6 +13,7 @@ export {
     SESSIONS_RECENT,
     daysUntil,
     firstSentence,
+    mapPreset,
     presetFor,
     RECORD_VIEW,
     recordPreset,
@@ -65,7 +66,7 @@ export {
     venueWarning,
     waitingWords
 } from './filter-menu.ts';
-export type { FilterChoice, FilterGroup, ListCell } from './filter-menu.ts';
+export type { FilterChoice, FilterGroup } from './filter-menu.ts';
 export { VENUE_WARN, disseminated, humanSize, stats } from './stats.ts';
 export type { Dissemination } from './stats.ts';
 export {
@@ -76,7 +77,8 @@ export {
     facetValues,
     isStale,
     offersMine,
-    parseBoardState
+    parseBoardState,
+    withPick,
+    withPicks
 } from './state.ts';
 export { newProjectTier } from './new-project.ts';
-export { entryRoles } from '../../../data/shapes/boards/roles.ts';

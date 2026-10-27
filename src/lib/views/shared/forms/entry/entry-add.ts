@@ -1,16 +1,32 @@
 // Layer 3, view helper of views/shared/forms/entry/AddAsk.svelte. What each Add asks and does: a
-// collection's Add asks the file's primary key and the fields its schema marks required (a venue:
-// its id and its name); a lead's asks its title; a Lit Watch paper's asks its title, its address
-// and its bucket; Literature's asks a DOI or an address. Each writes the entry and opens its page,
-// which names the entry by its hub and its key and where the editor fills the rest; a refusal
-// comes back as the server's sentence for the box to show above what was typed.
+// collection's Add asks the fields `askFields` gives (state/forms/new-entry.ts: the file's primary
+// key, the fields its schema marks required, and its `lead`, `supervisors` and `collaborators`); a
+// lead's asks its title; a Lit Watch paper's asks its title, its address and its bucket;
+// Literature's asks a DOI or an address. Each writes the entry and opens its page, which names the
+// entry by its hub and its key and where the editor fills the rest; a refusal comes back as the
+// server's sentence for the box to show above what was typed.
+//
+// A collection's Add asks each field by its type, its choices those of the hub the box opens on
+// (`fieldChoices`): a `select` as a pick of its options or its `foreign_key`'s entries or words,
+// with an empty choice; a `tags` field with a `foreign_key` or options as a multi-pick of them, a
+// people field offering the hub's people; a field of any other type with a `foreign_key` as a pick;
+// every other field as a typed line. A pick or a multi-pick with no choice in that hub (Lead in a
+// hub with no people collection) is a typed line, a multi-pick's split on commas, so the Add stays
+// possible. Lead starts with the user picked where the choices hold the user's key in its own hub.
+// A field the schema marks `required: true` is required in the box, a typed line among them, so
+// the yes stays off until each holds an answer; a field required under a condition is asked as an
+// optional one, the box not checking the condition. The body holds a pick as its id, a multi-pick
+// as its list of ids and a typed line trimmed, and leaves out a field that is not required and is
+// left empty, so the file gets what was asked and nothing else.
 //
 // A collection's Add, Literature's Add and Lit Watch's Add write to a hub that could take the
 // entry, by the rule every path that makes a record reads (`hubsTaking` and `chosenHub` of
 // state/shared/page/hubs.ts): when more than one hub holds the collection, the box asks which, the
 // primary first and chosen when it is among them, and none chosen otherwise, the Add off until one
 // is picked; when one hub holds it, the entry goes to that hub, primary or not, and nothing is
-// asked.
+// asked. A collection's Add answered with a hub other than the one whose choices it offered writes
+// nothing and hands back the Add of the hub answered, its typed lines carried over and its picks
+// asked again, so a key is written only to the hub whose choices offered it.
 //
 // Literature's Add looks a DOI, an arXiv paper or a PubMed paper up through the sources the
 // Literature search asks (state/feeds/literature/lookup.ts) and saves the paper they merge into;
@@ -21,6 +37,8 @@ import type { PromptField } from '$lib/ui/forms/prompt';
 import type { ClientState } from '$lib/state/client/context';
 import { primaryKeyOf, type Collection, type SchemaField } from '$lib/state/boards/collection';
 import { pageView } from '$lib/state/forms/page-entry';
+import { formFieldsOf } from '$lib/state/forms/record-fields';
+import { selectChoices, type Choice } from '$lib/state/forms/schema';
 import {
     addressOfId,
     bareId,
@@ -38,16 +56,107 @@ import { hitPaper } from '$lib/state/feeds/literature/saved';
 import { t } from '$lib/state/shared/words/text';
 import { refusalWords } from '../answer-words';
 
-/** What an Add box asks, and what its yes does with the typed values. */
+/** What an Add box asks, and what its yes does with the typed values and the picks. */
 export type Ask = {
     message: string;
     fields: PromptField[];
     /**
-     * Write the entry: the sentence of a refusal, the empty text once the page is open, or another
-     * Add for the box to ask in its place.
+     * Write the entry from each field's text (`values`) and each field's picks (`picked`, a
+     * multi-pick's ids by the field's place, none for an Add that asks no multi-pick): the
+     * sentence of a refusal, the empty text once the page is open, or another Add for the box to
+     * ask in its place.
      */
-    submit: (values: string[]) => Promise<string | Ask>;
+    submit: (values: string[], picked?: string[][]) => Promise<string | Ask>;
 };
+
+/**
+ * How a collection's Add asks one field: a typed line, a pick of one choice, a multi-pick, or a
+ * typed line read as a list split on commas, which a multi-pick is in a hub that offers it no
+ * choice.
+ */
+type AskedAs = 'line' | 'pick' | 'multi' | 'list';
+
+/** What separates the keys of a typed list. */
+const LIST_SEPARATOR = ',';
+
+/** One field a collection's Add asks: the schema's field, how it is asked, and the box's field. */
+type Question = { field: SchemaField; as: AskedAs; prompt: PromptField };
+
+/** The field whose box starts with the user picked. */
+const USER_FIELD = 'lead';
+
+/**
+ * The key Lead starts with: the key of the first of the user's ids (`self`) that the choices hold
+ * as the user's own record, its key and its hub alike, a choice with no hub being of the hub the
+ * box opens on (`hub`); none when no choice is the user's, so the box never starts with a key that
+ * would name another person.
+ */
+function userPicked(self: ReadonlySet<string>, choices: readonly Choice[], hub: string): string[] {
+    for (const id of self) {
+        const address = addressOfId(id);
+        const held = choices.some(
+            (one) => one.id === address.key && (one.hub ?? hub) === address.hub
+        );
+        if (held) return [address.key];
+    }
+    return [];
+}
+
+/**
+ * How the Add asks one schema field in the hub `hub`, its choices read there: a select as a pick,
+ * a tags field with a `foreign_key` or options as a multi-pick, any other field with a
+ * `foreign_key` as a pick, each a typed line where the hub offers no choice; every other field a
+ * typed line, starting from `typed` (what was typed in it in another hub's box). Each is required
+ * in the box, a typed line or a list included, when the schema marks it `required: true`.
+ */
+function questionOf(client: ClientState, one: SchemaField, hub: string, typed = ''): Question {
+    const label = one.label ?? one.field;
+    const required = one.required === true;
+    const [form] = formFieldsOf([one], {});
+    const keyed = form.foreign_key !== undefined;
+    const multi = one.type === 'tags' && (keyed || (one.options ?? []).length > 0);
+    const single = !multi && (one.type === 'select' || keyed);
+    const line: PromptField = required
+        ? { label, value: typed, required }
+        : { label, value: typed };
+    if (!multi && !single) return { field: one, as: 'line', prompt: line };
+    const choices = client.selectors.fieldChoices(form, null, hub === '' ? undefined : hub);
+    if (choices.length === 0) {
+        return multi
+            ? { field: one, as: 'list', prompt: { ...line, split: LIST_SEPARATOR } }
+            : { field: one, as: 'line', prompt: line };
+    }
+    if (multi) {
+        const picked =
+            one.field === USER_FIELD ? userPicked(client.selectors.selfPeople(), choices, hub) : [];
+        return { field: one, as: 'multi', prompt: { label, value: '', choices, picked, required } };
+    }
+    const prompt: PromptField = {
+        label,
+        value: '',
+        choices: selectChoices(choices),
+        empty: t('editor.empty_choice'),
+        required
+    };
+    return { field: one, as: 'pick', prompt };
+}
+
+/** The value one asked field writes: a pick's id, a multi-pick's ids, a typed line trimmed. */
+function answerOf(question: Question, typed: string, picks: readonly string[]): string | string[] {
+    if (question.as === 'multi') return [...picks];
+    if (question.as === 'list') {
+        return typed
+            .split(LIST_SEPARATOR)
+            .map((one) => one.trim())
+            .filter((one) => one !== '');
+    }
+    return question.as === 'pick' ? typed : typed.trim();
+}
+
+/** Whether an answer is empty: the empty text or no pick. */
+function emptyAnswer(answer: string | string[]): boolean {
+    return answer.length === 0;
+}
 
 /** Open the page of the entry just added, by its id in the portfolio; its tab shows its key. */
 function openPage(
@@ -95,11 +204,33 @@ function hubAsk(
 }
 
 /**
- * The Add of a collection: the primary key and the required fields of the new entry, and the hub
- * to write it in when more than one hub holds the collection, `chosen` chosen when it is one of
- * them, else the primary when it is, else none (`hubField`). `held` is the collection of each hub
- * that holds it, those of the key `collection` unless given (a registry's, whose key each hub's
- * list gives); the entry is written under the key of the chosen hub's collection.
+ * The body a collection's Add writes from what its box holds: each asked field's answer
+ * (`answerOf`), a field that is not required left out while its answer is empty.
+ */
+function bodyOf(
+    questions: readonly Question[],
+    values: readonly string[],
+    picked: readonly (readonly string[])[]
+): Record<string, string | string[]> {
+    const body: Record<string, string | string[]> = {};
+    questions.forEach((question, at) => {
+        const answer = answerOf(question, values[at] ?? '', picked[at] ?? []);
+        if (question.field.required !== true && emptyAnswer(answer)) return;
+        body[question.field.field] = answer;
+    });
+    return body;
+}
+
+/**
+ * The Add of a collection: the fields `askFields` gives, each asked by its type (`questionOf`)
+ * with the choices of the hub the box opens on, and the hub to write the entry in when more than
+ * one hub holds the collection, `chosen` chosen when it is one of them, else the primary when it
+ * is, else none (`hubField`). The box opens on `chosen` when it is one of them, else on the hub
+ * the Add would write to, else on the primary. `held` is the collection of each hub that holds it,
+ * those of the key `collection` unless given (a registry's, whose key each hub's list gives); the
+ * entry is written under the key of the chosen hub's collection. Answered with a hub other than
+ * the one it opened on, the Add writes nothing and answers with the Add of the hub answered, the
+ * typed lines carried over by field (`typed`, by field name).
  */
 export function collectionAsk(
     client: ClientState,
@@ -107,11 +238,19 @@ export function collectionAsk(
     schema: SchemaField[] | undefined,
     title: string,
     chosen?: string,
-    held: Collection[] = client.selectors.collectionsOfKey(collection)
+    held: Collection[] = client.selectors.collectionsOfKey(collection),
+    typed: Record<string, string> = {}
 ): Ask {
     const named = held.find((one) => one.primary_key !== undefined)?.primary_key ?? null;
     const asked = askFields(schema, schema === undefined ? named : primaryKeyOf(schema));
     const hub = hubAsk(client, held, chosen);
+    const taking = hubsTaking(held, client.fs.primary());
+    const first = hub.fields.at(0)?.value;
+    const opened =
+        chosen !== undefined && taking.includes(chosen)
+            ? chosen
+            : (hub.rootOf(first === '' ? undefined : first) ?? client.fs.primary() ?? '');
+    const questions = asked.map((one) => questionOf(client, one, opened, typed[one.field]));
     /** The key the hub `root` names the collection by, `collection` for none. */
     const keyIn = (root: string | undefined): string => {
         const one = held.find((each) => rootOf(each) === root);
@@ -119,15 +258,24 @@ export function collectionAsk(
     };
     return {
         message: t('entry_form.add_ask', title),
-        fields: [
-            ...asked.map((one) => ({ label: one.label ?? one.field, value: '' })),
-            ...hub.fields
-        ],
-        submit: async (values) => {
-            const body = Object.fromEntries(asked.map((one, at) => [one.field, values[at].trim()]));
+        fields: [...questions.map((one) => one.prompt), ...hub.fields],
+        submit: async (values, picked = []) => {
             const root = hub.rootOf(values.at(asked.length));
+            if (root !== undefined && root !== opened && taking.includes(root)) {
+                const carried = Object.fromEntries(
+                    questions
+                        .map((one, at) => [one, values[at] ?? ''] as const)
+                        .filter(([one]) => one.as === 'line' || one.as === 'list')
+                        .map(([one, text]) => [one.field.field, text])
+                );
+                return collectionAsk(client, collection, schema, title, root, held, carried);
+            }
             const key = keyIn(root);
-            const answer = await client.writes.newEntry(key, body, root);
+            const answer = await client.writes.newEntry(
+                key,
+                bodyOf(questions, values, picked),
+                root
+            );
             const sentence = refusalWords(answer);
             if (sentence === '' && answer.id !== undefined) {
                 const into = held.find((each) => rootOf(each) === root);

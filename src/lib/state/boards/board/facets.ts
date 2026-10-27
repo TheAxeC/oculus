@@ -26,8 +26,10 @@ import {
     paletteTone,
     stageLabel,
     stageTone,
-    toneOf
+    toneOf,
+    vocabOf
 } from '../../shared/words/tones.ts';
+import { tierWords } from '../../../data/shapes/boards/tiers.ts';
 import {
     CODE_VALUES,
     FACETS,
@@ -98,7 +100,8 @@ function recordValues(items: BoardItem[], facet: string): Recorded {
  * The words a facet value carries, for the values that are data rather than vocabulary. A compute
  * value reads by the resource's name `recorded` holds, a venue by its short name, a pillar, a
  * funding scheme and a dataset by the words a card draws for them, and a waited-on value by the
- * words the card's WAITING ON line draws for it, each as itself without one.
+ * words the card's WAITING ON line draws for it, each as itself without one; a tier reads by its
+ * label in `tiers:` of every hub's words (data/shapes/boards/tiers.ts), as its key without one.
  */
 export function facetLabel(
     facet: string,
@@ -111,6 +114,8 @@ export function facetLabel(
     if (facet === 'role') return preset.roles.find((one) => one.key === value)?.label ?? value;
     if (facet === 'domain') return domainLabel(value);
     if (facet === 'status' || facet === 'form') return chipLabel(value);
+    if (facet === 'tier')
+        return tierWords(vocabOf()).find((one) => one.key === value)?.label ?? value;
     return value;
 }
 
@@ -142,6 +147,12 @@ function orderValues(
     if (facet === 'role') return preset.roles.map((one) => one.key);
     if (facet === 'status') return chipKeys().filter(has);
     if (facet === 'form') return formOrder().filter(has);
+    if (facet === 'tier') {
+        // The tiers in the order of `tiers:`, then a word no row of `tiers:` names, by its key.
+        const listed = tierWords(vocabOf()).map((one) => one.key);
+        const other = [...counts.keys()].filter((one) => has(one) && !listed.includes(one));
+        return [...listed.filter(has), ...other.sort()];
+    }
     if (facet === 'compute') {
         // The resources by name, then by registry position, and the value for none last.
         const named = [...recorded.keys()].filter(has);

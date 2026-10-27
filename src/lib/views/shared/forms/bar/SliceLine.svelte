@@ -1,12 +1,17 @@
 <script lang="ts">
-    // Layer 3, view partial of views/boards/projects/Projects.svelte. Line 2 of a project board's
-    // bar: for each category the board's projects are in, its label in small capitals in the
-    // category's colour, then its slices as chips, each with its words and its count ("journal
-    // article 9"), outlined in the slice's hue and filled while picked; a press on a slice picks or
-    // unpicks it, and a press on a category's label picks every slice of it, or takes them all out
-    // when all are picked. The line ends with how many projects the board shows ("16 projects",
-    // "5 of 16 shown") and, while any facet value is picked, Clear all, which takes every facet
-    // value out, the slices included, and leaves the search and the toggles as they are.
+    // Layer 3, shared view partial of the project boards (views/boards/projects/Projects.svelte),
+    // the collection views (views/boards/collection/Collection.svelte) and the Map
+    // (views/structure/map/Map.svelte). Line 2 of their bar: for each category of slices the caller
+    // hands (a board's and the Map's categories of projects, a collection's status field), its
+    // label in small capitals in the category's colour, then its slices as chips, each with its
+    // words and its count ("journal article 9"), outlined in the slice's hue and filled while
+    // picked; a press on a slice picks or unpicks it, and a press on a category's label picks every
+    // slice of it, or takes them all out when all are picked. The slices are stored under one facet
+    // key (`facet`: `slice` on a board and the Map, the collection's `status`), and their counts
+    // are that facet's in `counted`. The line ends with how many are shown, in the caller's words
+    // (`words`: "16 projects", "5 of 16 shown", "12 entries") and, while any facet value is picked,
+    // Clear all, which takes every group's and slice's pick out and leaves the search and the
+    // caller's toggles as they are.
     //
     // The line is one line at any pane width: the slices that do not fit beside the end of the line
     // fold, last in, first out, into a "+<n>" button that opens them in a list headed by category
@@ -15,8 +20,9 @@
     // folds its label with them. The folding is ui/frame/toolbar/FoldRun.svelte's, as line 1's
     // (FilterBar.svelte) is; a render with no layout draws every slice.
     //
-    // It holds no state of the board: the slices, their counts and the picks are the board's,
-    // computed by the pure functions of state/boards/board/, and every press is handed back.
+    // It holds no state of its caller: the slices, their counts and the picks are the caller's,
+    // computed by pure functions of state/boards/, and every press is handed back as the filters it
+    // leaves (`onfilters`, made by state/boards/board/state.ts `withPick` and `withPicks`).
 
     import Chip from '$lib/ui/controls/Chip.svelte';
     import RowButton from '$lib/ui/controls/RowButton.svelte';
@@ -24,8 +30,9 @@
     import FoldRun from '$lib/ui/frame/toolbar/FoldRun.svelte';
     import PickMenu from './PickMenu.svelte';
     import {
-        shownWords,
         sliceChoices,
+        withPick,
+        withPicks,
         type Facet,
         type Slice,
         type SliceGroup
@@ -33,24 +40,30 @@
     import { t } from '$lib/state/shared/words/text';
 
     type Props = {
-        /** The board's slices by category, read from its projects before any filter. */
+        /** The line's accessible name, already translated. */
+        label: string;
+        /** The slices by category, read from the caller's items before any filter. */
         groups: SliceGroup[];
+        /** The facet key the slices are stored under in `filters` and counted in `counted`. */
+        facet: string;
         /** The facets with their counts over what the other filters leave, slices included. */
         counted: Facet[];
-        /** The facet values the board's saved state holds. */
+        /** The facet values the caller's saved state holds. */
         filters: Record<string, string[]>;
-        /** How many projects the board shows, and how many it holds. */
+        /** How many items are shown, and how many the caller holds. */
         shown: number;
         total: number;
-        /** Adds or takes out one slice. */
-        ontoggle: (facet: string, value: string) => void;
-        /** Sets the picked slices to `values`. */
-        onslices: (values: string[]) => void;
-        /** Takes every facet value out. */
-        onclear: () => void;
+        /** The words of the shown count, already translated. */
+        words: (shown: number, total: number) => string;
+        /**
+         * Hands back the filters a press leaves: one slice picked or taken out, a category's slices
+         * set, or every facet value taken out by Clear all.
+         */
+        onfilters: (filters: Record<string, string[]>) => void;
     };
 
-    let { groups, counted, filters, shown, total, ontoggle, onslices, onclear }: Props = $props();
+    let { label, groups, facet, counted, filters, shown, total, words, onfilters }: Props =
+        $props();
 
     /** How wide the "+<n>" button is taken to be before it is first drawn. */
     const MORE_GUESS = 40;
@@ -61,10 +74,10 @@
     const places: Place[] = $derived(
         groups.flatMap((group) => [{ group }, ...group.slices.map((slice) => ({ group, slice }))])
     );
-    const picked = $derived(Object.hasOwn(filters, 'slice') ? filters.slice : []);
+    const picked = $derived(Object.hasOwn(filters, facet) ? filters[facet] : []);
     const counts = $derived(
         new Map(
-            (counted.find((one) => one.key === 'slice')?.values ?? []).map((one) => [
+            (counted.find((one) => one.key === facet)?.values ?? []).map((one) => [
                 one.value,
                 one.count
             ])
@@ -86,7 +99,7 @@
             fits === null ? [] : places.slice(fits).flatMap((place) => place.slice?.value ?? [])
         )
     );
-    const foldedGroups = $derived(sliceChoices(groups, counted, filters, folded));
+    const foldedGroups = $derived(sliceChoices(groups, facet, counted, filters, folded));
     /** How many of the folded slices are picked, which the "+<n>" button's words carry. */
     const foldedPicks = $derived(picked.filter((value) => folded.has(value)).length);
 
@@ -116,10 +129,14 @@
     function pickCategory(group: SliceGroup): void {
         const values = group.slices.map((one) => one.value);
         const all = values.every((value) => picked.includes(value));
-        onslices(
-            all
-                ? picked.filter((value) => !values.includes(value))
-                : [...picked, ...values.filter((value) => !picked.includes(value))]
+        onfilters(
+            withPicks(
+                filters,
+                facet,
+                all
+                    ? picked.filter((value) => !values.includes(value))
+                    : [...picked, ...values.filter((value) => !picked.includes(value))]
+            )
         );
     }
 
@@ -144,12 +161,12 @@
             tone={slice.tone === '' ? undefined : slice.tone}
             outlined
             pressed={picked.includes(slice.value)}
-            onclick={() => ontoggle('slice', slice.value)}
+            onclick={() => onfilters(withPick(filters, facet, slice.value))}
         />
     {/if}
 {/snippet}
 
-<div class="line" role="toolbar" aria-label={t('board.slices')} bind:this={line}>
+<div class="line" role="toolbar" aria-label={label} bind:this={line}>
     <FoldRun
         items={places}
         key={placeKey}
@@ -167,14 +184,20 @@
                     : t('board.slices_more_picked', folded.size, foldedPicks)}
                 groups={foldedGroups}
                 headed
-                onpick={ontoggle}
+                onpick={(_category: string, value: string) =>
+                    onfilters(withPick(filters, facet, value))}
             />
         </span>
     {/if}
     <span class="end" bind:this={end}>
-        <span class="count">{shownWords(shown, total)}</span>
+        <span class="count">{words(shown, total)}</span>
         {#if picking}
-            <ToolButton small glyph="clear_all" label={t('board.filter_clear')} onclick={onclear} />
+            <ToolButton
+                small
+                glyph="clear_all"
+                label={t('board.filter_clear')}
+                onclick={() => onfilters({})}
+            />
         {/if}
     </span>
 </div>
@@ -213,7 +236,7 @@
         color: var(--tone, var(--muted-txt, var(--muted)));
     }
 
-    /* How many projects are shown, and Clear all, at the line's right end. */
+    /* How many are shown, and Clear all, at the line's right end. */
     .end {
         display: inline-flex;
         flex: none;

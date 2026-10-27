@@ -1,31 +1,28 @@
 # Oculus text owned by the map view.
 text:
     map:
-        all: all
-        all_lines_tip: Draw every pillar again
-        all_stages_tip: Draw every project stage again
-        archived: '+ archived:'
-        collaborators: + team
-        connected: connected only
         connected_tip: Leave out a project with no membership of a pillar still drawn
-        count: '{0} ({1})'
         edge_failed: 'Edge edit failed: {0}'
         empty: 'No relationships yet: add pillars or related to manifests.'
-        empty_filtered: Nothing is left under these filters. Press a filter again, or all, to widen them.
+        empty_filtered: Nothing is left under these filters. Take a pick out, or press Clear all.
         empty_glyph: circle_empty
         filters: Map filters
         layout_failed: 'The map could not be laid out: {0}'
         legend_line: pillar
-        line_glyph: square_filled
-        lines: 'lines:'
         link: link
         link_glyph: link
         link_tip: 'Link mode: drag one project onto another to add or remove a related edge'
         retune: re-tune
         retune_glyph: refresh
         retune_tip: Lay the map out again from another start
+        show: Show
+        show_connected: Connected only
+        show_pillars: Pillars
+        show_projects: Projects
+        show_team: Team
+        slices: Map slices
+        stage: Stage
         toolbar: Map actions
-        stages: 'stages:'
     views:
         map: Map
         map_glyph: link

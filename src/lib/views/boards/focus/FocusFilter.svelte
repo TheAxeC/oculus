@@ -2,7 +2,7 @@
     // Layer 3, view partial of views/boards/focus/Focus.svelte. The Filter action of the Focus
     // pane's header: a bare glyph button, drawn pressed while the filter hides a row of the page,
     // that opens a list which stays open on a pick, as a project board's group lists do
-    // (views/boards/projects/PickMenu.svelte). The list holds Mine only, then the Role checklist
+    // (views/shared/forms/bar/PickMenu.svelte). The list holds Mine only, then the Role checklist
     // (the roles of `roles:` that have a field), while a person is marked as the user; the Tier
     // checklist (the words of `tiers:`); the Pillar checklist (every pillar of the workspace, its
     // hub's name after its title while there is more than one hub) while a pillar exists; and the

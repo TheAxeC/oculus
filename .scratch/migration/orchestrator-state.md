@@ -24,19 +24,9 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 
 ```yaml
 dispatch:          # steps in flight, up to six (Z632)
-- step: O92
-  brief_check: .scratch/migration/agents/reviews/O92-brief-check.md (a6eefc8dc6b4ef0cb, claude-opus-5-5, 285982 tokens, 78 tool uses, 10 min 45 s)
-  base: a964e0170
-  worktree: .agents/worktrees/migration-O92
-  executor: agent
-  worker: claude:opus
-  session_id: afca7f28cc1fce52c (claude-opus-5-5)
-  launched: 2026-10-27
-  report: .scratch/migration/agents/reviews/O92-report.md
-  builder_usage: 302006 tokens, 431 tool uses, 75 min 13 s; round 1: 221958 tokens, 192 tool uses, 27 min 25 s
-  reviewer_report: .scratch/migration/agents/reviews/O92-refuter.md (a30959dfc24838389, claude-opus-5-5, 336845 tokens, 85 tool uses, 19 min 18 s); over round 1: "running: a8e741ac1403a49d0 (claude-opus-5-5)"
-  round: 1
-  landing: not-started
+- step: O98
+  brief_check: .scratch/migration/agents/reviews/O98-brief-check.md (a5d4f9a13f2831178, claude-opus-5-5, 236369 tokens, 81 tool uses, 13 min 47 s)
+  landing: preparing
 ```
 
 ## The standing demands (from Axel, in force)
@@ -177,11 +167,8 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
-- 508 (2026-10-27, O98's /spec, rewritten 2026-10-27 at Axel's word): two choices O98 needs, each option with no value in code and no shipped default. What the tree shows: the status bar's HPC item, the Command Center's HPC pill and the Live HPC rail badge show one queue (`HpcPayload`, `src/lib/data/model/model-sessions.ts:657-689`); the Google and Microsoft sign-in addresses are written in code (`src/lib/server/accounts/connect/oauth.ts:122-142`); ruling 507 wrote GitHub's address, the key type `ed25519` and the key path `~/.ssh/id_ed25519_<resource>` into O98's line. With nothing configured, the git section and the key setup say what is missing and where it is set, and do nothing else.
-  - (1) The status bar's HPC item, the Command Center's HPC pill and the rail badge with several clusters. (a) one of each, the counts summed over the clusters, the tip a line per cluster with its name and its counts or its failure, the item in the warning tone while a cluster fails. (b) one item and one pill per cluster, each with its own counts or its failure. (a) keeps the bar one item wide whatever the number of clusters, and a failing cluster is named only in the tip; (b) shows each queue and each failure without a tip, and widens the bar by one item per cluster. Recommended: (a), as a judgment, since the Live HPC view already lists each cluster. The lazy option: none, both cost the same.
-  - (2) Where the sign-in providers (each provider's authorize, token, device-code and user addresses, its scopes, and for a git host the address git's credential request names and the page where the reader registers the OAuth App) and the two key settings (the key type and the key file pattern) are configured, oculus shipping none of them. (a) the hub's `.oculus/config.yml`, a `sign_in:` list of provider rows and `clusters.key_type` and `clusters.key_file` settings, edited in Settings like the hub's other settings. (b) the machine's `local.yml`, the same rows and settings beside the `clusters:` rows of ruling 507. (a) is set once per hub and reaches every machine that opens it, and the values are no secrets; (b) is set again on each machine, and keeps everything of the Account setup in one file. Recommended: (a), as a judgment. The lazy option: none, both cost the same.
-
 ## Closed items
+- 508 (2026-10-27): ruled by Axel, 1 (a), 2 (a); the HPC item, pill and badge one each with the counts summed; the sign-in rows, the key settings and the failure rows in the hub's `.oculus/config.yml`, nothing shipped; booked in `plan.md` Rulings and on O98's line.
 - 507 (2026-10-27): ruled by Axel, 1 (a), 2 (a), 3 (a), 4 (a), 5 (b); the clusters as a `clusters:` list of rows in `local.yml`, the key made with no passphrase and put on the cluster over one password login, the GitHub sign-in by the reader's own OAuth App and the device flow, the token handed to every git oculus starts by a credential helper, the device flow written by hand; booked in `plan.md` Rulings and on O98's line.
 - 506 (2026-10-27): ruled by Axel, (a); O98 prepared now and built beside O92, O95, O96 and O97 together once O92 has landed; booked in `plan.md` Rulings, O98's line moved before O95's.
 - 489 (2026-10-27): ruled by Axel, (b); the ten titles move onto the people file as a new field `work`, in O91's hub commit, with its `docs/templates.md` row; booked in `plan.md` Rulings.
@@ -669,6 +656,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-10-27 (O92 landed; O98's brief check back). O92 landed on main (the landing commit; booking in `plan.md` under O92, landing report `agents/reviews/O92-landing.md`), checked in the gate (every command passed after B1, S1, St1, St2 and St3 fixed at landing and a prettier and a comment-width line closed there) and on main (staged diff equal to the gate's under `cmp`), and looked at on localhost:8790; G134 written into `agents/guarded.md`. O98's brief check (`agents/reviews/O98-brief-check.md`, a5d4f9a13f2831178, claude-opus-5-5) is saved and its findings are not yet closed in the brief; its /spec goes on from there. Axel asked for a pause before another agent is launched: no agent is launched until he says go. Next: close O98's brief-check findings in its brief, and the /spec of O95, O96 and O97, each before any launch only on Axel's go.
 - 2026-10-27 (O92 repair round 1; O98 stopped at /spec on 508). O92's review (`agents/reviews/O92-refuter.md`, a30959dfc24838389, claude-opus-5-5) saved; round 1 (`agents/briefs/O92-round1.md`) sent to builder afca7f28cc1fce52c, snapshot `.agents/worktrees/migration-O92-round-1`. At O92's landing: G134 added to `agents/guarded.md` with its Test line naming the describe 'what a collection Add asks and writes', the case 37 correction, the spec.md:65 breach, the git reads outside spec.md:33 and the `docs/data-map.md:110` line (Axel's unstaged hunks left unstaged). Ruling 507 booked; O98's /spec rechecked its premises and stopped on open item 508 (the `hpc` channel, the status bar and pill, Submit's and Recover's cluster, the tests G135); no brief, no worktree. In flight (1 of 6): O92. Next: O92's round report, /refute over round 1, /land O92 with the looks on 8790; Axel's ruling on 508, then /spec O98 (its brief check runs then). Open items: 508.
 - 2026-10-27 (O92 building). Axel ruled 498 (a), G134 for the Add's tests; O92's brief rewritten to it (preparation commit a964e0170, the base); Z1049 (open item 499) widens its paths to two comments the step makes false. Worktree `.agents/worktrees/migration-O92` with `npm ci` and `svelte-kit sync`; base copy `.agents/worktrees/O92-base/` with `unused-exports.txt` (341 lines); builder afca7f28cc1fce52c (claude-opus-5-5). At landing: G134 added to `agents/guarded.md`. In flight (1 of 6): O92. Next: O92's report, /refute O92, /land O92 with the looks on 8790; then O95 and O96. Open items: none.
 - 2026-10-27 (O92 stopped at /spec; open item 498). O92's brief was written from main at c72f0fcb9 and checked (`agents/reviews/O92-brief-check.md`, a6eefc8dc6b4ef0cb, claude-opus-5-5); every finding but 4 closed in the brief under the report's Closed heading, with the Tier work of ruling 491. Finding 4 (the tests need a guarded entry, `agents/spec.md:59`) is open item 498, booked here and under O92's Step 0 in `plan.md`; the brief removed as the spec skill's stop says, its closed text kept at the session's scratch copy `O92-brief-closed.md`. Rulings 491 to 497 booked; O95 and O96 queued after O92 (ruling 497). In flight (0 of 6): none. Next: Axel's ruling on 498, then /spec O92 again (no second brief check), the preparation commit, the worktree, the builder. Open items: 498.

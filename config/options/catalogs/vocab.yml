@@ -277,7 +277,7 @@ options:
     facet_tones:
         heading: boards
         section: Vocabulary
-        help: "The hue name of each filter group of a project board's bar: its heading in the More list, and the dot, the fill and the Venue bar of a value with no colour of its own."
+        help: 'The hue name of each filter group of the bar of a project board, a collection and the Map: its heading in the More list, and the dot, the fill and the Venue bar of a value with no colour of its own.'
         fields:
             key: the filter group, such as form
             value:

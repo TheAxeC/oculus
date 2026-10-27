@@ -191,6 +191,8 @@ type EntryRoles = {
     facet: RoleCount[];
     /** Whether the Mine only toggle and the Role facet keep an entry; every one when not drawn. */
     keeps: (entry: Fielded) => boolean;
+    /** The key of the row of `roles:` an entry is at for the user, none when not drawn. */
+    role: (entry: Fielded) => string | undefined;
     /** Whether an entry carries the Lead badge; none when not drawn. */
     lead: (entry: Fielded) => boolean;
 };
@@ -209,12 +211,15 @@ export function entryRoles(
     const roles = rolesOf(config);
     const isSelf = isSelfByKey(self);
     const drawn = self.size > 0 && schemas.some((schema) => declaresRoles(schema, roles));
-    if (!drawn) return { drawn, facet: [], keeps: () => true, lead: () => false };
+    if (!drawn) {
+        return { drawn, facet: [], keeps: () => true, role: () => undefined, lead: () => false };
+    }
     const people = (entry: Fielded): PeopleOf => entryPeople(entry.fields);
     return {
         drawn,
         facet: roleCounts(entries.map(people), roles, isSelf),
         keeps: (entry) => roleKeeps(people(entry), roles, isSelf, filter),
+        role: (entry) => roleOf(people(entry), roles, isSelf)?.key,
         lead: (entry) => isLead(people(entry), roles, isSelf)
     };
 }

@@ -20,13 +20,13 @@
     import Chip from '$lib/ui/controls/Chip.svelte';
     import LinkedText from '$lib/ui/display/text/LinkedText.svelte';
     import Table from '$lib/ui/display/table/Table.svelte';
-    import { type Column, cellText } from '$lib/ui/display/table/table-rows';
     import {
-        firstSentence,
-        shortWords,
-        type BoardItem,
-        type ListCell
-    } from '$lib/state/boards/board';
+        type Column,
+        type ListedColumn,
+        cellText,
+        fittedColumns
+    } from '$lib/ui/display/table/table-rows';
+    import { firstSentence, shortWords, type BoardItem } from '$lib/state/boards/board';
     import { projectLane } from '$lib/state/boards/focus';
     import { rootOf } from '$lib/state/shared/page/hubs';
     import { t } from '$lib/state/shared/words/text';
@@ -36,7 +36,7 @@
         /** The section's projects, in the order drawn. */
         items: BoardItem[];
         /** The cells the Columns menu draws, in its order. */
-        cells: ListCell[];
+        cells: ListedColumn[];
         /** The words a row's Project cell reads: the short handle or the full title. */
         label: (item: BoardItem) => string;
     };
@@ -50,29 +50,12 @@
     /** The list's width, 0 until it is laid out. */
     let width = $state(0);
 
-    function least(cell: ListCell): number {
-        return MIN_WIDTH[cell.key] ?? MIN_OTHER;
+    function least(key: string): number {
+        return MIN_WIDTH[key] ?? MIN_OTHER;
     }
 
-    /**
-     * The columns drawn: every cell the menu draws, less the rightmost ones that do not fit, but
-     * Project. A render with no layout draws them all.
-     */
-    const columns: Column[] = $derived.by(() => {
-        const kept = cells.filter((cell) => cell.shown);
-        let total = kept.reduce((sum, cell) => sum + least(cell), 0);
-        while (width > 0 && total > width) {
-            const at = kept.findLastIndex((cell) => cell.key !== 'title');
-            if (at < 0) break;
-            total -= least(kept[at]);
-            kept.splice(at, 1);
-        }
-        return kept.map((cell) => ({
-            key: cell.key,
-            label: cell.label,
-            width: `${((least(cell) / total) * 100).toFixed(3)}%`
-        }));
-    });
+    /** The columns drawn: the cells the menu draws that fit, Project always (`fittedColumns`). */
+    const columns: Column[] = $derived(fittedColumns(cells, width, least, 'title'));
 
     const rows = $derived(items.map(row));
 

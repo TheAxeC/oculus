@@ -20,18 +20,35 @@ import type { WriteAnswer } from '../shared/stores/shapes.ts';
 const TASK_KEY_MAX = 80;
 
 /**
- * The fields an Add box asks for when it adds to a collection: the file's primary key
- * `primaryKey` and every field the schema marks `required: true`, in the schema's order (a venue:
- * its id and its name). A primary key the schema does not name, the one a file with no schema
- * names on its `collections:` entry, is asked first as text; a file with no primary key is asked
- * its required fields, and the write that follows is refused with the sentence that says why.
+ * The people fields an Add box asks whether or not the schema marks them required, by their
+ * literal names as ruled, whatever the rows of `roles:` name.
+ */
+const ASKED_PEOPLE = ['lead', 'supervisors', 'collaborators'];
+
+/**
+ * The fields an Add box asks for when it adds to a collection, each once, in the schema's order:
+ * the file's primary key `primaryKey`, every field the schema marks required, always or under a
+ * condition (events' `link`, required while `role` is `present`, which the box asks as an optional
+ * field), and the people fields `lead`, `supervisors` and `collaborators` (a venue: its id and its
+ * name; a task: its key, title and status, its lead, its collaborators and its supervisors). How
+ * each is asked, a typed line, a pick or a multi-pick, is the box's
+ * (views/shared/forms/entry/entry-add.ts). A primary key the schema does not name, the one a file
+ * with no schema names on its `collections:` entry, is asked first as text; a file with no primary
+ * key is asked its other fields, and the write that follows is refused with the sentence that says
+ * why.
  */
 export function askFields(
     schema: SchemaField[] | undefined,
     primaryKey: string | null
 ): SchemaField[] {
     const own = schema ?? [];
-    const asked = own.filter((one) => one.field === primaryKey || one.required === true);
+    const asked = own.filter(
+        (one) =>
+            one.field === primaryKey ||
+            one.required === true ||
+            typeof one.required === 'object' ||
+            ASKED_PEOPLE.includes(one.field)
+    );
     const named = primaryKey !== null && !own.some((one) => one.field === primaryKey);
     return named ? [{ field: primaryKey, type: 'text' }, ...asked] : asked;
 }

@@ -219,7 +219,7 @@ ticker_categories:
   task:       { label: focus.command.dlcat_task,        glyph: focus.command.glyph_task,       noun: focus.command.word_task }
   conference: { label: focus.command.dlcat_conference,  glyph: focus.command.glyph_conference, noun: focus.command.word_conference }
 
-# The colour of each filter group of a project board's bar, by the group, as a palette tone: the group's heading in the More list, and the dot, the fill and the Venue bar of a value with no colour of its own.
+# The colour of each filter group of the bar of a project board, a collection and the Map, by the group, as a palette tone: the group's heading in the More list, and the dot, the fill and the Venue bar of a value with no colour of its own.
 facet_tones:
   code: cyan
   compute: cyan
@@ -233,6 +233,7 @@ facet_tones:
   role: blue
   sessions: cyan
   status: purple
+  tier: indigo
   venue: amber
   waiting: red
   year: slate

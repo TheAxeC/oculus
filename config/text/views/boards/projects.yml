@@ -34,6 +34,7 @@ text:
         facet_reproduced: Reproduced
         facet_sessions: Sessions
         facet_status: Situation
+        facet_tier: Tier
         facet_venue: Venue
         facet_waiting: Waiting on
         facet_year: Year

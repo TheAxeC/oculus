@@ -1,6 +1,9 @@
 // Layer 2, client state. The pure half of the collection view: what a card draws for one entry and
-// in what order, the values the status facet offers, and the filter. No rune and no store here, so
-// every rule below is checked without a browser, exactly as state/boards/board/ is for the board.
+// in what order, the values the status facet offers, the view's saved state, the columns of its
+// list, and the words a field's value reads as (`fieldWords`), which the bar and the list both
+// read. Its bar, the groups, the slices and what they keep, is bar.ts beside it. No rune and no
+// store here, so every rule below is checked without a browser, exactly as state/boards/board/ is
+// for the board.
 //
 // A collection is drawn from its own file's `schema:` rather than from anything this module knows:
 // the order is the schema's order, a field the schema names and the entry lacks is skipped, and a
@@ -27,9 +30,7 @@ import {
     subtasks
 } from '../../../data/shapes/shapes.ts';
 import {
-    FILTERED_TYPES,
     displayFields,
-    optionLabel,
     primaryKeyOf,
     type Entry,
     type Followup,
@@ -41,6 +42,9 @@ import { fileBytesUrl } from '../../sources/fs-transport.ts';
 import { normalisePath } from '../../sources/fs.ts';
 import { dirOf } from '../../sources/repositories/change-tree.ts';
 import { entryPageState } from '../../forms/page-entry.ts';
+import { t } from '../../shared/words/text.ts';
+import type { ListedColumn } from '../../../data/shapes/boards/columns.ts';
+import { freshPicks } from '../board/state.ts';
 
 // The boundary table lets `views/` import `state/` and nothing of `data/`, so the types the view
 // names reach it from here, beside the functions that return them.
@@ -89,80 +93,126 @@ export type Drawn = {
     values: string[];
 };
 
+/** How the view draws its entries: as cards, or as one table. */
+export type CollectionMode = 'cards' | 'list';
+
 /**
- * What the view holds per instance: the search box, the status values in force, the statuses the
- * reader has switched off in the facet bar, and the schema filters' picks and ranges.
- *
- * The two status fields are not one field. `statuses` is a selection: empty means every status, and
- * a value in it means that value alone. `hidden` is the facet bar of the acceptance list, where
- * every toggle is on until it is clicked and a click hides that status's cards. A card is drawn
- * when the selection admits it and the facet bar has not hidden it.
+ * What the view holds per instance: the search box, the picks of its bar's groups and slices, Mine
+ * only, how it draws its entries and the list's columns. A picked value keeps the entries that hold
+ * it and none picked keeps every entry, as on a project board (state/boards/collection/bar.ts).
  */
 export type CollectionState = {
     search: string;
-    statuses: string[];
-    hidden: string[];
-    /** The ids of the entries whose long text is drawn whole rather than cut to its clamp. */
-    more: string[];
     /**
-     * The values picked in each chip filter of the bar, by field (fieldFilters): an entry is drawn
-     * when it holds one of them. A field with none picked lets every entry through.
+     * The picked values by group id: `role`, `hub`, `field:<field>`, and the status slices under
+     * `status` (`NO_FUNDING` among them for the No funding card).
      */
-    picked: Record<string, string[]>;
-    /** The bounds typed in each range filter of the bar, by field, either one empty for none. */
-    range: Record<string, Bounds>;
+    filters: Record<string, string[]>;
     /** Mine only, on by default; read only where the collection declares a field of a role. */
     mine: boolean;
-    /** The keys of `roles` picked in the Role facet; none picked lets every entry through. */
-    roles: string[];
-    /**
-     * The hubs whose chip is unpressed, whose entries are hidden; read only while the workspace has
-     * more than one hub, so a hub added later starts pressed.
-     */
-    hubs: string[];
+    mode: CollectionMode;
+    /** The list's columns drawn, by field, nothing while they are the default (`entryColumns`). */
+    columns?: string[];
+    /** The ids of the entries whose long text is drawn whole rather than cut to its clamp. */
+    more: string[];
     /** The palette destination, cleared by the view after it scrolls and flashes the card. */
     reveal?: string;
 };
 
-/** The two bounds of a range filter as typed. */
-export type Bounds = { from: string; to: string };
+/** The fields of a saved instance, each read apart so a wrong one costs that field alone. */
+const collectionStateShape = searchRevealShape.extend({
+    filters: z.record(z.string(), fieldItemsShape).catch({}),
+    mine: z.boolean().catch(true),
+    mode: z.enum(['cards', 'list']).catch('cards'),
+    columns: fieldItemsShape.optional(),
+    more: recordItemsShape
+});
 
-/** The state of an instance nobody has typed in yet. */
-export function emptyCollectionState(): CollectionState {
+/**
+ * The saved state of one instance, with anything that is not the shape above replaced by it, its
+ * records and lists built for this call (`freshPicks`).
+ */
+export function parseCollectionState(raw: unknown): CollectionState {
+    const held = readAs(collectionStateShape, raw) ?? collectionStateShape.parse({});
+    const { reveal, columns, filters, more, ...state } = held;
     return {
-        search: '',
-        statuses: [],
-        hidden: [],
-        more: [],
-        picked: {},
-        range: {},
-        mine: true,
-        roles: [],
-        hubs: []
+        ...state,
+        filters: freshPicks(filters),
+        more: [...more],
+        ...(columns === undefined ? {} : { columns: [...columns] }),
+        ...(reveal === undefined ? {} : { reveal })
     };
 }
 
-/** The two bounds of a range, each the empty text unless it is text. */
-const boundsShape = z.object({ from: z.string().catch(''), to: z.string().catch('') });
+/**
+ * The key of the list's title column. A schema field named `:title` gets no column of its own
+ * (`entryColumns`), so the key is the title's alone.
+ */
+export const TITLE_COLUMN = ':title';
 
-/** The fields of a saved instance, each read apart so a wrong one costs that field alone. */
-const collectionStateShape = searchRevealShape.extend({
-    statuses: fieldItemsShape,
-    hidden: fieldItemsShape,
-    more: recordItemsShape,
-    picked: z.record(z.string(), fieldItemsShape).catch({}),
-    range: z.record(z.string(), boundsShape).catch({}),
-    mine: z.boolean().catch(true),
-    roles: fieldItemsShape,
-    hubs: fieldItemsShape
-});
+/** The types of field the list draws a column of. */
+const COLUMN_TYPES = ['select', 'text', 'tags', 'chips', 'date'];
 
-/** The saved state of one instance, with anything that is not the shape above replaced by it. */
-export function parseCollectionState(raw: unknown): CollectionState {
-    const held = readAs(collectionStateShape, raw);
-    if (held === null) return emptyCollectionState();
-    const { reveal, ...state } = held;
-    return reveal === undefined ? state : { ...state, reveal };
+/** The people fields the list draws by default, by their literal names as the Add asks them. */
+const PEOPLE_COLUMNS = ['lead', 'supervisors', 'collaborators'];
+
+/**
+ * Every column a collection's list can draw, in the order its Columns menu lists them: the title,
+ * always drawn, then one per field of the schemas, each once in the order the files name them, of
+ * the types `COLUMN_TYPES`, the primary key, the display field and a field named `TITLE_COLUMN`
+ * left out. A column is drawn when the saved choice (`saved`) names it or, with none, when it is
+ * the status field, a people field (`lead`, `supervisors`, `collaborators`) or a field marked
+ * `filter: true`.
+ */
+export function entryColumns(
+    schemas: readonly (SchemaField[] | undefined)[],
+    saved: string[] | undefined
+): ListedColumn[] {
+    const fields = new Map<string, SchemaField>();
+    for (const schema of schemas) {
+        const own = schema ?? [];
+        const key = primaryKeyOf(own);
+        const shown = displayFields(own);
+        for (const one of own) {
+            const skip =
+                one.field === key ||
+                one.field === TITLE_COLUMN ||
+                shown.includes(one.field) ||
+                fields.has(one.field);
+            if (!skip && COLUMN_TYPES.includes(one.type)) fields.set(one.field, one);
+        }
+    }
+    const byDefault = (one: SchemaField): boolean =>
+        one.field === STATUS_FIELD || PEOPLE_COLUMNS.includes(one.field) || one.filter === true;
+    const drawn = saved === undefined ? null : new Set(saved);
+    return [
+        { key: TITLE_COLUMN, label: t('collection.title_column'), shown: true },
+        ...[...fields.values()].map((one) => ({
+            key: one.field,
+            label: one.label ?? one.field,
+            shown: drawn === null ? byDefault(one) : drawn.has(one.field)
+        }))
+    ];
+}
+
+/**
+ * The saved choice of a collection's columns after one is shown or hidden: the columns drawn, in
+ * the Columns menu's order, or nothing when they are the default, so a schema that changes later
+ * draws its new default. The title stays drawn.
+ */
+export function pickColumn(
+    schemas: readonly (SchemaField[] | undefined)[],
+    saved: string[] | undefined,
+    key: string
+): string[] | undefined {
+    const drawnKeys = (columns: ListedColumn[]): string[] =>
+        columns.filter((one) => one.key !== TITLE_COLUMN && one.shown).map((one) => one.key);
+    const next = entryColumns(schemas, saved).map((one) =>
+        one.key === key && key !== TITLE_COLUMN ? { ...one, shown: !one.shown } : one
+    );
+    const own = drawnKeys(entryColumns(schemas, undefined));
+    const picked = drawnKeys(next);
+    return picked.join('\n') === own.join('\n') ? undefined : picked;
 }
 
 /** A string and nothing else, for a value the data layer types as unknown. */
@@ -230,6 +280,20 @@ function mapPairs(value: unknown): string[] {
 export function listWords(value: unknown): string[] {
     const items = readAs(listOrOneShape, value) ?? [];
     return items.map(textOf).filter((word): word is string => word !== undefined);
+}
+
+/**
+ * The values one field of an entry holds, as the collection's bar counts them and its list draws
+ * them: each item of a list, or its one value, a string or a number as text, trimmed, the empty
+ * ones left out.
+ */
+export function fieldWords(value: unknown): string[] {
+    const items = Array.isArray(value) ? value : [value];
+    return items
+        .flatMap((one) =>
+            typeof one === 'string' || typeof one === 'number' ? [String(one).trim()] : []
+        )
+        .filter((one) => one !== '');
 }
 
 /** A `{ label, value }` pair of a metalist, over any two values. */
@@ -442,159 +506,6 @@ export function statusValues(entries: Entry[]): { value: string; count: number }
     return [...counts].map(([value, count]) => ({ value, count }));
 }
 
-/** Every word an entry holds, so the search box reaches a value wherever in the record it sits. */
-function haystack(value: unknown): string {
-    if (typeof value === 'string') return value;
-    if (typeof value === 'number' || typeof value === 'boolean') return String(value);
-    if (Array.isArray(value)) return value.map(haystack).join(' ');
-    if (isMap(value)) return Object.values(value).map(haystack).join(' ');
-    return '';
-}
-
-/**
- * The entries a card list shows: every selected status is an alternative, and the search is a
- * substring of every word the entry holds, case insensitive. An empty search matches everything and
- * so does an empty status selection, which is what an instance nobody has touched shows.
- */
-export function applyCollectionFilters(
-    entries: Entry[],
-    state: Pick<CollectionState, 'search' | 'statuses' | 'hidden'> &
-        Partial<Pick<CollectionState, 'picked' | 'range'>>
-): Entry[] {
-    const needle = state.search.trim().toLowerCase();
-    return entries.filter((entry) => {
-        const status = entryStatus(entry);
-        if (state.statuses.length > 0) {
-            if (status === undefined || !state.statuses.includes(status)) return false;
-        }
-        if (status !== undefined && state.hidden.includes(status)) return false;
-        if (!passesFields(entry, state.picked ?? {}, state.range ?? {})) return false;
-        if (needle === '') return true;
-        return haystack(entry.fields).toLowerCase().includes(needle);
-    });
-}
-
-/**
- * The entries the Hub chips of a collection keep: the hubs hidden are the unpressed ones (`off`,
- * the instance state's `hubs`) that are chips of `hubs` (state/shared/page/hubs.ts `hubList`, none
- * while the workspace has one hub), and an entry is kept unless its hub, its `root`, is one of
- * them. A hub saved unpressed that is no chip now hides nothing.
- */
-export function keptByHub<T extends { root?: string }>(
-    entries: readonly T[],
-    off: readonly string[],
-    hubs: readonly string[]
-): T[] {
-    const hidden = off.filter((hub) => hubs.includes(hub));
-    return entries.filter((entry) => !hidden.includes(rootOf(entry)));
-}
-
-/** The words one field of an entry holds: each item of a list, or its one value, as text. */
-function fieldWords(value: unknown): string[] {
-    const items = Array.isArray(value) ? value : [value];
-    return items
-        .flatMap((one) =>
-            typeof one === 'string' || typeof one === 'number' ? [String(one).trim()] : []
-        )
-        .filter((one) => one !== '');
-}
-
-/** A whole number written in digits, or null for any other text. */
-function wholeOf(text: string): number | null {
-    return /^\d{1,9}$/.test(text.trim()) ? Number(text.trim()) : null;
-}
-
-/** Whether an entry holds one picked value of every chip filter and lies in every range. */
-function passesFields(
-    entry: Entry,
-    picked: Record<string, string[]>,
-    range: Record<string, Bounds>
-): boolean {
-    for (const [field, values] of Object.entries(picked)) {
-        if (values.length === 0) continue;
-        if (!fieldWords(entry.fields[field]).some((one) => values.includes(one))) return false;
-    }
-    for (const [field, bounds] of Object.entries(range)) {
-        const from = wholeOf(bounds.from);
-        const to = wholeOf(bounds.to);
-        if (from === null && to === null) continue;
-        const held = wholeOf(fieldWords(entry.fields[field]).at(0) ?? '');
-        if (held === null) return false;
-        if ((from !== null && held < from) || (to !== null && held > to)) return false;
-    }
-    return true;
-}
-
-/** One chip of a chip filter: its value, the words it is drawn with, how many entries hold it. */
-type FilterChip = { value: string; label: string; count: number };
-
-/**
- * One filter of the bar, for a schema field marked `filter: true`: the chips of the values the
- * entries hold, or, for a text field whose values are all whole numbers, a range from the least to
- * the greatest of them.
- */
-export type FieldFilter =
-    | { field: string; label: string; kind: 'chips'; chips: FilterChip[] }
-    | { field: string; label: string; kind: 'range'; least: number; most: number };
-
-/** The most values a chip filter draws as chips; one with more draws as a list to search. */
-export const FILTER_CHIPS_MOST = 12;
-
-/**
- * The picks of a chip filter after its list control answered `next`: each value whose press
- * changed, which the view presses or releases one at a time.
- */
-export function changedPicks(held: readonly string[], next: readonly string[]): string[] {
-    return [
-        ...held.filter((value) => !next.includes(value)),
-        ...next.filter((value) => !held.includes(value))
-    ];
-}
-
-/**
- * The filters of a collection view, one per field marked `filter: true` in the schema of any of its
- * files, in the order the files name them, over every entry the view holds. A select or tags field
- * is drawn as chips labelled by its options; a text field as a range when every value it holds is a
- * whole number, else as chips. A field no entry holds a value of draws nothing.
- */
-export function fieldFilters(
-    schemas: (SchemaField[] | undefined)[],
-    entries: Entry[]
-): FieldFilter[] {
-    const fields = new Map<string, SchemaField>();
-    for (const one of schemas.flatMap((schema) => schema ?? [])) {
-        if (one.filter === true && FILTERED_TYPES.includes(one.type) && !fields.has(one.field)) {
-            fields.set(one.field, one);
-        }
-    }
-    const filters: FieldFilter[] = [];
-    for (const field of fields.values()) {
-        const held = entries.flatMap((entry) => fieldWords(entry.fields[field.field]));
-        if (held.length === 0) continue;
-        const label = field.label ?? field.field;
-        const numbers = held.map(wholeOf);
-        if (field.type === 'text' && numbers.every((one) => one !== null)) {
-            filters.push({
-                field: field.field,
-                label,
-                kind: 'range',
-                least: Math.min(...numbers),
-                most: Math.max(...numbers)
-            });
-            continue;
-        }
-        const counts = new Map<string, number>();
-        for (const value of held) counts.set(value, (counts.get(value) ?? 0) + 1);
-        const chips = [...counts].map(([value, count]) => ({
-            value,
-            label: optionLabel(field, value),
-            count
-        }));
-        filters.push({ field: field.field, label, kind: 'chips', chips });
-    }
-    return filters;
-}
-
 /** The facet value of the synthetic card the Funding view draws for the projects with no scheme. */
 export const NO_FUNDING = 'no-funding';
 
@@ -693,13 +604,14 @@ export function movedOrder(order: readonly string[], at: number, to: number): st
     return moved;
 }
 
-/** One toggle of the facet bar: the status, how many entries carry it. */
+/** One status the entries carry, and how many carry it. */
 export type StatusFacet = { value: string; count: number };
 
 /**
  * Every status the entries carry, in the order they first occur, with a count each. Unlike
- * statusValues, which offers a menu and so needs two values to be worth offering, one value is a
- * facet bar of one toggle and is drawn: it is the file saying what its one lifecycle value is.
+ * statusValues, which offers a menu and so needs two values to be worth offering, one value counts:
+ * it is the file saying what its one lifecycle value is, which `offeredStatuses` offers a file with
+ * no schema.
  */
 export function statusFacets(entries: Entry[]): StatusFacet[] {
     const counts = new Map<string, number>();

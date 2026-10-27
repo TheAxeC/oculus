@@ -24,6 +24,7 @@ import {
     type QuickFilters
 } from './presets.ts';
 import { waitingValue } from '../waiting.ts';
+import { toggled } from '../../shared/lists/lists.ts';
 
 /** The `stale_lag_days` of `focus:` when the config names none. */
 export const STALE_LAG = 1;
@@ -31,10 +32,11 @@ export const STALE_LAG = 1;
 /**
  * The values one item carries for one facet. A project with no stage is in no slice, so it is under
  * no value of the slice facet; the Situation facet (`status`) reads the project's own chips and the
- * Form facet its form, apart; a venue is its key, so a venue two hubs catalogue is one value; and
- * the Waiting on facet (`waiting`) holds each value of the item's `waiting` once, by
- * state/boards/waiting.ts `waitingValue`, a person or a project by its key and a value that names
- * neither as it is written.
+ * Form facet its form, apart; the Tier facet reads the project's `tier`, a project with none under
+ * no value; a venue is its key, so a venue two hubs catalogue is one value; and the Waiting on
+ * facet (`waiting`) holds each value of the item's `waiting` once, by state/boards/waiting.ts
+ * `waitingValue`, a person or a project by its key and a value that names neither as it is
+ * written.
  */
 export function facetValues(item: BoardItem, facet: string): string[] {
     const ids = (tags: { id: string }[]): string[] => tags.map((tag) => keyOf(tag.id));
@@ -55,6 +57,8 @@ export function facetValues(item: BoardItem, facet: string): string[] {
             return [...new Set(item.waiting.map(waitingValue))];
         case 'hub':
             return rootOf(item.project) === '' ? [] : [rootOf(item.project)];
+        case 'tier':
+            return (item.project.tier ?? '') === '' ? [] : [item.project.tier ?? ''];
         case 'pillar':
             return ids(item.pillars);
         case 'funding':
@@ -211,4 +215,41 @@ export function parseBoardState(
         if (values.length > 0) state.filters[facet] = values;
     }
     return state;
+}
+
+/**
+ * A bar's filters with one facet's picks set to `values`, the facet taken out when none is left,
+ * which is what Clear on one group and a pick of slices write. The bars of a project board, a
+ * collection and the Map write their filters through it.
+ */
+export function withPicks(
+    filters: Record<string, string[]>,
+    facet: string,
+    values: string[]
+): Record<string, string[]> {
+    return Object.fromEntries(
+        Object.entries({ ...filters, [facet]: values }).filter(
+            ([key]) => key !== facet || values.length > 0
+        )
+    );
+}
+
+/** A bar's filters with one value of one facet picked, or taken out when it was picked. */
+export function withPick(
+    filters: Record<string, string[]>,
+    facet: string,
+    value: string
+): Record<string, string[]> {
+    return withPicks(filters, facet, toggled(byKey(filters, facet) ?? [], value));
+}
+
+/**
+ * A bar's filters as read back from a saved state, the record and each list built for this call,
+ * so a shape's fallback value read back is never one object two callers hold. The collection's and
+ * the Map's saved states are read back through it.
+ */
+export function freshPicks(filters: Record<string, readonly string[]>): Record<string, string[]> {
+    return Object.fromEntries(
+        Object.entries(filters).map(([facet, values]) => [facet, [...values]])
+    );
 }

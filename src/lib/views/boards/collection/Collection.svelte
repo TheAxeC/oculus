@@ -8,12 +8,15 @@
 </script>
 
 <script lang="ts">
-    // Layer 3, view. One collection file as its own tab: the file's title, a search over every word
-    // an entry holds and a facet bar of the statuses the file uses (both in the bar under the
-    // header), an Add that asks the new entry's name and opens its page, and one card per entry,
-    // the pinned ones first, in the shared card grid (views/shared/card/record/CardGrid.svelte).
-    // The title of a card opens the entry's page, the `entry` view's tab, where the entry is edited
-    // and deleted.
+    // Layer 3, view. One collection file as its own tab: the file's title, the bar under the header
+    // (a project board's two lines, drawn by views/shared/forms/bar/FilterBar.svelte and
+    // SliceLine.svelte), an Add that asks the new entry's fields and opens its page, and its
+    // entries, the pinned ones first, as one card each in the shared card grid
+    // (views/shared/card/record/CardGrid.svelte) or, with List pressed in the toolbar (the Cards
+    // and List buttons of views/shared/forms/bar/ModeButtons.svelte), as one table
+    // (EntryList.svelte) whose columns the toolbar's Columns menu shows and hides. The title of a
+    // card or of a row opens the entry's page, the `entry` view's tab, where the entry is edited
+    // and deleted. The keyboard move of a card acts in cards mode only.
     //
     // It is registered once per collection view the page is given and reads which collection it is
     // from the id of the instance it was mounted as, exactly as Projects.svelte reads which board
@@ -29,29 +32,34 @@
     // paper up and saves it into one of those hubs, their cards copy their BibTeX, and the toolbar
     // copies the BibTeX of their entries shown. An entry's page opens by its own hub's registry.
     //
-    // A schema field marked `filter: true` is a filter in the bar (FieldFilters.svelte), its picks
-    // and ranges the tab's instance state beside the search.
+    // Line 1 of the bar is the search, Mine only and the group buttons, folding into More: the Role
+    // group, the Hub group while the workspace has more than one hub, then one group per schema
+    // field marked `filter: true`. Line 2 is the status field's slices with their counts, the No
+    // funding slice after them for the files whose entry names the `funding` registry while
+    // projects have no scheme, how many entries are shown, and Clear all. A pick keeps the entries
+    // that hold it, none picked keeps every entry, and each count is taken over what the other
+    // filters leave, as on a project board; the rules are state/boards/collection/bar.ts's, the
+    // picks the tab's instance state beside the search.
     //
     // A collection whose `schema:` declares a field a row of `roles:` is read from (`lead`,
     // `collaborators`, `supervisors`) draws, while a person is marked as the user, the Mine only
     // toggle, on by default, keeping the entries that name the user in one of those fields and
-    // those that name no one; the Role facet, every row of `roles:` with its count; and the Lead
+    // those that name no one; the Role group, every row of `roles:` with its count; and the Lead
     // badge on an entry whose lead is the user. The rule is data/shapes/boards/roles.ts's, the one
-    // the project boards read. While the workspace has more than one hub, the Hub chips follow
-    // (HubChips.svelte), and an unpressed one hides that hub's entries (state/boards/collection/
-    // `keptByHub`). The line a write answered and the empty message are
+    // the project boards read. The line a write answered and the empty message are
     // views/shared/writes/SaidBody.svelte's, as on the project boards.
 
-    import Chip from '$lib/ui/controls/Chip.svelte';
+    import Menu from '$lib/ui/menu/Menu.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
-    import Search from '$lib/ui/controls/text/Search.svelte';
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import EntryCard from '../../shared/forms/entry/card/EntryCard.svelte';
     import { taskCardActions } from '$lib/views/shared/forms/entry/task-card';
     import AddAsk from '../../shared/forms/entry/AddAsk.svelte';
-    import FieldFilters from './FieldFilters.svelte';
-    import HubChips from './HubChips.svelte';
+    import FilterBar from '../../shared/forms/bar/FilterBar.svelte';
+    import SliceLine from '../../shared/forms/bar/SliceLine.svelte';
+    import ModeButtons from '../../shared/forms/bar/ModeButtons.svelte';
+    import EntryList from './EntryList.svelte';
     import NoFundingCard from './NoFundingCard.svelte';
     import { copyBibtex, literatureCardActions } from '$lib/views/shared/card/feed/literature-card';
     import AddButton from '../../shared/forms/AddButton.svelte';
@@ -63,28 +71,29 @@
     import SourceButton from '../../shared/links/SourceButton.svelte';
     import {
         NO_FUNDING,
-        applyCollectionFilters,
-        fieldFilters,
+        TITLE_COLUMN,
+        entryColumns,
         fileOrder,
         identityFaults,
         identityValue,
         joinedRegistries,
-        keptByHub,
         movedOrder,
         offeredStatuses,
         parseCollectionState,
+        pickColumn,
         pinnedFirst,
         statusFacets,
-        type Bounds,
+        type CollectionMode,
         type CollectionState,
         type Entry
     } from '$lib/state/boards/collection';
+    import { STATUS_FACET, collectionBar, entryCountWords } from '$lib/state/boards/collection/bar';
+    import { withPick } from '$lib/state/boards/board';
     import { unfundedBy } from '$lib/state/boards/structure/cross-links';
-    import { entryRoles } from '$lib/state/boards/board';
     import { pageView } from '$lib/state/forms/page-entry';
     import { cardCursor, storedState } from '$lib/state/workbench/layout/instance';
     import { t } from '$lib/state/shared/words/text';
-    import { statusTone, vocabOf } from '$lib/state/shared/words/tones';
+    import { vocabOf } from '$lib/state/shared/words/tones';
     import { viewSourceFile } from '$lib/state/sessions/view-source';
     import { fileUnder, hubList, rootOf } from '$lib/state/shared/page/hubs';
     import { registrationLabel, type ViewProps } from '$lib/state/workbench/navigation/registry';
@@ -130,38 +139,10 @@
         }))
     );
     const entries = $derived(pinnedFirst(parts.flatMap((part) => part.collection.entries)));
-    /** The Mine only toggle, the Role facet and the Lead badge, drawn where the file has roles. */
-    const roles = $derived(
-        entryRoles(
-            configMap(),
-            parts.map((part) => part.schema),
-            selfPeople(),
-            entries,
-            { mine: held.mine, picked: held.roles }
-        )
-    );
-    /** The hubs of the Hub chips, none while the workspace has one hub. */
+    const schemas = $derived(parts.map((part) => part.schema));
+    /** The hubs of the Hub group, none while the workspace has one hub. */
     const hubs = $derived(hubList(roots(), primary()));
-    const shown = $derived(
-        parts.flatMap((part) =>
-            keptByHub(
-                applyCollectionFilters(pinnedFirst(part.collection.entries), held).filter(
-                    roles.keeps
-                ),
-                held.hubs,
-                hubs
-            ).map((entry) => ({ entry, part }))
-        )
-    );
-    const facets = $derived(statusFacets(entries));
-    const filters = $derived(
-        fieldFilters(
-            parts.map((part) => part.schema),
-            entries
-        )
-    );
-
-    const lifecycle = $derived(offeredStatuses(schema, facets));
+    const lifecycle = $derived(offeredStatuses(schema, statusFacets(entries)));
 
     /** The collection file this view is drawn from, offered once the file has been read. */
     const source = $derived(
@@ -174,6 +155,28 @@
             ? unfundedBy(joined.fundedProjects(all), joined.funded, configMap(), vocabOf)
             : []
     );
+    /** The bar's groups and slices with their counts, and what it keeps. */
+    const filtered = $derived(
+        collectionBar({
+            entries,
+            schemas,
+            filters: held.filters,
+            search: held.search,
+            mine: held.mine,
+            config: configMap(),
+            self: selfPeople(),
+            hubs,
+            noFunding: unfunded.length
+        })
+    );
+    const shown = $derived(
+        parts.flatMap((part) =>
+            pinnedFirst(part.collection.entries)
+                .filter(filtered.keeps)
+                .map((entry) => ({ entry, part }))
+        )
+    );
+    const columns = $derived(entryColumns(schemas, held.columns));
     /** The entries shown of the files whose entry names the `literature` registry. */
     const shownPapers = $derived(
         shown.filter((one) => one.part.collection.registry === 'literature').map((one) => one.entry)
@@ -204,34 +207,14 @@
         openView(page.view, page.state);
     }
 
-    /** Hide one status's cards, or bring them back, which is what a facet toggle does. */
-    function toggle(value: string): void {
-        const shownNow = held.hidden;
-        write({
-            hidden: shownNow.includes(value)
-                ? shownNow.filter((other) => other !== value)
-                : [...shownNow, value]
-        });
+    /** Add or remove one value of one group, which is what a pick in a group's list means. */
+    function toggleFilter(group: string, value: string): void {
+        write({ filters: withPick(held.filters, group, value) });
     }
 
-    /** Pick or release one role of the Role facet. */
-    function pickRole(role: string): void {
-        const picked = held.roles;
-        write({
-            roles: picked.includes(role) ? picked.filter((one) => one !== role) : [...picked, role]
-        });
-    }
-
-    /** Press or release one value of a schema filter. */
-    function pick(field: string, value: string): void {
-        const now = held.picked[field] ?? [];
-        const next = now.includes(value) ? now.filter((one) => one !== value) : [...now, value];
-        write({ picked: { ...held.picked, [field]: next } });
-    }
-
-    /** The bounds of one range filter as typed. */
-    function bound(field: string, bounds: Bounds): void {
-        write({ range: { ...held.range, [field]: bounds } });
+    /** Draw the cards or the list; a press on the mode in force changes nothing. */
+    function setMode(mode: CollectionMode): void {
+        if (held.mode !== mode) write({ mode });
     }
 
     /**
@@ -330,7 +313,7 @@
         const asked = cardMoveRequested(instance.id);
         if (asked === null || asked.seq === carried) return;
         carried = asked.seq;
-        void carry(asked.card, asked.step);
+        if (held.mode === 'cards') void carry(asked.card, asked.step);
     });
 
     /**
@@ -349,6 +332,27 @@
         {#if schema !== undefined}
             <AddButton onclick={() => (asking = addAsk())} />
         {/if}
+        <ModeButtons mode={held.mode} onmode={setMode} />
+        {#if held.mode === 'list'}
+            <Menu
+                label={t('board.columns')}
+                glyph="sliders"
+                compact
+                bare
+                placement="down"
+                align="right"
+                items={columns.map((one) => ({
+                    id: one.key,
+                    label: one.label,
+                    checked: one.shown,
+                    disabled: one.key === TITLE_COLUMN,
+                    title:
+                        one.key === TITLE_COLUMN ? t('board.columns_always', one.label) : one.label
+                }))}
+                onpick={(column: string) =>
+                    write({ columns: pickColumn(schemas, held.columns, column) })}
+            />
+        {/if}
         {#if joined.literature.length > 0}
             <ToolButton
                 label={t('literature.bibtex_shown')}
@@ -365,63 +369,30 @@
 {/snippet}
 
 {#snippet bar()}
-    <Toolbar label={t('collection.filters')}>
-        <Search
-            fill
-            value={held.search}
-            placeholder={t('collection.search', title())}
-            oninput={(value: string) => write({ search: value })}
-        />
-        {#if facets.length > 0 || unfunded.length > 0}
-            <span class="label">{t('collection.status_facet')}</span>
-            {#each facets as facet (facet.value)}
-                <Chip
-                    label={`${facet.value} ${facet.count}`}
-                    tone={statusTone(facet.value)}
-                    pressed={!held.hidden.includes(facet.value)}
-                    onclick={() => toggle(facet.value)}
-                />
-            {/each}
-            {#if unfunded.length > 0}
-                <Chip
-                    label={`${t('collection.no_funding')} ${unfunded.length}`}
-                    pressed={!held.hidden.includes(NO_FUNDING)}
-                    onclick={() => toggle(NO_FUNDING)}
-                />
-            {/if}
-        {/if}
-        {#if roles.drawn}
-            <Chip
-                label={t('roles.mine')}
-                title={t('roles.mine_tip')}
-                pressed={held.mine}
-                onclick={() => write({ mine: !held.mine })}
-            />
-            <span class="label">{t('roles.facet')}</span>
-            {#each roles.facet as role (role.key)}
-                <Chip
-                    label={`${role.label} ${role.count}`}
-                    pressed={held.roles.includes(role.key)}
-                    onclick={() => pickRole(role.key)}
-                />
-            {/each}
-        {/if}
-        {#if hubs.length > 0}
-            <HubChips
-                {hubs}
-                {entries}
-                off={held.hubs}
-                onchange={(off: string[]) => write({ hubs: off })}
-            />
-        {/if}
-        <FieldFilters
-            {filters}
-            picked={held.picked}
-            range={held.range}
-            onpick={pick}
-            onrange={bound}
-        />
-    </Toolbar>
+    <FilterBar
+        label={t('collection.filters')}
+        search={held.search}
+        placeholder={t('collection.search', title())}
+        onsearch={(value: string) => write({ search: value })}
+        named={filtered.named}
+        mine
+        pressed={held.mine}
+        onmine={() => write({ mine: !held.mine })}
+        groups={filtered.groups}
+        line={filtered.line}
+        ontoggle={toggleFilter}
+    />
+    <SliceLine
+        label={t('collection.slices')}
+        groups={filtered.slices}
+        facet={STATUS_FACET}
+        counted={filtered.counted}
+        filters={held.filters}
+        shown={filtered.shown}
+        total={filtered.total}
+        words={entryCountWords}
+        onfilters={(next: Record<string, string[]>) => write({ filters: next })}
+    />
 {/snippet}
 
 <AddAsk ask={asking} onclose={() => (asking = null)} />
@@ -430,64 +401,69 @@
     <div class="collection" data-instance={instance.id} data-collection={instance.view}>
         <SaidBody
             {said}
-            empty={shown.length === 0 && unfunded.length === 0}
+            empty={shown.length === 0 && !filtered.card}
             message={t('collection.empty')}
         >
-            <CardGrid role="list">
-                {#each shown as { entry, part } (`${rootOf(entry)}:${entry.index}`)}
-                    <Reveal
-                        id={entry.id}
-                        wanted={held.reveal}
-                        onrevealed={() => write({ reveal: '' })}
-                    >
-                        <EntryCard
-                            {entry}
-                            cursor={cursor === identityValue(entry)}
-                            collection={key}
-                            schema={part.schema}
-                            projects={all}
-                            statuses={lifecycle}
-                            file={part.file}
-                            fault={part.faults.get(entry.index)}
-                            ondragfrom={(value: string) => (dragged = value)}
-                            ondropon={drop}
-                            onsaid={(words: string) => (said = words)}
-                            lead={roles.lead(entry)}
-                            more={held.more.includes(entry.id)}
-                            onmore={() => toggleMore(entry.id)}
-                            onpage={() => openPage(entry)}
-                            extra={taskCardActions(
-                                part.collection,
-                                entry,
-                                configMap(),
-                                startAgent
-                            ).concat(
-                                literatureCardActions(
+            {#if held.mode === 'list'}
+                {#if filtered.card}
+                    <CardGrid role="list">
+                        <NoFundingCard {unfunded} cursor={cursor === NO_FUNDING} />
+                    </CardGrid>
+                {/if}
+                <EntryList
+                    rows={shown.map((one) => ({ entry: one.entry, schema: one.part.schema }))}
+                    {columns}
+                    onpage={openPage}
+                    reveal={held.reveal}
+                    onrevealed={() => write({ reveal: '' })}
+                />
+            {:else}
+                <CardGrid role="list">
+                    {#each shown as { entry, part } (`${rootOf(entry)}:${entry.index}`)}
+                        <Reveal
+                            id={entry.id}
+                            wanted={held.reveal}
+                            onrevealed={() => write({ reveal: '' })}
+                        >
+                            <EntryCard
+                                {entry}
+                                cursor={cursor === identityValue(entry)}
+                                collection={key}
+                                schema={part.schema}
+                                projects={all}
+                                statuses={lifecycle}
+                                file={part.file}
+                                fault={part.faults.get(entry.index)}
+                                ondragfrom={(value: string) => (dragged = value)}
+                                ondropon={drop}
+                                onsaid={(words: string) => (said = words)}
+                                lead={filtered.lead(entry)}
+                                more={held.more.includes(entry.id)}
+                                onmore={() => toggleMore(entry.id)}
+                                onpage={() => openPage(entry)}
+                                extra={taskCardActions(
                                     part.collection,
                                     entry,
-                                    writeToken,
-                                    (words) => {
-                                        said = words;
-                                    }
-                                )
-                            )}
-                        />
-                    </Reveal>
-                {/each}
-                {#if unfunded.length > 0 && !held.hidden.includes(NO_FUNDING)}
-                    <NoFundingCard {unfunded} cursor={cursor === NO_FUNDING} />
-                {/if}
-            </CardGrid>
+                                    configMap(),
+                                    startAgent
+                                ).concat(
+                                    literatureCardActions(
+                                        part.collection,
+                                        entry,
+                                        writeToken,
+                                        (words) => {
+                                            said = words;
+                                        }
+                                    )
+                                )}
+                            />
+                        </Reveal>
+                    {/each}
+                    {#if filtered.card}
+                        <NoFundingCard {unfunded} cursor={cursor === NO_FUNDING} />
+                    {/if}
+                </CardGrid>
+            {/if}
         </SaidBody>
     </div>
 </Pane>
-
-<style>
-    .label {
-        font-size: var(--fs-xs);
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
-        color: var(--accent-txt, var(--accent));
-    }
-</style>

@@ -1,6 +1,10 @@
-// Layer 3, primitive. The table's contract and its ordering: what one column declares, and how
-// rows are sorted by one of them. Apart from the component so the comparison can be read without a
-// rendering.
+// Layer 3, primitive. The table's contract, its ordering and its fitting: what one column declares,
+// how rows are sorted by one of them, and which of the columns a list's Columns menu lists
+// (`ListedColumn`, declared in data/shapes/boards/columns.ts) are drawn in the list's width
+// (`fittedColumns`). Apart from the component so the comparison and the fitting can be read without
+// a rendering.
+
+import type { ListedColumn } from '../../../data/shapes/boards/columns.ts';
 
 /** One column: the key it reads from a row, its heading, and how its cells are drawn. */
 export type Column = {
@@ -47,4 +51,33 @@ export function order(
         if (typeof a === 'number' && typeof b === 'number') return sign * (a - b);
         return sign * cellText(a).localeCompare(cellText(b));
     });
+}
+
+export type { ListedColumn };
+
+/**
+ * The columns a list draws in its width: every listed column that is shown, less the rightmost
+ * ones whose minimum widths (`least`) do not fit, but the column `kept`, which is drawn always.
+ * The columns drawn share the width in proportion to their minimums. A width of 0, a render with
+ * no layout, draws them all.
+ */
+export function fittedColumns(
+    listed: readonly ListedColumn[],
+    width: number,
+    least: (key: string) => number,
+    kept: string
+): Column[] {
+    const drawn = listed.filter((one) => one.shown);
+    let total = drawn.reduce((sum, one) => sum + least(one.key), 0);
+    while (width > 0 && total > width) {
+        const at = drawn.findLastIndex((one) => one.key !== kept);
+        if (at < 0) break;
+        total -= least(drawn[at].key);
+        drawn.splice(at, 1);
+    }
+    return drawn.map((one) => ({
+        key: one.key,
+        label: one.label,
+        width: `${((least(one.key) / total) * 100).toFixed(3)}%`
+    }));
 }

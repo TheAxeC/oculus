@@ -4,12 +4,15 @@
 // slices folded off the bar's second line as groups headed by their category; and the words of the
 // counts the controls carry (the deadline toggle, the waiting toggle, the Situation badge, the
 // Venue mark, the end of the second line); and the cells of the list's Columns menu, with which of
-// them are drawn.
+// them are drawn. A collection view's bar (state/boards/collection/bar.ts) and the Map's
+// (state/boards/structure/map-bar.ts) are made in the same shapes: the collection's reads the
+// facets' hues from here (`facetToneIn`), the Map's its facet groups (`filterGroups`).
 //
 // It is apart from the views so the grouping, the counts and the words can be read without a DOM:
 // a group's list is drawn only once it is opened, which a server rendering never does.
 
 import { byKey } from '../../../data/helpers/guards.ts';
+import type { ListedColumn } from '../../../data/shapes/boards/columns.ts';
 import { mapOfShape, readAs, wordShape } from '../../../data/shapes/shapes.ts';
 import { t } from '../../shared/words/text.ts';
 import { namedTone } from '../../shared/words/tones.ts';
@@ -62,6 +65,7 @@ export function facetHeading(facet: string): string {
     if (facet === 'venue') return t('board.facet_venue');
     if (facet === 'waiting') return t('board.facet_waiting');
     if (facet === 'hub') return t('board.facet_hub');
+    if (facet === 'tier') return t('board.facet_tier');
     if (facet === 'pillar') return t('board.facet_pillar');
     if (facet === 'funding') return t('board.facet_funding');
     if (facet === 'dataset') return t('board.facet_dataset');
@@ -82,7 +86,16 @@ const facetTonesShape = mapOfShape(wordShape);
  */
 function facetTone(facet: string, preset: BoardPreset): string {
     const hub = preset.rule.hub ?? undefined;
-    const tones = readAs(facetTonesShape, preset.words(hub).config.facet_tones) ?? {};
+    return facetToneIn(facet, preset.words(hub).config, hub);
+}
+
+/**
+ * A filter group's hue in the words `words` (a hub's, or the merged config for every hub's): its
+ * row of `facet_tones` as a palette hue of the hub `hub`, the unknown tone for a group the map does
+ * not name. A collection's Role and Hub groups and the Map's groups read it as a board's do.
+ */
+export function facetToneIn(facet: string, words: Record<string, unknown>, hub?: string): string {
+    const tones = readAs(facetTonesShape, words.facet_tones) ?? {};
     return namedTone(byKey(tones, facet) ?? '', hub);
 }
 
@@ -197,16 +210,18 @@ export function moreWords(groups: FilterGroup[]): string {
 
 /**
  * The slices folded off line 2 (`folded`, their values) as groups headed by their category, each
- * slice with its count from the slice facet of `counted` and drawn in its own hue.
+ * slice with its count from the facet `facet` of `counted`, the key the slices are stored under
+ * (`slice` on a board and the Map, `status` on a collection), and drawn in its own hue.
  */
 export function sliceChoices(
     groups: SliceGroup[],
+    facet: string,
     counted: Facet[],
     filters: Record<string, string[]>,
     folded: ReadonlySet<string>
 ): FilterGroup[] {
-    const counts = counted.find((one) => one.key === 'slice')?.values ?? [];
-    const picked = byKey(filters, 'slice') ?? [];
+    const counts = counted.find((one) => one.key === facet)?.values ?? [];
+    const picked = byKey(filters, facet) ?? [];
     return groups.flatMap((group) => {
         const items = group.slices
             .filter((slice) => folded.has(slice.value))
@@ -265,9 +280,6 @@ export function shownWords(shown: number, total: number): string {
     return total === 1 ? t('board.count_one') : t('board.count', total);
 }
 
-/** One cell of a board's list as a choice of its Columns menu: whether it is drawn, and how. */
-export type ListCell = { key: string; label: string; shown: boolean };
-
 /**
  * A cell's own heading, for a cell the board's `columns` do not name. The keys are literal for the
  * same reason as the headings'.
@@ -291,7 +303,7 @@ function cellHeading(cell: string): string {
  * the board's `columns` do; Project (`title`) is drawn always. A column of `columns` naming no cell
  * of `LIST_CELLS` is left out, as the config check reports it.
  */
-export function listCells(columns: BoardColumn[], saved: string[] | undefined): ListCell[] {
+export function listCells(columns: BoardColumn[], saved: string[] | undefined): ListedColumn[] {
     const own = columns.filter((one) => LIST_CELLS.includes(one.key));
     const named = new Set(own.map((one) => one.key));
     const cells = [

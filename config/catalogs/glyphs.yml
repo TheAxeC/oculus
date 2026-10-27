@@ -143,7 +143,6 @@ glyphs:
   spark: "*"
   circle_empty: "( )"
   circle_filled: "@"
-  square_filled: "#"
   # radar / status colors
   red: "(!)"
   purple: "(~)"

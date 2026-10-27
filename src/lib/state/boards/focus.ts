@@ -39,6 +39,10 @@ import {
 export type { Id, Project, Snapshot, Venue } from '../../data/model/index.ts';
 import { daysUntil } from './board/index.ts';
 export { setting } from './board/index.ts';
+// The words of `tiers:` are data/shapes/boards/tiers.ts's, which the board's Tier facet reads too;
+// the Focus view reaches them from here, as it reaches the model types.
+import { tierWords } from '../../data/shapes/boards/tiers.ts';
+export { tierWords, type TierWord } from '../../data/shapes/boards/tiers.ts';
 import {
     FOCUS_CLUSTERS,
     drawnClusterRows,
@@ -502,22 +506,6 @@ export function venueLabel(venue: Venue | undefined): string {
     if (venue === undefined) return '';
     const short = venue.short ?? '';
     return short === '' ? venue.name : short;
-}
-
-/**
- * One word of `tiers:`: its key, its words (the key itself for a row that names no label), and
- * whether a Focus lane card leaves it off its tags (`unmarked: true`).
- */
-export type TierWord = { key: string; label: string; unmarked?: true };
-
-/** The words of `tiers:` of a hub's words, in the order the map lists them. */
-export function tierWords(words: Record<string, unknown>): TierWord[] {
-    const rows = readAs(mapShape, words.tiers) ?? {};
-    return vocabKeys(words.tiers).map((key) => {
-        const row = readAs(mapShape, rows[key]);
-        const label = typeof row?.label === 'string' && row.label !== '' ? row.label : key;
-        return row?.unmarked === true ? { key, label, unmarked: true } : { key, label };
-    });
 }
 
 /**

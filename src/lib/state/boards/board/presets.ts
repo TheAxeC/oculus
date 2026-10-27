@@ -6,9 +6,10 @@
 // data/shapes/boards/. A board over the records of several hubs reads each project under the words
 // of its own hub, and draws its sections, slices, facets and stage order from the union of every
 // hub's words. This module holds no table of boards: the board views the page registers are read
-// from the same rows (`boardViews`), each named and drawn by the words its row names. The one board
-// no row names is the track record's (`recordPreset`), which a role row of the Career banner opens
-// for its role.
+// from the same rows (`boardViews`), each named and drawn by the words its row names. Two presets
+// no row names: the track record's (`recordPreset`), which a role row of the Career banner opens
+// for its role, and the Map's (`mapPreset`), which takes every project of every hub for the Map's
+// bar.
 
 import { z } from 'zod';
 import type { Finding, Id, Project, Resource, Venue } from '../../../data/model/index.ts';
@@ -286,6 +287,7 @@ export const FACETS = [
     'venue',
     'waiting',
     'hub',
+    'tier',
     'pillar',
     'funding',
     'dataset',
@@ -567,6 +569,43 @@ export function recordPreset(
         },
         ...drawnBy(row),
         categories: records,
+        roles: union.roles,
+        stageOrder: vocabKeys(union.config.stages),
+        cards: 'sections',
+        config,
+        words
+    };
+}
+
+/** The id of the Map's preset, which no row of `boards:` names. */
+const MAP_VIEW = 'map';
+
+/**
+ * The preset the Map filters its projects by: a rule of nulls, so it takes every project, the
+ * done work at a terminal stage included (the Map's Stage group decides which stages are drawn),
+ * with the categories, the roles and the stage order of every hub's words, and no columns, no
+ * label mode and no search words of its own (`drawnBy` of an empty row).
+ */
+export function mapPreset(
+    config: Record<string, unknown> = {},
+    vocab: WordsOf = () => config
+): BoardPreset {
+    const words = wordsReader(vocab);
+    const union = words();
+    return {
+        id: MAP_VIEW,
+        rule: {
+            tiers: null,
+            roles: null,
+            stages: null,
+            chips: null,
+            forms: null,
+            hub: null,
+            match: null,
+            record: null
+        },
+        ...drawnBy({}),
+        categories: union.categories,
         roles: union.roles,
         stageOrder: vocabKeys(union.config.stages),
         cards: 'sections',

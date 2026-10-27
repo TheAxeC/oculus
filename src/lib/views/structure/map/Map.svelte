@@ -12,15 +12,26 @@
 </script>
 
 <script lang="ts">
-    // Layer 3, view. The relationship map's legend and visibility controls around the pure graph
-    // built from the current portfolio snapshot. The pane keeps the start seed Graphviz's neato
-    // lays its node set out from, as `start: { key, seed }` in its own instance state, so a page
-    // saved with a map draws the same picture again; the re-tune control saves the next seed.
+    // Layer 3, view. The relationship map's legend and bar around the pure graph built from the
+    // current portfolio snapshot. The pane keeps the start seed Graphviz's neato lays its node set
+    // out from, as `start: { key, seed }` in its own instance state, so a page saved with a map
+    // draws the same picture again; the re-tune control saves the next seed.
     //
-    // The header holds the two icon actions, link mode and re-tune. The bar holds the filters and
-    // the visibility toggles (Controls.svelte), and the body the legend (Legend.svelte) and the
-    // graph, drawn by views/shared/graph/Graph.svelte, which the Notes Graph draws too; what a node
-    // opens (node-view.ts) and the related edge a link writes (edge-write.ts) are the Map's.
+    // The header holds the two icon actions, link mode and re-tune. The bar is a project board's
+    // two lines (views/shared/forms/bar/FilterBar.svelte and SliceLine.svelte): line 1 the search;
+    // the Show button (views/shared/forms/bar/PickMenu.svelte), which lists Projects, Pillars and
+    // Team, each ticked while its kind of node is drawn, and Connected only; Mine only while a
+    // person is marked as the user, off at first; then the group buttons Stage, Form, Situation,
+    // Role, Year, Domain, Venue, Pillar, Tier and Hub (Hub while the workspace has more than one
+    // hub), folding into More, which holds a board's other facets. Line 2 is the slices, how many
+    // projects the filters keep and Clear all. The Stage group draws the stages that do not carry
+    // `terminal` while none is picked, and the stages picked otherwise; a Pillar pick keeps its
+    // projects and only its pillars' nodes. The groups, their counts and what they keep are
+    // state/boards/structure/map-bar.ts's, the graph state/boards/structure/graph.ts's.
+    //
+    // The body holds the legend (Legend.svelte), the stages of the projects drawn, and the graph,
+    // drawn by views/shared/graph/Graph.svelte, which the Notes Graph draws too; what a node opens
+    // (node-view.ts) and the related edge a link writes (edge-write.ts) are the Map's.
     //
     // Over a wallpaper the graph's canvas is its own surface, and the legend is read off a
     // `Surface` above it.
@@ -30,87 +41,117 @@
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import Controls from '$lib/views/structure/map/Controls.svelte';
+    import FilterBar from '$lib/views/shared/forms/bar/FilterBar.svelte';
+    import PickMenu from '$lib/views/shared/forms/bar/PickMenu.svelte';
+    import SliceLine from '$lib/views/shared/forms/bar/SliceLine.svelte';
     import Graph from '$lib/views/shared/graph/Graph.svelte';
     import Legend from '$lib/views/structure/map/Legend.svelte';
     import { writeRelated } from './edge-write';
     import { viewOf } from './node-view';
     import {
-        archiveStatuses,
         buildGraph,
-        filterGraph,
+        drawnStages,
         hasRelationships as relationshipsOf,
-        lineFilters as lineChips,
-        presentFilter,
-        nextStart,
-        startFor,
-        toggleFilter,
-        stageFilters as stageChips
-    } from '$lib/state/boards/structure/graph';
-    import { t } from '$lib/state/shared/words/text';
-    import {
         labelModeOf,
+        nextStart,
         parseMapState,
+        startFor,
+        type GraphShow,
         type MapState,
         type PointNode
     } from '$lib/state/boards/structure/graph';
+    import {
+        MAP_LINE,
+        PILLAR_FACET,
+        SHOW_CONNECTED,
+        mapBar,
+        showGroup
+    } from '$lib/state/boards/structure/map-bar';
+    import { mapPreset, offersMine, shownWords, withPick } from '$lib/state/boards/board';
+    import { hubList } from '$lib/state/shared/page/hubs';
+    import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
     import { storedState } from '$lib/state/workbench/layout/instance';
     import { vocabOf } from '$lib/state/shared/words/tones';
 
     const {
         entities: { portfolio },
+        fs: { primary, roots },
         layout: { openView },
-        selectors: { configMap },
+        selectors: { board, configMap, selfNamed },
         ui: { instanceState, setInstanceState },
         writes: { writeManifest }
     } = useState();
 
     let { instance }: ViewProps = $props();
     const held = $derived(parseMapState(instanceState(instance.id)));
-    const collaborators = $derived(held.collaborators);
-    const enabled = $derived(held.enabled);
     const linkMode = $derived(held.linkMode);
-    const connected = $derived(held.connected);
 
-    /** Keep the view's own toggles with the instance, so a tab reopened is the tab as it was. */
+    /** Keep the view's own controls with the instance, so a tab reopened is the tab as it was. */
     function write(next: Partial<MapState>): void {
-        setInstanceState(instance.id, storedState({ ...held, ...next }, ['lines']));
+        setInstanceState(instance.id, storedState({ ...held, ...next }, []));
     }
     const snapshot = $derived(portfolio());
-    const statuses = $derived(archiveStatuses(snapshot, configMap(), vocabOf));
-    /**
-     * The graph the filters narrow, which is what the chips are drawn from: a type or a line stays
-     * on the row while nothing of it is drawn, so a reader can press it back.
-     */
-    const base = $derived.by(() => {
+    /** The Map's projects as a board's items, every project of every hub. */
+    const preset = $derived(mapPreset(configMap(), vocabOf));
+    const items = $derived(board(preset));
+    /** Whether a person is marked as the user, which Mine only and the Role group need. */
+    const named = $derived(selfNamed());
+    /** The hubs the Hub group lists, none while the workspace has one hub. */
+    const hubs = $derived(hubList(roots(), primary()));
+    /** The bar's groups and slices with their counts, and the projects it keeps. */
+    const made = $derived(
+        mapBar({
+            items,
+            preset,
+            filters: held.filters,
+            search: held.search,
+            mine: held.mine,
+            named,
+            hubs,
+            config: configMap(),
+            wordsOf: vocabOf
+        })
+    );
+    /** What the graph and the Show group's counts are built over. */
+    const context = $derived({
+        projects: new Set(made.kept.map((item) => item.project.id)),
+        pillars: held.filters[PILLAR_FACET] ?? [],
+        wordsOf: vocabOf
+    });
+    const graph = $derived.by(() => {
         if (snapshot === null) return { nodes: [], edges: [] };
         return buildGraph(snapshot, configMap(), {
-            archived: enabled,
-            collaborators,
-            labelMode: labelModeOf(configMap()),
-            wordsOf: vocabOf
+            ...context,
+            show: held.show,
+            connected: held.connected,
+            labelMode: labelModeOf(configMap())
         });
     });
-    /**
-     * The filter the graph is drawn under: what the saved state names, narrowed to the stages and
-     * the lines the base graph still holds, so a stale name neither hides a node nor a chip.
-     */
-    const kept = $derived(presentFilter(base, held));
-    const stages = $derived(kept.stages);
-    const lines = $derived(kept.lines);
-    const graph = $derived(filterGraph(base, kept));
+    const show = $derived(
+        snapshot === null
+            ? null
+            : showGroup(snapshot, configMap(), context, held.show, held.connected)
+    );
     /** The seed this pane lays the set of nodes it is drawing out from. */
     const seed = $derived(startFor(held, graph.nodes));
-
-    const stageFilters = $derived(stageChips(base, graph, configMap(), stages));
-    const lineFilters = $derived(lineChips(base, graph, snapshot, lines));
     const hasRelationships = $derived(relationshipsOf(snapshot));
 
-    function toggleArchive(status: string, checked: boolean): void {
-        write({
-            enabled: checked ? [...enabled, status] : enabled.filter((item) => item !== status)
-        });
+    /** Add or remove one value of one facet, which is what a pick in a group's list means. */
+    function toggleFilter(facet: string, value: string): void {
+        write({ filters: withPick(held.filters, facet, value) });
+    }
+
+    /** Tick or untick one item of the Show group: a kind of node, or Connected only. */
+    function toggleShow(_group: string, id: string): void {
+        if (id === SHOW_CONNECTED) {
+            write({ connected: !held.connected });
+            return;
+        }
+        if (id === 'projects' || id === 'pillars' || id === 'team') {
+            const next: GraphShow = { ...held.show, [id]: !held.show[id] };
+            write({ show: next });
+        }
     }
 
     /** Lay the map out again from the next seed, and keep that picture with the pane. */
@@ -159,36 +200,48 @@
     </Toolbar>
 {/snippet}
 
+{#snippet toggles()}
+    {#if show !== null}
+        <PickMenu label={t('map.show')} groups={[show]} onpick={toggleShow} />
+    {/if}
+{/snippet}
+
 {#snippet bar()}
-    <Controls
-        {collaborators}
-        {statuses}
-        {enabled}
-        {connected}
-        stages={stageFilters}
-        lines={lineFilters}
-        oncollaborators={(checked: boolean) => write({ collaborators: checked })}
-        onarchive={toggleArchive}
-        onstage={(stage: string) => write({ stages: toggleFilter(stages, stage) })}
-        online={(id: string) => write({ lines: toggleFilter(lines, id) })}
-        onallstages={() => write({ stages: [] })}
-        onalllines={() => write({ lines: [] })}
-        onconnected={() => write({ connected: !connected })}
+    <FilterBar
+        label={t('map.filters')}
+        search={held.search}
+        placeholder={t('board.search_default')}
+        onsearch={(value: string) => write({ search: value })}
+        {toggles}
+        {named}
+        mine={offersMine(items, named)}
+        pressed={held.mine}
+        onmine={() => write({ mine: !held.mine })}
+        groups={made.groups}
+        line={MAP_LINE}
+        ontoggle={toggleFilter}
+    />
+    <SliceLine
+        label={t('map.slices')}
+        groups={made.slices}
+        facet="slice"
+        counted={made.counted}
+        filters={held.filters}
+        shown={made.kept.length}
+        total={made.total}
+        words={shownWords}
+        onfilters={(next: Record<string, string[]>) => write({ filters: next })}
     />
 {/snippet}
 
 <Pane title={t('views.map')} toolbar={tools} {bar}>
     <div class="map" data-instance={instance.id}>
         <Surface>
-            <Legend
-                stages={stageFilters
-                    .filter((item) => item.shown && item.count > 0)
-                    .map((item) => item.stage)}
-            />
+            <Legend stages={drawnStages(graph, configMap())} />
         </Surface>
         {#if !hasRelationships}
             <Empty message={t('map.empty')} glyph={t('map.empty_glyph')} />
-        {:else if base.nodes.length > 0 && graph.nodes.length === 0}
+        {:else if items.length > 0 && graph.nodes.length === 0}
             <Empty message={t('map.empty_filtered')} glyph={t('map.empty_glyph')} />
         {:else}
             <Graph

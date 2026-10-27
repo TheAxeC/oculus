@@ -48,16 +48,18 @@
     // role's row of the Track record counts (state/boards/board/presets.ts `recordPreset`). It
     // holds none while no person is marked as the user, and a tab opened with no role says so.
     //
-    // The header holds New project, Cards and List, the one in force pressed, Full titles, pressed
-    // while the board draws full titles, and, in list mode, Columns, a menu that shows or hides
-    // each cell of the list, Project always shown. A board offers New project, written with its
-    // tier and its `role:` keys, only when its rule takes the project that write makes
-    // (state/boards/board/new-project.ts), so Archive, which takes done work, offers none with the
-    // shipped boards. Line 1 of the bar is the search, the toggles and the group buttons
-    // (views/boards/projects/FilterBar.svelte); line 2 the slices, each the projects of one
+    // The header holds New project, Cards and List (views/shared/forms/bar/ModeButtons.svelte), the
+    // one in force pressed, Full titles, pressed while the board draws full titles, and, in list
+    // mode, Columns, a menu that shows or hides each cell of the list, Project always shown. A
+    // board offers New project, written with its tier and its `role:` keys, only when its rule
+    // takes the project that write makes (state/boards/board/new-project.ts), so Archive, which
+    // takes done work, offers none with the shipped boards. Line 1 of the bar is the search, the
+    // stale, deadline and waiting toggles this view hands it, and the group buttons, those of
+    // `LINE_FACETS` on the line and the rest, Tier among them, in More
+    // (views/shared/forms/bar/FilterBar.svelte); line 2 the slices, each the projects of one
     // category at one stage or form, how many projects are shown, and Clear all
-    // (views/boards/projects/SliceLine.svelte). While a person is marked as the user, the bar draws
-    // the Role group and Mine only, and a card whose lead is the user carries the Lead badge;
+    // (views/shared/forms/bar/SliceLine.svelte). While a person is marked as the user, the bar
+    // draws the Role group and Mine only, and a card whose lead is the user carries the Lead badge;
     // Mine only, on by default, is applied only where one of the board's projects is one it does
     // not keep, and drawn disabled elsewhere. Without a `self` it draws none of them. While the
     // workspace has more than one hub, line 1 draws the Hub group after Venue and Waiting on, a
@@ -93,18 +95,23 @@
     import Surface from '$lib/ui/frame/Surface.svelte';
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import Chip from '$lib/ui/controls/Chip.svelte';
     import GroupHead from '$lib/ui/controls/heads/GroupHead.svelte';
     import Card from '../../shared/card/project/ProjectCard.svelte';
     import CardGrid from '../../shared/card/record/CardGrid.svelte';
     import SaidBody from '../../shared/writes/SaidBody.svelte';
+    import FilterBar from '../../shared/forms/bar/FilterBar.svelte';
+    import SliceLine from '../../shared/forms/bar/SliceLine.svelte';
+    import ModeButtons from '../../shared/forms/bar/ModeButtons.svelte';
     import BoardList from './BoardList.svelte';
-    import FilterBar from './FilterBar.svelte';
     import NewIdea from './NewIdea.svelte';
-    import SliceLine from './SliceLine.svelte';
     import {
+        LINE_FACETS,
         appliedFilters,
         applyFilters,
+        blockedBadge,
         cardSections,
+        deadlineWords,
         facets,
         filterGroups,
         listCells,
@@ -113,7 +120,11 @@
         parseBoardState,
         pickCell,
         recordPreset,
+        shownWords,
         sliceGroups,
+        venueWarning,
+        waitingWords,
+        withPick,
         type BoardItem,
         type BoardMode,
         type BoardState,
@@ -226,24 +237,9 @@
         if (held.mode !== mode) write({ mode });
     }
 
-    /** Set the picked values of one facet, and take the facet out when none is left. */
-    function setFacet(facet: string, values: string[]): void {
-        const next = { ...held.filters };
-        // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- a Map here would change the shape every reader of this record depends on
-        if (values.length === 0) delete next[facet];
-        else next[facet] = values;
-        write({ filters: next });
-    }
-
     /** Add or remove one value of one facet, which is what a pick in a group's list means. */
     function toggleFilter(facet: string, value: string): void {
-        const selected = held.filters[facet] ?? [];
-        setFacet(
-            facet,
-            selected.includes(value)
-                ? selected.filter((one) => one !== value)
-                : [...selected, value]
-        );
+        write({ filters: withPick(held.filters, facet, value) });
     }
 
     /** Draw one card's long description whole, or cut it to its clamp again. */
@@ -331,20 +327,7 @@
                 onclick={() => (adding = !adding)}
             />
         {/if}
-        <ToolButton
-            bare
-            glyph="cards"
-            label={t('board.view_cards')}
-            pressed={held.mode === 'cards'}
-            onclick={() => setMode('cards')}
-        />
-        <ToolButton
-            bare
-            glyph="list"
-            label={t('board.view_list')}
-            pressed={held.mode === 'list'}
-            onclick={() => setMode('list')}
-        />
+        <ModeButtons mode={held.mode} onmode={setMode} />
         <ToolButton
             bare
             glyph="full_titles"
@@ -374,26 +357,59 @@
     </Toolbar>
 {/snippet}
 
+{#snippet toggles()}
+    <Chip
+        label={t('board.quick_stale')}
+        title={t('board.quick_stale_tip')}
+        glyph={t('board.stale_glyph')}
+        pressed={held.stale}
+        onclick={() => write({ stale: !held.stale })}
+    />
+    <Chip
+        label={deadlineWords(strip)}
+        title={t('board.quick_deadline_tip')}
+        glyph={t('project.card.deadline_glyph')}
+        pressed={held.dated}
+        onclick={() => write({ dated: !held.dated })}
+    />
+    <Chip
+        label={waitingWords(strip)}
+        title={t('board.quick_waiting_tip')}
+        glyph={t('project.card.waiting_glyph')}
+        pressed={held.waiting}
+        onclick={() => write({ waiting: !held.waiting })}
+    />
+{/snippet}
+
 {#snippet bar()}
     <FilterBar
-        {held}
-        placeholder={preset.search}
-        {groups}
-        stats={strip}
+        label={t('board.filters')}
+        search={held.search}
+        placeholder={preset.search === '' ? t('board.search_default') : preset.search}
+        onsearch={(value: string) => write({ search: value })}
+        {toggles}
         {named}
         mine={mineApplies}
-        onwrite={write}
+        pressed={held.mine}
+        onmine={() => write({ mine: !held.mine })}
+        {groups}
+        line={LINE_FACETS}
+        badges={{
+            status: { badge: blockedBadge(strip) },
+            venue: { warning: venueWarning(strip) }
+        }}
         ontoggle={toggleFilter}
     />
     <SliceLine
+        label={t('board.slices')}
         groups={slices}
+        facet="slice"
         {counted}
         filters={held.filters}
         shown={shown.length}
         total={strip.projects}
-        ontoggle={toggleFilter}
-        onslices={(values: string[]) => setFacet('slice', values)}
-        onclear={() => write({ filters: {} })}
+        words={shownWords}
+        onfilters={(next: Record<string, string[]>) => write({ filters: next })}
     />
 {/snippet}
 

@@ -1,11 +1,13 @@
 <script lang="ts">
-    // Layer 3, view partial of views/boards/projects/Projects.svelte. A button of a project board's
-    // bar that opens a list of values to pick: a group button of line 1 (one facet), the More
-    // button (several facets, each headed by its name) and the "+<n>" button at the end of line 2
-    // (the slices folded off the line, each category headed by its name). The list has a search
-    // field at its top, then the values, each with a dot in its hue, its words and its count; a
-    // picked value is ticked and its words are drawn filled in its hue, and the Venue list draws
-    // behind each count a bar as long as the count is against the largest count of the list.
+    // Layer 3, shared view partial of the bar FilterBar.svelte and SliceLine.svelte draw for the
+    // project boards, the collection views and the Map, and of the Map's Show button
+    // (views/structure/map/Map.svelte). A button of that bar that opens a list of values to pick: a
+    // group button of line 1 (one facet), the More button (several facets, each headed by its
+    // name), the "+<n>" button at the end of line 2 (the slices folded off the line, each category
+    // headed by its name) and the Map's Show button (the kinds of node it draws). The list has a
+    // search field at its top, then the values, each with a dot in its hue, its words and its
+    // count; a picked value is ticked and its words are drawn filled in its hue, and the Venue list
+    // draws behind each count a bar as long as the count is against the largest count of the list.
     // Typing filters the values by their words, over every heading; the arrows move; a press or
     // Enter picks or unpicks a value, and the list stays open, so several are picked in one go.
     // Escape and a press outside close it and give the focus back to the button.
@@ -16,8 +18,9 @@
     // never matches what was typed. The button is ui/menu/MenuOpener.svelte, handed the popover's
     // trigger, and the box is ui/frame/FloatingList.svelte, so the list looks as a menu's list
     // does, its rows, dots and badges in MenuList.svelte's tokens. The words, the counts and the
-    // hues are the board's (state/boards/board/filter-menu.ts). Beside the button it draws the red
-    // badge and the amber mark of the counts a group carries (`badge`, `warning`).
+    // hues are the caller's, in the shapes of state/boards/board/filter-menu.ts (`FilterGroup`,
+    // `FilterChoice`). Beside the button it draws the red badge and the amber mark of the counts a
+    // group carries (`badge`, `warning`).
 
     import { Command, Popover } from 'bits-ui';
     import Chip from '$lib/ui/controls/Chip.svelte';

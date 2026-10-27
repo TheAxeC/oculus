@@ -1,27 +1,22 @@
-// Layer 2, client state. The Map's pure graph builder, the chips its filters draw, and the start
-// seed a pane keeps for its node set (`layoutKey`, `layoutSeed`, `startFor`, `nextStart`). The
-// placement itself is Graphviz's neato, in layout.ts beside this file, and the force simulation the
-// Map runs from it is forces.ts there. Every visible-set and seed rule is independent of the DOM so
-// it can be checked without a browser. It sits in state/boards/structure beside the Pillars and
-// Domains joins, the pure halves of the Structure views. A project's stage is read under the words
-// of its own hub when the caller gives them (`wordsOf`), and the stage chips are drawn in the order
-// and the tones of every hub's words.
+// Layer 2, client state. The Map's pure graph builder over the projects its bar keeps, the kinds of
+// node its Show menu draws, its saved state, and the start seed a pane keeps for its node set
+// (`layoutKey`, `layoutSeed`, `startFor`, `nextStart`). The bar's groups and what they keep are
+// map-bar.ts beside this file. The placement itself is Graphviz's neato, in layout.ts, and the
+// force simulation the Map runs from it is forces.ts there. Every visible-set and seed rule is
+// independent of the DOM so it can be checked without a browser. It sits in state/boards/structure
+// beside the Pillars and Domains joins, the pure halves of the Structure views. A project's stage
+// is read under the words of its own hub when the caller gives them (`wordsOf`), and the legend's
+// stages are listed in the order of every hub's words.
 
 import { z } from 'zod';
 import type { Project, Snapshot } from '../../../data/model/index.ts';
 import { byKey } from '../../../data/helpers/guards.ts';
 import { keyOf } from '../../../data/helpers/hub-names.ts';
-import {
-    anyNumberShape,
-    fieldItemsShape,
-    readAs,
-    recordItemsShape,
-    wordShape
-} from '../../../data/shapes/shapes.ts';
+import { anyNumberShape, fieldItemsShape, readAs, wordShape } from '../../../data/shapes/shapes.ts';
 import { hasWord, recordWords, vocabKeys, type WordsOf } from '../../../data/shapes/vocab-keys.ts';
 import { personNames } from '../person.ts';
 import { selfIds, shownTeam } from '../board/team.ts';
-import { stageTone } from '../../shared/words/tones.ts';
+import { freshPicks } from '../board/state.ts';
 
 /**
  * What a node stands for: the Map's projects, pillar lines and people (the people of a project's
@@ -53,22 +48,32 @@ export type GraphEdge = {
 
 export type Graph = { nodes: GraphNode[]; edges: GraphEdge[] };
 
+/** The kinds of node the Map's Show menu draws or leaves out. */
+export type GraphShow = { projects: boolean; pillars: boolean; team: boolean };
+
 /**
- * Which part of a built graph is drawn. An empty or absent list means every one of its kind, so a
- * saved Map state that names no filter draws the whole graph.
+ * What the Map draws with nothing changed in its Show menu: the projects and the pillars, built per
+ * call so no caller holds another's object.
  */
-export type GraphFilter = {
-    /** The project stages drawn. */
-    stages?: string[];
-    /** The pillars drawn, by their registry key. */
-    lines?: string[];
-    /** Drop a project with no membership edge to a line that is still drawn. */
+function showDefault(): GraphShow {
+    return { projects: true, pillars: true, team: false };
+}
+
+/**
+ * Which part of a built graph is drawn: the kinds of node shown, the pillars picked by their key
+ * (none picked draws every pillar), and Connected only.
+ */
+type GraphFilter = {
+    show?: GraphShow;
+    /** The pillars drawn, by their key, every hub's pillar of a key among them; empty is all. */
+    pillars?: readonly string[];
+    /** While pillars are shown, drop a project with no membership edge to a pillar drawn. */
     connected?: boolean;
 };
 
 export type GraphOptions = GraphFilter & {
-    archived?: string[];
-    collaborators?: boolean;
+    /** The projects drawn, by their ids; every project of the snapshot without it. */
+    projects?: ReadonlySet<string>;
     labelMode?: string;
     /** The words of each hub, which a project's stage is read under; the config's without it. */
     wordsOf?: WordsOf;
@@ -96,31 +101,33 @@ export function labelModeOf(config: Record<string, unknown>): string {
     return wordShape.parse(config.map_label_mode);
 }
 
-/** The stage of a project at a stage carrying `terminal`, which a Map toggle shows; else none. */
+/**
+ * The stage of a project at a stage carrying `terminal`, its node and its edges drawn as done
+ * work; else none.
+ */
 function archivedAt(project: Project, config: Record<string, unknown>): string | undefined {
     return hasWord(config, 'stages', 'terminal', project.stage) ? project.stage : undefined;
 }
 
 /**
- * Build only nodes reached by visible projects and only edges whose two ends are visible. With the
- * people option a node and an edge are drawn for each person of a project's team, its lead, its
- * collaborators and its supervisors, except the user, the person marked `self: true`
- * (board/team.ts).
+ * The graph of the projects `options.projects` names (every project without it): a node per
+ * project, a pillar node per pillar a drawn project names with its membership edge while pillars
+ * are shown, a node and an edge per person of a project's team, its lead, its collaborators and its
+ * supervisors, except the user, the person marked `self: true` (board/team.ts), while the team is
+ * shown, and the related edges between drawn projects; then `filterGraph`.
  */
 export function buildGraph(
     snapshot: Snapshot,
     config: Record<string, unknown>,
     options: GraphOptions = {}
 ): Graph {
-    const enabled = new Set(options.archived ?? []);
+    const show = options.show ?? showDefault();
     const archived = (project: Project): string | undefined =>
         archivedAt(project, recordWords(config, options.wordsOf, project));
     const projects = Object.values(snapshot.entities.projects);
     const all = new Map(projects.map((project) => [project.id, project]));
-    const visible = projects.filter((project) => {
-        const status = archived(project);
-        return status === undefined || enabled.has(status);
-    });
+    const wanted = options.projects;
+    const visible = projects.filter((project) => wanted === undefined || wanted.has(project.id));
     const visibleIds = new Set(visible.map((project) => project.id));
     const nodes: GraphNode[] = visible.map((project) => ({
         id: `project::${project.id}`,
@@ -141,7 +148,7 @@ export function buildGraph(
     const self = selfIds(snapshot);
 
     for (const project of visible) {
-        for (const line of project.pillarIds) {
+        for (const line of show.pillars ? project.pillarIds : []) {
             lineIds.add(line);
             edges.push({
                 id: `membership::${project.id}::${line}`,
@@ -152,7 +159,7 @@ export function buildGraph(
                 archived: archived(project) !== undefined
             });
         }
-        if (options.collaborators === true) {
+        if (show.team) {
             for (const person of shownTeam(project, self)) {
                 collaboratorIds.add(person);
                 edges.push({
@@ -257,25 +264,22 @@ function joining(edges: GraphEdge[], kept: Set<string>): GraphEdge[] {
 }
 
 /**
- * The part of a graph one Map instance draws, as a pure function over the whole of it. The three
- * rules run in order: the stages and the lines take their own nodes out, `connected` then takes out
- * a project left with no membership edge, and a line or a person of a team whose projects have all
- * gone leaves with them, since such a node is in the graph only to carry a project's edge.
+ * The part of a graph one Map instance draws, as a pure function over the whole of it. The rules
+ * run in order: the pillars picked keep their own pillar nodes (by key, so every hub's pillar of a
+ * picked key stays); Connected only, while pillars are shown, takes out a project left with no
+ * membership edge to a pillar drawn; with projects shown, a pillar or a person of a team whose
+ * projects have all gone leaves with them, since such a node is in the graph only to carry a
+ * project's edge; with projects not shown, every project node goes, and the pillars and the team
+ * the drawn projects reach stay without edges, so the view is not empty.
  */
-export function filterGraph(graph: Graph, filter: GraphFilter = {}): Graph {
-    const stages = new Set(filter.stages ?? []);
-    const lines = new Set(filter.lines ?? []);
-    let nodes = graph.nodes.filter((node) => {
-        // A project whose manifest names no stage is outside the stage filter rather than under
-        // it: the row carries no chip for it, so a filter that dropped it could not bring it back.
-        if (node.kind === 'project') {
-            return stages.size === 0 || node.stage === undefined || stages.has(node.stage);
-        }
-        if (node.kind === 'line') return lines.size === 0 || lines.has(node.entityId);
-        return true;
-    });
+function filterGraph(graph: Graph, filter: GraphFilter = {}): Graph {
+    const show = filter.show ?? showDefault();
+    const picked = new Set(filter.pillars ?? []);
+    let nodes = graph.nodes.filter(
+        (node) => node.kind !== 'line' || picked.size === 0 || picked.has(keyOf(node.entityId))
+    );
     let edges = joining(graph.edges, idsOf(nodes));
-    if (filter.connected === true) {
+    if (filter.connected === true && show.pillars) {
         const joined = new Set(
             edges.filter((edge) => edge.kind === 'membership').map((edge) => edge.source)
         );
@@ -284,36 +288,12 @@ export function filterGraph(graph: Graph, filter: GraphFilter = {}): Graph {
     }
     const ends = new Set(edges.flatMap((edge) => [edge.source, edge.target]));
     nodes = nodes.filter((node) => node.kind === 'project' || ends.has(node.id));
+    if (!show.projects)
+        return measure(
+            nodes.filter((node) => node.kind !== 'project'),
+            []
+        );
     return measure(nodes, edges);
-}
-
-/**
- * A saved filter narrowed to what one graph holds: a stage or a line the graph no longer draws is
- * dropped from its list, and a list left empty by that is nothing filtered, so a map saved against
- * a portfolio that has since changed opens on the whole graph rather than on an empty canvas.
- */
-export function presentFilter(graph: Graph, filter: GraphFilter = {}): Required<GraphFilter> {
-    const stages = new Set<string>();
-    const lines = new Set<string>();
-    for (const node of graph.nodes) {
-        if (node.kind === 'project' && node.stage !== undefined) stages.add(node.stage);
-        if (node.kind === 'line') lines.add(node.entityId);
-    }
-    return {
-        stages: (filter.stages ?? []).filter((stage) => stages.has(stage)),
-        lines: (filter.lines ?? []).filter((id) => lines.has(id)),
-        connected: filter.connected === true
-    };
-}
-
-/**
- * One press of a filter control. Nothing filtered is every one of its kind drawn, so the first
- * press narrows to the one pressed; after that a press adds or removes, and taking the last one out
- * is nothing filtered again rather than an empty map.
- */
-export function toggleFilter(list: string[], id: string): string[] {
-    if (list.length === 0) return [id];
-    return list.includes(id) ? list.filter((one) => one !== id) : [...list, id];
 }
 
 /** How many projects at each stage a graph draws, which is the count one filter carries. */
@@ -326,86 +306,15 @@ export function stageCounts(graph: Graph): Record<string, number> {
     return counted;
 }
 
-/** How many projects each line holds a membership edge from, by the line's registry key. */
-export function lineCounts(graph: Graph): Record<string, number> {
-    const keys = new Map(
-        graph.nodes.filter((node) => node.kind === 'line').map((node) => [node.id, node.entityId])
-    );
-    const counted: Record<string, number> = {};
-    for (const edge of graph.edges) {
-        if (edge.kind !== 'membership') continue;
-        const id = keys.get(edge.target);
-        if (id === undefined) continue;
-        counted[id] = (counted[id] ?? 0) + 1;
-    }
-    return counted;
-}
-
 /**
- * The archive statuses the Map offers a toggle for: every stage carrying `terminal` that a project
- * is at (the done work of every tier) under its own hub's words, each with the tone the `color` of
- * its row of `stages` of every hub's words gives, the tone its board card and its node are drawn
- * in.
+ * The stages of the projects a graph draws, in the order of `stages` of `config` (every hub's
+ * words), then the rest by name: what the Map's legend lists.
  */
-export function archiveStatuses(
-    snapshot: Snapshot | null,
-    config: Record<string, unknown>,
-    wordsOf?: WordsOf
-): { status: string; tone: string }[] {
-    const found = new Set<string>();
-    for (const project of Object.values(snapshot?.entities.projects ?? {})) {
-        const stage = archivedAt(project, recordWords(config, wordsOf, project));
-        if (stage) found.add(stage);
-    }
-    return [...found].map((status) => ({ status, tone: stageTone(status) }));
-}
-
-/**
- * One chip per project stage the base graph holds: the keys of `stages` of the merged config first,
- * in its order, then the rest by name, each with how many the drawn graph holds and whether the
- * filter shows it (an empty filter shows every stage).
- */
-export function stageFilters(
-    base: Graph,
-    drawn: Graph,
-    config: Record<string, unknown>,
-    stages: string[]
-): { stage: string; count: number; shown: boolean }[] {
+export function drawnStages(graph: Graph, config: Record<string, unknown>): string[] {
     const ordered = vocabKeys(config.stages);
-    const counted = stageCounts(drawn);
-    const names = Object.keys(stageCounts(base));
+    const names = Object.keys(stageCounts(graph));
     const rest = names.filter((stage) => !ordered.includes(stage)).sort();
-    return [...ordered.filter((stage) => names.includes(stage)), ...rest].map((stage) => ({
-        stage,
-        count: counted[stage] ?? 0,
-        shown: stages.length === 0 || stages.includes(stage)
-    }));
-}
-
-/**
- * One chip per line the base graph holds: in the registry's order, then any it does not list, each
- * with its label, how many projects the drawn graph gives it and whether the filter shows it.
- */
-export function lineFilters(
-    base: Graph,
-    drawn: Graph,
-    snapshot: Snapshot | null,
-    lines: string[]
-): { id: string; title: string; count: number; shown: boolean }[] {
-    const counted = lineCounts(drawn);
-    const present = base.nodes.filter((node) => node.kind === 'line');
-    const order = Object.keys(snapshot?.entities.pillars ?? {});
-    const ids = present.map((node) => node.entityId);
-    const listed = [
-        ...order.filter((id) => ids.includes(id)),
-        ...ids.filter((id) => !order.includes(id))
-    ];
-    return listed.map((id) => ({
-        id,
-        title: present.find((node) => node.entityId === id)?.label ?? keyOf(id),
-        count: counted[id] ?? 0,
-        shown: lines.length === 0 || lines.includes(id)
-    }));
+    return [...ordered.filter((stage) => names.includes(stage)), ...rest];
 }
 
 /** Whether any project names a line or a related project, which is what gives the Map an edge. */
@@ -439,19 +348,23 @@ export function layoutSeed(nodes: GraphNode[]): number {
 /**
  * What one Map instance holds of its own: which nodes it shows and whether links are being drawn.
  */
-export type MapState = GraphFilter & {
-    /** Whether the people of each project's team, the user left out, join the graph as nodes. */
-    collaborators: boolean;
-    /** The archive stages whose projects are shown, by their own stage word. */
-    enabled: string[];
+export type MapState = {
+    /** What is typed in the bar's search box. */
+    search: string;
+    /**
+     * The picked values of the bar's groups by facet, a project board's facets
+     * (state/boards/board/presets.ts `FACETS`), the slices under `slice`, and the Stage group's
+     * under `stage`, which the Map applies itself (state/boards/structure/map-bar.ts).
+     */
+    filters: Record<string, string[]>;
+    /** Mine only, off at first, since the Map draws every project. */
+    mine: boolean;
+    /** The kinds of node the Show menu draws. */
+    show: GraphShow;
+    /** Whether a project with no membership edge to a pillar drawn is dropped. */
+    connected: boolean;
     /** Whether a click starts a link rather than selecting. */
     linkMode: boolean;
-    /** The project stages drawn. Empty is every stage, which is what an unfiltered map holds. */
-    stages: string[];
-    /** The pillars drawn, by their ids in the portfolio. Empty is every pillar. */
-    lines: string[];
-    /** Whether a project with no membership edge to a line still drawn is dropped. */
-    connected: boolean;
     /** The start seed the pane chose, under the name of the node set it was chosen for. */
     start?: { key: string; seed: number };
 };
@@ -464,12 +377,18 @@ const startShape = z.object({
 
 /** The fields of a saved Map instance, each read apart so a wrong one costs that field alone. */
 const mapStateShape = z.object({
-    collaborators: z.boolean().catch(false),
-    enabled: fieldItemsShape,
-    linkMode: z.boolean().catch(false),
-    stages: fieldItemsShape,
-    lines: recordItemsShape,
+    search: z.string().catch(''),
+    filters: z.record(z.string(), fieldItemsShape).catch({}),
+    mine: z.boolean().catch(false),
+    show: z
+        .object({
+            projects: z.boolean().catch(showDefault().projects),
+            pillars: z.boolean().catch(showDefault().pillars),
+            team: z.boolean().catch(showDefault().team)
+        })
+        .catch(() => showDefault()),
     connected: z.boolean().catch(false),
+    linkMode: z.boolean().catch(false),
     start: startShape.optional().catch(undefined)
 });
 
@@ -492,15 +411,12 @@ export function nextStart(state: MapState, nodes: GraphNode[]): { key: string; s
  * The saved state of one Map instance, with anything that is not the shape above replaced by it.
  */
 export function parseMapState(raw: unknown): MapState {
-    const held = readAs(mapStateShape, raw) ?? {
-        collaborators: false,
-        enabled: [],
-        linkMode: false,
-        stages: [],
-        lines: [],
-        connected: false,
-        start: undefined
+    const held = readAs(mapStateShape, raw) ?? mapStateShape.parse({});
+    const { start, filters, show, ...fields } = held;
+    return {
+        ...fields,
+        filters: freshPicks(filters),
+        show,
+        ...(start === undefined ? {} : { start })
     };
-    const { start, ...fields } = held;
-    return { ...fields, ...(start === undefined ? {} : { start }) };
 }

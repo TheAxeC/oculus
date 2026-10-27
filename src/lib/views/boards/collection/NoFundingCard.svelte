@@ -2,8 +2,9 @@
     // Layer 3, view partial of views/boards/collection/Collection.svelte. The Funding collection's
     // one card of its own, drawn as the record card (views/shared/card/record/RecordCard.svelte):
     // the projects no scheme of the file covers, as the project strip at its foot, each opening its
-    // project tab, which the collection draws after the entries while its No funding chip is
-    // pressed. The card has no action, so no menu of its own.
+    // project tab, which the collection draws after its cards, or above its list, while its bar
+    // keeps it: no Status slice picked, or the No funding slice among those picked. The card has no
+    // action, so no menu of its own.
 
     import Tag from '$lib/ui/controls/Tag.svelte';
     import RecordCard from '$lib/views/shared/card/record/RecordCard.svelte';

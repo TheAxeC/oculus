@@ -221,6 +221,8 @@ const LAYERS = ['data', 'server', 'server/transcripts', 'state', 'ui', 'shell', 
 // reader and no I/O: `ui/theme/theme.ts` joins the body class string a theme lands on the document
 // as through its `bodyClass`, by which the server writes the same string into the page's first
 // HTML, so the page's first draw and the HTML it was sent with carry one class.
+// `data/shapes/boards/columns` is there because a list's columns are built in client state and
+// drawn by the table primitive (`fittedColumns`), and the module holds only their one type.
 //
 // `data/snapshot/place` is the place of any project's folder: the server finds the folder for the
 // chat, the document route and the file listing through it, and the page draws a project's card,
@@ -244,7 +246,8 @@ const ALLOWED: Record<string, string[]> = {
         'data/helpers/files/apps/choices',
         'data/helpers/files/apps/tools/language-kit',
         'data/helpers/files/languages',
-        'data/helpers/editor/start-theme'
+        'data/helpers/editor/start-theme',
+        'data/shapes/boards/columns'
     ],
     shell: [
         'shell/**',

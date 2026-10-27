@@ -142,7 +142,6 @@ icons:
     spark: sparkles
     circle_empty: circle
     circle_filled: circle-dot
-    square_filled: square
     # radar and status colours: a line icon carries shape and not colour, so a coloured dot is a circle and the hue comes from the tone the chip around it already paints.
     red: circle
     purple: circle

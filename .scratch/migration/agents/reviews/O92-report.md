@@ -1033,3 +1033,220 @@ case 45: look on landing
 ```
 
 Each line against the brief: cases 1-7, 32, 34-36 as the brief says; 37 as item 2 makes it (see "Wrong or impossible"); 8-17 and 38 as the brief says (17: the title and status, Lead, Collaborators, Supervisors drawn, Deadline listed and hidden, `key` and `title` left out); 18-25 and 39-44 as the brief says (22: the user `axel` left out of the team; 40: the count takes no Show input, so Show Projects off cannot change it).
+
+## Round 1
+
+Not done as the brief words it: item 3's second half. `EntryColumn` is gone, but the one type the collection's columns now use is `ListCell` (state/boards/board/filter-menu.ts:287, the board list's existing type of the same shape), and `ListedColumn` (ui/display/table/table-rows.ts:54) stays as the table primitive's own parameter type. One declaration both layers read is refused by the layer table, and widening that table is a check loosened; it is handed back under "Handed back". Everything else in the round is done.
+
+Times are UTC, the transcript's clock (the machine's local clock is UTC+1).
+
+### Items
+
+1. DONE. A required typed line keeps the yes off.
+   - `questionOf` gives the `line` prompt, which the `list` form shares, `required` when the schema marks the field `required: true`: `const line: PromptField = required ? { label, value: typed, required } : { label, value: typed };` (src/lib/views/shared/forms/entry/entry-add.ts:116-118).
+   - `answered` (src/lib/ui/forms/prompt.ts:57-68): a required field with no `picked` and no `choices` is answered when `value.trim() !== ''`; a required pick when its value is not `''`; a required multi-pick when it holds a pick. A field not marked required never keeps the yes off, so a caller that marks no typed line required is unchanged (case 2).
+   - Docs: `PromptField` and `answered` in prompt.ts state the rule; the head comment and the `questionOf` doc of entry-add.ts say a typed line or a list is required when the schema marks it so; the head comment of src/lib/ui/forms/Prompt.svelte, which stated the old rule, now names the typed line holding only spaces.
+2. DONE. No shared default handed to callers.
+   - graph.ts: `SHOW_DEFAULT` became `showDefault()` (graph.ts:58), built per call; `buildGraph` (:124) and `filterGraph` (:276) call it; the shape's catches are `.catch(() => ({}))` for `filters` (:381) and `.catch(() => showDefault())` for `show` (:389); `parseMapState` returns `filters: freshPicks(filters)` and `show: { ...show }` (:418-419).
+   - collection/index.ts: `filters` catches to `() => ({})` (:123); `parseCollectionState` (:134-145) returns `filters: freshPicks(filters)`, `more: [...more]` and `columns: [...columns]`, so neither a catch value nor the shared `catch([])` of the base shapes `fieldItemsShape` and `recordItemsShape` reaches a caller.
+   - `freshPicks` (src/lib/state/boards/board/state.ts:251) copies the record and each list; both parse functions read it.
+   - `MAP_LINE` (src/lib/state/boards/structure/map-bar.ts:53), exported and handed to the bar, is `Object.freeze`d and typed `readonly string[]`.
+   - The grep of every file-scope object or list the step adds, `git diff -U0 a964e0170 -- src | grep -E "^\+(export )?const [A-Za-z_]+(: [^=]+)? = (\[|\{|Object\.freeze|new )"` with the same pattern over the step's new files, and again with leading spaces for the .svelte scripts, prints `COLUMN_TYPES` and `PEOPLE_COLUMNS` (collection/index.ts), `ASKED_PEOPLE` (state/forms/new-entry.ts) and `MAP_LINE` (map-bar.ts:53). The first three are read only by `.includes` inside their module (`grep -n "ASKED_PEOPLE\|COLUMN_TYPES\|PEOPLE_COLUMNS"` prints collection/index.ts:181 and :185 and new-entry.ts:50 besides their declarations), so none is handed to a caller.
+3. PARTLY DONE (see the first paragraph).
+   - `cellWords` is gone. `fieldWords` moved from collection/bar.ts into collection/index.ts (:289) and is exported; bar.ts imports it for its field rule (bar.ts:31, :202) and EntryList.svelte reads it in `row()` (EntryList.svelte:101).
+   - `EntryColumn` is gone: `entryColumns` returns `ListCell[]` (collection/index.ts:169), imported as a type from `../board/filter-menu.ts`; `pickEntryColumn` is renamed `pickColumn` (collection/index.ts, Collection.svelte:83 and :353), so case 4's grep prints nothing. EntryList.svelte's `columns` prop is `ListedColumn[]`, which `ListCell[]` fills by shape. `ListCell`'s doc now names both lists.
+4. DONE. table-rows.ts:1-4 names the column fitting, `ListedColumn` and `fittedColumns`; SliceLine.svelte's `.end` comment reads "How many are shown, and Clear all, at the line's right end."
+5. DONE. tests/views/shared/forms/entry-add.test.ts: the head comment names G8 with the describes 'the hub an Add writes to' and 'the page an Add opens', and G134 with the describe 'what a collection Add asks and writes'. The two rows of 'the page an Add opens' end in "(G8)". `grep -n "^\s*it(\|^\s*\])(" tests/views/shared/forms/entry-add.test.ts` and the it.each title lines show every row title ending "(G8)" or "(G134)".
+6. DONE. Two G134 rows at the end of 'what a collection Add asks and writes': "keeps a tasks Add's yes off while its key or title is empty or only spaces, and turns it on once both hold text (G134)" and "keeps the yes off while a required Lead typed as a list, in a hub with no people, is empty, and turns it on once it names a key (G134)". Their first run is under "First runs".
+7. DONE, under "Report additions".
+
+Beyond the items, the collision check of `:title` found that a schema field named `:title` would take the title column's key. `entryColumns` now leaves such a field out (collection/index.ts:176-181) and `TITLE_COLUMN`'s doc says so. No test row covers it, since a field named `:title` costs only its own column.
+
+### Files written in this round
+
+src/lib/ui/forms/prompt.ts, src/lib/ui/forms/Prompt.svelte (its head comment), src/lib/views/shared/forms/entry/entry-add.ts, src/lib/state/boards/structure/graph.ts, src/lib/state/boards/structure/map-bar.ts (`MAP_LINE` frozen), src/lib/state/boards/board/state.ts (`freshPicks`), src/lib/state/boards/board/filter-menu.ts (the `ListCell` doc), src/lib/state/boards/collection/index.ts, src/lib/state/boards/collection/bar.ts, src/lib/views/boards/collection/EntryList.svelte, src/lib/views/boards/collection/Collection.svelte (the `pickColumn` name), src/lib/ui/display/table/table-rows.ts, src/lib/views/shared/forms/bar/SliceLine.svelte, tests/views/shared/forms/entry-add.test.ts, this report; `npm run diagrams` rewrote the step's diagram files. Outside the round's list and inside the step's paths: map-bar.ts, Collection.svelte. Outside both: Prompt.svelte, whose head comment stated the rule item 1 changes; board/state.ts and filter-menu.ts, where the helper and the type the two parse functions and the two lists read live.
+
+Every file was edited with the Edit tool. No program wrote a file of the worktree. The scratch files (below) were written with the Write tool, except `$SCRATCH/caserun/`, which `sed -n` cut from this report's quoted source of the round-0 program, and the outputs that commands redirected to files there.
+
+### First runs (the round's starting tree)
+
+G134 rows, 12:10:43, `npx vitest run tests/views/shared/forms/entry-add.test.ts -t "keeps"`:
+
+```
+Tests  2 failed | 14 skipped (16)
+AssertionError: expected { keyEmpty: true, ...(4) } to deeply equal { keyEmpty: false, ...(4) }
+  (received keyEmpty true, keySpaces true, titleEmpty true, titleSpaces true, both true)
+AssertionError: expected { empty: true, spaces: true, ...(1) } to deeply equal { empty: false, spaces: false, ...(1) }
+```
+
+Cases 1 to 3, 12:11:17, `CASE_ROOT=/Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O92 node --import ./register.mjs cases.mjs` in `$SCRATCH/o92r1/`, whole:
+
+```
+case 1: Key empty true, Key '  ' true, Key and Title filled true
+case 2: leadAsk fields [{"label":"Title","value":""}]; answered with its line empty true
+case 3: parseMapState({}).show shared true; parseCollectionState(null).filters shared true; .more shared true
+```
+
+Case 4, 12:11:18, `grep -n "cellWords\|EntryColumn" -r src`, whole:
+
+```
+src/lib/views/boards/collection/EntryList.svelte:23:        type EntryColumn,
+src/lib/views/boards/collection/EntryList.svelte:35:        columns: EntryColumn[];
+src/lib/views/boards/collection/EntryList.svelte:82:    function cellWords(entry: Entry, field: SchemaField): string {
+src/lib/views/boards/collection/EntryList.svelte:106:                words[field.field] = cellWords(entry, field);
+src/lib/state/boards/collection/index.ts:140:export type EntryColumn = { key: string; label: string; shown: boolean };
+src/lib/state/boards/collection/index.ts:161:): EntryColumn[] {
+src/lib/state/boards/collection/index.ts:190:export function pickEntryColumn(
+src/lib/state/boards/collection/index.ts:195:    const drawnKeys = (columns: EntryColumn[]): string[] =>
+src/lib/views/boards/collection/Collection.svelte:83:        pickEntryColumn,
+src/lib/views/boards/collection/Collection.svelte:353:                    write({ columns: pickEntryColumn(schemas, held.columns, column) })}
+```
+
+### Results after the change
+
+Cases 1 to 3, 12:23:27, same command, whole:
+
+```
+case 1: Key empty false, Key '  ' false, Key and Title filled true
+case 2: leadAsk fields [{"label":"Title","value":""}]; answered with its line empty true
+case 3: parseMapState({}).show shared false; parseCollectionState(null).filters shared false; .more shared false
+```
+
+Case 4, 12:23:27, `grep -n "cellWords\|EntryColumn" -r src`: nothing printed, exit 1.
+
+Case 5, 12:23:27, `npx vitest run tests/views/shared/forms/entry-add.test.ts -t "keeps"`: `Tests  2 passed | 14 skipped (16)`.
+
+Case 6: the round-0 case program, cut from this report into `$SCRATCH/caserun/` and run at 12:32:21 (`CASE_ROOT=... node --import ./register.mjs cases.mjs > round1-run.txt`, exit 0), then `diff expected.txt round1-run.txt`, where expected.txt is the round-0 last run quoted above. The diff prints only these changes:
+   - cases 1, 5, 6, 7, 34, 35, 36, 37 and 37b: each typed line of a field the schema marks required now reads `line, required` (for example `key: line, required, value ""`), and case 35's Lead typed as a list reads `lead: line, required, value ""`; the optional lines (`collaborators`, `supervisors`, `link`, people's `id`) are unchanged. This is item 1.
+   - cases 16, 25 and 39: the same keys and values in another key order, since the parse functions now spread the copied fields after the rest (`{"search":"","mine":true,"mode":"cards","filters":{},"more":[]}` for `{"search":"","filters":{},"mine":true,"mode":"cards","more":[]}`).
+   No other line differs, so every case of the step's brief is met as in round 0, case 37 as corrected.
+
+| Case | Starting tree | After |
+| --- | --- | --- |
+| 1 | true, true, true | false, false, true |
+| 2 | true | true |
+| 3 | show shared true, filters shared true | false, false |
+| 4 | 10 lines | nothing |
+| 5 | 2 failed | 2 passed |
+| 6 | round-0 run | same, but item 1's `required` and key order |
+
+### Verification
+
+Two full runs of the verify list, and one run of the failed command alone between them.
+
+- Full run 1, 12:28:47 to 12:29:35, `npm run diagrams && npm run docs:palette && npm run test:quick -- --base a964e0170`: `FAILED  vitest checks (57.0 s)`; `tests/checks/source/comment-width.test.ts > a comment line > ends by the hundredth column everywhere under src, tests and utils`: `+   "src/lib/views/shared/forms/entry/entry-add.ts:18",`; `test:quick: 59.4 s; failed: vitest checks`. Fix: the head-comment line entry-add.ts:18, which item 1's edit left over 100 columns, rewrapped with the Edit tool.
+- The failed command alone, from 12:30:51, `npm run test:quick -- --base a964e0170`: `ok      vitest checks (58.8 s)`, `test:quick: 61.2 s; every command passed`, exit 0.
+- Full run 2, from 12:31:53, the same list: `ok      prettier (0.5 s)`, `ok      ASCII gate (0.6 s)`, `ok      svelte-kit sync (2.0 s)`, `ok      eslint (2.3 s)`, `ok      svelte-check (9.4 s): ... 551 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS`, `ok      vitest slow (13.0 s)`, `ok      vitest (33.2 s)`, `ok      vitest checks (47.2 s)`, `test:quick: 49.3 s; every command passed`, exit 0. What it does not cover, as it prints: tests that reach no changed file within the import depth, other than the checks under tests/checks/source and tests/checks/tree; the build; the lint of unchanged files.
+- `sh utils/unused-exports.sh > unused.txt` (exit 0), `diff .agents/worktrees/O92-base/unused-exports.txt unused.txt`: two lines differ, both removals: collection/index.ts loses `STATUS_FIELD, emptyCollectionState` from its list and graph.ts loses `lineCounts`. No export added.
+- ASCII gate over the 14 files this round changed, `LC_ALL=C grep -n '[^ -~]' <files>`: nothing printed, exit 1. Over this report: under "Report checks" below.
+- While working: `npx vitest run` over entry-add, new-entry, hub-facets, board-rules, board-views, choices (state/forms), map-forces, server/edit/writes, checks/imports/cycles, checks/imports/order, checks/tree/boundaries and checks/tree/duplication: `Test Files  12 passed (12)`, `Tests  276 passed (276)`; `npx svelte-check --threshold error`: `0 errors and 0 warnings`; `npx prettier --check` and `npx eslint` over the 14 files: clean.
+
+### Report additions
+
+Case 33 as the code holds it. AddAsk.svelte keeps what the box held in two states, `let typed = $state<string[] | null>(null);` and `let kept = $state<string[][] | null>(null);` (AddAsk.svelte:23-24). On a refusal, `send` sets `typed = values; kept = picked;` (:72-73) and the refusal, and `round += 1` redraws the Prompt under `{#key round}`. The request it draws gives each field `value: typed?.[at] ?? field.value` and, for a pick, `picked: kept?.[at] ?? field.picked` (:46-49), and Prompt.svelte starts its picks from `field.picked` (Prompt.svelte:35). So a refused Add whose `lead` held `['axel']` and `supervisors` `['amir']` comes back with the refusal and both picks.
+
+Commands of round 0 outside the list above ("Commands that wrote files other than through Edit or Write"), from the transcript `agent-afca7f28cc1fce52c.jsonl`:
+- read-only `python3` runs in the worktree that only print: 10:42:45 (`python3 - <<'EOF'` printing an empty slice of Prompt.svelte's text) and 10:48:17 (`python3 - <<'EOF'` printing the line count of SliceLine.svelte). Four more read-only `python3` runs read the transcript itself, outside the worktree: 11:32:49, 11:33:46, 11:38:39, 11:38:46.
+- git reads outside spec.md:33: `git log --oneline -3` (10:29:00); `git show HEAD:src/lib/state/boards/board/index.ts | grep -n entryRoles; git grep -n "entryRoles" HEAD -- src | head` (11:17:32); `git grep -n "square_filled" HEAD | head` (11:24:28).
+In this round: one read-only `python3 -I -c` over the transcript (12:28:29), printing the round-0 commands above; git only as `git status`, `git diff` and `git show`.
+
+History words. The grep of the step's added comment lines and test titles, `{ git diff -U0 a964e0170 -- src tests; <the new files of src and tests, each line prefixed +>; } | grep -E '^\+\s*(//|/\*|\*|<!--)|^\+.*\bit(\.each)?\(|^\+\s*\]\)\(' | grep -nE "\b(was|were|used to|no longer|previously|earlier|formerly|replaced|replaces|reverted|old|now|anymore|any more|round|before the change|after the change|this step|session)\b|<the plan id families of tests/checks/source/history.test.ts>|[0-9]{4}-[0-9]{2}-[0-9]{2}"`, prints 16 lines. Each one describes what the code does, not when it changed: "or taken out when it was picked"; "with anything that is not the shape above replaced by it"; "session list's filter" (the Sessions view's list); "what was typed" or "what was typed and picked" (six lines); "the file gets what was asked and nothing else"; "What the box shows now"; "the tab as it was"; "record what they were asked"; "a pick saved earlier narrows nothing while its group is not drawn"; "The width More was last drawn at"; "The width the "+<n>" button was last drawn at". No plan id, date or session phrase.
+
+Removed exports and changed names. `grep -rnE "applyCollectionFilters|keptByHub|fieldFilters|FILTER_CHIPS_MOST|changedPicks|emptyCollectionState|presentFilter|archiveStatuses|stageFilters|lineFilters|lineCounts|SHOW_DEFAULT|cellWords|EntryColumn|pickEntryColumn" src tests docs config README.md --exclude=local.yml`: nothing printed, exit 1. The other `export` lines the step's diff removes are `Bounds` and `toggleFilter` of collection/index.ts and graph.ts, `filterGraph` and `GraphFilter` of graph.ts (now internal), and `tierWords` and `TierWord` of focus.ts and the `entryRoles` re-export of board/index.ts (both moved). `grep -rn "Bounds" src tests | grep -i collection` prints nothing; `grep -rnw <name> src tests docs config README.md --exclude=local.yml` for each of the others prints only graph.ts's own `Bounds` and its internal `filterGraph` and `GraphFilter`, the views' own local `toggleFilter` functions (Collection.svelte:211, Projects.svelte:241, Map.svelte:141), `tierWords` and `TierWord` at their new home data/shapes/boards/tiers.ts with focus.ts's re-export and its readers, and `entryRoles` at data/shapes/boards/roles.ts:204 with its readers collection/bar.ts and tests/state/boards/board/board-rules.test.ts. No stale reference.
+
+Helper reuse. `grep -rnE "\b(withPick|withPicks|fittedColumns|facetToneIn|freshPicks|fieldWords)\(" src`:
+- `withPick`: SliceLine.svelte:164 and :188, Collection.svelte:212, Projects.svelte:242, Map.svelte:142; `withPicks`: state.ts:243 (inside `withPick`), SliceLine.svelte:133.
+- `fittedColumns`: EntryList.svelte:67, BoardList.svelte:58.
+- `facetToneIn`: filter-menu.ts:88, collection/bar.ts:234 and :240.
+- `freshPicks`: collection/index.ts:139, graph.ts:418.
+- `fieldWords`: collection/bar.ts:202, EntryList.svelte:101.
+Each helper is read by every bar or list that needs it; none of them repeats its logic inline.
+
+Collisions of the new ids.
+- Collection filter keys `role`, `hub`, `field:<f>` and `status` (`grep -nE "ROLE_GROUP =|HUB_GROUP =|FIELD_GROUP =|STATUS_FIELD ="` prints bar.ts:37, :38, :41 and collection/index.ts:75). A field's group is always `field:` plus its name (bar.ts:201), so a field named `role`, `hub` or `status` is stored under `field:role`, `field:hub` or `field:status`, and two fields share a key only when they share a name, which `filteredFields` (bar.ts:107-115) keeps once.
+- `:title` (collection/index.ts:150): a list column key next to the schema field names. A field named `:title` would have shared it, so `entryColumns` now leaves such a field out (collection/index.ts:176-181).
+- The Map's `stage` facet and `show` group (map-bar.ts:38, :44): `grep` of board/presets.ts `FACETS` (:280-298) lists `slice`, `form`, `status`, `role`, `year`, `domain`, `venue`, `waiting`, `hub`, `tier`, `pillar`, `funding`, `dataset`, `compute`, `reproduced`, `code` and `sessions`; neither `stage` nor `show` is a board facet. `stage` in `LIST_CELLS` (presets.ts:306) is a list column key, a different namespace.
+- The Show items `projects`, `pillars`, `team` and `connected` (map-bar.ts:219, :226, :233, :47) are the item ids of the Show group only and are stored apart, in `show` and `connected` of the Map's state (graph.ts:383-390), never in `filters`.
+- The hub re-ask (entry-add.ts:255-265): when the hub answered is not the hub the box opened on, `submit` returns the new Ask before its first `await`, so nothing is written; the write (`await client.writes.newEntry`, :267) runs only for the hub the box opened on. The G134 row "writes nothing when the hub answered is not the one the box opened on, ..." checks it.
+
+### Host- or user-visible changes, before and after
+
+- B1, the Map under a Stage pick. Before: a project whose manifest names no stage stayed drawn under any stage pick (base graph.ts:269-272, `stages.size === 0 || node.stage === undefined || stages.has(node.stage)`). After: once a stage is picked, only projects at a picked stage are kept, and a project with no stage is dropped (map-bar.ts:116-117, `stageKeeps`); with no stage picked, projects with no stage are kept. The brief's Stage rule asks for this; docs/HELP.md says it.
+- B2, saved tabs. Before: a Collection tab saved `statuses`, `hidden`, `picked`, `range`, `roles` and `hubs` (base collection/index.ts:101-125) and a Map tab saved `stages`, `lines`, `collaborators` and `enabled` (base graph.ts:444-456). After: both read `filters` alone (collection/index.ts:123, graph.ts:381), so a tab saved under the old fields reopens with no filter, every other field kept (cases 16 and 25).
+- B3, a Map Pillar pick. Before: a line chip took only the other line nodes out; every project stayed unless Connected was on (base graph.ts:273-274). After: a Pillar pick is a bar facet (`pillar`), so the bar keeps only that pillar's projects (map-bar.ts `mapBar`, `applyFilters` over the `pillar` facet), and `filterGraph` draws only the picked pillars' nodes (graph.ts:277-279), over every hub.
+- B4, People and Organisations. Before: a collection with no status field drew no status line and no count (base Collection.svelte:375, `{#if facets.length > 0 || unfunded.length > 0}`). After: line 2 (SliceLine, Collection.svelte:385-395) is drawn for every collection, with the count of entries shown and Clear all, and no slice when the file has no status field (collection/bar.ts:280-281).
+- B5, the Map's empty case. Before: `map.empty_filtered` showed when the unfiltered graph had nodes and the filtered one none (base Map.svelte:191, `base.nodes.length > 0 && graph.nodes.length === 0`). After: it shows when the Map holds projects and the graph draws none (Map.svelte:244, `items.length > 0 && graph.nodes.length === 0`); a portfolio whose projects all sit at terminal stages, which drew an empty graph before, now reads "Nothing is left under these filters. Take a pick out, or press Clear all."
+- Item 1, the Add's yes. Before: a collection Add with a required typed line (a tasks Add's Key or Title) left empty, or holding only spaces, had its yes on, and Enter sent it to the server, which refused it. After: the yes stays off, and Enter answers nothing, until each required typed line holds text; a required Lead typed as a list (a hub with no people) likewise. The Adds of a lead, a Lit Watch paper and Literature mark no typed line required and are unchanged.
+
+### Handed back
+
+Item 3, "`EntryColumn` and `ListedColumn` are one type, `ListedColumn`". `ListedColumn` is the parameter type of `fittedColumns` in src/lib/ui/display/table/table-rows.ts, a ui primitive; `entryColumns` and `pickColumn` are state functions in src/lib/state/boards/collection/index.ts. The layer table refuses both directions: the state row (tests/checks/tree/boundaries.test.ts:291-352) names no `ui/` module, and the ui row (:234-248) names no `state/` module but `state/shared/words/text` and `state/shared/words/appearance`. Imports are read type-only ones included (boundaries.test.ts:3). One declaration both read therefore needs a row widened, which is a check loosened and is not done by a builder. Done instead: `EntryColumn` is removed and the collection reads `ListCell`, the state type of the same shape the board list already used, so the state layer holds one column-choice type and the ui primitive its own parameter type. Options for the orchestrator:
+- (a) keep this: two declarations, one per layer, the table unchanged. Recommended (judgment): the ui primitive declaring the shape it takes is how `Column` is already declared in the same file.
+- (b) move `ListedColumn` into a data module and add that module to the ui row, as the table's comment does for other pure helpers both layers read (boundaries.test.ts, the comment over the rows); one declaration, at the cost of one more row entry.
+- (c) add `ui/display/table/table-rows` to the state row; this breaks the rule that state reads no ui and is not recommended.
+The lazy option is (a) if the goal is one declaration, since it leaves two; (b) is the one that reaches the brief's wording.
+
+### Report checks
+
+`LC_ALL=C grep -n '[^ -~]' .scratch/migration/agents/reviews/O92-report.md`, run after the last edit of this report: nothing printed, exit 1.
+
+### The case-run program of this round
+
+Three files in `$SCRATCH/o92r1/` (`$SCRATCH` = /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad), run there as `CASE_ROOT=/Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O92 node --import ./register.mjs cases.mjs`. It prints and writes nothing. register.mjs and hook.mjs are the round-0 files quoted above, unchanged (`diff` of each against its quoted block prints nothing). cases.mjs:
+
+```js
+// Case-run program of O92 round 1: prints the result of each case for its input, over the tree
+// CASE_ROOT names. It writes nothing.
+
+const R = process.env.CASE_ROOT;
+const imp = (path) => import(`${R}/src/lib/${path}`);
+const { engineDir, loadConfig, textCatalog } = await imp('data/sources/config.ts');
+const { setCatalog } = await imp('state/shared/words/text.ts');
+setCatalog(textCatalog(loadConfig(engineDir()).config));
+
+const out = (n, text) => console.log(`case ${n}: ${text}`);
+const add = await imp('views/shared/forms/entry/entry-add.ts');
+const { answered } = await imp('ui/forms/prompt.ts');
+const graph = await imp('state/boards/structure/graph.ts');
+const collection = await imp('state/boards/collection/index.ts');
+
+const PEOPLE = [
+    { id: 'axel', label: 'Axel' },
+    { id: 'amir', label: 'Amir' }
+];
+const client = {
+    fs: { primary: () => 'main', roots: () => [{ key: 'main', hub: true }] },
+    selectors: {
+        collectionsOfKey: (key) => [{ id: `main:${key}`, root: 'main' }],
+        registryCollections: () => [],
+        registryKey: () => 'literature',
+        selfPeople: () => new Set(['main:axel']),
+        fieldChoices: (field) => [
+            ...(field.options ?? []).map((one) => ({ id: one, label: one })),
+            ...((field.foreign_key ?? []).includes('people') ? PEOPLE : [])
+        ]
+    },
+    writes: {},
+    layout: { openView: () => Promise.resolve() }
+};
+const TASKS = [
+    { field: 'key', type: 'text', primary_key: true, required: true },
+    { field: 'title', type: 'text', display: 1, required: true },
+    { field: 'status', type: 'select', options: ['todo', 'doing', 'done', 'dropped'], required: true },
+    { field: 'lead', type: 'tags', foreign_key: ['people'], required: true },
+    { field: 'collaborators', type: 'tags', foreign_key: ['people'] },
+    { field: 'supervisors', type: 'tags', foreign_key: ['people'] }
+];
+
+const ask = add.collectionAsk(client, 'tasks', TASKS, 'Tasks');
+const picked = [[], [], [], ['axel'], [], []];
+const yes = (key, title) => answered(ask.fields, [key, title, 'todo', '', '', ''], picked);
+out(1, `Key empty ${yes('', 'T')}, Key '  ' ${yes('  ', 'T')}, Key and Title filled ${yes('t1', 'T')}`);
+
+const lead = add.leadAsk(client);
+out(2, `leadAsk fields ${JSON.stringify(lead.fields)}; answered with its line empty ${answered(lead.fields, lead.fields.map(() => ''), lead.fields.map(() => []))}`);
+
+out(3, `parseMapState({}).show shared ${graph.parseMapState({}).show === graph.parseMapState({}).show}; parseCollectionState(null).filters shared ${collection.parseCollectionState(null).filters === collection.parseCollectionState(null).filters}; .more shared ${collection.parseCollectionState(null).more === collection.parseCollectionState(null).more}`);
+```
+
+The files of `$SCRATCH/o92r1/` and `$SCRATCH/caserun/` were removed before the hand-back.

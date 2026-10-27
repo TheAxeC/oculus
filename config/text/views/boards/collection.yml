@@ -15,8 +15,6 @@ text:
         form_cancel: Cancel
         fundstmt_tip: verbatim funder acknowledgment - paste into a manuscript's Funding section
         grip_glyph: grip
-        hub_facet: Hub
-        hub_tip: show or hide the entries of {0}
         identity_unusable: 'Writes are off: {0} "{1}" is empty or shared with another entry'
         no_primary_key_none: 'Writes are off: {0} has no primary key, as its schema flags no field with primary_key: true; flag the field an entry is addressed by'
         no_primary_key_two: 'Writes are off: {0} has no primary key, as its schema flags {1} with primary_key: true and a file has only one; keep the flag on one of them'
@@ -50,9 +48,11 @@ text:
         toolbar: Collection controls
         unpin: Unpin
         open_venue: Open this venue as its own tab
-        range_from: '{0} from'
-        range_to: '{0} to'
-        filter_picked: '{0}, {1} picked'
+        count: '{0} entries'
+        count_one: 1 entry
+        count_shown: '{0} of {1} shown'
+        slices: Collection slices
+        title_column: Title
     views:
         applications: Applications
         applications_glyph: inbox

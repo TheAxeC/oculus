@@ -210,6 +210,9 @@ One entry per guarantee. An entry keeps one test per unit it covers: each API ro
 - G133. The user is the one person the key `self` of the primary hub's `.oculus/local.yml` names, resolved from the primary hub: the primary's person of that key, else the person of the one other hub that holds it; a key two or more other hubs hold, or one no hub holds, marks nobody and is one finding on that file; an empty key, or a workspace with no primary, marks nobody and gives no finding.
   Code: the mark and its finding under `src/lib/data/snapshot/hubs/`.
   Test: `tests/data/hubs/self.test.ts`, every row of describe 'the user the key self names'.
+- G134. A collection's Add writes what it asked and nothing else: a picked field as its id, a multi-picked field as its list of ids, a typed field trimmed, a field not required and left empty left out; it writes to the one hub that names the collection, or to the hub asked, and a key only to the hub whose choices offered it; a required field left unanswered keeps the yes off.
+  Code: `src/lib/views/shared/forms/entry/entry-add.ts`, `src/lib/ui/forms/prompt.ts` (`answered`).
+  Test: `tests/views/shared/forms/entry-add.test.ts`, every row.
 
 ## It starts, and configuration is checked
 
