@@ -68,7 +68,15 @@ dispatch:          # steps in flight, up to six (Z632)
 - step: O91
   brief_check: .scratch/migration/agents/reviews/O91-brief-check.md (a9938b4abd405e606, claude-opus-5-5, 228428 tokens, 71 tool uses, 11 min 7 s)
   shared_paths: with O87, judged simple merges resolved at landing: `docs/HELP.md:547`, `config/options/behavior.yml:161` and `docs/templates.md:66` (O87 rewrites each and keeps joint work; O91 drops joint work: the second landing keeps O87's words without the flag and the collection), `config/options/sources.yml` (O87 78-90 and 105-115; O91 106-108, the flag's row), `docs/templates.md` (O87 64-68, 274-278, 318-332; O91 87, 94, 1064-1088, 1233-1258), `docs/HELP.md` (O87 294, 529, 538; O91 52, 236, 301); with O88, `tests/fixtures/hubs/demo/.oculus/data/academic/joint-work.yml` (O88 removes its `intro:`; O91 deletes the file: the deletion stands), `src/lib/views/boards/person/Person.svelte` and `src/lib/views/shared/forms/entry/Referrers.svelte` (O88 the heading component; O91 the joint-work block, button and head comment), `src/lib/data/snapshot/normalise.ts`, `src/lib/data/model/model-collections.ts`, `tests/data/sources/collections.test.ts` and `docs/templates.md` (separate lines); with O94, `docs/templates.md` (O94 664-691) and `docs/HELP.md` (O94 332); with all three, the generated `docs/diagrams/*` and `docs/palette.md`, regenerated at each landing.
-  landing: preparing
+  base: eeafcd4cb
+  worktree: .agents/worktrees/migration-O91
+  executor: agent
+  worker: claude:opus
+  session_id: aee7e1a854ae78fa0 (claude-opus-5-5)
+  launched: 2026-10-27
+  report: .scratch/migration/agents/reviews/O91-report.md
+  round: 0
+  landing: not-started
 ```
 
 ## The standing demands (from Axel, in force)
