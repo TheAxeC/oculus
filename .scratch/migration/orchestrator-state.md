@@ -46,9 +46,9 @@ dispatch:          # steps in flight, up to six (Z632)
   session_id: a842e39268dc6aed0 (claude-opus-5-5)
   launched: 2026-10-27
   report: .scratch/migration/agents/reviews/O94-report.md
-  round: 0 (cases ruled, agents/briefs/O94-cases.md: case 7 dropped, read-back with uniqueKeys false)
+  round: 1 (agents/briefs/O94-round1.md: the tree's front matter rule, no idea a sidecar, a name after xx-, a failed write renamed back, the report; round 0 the cases ruled, agents/briefs/O94-cases.md)
   builder_usage: hand-back of the first run: 133375 tokens, 23 tool uses, 8 min 52 s; after the round-0 ruling: 231386 tokens, 102 tool uses, 35 min 34 s
-  reviewer_report: running: a3d20902e374d2dd1 (claude-opus-5-5)
+  reviewer_report: .scratch/migration/agents/reviews/O94-refuter.md (a3d20902e374d2dd1, claude-opus-5-5, 209441 tokens, 56 tool uses, 17 min 47 s)
   shared_paths: with O84, `config/text/server.yml` (O84 under `server.config_key.*`; O94 lines 330-340), and `docs/HELP.md` (O84 Doc text at 288 and 532; O94 332); with O87, `docs/HELP.md` (O87 294, 529, 538, 547) and `docs/templates.md` (O87 64-68, 274-278, 318-332; O94 664-691); the generated `docs/diagrams/*`, regenerated at each landing; simple merges in separate lines.
   landing: not-started
 - step: O88
@@ -61,6 +61,9 @@ dispatch:          # steps in flight, up to six (Z632)
   session_id: a08d61da6d5e84ade (claude-opus-5-5)
   launched: 2026-10-27
   report: .scratch/migration/agents/reviews/O88-report.md
+  round: 0
+  landing: not-started
+- step: O91
   landing: preparing
 ```
 
