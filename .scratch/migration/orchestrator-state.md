@@ -24,6 +24,8 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 
 ```yaml
 dispatch:          # steps in flight, up to six (Z632)
+- step: O100
+  landing: preparing
 - step: O98
   brief_check: "agents/reviews/O98-brief-check.md (a5d4f9a13f2831178, claude-opus-5-5, 236369 tokens, 81 tool uses, 13 min 47 s)"
   base: 54304adb4
