@@ -1,5 +1,5 @@
 In flight (1 of 6 slots in use):
-- O90 (the board bar's Waiting on filter), /spec: brief written, brief check running.
+- O90 (the board bar's Waiting on filter), building: builder launched 2026-10-27 at base 9f55cd70.
 
 Queued (1):
 - O92 (the collection's Add and bar, and the Map's bar), /spec after O90 lands: it moves and reshapes the bar partials O90 edits (FilterBar.svelte), so the two run in sequence.
