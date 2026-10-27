@@ -178,6 +178,7 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
 
 
 ## Closed items
+- 524 (2026-10-27): ruled by Axel ("Please do"): step O100 added; booked in `plan.md` Rulings.
 - 523 (2026-10-27): ruled by Axel, (a); booked in `plan.md` Rulings.
 - 517 (2026-10-27): (1) and (2) ruled by Axel, (a) each, booked in `plan.md` Rulings; (3) raised again as 518, which Axel ruled.
 - 518 (2026-10-27): ruled by Axel, (1) (a), (2) (b); booked in `plan.md` Rulings.
