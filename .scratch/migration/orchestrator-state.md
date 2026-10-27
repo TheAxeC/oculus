@@ -48,7 +48,7 @@ dispatch:          # steps in flight, up to six (Z632)
   launched: 2026-10-27
   report: .scratch/migration/agents/reviews/O96-report.md
   builder_usage: 155519 tokens, 229 tool uses, 46 min 1 s
-  reviewer_report: "running: aba0d8dc3c0d0853c (claude-opus-5-5)"
+  reviewer_report: "agents/reviews/O96-refuter.md (aba0d8dc3c0d0853c, claude-opus-5-5, 239441 tokens, 74 tool uses, 16 min 44 s)"
   landing: not-started
 - step: O98
   brief_check: "agents/reviews/O98-brief-check.md (a5d4f9a13f2831178, claude-opus-5-5, 236369 tokens, 81 tool uses, 13 min 47 s)"
@@ -203,11 +203,14 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
 - 517 (2026-10-27, O97's /spec, the second stop): (1) and (2) ruled by Axel, (a) each, booked in `plan.md` Rulings; (3) rejected by Axel in all its options and raised again as open item 518.
-- 518 (2026-10-27, O97, in place of 517 (3), which Axel rejected): how a service's row (`venues.browser`, `literature.sources`, `recover.sources`, `links`) is edited in Settings. Settings already draws a list of records as cards, a record inside a card, and a map of key and value pairs inside a card (`readFamily`, `src/lib/state/system/config/editors/fields.ts:204-234`), so the rows are described in `config/options/` as families with fields and edited with the controls Settings has. (a) Every card shows every field of the row, set or not. (b) A card shows the fields its row sets, with an Add field menu offering the others, on families whose options entry says so. Recommended (b). Lazy option, not offered: a link to the file, which Axel has ruled illegal. Status: Axel's.
-- 519 (2026-10-27, Settings cannot edit every setting, a defect in delivered work): (1) the fix: (a) a new step O99 before O97 that makes every leaf of every config file editable in Settings and removes the Edit-in-file fallback, recommended; (b) the same work folded into O97. (2) the repository files `.oculus/launch.yml`, `.oculus/cpp.yml` and `.oculus/settings.yml`, which have no form: (a) the repository's `settings.yml` a scope of Settings, `launch.yml` a form in the Debug view and `cpp.yml` a form on the C++ status item, as `commands.yml` has Add Command, recommended; (b) all three as groups of Settings. Lazy option, not offered: keeping the file link for rare shapes. Status: Axel's.
 
 
 ## Closed items
+- 518 (2026-10-27): ruled by Axel, (1) (a), (2) (b); booked in `plan.md` Rulings.
+- 519 (2026-10-27): ruled by Axel, (a); O99 booked before O97 in `plan.md` and in Rulings.
+- 520 (2026-10-27): ruled by Axel, (a) and (b) together; booked in `plan.md` Rulings.
+- 521 (2026-10-27): ruled by Axel, (1) (a), (2) (a); booked in `plan.md` Rulings.
+- 522 (2026-10-27): ruled by Axel, (a); booked in `plan.md` Rulings.
 - 510 (2026-10-27): ruled by Axel, (1) (a), (2) (a), (3) (a), (4) (a), (5) (b), (6) (a); booked in `plan.md` Rulings and under O98; O98 is prepared again by /spec.
 - 511 (2026-10-27): ruled by Axel, (1) (a), (2) (a), (3) (a); booked in `plan.md` Rulings and under O97; O97 is prepared again by /spec.
 - 513 (2026-10-27): ruled by Axel, (a); booked in `plan.md` Rulings and under O95; sent with O95's repair round 1.

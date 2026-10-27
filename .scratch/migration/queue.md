@@ -1,12 +1,13 @@
 In flight (3 of 6 slots in use):
 - O95 (Focus, what a press opens): built; under review (reviewer running); repair round 1 next, carrying ruling 513 (a).
-- O96 (the cards' project strip: its filters and its groups by category): built; under review (reviewer running).
+- O96 (the cards' project strip: its filters and its groups by category): built; reviewed (`agents/reviews/O96-refuter.md`); repair round 1 next (`agents/briefs/O96-round1.md`).
 - O98 (accounts and connections, rulings 507 to 510 and 516): building, builder launched 2026-10-27, base 54304adb4.
 
-Queued: none.
+Queued:
+- O99 (every setting edited in Settings and a form for every file that is no setting, rulings 519 to 522): next to start, before O97.
+- O97 (the journal browser from configuration and one configurable reader, rulings 509, 511, 517 and 518): after O99.
 
-Waiting on a ruling (1):
-- O97 (the journal browser from configuration and one configurable reader, rulings 509 and 511): stopped at its /spec on open item 517 (the extra keys of a service's configuration row, the venue fields, how the rows are edited in Settings).
+Waiting on a ruling: none.
 
 Landing next: O96, then O95, after their reviews.
 
