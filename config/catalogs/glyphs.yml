@@ -76,6 +76,7 @@ glyphs:
   warn: "/!\\"
   overdue: "(!)"
   attention: "!"
+  waiting: "(w)"
   flag: "|>"
   pin: "[p]"
   lock: "[L]"

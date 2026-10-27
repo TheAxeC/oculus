@@ -4,8 +4,10 @@
     // that opens a list which stays open on a pick, as a project board's group lists do
     // (views/boards/projects/PickMenu.svelte). The list holds Mine only, then the Role checklist
     // (the roles of `roles:` that have a field), while a person is marked as the user; the Tier
-    // checklist (the words of `tiers:`); and the Hub checklist while the workspace has more than
-    // one hub. Mine only is drawn disabled, with a tip that says why, while it would hide no row.
+    // checklist (the words of `tiers:`); the Pillar checklist (every pillar of the workspace, its
+    // hub's name after its title while there is more than one hub) while a pillar exists; and the
+    // Hub checklist while the workspace has more than one hub. Mine only is drawn disabled, with a
+    // tip that says why, while it would hide no row.
     // Every pick hands the whole choice back; the rule that applies it is
     // state/boards/focus/filter.ts.
     //
@@ -34,6 +36,8 @@
         roles: { key: string; label: string }[];
         /** The words of `tiers:`. */
         tiers: TierWord[];
+        /** The pillars of the workspace, each by its id and its words (`pillarRows`). */
+        pillars: { key: string; label: string }[];
         /** The hubs of the workspace, none while it has one. */
         hubs: readonly string[];
         /** Whether Mine only would hide a row of the page. */
@@ -44,7 +48,8 @@
         onchange: (filter: FocusFilter) => void;
     };
 
-    let { filter, named, roles, tiers, hubs, mineHides, hides, onchange }: Props = $props();
+    let { filter, named, roles, tiers, pillars, hubs, mineHides, hides, onchange }: Props =
+        $props();
 
     /** Whether the list is open, the button it is placed against, and the list itself. */
     let open = $state(false);
@@ -104,6 +109,19 @@
                     label: tier.label,
                     ticked: !filter.tiers.includes(tier.key),
                     pick: () => onchange({ ...filter, tiers: toggled(filter.tiers, tier.key) })
+                }))
+            });
+        }
+        if (pillars.length > 0) {
+            made.push({
+                id: 'pillar',
+                heading: t('focus.filter_pillar'),
+                rows: pillars.map((pillar) => ({
+                    id: pillar.key,
+                    label: pillar.label,
+                    ticked: !filter.pillars.includes(pillar.key),
+                    pick: () =>
+                        onchange({ ...filter, pillars: toggled(filter.pillars, pillar.key) })
                 }))
             });
         }

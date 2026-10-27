@@ -8,11 +8,11 @@
     // draws the rest in place.
     //
     // The waiting kind is the project's `waiting-on:`, each value named by state/boards/waiting.ts
-    // as the Focus board's strip and lane cards name it, in amber: a person opens the Person view
-    // as a TEAM tag does, a project opens it as a RELATED tag does, and a value that names neither
-    // is its key with no press. The blocked kind is one red tag with the words of
-    // `project.helper.blocked_external`, drawn while one of the project's chips carries the flag
-    // `blocked`. A project that is both draws both lines.
+    // as the Focus board's strip and lane cards name it, in red with the waiting glyph on every
+    // tag: a person opens the Person view as a TEAM tag does, a project opens it as a RELATED tag
+    // does, and a value that names neither is its key with no press. The blocked kind is one red
+    // tag with the words of `project.helper.blocked_external`, drawn while one of the project's
+    // chips carries the flag `blocked`. A project that is both draws both lines.
     //
     // The team kind is the project's people (state/boards/board/team.ts): the people of its `lead:`
     // first, then those of its `collaborators:`, then those of its `supervisors:`, without the
@@ -86,8 +86,9 @@
         {
             key: WAITING,
             label: t('project.card.waiting_on'),
+            glyph: t('project.card.waiting_glyph'),
             tags: waiting.map((one) => ({ id: one.id, label: one.label })),
-            tone: 'amber'
+            tone: 'red'
         },
         {
             key: 'blocked',
@@ -146,18 +147,6 @@
         opened = { id: item.id, kinds: [...expanded, key] };
     }
 
-    /**
-     * The glyph one entry carries: its kind's, and for a waited-on value the glyph of the line
-     * whose entries are of its sort, TEAM's for a person and RELATED's for a project.
-     */
-    function glyphOf(kind: Kind, tag: BoardTag): string | undefined {
-        if (kind.key !== WAITING) return kind.glyph;
-        const named = waiting.find((one) => one.id === tag.id)?.kind;
-        if (named === 'person') return t('project.card.team_glyph');
-        if (named === 'project') return t('project.card.related_glyph');
-        return undefined;
-    }
-
     /** What pressing one entry does, and nothing for a kind whose entries are not cross-links. */
     function press(kind: Kind, tag: BoardTag): (() => void) | null {
         if (kind.key === WAITING) {
@@ -190,7 +179,7 @@
                         {#if onpress === null}
                             <Tag
                                 label={tag.label}
-                                glyph={glyphOf(kind, tag)}
+                                glyph={kind.glyph}
                                 tone={kind.tone}
                                 wrap={kind.wrap === true}
                             />
@@ -202,11 +191,7 @@
                                     title={t('project.card.open_in', kind.label)}
                                     onclick={onpress}
                                 >
-                                    <Tag
-                                        label={tag.label}
-                                        glyph={glyphOf(kind, tag)}
-                                        tone={kind.tone}
-                                    />
+                                    <Tag label={tag.label} glyph={kind.glyph} tone={kind.tone} />
                                 </ToolButton>
                             </span>
                         {/if}

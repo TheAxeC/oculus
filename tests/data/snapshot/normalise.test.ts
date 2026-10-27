@@ -96,13 +96,20 @@ function portfolio(): RawPortfolio {
                     priority: 'high',
                     'waiting-on': ['someone', 'A Free Name'],
                     followup: [
-                        { do: 'chase the coauthor', after: '2026-01-01' },
-                        { do: 'watch the call' }
+                        {
+                            do: 'chase the coauthor',
+                            after: '2026-01-01',
+                            done: true,
+                            lead: 'someone',
+                            supervisors: ['someone']
+                        },
+                        { do: 'watch the call' },
+                        { do: 'ask the editor', done: 'yes' }
                     ],
                     snooze: '2026-12-01',
                     subtasks: {
-                        fig: { do: 'redraw figure 2', deadline: '2026-10-01' },
-                        ack: { do: 'add the funding line', done: true }
+                        fig: { do: 'redraw figure 2', deadline: '2026-10-01', lead: 'someone' },
+                        ack: { do: 'add the funding line', done: true, collaborators: ['someone'] }
                     },
                     paths: { manuscript: 'ms' },
                     code_availability: {
@@ -305,13 +312,32 @@ describe('normalise, the field mapping', () => {
             deadline: '2026-11-17',
             waitingOn: ['someone', 'A Free Name'],
             followups: [
-                { key: '0', do: 'chase the coauthor', after: '2026-01-01' },
-                { key: '1', do: 'watch the call' }
+                {
+                    key: '0',
+                    do: 'chase the coauthor',
+                    after: '2026-01-01',
+                    done: true,
+                    lead: ['someone'],
+                    supervisors: ['someone']
+                },
+                { key: '1', do: 'watch the call', done: false },
+                { key: '2', do: 'ask the editor', done: false }
             ],
             snooze: '2026-12-01',
             subtasks: [
-                { key: 'fig', do: 'redraw figure 2', deadline: '2026-10-01', done: false },
-                { key: 'ack', do: 'add the funding line', done: true }
+                {
+                    key: 'fig',
+                    do: 'redraw figure 2',
+                    deadline: '2026-10-01',
+                    done: false,
+                    lead: ['someone']
+                },
+                {
+                    key: 'ack',
+                    do: 'add the funding line',
+                    done: true,
+                    collaborators: ['someone']
+                }
             ],
             doi: '10.0/alpha',
             outcome: 'in review',

@@ -1,5 +1,6 @@
-// What writeManifest does over a hub of its own: the subtask, career, entry and idea writes beside
-// it. The collection entry writes are writes-collection.test.ts, beside this.
+// What writeManifest does over a hub of its own: the career, entry and idea writes beside it. The
+// subtask and follow-up line writes are lines.test.ts, and the collection entry writes
+// writes-collection.test.ts, beside this.
 //
 // The hub here is a synthetic one under the system temporary directory, and every path this file
 // writes is asserted to be inside it before it is written; nothing in this file opens the real hub
@@ -14,15 +15,7 @@
 import { mkdirSync, readdirSync, readFileSync, symlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect } from 'vitest';
-import {
-    createEntry,
-    createIdea,
-    writeFollowup,
-    writeManifest,
-    writeSubtask,
-    writeSubtaskAdd
-} from '../../../src/lib/server/edit/writes.ts';
-import { FOLLOWUP } from '../../../src/lib/server/edit/entry-edit/index.ts';
+import { createEntry, createIdea, writeManifest } from '../../../src/lib/server/edit/writes.ts';
 import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
 import { words } from '../../../src/lib/server/core/words.ts';
 import { careerRules, writeCareer } from '../../../src/lib/server/edit/writes/subtasks.ts';
@@ -30,12 +23,14 @@ import { it, scratchDir } from '../../fixtures/scratch.ts';
 import { DEMO_HUB } from '../../fixtures/hubs/real-hub.ts';
 import {
     MANIFEST,
+    SUBJECTS,
     configFor,
+    fileOf,
     hub,
     record,
     manifestPath,
     personalWorld,
-    type PersonalWorld,
+    type Subject,
     tasksPath,
     TASKS,
     KEYED,
@@ -47,18 +42,6 @@ import {
 import { PERSONAL_MANIFEST } from '../../routes/edit/write-fixture.ts';
 import type { PortfolioConfig } from '../../../src/lib/data/model/index.ts';
 import { portfolioConfigFrom } from '../../../src/lib/data/index.ts';
-
-/**
- * The files a row of the tables below writes in: a research manifest and two personal manifests.
- */
-type Subject = 'alpha' | 'idea' | 'r';
-
-const SUBJECTS: Subject[] = ['alpha', 'idea', 'r'];
-
-/** The file of each subject in a world. */
-function fileOf(world: PersonalWorld, subject: Subject): string {
-    return subject === 'alpha' ? manifestPath(world.root) : world.files[subject];
-}
 
 type FieldRow = {
     name: string;
@@ -218,120 +201,6 @@ describe('a field a hub adds to the project form', () => {
         });
         expect(readFileSync(manifestPath(other), 'utf8')).toBe(MANIFEST);
     });
-});
-
-/** A row of the subtask-line table: `added` is the text the add appends to the file. */
-type LineRow = { name: string; subject: Subject; first: number; added: string };
-
-const LINE_ROWS: LineRow[] = [
-    {
-        name: 'a research project',
-        subject: 'alpha',
-        first: 0,
-        added: 'subtasks:\n  - { do: write it }\n'
-    },
-    { name: 'a hub project', subject: 'idea', first: 1, added: '  - { do: write it }\n' },
-    { name: 'a repository project', subject: 'r', first: 1, added: '  - { do: write it }\n' }
-];
-
-describe('writing one subtask line', () => {
-    it.each(LINE_ROWS)(
-        'ticks, reopens, edits and removes a line of a manifest',
-        { tags: ['slow'] },
-        (row) => {
-            const world = personalWorld();
-            const file = fileOf(world, row.subject);
-            const original = readFileSync(file, 'utf8');
-            const into = [world.root, world.config] as const;
-            const host = { id: row.subject };
-            const key = String(row.first);
-            expect(writeManifest(...into, row.subject, {}).changed, row.name).toEqual([]);
-            const added = writeSubtaskAdd(...into, host, { do: 'write it' });
-            expect(added.changed, row.name).toEqual(['subtasks']);
-            expect(readFileSync(file, 'utf8'), row.name).toBe(original + row.added);
-            const done = writeSubtask(...into, host, key, 'done');
-            expect(done.changed, row.name).toEqual(['done']);
-            expect(readFileSync(file, 'utf8'), row.name).toContain(
-                '- { do: write it, done: true }'
-            );
-            const open = writeSubtask(...into, host, key, 'reopen');
-            expect(open.changed, row.name).toEqual(['done']);
-            expect(readFileSync(file, 'utf8'), row.name).toContain('- { do: write it }');
-            const dated = writeSubtask(...into, host, key, 'deadline', '2026-12-01');
-            expect(dated.changed, row.name).toEqual(['deadline']);
-            expect(readFileSync(file, 'utf8'), row.name).toContain(
-                '- { do: write it, deadline: 2026-12-01 }'
-            );
-            const renamed = writeSubtask(...into, host, key, 'do', 'write it twice');
-            expect(renamed.changed, row.name).toEqual(['do']);
-            expect(readFileSync(file, 'utf8'), row.name).toContain(
-                '- { do: write it twice, deadline: 2026-12-01 }'
-            );
-            const blank = writeSubtask(...into, host, key, 'do', ' ');
-            expect([blank.changed, blank.refused.map((one) => one.field)], row.name).toEqual([
-                [],
-                ['do']
-            ]);
-            const undated = writeSubtask(...into, host, key, 'deadline', '');
-            expect(undated.changed, row.name).toEqual(['deadline']);
-            expect(readFileSync(file, 'utf8'), row.name).toContain('- { do: write it twice }');
-            const removed = writeSubtask(...into, host, key, 'delete');
-            expect(removed.changed, row.name).toEqual(['subtasks']);
-            expect(readFileSync(file, 'utf8'), row.name).not.toContain('write it');
-            for (const one of SUBJECTS.filter((other) => other !== row.subject))
-                expect(readFileSync(fileOf(world, one), 'utf8'), `${row.name}: ${one}`).toBe(
-                    one === 'alpha' ? MANIFEST : PERSONAL_MANIFEST
-                );
-            if (row.subject !== 'alpha')
-                expect(readFileSync(file, 'utf8'), row.name).toBe(original);
-        }
-    );
-});
-
-describe('writing the follow-up notes of a manifest', () => {
-    it.each(LINE_ROWS)(
-        'adds notes to a list, changes one, takes one out when done, and the list with the last',
-        { tags: ['slow'] },
-        (row) => {
-            const world = personalWorld();
-            const file = fileOf(world, row.subject);
-            const original = readFileSync(file, 'utf8');
-            const into = [world.root, world.config] as const;
-            const host = { id: row.subject };
-            const first = writeSubtaskAdd(...into, host, { do: 'ask Ann' }, FOLLOWUP);
-            expect(first.changed, row.name).toEqual(['followup']);
-            const second = writeSubtaskAdd(
-                ...into,
-                host,
-                { do: 'chase the call', after: '2026-12-01', deadline: '2026-12-09' },
-                FOLLOWUP
-            );
-            expect(second.changed, row.name).toEqual(['followup']);
-            expect(readFileSync(file, 'utf8'), row.name).toBe(
-                `${original}followup:\n  - { do: ask Ann }\n  - { do: chase the call, after: 2026-12-01 }\n`
-            );
-            const later = writeFollowup(...into, host, '0', 'after', '2026-11-30');
-            expect(later.changed, row.name).toEqual(['after']);
-            const renamed = writeFollowup(...into, host, '0', 'do', 'ask Ann again');
-            expect(renamed.changed, row.name).toEqual(['do']);
-            const blank = writeFollowup(...into, host, '0', 'do', ' ');
-            expect([blank.changed, blank.refused.map((one) => one.field)], row.name).toEqual([
-                [],
-                ['do']
-            ]);
-            expect(readFileSync(file, 'utf8'), row.name).toBe(
-                `${original}followup:\n  - { do: ask Ann again, after: 2026-11-30 }\n  - { do: chase the call, after: 2026-12-01 }\n`
-            );
-            const done = writeFollowup(...into, host, '0', 'done');
-            expect(done.changed, row.name).toEqual(['followup']);
-            expect(readFileSync(file, 'utf8'), row.name).toBe(
-                `${original}followup:\n  - { do: chase the call, after: 2026-12-01 }\n`
-            );
-            const last = writeFollowup(...into, host, '0', 'done');
-            expect(last.changed, row.name).toEqual(['followup']);
-            expect(readFileSync(file, 'utf8'), row.name).toBe(original);
-        }
-    );
 });
 
 const CAREER_SECTIONS = [

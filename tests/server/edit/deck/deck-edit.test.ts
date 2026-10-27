@@ -6,7 +6,7 @@
 
 import { describe, expect, it } from 'vitest';
 import { parse } from 'yaml';
-import { setGroupSlides } from '../../../src/lib/server/edit/deck-edit.ts';
+import { setGroupSlides } from '../../../../src/lib/server/edit/deck-edit.ts';
 
 /** A deck file with comments before, between and after the lists of its two groups. */
 const BOTH = `# the deck

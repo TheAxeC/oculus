@@ -10,7 +10,14 @@ export {
     startEntries,
     takeOutAppended
 } from './entries.ts';
-export { addSubtask, deleteSubtask, setSubtask, subtaskLines, subtaskValues } from './subtasks.ts';
+export {
+    addSubtask,
+    deleteSubtask,
+    peopleKeys,
+    setSubtask,
+    subtaskLines,
+    subtaskValues
+} from './subtasks.ts';
 export { setSections } from './merge.ts';
 export { FOLLOWUP, SUBTASKS, entryRange } from './lines.ts';
 export type { LineBlock, LineRange, SubtaskBlock, SubtaskLine } from './lines.ts';

@@ -1,7 +1,8 @@
 // Layer 2, server. The line half of the write path, and the career write beside it: a subtask line
-// ticked, reopened, snoozed, changed or taken out, a follow-up note changed or taken out, a line of
-// either block added to a host that may have no block yet, and the sections of the career file set
-// from the career editor.
+// ticked, reopened, snoozed, changed or taken out, a follow-up note marked done, reopened, changed
+// or taken out, the people a line of either block names set, a line of either block added to a
+// host that may have no block yet, and the sections of the career file set from the career
+// editor.
 //
 // The subtask and the follow-up writes run the same line editor (entry-edit/subtasks.ts) over
 // their own block, `subtasks:` or `followup:`, and differ in the actions they take.
@@ -27,10 +28,12 @@ import {
     addSubtask,
     deleteSubtask,
     entryRange,
+    peopleKeys,
     setSections,
     setSubtask,
     subtaskValues
 } from '../entry-edit/index.ts';
+import type { FollowupTextAction, PeopleAction, SubtaskTextAction } from './bodies.ts';
 import { plain } from '../../core/changes.ts';
 import { words } from '../../core/words.ts';
 import { collectionSchema } from '../../../data/snapshot/normalise.ts';
@@ -71,7 +74,11 @@ export function subtaskHost(
 /**
  * What one subtask edit changed, read from the text the writer holds on either side of it: the line
  * as the file had it and the line as the edit leaves it, through the one reader, so the record and
- * the file cannot disagree.
+ * the file cannot disagree. An edit that leaves the block a line shorter took the line `key` out,
+ * and the record's after is what that key holds now, the next line or nothing, which is what the
+ * undo's check finds there while the file is unchanged; one that leaves it a line longer made the
+ * line at the first key whose value changed, which is the line an add put in, at the end or in the
+ * place a deleted line held.
  */
 function subtaskRecord(
     host: SubtaskHost,
@@ -83,87 +90,141 @@ function subtaskRecord(
     if (edit.changed.length === 0) return [];
     const before = subtaskValues(host.source, host.range, block);
     const after = subtaskValues(edit.text, host.range, block);
-    const line = key === '' ? Object.keys(after).find((one) => !(one in before)) : key;
+    const grown = Object.keys(after).length - Object.keys(before).length;
+    const moved = (one: string): boolean =>
+        JSON.stringify(before[one]) !== JSON.stringify(after[one]);
+    const line = key === '' ? Object.keys(after).find(moved) : key;
     if (line === undefined) return [];
-    const had = line in before;
-    const has = line in after;
-    const undo: ChangeRecord['undo'] = !had ? 'create' : !has ? 'delete' : 'field';
+    const undo: ChangeRecord['undo'] = grown > 0 ? 'create' : grown < 0 ? 'delete' : 'field';
     return [
         {
             file: host.file,
             key: target.id,
             field: line,
-            before: had ? before[line] : null,
-            after: has ? after[line] : null,
+            before: before[line] ?? null,
+            after: after[line] ?? null,
             undo
         }
     ];
 }
 
-/** What one subtask button does to its line: `do` and `deadline` set that field to the value. */
-export type SubtaskAction = 'done' | 'reopen' | 'snooze' | 'delete' | 'do' | 'deadline';
+/** What one subtask write does to its line. */
+export type SubtaskAction = SubtaskTextAction | PeopleAction;
+
+/** What one follow-up write does to its note. */
+export type FollowupAction = FollowupTextAction | PeopleAction;
 
 /**
- * Tick one subtask line, reopen it, snooze it until a date, change its text or its deadline, or
- * take the line out. An empty deadline clears it; an empty text is refused, since a line is its
- * text.
+ * The edit one action makes to one line of a block: Done and Reopen set and clear `done`, Delete
+ * takes the line out and the block's key with the last, a people action sets its field to the
+ * keys given (each once, no key dropping the field), and any other action sets its field to the
+ * trimmed text, an empty text clearing it.
+ */
+function lineEdit(
+    host: SubtaskHost,
+    key: string,
+    action: SubtaskAction | FollowupAction,
+    value: string | readonly string[] | undefined,
+    text: Record<string, string>,
+    block: LineBlock
+): EditResult {
+    if (action === 'delete') return deleteSubtask(host.source, host.range, key, text, block);
+    const fields =
+        action === 'done' || action === 'reopen'
+            ? { done: action === 'done' }
+            : typeof value === 'string' || value === undefined
+              ? { [action]: value?.trim() ?? null }
+              : { [action]: peopleKeys(value) };
+    return setSubtask(host.source, host.range, key, fields, text, block);
+}
+
+/**
+ * Tick one subtask line, reopen it, snooze it until a date, change its text or its deadline, set
+ * the people it names, or take the line out. An empty deadline clears it; an empty text is
+ * refused, since a line is its text.
  */
 export function writeSubtask(
     hub: string,
     config: PortfolioConfig,
     target: SubtaskTarget,
     key: string,
-    action: SubtaskAction,
+    action: PeopleAction,
+    value: readonly string[]
+): WriteOutcome;
+export function writeSubtask(
+    hub: string,
+    config: PortfolioConfig,
+    target: SubtaskTarget,
+    key: string,
+    action: SubtaskTextAction,
     value?: string
+): WriteOutcome;
+// A body read by the route's shape (writes/bodies.ts `subtaskWrite`), which pairs the action and
+// its value already.
+export function writeSubtask(
+    hub: string,
+    config: PortfolioConfig,
+    target: SubtaskTarget,
+    key: string,
+    action: SubtaskAction,
+    value?: string | readonly string[]
+): WriteOutcome;
+export function writeSubtask(
+    hub: string,
+    config: PortfolioConfig,
+    target: SubtaskTarget,
+    key: string,
+    action: SubtaskAction,
+    value?: string | readonly string[]
 ): WriteOutcome {
     const host = subtaskHost(hub, config, target);
     if (host === null) return { found: false, changed: [], refused: [] };
-    const edit =
-        action === 'delete'
-            ? deleteSubtask(host.source, host.range, key, config.text)
-            : action === 'snooze' || action === 'do' || action === 'deadline'
-              ? setSubtask(
-                    host.source,
-                    host.range,
-                    key,
-                    { [action]: value?.trim() ?? null },
-                    config.text
-                )
-              : setSubtask(host.source, host.range, key, { done: action === 'done' }, config.text);
+    const edit = lineEdit(host, key, action, value, config.text, SUBTASKS);
     const out = saved(host.file, host.source, edit);
     return { ...out, records: subtaskRecord(host, edit, key, target, SUBTASKS) };
 }
 
 /**
- * What one follow-up button does to its note: `done` takes it out, `do` and `after` set that field.
- */
-export type FollowupAction = 'done' | 'do' | 'after';
-
-/**
- * Take one follow-up note out once it is done, or change its text or the date before which it stays
- * hidden. An empty date clears it; an empty text is refused, since a note is its text.
+ * Mark one follow-up note done or open again, take it out, change its text or the date before
+ * which it stays hidden, or set the people it names. An empty date clears it; an empty text is
+ * refused, since a note is its text.
  */
 export function writeFollowup(
     hub: string,
     config: PortfolioConfig,
     target: SubtaskTarget,
     key: string,
-    action: FollowupAction,
+    action: PeopleAction,
+    value: readonly string[]
+): WriteOutcome;
+export function writeFollowup(
+    hub: string,
+    config: PortfolioConfig,
+    target: SubtaskTarget,
+    key: string,
+    action: FollowupTextAction,
     value?: string
+): WriteOutcome;
+// A body read by the route's shape (writes/bodies.ts `followupWrite`), as for a subtask.
+export function writeFollowup(
+    hub: string,
+    config: PortfolioConfig,
+    target: SubtaskTarget,
+    key: string,
+    action: FollowupAction,
+    value?: string | readonly string[]
+): WriteOutcome;
+export function writeFollowup(
+    hub: string,
+    config: PortfolioConfig,
+    target: SubtaskTarget,
+    key: string,
+    action: FollowupAction,
+    value?: string | readonly string[]
 ): WriteOutcome {
     const host = subtaskHost(hub, config, target);
     if (host === null) return { found: false, changed: [], refused: [] };
-    const edit =
-        action === 'done'
-            ? deleteSubtask(host.source, host.range, key, config.text, FOLLOWUP)
-            : setSubtask(
-                  host.source,
-                  host.range,
-                  key,
-                  { [action]: value?.trim() ?? null },
-                  config.text,
-                  FOLLOWUP
-              );
+    const edit = lineEdit(host, key, action, value, config.text, FOLLOWUP);
     const out = saved(host.file, host.source, edit);
     return { ...out, records: subtaskRecord(host, edit, key, target, FOLLOWUP) };
 }
@@ -193,19 +254,24 @@ export function restoreSubtask(
     return { ...out, records: subtaskRecord(host, edit, key, target, block) };
 }
 
-/** Add one line of a block, a subtask or a follow-up note, to a manifest or a collection entry. */
+/**
+ * Add one line of a block, a subtask or a follow-up note, to a manifest or a collection entry: at
+ * the end, or before the line at the index `at` when the block holds one there, which is how the
+ * undo of a Delete puts a line back in its place.
+ */
 export function writeSubtaskAdd(
     hub: string,
     config: PortfolioConfig,
     target: SubtaskTarget,
     fields: Record<string, unknown>,
-    block: LineBlock = SUBTASKS
+    block: LineBlock = SUBTASKS,
+    at?: number
 ): WriteOutcome {
     const host = subtaskHost(hub, config, target);
     if (host === null) return { found: false, changed: [], refused: [] };
-    const edit = addSubtask(host.source, host.range, fields, config.text, block);
+    const edit = addSubtask(host.source, host.range, fields, config.text, block, at);
     const out = saved(host.file, host.source, edit);
-    // The key the new line took is the one the edit added, which is why the record is asked for it
+    // The key the new line took is the one the edit made, which is why the record is asked for it
     // by the empty name rather than being told one this writer does not choose.
     return { ...out, records: subtaskRecord(host, edit, '', target, block) };
 }

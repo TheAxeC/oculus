@@ -16,9 +16,10 @@
     // more than one hub each record carries its hub's name after it. A kind with no record leaves
     // the record dropdown empty and Save disabled.
     //
-    // A follow-up is added with its "Not before" date, a subtask with its deadline, and a deadline
-    // is written to the project's manifest or to the entry, an emptied box clearing it. The answer
-    // is said through `onsaid`, and the form closes on a write that changed a file.
+    // A follow-up is added with its "Not before" date, a subtask with its deadline, each with the
+    // people picked (the people of the record's hub first), and a deadline is written to the
+    // project's manifest or to the entry, an emptied box clearing it. The answer is said through
+    // `onsaid`, and the form closes on a write that changed a file.
 
     import Select from '$lib/ui/forms/choice/Select.svelte';
     import DatedForm from './DatedForm.svelte';
@@ -27,6 +28,7 @@
     import { labelOf, type Project } from '$lib/state/boards/focus';
     import type { Collection } from '$lib/state/boards/collection';
     import type { WriteAnswer } from '$lib/state/client/writes.svelte';
+    import type { LinePeopleFields } from '$lib/state/shared/stores/shapes';
     import { registrationLabel } from '$lib/state/workbench/navigation/registry';
     import { REGISTRY_VIEWS, bareId, keyOf, rootOf } from '$lib/state/shared/page/hubs';
     import { t } from '$lib/state/shared/words/text';
@@ -147,17 +149,29 @@
         return field === undefined || field.type === 'date' ? 'date' : 'text';
     });
 
-    /** Write what the form holds to the record picked. */
-    async function save(words: string, date: string): Promise<WriteAnswer> {
+    /** Write what the form holds to the record picked, a new line with the people it names. */
+    async function save(
+        words: string,
+        date: string,
+        people: LinePeopleFields
+    ): Promise<WriteAnswer> {
         const target = row;
         if (target === undefined)
             return { ok: false, error: t('focus.qa_no_record'), changed: [], refused: [] };
         const at = group === PROJECT ? { id: target.id } : { id: target.id, collection: group };
         if (kind === 'subtask') {
-            return addSubtask(at, date === '' ? { do: words } : { do: words, deadline: date });
+            return addSubtask(at, {
+                do: words,
+                ...(date === '' ? {} : { deadline: date }),
+                ...people
+            });
         }
         if (kind === 'followup') {
-            return addFollowup(at, date === '' ? { do: words } : { do: words, after: date });
+            return addFollowup(at, {
+                do: words,
+                ...(date === '' ? {} : { after: date }),
+                ...people
+            });
         }
         const value = date === '' ? null : date;
         return group === PROJECT
@@ -193,6 +207,7 @@
         {text}
         held={row?.deadline ?? ''}
         {type}
+        root={row?.hub ?? ''}
         blocked={row === undefined ? t('focus.qa_no_record') : ''}
         {save}
         onanswer={answered}

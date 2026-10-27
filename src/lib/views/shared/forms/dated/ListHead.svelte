@@ -10,7 +10,9 @@
 
     import DatedForm from './DatedForm.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import type { WriteAnswer } from '$lib/state/client/writes.svelte';
+    import type { SubtaskTarget, WriteAnswer } from '$lib/state/client/writes.svelte';
+    import { addressOfId } from '$lib/state/shared/page/hubs';
+    import type { LinePeopleFields } from '$lib/state/shared/stores/shapes';
 
     type Props = {
         /** Whether the head row is drawn: the list holds at least one item. */
@@ -24,16 +26,16 @@
         addTip: string;
         /** Which list the form adds a line to. */
         kind: 'followup' | 'subtask';
-        /** The record the lines hang under, by a key that changes when the record does. */
-        record: string;
+        /** The record the lines hang under: its id, and its collection for a collection entry. */
+        target: SubtaskTarget;
         /** Why the buttons that write are disabled, already translated; '' when they are not. */
         blocked: string;
         /** True while the add form is open. */
         adding: boolean;
         /** Open or close the add form. */
         onadding: (next: boolean) => void;
-        /** The add form's save: the text and the date, '' when none was given. */
-        onadd: (text: string, date: string) => Promise<WriteAnswer>;
+        /** The add form's save: the text and the date, '' when none was given, and the people. */
+        onadd: (text: string, date: string, people: LinePeopleFields) => Promise<WriteAnswer>;
         /** The answer of a save, while the form is drawn for its record. */
         onanswer: (answer: WriteAnswer) => void;
     };
@@ -45,13 +47,19 @@
         addLabel,
         addTip,
         kind,
-        record,
+        target,
         blocked,
         adding,
         onadding,
         onadd,
         onanswer
     }: Props = $props();
+
+    /** The record by a key that changes when the record does, as the add form names it. */
+    const record = $derived(`${target.collection ?? ''}:${target.id}`);
+
+    /** The hub of the record, whose people the form's picks offer first. */
+    const root = $derived(addressOfId(target.id).hub);
 </script>
 
 {#if shown}
@@ -72,7 +80,15 @@
 {/if}
 
 {#if adding}
-    <DatedForm {kind} {record} {blocked} save={onadd} {onanswer} oncancel={() => onadding(false)} />
+    <DatedForm
+        {kind}
+        {record}
+        {root}
+        {blocked}
+        save={onadd}
+        {onanswer}
+        oncancel={() => onadding(false)}
+    />
 {/if}
 
 <style>

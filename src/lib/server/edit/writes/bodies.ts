@@ -10,9 +10,38 @@
 // server/edit/writes.ts is the route and re-exports everything here.
 
 import { z } from 'zod';
-import { anyNumberShape, mapShape, readAs, unchanged } from '../../../data/shapes/shapes.ts';
+import {
+    LINE_PEOPLE,
+    anyNumberShape,
+    mapShape,
+    readAs,
+    unchanged
+} from '../../../data/shapes/shapes.ts';
 import type { RailEntry } from '../../../data/sources/config/rail.ts';
-import type { FollowupAction, SubtaskAction, SubtaskTarget } from './subtasks.ts';
+import type { SubtaskTarget } from './subtasks.ts';
+
+/** A people field of a line, which a write sets to a list of person keys. */
+export type PeopleAction = (typeof LINE_PEOPLE)[number];
+
+/**
+ * What one subtask button does to its line, besides setting its people: `done` and `reopen` tick
+ * and clear it, `delete` takes it out, and `snooze`, `do` and `deadline` set that field to the
+ * text given.
+ */
+const SUBTASK_TEXT_ACTIONS = ['done', 'reopen', 'snooze', 'delete', 'do', 'deadline'] as const;
+
+/** One of the subtask actions that carry a text. */
+export type SubtaskTextAction = (typeof SUBTASK_TEXT_ACTIONS)[number];
+
+/**
+ * What one follow-up button does to its note, besides setting its people: `done` marks it done and
+ * `reopen` clears that, `delete` takes it out, and `do` and `after` set that field to the text
+ * given.
+ */
+const FOLLOWUP_TEXT_ACTIONS = ['done', 'reopen', 'delete', 'do', 'after'] as const;
+
+/** One of the follow-up actions that carry a text. */
+export type FollowupTextAction = (typeof FOLLOWUP_TEXT_ACTIONS)[number];
 
 /** The body a write carries. `kind` is the discriminator later writes are added on. */
 export type ManifestWrite = { kind: 'manifest'; id: string; fields: Record<string, unknown> };
@@ -42,14 +71,19 @@ export type EntryWrite = {
     fields: Record<string, unknown>;
 };
 
+/**
+ * An action on a line with the value it carries: a list of person keys for a people action, a
+ * text for any other.
+ */
+type LineAct<Text extends string> =
+    { action: Text; value?: string } | { action: PeopleAction; value: string[] };
+
 /** One subtask line acted on: the host it hangs under, which line, and what the button does. */
 export type SubtaskWrite = {
     kind: 'subtask';
     target: SubtaskTarget;
     key: string;
-    action: SubtaskAction;
-    value?: string;
-};
+} & LineAct<SubtaskTextAction>;
 
 /** One subtask line added to a host that may not have a block yet. */
 export type SubtaskAddWrite = {
@@ -63,9 +97,7 @@ export type FollowupWrite = {
     kind: 'followup';
     target: SubtaskTarget;
     key: string;
-    action: FollowupAction;
-    value?: string;
-};
+} & LineAct<FollowupTextAction>;
 
 /** One follow-up note added to a host that may not have a `followup:` block yet. */
 export type FollowupAddWrite = {
@@ -295,34 +327,62 @@ const entryShape = z.object({
     fields: mapShape
 }) satisfies z.ZodType<EntryWrite>;
 
-const subtaskShape = z.object({
-    kind: z.literal('subtask'),
-    target: targetShape,
-    key: wordShape,
-    action: z.enum(['done', 'reopen', 'snooze', 'delete', 'do', 'deadline']),
-    value: z.string().optional()
-}) satisfies z.ZodType<SubtaskWrite>;
+/** A text that is more than blanks. */
+const filledShape = z.string().refine((one) => one.trim() !== '');
 
-/** The fields of a subtask add must carry a `do` that is more than blanks. */
+/** The keys a people action carries: a list of texts, each more than blanks. */
+const peopleValueShape = z.array(filledShape);
+
+/**
+ * One action on a line of a block, after the `head` that names its kind, host and line: a text
+ * action with an optional text value, or a people action with its list of keys. A people action
+ * carrying anything else (a text, a number, a list holding a non-text or a blank key) is no write.
+ * Each caller writes its kind as `kind: z.literal(...)` in the head, the form in which every body
+ * of this file names the kind it is, which the list of recorded kinds is read from.
+ */
+function lineWriteShape<Head extends z.ZodRawShape, Text extends string>(
+    head: Head,
+    actions: readonly [Text, ...Text[]]
+) {
+    return z.union([
+        z.object({ ...head, action: z.enum(actions), value: z.string().optional() }),
+        z.object({ ...head, action: z.enum(LINE_PEOPLE), value: peopleValueShape })
+    ]);
+}
+
+/**
+ * The fields of a line add: a `do` that is more than blanks, and each people field, when given, a
+ * list of filled keys.
+ */
+const lineAddFieldsShape = unchanged(
+    z.looseObject({
+        do: filledShape,
+        lead: peopleValueShape.optional(),
+        supervisors: peopleValueShape.optional(),
+        collaborators: peopleValueShape.optional()
+    })
+);
+
+const subtaskShape = lineWriteShape(
+    { kind: z.literal('subtask'), target: targetShape, key: wordShape },
+    SUBTASK_TEXT_ACTIONS
+) satisfies z.ZodType<SubtaskWrite>;
+
 const subtaskAddShape = z.object({
     kind: z.literal('subtask-add'),
     target: targetShape,
-    fields: unchanged(z.looseObject({ do: z.string().refine((one) => one.trim() !== '') }))
+    fields: lineAddFieldsShape
 }) satisfies z.ZodType<SubtaskAddWrite>;
 
-const followupShape = z.object({
-    kind: z.literal('followup'),
-    target: targetShape,
-    key: wordShape,
-    action: z.enum(['done', 'do', 'after']),
-    value: z.string().optional()
-}) satisfies z.ZodType<FollowupWrite>;
+const followupShape = lineWriteShape(
+    { kind: z.literal('followup'), target: targetShape, key: wordShape },
+    FOLLOWUP_TEXT_ACTIONS
+) satisfies z.ZodType<FollowupWrite>;
 
-/** The fields of a follow-up add must carry a `do` that is more than blanks. */
 const followupAddShape = z.object({
     kind: z.literal('followup-add'),
     target: targetShape,
-    fields: unchanged(z.looseObject({ do: z.string().refine((one) => one.trim() !== '') }))
+    fields: lineAddFieldsShape
 }) satisfies z.ZodType<FollowupAddWrite>;
 
 const careerShape = z.object({

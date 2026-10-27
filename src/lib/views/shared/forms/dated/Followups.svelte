@@ -1,10 +1,11 @@
 <script lang="ts">
     // Layer 3, view partial under views/shared/. The follow-up block of one card: one row per note
-    // of the host's `followup:` list with what it says and the date before which it stays off the
-    // Focus board, the buttons that change it or take it out once done, and the form that adds
+    // of the host's `followup:` list with what it says, the names of the people it names and the
+    // date before which it stays off the Focus board, the buttons that mark it done (it then stays
+    // struck through, with Reopen in place of Done), change it or delete it, and the form that adds
     // another (views/shared/forms/dated/DatedForm.svelte, headed "New follow-up"). A note's edit
-    // button turns the note into the one-line form (LineForm.svelte), holding its text and date,
-    // and its save writes each of the two that changed.
+    // button turns the note into the line form (LineForm.svelte), holding its text, its date and
+    // its people, and its save writes each of them that changed.
     //
     // A card with no notes draws no list: adding its first note is the Follow-up row of the card's
     // menu, which opens the add form here. So whether the add form is open is the card's, handed
@@ -33,18 +34,19 @@
     import LineForm from './LineForm.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { t } from '$lib/state/shared/words/text';
-    import type {
-        FollowupAction,
-        SubtaskTarget,
-        WriteAnswer
-    } from '$lib/state/client/writes.svelte';
+    import type { SubtaskTarget, WriteAnswer } from '$lib/state/client/writes.svelte';
+    import type { LinePeopleFields } from '$lib/state/shared/stores/shapes';
     import { answerWords } from '../answer-words';
     import ListHead from './ListHead.svelte';
+    import { saveLine } from './line-save';
     import type { Followup } from '$lib/state/boards/collection';
+    import { lineNames } from '$lib/state/boards/person';
+    import { addressOfId } from '$lib/state/shared/page/hubs';
     import { useState } from '$lib/state/client/use';
     import { daysUntil } from '$lib/state/boards/board';
 
     const {
+        entities: { portfolio },
         writes: { addFollowup, writeFollowup }
     } = useState();
 
@@ -80,6 +82,15 @@
     /** The notes the block draws: none when it draws the add form alone. */
     const lines = $derived(formOnly ? [] : notes);
 
+    /** The hub of the record the notes hang under, whose people a note's keys name first. */
+    const root = $derived(addressOfId(target.id).hub);
+
+    /** The names of the people a note names, as the one text drawn after it. */
+    const namesOf = $derived(lineNames(portfolio()));
+    function names(note: Followup): string {
+        return namesOf(root, note).join(t('project.card.line_people_join'));
+    }
+
     /**
      * Whether a note is still off the Focus board: its date lies after the reader's today, the
      * test the board itself makes (state/boards/board/ticker-lines.ts `dueFollowups`).
@@ -102,24 +113,26 @@
     }
 
     /**
-     * The edit form's save: the text, then the date, each written only when it changed, and the
-     * form closed when every write it made was taken. An emptied date clears it.
+     * The edit form's save (line-save.ts `saveLine`): the text, the date before which the note
+     * stays off the board and its people, each written when it changed, and the form closed when
+     * every write was taken.
      */
-    async function save(note: Followup, text: string, after: string): Promise<void> {
-        const writes: [FollowupAction, string][] = [];
-        if (text !== note.do) writes.push(['do', text]);
-        if (after !== (note.after ?? '')) writes.push(['after', after]);
-        for (const [action, value] of writes) {
-            const answer = await writeFollowup(target, note.key, action, value);
-            said(answer);
-            if (!answer.ok) return;
+    async function save(
+        note: Followup,
+        text: string,
+        after: string,
+        people: LinePeopleFields
+    ): Promise<void> {
+        const held = { text: note.do, date: note.after ?? '', people: note };
+        const line = { target, key: note.key, date: 'after' as const };
+        if (await saveLine(writeFollowup, line, held, { text, date: after, people }, said)) {
+            editing = null;
         }
-        editing = null;
     }
 
-    /** The add form's save: one note, with its date when the form was given one. */
-    function add(text: string, after: string): Promise<WriteAnswer> {
-        return addFollowup(target, after === '' ? { do: text } : { do: text, after });
+    /** The add form's save: one note, with its date when the form was given one, and its people. */
+    function add(text: string, after: string, people: LinePeopleFields): Promise<WriteAnswer> {
+        return addFollowup(target, { do: text, ...(after === '' ? {} : { after }), ...people });
     }
 
     /** What the add form's save answered: said, and the form closed when the server took it. */
@@ -137,7 +150,7 @@
             addLabel={t('project.action.add_followup')}
             addTip={t('project.action.add_followup_tip')}
             kind="followup"
-            record={`${target.collection ?? ''}:${target.id}`}
+            {target}
             {blocked}
             {adding}
             {onadding}
@@ -151,34 +164,59 @@
                     text={note.do}
                     date={note.after}
                     dateLabel={t('project.action.followup_after')}
+                    people={note}
+                    {root}
                     {blocked}
-                    onsave={(text: string, after: string) => save(note, text, after)}
+                    onsave={(text: string, after: string, people: LinePeopleFields) =>
+                        save(note, text, after, people)}
                     oncancel={() => (editing = null)}
                 />
             {:else}
-                <div class="line">
+                <div class="line" class:done={note.done}>
                     <span class="mark">
                         <Glyph name={t('project.action.add_followup_glyph')} />
                     </span>
                     <span class="do"><LinkedText text={note.do} /></span>
+                    {#if names(note) !== ''}
+                        <span class="people">{names(note)}</span>
+                    {/if}
                     {#if note.after !== undefined && waiting(note)}
                         <Tag label={t('project.card.not_until', note.after)} />
                     {/if}
                     <span class="acts">
-                        <ToolButton
-                            small
-                            label={t('project.action.done')}
-                            title={why(t('project.action.followup_done_tip'))}
-                            disabled={blocked !== ''}
-                            onclick={async () =>
-                                said(await writeFollowup(target, note.key, 'done'))}
-                        />
+                        {#if note.done}
+                            <ToolButton
+                                small
+                                label={t('project.action.reopen')}
+                                title={why(t('project.action.followup_reopen_tip'))}
+                                disabled={blocked !== ''}
+                                onclick={async () =>
+                                    said(await writeFollowup(target, note.key, 'reopen'))}
+                            />
+                        {:else}
+                            <ToolButton
+                                small
+                                label={t('project.action.done')}
+                                title={why(t('project.action.followup_done_tip'))}
+                                disabled={blocked !== ''}
+                                onclick={async () =>
+                                    said(await writeFollowup(target, note.key, 'done'))}
+                            />
+                        {/if}
                         <ToolButton
                             small
                             label={t('project.action.edit')}
                             title={why(t('project.action.edit_followup'))}
                             disabled={blocked !== ''}
                             onclick={() => (editing = note.key)}
+                        />
+                        <ToolButton
+                            small
+                            label={t('project.action.del')}
+                            title={why(t('project.action.delete_followup'))}
+                            disabled={blocked !== ''}
+                            onclick={async () =>
+                                said(await writeFollowup(target, note.key, 'delete'))}
                         />
                     </span>
                 </div>
@@ -237,5 +275,15 @@
     .do {
         font-size: var(--fs-md);
         min-width: 0;
+    }
+
+    .people {
+        font-size: var(--fs-sm);
+        color: var(--muted-txt, var(--muted));
+    }
+
+    .line.done .do {
+        text-decoration: line-through;
+        color: var(--muted-txt, var(--muted));
     }
 </style>

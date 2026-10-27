@@ -113,8 +113,10 @@ text:
         filter_check_glyph: check
         filter_glyph: sliders
         filter_hub: Hub
+        filter_pillar: Pillar
+        filter_pillar_in: '{0} ({1})'
         filter_tier: Tier
-        filter_tip: show only what the ticked roles, tiers and hubs hold
+        filter_tip: show only what the ticked roles, tiers, pillars and hubs hold
         fold: Fold {0}
         funding_glyph: coin
         funding_lane: Funding
@@ -143,6 +145,9 @@ text:
             grp_tasks_label: Tasks
             heading: Tasks
             heading_glyph: tasks
+            remove: Remove
+            remove_followup_tip: delete the note
+            remove_task_tip: delete this entry; asks first
         teaching_glyph: teaching
         teaching_lane: Teaching & supervision
         teaching_sub: running and planned

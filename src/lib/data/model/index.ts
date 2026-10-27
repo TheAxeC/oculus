@@ -468,6 +468,7 @@ export type {
     Funding,
     Id,
     DocPart,
+    LinePeople,
     RenderedHeading,
     Organisation,
     Person,

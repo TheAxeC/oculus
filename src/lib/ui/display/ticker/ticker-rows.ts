@@ -2,14 +2,16 @@
 // called back with. Apart from the component so a view can build rows without importing it.
 
 /**
- * One row: the glyph it is drawn with (none for the empty name), the words that name it, the words
- * that date it, and the hue the tail is drawn in. A row with an `id` is one the caller can be told
- * about; a row without one is read and not clicked.
+ * One row: the glyph it is drawn with (none for the empty name), the words that name it, the muted
+ * words after them, the words that date it, and the hue the tail is drawn in. A row with an `id`
+ * is one the caller can be told about; a row without one is read and not clicked.
  */
 export type TickerRow = {
     id: string;
     glyph: string;
     label: string;
+    /** Words drawn after the name in muted text, such as the names of the people a line names. */
+    detail?: string;
     tail?: string;
     tone?: string;
     /**

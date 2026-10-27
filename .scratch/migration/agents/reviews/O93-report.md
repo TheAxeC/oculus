@@ -1,6 +1,6 @@
 # O93 report: people and Done on the dated lines, Remove on Focus rows, a Pillar filter, and the waiting line in red
 
-NOT done: one check is not green. The last run of `npm run test:quick -- --base 46657382a` printed `FAILED  vitest (202.5 s)` with one failure: `tests/state/sessions/terminal/latex-fast-failure.test.ts`, 'posts the failure notice of a build whose terminal ended while its list was read' (`expected [ [Function], [Function], [Function] ] to have a length of 2 but got 3`). That test's code is unchanged by this step (`git diff --quiet -- src/lib/state/sessions/latex/ src/lib/data/sources/config/settings/latex.ts tests/server/text.ts` prints "none of these changed"); it reaches a changed file only through a type import of `src/lib/data/model/index.ts`. The full run before it, over the same tree but for two comment lines in `src/lib/server/edit/writes.ts`, ended `test:quick: 276.8 s; every command passed`, and the test alone passed three times in a row (`Tests  1 passed (1)` each). My judgment is that it is a timing failure under the load of the full tier; the step did not run the tier again to get a green, so the reviewer's run decides. Everything else in the brief, the round-0 rulings and cases 47 and 48 is built; the looks (cases 28, 31-36, 45) are for landing.
+NOT done: nothing, after round 1. Every item of the brief, of the round-0 rulings and of round 1 is built, and round 1's verify 1 ends `test:quick: 285.2 s; every command passed` (section "Round 1"); the looks (cases 28, 31-36, 45) are for landing. The rest of this paragraph is the first run's state. The first run's last run of `npm run test:quick -- --base 46657382a` printed `FAILED  vitest (202.5 s)` with one failure: `tests/state/sessions/terminal/latex-fast-failure.test.ts`, 'posts the failure notice of a build whose terminal ended while its list was read' (`expected [ [Function], [Function], [Function] ] to have a length of 2 but got 3`). That test's code is unchanged by this step (`git diff --quiet -- src/lib/state/sessions/latex/ src/lib/data/sources/config/settings/latex.ts tests/server/text.ts` prints "none of these changed"); it reaches a changed file only through a type import of `src/lib/data/model/index.ts`. The full run before it, over the same tree but for two comment lines in `src/lib/server/edit/writes.ts`, ended `test:quick: 276.8 s; every command passed`, and the test alone passed three times in a row (`Tests  1 passed (1)` each). My judgment is that it is a timing failure under the load of the full tier; the step did not run the tier again to get a green, so the reviewer's run decides. Everything else in the brief, the round-0 rulings and cases 47 and 48 is built; the looks (cases 28, 31-36, 45) are for landing.
 
 ## Open items of the state file, verbatim
 
@@ -257,7 +257,7 @@ Folders: `tests/server/edit` 10 items, `tests/server/edit/deck` 2, `tests/routes
 - `src/lib/state/boards/person.ts`: `lineNames`, the names of a line's people in its record's hub, which the ticker and both card blocks draw.
 - `src/lib/server/edit/entry-edit/index.ts`: re-exports `peopleKeys` and the line editor's new parameters.
 - `src/lib/views/shared/forms/dated/PeoplePicks.svelte` (new): the three people picks, which `DatedForm.svelte` and `LineForm.svelte` both draw.
-- `src/lib/views/shared/forms/dated/line-save.ts` (new): `PEOPLE_FIELDS`, `changedPeople` and `saveLine`, the edit form's save both blocks run. It exists because `tests/checks/tree/duplication.test.ts` refused the save written twice in `Followups.svelte` and `Subtasks.svelte`, and because eslint cannot type an export of a component's module script (`no-unsafe-call` at `Followups.svelte:130` and `Subtasks.svelte:134` while `changedPeople` lived in `PeoplePicks.svelte`).
+- `src/lib/views/shared/forms/dated/line-save.ts` (new): `changedPeople` and `saveLine`, the edit form's save both blocks run, reading the people fields from `LINE_PEOPLE` of `data/shapes/shapes.ts` (round 1). It exists because `tests/checks/tree/duplication.test.ts` refused the save written twice in `Followups.svelte` and `Subtasks.svelte`, and because eslint cannot type an export of a component's module script (`no-unsafe-call` at `Followups.svelte:130` and `Subtasks.svelte:134` while `changedPeople` lived in `PeoplePicks.svelte`).
 - `tests/server/edit/writes-fixture.ts`: `Subject`, `SUBJECTS` and `fileOf`, which `writes.test.ts` and `lines.test.ts` both use.
 - `tests/routes/edit/write-fixture.ts`, `tests/routes/edit/undo/folder-undo.test.ts`, `tests/server/edit/lines.test.ts`, `tests/server/edit/deck/`: added by the round-0 rulings.
 - Lines outside a shared file's range, each base-numbered from `git diff -U0` hunk heads: `shapes.ts:20` (the model import); `collection/index.ts:23-27` (imports); `bodies.ts:13-15` (imports); `writes.ts:92` (import), `:474` (the `hubOf` helper) and the two comments at the line writes; `undo.ts:18` (head comment), `:75` (import), `:215` (`lineIndex`, `LINE_BLOCKS`, `lineUndo`) and `:512-524` (the line branches of `apply`); `writes.svelte.ts:44-63` (imports and the re-export list) and `:325-329`; `stores/shapes.ts` exports `LineWriter` inside its 211-217 range. The undo lines are the fix of the defect under "Judgment calls"; the rest are imports and helpers of the ranged code.
@@ -268,12 +268,12 @@ Folders: `tests/server/edit` 10 items, `tests/server/edit/deck` 2, `tests/routes
 - A line put back by an undo is written from its recorded fields in a fixed order (`do`, the date fields, `done`, the people), so a line whose fields stood in another order or were quoted by hand comes back with the same values in that order; the fixtures' lines come back byte for byte (w 17, w 20 and the undo rows).
 - `renderFlowMap` (`entry-edit/render.ts`) writes any list of texts in a flow line inline, `[a, b]`, through `renderFlowList`, not only the people fields; any other value is written by `flowScalar` as before.
 - The people of a line are drawn as their registry names in the line's record's hub, a key no hub holds as the key (a 62 `zed`), joined by `project.card.line_people_join`.
-- The line rule of item 7 is a third ticker build (`linePeopleRule` in `filter.ts`), made only while a self is named and Mine only or a role is set. Its cost was not measured.
+- The line rule of item 7 is a third ticker build (`linePeopleRule` in `filter.ts`), made only while a self is named and Mine only or a role is set. Its cost is measured in "Round 1", item 8.
 - A funding scheme's band card is read from the entries of the hub's funding file, not from the scheme records the Pillar rule filters, so `keptSnapshot` also keeps an entry of a funding registry file as its scheme is kept (`schemeEntryKeeps`); without it the band kept the card of a scheme the Pillar list hid (case 25).
 - `ListHead.svelte` takes the record's `target` and derives the record key and the hub from it, in place of `record` and `root` props, so both blocks hand it the same thing; the markup the duplication check refused at `Followups.svelte:161` and `Subtasks.svelte:170` was two attributes longer than the base's.
 - The two body shapes of the line writes are built by one helper (`lineWriteShape` in `bodies.ts`), each caller writing `kind: z.literal(...)` in the head it hands over, the form the list of recorded kinds (`tests/fixtures/kinds.ts`) reads; with the literal inside the helper, `history.kind_subtask` and `history.kind_followup` lost their reader in `keys.test.ts`.
-- The route and the client call the overloaded writers from two branches whose text reads alike (`setsPeople(...) ? write(...) : write(...)`), since each call picks one overload; a comment says so at `writes.ts:487-488`.
-- `src/lib/server/machine/runs/seeds/task-seed.ts` keeps its own `lineShape`, which keeps lines with a blank `do` on purpose; it is a reader of subtask lines outside the brief's three and was not changed.
+- The route calls each line writer once, through an overload over the union of the actions and values (round 1, item 7); the client's `writes.svelte.ts` sends both kinds through its one union call, `writeLine`.
+- `src/lib/server/machine/runs/seeds/task-seed.ts` reads a line through `checklistLineShape` of `data/shapes/shapes.ts` and keeps lines with a blank `do` (round 1, item 1).
 
 ## Host- or user-visible changes
 
@@ -287,6 +287,9 @@ Folders: `tests/server/edit` 10 items, `tests/server/edit/deck` 2, `tests/routes
 - The manifest editor's Follow-ups box leaves a done note out.
 - The schema: a follow-up note may carry `done` and the three people fields, and a subtask line the three people fields, with no finding; a `done` that is no flag gives a type finding.
 - `docs/HELP.md` lines 282, 285, 294 and 296 and `docs/apps.md` lines 439-442 say the above.
+- History, the undo of a subtask Del or a follow-up Del of a line that is not the last. Before: the line came back at the end of the block, and the line that had moved up into its place was overwritten and lost (base run b 18: "test it" lost, `"asBefore":false`; a follow-up Del was refused, b 21). After: the line comes back in its place and the file is as it was (w 17, w 20, `"asBefore":true`).
+- A record card's Subtasks block for an entry whose line holds a `do` or a `deadline` that is not text. Before (b 5): a `do` of `3` was drawn as the line "3", a `do` of `[x, y]` as "x | y", and a `deadline` of `20261201` as a deadline tag "20261201". After (w 5): a line whose `do` is not text is not drawn, as on the Focus board, and a `deadline` that is not text draws no tag. The orchestrator's count is that the research hub holds no such deadline: `grep -rnE "deadline: *[0-9]+ *[,}]|deadline: *[0-9]+$" --include='*.yml' --exclude=local.yml` over the hub prints nothing (not run by me; the hub is outside this step's reads).
+- Focus, the Filter button's tip. Before: "show only what the ticked roles, tiers and hubs hold". After: "show only what the ticked roles, tiers, pillars and hubs hold" (`config/text/views/boards/focus.yml`, `filter_tip`).
 
 ## Changed lines of existing assertions, allow lists and predicates
 
@@ -661,88 +664,88 @@ it('the glyph', () => {
 Its output, whole (the vitest pass mark written `<check mark>`; `<scratch>` stands for the scratchpad path above):
 
 ```
-1	
-2	 RUN  v4.1.11 /Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O93
-3	
-4	stdout | ../../../../../../..<scratch>/o93/cases.test.ts > the writes
-5	case 1: {"answer":{"found":true,"changed":["followup"],"refused":[]},"file":""}
-6	case 2: {"answer":{"found":true,"changed":[],"refused":[]},"file":"followup:\n  - { do: ask Ann, done: true }\n"}
-7	case 3 two: {"answer":{"found":true,"changed":[],"refused":[]},"file":"followup:\n  - { do: ask Ann }\n  - { do: ask Bob }\n"}
-8	case 3 one: {"answer":{"found":true,"changed":[],"refused":[]},"file":"followup:\n  - { do: ask Ann }\n"}
-9	case 4 set: {"answer":"threw: TypeError: value?.trim is not a function","file":"followup:\n  - { do: ask Ann }\n"}
-10	case 5: {"answer":{"found":true,"changed":[],"refused":[]},"file":"subtasks:\n  - { do: write it, deadline: 2026-12-01 }\n"}
-11	case 6: {"answer":{"found":true,"changed":["followup"],"refused":[]},"file":"followup:\n  - { do: x }\n"}
-12	case 40: {"answer":"threw: TypeError: value?.trim is not a function","file":"followup:\n  - { do: ask Ann }\n"}
-13	case 41: {"answer":"threw: TypeError: value?.trim is not a function","file":"followup:\n  - { do: ask Ann }\n"}
-14	case 42 followup: {"answer":{"found":true,"changed":[],"refused":[]},"file":"followup:\n  - { do: ask Ann }\n"}
-15	case 42 subtask: {"answer":{"found":true,"changed":[],"refused":[]},"file":"subtasks:\n  - { do: write it }\n"}
-16	case 46 followup gone: {"answer":{"found":true,"changed":[],"refused":[{"field":"delete","reason":"there is no follow-up note 1"}]},"file":"followup:\n  - { do: ask Bob }\n"}
-17	case 46 subtask gone: {"answer":{"found":true,"changed":[],"refused":[{"field":"subtasks","reason":"there is no subtask 1"}]},"file":"subtasks:\n  - { do: ask Bob }\n"}
-18	case 46 subtask shifted: {"answer":{"found":true,"changed":["subtasks"],"refused":[]},"file":"subtasks:\n  - { do: ask Cy }\n"}
-19	case 46 followup shifted: {"answer":{"found":true,"changed":[],"refused":[]},"file":"followup:\n  - { do: ask Bob }\n  - { do: ask Cy }\n"}
-20	case 8 done records: [{"file":"/var/folders/7r/49ks4w4558vcr57tvb9svmph0000gp/T/oculus-writes-NrgHWW/projects/manuscripts/alpha/project.yml","key":"alpha","field":"0","before":{"do":"ask Ann"},"after":null,"undo":"delete"}]
-21	case 8 delete records: []
-22	
-23	stdout | ../../../../../../..<scratch>/o93/cases.test.ts > the request bodies
-24	case 7 subtask lead "ann": null
-25	case 7 followup lead "ann": null
-26	case 7 subtask lead 3: null
-27	case 7 followup lead 3: null
-28	case 7 subtask lead ["ann",4]: null
-29	case 7 followup lead ["ann",4]: null
-30	case 7 subtask lead [""]: null
-31	case 7 followup lead [""]: null
-32	case 7 subtask lead ["ann"]: null
-33	case 7 followup lead ["ann"]: null
-34	
-35	stdout | ../../../../../../..<scratch>/o93/cases.test.ts > the readers
-36	case 10: [{"key":"0","do":"a"},{"key":"1","do":"b"}]
-37	case 11 subtasks: [{"key":"0","do":"a","done":false}]
-38	case 11 entrySubtasks: [{"key":"0","do":"a","done":false}]
-39	case 11 readers apart, subtasks: [{"key":"2","do":"z","done":false}]
-40	case 11 readers apart, entrySubtasks: [{"key":"0","do":"3","done":false},{"key":"1","do":"x | y","done":false},{"key":"2","do":"z","done":false,"deadline":"20261201"}]
-41	
-42	stdout | ../../../../../../..<scratch>/o93/cases.test.ts > the ticker and the Focus filter
-43	ids: {"projects":["lab:pann","lab:pbob","lab:pnone"],"people":["lab:ann","lab:bob"],"pillars":["lab:a","lab:b"],"pillarIds":[["lab:pann",["lab:a"]],["lab:pbob",["lab:a","lab:b"]],["lab:pnone",[]]]}
-44	case 13 tasks: [{"label":"pann - sup","target":{"kind":"followup","id":"lab:pann","note":"0"},"root":"lab"},{"label":"pann - led","target":{"kind":"followup","id":"lab:pann","note":"1"},"root":"lab"},{"label":"pann - closed","target":{"kind":"followup","id":"lab:pann","note":"2"},"root":"lab"},{"label":"pann: theirs","target":{"kind":"manifest","id":"lab:pann","subtask":"0"},"root":"lab"},{"label":"pann: plain","target":{"kind":"manifest","id":"lab:pann","subtask":"1"},"root":"lab"},{"label":"pbob: mine","target":{"kind":"manifest","id":"lab:pbob","subtask":"0"},"root":"lab"},{"label":"pbob: ghost","target":{"kind":"manifest","id":"lab:pbob","subtask":"1"},"root":"lab"},{"label":"pnone: free","target":{"kind":"manifest","id":"lab:pnone","subtask":"0"},"root":"lab"},{"label":"A talk: slides","target":{"kind":"entry","id":"lab:A talk","collection":"events","subtask":"0"},"root":"lab"},{"label":"A task: sub of task","target":{"kind":"entry","id":"lab:t1","collection":"tasks","subtask":"0"},"root":"lab"},{"label":"A task","target":{"kind":"entry","id":"lab:t1","collection":"tasks","statuses":["todo","doing","done"],"task":true},"root":"lab"}]
-45	case 11 ticker entry lines: [{"label":"A talk: slides","target":{"kind":"entry","id":"lab:A talk","collection":"events","subtask":"0"},"root":"lab","item":{"kind":"","glyph":"pin","label":"A talk: slides","days":null,"snoozed":false,"entry":"events","root":"lab","subtaskDo":"slides","target":{"kind":"entry","id":"lab:A talk","collection":"events","subtask":"0"}}},{"label":"A task: sub of task","target":{"kind":"entry","id":"lab:t1","collection":"tasks","subtask":"0"},"root":"lab","item":{"kind":"","glyph":"pin","label":"A task: sub of task","days":null,"snoozed":false,"entry":"tasks","root":"lab","subtaskDo":"sub of task","target":{"kind":"entry","id":"lab:t1","collection":"tasks","subtask":"0"}}},{"label":"A task","target":{"kind":"entry","id":"lab:t1","collection":"tasks","statuses":["todo","doing","done"],"task":true},"root":"lab","item":{"kind":"task","glyph":"tasks","label":"A task","days":null,"snoozed":false,"entry":"tasks","status":"todo","root":"lab","target":{"kind":"entry","id":"lab:t1","collection":"tasks","statuses":["todo","doing","done"],"task":true}}}]
-46	case 17/19 mine: {"tasks":["pann - sup","pann - led","pann - closed","pann: theirs","pann: plain","pnone: free","A talk: slides","A task: sub of task","A task"],"lanes":["lab:pann","lab:pnone"],"hidden":2,"hides":true,"mineHides":true}
-47	case 17/19 all: {"tasks":["pann - sup","pann - led","pann - closed","pann: theirs","pann: plain","pbob: mine","pbob: ghost","pnone: free","A talk: slides","A task: sub of task","A task"],"lanes":["lab:pann","lab:pbob","lab:pnone"],"hidden":0,"hides":false,"mineHides":true}
-48	case 18 supervisor unticked: {"tasks":["pann - sup","pann - led","pann - closed","pann: theirs","pann: plain","pbob: mine","pbob: ghost","pnone: free","A talk: slides","A task: sub of task","A task"],"lanes":["lab:pann","lab:pbob","lab:pnone"],"hidden":0,"hides":false,"mineHides":true}
-49	case 20 tier unticked: {"tasks":["A talk: slides","A task: sub of task","A task"],"lanes":[],"hidden":8,"hides":true,"mineHides":true}
-50	case 22/26 pillar a unticked: {"tasks":["pann - sup","pann - led","pann - closed","pann: theirs","pann: plain","pbob: mine","pbob: ghost","pnone: free","A talk: slides","A task: sub of task","A task"],"lanes":["lab:pann","lab:pbob","lab:pnone"],"hidden":0,"hides":false,"mineHides":true}
-51	case 24 every pillar unticked: {"tasks":["pann - sup","pann - led","pann - closed","pann: theirs","pann: plain","pbob: mine","pbob: ghost","pnone: free","A talk: slides","A task: sub of task","A task"],"lanes":["lab:pann","lab:pbob","lab:pnone"],"hidden":0,"hides":false,"mineHides":true}
-52	case 27 read: [{"mine":true,"roles":[],"tiers":[],"hubs":[]},{"mine":true,"roles":[],"tiers":[],"hubs":[]},{"mine":true,"roles":[],"tiers":[],"hubs":[]}]
-53	case 14 followup actions: ["done"]
-54	case 15 task actions: ["status:doing","status:done","agent","snooze:7","snooze:30","snooze:hide"]
-55	case 16 subtask actions: ["done","agent","snooze:7","snooze:30","snooze:hide","del"]
-56	case 14/15 writes sent: [[{"id":"lab:pann"},"0","done"],["tasks","lab:t1",{"snooze":"true"}]]
-57	case 29 row: {"id":"tmanifest::lab%3Apbob:0","glyph":"pin","label":"pbob: mine","tail":"","mark":"lab","actions":[{"id":"done","label":"done","title":"mark done"},{"id":"agent","label":"agent","title":"open the composer seeded with this task, in its folder"},{"id":"snooze:7","label":"1w","title":"snooze 1w"},{"id":"snooze:30","label":"1mo","title":"snooze 1mo"},{"id":"snooze:hide","label":"hide","title":"snooze hide"},{"id":"del","label":"del","title":"delete subtask"}],"plain":false}
-58	case 44 task row: [{"id":"status:doing","label":"doing","title":"the file has unsaved text","disabled":true},{"id":"status:done","label":"done","title":"the file has unsaved text","disabled":true},{"id":"agent","label":"agent","title":"open the composer seeded with this task, in its folder"},{"id":"snooze:7","label":"1w","title":"the file has unsaved text","disabled":true},{"id":"snooze:30","label":"1mo","title":"the file has unsaved text","disabled":true},{"id":"snooze:hide","label":"hide","title":"the file has unsaved text","disabled":true}]
-59	
-60	 <check mark> ../../../../../../..<scratch>/o93/cases.test.ts > the writes 92ms
-61	 <check mark> ../../../../../../..<scratch>/o93/cases.test.ts > the request bodies 1ms
-62	 <check mark> ../../../../../../..<scratch>/o93/cases.test.ts > the readers 1ms
-63	 <check mark> ../../../../../../..<scratch>/o93/cases.test.ts > the ticker and the Focus filter 91ms
-64	stdout | ../../../../../../..<scratch>/o93/cases.test.ts > two hubs
-65	case 43: {"lanes":["home:pann","lab:pann","home:pbob","lab:pbob","home:pnone","lab:pnone"],"tasks":["home:pann - sup","home:pann - led","home:pann - closed","lab:pann - sup","lab:pann - led","lab:pann - closed","home:pann: theirs","home:pann: plain","home:pbob: mine","home:pbob: ghost","home:pnone: free","lab:pann: theirs","lab:pann: plain","lab:pbob: mine","lab:pbob: ghost","lab:pnone: free","home:A talk: slides","home:A task: sub of task","lab:A talk: slides","lab:A task: sub of task","home:A task","lab:A task"]}
-66	
-67	 <check mark> ../../../../../../..<scratch>/o93/cases.test.ts > two hubs 290ms
-68	stdout | ../../../../../../..<scratch>/o93/cases.test.ts > the hub schema
-69	case 12 { do: a, done: true, lead: [ann] }: [["followup[0].done",6,"key followup[0].done is not declared by the schema of this file"],["followup[0].lead",6,"key followup[0].lead is not declared by the schema of this file"]]
-70	case 12 { do: a, done: maybe }: [["followup[0].done",6,"key followup[0].done is not declared by the schema of this file"]]
-71	
-72	stdout | ../../../../../../..<scratch>/o93/cases.test.ts > the glyph
-73	case 30 palette waiting rows: []
-74	
-75	 <check mark> ../../../../../../..<scratch>/o93/cases.test.ts > the hub schema 46ms
-76	 <check mark> ../../../../../../..<scratch>/o93/cases.test.ts > the glyph 1ms
-77	
-78	 Test Files  1 passed (1)
-79	      Tests  7 passed (7)
-80	   Start at  04:15:57
-81	   Duration  4.28s (transform 1.23s, setup 0ms, import 3.66s, tests 521ms, environment 0ms)
-82	
+1<tab>
+2<tab> RUN  v4.1.11 /Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O93
+3<tab>
+4<tab>stdout | ../../../../../../..<scratch>/o93/cases.test.ts > the writes
+5<tab>case 1: {"answer":{"found":true,"changed":["followup"],"refused":[]},"file":""}
+6<tab>case 2: {"answer":{"found":true,"changed":[],"refused":[]},"file":"followup:\n  - { do: ask Ann, done: true }\n"}
+7<tab>case 3 two: {"answer":{"found":true,"changed":[],"refused":[]},"file":"followup:\n  - { do: ask Ann }\n  - { do: ask Bob }\n"}
+8<tab>case 3 one: {"answer":{"found":true,"changed":[],"refused":[]},"file":"followup:\n  - { do: ask Ann }\n"}
+9<tab>case 4 set: {"answer":"threw: TypeError: value?.trim is not a function","file":"followup:\n  - { do: ask Ann }\n"}
+10<tab>case 5: {"answer":{"found":true,"changed":[],"refused":[]},"file":"subtasks:\n  - { do: write it, deadline: 2026-12-01 }\n"}
+11<tab>case 6: {"answer":{"found":true,"changed":["followup"],"refused":[]},"file":"followup:\n  - { do: x }\n"}
+12<tab>case 40: {"answer":"threw: TypeError: value?.trim is not a function","file":"followup:\n  - { do: ask Ann }\n"}
+13<tab>case 41: {"answer":"threw: TypeError: value?.trim is not a function","file":"followup:\n  - { do: ask Ann }\n"}
+14<tab>case 42 followup: {"answer":{"found":true,"changed":[],"refused":[]},"file":"followup:\n  - { do: ask Ann }\n"}
+15<tab>case 42 subtask: {"answer":{"found":true,"changed":[],"refused":[]},"file":"subtasks:\n  - { do: write it }\n"}
+16<tab>case 46 followup gone: {"answer":{"found":true,"changed":[],"refused":[{"field":"delete","reason":"there is no follow-up note 1"}]},"file":"followup:\n  - { do: ask Bob }\n"}
+17<tab>case 46 subtask gone: {"answer":{"found":true,"changed":[],"refused":[{"field":"subtasks","reason":"there is no subtask 1"}]},"file":"subtasks:\n  - { do: ask Bob }\n"}
+18<tab>case 46 subtask shifted: {"answer":{"found":true,"changed":["subtasks"],"refused":[]},"file":"subtasks:\n  - { do: ask Cy }\n"}
+19<tab>case 46 followup shifted: {"answer":{"found":true,"changed":[],"refused":[]},"file":"followup:\n  - { do: ask Bob }\n  - { do: ask Cy }\n"}
+20<tab>case 8 done records: [{"file":"/var/folders/7r/49ks4w4558vcr57tvb9svmph0000gp/T/oculus-writes-NrgHWW/projects/manuscripts/alpha/project.yml","key":"alpha","field":"0","before":{"do":"ask Ann"},"after":null,"undo":"delete"}]
+21<tab>case 8 delete records: []
+22<tab>
+23<tab>stdout | ../../../../../../..<scratch>/o93/cases.test.ts > the request bodies
+24<tab>case 7 subtask lead "ann": null
+25<tab>case 7 followup lead "ann": null
+26<tab>case 7 subtask lead 3: null
+27<tab>case 7 followup lead 3: null
+28<tab>case 7 subtask lead ["ann",4]: null
+29<tab>case 7 followup lead ["ann",4]: null
+30<tab>case 7 subtask lead [""]: null
+31<tab>case 7 followup lead [""]: null
+32<tab>case 7 subtask lead ["ann"]: null
+33<tab>case 7 followup lead ["ann"]: null
+34<tab>
+35<tab>stdout | ../../../../../../..<scratch>/o93/cases.test.ts > the readers
+36<tab>case 10: [{"key":"0","do":"a"},{"key":"1","do":"b"}]
+37<tab>case 11 subtasks: [{"key":"0","do":"a","done":false}]
+38<tab>case 11 entrySubtasks: [{"key":"0","do":"a","done":false}]
+39<tab>case 11 readers apart, subtasks: [{"key":"2","do":"z","done":false}]
+40<tab>case 11 readers apart, entrySubtasks: [{"key":"0","do":"3","done":false},{"key":"1","do":"x | y","done":false},{"key":"2","do":"z","done":false,"deadline":"20261201"}]
+41<tab>
+42<tab>stdout | ../../../../../../..<scratch>/o93/cases.test.ts > the ticker and the Focus filter
+43<tab>ids: {"projects":["lab:pann","lab:pbob","lab:pnone"],"people":["lab:ann","lab:bob"],"pillars":["lab:a","lab:b"],"pillarIds":[["lab:pann",["lab:a"]],["lab:pbob",["lab:a","lab:b"]],["lab:pnone",[]]]}
+44<tab>case 13 tasks: [{"label":"pann - sup","target":{"kind":"followup","id":"lab:pann","note":"0"},"root":"lab"},{"label":"pann - led","target":{"kind":"followup","id":"lab:pann","note":"1"},"root":"lab"},{"label":"pann - closed","target":{"kind":"followup","id":"lab:pann","note":"2"},"root":"lab"},{"label":"pann: theirs","target":{"kind":"manifest","id":"lab:pann","subtask":"0"},"root":"lab"},{"label":"pann: plain","target":{"kind":"manifest","id":"lab:pann","subtask":"1"},"root":"lab"},{"label":"pbob: mine","target":{"kind":"manifest","id":"lab:pbob","subtask":"0"},"root":"lab"},{"label":"pbob: ghost","target":{"kind":"manifest","id":"lab:pbob","subtask":"1"},"root":"lab"},{"label":"pnone: free","target":{"kind":"manifest","id":"lab:pnone","subtask":"0"},"root":"lab"},{"label":"A talk: slides","target":{"kind":"entry","id":"lab:A talk","collection":"events","subtask":"0"},"root":"lab"},{"label":"A task: sub of task","target":{"kind":"entry","id":"lab:t1","collection":"tasks","subtask":"0"},"root":"lab"},{"label":"A task","target":{"kind":"entry","id":"lab:t1","collection":"tasks","statuses":["todo","doing","done"],"task":true},"root":"lab"}]
+45<tab>case 11 ticker entry lines: [{"label":"A talk: slides","target":{"kind":"entry","id":"lab:A talk","collection":"events","subtask":"0"},"root":"lab","item":{"kind":"","glyph":"pin","label":"A talk: slides","days":null,"snoozed":false,"entry":"events","root":"lab","subtaskDo":"slides","target":{"kind":"entry","id":"lab:A talk","collection":"events","subtask":"0"}}},{"label":"A task: sub of task","target":{"kind":"entry","id":"lab:t1","collection":"tasks","subtask":"0"},"root":"lab","item":{"kind":"","glyph":"pin","label":"A task: sub of task","days":null,"snoozed":false,"entry":"tasks","root":"lab","subtaskDo":"sub of task","target":{"kind":"entry","id":"lab:t1","collection":"tasks","subtask":"0"}}},{"label":"A task","target":{"kind":"entry","id":"lab:t1","collection":"tasks","statuses":["todo","doing","done"],"task":true},"root":"lab","item":{"kind":"task","glyph":"tasks","label":"A task","days":null,"snoozed":false,"entry":"tasks","status":"todo","root":"lab","target":{"kind":"entry","id":"lab:t1","collection":"tasks","statuses":["todo","doing","done"],"task":true}}}]
+46<tab>case 17/19 mine: {"tasks":["pann - sup","pann - led","pann - closed","pann: theirs","pann: plain","pnone: free","A talk: slides","A task: sub of task","A task"],"lanes":["lab:pann","lab:pnone"],"hidden":2,"hides":true,"mineHides":true}
+47<tab>case 17/19 all: {"tasks":["pann - sup","pann - led","pann - closed","pann: theirs","pann: plain","pbob: mine","pbob: ghost","pnone: free","A talk: slides","A task: sub of task","A task"],"lanes":["lab:pann","lab:pbob","lab:pnone"],"hidden":0,"hides":false,"mineHides":true}
+48<tab>case 18 supervisor unticked: {"tasks":["pann - sup","pann - led","pann - closed","pann: theirs","pann: plain","pbob: mine","pbob: ghost","pnone: free","A talk: slides","A task: sub of task","A task"],"lanes":["lab:pann","lab:pbob","lab:pnone"],"hidden":0,"hides":false,"mineHides":true}
+49<tab>case 20 tier unticked: {"tasks":["A talk: slides","A task: sub of task","A task"],"lanes":[],"hidden":8,"hides":true,"mineHides":true}
+50<tab>case 22/26 pillar a unticked: {"tasks":["pann - sup","pann - led","pann - closed","pann: theirs","pann: plain","pbob: mine","pbob: ghost","pnone: free","A talk: slides","A task: sub of task","A task"],"lanes":["lab:pann","lab:pbob","lab:pnone"],"hidden":0,"hides":false,"mineHides":true}
+51<tab>case 24 every pillar unticked: {"tasks":["pann - sup","pann - led","pann - closed","pann: theirs","pann: plain","pbob: mine","pbob: ghost","pnone: free","A talk: slides","A task: sub of task","A task"],"lanes":["lab:pann","lab:pbob","lab:pnone"],"hidden":0,"hides":false,"mineHides":true}
+52<tab>case 27 read: [{"mine":true,"roles":[],"tiers":[],"hubs":[]},{"mine":true,"roles":[],"tiers":[],"hubs":[]},{"mine":true,"roles":[],"tiers":[],"hubs":[]}]
+53<tab>case 14 followup actions: ["done"]
+54<tab>case 15 task actions: ["status:doing","status:done","agent","snooze:7","snooze:30","snooze:hide"]
+55<tab>case 16 subtask actions: ["done","agent","snooze:7","snooze:30","snooze:hide","del"]
+56<tab>case 14/15 writes sent: [[{"id":"lab:pann"},"0","done"],["tasks","lab:t1",{"snooze":"true"}]]
+57<tab>case 29 row: {"id":"tmanifest::lab%3Apbob:0","glyph":"pin","label":"pbob: mine","tail":"","mark":"lab","actions":[{"id":"done","label":"done","title":"mark done"},{"id":"agent","label":"agent","title":"open the composer seeded with this task, in its folder"},{"id":"snooze:7","label":"1w","title":"snooze 1w"},{"id":"snooze:30","label":"1mo","title":"snooze 1mo"},{"id":"snooze:hide","label":"hide","title":"snooze hide"},{"id":"del","label":"del","title":"delete subtask"}],"plain":false}
+58<tab>case 44 task row: [{"id":"status:doing","label":"doing","title":"the file has unsaved text","disabled":true},{"id":"status:done","label":"done","title":"the file has unsaved text","disabled":true},{"id":"agent","label":"agent","title":"open the composer seeded with this task, in its folder"},{"id":"snooze:7","label":"1w","title":"the file has unsaved text","disabled":true},{"id":"snooze:30","label":"1mo","title":"the file has unsaved text","disabled":true},{"id":"snooze:hide","label":"hide","title":"the file has unsaved text","disabled":true}]
+59<tab>
+60<tab> <check mark> ../../../../../../..<scratch>/o93/cases.test.ts > the writes 92ms
+61<tab> <check mark> ../../../../../../..<scratch>/o93/cases.test.ts > the request bodies 1ms
+62<tab> <check mark> ../../../../../../..<scratch>/o93/cases.test.ts > the readers 1ms
+63<tab> <check mark> ../../../../../../..<scratch>/o93/cases.test.ts > the ticker and the Focus filter 91ms
+64<tab>stdout | ../../../../../../..<scratch>/o93/cases.test.ts > two hubs
+65<tab>case 43: {"lanes":["home:pann","lab:pann","home:pbob","lab:pbob","home:pnone","lab:pnone"],"tasks":["home:pann - sup","home:pann - led","home:pann - closed","lab:pann - sup","lab:pann - led","lab:pann - closed","home:pann: theirs","home:pann: plain","home:pbob: mine","home:pbob: ghost","home:pnone: free","lab:pann: theirs","lab:pann: plain","lab:pbob: mine","lab:pbob: ghost","lab:pnone: free","home:A talk: slides","home:A task: sub of task","lab:A talk: slides","lab:A task: sub of task","home:A task","lab:A task"]}
+66<tab>
+67<tab> <check mark> ../../../../../../..<scratch>/o93/cases.test.ts > two hubs 290ms
+68<tab>stdout | ../../../../../../..<scratch>/o93/cases.test.ts > the hub schema
+69<tab>case 12 { do: a, done: true, lead: [ann] }: [["followup[0].done",6,"key followup[0].done is not declared by the schema of this file"],["followup[0].lead",6,"key followup[0].lead is not declared by the schema of this file"]]
+70<tab>case 12 { do: a, done: maybe }: [["followup[0].done",6,"key followup[0].done is not declared by the schema of this file"]]
+71<tab>
+72<tab>stdout | ../../../../../../..<scratch>/o93/cases.test.ts > the glyph
+73<tab>case 30 palette waiting rows: []
+74<tab>
+75<tab> <check mark> ../../../../../../..<scratch>/o93/cases.test.ts > the hub schema 46ms
+76<tab> <check mark> ../../../../../../..<scratch>/o93/cases.test.ts > the glyph 1ms
+77<tab>
+78<tab> Test Files  1 passed (1)
+79<tab>      Tests  7 passed (7)
+80<tab>   Start at  04:15:57
+81<tab>   Duration  4.28s (transform 1.23s, setup 0ms, import 3.66s, tests 521ms, environment 0ms)
+82<tab>
 ```
 
 ## The case-run programs, round 0 and last run
@@ -932,75 +935,75 @@ it('the undo of a write that takes out a line before another', async () => {
 The base run's output, whole ("b N"; `<scratch>` as above, the pass mark written `<check mark>`):
 
 ```
-1	
-2	 RUN  v4.1.11 <scratch>/o93/base
-3	
-4	stdout | ../both.test.ts > case 47: the lines of an entry whose subtasks hold a number and a list
-5	case 47 entry card lines: [{"key":"0","do":"3","done":false},{"key":"1","do":"x | y","done":false},{"key":"2","do":"z","done":false,"deadline":"20261201"}]
-6	case 47 Focus rows of the entry: ["A talk: z"]
-7	
-8	stdout | ../both.test.ts > case 48: a Remove press on a task line, before the question is answered
-9	case 48 line: A task
-10	case 48 removeAsked: no such export
-11	
-12	stdout | ../both.test.ts > case 48: a Remove press on a task line, before the question is answered
-13	case 48 write calls: [["writeEntry","tasks","lab:t1",{"snooze":"true"}]]
-14	
-15	 <check mark> ../both.test.ts > case 47: the lines of an entry whose subtasks hold a number and a list 98ms
-16	 <check mark> ../both.test.ts > case 48: a Remove press on a task line, before the question is answered 36ms
-17	stdout | ../both.test.ts > the undo of a write that takes out a line before another
-18	undo, subtask delete 0: {"status":200,"written":"tier: personal\nstage: building\ntitle: \"A repository\"\nsubtasks:\n  - { do: test it }\nfollowup:\n  - { do: ask about the tool, supervisors: [ann] }\n  - { do: chase the reply }\n","record":{"field":"0","before":{"do":"read it","lead":["ann"]},"after":{"do":"test it"},"undo":"field"},"undoStatus":200,"asBefore":false,"after":"tier: personal\nstage: building\ntitle: \"A repository\"\nsubtasks:\n  - { do: read it, lead: [\"ann\"] }\nfollowup:\n  - { do: ask about the tool, supervisors: [ann] }\n  - { do: chase the reply }\n"}
-19	
-20	stdout | ../both.test.ts > the undo of a write that takes out a line before another
-21	undo, followup delete 0: {"status":400,"file":"unchanged"}
-22	
-23	stdout | ../both.test.ts > the undo of a write that takes out a line before another
-24	undo, followup done 0: {"status":200,"written":"tier: personal\nstage: building\ntitle: \"A repository\"\nsubtasks:\n  - { do: read it, lead: [ann] }\n  - { do: test it }\nfollowup:\n  - { do: chase the reply }\n","record":{"field":"0","before":{"do":"ask about the tool","supervisors":["ann"]},"after":{"do":"chase the reply"},"undo":"field"},"undoStatus":200,"asBefore":false,"after":"tier: personal\nstage: building\ntitle: \"A repository\"\nsubtasks:\n  - { do: read it, lead: [ann] }\n  - { do: test it }\nfollowup:\n  - { do: ask about the tool, supervisors: [\"ann\"] }\n"}
-25	
-26	 <check mark> ../both.test.ts > the undo of a write that takes out a line before another 1657ms
-27	
-28	 Test Files  1 passed (1)
-29	      Tests  3 passed (3)
-30	   Start at  05:43:49
-31	   Duration  6.88s (transform 1.97s, setup 0ms, import 4.98s, tests 1.79s, environment 0ms)
-32	
+1<tab>
+2<tab> RUN  v4.1.11 <scratch>/o93/base
+3<tab>
+4<tab>stdout | ../both.test.ts > case 47: the lines of an entry whose subtasks hold a number and a list
+5<tab>case 47 entry card lines: [{"key":"0","do":"3","done":false},{"key":"1","do":"x | y","done":false},{"key":"2","do":"z","done":false,"deadline":"20261201"}]
+6<tab>case 47 Focus rows of the entry: ["A talk: z"]
+7<tab>
+8<tab>stdout | ../both.test.ts > case 48: a Remove press on a task line, before the question is answered
+9<tab>case 48 line: A task
+10<tab>case 48 removeAsked: no such export
+11<tab>
+12<tab>stdout | ../both.test.ts > case 48: a Remove press on a task line, before the question is answered
+13<tab>case 48 write calls: [["writeEntry","tasks","lab:t1",{"snooze":"true"}]]
+14<tab>
+15<tab> <check mark> ../both.test.ts > case 47: the lines of an entry whose subtasks hold a number and a list 98ms
+16<tab> <check mark> ../both.test.ts > case 48: a Remove press on a task line, before the question is answered 36ms
+17<tab>stdout | ../both.test.ts > the undo of a write that takes out a line before another
+18<tab>undo, subtask delete 0: {"status":200,"written":"tier: personal\nstage: building\ntitle: \"A repository\"\nsubtasks:\n  - { do: test it }\nfollowup:\n  - { do: ask about the tool, supervisors: [ann] }\n  - { do: chase the reply }\n","record":{"field":"0","before":{"do":"read it","lead":["ann"]},"after":{"do":"test it"},"undo":"field"},"undoStatus":200,"asBefore":false,"after":"tier: personal\nstage: building\ntitle: \"A repository\"\nsubtasks:\n  - { do: read it, lead: [\"ann\"] }\nfollowup:\n  - { do: ask about the tool, supervisors: [ann] }\n  - { do: chase the reply }\n"}
+19<tab>
+20<tab>stdout | ../both.test.ts > the undo of a write that takes out a line before another
+21<tab>undo, followup delete 0: {"status":400,"file":"unchanged"}
+22<tab>
+23<tab>stdout | ../both.test.ts > the undo of a write that takes out a line before another
+24<tab>undo, followup done 0: {"status":200,"written":"tier: personal\nstage: building\ntitle: \"A repository\"\nsubtasks:\n  - { do: read it, lead: [ann] }\n  - { do: test it }\nfollowup:\n  - { do: chase the reply }\n","record":{"field":"0","before":{"do":"ask about the tool","supervisors":["ann"]},"after":{"do":"chase the reply"},"undo":"field"},"undoStatus":200,"asBefore":false,"after":"tier: personal\nstage: building\ntitle: \"A repository\"\nsubtasks:\n  - { do: read it, lead: [ann] }\n  - { do: test it }\nfollowup:\n  - { do: ask about the tool, supervisors: [\"ann\"] }\n"}
+25<tab>
+26<tab> <check mark> ../both.test.ts > the undo of a write that takes out a line before another 1657ms
+27<tab>
+28<tab> Test Files  1 passed (1)
+29<tab>      Tests  3 passed (3)
+30<tab>   Start at  05:43:49
+31<tab>   Duration  6.88s (transform 1.97s, setup 0ms, import 4.98s, tests 1.79s, environment 0ms)
+32<tab>
 ```
 
 The worktree run's output, whole ("w N"):
 
 ```
-1	
-2	 RUN  v4.1.11 /Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O93
-3	
-4	stdout | <scratch>/o93/both.test.ts > case 47: the lines of an entry whose subtasks hold a number and a list
-5	case 47 entry card lines: [{"key":"2","do":"z","done":false}]
-6	case 47 Focus rows of the entry: ["A talk: z"]
-7	
-8	 <check mark> <scratch>/o93/both.test.ts > case 47: the lines of an entry whose subtasks hold a number and a list 300ms
-9	stdout | <scratch>/o93/both.test.ts > case 48: a Remove press on a task line, before the question is answered
-10	case 48 line: A task
-11	case 48 removeAsked: {"collection":"tasks","id":"lab:t1"}
-12	
-13	stdout | <scratch>/o93/both.test.ts > case 48: a Remove press on a task line, before the question is answered
-14	case 48 write calls: []
-15	
-16	stdout | <scratch>/o93/both.test.ts > the undo of a write that takes out a line before another
-17	undo, subtask delete 0: {"status":200,"written":"tier: personal\nstage: building\ntitle: \"A repository\"\nsubtasks:\n  - { do: test it }\nfollowup:\n  - { do: ask about the tool, supervisors: [ann] }\n  - { do: chase the reply }\n","record":{"field":"0","before":{"do":"read it","lead":["ann"]},"after":{"do":"test it"},"undo":"delete"},"undoStatus":200,"asBefore":true,"after":"tier: personal\nstage: building\ntitle: \"A repository\"\nsubtasks:\n  - { do: read it, lead: [ann] }\n  - { do: test it }\nfollowup:\n  - { do: ask about the tool, supervisors: [ann] }\n  - { do: chase the reply }\n"}
-18	
-19	stdout | <scratch>/o93/both.test.ts > the undo of a write that takes out a line before another
-20	undo, followup delete 0: {"status":200,"written":"tier: personal\nstage: building\ntitle: \"A repository\"\nsubtasks:\n  - { do: read it, lead: [ann] }\n  - { do: test it }\nfollowup:\n  - { do: chase the reply }\n","record":{"field":"0","before":{"do":"ask about the tool","supervisors":["ann"]},"after":{"do":"chase the reply"},"undo":"delete"},"undoStatus":200,"asBefore":true,"after":"tier: personal\nstage: building\ntitle: \"A repository\"\nsubtasks:\n  - { do: read it, lead: [ann] }\n  - { do: test it }\nfollowup:\n  - { do: ask about the tool, supervisors: [ann] }\n  - { do: chase the reply }\n"}
-21	
-22	stdout | <scratch>/o93/both.test.ts > the undo of a write that takes out a line before another
-23	undo, followup done 0: {"status":200,"written":"tier: personal\nstage: building\ntitle: \"A repository\"\nsubtasks:\n  - { do: read it, lead: [ann] }\n  - { do: test it }\nfollowup:\n  - { do: ask about the tool, supervisors: [ann], done: true }\n  - { do: chase the reply }\n","record":{"field":"0","before":{"do":"ask about the tool","supervisors":["ann"]},"after":{"do":"ask about the tool","supervisors":["ann"],"done":true},"undo":"field"},"undoStatus":200,"asBefore":true,"after":"tier: personal\nstage: building\ntitle: \"A repository\"\nsubtasks:\n  - { do: read it, lead: [ann] }\n  - { do: test it }\nfollowup:\n  - { do: ask about the tool, supervisors: [ann] }\n  - { do: chase the reply }\n"}
-24	
-25	 <check mark> <scratch>/o93/both.test.ts > case 48: a Remove press on a task line, before the question is answered 32ms
-26	 <check mark> <scratch>/o93/both.test.ts > the undo of a write that takes out a line before another 1854ms
-27	
-28	 Test Files  1 passed (1)
-29	      Tests  3 passed (3)
-30	   Start at  05:43:59
-31	   Duration  6.60s (transform 1.48s, setup 0ms, import 4.31s, tests 2.19s, environment 0ms)
-32	
+1<tab>
+2<tab> RUN  v4.1.11 /Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O93
+3<tab>
+4<tab>stdout | <scratch>/o93/both.test.ts > case 47: the lines of an entry whose subtasks hold a number and a list
+5<tab>case 47 entry card lines: [{"key":"2","do":"z","done":false}]
+6<tab>case 47 Focus rows of the entry: ["A talk: z"]
+7<tab>
+8<tab> <check mark> <scratch>/o93/both.test.ts > case 47: the lines of an entry whose subtasks hold a number and a list 300ms
+9<tab>stdout | <scratch>/o93/both.test.ts > case 48: a Remove press on a task line, before the question is answered
+10<tab>case 48 line: A task
+11<tab>case 48 removeAsked: {"collection":"tasks","id":"lab:t1"}
+12<tab>
+13<tab>stdout | <scratch>/o93/both.test.ts > case 48: a Remove press on a task line, before the question is answered
+14<tab>case 48 write calls: []
+15<tab>
+16<tab>stdout | <scratch>/o93/both.test.ts > the undo of a write that takes out a line before another
+17<tab>undo, subtask delete 0: {"status":200,"written":"tier: personal\nstage: building\ntitle: \"A repository\"\nsubtasks:\n  - { do: test it }\nfollowup:\n  - { do: ask about the tool, supervisors: [ann] }\n  - { do: chase the reply }\n","record":{"field":"0","before":{"do":"read it","lead":["ann"]},"after":{"do":"test it"},"undo":"delete"},"undoStatus":200,"asBefore":true,"after":"tier: personal\nstage: building\ntitle: \"A repository\"\nsubtasks:\n  - { do: read it, lead: [ann] }\n  - { do: test it }\nfollowup:\n  - { do: ask about the tool, supervisors: [ann] }\n  - { do: chase the reply }\n"}
+18<tab>
+19<tab>stdout | <scratch>/o93/both.test.ts > the undo of a write that takes out a line before another
+20<tab>undo, followup delete 0: {"status":200,"written":"tier: personal\nstage: building\ntitle: \"A repository\"\nsubtasks:\n  - { do: read it, lead: [ann] }\n  - { do: test it }\nfollowup:\n  - { do: chase the reply }\n","record":{"field":"0","before":{"do":"ask about the tool","supervisors":["ann"]},"after":{"do":"chase the reply"},"undo":"delete"},"undoStatus":200,"asBefore":true,"after":"tier: personal\nstage: building\ntitle: \"A repository\"\nsubtasks:\n  - { do: read it, lead: [ann] }\n  - { do: test it }\nfollowup:\n  - { do: ask about the tool, supervisors: [ann] }\n  - { do: chase the reply }\n"}
+21<tab>
+22<tab>stdout | <scratch>/o93/both.test.ts > the undo of a write that takes out a line before another
+23<tab>undo, followup done 0: {"status":200,"written":"tier: personal\nstage: building\ntitle: \"A repository\"\nsubtasks:\n  - { do: read it, lead: [ann] }\n  - { do: test it }\nfollowup:\n  - { do: ask about the tool, supervisors: [ann], done: true }\n  - { do: chase the reply }\n","record":{"field":"0","before":{"do":"ask about the tool","supervisors":["ann"]},"after":{"do":"ask about the tool","supervisors":["ann"],"done":true},"undo":"field"},"undoStatus":200,"asBefore":true,"after":"tier: personal\nstage: building\ntitle: \"A repository\"\nsubtasks:\n  - { do: read it, lead: [ann] }\n  - { do: test it }\nfollowup:\n  - { do: ask about the tool, supervisors: [ann] }\n  - { do: chase the reply }\n"}
+24<tab>
+25<tab> <check mark> <scratch>/o93/both.test.ts > case 48: a Remove press on a task line, before the question is answered 32ms
+26<tab> <check mark> <scratch>/o93/both.test.ts > the undo of a write that takes out a line before another 1854ms
+27<tab>
+28<tab> Test Files  1 passed (1)
+29<tab>      Tests  3 passed (3)
+30<tab>   Start at  05:43:59
+31<tab>   Duration  6.60s (transform 1.48s, setup 0ms, import 4.31s, tests 2.19s, environment 0ms)
+32<tab>
 ```
 
 ### Cases 1-46, last run
@@ -1355,106 +1358,106 @@ it('the glyph', () => {
 Its output, whole ("a N"; `<tmp>` stands for the system temporary directory):
 
 ```
-1	
-2	 RUN  v4.1.11 /Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O93
-3	
-4	stdout | <scratch>/o93/cases.test.ts > the writes
-5	case 1: {"answer":{"found":true,"changed":["done"],"refused":[]},"file":"followup:\n  - { do: ask Ann, done: true }\n"}
-6	case 2: {"answer":{"found":true,"changed":["done"],"refused":[]},"file":"followup:\n  - { do: ask Ann }\n"}
-7	case 3 two: {"answer":{"found":true,"changed":["followup"],"refused":[]},"file":"followup:\n  - { do: ask Bob }\n"}
-8	case 3 one: {"answer":{"found":true,"changed":["followup"],"refused":[]},"file":""}
-9	case 4 set: {"answer":{"found":true,"changed":["supervisors"],"refused":[]},"file":"followup:\n  - { do: ask Ann, supervisors: [ann, bob] }\n"}
-10	case 4 drop: {"answer":{"found":true,"changed":["supervisors"],"refused":[]},"file":"followup:\n  - { do: ask Ann }\n"}
-11	case 5: {"answer":{"found":true,"changed":["lead"],"refused":[]},"file":"subtasks:\n  - { do: write it, deadline: 2026-12-01, lead: [ann] }\n"}
-12	case 6: {"answer":{"found":true,"changed":["followup"],"refused":[]},"file":"followup:\n  - { do: x, done: true, collaborators: [ann] }\n"}
-13	case 40: {"answer":{"found":true,"changed":["lead"],"refused":[]},"file":"followup:\n  - { do: ask Ann, lead: [\"a,b\"] }\n"}
-14	case 40 read back: [{"key":"0","do":"ask Ann","done":false,"lead":["a,b"]}]
-15	case 41: {"answer":{"found":true,"changed":["lead"],"refused":[]},"file":"followup:\n  - { do: ask Ann, lead: [ann] }\n"}
-16	case 42 followup: {"answer":{"found":true,"changed":[],"refused":[]},"file":"followup:\n  - { do: ask Ann }\n"}
-17	case 42 subtask: {"answer":{"found":true,"changed":[],"refused":[]},"file":"subtasks:\n  - { do: write it }\n"}
-18	case 46 followup gone: {"answer":{"found":true,"changed":[],"refused":[{"field":"followup","reason":"there is no follow-up note 1"}]},"file":"followup:\n  - { do: ask Bob }\n"}
-19	case 46 subtask gone: {"answer":{"found":true,"changed":[],"refused":[{"field":"subtasks","reason":"there is no subtask 1"}]},"file":"subtasks:\n  - { do: ask Bob }\n"}
-20	case 46 subtask shifted: {"answer":{"found":true,"changed":["subtasks"],"refused":[]},"file":"subtasks:\n  - { do: ask Cy }\n"}
-21	case 46 followup shifted: {"answer":{"found":true,"changed":["followup"],"refused":[]},"file":"followup:\n  - { do: ask Cy }\n"}
-22	case 8 done records: [{"file":"<tmp>/oculus-writes-ct9M9I/projects/manuscripts/alpha/project.yml","key":"alpha","field":"0","before":{"do":"ask Ann"},"after":{"do":"ask Ann","done":true},"undo":"field"}]
-23	case 8 delete records: [{"file":"<tmp>/oculus-writes-QmMP9o/projects/manuscripts/alpha/project.yml","key":"alpha","field":"0","before":{"do":"ask Ann"},"after":null,"undo":"delete"}]
-24	
-25	 <check mark> <scratch>/o93/cases.test.ts > the writes 187ms
-26	stdout | <scratch>/o93/cases.test.ts > the request bodies
-27	case 7 subtask lead "ann": null
-28	case 7 followup lead "ann": null
-29	case 7 subtask lead 3: null
-30	case 7 followup lead 3: null
-31	case 7 subtask lead ["ann",4]: null
-32	case 7 followup lead ["ann",4]: null
-33	case 7 subtask lead [""]: null
-34	case 7 followup lead [""]: null
-35	case 7 subtask lead ["ann"]: {"kind":"subtask","target":{"id":"alpha"},"key":"0","action":"lead","value":["ann"]}
-36	case 7 followup lead ["ann"]: {"kind":"followup","target":{"id":"alpha"},"key":"0","action":"lead","value":["ann"]}
-37	
-38	stdout | <scratch>/o93/cases.test.ts > the readers
-39	case 10: [{"key":"0","do":"a","done":true,"lead":["ann"],"supervisors":["bob"]},{"key":"1","do":"b","done":false}]
-40	case 11 subtasks: [{"key":"0","do":"a","done":false,"collaborators":["ann"]}]
-41	case 11 entrySubtasks: [{"key":"0","do":"a","done":false,"collaborators":["ann"]}]
-42	
-43	stdout | <scratch>/o93/cases.test.ts > the ticker and the Focus filter
-44	ids: {"projects":["lab:pann","lab:pbob","lab:pnone"],"people":["lab:ann","lab:bob"],"pillars":["lab:a","lab:b"],"pillarIds":[["lab:pann",["lab:a"]],["lab:pbob",["lab:a","lab:b"]],["lab:pnone",[]]]}
-45	case 13 tasks: [{"label":"pann - sup","target":{"kind":"followup","id":"lab:pann","note":"0"},"root":"lab","people":{"supervisors":["ann"]},"names":"Ann Arbor"},{"label":"pann - led","target":{"kind":"followup","id":"lab:pann","note":"1"},"root":"lab","people":{"lead":["ann"]},"names":"Ann Arbor"},{"label":"pann: theirs","target":{"kind":"manifest","id":"lab:pann","subtask":"0"},"root":"lab","people":{"lead":["bob"]},"names":"Bob Bell"},{"label":"pann: plain","target":{"kind":"manifest","id":"lab:pann","subtask":"1"},"root":"lab"},{"label":"pbob: mine","target":{"kind":"manifest","id":"lab:pbob","subtask":"0"},"root":"lab","people":{"lead":["ann"],"collaborators":["bob"]},"names":"Ann Arbor, Bob Bell"},{"label":"pbob: ghost","target":{"kind":"manifest","id":"lab:pbob","subtask":"1"},"root":"lab","people":{"lead":["zed"]},"names":"zed"},{"label":"pnone: free","target":{"kind":"manifest","id":"lab:pnone","subtask":"0"},"root":"lab"},{"label":"B course: notes","target":{"kind":"entry","id":"lab:B course","collection":"education","subtask":"0"},"root":"lab"},{"label":"A talk: slides","target":{"kind":"entry","id":"lab:A talk","collection":"events","subtask":"0"},"root":"lab"},{"label":"A task: sub of task","target":{"kind":"entry","id":"lab:t1","collection":"tasks","subtask":"0"},"root":"lab","people":{"collaborators":["ann"]},"names":"Ann Arbor"},{"label":"A task","target":{"kind":"entry","id":"lab:t1","collection":"tasks","statuses":["todo","doing","done"],"task":true},"root":"lab"}]
-46	case 11 ticker entry lines: [{"label":"B course: notes","target":{"kind":"entry","id":"lab:B course","collection":"education","subtask":"0"},"root":"lab"},{"label":"A talk: slides","target":{"kind":"entry","id":"lab:A talk","collection":"events","subtask":"0"},"root":"lab"},{"label":"A task: sub of task","target":{"kind":"entry","id":"lab:t1","collection":"tasks","subtask":"0"},"root":"lab","people":{"collaborators":["ann"]},"names":"Ann Arbor"},{"label":"A task","target":{"kind":"entry","id":"lab:t1","collection":"tasks","statuses":["todo","doing","done"],"task":true},"root":"lab"}]
-47	case 13/17/21 mine: {"tasks":["pann - sup","pann - led","pann: plain","pbob: mine","pnone: free","B course: notes","A talk: slides","A task: sub of task","A task"],"deadlines":[],"lanes":["lab:pann","lab:pnone"],"awaiting":[{"label":"Bob Bell","count":1}],"band":[],"hidden":{"command":0,"tasks":2,"awaiting":1,"lanes":{"run":0,"push":0,"revise":0,"review":1,"blocked":0,"backburner":0,"scope":0,"derisk":0,"build":0,"idea":0},"band":{"funding":0,"jobs":0,"teaching":0}},"hides":true,"mineHides":true}
-48	case 13/17 all: {"tasks":["pann - sup","pann - led","pann: theirs","pann: plain","pbob: mine","pbob: ghost","pnone: free","B course: notes","A talk: slides","A task: sub of task","A task"],"deadlines":[],"lanes":["lab:pann","lab:pbob","lab:pnone"],"awaiting":[{"label":"Ann Arbor","count":1},{"label":"Bob Bell","count":1}],"band":[],"hidden":{"command":0,"tasks":0,"awaiting":0,"lanes":{"run":0,"push":0,"revise":0,"review":0,"blocked":0,"backburner":0,"scope":0,"derisk":0,"build":0,"idea":0},"band":{"funding":0,"jobs":0,"teaching":0}},"hides":false,"mineHides":true}
-49	case 18 supervisor unticked: {"tasks":["pann - led","pann: theirs","pann: plain","pbob: mine","pbob: ghost","pnone: free","B course: notes","A talk: slides","A task: sub of task","A task"],"deadlines":[],"lanes":["lab:pann","lab:pbob","lab:pnone"],"awaiting":[{"label":"Ann Arbor","count":1},{"label":"Bob Bell","count":1}],"band":[],"hidden":{"command":0,"tasks":1,"awaiting":0,"lanes":{"run":0,"push":0,"revise":0,"review":0,"blocked":0,"backburner":0,"scope":0,"derisk":0,"build":0,"idea":0},"band":{"funding":0,"jobs":0,"teaching":0}},"hides":true,"mineHides":true}
-50	case 20 tier unticked: {"tasks":["B course: notes","A talk: slides","A task: sub of task","A task"],"deadlines":[],"lanes":[],"awaiting":[],"band":[],"hidden":{"command":0,"tasks":7,"awaiting":3,"lanes":{"run":0,"push":0,"revise":0,"review":3,"blocked":0,"backburner":0,"scope":0,"derisk":0,"build":0,"idea":0},"band":{"funding":0,"jobs":0,"teaching":0}},"hides":true,"mineHides":true}
-51	case 22/23/26 pillar a unticked: {"tasks":["pbob: mine","pbob: ghost","pnone: free","B course: notes","A task: sub of task","A task"],"deadlines":[],"lanes":["lab:pbob","lab:pnone"],"awaiting":[{"label":"Ann Arbor","count":1}],"band":[],"hidden":{"command":0,"tasks":5,"awaiting":1,"lanes":{"run":0,"push":0,"revise":0,"review":1,"blocked":0,"backburner":0,"scope":0,"derisk":0,"build":0,"idea":0},"band":{"funding":0,"jobs":0,"teaching":0}},"hides":true,"mineHides":true}
-52	case 24 every pillar unticked: {"tasks":["pnone: free","B course: notes","A task: sub of task","A task"],"deadlines":[],"lanes":["lab:pnone"],"awaiting":[],"band":[],"hidden":{"command":0,"tasks":7,"awaiting":2,"lanes":{"run":0,"push":0,"revise":0,"review":2,"blocked":0,"backburner":0,"scope":0,"derisk":0,"build":0,"idea":0},"band":{"funding":0,"jobs":0,"teaching":0}},"hides":true,"mineHides":true}
-53	case 27 read: [{"mine":true,"roles":[],"tiers":[],"pillars":[],"hubs":[]},{"mine":true,"roles":[],"tiers":[],"pillars":[],"hubs":[]},{"mine":true,"roles":[],"tiers":[],"pillars":["a"],"hubs":[]}]
-54	case 28 pillar rows, one hub: [{"key":"lab:a","label":"Pillar a"},{"key":"lab:b","label":"Pillar b"}]
-55	case 28 pillar rows, no pillar: []
-56	case 14 followup actions: ["done","remove"]
-57	case 15 task actions: ["status:doing","status:done","agent","snooze:7","snooze:30","snooze:hide","remove"]
-58	case 15 removeAsked: [{"collection":"tasks","id":"lab:t1"},null,null]
-59	case 16 subtask actions: ["done","agent","snooze:7","snooze:30","snooze:hide","del"]
-60	case 14/15 writes sent: [["writeFollowup",{"id":"lab:pann"},"0","done"],["writeFollowup",{"id":"lab:pann"},"0","delete"]]
-61	case 29 row naming people: {"id":"tmanifest::lab%3Apbob:0","glyph":"pin","label":"pbob: mine","detail":"Ann Arbor, Bob Bell","tail":"","mark":"lab","actions":[{"id":"done","label":"done","title":"mark done"},{"id":"agent","label":"agent","title":"open the composer seeded with this task, in its folder"},{"id":"snooze:7","label":"1w","title":"snooze 1w"},{"id":"snooze:30","label":"1mo","title":"snooze 1mo"},{"id":"snooze:hide","label":"hide","title":"snooze hide"},{"id":"del","label":"del","title":"delete subtask"}],"plain":false}
-62	case 21 row naming zed: zed
-63	case 29 row naming nobody: null
-64	case 44 task row: [{"id":"status:doing","label":"doing","title":"the file has unsaved text","disabled":true},{"id":"status:done","label":"done","title":"the file has unsaved text","disabled":true},{"id":"agent","label":"agent","title":"open the composer seeded with this task, in its folder"},{"id":"snooze:7","label":"1w","title":"the file has unsaved text","disabled":true},{"id":"snooze:30","label":"1mo","title":"the file has unsaved text","disabled":true},{"id":"snooze:hide","label":"hide","title":"the file has unsaved text","disabled":true},{"id":"remove","label":"Remove","title":"the file has unsaved text","disabled":true}]
-65	
-66	 <check mark> <scratch>/o93/cases.test.ts > the request bodies 1ms
-67	 <check mark> <scratch>/o93/cases.test.ts > the readers 0ms
-68	 <check mark> <scratch>/o93/cases.test.ts > the ticker and the Focus filter 127ms
-69	stdout | <scratch>/o93/cases.test.ts > every record the user's
-70	case 19 Mine only off: {"tasks":["pann: theirs","pann: plain"],"deadlines":[],"lanes":["lab:pann"],"awaiting":[],"band":[],"hidden":{"command":0,"tasks":0,"awaiting":0,"lanes":{"run":0,"push":0,"revise":0,"review":0,"blocked":0,"backburner":0,"scope":0,"derisk":0,"build":0,"idea":0},"band":{"funding":0,"jobs":0,"teaching":0}},"hides":false,"mineHides":true}
-71	case 19 Mine only on: {"tasks":["pann: plain"],"deadlines":[],"lanes":["lab:pann"],"awaiting":[],"band":[],"hidden":{"command":0,"tasks":1,"awaiting":0,"lanes":{"run":0,"push":0,"revise":0,"review":0,"blocked":0,"backburner":0,"scope":0,"derisk":0,"build":0,"idea":0},"band":{"funding":0,"jobs":0,"teaching":0}},"hides":true,"mineHides":true}
-72	
-73	stdout | <scratch>/o93/cases.test.ts > a funding scheme
-74	schemes: [["lab:s1",["lab:a"]],["lab:s2",[]]]
-75	case 25 nothing unticked: {"tasks":["pbob: mine","pbob: ghost","B course: notes","A talk: slides","A task: sub of task","A task"],"deadlines":["Scheme one","Scheme two"],"lanes":["lab:pann","lab:pbob","lab:pnone"],"awaiting":[{"label":"Ann Arbor","count":1}],"band":[["lab:s1","lab:s2"]],"hidden":{"command":0,"tasks":0,"awaiting":0,"lanes":{"run":0,"push":0,"revise":0,"review":0,"blocked":0,"backburner":0,"scope":0,"derisk":0,"build":0,"idea":0},"band":{"funding":0,"jobs":0,"teaching":0}},"hides":false,"mineHides":false}
-76	case 25 pillar a unticked: {"tasks":["pbob: mine","pbob: ghost","B course: notes","A task: sub of task","A task"],"deadlines":["Scheme two"],"lanes":["lab:pbob","lab:pnone"],"awaiting":[{"label":"Ann Arbor","count":1}],"band":[["lab:s2"]],"hidden":{"command":1,"tasks":1,"awaiting":1,"lanes":{"run":0,"push":0,"revise":0,"review":1,"blocked":0,"backburner":0,"scope":0,"derisk":0,"build":0,"idea":0},"band":{"funding":1,"jobs":0,"teaching":0}},"hides":true,"mineHides":false}
-77	
-78	 <check mark> <scratch>/o93/cases.test.ts > every record the user's 47ms
-79	 <check mark> <scratch>/o93/cases.test.ts > a funding scheme 66ms
-80	stdout | <scratch>/o93/cases.test.ts > two hubs
-81	case 43: {"tasks":["home:pann - sup","home:pann - led","home:pann: theirs","home:pann: plain","home:pbob: mine","home:pbob: ghost","home:pnone: free","lab:pbob: mine","lab:pbob: ghost","lab:pnone: free","home:B course: notes","home:A talk: slides","home:A task: sub of task","lab:B course: notes","lab:A task: sub of task","home:A task","lab:A task"],"deadlines":[],"lanes":["home:pann","home:pbob","lab:pbob","home:pnone","lab:pnone"],"awaiting":[{"label":"Ann Arbor","count":2},{"label":"Bob Bell","count":1}],"band":[],"hidden":{"command":0,"tasks":5,"awaiting":1,"lanes":{"run":0,"push":0,"revise":0,"review":1,"blocked":0,"backburner":0,"scope":0,"derisk":0,"build":0,"idea":0},"band":{"funding":0,"jobs":0,"teaching":0}},"hides":true,"mineHides":false}
-82	case 28 pillar rows, two hubs: [{"key":"home:a","label":"Pillar a (home)"},{"key":"home:b","label":"Pillar b (home)"},{"key":"lab:a","label":"Pillar a (lab)"},{"key":"lab:b","label":"Pillar b (lab)"}]
-83	
-84	 <check mark> <scratch>/o93/cases.test.ts > two hubs 297ms
-85	stdout | <scratch>/o93/cases.test.ts > the hub schema
-86	case 12 { do: a, done: true, lead: [ann] }: []
-87	case 12 { do: a, done: maybe }: [["alpha/project.yml","followup[0].done",6,"followup[0].done must be true or false, not a string"]]
-88	
-89	stdout | <scratch>/o93/cases.test.ts > the glyph
-90	case 30 palette waiting rows: []
-91	case 30 glyph catalog: (w)
-92	
-93	 <check mark> <scratch>/o93/cases.test.ts > the hub schema 72ms
-94	 <check mark> <scratch>/o93/cases.test.ts > the glyph 1ms
-95	
-96	 Test Files  1 passed (1)
-97	      Tests  9 passed (9)
-98	   Start at  05:44:09
-99	   Duration  4.59s (transform 1.29s, setup 0ms, import 3.70s, tests 800ms, environment 0ms)
-100	
+1<tab>
+2<tab> RUN  v4.1.11 /Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O93
+3<tab>
+4<tab>stdout | <scratch>/o93/cases.test.ts > the writes
+5<tab>case 1: {"answer":{"found":true,"changed":["done"],"refused":[]},"file":"followup:\n  - { do: ask Ann, done: true }\n"}
+6<tab>case 2: {"answer":{"found":true,"changed":["done"],"refused":[]},"file":"followup:\n  - { do: ask Ann }\n"}
+7<tab>case 3 two: {"answer":{"found":true,"changed":["followup"],"refused":[]},"file":"followup:\n  - { do: ask Bob }\n"}
+8<tab>case 3 one: {"answer":{"found":true,"changed":["followup"],"refused":[]},"file":""}
+9<tab>case 4 set: {"answer":{"found":true,"changed":["supervisors"],"refused":[]},"file":"followup:\n  - { do: ask Ann, supervisors: [ann, bob] }\n"}
+10<tab>case 4 drop: {"answer":{"found":true,"changed":["supervisors"],"refused":[]},"file":"followup:\n  - { do: ask Ann }\n"}
+11<tab>case 5: {"answer":{"found":true,"changed":["lead"],"refused":[]},"file":"subtasks:\n  - { do: write it, deadline: 2026-12-01, lead: [ann] }\n"}
+12<tab>case 6: {"answer":{"found":true,"changed":["followup"],"refused":[]},"file":"followup:\n  - { do: x, done: true, collaborators: [ann] }\n"}
+13<tab>case 40: {"answer":{"found":true,"changed":["lead"],"refused":[]},"file":"followup:\n  - { do: ask Ann, lead: [\"a,b\"] }\n"}
+14<tab>case 40 read back: [{"key":"0","do":"ask Ann","done":false,"lead":["a,b"]}]
+15<tab>case 41: {"answer":{"found":true,"changed":["lead"],"refused":[]},"file":"followup:\n  - { do: ask Ann, lead: [ann] }\n"}
+16<tab>case 42 followup: {"answer":{"found":true,"changed":[],"refused":[]},"file":"followup:\n  - { do: ask Ann }\n"}
+17<tab>case 42 subtask: {"answer":{"found":true,"changed":[],"refused":[]},"file":"subtasks:\n  - { do: write it }\n"}
+18<tab>case 46 followup gone: {"answer":{"found":true,"changed":[],"refused":[{"field":"followup","reason":"there is no follow-up note 1"}]},"file":"followup:\n  - { do: ask Bob }\n"}
+19<tab>case 46 subtask gone: {"answer":{"found":true,"changed":[],"refused":[{"field":"subtasks","reason":"there is no subtask 1"}]},"file":"subtasks:\n  - { do: ask Bob }\n"}
+20<tab>case 46 subtask shifted: {"answer":{"found":true,"changed":["subtasks"],"refused":[]},"file":"subtasks:\n  - { do: ask Cy }\n"}
+21<tab>case 46 followup shifted: {"answer":{"found":true,"changed":["followup"],"refused":[]},"file":"followup:\n  - { do: ask Cy }\n"}
+22<tab>case 8 done records: [{"file":"<tmp>/oculus-writes-ct9M9I/projects/manuscripts/alpha/project.yml","key":"alpha","field":"0","before":{"do":"ask Ann"},"after":{"do":"ask Ann","done":true},"undo":"field"}]
+23<tab>case 8 delete records: [{"file":"<tmp>/oculus-writes-QmMP9o/projects/manuscripts/alpha/project.yml","key":"alpha","field":"0","before":{"do":"ask Ann"},"after":null,"undo":"delete"}]
+24<tab>
+25<tab> <check mark> <scratch>/o93/cases.test.ts > the writes 187ms
+26<tab>stdout | <scratch>/o93/cases.test.ts > the request bodies
+27<tab>case 7 subtask lead "ann": null
+28<tab>case 7 followup lead "ann": null
+29<tab>case 7 subtask lead 3: null
+30<tab>case 7 followup lead 3: null
+31<tab>case 7 subtask lead ["ann",4]: null
+32<tab>case 7 followup lead ["ann",4]: null
+33<tab>case 7 subtask lead [""]: null
+34<tab>case 7 followup lead [""]: null
+35<tab>case 7 subtask lead ["ann"]: {"kind":"subtask","target":{"id":"alpha"},"key":"0","action":"lead","value":["ann"]}
+36<tab>case 7 followup lead ["ann"]: {"kind":"followup","target":{"id":"alpha"},"key":"0","action":"lead","value":["ann"]}
+37<tab>
+38<tab>stdout | <scratch>/o93/cases.test.ts > the readers
+39<tab>case 10: [{"key":"0","do":"a","done":true,"lead":["ann"],"supervisors":["bob"]},{"key":"1","do":"b","done":false}]
+40<tab>case 11 subtasks: [{"key":"0","do":"a","done":false,"collaborators":["ann"]}]
+41<tab>case 11 entrySubtasks: [{"key":"0","do":"a","done":false,"collaborators":["ann"]}]
+42<tab>
+43<tab>stdout | <scratch>/o93/cases.test.ts > the ticker and the Focus filter
+44<tab>ids: {"projects":["lab:pann","lab:pbob","lab:pnone"],"people":["lab:ann","lab:bob"],"pillars":["lab:a","lab:b"],"pillarIds":[["lab:pann",["lab:a"]],["lab:pbob",["lab:a","lab:b"]],["lab:pnone",[]]]}
+45<tab>case 13 tasks: [{"label":"pann - sup","target":{"kind":"followup","id":"lab:pann","note":"0"},"root":"lab","people":{"supervisors":["ann"]},"names":"Ann Arbor"},{"label":"pann - led","target":{"kind":"followup","id":"lab:pann","note":"1"},"root":"lab","people":{"lead":["ann"]},"names":"Ann Arbor"},{"label":"pann: theirs","target":{"kind":"manifest","id":"lab:pann","subtask":"0"},"root":"lab","people":{"lead":["bob"]},"names":"Bob Bell"},{"label":"pann: plain","target":{"kind":"manifest","id":"lab:pann","subtask":"1"},"root":"lab"},{"label":"pbob: mine","target":{"kind":"manifest","id":"lab:pbob","subtask":"0"},"root":"lab","people":{"lead":["ann"],"collaborators":["bob"]},"names":"Ann Arbor, Bob Bell"},{"label":"pbob: ghost","target":{"kind":"manifest","id":"lab:pbob","subtask":"1"},"root":"lab","people":{"lead":["zed"]},"names":"zed"},{"label":"pnone: free","target":{"kind":"manifest","id":"lab:pnone","subtask":"0"},"root":"lab"},{"label":"B course: notes","target":{"kind":"entry","id":"lab:B course","collection":"education","subtask":"0"},"root":"lab"},{"label":"A talk: slides","target":{"kind":"entry","id":"lab:A talk","collection":"events","subtask":"0"},"root":"lab"},{"label":"A task: sub of task","target":{"kind":"entry","id":"lab:t1","collection":"tasks","subtask":"0"},"root":"lab","people":{"collaborators":["ann"]},"names":"Ann Arbor"},{"label":"A task","target":{"kind":"entry","id":"lab:t1","collection":"tasks","statuses":["todo","doing","done"],"task":true},"root":"lab"}]
+46<tab>case 11 ticker entry lines: [{"label":"B course: notes","target":{"kind":"entry","id":"lab:B course","collection":"education","subtask":"0"},"root":"lab"},{"label":"A talk: slides","target":{"kind":"entry","id":"lab:A talk","collection":"events","subtask":"0"},"root":"lab"},{"label":"A task: sub of task","target":{"kind":"entry","id":"lab:t1","collection":"tasks","subtask":"0"},"root":"lab","people":{"collaborators":["ann"]},"names":"Ann Arbor"},{"label":"A task","target":{"kind":"entry","id":"lab:t1","collection":"tasks","statuses":["todo","doing","done"],"task":true},"root":"lab"}]
+47<tab>case 13/17/21 mine: {"tasks":["pann - sup","pann - led","pann: plain","pbob: mine","pnone: free","B course: notes","A talk: slides","A task: sub of task","A task"],"deadlines":[],"lanes":["lab:pann","lab:pnone"],"awaiting":[{"label":"Bob Bell","count":1}],"band":[],"hidden":{"command":0,"tasks":2,"awaiting":1,"lanes":{"run":0,"push":0,"revise":0,"review":1,"blocked":0,"backburner":0,"scope":0,"derisk":0,"build":0,"idea":0},"band":{"funding":0,"jobs":0,"teaching":0}},"hides":true,"mineHides":true}
+48<tab>case 13/17 all: {"tasks":["pann - sup","pann - led","pann: theirs","pann: plain","pbob: mine","pbob: ghost","pnone: free","B course: notes","A talk: slides","A task: sub of task","A task"],"deadlines":[],"lanes":["lab:pann","lab:pbob","lab:pnone"],"awaiting":[{"label":"Ann Arbor","count":1},{"label":"Bob Bell","count":1}],"band":[],"hidden":{"command":0,"tasks":0,"awaiting":0,"lanes":{"run":0,"push":0,"revise":0,"review":0,"blocked":0,"backburner":0,"scope":0,"derisk":0,"build":0,"idea":0},"band":{"funding":0,"jobs":0,"teaching":0}},"hides":false,"mineHides":true}
+49<tab>case 18 supervisor unticked: {"tasks":["pann - led","pann: theirs","pann: plain","pbob: mine","pbob: ghost","pnone: free","B course: notes","A talk: slides","A task: sub of task","A task"],"deadlines":[],"lanes":["lab:pann","lab:pbob","lab:pnone"],"awaiting":[{"label":"Ann Arbor","count":1},{"label":"Bob Bell","count":1}],"band":[],"hidden":{"command":0,"tasks":1,"awaiting":0,"lanes":{"run":0,"push":0,"revise":0,"review":0,"blocked":0,"backburner":0,"scope":0,"derisk":0,"build":0,"idea":0},"band":{"funding":0,"jobs":0,"teaching":0}},"hides":true,"mineHides":true}
+50<tab>case 20 tier unticked: {"tasks":["B course: notes","A talk: slides","A task: sub of task","A task"],"deadlines":[],"lanes":[],"awaiting":[],"band":[],"hidden":{"command":0,"tasks":7,"awaiting":3,"lanes":{"run":0,"push":0,"revise":0,"review":3,"blocked":0,"backburner":0,"scope":0,"derisk":0,"build":0,"idea":0},"band":{"funding":0,"jobs":0,"teaching":0}},"hides":true,"mineHides":true}
+51<tab>case 22/23/26 pillar a unticked: {"tasks":["pbob: mine","pbob: ghost","pnone: free","B course: notes","A task: sub of task","A task"],"deadlines":[],"lanes":["lab:pbob","lab:pnone"],"awaiting":[{"label":"Ann Arbor","count":1}],"band":[],"hidden":{"command":0,"tasks":5,"awaiting":1,"lanes":{"run":0,"push":0,"revise":0,"review":1,"blocked":0,"backburner":0,"scope":0,"derisk":0,"build":0,"idea":0},"band":{"funding":0,"jobs":0,"teaching":0}},"hides":true,"mineHides":true}
+52<tab>case 24 every pillar unticked: {"tasks":["pnone: free","B course: notes","A task: sub of task","A task"],"deadlines":[],"lanes":["lab:pnone"],"awaiting":[],"band":[],"hidden":{"command":0,"tasks":7,"awaiting":2,"lanes":{"run":0,"push":0,"revise":0,"review":2,"blocked":0,"backburner":0,"scope":0,"derisk":0,"build":0,"idea":0},"band":{"funding":0,"jobs":0,"teaching":0}},"hides":true,"mineHides":true}
+53<tab>case 27 read: [{"mine":true,"roles":[],"tiers":[],"pillars":[],"hubs":[]},{"mine":true,"roles":[],"tiers":[],"pillars":[],"hubs":[]},{"mine":true,"roles":[],"tiers":[],"pillars":["a"],"hubs":[]}]
+54<tab>case 28 pillar rows, one hub: [{"key":"lab:a","label":"Pillar a"},{"key":"lab:b","label":"Pillar b"}]
+55<tab>case 28 pillar rows, no pillar: []
+56<tab>case 14 followup actions: ["done","remove"]
+57<tab>case 15 task actions: ["status:doing","status:done","agent","snooze:7","snooze:30","snooze:hide","remove"]
+58<tab>case 15 removeAsked: [{"collection":"tasks","id":"lab:t1"},null,null]
+59<tab>case 16 subtask actions: ["done","agent","snooze:7","snooze:30","snooze:hide","del"]
+60<tab>case 14/15 writes sent: [["writeFollowup",{"id":"lab:pann"},"0","done"],["writeFollowup",{"id":"lab:pann"},"0","delete"]]
+61<tab>case 29 row naming people: {"id":"tmanifest::lab%3Apbob:0","glyph":"pin","label":"pbob: mine","detail":"Ann Arbor, Bob Bell","tail":"","mark":"lab","actions":[{"id":"done","label":"done","title":"mark done"},{"id":"agent","label":"agent","title":"open the composer seeded with this task, in its folder"},{"id":"snooze:7","label":"1w","title":"snooze 1w"},{"id":"snooze:30","label":"1mo","title":"snooze 1mo"},{"id":"snooze:hide","label":"hide","title":"snooze hide"},{"id":"del","label":"del","title":"delete subtask"}],"plain":false}
+62<tab>case 21 row naming zed: zed
+63<tab>case 29 row naming nobody: null
+64<tab>case 44 task row: [{"id":"status:doing","label":"doing","title":"the file has unsaved text","disabled":true},{"id":"status:done","label":"done","title":"the file has unsaved text","disabled":true},{"id":"agent","label":"agent","title":"open the composer seeded with this task, in its folder"},{"id":"snooze:7","label":"1w","title":"the file has unsaved text","disabled":true},{"id":"snooze:30","label":"1mo","title":"the file has unsaved text","disabled":true},{"id":"snooze:hide","label":"hide","title":"the file has unsaved text","disabled":true},{"id":"remove","label":"Remove","title":"the file has unsaved text","disabled":true}]
+65<tab>
+66<tab> <check mark> <scratch>/o93/cases.test.ts > the request bodies 1ms
+67<tab> <check mark> <scratch>/o93/cases.test.ts > the readers 0ms
+68<tab> <check mark> <scratch>/o93/cases.test.ts > the ticker and the Focus filter 127ms
+69<tab>stdout | <scratch>/o93/cases.test.ts > every record the user's
+70<tab>case 19 Mine only off: {"tasks":["pann: theirs","pann: plain"],"deadlines":[],"lanes":["lab:pann"],"awaiting":[],"band":[],"hidden":{"command":0,"tasks":0,"awaiting":0,"lanes":{"run":0,"push":0,"revise":0,"review":0,"blocked":0,"backburner":0,"scope":0,"derisk":0,"build":0,"idea":0},"band":{"funding":0,"jobs":0,"teaching":0}},"hides":false,"mineHides":true}
+71<tab>case 19 Mine only on: {"tasks":["pann: plain"],"deadlines":[],"lanes":["lab:pann"],"awaiting":[],"band":[],"hidden":{"command":0,"tasks":1,"awaiting":0,"lanes":{"run":0,"push":0,"revise":0,"review":0,"blocked":0,"backburner":0,"scope":0,"derisk":0,"build":0,"idea":0},"band":{"funding":0,"jobs":0,"teaching":0}},"hides":true,"mineHides":true}
+72<tab>
+73<tab>stdout | <scratch>/o93/cases.test.ts > a funding scheme
+74<tab>schemes: [["lab:s1",["lab:a"]],["lab:s2",[]]]
+75<tab>case 25 nothing unticked: {"tasks":["pbob: mine","pbob: ghost","B course: notes","A talk: slides","A task: sub of task","A task"],"deadlines":["Scheme one","Scheme two"],"lanes":["lab:pann","lab:pbob","lab:pnone"],"awaiting":[{"label":"Ann Arbor","count":1}],"band":[["lab:s1","lab:s2"]],"hidden":{"command":0,"tasks":0,"awaiting":0,"lanes":{"run":0,"push":0,"revise":0,"review":0,"blocked":0,"backburner":0,"scope":0,"derisk":0,"build":0,"idea":0},"band":{"funding":0,"jobs":0,"teaching":0}},"hides":false,"mineHides":false}
+76<tab>case 25 pillar a unticked: {"tasks":["pbob: mine","pbob: ghost","B course: notes","A task: sub of task","A task"],"deadlines":["Scheme two"],"lanes":["lab:pbob","lab:pnone"],"awaiting":[{"label":"Ann Arbor","count":1}],"band":[["lab:s2"]],"hidden":{"command":1,"tasks":1,"awaiting":1,"lanes":{"run":0,"push":0,"revise":0,"review":1,"blocked":0,"backburner":0,"scope":0,"derisk":0,"build":0,"idea":0},"band":{"funding":1,"jobs":0,"teaching":0}},"hides":true,"mineHides":false}
+77<tab>
+78<tab> <check mark> <scratch>/o93/cases.test.ts > every record the user's 47ms
+79<tab> <check mark> <scratch>/o93/cases.test.ts > a funding scheme 66ms
+80<tab>stdout | <scratch>/o93/cases.test.ts > two hubs
+81<tab>case 43: {"tasks":["home:pann - sup","home:pann - led","home:pann: theirs","home:pann: plain","home:pbob: mine","home:pbob: ghost","home:pnone: free","lab:pbob: mine","lab:pbob: ghost","lab:pnone: free","home:B course: notes","home:A talk: slides","home:A task: sub of task","lab:B course: notes","lab:A task: sub of task","home:A task","lab:A task"],"deadlines":[],"lanes":["home:pann","home:pbob","lab:pbob","home:pnone","lab:pnone"],"awaiting":[{"label":"Ann Arbor","count":2},{"label":"Bob Bell","count":1}],"band":[],"hidden":{"command":0,"tasks":5,"awaiting":1,"lanes":{"run":0,"push":0,"revise":0,"review":1,"blocked":0,"backburner":0,"scope":0,"derisk":0,"build":0,"idea":0},"band":{"funding":0,"jobs":0,"teaching":0}},"hides":true,"mineHides":false}
+82<tab>case 28 pillar rows, two hubs: [{"key":"home:a","label":"Pillar a (home)"},{"key":"home:b","label":"Pillar b (home)"},{"key":"lab:a","label":"Pillar a (lab)"},{"key":"lab:b","label":"Pillar b (lab)"}]
+83<tab>
+84<tab> <check mark> <scratch>/o93/cases.test.ts > two hubs 297ms
+85<tab>stdout | <scratch>/o93/cases.test.ts > the hub schema
+86<tab>case 12 { do: a, done: true, lead: [ann] }: []
+87<tab>case 12 { do: a, done: maybe }: [["alpha/project.yml","followup[0].done",6,"followup[0].done must be true or false, not a string"]]
+88<tab>
+89<tab>stdout | <scratch>/o93/cases.test.ts > the glyph
+90<tab>case 30 palette waiting rows: []
+91<tab>case 30 glyph catalog: (w)
+92<tab>
+93<tab> <check mark> <scratch>/o93/cases.test.ts > the hub schema 72ms
+94<tab> <check mark> <scratch>/o93/cases.test.ts > the glyph 1ms
+95<tab>
+96<tab> Test Files  1 passed (1)
+97<tab>      Tests  9 passed (9)
+98<tab>   Start at  05:44:09
+99<tab>   Duration  4.59s (transform 1.29s, setup 0ms, import 3.70s, tests 800ms, environment 0ms)
+100<tab>
 ```
 
 ## Doc text
@@ -1466,3 +1469,484 @@ For `docs/data-map.md`, which the step does not edit in the worktree. Line 219 a
 Its first sentence becomes the following, the rest of the line (from "The Focus lane is no key:") kept as it is:
 
 "- `project.yml`: `followup:` is a list of notes, each `{ do, after, done, lead, supervisors, collaborators }`; a note's `after` hides it until that date, and `done: true` keeps it on its card, struck through, and off the Focus board. The three people fields each hold a person key or a list of keys, which Mine only and the Role list read in place of the project's own people, and a `subtasks:` line takes the same three fields."
+
+## Round 1
+
+Everything in the round is done, and the round's three verify checks pass (below). The orchestrator closed review Spec 3 (the palette half of case 30 and item 10 is the brief's error) and Spec 4 (the key-'0' row of `folder-undo.test.ts`); this round leaves both as they are.
+
+### Items
+
+1. DONE, one line reader for the agent seed. `checklistLineShape` of `src/lib/data/shapes/shapes.ts` is exported, its doc comment saying a line with a blank or missing `do` passes the shape and each reader decides whether to keep it. `src/lib/server/machine/runs/seeds/task-seed.ts` `linesOf` reads each line through it, with `do` and `deadline` the empty text when they are not text and `done` as the shape reads it; its own `lineShape` and its `zod` and `wordShape` imports are gone, and its head comment names the shape. The seed's answers are unchanged (case 1).
+2. DONE, the test halves of cases 10 and 40. `tests/data/snapshot/normalise.test.ts` 'fills a project from the manifest keys of the same meaning' (G32) reads a third note `{ do: 'ask the editor', done: 'yes' }` and expects `{ key: '2', do: 'ask the editor', done: false }`. `tests/server/edit/lines.test.ts`, the follow-up `it`, after the write of `lead: ["a,b"]` parses the file and asserts `followups(...)[1].lead` is `['a,b']`.
+3. DONE, the report's character set. Each tab of the quoted outputs is written `<tab>` (246 lines). The first run's verify-7 row was run with the predicate `$'[^\t -~]'`, which admits tabs, in place of the brief's `'[^ -~]'`; the brief's form is the one run below.
+4. DONE, the doc comment of `Project.followups` (`src/lib/data/model/model-entities.ts:386-389`) now reads "The `followup:` notes, a list of `{ do, after, done }` maps with the people each names, done notes included; a done note is off the Focus board." The greps and their hits are under "Item 4's greps".
+5. DONE, one list of the people fields. `PEOPLE_FIELDS` is gone: `line-save.ts` `changedPeople` and `PeoplePicks.svelte` read `LINE_PEOPLE` of `$lib/data/shapes/shapes`. `peopleMark` (`src/lib/state/boards/board/ticker-lines.ts:144-148`) reads a line's people through `peopleOfLine`, now exported from `shapes.ts`, and the head comments of both files say so.
+6. DONE, `HeldLine` and `EditedLine` in `line-save.ts` are local types: after item 5 no file outside `line-save.ts` names them (`grep -rn "HeldLine\|EditedLine" src tests docs config --exclude=local.yml` prints only `line-save.ts` lines 28, 31, 41-43 and the unrelated local type of `server/machine/debug/breakpoints.ts`).
+7. DONE, one call in place of two identical branches. `writeSubtask` and `writeFollowup` (`src/lib/server/edit/writes/subtasks.ts`) gain a third overload over `SubtaskAction` / `FollowupAction` with `value?: string | readonly string[]`, the type of their implementation, with a comment that it is the overload a body read by the route's shape calls. `src/lib/server/edit/writes.ts` calls each writer once (lines 488 and 517), the two comments that explained the twin branches are gone, and `setsPeople`, which had no other user, is removed from `writes/bodies.ts` and from the route's import. The report's judgment call on "two branches" in the client now says that `writes.svelte.ts` sends both kinds through its one union call, `writeLine`.
+8. DONE, the cost of the third ticker build, measured; nothing is changed for it. Over a synthetic hub of 120 projects, 1200 collection entries in three files (with the 10 people of `people.yml`, 1210 entries in all) and 200 lines of which 40 name people, the median of 20 calls (after two that are not timed) on this machine:
+
+   | Call | Median | Tasks lines | Hides |
+   | --- | --- | --- | --- |
+   | `focusPage`, nothing unticked, no self | 42.7 ms | 466 | false |
+   | `focusPage`, Mine only on, self `lab:ann` | 126.5 ms | 286 | true |
+   | `focusPage`, role Supervisor unticked, self `lab:ann` | 124.9 ms | 464 | true |
+   | `focusPage`, only role Supervisor ticked, self `lab:ann` | 124.1 ms | 448 | true |
+   | `ticker`, one build | 37.0 ms | 466 | - |
+
+   With a rule that hides, a Focus page costs about 125 ms, three times the page with none; one ticker build is 37.0 ms, so the third build that `linePeopleRule` makes is about 30 per cent of that page. The program and its output are under "Item 8's timing program".
+9. DONE, `tests/server/edit/lines.test.ts` opens "// Layer 2, server tests. What the line writes do to a manifest over a hub of its own: ...", and its head says the notes are read back by their reader.
+10. DONE, this section and the report's earlier sections:
+    - The verify list: the first run (phase 1 and round 0) ran verify 1 five times, the fifth after the last change, and verify 2 (`sh utils/unused-exports.sh`) four times (the count of distinct tool calls of each command in that run's transcript). This round ran verify 1 once and verify 2 once, after the last source change, and verify 3 once, after the last change to the report. The first run's five runs of verify 1 are more than the token-discipline paragraph of `spec.md` allows (one after the last change, and one more after a fix of a file the step changed).
+    - The history-word grep, under "History words".
+    - The key checks, under "Keys".
+    - "Host- or user-visible changes" now states History's undo of a Del, the entry card's lines whose `do` or `deadline` is not text, and the Filter button's tip, each with its before and after.
+    - Sentences of the earlier sections this round makes false are corrected in place: the first line, the `line-save.ts` row under "Paths outside the write list", and the judgment calls on the ticker build's cost, on the route's two branches and on `task-seed.ts`.
+
+### The cases' first run, on the round's starting tree
+
+1. `grep -n "z.union\|lineShape" src/lib/server/machine/runs/seeds/task-seed.ts` printed `42:const lineShape = z.union([` and `50:        const line = readAs(lineShape, held);`. The seed program (under "Case 1's program") printed the 21 lines quoted there; `npx vitest run tests/data/snapshot/normalise.test.ts tests/server/edit/lines.test.ts tests/routes/sessions/compose.test.ts --reporter=verbose` printed `Test Files  3 passed (3)`, `Tests  32 passed (32)`.
+2. The same run, with the two new assertions added and no source changed: 'fills a project from the manifest keys of the same meaning' and the three rows of the follow-up `it` of `lines.test.ts` each passed.
+3. `LC_ALL=C grep -n '[^ -~]' .scratch/migration/agents/reviews/O93-report.md | wc -l` printed `246`.
+4. `grep -rn "PEOPLE_FIELDS" src` printed `PeoplePicks.svelte:19` (the import), `PeoplePicks.svelte:43`, `line-save.ts:11` (the definition) and `line-save.ts:21`.
+5. `grep -n "setsPeople(subtask) ?" src/lib/server/edit/writes.ts` printed nothing on the starting tree: prettier writes the ternary's `?` on the line after `setsPeople(subtask)`. `grep -n "setsPeople" src/lib/server/edit/writes.ts` printed `93:    setsPeople,`, `492:                : setsPeople(subtask)` and `525:                : setsPeople(followup)`, the two ternaries whose branches were identical.
+6. Not run separately before the change; the step's cases are run after it (below).
+
+### Result
+
+| Case | Result | Evidence |
+| --- | --- | --- |
+| 1 | Met | the grep prints nothing; the seed program's 21 lines after the change equal the 21 before (`diff` of the two, `diff exit 0`); `compose.test.ts` passes |
+| 2 | Met | the run after the change: `Test Files  3 passed (3)`, `Tests  32 passed (32)`, both assertions passing |
+| 3 | Met | `LC_ALL=C grep -n '[^ -~]'` over the report prints nothing (verify 3) |
+| 4 | Met | `grep -rn "PEOPLE_FIELDS" src` prints nothing |
+| 5 | Met | `grep -n "setsPeople(subtask) ?"` and `grep -rn "setsPeople" src tests` print nothing |
+| 6 | Met | the case programs of the first run, rebuilt from this report's code blocks, print the same case lines (below); the step's tests pass in verify 1 |
+
+Case 6: the programs `cases.test.ts` and `both.test.ts` were rebuilt from this report's code blocks (`sed -n 1011,1352p` and `sed -n 786,929p` of the report into the round's temporary folder) and run on the changed tree under the round's config. Their printed case lines, the temporary paths normalised, equal the quoted last run: `diff` of the 64 lines of "a N" printed nothing (`cases diff exit 0`), and of the 8 lines of "w N" nothing (`both diff exit 0`); `Tests  9 passed (9)` and `Tests  3 passed (3)`.
+
+### Verification
+
+Each check once, from the worktree's root, after the last change it covers:
+
+1. `npm run diagrams && npm run docs:palette && npm run test:quick -- --base 46657382a`, exit 0. The diagrams wrote `docs/diagrams` (`git diff 46657382a --stat -- docs/diagrams`: `10 files changed, 40 insertions(+), 40 deletions(-)`, the diagrams of the modules this round changed); `docs/palette.md` is unchanged (`git status --short docs/palette.md` prints nothing). The list printed:
+
+   ```
+   test:quick: 71 changed file(s), from git since 46657382a
+   test:quick: 302 test file(s)
+   ok      ASCII gate (2.5 s)
+   ok      svelte-kit sync (2.5 s)
+   ok      prettier (2.5 s): All matched files use Prettier code style!
+   ok      eslint (105.5 s)
+   ok      svelte-check (115.1 s): 1793079706188 COMPLETED 549 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+   ok      vitest checks (182.6 s): Duration  173.14s (transform 100.56s, setup 0ms, import 286.92s, tests 345.39s, environment 4ms)
+   ok      vitest (228.0 s): Duration  220.88s (transform 196.68s, setup 0ms, import 457.72s, tests 338.54s, environment 44.03s)
+   ok      vitest slow (282.5 s): Duration  275.14s (transform 14.63s, setup 0ms, import 139.16s, tests 949.07s, environment 17ms)
+   test:quick: 285.2 s; every command passed
+   test:quick: not covered: tests that reach no changed file within the import depth,
+               other than the checks under tests/checks/source and tests/checks/tree,
+               which run for any change under src, tests or utils; the build, the lint
+               of unchanged files
+   ```
+
+   `tests/state/sessions/terminal/latex-fast-failure.test.ts` was in the run ("imports at depth 2") and passed.
+2. `sh utils/unused-exports.sh` (exit 0, 341 lines), then `diff ../O93-base/unused-exports.txt <its output>`: nothing printed, `diff exit 0`. No export is added to the list: `checklistLineShape` and `peopleOfLine` have importers (`task-seed.ts`, `ticker-lines.ts`), and `setsPeople` and `PEOPLE_FIELDS` are gone and `HeldLine` and `EditedLine` are local.
+3. The perl gate of `spec.md` (its "The ASCII gate" paragraph) over the 13 files this round changes (`src/lib/data/shapes/shapes.ts`, `src/lib/server/machine/runs/seeds/task-seed.ts`, `src/lib/state/boards/board/ticker-lines.ts`, `src/lib/views/shared/forms/dated/line-save.ts`, `PeoplePicks.svelte`, `src/lib/server/edit/writes/subtasks.ts`, `src/lib/server/edit/writes.ts`, `src/lib/server/edit/writes/bodies.ts`, `src/lib/data/model/model-entities.ts`, `src/lib/state/boards/focus/filter.ts`, `src/lib/state/forms/schema.ts`, `tests/data/snapshot/normalise.test.ts`, `tests/server/edit/lines.test.ts`): nothing printed, `gate exit 0`. `LC_ALL=C grep -n '[^ -~]' .scratch/migration/agents/reviews/O93-report.md`: nothing printed, `report grep exit 1`.
+
+### Item 4's greps
+
+`grep -rnw "<name>" src tests docs config --exclude=local.yml`, for each name the step changed:
+
+- `subtasksOf`, `SubtaskRow`, `subtaskFieldsShape`: 0 hits each.
+- `lineShape`: `src/lib/state/system/machine/lsp/references.ts:82` and `:93`, another module's own shape of an LSP reference line; nothing false.
+- `noteShape`: `src/lib/server/accounts/mail/triage.ts:47` and `:57` (a mail triage note, unrelated); `src/lib/data/shapes/shapes.ts:385` and `:420`, the follow-up note shape, whose doc comment "One note of a `followup:` list: a map of the line's fields and its `after`" is true.
+- `FOLLOWUP_NOTES`: `src/lib/data/snapshot/schema/record.ts:265` and `:285`; its doc comment names `{ do, after, done }` and the people fields; true.
+- `FollowupAction`: `src/lib/server/edit/writes/subtasks.ts:115`, `:126`, `:214`, `:222`; `src/lib/state/shared/stores/shapes.ts:232`; `src/lib/state/client/writes.svelte.ts:44`, `:347`, `:358`. Each doc comment ("What one follow-up write does to its note") is true.
+- `SubtaskAction`: `src/lib/server/edit/writes.ts:221`; `src/lib/server/edit/writes/subtasks.ts:112`, `:126`, `:169`, `:177`; `src/lib/state/shared/stores/shapes.ts:222`; `src/lib/state/client/writes.svelte.ts:49`, `:326`, `:358`. True.
+- `Followup`: 22 hits in `collection/index.ts`, `ticker-lines.ts`, `shapes.ts`, `model/index.ts`, `record-menu.ts`, `model-entities.ts` and `Followups.svelte`. One sentence was false, `model-entities.ts:386` (item 4); the type's own doc comment (`model-entities.ts:318-322`) names `after`, `done` and the key; the others are imports and signatures.
+- `Subtask`: 37 hits; the type's doc comment and `entrySubtasks`' doc comment are true, and the rest are imports, signatures, and the menu row named Subtask in `HELP.md`, `project.yml`, `RecordCard.svelte`, `record-menu.ts`, `ProjectCard.svelte`, `RecordPick.svelte`, `Subtasks.svelte`, `Inbox.svelte` and `InboxCard.svelte`, which name the row, not the shape.
+- The prose forms of the old shapes, `grep -rn "do, after }\|{ do, after\b\|do, deadline, done }\|out when done\|PEOPLE_FIELDS\|setsPeople\|picks one overload" src tests docs config --exclude=local.yml`: `record.ts:262`, `shapes.ts:411`, `model-entities.ts:387`, `HELP.md:282` and `templates.md:752` name the new note fields and are true; `docs/data-map.md:219` holds `{ do, after }`, the line this step does not edit, whose text is under "Doc text".
+
+### History words
+
+The comment lines and test titles the step adds, from `git diff 46657382a -U0` over `src`, `tests`, `config` and `docs` with the new files whole, grepped with `grep -iwE "before|used to|no longer|still|always has been|always had|as before|previously|the step adds|after this package lands"`. Each hit, judged:
+
+- `entry-edit/subtasks.ts` "a follow-up note's date before which it stays hidden", "at its end, or before the line ...", "The line the new one goes before"; `writes/subtasks.ts` "the date before which it stays hidden", "before the line at the index `at`"; `Followups.svelte` (two lines) and `LineForm.svelte` "date before which ..."; `RecordPick.svelte` "its \"Not before\" date"; `rows.ts` "under the tasks section, before the entry is deleted"; `writes-fixture.ts` "asserted to be inside its own hub before"; `folder-undo.test.ts` "which the undo puts back before the other" and the row title 'a follow-up deleted before another'; `filter.ts:19` "read before the rest of the choice": each is a position in a list, a date's meaning or the order of two acts at run time, not a comparison with earlier code. Kept.
+- `filter.ts:173` "no pillar is hidden that the workspace no longer holds", `filter.ts:317` "so a kept project still reads its venue", `filter.ts:455` "since those still decide a line by its record", `forms/schema.ts:393` "The follow-up notes still open": rewritten this round to "does not hold", "reads", "decide" and "not done", and the grep over the step's lines does not hit them now.
+- `tests/server/edit/deck/deck-acts.test.ts` and `deck-edit.test.ts`: lines of the moved files, unchanged apart from their imports (the review's diff of each with its base); not lines the step wrote.
+
+### Keys
+
+Each key the step adds, checked empty, duplicated and colliding. The runs are the program under "Item 10's key checks program".
+
+- The Focus filter's `pillars` key. Read by `focusFilter`: `[]` gives `[]`; `[""]` gives `[""]`; `["a","a"]` gives `["a","a"]`; `["__proto__"]` gives `["__proto__"]`; `"a"`, `[3]` and `null` give `[]`. The rule (`filter.ts` `ruleOf`) keeps only the ids the workspace holds, through `byKey`, which reads `Object.hasOwn` (`src/lib/data/helpers/guards.ts:57-59`), into a `Set`. So an empty id and `__proto__` hide nothing and a duplicate counts once. The key sits beside `mine`, `roles`, `tiers` and `hubs`, and a saved filter of `{ pillars: ["mine"], mine: false }` reads as `{"mine":false,...,"pillars":["mine"],...}`, the two keys apart.
+- The three people fields of a line. A request body: `[]` is a write (it drops the field); `[""]`, `[" "]` and `["ann",""]` are no write (`null`); `["ann","ann"]` and `[" ann ","ann"]` are writes. The write: `["ann","bob","ann"]` writes `lead: [ann, bob]`; `[" ann ","ann"]` writes `lead: [ann]`; a line holding `lead: 3` is rewritten to `lead: [ann]`; `[]` on a line naming nobody changes nothing. The reader: `lead: 3` and `lead: ""` read as no lead, `[ann, ann]` as `["ann"]`, `["", bob]` as `["bob"]`, and a key in two fields (`supervisors: ann, lead: ann`) is read in both. The names `lead`, `supervisors` and `collaborators` do not collide with the other keys of a line (`do`, `after`, `deadline`, `done`, `snooze`), which are distinct names.
+- The catalog keys. `grep -cE "^ +<key>:"` over each key's file gives 1 for each of `filter_pillar`, `filter_pillar_in`, `remove`, `remove_followup_tip` and `remove_task_tip` in `config/text/views/boards/focus.yml`; for `delete_followup`, `followup_done_tip`, `followup_reopen_tip`, `line_collaborators`, `line_lead`, `line_supervisors`, `line_people_join` and `waiting_glyph` in `config/text/views/boards/project.yml`; and for `waiting` in `config/catalogs/glyphs.yml` and in `config/catalogs/icons.yml`. No value is empty (each is a word or `', '`), and `tests/checks/source/keys.test.ts`, which fails a key read and missing or a key held and never read, ran in verify 1.
+
+### Files and line counts this round
+
+`wc -l`: `src/lib/data/shapes/shapes.ts` 448, `src/lib/server/machine/runs/seeds/task-seed.ts` 207, `src/lib/state/boards/board/ticker-lines.ts` 177, `src/lib/views/shared/forms/dated/line-save.ts` 59, `src/lib/views/shared/forms/dated/PeoplePicks.svelte` 74, `src/lib/server/edit/writes/subtasks.ts` 405, `src/lib/server/edit/writes.ts` 781, `src/lib/server/edit/writes/bodies.ts` 772, `src/lib/data/model/model-entities.ts` 757, `src/lib/state/boards/focus/filter.ts` 669, `src/lib/state/forms/schema.ts` 603, `tests/data/snapshot/normalise.test.ts` 370, `tests/server/edit/lines.test.ts` 191, and this report.
+
+Paths outside the round's list: `src/lib/state/boards/board/ticker-lines.ts`, `src/lib/views/shared/forms/dated/line-save.ts`, `PeoplePicks.svelte`, `src/lib/server/edit/writes/subtasks.ts`, `writes.ts`, `writes/bodies.ts`, `tests/data/snapshot/normalise.test.ts` and `tests/server/edit/lines.test.ts` are the step's paths, which the round's list includes; `src/lib/data/model/model-entities.ts` (item 4's false sentence), `src/lib/state/boards/focus/filter.ts` and `src/lib/state/forms/schema.ts` (the history words) are files whose sentences item 4 and item 10 show to be changed.
+
+Head comments: rewritten in `task-seed.ts`, `shapes.ts` (it names `checklistLineShape` and `peopleOfLine`), `ticker-lines.ts`, `line-save.ts` and `lines.test.ts`; still true in `PeoplePicks.svelte`, `writes/subtasks.ts`, `writes.ts`, `writes/bodies.ts`, `model-entities.ts`, `filter.ts`, `forms/schema.ts` and `normalise.test.ts`. The doc comments of the functions this round touched (`linesOf`, `checklistLineShape`, `peopleMark`, `changedPeople`, `saveLine`, `writeSubtask`, `writeFollowup`) say what each does now.
+
+Commands that wrote a file other than through Edit or Write: the `sed -n` of the report's two code blocks into `cases.test.ts` and `both.test.ts` of the round's temporary folder; shell redirects of the programs' and checks' output into that folder; `npm run diagrams`, `npm run docs:palette` and `npm run test:quick` of verify 1, which write `docs/diagrams`, `docs/palette.md` and `.svelte-kit/`. The tabs of this report were written as `<tab>` by one Edit with `replace_all`.
+
+### Case 1's program
+
+The config, `/var/folders/7r/49ks4w4558vcr57tvb9svmph0000gp/T/o93r1/vitest.round.mts`, which every program of this round runs under, with `O93_FILE=<file> npx vitest run --config <that file> --configLoader runner` from the worktree's root:
+
+```ts
+// The config the round-1 programs of O93 run under: the worktree's own Vite config (so `$lib`,
+// Svelte runes and the plugins resolve as in the suite), with one node project whose only file is
+// the program O93_FILE names in this folder, and `@tree` naming the worktree's root.
+const HERE = '/var/folders/7r/49ks4w4558vcr57tvb9svmph0000gp/T/o93r1';
+const TREE = '/Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O93';
+const FILE = process.env.O93_FILE ?? '';
+const base = (await import(/* @vite-ignore */ `${TREE}/vite.config.ts`)).default;
+
+export default (env: { mode: string; command: string }) => {
+    const made = (base as unknown as (e: typeof env) => Record<string, any>)(env);
+    return {
+        ...made,
+        resolve: { ...made.resolve, alias: [{ find: '@tree', replacement: TREE }] },
+        test: {
+            ...made.test,
+            projects: undefined,
+            environment: 'node',
+            dir: HERE,
+            include: [FILE],
+            expect: { requireAssertions: false },
+            testTimeout: 600000,
+            reporters: ['verbose']
+        }
+    };
+};
+```
+
+`seed.test.ts`:
+
+```ts
+// The case-1 program of O93 round 1: what the agent seed answers for a reference to each kind of
+// subtask line (a string line, a line with a blank or missing `do`, a line whose `do` or
+// `deadline` is not text, a done line) and for the whole task that holds them, printed and not
+// asserted. The hub is a scratch directory under the system temporary directory, made by the
+// suite's own fixture.
+import { it } from 'vitest';
+import { engineDir, loadConfig, textCatalog } from '$lib/data/sources/config';
+import { portfolioConfigFrom } from '$lib/data/index';
+import { taskSeed } from '$lib/server/machine/runs/seeds/task-seed';
+import { plantScratch } from '@tree/tests/fixtures/scratch.ts';
+
+const LOADED = loadConfig(engineDir()).config;
+const CONFIG = portfolioConfigFrom(LOADED);
+const TEXT = textCatalog(LOADED) as Record<string, string>;
+
+const LINES =
+    'subtasks:\n  - read it\n  - { do: "" }\n  - { deadline: 2026-12-01 }\n  - { do: 3 }\n  - { do: test it, deadline: 20261201 }\n  - { do: ship it, done: true, lead: [ann] }\n  - { do: tell them, done: "yes" }\n  - 7\n';
+
+it('the seed of each line', () => {
+    const hub = plantScratch(
+        'oculus-o93r1-seed-',
+        {
+            'projects/active/alpha/project.yml': `id: alpha\ntier: research\nstage: building\ntitle: Alpha\n${LINES}`,
+            '.oculus/data/academic/tasks.yml': `schema:\n  - { field: key, type: text, primary_key: true }\n  - { field: title, type: text, display: 1 }\nentries:\n  - key: t1\n    title: A task\n    ${LINES.replace(/\n  /g, '\n      ').replace(/\n$/, '')}\n`
+        },
+        ['projects/active']
+    );
+    const show = (label: string, ref: Parameters<typeof taskSeed>[0]): void => {
+        const answer = taskSeed(ref, hub, CONFIG, TEXT);
+        const shown = answer.ok
+            ? { seed: answer.seed.replace(/\n/g, ' / '), name: answer.name }
+            : answer;
+        console.log(`${label}: ${JSON.stringify(shown)}`);
+    };
+    const keyed: [string, string][] = [
+        ['0', 'read it'],
+        ['1', ''],
+        ['2', ''],
+        ['3', ''],
+        ['3', '3'],
+        ['4', 'test it'],
+        ['5', 'ship it'],
+        ['6', 'tell them'],
+        ['7', ''],
+        ['7', '7']
+    ];
+    for (const [key, text] of keyed) {
+        show(`manifest line ${key} "${text}"`, { id: 'alpha', subtask: { key, do: text } });
+        show(`entry line ${key} "${text}"`, {
+            id: 't1',
+            collection: 'tasks',
+            subtask: { key, do: text }
+        });
+    }
+    show('entry whole task', { id: 't1', collection: 'tasks' });
+});
+```
+
+Its output, the same before and after the change:
+
+```
+manifest line 0 "read it": {"seed":"Task: read it / Part of: Alpha / Written in projects/active/alpha/project.yml; read that file for its context.","name":"Task: read it"}
+entry line 0 "read it": {"seed":"Task: read it / Part of: A task / Written in .oculus/data/academic/tasks.yml; read that file for its context.","name":"Task: read it"}
+manifest line 1 "": {"seed":"Task: 1 / Part of: Alpha / Written in projects/active/alpha/project.yml; read that file for its context.","name":"Task: 1"}
+entry line 1 "": {"seed":"Task: 1 / Part of: A task / Written in .oculus/data/academic/tasks.yml; read that file for its context.","name":"Task: 1"}
+manifest line 2 "": {"seed":"Task: 2 / Part of: Alpha / Deadline: 2026-12-01 / Written in projects/active/alpha/project.yml; read that file for its context.","name":"Task: 2"}
+entry line 2 "": {"seed":"Task: 2 / Part of: A task / Deadline: 2026-12-01 / Written in .oculus/data/academic/tasks.yml; read that file for its context.","name":"Task: 2"}
+manifest line 3 "": {"seed":"Task: 3 / Part of: Alpha / Written in projects/active/alpha/project.yml; read that file for its context.","name":"Task: 3"}
+entry line 3 "": {"seed":"Task: 3 / Part of: A task / Written in .oculus/data/academic/tasks.yml; read that file for its context.","name":"Task: 3"}
+manifest line 3 "3": {"ok":false,"word":"task-unknown"}
+entry line 3 "3": {"ok":false,"word":"task-unknown"}
+manifest line 4 "test it": {"seed":"Task: test it / Part of: Alpha / Written in projects/active/alpha/project.yml; read that file for its context.","name":"Task: test it"}
+entry line 4 "test it": {"seed":"Task: test it / Part of: A task / Written in .oculus/data/academic/tasks.yml; read that file for its context.","name":"Task: test it"}
+manifest line 5 "ship it": {"seed":"Task: ship it / Part of: Alpha / Written in projects/active/alpha/project.yml; read that file for its context.","name":"Task: ship it"}
+entry line 5 "ship it": {"seed":"Task: ship it / Part of: A task / Written in .oculus/data/academic/tasks.yml; read that file for its context.","name":"Task: ship it"}
+manifest line 6 "tell them": {"seed":"Task: tell them / Part of: Alpha / Written in projects/active/alpha/project.yml; read that file for its context.","name":"Task: tell them"}
+entry line 6 "tell them": {"seed":"Task: tell them / Part of: A task / Written in .oculus/data/academic/tasks.yml; read that file for its context.","name":"Task: tell them"}
+manifest line 7 "": {"ok":false,"word":"task-unknown"}
+entry line 7 "": {"ok":false,"word":"task-unknown"}
+manifest line 7 "7": {"ok":false,"word":"task-unknown"}
+entry line 7 "7": {"ok":false,"word":"task-unknown"}
+entry whole task: {"seed":"Task: A task / Open subtasks: read it; test it; tell them / Written in .oculus/data/academic/tasks.yml; read that file for its context.","name":"Task: A task"}
+```
+
+Both runs end `Tests  1 passed (1)`; the after run's 21 lines, compared with these by `diff`, give `diff exit 0`.
+
+### Item 8's timing program
+
+`timing.test.ts`:
+
+```ts
+// The item-8 timing program of O93 round 1: the median time of 20 calls each of `focusPage`
+// (state/boards/focus/filter.ts) under four filters and of `ticker` (state/boards/ticker.ts) over
+// one synthetic hub the size of the research hub: 120 projects, 1200 collection entries, and 200
+// subtask and follow-up lines of which 40 name people. The hub is a scratch directory under the
+// system temporary directory, made by the suite's own fixture; the program prints and asserts
+// nothing.
+import { it } from 'vitest';
+import { performance } from 'node:perf_hooks';
+import { engineDir, glyphCatalog, loadConfig, textCatalog } from '$lib/data/sources/config';
+import { hubVocabs, portfolioConfigFrom } from '$lib/data/index';
+import { setCatalog, setGlyphs } from '$lib/state/shared/words/text';
+import { mergeHubs } from '$lib/data/snapshot/hubs/merge';
+import { ticker } from '$lib/state/boards/ticker';
+import { focusFilter, focusPage, type FocusFilter } from '$lib/state/boards/focus/filter';
+import { buildOneHub } from '@tree/tests/fixtures/hubs/hub-build.ts';
+import { plantScratch } from '@tree/tests/fixtures/scratch.ts';
+
+const LOADED = loadConfig(engineDir()).config;
+const CONFIG = portfolioConfigFrom(LOADED);
+const TEXT = textCatalog(LOADED);
+setCatalog(TEXT);
+setGlyphs(glyphCatalog(LOADED));
+
+const NOW = Date.parse('2026-10-27T12:00:00Z');
+const LISTS = hubVocabs({ primary: null, folders: [], own: LOADED }, null, []);
+const wordsOf = (() => LOADED) as never;
+const FILES = new Proxy({}, { get: () => '' }) as Record<string, string>;
+
+const PEOPLE = ['ann', 'bob', 'cy', 'dee', 'eve', 'fay', 'gus', 'hal', 'ivy', 'jo'];
+const STAGES = ['building', 'submitted', 'drafting', 'exploring'];
+
+/** The files of the synthetic hub, by path. */
+function hubFiles(): Record<string, string> {
+    const files: Record<string, string> = {};
+    const keyed =
+        'schema:\n  - { field: key, type: text, primary_key: true }\n  - { field: name, type: text, display: 1 }\n';
+    files['.oculus/data/people/people.yml'] =
+        `${keyed}entries:\n${PEOPLE.map((one) => `  - { key: ${one}, name: ${one.toUpperCase()} }`).join('\n')}\n`;
+    let named = 0;
+    for (let at = 0; at < 120; at += 1) {
+        const lead = PEOPLE[at % PEOPLE.length];
+        const lines: string[] = [];
+        if (at < 100) {
+            const people = named < 40 ? `, supervisors: [${PEOPLE[(at + 1) % 10]}]` : '';
+            if (people !== '') named += 1;
+            lines.push(`subtasks:\n  - { do: step ${at}${people} }`);
+            const also = named < 40 ? `, lead: [${PEOPLE[(at + 2) % 10]}]` : '';
+            if (also !== '') named += 1;
+            lines.push(`followup:\n  - { do: chase ${at}${also} }`);
+        }
+        files[`projects/active/p${at}/project.yml`] =
+            `id: p${at}\ntier: research\nstage: ${STAGES[at % STAGES.length]}\ntitle: Project ${at}\nlead: [${lead}]\n${lines.join('\n')}\n`;
+    }
+    const entries = (make: (at: number) => string): string =>
+        Array.from({ length: 400 }, (_, at) => `  - ${make(at)}`).join('\n');
+    files['.oculus/data/academic/tasks.yml'] =
+        `schema:\n  - { field: key, type: text, primary_key: true }\n  - { field: title, type: text, display: 1 }\n  - { field: status, type: select, options: [todo, doing, done] }\nentries:\n${entries((at) => `{ key: t${at}, title: Task ${at}, status: ${at % 3 === 0 ? 'done' : 'todo'} }`)}\n`;
+    files['.oculus/data/academic/events.yml'] =
+        `schema:\n  - { field: title, type: text, display: 1, primary_key: true }\n  - { field: date, type: date }\nentries:\n${entries((at) => `{ title: Event ${at}, date: "2026-${String((at % 12) + 1).padStart(2, '0')}-15" }`)}\n`;
+    files['.oculus/data/academic/education.yml'] =
+        `schema:\n  - { field: title, type: text, display: 1, primary_key: true }\n  - { field: date, type: date }\nentries:\n${entries((at) => `{ title: Course ${at}, date: "2027-${String((at % 12) + 1).padStart(2, '0')}-01" }`)}\n`;
+    return files;
+}
+
+/** The median of 20 timed calls of `run`, after two calls that are not timed, in milliseconds. */
+function median(run: () => unknown): number {
+    run();
+    run();
+    const times: number[] = [];
+    for (let at = 0; at < 20; at += 1) {
+        const start = performance.now();
+        run();
+        times.push(performance.now() - start);
+    }
+    times.sort((a, b) => a - b);
+    return (times[9] + times[10]) / 2;
+}
+
+it('the cost of a Focus page and of one ticker build', () => {
+    const dir = plantScratch('oculus-o93r1-timing-', hubFiles(), ['projects/active']);
+    const one = buildOneHub(dir, CONFIG, 0, [], undefined, null, 'lab').snapshot;
+    const snapshot = mergeHubs([{ key: 'lab', files: FILES as never, snapshot: one }], TEXT as never, 0);
+    const entries = Object.values(snapshot.entities.collections).reduce(
+        (sum, held) => sum + held.entries.length,
+        0
+    );
+    const projects = Object.values(snapshot.entities.projects);
+    const lines = projects.reduce((sum, p) => sum + p.subtasks.length + p.followups.length, 0);
+    const naming = projects.reduce(
+        (sum, p) =>
+            sum +
+            [...p.subtasks, ...p.followups].filter(
+                (line) => line.lead !== undefined || line.supervisors !== undefined
+            ).length,
+        0
+    );
+    console.log(
+        `size: ${JSON.stringify({ projects: projects.length, entries, lines, naming, people: Object.keys(snapshot.entities.people).length })}`
+    );
+    const self = new Set(['lab:ann']);
+    const page = (filter: Partial<FocusFilter> & Record<string, unknown>, mine: ReadonlySet<string>) => {
+        const scope = { self: mine, hubs: [], wordsOf, lists: LISTS };
+        const read = focusFilter({ filter });
+        return () => focusPage(snapshot, LOADED, NOW, read, scope);
+    };
+    const week = ticker(snapshot, LOADED, NOW, wordsOf, LISTS);
+    console.log(`ticker lines: ${JSON.stringify({ tasks: week.tasks.length, deadlines: week.deadlines.length })}`);
+    const rows: [string, () => unknown][] = [
+        ['focusPage, nothing ticked off, no self', page({ mine: false }, new Set())],
+        ['focusPage, Mine only on, self lab:ann', page({ mine: true }, self)],
+        ['focusPage, role Supervisor unticked, self lab:ann', page({ mine: false, roles: ['supervisor'] }, self)],
+        ['focusPage, only role Supervisor ticked, self lab:ann', page({ mine: false, roles: ['lead', 'collaborator', 'other'] }, self)],
+        ['ticker, one build', () => ticker(snapshot, LOADED, NOW, wordsOf, LISTS)]
+    ];
+    for (const [label, run] of rows) {
+        const made = run() as { hides?: boolean; sections?: { week: { tasks: unknown[] } } };
+        const shown =
+            made.sections === undefined ? '' : `, hides ${String(made.hides)}, tasks ${made.sections.week.tasks.length}`;
+        console.log(`${label}: median ${median(run).toFixed(1)} ms${shown}`);
+    }
+});
+```
+
+Its output:
+
+```
+size: {"projects":120,"entries":1210,"lines":200,"naming":40,"people":10}
+ticker lines: {"tasks":466,"deadlines":100}
+focusPage, nothing ticked off, no self: median 42.7 ms, hides false, tasks 466
+focusPage, Mine only on, self lab:ann: median 126.5 ms, hides true, tasks 286
+focusPage, role Supervisor unticked, self lab:ann: median 124.9 ms, hides true, tasks 464
+focusPage, only role Supervisor ticked, self lab:ann: median 124.1 ms, hides true, tasks 448
+ticker, one build: median 37.0 ms
+      Tests  1 passed (1)
+```
+
+### Item 10's key checks program
+
+`keys.test.ts`:
+
+```ts
+// The item-10 key checks of O93 round 1: what the step's new keys answer when they are empty,
+// duplicated or collide with another key: the Focus filter's `pillars` list, and the three people
+// fields of a dated line, in a request body, in a write and in a read. Printed, not asserted; every
+// hub it writes is a scratch directory under the system temporary directory, made by the suite's
+// own fixture.
+import { it } from 'vitest';
+import { engineDir, glyphCatalog, loadConfig, textCatalog } from '$lib/data/sources/config';
+import { setCatalog, setGlyphs } from '$lib/state/shared/words/text';
+import { focusFilter } from '$lib/state/boards/focus/filter';
+import { followupWrite, subtaskWrite, writeFollowup } from '$lib/server/edit/writes';
+import { followups, subtasks } from '$lib/data/shapes/shapes';
+import { configFor, hub, manifestOf } from '@tree/tests/server/edit/writes-fixture.ts';
+
+const LOADED = loadConfig(engineDir()).config;
+setCatalog(textCatalog(LOADED));
+setGlyphs(glyphCatalog(LOADED));
+
+const out = (label: string, value: unknown): void => {
+    console.log(`${label}: ${JSON.stringify(value)}`);
+};
+
+const BASE = 'id: alpha\ntier: research\nstage: submitted\ntitle: "A title"\n';
+
+it('the pillars key of the Focus filter', () => {
+    const values: unknown[] = [[], [''], ['a', 'a'], ['__proto__'], ['lab:a', 'lab:a'], 'a', [3], null];
+    for (const value of values) {
+        out(`pillars ${JSON.stringify(value)}`, focusFilter({ filter: { pillars: value } }).pillars);
+    }
+    out('a filter with a key named like a field', focusFilter({ filter: { pillars: ['mine'], mine: false } }));
+});
+
+it('the people fields of a line', () => {
+    const target = { id: 'alpha' };
+    for (const value of [[], [''], [' '], ['ann', ''], ['ann', 'ann'], [' ann ', 'ann']]) {
+        const body = { kind: 'followup', target, key: '0', action: 'lead', value };
+        out(`followup body lead ${JSON.stringify(value)}`, followupWrite(body));
+        out(`subtask body lead ${JSON.stringify(value)}`, subtaskWrite({ ...body, kind: 'subtask' }));
+    }
+    const config = configFor();
+    for (const [label, block, value] of [
+        ['duplicate keys', 'followup:\n  - { do: ask Ann }\n', ['ann', 'bob', 'ann']],
+        ['padded and plain', 'followup:\n  - { do: ask Ann }\n', [' ann ', 'ann']],
+        ['a lead the line holds as a number', 'followup:\n  - { do: ask Ann, lead: 3 }\n', ['ann']],
+        ['an empty list on a line naming nobody', 'followup:\n  - { do: ask Ann }\n', []]
+    ] as [string, string, string[]][]) {
+        const dir = hub(BASE + block);
+        const answer = writeFollowup(dir, config, target, '0', 'lead', value);
+        out(`write ${label}`, { changed: answer.changed, file: manifestOf(dir).slice(BASE.length) });
+    }
+    out('read lead: 3, lead: "", lead: [ann, ann], lead: ["", bob]', [
+        followups([{ do: 'a', lead: 3 }, { do: 'b', lead: '' }, { do: 'c', lead: ['ann', 'ann'] }]),
+        subtasks([{ do: 'd', lead: ['', 'bob'] }, { do: 'e', supervisors: 'ann', lead: 'ann' }])
+    ]);
+});
+```
+
+Its output:
+
+```
+pillars []: []
+pillars [""]: [""]
+pillars ["a","a"]: ["a","a"]
+pillars ["__proto__"]: ["__proto__"]
+pillars ["lab:a","lab:a"]: ["lab:a","lab:a"]
+pillars "a": []
+pillars [3]: []
+pillars null: []
+a filter with a key named like a field: {"mine":false,"roles":[],"tiers":[],"pillars":["mine"],"hubs":[]}
+followup body lead []: {"kind":"followup","target":{"id":"alpha"},"key":"0","action":"lead","value":[]}
+subtask body lead []: {"kind":"subtask","target":{"id":"alpha"},"key":"0","action":"lead","value":[]}
+followup body lead [""]: null
+subtask body lead [""]: null
+followup body lead [" "]: null
+subtask body lead [" "]: null
+followup body lead ["ann",""]: null
+subtask body lead ["ann",""]: null
+followup body lead ["ann","ann"]: {"kind":"followup","target":{"id":"alpha"},"key":"0","action":"lead","value":["ann","ann"]}
+subtask body lead ["ann","ann"]: {"kind":"subtask","target":{"id":"alpha"},"key":"0","action":"lead","value":["ann","ann"]}
+followup body lead [" ann ","ann"]: {"kind":"followup","target":{"id":"alpha"},"key":"0","action":"lead","value":[" ann ","ann"]}
+subtask body lead [" ann ","ann"]: {"kind":"subtask","target":{"id":"alpha"},"key":"0","action":"lead","value":[" ann ","ann"]}
+write duplicate keys: {"changed":["lead"],"file":"followup:\n  - { do: ask Ann, lead: [ann, bob] }\n"}
+write padded and plain: {"changed":["lead"],"file":"followup:\n  - { do: ask Ann, lead: [ann] }\n"}
+write a lead the line holds as a number: {"changed":["lead"],"file":"followup:\n  - { do: ask Ann, lead: [ann] }\n"}
+write an empty list on a line naming nobody: {"changed":[],"file":"followup:\n  - { do: ask Ann }\n"}
+read lead: 3, lead: "", lead: [ann, ann], lead: ["", bob]: [[{"key":"0","do":"a","done":false},{"key":"1","do":"b","done":false},{"key":"2","do":"c","done":false,"lead":["ann"]}],[{"key":"0","do":"d","done":false,"lead":["bob"]},{"key":"1","do":"e","done":false,"lead":["ann"],"supervisors":["ann"]}]]
+      Tests  2 passed (2)
+```
+
+### Handed back
+
+Nothing inside the round is handed back. The looks of cases 28, 31-36 and 45 are the landing's.

@@ -23,9 +23,11 @@
     // presses its name, which opens the project.
     //
     // A web address written in the next line is a link (ui/display/text/LinkedText.svelte); the
-    // waiting line is names and catalog words.
+    // waiting line is names and catalog words, drawn in red after the waiting glyph, whether it
+    // names who the project waits on or says Blocked.
 
     import Chip from '$lib/ui/controls/Chip.svelte';
+    import Glyph from '$lib/ui/display/Glyph.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import Tooltip from '$lib/ui/menu/Tooltip.svelte';
@@ -199,7 +201,10 @@
         </div>
     {/if}
     {#if wait !== ''}
-        <p class="wait">{wait}</p>
+        <p class="wait">
+            <Glyph name={t('project.card.waiting_glyph')} />
+            {wait}
+        </p>
     {/if}
     {#if project.next}
         <p class="next"><LinkedText text={firstSentence(project.next, CARD_NEXT)} /></p>
@@ -299,5 +304,13 @@
         font-size: var(--fs-sm);
         line-height: calc(18px * var(--text-scale, 1));
         color: var(--muted-txt, var(--muted));
+    }
+
+    /* The waiting line is red with the waiting glyph before its words, whoever it waits on. */
+    .wait {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        color: var(--c-red-txt);
     }
 </style>

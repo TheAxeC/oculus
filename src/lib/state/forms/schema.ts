@@ -389,9 +389,13 @@ function targetChoices(
     return registry === RESOURCES ? withGlyphs(joined, snapshot.entities.resources, root) : joined;
 }
 
-/** The follow-up notes, as one text with each note's date; the box that shows it is read-only. */
+/**
+ * The follow-up notes not done, as one text with each note's date; the box that shows it is
+ * read-only, and a done note is left out as a done line of the checklist is.
+ */
 function followupText(project: Project): string {
     return project.followups
+        .filter((note) => !note.done)
         .map((note) =>
             note.after === undefined
                 ? note.do

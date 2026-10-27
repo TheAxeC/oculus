@@ -15,8 +15,9 @@
 // named key), the foreign keys of its fields (naming nothing, empty, naming a collection with no
 // primary key, a `from:` left in place) and the display ranks (none on a target, two of one rank,
 // a rank that is no whole number), and a foreign key naming `projects` is checked against and
-// resolved to the manifests beside a collection keyed `projects`. Every sentence is looked up in
-// the shipped catalog.
+// resolved to the manifests beside a collection keyed `projects`. A manifest's follow-up note is
+// read against the hub schema: `done` and the people fields are declared, and a `done` that is no
+// flag is the type finding. Every sentence is looked up in the shipped catalog.
 
 import { describe, expect } from 'vitest';
 import { portfolioConfigFrom } from '../../../src/lib/data/index.ts';
@@ -380,6 +381,38 @@ describe('the rules of a hub schema', () => {
         expect(found.map((one) => [one.key, one.message])).toEqual([
             [row.key, sentence('findings.schema.not_declared', row.key)]
         ]);
+    });
+
+    it.each([
+        {
+            name: 'a note marked done that names its lead',
+            note: '{ do: a, done: true, lead: [ann] }',
+            found: (): unknown[] => []
+        },
+        {
+            name: 'a note whose done is no flag',
+            note: '{ do: a, done: maybe }',
+            found: (): unknown[] => [
+                [
+                    'followup[0].done',
+                    6,
+                    sentence(
+                        'findings.schema.type',
+                        'followup[0].done',
+                        sentence('findings.schema.is_flag'),
+                        sentence('findings.shape.is_other', 'string')
+                    )
+                ]
+            ]
+        }
+    ])("reads a manifest's follow-up note against the schema: $name", (row) => {
+        const file = 'projects/active/alpha/project.yml';
+        const text = `id: alpha\ntier: research\nstage: exploring\ntitle: Alpha\nfollowup:\n  - ${row.note}\n`;
+        const hub = plantScratch('oculus-schema-note-', { [file]: text }, ['projects/active']);
+        const found = buildOneHub(hub, CONFIG).snapshot.findings.filter((one) =>
+            one.file.endsWith(`/${file}`)
+        );
+        expect(found.map((one) => [one.key, one.line, one.message])).toEqual(row.found());
     });
 
     it.each(STATUS_ROWS)(

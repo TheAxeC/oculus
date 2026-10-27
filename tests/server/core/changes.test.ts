@@ -320,7 +320,7 @@ describe('what each writer records', { tags: ['slow'] }, () => {
     );
 
     it.each(SUBTASK_ROWS)(
-        'records a follow-up note added, changed and taken out once done',
+        'records a follow-up note added, changed, marked done and deleted',
         async (row) => {
             const { into, files } = personalTarget(target());
             const added = await written(
@@ -360,7 +360,24 @@ describe('what each writer records', { tags: ['slow'] }, () => {
                 { kind: 'followup', target: row.host, key: '0', action: 'done' },
                 row.name
             );
-            expect(done[0], row.name).toMatchObject({ field: '0', after: null, undo: 'delete' });
+            expect(done[0], row.name).toMatchObject({
+                kind: 'followup',
+                field: '0',
+                before: { do: 'ask Ann', after: '2026-12-01' },
+                after: { do: 'ask Ann', after: '2026-12-01', done: true },
+                undo: 'field'
+            });
+            const gone = await written(
+                into,
+                { kind: 'followup', target: row.host, key: '0', action: 'delete' },
+                row.name
+            );
+            expect(gone[0], row.name).toMatchObject({
+                field: '0',
+                before: { do: 'ask Ann', after: '2026-12-01', done: true },
+                after: null,
+                undo: 'delete'
+            });
         }
     );
 

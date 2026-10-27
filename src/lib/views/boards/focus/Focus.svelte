@@ -36,11 +36,11 @@
     // under its key (state/boards/focus.ts `FoldKey`), so a reload and a move of the tab keep it;
     // all of them start open.
     //
-    // The header holds the Filter action (FocusFilter.svelte): Mine only, the Role, Tier and Hub
-    // checklists, kept in the tab's instance state beside the folds. The page works the filter out
-    // once (state/boards/focus/filter.ts) and hands the command center, the tasks, the awaiting
-    // box, the band and the lanes the records it keeps and how many rows each hides; the career
-    // banner and the quick add read the whole portfolio.
+    // The header holds the Filter action (FocusFilter.svelte): Mine only, the Role, Tier, Pillar
+    // and Hub checklists, kept in the tab's instance state beside the folds. The page works the
+    // filter out once (state/boards/focus/filter.ts) and hands the command center, the tasks, the
+    // awaiting box, the band and the lanes the records it keeps and how many rows each hides; the
+    // career banner and the quick add read the whole portfolio.
     //
     // Over a wallpaper the banner, the command center, the tasks, the band's lanes and the lanes
     // are each a surface of their own; the awaiting box and the said line are read off a
@@ -75,6 +75,7 @@
         filterLists,
         focusFilter,
         focusPage,
+        pillarRows,
         withFocusFilter,
         type FocusFilter as Choice
     } from '$lib/state/boards/focus/filter';
@@ -119,6 +120,8 @@
     const hubs = $derived(hubList(roots(), primary()));
     /** The rows of the Role and Tier checklists, in the primary hub's words. */
     const lists = $derived(filterLists(vocabOf()));
+    /** The rows of the Pillar checklist: every pillar of the workspace. */
+    const pillars = $derived(pillarRows(snapshot?.entities.pillars ?? {}, hubs));
 
     /**
      * The page under the filter: every section's records, worked out once here and handed down,
@@ -228,6 +231,7 @@
                 named={self.size > 0}
                 roles={lists.roles}
                 tiers={lists.tiers}
+                {pillars}
                 {hubs}
                 mineHides={page?.mineHides ?? false}
                 hides={page?.hides ?? false}

@@ -16,14 +16,19 @@ text:
             deadline: Deadline
             deadline_tip: set or change the deadline
             del: del
+            delete_followup: delete the note
             delete_subtask: delete subtask
             done: done
             edit: edit
             edit_followup: change the text or the date it waits for
             edit_subtask: change the text or the deadline
             followup_after: not before
-            followup_done_tip: done; takes the note out
+            followup_done_tip: done; the note stays, struck through, until it is deleted
+            followup_reopen_tip: open the note again
             followups: Follow-ups
+            line_collaborators: Collaborators
+            line_lead: Lead
+            line_supervisors: Supervisors
             mark_done: mark done
             n_open: '{0} open'
             new_deadline: New deadline
@@ -90,6 +95,7 @@ text:
             lane_tip: 'Focus lane: {0}'
             latest: Latest
             lead_tip: 'Role: {0}'
+            line_people_join: ', '
             machine_glyph: host
             menu_glyph: more
             more_actions: More
@@ -133,6 +139,7 @@ text:
             venue: Venue
             venue_glyph: venue
             venue_tip: 'Venue: {0}'
+            waiting_glyph: waiting
             waiting_on: Waiting on
             workbench_glyph: app_view
         doc_failed: 'the document was not read: {0}'

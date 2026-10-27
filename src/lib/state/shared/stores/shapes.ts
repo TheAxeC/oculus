@@ -208,13 +208,48 @@ export type SessionFields = {
 /** What a subtask write hangs under: one project by its id, or one entry of one collection. */
 export type SubtaskTarget = { id: string; collection?: string };
 
-/** What one subtask button does to its line: `do` and `deadline` set that field to the value. */
-export type SubtaskAction = 'done' | 'reopen' | 'snooze' | 'delete' | 'do' | 'deadline';
+/** A people field of a dated line, which a write sets to a list of person keys. */
+export type PeopleAction = 'lead' | 'supervisors' | 'collaborators';
 
 /**
- * What one follow-up button does to its note: `done` takes it out, `do` and `after` set that field.
+ * What one subtask button does to its line, besides setting its people: `done` and `reopen` tick
+ * and clear it, `delete` takes it out, and `snooze`, `do` and `deadline` set that field to the
+ * text given.
  */
-export type FollowupAction = 'done' | 'do' | 'after';
+export type SubtaskTextAction = 'done' | 'reopen' | 'snooze' | 'delete' | 'do' | 'deadline';
+
+/** What one subtask write does to its line. */
+export type SubtaskAction = SubtaskTextAction | PeopleAction;
+
+/**
+ * What one follow-up button does to its note, besides setting its people: `done` marks it done and
+ * `reopen` clears that, `delete` takes it out, and `do` and `after` set that field to the text
+ * given.
+ */
+type FollowupTextAction = 'done' | 'reopen' | 'delete' | 'do' | 'after';
+
+/** What one follow-up write does to its note. */
+export type FollowupAction = FollowupTextAction | PeopleAction;
+
+/** The people a new line names, by field, each a list of person keys. */
+export type LinePeopleFields = Partial<Record<PeopleAction, string[]>>;
+
+/** What a new subtask line carries: its text, its deadline, whether it is done and its people. */
+export type SubtaskAddFields = LinePeopleFields & { do: string; deadline?: string; done?: boolean };
+
+/** What a new follow-up note carries: its text, its date, whether it is done and its people. */
+export type FollowupAddFields = LinePeopleFields & { do: string; after?: string; done?: boolean };
+
+/** The write of one line's field: a people field takes a list of keys, every other a text. */
+export type LineWriter<Text extends string> = {
+    (
+        target: SubtaskTarget,
+        key: string,
+        action: PeopleAction,
+        value: readonly string[]
+    ): Promise<WriteAnswer>;
+    (target: SubtaskTarget, key: string, action: Text, value?: string): Promise<WriteAnswer>;
+};
 
 /**
  * What a caller says about one write it sends: `said` when it words a failure itself, `asked` the
@@ -310,26 +345,10 @@ export type WritesStore = {
         id: string,
         fields: Record<string, unknown>
     ) => Promise<WriteAnswer>;
-    writeSubtask: (
-        target: SubtaskTarget,
-        key: string,
-        action: SubtaskAction,
-        value?: string
-    ) => Promise<WriteAnswer>;
-    addSubtask: (
-        target: SubtaskTarget,
-        fields: { do: string; deadline?: string }
-    ) => Promise<WriteAnswer>;
-    writeFollowup: (
-        target: SubtaskTarget,
-        key: string,
-        action: FollowupAction,
-        value?: string
-    ) => Promise<WriteAnswer>;
-    addFollowup: (
-        target: SubtaskTarget,
-        fields: { do: string; after?: string }
-    ) => Promise<WriteAnswer>;
+    writeSubtask: LineWriter<SubtaskTextAction>;
+    addSubtask: (target: SubtaskTarget, fields: SubtaskAddFields) => Promise<WriteAnswer>;
+    writeFollowup: LineWriter<FollowupTextAction>;
+    addFollowup: (target: SubtaskTarget, fields: FollowupAddFields) => Promise<WriteAnswer>;
     /** Set the changed sections of the career file, a section cleared by null. */
     writeCareer: (fields: Record<string, unknown>) => Promise<WriteAnswer>;
     /**

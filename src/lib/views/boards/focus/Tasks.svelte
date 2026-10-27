@@ -11,6 +11,11 @@
     // rows with. A group with no line draws nothing, and a section with no group at all draws
     // nothing either, unless the Focus filter hides lines of it, which its heading row then says
     // ("3 hidden").
+    //
+    // A task entry's Remove asks the card's Delete question under the groups (views/shared/forms/
+    // entry/DeleteAsk.svelte), naming any file that refers to the entry; its yes deletes the entry
+    // and the answer is said on the board's outcome line, its No closes it with nothing written. A
+    // second Remove while it is open asks about the second entry alone.
 
     import RootChip from '$lib/views/shared/card/RootChip.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
@@ -19,7 +24,17 @@
     import { hasTasks, taskGroups, type TickerItem } from '$lib/state/boards/ticker';
     import { t } from '$lib/state/shared/words/text';
     import FoldHead from '../../shared/card/heads/FoldHead.svelte';
-    import { act, dateTail, fileBlock, openLine, rowMaker, type SectionProps } from './rows';
+    import DeleteAsk from '../../shared/forms/entry/DeleteAsk.svelte';
+    import {
+        act,
+        dateTail,
+        fileBlock,
+        openLine,
+        removeAsked,
+        rowMaker,
+        type SectionProps,
+        type TaskEntry
+    } from './rows';
     import { useState } from '$lib/state/client/use';
 
     const client = useState();
@@ -57,8 +72,19 @@
         }
     }
 
-    /** One button on one line, and the one sentence the board says about what it wrote. */
+    /** The task entry whose Remove asks its question under the section, null while none does. */
+    let asking = $state<TaskEntry | null>(null);
+
+    /**
+     * One button on one line, and the one sentence the board says about what it wrote. A task
+     * entry's Remove writes nothing: it opens the question for that entry, in place of any other.
+     */
     async function run(id: string, action: string): Promise<void> {
+        const asked = removeAsked(view.index[id], action);
+        if (asked !== null) {
+            asking = asked;
+            return;
+        }
         const said = await act(client, view.index[id], action, now);
         if (said !== null) onsaid(said);
     }
@@ -111,6 +137,18 @@
             )}
             <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
             {@render group(t('focus.tasks.grp_tasks_label'), '', view.tasks)}
+            {#if asking !== null}
+                {#key `${asking.collection}:${asking.id}`}
+                    <div class="ask">
+                        <DeleteAsk
+                            collection={asking.collection}
+                            id={asking.id}
+                            {onsaid}
+                            onclose={() => (asking = null)}
+                        />
+                    </div>
+                {/key}
+            {/if}
         {/if}
     </section>
 {/if}
@@ -146,6 +184,12 @@
     .grp {
         margin-top: 4px;
         break-inside: avoid;
+    }
+
+    /* The question a task's Remove asks spans both columns, under the groups. */
+    .ask {
+        column-span: all;
+        margin-top: 4px;
     }
     .lbl {
         display: flex;

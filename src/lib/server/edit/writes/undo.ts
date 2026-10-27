@@ -15,7 +15,8 @@
 // a new line, or inside its line for text removed from a flow map. An add and a delete of a
 // collection entry, and the delete of a lead or a Lit Watch entry, carry the text they replaced,
 // which goes back in place, so the file is what it was byte for byte; a file changed there
-// since is put right by the writer the other way.
+// since is put right by the writer the other way. A deleted subtask line or follow-up note goes
+// back at the place it held (`lineIndex`), written from its recorded fields.
 
 import { existsSync } from 'node:fs';
 import { join, resolve } from 'node:path';
@@ -72,7 +73,7 @@ import {
     writeSubtask,
     writeSubtaskAdd
 } from './subtasks.ts';
-import { FOLLOWUP } from '../entry-edit/index.ts';
+import { FOLLOWUP, SUBTASKS, type LineBlock } from '../entry-edit/index.ts';
 import { entryOf, readCollection, type Collection } from '../../files/fs/collections.ts';
 import { entryIdOf } from '../../../data/model/index.ts';
 import type { FeedKind } from '../../../data/model/index.ts';
@@ -211,6 +212,42 @@ function feedOf(into: PrimaryTarget, change: Change): FeedKind | null {
 function subtaskTarget(into: PrimaryTarget, change: Change): SubtaskTarget {
     const collection = collectionOf(into, change);
     return collection === null ? { id: change.key } : { id: change.key, collection };
+}
+
+/**
+ * The place a deleted line of a list block held, from its key, which the undo of the Delete puts
+ * it back at; none for the name of a line of a block written as a map.
+ */
+function lineIndex(field: string): number | undefined {
+    return /^\d+$/.test(field) ? Number(field) : undefined;
+}
+
+/** The block a change of each line kind is a change to. */
+const LINE_BLOCKS: Partial<Record<string, LineBlock>> = {
+    subtask: SUBTASKS,
+    'subtask-add': SUBTASKS,
+    followup: FOLLOWUP,
+    'followup-add': FOLLOWUP
+};
+
+/**
+ * The undo of a change to one line of a block, by the undo the record names: a deleted line goes
+ * back at the place it held, a line the change made is taken out, and a changed line gets its
+ * earlier fields back. An undo of an undo reads its own record the same way.
+ */
+function lineUndo(into: PrimaryTarget, change: Change, block: LineBlock): WriteOutcome {
+    const target = subtaskTarget(into, change);
+    const before = mapBeforeShape.parse(change.before);
+    if (change.undo === 'delete') {
+        const at = lineIndex(change.field);
+        return writeSubtaskAdd(into.hub, into.config, target, before, block, at);
+    }
+    if (change.undo === 'create') {
+        return block === FOLLOWUP
+            ? writeFollowup(into.hub, into.config, target, change.field, 'delete')
+            : writeSubtask(into.hub, into.config, target, change.field, 'delete');
+    }
+    return restoreSubtask(into.hub, into.config, target, change.field, before, block);
 }
 
 /** One collection read for an undo, by the key whose file the record names. */
@@ -509,28 +546,8 @@ function apply(into: WriteTarget, change: Change): WriteOutcome | { error: 'unwr
     if (change.kind === LITERATURE_SAVE) {
         return removeLiterature(fileOf(change), change.key, change.replaced, own.config);
     }
-    if (change.kind === 'subtask') {
-        const target = subtaskTarget(own, change);
-        const before = mapBeforeShape.parse(change.before);
-        if (change.undo === 'delete') return writeSubtaskAdd(own.hub, own.config, target, before);
-        return restoreSubtask(own.hub, own.config, target, change.field, before);
-    }
-    if (change.kind === 'subtask-add') {
-        const target = subtaskTarget(own, change);
-        return writeSubtask(own.hub, own.config, target, change.field, 'delete');
-    }
-    if (change.kind === 'followup') {
-        const target = subtaskTarget(own, change);
-        const before = mapBeforeShape.parse(change.before);
-        if (change.undo === 'delete') {
-            return writeSubtaskAdd(own.hub, own.config, target, before, FOLLOWUP);
-        }
-        return restoreSubtask(own.hub, own.config, target, change.field, before, FOLLOWUP);
-    }
-    if (change.kind === 'followup-add') {
-        const target = subtaskTarget(own, change);
-        return writeFollowup(own.hub, own.config, target, change.field, 'done');
-    }
+    const block = LINE_BLOCKS[change.kind];
+    if (block !== undefined) return lineUndo(own, change, block);
     if (
         change.kind === 'feed-field' ||
         change.kind === 'feed-delete' ||

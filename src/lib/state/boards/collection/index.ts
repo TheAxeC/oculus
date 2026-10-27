@@ -20,11 +20,11 @@ import {
     filledTextShape,
     followups,
     itemsShape,
-    keyedRowsShape,
     listOrOneShape,
     readAs,
     recordItemsShape,
-    searchRevealShape
+    searchRevealShape,
+    subtasks
 } from '../../../data/shapes/shapes.ts';
 import {
     FILTERED_TYPES,
@@ -722,32 +722,14 @@ export function offeredStatuses(
     return schema === undefined ? facets.map((facet) => facet.value) : [];
 }
 
-/** The fields of a subtask written as a map: `done` is true only when it is the boolean true. */
-const subtaskFieldsShape = z.object({
-    do: anyValueShape,
-    done: z.boolean().catch(false),
-    deadline: anyValueShape,
-    snooze: anyValueShape
-});
-
 /**
- * The `subtasks:` of one entry as the block draws them. A list is keyed by position and a map by
- * its own keys, which is what the write path addresses a line by; a line with no `do` is no line.
+ * The `subtasks:` of one entry as the block and the Focus board draw them, read by the one reader
+ * the snapshot uses (data/shapes/shapes.ts): a list is keyed by position and a map by its own
+ * keys, which is what the write path addresses a line by, and a line whose `do` is no text is no
+ * line.
  */
 export function entrySubtasks(entry: Pick<Entry, 'fields'>): Subtask[] {
-    const lines: Subtask[] = [];
-    for (const [key, item] of readAs(keyedRowsShape, entry.fields.subtasks) ?? []) {
-        const record = readAs(subtaskFieldsShape, item);
-        const text = readAs(stringShape, item) ?? textOf(record?.do);
-        if (text === undefined || text.trim() === '') continue;
-        const line: Subtask = { key, do: text, done: record?.done ?? false };
-        const deadline = textOf(record?.deadline);
-        const snooze = textOf(record?.snooze);
-        if (deadline !== undefined) line.deadline = deadline;
-        if (snooze !== undefined) line.snooze = snooze;
-        lines.push(line);
-    }
-    return lines;
+    return subtasks(entry.fields.subtasks);
 }
 
 /**

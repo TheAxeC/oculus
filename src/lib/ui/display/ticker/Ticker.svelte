@@ -11,7 +11,9 @@
     // by the caller's `marked` snippet, since this folder imports nothing of ui/controls.
     //
     // A web address written in the name of a row that is plain text is a link
-    // (ui/display/text/LinkedText.svelte); a row that is picked draws its name as its button.
+    // (ui/display/text/LinkedText.svelte); a row that is picked draws its name as its button. A
+    // row's `detail` is drawn after its name in the muted colour, inside that button when it is
+    // one.
 
     import type { Snippet } from 'svelte';
     import Glyph from '../Glyph.svelte';
@@ -83,6 +85,9 @@
                     onclick={() => onpick(row.id)}
                 >
                     {row.label}
+                    {#if row.detail !== undefined && row.detail !== ''}
+                        <span class="detail">{row.detail}</span>
+                    {/if}
                     {#if row.tail !== undefined && row.tail !== ''}
                         <span
                             class="tail"
@@ -95,6 +100,9 @@
                 </button>
             {:else}
                 <span class="name plain"><LinkedText text={row.label} /></span>
+                {#if row.detail !== undefined && row.detail !== ''}
+                    <span class="detail">{row.detail}</span>
+                {/if}
                 {#if row.tail !== undefined && row.tail !== ''}
                     <span
                         class="tail"
@@ -178,6 +186,11 @@
 
     .tail {
         flex: 0 0 auto;
+        color: var(--muted-txt, var(--muted));
+    }
+
+    /* The muted words after a name, such as the people a line names. */
+    .detail {
         color: var(--muted-txt, var(--muted));
     }
 

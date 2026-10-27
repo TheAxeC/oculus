@@ -472,6 +472,12 @@ export async function handleWrite(
         return answer(made, 'entry', into, undefined, app ?? undefined);
     }
 
+    /** The hub, the configuration and the target a routed line write runs over. */
+    const hubOf = (at: {
+        into: { hub: string; config: PortfolioConfig };
+        target: SubtaskTarget;
+    }): [string, PortfolioConfig, SubtaskTarget] => [at.into.hub, at.into.config, at.target];
+
     const subtask = subtaskWrite(body);
     if (subtask !== null) {
         const off = routeRefusal(into, [subtask.target.id]);
@@ -480,14 +486,7 @@ export async function handleWrite(
         const outcome =
             at === null || !reaches(at.into, at.target.id, app)
                 ? NOT_FOUND
-                : writeSubtask(
-                      at.into.hub,
-                      at.into.config,
-                      at.target,
-                      subtask.key,
-                      subtask.action,
-                      subtask.value
-                  );
+                : writeSubtask(...hubOf(at), subtask.key, subtask.action, subtask.value);
         if (!outcome.found) {
             return json({ error: notFound(into.config.text, subtask.target) }, { status: 404 });
         }
@@ -517,14 +516,7 @@ export async function handleWrite(
         const outcome =
             at === null || !reaches(at.into, at.target.id, app)
                 ? NOT_FOUND
-                : writeFollowup(
-                      at.into.hub,
-                      at.into.config,
-                      at.target,
-                      followup.key,
-                      followup.action,
-                      followup.value
-                  );
+                : writeFollowup(...hubOf(at), followup.key, followup.action, followup.value);
         if (!outcome.found) {
             return json({ error: notFound(into.config.text, followup.target) }, { status: 404 });
         }

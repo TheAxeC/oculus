@@ -749,9 +749,9 @@ stage: nascent          # nascent, scoping, de-risking, exploring, in-prep, buil
 
 # --- Dates
 # deadline: YYYY-MM-DD
-# followup: []          # written by the card: { do, after }, hidden until after
+# followup: []          # written by the card: { do, after, done, lead, supervisors, collaborators }, hidden until after
 # snooze: YYYY-MM-DD    # off the ticker until this date
-# subtasks: {}          # written by the card
+# subtasks: {}          # written by the card: { do, deadline, done, snooze, lead, supervisors, collaborators }
 
 # --- Deposit and compute
 # code_availability:

@@ -7,9 +7,22 @@ import { renderScalar } from '../../../data/helpers/files/yaml/collection-text.t
 import { byKey } from '../../../data/helpers/guards.ts';
 import { flowScalar, renderFlowList } from './lines.ts';
 
+/**
+ * One line of a block as a flow map. A list of texts, the people of a line, is written in the
+ * tree's inline form `[a, b]` (`renderFlowList`, which quotes an item holding a comma, a bracket or
+ * a brace); every other value is written as `flowScalar` writes it.
+ */
 export function renderFlowMap(record: Record<string, FieldValue>): string {
-    const parts = Object.entries(record).map(([key, value]) => `${key}: ${flowScalar(value)}`);
+    const parts = Object.entries(record).map(([key, value]) => `${key}: ${flowValue(value)}`);
     return parts.length === 0 ? '{}' : `{ ${parts.join(', ')} }`;
+}
+
+/** One value of a flow map: a list of texts inline, anything else as a flow scalar. */
+function flowValue(value: FieldValue): string {
+    if (Array.isArray(value) && value.every((item) => typeof item === 'string')) {
+        return renderFlowList(value, []);
+    }
+    return flowScalar(value);
 }
 
 /**

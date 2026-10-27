@@ -1,7 +1,8 @@
 // Layer 2, server. Reading and editing the blocks of one-line flow maps a card edits line by line
 // lives here: the `subtasks:` checklist and the `followup:` notes, each a list of lines under a
 // manifest or a collection entry. They change independently of collection entry fields, and the
-// two blocks differ only in their key and in the fields a new line may carry (`LINE_FIELDS`).
+// two blocks differ only in their key and in the text fields a new line may carry (`LINE_FIELDS`);
+// a line of either may be done and may name people (`LINE_PEOPLE` of data/shapes/shapes.ts).
 //
 // A parsed value is taken for a map by data/helpers/guards.ts's `isMap`, and the yaml library's own
 // node test is imported as `isYamlMap`.
@@ -33,11 +34,12 @@ import {
     type SubtaskBlock,
     type SubtaskLine
 } from './lines.ts';
-import { isMap } from '../../../data/helpers/guards.ts';
+import { isMap, strings } from '../../../data/helpers/guards.ts';
+import { LINE_PEOPLE } from '../../../data/shapes/shapes.ts';
 
 /**
- * The text fields a new line of each block carries besides its `do`: a subtask's deadline and
- * snooze day, a follow-up note's date before which it stays hidden.
+ * The text fields a new line of each block carries besides its `do`, its `done` and its people: a
+ * subtask's deadline and snooze day, a follow-up note's date before which it stays hidden.
  */
 const LINE_FIELDS: Record<LineBlock, string[]> = {
     [SUBTASKS]: ['deadline', 'snooze'],
@@ -276,8 +278,21 @@ export function deleteSubtask(
 }
 
 /**
- * Append one line to a block of a host, making the block when it has none. A block written as a
- * map of keys is not appended to: the key a new line would take is the file's own vocabulary and
+ * The person keys a people field of a line is written with: each trimmed, a blank one dropped and
+ * a key given twice written once, in the order given; null when no key is left, which drops the
+ * field.
+ */
+export function peopleKeys(keys: readonly string[]): string[] | null {
+    const held = [...new Set(keys.map((one) => one.trim()).filter((one) => one !== ''))];
+    return held.length === 0 ? null : held;
+}
+
+/**
+ * Add one line to a block of a host, making the block when it has none: at its end, or before the
+ * line at the index `at` when the block holds a line there. The line carries its `do`, the text
+ * fields of its block (`LINE_FIELDS`), `done: true` when it is given so, and the people it names (a
+ * person key, or a list of keys written `[a, b]`); any other field is dropped. A block written as a
+ * map of keys is not added to: the key a new line would take is the file's own vocabulary and
  * nothing here may invent one.
  */
 export function addSubtask(
@@ -285,7 +300,8 @@ export function addSubtask(
     range: LineRange | null,
     fields: Record<string, unknown>,
     catalog: Record<string, string>,
-    name: LineBlock = SUBTASKS
+    name: LineBlock = SUBTASKS,
+    at?: number
 ): EditResult {
     const host = hostAt(source, range);
     if (host === null) return refuseAll(source, [name], why(REFUSALS.entryNotInFile), catalog);
@@ -303,28 +319,41 @@ export function addSubtask(
         const value = fields[field];
         if (typeof value === 'string' && value.trim() !== '') record[field] = value.trim();
     }
-    if (name === SUBTASKS && fields.done === true) record.done = true;
+    if (fields.done === true) record.done = true;
+    for (const field of LINE_PEOPLE) {
+        const value = fields[field];
+        const keys = Array.isArray(value) ? peopleKeys(strings(value)) : null;
+        if (typeof value === 'string' && value.trim() !== '') record[field] = value.trim();
+        else if (keys !== null) record[field] = keys;
+    }
 
     const lines = source.split('\n');
     const line = `${' '.repeat(block.indent)}- ${renderFlowMap(record)}`;
-    let held: unknown[] = [];
+    let list: unknown[] = [record];
     if (block.key === null) {
         const own = rangeOf(host.node);
         if (own === null) return refuseAll(source, [name], why(REFUSALS.entryNoPlace), catalog);
         const pad = ' '.repeat(columnAt(source, own[0]));
-        const at =
+        const place =
             host.path.length === 0 ? lastKeyLine(source, host.node) : lastLineOf(source, host.node);
-        if (at === null) return refuseAll(source, [name], why(REFUSALS.entryNoPlace), catalog);
-        lines.splice(at, 0, `${pad}${name}:`, `${pad}  - ${renderFlowMap(record)}`);
+        if (place === null) return refuseAll(source, [name], why(REFUSALS.entryNoPlace), catalog);
+        lines.splice(place, 0, `${pad}${name}:`, `${pad}  - ${renderFlowMap(record)}`);
     } else {
-        const at =
-            block.items.length === 0 ? block.key + 1 : block.items[block.items.length - 1].line + 1;
         const value = pairOf(host.node, name)?.value;
-        held = value !== undefined && value !== null && isSeq(value) ? value.toJSON() : [];
-        lines.splice(at, 0, line);
+        const held: unknown[] =
+            value !== undefined && value !== null && isSeq(value) ? value.toJSON() : [];
+        // The line the new one goes before, when `at` names one; else it goes after the last.
+        const next = at === undefined ? undefined : block.items[at];
+        const last = block.items[block.items.length - 1] as SubtaskLine | undefined;
+        const place = next?.line ?? (last === undefined ? block.key + 1 : last.line + 1);
+        lines.splice(place, 0, line);
+        list =
+            next === undefined
+                ? [...held, record]
+                : [...held.slice(0, at), record, ...held.slice(at)];
     }
     const text = lines.join('\n');
-    const change: Change = { path: [...host.path, name], value: [...held, record] };
+    const change: Change = { path: [...host.path, name], value: list };
     if (!verified(source, text, [change])) {
         return refuseAll(source, [name], why(REFUSALS.unverified), catalog);
     }

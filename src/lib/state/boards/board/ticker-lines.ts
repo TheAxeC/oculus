@@ -1,15 +1,16 @@
 // Layer 2, client state. The lines the ticker is made of, and the builders that make them: the
-// shape of a line, the follow-ups that are due and the pending lines of one checklist. The
-// projects' and entries' lines are built in ticker.ts out of these builders. A subtask's line is
-// drawn with the glyph the word `focus.command.glyph_subtask` names, as ticker.ts draws an overdue
-// line and a follow-up with the glyphs of `focus.command.glyph_overdue` and
-// `focus.command.glyph_followup`, and a dated line of a category with its word's glyph
-// (`ticker_categories`).
+// shape of a line, the follow-ups that are due, the pending lines of one checklist and what a line
+// carries of the people it names. The lines of a checklist are read by the one reader of
+// data/shapes/shapes.ts (`subtasks`), so the board and a card read a line alike, and a line's
+// people by its `peopleOfLine`. The projects' and entries' lines are built in ticker.ts out of
+// these builders. A subtask's line is drawn with the glyph the word `focus.command.glyph_subtask`
+// names, as ticker.ts draws an overdue line and a follow-up with the glyphs of
+// `focus.command.glyph_overdue` and `focus.command.glyph_followup`, and a dated line of a category
+// with its word's glyph (`ticker_categories`).
 
-import type { Followup, Id, Rooted } from '../../../data/model/index.ts';
+import type { Followup, Id, LinePeople, Rooted, Subtask } from '../../../data/model/index.ts';
 import { rootOf } from '../../../data/helpers/hub-names.ts';
-import { z } from 'zod';
-import { keyedRowsShape, readAs, wordShape } from '../../../data/shapes/shapes.ts';
+import { peopleOfLine } from '../../../data/shapes/shapes.ts';
 import { t } from '../../shared/words/text.ts';
 import { snoozed } from '../focus.ts';
 import { daysUntil } from './index.ts';
@@ -18,8 +19,8 @@ import { daysUntil } from './index.ts';
  * What a ticker line's buttons act on, and nothing about what they say. A view derives the buttons
  * from the shape: a `manifest` or an `entry` is snoozed, an `entry` carrying `statuses` also gets
  * its lifecycle buttons, a line carrying a `subtask` key is ticked, reopened, snoozed or deleted, a
- * `followup` note is marked done, which takes it out of its list, a snoozed line is woken, and a
- * `lead` and a `venue` carry none: a lead's line opens the Leads view, where its actions are, and a
+ * `followup` note is marked done or taken out of its list, a snoozed line is woken, and a `lead`
+ * and a `venue` carry none: a lead's line opens the Leads view, where its actions are, and a
  * venue's call opens the Venues view.
  *
  * Keeping the words out is what lets one view draw every group: the buttons are the write path's
@@ -82,6 +83,13 @@ export type TickerItem = {
     months?: number;
     /** The name of the hub the line's record is of, absent for a record of no hub. */
     root?: string;
+    /**
+     * The people a subtask or follow-up line names, by key in each field, which Mine only and the
+     * Role list read in place of the record's people; absent when the line names nobody.
+     */
+    people?: LinePeople;
+    /** The names of those people as one text, which the row draws after its label. */
+    names?: string;
     snoozed: boolean;
 };
 
@@ -105,13 +113,17 @@ export function item(
     return { kind, glyph, label, days, snoozed: false, ...over };
 }
 
-/** The follow-ups of one holder that are due: no `after:`, or an `after:` that has passed. */
+/**
+ * The follow-ups of one holder that are due: not done, with no `after:` or an `after:` that has
+ * passed. A done note leaves the board, as a done subtask line does.
+ */
 export function dueFollowups(
     notes: Followup[],
     now: number
 ): { note: Followup; days: number | null }[] {
     const out: { note: Followup; days: number | null }[] = [];
     for (const note of notes) {
+        if (note.done) continue;
         const after = note.after ?? '';
         if (after === '') {
             out.push({ note, days: null });
@@ -124,43 +136,29 @@ export function dueFollowups(
     return out;
 }
 
-export type SubtaskRow = {
-    key: string;
-    do: string;
-    deadline?: string;
-    done: boolean;
-    snooze?: string;
-};
-
-/** One line of an entry's checklist: a string, or a map with `do`, `deadline`, `done`, `snooze`. */
-const subtaskShape = z
-    .union([
-        z.string().transform((line) => ({ do: line, deadline: '', done: false, snooze: '' })),
-        z.object({
-            do: wordShape,
-            deadline: wordShape,
-            done: z.boolean().catch(false),
-            snooze: wordShape
-        })
-    ])
-    .refine((line) => line.do.trim() !== '');
-
-/** The `subtasks:` of a collection entry, as a map of lines or a list of them. */
-export function subtasksOf(value: unknown): SubtaskRow[] {
-    return (readAs(keyedRowsShape, value) ?? []).flatMap(([key, held]) => {
-        const line = readAs(subtaskShape, held);
-        return line === null ? [] : [{ key, ...line }];
-    });
+/**
+ * What a ticker line of a dated line carries of the people it names: their keys by field, and the
+ * words of their names (state/boards/person.ts `lineNames`) joined by the catalog's separator. A
+ * line that names nobody carries neither.
+ */
+export function peopleMark(line: LinePeople, names: readonly string[]): Partial<TickerItem> {
+    const people = peopleOfLine(line);
+    if (Object.keys(people).length === 0) return {};
+    return { people, names: names.join(t('project.card.line_people_join')) };
 }
 
-/** The pending lines of one checklist, each carrying its parent's `kind` as its grouping word. */
+/**
+ * The pending lines of one checklist, each carrying its parent's `kind` as its grouping word and
+ * what `marked` gives it of the people the line names.
+ */
 export function subtaskLines(
-    rows: SubtaskRow[],
+    rows: Subtask[],
     parent: string,
     kind: string,
     now: number,
     over: Partial<TickerItem>,
-    target: TickerTarget
+    target: TickerTarget,
+    marked: (row: Subtask) => Partial<TickerItem>
 ): TickerItem[] {
     const out: TickerItem[] = [];
     for (const row of rows) {
@@ -168,6 +166,7 @@ export function subtaskLines(
         const days = daysUntil(row.deadline ?? '', now);
         const line = item(kind, t('focus.command.glyph_subtask'), `${parent}: ${row.do}`, days, {
             ...over,
+            ...marked(row),
             subtaskDo: row.do,
             target: { ...target, subtask: row.key }
         });

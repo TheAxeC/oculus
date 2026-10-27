@@ -7,9 +7,10 @@
 // what the reader was shown. A task is an entry of a collection, a subtask of a manifest, or a
 // subtask of an entry; the subtask is found by its key in the host's own list and must hold the
 // `do` text the page drew, so a list whose items shifted never seeds the line that moved into its
-// place. A line of a list is read by the keys the ticker uses (the position in a list, the key of a
-// map) and, unlike the ticker's, a line with a blank `do` is kept, since a reference to it is
-// answered with the task's id in place of its text.
+// place. A line of a list is read by the keys and the line shape the ticker uses (the position in a
+// list, the key of a map; data/shapes/shapes.ts `checklistLineShape`) and, unlike the ticker's, a
+// line with a blank `do` is kept, since a reference to it is answered with the task's id in place
+// of its text.
 //
 // Every value that reaches the seed or the name has its control characters replaced by a space,
 // because the seed becomes an argument of a process and the name a tmux option; the line feeds
@@ -17,13 +18,12 @@
 
 import { statSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
-import { z } from 'zod';
 import { scalar, str, strings } from '../../../../data/helpers/guards.ts';
 import { PROMPT_MAX } from '../../../../data/helpers/run/schedules.ts';
 import { entryTitleOf } from '../../../../data/model/index.ts';
 import type { PortfolioConfig, TaskRef } from '../../../../data/model/index.ts';
 import { collectionSchema } from '../../../../data/snapshot/normalise.ts';
-import { keyedRowsShape, readAs, wordShape } from '../../../../data/shapes/shapes.ts';
+import { checklistLineShape, keyedRowsShape, readAs } from '../../../../data/shapes/shapes.ts';
 import { manifestDir } from '../../../../data/sources/manifests.ts';
 import { hubManifests } from '../../../files/roots.ts';
 import { entryOf, identityOf, readCollection } from '../../../files/fs/collections.ts';
@@ -39,16 +39,17 @@ export type SeedAnswer =
 /** One line of a checklist: its key, its text, its deadline and whether it is done. */
 type Line = { key: string; do: string; deadline: string; done: boolean };
 
-const lineShape = z.union([
-    z.string().transform((line) => ({ do: line, deadline: '', done: false })),
-    z.object({ do: wordShape, deadline: wordShape, done: z.boolean().catch(false) })
-]);
-
-/** The lines of a `subtasks:` value, keyed as the ticker keys them. */
+/**
+ * The lines of a `subtasks:` value, keyed as the ticker keys them and read by the one checklist
+ * line shape (data/shapes/shapes.ts `checklistLineShape`); a `do` or a `deadline` that is not
+ * text reads as the empty text.
+ */
 function linesOf(value: unknown): Line[] {
     return (readAs(keyedRowsShape, value) ?? []).flatMap(([key, held]) => {
-        const line = readAs(lineShape, held);
-        return line === null ? [] : [{ key, ...line }];
+        const line = readAs(checklistLineShape, held);
+        if (line === null) return [];
+        const deadline = 'deadline' in line ? line.deadline : undefined;
+        return [{ key, do: line.do ?? '', deadline: deadline ?? '', done: line.done }];
     });
 }
 

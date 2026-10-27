@@ -1,7 +1,8 @@
 // Layer 4, test fixture. The synthetic hub the write suites build under the system temporary
-// directory, the manifest, tasks and collection bodies they start from, and the helpers that build
-// a hub, a write record and the paths a write lands on. Every path a suite writes is asserted to be
-// inside its own hub before it is written.
+// directory, the manifest, tasks and collection bodies they start from, the three manifests a row
+// of the write tables writes in (`SUBJECTS`), and the helpers that build a hub, a write record and
+// the paths a write lands on. Every path a suite writes is asserted to be inside its own hub before
+// it is written.
 
 import { mkdirSync, readFileSync, symlinkSync, writeFileSync } from 'node:fs';
 import { join, resolve, sep } from 'node:path';
@@ -163,6 +164,18 @@ export function personalWorld(): PersonalWorld {
     const base = configFor();
     const repositories = [{ key: PERSONAL_ROOT, dir: planted.served }];
     return { root, config: { ...base, repositories }, ...planted };
+}
+
+/**
+ * The files a row of the write tables writes in: a research manifest and two personal manifests.
+ */
+export type Subject = 'alpha' | 'idea' | 'r';
+
+export const SUBJECTS: Subject[] = ['alpha', 'idea', 'r'];
+
+/** The file of each subject in a world. */
+export function fileOf(world: PersonalWorld, subject: Subject): string {
+    return subject === 'alpha' ? manifestPath(world.root) : world.files[subject];
 }
 
 /**

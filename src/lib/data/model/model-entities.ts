@@ -305,14 +305,27 @@ export type DocPart =
 export type RenderedHeading = { level: number; text: string; id: string };
 
 /**
+ * The people a dated line names, by person key, in the three fields the roles of `roles:` read
+ * (config/catalogs/vocab.yml). A field the line leaves out, or names nobody in, is absent; a key
+ * written as one string reads as a list of one.
+ */
+export type LinePeople = {
+    lead?: string[];
+    supervisors?: string[];
+    collaborators?: string[];
+};
+
+/**
  * One standing "do this later" note, a line of the `followup:` list of a manifest or a collection
  * entry. `key` is what the note is addressed by: its position in the list, or its own key in a map
- * of notes. `after` is an ISO date the note is hidden until; a note without one is always due.
+ * of notes. `after` is an ISO date the note is hidden until; a note without one is always due. A
+ * note marked `done` stays in the list, struck through, until it is deleted.
  */
-export type Followup = {
+export type Followup = LinePeople & {
     key: string;
     do: string;
     after?: string;
+    done: boolean;
 };
 
 /**
@@ -320,7 +333,7 @@ export type Followup = {
  * the line is addressed by: the key of the map the manifest writes, or the position in the list
  * for a manifest that writes a list.
  */
-export type Subtask = {
+export type Subtask = LinePeople & {
     key: string;
     do: string;
     deadline?: string;
@@ -370,7 +383,10 @@ export type Project = Rooted & {
      * reports a value that is neither, and the Focus strip draws each by the name it resolves to.
      */
     waitingOn: Id[];
-    /** The `followup:` notes, a list of `{ do, after }` maps. */
+    /**
+     * The `followup:` notes, a list of `{ do, after, done }` maps with the people each names, done
+     * notes included; a done note is off the Focus board.
+     */
     followups: Followup[];
     /** An ISO date the project's own dates are hidden from the Focus ticker until. */
     snooze?: string;

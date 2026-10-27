@@ -1,9 +1,10 @@
 <script lang="ts">
     // Layer 3, view partial under views/shared/. The subtasks block of one card: the open count,
-    // one row per line with what it says and when it is due, the buttons that move it, and the
-    // form that adds another (views/shared/forms/dated/DatedForm.svelte, headed "New subtask"). A
-    // line's edit button turns the line into the one-line form (LineForm.svelte), holding its text
-    // and deadline, and its save writes each of the two that changed.
+    // one row per line with what it says, the names of the people it names and when it is due, the
+    // buttons that move it, and the form that adds another (views/shared/forms/dated/
+    // DatedForm.svelte, headed "New subtask"). A line's edit button turns the line into the line
+    // form (LineForm.svelte), holding its text, its deadline and its people, and its save writes
+    // each of them that changed.
     //
     // A card with no lines draws no list: adding its first line is the Subtask row of the card's
     // menu, which opens the add form here. So whether the add form is open is the card's, handed
@@ -32,17 +33,18 @@
     import LineForm from './LineForm.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { t } from '$lib/state/shared/words/text';
-    import type {
-        SubtaskAction,
-        SubtaskTarget,
-        WriteAnswer
-    } from '$lib/state/client/writes.svelte';
+    import type { SubtaskTarget, WriteAnswer } from '$lib/state/client/writes.svelte';
+    import type { LinePeopleFields, SubtaskTextAction } from '$lib/state/shared/stores/shapes';
     import { answerWords } from '../answer-words';
     import ListHead from './ListHead.svelte';
+    import { saveLine } from './line-save';
     import { openSubtaskCount, type Subtask } from '$lib/state/boards/collection';
+    import { lineNames } from '$lib/state/boards/person';
+    import { addressOfId } from '$lib/state/shared/page/hubs';
     import { useState } from '$lib/state/client/use';
 
     const {
+        entities: { portfolio },
         writes: { addSubtask, writeSubtask }
     } = useState();
 
@@ -78,6 +80,15 @@
     /** The lines the block draws: none when it draws the add form alone. */
     const lines = $derived(formOnly ? [] : subtasks);
 
+    /** The hub of the record the lines hang under, whose people a line's keys name first. */
+    const root = $derived(addressOfId(target.id).hub);
+
+    /** The names of the people a line names, as the one text drawn after it. */
+    const namesOf = $derived(lineNames(portfolio()));
+    function names(line: Subtask): string {
+        return namesOf(root, line).join(t('project.card.line_people_join'));
+    }
+
     /** A button's own words, or the words saying why it is disabled. */
     function why(own?: string): string | undefined {
         return blocked === '' ? own : blocked;
@@ -101,29 +112,34 @@
     }
 
     /** One button: the action it names, on the line it sits in. */
-    async function act(key: string, action: SubtaskAction, value?: string): Promise<void> {
+    async function act(key: string, action: SubtaskTextAction, value?: string): Promise<void> {
         said(await writeSubtask(target, key, action, value));
     }
 
     /**
-     * The edit form's save: the text, then the deadline, each written only when it changed, and the
-     * form closed when every write it made was taken. An emptied deadline clears it.
+     * The edit form's save (line-save.ts `saveLine`): the text, the deadline and the people, each
+     * written when it changed, and the form closed when every write was taken.
      */
-    async function save(line: Subtask, text: string, due: string): Promise<void> {
-        const writes: [SubtaskAction, string][] = [];
-        if (text !== line.do) writes.push(['do', text]);
-        if (due !== (line.deadline ?? '')) writes.push(['deadline', due]);
-        for (const [action, value] of writes) {
-            const answer = await writeSubtask(target, line.key, action, value);
-            said(answer);
-            if (!answer.ok) return;
+    async function save(
+        line: Subtask,
+        text: string,
+        due: string,
+        people: LinePeopleFields
+    ): Promise<void> {
+        const held = { text: line.do, date: line.deadline ?? '', people: line };
+        const edited = { target, key: line.key, date: 'deadline' as const };
+        if (await saveLine(writeSubtask, edited, held, { text, date: due, people }, said)) {
+            editing = null;
         }
-        editing = null;
     }
 
-    /** The add form's save: one line, with the deadline when the form was given one. */
-    function add(text: string, due: string): Promise<WriteAnswer> {
-        return addSubtask(target, due === '' ? { do: text } : { do: text, deadline: due });
+    /** The add form's save: one line, with the deadline when the form was given one, and people. */
+    function add(text: string, due: string, people: LinePeopleFields): Promise<WriteAnswer> {
+        return addSubtask(target, {
+            do: text,
+            ...(due === '' ? {} : { deadline: due }),
+            ...people
+        });
     }
 
     /** What the add form's save answered: said, and the form closed when the server took it. */
@@ -142,7 +158,7 @@
             addLabel={t('project.action.add_subtask')}
             addTip={t('project.action.add_subtask_tip')}
             kind="subtask"
-            record={`${target.collection ?? ''}:${target.id}`}
+            {target}
             {blocked}
             {adding}
             {onadding}
@@ -156,8 +172,11 @@
                     text={line.do}
                     date={line.deadline}
                     dateLabel={t('project.action.subtask_deadline')}
+                    people={line}
+                    {root}
                     {blocked}
-                    onsave={(text: string, due: string) => save(line, text, due)}
+                    onsave={(text: string, due: string, people: LinePeopleFields) =>
+                        save(line, text, due, people)}
                     oncancel={() => (editing = null)}
                 />
             {:else}
@@ -170,6 +189,9 @@
                         />
                     </span>
                     <span class="do"><LinkedText text={line.do} /></span>
+                    {#if names(line) !== ''}
+                        <span class="people">{names(line)}</span>
+                    {/if}
                     {#if line.deadline}
                         <Tag label={line.deadline} glyph={t('project.card.deadline_glyph')} />
                     {/if}
@@ -308,6 +330,11 @@
     .do {
         font-size: var(--fs-md);
         min-width: 0;
+    }
+
+    .people {
+        font-size: var(--fs-sm);
+        color: var(--muted-txt, var(--muted));
     }
 
     .line.done .do {

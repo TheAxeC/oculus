@@ -75,6 +75,7 @@ icons:
     warn: alert-triangle
     overdue: ban
     attention: alert-octagon
+    waiting: clock
     flag: flag
     pin: pin
     lock: lock

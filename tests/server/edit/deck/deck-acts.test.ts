@@ -11,15 +11,15 @@
 import { mkdirSync, readdirSync, readFileSync, renameSync, statSync, writeFileSync } from 'node:fs';
 import { basename, join, relative } from 'node:path';
 import { describe, expect } from 'vitest';
-import { handleWrite, type PrimaryTarget } from '../../../src/lib/server/edit/writes.ts';
-import { it, test } from '../../fixtures/scratch.ts';
+import { handleWrite, type PrimaryTarget } from '../../../../src/lib/server/edit/writes.ts';
+import { it, test } from '../../../fixtures/scratch.ts';
 import {
     TOKEN,
     changesOf,
     deckTarget,
     request,
     warmConfig
-} from '../../routes/edit/write-fixture.ts';
+} from '../../../routes/edit/write-fixture.ts';
 
 test.beforeAll(warmConfig);
 

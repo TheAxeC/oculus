@@ -1,7 +1,6 @@
 In flight (3 of 6 slots in use):
 - O88 (one heading, one card grid, no intro paragraph, Pillars by kind, and the app theme that failed to load), built (base 85a826ca6); one red left, the html-sites floor (open item 490); reviewed (agents/reviews/O88-refuter.md); repair round 1 built (one fold toggle reused by every view, comment rewraps, the Catalogue's sub-heading row, the report's corrections); reviewed over round 1 (agents/reviews/O88-refuter.md, every finding closed). Ready for /land, which waits on open item 490.
 - O91 (joint work onto the people file, and the projects on people's, organisations' and resources' cards), built (base eeafcd4cb); reviewed (agents/reviews/O91-refuter.md): no spec, proof or behaviour finding, two comment-wrap findings (docs/templates.md:61-73, RecordCard.svelte:23) fixed at landing; no repair round. Ready for /land, which waits on open item 489, since its hub commit is part of the landing.
-- O93 (Focus and the dated lines: people on a line, Done on a follow-up, Remove on Focus rows, the Pillar filter, the red waiting line), /spec: brief written (agents/briefs/O93.md), brief checked (agents/reviews/O93-brief-check.md, every finding closed in the brief); builder (a64178b18c7109ef5, claude-opus-5-5, base 46657382a) handed back four points after its first run; ruled in agents/briefs/O93-cases.md (two test files split by concern, the fixture's second follow-up, the text-only line reader); built (agents/reviews/O93-report.md); reviewed (agents/reviews/O93-refuter.md); repair round 1 sent to the builder (agents/briefs/O93-round1.md).
 
 Queued (2):
 - O90 (the board bar's Waiting on filter), /spec after O88.
@@ -12,6 +11,7 @@ Waiting on a ruling: open item 489 (the ten joint-work titles), for O91's hub co
 Owed looks: none.
 
 Landed, newest first:
+- O93 (Focus and the dated lines: people on a line, Done on a follow-up, Remove on Focus rows, the Pillar filter, the red waiting line), 2026-10-27, landing commit.
 - O87 (the Focus band's positions and teaching, and the dated lines in Tasks), 2026-10-27, 744de6aa.
 - O94 (LinkedIn's Mark posted), 2026-10-27, 8dbb9021; hub 34232a90b.
 - O84 (who the user is), 2026-10-27, 813bf6e6; hub 5a7e8e025.

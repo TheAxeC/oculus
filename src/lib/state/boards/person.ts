@@ -1,17 +1,26 @@
 // Layer 2, client state. One person, joined to everything the hub knows about them: the registry
 // entry, the organisations they are affiliated to, the joint work that names them, the projects of
 // whose team they are (whose `lead:`, `collaborators:` or `supervisors:` name them), the projects
-// whose `waiting-on:` names them, and a student's supervision folder; and what the person's "this
-// is me" button can do, which the key `self` of the primary hub's `local.yml` decides
-// (`selfStanding`).
+// whose `waiting-on:` names them, and a student's supervision folder; what the person's "this is
+// me" button can do, which the key `self` of the primary hub's `local.yml` decides
+// (`selfStanding`); and the names of the people a dated line names (`lineNames`).
 //
 // Pure, so the Person view is tested without a browser: every join reads the snapshot it is given
 // and nothing else. The joins go through the relation tables rather than by scanning, since the
 // tables are what data/snapshot/normalise.ts already wrote from both sides and a second scan here
 // could disagree with them.
 
-import type { Entry, Id, Organisation, Person, Project, Snapshot } from '../../data/model/index.ts';
+import type {
+    Entry,
+    Id,
+    LinePeople,
+    Organisation,
+    Person,
+    Project,
+    Snapshot
+} from '../../data/model/index.ts';
 import { byKey } from '../../data/helpers/guards.ts';
+import { LINE_PEOPLE } from '../../data/shapes/shapes.ts';
 import {
     flaggedEntries,
     holdersOf,
@@ -48,6 +57,33 @@ export function personNames(snapshot: Snapshot | null): Record<Id, string> {
         names[one.id] = one.name === '' ? keyOf(one.id) : one.name;
     }
     return names;
+}
+
+/**
+ * The names of the people a dated line of a record names, for the record's hub: lead first, then
+ * supervisors, then collaborators, each person once. A key is read in the record's hub first, then
+ * in the one other hub that holds it (`resolveKey`), as a record's own `lead:` is; a key no hub
+ * resolves is drawn as the key. The answer is a function of the hub and the line, so the registry
+ * is indexed once for every line of a board.
+ */
+export function lineNames(snapshot: Snapshot | null): (root: string, line: LinePeople) => string[] {
+    const people = Object.values(snapshot?.entities.people ?? {});
+    const holders = holdersOf(people);
+    const names = personNames(snapshot);
+    return (root, line) => {
+        const seen = new Set<string>();
+        const out: string[] = [];
+        for (const field of LINE_PEOPLE) {
+            for (const key of line[field] ?? []) {
+                const found = resolveKey(holders, root, key);
+                const id = found !== null && 'id' in found ? found.id : key;
+                if (seen.has(id)) continue;
+                seen.add(id);
+                out.push(names[id] ?? key);
+            }
+        }
+        return out;
+    };
 }
 
 /**

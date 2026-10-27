@@ -252,14 +252,27 @@ function valueSchema(field: SchemaField, ctx: Context): JsonSchema {
  */
 const FOLLOWUP = 'followup';
 
-/** The value of a `followup:` field: a list of `{ do, after }` notes, each with its `do`. */
+/** A people field of a note: a person key or a list of keys. */
+const NOTE_PEOPLE: JsonSchema = {
+    type: ['string', 'array', 'null'],
+    items: { type: 'string' }
+};
+
+/**
+ * The value of a `followup:` field: a list of `{ do, after, done }` notes, each with its `do`, and
+ * the people it names in `lead`, `supervisors` and `collaborators`.
+ */
 const FOLLOWUP_NOTES: JsonSchema = {
     type: ['array', 'null'],
     items: {
         type: 'object',
         properties: {
             do: { type: TEXT_TYPES },
-            after: { type: ['string', 'null'], pattern: ISO_DATE.source }
+            after: { type: ['string', 'null'], pattern: ISO_DATE.source },
+            done: { type: ['boolean', 'null'] },
+            lead: NOTE_PEOPLE,
+            supervisors: NOTE_PEOPLE,
+            collaborators: NOTE_PEOPLE
         },
         required: ['do'],
         additionalProperties: false

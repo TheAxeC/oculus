@@ -7,17 +7,25 @@
 // readers `readAs`, `readOr`, `filledText`, `optionalText`, `text` and `textOrNumber`, and the one
 // shape of a debug console append (`debugAppendShape`), which the server's merge and the page's
 // reader share, and the fields of a debug configuration (`debugConfigurationShape`), which the
-// server's route and the page's reader of the launch file share, and the readers of a manifest's
-// or a collection entry's `followup:` notes and `subtasks:` checklist (`followups`, `subtasks`),
-// which the snapshot and the page's cards share. They sit in a folder of their own
-// so every data folder above data/helpers can import them, and apart from the server's json.ts,
-// which can reach the disk: the write diagram draws a module as a writer when anything it imports
-// can write, and a schema helper never does.
+// server's route and the page's reader of the launch file share, and the readers of a manifest's or
+// a collection entry's `followup:` notes and `subtasks:` checklist (`followups`, `subtasks`), which
+// the snapshot and the page's cards share, with the shape of one checklist line
+// (`checklistLineShape`), which the agent seed reads too, and the people of a line
+// (`peopleOfLine`), which the ticker reads. They sit in a folder of their own so every data folder
+// above data/helpers can import them, and apart from the server's json.ts, which can reach the
+// disk: the write diagram draws a module as a writer when anything it imports can write, and a
+// schema helper never does.
 
 import { z } from 'zod';
 import { strings } from '../helpers/guards.ts';
 import { hubId } from '../helpers/hub-names.ts';
-import { DEBUG_CONSOLE_KINDS, type Followup, type Subtask, type TaskRef } from '../model/index.ts';
+import {
+    DEBUG_CONSOLE_KINDS,
+    type Followup,
+    type LinePeople,
+    type Subtask,
+    type TaskRef
+} from '../model/index.ts';
 
 /**
  * A schema that accepts what `shape` accepts and answers the value it was given, not the copy zod
@@ -347,15 +355,64 @@ export const debugConfigurationShape = z.object({
     before: z.string().optional()
 });
 
-/** One note of a `followup:` list: a map with its `do` and its `after`. */
-const noteShape = z.object({ do: optionalTextShape, after: optionalTextShape });
+/** The fields of a dated line that name people, in the order a line's names are drawn. */
+export const LINE_PEOPLE = ['lead', 'supervisors', 'collaborators'] as const;
 
 /**
- * The `followup:` notes of a manifest or of a collection entry: a list of `{ do, after }` maps, as
- * the follow-up writes leave it. The key a note is addressed by is its position in the list, so a
- * write knows which note it means. A value that is not a list holds no notes (validate.ts and
- * hub.ts report it), and an item that is not such a map or has no `do` is dropped in silence, the
- * way str() drops a value of the wrong type.
+ * The people of one field of a dated line: a person key or a list of keys, read as the list of
+ * its filled keys, each once. A field that names nobody, or holds anything else, reads as absent.
+ */
+const linePeopleShape = z
+    .union([z.string().transform((one) => [one]), z.array(z.unknown()).transform(strings)])
+    .transform((keys) => [...new Set(keys.filter((key) => key.trim() !== ''))])
+    .transform((keys) => (keys.length === 0 ? undefined : keys))
+    .optional()
+    .catch(undefined);
+
+/**
+ * The fields every dated line is read with, a follow-up note and a subtask line alike: its `do`,
+ * whether it is `done` (only the boolean true is) and the people it names.
+ */
+const lineFieldsShape = z.object({
+    do: optionalTextShape,
+    done: z.boolean().catch(false),
+    lead: linePeopleShape,
+    supervisors: linePeopleShape,
+    collaborators: linePeopleShape
+});
+
+/** One note of a `followup:` list: a map of the line's fields and its `after`. */
+const noteShape = lineFieldsShape.extend({ after: optionalTextShape });
+
+/**
+ * One line of a `subtasks:` checklist: a string, or a map of the line's fields and its dates. A
+ * line with a blank or missing `do` passes, and a reader decides whether it keeps it: `subtasks`
+ * drops it, the agent seed keeps it (server/machine/runs/seeds/task-seed.ts).
+ */
+export const checklistLineShape = z.union([
+    z.string().transform((text) => lineFieldsShape.parse({ do: text })),
+    lineFieldsShape.extend({ deadline: optionalTextShape, snooze: optionalTextShape })
+]);
+
+/**
+ * The people of a line as read, each field present only when it names someone, so the snapshot
+ * survives a JSON round trip.
+ */
+export function peopleOfLine(line: LinePeople): LinePeople {
+    const people: LinePeople = {};
+    for (const field of LINE_PEOPLE) {
+        const keys = line[field];
+        if (keys !== undefined) people[field] = keys;
+    }
+    return people;
+}
+
+/**
+ * The `followup:` notes of a manifest or of a collection entry: a list of `{ do, after, done }`
+ * maps with the people they name, as the follow-up writes leave it. The key a note is addressed by
+ * is its position in the list, so a write knows which note it means. A value that is not a list
+ * holds no notes (validate.ts and hub.ts report it), and an item that is not such a map or has no
+ * `do` text is dropped in silence, the way str() drops a value of the wrong type.
  */
 export function followups(value: unknown): Followup[] {
     const out: Followup[] = [];
@@ -363,44 +420,29 @@ export function followups(value: unknown): Followup[] {
         const note = readAs(noteShape, item);
         if (note?.do === undefined || note.do.trim() === '') return;
         // A note with no `after` has no such key, so the snapshot survives a JSON round trip.
-        const held: Followup = { key: String(at), do: note.do };
+        const held: Followup = { key: String(at), do: note.do, done: note.done };
         if (note.after !== undefined) held.after = note.after;
-        out.push(held);
+        out.push({ ...held, ...peopleOfLine(note) });
     });
     return out;
 }
 
-/** One line of a `subtasks:` checklist: a string, or a map of its `do`, `deadline` and so on. */
-const lineShape = z.union([
-    z.string().transform((text) => ({
-        do: text,
-        deadline: undefined as string | undefined,
-        done: false,
-        snooze: undefined as string | undefined
-    })),
-    z.object({
-        do: optionalTextShape,
-        deadline: optionalTextShape,
-        done: z.boolean().catch(false),
-        snooze: optionalTextShape
-    })
-]);
-
 /**
  * The `subtasks:` checklist of a manifest or of a collection entry. The key holds a map of key to
- * line or a list of lines, and a line is a string or a `{ do, deadline, done, snooze }` map. The
- * key a line is addressed by is the map's own key, or the position for a list, so a write knows
- * which line it means whatever shape the file is written in.
+ * line or a list of lines, and a line is a string or a `{ do, deadline, done, snooze }` map with
+ * the people it names. The key a line is addressed by is the map's own key, or the position for a
+ * list, so a write knows which line it means whatever shape the file is written in. A line whose
+ * `do` is not text is no line, on the Focus board and on a card alike.
  */
 export function subtasks(value: unknown): Subtask[] {
     const out: Subtask[] = [];
     for (const [key, item] of readOr(keyedRowsShape, value, [])) {
-        const line = readAs(lineShape, item);
+        const line = readAs(checklistLineShape, item);
         if (line?.do === undefined || line.do.trim() === '') continue;
         const held: Subtask = { key, do: line.do, done: line.done };
-        if (line.deadline !== undefined) held.deadline = line.deadline;
-        if (line.snooze !== undefined) held.snooze = line.snooze;
-        out.push(held);
+        if ('deadline' in line && line.deadline !== undefined) held.deadline = line.deadline;
+        if ('snooze' in line && line.snooze !== undefined) held.snooze = line.snooze;
+        out.push({ ...held, ...peopleOfLine(line) });
     }
     return out;
 }

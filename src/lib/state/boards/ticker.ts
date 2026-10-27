@@ -10,6 +10,7 @@ import {
     type CollectionEntry,
     type HubVocabs,
     type Id,
+    type LinePeople,
     type Project,
     type Rooted,
     type Snapshot,
@@ -28,16 +29,17 @@ import {
 } from '../../data/helpers/hub-names.ts';
 import { mapShape, readAs } from '../../data/shapes/shapes.ts';
 import { hasGlyph, hasText, lookup, t } from '../shared/words/text.ts';
-import { entryFollowups } from './collection/index.ts';
+import { entryFollowups, entrySubtasks } from './collection/index.ts';
+import { lineNames } from './person.ts';
 import { hasWord, oneWordWith, type WordsOf } from '../../data/shapes/vocab-keys.ts';
 import { isLeadClosed } from '../../data/accounts/leads.ts';
 import { DEADLINE_SOON, VENUE_WARN, daysUntil } from './board/index.ts';
 import {
     dueFollowups,
     item,
+    peopleMark,
     rootMark,
     subtaskLines,
-    subtasksOf,
     type TickerItem,
     type TickerTarget
 } from './board/ticker-lines.ts';
@@ -396,10 +398,18 @@ export function ticker(
         });
     }
 
+    /** The names of the people a line names, read in its record's hub (state/boards/person.ts). */
+    const namesOf = lineNames(snapshot);
+    const marked =
+        (record: Rooted) =>
+        (line: LinePeople): Partial<TickerItem> =>
+            peopleMark(line, namesOf(rootOf(record), line));
+
     /**
      * Follow-ups: a project's, then every collection entry's, oldest due first. A note shows while
      * its parent is open, or closed by a status that keeps its lines live (`live_subtasks`), as a
-     * subtask does. Each line names its note by its key, which is what Done takes out.
+     * subtask does, and leaves once it is done. Each line names its note by its key, which is what
+     * Done and Remove write to.
      */
     const notes: { days: number | null; line: TickerItem }[] = [];
     for (const project of Object.values(snapshot.entities.projects)) {
@@ -414,6 +424,7 @@ export function ticker(
                     {
                         id: project.id,
                         ...rootMark(project),
+                        ...marked(project)(note),
                         target: { kind: 'followup', id: project.id, note: note.key }
                     }
                 )
@@ -431,6 +442,7 @@ export function ticker(
                 line: item('followup', followupGlyph, `${scheme.title} - ${note.do}`, days, {
                     entry: key,
                     ...rootMark(scheme),
+                    ...marked(scheme)(note),
                     target: { kind: 'followup', id: scheme.id, collection: key, note: note.key }
                 })
             });
@@ -454,6 +466,7 @@ export function ticker(
                     line: item('followup', followupGlyph, `${entry.title} - ${note.do}`, days, {
                         entry: key,
                         ...rootMark(entry),
+                        ...marked(entry)(note),
                         target: { kind: 'followup', id: entry.id, collection: key, note: note.key }
                     })
                 });
@@ -472,7 +485,8 @@ export function ticker(
             '',
             now,
             { id: project.id, ...rootMark(project) },
-            { kind: 'manifest', id: project.id }
+            { kind: 'manifest', id: project.id },
+            marked(project)
         )) {
             if (line.snoozed) asleep.push(line);
             else subtasks.push(line);
@@ -488,7 +502,8 @@ export function ticker(
             'funding',
             now,
             rootMark(scheme),
-            { kind: 'funding', id: scheme.id, collection: fundingKey(scheme) }
+            { kind: 'funding', id: scheme.id, collection: fundingKey(scheme) },
+            marked(scheme)
         )) {
             if (line.snoozed) asleep.push(line);
             else subtasks.push(line);
@@ -505,12 +520,13 @@ export function ticker(
             )
                 continue;
             for (const line of subtaskLines(
-                subtasksOf(entry.fields.subtasks),
+                entrySubtasks(entry),
                 entry.title,
                 str(entry.fields.kind),
                 now,
                 { entry: key, ...rootMark(entry) },
-                { kind: 'entry', id: entry.id, collection: key }
+                { kind: 'entry', id: entry.id, collection: key },
+                marked(entry)
             )) {
                 if (line.snoozed) asleep.push(line);
                 else subtasks.push(line);

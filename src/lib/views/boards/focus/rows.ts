@@ -16,6 +16,10 @@
 // A line whose buttons write an entry or a subtask of a collection file has them disabled, with the
 // words naming the file as their title, while a source tab holds unsaved text of that file. The
 // `agent` button writes nothing and stays enabled.
+//
+// A follow-up line's Remove deletes its note at once, as a subtask's Del does. A task entry's
+// Remove writes nothing here: the tasks section asks the card's Delete question first
+// (views/shared/forms/entry/DeleteAsk.svelte) for the entry `removeAsked` names.
 
 import type { TickerAction, TickerRow } from '$lib/ui/display/ticker/ticker-rows';
 import {
@@ -53,6 +57,32 @@ const STATUS = 'status:';
 
 /** The id of the button that starts an agent on a task line. */
 const AGENT = 'agent';
+
+/**
+ * The id of the Remove button: a follow-up line's takes its note out, and a task entry's asks
+ * first, under the tasks section, before the entry is deleted.
+ */
+const REMOVE = 'remove';
+
+/** The entry a task line names, by its collection key and its id, as a card's Delete names it. */
+export type TaskEntry = { collection: string; id: string };
+
+/**
+ * The entry whose question a press asks: the task entry of the line when the press is its Remove,
+ * and null for any other press or line, which `act` handles.
+ */
+export function removeAsked(line: TickerItem | undefined, action: string): TaskEntry | null {
+    const target = line?.target;
+    if (action !== REMOVE || target === undefined || !isTaskEntry(target)) return null;
+    return target.collection === undefined
+        ? null
+        : { collection: target.collection, id: target.id };
+}
+
+/** Whether a target is an entry of the collection flagged `tasks`, and no line of one. */
+function isTaskEntry(target: TickerTarget): boolean {
+    return target.kind === 'entry' && target.task === true && target.subtask === undefined;
+}
 
 /** The lines one partial drew, by the row id each was given. */
 export type RowIndex = Record<string, TickerItem | undefined>;
@@ -196,8 +226,9 @@ function unsnooze(): TickerAction {
 /**
  * The buttons one line carries, from its target alone. A subtask is ticked, snoozed and deleted; a
  * project, an entry or a scheme is snoozed; an entry also gets the lifecycle statuses of its own
- * collection, minus the one it is in; a follow-up's Done takes its one note out. A lead opens the
- * Leads view but carries no write, and neither does a conference call, which opens the Venues view,
+ * collection, minus the one it is in, and a task entry Remove after its other buttons; a
+ * follow-up's Done marks its note done and its Remove takes the note out. A lead opens the Leads
+ * view but carries no write, and neither does a conference call, which opens the Venues view,
  * since the venue registry's schema has no status field to write.
  */
 export function actionsFor(line: TickerItem): TickerAction[] | undefined {
@@ -224,6 +255,11 @@ export function actionsFor(line: TickerItem): TickerAction[] | undefined {
                 id: 'done',
                 label: t('project.action.done'),
                 title: t('project.action.followup_done_tip')
+            },
+            {
+                id: REMOVE,
+                label: t('focus.tasks.remove'),
+                title: t('focus.tasks.remove_followup_tip')
             }
         ];
     }
@@ -237,7 +273,10 @@ export function actionsFor(line: TickerItem): TickerAction[] | undefined {
             title: t('project.action.set_status', status)
         });
     }
-    return [...statuses, ...agentActions(line), ...snoozeActions()];
+    const removal: TickerAction[] = isTaskEntry(target)
+        ? [{ id: REMOVE, label: t('focus.tasks.remove'), title: t('focus.tasks.remove_task_tip') }]
+        : [];
+    return [...statuses, ...agentActions(line), ...snoozeActions(), ...removal];
 }
 
 /** The `agent` button, on a line that is a task. */
@@ -291,6 +330,7 @@ export function rowMaker(prefix: string, blocked: (line: TickerItem) => string =
                 id,
                 glyph: line.glyph,
                 label: name,
+                ...(line.names === undefined ? {} : { detail: line.names }),
                 tail,
                 tone: daysTone(line.days),
                 ...(line.root === undefined ? {} : { mark: line.root }),
@@ -344,11 +384,13 @@ async function write(
         return writes.writeSubtask(host, target.subtask, 'snooze', snoozeValue(action, now));
     }
     if (target.kind === 'followup') {
-        if (target.note === undefined || action !== 'done') return null;
+        if (target.note === undefined || (action !== 'done' && action !== REMOVE)) return null;
         const collection = target.collection;
         const host = collection === undefined ? { id: target.id } : { id: target.id, collection };
-        return writes.writeFollowup(host, target.note, 'done');
+        return writes.writeFollowup(host, target.note, action === 'done' ? 'done' : 'delete');
     }
+    // A task entry's Remove asks its question first (`removeAsked`); a press of it writes nothing.
+    if (action === REMOVE) return null;
     const fields = fieldsFor(action, now);
     if (target.kind === 'manifest') return writes.writeManifest(target.id, fields);
     if ((target.kind === 'funding' || target.kind === 'entry') && target.collection !== undefined) {

@@ -436,10 +436,10 @@ Every record carries `root`, the name of its hub, and has the id `<hub>:<key>`, 
 |------|------|------------|
 | `manifest` | `{ kind, id, fields }` | no |
 | `entry` | `{ kind, collection, id, fields }` | no |
-| `subtask` | `{ kind, target: { id, collection? }, key, action, value? }`; `action` `done`, `reopen`, `snooze`, `delete`, `do` or `deadline`, the last two with the new text or date in `value` | no |
-| `subtask-add` | `{ kind, target: { id, collection? }, fields }`; `fields.do` the text | no |
-| `followup` | `{ kind, target: { id, collection? }, key, action, value? }`; `action` `done` (takes the note out), `do` or `after`, the last two with the new text or date in `value` | no |
-| `followup-add` | `{ kind, target: { id, collection? }, fields }`; `fields.do` the text, `fields.after` the date it stays hidden until | no |
+| `subtask` | `{ kind, target: { id, collection? }, key, action, value? }`; `action` `done`, `reopen`, `snooze`, `delete`, `do` or `deadline`, the last two with the new text or date in `value`; or `lead`, `supervisors` or `collaborators` with a list of people keys in `value`, an empty list taking the field off | no |
+| `subtask-add` | `{ kind, target: { id, collection? }, fields }`; `fields.do` the text, and `fields.deadline`, `fields.done` and `fields.lead`, `fields.supervisors` and `fields.collaborators` (each a list of people keys) when given | no |
+| `followup` | `{ kind, target: { id, collection? }, key, action, value? }`; `action` `done` (marks the note done and keeps it), `reopen` (clears that), `delete` (takes the note out), `do` or `after`, the last two with the new text or date in `value`; or `lead`, `supervisors` or `collaborators` with a list of people keys in `value`, an empty list taking the field off | no |
+| `followup-add` | `{ kind, target: { id, collection? }, fields }`; `fields.do` the text, `fields.after` the date it stays hidden until, and `fields.done` and `fields.lead`, `fields.supervisors` and `fields.collaborators` (each a list of people keys) when given | no |
 | `new-entry` | `{ kind, collection, fields, root? }`; `root` names the hub, which for an app is the primary hub alone | no |
 | `reorder` | `{ kind, collection, order }` | no |
 | `delete-entry` | `{ kind, collection, id }` | yes |

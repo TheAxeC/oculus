@@ -6,10 +6,10 @@
 // so no case of either suite reaches ~/.oculus or the checkout.
 //
 // It is its own file because the suites are made over it: tests/routes/edit/write.test.ts, which
-// is what each write kind answers, tests/routes/edit/undo/undo.test.ts, which is what taking one
-// of them back writes, and the Settings write suites, which read a scratch copy of the engine's
-// config folder (`scratchEngine`) and write a saved workspace file under the synthetic hub
-// (`configTarget`), never the checkout's.
+// is what each write kind answers, tests/routes/edit/undo/undo.test.ts and folder-undo.test.ts,
+// which are what taking one of them back writes (`made`, `undone`), and the Settings write suites,
+// which read a scratch copy of the engine's config folder (`scratchEngine`) and write a saved
+// workspace file under the synthetic hub (`configTarget`), never the checkout's.
 
 import { cpSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -208,6 +208,14 @@ export function manifestOf(into: PrimaryTarget): string {
 /** The answer of the undo route for one change. */
 export function undone(into: WriteTarget, change: Change): Promise<Response> {
     return handleWrite(request({ kind: 'undo', at: change.at }), TOKEN, into);
+}
+
+/** One write, and the change it left at the head of the log; `row` names the case it fails. */
+export async function made(into: PrimaryTarget, body: unknown, row = ''): Promise<Change> {
+    expect((await handleWrite(request(body), TOKEN, into)).status, row).toBe(200);
+    const [change] = changesOf(into);
+    expect(change).toBeDefined();
+    return change;
 }
 
 /**
@@ -458,8 +466,11 @@ export function repositoryTarget(
     return { into: { ...base, config: withRoot(base, { key: REPOSITORY_ID, dir }) }, dir, file };
 }
 
-/** The manifest of the folder `insideHubTarget` plants: the repository's, with a follow-up. */
-const INSIDE_MANIFEST = `${REPOSITORY_MANIFEST}followup:\n  - { do: ask about the tool }\n`;
+/**
+ * The manifest of the folder `insideHubTarget` plants: the repository's, with an open follow-up and
+ * a done one that names people.
+ */
+const INSIDE_MANIFEST = `${REPOSITORY_MANIFEST}followup:\n  - { do: ask about the tool }\n  - { do: chase the reply, done: true, lead: [ann], supervisors: [ann] }\n`;
 
 /**
  * The target with a folder of the workspace inside a hub and outside every scan folder, holding
