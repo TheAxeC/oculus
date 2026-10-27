@@ -32,6 +32,7 @@ dispatch:          # steps in flight, up to six (Z632)
   worker: claude:opus
   session_id: a40dc274a49422bab (claude-opus-5-5)
   launched: 2026-10-27
+  builder_usage: round 0 hand-back 113087 tokens, 18 tool uses, 3 min 12 s
   report: .scratch/migration/agents/reviews/O100-report.md
   round: 0
   landing: not-started
