@@ -369,11 +369,14 @@
                                 <span class="wait-names" class:blocked={row.key === 'blocked'}
                                     >{#each row.names as name, at (at)}{#if at > 0}{t(
                                                 'focus.wait_join'
-                                            )}{/if}{#if name.press === null}{name.text}{:else}<ToolButton
-                                                plain
-                                                label={name.text}
-                                                onclick={name.press}
-                                            />{/if}{/each}</span
+                                            )}{/if}{#if name.press === null}{name.text}{:else}<span
+                                                class="wait-name"
+                                                ><ToolButton
+                                                    plain
+                                                    label={name.text}
+                                                    onclick={name.press}
+                                                /></span
+                                            >{/if}{/each}</span
                                 >
                             {/each}
                         </section>
@@ -462,7 +465,22 @@
         overflow-wrap: anywhere;
     }
 
-    .wait-names.blocked {
+    /* A name of the box is a plain button: its words, with the focus ring the button draws, and an
+       underline and the accent colour under the pointer and with keyboard focus. Its box is
+       inline-flex so the underline reaches the button inside it; Blocked's count keeps its red. */
+    .wait-name {
+        display: inline-flex;
+        min-width: 0;
+    }
+
+    .wait-name:hover,
+    .wait-name:has(:global(:focus-visible)) {
+        color: var(--accent-txt, var(--accent));
+        text-decoration: underline;
+    }
+
+    .wait-names.blocked,
+    .wait-names.blocked .wait-name {
         color: var(--c-red-txt);
     }
 </style>

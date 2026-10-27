@@ -1,5 +1,4 @@
-In flight (2 of 6 slots in use):
-- O100 (underline the Awaiting box's names under the pointer, ruling 524): building, a small text step, builder launched 2026-10-27, base 249bd5b57.
+In flight (1 of 6 slots in use):
 - O98 (accounts and connections, rulings 507 to 510 and 516): building, builder launched 2026-10-27, base 54304adb4.
 
 Queued:
@@ -13,7 +12,8 @@ Landing next: O98, when its builder reports and its review and rounds close.
 Owed looks: O98 at its landing, on 8790.
 
 Landed, newest first:
-- O95 (Focus, what a press opens), 2026-10-27, landing commit.
+- O100 (the Awaiting box's names underlined under the pointer), 2026-10-27, landing commit.
+- O95 (Focus, what a press opens), 2026-10-27, 5a51074e.
 - O96 (the cards' project strip: its filters and its groups by category), 2026-10-27, 01bb9024.
 - O92 (the collection's Add and bar, and the Map's bar), 2026-10-27, 0414282f.
 - O90 (the board bar's Waiting on toggle and group), 2026-10-27, c72f0fcb.
