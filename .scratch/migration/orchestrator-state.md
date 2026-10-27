@@ -34,7 +34,8 @@ dispatch:          # steps in flight, up to six (Z632)
   launched: 2026-10-27
   report: .scratch/migration/agents/reviews/O87-report.md
   builder_usage: 220811 tokens, 275 tool uses, 50 min 37 s
-  reviewer_report: running: a362e1e25ae8483be (claude-opus-5-5)
+  round: 1 (agents/briefs/O87-round1.md: a wrong-kind or repeated stage row a finding with oculus's list standing, the G126 rows, the sentences made false, the report)
+  reviewer_report: .scratch/migration/agents/reviews/O87-refuter.md (a362e1e25ae8483be, claude-opus-5-5, 274255 tokens, 83 tool uses, 19 min 44 s)
   shared_paths: with O84, simple merges in separate lines: `config/options/sources.yml` (O84 189-196; O87 78-90), `docs/templates.md` (O84 372-512 and 1055-1065; O87 64-68, 274-278, 318-332), `src/lib/state/boards/focus/filter.ts` (O84 comments; O87 280-480), `tests/checks/config/config-folder.test.ts` (O84 its rows; O87 222-245), `docs/HELP.md` (O84 Doc text at 288 and 532; O87 294, 529, 538, 547); the generated `docs/diagrams/*`, regenerated at each landing.
   landing: not-started
 - step: O94

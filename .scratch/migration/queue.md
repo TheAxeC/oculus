@@ -1,5 +1,5 @@
 In flight (4 of 6 slots in use):
-- O87 (the Focus band's positions and teaching, and the dated lines in Tasks), built; review running.
+- O87 (the Focus band's positions and teaching, and the dated lines in Tasks), repair round 1 building (agents/briefs/O87-round1.md).
 - O94 (LinkedIn's Mark posted), repair round 1 building (agents/briefs/O94-round1.md).
 - O88 (one heading, one card grid, no intro paragraph, Pillars by kind, and the app theme that failed to load), building (base 85a826ca6).
 - O91 (joint work onto the people file, and the projects on people's, organisations' and resources' cards), /spec running: premise checks.
