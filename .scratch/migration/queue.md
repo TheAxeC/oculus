@@ -1,18 +1,18 @@
-In flight (2 of 6 slots in use):
-- O88 (one heading, one card grid, no intro paragraph, Pillars by kind, and the app theme that failed to load), building after the round-0 ruling of its cases (agents/briefs/O88-cases.md; base 85a826ca6).
-- O91 (joint work onto the people file, and the projects on people's, organisations' and resources' cards), built (base eeafcd4cb); review next. Its hub commit at landing waits on open item 489.
+In flight (3 of 6 slots in use):
+- O88 (one heading, one card grid, no intro paragraph, Pillars by kind, and the app theme that failed to load), built (base 85a826ca6); one red left, the html-sites floor (open item 490); review running (abdef2fd8ccb0c728, claude-opus-5-5).
+- O91 (joint work onto the people file, and the projects on people's, organisations' and resources' cards), built (base eeafcd4cb); reviewed (agents/reviews/O91-refuter.md): no spec, proof or behaviour finding, two comment-wrap findings (docs/templates.md:61-73, RecordCard.svelte:23) fixed at landing; no repair round. Ready for /land, which waits on open item 489, since its hub commit is part of the landing.
+- O93 (Focus and the dated lines: people on a line, Done on a follow-up, Remove on Focus rows, the Pillar filter, the red waiting line), /spec: brief written (agents/briefs/O93.md), brief checked (agents/reviews/O93-brief-check.md, every finding closed in the brief); worktree being prepared, builder next.
 
-Queued (3):
+Queued (2):
 - O90 (the board bar's Waiting on filter), /spec after O88.
 - O92 (the collection's Add and bar, and the Map's bar), /spec after O90.
-- O93 (Focus and the dated lines), /spec next.
 
-Waiting on a ruling: open item 489 (the ten joint-work titles), for O91's hub commit at landing.
+Waiting on a ruling: open item 489 (the ten joint-work titles), for O91's hub commit at landing; open item 490 (the html-sites floor), for O88's landing.
 
 Owed looks: none.
 
 Landed, newest first:
-- O87 (the Focus band's positions and teaching, and the dated lines in Tasks), 2026-10-27.
+- O87 (the Focus band's positions and teaching, and the dated lines in Tasks), 2026-10-27, 744de6aa.
 - O94 (LinkedIn's Mark posted), 2026-10-27, 8dbb9021; hub 34232a90b.
 - O84 (who the user is), 2026-10-27, 813bf6e6; hub 5a7e8e025.
 - O86 (the update tasks of every hub), 2026-10-26, bf60e137.
