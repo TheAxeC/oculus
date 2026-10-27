@@ -47,6 +47,8 @@ dispatch:          # steps in flight, up to six (Z632)
   launched: 2026-10-27
   report: .scratch/migration/agents/reviews/O96-report.md
   landing: not-started
+- step: O98
+  landing: preparing
 ```
 
 ## The standing demands (from Axel, in force)
@@ -193,6 +195,7 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
 - 511 (2026-10-27): ruled by Axel, (1) (a), (2) (a), (3) (a); booked in `plan.md` Rulings and under O97; O97 is prepared again by /spec.
 - 513 (2026-10-27): ruled by Axel, (a); booked in `plan.md` Rulings and under O95; sent with O95's repair round 1.
 - 515 (2026-10-27, O95's first run, a new test file): written in full in `choices.md` Z1052 with its options and the lazy option named; closed in automode with (a); booked in `plan.md` Rulings.
+- 516 (2026-10-27, O98's /spec, O98's paths widened): written in full in `choices.md` Z1053 with its options and the lazy option named; closed in automode with (a); booked in `plan.md` Rulings.
 - 512 (2026-10-27, O95's brief check, two paths outside the list): written in full in `choices.md` Z1050 with its options and the lazy option named; closed in automode with (a), the paths gain `docs/palette.md` and `ticker-lines.ts`; booked in `plan.md` Rulings.
 - 514 (2026-10-27, O96's brief check, the files outside the list): written in full in `choices.md` Z1051 with its options and the lazy option named; closed in automode with (a); booked in `plan.md` Rulings.
 - 509 (2026-10-27): ruled by Axel, 1 (a), 2 (b); every web address written in oculus's code moves into the hub's configuration beside the feature that reads it, and one configurable reader built in O97 serves the journal browser, the literature sources and the Recover sources; booked in `plan.md` Rulings and on O98's and O97's lines.

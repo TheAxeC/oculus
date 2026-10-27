@@ -5517,3 +5517,14 @@ O95's builder found on its first run that `tests/state/boards/board/board-rules.
 Where it applies: O95's round-0 ruling `agents/briefs/O95-cases.md`. Booked in `plan.md` Rulings (open item 515) and the state file's closed log.
 Builds on it: O95
 
+
+## Z1053 (2026-10-27, O98's /spec, the orchestrator, automode): O98's paths widened to the readers its change reaches
+
+O98's brief check found readers of `hpc_host`, `slurm.resource`, the `hpc` channel and the fetch outside the step's paths (`referrers.ts`, `watch/local.ts`, `server-context.ts`, `shapes.ts`, `status.ts`, `git-remote.ts`, `watch/git.ts`, `core/git/state.ts`, `data/accounts/connect.ts`, `machine.ts`, `config-key.ts`, `state/system/config`, `workbench.yml:24`, `config/options/behavior.yml:201`, `docs/data-map.md` base lines 16 and 79-131, the recover tests and the context fixture), and folders and files near their limits (`src/lib/server/machine/hpc/` at ten items). Each is a file the step's own change makes wrong or breaks when left out; writing them adds no requirement and changes nothing a user sees beyond what the step line and rulings 500 to 510 already give.
+
+- Chosen: (a) the brief names every such file on its paths and in its items, and names the splits the limits need (a new folder under `hpc/` for the resolver and the aggregator).
+- Not chosen: (b) the paths kept as the step line drew them, which leaves the step unable to build without breaking those readers.
+- The lazy option: (b).
+
+Where it applies: `agents/briefs/O98.md` "What is on the tree", "What to build" items 1, 2, 4, 6, 13, 17, 18 and 20, and "Paths this step writes". Booked in `plan.md` Rulings (open item 516) and the state file's closed log.
+Builds on it: O98
