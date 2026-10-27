@@ -30,12 +30,19 @@ dispatch:          # steps in flight, up to six (Z632)
   worktree: .agents/worktrees/migration-O95
   executor: agent
   worker: claude:opus
+  session_id: a8009799d26d93fad (claude-opus-5-5)
+  launched: 2026-10-27
   report: .scratch/migration/agents/reviews/O95-report.md
   landing: not-started
 - step: O96
   brief_check: "agents/reviews/O96-brief-check.md (ad36c99e52ba380ff, claude-opus-5-5, 234840 tokens, 61 tool uses, 8 min 47 s)"
   shared_paths: with O95, `docs/HELP.md` (O95 line 294; O96 lines 277, 296 and 301) and the generated `docs/diagrams/*`, regenerated at each landing; simple merges in separate lines.
-  landing: preparing
+  base: 909f79d53
+  worktree: .agents/worktrees/migration-O96
+  executor: agent
+  worker: claude:opus
+  report: .scratch/migration/agents/reviews/O96-report.md
+  landing: not-started
 ```
 
 ## The standing demands (from Axel, in force)
