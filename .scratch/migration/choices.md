@@ -5469,3 +5469,14 @@ Rulings 448 (a) and 461 (b) make `GroupHead` the only code for a grouping headin
 
 Where it applies: O88. Booked in `plan.md` Rulings (open item 488) and O88's line.
 Builds on it: O88
+
+## Z1049 (2026-10-27, O92's brief check, the orchestrator, automode): two comments the step makes false, outside its paths
+
+The brief check of O92 (`agents/reviews/O92-brief-check.md`, Names) found two comments outside the step's paths that the step makes false: `src/lib/views/structure/map/Legend.svelte:4` and `:11` name `Controls.svelte` and the bar's stage chips, which the step deletes; `src/lib/state/shared/lists/lists.ts:2` names a collection's Hub chips, which the step deletes. Widening the paths to these two comments changes nothing a user sees, adds no requirement and adds no case.
+
+- Chosen: (a) the brief's paths gain `Legend.svelte` lines 1-15 and `lists.ts` lines 1-5, and the comments name the new bar.
+- Not chosen: (b) the paths stay and the two comments stay false after the step.
+- The lazy option: (b).
+
+Where it applies: O92's brief. Booked in `plan.md` Rulings (open item 499) and the state file's closed log.
+Builds on it: O92

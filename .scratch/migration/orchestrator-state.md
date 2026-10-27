@@ -25,8 +25,16 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 ```yaml
 dispatch:          # steps in flight, up to six (Z632)
 - step: O92
-  landing: preparing
   brief_check: .scratch/migration/agents/reviews/O92-brief-check.md (a6eefc8dc6b4ef0cb, claude-opus-5-5, 285982 tokens, 78 tool uses, 10 min 45 s)
+  base: a964e0170
+  worktree: .agents/worktrees/migration-O92
+  executor: agent
+  worker: claude:opus
+  session_id: afca7f28cc1fce52c (claude-opus-5-5)
+  launched: 2026-10-27
+  report: .scratch/migration/agents/reviews/O92-report.md
+  round: 0
+  landing: not-started
 ```
 
 ## The standing demands (from Axel, in force)
@@ -178,6 +186,7 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
 - 496 (2026-10-27): ruled by Axel, (a); band rows open the entry's page; scheduled as O95 (ruling 497); booked in `plan.md` Rulings.
 - 497 (2026-10-27): ruled by Axel, (a); 492 to 496 scheduled as O95 (494, 495, 496) and O96 (492, 493) after O92; booked in `plan.md` Rulings and as the two steps.
 - 498 (2026-10-27): ruled by Axel, (a); a new guarded entry G134 under "Your work is not lost or misplaced": a collection's Add writes what it asked and nothing else (a picked field as its id, a multi-picked field as its list of ids, a typed field trimmed, a field not required and left empty left out; it writes to the one hub that names the collection, or to the hub asked, and a key only to the hub whose choices offered it; a required field left unanswered keeps the yes off); Code `src/lib/views/shared/forms/entry/entry-add.ts` and `src/lib/ui/forms/prompt.ts` (`answered`); Test `tests/views/shared/forms/entry-add.test.ts`, every row, the file's head comment citing G134; the entry added to `agents/guarded.md` at O92's landing; booked in `plan.md` Rulings and on O92's line; (c) was the lazy option.
+- 499 (2026-10-27, O92's brief check, two comments outside the paths that the step makes false): written in full in `choices.md` Z1049 with its options and the lazy option named; closed in automode with (a), the paths gain `Legend.svelte` lines 1-15 and `lists.ts` lines 1-5; booked in `plan.md` Rulings.
 - 488 (2026-10-27, /spec O88, the side-bar sections and tree rows that fold): written in full in `choices.md` Z1048 with its options and the lazy option named; closed in automode with (a), they keep their own heads; booked in `plan.md` Rulings and on O88's line.
 - 486 (2026-10-26): ruled by Axel, (a); the Map's bar as the board's, built within O92; booked in `plan.md` Rulings and on O92's line.
 - 485 (2026-10-26): ruled by Axel, (a); `pillar_kinds:` in vocab.yml and the Pillars sections by kind, built within O88; booked in `plan.md` Rulings and on O88's line.
@@ -646,6 +655,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-10-27 (O92 building). Axel ruled 498 (a), G134 for the Add's tests; O92's brief rewritten to it (preparation commit a964e0170, the base); Z1049 (open item 499) widens its paths to two comments the step makes false. Worktree `.agents/worktrees/migration-O92` with `npm ci` and `svelte-kit sync`; base copy `.agents/worktrees/O92-base/` with `unused-exports.txt` (341 lines); builder afca7f28cc1fce52c (claude-opus-5-5). At landing: G134 added to `agents/guarded.md`. In flight (1 of 6): O92. Next: O92's report, /refute O92, /land O92 with the looks on 8790; then O95 and O96. Open items: none.
 - 2026-10-27 (O92 stopped at /spec; open item 498). O92's brief was written from main at c72f0fcb9 and checked (`agents/reviews/O92-brief-check.md`, a6eefc8dc6b4ef0cb, claude-opus-5-5); every finding but 4 closed in the brief under the report's Closed heading, with the Tier work of ruling 491. Finding 4 (the tests need a guarded entry, `agents/spec.md:59`) is open item 498, booked here and under O92's Step 0 in `plan.md`; the brief removed as the spec skill's stop says, its closed text kept at the session's scratch copy `O92-brief-closed.md`. Rulings 491 to 497 booked; O95 and O96 queued after O92 (ruling 497). In flight (0 of 6): none. Next: Axel's ruling on 498, then /spec O92 again (no second brief check), the preparation commit, the worktree, the builder. Open items: 498.
 - 2026-10-27 (O90 landed). O90 landed on main (the landing commit; booking in `plan.md` under O90, landing report `agents/reviews/O90-landing.md`): the board bar's `waiting <n>` toggle and Waiting on group, checked in the gate (every command passed) and on main (23 staged paths equal under `cmp` to the gate's file); the look taken on localhost:8790, Axel's page left on Settings as he had it. Next: /spec O92. In flight (0 of 6): none. Open items: none.
 - 2026-10-27 (O90 building). O90's brief `agents/briefs/O90.md` written from main at 38481ec63 and checked (`agents/reviews/O90-brief-check.md`, ac1a6cbad4e5cb3e9, claude-opus-5-5), every finding closed in the brief under the report's Closed heading; preparation commit 9f55cd701 is the base; worktree `.agents/worktrees/migration-O90` with `npm ci` and `svelte-kit sync`; base copy `.agents/worktrees/O90-base/` with `unused-exports.txt`; builder aae26928d468b78b8 (claude-opus-5-5). O92 waits for O90's landing: it moves and reshapes `FilterBar.svelte`, which O90 edits, a merge beyond a few named functions, so the two run in sequence. Next: O90's review and landing, then /spec O92. In flight (1 of 6): O90. Open items: none.

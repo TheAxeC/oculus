@@ -1,11 +1,11 @@
-In flight (0 of 6 slots in use): none.
+In flight (1 of 6 slots in use):
+- O92 (the collection's Add and bar, and the Map's bar), building.
 
-Queued (3):
-- O92 (the collection's Add and bar, and the Map's bar), stopped at /spec on open item 498; /spec O92 again after the ruling.
+Queued (2):
 - O95 (Focus, what a press opens), after O92.
 - O96 (the cards' project strip: its filters and its groups by category), after O92.
 
-Waiting on a ruling: 498 (O92: the guarded entry for the Add's tests). Landing next: none.
+Waiting on a ruling: nothing. Landing next: none.
 
 Owed looks: none.
 
