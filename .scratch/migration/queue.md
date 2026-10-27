@@ -7,7 +7,7 @@ Queued (4):
 - O96 (the cards' project strip: its filters and its groups by category), after O92.
 - O97 (the journal browser from configuration, the hub naming the UT's: the venues' fee line and a journal search view), after O92.
 
-Waiting on a ruling: open item 508, what several clusters change and the tests of O98 (O98 stopped at its /spec). Landing next: none.
+Waiting on a ruling: open item 508, O98's HPC status item for several clusters and where the sign-in providers and key settings are configured (O98 stopped at its /spec). Landing next: none.
 
 Owed looks: none.
 
