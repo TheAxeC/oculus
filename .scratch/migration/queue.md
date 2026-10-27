@@ -1,16 +1,16 @@
-In flight (2 of 6 slots in use):
-- O95 (Focus, what a press opens): building, builder launched 2026-10-27, base 046e0debc.
-- O96 (the cards' project strip: its filters and its groups by category): building, builder launched 2026-10-27, base 909f79d53.
+In flight (3 of 6 slots in use):
+- O95 (Focus, what a press opens): built; under review (reviewer running); repair round 1 next, carrying ruling 513 (a).
+- O96 (the cards' project strip: its filters and its groups by category): built; under review (reviewer running).
+- O98 (accounts and connections, rulings 507 to 510 and 516): building, builder launched 2026-10-27, base 54304adb4.
 
-Queued (2):
-- O97 (the journal browser from configuration and one configurable reader, rulings 509 and 511): its /spec next.
-- O98 (accounts and connections, rulings 507 to 510): its /spec next.
+Queued: none.
 
-Waiting on a ruling: none.
+Waiting on a ruling (1):
+- O97 (the journal browser from configuration and one configurable reader, rulings 509 and 511): stopped at its /spec on open item 517 (the extra keys of a service's configuration row, the venue fields, how the rows are edited in Settings).
 
-Landing next: none.
+Landing next: O96, then O95, after their reviews.
 
-Owed looks: none.
+Owed looks: O95 and O96 at their landings, on 8790.
 
 Landed, newest first:
 - O92 (the collection's Add and bar, and the Map's bar), 2026-10-27, 0414282f.
