@@ -25,7 +25,16 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 ```yaml
 dispatch:          # steps in flight, up to six (Z632)
 - step: O100
-  landing: preparing
+  brief_check: none, a small text step
+  base: 249bd5b57
+  worktree: .agents/worktrees/migration-O100
+  executor: agent
+  worker: claude:opus
+  session_id: a40dc274a49422bab (claude-opus-5-5)
+  launched: 2026-10-27
+  report: .scratch/migration/agents/reviews/O100-report.md
+  round: 0
+  landing: not-started
 - step: O98
   brief_check: "agents/reviews/O98-brief-check.md (a5d4f9a13f2831178, claude-opus-5-5, 236369 tokens, 81 tool uses, 13 min 47 s)"
   base: 54304adb4
@@ -684,6 +693,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-10-27 (O100 building; O98 building). Ruling 524 added O100, a small text step: the Awaiting box's names underlined under the pointer (brief `agents/briefs/O100.md`, base 249bd5b57, worktree `.agents/worktrees/migration-O100`, no brief check). O100's builder a40dc274a49422bab and O98's builder a8cc0514e57924553 (both claude-opus-5-5) are building. In flight (2 of 6): O100, O98. Next: each builder's report, /refute (O100 one review, no repair round), /land with its look on 8790; then /spec O99, then O97.
 - 2026-10-27 (O95 landed; O98 building; O99 waits for O98, then O97). O95 is on main (booked under O95 in `plan.md`, `agents/reviews/O95-landing.md`), checked in the gate worktree (`npm run diagrams && npm run docs:palette && npm run test:quick`) and on main (`git diff --cached --binary` equal to the gate's under `cmp`), with the two comment refills of the review over round 1 fixed at landing, and looked at on 8790 (the Awaiting box's names as buttons, the Under review: BSPC board, a grant's page, a band card's page, a subtask line's page). O98's builder a8cc0514e57924553 (claude-opus-5-5) is building from base 54304adb4. In flight (1 of 6): O98. Next: O98's report, /refute, its rounds and /land with its look on 8790; then /spec O99, then O97.
 - 2026-10-27 (O96 landed; O95 reviewed over round 1, landing next; O98 building; O99 waits for O98, then O97). O96 is on main (booked under O96 in `plan.md`, `agents/reviews/O96-landing.md`), checked in the gate worktree (`npm run diagrams && npm run docs:palette && npm run test:quick`, every command passed, 172.4 s) and on main (`git diff --cached --binary` equal to the gate's under `cmp`), looked at on 8790 (the Funding view's strips and its Projects section in More). O95's review over round 1 is saved in `agents/reviews/O95-refuter.md`: its findings are fixed at O95's landing (two comment rewraps, the report's stale counts and misplaced lines, the Awaiting hidden count in the look). O98's builder a8cc0514e57924553 is building. Open items: none.
 - 2026-10-27 (O95, O96 under review; O98 building; O97 stopped on 517). O95's reviewer a2941302c62abd230 and O96's reviewer aba0d8dc3c0d0853c (both claude-opus-5-5) are running; O95's repair round 1 carries ruling 513 (a) with the review's findings. O98's builder a8cc0514e57924553 (claude-opus-5-5) is building from base 54304adb4. O97 stopped at its /spec a second time on open item 517 (the request keys of a reader row, the venue fields, the Settings control), booked under O97's Step 0 in `plan.md`; its preparing entry is removed and no worktree was made. In flight (3 of 6): O95, O96, O98. Next: each reviewer's report, O95's round 1, /refute and /land with the looks on 8790; O97's /spec again on Axel's ruling of 517. Open items: 517 (O97).
