@@ -2,12 +2,12 @@ In flight (1 of 6 slots in use):
 - O92 (the collection's Add and bar, and the Map's bar), repair round 1 running.
 
 Queued (4):
-- O98 (accounts and connections: several clusters, git signed in from Account setup, failures told apart), now, beside O92 (ruling 506), its /spec running again after ruling 507.
+- O98 (accounts and connections: several clusters, git signed in from Account setup, failures told apart), beside O92, stopped at its /spec on open item 508.
 - O95 (Focus, what a press opens), after O92.
 - O96 (the cards' project strip: its filters and its groups by category), after O92.
 - O97 (the journal browser from configuration, the hub naming the UT's: the venues' fee line and a journal search view), after O92.
 
-Waiting on a ruling: nothing. Landing next: none.
+Waiting on a ruling: open item 508, what several clusters change and the tests of O98 (O98 stopped at its /spec). Landing next: none.
 
 Owed looks: none.
 
