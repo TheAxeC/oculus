@@ -1,0 +1,11 @@
+# O95, round 0: the ruling on the case the brief got wrong
+
+The builder's first run found that the brief's tab state `{ id, row, name, title, filter }` cannot give the titles cases 1 and 2 ask for: every place that names a tab reads the state's `label` key alone (`instanceLabel`, `src/lib/state/workbench/layout/instance.ts:96-98`, read by the tab strip at `src/lib/shell/panes/strip/strip-tab.ts:47`, the window title and `tabNameOf`), and the track record's board opens with `{ id, label }` (`src/lib/views/boards/focus/career/career-rows.ts:233-234`).
+
+1. Ruled (a): the transient board's tab state is `{ id, row, name, label, filter }`, `label` holding the title item 2 gives ("Under review: BSPC", "Under review: (venue unset)", "Waiting on: Maryam", "Blocked"). Wherever the brief says `title` for the tab state (item 2, decision 6), read `label`. No shell file changes. Not chosen: (b) both `title` and `label`, which can disagree in a saved layout; (c) the tab-name readers taught `title`, which changes how every tab is named, outside the step. The lazy option, not offered: the tab reading "Awaiting".
+2. Ruled: G124's new rows go into a new file `tests/state/boards/board/board-new-project.test.ts`, holding the describe 'New project on a board' moved whole from `board-rules.test.ts` (`:606-791` at the base) and the new rows, since `board-rules.test.ts` is 862 lines and the rows would take it past 880. The file is on the step's paths; the report's "Doc text" gives G124's Test line naming both files. The moved describe's rows are run after the move and quoted passing.
+3. Case 6's input: the blocked project on no awaiting lane is at a terminal stage, as the first run found (a blocked project at a non-terminal stage sits on the Blocked chip lane, `src/lib/state/boards/focus.ts:300-311`).
+4. Item 1's sentence "so two such names never read the same" applies to names of different hubs; two entries of one title in one hub are two buttons that read the same, each opening its own page. That is what item 1 asks.
+5. Open item 513 is booked in the main ledger's state file; the worktree's copy is at the base and does not hold it. Build the brief as written: the tally's count is not changed by this step.
+
+Everything else in the brief stands. Go on with the build.

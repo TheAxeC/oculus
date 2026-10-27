@@ -32,6 +32,8 @@ dispatch:          # steps in flight, up to six (Z632)
   worker: claude:opus
   session_id: a8009799d26d93fad (claude-opus-5-5)
   launched: 2026-10-27
+  builder_usage: round 0 hand-back 270291 tokens, 64 tool uses, 8 min 52 s
+  round: 0
   report: .scratch/migration/agents/reviews/O95-report.md
   landing: not-started
 - step: O96
@@ -245,6 +247,7 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
   - Status: Axel's to rule; nothing picked automatically.
 
 ## Closed items
+- 515 (2026-10-27, O95's first run, a new test file): written in full in `choices.md` Z1052 with its options and the lazy option named; closed in automode with (a); booked in `plan.md` Rulings.
 - 512 (2026-10-27, O95's brief check, two paths outside the list): written in full in `choices.md` Z1050 with its options and the lazy option named; closed in automode with (a), the paths gain `docs/palette.md` and `ticker-lines.ts`; booked in `plan.md` Rulings.
 - 514 (2026-10-27, O96's brief check, the files outside the list): written in full in `choices.md` Z1051 with its options and the lazy option named; closed in automode with (a); booked in `plan.md` Rulings.
 - 509 (2026-10-27): ruled by Axel, 1 (a), 2 (b); every web address written in oculus's code moves into the hub's configuration beside the feature that reads it, and one configurable reader built in O97 serves the journal browser, the literature sources and the Recover sources; booked in `plan.md` Rulings and on O98's and O97's lines.

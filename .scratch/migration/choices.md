@@ -5505,3 +5505,15 @@ The brief check of O96 (`agents/reviews/O96-brief-check.md`, findings F1.1, F3.2
 Where it applies: O96's brief. Booked in `plan.md` Rulings (open item 514) and the state file's closed log.
 Builds on it: O96
 
+
+## Z1052 (2026-10-27, O95's first run, the orchestrator, automode): G124's new rows in a new test file
+
+O95's builder found on its first run that `tests/state/boards/board/board-rules.test.ts` is 862 lines (`wc -l`), so G124's new rows would take it past the 880-line limit the size check applies to tests (`tests/checks/tree/size.test.ts`). A new file for tests the step already writes changes nothing a user sees and adds no requirement.
+
+- Chosen: (a) the describe 'New project on a board' moves whole into a new `tests/state/boards/board/board-new-project.test.ts` with the new rows, G124's Test line naming both files.
+- Not chosen: (b) the rows written into `board-rules.test.ts`, which then fails the size check.
+- The lazy option: (b).
+
+Where it applies: O95's round-0 ruling `agents/briefs/O95-cases.md`. Booked in `plan.md` Rulings (open item 515) and the state file's closed log.
+Builds on it: O95
+
