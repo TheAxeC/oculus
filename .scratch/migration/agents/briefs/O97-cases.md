@@ -14,3 +14,24 @@ Axel ruled open item 529 (a) on 2026-10-28. It changes the brief's "Cases" and i
    - G111's rule sentence with "a `recover.sources` row" in place of the services it names, and G114's rule sentence with "the address the row's `access` names" in place of the three login requests (PhysioNet's `SHA256SUMS.txt`, Kaggle's dataset list, Synapse's user profile), each rule otherwise as it stands;
    - the Code and Test lines item 10 already names.
    The orchestrator writes them into `guarded.md` at landing; you do not edit the ledger.
+
+## The first run's five cases, ruled by the orchestrator
+
+The builder's first run (its hand-back of 2026-10-28) found five cases the brief gets wrong. Each ruling below replaces the brief's text it names.
+
+(a) Case 22, verify 4's second grep. Its exclusions widen to the lines that read an identifier or the hub's venue fields and send no request: the venue fields of `src/lib/data/model/model-entities.ts` (`wos`, `scopus`, `scopusMark`), the hit field `arxiv` of `src/lib/data/model/model-search.ts`, and the lines of `src/lib/state/feeds/literature/merge.ts`, `answers.ts`, `bibtex.ts` and `lookup.ts` that read `arxiv` or `pubmed` ids or parse the addresses a reader types into Add. A line that builds an address to open or ask is not excluded: it reads the `links` rows (item 6). The report quotes the grep after the build with every remaining line, each judged "reads an identifier" or "the hub's venue field"; no field, vocabulary or stored value is renamed.
+
+(b) Case 9, GEO. The GEO row's file selector is `pre a:not([href^="/"]):not([href*="?"])`, which gives the pattern's two files on the recorded listing. A row gets `expect`, a path or selector the answer must hold; an answer without it is refused with a line naming the row (GEO's `title` holding `Index of`, as `geo.ts:44` refuses today). Open item 531, closed in automode (`choices.md` Z1057).
+
+(c) Case 2 and decision 4. Case 2 compares every header except `user-agent`; case 16 checks the User-Agent `oculus/<version>` on every reader request.
+
+(d) Case 6, Synapse. "Not followed" means no request for the folder at depth 9 and the whole listing refused with `{ refused: 'answer', source: 'synapse' }`, as `tokened.ts:135` does today (G111).
+
+(e) Case 17, open access. The UT row reads `open_access: { select: "li.open_access", attr: title }`; case 17 expects "Full Open Access. All articles in this journal are Open Access" for the recorded hits.
+
+Also ruled:
+- The UT browser's `query.issn` asks with `wq_fld=q` and the ISSN as `q`, as your recorded request did. The ISSN cell `ISSN: 1053-8119 (1095-9572)` is read by `match` with `all: true`, which gives every match as a list (Z1057).
+- Semantic Scholar's answer written by hand from its zod shape, after its one curl answered 429, stands; say so in the report.
+- Name in the report the command that turned `europepmc.json` and `openalex.json` to ASCII and the two HTML pages' entities. A file in the diff is written with Write, so if a program wrote them, write each again with Write from its checked text and quote the check that the parsed value is unchanged.
+
+Go on with the build: write the G136 to G138 tests and run them on the unchanged tree, then items 1 to 11 under the brief, the 529 (a) ruling and these rulings.

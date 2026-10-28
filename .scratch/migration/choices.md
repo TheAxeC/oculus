@@ -5564,3 +5564,15 @@ O97's brief check found mechanisms of the present sources that no named row key 
 
 Where it applies: `agents/briefs/O97.md` "What to build" items 2, 4, 5, 6 and 7, decision 6, cases 8, 24 to 26 and 28. Booked in `plan.md` Rulings (open item 530) and the state file's closed log.
 Builds on it: O97
+
+
+## Z1057 (2026-10-28, O97's first run, the orchestrator, automode): an answer's required part, and every match of a pattern
+
+O97's builder found on its first run that GEO's old reader refuses a page without `<title>Index of` (`geo.ts:44`), which no row key can say, and that the UT browser writes a journal's two ISSNs in one cell (`ISSN: 1053-8119 (1095-9572)`), which the `match` operation, giving one match, cannot read as the `issn` list.
+
+- Chosen: (a) a row's `expect`, a path or selector the answer must hold, else the answer is refused with a line naming the row; and `match` with `all: true`, every match as a list.
+- Not chosen: (b) GEO's check and the ISSN split kept in code, which leaves service code in oculus against ruling 509.
+- The lazy option: (b).
+
+Where it applies: `agents/briefs/O97-cases.md`, the first run's rulings (b) and the ISSN line; O97's Hub text. Booked in `plan.md` Rulings (open item 531) and the state file's closed log.
+Builds on it: O97

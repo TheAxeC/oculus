@@ -48,6 +48,7 @@ dispatch:          # steps in flight, up to six (Z632)
   session_id: a0fed28c88758e2aa (claude-opus-5-5)
   launched: 2026-10-28
   report: .scratch/migration/agents/reviews/O97-report.md
+  builder_usage: round 0 hand-back 291761 tokens, 120 tool uses, 28 min 53 s
   round: 0 (cases ruling agents/briefs/O97-cases.md)
   landing: not-started
 ```
@@ -195,6 +196,7 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
 - 527 (2026-10-28, O97's /spec, the orchestrator, automode): (a), the keys O97's rows need beyond rulings 511 and 517 and the catalog key `sparse: true`, taken in O97's brief; booked in `plan.md` Rulings and `choices.md` Z1054.
 - 528 (2026-10-28, O98's round 1, the orchestrator, automode): (a), a `connections.failures` row's `for` (`cluster`, `git`), sent in O98's round 1; booked in `plan.md` Rulings and `choices.md` Z1055.
 - 530 (2026-10-28, O97's brief check, the orchestrator, automode): (a), the row keys the tree's sources need beyond rulings 511, 517 and Z1054 (`query.issn`, `query.id`, `none_when`, `missing: none`, `pick` with `glob`, `{hole|path}`, `clash`, `pace.field`, the `links` holes beyond `{id}`), taken in O97's brief decision 6; booked in `plan.md` Rulings and `choices.md` Z1056.
+- 531 (2026-10-28, O97's first run, the orchestrator, automode): (a), a row's `expect` (a path or selector the answer must hold, else refused naming the row) and `match` with `all: true`, ruled in `agents/briefs/O97-cases.md`; booked in `plan.md` Rulings and `choices.md` Z1057.
 - 529 (2026-10-28): (a), guarded entries G136 (the configured reader), G137 (the journal browser) and G138 (the sparse Settings card), case 11 into G111's table, and G111's and G114's rule sentences reworded without service names; sent to O97's builder as `agents/briefs/O97-cases.md` (Axel: "529 (a)"); booked in `plan.md` Rulings.
 - 525 (2026-10-28): (a), the held review discarded and `/refute migration O98` run (Axel: "Why didn't you take the recommendation").
 - 524 (2026-10-27): ruled by Axel ("Please do"): step O100 added; booked in `plan.md` Rulings.
