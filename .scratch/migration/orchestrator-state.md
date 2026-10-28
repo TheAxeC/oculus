@@ -34,7 +34,7 @@ dispatch:          # steps in flight, up to six (Z632)
   session_id: a0fed28c88758e2aa (claude-opus-5-5)
   launched: 2026-10-28
   report: .scratch/migration/agents/reviews/O97-report.md
-  builder_usage: round 0 hand-back 291761 tokens, 120 tool uses, 28 min 53 s; after the cases ruling, paused at Axel's word on 2026-10-28 (stopped, no usage notice), resumed by a message to the same agent id, paused again at Axel's word the same day (stopped, no usage notice), resumed again by a message to the same agent id, paused a third time at Axel's word the same day (stopped, no usage notice)
+  builder_usage: round 0 hand-back 291761 tokens, 120 tool uses, 28 min 53 s; after the cases ruling, paused at Axel's word on 2026-10-28 (stopped, no usage notice), resumed by a message to the same agent id, paused again at Axel's word the same day (stopped, no usage notice), resumed again by a message to the same agent id, paused a third time at Axel's word the same day (stopped, no usage notice), resumed a third time by a message to the same agent id
   round: 0 (cases ruling agents/briefs/O97-cases.md)
   landing: not-started
 ```
@@ -176,6 +176,8 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 ## Open items (only what Axel must rule on; every report tells him these in plain words, decisions first, until he has ruled)
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
+
+- 533 (2026-10-28): add the ruling "Zenodo deposit" (`plan.md` Rulings) to the plan as one step, O101, after O99. (a) One full step O101, `(ruling Zenodo deposit)`, after O97 and O99: the `.zenodo.json` the deposit writes from the manifest, the Release action, and the DOI read back into `code_availability.doi`, its address in the hub's configuration as ruling 509 requires. Pros: one review and one landing for one feature; it comes after O97, whose configurable reader can read the record's DOI, and after O99, which rewrites the Settings both touch. Cons: it waits for O97 and O99. (b) A roadmap entry of its own outside this plan. Pros: the migration plan stays to its present steps. Cons: a second plan to open for one step, when the plan already takes features by ruling (O97 by ruling 502, O98 by ruling 504). (c) Build it now beside O97. Pros: sooner. Cons: it shares the deposit and Settings files with O99 and would build on a Settings O99 rewrites. Recommendation: (a). The lazy option: none of the three leaves work undone; (b) only moves it.
 
 ## Closed items
 - 526 (2026-10-28): (a), O97 runs now beside O98, and O99 after O98 and O97 have landed (Axel: "526 (a)"); booked in `plan.md` Rulings.
@@ -690,6 +692,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-10-28 (O97 resumed a third time; ruling Zenodo deposit; open item 533). At Axel's word O97's builder a0fed28c88758e2aa is resumed by a message to the same agent id, served claude-opus-5-5 (its transcript), going on with the related tests, then the rest of its build. Axel ruled "Zenodo deposit" (option (a), booked in `plan.md` Rulings); open item 533 asks whether it becomes step O101 after O99. In flight (1 of 6): O97, building. Next: its report, /refute, its round and /land with its look on 8790; then /spec O99. Open items: 533.
 - 2026-10-28 (O97 paused a third time). At Axel's word O97's builder a0fed28c88758e2aa is stopped mid-build (it was about to run the related tests); its worktree `.agents/worktrees/migration-O97` is kept as it stands, and a message to the same agent id resumes it with its context. In flight (1 of 6): O97, paused. Next: resume O97's builder at Axel's word; then its report, /refute, its round and /land; then /spec O99.
 - 2026-10-28 (O97 resumed again). At Axel's word O97's builder a0fed28c88758e2aa is resumed a second time by a message to the same agent id, served claude-opus-5-5 (its transcript), going on with the check of its pages against its scratch copies, then the rest of its build. In flight (1 of 6): O97, building. Next: its report, /refute, its round and /land with its look on 8790; then /spec O99.
 - 2026-10-28 (O97 paused again). At Axel's word O97's builder a0fed28c88758e2aa is stopped mid-build a second time (it was checking the pages against scratch copies); its worktree `.agents/worktrees/migration-O97` is kept as it stands, and a message to the same agent id resumes it with its context. In flight (1 of 6): O97, paused. Next: resume O97's builder at Axel's word; then its report, /refute, its round and /land; then /spec O99.
