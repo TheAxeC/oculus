@@ -5,7 +5,7 @@ In flight (2 of 6 slots in use):
 Queued:
 - O99 (every setting edited in Settings and a form for every file that is no setting, rulings 519 to 522): after O98 and O97 have landed (ruling 526 (a)), since it rewrites the Settings files both change.
 
-Waiting on a ruling: open item 529 (guarded entries for O97's reader, the browser and the sparse Settings card); O97's build is not held for it.
+Waiting on a ruling: none.
 
 Landing next: O98, when its review and rounds close.
 

@@ -48,7 +48,7 @@ dispatch:          # steps in flight, up to six (Z632)
   session_id: a0fed28c88758e2aa (claude-opus-5-5)
   launched: 2026-10-28
   report: .scratch/migration/agents/reviews/O97-report.md
-  round: 0
+  round: 0 (cases ruling agents/briefs/O97-cases.md)
   landing: not-started
 ```
 
@@ -190,18 +190,12 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
-- 529 (2026-10-28, O97's brief check, for Axel: kind 3, a check added to the rules). **Tests for the new configurable reader.** What it is about: O97 replaces the eight hand-written literature sources, the eleven Recover sources and adds the journal browser, all read by one new reader from rows in the hub's `config.yml`. The rules file lets a builder write a test only as the test of an entry of `agents/guarded.md`, and a new entry is yours to approve. Recover's readers already have one (G111, G114) and keep it; the literature hits, the requests each source sends, paging, encoding of values, links, the journal browser and the new Settings card have none, so without your word they are checked once by quoted runs and never again. The rule sentences of G111 and G114 also name PhysioNet, Kaggle and Synapse and their login requests, which become rows, so those sentences need rewording.
-  - (a) Three new entries and two reworded sentences. G136: the configured reader sends exactly the requests a row describes (address, parameters, headers, body, paging, auth, pacing and the 429 state) and reads exactly the records and fields it names, every value encoded in its part; Code `src/lib/server/core/reader/`, Test `tests/server/core/reader/reader.test.ts`, a table with one row per literature source against its recorded answer, plus the request, paging, encoding, link and 429 rows (O97 cases 1 to 3, 5 to 7, 12 to 14, 24 to 27). G137: the journal browser asks only on a press and writes a hit, or a venue's fee and open access, through the write chain; Code the browser's files under `src/lib/views/sources/venues/` and `src/lib/state/sources/registries/`, Test `tests/state/sources/registries/browser.test.ts` (cases 15 to 17, 18's Read, 28, 32). G138: a Settings family marked `sparse: true` draws the fields its row sets with an Add field menu, and a pairs value may be a text or a record; Code `src/lib/state/system/config/editors/fields.ts`, Test `tests/state/system/config/sparse-card.test.ts` (cases 19 and 31). Case 11 (a kind with no row) joins G111's table. G111's and G114's rule sentences say the same rule with "a `recover.sources` row" in place of the named services and "the address the row's `access` names" in place of the three login requests. Pros: the reader every search and every Recover listing now goes through stays checked on every change; a row edited in a hub or a reader change that gives wrong hits fails a test. Cons: about three test files more to keep, each a table.
-  - (b) No new entry: those cases are runs the report quotes once, and G111's and G114's sentences reworded only. Pros: no new test file. Cons: a later change to the reader can give wrong hits or send a wrong request with nothing failing.
-  - Recommendation: (a), since the reader is the single path every literature search, Recover listing and the browser now share, and its failures (wrong hits, a request to the wrong address) cost wrong results without a visible error. The lazy option: (b).
-  - Status: open. O97's builder is not held for it: until you rule, those cases are quoted runs and no test of them is written (the rules file's test rule); on (a), the tests are sent to the builder as a round-0 ruling before review.
-
-
 ## Closed items
 - 526 (2026-10-28): (a), O97 runs now beside O98, and O99 after O98 and O97 have landed (Axel: "526 (a)"); booked in `plan.md` Rulings.
 - 527 (2026-10-28, O97's /spec, the orchestrator, automode): (a), the keys O97's rows need beyond rulings 511 and 517 and the catalog key `sparse: true`, taken in O97's brief; booked in `plan.md` Rulings and `choices.md` Z1054.
 - 528 (2026-10-28, O98's round 1, the orchestrator, automode): (a), a `connections.failures` row's `for` (`cluster`, `git`), sent in O98's round 1; booked in `plan.md` Rulings and `choices.md` Z1055.
 - 530 (2026-10-28, O97's brief check, the orchestrator, automode): (a), the row keys the tree's sources need beyond rulings 511, 517 and Z1054 (`query.issn`, `query.id`, `none_when`, `missing: none`, `pick` with `glob`, `{hole|path}`, `clash`, `pace.field`, the `links` holes beyond `{id}`), taken in O97's brief decision 6; booked in `plan.md` Rulings and `choices.md` Z1056.
+- 529 (2026-10-28): (a), guarded entries G136 (the configured reader), G137 (the journal browser) and G138 (the sparse Settings card), case 11 into G111's table, and G111's and G114's rule sentences reworded without service names; sent to O97's builder as `agents/briefs/O97-cases.md` (Axel: "529 (a)"); booked in `plan.md` Rulings.
 - 525 (2026-10-28): (a), the held review discarded and `/refute migration O98` run (Axel: "Why didn't you take the recommendation").
 - 524 (2026-10-27): ruled by Axel ("Please do"): step O100 added; booked in `plan.md` Rulings.
 - 523 (2026-10-27): ruled by Axel, (a); booked in `plan.md` Rulings.
