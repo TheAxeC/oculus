@@ -33,7 +33,7 @@ dispatch:          # steps in flight, up to six (Z632)
   session_id: a8cc0514e57924553 (claude-opus-5-5)
   launched: 2026-10-27
   report: .scratch/migration/agents/reviews/O98-report.md
-  builder_usage: 327915 tokens, 2155 tool uses, 4 h 9 min 32 s
+  builder_usage: 327915 tokens, 2155 tool uses, 4 h 9 min 32 s; round 1: 370072 tokens, 535 tool uses, 69 min 16 s
   reviewer_report: "(ace99e5278712884d, claude-opus-5-5, 249353 tokens, 136 tool uses, 26 min 20 s, dispatched outside /refute, report discarded by ruling 525 (a)); agents/reviews/O98-refuter.md (a7bc5df274463e2fa, claude-opus-5-5, 85779 tokens, 90 tool uses, 25 min 29 s)"
   round: 1
   shared_paths: with O95 and O96, `docs/HELP.md` (O98 the Live HPC, Recover, Account setup, Settings, Source Control and local.yml lines, 252, 258, 315-324, 337, 532, 553 and 585 among them; O95 line 294; O96 lines 277, 296 and 301; separate lines, simple merges) and the generated `docs/diagrams/*`, regenerated at each landing.
@@ -191,6 +191,11 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
+- 532 (2026-10-28, O98's round 1 report, for Axel: kind 3, a script the rules file reserves to you). **Files O98's builder wrote with a one-off script.** What it is about: the rules file says every edit is made with the Edit and Write tools and that any script needs your approval of what it computes. O98's builder reports that it wrote `src/lib/server/core/git/credentials.ts` and `src/lib/views/personal/account-setup/AccountSetup.svelte` with python one-off scripts, and appended text to `tests/server/accounts/connect/git/routes.test.ts`, `docs/HELP.md` and `tests/data/sources/config/settings.test.ts` with `cat >>`. The scripts computed nothing: each wrote text the builder composed. The skill says nothing such a script produced is used until you rule.
+  - (a) Accept those files as written: they are judged like every other file by the review of the diff, and the round's checks run over them. Pros: no rework of text that is the same either way. Cons: the rule was broken and stays broken for these files.
+  - (b) The builder writes each of those files or sections again with Edit or Write, in the next round, the text otherwise as the review leaves it. Pros: the files then come from the tools the rule names. Cons: the same text is written a second time; `credentials.ts` is rewritten in round 2 anyway for the boundaries check.
+  - Recommendation: (a), since the content is reviewed by reading in either case and a second write of the same text checks nothing more. The cheaper option is (a); it is not the lazy one, as it leaves no work undone, while (b) repeats work without a new check.
+  - Status: open. O98's round 2 does not wait for it; the landing does.
 ## Closed items
 - 526 (2026-10-28): (a), O97 runs now beside O98, and O99 after O98 and O97 have landed (Axel: "526 (a)"); booked in `plan.md` Rulings.
 - 527 (2026-10-28, O97's /spec, the orchestrator, automode): (a), the keys O97's rows need beyond rulings 511 and 517 and the catalog key `sparse: true`, taken in O97's brief; booked in `plan.md` Rulings and `choices.md` Z1054.
