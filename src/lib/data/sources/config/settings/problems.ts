@@ -4,9 +4,13 @@
 
 import {
     calendarSettings,
+    clusterKeySettings,
+    failureRows,
     literatureSettings,
     mailSettings,
+    nodeDownload,
     refreshSettings,
+    signInRows,
     slurmSettings,
     usageTiers
 } from './connectors.ts';
@@ -31,6 +35,10 @@ const PROBLEM_READERS: ((
     problems: SettingProblem[]
 ) => unknown)[] = [
     slurmSettings,
+    clusterKeySettings,
+    failureRows,
+    signInRows,
+    nodeDownload,
     calendarSettings,
     searchSettings,
     literatureSettings,

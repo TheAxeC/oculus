@@ -9,5 +9,8 @@ import type { RequestHandler } from './$types';
 
 export const GET: RequestHandler = ({ request, locals }) =>
     handleLines(request, (signal) =>
-        countLines(locals.server.engine, textCatalog(locals.config().config), { signal })
+        countLines(locals.server.engine, textCatalog(locals.config().config), {
+            signal,
+            credentials: locals.server.credentials
+        })
     );

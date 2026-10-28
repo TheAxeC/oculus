@@ -4,15 +4,24 @@
 // `Copier` is what the planner's callers pass, so a test hands in one that records its call and no
 // test starts rsync or ssh.
 //
-// rsync's transport is the same ssh the poll and the commands use, with the same options
-// (ssh.ts's SSH_OPTIONS), joined into the one word rsync's `-e` takes: rsync splits it on spaces.
-// There is no `--delete`: the cluster folder also holds the jobs' results, logs and data, and a
-// copy only adds and updates. `--timeout` is rsync's own idle limit on its input and output, so a
-// large first copy over a slow link is not cut by a wall-clock limit and a link that has gone quiet
-// is.
+// rsync's transport is the same ssh the poll and the commands use, with the same options and the
+// same login (ssh.ts's SSH_OPTIONS and loginOptions), joined into the one word rsync's `-e` takes.
+// rsync splits that word on spaces and honours single quotes in it, so each part is put in single
+// quotes, and a user name or a key file (neither holds a single quote) stays one word and adds no
+// option. There is no `--delete`: the cluster folder also holds the jobs' results, logs and data,
+// and a copy only adds and updates. `--timeout` is rsync's own idle limit on its input and output,
+// so a large first copy over a slow link is not cut by a wall-clock limit and a link that has gone
+// quiet is.
 
 import { spawn } from 'node:child_process';
-import { KILL_GRACE_MS, SSH_OPTIONS, SSH_PROGRAM, type RunResult } from './ssh.ts';
+import {
+    KILL_GRACE_MS,
+    loginOptions,
+    SSH_OPTIONS,
+    SSH_PROGRAM,
+    type Connection,
+    type RunResult
+} from './ssh.ts';
 
 /** Seconds of silence on rsync's input and output before it gives up. */
 const COPY_IDLE_S = 60;
@@ -28,17 +37,31 @@ type CopyInput = {
 /** Run one copy and say what it came to. A program that cannot start comes back as code 1. */
 export type Copier = (input: CopyInput) => Promise<RunResult>;
 
-/** The arguments of the copy of a code folder to `target` (`<host>:<folder>/`). */
-export function copyVector(target: string): string[] {
+/**
+ * Where a copy to `folder` on the connection's host lands, `<host>:<folder>/`: an address with a
+ * colon (IPv6) in brackets, so rsync does not read its colon as the end of the host.
+ */
+export function copyTarget(connection: Connection, folder: string): string {
+    const host = connection.host.includes(':') ? `[${connection.host}]` : connection.host;
+    return `${host}:${folder}/`;
+}
+
+/**
+ * The arguments of the copy of a code folder to `folder` on the connection's host (copyTarget),
+ * its ssh's words each in single quotes in the one word of `-e`.
+ */
+export function copyVector(connection: Connection, folder: string): string[] {
     return [
         '-a',
         '-0',
         '--files-from=-',
         `--timeout=${COPY_IDLE_S}`,
         '-e',
-        [SSH_PROGRAM, ...SSH_OPTIONS].join(' '),
+        [SSH_PROGRAM, ...SSH_OPTIONS, ...loginOptions(connection)]
+            .map((word) => `'${word}'`)
+            .join(' '),
         './',
-        target
+        copyTarget(connection, folder)
     ];
 }
 

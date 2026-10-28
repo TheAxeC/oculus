@@ -29,6 +29,7 @@ import {
     stashIn,
     tagIn,
     withFile,
+    type GitAt,
     type Outcome
 } from './git-write.ts';
 import { stoppedOn } from './git-index.ts';
@@ -54,21 +55,21 @@ function takes({ code }: StatusRecord, mode: StashMode): boolean {
 
 /** Stash the changes the mode names, with the message when one is given. */
 export async function stash(
-    root: string,
+    at: GitAt,
     mode: StashMode,
     message: string,
     text: Record<string, string>,
     roots: string[] = allowedRoots()
 ): Promise<Outcome> {
-    if (!permitted(root, roots)) return failed(words(text, 'server.git.unknown_directory'));
+    if (!permitted(at.root, roots)) return failed(words(text, 'server.git.unknown_directory'));
     const flags = byKey(STASH_FLAGS, mode);
     if (flags === undefined) return failed(words(text, 'server.git.not_a_way_to_stash'));
-    const something = await statusHolds(root, (record) => takes(record, mode));
+    const something = await statusHolds(at, (record) => takes(record, mode));
     if (something !== true) {
         return something === false ? failed(words(text, 'server.git.nothing_to_stash')) : something;
     }
     const body = typeof message === 'string' ? message.trim() : '';
-    const done = await stashIn(root, [
+    const done = await stashIn(at, [
         'push',
         ...flags,
         ...(body === '' ? [] : [`--message=${body}`])
@@ -86,31 +87,31 @@ export function stagedUnknown(error: string): boolean {
 
 /** Apply, pop or drop one stash by git's own name for it. */
 export async function stashAct(
-    root: string,
+    at: GitAt,
     act: 'apply' | 'pop' | 'drop',
     ref: string,
     text: Record<string, string>,
     roots: string[] = allowedRoots()
 ): Promise<Outcome> {
-    if (!permitted(root, roots)) return failed(words(text, 'server.git.unknown_directory'));
+    if (!permitted(at.root, roots)) return failed(words(text, 'server.git.unknown_directory'));
     if (!['apply', 'pop', 'drop'].includes(act)) {
         return failed(words(text, 'server.git.not_a_stash_action'));
     }
     if (typeof ref !== 'string' || !STASH_REF.test(ref)) {
         return failed(words(text, 'server.git.not_a_stash'));
     }
-    const done = await stashIn(root, [act, ref]);
+    const done = await stashIn(at, [act, ref]);
     if (done.ok || act === 'drop') return done;
-    return stoppedOn(root, done, text, act === 'pop' ? 'pop' : 'apply');
+    return stoppedOn(at, done, text, act === 'pop' ? 'pop' : 'apply');
 }
 
 /** Whether a name is one git takes for a tag, judged by git over the whole ref. */
-async function tagName(root: string, name: string, text: Record<string, string>): Promise<string> {
+async function tagName(at: GitAt, name: string, text: Record<string, string>): Promise<string> {
     if (typeof name !== 'string' || name.trim() === '') {
         return words(text, 'server.git.tag_needs_name');
     }
     if (name.startsWith('-')) return words(text, 'server.git.not_tag_name', name);
-    const judged = await refFormat(root, [`refs/tags/${name}`]);
+    const judged = await refFormat(at, [`refs/tags/${name}`]);
     return judged.ok ? '' : words(text, 'server.git.not_tag_name', name);
 }
 
@@ -119,38 +120,38 @@ async function tagName(root: string, name: string, text: Record<string, string>)
  * the message when it has one. The message goes through a file, as a commit's does.
  */
 export async function createTag(
-    root: string,
+    at: GitAt,
     name: string,
     message: string,
     text: Record<string, string>,
     roots: string[] = allowedRoots(),
     start?: string
 ): Promise<Outcome> {
-    if (!permitted(root, roots)) return failed(words(text, 'server.git.unknown_directory'));
-    const wrong = await tagName(root, name, text);
+    if (!permitted(at.root, roots)) return failed(words(text, 'server.git.unknown_directory'));
+    const wrong = await tagName(at, name, text);
     if (wrong !== '') return failed(wrong);
-    const at: string[] = [];
+    const point: string[] = [];
     if (start !== undefined) {
         const refusal = checkStart(start, text);
         if (refusal !== '') return failed(refusal);
-        at.push(start);
+        point.push(start);
     }
     const body = typeof message === 'string' ? message.trim() : '';
-    if (body === '') return tagIn(root, [name, ...at]);
-    return withFile('oculus-tag-', body, (file) => tagIn(root, ['-a', name, '-F', file, ...at]));
+    if (body === '') return tagIn(at, [name, ...point]);
+    return withFile('oculus-tag-', body, (file) => tagIn(at, ['-a', name, '-F', file, ...point]));
 }
 
 /** Delete one tag here; a tag already pushed stays on the remote. */
 export async function deleteTag(
-    root: string,
+    at: GitAt,
     name: string,
     text: Record<string, string>,
     roots: string[] = allowedRoots()
 ): Promise<Outcome> {
-    if (!permitted(root, roots)) return failed(words(text, 'server.git.unknown_directory'));
-    const wrong = await tagName(root, name, text);
+    if (!permitted(at.root, roots)) return failed(words(text, 'server.git.unknown_directory'));
+    const wrong = await tagName(at, name, text);
     if (wrong !== '') return failed(wrong);
-    return tagIn(root, ['-d', name]);
+    return tagIn(at, ['-d', name]);
 }
 
 /**
@@ -158,14 +159,14 @@ export async function deleteTag(
  * accept, a branch the repository lacks, and the branch checked out here.
  */
 async function undeletable(
-    root: string,
+    at: GitAt,
     name: string,
     text: Record<string, string>,
     roots: string[]
 ): Promise<Outcome | null> {
-    const wrong = await checkName(root, name, text, roots);
+    const wrong = await checkName(at, name, text, roots);
     if (wrong !== '') return failed(wrong);
-    const listed = await branchIn(root, [REFS_FORMAT]);
+    const listed = await branchIn(at, [REFS_FORMAT]);
     if (!listed.ok) return listed;
     const found = parseBranches(listed.output).find((one) => one.name === name);
     if (found === undefined) return failed(words(text, 'server.git.not_a_branch_here', name));
@@ -182,14 +183,14 @@ async function undeletable(
  * the reader's language. The branch checked out here is refused before git is asked.
  */
 export async function deleteBranch(
-    root: string,
+    at: GitAt,
     name: string,
     text: Record<string, string>,
     roots: string[] = allowedRoots()
 ): Promise<Outcome> {
-    const refused = await undeletable(root, name, text, roots);
+    const refused = await undeletable(at, name, text, roots);
     if (refused !== null) return refused;
-    return branchIn(root, ['-d', name], {
+    return branchIn(at, ['-d', name], {
         env: { LC_ALL: 'C' },
         codes: { 'is not fully merged': BRANCH_NOT_MERGED }
     });
@@ -201,12 +202,12 @@ export async function deleteBranch(
  * only after the question Delete Anyway asks. The same refusals as `deleteBranch` come first.
  */
 export async function deleteBranchAnyway(
-    root: string,
+    at: GitAt,
     name: string,
     text: Record<string, string>,
     roots: string[] = allowedRoots()
 ): Promise<Outcome> {
-    const refused = await undeletable(root, name, text, roots);
+    const refused = await undeletable(at, name, text, roots);
     if (refused !== null) return refused;
-    return branchIn(root, ['-D', name]);
+    return branchIn(at, ['-D', name]);
 }

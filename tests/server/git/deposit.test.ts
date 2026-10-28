@@ -22,10 +22,12 @@ import {
     commit,
     push,
     sync,
+    type DepositOptions,
     type Plan
 } from '../../../src/lib/server/git/deposit/deposit.ts';
 import { type GhRun, type Outcome } from '../../../src/lib/server/git/deposit/deposit-git.ts';
 import type { WriteTarget } from '../../../src/lib/server/edit/writes.ts';
+import { noCredentials } from '../../fixtures/doubles.ts';
 import { it, scratchDir, test } from '../../fixtures/scratch.ts';
 import {
     depositTarget,
@@ -101,8 +103,8 @@ function answer(ok: boolean, output: string, error: string): Promise<Outcome> {
     return Promise.resolve({ ok, output, error });
 }
 
-function options(): { mirrors: string; into: WriteTarget; gh: GhRun } {
-    return { mirrors, into, gh };
+function options(): DepositOptions {
+    return { mirrors, into, gh, credentials: noCredentials() };
 }
 
 test.beforeAll(() => {
@@ -181,7 +183,7 @@ describe('a deposit of a project of the second hub', () => {
                 : answer(false, '', 'could not resolve to a Repository');
         };
         const hubs = [{ key: 'lab', hub: lab, config: into.config }];
-        const both = { mirrors, into: { ...into, hubs }, gh: sent };
+        const both = { mirrors, into: { ...into, hubs }, gh: sent, credentials: noCredentials() };
         const firstBefore = readFileSync(manifestOf(hub), 'utf8');
         expect((await adopt('lab:alpha', TEXT, both)).ok).toBe(true);
         const pushed = await push('lab:alpha', TEXT, both);

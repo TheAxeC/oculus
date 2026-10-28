@@ -76,6 +76,7 @@ import {
     urlOf
 } from './deposit-git.ts';
 import { REFS_FORMAT } from '../../core/git/parse.ts';
+import type { GitCredentials } from '../../core/git/credentials.ts';
 import { scan } from './deposit-scan.ts';
 import {
     UNCOMPARED,
@@ -137,11 +138,16 @@ export type DepositOptions = {
     gh?: GhRun;
     /** How git is run; the real one when absent. A test fails one command through it. */
     git?: GitRunner;
+    /** The server context's git credentials, which the real git is given. */
+    credentials: GitCredentials;
     /** The signal that ends the commands of this run when Cancel aborts it. */
     signal?: AbortSignal;
     /** The last plan per project, kept by the owning server context for the GET. */
     plans?: Map<string, Plan>;
 };
+
+/** What names the hubs a deposit reads, which is all the list of project ids needs. */
+type DepositHubs = Pick<DepositOptions, 'into' | 'engine' | 'config' | 'carried'>;
 
 /** The repository's GitHub About, as the manifest configures it. */
 type About = { description?: string; homepage?: string; topics?: string[] };
@@ -171,7 +177,7 @@ function done(output: string): Outcome {
  * it named says. A caller that gives neither is the endpoint without its server settings, which is
  * a fault in the wiring rather than in a request, so it is said as one.
  */
-function hubTarget(options: DepositOptions): WriteTarget {
+function hubTarget(options: DepositHubs): WriteTarget {
     if (options.into !== undefined) return options.into;
     if (
         options.engine === undefined ||
@@ -205,6 +211,7 @@ function settings(
             dir,
             mirrors,
             text: text ?? into.config.text,
+            credentials: options.credentials,
             ...(runner === undefined ? {} : { git: runner }),
             ...(signal === undefined ? {} : { signal })
         })
@@ -272,8 +279,8 @@ function depositFor(
 }
 
 /** Every project id the hubs hold, each `<hub>:<key>`. */
-export function projectIds(options: DepositOptions = {}): string[] {
-    const { into } = settings(options);
+export function projectIds(options: DepositHubs): string[] {
+    const into = hubTarget(options);
     const held = [
         ...(into.primary === null || into.hub === null
             ? []
@@ -286,7 +293,7 @@ export function projectIds(options: DepositOptions = {}): string[] {
 }
 
 /** Where the mirror of one project is, or the empty string when the hub holds no such project. */
-export function mirrorOf(id: string, options: DepositOptions = {}): string {
+export function mirrorOf(id: string, options: DepositOptions): string {
     return depositFor(id, options)?.at.dir ?? '';
 }
 
@@ -302,7 +309,7 @@ function made(at: Where): boolean {
 export async function adopt(
     id: string,
     text: Record<string, string>,
-    options: DepositOptions = {}
+    options: DepositOptions
 ): Promise<Outcome> {
     const { mirrors, run, where } = settings(options, text);
     const deposit = depositFor(id, options, text);
@@ -338,7 +345,7 @@ export async function adopt(
 export async function sync(
     id: string,
     text: Record<string, string>,
-    options: DepositOptions = {}
+    options: DepositOptions
 ): Promise<PlanOutcome> {
     const deposit = depositFor(id, options, text);
     if (deposit === null) {
@@ -381,7 +388,7 @@ export async function commit(
     id: string,
     message: string,
     text: Record<string, string>,
-    options: DepositOptions = {}
+    options: DepositOptions
 ): Promise<PlanOutcome> {
     if (typeof message !== 'string' || message.trim() === '') {
         return { ...failed(words(text, 'server.deposit.commit_needs_message')), plan: null };
@@ -411,7 +418,7 @@ export async function commit(
 export async function push(
     id: string,
     text: Record<string, string>,
-    options: DepositOptions = {}
+    options: DepositOptions
 ): Promise<Outcome> {
     const { into, run } = settings(options, text);
     const deposit = depositFor(id, options, text);
@@ -460,7 +467,7 @@ export async function snapshot(
     id: string,
     message: string,
     text: Record<string, string>,
-    options: DepositOptions = {}
+    options: DepositOptions
 ): Promise<PlanOutcome> {
     if (typeof message !== 'string' || message.trim() === '') {
         return { ...failed(words(text, 'server.deposit.snapshot_needs_message')), plan: null };
@@ -532,7 +539,7 @@ async function replanned(
 export async function branches(
     id: string,
     text: Record<string, string>,
-    options: DepositOptions = {}
+    options: DepositOptions
 ): Promise<BranchOutcome> {
     const deposit = depositFor(id, options, text);
     if (deposit === null) {
@@ -551,7 +558,7 @@ export async function createBranch(
     id: string,
     name: string,
     text: Record<string, string>,
-    options: DepositOptions = {}
+    options: DepositOptions
 ): Promise<Outcome> {
     const deposit = depositFor(id, options, text);
     if (deposit === null) return failed(words(text, 'server.deposit.no_project', id));
@@ -572,7 +579,7 @@ export async function switchBranch(
     id: string,
     name: string,
     text: Record<string, string>,
-    options: DepositOptions = {}
+    options: DepositOptions
 ): Promise<Outcome> {
     const deposit = depositFor(id, options, text);
     if (deposit === null) return failed(words(text, 'server.deposit.no_project', id));
@@ -604,7 +611,7 @@ export async function switchBranch(
 export async function fetchMirror(
     id: string,
     text: Record<string, string>,
-    options: DepositOptions = {}
+    options: DepositOptions
 ): Promise<Outcome> {
     const deposit = depositFor(id, options, text);
     if (deposit === null) return failed(words(text, 'server.deposit.no_project', id));
@@ -624,7 +631,7 @@ export async function fileTexts(
     against: string,
     path: string,
     text: Record<string, string>,
-    options: DepositOptions = {}
+    options: DepositOptions
 ): Promise<TextsOutcome> {
     const deposit = depositFor(id, options, text);
     if (deposit === null) {
@@ -637,7 +644,7 @@ export async function fileTexts(
 }
 
 /** Where the mirror is and what state it is in, for the GET. */
-export async function state(id: string, options: DepositOptions = {}): Promise<MirrorState | null> {
+export async function state(id: string, options: DepositOptions): Promise<MirrorState | null> {
     const deposit = depositFor(id, options);
     if (deposit === null) return null;
     const plan = options.plans?.get(id) ?? null;

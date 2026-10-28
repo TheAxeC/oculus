@@ -11,11 +11,12 @@ import { dirname, isAbsolute, join, resolve } from 'node:path';
 import { homedir } from 'node:os';
 import { z } from 'zod';
 import { parse } from 'yaml';
-import type {
-    AccountProvider,
-    CalendarAccountConfig,
-    MailAccountConfig,
-    UsageAccountConfig
+import {
+    MAC_TARGET,
+    type AccountProvider,
+    type CalendarAccountConfig,
+    type MailAccountConfig,
+    type UsageAccountConfig
 } from '../../model/index.ts';
 import { isAccountLabel, isCalendarProvider, isProvider } from '../../accounts/connect.ts';
 import { filledText, itemsShape, mapShape, readAs } from '../../shapes/shapes.ts';
@@ -46,8 +47,11 @@ export type LocalConfig = {
      * people of every hub (data/snapshot/hubs/self.ts); empty when the file names nobody.
      */
     self: string;
-    /** Per-machine ssh alias for the Live HPC view. */
-    hpcHost?: string;
+    /**
+     * This machine's account on each cluster, `clusters` in the file: the user name and the key
+     * file ssh connects with, by the cluster's key. Empty unless the machine names any.
+     */
+    clusters: ClusterAccount[];
     /**
      * Where the session layer keeps its byte-offset cache, `sessions_cache` in the file. Absent
      * unless the machine sets it, and the sessions layer then uses ~/.oculus/transcript-cache.json.
@@ -139,6 +143,19 @@ export type LocalConfig = {
     downloads: DownloadAccount[];
 };
 
+/**
+ * One row of `clusters:`: the key of the cluster entry it is this machine's account on, the user
+ * name on that cluster and the absolute path of the key file, each absent when the row leaves it
+ * out, and the hub whose file holds the row.
+ */
+export type ClusterAccount = { resource: string; user?: string; keyFile?: string; hub?: string };
+
+/**
+ * A user name ssh's `-l` takes as one word that is no option: a letter, a digit or an underscore,
+ * then letters, digits, dots, dashes and underscores.
+ */
+export const USER_NAME = /^[A-Za-z0-9_][A-Za-z0-9._-]*$/;
+
 /** The services a `downloads` row names. */
 const DOWNLOAD_SERVICES = ['physionet', 'kaggle', 'kaggle-token', 'synapse'] as const;
 
@@ -164,7 +181,7 @@ export const LOCAL_NAME = 'local.yml';
 export const LOCAL_KEYS = [
     'port',
     'self',
-    'hpc_host',
+    'clusters',
     'sessions_cache',
     'sessions_overrides',
     'changes',
@@ -204,6 +221,7 @@ export function localDefaults(): LocalConfig {
     return {
         port: DEFAULT_PORT,
         self: '',
+        clusters: [],
         claudeBin: 'claude',
         riteDapBin: 'rite_dap',
         accounts: [
@@ -377,6 +395,85 @@ function connectAccounts<P extends AccountProvider>(
 }
 
 /**
+ * The path of a cluster's key file a `clusters:` row names: `~/` resolved against the home folder,
+ * absolute after that, holding no single quote (rsync's `-e` word quotes it in single quotes) and
+ * not ending in `.pub`, the public half; null for any other.
+ */
+export function keyFilePath(value: string): string | null {
+    const path = value.startsWith('~/') ? join(homedir(), value.slice(2)) : value;
+    if (!isAbsolute(path) || path.includes("'") || path.endsWith('.pub')) return null;
+    return path;
+}
+
+/**
+ * The rows of `clusters:` that read: the key of a cluster, and the user name and the key file the
+ * row gives, an empty one read as absent. A row whose user name is no USER_NAME, or whose key file
+ * keyFilePath refuses, is left out with a problem naming the row and the field, and so is a row of
+ * the resource `mac`, which names this Mac, and a row of a resource an earlier row names; no
+ * problem holds a value of the file. A list that is not a list is null.
+ */
+function clusterAccounts(value: unknown, problems: LocalProblem[]): ClusterAccount[] | null {
+    const rows = readAs(itemsShape, value);
+    if (rows === null) {
+        problems.push(wrong('clusters', 'a list'));
+        return null;
+    }
+    const read: ClusterAccount[] = [];
+    rows.forEach((item, index) => {
+        const at = `clusters[${index}]`;
+        const row = readAs(mapShape, item);
+        if (row === null) {
+            problems.push(wrong(at, 'a map', 'row'));
+            return;
+        }
+        const resource = filledText(row.resource);
+        if (resource === undefined) {
+            problems.push(wrong(`${at}.resource`, 'the key of a cluster', 'row'));
+            return;
+        }
+        if (resource === MAC_TARGET) {
+            problems.push(wrong(`${at}.resource`, NOT_THIS_MAC_WORDS, 'row'));
+            return;
+        }
+        const one: ClusterAccount = { resource };
+        if (row.user !== undefined && row.user !== '') {
+            if (typeof row.user !== 'string' || !USER_NAME.test(row.user)) {
+                problems.push(wrong(`${at}.user`, USER_WORDS, 'row'));
+                return;
+            }
+            one.user = row.user;
+        }
+        if (row.key_file !== undefined && row.key_file !== '') {
+            const file = typeof row.key_file === 'string' ? keyFilePath(row.key_file) : null;
+            if (file === null) {
+                problems.push(wrong(`${at}.key_file`, KEY_FILE_WORDS, 'row'));
+                return;
+            }
+            one.keyFile = file;
+        }
+        if (read.some((earlier) => earlier.resource === resource)) {
+            problems.push(
+                wrong(`${at}.resource`, 'the key of a cluster no earlier row names', 'row')
+            );
+            return;
+        }
+        read.push(one);
+    });
+    return read;
+}
+
+/** What a `clusters:` row's resource must be besides the key of a cluster. */
+const NOT_THIS_MAC_WORDS = `the key of a cluster other than ${MAC_TARGET}, which names this Mac`;
+
+/** What a `clusters:` row's user name must be. */
+const USER_WORDS =
+    'a user name of letters, digits, dots, dashes and underscores, starting with a letter, a digit or an underscore';
+
+/** What a `clusters:` row's key file must be. */
+const KEY_FILE_WORDS =
+    'an absolute path or one under ~/, holding no single quote and not ending in .pub';
+
+/**
  * The keys under `literature:` that read. A value that is no map is a problem and gives none; a key
  * that is not text with something in it is a problem and is absent; a key oculus does not read is
  * added to `unknown` as `literature.<key>` and ignored.
@@ -483,9 +580,8 @@ export function localFile(hub: string): string {
     return join(hub, ROOT_FOLDER, LOCAL_NAME);
 }
 
-/** The keys of the file that name a program or a host, with the field each sets. */
+/** The keys of the file that name a program, with the field each sets. */
 export const PROGRAM_KEYS = [
-    ['hpc_host', 'hpcHost'],
     ['claude_bin', 'claudeBin'],
     ['open_bin', 'openBin'],
     ['rite_dap_bin', 'riteDapBin']
@@ -575,6 +671,10 @@ export function readLocalText(text: string, base: string, hub?: string): LocalRe
     if (account !== undefined) {
         if (typeof account !== 'string') problems.push(wrong('commit_message_account', 'a label'));
         else if (account !== '') config.commitMessageAccount = account;
+    }
+    if (record.clusters !== undefined) {
+        const rows = clusterAccounts(record.clusters, problems);
+        if (rows !== null) config.clusters = marked(rows, hub);
     }
     if (record.accounts !== undefined) {
         const rows = usageAccounts(record.accounts, base, problems);

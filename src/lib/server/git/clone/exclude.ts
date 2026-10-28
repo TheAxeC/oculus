@@ -26,7 +26,7 @@
 
 import { mkdirSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
 import { dirname, isAbsolute, relative, resolve, sep } from 'node:path';
-import { cloneGit, LOCAL_TIMEOUT_MS, type InputRunner } from './clone-git.ts';
+import { LOCAL_TIMEOUT_MS, type InputRunner } from './clone-git.ts';
 
 /** The line that opens the block oculus owns in the exclude file. */
 const BLOCK_START = '# BEGIN nested-repos';
@@ -187,10 +187,7 @@ async function linesOf(one: HubRepositories, place: Place, git: InputRunner): Pr
  * that were written. A hub that is no repository is passed over, and a hub whose file cannot be
  * written is the caller's failure to log.
  */
-export async function syncNested(
-    hubs: HubRepositories[],
-    git: InputRunner = cloneGit
-): Promise<string[]> {
+export async function syncNested(hubs: HubRepositories[], git: InputRunner): Promise<string[]> {
     const files = new Map<string, Set<string>>();
     for (const one of hubs) {
         const place = await placeOf(one.hub, git);

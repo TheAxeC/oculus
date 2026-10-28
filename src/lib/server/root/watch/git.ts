@@ -85,8 +85,8 @@
 // a while (a large worktree while the machine is busy) is shown unreadable only for that while, and
 // nothing else would read it again, since a root nobody writes in sends no event.
 
-import { existsSync, lstatSync, readdirSync, watch } from 'node:fs';
-import type { FSWatcher, Stats } from 'node:fs';
+import { existsSync, watch } from 'node:fs';
+import type { FSWatcher } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { REPO_SETTINGS } from '../../../data/helpers/editor/editor.ts';
 import { byKey } from '../../../data/helpers/guards.ts';
@@ -98,9 +98,9 @@ import type {
 } from '../../../data/model/index.ts';
 import type { Hub, Sink } from '../../core/channels.ts';
 import { systemClock, type Clock, type Timer } from '../../core/file-poll.ts';
-import { readState, type StateRead } from '../../core/git/state.ts';
+import { readState, type FetchFailures, type StateRead } from '../../core/git/state.ts';
 import { TIMEOUT_MS } from '../../core/git/run.ts';
-import { APP_FOLDERS, PLAIN_FOLDERS } from '../process/build-folders.ts';
+import type { GitCredentials } from '../../core/git/credentials.ts';
 import { markedBy } from '../../files/project/make.ts';
 import type { HubRepositories } from '../../git/clone/exclude.ts';
 import {
@@ -110,6 +110,7 @@ import {
     type NestedFound
 } from './repos/nested.ts';
 import { mayChangeRepositories } from './repos/depth.ts';
+import { IGNORED, parentOf, relevant, statOf, subrepositories } from './repos/paths.ts';
 import type { Watcher } from './portfolio/portfolio.ts';
 
 /** Milliseconds one root is re-read at most once in. */
@@ -117,14 +118,6 @@ export const THROTTLE = 2000;
 
 /** How many folders one window names before it names the whole root instead. */
 const MOST_FOLDERS = 64;
-
-/** Path segments whose writes never change what git reports about the working tree. */
-export const IGNORED = [
-    'node_modules',
-    ...Object.values(PLAIN_FOLDERS),
-    ...Object.values(APP_FOLDERS),
-    '__pycache__'
-];
 
 export type GitWatchOptions = {
     /** Milliseconds one root is re-read at most once in. */
@@ -184,25 +177,14 @@ export type GitWatchOptions = {
      * from the next tick; the answer takes the listener away.
      */
     follow?: (listener: () => void) => () => void;
+    /**
+     * The last failed fetch of each root, put on the root's state at each read as `fetchFailure`;
+     * a fetch, a pull or a sync asks for a read after it, so the state carries its outcome.
+     */
+    fetchFailures?: FetchFailures;
+    /** The server context's git credentials, which every read of a root's state runs git with. */
+    credentials: GitCredentials;
 };
-
-/**
- * Whether an event is one of ours: outside .git/objects, outside every ignored folder, and not a
- * lock file inside .git.
- *
- * The lock is the one that matters. The module's own reads run without optional locks and write
- * none, but another git process in the same repository (the owner's commit, an editor) takes
- * .git/index.lock and renames it away again, and without this line each of those would schedule a
- * read. A real index change announces itself with an event on .git/index, which is not filtered.
- */
-export function relevant(filename: string | null): boolean {
-    if (filename === null || filename === '') return false;
-    const parts = filename.split(/[/\\]/);
-    if (parts.some((part) => IGNORED.includes(part))) return false;
-    if (parts[0] !== '.git') return true;
-    if (parts[1] === 'objects') return false;
-    return !parts[parts.length - 1].endsWith('.lock');
-}
 
 /** The workspace roots a sessions payload names, without the unknown workspace's empty key. */
 export function rootsOf(payload: SessionsPayload): string[] {
@@ -215,58 +197,8 @@ export function rootsOf(payload: SessionsPayload): string[] {
     return roots;
 }
 
-/**
- * The repositories below a root, by path in name order: every folder down to `depth` levels under
- * it that holds a `.git`, a folder or a file. The walk enters repositories too (a repository inside
- * one is found), skips links, `.git` and the ignored folders, and enters every other folder, dot
- * folders included. A folder that cannot be listed is skipped and the rest of the walk goes on. A
- * depth of 0 finds nothing, and `Infinity` has no limit.
- */
-export function subrepositories(root: string, depth: number): string[] {
-    const found: string[] = [];
-    const walk = (dir: string, level: number): void => {
-        if (level >= depth) return;
-        let entries;
-        try {
-            entries = readdirSync(dir, { withFileTypes: true });
-        } catch {
-            return;
-        }
-        for (const entry of entries) {
-            if (!entry.isDirectory() || entry.name === '.git' || IGNORED.includes(entry.name)) {
-                continue;
-            }
-            const path = join(dir, entry.name);
-            if (existsSync(join(path, '.git'))) found.push(path);
-            walk(path, level + 1);
-        }
-    };
-    walk(root, 0);
-    return found.sort();
-}
-
 function reason(error: unknown): string {
     return error instanceof Error ? error.message : String(error);
-}
-
-/**
- * What a stat says of a path itself, or nothing when there is no entry there to say it of: a path
- * that is gone, and one under a file (a worktree's `.git` is one), which the stat refuses with
- * ENOTDIR. A symbolic link is dated by its own change time, not its target's: a link made or
- * pointed elsewhere now, at a file that is old, is a new entry git reports.
- */
-function statOf(path: string): Stats | undefined {
-    try {
-        return lstatSync(path, { throwIfNoEntry: false });
-    } catch {
-        return undefined;
-    }
-}
-
-/** The folder that holds a path, relative to the root: `''` for the root's own top. */
-function parentOf(path: string): string {
-    const at = Math.max(path.lastIndexOf('/'), path.lastIndexOf('\\'));
-    return at === -1 ? '' : path.slice(0, at);
 }
 
 /**
@@ -292,7 +224,7 @@ type Slot = { running: boolean; waiting: { settle: () => void; announce: boolean
  * repository. The same watch publishes the `files` channel: at the end of each throttle window, the
  * folders its events landed in.
  */
-export function watchGit(hub: Hub, options: GitWatchOptions = {}): GitWatcher {
+export function watchGit(hub: Hub, options: GitWatchOptions): GitWatcher {
     const throttle = options.throttle ?? THROTTLE;
     const clock = options.clock ?? systemClock;
     const timeout = options.timeout ?? TIMEOUT_MS;
@@ -423,9 +355,10 @@ export function watchGit(hub: Hub, options: GitWatchOptions = {}): GitWatcher {
             void renewNested();
         }
         const began = first ? born.at : Date.now();
-        const read = await readState(root, text, timeout);
+        const read = await readState(options.credentials, root, text, timeout);
         if (!stillOpen(root, born)) return;
-        const next = read.state;
+        const failure = options.fetchFailures?.get(root);
+        const next = failure === undefined ? read.state : { ...read.state, fetchFailure: failure };
         answered(root, began, read);
         if (first) last.set(root, Date.now());
         // No event comes for a root nobody writes in, so the watcher asks for the next read itself.

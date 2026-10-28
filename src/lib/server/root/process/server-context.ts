@@ -9,12 +9,15 @@ import type { HostInfo } from '../../../data/model/index.ts';
 import type { AccountBook } from '../../accounts/connect/actions.ts';
 import type { CalendarWatcher } from '../../accounts/calendar/poll.ts';
 import type { ConnectStates } from '../../accounts/connect/oauth.ts';
+import type { GitSignIns } from '../../accounts/connect/git/signins.ts';
 import type { MailWatcher } from '../../accounts/mail/poll.ts';
 import type { IconMemory } from '../../../data/sources/config.ts';
 import type { LiteratureDesk } from '../../content/literature/desk.ts';
 import type { WallpaperMemory } from '../../content/wallpaper.ts';
 import type { Hub } from '../../core/channels.ts';
+import type { GitCredentials } from '../../core/git/credentials.ts';
 import type { RunningGit } from '../../core/git/running.ts';
+import type { FetchFailures } from '../../core/git/state.ts';
 import type { FsWrites } from '../../core/json.ts';
 import type { IgnoredCache } from '../../files/fs.ts';
 import type { OpenFiles } from '../../files/fs/open-files.ts';
@@ -22,8 +25,8 @@ import type { PickerState } from '../../files/fs/picker.ts';
 import type { Opener, PathOpener } from '../../files/open.ts';
 import type { Plan } from '../../git/deposit/deposit.ts';
 import type { DebugClient } from '../../machine/debug/session.ts';
-import type { LogPaths } from '../../machine/hpc/actions.ts';
-import type { HpcWatcher } from '../../machine/hpc/poll.ts';
+import type { ClusterLogPaths } from '../../machine/hpc/actions.ts';
+import type { HpcClusters } from '../../machine/hpc/clusters/watch.ts';
 import type { SubmitState } from '../../machine/hpc/submit.ts';
 import type { Relay } from '../../machine/lsp/relay/relay.ts';
 import type { Terminals } from '../../machine/pty/channel.ts';
@@ -67,7 +70,8 @@ export type ServerContext = {
     repositories: () => readonly string[];
     /** The files open in source tabs, polled for a change on disk behind the `source:` channels. */
     openFiles: OpenFiles;
-    hpc: HpcWatcher;
+    /** The Live HPC watchers, one per cluster of `slurm.resource`, and their `hpc` channel. */
+    hpc: HpcClusters;
     calendar: CalendarWatcher;
     mail: MailWatcher;
     usage: UsageWatcher;
@@ -132,6 +136,16 @@ export type ServerContext = {
     opsWrites: FsWrites;
     /** The git and deposit writes in flight, so Cancel ends the one a root or a deposit runs. */
     gitRunning: RunningGit;
+    /**
+     * The last failed fetch of each root, set by the automatic fetch and the reader's Fetch and
+     * cleared by a fetch, a pull or a sync that succeeds; the git watcher puts it on the state.
+     */
+    fetchFailures: FetchFailures;
+    /**
+     * The git credentials every git oculus starts and every terminal is handed: the credential
+     * helper's pairs for the hosts signed in to whose `sign_in` row in force names the address.
+     */
+    credentials: GitCredentials;
     /** The clone folders a clone is running in, so a second request for one is answered busy. */
     cloning: Set<string>;
     /** The ignored names the file browser's listings asked git for lately. */
@@ -141,8 +155,8 @@ export type ServerContext = {
      * open is answered busy and `close` ends it.
      */
     folderPicker: PickerState;
-    /** The log path found per HPC job id. */
-    hpcLogPaths: LogPaths;
+    /** The log path found per HPC job id, kept per cluster. */
+    hpcLogPaths: ClusterLogPaths;
     /** The Submit runs in flight, whose children the server's close ends. */
     hpcSubmits: SubmitState;
     /** The calendar consents in flight, minted by the connect action and taken by the callback. */
@@ -160,6 +174,8 @@ export type ServerContext = {
     literature: LiteratureDesk;
     /** The folder the one client half per provider lives in, resolved once. */
     providerDir: string;
+    /** The Sign ins of the git hosts of `sign_in` that run, one per host at most. */
+    gitSignIns: GitSignIns;
     /**
      * The machine's own file, the chain an account write waits on, and the re-read after one: the
      * whole file is read again, `local` and the fields above take its values, and what is built

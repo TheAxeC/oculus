@@ -33,6 +33,7 @@ import { basename, dirname, join, sep } from 'node:path';
 import type { DiffSides, GitBlameLine, GitCommitFile } from '../../../data/model/index.ts';
 import { permitted } from '../paths.ts';
 import { words } from '../words.ts';
+import type { GitCredentials } from './credentials.ts';
 import { PANE_DIFF, parseBlame, parseNameStatus } from './parse.ts';
 import { sidesOf } from './reads.ts';
 import {
@@ -61,12 +62,19 @@ export type RefName = { name: string; kind: RefKind };
 export type HeadFile = { text: string } | { missing: true } | { binary: true };
 
 /** The one `diff` call site of this module, run with the path rule set to literal. */
-function diff(root: string, args: string[], timeout: number): Promise<Outcome> {
-    return run(root, ['diff', ...args], timeout, undefined, { GIT_LITERAL_PATHSPECS: '1' });
+function diff(
+    credentials: GitCredentials,
+    root: string,
+    args: string[],
+    timeout: number
+): Promise<Outcome> {
+    const literal = { GIT_LITERAL_PATHSPECS: '1' };
+    return run(credentials, root, ['diff', ...args], timeout, undefined, literal);
 }
 
 /** A file as HEAD or the index holds it; a directory is refused and a path git lacks is missing. */
 export async function headFile(
+    credentials: GitCredentials,
     root: string,
     stage: HeadStage,
     path: string,
@@ -80,13 +88,13 @@ export async function headFile(
     const spec = `${stage === 'head' ? 'HEAD' : ':0'}:${path}`;
     const kind =
         stage === 'head'
-            ? await headKind(root, spec, text, ms)
-            : await indexKind(root, path, text, ms);
+            ? await headKind(credentials, root, spec, text, ms)
+            : await indexKind(credentials, root, path, text, ms);
     if (!kind.ok) return kind;
     if (kind.value === 'none') return missing();
     if (kind.value === 'folder') return refused(words(text, 'server.git.is_a_folder', path));
     if (kind.value === 'other') return refused(words(text, 'server.git.not_a_file', path));
-    const done = await run(root, ['show', '--no-textconv', spec], ms);
+    const done = await run(credentials, root, ['show', '--no-textconv', spec], ms);
     if (!done.ok) return refused(reasonOf(done, text));
     if (isBinary(done.text, done.utf8)) return { ok: true, value: { binary: true } };
     return { ok: true, value: { text: done.text } };
@@ -98,6 +106,7 @@ export async function headFile(
  * git's uncommitted author on that line.
  */
 export async function blameAt(
+    credentials: GitCredentials,
     root: string,
     path: string,
     stage: HeadStage,
@@ -107,13 +116,15 @@ export async function blameAt(
     if (!pathInside(root, path)) return refused(words(text, 'server.git.path_outside', path));
     const ms = milliseconds(timeout);
     if (stage === 'head') {
-        const done = await run(root, ['blame', '--porcelain', 'HEAD', '--', path], ms);
+        const args = ['blame', '--porcelain', 'HEAD', '--', path];
+        const done = await run(credentials, root, args, ms);
         return done.ok ? { ok: true, value: parseBlame(done.text) } : refused(reasonOf(done, text));
     }
-    const held = await headFile(root, 'index', path, text, ms);
+    const held = await headFile(credentials, root, 'index', path, text, ms);
     if (!held.ok) return held;
     if (!('text' in held.value)) return refused(words(text, 'server.git.no_index_text', path));
     const done = await run(
+        credentials,
         root,
         ['blame', '--porcelain', '--contents', '-', '--', path],
         ms,
@@ -127,12 +138,13 @@ type Kind = 'file' | 'folder' | 'other' | 'none';
 
 /** The type of the object `HEAD:<path>` names; a path HEAD lacks, or no HEAD at all, is none. */
 async function headKind(
+    credentials: GitCredentials,
     root: string,
     spec: string,
     text: Record<string, string>,
     timeout: number
 ): Promise<Read<Kind>> {
-    const done = await run(root, ['cat-file', '-t', spec], timeout);
+    const done = await run(credentials, root, ['cat-file', '-t', spec], timeout);
     if (!done.ok) {
         return done.text.includes('not a git repository')
             ? refused(reasonOf(done, text))
@@ -147,12 +159,14 @@ async function headKind(
  * entries under it for a folder, each as `<mode> <hash> <stage>\t<path>`.
  */
 async function indexKind(
+    credentials: GitCredentials,
     root: string,
     path: string,
     text: Record<string, string>,
     timeout: number
 ): Promise<Read<Kind>> {
-    const done = await run(root, ['ls-files', '--stage', '-z', '--', path], timeout, undefined, {
+    const args = ['ls-files', '--stage', '-z', '--', path];
+    const done = await run(credentials, root, args, timeout, undefined, {
         GIT_LITERAL_PATHSPECS: '1'
     });
     if (!done.ok) return refused(reasonOf(done, text));
@@ -175,6 +189,7 @@ function missing(): Read<HeadFile> {
  * runs, since it could be an option.
  */
 async function commitOf(
+    credentials: GitCredentials,
     root: string,
     ref: string,
     text: Record<string, string>,
@@ -183,7 +198,8 @@ async function commitOf(
     if (typeof ref !== 'string' || ref === '' || ref.startsWith('-')) {
         return refused(words(text, 'server.git.not_a_reference'));
     }
-    const done = await run(root, ['rev-parse', '--verify', '--quiet', `${ref}^{commit}`], timeout);
+    const args = ['rev-parse', '--verify', '--quiet', `${ref}^{commit}`];
+    const done = await run(credentials, root, args, timeout);
     const hash = done.text.trim();
     return done.ok && HASH.test(hash)
         ? { ok: true, value: hash }
@@ -192,6 +208,7 @@ async function commitOf(
 
 /** The files of `git diff <from> <to>`: the from side is any ref, the to side a commit hash. */
 export async function compareFiles(
+    credentials: GitCredentials,
     root: string,
     from: string,
     to: string,
@@ -200,9 +217,10 @@ export async function compareFiles(
 ): Promise<Read<GitCommitFile[]>> {
     if (!HASH.test(to)) return refused(words(text, 'server.git.not_a_commit'));
     const ms = milliseconds(timeout);
-    const start = await commitOf(root, from, text, ms);
+    const start = await commitOf(credentials, root, from, text, ms);
     if (!start.ok) return start;
     const done = await diff(
+        credentials,
         root,
         ['--name-status', '-z', '-M', '--end-of-options', start.value, to],
         ms
@@ -217,6 +235,7 @@ export async function compareFiles(
  * renamed is diffed from its old path, which the comparison's own file list names.
  */
 export async function compareSides(
+    credentials: GitCredentials,
     root: string,
     from: string,
     to: string,
@@ -227,9 +246,10 @@ export async function compareSides(
     if (!HASH.test(to)) return refused(words(text, 'server.git.not_a_commit'));
     if (!pathInside(root, path)) return refused(words(text, 'server.git.path_outside', path));
     const ms = milliseconds(timeout);
-    const start = await commitOf(root, from, text, ms);
+    const start = await commitOf(credentials, root, from, text, ms);
     if (!start.ok) return start;
     const listed = await diff(
+        credentials,
         root,
         ['--name-status', '-z', '-M', '--end-of-options', start.value, to],
         ms
@@ -238,21 +258,23 @@ export async function compareSides(
     const renamed = parseNameStatus(listed.text).find((file) => file.path === path && file.from);
     const paths = renamed ? [renamed.from, path] : [path];
     const done = await diff(
+        credentials,
         root,
         [...PANE_DIFF, '-M', '--end-of-options', start.value, to, '--', ...paths],
         ms
     );
     if (!done.ok) return refused(reasonOf(done, text));
-    return sidesOf(root, done.text, `${start.value}:`, `${to}:`, text, ms);
+    return sidesOf(credentials, root, done.text, `${start.value}:`, `${to}:`, text, ms);
 }
 
 /** The refs a picker offers: local branches, remote branches and tags, never a remote's HEAD. */
 export async function refNames(
+    credentials: GitCredentials,
     root: string,
     text: Record<string, string>,
     timeout: number = TIMEOUT_MS
 ): Promise<Read<RefName[]>> {
-    const table = await refTable(root, text, milliseconds(timeout));
+    const table = await refTable(credentials, root, text, milliseconds(timeout));
     if (!table.ok) return table;
     const rows: RefName[] = [];
     for (const row of table.value) {
@@ -272,11 +294,13 @@ type RefRow = { name: string; symref: string; upstream: string };
 
 /** The one `for-each-ref` read of this module: the three namespaces with what a base reads. */
 async function refTable(
+    credentials: GitCredentials,
     root: string,
     text: Record<string, string>,
     timeout: number
 ): Promise<Read<RefRow[]>> {
     const done = await run(
+        credentials,
         root,
         [
             'for-each-ref',
@@ -305,20 +329,21 @@ async function refTable(
  * back.
  */
 export async function branchBase(
+    credentials: GitCredentials,
     root: string,
     text: Record<string, string>,
     timeout: number = TIMEOUT_MS
 ): Promise<string> {
     const ms = milliseconds(timeout);
-    const head = await run(root, ['symbolic-ref', '--short', 'HEAD'], ms);
-    const table = await refTable(root, text, ms);
+    const head = await run(credentials, root, ['symbolic-ref', '--short', 'HEAD'], ms);
+    const table = await refTable(credentials, root, text, ms);
     if (!head.ok || !table.ok) return '';
     const branch = head.text.trim();
     const remote = (name: string): boolean =>
         table.value.some((row) => row.name === `refs/remotes/${name}` && row.symref === '');
-    const configured = await mergeBaseSetting(root, branch, ms);
+    const configured = await mergeBaseSetting(credentials, root, branch, ms);
     if (configured !== '' && remote(configured)) return configured;
-    const from = await createdFrom(root, branch, ms);
+    const from = await createdFrom(credentials, root, branch, ms);
     if (from !== '') {
         if (remote(from)) return from;
         const upstream = table.value.find((row) => row.name === `refs/heads/${from}`)?.upstream;
@@ -328,8 +353,14 @@ export async function branchBase(
 }
 
 /** The value of `branch.<name>.vscode-merge-base`, or the empty string when it is not set. */
-async function mergeBaseSetting(root: string, branch: string, timeout: number): Promise<string> {
+async function mergeBaseSetting(
+    credentials: GitCredentials,
+    root: string,
+    branch: string,
+    timeout: number
+): Promise<string> {
     const done = await run(
+        credentials,
         root,
         ['config', '--get-regexp', '^branch\\..*\\.vscode-merge-base$'],
         timeout
@@ -345,8 +376,14 @@ async function mergeBaseSetting(root: string, branch: string, timeout: number): 
 }
 
 /** The `%gs` subjects of a ref's reflog, newest first; none for a ref with no reflog. */
-async function reflogOf(root: string, ref: string, timeout: number): Promise<string[]> {
-    const done = await run(root, ['log', '--walk-reflogs', '--format=%gs', ref, '--'], timeout);
+async function reflogOf(
+    credentials: GitCredentials,
+    root: string,
+    ref: string,
+    timeout: number
+): Promise<string[]> {
+    const args = ['log', '--walk-reflogs', '--format=%gs', ref, '--'];
+    const done = await run(credentials, root, args, timeout);
     return done.ok ? done.text.split('\n').filter((line) => line !== '') : [];
 }
 
@@ -355,15 +392,20 @@ async function reflogOf(root: string, ref: string, timeout: number): Promise<str
  * an X of `HEAD` the branch the oldest `checkout: moving from <X> to <branch>` entry of the HEAD
  * reflog left. The empty string when the reflog says nothing.
  */
-async function createdFrom(root: string, branch: string, timeout: number): Promise<string> {
-    const created = (await reflogOf(root, `refs/heads/${branch}`, timeout))
+async function createdFrom(
+    credentials: GitCredentials,
+    root: string,
+    branch: string,
+    timeout: number
+): Promise<string> {
+    const created = (await reflogOf(credentials, root, `refs/heads/${branch}`, timeout))
         .filter((line) => line.startsWith('branch: Created from '))
         .map((line) => line.slice('branch: Created from '.length));
     if (created.length !== 1) return '';
     if (created[0] !== 'HEAD') return created[0];
     const prefix = 'checkout: moving from ';
     const suffix = ` to ${branch}`;
-    const moves = (await reflogOf(root, 'HEAD', timeout)).filter(
+    const moves = (await reflogOf(credentials, root, 'HEAD', timeout)).filter(
         (line) => line.startsWith(prefix) && line.endsWith(suffix)
     );
     const last = moves.at(-1);
@@ -397,6 +439,7 @@ function defaultBranchOf(rows: RefRow[], branch: string): string {
  * read from it.
  */
 export async function workspaceSides(
+    credentials: GitCredentials,
     root: string,
     path: string,
     roots: string[],
@@ -406,7 +449,7 @@ export async function workspaceSides(
     if (path === '.' || !pathInside(root, path)) {
         return refused(words(text, 'server.git.path_outside', path));
     }
-    const listed = await worktrees(root, milliseconds(timeout));
+    const listed = await worktrees(credentials, root, milliseconds(timeout));
     const main = listed.at(0)?.path;
     if (main === undefined) return refused(words(text, 'server.git.no_worktrees'));
     if (realOf(main) === realOf(root)) return refused(words(text, 'server.git.is_main_worktree'));

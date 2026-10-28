@@ -5,6 +5,7 @@
 // makes is listed, moved, split, renamed and closed as any terminal.
 
 import type { Terminal } from '../../../../../data/model/index.ts';
+import type { GitCredentials } from '../../../../core/git/credentials.ts';
 import type { Terminals } from '../../../pty/channel.ts';
 import {
     respawnTerminal,
@@ -31,6 +32,8 @@ export type TerminalsEnvOptions = {
     tmux?: RunOptions;
     /** The user's shell, for a terminal that names none. */
     shell: () => string;
+    /** The server context's git credentials, which every terminal started here carries. */
+    credentials: GitCredentials;
 };
 
 /** The terminals env of a process. */
@@ -51,6 +54,7 @@ export function terminalsEnv(options: TerminalsEnvOptions): TerminalsEnv {
                 },
                 {
                     ...tmux,
+                    credentials: options.credentials,
                     argv: request.argv,
                     ...(request.job === undefined ? {} : { task: request.job })
                 }

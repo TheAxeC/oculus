@@ -1,5 +1,5 @@
-// Layer 2, server. Recover's section of the Live HPC batch (machine/hpc/poll.ts), which runs it in
-// its one ssh command per poll. The section lists oculus's sessions on the socket
+// Layer 2, server. Recover's section of the Live HPC batch of one cluster (machine/hpc/poll.ts),
+// which runs it in its one ssh command per poll. The section lists oculus's sessions on the socket
 // `oculus-recover`, each with the bytes of the folder of the dataset its name gives (`du -sb`),
 // and for each dataset Recover follows on the cluster the bytes of its folder and the last lines
 // of its fetch log and of its latest job's output. Every line the section prints that is not log
@@ -23,14 +23,15 @@ function bytesLine(folder: string): string {
 }
 
 /**
- * The section's commands: each session on the socket with the bytes of the folder of the dataset
- * of `places` it names, then for each run of `followed` its folder's bytes and its log lines.
- * `home` is this Mac's home folder, where the job records are kept.
+ * The section's commands on the cluster `resource`: each session on the socket with the bytes of
+ * the folder of the dataset of `places` it names, then for each run of `followed` its folder's
+ * bytes and its log lines. `home` is this Mac's home folder, where the job records are kept.
  */
 export function sectionCommand(
     places: ClusterPlace[],
     followed: ClusterPlace[],
-    home: string
+    home: string,
+    resource: string
 ): string {
     return [
         `tmux -L ${SOCKET} ls -F '#{session_name}' 2>/dev/null | while IFS= read -r s; do`,
@@ -45,7 +46,7 @@ export function sectionCommand(
         ...followed.flatMap((one) => [
             `printf '%s\\n' ${shellWord(`${RUN}${one.hub}/${one.key}`)}`,
             bytesLine(one.folder),
-            clusterLogTails(one, home)
+            clusterLogTails(one, home, resource)
         ]),
         'true'
     ].join('\n');

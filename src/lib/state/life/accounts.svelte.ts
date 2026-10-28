@@ -15,13 +15,15 @@
 //
 // The setup page's facts, whether each provider is set up and the addresses and scopes to register,
 // are the server's answer to `GET /api/connect`; the page holds no copy of them. Nothing here keeps
-// a client id or a secret past the request that carries it.
+// a client id or a secret past the request that carries it. The git section's requests go to
+// `POST /api/connect/git`, whose `status` adds where each Sign in stands.
 
 import { z } from 'zod';
 import { publishedLink } from '../../data/accounts/calendar.ts';
 import {
     accountRefusal,
     connectKey,
+    gitClientId,
     isProvider,
     providerHalf
 } from '../../data/accounts/connect.ts';
@@ -30,7 +32,8 @@ import type {
     AccountRow,
     ConnectKind,
     ConnectProvider,
-    ConnectSetup
+    ConnectSetup,
+    GitHosts
 } from '../../data/model/index.ts';
 import { optionalTextShape, readAs, readJson, unchanged } from '../../data/shapes/shapes.ts';
 import { t } from '../shared/words/text.ts';
@@ -69,10 +72,20 @@ export type AccountsStore = {
     /** Whether an Add or a Remove of this connector has not been answered yet. */
     busy: (kind: ConnectKind) => boolean;
     openSetup: () => void;
+    /** The git section with where each Sign in stands, or null when it could not be read. */
+    gitStatus: () => Promise<GitHosts | null>;
+    /**
+     * One request of the git section for the host `key` (`client_id`, `sign_in`, `cancel`,
+     * `sign_out`): the empty string when it was taken, the refusal's sentence otherwise.
+     */
+    gitAction: (key: string, action: string, clientId?: string) => Promise<string>;
 };
 
 /** The endpoint each connector's account commands go to. */
 const ENDPOINT: Record<ConnectKind, string> = { calendar: '/api/calendar', mail: '/api/mail' };
+
+/** The endpoint of Account setup's git section. */
+const GIT_ENDPOINT = '/api/connect/git';
 
 /**
  * The sentence one refusal code is said in. A code the page does not know is a sentence the
@@ -98,6 +111,8 @@ function refusalWords(code: string, label: string, reason: string): string {
             return t('accounts.refused_tenant');
         case 'file':
             return t('accounts.refused_file', reason);
+        case 'sign_in':
+            return reason;
         case 'unreachable':
             return t('accounts.unreachable');
         case 'unreadable':
@@ -110,6 +125,35 @@ function refusalWords(code: string, label: string, reason: string): string {
 /** One provider's word for each of the two connectors, or one flag for each provider. */
 const perProvider = <T extends z.ZodType>(item: T) => z.object({ google: item, microsoft: item });
 
+/** A Sign in of a git host as the server answers it. */
+const gitFlowShape = z.object({
+    code: z.string(),
+    address: z.string(),
+    state: z.enum(['waiting', 'granted', 'denied', 'expired', 'cancelled', 'failed']),
+    said: z.string()
+});
+
+/** The git section as the server answers it, in the setup's facts and on its own. */
+const gitHostsShape = unchanged(
+    z.object({
+        hosts: z.array(
+            z.object({
+                key: z.string(),
+                name: z.string(),
+                register: z.string(),
+                address: z.string(),
+                missing: z.string(),
+                clientSaved: z.boolean(),
+                login: z.string(),
+                flow: gitFlowShape.nullable()
+            })
+        ),
+        unlisted: z.array(z.object({ key: z.string(), login: z.string(), missing: z.string() })),
+        none: z.string(),
+        helperRefused: z.string()
+    })
+) satisfies z.ZodType<GitHosts>;
+
 /** The setup page's facts, read as the server sent them: the body itself when it is complete. */
 const connectSetupShape = unchanged(
     z.object({
@@ -118,7 +162,9 @@ const connectSetupShape = unchanged(
         scopes: z.object({
             calendar: perProvider(z.string()),
             mail: perProvider(z.string())
-        })
+        }),
+        missing: perProvider(z.string()),
+        git: gitHostsShape
     })
 ) satisfies z.ZodType<ConnectSetup>;
 
@@ -277,6 +323,37 @@ export function createAccounts(
         },
         connecting: (kind, account) => connectingKeys.has(`${kind}:${connectKey(account)}`),
         busy: (kind) => busyKinds.has(kind),
-        openSetup
+        openSetup,
+        gitStatus: async () => {
+            try {
+                const answer = await writes.postCommand(GIT_ENDPOINT, { action: 'status' });
+                return readAs(gitHostsShape, answer.body);
+            } catch {
+                return null;
+            }
+        },
+        gitAction: async (key, action, clientId) => {
+            if (action === 'client_id' && gitClientId(clientId) === null) {
+                return t('accounts.git_client_id');
+            }
+            let answer: Answer & { refused: string };
+            try {
+                const posted = await writes.postCommand(GIT_ENDPOINT, {
+                    action,
+                    key,
+                    ...(clientId === undefined ? {} : { client_id: clientId })
+                });
+                answer = {
+                    ok: posted.ok,
+                    error: readAs(optionalTextShape, posted.body.error) ?? posted.failed,
+                    reason: '',
+                    refused: readAs(optionalTextShape, posted.body.refused) ?? ''
+                };
+            } catch {
+                return t('accounts.unreachable');
+            }
+            if (answer.refused !== '') return answer.refused;
+            return answer.ok ? '' : refusalWords(answer.error, '', '');
+        }
     };
 }

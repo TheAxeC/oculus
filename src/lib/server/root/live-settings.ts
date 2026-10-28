@@ -1,10 +1,14 @@
 // Layer 2, server. Hands the pollers the settings of every config push. The pollers are built from
 // the configuration read at start; this module subscribes to the `config` channel the portfolio
 // watcher publishes on, reads each group of settings again through its reader, and gives the
-// poller the settings that changed. The Live HPC host is the one setting with other sources: the
-// `hpc_host` of local.yml, read from the context at each push and again when local.yml changes, and
-// the cluster entry of the resources registry that `slurm.resource` names, read again after each
-// portfolio rebuild.
+// poller the settings that changed. The Live HPC clusters are the one setting with other sources:
+// each key of `slurm.resource` gives its connection from the cluster entry of the resources
+// registry, read again after each portfolio rebuild, and from this machine's `clusters:` row of
+// local.yml, read again when local.yml changes; the watchers are handed the clusters as a whole,
+// which starts and stops watchers so the set matches. The `sign_in` rows in force are also what
+// `signIn()` answers, which the server context's git credentials read at each git start
+// (core/git/credentials.ts), so a git is given only the tokens the rows of that moment name with
+// their address.
 //
 // Each group is read on its own, so one a hand edit made unreadable keeps the settings in force
 // while the others take theirs. A value the options catalog's rule refuses is read as the entry's
@@ -20,35 +24,52 @@ import { z } from 'zod';
 import {
     calendarSettings,
     droppedFile,
+    failureRows,
     mailSettings,
     processesSettings,
     refreshSettings,
     slurmSettings,
+    signInRows,
     textCatalog,
     usageTiers,
     type CalendarSettings,
+    type FailureRow,
     type MailSettings,
     type ProcessesSettings,
+    type SignInRow,
     type SlurmSettings
 } from '../../data/sources/config.ts';
-import type { Id, Resource } from '../../data/model/index.ts';
 import { mapShape, readAs } from '../../data/shapes/shapes.ts';
 import type { CalendarWords } from '../accounts/calendar/poll.ts';
+import { signInWords } from '../accounts/connect/providers.ts';
 import type { MailWords } from '../accounts/mail/poll.ts';
 import type { Hub, Sink } from '../core/channels.ts';
-import { hostWordsOf, hpcSettingsOf, type HostWords } from '../machine/hpc/host.ts';
+import {
+    clusterSettingsOf,
+    hostWordsOf,
+    type ClusterConnection,
+    type HostWords
+} from '../machine/hpc/clusters/connections.ts';
 import type { HpcSettings } from '../machine/hpc/poll.ts';
+
+/** The Live HPC clusters in order, and the sentence for a hub that names none. */
+type HpcClusterSet = { clusters: HpcSettings[]; hint: string };
 
 /** The settings the pollers were built with, which a push is compared with. */
 export type LiveStart = {
-    /** The host `local.yml` names now, which a pushed `slurm.resource` does not replace. */
-    hpcHost: () => string | undefined;
-    /** The resources of the latest portfolio snapshot, or null while there is none. */
-    resources: () => Record<Id, Resource> | null;
+    /**
+     * The connection of each key of `resources`, in order, as the resources of the latest
+     * portfolio snapshot and this machine's `clusters:` rows stand now (clusters/connections.ts).
+     */
+    connections: (resources: readonly string[], words: HostWords) => ClusterConnection[];
     /** The sentences for having no host, which each push renews. */
     hostWords: HostWords;
     /** The Live HPC settings as the configuration reads them, `slurm.resource` included. */
     slurm: SlurmSettings;
+    /** The hub's `connections.failures`, which tell a failed poll apart. */
+    failures: FailureRow[];
+    /** The hub's `sign_in` rows, which both connectors sign in through. */
+    signIn: SignInRow[];
     calendar: CalendarSettings;
     mail: MailSettings;
     refresh: { refreshMin: number; model: string };
@@ -62,12 +83,17 @@ export type LiveStart = {
 
 /** What a poller is told when a group of settings changes. */
 export type LiveTargets = {
-    hpc: { set(settings: HpcSettings): void };
+    hpc: { set(clusters: readonly HpcSettings[], hint: string): void };
     calendar: {
         setSettings(settings: CalendarSettings): void;
         setWords(words: CalendarWords): void;
+        setProviders(rows: readonly SignInRow[]): void;
     };
-    mail: { setSettings(settings: MailSettings): void; setWords(words: MailWords): void };
+    mail: {
+        setSettings(settings: MailSettings): void;
+        setWords(words: MailWords): void;
+        setProviders(rows: readonly SignInRow[]): void;
+    };
     usageRefresh: { set(settings: { refreshMin: number; model: string }): void };
     usage: { setTiers(tiers: Record<string, string>): void };
     processes: {
@@ -90,27 +116,42 @@ const KEPT = 'the settings in force are kept';
 /** What a started `liveSettings` offers beside the subscription. */
 export type LiveSettings = {
     /**
-     * Hand the Live HPC poller the host `local.yml` names, or the host of the cluster
-     * `slurm.resource` names in the resources of the latest portfolio snapshot.
+     * Hand the Live HPC watchers the clusters of `slurm.resource` as the resources of the latest
+     * portfolio snapshot and this machine's `clusters:` rows now give them.
      */
-    hostChanged(): void;
+    clustersChanged(): void;
     /** The usage settings in force, which a watcher built again is started with. */
     held(): { refresh: { refreshMin: number; model: string }; tiers: Record<string, string> };
+    /** The `sign_in` rows in force: those read at start until a push reads others. */
+    signIn(): readonly SignInRow[];
     /** Take the sink off the hub. */
     close(): void;
 };
 
 /** Subscribe the pollers to the config channel; close() takes the subscription off the hub. */
 export function liveSettings(hub: Hub, start: LiveStart, targets: LiveTargets): LiveSettings {
-    const { hpcHost, ...held } = start;
-    const { resources, hostWords: startWords, slurm: started, ...plain } = held;
+    const {
+        connections,
+        hostWords: startWords,
+        slurm: started,
+        failures: startFailures,
+        ...plain
+    } = start;
     let hostWords = startWords;
-    /** The `slurm:` of the last configuration read, whose resource `hpc_host` replaces when set. */
+    /** The `slurm:` and `connections.failures` of the last configuration read. */
     let pushed = started;
-    /** The Live HPC settings for a `slurm:` block, resolved over what the sources hold now. */
-    const hpcFor = (slurm: SlurmSettings): HpcSettings =>
-        hpcSettingsOf(slurm, hpcHost(), resources(), hostWords);
-    const current = { ...structuredClone(plain), hpc: hpcFor(started) };
+    let failures = startFailures;
+    /** The Live HPC clusters for the settings held, resolved over what the sources hold now. */
+    const hpcNow = (): HpcClusterSet => ({
+        clusters: clusterSettingsOf(
+            pushed,
+            connections(pushed.resources, hostWords),
+            hostWords.poll,
+            failures
+        ),
+        hint: hostWords.noCluster
+    });
+    const current = { ...structuredClone(plain), hpc: hpcNow() };
     /** The message each group last refused with, by group; a group that reads has no entry. */
     const said = new Map<string, string>();
     let closed = false;
@@ -139,11 +180,11 @@ export function liveSettings(hub: Hub, start: LiveStart, targets: LiveTargets): 
         return value;
     };
 
-    /** Resolve the host again; the poller gets the settings when they differ from those held. */
+    /** Resolve the clusters again; the watchers get them when they differ from those held. */
     const handHpc = (): void => {
-        const next = hpcFor(pushed);
+        const next = hpcNow();
         if (isDeepStrictEqual(next, current.hpc)) return;
-        targets.hpc.set(next);
+        targets.hpc.set(next.clusters, next.hint);
         current.hpc = next;
     };
 
@@ -151,6 +192,7 @@ export function liveSettings(hub: Hub, start: LiveStart, targets: LiveTargets): 
     const takeBehavior = (config: Record<string, unknown>): void => {
         attempt('slurm', () => {
             pushed = slurmSettings(config);
+            failures = failureRows(config);
             handHpc();
         });
         attempt('calendar', () => {
@@ -158,6 +200,13 @@ export function liveSettings(hub: Hub, start: LiveStart, targets: LiveTargets): 
             if (isDeepStrictEqual(calendar, current.calendar)) return;
             targets.calendar.setSettings(calendar);
             current.calendar = calendar;
+        });
+        attempt('sign_in', () => {
+            const rows = signInRows(config);
+            if (isDeepStrictEqual(rows, current.signIn)) return;
+            targets.calendar.setProviders(rows);
+            targets.mail.setProviders(rows);
+            current.signIn = rows;
         });
         attempt('mail', () => {
             const mail = mailSettings(config);
@@ -213,6 +262,13 @@ export function liveSettings(hub: Hub, start: LiveStart, targets: LiveTargets): 
             textOf(textCatalog(config)['accounts.timed_out'], 'accounts.timed_out')
         );
         if (timedOut !== undefined) words.timedOut = timedOut;
+        const signIn = attempt('accounts.sign_in', () => {
+            const held = signInWords(config);
+            textOf(held.noRow, 'accounts.sign_in_no_row');
+            textOf(held.noField, 'accounts.sign_in_no_field');
+            return held;
+        });
+        if (signIn !== undefined) words.signIn = signIn;
         attempt('processes.words', () => {
             const text = textCatalog(config);
             if (isDeepStrictEqual(text, current.processesText)) return;
@@ -225,8 +281,8 @@ export function liveSettings(hub: Hub, start: LiveStart, targets: LiveTargets): 
             current.calendarWords = words;
         });
         attempt('mail.words', () => {
-            if (words.timedOut === current.mailWords.timedOut) return;
-            const mailWords = { timedOut: words.timedOut };
+            const mailWords = { timedOut: words.timedOut, signIn: words.signIn };
+            if (isDeepStrictEqual(mailWords, current.mailWords)) return;
             targets.mail.setWords(mailWords);
             current.mailWords = mailWords;
         });
@@ -262,11 +318,12 @@ export function liveSettings(hub: Hub, start: LiveStart, targets: LiveTargets): 
     };
     hub.subscribe(sink, ['config'], false);
     return {
-        hostChanged(): void {
+        clustersChanged(): void {
             if (closed) return;
-            attempt('hpc_host', handHpc);
+            attempt('clusters', handHpc);
         },
         held: () => structuredClone({ refresh: current.refresh, tiers: current.tiers }),
+        signIn: () => current.signIn,
         close(): void {
             closed = true;
             hub.remove(sink);

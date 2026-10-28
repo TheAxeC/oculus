@@ -9,7 +9,8 @@
 // it: `apply --cached` to the index for a stage, the same reversed for an unstage, and reversed on
 // the worktree for a revert. Every path the patch names is held to the repository before git sees
 // it, and a patch git refuses is answered with git's own line. Every call reaches git through the
-// one call site server/git/git-write.ts exports for its subcommand.
+// one call site server/git/git-write.ts exports for its subcommand, with the `GitAt` the write is
+// handed: the root and the credentials of the server context.
 //
 // A path handed to git is checked by core/git/run.ts's `pathInside`; the records of `status
 // --porcelain=v1 -z` are read one by one as git writes them, through git-write.ts's `statusIn`.
@@ -42,6 +43,7 @@ import {
     statusIn,
     trackedChange,
     untrackedAmong,
+    type GitAt,
     type Outcome
 } from './git-write.ts';
 
@@ -88,13 +90,13 @@ function unquote(name: string): string {
  * path outside the repository, is refused before git is asked.
  */
 export async function applyHunk(
-    root: string,
+    at: GitAt,
     patch: string,
     mode: PatchMode,
     text: Record<string, string>,
     roots: string[] = allowedRoots()
 ): Promise<Outcome> {
-    if (!permitted(root, roots)) return failed(words(text, 'server.git.unknown_directory'));
+    if (!permitted(at.root, roots)) return failed(words(text, 'server.git.unknown_directory'));
     const flags = byKey(FLAGS, mode);
     if (flags === undefined) return failed(words(text, 'server.git.not_a_way_to_apply'));
     if (typeof patch !== 'string' || !patch.startsWith('diff --git ')) {
@@ -102,11 +104,11 @@ export async function applyHunk(
     }
     const paths = patchPaths(patch);
     if (paths.length === 0) return failed(words(text, 'server.git.patch_names_no_path'));
-    const outside = paths.find((path) => !pathInside(root, path));
+    const outside = paths.find((path) => !pathInside(at.root, path));
     if (outside !== undefined) {
         return failed(words(text, 'server.git.path_outside_workspace', outside));
     }
-    return applyPatch(root, flags, patch.endsWith('\n') ? patch : `${patch}\n`);
+    return applyPatch(at, flags, patch.endsWith('\n') ? patch : `${patch}\n`);
 }
 
 /**
@@ -124,18 +126,18 @@ export async function applyHunk(
  * grows with the files it stages, and Cancel ends it.
  */
 export async function stageAll(
-    root: string,
+    at: GitAt,
     group: string,
     text: Record<string, string>,
     roots: string[] = allowedRoots(),
     signal?: AbortSignal
 ): Promise<Outcome> {
-    if (!permitted(root, roots)) return failed(words(text, 'server.git.unknown_directory'));
-    if (group === 'changed') return addTo(root, ['-u', '--', '.']);
+    if (!permitted(at.root, roots)) return failed(words(text, 'server.git.unknown_directory'));
+    if (group === 'changed') return addTo(at, ['-u', '--', '.']);
     if (group !== 'untracked') return failed(words(text, 'server.git.not_a_group'));
-    const add = pathAdder(root, signal);
+    const add = pathAdder(at, signal);
     const state = await statusIn(
-        root,
+        at,
         (record) => {
             if (record.code === '??') add.take(record.path);
         },
@@ -155,7 +157,7 @@ export async function stageAll(
  * ends it too.
  */
 function pathAdder(
-    root: string,
+    at: GitAt,
     signal?: AbortSignal
 ): {
     take: (path: string) => void;
@@ -170,7 +172,7 @@ function pathAdder(
             if (paths === null) {
                 paths = new PassThrough();
                 added = addTo(
-                    root,
+                    at,
                     ['--pathspec-from-file=-', '--pathspec-file-nul'],
                     {
                         input: paths,
@@ -196,12 +198,12 @@ function pathAdder(
 
 /** Take everything back out of the index, leaving the worktree as it is. */
 export async function unstageAll(
-    root: string,
+    at: GitAt,
     text: Record<string, string>,
     roots: string[] = allowedRoots()
 ): Promise<Outcome> {
-    if (!permitted(root, roots)) return failed(words(text, 'server.git.unknown_directory'));
-    return restore(root, ['.'], true);
+    if (!permitted(at.root, roots)) return failed(words(text, 'server.git.unknown_directory'));
+    return restore(at, ['.'], true);
 }
 
 /**
@@ -210,12 +212,12 @@ export async function unstageAll(
  * get back.
  */
 export async function discardAll(
-    root: string,
+    at: GitAt,
     text: Record<string, string>,
     roots: string[] = allowedRoots()
 ): Promise<Outcome> {
-    if (!permitted(root, roots)) return failed(words(text, 'server.git.unknown_directory'));
-    return restore(root, ['.'], false);
+    if (!permitted(at.root, roots)) return failed(words(text, 'server.git.unknown_directory'));
+    return restore(at, ['.'], false);
 }
 
 /**
@@ -224,26 +226,26 @@ export async function discardAll(
  * refused, so this never writes over a file that is not in conflict.
  */
 export async function resolveMerge(
-    root: string,
+    at: GitAt,
     path: string,
     content: string,
     text: Record<string, string>,
     roots: string[] = allowedRoots()
 ): Promise<Outcome> {
-    if (!permitted(root, roots)) return failed(words(text, 'server.git.unknown_directory'));
-    if (typeof path !== 'string' || !pathInside(root, path)) {
+    if (!permitted(at.root, roots)) return failed(words(text, 'server.git.unknown_directory'));
+    if (typeof path !== 'string' || !pathInside(at.root, path)) {
         return failed(words(text, 'server.git.path_outside_workspace', path));
     }
     if (typeof content !== 'string') return failed(words(text, 'server.git.merge_not_text'));
-    if (!(await unmergedPaths(root)).includes(path)) {
+    if (!(await unmergedPaths(at)).includes(path)) {
         return failed(words(text, 'server.git.not_in_conflict_resolve', path));
     }
     try {
-        writeTextAtomic(join(root, path), content);
+        writeTextAtomic(join(at.root, path), content);
     } catch (error) {
         return failed(words(text, 'server.git.result_unwritable', String(error)));
     }
-    return addTo(root, ['--', path]);
+    return addTo(at, ['--', path]);
 }
 
 /** The conflicts in which a side deleted the path: both sides, ours (DU) or theirs (UD). */
@@ -253,9 +255,9 @@ const DELETIONS = ['DD', 'DU', 'UD'];
  * The status's two letters for one path, or the empty string when git lists it as clean or the
  * read failed. The read ends at the path's record.
  */
-async function pairOf(root: string, path: string): Promise<string> {
+async function pairOf(at: GitAt, path: string): Promise<string> {
     let code = '';
-    const state = await statusIn(root, (record) => {
+    const state = await statusIn(at, (record) => {
         if (record.path === path) code = record.code;
         return code === '';
     });
@@ -268,19 +270,19 @@ async function pairOf(root: string, path: string): Promise<string> {
  * in any other conflict, or in none, is refused before git is asked.
  */
 export async function acceptDeletion(
-    root: string,
+    at: GitAt,
     path: string,
     text: Record<string, string>,
     roots: string[] = allowedRoots()
 ): Promise<Outcome> {
-    if (!permitted(root, roots)) return failed(words(text, 'server.git.unknown_directory'));
-    if (typeof path !== 'string' || !pathInside(root, path)) {
+    if (!permitted(at.root, roots)) return failed(words(text, 'server.git.unknown_directory'));
+    if (typeof path !== 'string' || !pathInside(at.root, path)) {
         return failed(words(text, 'server.git.path_outside_workspace', path));
     }
-    if (!DELETIONS.includes(await pairOf(root, path))) {
+    if (!DELETIONS.includes(await pairOf(at, path))) {
         return failed(words(text, 'server.git.not_a_deletion', path));
     }
-    return removeIn(root, ['--quiet', '--', path]);
+    return removeIn(at, ['--quiet', '--', path]);
 }
 
 /**
@@ -290,20 +292,20 @@ export async function acceptDeletion(
  * unmerged is refused, so the control never stages an ordinary change.
  */
 export async function markResolved(
-    root: string,
+    at: GitAt,
     path: string,
     text: Record<string, string>,
     roots: string[] = allowedRoots()
 ): Promise<Outcome> {
-    if (!permitted(root, roots)) return failed(words(text, 'server.git.unknown_directory'));
-    if (typeof path !== 'string' || !pathInside(root, path)) {
+    if (!permitted(at.root, roots)) return failed(words(text, 'server.git.unknown_directory'));
+    if (typeof path !== 'string' || !pathInside(at.root, path)) {
         return failed(words(text, 'server.git.path_outside_workspace', path));
     }
-    const unmerged = await unmergedPaths(root);
+    const unmerged = await unmergedPaths(at);
     if (!unmerged.includes(path)) {
         return failed(words(text, 'server.git.not_in_conflict_resolve', path));
     }
-    return addTo(root, ['--', path]);
+    return addTo(at, ['--', path]);
 }
 
 /**
@@ -314,32 +316,32 @@ export async function markResolved(
  * Changes, where each is resolved in the merge editor, and Abort Merge takes the whole merge back.
  */
 export async function merge(
-    root: string,
+    at: GitAt,
     other: string,
     text: Record<string, string>,
     roots: string[] = allowedRoots(),
     signal?: AbortSignal
 ): Promise<Outcome> {
-    const wrong = await checkName(root, other, text, roots);
+    const wrong = await checkName(at, other, text, roots);
     if (wrong !== '') return failed(wrong);
-    const head = await revParse(root, ['--abbrev-ref', 'HEAD']);
+    const head = await revParse(at, ['--abbrev-ref', 'HEAD']);
     if (!head.ok) return head;
     const onto = head.output.trim();
     if (onto === 'HEAD' || onto === '') return failed(words(text, 'server.git.merge_no_branch'));
     if (onto === other) return failed(words(text, 'server.git.checked_out_merge', other));
     // A name git accepts as a reference is not a branch: a tag or a commit id would be merged just
     // as happily, and what this control offers is the branch of a worktree.
-    const listed = await branch(root, [REFS_FORMAT]);
+    const listed = await branch(at, [REFS_FORMAT]);
     if (!listed.ok) return listed;
     if (!parseBranches(listed.output).some((one) => one.name === other)) {
         return failed(words(text, 'server.git.not_a_branch_here', other));
     }
-    const dirty = await statusHolds(root, trackedChange);
+    const dirty = await statusHolds(at, trackedChange);
     if (dirty !== false)
         return dirty === true ? failed(words(text, 'server.git.dirty_merge')) : dirty;
-    const done = await mergeIn(root, [other], signal);
+    const done = await mergeIn(at, [other], signal);
     if (done.ok) return done;
-    return stoppedOn(root, done, text, 'merge');
+    return stoppedOn(at, done, text, 'merge');
 }
 
 /** The writes whose conflicts `stoppedOn` names. */
@@ -353,13 +355,13 @@ export type Stopped = 'merge' | 'pull' | 'cherry-pick' | 'pop' | 'apply';
  * the sentence says where they are.
  */
 export async function stoppedOn(
-    root: string,
+    at: GitAt,
     done: Outcome,
     text: Record<string, string>,
     what: Stopped
 ): Promise<Outcome> {
-    if (done.failure !== undefined) return leftInProgress(root, done);
-    const paths = await unmergedPaths(root);
+    if (done.failure !== undefined) return leftInProgress(at, done);
+    const paths = await unmergedPaths(at);
     if (paths.length === 0) return done;
     return failed(words(text, 'server.git.stopped_on', stoppedWord(text, what), paths.join(', ')));
 }
@@ -378,29 +380,29 @@ function stoppedWord(text: Record<string, string>, what: Stopped): string {
  * unfinished named in `failure.left`, so the answer says it is in progress and the view draws its
  * state and Abort Merge. A repository in none of the three answers as it was.
  */
-async function leftInProgress(root: string, done: Outcome): Promise<Outcome> {
+async function leftInProgress(at: GitAt, done: Outcome): Promise<Outcome> {
     if (done.failure === undefined) return done;
-    const left = await inProgress(root);
+    const left = await inProgress(at);
     return left === '' ? done : { ...done, failure: { ...done.failure, left } };
 }
 
 /** The paths the index holds unmerged, which is where a stopped write left its conflicts. */
-async function unmergedPaths(root: string): Promise<string[]> {
-    const conflicted = await diff(root, ['--name-only', '--diff-filter=U']);
+async function unmergedPaths(at: GitAt): Promise<string[]> {
+    const conflicted = await diff(at, ['--name-only', '--diff-filter=U']);
     return conflicted.ok ? conflicted.output.trim().split('\n').filter(Boolean) : [];
 }
 
 /** Which of the three the repository is in the middle of, read as git itself would. */
-async function inProgress(root: string): Promise<Unfinished | ''> {
-    const merging = await revParse(root, ['--verify', '--quiet', 'MERGE_HEAD']);
+async function inProgress(at: GitAt): Promise<Unfinished | ''> {
+    const merging = await revParse(at, ['--verify', '--quiet', 'MERGE_HEAD']);
     if (merging.ok) return 'merge';
     for (const name of ['rebase-merge', 'rebase-apply']) {
-        const where = await revParse(root, ['--git-path', name]);
+        const where = await revParse(at, ['--git-path', name]);
         if (!where.ok) continue;
         const path = where.output.trim();
-        if (existsSync(isAbsolute(path) ? path : join(root, path))) return 'rebase';
+        if (existsSync(isAbsolute(path) ? path : join(at.root, path))) return 'rebase';
     }
-    const picking = await revParse(root, ['--verify', '--quiet', 'CHERRY_PICK_HEAD']);
+    const picking = await revParse(at, ['--verify', '--quiet', 'CHERRY_PICK_HEAD']);
     return picking.ok ? 'cherry-pick' : '';
 }
 
@@ -409,15 +411,15 @@ async function inProgress(root: string): Promise<Unfinished | ''> {
  * started.
  */
 export async function abortMerge(
-    root: string,
+    at: GitAt,
     text: Record<string, string>,
     roots: string[] = allowedRoots()
 ): Promise<Outcome> {
-    if (!permitted(root, roots)) return failed(words(text, 'server.git.unknown_directory'));
-    const doing = await inProgress(root);
-    if (doing === 'merge') return mergeIn(root, ['--abort']);
-    if (doing === 'rebase') return rebaseIn(root, '--abort');
-    if (doing === 'cherry-pick') return cherryPickIn(root, ['--abort']);
+    if (!permitted(at.root, roots)) return failed(words(text, 'server.git.unknown_directory'));
+    const doing = await inProgress(at);
+    if (doing === 'merge') return mergeIn(at, ['--abort']);
+    if (doing === 'rebase') return rebaseIn(at, '--abort');
+    if (doing === 'cherry-pick') return cherryPickIn(at, ['--abort']);
     return failed(words(text, 'server.git.no_merge_to_abort'));
 }
 
@@ -427,22 +429,22 @@ export async function abortMerge(
  * back by Abort Merge; a pick that changes nothing is aborted and answered in VS Code's words.
  */
 export async function cherryPick(
-    root: string,
+    at: GitAt,
     hash: string,
     text: Record<string, string>,
     roots: string[] = allowedRoots(),
     signal?: AbortSignal
 ): Promise<Outcome> {
-    if (!permitted(root, roots)) return failed(words(text, 'server.git.unknown_directory'));
+    if (!permitted(at.root, roots)) return failed(words(text, 'server.git.unknown_directory'));
     if (typeof hash !== 'string' || !HASH.test(hash)) {
         return failed(words(text, 'server.git.not_a_commit_named', hash));
     }
-    const done = await cherryPickIn(root, [hash], signal);
+    const done = await cherryPickIn(at, [hash], signal);
     if (done.ok) return done;
-    if (done.failure !== undefined) return leftInProgress(root, done);
-    if ((await inProgress(root)) !== 'cherry-pick') return done;
-    if ((await unmergedPaths(root)).length > 0) return stoppedOn(root, done, text, 'cherry-pick');
-    const taken = await cherryPickIn(root, ['--abort']);
+    if (done.failure !== undefined) return leftInProgress(at, done);
+    if ((await inProgress(at)) !== 'cherry-pick') return done;
+    if ((await unmergedPaths(at)).length > 0) return stoppedOn(at, done, text, 'cherry-pick');
+    const taken = await cherryPickIn(at, ['--abort']);
     return taken.ok ? failed(words(text, 'server.git.already_present')) : taken;
 }
 
@@ -469,21 +471,21 @@ export type TrashInto = {
  * path the Trash fails on stops the rest.
  */
 export async function trashUntracked(
-    root: string,
+    at: GitAt,
     paths: string[],
     into: TrashInto,
     text: Record<string, string>,
     roots: string[] = allowedRoots()
 ): Promise<Outcome> {
-    const loose = await untrackedAmong(root, paths, text, roots);
+    const loose = await untrackedAmong(at, paths, text, roots);
     if (!(loose instanceof Set)) return loose;
-    const top = realPath(root);
+    const top = realPath(at.root);
     if (top === null) return failed(words(text, 'server.git.repository_not_found'));
     const items: { path: string; real: string; target: string }[] = [];
     for (const path of paths) {
         if (!loose.has(path)) return failed(words(text, 'server.git.not_untracked', path));
         const bare = path.endsWith('/') ? path.slice(0, -1) : path;
-        const folder = realPath(dirname(join(root, bare)));
+        const folder = realPath(dirname(join(at.root, bare)));
         if (folder === null || !inside(folder, top)) {
             return failed(words(text, 'server.git.path_outside_workspace', path));
         }
@@ -575,16 +577,16 @@ function appendIgnored(
  * place of the merge's commit. A path still unmerged is refused before git is asked.
  */
 export async function continueRebase(
-    root: string,
+    at: GitAt,
     text: Record<string, string>,
     roots: string[] = allowedRoots(),
     signal?: AbortSignal
 ): Promise<Outcome> {
-    if (!permitted(root, roots)) return failed(words(text, 'server.git.unknown_directory'));
-    if ((await inProgress(root)) !== 'rebase') {
+    if (!permitted(at.root, roots)) return failed(words(text, 'server.git.unknown_directory'));
+    if ((await inProgress(at)) !== 'rebase') {
         return failed(words(text, 'server.git.no_rebase_to_continue'));
     }
-    const left = await unmergedPaths(root);
+    const left = await unmergedPaths(at);
     if (left.length > 0) return failed(words(text, 'server.git.still_conflicted', left.join(', ')));
-    return leftInProgress(root, await rebaseIn(root, '--continue', signal));
+    return leftInProgress(at, await rebaseIn(at, '--continue', signal));
 }

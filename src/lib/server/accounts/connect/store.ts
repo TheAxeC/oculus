@@ -26,7 +26,8 @@
 // replaces the file whole through a temporary file and a rename, at mode 0600 in a 0700 folder.
 //
 // Nothing here logs, publishes or answers a field of a file. An error naming a field names the
-// field and never its value.
+// field and never its value. A git host's file is kept beside the providers' files by
+// connect/git/store.ts, which reads and writes it through the two functions exported here.
 
 import { chmodSync, existsSync, mkdirSync, readFileSync, rmSync } from 'node:fs';
 import { homedir } from 'node:os';
@@ -40,6 +41,7 @@ import type {
     ConnectKind,
     ConnectProvider
 } from '../../../data/model/index.ts';
+import { connectFolder } from '../../core/git/credentials.ts';
 import { writeTextAtomic } from '../../core/json.ts';
 
 /** The mode every credential file is created and kept at: it holds the reader's own secrets. */
@@ -74,9 +76,12 @@ export function defaultConnectDir(kind: ConnectKind): string {
     return join(homedir(), '.oculus', kind);
 }
 
-/** ~/.oculus/connect, where the one file per provider lives, resolved at the call. */
+/**
+ * ~/.oculus/connect, where the one file per provider and the git hosts' files live, resolved at
+ * the call; the git starts read the same folder (server/core/git/credentials.ts).
+ */
 export function defaultProviderDir(): string {
-    return join(homedir(), '.oculus', 'connect');
+    return connectFolder();
 }
 
 /** The credential file of one account inside a connector's directory. */
@@ -102,7 +107,7 @@ function field(record: Record<string, unknown>, name: string): string | undefine
  * One file as a JSON object, or null when it is not there. A file that is there and is not a JSON
  * object throws the sentence the view shows, which names the file and never what it held.
  */
-function readRecord(file: string): Record<string, unknown> | null {
+export function readRecord(file: string): Record<string, unknown> | null {
     if (!existsSync(file)) return null;
     let parsed: unknown;
     try {
@@ -189,7 +194,11 @@ export function readCredentials(
  * before the replacement is made, since the replacement takes the mode of the file it replaces and
  * a file written by hand may have been left readable by others.
  */
-function writeCredentialFile(file: string, dir: string, record: Record<string, unknown>): void {
+export function writeCredentialFile(
+    file: string,
+    dir: string,
+    record: Record<string, unknown>
+): void {
     mkdirSync(dir, { recursive: true, mode: DIR_MODE });
     if (existsSync(file)) chmodSync(file, MODE);
     writeTextAtomic(file, `${JSON.stringify(record, null, 4)}\n`, MODE);

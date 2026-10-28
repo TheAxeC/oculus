@@ -21,7 +21,7 @@ import type { GithubRepo } from '../../../data/model/index.ts';
 import { rowsShape } from '../../../data/shapes/shapes.ts';
 import { words } from '../../core/words.ts';
 import type { CloneOutcome } from './clone.ts';
-import { cloneGit, REMOTE_TIMEOUT_MS } from './clone-git.ts';
+import { REMOTE_TIMEOUT_MS } from './clone-git.ts';
 import type { GhRun, GitRunner } from '../deposit/deposit-git.ts';
 
 /** The arguments of the list. */
@@ -95,7 +95,8 @@ export type GithubClone = {
     /** The folder the repository's own folder is made in. */
     parent: string;
     text: Record<string, string>;
-    git?: GitRunner;
+    /** How git is run: clone-git.ts's `cloneGit` with the server context's credentials. */
+    git: GitRunner;
     signal?: AbortSignal;
 };
 
@@ -131,8 +132,7 @@ export async function cloneIntoFolder(request: GithubClone): Promise<CloneOutcom
     if (!folderExists) return refused(words(text, 'server.clone.parent_gone', parent));
     if (!isFolderName(name)) return refused(words(text, 'server.clone.not_a_name', name));
     const dir = cloneTarget(parent, name);
-    const git = request.git ?? cloneGit;
-    const done = await git(
+    const done = await request.git(
         ['-C', parent, 'clone', '--', url, dir],
         REMOTE_TIMEOUT_MS,
         request.signal

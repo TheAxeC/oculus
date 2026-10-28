@@ -1,8 +1,9 @@
 <script lang="ts">
-    // Layer 3, view partial. The Login node section: oculus's own Recover sessions on the cluster's
-    // tmux socket `oculus-recover`, which run on the login node and are not jobs, so squeue does
-    // not show them. Each row is a dataset's fetch with its hub, the bytes its folder holds of what
-    // the sources list, the rate those bytes grow at, its state and Stop.
+    // Layer 3, view partial. The Login node section of one cluster: oculus's own Recover sessions
+    // on that cluster's tmux socket `oculus-recover`, which run on the login node and are not jobs,
+    // so squeue does not show them. Each row is a dataset's fetch with its hub, the bytes its
+    // folder holds of what the sources list, the rate those bytes grow at, its state and Stop,
+    // which stops it on that cluster.
     //
     // The section is the group every grouping of a view is drawn as
     // (ui/controls/heads/GroupHead.svelte), folded in a new pane, its fold standing as Live HPC's
@@ -27,10 +28,13 @@
     } from '$lib/state/system/machine/recover-words';
 
     let {
+        resource,
         reason = '',
         open,
         ontoggle
     }: {
+        /** The key of the cluster whose login node the section shows. */
+        resource: string;
         /** Live HPC's words for why its last poll had no answer, or empty when it had one. */
         reason?: string;
         /** Whether the section is open, and the press of its fold control. */
@@ -48,7 +52,7 @@
     let outcome = $state('');
 
     /** The sessions of the last reading of the cluster, or null before one. */
-    const held = $derived(sessions());
+    const held = $derived(sessions(resource));
 
     /** A session's row key: its hub and its dataset. */
     const rowKey = (one: RecoverSession): string => `${one.hub}/${one.key}`;
@@ -85,12 +89,12 @@
 
     /** Stop a session; the server asks Live HPC for a poll, whose push draws the sessions left. */
     async function stop(hub: string, key: string): Promise<void> {
-        const answer = await act(hub, key, 'cluster', 'stop');
+        const answer = await act(hub, key, resource, 'stop');
         outcome = answer.ok
             ? ''
             : answer.refused === ''
               ? answer.error
-              : refusalWords(answer.refused);
+              : refusalWords(answer.refused, answer.hint);
     }
 </script>
 

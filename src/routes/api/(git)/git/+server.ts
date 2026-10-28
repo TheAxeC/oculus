@@ -26,7 +26,9 @@ const options = (locals: App.Locals) => {
             ]),
         refresh: (root: string) => server.git.refresh(root),
         writes: server.opsWrites,
-        running: server.gitRunning
+        running: server.gitRunning,
+        fetchFailures: server.fetchFailures,
+        credentials: server.credentials
     };
 };
 

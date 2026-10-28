@@ -16,6 +16,20 @@ text:
         adding: adding...
         bar: Connector status
         cancel: Cancel
+        cluster_host_compare: "Compare these fingerprints of the host's key with the ones the cluster's documentation gives, and trust the key only when they are the same:"
+        cluster_host_known: The host's key is in ~/.ssh/known_hosts.
+        cluster_host_read: Read the host's key
+        cluster_host_step: 'The key of the host {0}:'
+        cluster_host_trust: Trust this key
+        cluster_key_file: Key file
+        cluster_make_key: Make key
+        cluster_password: Password on the cluster
+        cluster_public_key: 'The public key of this key file, which a cluster that takes no password is given by hand:'
+        cluster_put_key: Put the key on the cluster
+        cluster_save: Save
+        cluster_unreachable: The cluster setup could not be read. Open the view again to try once more.
+        cluster_user: User name on the cluster
+        clusters_heading: Clusters (Live HPC)
         connect: Connect
         connected: connected
         connecting: connecting...
@@ -25,6 +39,28 @@ text:
         copy_value: 'Copy {0}'
         empty_calendar: 'No calendar account yet. Add one to read its events here.'
         empty_mail: 'No mail account yet. Add one to read its inbox here.'
+        git_cancelled: The Sign in was cancelled.
+        git_client_id: A client ID is letters, digits, dots, dashes and underscores.
+        git_client_id_field: Client ID of the OAuth App
+        git_client_saved: The client ID is saved.
+        git_denied: The Sign in was refused at the host.
+        git_expired: The code expired before it was typed. Sign in again.
+        git_failed: 'The Sign in failed: {0}'
+        git_granted: Signed in.
+        git_heading: Git hosts
+        git_helper_refused: "The path of oculus's program or of its credential helper holds a single quote, so git is given no sign-in. Run oculus from a folder whose path holds none."
+        git_no_client_id: Save the client ID of the OAuth App first.
+        git_no_host: The hub's sign_in has no git host row with the key {0}.
+        git_none: "No git host is set. A git host is a row of sign_in with a credential_address, in the hub's .oculus/config.yml, set in Settings."
+        git_sign_in: Sign in
+        git_sign_out: Sign out
+        git_signed_in: Signed in as {0}.
+        git_step_register: 'Register an OAuth App of your own, with Enable Device Flow ticked, at this page; git is then given its token for {0}:'
+        git_type_code: 'Type this code at the address below, which oculus opens in the browser when it is an https address:'
+        git_unlisted_address: "A token is saved for {0}, granted for another address than its sign_in row now names, so git is not given it. Sign out takes it out; Sign in again under the row to use the row's address."
+        git_unlisted_heading: Saved tokens no git host row names
+        git_unlisted_row: "A token is saved for {0}, whose row is gone from sign_in in the hub's .oculus/config.yml or names no credential_address, so git is not given it. Sign out deletes the token and the client ID of {0}."
+        git_waiting: Waiting for the code to be typed...
         google_client_id: Client ID
         google_client_secret: Client secret
         google_heading: Google (Calendar and Gmail)
@@ -89,6 +125,8 @@ text:
         saving: saving...
         set_up_provider: Set up provider
         setup_intro: 'Each provider is set up once on this machine: the application you register there serves every account of it, in the Calendar and the Inbox. The values below are the ones this server uses.'
+        sign_in_no_field: "The sign_in row {0} of the hub's .oculus/config.yml sets no {1}. Set it under sign_in in Settings."
+        sign_in_no_row: "The hub's .oculus/config.yml has no sign_in row with the key {0}. Add one under sign_in in Settings."
         timed_out: 'The provider did not answer within {0} s.'
         toolbar: Account actions
         unreachable: 'The server did not answer. Try again once oculus is running.'

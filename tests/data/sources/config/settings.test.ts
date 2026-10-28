@@ -55,7 +55,7 @@ const SCAN_DEPTH = SOURCES.repository_scan_depth;
 
 /** The default each synthetic entry answers, every one different from the shipped default. */
 const DEFAULTS: Record<string, unknown> = {
-    'slurm.resource': 'alpha',
+    'slurm.resource': ['alpha'],
     'slurm.days': 7,
     'slurm.poll_min': 25,
     'slurm.quota_min': 70,
@@ -170,8 +170,8 @@ function outcome(
 const NOT_FINITE = [Number.NaN, Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY, '5', null];
 
 describe('slurmSettings', () => {
-    const BLOCK = { resource: 'h', days: 3, poll_min: 5, quota_min: 30, prewarm: true };
-    const DEFAULT = { resource: 'alpha', days: 7, pollMin: 25, quotaMin: 70, prewarm: false };
+    const BLOCK = { resource: ['h'], days: 3, poll_min: 5, quota_min: 30, prewarm: true };
+    const DEFAULT = { resources: ['alpha'], days: 7, pollMin: 25, quotaMin: 70, prewarm: false };
     const read = (slurm: unknown) => outcome((p) => slurmSettings(mapWith({ slurm }), p));
 
     it.each([
@@ -186,7 +186,7 @@ describe('slurmSettings', () => {
         for (const value of [...bad]) {
             expect(read({ ...BLOCK, [key]: value })).toStrictEqual({
                 value: {
-                    resource: 'h',
+                    resources: ['h'],
                     days: 3,
                     pollMin: 5,
                     quotaMin: 30,
@@ -199,9 +199,22 @@ describe('slurmSettings', () => {
     });
 
     it('answers an empty resource as no cluster, with no problem', () => {
-        expect(read({ ...BLOCK, resource: '' })).toMatchObject({
-            value: { resource: '' },
+        expect(read({ ...BLOCK, resource: [] })).toMatchObject({
+            value: { resources: [] },
             problems: []
+        });
+    });
+
+    it.each([
+        ['one text', 'utwente', [], ['slurm.resource: words']],
+        ['a number', 3, [], ['slurm.resource: words']],
+        ['a key named twice', ['a', 'a'], ['a'], ['slurm.resource: repeat']],
+        ['the key of this Mac', ['mac', 'a'], ['a'], ['slurm.resource: this-mac']],
+        ['two keys', ['a', 'b'], ['a', 'b'], []]
+    ])('reads a resource of %s to its clusters and its findings', (_row, resource, keys, named) => {
+        expect(read({ ...BLOCK, resource })).toMatchObject({
+            value: { resources: keys },
+            problems: named
         });
     });
 });

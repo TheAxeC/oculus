@@ -17,8 +17,6 @@ import type {
 } from '../../../data/model/index.ts';
 import { getJson, httpsLink, PAGE_MAX, rowsOf, type ReadArgs, type Reading } from './api.ts';
 
-const BASE = 'https://www.googleapis.com/calendar/v3';
-
 /** How many events one page asks for; a calendar with more is followed by its page token. */
 const PER_PAGE = 250;
 
@@ -84,7 +82,7 @@ async function paged(
 /** The calendars the reader has selected, which is what Google draws in its own week view. */
 async function calendars(args: ReadArgs): Promise<CalendarListEntry[]> {
     const rows = await paged(args, (pageToken) => {
-        const url = new URL(`${BASE}/users/me/calendarList`);
+        const url = new URL(`${args.base}/users/me/calendarList`);
         if (pageToken !== '') url.searchParams.set('pageToken', pageToken);
         return url.toString();
     });
@@ -101,7 +99,7 @@ async function calendars(args: ReadArgs): Promise<CalendarListEntry[]> {
 /** One calendar's events inside the window, in the order Google sorted them. */
 async function events(args: ReadArgs, calendar: CalendarListEntry): Promise<CalendarEvent[]> {
     const rows = await paged(args, (pageToken) => {
-        const url = new URL(`${BASE}/calendars/${encodeURIComponent(calendar.id)}/events`);
+        const url = new URL(`${args.base}/calendars/${encodeURIComponent(calendar.id)}/events`);
         url.searchParams.set('singleEvents', 'true');
         url.searchParams.set('orderBy', 'startTime');
         url.searchParams.set('timeMin', args.window.start.toISOString());

@@ -34,13 +34,16 @@
 // Whether a path lies in a folder is read from server/core/paths.ts (`inside`). The status read
 // (`statusIn`) is the one command whose output grows with the mirror rather than with a request, so
 // it starts git itself and takes the records as git writes them; it refuses a directory outside the
-// mirrors folder exactly as `run` does.
+// mirrors folder exactly as `run` does. Every git here is given, before its own arguments, the `-c`
+// arguments of the server context's credentials that `Where` carries
+// (server/core/git/credentials.ts).
 
 import { execFile, spawn } from 'node:child_process';
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { homedir, tmpdir } from 'node:os';
 import { isAbsolute, join } from 'node:path';
 import { z } from 'zod';
+import type { GitCredentials } from '../../core/git/credentials.ts';
 import { endWith } from '../../core/git/running.ts';
 import { readRecords, visitText, type RecordVisit } from '../../core/git/records.ts';
 import { GIT } from '../../core/git/run.ts';
@@ -91,6 +94,8 @@ export type Where = {
     /** The text catalog the refusal of a directory outside the mirrors folder is worded from. */
     text: Record<string, string>;
     git?: GitRunner;
+    /** The server context's git credentials, whose `-c` arguments every real git here is given. */
+    credentials: GitCredentials;
     signal?: AbortSignal;
 };
 
@@ -145,8 +150,13 @@ export function underMirrors(dir: string, mirrors: string): boolean {
 }
 
 /** The real git, private to this module so the refusal below is the only way to it. */
-function git(args: string[], timeout: number, signal?: AbortSignal): Promise<Outcome> {
-    return execute(GIT, args, timeout, signal);
+function git(
+    credentials: GitCredentials,
+    args: string[],
+    timeout: number,
+    signal?: AbortSignal
+): Promise<Outcome> {
+    return execute(GIT, [...credentials.args(), ...args], timeout, signal);
 }
 
 /**
@@ -159,7 +169,8 @@ function run(at: Where, args: string[], timeout: number = TIMEOUT_MS): Promise<O
         return Promise.resolve(failed(words(at.text, 'server.deposit.not_a_mirror')));
     }
     const argv = ['-C', at.dir, ...args];
-    return (at.git ?? git)(argv, timeout, at.signal);
+    if (at.git !== undefined) return at.git(argv, timeout, at.signal);
+    return git(at.credentials, argv, timeout, at.signal);
 }
 
 /**
@@ -273,7 +284,9 @@ export async function statusIn(at: Where, visit: RecordVisit): Promise<Outcome> 
         if (done.ok) visitText(done.output, visit);
         return { ...done, output: '' };
     }
-    const child = spawn(GIT, ['-C', at.dir, ...args], { stdio: ['ignore', 'pipe', 'pipe'] });
+    const child = spawn(GIT, [...at.credentials.args(), '-C', at.dir, ...args], {
+        stdio: ['ignore', 'pipe', 'pipe']
+    });
     const { error, stderr } = await readRecords(
         child,
         { timeout: TIMEOUT_MS, signal: at.signal },

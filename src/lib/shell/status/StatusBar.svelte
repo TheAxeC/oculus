@@ -290,6 +290,7 @@
                         label={status.hpc.short}
                         glyph="hpc"
                         title={hpcTip(status.hpc.long)}
+                        warning={status.hpc.warning}
                         status
                         onclick={() => openView('hpc')}
                     />

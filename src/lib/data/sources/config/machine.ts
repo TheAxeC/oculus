@@ -2,12 +2,14 @@
 // hub the workspace lists, read by data/sources/config/local.ts one file at a time and joined here.
 // The three account lists (`accounts`, `calendars`, `mail`) are the files' rows in folder order,
 // each row marked with the hub whose file holds it, and a label two files both give is a problem
-// naming the later row, which is left out. Every other key is one value per oculus, read from the
-// primary hub's file alone: a hub that is not the primary and sets such a key is a problem naming
-// the hub and the key, and its value is not used. A workspace with no primary holds the defaults.
-// `commit_message_account` is read from the primary's file and checked against the joined
-// accounts: a label no `claude` row holds, compared reduced, is a problem naming the key, and no
-// account is used.
+// naming the later row, which is left out. The cluster accounts (`clusters`) are joined the same
+// way by the cluster they are for, the primary hub's rows first, so the primary's row of a cluster
+// is the one used and another hub's row of it is a problem. Every other key is one value per
+// oculus, read from the primary hub's file alone: a hub that is not the primary and sets such a key
+// is a problem naming the hub and the key, and its value is not used. A workspace with no primary
+// holds the defaults. `commit_message_account` is read from the primary's file and checked against
+// the joined accounts: a label no `claude` row holds, compared reduced, is a problem naming the
+// key, and no account is used.
 
 import type {
     CalendarAccountConfig,
@@ -20,6 +22,7 @@ import {
     localFile,
     readLocal,
     usageAccountLabel,
+    type ClusterAccount,
     type LocalConfig,
     type LocalProblem
 } from './local.ts';
@@ -44,7 +47,7 @@ export type MachineRead = {
      */
     set: string[];
     /**
-     * For each of the three joined lists, the names of the hubs whose file sets the key, in the
+     * For each of the four joined lists, the names of the hubs whose file sets the key, in the
      * workspace's folder order, whether or not a row of the file is in force. A list no file sets
      * has no entry.
      */
@@ -52,10 +55,16 @@ export type MachineRead = {
 };
 
 /** The keys that are rows of a list joined over every hub's file. */
-const JOINED = ['accounts', 'calendars', 'mail'];
+const JOINED = ['clusters', 'accounts', 'calendars', 'mail'];
 
-/** The rows of one list joined over the files, a row whose label an earlier file gave left out. */
-function joinRows<T extends { label: string; hub?: string }>(
+/** What the `clusters:` rows of a hub must be, in the form of local.ts's `wrong` problems. */
+const CLUSTERS_ONCE_WORDS = 'rows of clusters that no earlier hub has a row for';
+
+/**
+ * The rows of one list joined over the files, a row whose label (for `clusters`, whose cluster) an
+ * earlier file gave left out.
+ */
+function joinRows<T extends { hub?: string }>(
     list: string,
     rows: { file: string; rows: T[] }[],
     reduced: (row: T) => string | null,
@@ -69,11 +78,19 @@ function joinRows<T extends { label: string; hub?: string }>(
             if (key !== null && seen.has(key)) {
                 problems.push({
                     file: one.file,
-                    problem: {
-                        key: list,
-                        kind: 'repeat',
-                        sentence: `${list} repeats the label of an earlier hub's row`
-                    }
+                    problem:
+                        list === 'clusters'
+                            ? {
+                                  key: list,
+                                  kind: 'row',
+                                  words: CLUSTERS_ONCE_WORDS,
+                                  sentence: `${list} must be ${CLUSTERS_ONCE_WORDS}`
+                              }
+                            : {
+                                  key: list,
+                                  kind: 'repeat',
+                                  sentence: `${list} repeats the label of an earlier hub's row`
+                              }
                 });
                 continue;
             }
@@ -143,6 +160,15 @@ export function readMachine(
         }
     }
     const setting = (key: string) => reads.filter((one) => one.read.set.includes(key));
+    const clusters = setting('clusters');
+    config.clusters = joinRows<ClusterAccount>(
+        'clusters',
+        [...clusters.filter((one) => one === own), ...clusters.filter((one) => one !== own)].map(
+            (one) => ({ file: one.file, rows: one.read.config.clusters })
+        ),
+        (row) => row.resource,
+        problems
+    );
     const accounts = setting('accounts');
     const calendars = setting('calendars');
     const mail = setting('mail');

@@ -47,7 +47,7 @@ import { stash } from '../../../src/lib/server/git/git-refs.ts';
 import { pull } from '../../../src/lib/server/git/git-remote.ts';
 import { it, scratchDir, test } from '../../fixtures/scratch.ts';
 import { TEXT } from '../text.ts';
-import { isolateGit } from './refs/repo.ts';
+import { gitAt, isolateGit } from './refs/repo.ts';
 
 isolateGit();
 
@@ -103,18 +103,18 @@ describe('staging', () => {
         write(repo, 'kept.txt', 'two\n');
         expect(status()).toContain(' M kept.txt');
 
-        const staged = await stage(repo, ['kept.txt'], TEXT, ROOTS);
+        const staged = await stage(gitAt(repo), ['kept.txt'], TEXT, ROOTS);
         expect(staged.ok).toBe(true);
         expect(status()).toContain('M  kept.txt');
 
-        const back = await unstage(repo, ['kept.txt'], TEXT, ROOTS);
+        const back = await unstage(gitAt(repo), ['kept.txt'], TEXT, ROOTS);
         expect(back.ok).toBe(true);
         expect(status()).toContain(' M kept.txt');
         expect(readFileSync(join(repo, 'kept.txt'), 'utf8')).toBe('two\n');
     });
 
     it('discards a tracked change', async () => {
-        const answer = await discard(repo, ['kept.txt'], TEXT, ROOTS);
+        const answer = await discard(gitAt(repo), ['kept.txt'], TEXT, ROOTS);
         expect(answer.ok).toBe(true);
         expect(readFileSync(join(repo, 'kept.txt'), 'utf8')).toBe('one\n');
     });
@@ -127,7 +127,7 @@ describe('staging', () => {
         symlinkSync('kept.txt', join(repo, 'typed.txt'));
         const codes = async (): Promise<string[]> => {
             const found: string[] = [];
-            await statusIn(repo, (record: StatusRecord) => {
+            await statusIn(gitAt(repo), (record: StatusRecord) => {
                 if (record.path === 'typed.txt') found.push(record.code);
                 return true;
             });
@@ -135,14 +135,14 @@ describe('staging', () => {
         };
         expect(await codes()).toEqual([' T']);
 
-        expect((await stage(repo, ['typed.txt'], TEXT, ROOTS)).ok).toBe(true);
+        expect((await stage(gitAt(repo), ['typed.txt'], TEXT, ROOTS)).ok).toBe(true);
         expect(await codes()).toEqual(['T ']);
         expect(git(repo, 'ls-files', '-s', 'typed.txt')).toMatch(/^120000 /);
 
-        expect((await unstage(repo, ['typed.txt'], TEXT, ROOTS)).ok).toBe(true);
+        expect((await unstage(gitAt(repo), ['typed.txt'], TEXT, ROOTS)).ok).toBe(true);
         expect(await codes()).toEqual([' T']);
 
-        expect((await discard(repo, ['typed.txt'], TEXT, ROOTS)).ok).toBe(true);
+        expect((await discard(gitAt(repo), ['typed.txt'], TEXT, ROOTS)).ok).toBe(true);
         expect(await codes()).toEqual([]);
         expect(lstatSync(join(repo, 'typed.txt')).isSymbolicLink()).toBe(false);
         expect(readFileSync(join(repo, 'typed.txt'), 'utf8')).toBe('typed\n');
@@ -152,9 +152,9 @@ describe('staging', () => {
 describe('committing', () => {
     it('commits a multi-line message holding quotes and backticks', async () => {
         write(repo, 'kept.txt', 'three\n');
-        await stage(repo, ['kept.txt'], TEXT, ROOTS);
+        await stage(gitAt(repo), ['kept.txt'], TEXT, ROOTS);
         const message = 'Add the "thing"\n\n- Keep `one` and $two\n- Do not break \'quoting\'\n';
-        const answer = await commit(repo, message, TEXT, ROOTS);
+        const answer = await commit(gitAt(repo), message, TEXT, ROOTS);
         expect(answer.ok).toBe(true);
         expect(git(repo, 'log', '-1', '--pretty=%B')).toContain('Add the "thing"');
         expect(git(repo, 'log', '-1', '--pretty=%B')).toContain("- Do not break 'quoting'");
@@ -166,9 +166,9 @@ describe('pushing', () => {
         git(repo, 'remote', 'add', 'origin', remote);
         git(repo, 'push', '-q', '-u', 'origin', 'main');
         write(repo, 'kept.txt', 'five\n');
-        await stage(repo, ['kept.txt'], TEXT, ROOTS);
-        await commit(repo, 'Set it to five\n', TEXT, ROOTS);
-        const answer = await push(repo, TEXT, ROOTS);
+        await stage(gitAt(repo), ['kept.txt'], TEXT, ROOTS);
+        await commit(gitAt(repo), 'Set it to five\n', TEXT, ROOTS);
+        const answer = await push(gitAt(repo), TEXT, ROOTS);
         expect(answer.ok).toBe(true);
         // The bare repository's own HEAD is whatever git init made it; the branch that was pushed
         // is the one to read.
@@ -181,7 +181,7 @@ describe('pushing', () => {
 
 describe('branches', () => {
     it('creates one and checks it out', async () => {
-        const answer = await createBranch(repo, 'work/one', TEXT, ROOTS);
+        const answer = await createBranch(gitAt(repo), 'work/one', TEXT, ROOTS);
         expect(answer.ok).toBe(true);
         expect(git(repo, 'rev-parse', '--abbrev-ref', 'HEAD').trim()).toBe('work/one');
     });
@@ -207,7 +207,7 @@ describe('branches', () => {
         for (const [row, file, from, to, refusal] of SWITCHES) {
             git(repo, 'switch', '-q', from);
             if (file !== null) write(repo, file, 'carried\n');
-            const answer = await switchBranch(repo, to, TEXT, ROOTS);
+            const answer = await switchBranch(gitAt(repo), to, TEXT, ROOTS);
             expect(answer.ok, row).toBe(refusal === null);
             expect(answer.error, row).toBe(refusal ?? '');
             expect(git(repo, 'rev-parse', '--abbrev-ref', 'HEAD').trim(), row).toBe(
@@ -228,7 +228,7 @@ describe('worktrees', () => {
 
     it('makes one under the repository worktrees folder, on a branch of its name', async () => {
         const path = where();
-        const answer = await createWorktree(repo, name, TEXT, ROOTS);
+        const answer = await createWorktree(gitAt(repo), name, TEXT, ROOTS);
         expect(answer.ok).toBe(true);
         expect(git(path, 'rev-parse', '--abbrev-ref', 'HEAD').trim()).toBe(name);
         expect(path.endsWith(`.agents/worktrees/${name}`)).toBe(true);
@@ -249,7 +249,7 @@ describe('the merge back', () => {
         git(repo, 'add', 'kept.txt');
         git(repo, 'commit', '-q', '-m', 'Main');
 
-        const answer = await merge(repo, 'other', TEXT, ROOTS);
+        const answer = await merge(gitAt(repo), 'other', TEXT, ROOTS);
         expect(answer.ok).toBe(false);
         expect(answer.error).toContain('kept.txt');
         expect(answer.error).toContain('Merge Changes');
@@ -265,7 +265,7 @@ describe('the merge back', () => {
         expect(readFileSync(join(repo, 'kept.txt'), 'utf8')).toContain('<<<<<<<');
 
         // Abort Merge takes it back to main's side, which the cases after this one start from.
-        expect((await abortMerge(repo, TEXT, ROOTS)).ok).toBe(true);
+        expect((await abortMerge(gitAt(repo), TEXT, ROOTS)).ok).toBe(true);
         expect(existsSync(join(repo, '.git', 'MERGE_HEAD'))).toBe(false);
         expect(readFileSync(join(repo, 'kept.txt'), 'utf8')).toBe('from main\n');
     });
@@ -309,8 +309,8 @@ describe('the merge back', () => {
             const run = new AbortController();
             const answer =
                 how === 'merge'
-                    ? merge(here, 'other', TEXT, roots, run.signal)
-                    : pull(here, TEXT, roots, run.signal);
+                    ? merge(gitAt(here), 'other', TEXT, roots, run.signal)
+                    : pull(gitAt(here), TEXT, roots, run.signal);
             await vi.waitUntil(() => existsSync(started), { timeout: 10000, interval: 20 });
             run.abort();
             const done = await answer;
@@ -320,12 +320,13 @@ describe('the merge back', () => {
             expect(git(here, 'rev-parse', '--verify', '--quiet', 'MERGE_HEAD').trim()).toBe(
                 git(here, 'rev-parse', 'other').trim()
             );
-            expect((await abortMerge(here, TEXT, roots)).ok).toBe(true);
+            expect((await abortMerge(gitAt(here), TEXT, roots)).ok).toBe(true);
             const stopped = {
                 ...done,
                 failure: { code: 'cancelled' as const, detail: '', program: 'git' }
             };
-            expect((await stoppedOn(here, stopped, TEXT, 'merge')).failure?.left).toBeUndefined();
+            const after = await stoppedOn(gitAt(here), stopped, TEXT, 'merge');
+            expect(after.failure?.left).toBeUndefined();
             expect(git(here, 'rev-parse', 'HEAD')).toBe(before);
             expect(git(here, 'status', '--porcelain', '--untracked-files=no')).toBe('');
         }
@@ -333,7 +334,7 @@ describe('the merge back', () => {
 
     it('removes a worktree that is clean, and its branch with it', async () => {
         const path = worktreePath(repo, name);
-        const answer = await removeWorktree(repo, path, TEXT, ROOTS);
+        const answer = await removeWorktree(gitAt(repo), path, TEXT, ROOTS);
         expect(answer.ok).toBe(true);
         expect(existsSync(path)).toBe(false);
         expect(git(repo, 'branch', '--list', name).trim()).toBe('');
@@ -363,7 +364,7 @@ describe('the status read', () => {
         write(root, 'loose one.txt', '');
         write(root, 'loose\u00e9.txt', '');
         const seen: StatusRecord[] = [];
-        const whole = await statusIn(root, (record) => {
+        const whole = await statusIn(gitAt(root), (record) => {
             seen.push(record);
         });
         expect(whole).toEqual({ ok: true, output: '', error: '' });
@@ -374,11 +375,12 @@ describe('the status read', () => {
             { code: '??', path: 'loose\u00e9.txt', from: null }
         ]);
         const first: StatusRecord[] = [];
-        expect((await statusIn(root, (record) => first.push(record) === 0)).ok).toBe(true);
+        const at = gitAt(root);
+        expect((await statusIn(at, (record) => first.push(record) === 0)).ok).toBe(true);
         expect(first).toEqual([seen[0]]);
-        expect(await statusHolds(root, trackedChange)).toBe(true);
-        expect(await statusHolds(root, (record) => record.path === 'gone.txt')).toBe(false);
-        const loose = await untrackedAmong(root, ['loose\u00e9.txt', 'kept.txt'], TEXT, ROOTS);
+        expect(await statusHolds(at, trackedChange)).toBe(true);
+        expect(await statusHolds(at, (record) => record.path === 'gone.txt')).toBe(false);
+        const loose = await untrackedAmong(at, ['loose\u00e9.txt', 'kept.txt'], TEXT, ROOTS);
         expect(loose).toEqual(new Set(['loose\u00e9.txt']));
     });
 
@@ -390,7 +392,7 @@ describe('the status read', () => {
         write(root, 'ab.txt', '');
         write(root, '.gitignore', '*.log\n');
         write(root, 'deep/er/skip.log', '');
-        const answer = await stageAll(root, 'untracked', TEXT, ROOTS);
+        const answer = await stageAll(gitAt(root), 'untracked', TEXT, ROOTS);
         expect(answer.ok).toBe(true);
         expect(git(root, 'diff', '--cached', '--name-only').split('\n').sort()).toEqual([
             '',
@@ -401,18 +403,18 @@ describe('the status read', () => {
             'deep/er/d.txt'
         ]);
         expect(git(root, 'diff', '--name-only')).toBe('kept.txt\n');
-        const again = await stageAll(root, 'untracked', TEXT, ROOTS);
+        const again = await stageAll(gitAt(root), 'untracked', TEXT, ROOTS);
         expect(again.error).toBe(TEXT['server.git.nothing_untracked']);
     });
 
     it('stashes only when the read finds a change the way to stash takes', async () => {
         const root = fresh('stash');
         write(root, 'loose.txt', '');
-        const tracked = await stash(root, 'tracked', '', TEXT, ROOTS);
+        const tracked = await stash(gitAt(root), 'tracked', '', TEXT, ROOTS);
         expect(tracked.error).toBe(TEXT['server.git.nothing_to_stash']);
-        const staged = await stash(root, 'staged', '', TEXT, ROOTS);
+        const staged = await stash(gitAt(root), 'staged', '', TEXT, ROOTS);
         expect(staged.error).toBe(TEXT['server.git.nothing_to_stash']);
-        const untracked = await stash(root, 'untracked', '', TEXT, ROOTS);
+        const untracked = await stash(gitAt(root), 'untracked', '', TEXT, ROOTS);
         expect(untracked.ok).toBe(true);
         expect(existsSync(join(root, 'loose.txt'))).toBe(false);
         expect(git(root, 'stash', 'list').split('\n').filter(Boolean)).toHaveLength(1);

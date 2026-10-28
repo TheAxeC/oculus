@@ -18,10 +18,8 @@ import {
     type ReverseSynctex,
     type TexcountAutorun
 } from '../../../prose/latex.ts';
-import { mapShape, readAs } from '../../../shapes/shapes.ts';
 import type { FieldSpec } from '../catalog/options.ts';
-import { valueProblem } from '../catalog/value-rule.ts';
-import { heldAt, noRule, settingEntry, settingReader, type SettingProblem } from './reader.ts';
+import { checkedRows, noRule, settingEntry, settingReader, type SettingProblem } from './reader.ts';
 
 /** The LaTeX formatter of behavior.yml: the one Format Document runs, and each path. */
 export type LatexFormatting = {
@@ -104,27 +102,11 @@ function fieldOf(
     return spec;
 }
 
-/** The rows a records entry holds: its list, or none when the key is missing or no list. */
-function rowsOf(
-    config: Record<string, unknown>,
-    key: string,
-    problems: SettingProblem[]
-): unknown[] {
-    const held = heldAt(config, key, problems);
-    if (!held.present || held.value === null) return [];
-    if (!Array.isArray(held.value)) {
-        problems.push({ key, where: 'family' });
-        return [];
-    }
-    return held.value;
-}
-
 /**
- * The rows of a list of records, each read by the entry's own fields: a row that is no map, or
- * whose `name` or any other field the rule refuses is not read and comes back as a problem at
- * `<key>[<index>]`, a row with no name is not read, and a row repeating a name an earlier row took
- * is not read either. `pick` takes a row's fields out of it, and `refuse` names a problem a read
- * row has beyond its fields' own, which leaves the row out.
+ * The rows of a list of records, each read by the entry's own fields (checkedRows): a row with no
+ * name is not read, and a row repeating a name an earlier row took is not read either. `pick`
+ * takes a row's fields out of it, and `refuse` names a problem a read row has beyond its fields'
+ * own, which leaves the row out.
  */
 function recordRows<T extends { name: string }>(
     config: Record<string, unknown>,
@@ -133,40 +115,26 @@ function recordRows<T extends { name: string }>(
     pick: (row: Record<string, unknown>) => T,
     refuse: (one: T, at: string) => SettingProblem | null = () => null
 ): T[] {
-    const entry = settingEntry(config, key);
     const named = new Set<string>();
     const kept: T[] = [];
-    rowsOf(config, key, problems).forEach((raw, index) => {
-        const at = `${key}[${index}]`;
-        const row = readAs(mapShape, raw);
-        if (row === null) {
-            problems.push({ key: at, where: 'entry', problem: { kind: 'records' }, spec: entry });
-            return;
-        }
-        for (const [name, spec] of Object.entries(entry.fields ?? {})) {
-            const problem = valueProblem(spec, row[name]);
-            if (problem !== null) {
-                problems.push({ key: `${at}.${name}`, where: 'field', problem, spec });
-                return;
-            }
-        }
+    for (const { at, row } of checkedRows(config, key, problems)) {
         const one = pick(row);
         if (one.name === '') {
             problems.push({ key: at, where: 'unnamed' });
-            return;
+            continue;
         }
         if (named.has(one.name)) {
             problems.push({ key, where: 'repeat', name: one.name });
-            return;
+            continue;
         }
         const refused = refuse(one, at);
         if (refused !== null) {
             problems.push(refused);
-            return;
+            continue;
         }
         named.add(one.name);
         kept.push(one);
-    });
+    }
     return kept;
 }
 

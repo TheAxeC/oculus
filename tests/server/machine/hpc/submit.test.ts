@@ -210,7 +210,7 @@ describe('the run of a confirmed plan', () => {
         let sent = row.change === undefined ? plan : row.change(plan, code);
         if (row.replan === true) {
             const again = await planSubmit(
-                { root: 'hub', path: 'projects/p/code/hpc/a.slurm' },
+                { root: 'hub', path: 'projects/p/code/hpc/a.slurm', resource: 'utwente' },
                 deps
             );
             sent = again.status === 'ok' ? again.plan : plan;
@@ -229,9 +229,10 @@ describe('the run of a confirmed plan', () => {
         deps.kept = listing;
         if (row.close === 'before') deps.submits.close();
         if (row.close === 'during') {
-            deps.where = () => {
+            const reached = deps.connection;
+            deps.connection = (resource) => {
                 deps.submits.close();
-                return { host: 'utwente' };
+                return reached(resource);
             };
         }
         const answer = await runSubmit({ plan: sent, confirm }, deps);
@@ -249,11 +250,37 @@ describe('the run of a confirmed plan', () => {
                 files: ['hpc/a.slurm', 'main.py']
             });
             expect(ssh.mock.calls[0].slice(0, 3)).toEqual([
-                'utwente',
+                { resource: 'utwente', name: 'utwente', host: 'utwente' },
                 "cd ~/'projects/p' && sbatch --parsable 'hpc/a.slurm'",
                 30000
             ]);
         }
+    });
+});
+
+describe('the cluster a confirmed plan runs on', () => {
+    it('copies to and runs on the cluster the plan names, the second of two, and runs nothing for a key slurm.resource does not list (G43)', async () => {
+        const { deps, copy, ssh } = world({ 'hpc/a.slurm': SCRIPT });
+        const plan = await planned(deps, 'projects/p/code/hpc/a.slurm', 'b');
+        expect(plan.resource).toBe('b');
+        expect(await runSubmit({ plan, confirm: true }, deps)).toEqual({
+            status: 'ok',
+            job: '12345'
+        });
+        const sent = copy.mock.calls[0][0] as { vector: string[] };
+        expect(sent.vector.at(-1)).toBe('b:~/projects/p/');
+        expect(ssh.mock.calls.map((call) => call[0])).toEqual([
+            { resource: 'b', name: 'b', host: 'b' }
+        ]);
+        const elsewhere = await planSubmit(
+            { root: 'hub', path: 'projects/p/code/hpc/a.slurm', resource: 'c' },
+            deps
+        );
+        expect(elsewhere).toMatchObject({ status: 'refused', reason: 'unknown-cluster' });
+        const moved = await runSubmit({ plan: { ...plan, resource: 'c' }, confirm: true }, deps);
+        expect(moved).toMatchObject({ status: 'refused', reason: 'unknown-cluster' });
+        expect(copy).toHaveBeenCalledTimes(1);
+        expect(ssh).toHaveBeenCalledTimes(1);
     });
 });
 

@@ -10,6 +10,7 @@
 
 import { handleCalendar } from '$lib/server/accounts/calendar/routes';
 import { callbackUrl } from '$lib/server/accounts/connect/oauth';
+import { providersOf } from '$lib/server/accounts/connect/providers';
 import type { CalendarPayload } from '$lib/data/model';
 import type { RequestHandler } from './$types';
 
@@ -19,6 +20,7 @@ export const POST: RequestHandler = ({ request, locals }) =>
         accounts: locals.server.local.calendars,
         dir: locals.server.calendarDir,
         providerDir: locals.server.providerDir,
+        providers: providersOf(locals.config().config),
         book: locals.server.accounts,
         redirect: callbackUrl(locals.server.local.port, 'calendar'),
         states: locals.server.calendarConnects,

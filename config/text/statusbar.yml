@@ -66,6 +66,7 @@ text:
         debug_tip: 'Debug with {0}, or pick another configuration to start.'
         findings_tip: '{0} findings in the hub and the configuration. Open Findings.'
         findings_tip_one: 1 finding in the hub and the configuration. Open Findings.
+        hpc_cluster: '{0}: {1}'
         hpc_polling: polling
         hpc_live: '{0} running, {1} pending'
         hpc_tip: '{0}. Open Live HPC.'
@@ -240,8 +241,8 @@ text:
         notice_open: Open
         notice_permission: '{0} is waiting for you to answer a permission prompt.'
         notice_idle: '{0} finished its turn and is waiting for your input.'
-        notice_job_finished: 'Job {0} ({1}) finished.'
-        notice_job_failed: 'Job {0} ({1}) failed: {2}, exit code {3}.'
+        notice_job_finished: 'Job {0} ({1}) finished on {2}.'
+        notice_job_failed: 'Job {0} ({1}) failed on {4}: {2}, exit code {3}.'
         notice_update: '{0} ran and has new results.'
         notice_write_refused: 'A write was refused: {0}'
         notice_write_failed: 'A write got no answer: {0}'

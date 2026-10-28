@@ -11,7 +11,8 @@
     // the page reset, and the workbench row has none, since its layout tree is edited in the file;
     // a row of the machine's own file has its description, its key path, where it is set and the
     // value in force the server sent (a line for each row of a joined list, with a way to open the
-    // file of each hub that holds a row). A list, multi, parked list or family with no value in
+    // file of each hub that holds a row); the `clusters:` row has under it the editor of its rows
+    // (other-rows/ClusterRows.svelte). A list, multi, parked list or family with no value in
     // force says so and has the way to edit the user's file; a row set one value at a time with no
     // value in force draws its control empty (Control.svelte) and says nothing more.
     //
@@ -37,6 +38,7 @@
     // the draft or typed text kept for that hub is drawn again once they are read.
 
     import CodeText from '$lib/ui/display/text/CodeText.svelte';
+    import ClusterRows from './other-rows/ClusterRows.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import Select from '$lib/ui/forms/choice/Select.svelte';
     import { sourceTabState } from '$lib/state/sessions/source/draft';
@@ -278,6 +280,9 @@
                     <li><code>{line}</code></li>
                 {/each}
             </ul>
+        {/if}
+        {#if row.key === 'clusters'}
+            <ClusterRows />
         {/if}
         {#if row.hubs.length > 0}
             <div class="foot">

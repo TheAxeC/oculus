@@ -5,6 +5,7 @@
 
 import type { GitFilePage } from '../../../data/model/index.ts';
 import { words } from '../words.ts';
+import type { GitCredentials } from './credentials.ts';
 import { FILE_LOG_FORMAT, parseFileLog } from './parse.ts';
 import {
     HASH,
@@ -31,6 +32,7 @@ export const FILE_LOG_ENTRIES = 50;
  * never named, since git does not ignore what it already tracks.
  */
 export async function ignoredIn(
+    credentials: GitCredentials,
     root: string,
     names: string[],
     timeout: number = TIMEOUT_MS
@@ -38,7 +40,8 @@ export async function ignoredIn(
     const none = new Set<string>();
     if (names.length === 0) return none;
     const input = names.map((name) => `${name}\0`).join('');
-    const done = await run(root, ['check-ignore', '--stdin', '-z'], milliseconds(timeout), input);
+    const args = ['check-ignore', '--stdin', '-z'];
+    const done = await run(credentials, root, args, milliseconds(timeout), input);
     if (!done.ok) return none;
     const said = new Set(done.text.split('\0').filter((one) => one !== ''));
     return new Set(names.filter((name) => said.has(name)));
@@ -51,11 +54,12 @@ export async function ignoredIn(
  * a run that timed out answer why instead.
  */
 export async function trackedFiles(
+    credentials: GitCredentials,
     root: string,
     text: Record<string, string>,
     timeout: number = TIMEOUT_MS
 ): Promise<Read<string[]>> {
-    const done = await run(root, ['ls-files', '-z'], milliseconds(timeout));
+    const done = await run(credentials, root, ['ls-files', '-z'], milliseconds(timeout));
     if (!done.ok) return refused(reasonOf(done, text));
     return { ok: true, value: done.text.split('\0').filter((path) => path !== '') };
 }
@@ -68,11 +72,13 @@ export async function trackedFiles(
  * why instead.
  */
 export async function keptFiles(
+    credentials: GitCredentials,
     root: string,
     text: Record<string, string>,
     timeout: number = TIMEOUT_MS
 ): Promise<Read<string[]>> {
     const done = await run(
+        credentials,
         root,
         ['ls-files', '-z', '--cached', '--others', '--exclude-standard'],
         milliseconds(timeout)
@@ -98,6 +104,7 @@ export async function keptFiles(
  * of git answers its reason.
  */
 export async function fileLog(
+    credentials: GitCredentials,
     root: string,
     path: string,
     text: Record<string, string>,
@@ -109,6 +116,7 @@ export async function fileLog(
         return refused(words(text, 'server.git.not_a_commit'));
     }
     const done = await run(
+        credentials,
         root,
         [
             'log',

@@ -27,6 +27,7 @@ import { watchHpc } from '../../../../../src/lib/server/machine/hpc/poll.ts';
 import {
     clusterPlace,
     clusterState,
+    jobFolder,
     stopCluster
 } from '../../../../../src/lib/server/machine/runs/recover/cluster.ts';
 import {
@@ -374,10 +375,10 @@ describe('a Recover run on the cluster', () => {
         const stand = standIns(['tmux', 'squeue', 'scancel'], answers);
         const node = loginNode(stand);
         if (one.job !== null) {
-            const files = recoverFiles(node.deps.home, one.hub, 'mitdb');
-            mkdirSync(files.dir, { recursive: true });
+            const folder = jobFolder(node.deps.home, one.hub, node.deps.resource);
+            mkdirSync(folder, { recursive: true });
             writeFileSync(
-                `${files.dir}/mitdb.job.json`,
+                `${folder}/mitdb.job.json`,
                 JSON.stringify({ id: one.job, action: 'verify' })
             );
         }
@@ -417,18 +418,18 @@ describe('a Recover run on the cluster', () => {
                 join(node.remoteHome, 'data', 'mitdb', 'recover.log'),
                 '2026-10-19T10:00:00Z fetch: 1 files\n'
             );
+            const section = watcher.section('cluster');
             const poll = (stand: Stand): RecoverLive => {
-                watcher.section.take(
-                    shell(watcher.section.command(), stand, node.remoteHome).stdout,
-                    []
-                );
+                section.take(shell(section.command(), stand, node.remoteHome).stdout, []);
                 return channels.latest('recover')?.payload as RecoverLive;
             };
             try {
                 const first = poll(going);
-                expect(first.sessions).toEqual([
-                    { hub: 'research-hub', key: 'mitdb', done: 4096, total: null, rate: null }
-                ]);
+                expect(first.sessions).toEqual({
+                    cluster: [
+                        { hub: 'research-hub', key: 'mitdb', done: 4096, total: null, rate: null }
+                    ]
+                });
                 expect(first.runs).toMatchObject([
                     { target: 'cluster', state: 'running', run: { action: 'fetch' }, bytes: 4096 }
                 ]);
@@ -440,7 +441,7 @@ describe('a Recover run on the cluster', () => {
                     }
                 ]);
                 const ended = poll(standIns(['tmux', 'du']));
-                expect(ended.sessions).toEqual([]);
+                expect(ended.sessions).toEqual({ cluster: [] });
                 expect(ended.runs).toMatchObject([
                     { state: 'ended', run: null, log: ['2026-10-19T10:00:00Z fetch: 1 files'] }
                 ]);
@@ -468,7 +469,7 @@ describe('a Recover run on the cluster', () => {
             vi.advanceTimersByTime(120000);
             expect(readCluster).toHaveBeenCalledTimes(2);
             // An answer that lists no session and no job of the dataset ends what was followed.
-            watcher.section.take('', []);
+            watcher.section('cluster').take('', []);
             vi.advanceTimersByTime(120000);
             expect(readCluster).toHaveBeenCalledTimes(2);
         } finally {
@@ -503,17 +504,24 @@ describe('a Recover run on the cluster', () => {
             const calls: string[] = [];
             let polls = 0;
             const take = vi.fn();
-            const hub = new Hub();
+            let latest: HpcPayload | undefined;
+            const out = {
+                publish: (payload: HpcPayload) => (latest = payload),
+                latest: () => latest
+            };
             vi.useFakeTimers({ toFake: ['Date'] });
-            const watcher = watchHpc(hub, {
+            const watcher = watchHpc(out, {
+                resource: 'cluster',
+                name: 'cluster',
                 host: 'cluster',
+                failures: [],
                 days: 1,
                 pollMin: 20,
                 quotaMin: 60,
                 prewarm: false,
                 words: { sshExited: 'ssh exited {0}', slurmLate: 'late', overrun: 'overrun' },
                 recover: { command: () => 'echo section', take },
-                runner: (_host, command) => {
+                runner: (_connection, command) => {
                     calls.push(command);
                     if (command.startsWith('quota')) {
                         return Promise.resolve({ stdout: '', stderr: '', code: 1 });
@@ -531,7 +539,7 @@ describe('a Recover run on the cluster', () => {
                 take.mockClear();
                 const before = calls.length;
                 await watcher.recover();
-                const status = (hub.latest('hpc')?.payload as HpcPayload).status;
+                const status = latest?.status;
                 return { status, sent: calls.slice(before), take: take.mock.calls };
             } finally {
                 watcher.close();

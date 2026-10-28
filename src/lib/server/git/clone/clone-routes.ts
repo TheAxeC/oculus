@@ -17,8 +17,9 @@
 // holds files the repository tracks is `{ error, held }`, the files in `held`, which is how the
 // page asks for another folder.
 //
-// Every operation is an option with a real default, so tests/routes/git/clone.test.ts drives the
-// whole endpoint without running git or `gh` at all.
+// git is the option the route builds from the server context's credentials and every other
+// operation is an option with a real default, so tests/routes/git/clone.test.ts drives the whole
+// endpoint without running git or `gh` at all.
 
 import { isAbsolute } from 'node:path';
 import { json } from '@sveltejs/kit';
@@ -41,8 +42,9 @@ type CloneProject = { repository?: Pick<RepositoryBlock, 'url'> };
 export type CloneOptions = {
     /** The text catalog the sentences are worded from. */
     text: Record<string, string>;
-    /** How git and `gh` are run; the real ones when absent. */
-    git?: GitRunner;
+    /** How git is run: clone-git.ts's `cloneGit` with the server context's credentials. */
+    git: GitRunner;
+    /** How `gh` is run; the real one when absent. */
     gh?: GhRun;
     /** The project `id` of the last published portfolio, or null. */
     project: (id: string) => CloneProject | null;

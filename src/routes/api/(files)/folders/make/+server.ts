@@ -24,6 +24,7 @@ export const POST: RequestHandler = ({ request, locals }) => {
         engine: locals.server.engine,
         writes: locals.server.opsWrites,
         changes: held.changes,
-        initGit: (folder) => cloneGit(['-C', folder, 'init', '-q'], LOCAL_TIMEOUT_MS)
+        initGit: (folder) =>
+            cloneGit(locals.server.credentials)(['-C', folder, 'init', '-q'], LOCAL_TIMEOUT_MS)
     });
 };

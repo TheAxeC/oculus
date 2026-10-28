@@ -10,7 +10,7 @@ import { join } from 'node:path';
 import { describe, expect } from 'vitest';
 import { switchDetached } from '../../../../src/lib/server/git/git-write.ts';
 import { it } from '../../../fixtures/scratch.ts';
-import { commitFile, git, isolateGit, scratchRepo } from './repo.ts';
+import { commitFile, git, gitAt, isolateGit, scratchRepo } from './repo.ts';
 import { TEXT } from '../../text.ts';
 
 isolateGit();
@@ -31,7 +31,7 @@ describe('switchDetached', () => {
         ] as const) {
             const { root, first } = twoCommits();
             if (untracked !== null) writeFileSync(join(root, untracked), 'carried\n');
-            const answer = await switchDetached(root, first, TEXT, [root]);
+            const answer = await switchDetached(gitAt(root), first, TEXT, [root]);
             expect(answer.ok, row).toBe(true);
             expect(git(root, 'rev-parse', '--abbrev-ref', 'HEAD').trim(), row).toBe('HEAD');
             expect(git(root, 'rev-parse', 'HEAD').trim(), row).toBe(first);

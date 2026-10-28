@@ -22,6 +22,7 @@ import { fsWrites } from '../../../src/lib/server/core/json.ts';
 import { handleFs, ignoredCache, type FsTarget } from '../../../src/lib/server/files/fs.ts';
 import { machineDefaults } from '../../../src/lib/server/root/process/context/machine-defaults.ts';
 import { machineValues } from '../../../src/lib/server/root/process/context/machine-values.ts';
+import { noCredentials } from '../../fixtures/doubles.ts';
 import { it, scratchDir } from '../../fixtures/scratch.ts';
 import { plantHub, workspaceWith } from '../../fixtures/hubs/workspace.ts';
 
@@ -43,7 +44,8 @@ async function answered(primary: boolean) {
         machine: { set: read.set, defaults, values: {}, hubs: {}, portRefused: null },
         bookmarks: null,
         writes: fsWrites(),
-        ignored: ignoredCache()
+        ignored: ignoredCache(),
+        credentials: noCredentials()
     };
     const response = await handleFs(new Request('http://localhost/api/fs'), target);
     return { text: await response.text() };
@@ -58,7 +60,9 @@ describe('GET /api/fs with no root', () => {
         expect(body.machine.set).toEqual(['port', 'claude_bin']);
         expect(body.machine.defaults.port).toBe(String(DEFAULT_PORT));
         expect(body.machine.defaults.claude_bin).toBe(localDefaults().claudeBin);
-        expect(body.machine.defaults.hpc_host).toBe(words(TEXT, 'server.machine_default.hpc_host'));
+        expect(body.machine.defaults.clusters).toBe(
+            words(TEXT, 'server.machine_default.no_accounts')
+        );
     });
 
     it('names no key as set when the workspace has no primary', async () => {
@@ -108,7 +112,8 @@ async function answeredSecrets(): Promise<string> {
         },
         bookmarks: null,
         writes: fsWrites(),
-        ignored: ignoredCache()
+        ignored: ignoredCache(),
+        credentials: noCredentials()
     };
     const response = await handleFs(new Request('http://localhost/api/fs'), target);
     return response.text();

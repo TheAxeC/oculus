@@ -57,6 +57,7 @@ import { configDir } from '../../data/sources/config/folder.ts';
 import { tokenedBody } from '../core/auth.ts';
 import { resolveRootFileResult, resolveRootPath, type Root } from './files.ts';
 import { readBookmarks } from './fs/bookmarks.ts';
+import type { GitCredentials } from '../core/git/credentials.ts';
 import { ignoredIn } from '../core/git/files.ts';
 import { folderMarks, hubAbove } from './project/make.ts';
 import { notesFolderOf, notesFolderState, readAllNotes, writeNoteOrder } from './fs/notes.ts';
@@ -190,7 +191,7 @@ export async function cachedIgnored(
     cache: IgnoredCache,
     folder: string,
     names: string[],
-    ask: (folder: string, names: string[]) => Promise<Set<string>> = ignoredIn,
+    ask: (folder: string, names: string[]) => Promise<Set<string>>,
     now: () => number = Date.now
 ): Promise<Set<string>> {
     const key = `${folder}\0${names.join('\0')}`;
@@ -222,6 +223,8 @@ export type FsTarget = {
     writes: FsWrites;
     /** The ignored names asked for lately, which listings reuse for a moment. */
     ignored: IgnoredCache;
+    /** The server context's git credentials, which the ignored names are asked of git with. */
+    credentials: GitCredentials;
 };
 
 /**
@@ -302,6 +305,7 @@ export async function listShown(
     list: Root[],
     key: string,
     path: string,
+    credentials: GitCredentials,
     shown: Shown = DEFAULT_SHOWN,
     cache: IgnoredCache = ignoredCache()
 ): Promise<{ entries: Entry[] } | { error: 'outside' | 'missing' }> {
@@ -311,7 +315,8 @@ export async function listShown(
     const ignored = await cachedIgnored(
         cache,
         found.at,
-        found.entries.map((one) => one.name)
+        found.entries.map((one) => one.name),
+        (folder, names) => ignoredIn(credentials, folder, names)
     );
     if (!shown.ignored) return { entries: marked.filter((one) => !ignored.has(one.name)) };
     return {
@@ -450,7 +455,8 @@ export async function handleFs(request: Request, into: FsTarget): Promise<Respon
     const path = url.searchParams.get('path') ?? '';
     if (key === '')
         return json(workspacesAnswer(open, into.engine, into.machine), { headers: NO_STORE });
-    const found = await listShown(open.roots, key, path, shownOf(url.searchParams), into.ignored);
+    const shown = shownOf(url.searchParams);
+    const found = await listShown(open.roots, key, path, into.credentials, shown, into.ignored);
     if ('error' in found) return json({ error: found.error }, { status: 404, headers: NO_STORE });
     return json({ root: key, path, entries: found.entries }, { headers: NO_STORE });
 }

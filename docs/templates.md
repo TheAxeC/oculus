@@ -121,10 +121,80 @@ The hub's own settings. A key of oculus's `config/catalogs/vocab.yml` set here i
 #   example:
 #   - { label: "Lab handbook", path: docs/handbook.md, group: help }
 
-# The cluster Live HPC polls: the key of a `kind: cluster` entry of the resources registry.
-# Empty is no cluster.
+# The clusters Live HPC polls, in the order it draws them: the keys of `kind: cluster` entries of
+# the resources registry. The empty list is no cluster. Read from the primary hub alone.
 # slurm:
-#   resource: ""
+#   resource: []
+#   example:
+#   slurm:
+#     resource: [my-cluster]
+
+# The key Account setup makes for a cluster: the type ssh-keygen makes (ed25519, ecdsa or rsa) and
+# the path of the key file, `{type}` standing for the type and `{resource}` for the cluster's key.
+# Both empty by default, and Account setup then says which is missing. Read from the primary hub
+# alone.
+# clusters:
+#   key_type: ''
+#   key_file: ''
+#   example:
+#   clusters:
+#     key_type: ed25519
+#     key_file: ~/.ssh/id_{type}_{resource}
+
+# The rows that tell a failed ssh or git connection apart, read in order: the first row whose
+# `match` a line of the error output holds names the failure with its `kind` and its `fix`. A row's
+# `for` names the connections whose output it reads, `cluster` for a cluster's poll and `git` for a
+# fetch; a row without it reads both. None by default. Read from the primary hub alone.
+# connections:
+#   failures: []
+#   example:
+#   connections:
+#     failures:
+#       - { kind: Key refused, for: [cluster], match: 'Permission denied (publickey)', fix: Put the key on the cluster in Account setup }
+#       - { kind: Git key refused, for: [git], match: 'Permission denied (publickey)', fix: "Add this Mac's ssh key to the git host, or use its https address and sign in in Account setup" }
+
+# The providers a reader signs in with, one row each: `google` and `microsoft` for the mail and the
+# calendars, and a git host, any row with a `credential_address`, for git. Every address is an
+# https address; `{tenant}` stands for a Microsoft account's directory and `{id}` for a message's
+# id. None by default, and Connect, the refresh and Account setup then say which row or field is
+# missing. Read from the primary hub alone.
+# sign_in: []
+#   example:
+#   sign_in:
+#     - key: google
+#       name: Google
+#       authorize: https://accounts.google.com/o/oauth2/v2/auth
+#       token: https://oauth2.googleapis.com/token
+#       calendar: https://www.googleapis.com/calendar/v3
+#       mail: https://www.googleapis.com/gmail/v1/users/me
+#       mail_link: 'https://mail.google.com/mail/u/0/#inbox/{id}'
+#       calendar_scope: https://www.googleapis.com/auth/calendar.readonly
+#       mail_scope: https://www.googleapis.com/auth/gmail.modify https://www.googleapis.com/auth/gmail.send
+#     - key: microsoft
+#       name: Microsoft
+#       authorize: https://login.microsoftonline.com/{tenant}/oauth2/v2.0/authorize
+#       token: https://login.microsoftonline.com/{tenant}/oauth2/v2.0/token
+#       calendar: https://graph.microsoft.com/v1.0
+#       mail: https://graph.microsoft.com/v1.0
+#       calendar_scope: Calendars.Read offline_access
+#       mail_scope: Mail.ReadWrite Mail.Send offline_access
+#     - key: github
+#       name: GitHub
+#       device_code: https://github.com/login/device/code
+#       token: https://github.com/login/oauth/access_token
+#       user: https://api.github.com/user
+#       register: https://github.com/settings/applications/new
+#       git_scope: repo
+#       credential_address: https://github.com
+
+# The folder of Node.js's releases Recover's cluster side downloads the build for the cluster from.
+# Empty by default, and Recover's Unpack on a cluster then says it is missing. Read from the
+# primary hub alone.
+# recover:
+#   node_download: ''
+#   example:
+#   recover:
+#     node_download: https://nodejs.org/dist/
 
 # The writing rules: the globs of the files they leave alone, and of the files that draw arrows
 # as icons, matched against the path from the file's root. Both empty by default.
@@ -397,7 +467,7 @@ The hub's own settings. A key of oculus's `config/catalogs/vocab.yml` set here i
 
 ## local.yml
 
-This machine's own values. Keep the file out of git. Oculus reads the keys from the primary hub's file only, except `accounts`, `calendars` and `mail`, whose rows are read from every hub. A path that starts with `~` is under your home folder; any other relative path is read from the hub's folder.
+This machine's own values. Keep the file out of git. Oculus reads the keys from the primary hub's file only, except `accounts`, `calendars`, `mail` and `clusters`, whose rows are read from every hub. A path that starts with `~` is under your home folder; any other relative path is read from the hub's folder.
 
 ```yaml
 # The port the server listens on. Read when the server starts.
@@ -407,8 +477,14 @@ This machine's own values. Keep the file out of git. Oculus reads the keys from 
 # hub, read from this hub's people first.
 # self: me
 
-# This machine's ssh alias for the cluster. Takes precedence over the cluster entry's host.
-# hpc_host: ""
+# This machine's account on each cluster of slurm.resource: the user name ssh logs in with and the
+# key file it offers, an absolute path or one under ~/. A cluster with no row connects as ssh's
+# own configuration says. Account setup's Save and Settings write the rows. The rows of every
+# hub's file are read, the primary hub's first.
+# clusters: []
+#   example:
+#   clusters:
+#     - { resource: my-cluster, user: me, key_file: ~/.ssh/id_ed25519_my-cluster }
 
 # The programs oculus starts.
 # claude_bin: claude
@@ -1142,14 +1218,14 @@ schema:
   - { field: key,    type: text,     primary_key: true, required: true, help: "The resource's key, used by compute and slurm.resource." }
   - { field: name,   type: text,     display: 1, required: true, help: "Name." }
   - { field: kind,   type: select,   options: [cluster, machine, storage], required: true, help: "Kind." }
-  - { field: host,   type: text,     help: "The ssh alias of a cluster or remote machine." }
+  - { field: host,   type: text,     help: "The host ssh connects to for a cluster or remote machine: an ssh alias, a DNS name or an address, with no user name." }
   - { field: access, type: textarea, help: "How it is reached." }
   - { field: links,  type: tags,     help: "Web addresses." }
 entries:
 #  - key: my-cluster              # required; what compute and slurm.resource name
 #    name: "My cluster"           # required
 #    kind: cluster                # required: cluster, machine or storage
-#    host: my-cluster             # the ssh alias
+#    host: my-cluster             # an ssh alias, a DNS name or an address
 #    access: ""
 #    links: []
 ```

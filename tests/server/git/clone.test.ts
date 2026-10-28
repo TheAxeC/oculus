@@ -11,18 +11,23 @@ import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect } from 'vitest';
 import { cloneRepository } from '../../../src/lib/server/git/clone/clone.ts';
+import { cloneGit } from '../../../src/lib/server/git/clone/clone-git.ts';
+import { noCredentials } from '../../fixtures/doubles.ts';
 import { plantFile, scratchDir, test } from '../../fixtures/scratch.ts';
 import { TEXT } from '../text.ts';
 import { git, isolateGit, remote } from './refs/repo.ts';
 
 isolateGit();
 
+/** The real git of a clone, with the credentials of a server signed in nowhere. */
+const run = cloneGit(noCredentials());
+
 describe('cloning into a clone folder', () => {
     test('makes a missing folder, checks the default branch out and tracks it', async () => {
         const url = remote({ 'a.txt': 'one\n' });
         const parent = scratchDir('oculus-clone-into-');
         const dir = join(parent, 'deep', 'er');
-        const done = await cloneRepository({ dir, url, text: TEXT });
+        const done = await cloneRepository({ dir, url, text: TEXT, git: run });
         expect(done).toMatchObject({ ok: true, output: 'main' });
         expect(readFileSync(join(dir, 'a.txt'), 'utf8')).toBe('one\n');
         expect(git(dir, 'rev-parse', '--abbrev-ref', '@{upstream}').trim()).toBe('origin/main');
@@ -32,7 +37,9 @@ describe('cloning into a clone folder', () => {
         const url = remote({ 'a.txt': 'one\n' });
         const dir = scratchDir('oculus-clone-held-');
         plantFile(dir, 'project.yml', 'title: kept\n');
-        expect(await cloneRepository({ dir, url, text: TEXT })).toMatchObject({ ok: true });
+        expect(await cloneRepository({ dir, url, text: TEXT, git: run })).toMatchObject({
+            ok: true
+        });
         expect(readFileSync(join(dir, 'project.yml'), 'utf8')).toBe('title: kept\n');
         expect(existsSync(join(dir, 'a.txt'))).toBe(true);
     });
@@ -40,7 +47,7 @@ describe('cloning into a clone folder', () => {
     test('follows a default branch that is not main', async () => {
         const url = remote({ 'a.txt': 'one\n' }, 'master');
         const dir = scratchDir('oculus-clone-master-');
-        expect(await cloneRepository({ dir, url, text: TEXT })).toMatchObject({
+        expect(await cloneRepository({ dir, url, text: TEXT, git: run })).toMatchObject({
             ok: true,
             output: 'master'
         });
@@ -52,7 +59,7 @@ describe('cloning into a clone folder', () => {
         const dir = scratchDir('oculus-clone-clash-');
         plantFile(dir, 'README.md', 'mine\n');
         plantFile(dir, 'docs/x.md', 'mine too\n');
-        const done = await cloneRepository({ dir, url, text: TEXT });
+        const done = await cloneRepository({ dir, url, text: TEXT, git: run });
         expect(done.ok).toBe(false);
         expect(done.error).toContain('README.md');
         expect(done.error).toContain('docs/x.md');
@@ -67,7 +74,7 @@ describe('cloning into a clone folder', () => {
         git(bare, 'init', '-q', '--bare', '-b', 'main');
         const parent = scratchDir('oculus-clone-into-');
         const dir = join(parent, 'new');
-        const done = await cloneRepository({ dir, url: bare, text: TEXT });
+        const done = await cloneRepository({ dir, url: bare, text: TEXT, git: run });
         expect(done.ok).toBe(false);
         expect(done.error).toContain(bare);
         expect(existsSync(dir)).toBe(false);
@@ -77,7 +84,7 @@ describe('cloning into a clone folder', () => {
         const parent = scratchDir('oculus-clone-into-');
         const dir = join(parent, 'new');
         const gone = join(parent, 'no-such-remote');
-        const done = await cloneRepository({ dir, url: gone, text: TEXT });
+        const done = await cloneRepository({ dir, url: gone, text: TEXT, git: run });
         expect(done.ok).toBe(false);
         expect(done.error).not.toBe('');
         expect(done.error).toMatch(/repository/i);
@@ -87,8 +94,10 @@ describe('cloning into a clone folder', () => {
     test('refuses a folder that holds a repository already', async () => {
         const url = remote({ 'a.txt': 'one\n' });
         const dir = scratchDir('oculus-clone-twice-');
-        expect(await cloneRepository({ dir, url, text: TEXT })).toMatchObject({ ok: true });
-        const again = await cloneRepository({ dir, url, text: TEXT });
+        expect(await cloneRepository({ dir, url, text: TEXT, git: run })).toMatchObject({
+            ok: true
+        });
+        const again = await cloneRepository({ dir, url, text: TEXT, git: run });
         expect(again.ok).toBe(false);
         expect(again.error).toContain(dir);
     });

@@ -35,13 +35,21 @@ import type {
     TriageFile,
     TriageNote
 } from '../../../data/model/index.ts';
-import type { MailSettings } from '../../../data/sources/config.ts';
+import type { MailSettings, SignInRow } from '../../../data/sources/config.ts';
 import type { Hub } from '../../core/channels.ts';
 import { POLL, pollFile, systemClock, type Clock, type FilePoll } from '../../core/file-poll.ts';
 import { hubMark } from '../../../data/accounts/connect.ts';
-import { accountLoop, signIn, takeLoopSettings, type AccountLoop } from '../connect/loop.ts';
+import {
+    accountLoop,
+    roundSignIn,
+    takeLoopSettings,
+    watcherControls,
+    type AccountLoop,
+    type WatcherHeld
+} from '../connect/loop.ts';
 import { hasOwnHalf } from '../connect/store.ts';
 import { ReadTimeout, timedFetcher, type Fetcher } from '../connect/oauth.ts';
+import { readAddress, type SignInWords } from '../connect/providers.ts';
 import { readGoogleMail } from './google.ts';
 import { readMicrosoftMail } from './microsoft.ts';
 import { plate, type Candidate, type MailReadArgs, type PlateThread } from './plate.ts';
@@ -53,6 +61,8 @@ export type MailOptions = {
     dir: string;
     /** The folder the providers' client halves live in, already resolved. */
     providerDir: string;
+    /** The hub's `sign_in` rows, which give each provider's addresses and scopes. */
+    providers: readonly SignInRow[];
     pollMin: number;
     perSignal: number;
     /**
@@ -73,8 +83,11 @@ export type MailOptions = {
     notesEvery?: number;
 };
 
-/** A request that had no answer in time, from the catalog, with `{0}` for the seconds waited. */
-export type MailWords = { timedOut: string };
+/**
+ * The catalog's sentences: a request that had no answer in time, with `{0}` for the seconds
+ * waited, and those of a provider with no `sign_in` row of the hub or a row lacking a field.
+ */
+export type MailWords = { timedOut: string; signIn: SignInWords };
 
 export type MailWatcher = {
     refresh(): Promise<void>;
@@ -85,6 +98,8 @@ export type MailWatcher = {
     setSettings(settings: MailSettings): void;
     /** Take new sentences, used from the next row that carries one. */
     setWords(words: MailWords): void;
+    /** Take the hub's `sign_in` rows as they now stand; changed rows read every account at once. */
+    setProviders(rows: readonly SignInRow[]): void;
     /** Publish again over the notes as they now are, without calling any provider. */
     republish(): void;
     /**
@@ -132,7 +147,8 @@ export function watchMail(hub: Hub, options: MailOptions): MailWatcher {
     const now = options.now ?? ((): Date => new Date());
     let settings: MailSettings = { pollMin: options.pollMin, perSignal: options.perSignal };
     let words = options.words;
-    let closed = false;
+    /** Whether the watcher is closed, and the hub's `sign_in` rows it reads its accounts with. */
+    const watched: WatcherHeld = { closed: false, rows: options.providers };
     /** Every account's state word and hint, and the plate its last good poll left. */
     const state = new Map<string, MailAccount>();
     const kept = new Map<string, Kept>();
@@ -226,14 +242,16 @@ export function watchMail(hub: Hub, options: MailOptions): MailWatcher {
             ...(held === undefined ? {} : { lastOk: held.lastOk })
         };
         try {
-            const signed = await signIn('mail', account, { dir, providerDir }, fetcher);
-            if ('waiting' in signed) {
-                state.set(key, { ...base, ...signed.waiting });
-                return true;
-            }
-            if (!live()) return true;
+            const signed = await roundSignIn('mail', account, { dir, providerDir }, fetcher, {
+                providers: { rows: watched.rows, words: words.signIn },
+                wait: (waiting) => state.set(key, { ...base, ...waiting }),
+                live
+            });
+            if (signed === null) return true;
             const args: MailReadArgs = {
                 token: signed.token,
+                base: readAddress(signed.row, 'mail'),
+                link: signed.row.mailLink ?? '',
                 key,
                 perSignal: settings.perSignal,
                 fetcher
@@ -305,7 +323,7 @@ export function watchMail(hub: Hub, options: MailOptions): MailWatcher {
         refresh: () => loop.run(true),
         republish: publish,
         setSettings(next): void {
-            if (closed) return;
+            if (watched.closed) return;
             const before = settings;
             settings = { ...next };
             takeLoopSettings(
@@ -316,15 +334,16 @@ export function watchMail(hub: Hub, options: MailOptions): MailWatcher {
             );
         },
         setWords(next): void {
-            if (!closed) words = { ...next };
+            if (!watched.closed) words = { ...next };
         },
-        setAccounts: loop.set,
-        close(): void {
-            closed = true;
-            loop.close();
-            notesPoll?.close();
-            notesPoll = null;
-        }
+        ...watcherControls(loop, watched, {
+            pollMin: () => settings.pollMin,
+            publish,
+            closing: () => {
+                notesPoll?.close();
+                notesPoll = null;
+            }
+        })
     };
 }
 

@@ -10,6 +10,7 @@ import { handleSetupWrite } from '../../../../src/lib/server/accounts/connect/se
 import { providerFile } from '../../../../src/lib/server/accounts/connect/store.ts';
 import { fsWrites } from '../../../../src/lib/server/core/json.ts';
 import { pagePost } from '../../../fixtures/doubles.ts';
+import { PROVIDERS } from '../providers.ts';
 import { it, scratchDir } from '../../../fixtures/scratch.ts';
 
 const TOKEN = 'the-write-token-of-this-case';
@@ -42,7 +43,22 @@ function post(path: string, body: unknown, token = TOKEN): Request {
 
 /** The setup endpoint's target over one machine. */
 function setupTarget(at: Machine, refresh = vi.fn(() => Promise.resolve())) {
-    return { token: TOKEN, providerDir: at.providerDir, port: 8792, writes: fsWrites(), refresh };
+    return {
+        token: TOKEN,
+        providerDir: at.providerDir,
+        port: 8792,
+        providers: PROVIDERS,
+        git: {
+            rows: PROVIDERS.rows,
+            words: PROVIDERS.words,
+            text: {},
+            providerDir: at.providerDir,
+            engine: at.root,
+            execPath: '/fixture/node'
+        },
+        writes: fsWrites(),
+        refresh
+    };
 }
 
 describe('the account setup page', () => {

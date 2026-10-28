@@ -34,6 +34,7 @@ import {
     typeChanged,
     type DiffHead
 } from './parse.ts';
+import type { GitCredentials } from './credentials.ts';
 import { MAX_ENTRIES } from './state.ts';
 import { words } from '../words.ts';
 import {
@@ -63,6 +64,7 @@ export const GRAPH_PAGE = 50;
  * range, and a repository with no commit answers git's own reason.
  */
 export async function graphPage(
+    credentials: GitCredentials,
     root: string,
     skip: number,
     text: Record<string, string>,
@@ -70,9 +72,10 @@ export async function graphPage(
 ): Promise<Read<GitGraphPage>> {
     const from = Number.isInteger(skip) && skip > 0 ? skip : 0;
     const ms = milliseconds(timeout);
-    const upstream = await commitOf(root, '@{upstream}', ms);
+    const upstream = await commitOf(credentials, root, '@{upstream}', ms);
     const tips = upstream === '' ? ['HEAD'] : ['HEAD', upstream];
     const done = await run(
+        credentials,
         root,
         [
             'log',
@@ -88,22 +91,28 @@ export async function graphPage(
     if (!done.ok) return refused(reasonOf(done, text));
     const rows = parseGraph(done.text);
     const first = from === 0 && upstream !== '';
-    const range = first ? await rangeOf(root, upstream, ms) : null;
+    const range = first ? await rangeOf(credentials, root, upstream, ms) : null;
     return {
         ok: true,
         value: {
             commits: rows.slice(0, GRAPH_PAGE),
             more: rows.length > GRAPH_PAGE,
-            incoming: first ? await between(root, `HEAD..${upstream}`, ms) : [],
-            outgoing: first ? await between(root, `${upstream}..HEAD`, ms) : [],
+            incoming: first ? await between(credentials, root, `HEAD..${upstream}`, ms) : [],
+            outgoing: first ? await between(credentials, root, `${upstream}..HEAD`, ms) : [],
             ...(range === null ? {} : { range })
         }
     };
 }
 
 /** The commit a ref names, or the empty string when it names none (a branch with no upstream). */
-async function commitOf(root: string, ref: string, timeout: number): Promise<string> {
-    const done = await run(root, ['rev-parse', '--verify', '--quiet', `${ref}^{commit}`], timeout);
+async function commitOf(
+    credentials: GitCredentials,
+    root: string,
+    ref: string,
+    timeout: number
+): Promise<string> {
+    const args = ['rev-parse', '--verify', '--quiet', `${ref}^{commit}`];
+    const done = await run(credentials, root, args, timeout);
     const hash = done.text.trim();
     return done.ok && HASH.test(hash) ? hash : '';
 }
@@ -115,20 +124,27 @@ async function commitOf(root: string, ref: string, timeout: number): Promise<str
  * histories with nothing in common.
  */
 async function rangeOf(
+    credentials: GitCredentials,
     root: string,
     upstream: string,
     timeout: number
 ): Promise<GitGraphRange | null> {
-    const head = await commitOf(root, 'HEAD', timeout);
-    const based = await run(root, ['merge-base', upstream, 'HEAD'], timeout);
+    const head = await commitOf(credentials, root, 'HEAD', timeout);
+    const based = await run(credentials, root, ['merge-base', upstream, 'HEAD'], timeout);
     const base = based.text.trim();
     if (head === '' || !based.ok || !HASH.test(base)) return null;
     return { base, incoming: upstream, outgoing: head };
 }
 
 /** The commits of one range around the upstream, capped; a range git cannot read is empty. */
-async function between(root: string, range: string, timeout: number): Promise<GitGraphCommit[]> {
+async function between(
+    credentials: GitCredentials,
+    root: string,
+    range: string,
+    timeout: number
+): Promise<GitGraphCommit[]> {
     const done = await run(
+        credentials,
         root,
         ['log', '--topo-order', GRAPH_FORMAT, `-${MAX_ENTRIES}`, range, '--'],
         timeout
@@ -138,6 +154,7 @@ async function between(root: string, range: string, timeout: number): Promise<Gi
 
 /** The paths one commit changed against its first parent, or against nothing for a root commit. */
 export async function commitFiles(
+    credentials: GitCredentials,
     root: string,
     hash: string,
     text: Record<string, string>,
@@ -145,6 +162,7 @@ export async function commitFiles(
 ): Promise<Read<GitCommitFile[]>> {
     if (!HASH.test(hash)) return refused(words(text, 'server.git.not_a_commit'));
     const done = await show(
+        credentials,
         root,
         ['--format=', '--name-status', '-z', '--diff-merges=first-parent', hash],
         milliseconds(timeout)
@@ -159,6 +177,7 @@ export async function commitFiles(
  * the commit renamed is diffed from its old path, which the commit's own file list names.
  */
 export async function commitDiff(
+    credentials: GitCredentials,
     root: string,
     hash: string,
     path: string,
@@ -169,6 +188,7 @@ export async function commitDiff(
     if (!pathInside(root, path)) return refused(words(text, 'server.git.path_outside', path));
     const ms = milliseconds(timeout);
     const listed = await show(
+        credentials,
         root,
         [
             '--format=',
@@ -185,12 +205,13 @@ export async function commitDiff(
     const renamed = parseNameStatus(listed.text).find((file) => file.path === path && file.from);
     const paths = renamed ? [renamed.from, path] : [path];
     const done = await show(
+        credentials,
         root,
         ['--format=', ...PANE_DIFF, '-M', '--diff-merges=first-parent', hash, '--', ...paths],
         ms
     );
     if (!done.ok) return refused(reasonOf(done, text));
-    return sidesOf(root, done.text, `${hash}^:`, `${hash}:`, text, ms);
+    return sidesOf(credentials, root, done.text, `${hash}^:`, `${hash}:`, text, ms);
 }
 
 /**
@@ -198,6 +219,7 @@ export async function commitDiff(
  * two versions of each; a stash that kept untracked files lists them after, each from nothing.
  */
 export async function stashDiff(
+    credentials: GitCredentials,
     root: string,
     ref: string,
     text: Record<string, string>,
@@ -205,18 +227,18 @@ export async function stashDiff(
 ): Promise<Read<DiffSides[]>> {
     if (!STASH_REF.test(ref)) return refused(words(text, 'server.git.not_a_stash'));
     const ms = milliseconds(timeout);
-    const done = await readDiff(root, [...PANE_DIFF, '-M', `${ref}^1`, ref], ms);
+    const done = await readDiff(credentials, root, [...PANE_DIFF, '-M', `${ref}^1`, ref], ms);
     if (!done.ok) return refused(reasonOf(done, text));
-    const tracked = await sidesOf(root, done.text, `${ref}^1:`, `${ref}:`, text, ms);
+    const tracked = await sidesOf(credentials, root, done.text, `${ref}^1:`, `${ref}:`, text, ms);
     if (!tracked.ok) return tracked;
-    const parents = await show(root, ['-s', '--format=%P', ref], ms);
+    const parents = await show(credentials, root, ['-s', '--format=%P', ref], ms);
     if (!parents.ok) return refused(reasonOf(parents, text));
     if (parents.text.trim().split(/\s+/).length < 3) return tracked;
     // The untracked files are a third parent with no parent of its own, so `show` lists each as
     // new.
-    const loose = await show(root, ['--format=', ...PANE_DIFF, `${ref}^3`], ms);
+    const loose = await show(credentials, root, ['--format=', ...PANE_DIFF, `${ref}^3`], ms);
     if (!loose.ok) return refused(reasonOf(loose, text));
-    const added = await sidesOf(root, loose.text, `${ref}^3:`, `${ref}^3:`, text, ms);
+    const added = await sidesOf(credentials, root, loose.text, `${ref}^3:`, `${ref}^3:`, text, ms);
     return added.ok ? { ok: true, value: [...tracked.value, ...added.value] } : added;
 }
 
@@ -233,6 +255,7 @@ export async function stashDiff(
  * side is which, and no line changes of git's, since its two hunks are each against nothing.
  */
 export async function sidesOf(
+    credentials: GitCredentials,
     root: string,
     diffText: string,
     before: string | null,
@@ -248,8 +271,8 @@ export async function sidesOf(
         const next = heads.at(at + 1);
         if (next !== undefined && typeChanged(file, next)) {
             at += 1;
-            const original = await sideOf(root, file, '-', before, text, ms);
-            const modified = await sideOf(root, next, '+', after, text, ms);
+            const original = await sideOf(credentials, root, file, '-', before, text, ms);
+            const modified = await sideOf(credentials, root, next, '+', after, text, ms);
             if (!original.ok) return refused(original.text);
             if (!modified.ok) return refused(modified.text);
             files.push({
@@ -272,10 +295,10 @@ export async function sidesOf(
         }
         const original = file.created
             ? NOTHING
-            : await version(root, before, file.oldPath, text, ms);
+            : await version(credentials, root, before, file.oldPath, text, ms);
         const modified = file.deleted
             ? NOTHING
-            : await version(root, after, file.newPath, text, ms);
+            : await version(credentials, root, after, file.newPath, text, ms);
         if (!original.ok) return refused(original.text);
         if (!modified.ok) return refused(modified.text);
         const changes = gitLineChanges(file.body, original.text, modified.text);
@@ -300,6 +323,7 @@ const NOTHING: Version = { ok: true, text: '', utf8: true };
  * version read whole where `at` names.
  */
 async function sideOf(
+    credentials: GitCredentials,
     root: string,
     file: DiffHead,
     mark: '-' | '+',
@@ -309,7 +333,8 @@ async function sideOf(
 ): Promise<Version> {
     if (file.binary) return NOTHING;
     if (file.submodule) return { ok: true, text: submoduleText(file, mark), utf8: true };
-    return version(root, at, mark === '-' ? file.oldPath : file.newPath, text, timeout);
+    const path = mark === '-' ? file.oldPath : file.newPath;
+    return version(credentials, root, at, path, text, timeout);
 }
 
 /** One version of a file: its text, and whether its bytes were UTF-8 before they were decoded. */
@@ -318,6 +343,7 @@ type Version = { ok: boolean; text: string; utf8: boolean };
 /** One file's text at a revision (`show <at><path>`), or as the worktree holds it for null; a
  * symbolic link is its target, as git stores it. */
 async function version(
+    credentials: GitCredentials,
     root: string,
     at: string | null,
     path: string,
@@ -328,7 +354,7 @@ async function version(
         return { ok: false, text: words(text, 'server.git.path_outside', path), utf8: true };
     }
     if (at !== null) {
-        const done = await show(root, ['--no-textconv', `${at}${path}`], timeout);
+        const done = await show(credentials, root, ['--no-textconv', `${at}${path}`], timeout);
         return done.ok ? done : { ok: false, text: reasonOf(done, text), utf8: true };
     }
     const full = join(root, path);
@@ -347,13 +373,14 @@ async function version(
  * Where a branch and a worktree's HEAD parted: the commit a worktree's three-dot diff starts at.
  */
 export async function mergeBase(
+    credentials: GitCredentials,
     root: string,
     from: string,
     text: Record<string, string>,
     timeout: number = TIMEOUT_MS
 ): Promise<Read<string>> {
     if (from.startsWith('-')) return refused(words(text, 'server.git.not_a_branch'));
-    const done = await run(root, ['merge-base', from, 'HEAD'], milliseconds(timeout));
+    const done = await run(credentials, root, ['merge-base', from, 'HEAD'], milliseconds(timeout));
     return done.ok ? { ok: true, value: done.text.trim() } : refused(reasonOf(done, text));
 }
 
@@ -363,6 +390,7 @@ export async function mergeBase(
  * so the diff pane withholds its partial patches from a file git converts.
  */
 export async function attributesOf(
+    credentials: GitCredentials,
     root: string,
     path: string,
     text: Record<string, string>,
@@ -371,12 +399,14 @@ export async function attributesOf(
     if (!pathInside(root, path)) return refused(words(text, 'server.git.path_outside', path));
     const ms = milliseconds(timeout);
     const checked = await run(
+        credentials,
         root,
         ['check-attr', 'filter', 'text', 'eol', 'working-tree-encoding', 'ident', '--', path],
         ms
     );
     if (!checked.ok) return refused(reasonOf(checked, text));
-    const autocrlf = await run(root, ['config', '--get', '--default=', 'core.autocrlf'], ms);
+    const crlf = ['config', '--get', '--default=', 'core.autocrlf'];
+    const autocrlf = await run(credentials, root, crlf, ms);
     if (!autocrlf.ok) return refused(reasonOf(autocrlf, text));
     return {
         ok: true,
@@ -389,20 +419,26 @@ export async function attributesOf(
  * is set, which includes a folder that is no repository (git answers it from the global
  * configuration), and null when the read fails (a timeout, git not run, or git exiting non-zero).
  */
-export async function sshCommand(root: string): Promise<string | null> {
-    const done = await run(root, ['config', '--get', '--default=', 'core.sshCommand'], TIMEOUT_MS);
+export async function sshCommand(
+    credentials: GitCredentials,
+    root: string
+): Promise<string | null> {
+    const args = ['config', '--get', '--default=', 'core.sshCommand'];
+    const done = await run(credentials, root, args, TIMEOUT_MS);
     return done.ok ? done.text.trim() : null;
 }
 
 /** Who last changed each line of one file in the worktree: the working tab's blame. */
 export async function blameOf(
+    credentials: GitCredentials,
     root: string,
     path: string,
     text: Record<string, string>,
     timeout: number = TIMEOUT_MS
 ): Promise<Read<GitBlameLine[]>> {
     if (!pathInside(root, path)) return refused(words(text, 'server.git.path_outside', path));
-    const done = await run(root, ['blame', '--porcelain', '--', path], milliseconds(timeout));
+    const args = ['blame', '--porcelain', '--', path];
+    const done = await run(credentials, root, args, milliseconds(timeout));
     return done.ok ? { ok: true, value: parseBlame(done.text) } : refused(reasonOf(done, text));
 }
 
@@ -411,6 +447,7 @@ export async function blameOf(
  * file git has no index entry for answer no marks, as VS Code draws none for them.
  */
 export async function lineMarks(
+    credentials: GitCredentials,
     root: string,
     path: string,
     text: Record<string, string>,
@@ -418,6 +455,7 @@ export async function lineMarks(
 ): Promise<Read<GitLineMark[]>> {
     if (!pathInside(root, path)) return refused(words(text, 'server.git.path_outside', path));
     const done = await readDiff(
+        credentials,
         root,
         ['--no-color', '--no-ext-diff', '-U0', '--', path],
         milliseconds(timeout)
@@ -431,6 +469,7 @@ export async function lineMarks(
  * added, or the other side of a path one side added) is empty.
  */
 export async function mergeSides(
+    credentials: GitCredentials,
     root: string,
     path: string,
     text: Record<string, string>,
@@ -441,7 +480,7 @@ export async function mergeSides(
     // A side that deleted the path has no stage in the index, which `show` answers with a failure;
     // an empty file is a stage that answers with no text.
     const side = async (stage: number): Promise<{ held: boolean; text: string }> => {
-        const done = await show(root, [`:${stage}:${path}`], ms);
+        const done = await show(credentials, root, [`:${stage}:${path}`], ms);
         return { held: done.ok, text: done.ok ? done.text : '' };
     };
     const [base, ours, theirs] = [await side(1), await side(2), await side(3)];

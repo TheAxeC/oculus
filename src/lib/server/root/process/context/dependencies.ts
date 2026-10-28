@@ -12,7 +12,14 @@ import {
     type CalendarWatcher
 } from '../../../accounts/calendar/poll.ts';
 import { watchMail, type MailOptions, type MailWatcher } from '../../../accounts/mail/poll.ts';
-import { watchHpc, type HpcOptions, type HpcWatcher } from '../../../machine/hpc/poll.ts';
+import {
+    watchHpc,
+    type ClusterOut,
+    type HpcOptions,
+    type HpcWatcher
+} from '../../../machine/hpc/poll.ts';
+import { resolveConnection } from '../../../machine/hpc/clusters/resolution.ts';
+import type { ClusterResolve } from '../../../machine/hpc/clusters/watch.ts';
 import { DebugClient, type DebugOptions } from '../../../machine/debug/session.ts';
 import { createRelay, type Relay } from '../../../machine/lsp/relay/relay.ts';
 import type { RelayOptions } from '../../../machine/lsp/relay/relay-options.ts';
@@ -79,7 +86,10 @@ export type ContextDependencies = {
     watchAutofetch: (hub: Hub, options: AutofetchOptions) => AutofetchWatcher;
     watchBookmarks: (hub: Hub, options: BookmarksWatchOptions) => Watcher;
     watchSchedules: (hub: Hub, options: SchedulesOptions) => SchedulesWatcher;
-    watchHpc: (hub: Hub, options: HpcOptions) => HpcWatcher;
+    /** The Live HPC watcher of one cluster, handing its payloads to `out`. */
+    watchHpc: (out: ClusterOut, options: HpcOptions) => HpcWatcher;
+    /** What a cluster's connection resolves to (`ssh -G`), shown in its Live HPC section. */
+    resolveConnection: ClusterResolve;
     watchProcesses: (hub: Hub, options: ProcessesOptions) => ProcessesWatcher;
     watchCalendar: (hub: Hub, options: CalendarOptions) => CalendarWatcher;
     watchMail: (hub: Hub, options: MailOptions) => MailWatcher;
@@ -110,6 +120,7 @@ export const contextDependencies: ContextDependencies = {
     watchBookmarks,
     watchSchedules,
     watchHpc,
+    resolveConnection: (connection) => resolveConnection(connection),
     watchProcesses,
     watchCalendar,
     watchMail,

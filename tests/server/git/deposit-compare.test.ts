@@ -29,9 +29,10 @@ import {
     switchBranch,
     sync
 } from '../../../src/lib/server/git/deposit/deposit.ts';
-import type { Plan } from '../../../src/lib/server/git/deposit/deposit.ts';
+import type { DepositOptions, Plan } from '../../../src/lib/server/git/deposit/deposit.ts';
 import type { GhRun } from '../../../src/lib/server/git/deposit/deposit-git.ts';
 import type { WriteTarget } from '../../../src/lib/server/edit/writes.ts';
+import { noCredentials } from '../../fixtures/doubles.ts';
 import { it, scratchDir, test } from '../../fixtures/scratch.ts';
 import {
     depositTarget,
@@ -75,8 +76,8 @@ function manifest(id: string, url = ''): string {
 const gh: GhRun = () =>
     Promise.resolve({ ok: false, output: '', error: 'could not resolve to a Repository' });
 
-function options(): { mirrors: string; into: WriteTarget; gh: GhRun; plans: Map<string, Plan> } {
-    return { mirrors, into, gh, plans };
+function options(): DepositOptions {
+    return { mirrors, into, gh, plans, credentials: noCredentials() };
 }
 
 const codeOf = (): string => join(hub, 'projects', 'alpha', 'code');

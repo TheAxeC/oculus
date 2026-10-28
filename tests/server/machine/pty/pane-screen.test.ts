@@ -19,6 +19,7 @@ import {
     stopTerminal
 } from '../../../../src/lib/server/machine/pty/sessions.ts';
 import { run } from '../../../../src/lib/server/machine/pty/tmux.ts';
+import { noCredentials } from '../../../fixtures/doubles.ts';
 import { it } from '../../../fixtures/scratch.ts';
 import { privateTmux, tmuxOptions } from './tmux-server.ts';
 
@@ -34,7 +35,7 @@ describe('a private tmux server', { tags: ['slow'] }, () => {
     it('sends a line the pane wrapped as one line', async () => {
         const started = await startTerminal(
             { kind: 'shell', cwd: server.dir, cols: 20, rows: 6, name: 'wrapped' },
-            { ...options, command: 'cat' }
+            { ...options, command: 'cat', credentials: noCredentials() }
         );
         try {
             await vi.waitFor(

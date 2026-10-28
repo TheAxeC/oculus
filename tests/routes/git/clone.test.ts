@@ -15,8 +15,9 @@ import { cloneGit } from '../../../src/lib/server/git/clone/clone-git.ts';
 import { handleClone, type CloneOptions } from '../../../src/lib/server/git/clone/clone-routes.ts';
 import { syncNested } from '../../../src/lib/server/git/clone/exclude.ts';
 import type { GhRun, GitRunner } from '../../../src/lib/server/git/deposit/deposit-git.ts';
-import { IGNORED } from '../../../src/lib/server/root/watch/git.ts';
+import { IGNORED } from '../../../src/lib/server/root/watch/repos/paths.ts';
 import { nestedRepositories } from '../../../src/lib/server/root/watch/repos/nested.ts';
+import { noCredentials } from '../../fixtures/doubles.ts';
 import { it, scratchDir } from '../../fixtures/scratch.ts';
 import { git, isolateGit, put } from '../../server/git/refs/repo.ts';
 
@@ -25,6 +26,9 @@ isolateGit();
 const TOKEN = mintToken();
 const TEXT = textCatalog(loadConfig(engineDir()).config);
 const HOST = '127.0.0.1:8791';
+
+/** The real git of a clone, with the credentials of a server signed in nowhere. */
+const GIT = cloneGit(noCredentials());
 
 /** A bare repository on `main` holding these files in one commit. */
 function remote(files: Record<string, string>): string {
@@ -64,6 +68,7 @@ function optionsFor(
 ): CloneOptions {
     return {
         text: TEXT,
+        git: GIT,
         project: (id) => (id === 'p' ? { repository: url === null ? {} : { url } } : null),
         rescan: () => {
             seen.rescans += 1;
@@ -113,7 +118,8 @@ describe('cloning the repository of a project into the folder the reader chose',
         expect(seen.rescans).toBe(1);
         expect(existsSync(join(dir, '.gitignore'))).toBe(false);
 
-        await syncNested([{ hub: dir, repositories: await nestedRepositories(dir, IGNORED) }]);
+        const repositories = await nestedRepositories(dir, IGNORED);
+        await syncNested([{ hub: dir, repositories }], GIT);
         const exclude = readFileSync(join(dir, '.git', 'info', 'exclude'), 'utf8');
         expect(exclude).toContain('/side-projects/p/\n');
         expect(git(dir, 'status', '--porcelain', '-uall')).toBe('');
@@ -238,7 +244,7 @@ describe('the folder a clone is running in', () => {
                 started();
                 await gate;
             }
-            return cloneGit(args, timeout, signal);
+            return GIT(args, timeout, signal);
         };
         return { run, started: begun, release };
     }
@@ -255,7 +261,7 @@ describe('the folder a clone is running in', () => {
         expect(second.status).toBe(400);
         expect(String(second.body.error)).toContain('is being cloned into');
         const third = await post(
-            { ...options, git: undefined },
+            { ...options, git: GIT },
             { action: 'clone', id: 'p', dir: other }
         );
         expect(third.status).toBe(200);

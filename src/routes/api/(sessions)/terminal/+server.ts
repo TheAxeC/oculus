@@ -31,6 +31,8 @@ export const POST: RequestHandler = ({ request, locals }) => {
         // The terminals the hosts of apps hold as streams, and the tasks they give as commands.
         streams: server.hosts.tools.streams,
         tasks: server.hosts.tools.tasks,
-        turns: server.terminals.turns
+        turns: server.terminals.turns,
+        // Every terminal a request starts carries the git credentials' GIT_CONFIG_* pairs.
+        credentials: server.credentials
     });
 };

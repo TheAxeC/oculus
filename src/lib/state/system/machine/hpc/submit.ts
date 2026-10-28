@@ -1,7 +1,8 @@
-// Layer 2, client state. What the page reads of Submit's two answers (api/hpc `plan` and `submit`):
-// the plan of what the job script would copy and run, the job id, or the refusal with its word. A
-// word the page does not know reads as `failed`, so a word only the server has says that Submit
-// failed. Each refusal's sentence is a catalog key read here as a literal.
+// Layer 2, client state. What the page reads of Submit's answers (api/hpc `clusters`, `plan` and
+// `submit`): the clusters the Submit box offers with the one picked at the start, the plan of what
+// the job script would copy and run on the picked cluster, the job id, or the refusal with its
+// word. A word the page does not know reads as `failed`, so a word only the server has says that
+// Submit failed. Each refusal's sentence is a catalog key read here as a literal.
 import { z } from 'zod';
 import type { SubmitPlan } from '../../../../data/model/index.ts';
 import { readAs } from '../../../../data/shapes/shapes.ts';
@@ -16,10 +17,24 @@ export type SubmitRefusal = { reason: string; detail: string };
 export type PlanResult = { plan: SubmitPlan } | { refused: SubmitRefusal };
 export type JobResult = { job: string } | { refused: SubmitRefusal };
 
+/** A cluster the Submit box offers: its key in `slurm.resource` and its name. */
+export type SubmitCluster = { resource: string; name: string };
+
+/** What the Submit box offers: the clusters, and the one picked at the start or none. */
+export type ChoicesResult =
+    { clusters: SubmitCluster[]; picked: string | null } | { refused: SubmitRefusal };
+
+const choicesShape = z.object({
+    status: z.literal('ok'),
+    clusters: z.array(z.object({ resource: z.string(), name: z.string() })),
+    picked: z.string().nullable()
+});
+
 const planShape: z.ZodType<SubmitPlan> = z.object({
     root: z.string(),
     path: z.string(),
     project: z.string(),
+    resource: z.string(),
     host: z.string(),
     source: z.string(),
     target: z.string(),
@@ -48,6 +63,7 @@ const SENTENCES: Record<string, (detail: string) => string> = {
     'no-project': () => t('source.submit_no_project'),
     'outside-code': () => t('source.submit_outside_code'),
     'bad-cluster': (detail) => t('source.submit_bad_cluster', detail),
+    'unknown-cluster': (detail) => t('source.submit_unknown_cluster', detail),
     'no-host': (detail) => t('source.submit_no_host', detail),
     'no-files': (detail) => t('source.submit_no_files', detail),
     'not-sent': () => t('source.submit_not_sent'),
@@ -72,6 +88,14 @@ function refusalOf(answer: unknown): { refused: SubmitRefusal } {
 export function planOf(answer: unknown): PlanResult {
     const plan = readAs(planAnswerShape, answer);
     return plan === null ? refusalOf(answer) : { plan: plan.plan };
+}
+
+/** The clusters an answer offers, or its refusal. */
+export function choicesOf(answer: unknown): ChoicesResult {
+    const choices = readAs(choicesShape, answer);
+    return choices === null
+        ? refusalOf(answer)
+        : { clusters: choices.clusters, picked: choices.picked };
 }
 
 /** The job an answer carries, or its refusal. */

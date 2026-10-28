@@ -2,7 +2,8 @@
 // request does is here and src/routes/api/(machine)/recover/+server.ts joins them, as the deposit
 // and Live HPC routes do.
 //
-// A GET answers one dataset on one target (`hub`, `key`, `target` = `mac` or `cluster`): its
+// A GET answers one dataset on one target (`hub`, `key`, `target` = `mac` or the key of a cluster
+// of `slurm.resource`, whose connection the cluster side runs on; another key is refused): its
 // folder, the access of its credentialed services, the plan of its files, its run and its log, and
 // the `recover` channel's version, so the view knows which pushed run readings are newer. The view
 // asks it when it opens, after a press and on its refresh control; between those it draws the
@@ -19,7 +20,12 @@
 import { json } from '@sveltejs/kit';
 import { writeFileSync, mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
-import type { Dataset, RecoverSource, RecoverState } from '../../../../data/model/index.ts';
+import {
+    MAC_TARGET as MAC,
+    type Dataset,
+    type RecoverSource,
+    type RecoverState
+} from '../../../../data/model/index.ts';
 import type { DownloadAccount } from '../../../../data/sources/config.ts';
 import { gatedBody } from '../../../core/auth.ts';
 import { accessGranted, accessOf } from './access.ts';
@@ -91,14 +97,29 @@ export type RecoverTarget = {
     downloads: () => DownloadAccount[];
     fetch: Fetcher;
     local: LocalDeps;
-    /** The cluster's runs, or the sentence for why no host is there. */
-    cluster: () => ClusterDeps | { missing: string };
+    /**
+     * The runs on the cluster `resource`, or the sentence for why there are none: `unlisted` for a
+     * key `slurm.resource` does not list, else a cluster with no usable host.
+     */
+    cluster: (resource: string) => ClusterDeps | { missing: string; unlisted?: true };
     /** The Recover watcher (live/watch.ts): told of each press, and its channel's version. */
     live: Pick<RecoverWatcher, 'changed' | 'version'>;
 };
 
 /** Nothing of an answer of this route is cached. */
 const NO_STORE = { 'cache-control': 'no-store' };
+
+/** Whether a request's target can name this Mac or a cluster; its listing is checked later. */
+function targetWord(where: unknown): where is string {
+    return typeof where === 'string' && (where === MAC || validName(where));
+}
+
+/** The refusal of a cluster with no runs: a key not listed, or a cluster with no usable host. */
+function noCluster(found: { missing: string; unlisted?: true }): Response {
+    return found.unlisted === true
+        ? refused('target', 400, { hint: found.missing })
+        : refused('host', 200, { hint: found.missing });
+}
 
 /** What the view is told of one dataset on one target. */
 type RecoverAnswer = RecoverState;
@@ -210,7 +231,7 @@ function asked(target: RecoverTarget, hub: string, key: string): { entry: Datase
 /** The plan of the files against the target's disk, the target's run and log. */
 async function onTarget(
     target: RecoverTarget,
-    where: 'mac' | 'cluster',
+    where: string,
     hub: string,
     key: string,
     entry: Dataset,
@@ -224,7 +245,7 @@ async function onTarget(
       }
     | Response
 > {
-    if (where === 'mac') {
+    if (where === MAC) {
         const place = localPlace(target.local.home, hub, key, entry.path);
         if (place === null) return refused('place', 400);
         const plan =
@@ -246,8 +267,8 @@ async function onTarget(
             log: logTail(recoverFiles(target.local.home, hub, key).log)
         };
     }
-    const deps = target.cluster();
-    if ('missing' in deps) return refused('host', 200, { hint: deps.missing });
+    const deps = target.cluster(where);
+    if ('missing' in deps) return noCluster(deps);
     const place = clusterPlace(hub, key, entry.path);
     if (place === null) return refused('place', 400);
     const disk = await clusterDisk(place, deps);
@@ -274,7 +295,7 @@ export async function handleRecoverState(
     const where = params.get('target');
     const hub = params.get('hub') ?? '';
     const key = params.get('key') ?? '';
-    if (where !== 'mac' && where !== 'cluster') return refused('target', 400);
+    if (!targetWord(where)) return refused('target', 400);
     const live = target.live.version();
     const found = asked(target, hub, key);
     if (found instanceof Response) return found;
@@ -303,7 +324,7 @@ export async function handleRecover(request: Request, target: RecoverTarget): Pr
     const where = body.target;
     if (
         (action !== 'fetch' && action !== 'verify' && action !== 'unpack' && action !== 'stop') ||
-        (where !== 'mac' && where !== 'cluster') ||
+        !targetWord(where) ||
         typeof hub !== 'string' ||
         typeof key !== 'string' ||
         (file !== undefined && typeof file !== 'string')
@@ -313,8 +334,10 @@ export async function handleRecover(request: Request, target: RecoverTarget): Pr
     const found = asked(target, hub, key);
     if (found instanceof Response) return found;
     const { entry } = found;
+    const cluster = where === MAC ? null : target.cluster(where);
+    if (cluster !== null && 'missing' in cluster) return noCluster(cluster);
     if (action === 'stop') {
-        const stopped = await stopOn(target, where, hub, key, entry);
+        const stopped = await stopOn(target, cluster, hub, key, entry);
         if (stopped) target.live.changed(hub, key, where);
         return json({ stopped });
     }
@@ -330,16 +353,19 @@ export async function handleRecover(request: Request, target: RecoverTarget): Pr
     const state = await onTarget(target, where, hub, key, entry, files);
     if (state instanceof Response) return state;
     const rows = state.plan?.rows ?? [];
-    const reason = await startOn(target, where, action, hub, key, entry, rows, file);
+    const reason = await startOn(target, cluster, action, hub, key, entry, rows, file);
     if (reason !== null) return refused(reason);
     target.live.changed(hub, key, where);
     return json({ started: action }, { headers: NO_STORE });
 }
 
-/** Start a run on its target; the reason it did not start, or null. */
+/**
+ * Start a run on its target, this Mac (`deps` null) or the cluster of `deps`; the reason it did
+ * not start, or null.
+ */
 async function startOn(
     target: RecoverTarget,
-    where: 'mac' | 'cluster',
+    deps: ClusterDeps | null,
     action: 'fetch' | 'verify' | 'unpack',
     hub: string,
     key: string,
@@ -347,7 +373,7 @@ async function startOn(
     rows: PlanRow[],
     file: string | undefined
 ): Promise<string | null> {
-    if (where === 'mac') {
+    if (deps === null) {
         const place = localPlace(target.local.home, hub, key, entry.path);
         if (place === null) return 'place';
         if (action === 'fetch') {
@@ -357,8 +383,6 @@ async function startOn(
             ? startLocalVerify(place, verifyList(rows), target.local)
             : startLocalUnpack(place, unpackList(rows), target.local);
     }
-    const deps = target.cluster();
-    if ('missing' in deps) return 'host';
     const place = clusterPlace(hub, key, entry.path);
     if (place === null) return 'place';
     if (action === 'fetch') {
@@ -372,19 +396,21 @@ async function startOn(
     );
 }
 
-/** Stop the dataset's run on its target; whether one was stopped. */
+/**
+ * Stop the dataset's run on its target, this Mac (`deps` null) or the cluster of `deps`; whether
+ * one was stopped.
+ */
 async function stopOn(
     target: RecoverTarget,
-    where: 'mac' | 'cluster',
+    deps: ClusterDeps | null,
     hub: string,
     key: string,
     entry: Dataset
 ): Promise<boolean> {
-    if (where === 'mac') {
+    if (deps === null) {
         const place = localPlace(target.local.home, hub, key, entry.path);
         return place !== null && stopLocal(place, target.local);
     }
-    const deps = target.cluster();
     const place = clusterPlace(hub, key, entry.path);
-    return !('missing' in deps) && place !== null && stopCluster(place, deps);
+    return place !== null && stopCluster(place, deps);
 }

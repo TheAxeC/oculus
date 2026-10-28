@@ -1,23 +1,98 @@
 // Layer 2, client state. Pure formatting, tone and word choices for the Live HPC view and the
-// status bar's HPC item keep display policy out of their components.
+// status bar's HPC item keep display policy out of their components, and the reading of each
+// cluster of the `hpc` channel's message.
 import {
     queueIsCurrent,
     type HpcJob,
+    type HpcMessage,
     type HpcPartition,
     type HpcPayload
 } from '../../../../data/model/index.ts';
 import { z } from 'zod';
-import { readAs } from '../../../../data/shapes/shapes.ts';
+import { anyNumberShape, readAs, unchangedAs } from '../../../../data/shapes/shapes.ts';
 import { clock } from '../../../shared/words/format.ts';
 import { t } from '../../../shared/words/text.ts';
+import { resolutionShape } from './setup.ts';
 export { queueIsCurrent } from '../../../../data/model/index.ts';
 export type {
     HpcJob,
+    HpcMessage,
     HpcPartition,
     HpcPayload,
     HpcQuotaItem,
     HpcRecent
 } from '../../../../data/model/index.ts';
+
+/** A list; its rows are read where a view draws them. */
+const listShape = z.instanceof(Array);
+
+/**
+ * One cluster of the message, its fields checked at their top level as the channel's schemas check
+ * a payload (state/client/shapes/payloads.ts).
+ */
+const clusterShape = unchangedAs<HpcPayload>(
+    z.object({
+        resource: z.string(),
+        name: z.string(),
+        status: z.string(),
+        hint: z.string().optional(),
+        failure: z.object({ kind: z.string(), fix: z.string() }).optional(),
+        jobs: listShape,
+        running: anyNumberShape,
+        pending: anyNumberShape,
+        total: anyNumberShape,
+        recent: listShape,
+        sinfo: listShape,
+        quota: listShape,
+        updated: z.string(),
+        lastOk: z.string().optional(),
+        stale: z
+            .object({
+                recent: z.string().nullable().optional(),
+                sinfo: z.string().nullable().optional()
+            })
+            .optional(),
+        pollMin: anyNumberShape,
+        retryMin: anyNumberShape,
+        host: z.string(),
+        resolution: resolutionShape.optional()
+    })
+);
+
+/** The clusters of a message, in `slurm.resource`'s order; one that does not read is left out. */
+export function clustersOf(message: HpcMessage | null): HpcPayload[] {
+    return (message?.clusters ?? []).flatMap((one) => readAs(clusterShape, one) ?? []);
+}
+
+/** The running and pending jobs of every cluster whose queue is current, summed. */
+export function summedCounts(clusters: readonly HpcPayload[]): {
+    running: number;
+    pending: number;
+    total: number;
+} {
+    return clusters
+        .filter((one) => queueIsCurrent(one))
+        .reduce(
+            (sum, one) => ({
+                running: sum.running + one.running,
+                pending: sum.pending + one.pending,
+                total: sum.total + one.total
+            }),
+            { running: 0, pending: 0, total: 0 }
+        );
+}
+
+/**
+ * Whether a cluster's last poll failed, which puts the status bar's HPC item in the warning tone:
+ * true for `unreachable`, `slurm_down` and `error`, false for every other status.
+ */
+export function failed(payload: Pick<HpcPayload, 'status'>): boolean {
+    return (
+        payload.status === 'unreachable' ||
+        payload.status === 'slurm_down' ||
+        payload.status === 'error'
+    );
+}
 
 export function walltimeFraction(job: HpcJob): number | null {
     if (job.state !== 'RUNNING') return null;
@@ -49,7 +124,7 @@ export function failureWords(
     payload: Pick<HpcPayload, 'status' | 'lastOk' | 'updated'>
 ): { word: string; sentence: string } | null {
     const { status } = payload;
-    if (status === 'starting' || status === 'ok' || status === 'unconfigured') return null;
+    if (status === 'starting' || status === 'ok') return null;
     if (queueIsCurrent(payload)) {
         return { word: t('hpc.slurm_down'), sentence: t('hpc.slurm_partial_msg') };
     }

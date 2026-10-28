@@ -18,16 +18,17 @@
 // The hub's exclude file is not touched here: the block that keeps a repository inside the hub out
 // of the hub's git is rewritten from the walk of the hub (exclude.ts).
 //
-// A command runs through the `GitRunner` the caller gives, the real git (clone-git.ts) when
-// absent, so a test drives the steps over scratch repositories or a runner of its own. Every
-// operation answers `{ ok, output, error }` and never throws. Nothing here is reachable from a
-// watcher or a timer: the callers are server/git/clone/clone-routes.ts, behind the write token.
+// A command runs through the `GitRunner` the caller gives, so a test drives the steps over scratch
+// repositories or a runner of its own; the routes give the real git (clone-git.ts) with the server
+// context's credentials. Every operation answers `{ ok, output, error }` and never throws. Nothing
+// here is reachable from a watcher or a timer: the callers are server/git/clone/clone-routes.ts,
+// behind the write token.
 
 import { existsSync, lstatSync, mkdirSync, rmSync, rmdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import type { GitRunner, Outcome } from '../deposit/deposit-git.ts';
 import { words } from '../../core/words.ts';
-import { cloneGit, LOCAL_TIMEOUT_MS, REMOTE_TIMEOUT_MS } from './clone-git.ts';
+import { LOCAL_TIMEOUT_MS, REMOTE_TIMEOUT_MS } from './clone-git.ts';
 
 /** What the clone of one project needs to know. */
 export type CloneRequest = {
@@ -36,7 +37,8 @@ export type CloneRequest = {
     /** The address of the remote. */
     url: string;
     text: Record<string, string>;
-    git?: GitRunner;
+    /** How git is run: clone-git.ts's `cloneGit` with the server context's credentials. */
+    git: GitRunner;
     signal?: AbortSignal;
 };
 
@@ -93,8 +95,7 @@ function undo(dir: string, made: string[]): void {
  * does not answer, has no branch, or tracks a file the folder holds.
  */
 export async function cloneRepository(request: CloneRequest): Promise<CloneOutcome> {
-    const { dir, url, text, signal } = request;
-    const git = request.git ?? cloneGit;
+    const { dir, url, text, signal, git } = request;
     const at = (...args: string[]): string[] => ['-C', dir, ...args];
     if (url.trim() === '') return refused(words(text, 'server.clone.no_url'));
     if (existsSync(join(dir, '.git')))

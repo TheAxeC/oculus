@@ -2,7 +2,7 @@
 // press on a log is as fast as the second.
 import { safePath, validId } from './actions.ts';
 import { dateFrom } from './parse.ts';
-import { run, type RunResult, type Runner } from './ssh.ts';
+import { run, type Connection, type RunResult, type Runner } from './ssh.ts';
 
 /**
  * The five rungs of the on-demand search in actions.ts, in the same order but without a job id in
@@ -164,7 +164,7 @@ export function pickFromListing(id: string, rungs: string[][]): string {
  * press pays the search it would have paid anyway.
  */
 export async function prewarmLogs(
-    host: string,
+    connection: Connection,
     ids: string[],
     days: number,
     runner: Runner = run
@@ -175,7 +175,7 @@ export async function prewarmLogs(
     let listed: RunResult;
     try {
         listed = await runner(
-            host,
+            connection,
             `sacct -X -u "$USER" -S ${dateFrom(days)} -o JobID,WorkDir%600 -Pn`,
             SACCT_TIMEOUT_MS
         );
@@ -208,7 +208,7 @@ export async function prewarmLogs(
     if (dirs.length === 0) return found;
     let listing: RunResult;
     try {
-        listing = await runner(host, listingCommand(dirs), listingTimeout(dirs.length));
+        listing = await runner(connection, listingCommand(dirs), listingTimeout(dirs.length));
     } catch {
         return found;
     }

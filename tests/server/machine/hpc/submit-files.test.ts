@@ -11,6 +11,7 @@ import { join } from 'node:path';
 import { describe, expect } from 'vitest';
 import { keptFiles } from '../../../../src/lib/server/core/git/files.ts';
 import { planSubmit } from '../../../../src/lib/server/machine/hpc/submit.ts';
+import { noCredentials } from '../../../fixtures/doubles.ts';
 import { it } from '../../../fixtures/scratch.ts';
 import { git, isolateGit } from '../../git/refs/repo.ts';
 import { SCRIPT, world } from './submit-world.ts';
@@ -69,10 +70,12 @@ const ROWS: Row[] = [
 
 describe('the files Submit sends from a code folder', () => {
     it.each(ROWS)('keeps, for $row, what the confirm counts', async ({ files, after, answer }) => {
-        const { code, deps } = world(files, 'id: p\n', keptFiles);
+        const kept = (root: string, text: Record<string, string>) =>
+            keptFiles(noCredentials(), root, text);
+        const { code, deps } = world(files, 'id: p\n', kept);
         git(code, 'init', '-q');
         after(code);
-        const planned = await planSubmit({ root: 'hub', path: PATH }, deps);
+        const planned = await planSubmit({ root: 'hub', path: PATH, resource: 'utwente' }, deps);
         if ('refused' in answer) {
             expect(planned).toEqual({ status: 'refused', reason: answer.refused });
         } else {

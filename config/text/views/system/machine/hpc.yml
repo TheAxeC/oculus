@@ -39,6 +39,7 @@ text:
         error_msg: The poll of the cluster failed.
         every: every {0}m
         fetch_failed: fetch failed
+        failure_told: '{0}. {1}'
         fetching: Fetching job status...
         footer: Polls squeue, sacct, sinfo, and disk quota on {0}. See the HPC how-to.
         gpu: gpu
@@ -49,8 +50,28 @@ text:
         host_no_cluster: the settings of this hub name no cluster (slurm.resource in .oculus/config.yml)
         host_not_cluster: '{0} is not a cluster'
         host_not_read: the resources registry is not read yet
+        host_not_listed: '{0} is not a cluster of slurm.resource in .oculus/config.yml'
         host_unknown: '{0} names no resource'
-        host_unusable: the host of the cluster {0} is not a usable ssh alias
+        host_unusable: the host of the cluster {0} is not a usable ssh alias, DNS name or address
+        host_changed: The host's key is not the one shown. Read it again and compare its fingerprints.
+        host_scan_failed: "The host's key could not be read: {0}"
+        key_exists: '{0} is there already and is used as it is.'
+        key_failed: 'ssh-keygen failed: {0}'
+        key_file_hub_refused: clusters.key_file gives {0}, which must lie under the home folder and end in a name of letters, digits, dots, dashes and underscores, not ending in .pub. Change clusters.key_file in Settings, or type a key file here.
+        key_file_refused: The key file {0} is refused. It must lie under the home folder and end in a name of letters, digits, dots, dashes and underscores, not ending in .pub.
+        key_made: The key {0} is made, with no passphrase.
+        key_missing: "{0} is not set, so Make key makes no key. Set {0} in Settings, in the hub's .oculus/config.yml."
+        put_done: The key is on the cluster.
+        put_failed: 'The key was not put on the cluster: {0}'
+        put_host_unknown: The host's key is not trusted yet. Confirm it in the step above first.
+        put_line_break: A password holding a line break is not sent.
+        put_more: The cluster asked for more than a password, such as a one-time code, so the key was not put on it.
+        put_no_key: No public key can be read from {0}.pub. Make the key first.
+        put_no_password: The cluster offers no password login, so the key cannot be put on it from here. Copy the public key below into ~/.ssh/authorized_keys on the cluster, as its access text says.
+        put_user: The user name must be letters, digits, dots, dashes and underscores, starting with a letter, a digit or an underscore.
+        row_no_primary: The workspace has no primary hub, whose .oculus/local.yml the row is written in.
+        row_not_in_primary: The primary hub's .oculus/local.yml holds no row of {0}; the row shown is another hub's, and is removed in that hub's file.
+        row_unwritable: 'The row could not be written: {0}'
         idle_count: '{0} idle'
         last_ok: last reached {0}
         live: live
@@ -84,6 +105,8 @@ text:
         queue_summary: '{0} running | {1} pending | {2} total'
         recent_title: Recent (finished)
         refresh_now: Refresh now
+        resolution: 'ssh connects to {0} as {1} on port {2}, offering {3}'
+        resolution_error: 'ssh -G could not read the connection: {0}'
         retrying: retrying every {0}m
         slurm_down: Slurm down
         slurm_down_msg: The cluster was reached over ssh, and Slurm did not answer.
@@ -91,7 +114,7 @@ text:
         stale_from: stale, from {0}
         stale_never: stale, not read since the server started
         tail: tail
-        toolbar: Live HPC controls
+        toolbar: Live HPC controls of {0}
         unconfigured: no cluster
         unreachable: unreachable
         unreachable_detail: '{0} `{1}`'

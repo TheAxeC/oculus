@@ -44,6 +44,7 @@ function serving(files: Record<string, string>, hubFiles: Record<string, string>
         calendars: [],
         mail: [],
         downloads: [],
+        clusters: [],
         self: ''
     };
     const state = plantState([{ name: 'hub', dir: hub }], 'hub');

@@ -1,24 +1,27 @@
-// Layer 2, server. The one POST handler for refresh, cancel, log, plan and submit applies the token
-// gate before dispatching an injected action target. `plan` answers what Submit would do with a
-// job script and `submit` runs the plan the reader confirmed (submit.ts); both answer a refusal as
-// a 200 with its word, and a body that is no such request as a 400.
+// Layer 2, server. The one POST handler for refresh, cancel, log, clusters, plan and submit applies
+// the token gate before dispatching an injected action target. A cancel and a log name the cluster
+// the job's row came from (`resource`) and act on that cluster's connection alone; a key that is
+// not one of `slurm.resource` is refused before any runner. `clusters` answers the clusters the
+// Submit box offers for a job script and the one picked at the start, `plan` what Submit would do
+// with the script on the cluster the reader picked, and `submit` runs the plan the reader confirmed
+// (submit.ts); a refusal is a 200 with its word, and a body that is no such request a 400.
 import { json } from '@sveltejs/kit';
 import { isMap } from '../../../data/helpers/guards.ts';
 import { gatedBody } from '../../core/auth.ts';
 import { cancel, validId } from './actions.ts';
-import { planSubmit, runSubmit, type SubmitDeps } from './submit.ts';
+import type { ClusterConnection } from './clusters/connections.ts';
+import { planSubmit, runSubmit, submitChoices, type SubmitDeps } from './submit.ts';
 
 export type HpcTarget = SubmitDeps & {
-    /**
-     * The ssh alias to act on, or the empty string with the sentence for why there is none (see
-     * host.ts). Read only for a cancel, a log or a plan, so a refresh runs whatever the host's
-     * sources say.
-     */
-    where: () => { host: string; missing?: string };
+    /** Poll every cluster now. */
+    refreshAll: () => Promise<void>;
     token: string;
     cancel?: typeof cancel;
-    /** The log read, over the context's remembered log paths. */
-    log: (host: string, id: string) => Promise<{ status: string; log: string; path: string }>;
+    /** The log read on one cluster, over that cluster's remembered log paths. */
+    log: (
+        connection: ClusterConnection,
+        id: string
+    ) => Promise<{ status: string; log: string; path: string }>;
 };
 
 const badAction = (): Response => json({ error: 'bad action or id' }, { status: 400 });
@@ -28,39 +31,60 @@ export async function handleHpc(request: Request, target: HpcTarget): Promise<Re
     if (body instanceof Response) return body;
     const action = body.action;
     if (action === 'refresh') {
-        await target.refresh();
+        const resource = body.resource;
+        if (resource === undefined) await target.refreshAll();
+        else if (typeof resource === 'string') await target.refresh(resource);
+        else return badAction();
         return json({ status: 'ok' });
     }
-    if (action === 'plan') {
+    if (action === 'clusters') {
         const { root, path } = body;
         if (typeof root !== 'string' || typeof path !== 'string') return badAction();
-        return json(await planSubmit({ root, path }, target));
+        return json(submitChoices({ root, path }, target));
+    }
+    if (action === 'plan') {
+        const { root, path, resource } = body;
+        if (typeof root !== 'string' || typeof path !== 'string' || typeof resource !== 'string') {
+            return badAction();
+        }
+        return json(await planSubmit({ root, path, resource }, target));
     }
     if (action === 'submit') {
         const { plan } = body;
-        if (!isMap(plan) || typeof plan.root !== 'string' || typeof plan.path !== 'string') {
+        if (
+            !isMap(plan) ||
+            typeof plan.root !== 'string' ||
+            typeof plan.path !== 'string' ||
+            typeof plan.resource !== 'string'
+        ) {
             return badAction();
         }
         const asked = {
-            plan: { ...plan, root: plan.root, path: plan.path },
+            plan: { ...plan, root: plan.root, path: plan.path, resource: plan.resource },
             confirm: body.confirm
         };
         return json(await runSubmit(asked, target));
     }
-    const id = body.id;
-    if ((action !== 'cancel' && action !== 'log') || typeof id !== 'string' || !validId(id))
+    const { id, resource } = body;
+    if (
+        (action !== 'cancel' && action !== 'log') ||
+        typeof id !== 'string' ||
+        !validId(id) ||
+        typeof resource !== 'string'
+    ) {
         return badAction();
-    const { host, missing } = target.where();
-    if (host === '') {
-        const hint = missing ?? '';
+    }
+    const found = target.connection(resource);
+    if ('missing' in found) {
+        const hint = found.missing;
         return json(
             action === 'log'
                 ? { status: 'error', hint, log: '', path: '' }
                 : { status: 'error', hint }
         );
     }
-    if (action === 'log') return json(await target.log(host, id));
-    const answer = await (target.cancel ?? cancel)(host, id);
-    if (answer.status === 'ok') await target.refresh();
+    if (action === 'log') return json(await target.log(found.connection, id));
+    const answer = await (target.cancel ?? cancel)(found.connection, id);
+    if (answer.status === 'ok') await target.refresh(resource);
     return json(answer);
 }

@@ -12,8 +12,10 @@
 import { existsSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { describe, expect } from 'vitest';
+import { cloneGit } from '../../../src/lib/server/git/clone/clone-git.ts';
 import { syncNested } from '../../../src/lib/server/git/clone/exclude.ts';
-import { IGNORED } from '../../../src/lib/server/root/watch/git.ts';
+import { noCredentials } from '../../fixtures/doubles.ts';
+import { IGNORED } from '../../../src/lib/server/root/watch/repos/paths.ts';
 import { nestedRepositories } from '../../../src/lib/server/root/watch/repos/nested.ts';
 import { scratchDir, test } from '../../fixtures/scratch.ts';
 import { git, isolateGit, put, repositoryAt } from './refs/repo.ts';
@@ -61,7 +63,7 @@ function excludeOf(dir: string): string {
 /** Walk the hub and write the block from what the walk found. */
 async function sync(dir: string): Promise<string[]> {
     const repositories = await nestedRepositories(dir, IGNORED);
-    return syncNested([{ hub: dir, repositories }]);
+    return syncNested([{ hub: dir, repositories }], cloneGit(noCredentials()));
 }
 
 describe('the block of an exclude file', () => {

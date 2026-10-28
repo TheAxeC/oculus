@@ -22,10 +22,11 @@ import { ignoredCache } from '../../../src/lib/server/files/fs.ts';
 import { pickerState } from '../../../src/lib/server/files/fs/picker.ts';
 import { submitState } from '../../../src/lib/server/machine/hpc/submit.ts';
 import { createRunningGit } from '../../../src/lib/server/core/git/running.ts';
+import { fetchFailures } from '../../../src/lib/server/core/git/state.ts';
 import { fsWrites } from '../../../src/lib/server/core/json.ts';
 import { LiteratureDesk } from '../../../src/lib/server/content/literature/desk.ts';
 import { wallpaperMemory } from '../../../src/lib/server/content/wallpaper.ts';
-import { idleDriver, noop } from '../../fixtures/doubles.ts';
+import { idleDriver, noCredentials, noop } from '../../fixtures/doubles.ts';
 import { configOptions } from '../../../src/lib/server/files/workspace/paths.ts';
 import { workspaceWith } from '../../fixtures/hubs/workspace.ts';
 import { hostsFixture } from '../machine/apps/world/hosts-fixture.ts';
@@ -42,6 +43,7 @@ export function contextFixture(overrides: Partial<ServerContext> = {}): ServerCo
         calendars: [],
         mail: [],
         downloads: [],
+        clusters: [],
         self: ''
     };
     const terminals = overrides.terminals ?? new Terminals(hub, { driver: idleDriver(), poll: 0 });
@@ -90,8 +92,9 @@ export function contextFixture(overrides: Partial<ServerContext> = {}): ServerCo
         git: { refresh: () => Promise.resolve(), close: noop },
         openFiles: { subscribed: () => [], unsubscribed: noop, remove: noop, close: noop },
         hpc: {
+            watcher: () => undefined,
+            resources: () => [],
             refresh: () => Promise.resolve(),
-            recover: () => Promise.resolve(),
             set: noop,
             close: noop
         },
@@ -100,6 +103,7 @@ export function contextFixture(overrides: Partial<ServerContext> = {}): ServerCo
             setAccounts: noop,
             setSettings: noop,
             setWords: noop,
+            setProviders: noop,
             close: noop
         },
         mail: {
@@ -108,6 +112,7 @@ export function contextFixture(overrides: Partial<ServerContext> = {}): ServerCo
             setAccounts: noop,
             setSettings: noop,
             setWords: noop,
+            setProviders: noop,
             close: noop
         },
         usage: { refresh: () => Promise.resolve(), setTiers: noop, close: noop },
@@ -187,6 +192,8 @@ export function contextFixture(overrides: Partial<ServerContext> = {}): ServerCo
         fsWrites: overrides.fsWrites ?? fsWrites(),
         opsWrites: overrides.opsWrites ?? fsWrites(),
         gitRunning: overrides.gitRunning ?? createRunningGit(),
+        fetchFailures: overrides.fetchFailures ?? fetchFailures(),
+        credentials: overrides.credentials ?? noCredentials(),
         cloning: overrides.cloning ?? new Set<string>(),
         ignoredCache: overrides.ignoredCache ?? ignoredCache(),
         folderPicker: overrides.folderPicker ?? pickerState(),
@@ -198,6 +205,13 @@ export function contextFixture(overrides: Partial<ServerContext> = {}): ServerCo
         literature: new LiteratureDesk(),
         mailDir: overrides.mailDir ?? '/fixture/mail',
         providerDir: overrides.providerDir ?? '/fixture/connect',
+        gitSignIns: overrides.gitSignIns ?? {
+            start: () =>
+                Promise.resolve({ code: '', address: '', state: 'failed', said: 'fixture' }),
+            flow: () => null,
+            cancel: noop,
+            close: noop
+        },
         accounts: overrides.accounts ?? {
             file: () => '/fixture/hub/.oculus/local.yml',
             fileOf: () => '/fixture/hub/.oculus/local.yml',
@@ -212,7 +226,7 @@ export function contextFixture(overrides: Partial<ServerContext> = {}): ServerCo
             local: localDeps('/fixture/home', new Map()),
             changed: noop,
             version: () => 0,
-            section: { command: () => '', take: noop },
+            section: () => ({ command: () => '', take: noop }),
             close: noop
         },
         rescan: noop,

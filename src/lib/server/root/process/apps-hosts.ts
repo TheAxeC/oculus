@@ -24,6 +24,7 @@ import {
     type LocalConfig
 } from '../../../data/sources/config.ts';
 import type { Hub } from '../../core/channels.ts';
+import type { GitCredentials } from '../../core/git/credentials.ts';
 import type { FsWrites } from '../../core/json.ts';
 import { words } from '../../core/words.ts';
 import { updateHostStore } from '../../edit/writes/apps/host-store.ts';
@@ -69,6 +70,8 @@ export type StartHostsOptions = {
     terminals: Terminals;
     /** The terminals the hosts hold as streams. */
     streamTerminals: StreamTerminalSet;
+    /** The server context's git credentials, which the hosts' tmux terminals carry. */
+    credentials: GitCredentials;
     /**
      * Settles when the server this context serves is listening; no host starts before it. A dev
      * reload makes the next server before it closes the old one, and listens on it only after the
@@ -126,7 +129,8 @@ export function startHosts(options: StartHostsOptions): StartedHosts {
             terminals: terminalsEnv({
                 terminals: options.terminals,
                 streams: options.streamTerminals,
-                shell: () => process.env.SHELL ?? '/bin/sh'
+                shell: () => process.env.SHELL ?? '/bin/sh',
+                credentials: options.credentials
             }),
             ops: (operation, app) =>
                 runOps(

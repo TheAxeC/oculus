@@ -72,10 +72,15 @@ function numberSchema(spec: FieldSpec): JsonSchema {
     return schema;
 }
 
-/** A text, held to its form. */
+/**
+ * A text, held to its form; the empty text also fits an entry that sets `empty`, as the value rule
+ * (catalog/value-rule.ts) reads it.
+ */
 function textSchema(spec: FieldSpec): JsonSchema {
     const schema: JsonSchema = { type: 'string' };
-    if (spec.form !== undefined) schema.pattern = FORM_PATTERNS[spec.form].source;
+    if (spec.form === undefined) return schema;
+    const form = FORM_PATTERNS[spec.form].source;
+    schema.pattern = spec.empty === undefined ? form : `^$|${form}`;
     return schema;
 }
 

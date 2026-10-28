@@ -211,7 +211,9 @@ export const HUB_FILES: Record<string, string> = {
 
 /** The engine's configuration files the index reads, planted with the keys the rows name. */
 export const ENGINE_FILES: Record<string, string> = {
-    'defaults/behavior.yml': ['usage_refresh_min: 10', 'slurm:', '  resource: hpc', ''].join('\n'),
+    'defaults/behavior.yml': ['usage_refresh_min: 10', 'slurm:', '  resource: [hpc]', ''].join(
+        '\n'
+    ),
     'defaults/sources.yml': ['scan:', '  - { dir: projects/manuscripts }', ''].join('\n'),
     'catalogs/vocab.yml': [
         'palette:',
@@ -268,7 +270,7 @@ export const WORKSPACE_TEXT = [
     'primary: hub',
     '# what this workspace sets',
     'settings:',
-    '  slurm: { resource: hpc }   # the cluster',
+    '  slurm: { resource: [hpc] }   # the cluster',
     '  code_theme: vscode-dark-2026',
     ''
 ].join('\n');

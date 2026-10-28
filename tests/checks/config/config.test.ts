@@ -297,7 +297,7 @@ describe("loadConfig with the hub's settings file", () => {
             hub,
             [
                 'slurm:',
-                '  resource: other',
+                '  resource: [other]',
                 'memories_dir: .oculus/photos',
                 'scan:',
                 '  - { dir: work }',
@@ -310,7 +310,7 @@ describe("loadConfig with the hub's settings file", () => {
         const { config, findings, from } = loadConfig(engine, { hub });
         expect(findings).toEqual([]);
         const slurm = config.slurm as Record<string, unknown>;
-        expect(slurm.resource).toBe('other');
+        expect(slurm.resource).toEqual(['other']);
         expect(slurm.poll_min).toBe(
             (loadConfig(engine).config.slurm as Record<string, unknown>).poll_min
         );
@@ -328,7 +328,7 @@ describe("loadConfig with the hub's settings file", () => {
         const hub = scratch();
         const file = settings(
             hub,
-            'theme: dark\nslurm: { resource: x, poll_min: 3 }\nvenues_file: other/venues.yml\ncareer_file: other/career.yml\n'
+            'theme: dark\nslurm: { resource: [x], poll_min: 3 }\nvenues_file: other/venues.yml\ncareer_file: other/career.yml\n'
         );
         const engineOnly = loadConfig(engine).config;
         const { config, findings } = loadConfig(engine, { hub });
@@ -346,7 +346,7 @@ describe("loadConfig with the hub's settings file", () => {
         expect(config.career_file).toBe('other/career.yml');
         const slurm = config.slurm as Record<string, unknown>;
         expect(slurm.poll_min).toBe((engineOnly.slurm as Record<string, unknown>).poll_min);
-        expect(slurm.resource).toBe('x');
+        expect(slurm.resource).toEqual(['x']);
     });
 
     it.each([
@@ -360,7 +360,7 @@ describe("loadConfig with the hub's settings file", () => {
         const file = settings(hub, body);
         const { config, findings } = loadConfig(engine, { hub });
         expect(findings.map((one) => [one.file, one.key])).toEqual([[file, '']]);
-        expect((config.slurm as Record<string, unknown>).resource).toBe('');
+        expect((config.slurm as Record<string, unknown>).resource).toEqual([]);
         const engineCareer = loadConfig(engine).config.career_file;
         expect(engineCareer).toBe('.oculus/data/academic/career.yml');
         expect(config.career_file).toBe(engineCareer);
@@ -587,12 +587,14 @@ describe('settingFindings', () => {
         expect(lines).toContain(
             'open.program_ext.pdf: open.program_ext.pdf must be an extension with its dot; the entry is not read'
         );
-        expect(lines).toContain('slurm.resource: slurm.resource must be text; the default is used');
+        expect(lines).toContain(
+            'slurm.resource: slurm.resource must be a list of words; the default is used'
+        );
         expect(settingFindings(shippedAt(engine), shipped)).toEqual([]);
     });
 
     it('reads an empty slurm.resource as no cluster, with no finding', () => {
-        expect(said({ ...shipped, slurm: { resource: '' } })).toEqual([]);
+        expect(said({ ...shipped, slurm: { resource: [] } })).toEqual([]);
     });
 
     it('says nothing for a merge that dropped behavior.yml, or for a map without the catalog', () => {

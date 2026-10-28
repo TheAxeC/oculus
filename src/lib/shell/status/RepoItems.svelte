@@ -28,6 +28,12 @@
     // button, in the focus order, so the focus the confirm gives back lands on it. The glyph is
     // still under the system's reduce-motion setting. The page says which of those actions runs
     // (`git.running`, asked for those actions alone), as it does the writes.
+    //
+    // While the repository's last fetch has failed (`fetchFailure` on the root's state, set by the
+    // automatic fetch and the reader's Fetch and cleared by a fetch, a pull or a sync that
+    // succeeds), the sync item is drawn in the warning tone and its hover words say the failure
+    // first: the kind and the fix the hub's `connections.failures` tell it apart by, else the line
+    // ssh or git wrote.
 
     import Confirm from '$lib/ui/controls/confirm/Confirm.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
@@ -35,11 +41,12 @@
     import type { MenuGroup, MenuItem } from '$lib/ui/menu/menu-items';
     import Menu from '$lib/ui/menu/Menu.svelte';
     import { Portal } from 'bits-ui';
-    import type {
-        RepoChoice,
-        RepoStatus,
-        RepoWhy,
-        StatusGit
+    import {
+        fetchFailureWords,
+        type RepoChoice,
+        type RepoStatus,
+        type RepoWhy,
+        type StatusGit
     } from '$lib/state/workbench/navigation/status';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
@@ -128,6 +135,20 @@
     /** Whether a publish runs on the repository, which the Publish item waits on. */
     const publishing = $derived(syncing?.action === 'publish');
 
+    /** The sync item's hover words while nothing runs: what a press pushes or syncs. */
+    function syncTip(): string {
+        if (!pushes) return t('statusbar.sync_tip_sync', repo.behind, repo.ahead, upstream);
+        return repo.ahead === 1
+            ? t('statusbar.sync_tip_push_one', upstream)
+            : t('statusbar.sync_tip_push', repo.ahead, upstream);
+    }
+
+    /** Hover words with the repository's failed fetch said first, when its last fetch failed. */
+    function failedWords(tip: string): string {
+        const failure = repo.fetchFailure;
+        return failure === null ? tip : `${fetchFailureWords(failure)}\n${tip}`;
+    }
+
     /** A branch picked from the list, checked out once the reader confirms. */
     function picked(name: string): void {
         if (name === repo.branch) return;
@@ -213,17 +234,12 @@
     </span>
 {/if}
 {#if sync && repo.tracked && !detached}
-    <span data-status="sync">
+    <span data-status="sync" data-fetch-failed={repo.fetchFailure === null ? undefined : ''}>
         <ToolButton
             label={t('statusbar.sync_name', repo.behind, repo.ahead)}
-            title={syncing !== null
-                ? syncing.words
-                : pushes
-                  ? repo.ahead === 1
-                      ? t('statusbar.sync_tip_push_one', upstream)
-                      : t('statusbar.sync_tip_push', repo.ahead, upstream)
-                  : t('statusbar.sync_tip_sync', repo.behind, repo.ahead, upstream)}
+            title={syncing !== null ? syncing.words : failedWords(syncTip())}
             status
+            warning={syncing === null && repo.fetchFailure !== null}
             onclick={synced}
         >
             {#if syncing !== null}

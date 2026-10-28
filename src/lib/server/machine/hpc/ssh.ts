@@ -1,11 +1,20 @@
 // Layer 2, server. The injected ssh runner for Live HPC and the ssh options every ssh this module
-// family starts is given, the copy's included. Its small result shape makes every caller testable
-// without opening a connection.
+// family starts is given, the copy's included. A command runs on a cluster's connection: its host,
+// and the user name and the key file of this machine's row for it, each its own argument, so no
+// value of a hub's or a machine's file is read by ssh as an option or a second word. Its small
+// result shape makes every caller testable without opening a connection.
 import { spawn } from 'node:child_process';
 
 export type RunResult = { stdout: string; stderr: string; code: number };
+
+/**
+ * What ssh connects with: the host (an ssh alias, a DNS name or an address, never starting with a
+ * dash), and the user name and the absolute path of the key file when this machine names them.
+ */
+export type Connection = { host: string; user?: string; keyFile?: string };
+
 export type Runner = (
-    host: string,
+    connection: Connection,
     remote: string,
     timeoutMs: number,
     signal?: AbortSignal
@@ -34,6 +43,25 @@ export const SSH_OPTIONS = [
 /** The ssh program, which rsync also starts for its transport. */
 export const SSH_PROGRAM = 'ssh';
 
+/**
+ * The options that log in as this machine's account on a cluster: `-l` and the user name, and `-i`
+ * with the key file and `IdentitiesOnly=yes`, so ssh offers that key and not every key its agent
+ * holds; none of either when the connection names none.
+ */
+export function loginOptions(connection: Connection): string[] {
+    return [
+        ...(connection.user === undefined ? [] : ['-l', connection.user]),
+        ...(connection.keyFile === undefined
+            ? []
+            : ['-i', connection.keyFile, '-o', 'IdentitiesOnly=yes'])
+    ];
+}
+
+/** The arguments of an ssh of this folder up to the remote command: the options, then the host. */
+export function sshArgs(connection: Connection): string[] {
+    return [...SSH_OPTIONS, ...loginOptions(connection), connection.host];
+}
+
 /** How long a child that ignored the polite signal is given before it is killed outright. */
 export const KILL_GRACE_MS = 2000;
 
@@ -59,7 +87,7 @@ export class RunTimeout extends Error {
  * `aborted`.
  */
 export function run(
-    host: string,
+    connection: Connection,
     remote: string,
     timeoutMs: number,
     signal?: AbortSignal
@@ -69,7 +97,7 @@ export function run(
             reject(new Error('aborted'));
             return;
         }
-        const child = spawn(SSH_PROGRAM, [...SSH_OPTIONS, host, remote]);
+        const child = spawn(SSH_PROGRAM, [...sshArgs(connection), remote]);
         let stdout = '';
         let stderr = '';
         let force: ReturnType<typeof setTimeout> | null = null;

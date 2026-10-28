@@ -29,8 +29,10 @@
 
 import { z } from 'zod';
 import type {
+    GitFetchFailure,
     GitPayload,
     HostInfo,
+    HpcMessage,
     HpcPayload,
     SessionsPayload,
     UsagePayload
@@ -48,7 +50,13 @@ import {
 } from '../../sources/repositories/repositories.ts';
 import type { RunningAction } from '../../sources/repositories/repositories.svelte.ts';
 import type { WriteAnswer } from '../../shared/stores/shapes.ts';
-import { failureWords, queueIsCurrent } from '../../system/machine/hpc/hpc.ts';
+import {
+    clustersOf,
+    failed,
+    failureWords,
+    queueIsCurrent,
+    summedCounts
+} from '../../system/machine/hpc/hpc.ts';
 import { PLAIN, registered } from '../../shared/words/languages.ts';
 import { t } from '../../shared/words/text.ts';
 import { byScore, fuzzyMatches, textParts, type TextPart } from '../../shared/words/fuzzy.ts';
@@ -66,8 +74,8 @@ export type RepoWhy = 'file' | 'workbench' | 'chosen' | 'hub';
  * `git` channel keys it by, the name the items call it, why it is the one followed, the branch
  * checked out (the empty string on a detached head, where `head` is the commit), whether the branch
  * tracks an upstream and the upstream's name where the branch listing gave it, how far the two are
- * apart, the branches the picker offers, and the remotes a branch with no upstream can be published
- * to.
+ * apart, the branches the picker offers, the remotes a branch with no upstream can be published
+ * to, and the last fetch of the root that failed, until a fetch, a pull or a sync succeeds.
  */
 export type RepoStatus = {
     root: string;
@@ -81,6 +89,7 @@ export type RepoStatus = {
     behind: number;
     branches: string[];
     remotes: string[];
+    fetchFailure: GitFetchFailure | null;
 };
 
 /** One repository the repository item's picker lists: its root on the channel and its label. */
@@ -113,8 +122,8 @@ export const NO_GIT: StatusGit = {
     show: () => undefined
 };
 
-/** The HPC poll's state in the bar's own few words, and in the queue's whole sentence. */
-export type HpcWords = { short: string; long: string };
+/** The HPC item's label, its tooltip's lines, and whether it is in the warning tone. */
+export type HpcWords = { short: string; long: string; warning: boolean };
 
 /** What the page hands the status bar. */
 export type StatusWords = {
@@ -138,7 +147,7 @@ export const NO_STATUS: StatusWords = {
     host: null,
     socket: '',
     usage: '',
-    hpc: { short: '', long: '' },
+    hpc: { short: '', long: '', warning: false },
     live: 0,
     findings: 0,
     problems: { errors: 0, warnings: 0, infos: 0 },
@@ -177,25 +186,47 @@ export function usageWords(usage: UsagePayload | null): string {
 }
 
 /**
- * The Live HPC poll: the state in the words its own head uses, and once it is live the running and
- * pending counts for the bar and the whole queue for the tooltip. A failed poll whose queue is this
- * poll's shows the counts too, and the tooltip adds its failure's sentence after the queue. Any
- * other failed poll shows its failure's word, and its failure's sentence in the tooltip. A hub that
- * names no cluster shows its sentence in the tooltip, with no failure word.
+ * One cluster's line of the tooltip: its name, then its queue once it is live, or its failure's
+ * words: the kind and the fix of the row of `connections.failures` that told it apart, else the
+ * failure's sentence. A failed poll whose queue is this poll's has its queue and its failure.
  */
-export function hpcWords(data: HpcPayload | null): HpcWords {
-    if (data === null || data.status === 'starting') {
-        return { short: t('statusbar.hpc_polling'), long: t('hpc.polling') };
+function clusterLine(one: HpcPayload): string {
+    if (one.status === 'starting') return t('statusbar.hpc_cluster', one.name, t('hpc.polling'));
+    const queue = t('hpc.queue_summary', one.running, one.pending, one.total);
+    const failed = failureWords(one);
+    if (failed === null) return t('statusbar.hpc_cluster', one.name, queue);
+    const why =
+        one.failure === undefined
+            ? failed.sentence
+            : t('hpc.failure_told', one.failure.kind, one.failure.fix);
+    const said = queueIsCurrent(one) ? [queue, why].join(` ${t('sessions.meta_sep')} `) : why;
+    return t('statusbar.hpc_cluster', one.name, said);
+}
+
+/**
+ * The Live HPC item over every cluster of `slurm.resource`: the running and pending counts summed
+ * over the clusters whose queue is current, and the tooltip one line per cluster (clusterLine).
+ * While no cluster's queue is current the item says the first failed cluster's failure word, and
+ * while every cluster starts it says it is polling. A hub that names no cluster shows its sentence
+ * in the tooltip, with no failure word. The item is in the warning tone while any cluster's poll
+ * failed.
+ */
+export function hpcWords(message: HpcMessage | null): HpcWords {
+    const clusters = clustersOf(message);
+    if (message === null) {
+        return { short: t('statusbar.hpc_polling'), long: t('hpc.polling'), warning: false };
     }
-    if (data.status === 'unconfigured') {
-        return { short: t('hpc.unconfigured'), long: data.hint ?? '' };
+    if (clusters.length === 0) {
+        return { short: t('hpc.unconfigured'), long: message.hint ?? '', warning: false };
     }
-    const failed = failureWords(data);
-    const short = t('statusbar.hpc_live', data.running, data.pending);
-    const queue = t('hpc.queue_summary', data.running, data.pending, data.total);
-    if (failed === null) return { short, long: queue };
-    if (!queueIsCurrent(data)) return { short: failed.word, long: failed.sentence };
-    return { short, long: [queue, failed.sentence].join(` ${t('sessions.meta_sep')} `) };
+    const warning = clusters.some(failed);
+    const long = clusters.map(clusterLine).join('\n');
+    if (clusters.some((one) => queueIsCurrent(one))) {
+        const sum = summedCounts(clusters);
+        return { short: t('statusbar.hpc_live', sum.running, sum.pending), long, warning };
+    }
+    const first = clusters.map(failureWords).find((one) => one !== null);
+    return { short: first?.word ?? t('statusbar.hpc_polling'), long, warning };
 }
 
 /**
@@ -297,7 +328,8 @@ function repositoryStatus(root: string, why: RepoWhy, git: GitPayload | null): R
         ahead: state.ahead,
         behind: state.behind,
         branches: state.branches.map((branch) => branch.name),
-        remotes: [...state.remotes]
+        remotes: [...state.remotes],
+        fetchFailure: state.fetchFailure ?? null
     };
 }
 
@@ -328,6 +360,17 @@ export type RepoRule = {
     folder: FolderRef | null;
     chosen: string | null;
 };
+
+/**
+ * The words a failed fetch is said in, by the sync item and on the repository in Source Control:
+ * the kind and the fix of the `connections.failures` row that told it apart, else the line ssh or
+ * git wrote.
+ */
+export function fetchFailureWords(failure: GitFetchFailure): string {
+    if (failure.kind === undefined) return t('repositories.fetch_failed', failure.line);
+    if (failure.fix === undefined) return t('repositories.fetch_failed', failure.kind);
+    return t('repositories.fetch_failed_kind', failure.kind, failure.fix);
+}
 
 /**
  * The repository the bar follows under a rule. A file in no repository, a root key that is neither
@@ -441,7 +484,7 @@ export function allFindings<T>(
 export function statusWords(
     state: SocketState,
     usage: UsagePayload | null,
-    hpc: HpcPayload | null,
+    hpc: HpcMessage | null,
     sessions: SessionsPayload | null,
     held: {
         host: HostInfo | null;

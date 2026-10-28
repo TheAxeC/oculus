@@ -95,7 +95,7 @@
         fs: { listing },
         layout: { openView, restateInstance },
         pages: { pageOf },
-        selectors: { collectionsOfKey, configMap, projects },
+        selectors: { collectionsOfKey, configMap, hubVocabs, projects },
         source: { unsavedFile },
         terminals: { composeAt },
         writes: { writeToken }
@@ -168,7 +168,9 @@
      */
     const referred = $derived(listsReferrers(collection ?? held.at(0) ?? null));
     const referrers = $derived(
-        snapshot === null || !referred ? [] : referrersOf(snapshot, configMap(), collectionKey, key)
+        snapshot === null || !referred
+            ? []
+            : referrersOf(snapshot, configMap(), collectionKey, key, hubVocabs()?.primary ?? null)
     );
 
     /** The entries of one folder of the hub, from the file store's listing of it. */

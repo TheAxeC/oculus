@@ -12,6 +12,7 @@ import { join, resolve, sep } from 'node:path';
 import { describe, expect } from 'vitest';
 import { ignoredCache, handleFsWrite, type FsTarget } from '../../../src/lib/server/files/fs.ts';
 import { fsWrites } from '../../../src/lib/server/core/json.ts';
+import { noCredentials } from '../../fixtures/doubles.ts';
 import { it, scratchDir } from '../../fixtures/scratch.ts';
 import { workspaceWith } from '../../fixtures/hubs/workspace.ts';
 
@@ -52,7 +53,8 @@ function target(): FsTarget & { hub: string } {
         machine: { set: [], defaults: {}, values: {}, hubs: {}, portRefused: null },
         bookmarks: join(store, 'bookmarks.yml'),
         writes: fsWrites(),
-        ignored: ignoredCache()
+        ignored: ignoredCache(),
+        credentials: noCredentials()
     };
 }
 

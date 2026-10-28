@@ -497,6 +497,7 @@ export type {
 } from './model-entities.ts';
 
 export type * from './machine/model-recover.ts';
+export { MAC_TARGET } from './machine/model-recover.ts';
 
 export type {
     Deck,
@@ -543,7 +544,11 @@ export type {
     ConnectKind,
     ConnectProvider,
     ConnectSetup,
-    ConnectStatus
+    ConnectStatus,
+    GitFlow,
+    GitHosts,
+    GitHostSetup,
+    GitUnlisted
 } from './accounts/model-connect.ts';
 
 export type {
@@ -582,6 +587,7 @@ export type {
     GitBlameLine,
     GitCommitFile,
     GitEntry,
+    GitFetchFailure,
     GitFileCommit,
     GitFilePage,
     GitGraphCommit,
@@ -599,15 +605,9 @@ export type {
     GitWorktree,
     GroupedSession,
     HookEvent,
-    HpcJob,
-    HpcPartition,
-    HpcPayload,
-    HpcQuotaItem,
-    HpcRecent,
     HubNotes,
     NoteEntry,
     NoteLinkRow,
-    SubmitPlan,
     UsageAccount,
     UsageAccountConfig,
     UsageDay,
@@ -631,7 +631,22 @@ export type {
     TurnTool,
     Workspace
 } from './model-sessions.ts';
-export { BRANCH_NOT_MERGED, queueIsCurrent } from './model-sessions.ts';
+export { BRANCH_NOT_MERGED } from './model-sessions.ts';
+export type {
+    ClusterResolution,
+    ClusterRow,
+    ClusterSetup,
+    ClusterSetupCluster,
+    HpcJob,
+    HpcMessage,
+    HpcPartition,
+    HpcPayload,
+    HpcQuotaItem,
+    HpcRecent,
+    SubmitPlan,
+    ToldFailure
+} from './machine/model-hpc.ts';
+export { queueIsCurrent } from './machine/model-hpc.ts';
 
 export { DECK_GAP } from './model-deck.ts';
 export { confirmValues } from './model-agents.ts';

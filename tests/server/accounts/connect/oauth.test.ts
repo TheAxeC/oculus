@@ -10,6 +10,7 @@ import { describe, expect, vi } from 'vitest';
 import type { CalendarAccountConfig } from '../../../../src/lib/data/model/index.ts';
 import {
     ConnectStates,
+    accessToken,
     callbackPath,
     callbackUrl,
     type Fetcher
@@ -21,6 +22,7 @@ import {
 import { credentialFile } from '../../../../src/lib/server/accounts/connect/store.ts';
 import { noop } from '../../../fixtures/doubles.ts';
 import { bookIn } from '../book.ts';
+import { PROVIDERS } from '../providers.ts';
 import { it, scratchDir } from '../../../fixtures/scratch.ts';
 
 const TOKEN = 'the-write-token-of-this-case';
@@ -92,6 +94,7 @@ function target(dir: string, states: ConnectStates, opened: string[]) {
         dir,
         // A provider folder this case never fills, so every half is the account file's own.
         providerDir: join(dir, 'connect'),
+        providers: PROVIDERS,
         book: bookIn(dir),
         redirect: callbackUrl(8791, 'calendar'),
         states,
@@ -107,6 +110,7 @@ function callbackTarget(dir: string, states: ConnectStates, fetcher: Fetcher, re
         accounts: ACCOUNTS,
         dir,
         providerDir: join(dir, 'connect'),
+        providers: PROVIDERS,
         states,
         fetcher,
         refresh: () => {
@@ -147,4 +151,65 @@ describe('the callback the provider sends the browser to', () => {
         expect(fetcher).not.toHaveBeenCalled();
         expect(tokenIn(file)).toBe(undefined);
     });
+});
+
+describe('the refresh of a Google and a Microsoft account', () => {
+    const REFRESH = 'the-refresh-token-of-this-case';
+    const [google, microsoft] = PROVIDERS.rows;
+
+    it.each([
+        {
+            name: 'Google',
+            row: google,
+            credentials: {
+                provider: 'google',
+                clientId: 'g-id',
+                clientSecret: 'g-secret'
+            } as const,
+            address: 'https://oauth2.googleapis.com/token'
+        },
+        {
+            name: 'Microsoft',
+            row: microsoft,
+            credentials: {
+                provider: 'microsoft',
+                clientId: 'm-id',
+                tenant: 'uni.example'
+            } as const,
+            address: 'https://login.microsoftonline.com/uni.example/oauth2/v2.0/token'
+        }
+    ])(
+        "sends the refresh token of $name only to its row's token address, in the body and never in the address or the error (G135)",
+        async ({ row, credentials, address }) => {
+            const answers = [
+                Response.json({ access_token: 'access' }),
+                Response.json(
+                    { error: 'invalid_grant', error_description: REFRESH },
+                    { status: 400 }
+                )
+            ];
+            const calls: { address: string; body: string }[] = [];
+            const fetcher = vi.fn<Fetcher>((input, init) => {
+                calls.push({
+                    address: input instanceof Request ? input.url : input.toString(),
+                    body: typeof init?.body === 'string' ? init.body : ''
+                });
+                return Promise.resolve(answers[calls.length - 1]);
+            });
+            expect(await accessToken('calendar', credentials, row, REFRESH, fetcher)).toBe(
+                'access'
+            );
+            const said = await accessToken('calendar', credentials, row, REFRESH, fetcher).then(
+                () => '',
+                (error: unknown) => String(error)
+            );
+            expect(said).toContain('400 invalid_grant');
+            expect(said).not.toContain(REFRESH);
+            expect(calls.map((one) => one.address)).toEqual([address, address]);
+            for (const one of calls) {
+                expect(one.address).not.toContain(REFRESH);
+                expect(new URLSearchParams(one.body).get('refresh_token')).toBe(REFRESH);
+            }
+        }
+    );
 });

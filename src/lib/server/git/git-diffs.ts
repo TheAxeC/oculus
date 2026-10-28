@@ -15,17 +15,18 @@ import {
     failed,
     revParse,
     worktreeUnder,
+    type GitAt,
     type Outcome
 } from './git-write.ts';
 
 /** What is staged right now, which is what the suggested message is written from. */
 export async function stagedDiff(
-    root: string,
+    at: GitAt,
     text: Record<string, string>,
     roots: string[] = allowedRoots()
 ): Promise<Outcome> {
-    if (!permitted(root, roots)) return failed(words(text, 'server.git.unknown_directory'));
-    return diff(root, ['--cached']);
+    if (!permitted(at.root, roots)) return failed(words(text, 'server.git.unknown_directory'));
+    return diff(at, ['--cached']);
 }
 
 /**
@@ -37,19 +38,19 @@ export async function stagedDiff(
  * worktree, the side the reader's edits go to.
  */
 export async function fileDiff(
-    root: string,
+    at: GitAt,
     path: string,
     staged: boolean,
     text: Record<string, string>,
     roots: string[] = allowedRoots()
 ): Promise<Outcome & { ours: boolean }> {
-    const wrong = checkPaths(root, [path], text, roots);
+    const wrong = checkPaths(at.root, [path], text, roots);
     if (wrong !== '') return { ...failed(wrong), ours: false };
     const flags = [...PANE_DIFF, '--', path];
-    const read = await diff(root, [...(staged ? ['--cached'] : []), ...flags]);
+    const read = await diff(at, [...(staged ? ['--cached'] : []), ...flags]);
     if (staged || !read.ok || !read.output.startsWith('diff --cc '))
         return { ...read, ours: false };
-    return { ...(await diff(root, ['--ours', ...flags])), ours: true };
+    return { ...(await diff(at, ['--ours', ...flags])), ours: true };
 }
 
 /**
@@ -62,32 +63,35 @@ export async function fileDiff(
  * answer with itself and every worktree this hub makes would be refused.
  */
 export async function worktreeFrom(
-    root: string,
+    at: GitAt,
     path: string,
     text: Record<string, string>,
     roots: string[] = allowedRoots()
 ): Promise<Outcome> {
-    if (!permitted(root, roots)) return failed(words(text, 'server.git.unknown_directory'));
-    if (!worktreeUnder(root, path)) return failed(words(text, 'server.git.outside_worktrees'));
-    const head = await revParse(root, ['--abbrev-ref', 'HEAD']);
+    if (!permitted(at.root, roots)) return failed(words(text, 'server.git.unknown_directory'));
+    if (!worktreeUnder(at.root, path)) return failed(words(text, 'server.git.outside_worktrees'));
+    const head = await revParse(at, ['--abbrev-ref', 'HEAD']);
     if (!head.ok) return head;
     const name = head.output.trim();
-    const from = name === '' || name === 'HEAD' ? await revParse(root, ['HEAD']) : head;
+    const from = name === '' || name === 'HEAD' ? await revParse(at, ['HEAD']) : head;
     return from.ok ? { ...from, output: from.output.trim() } : from;
 }
 
 /** What a worktree holds that the repository's checked-out branch does not, as a diff. */
 export async function worktreeDiff(
-    root: string,
+    at: GitAt,
     path: string,
     text: Record<string, string>,
     roots: string[] = allowedRoots()
 ): Promise<Outcome> {
-    const from = await worktreeFrom(root, path, text, roots);
-    return from.ok ? worktreeRange(path, from.output) : from;
+    const from = await worktreeFrom(at, path, text, roots);
+    return from.ok ? worktreeRange({ ...at, root: path }, from.output) : from;
 }
 
-/** The three-dot diff of a worktree from the branch `worktreeFrom` named, which it checked. */
-export function worktreeRange(path: string, from: string): Promise<Outcome> {
-    return diff(path, [...PANE_DIFF, `${from}...HEAD`]);
+/**
+ * The three-dot diff of a worktree, the root of `tree`, from the branch `worktreeFrom` named,
+ * which it checked.
+ */
+export function worktreeRange(tree: GitAt, from: string): Promise<Outcome> {
+    return diff(tree, [...PANE_DIFF, `${from}...HEAD`]);
 }

@@ -40,6 +40,7 @@ function options(extra: Partial<GitOptions> = {}): GitOptions {
             return Promise.resolve({ ok: true, output: 'done', error: '' });
         },
         refresh: (root) => SERVER.git.refresh(root),
+        credentials: SERVER.credentials,
         ...extra
     };
 }

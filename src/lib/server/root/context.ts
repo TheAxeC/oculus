@@ -19,6 +19,7 @@ import {
     configDir,
     iconSet,
     type IconMemory,
+    failureRows,
     loadConfig,
     localFile,
     localSentence,
@@ -29,6 +30,7 @@ import {
     latexFormatting,
     lintSettings,
     refreshSettings,
+    signInRows,
     slurmSettings,
     textCatalog,
     usageTiers,
@@ -39,7 +41,8 @@ import type { HostInfo, Snapshot } from '../../data/model/index.ts';
 import { words } from '../core/words.ts';
 import type { Finding, FilesPayload } from '../../data/model/index.ts';
 import { defaultConnectDir } from '../accounts/connect/store.ts';
-import { ConnectStates } from '../accounts/connect/oauth.ts';
+import { ConnectStates, timedFetcher } from '../accounts/connect/oauth.ts';
+import { gitSignIns, sleep } from '../accounts/connect/git/signins.ts';
 import { machineOpener, pathOpener } from '../files/open.ts';
 import { LiteratureDesk } from '../content/literature/desk.ts';
 import { target, type Carried } from '../edit/writes.ts';
@@ -53,9 +56,16 @@ import { closePicker, pickerState } from '../files/fs/picker.ts';
 import { submitState } from '../machine/hpc/submit.ts';
 import { fsWrites } from '../core/json.ts';
 import { createRunningGit } from '../core/git/running.ts';
+import { fetchFailures } from '../core/git/state.ts';
+import { gitCredentials } from '../core/git/credentials.ts';
 import { expandHome } from '../files/workspace/folders.ts';
 import { wallpaperMemory } from '../content/wallpaper.ts';
-import { hostWordsOf, hpcSettingsOf, latestResources } from '../machine/hpc/host.ts';
+import {
+    clusterConnections,
+    clustersOf,
+    hostWordsOf,
+    latestResources
+} from '../machine/hpc/clusters/connections.ts';
 import { markdownExtensions } from '../machine/lsp/adapters/markdown/settings.ts';
 import { defaultLspPath } from '../machine/lsp/choices.ts';
 import { debugControl } from '../machine/debug/session/start.ts';
@@ -82,11 +92,15 @@ import type { OpenWorkspace } from '../files/workspace/open.ts';
 import { configOptions, perOculus } from '../files/workspace/paths.ts';
 import { noApps, type AppsHeld } from '../machine/apps/read/held.ts';
 import { languageSource, languageStamp } from '../machine/apps/routes/localization.ts';
-import { stateFileOf } from '../files/workspace/state.ts';
 import { liveSettings, type LiveSettings } from './live-settings.ts';
 import { createConfigCache } from './process/config-cache.ts';
 import { createMachine } from './process/context/machine.ts';
-import { newWorkspaceFindings, reportFindings, startFindings } from './process/context/findings.ts';
+import {
+    newWorkspaceFindings,
+    reportFindings,
+    restartFindings,
+    startFindings
+} from './process/context/findings.ts';
 import { createPortMover } from './process/context/port.ts';
 import { createRebuild, reasonOf, type Parts } from './process/context/rebuild.ts';
 import { contextDependencies, type ContextDependencies } from './process/context/dependencies.ts';
@@ -149,19 +163,8 @@ export function createServerContext(
     // The findings the keys held at their running value are said in: a restart takes the new value.
     // Each is against the primary's `local.yml`, or with no primary against the open workspace file
     // (the state file while the workspace is unsaved), and names the key, never a value of a file.
-    const heldFindings = (): Finding[] => {
-        const now = open();
-        const text = textCatalog(configCache.read().config);
-        const file =
-            now.primaryDir !== null
-                ? localFile(now.primaryDir)
-                : (now.file ?? stateFileOf(make.stateFolder()));
-        return machine.heldBack().map((one) => ({
-            file,
-            key: one.file,
-            message: words(text, 'server.workspace.restart_key', one.file)
-        }));
-    };
+    const heldFindings = (): Finding[] =>
+        restartFindings(open(), make.stateFolder(), machine.heldBack(), configCache.read().config);
     const heardHeld = new Set<() => void>();
     const followWorkspace = (listener: () => void): (() => void) => {
         const unsubscribe = workspace.subscribe(() => listener());
@@ -213,6 +216,7 @@ export function createServerContext(
     const mailConfig = mailSettings(config);
     const tiers = usageTiers(config);
     const refresh = refreshSettings(config);
+    const signIn = signInRows(config);
     // The open and LaTeX endpoints read their keys again at every request, so a key the catalog
     // holds no rule for stops the server here rather than reaching a tab.
     for (const read of [openSettings, latexFormatting, latexBuild, lintSettings]) read(config);
@@ -296,6 +300,9 @@ export function createServerContext(
         if (built.parts === undefined) throw new Error('the watchers are not built yet');
         return built.parts;
     };
+    // The one owner of the git credentials: every git oculus starts and every terminal is handed
+    // these, read from the `sign_in` rows in force at each start (live-settings.ts holds them).
+    const credentials = gitCredentials(() => built.live?.signIn() ?? signIn);
     // The workspace is taken from the holder at the call, as the git watcher's roots are, so a
     // folder added to the open file while the server runs is served when the next rebuild asks.
     // `nested` holds the repositories the git watcher last listed (the portfolio's clones and the
@@ -322,7 +329,7 @@ export function createServerContext(
             },
             {
                 built: () => {
-                    built.live?.hostChanged();
+                    built.live?.clustersChanged();
                     relay.settingsChanged();
                     if (!lintSettings(configCache.quiet().config).on.eslint) eslint.endAll();
                     followPaths?.();
@@ -351,16 +358,19 @@ export function createServerContext(
             terminals,
             hooks: store
         });
+    const gitFetchFailures = fetchFailures();
     const startGitWatcher = (): GitWatcher =>
         startGit(
             make,
             hub,
             () => configCache.quiet().config,
             workspace,
-            nestedFound(nested, () => owned().portfolio.rescan())
+            nestedFound(nested, () => owned().portfolio.rescan(), credentials),
+            gitFetchFailures,
+            credentials
         );
     const startAutofetchWatcher = (): AutofetchWatcher =>
-        startAutofetch(make, hub, () => owned().git);
+        startAutofetch(make, hub, () => owned().git, gitFetchFailures, credentials);
     const paths = () => perOculus(open().primaryDir, configCache.quiet().config);
     // The per-oculus paths the watchers were built with. Every rebuild of the portfolio compares
     // them with the merged config's, so a change of `bookmarks`, `schedules` or `apps_dir` in the
@@ -391,7 +401,8 @@ export function createServerContext(
                     claudeBin: local.claudeBin,
                     text: textCatalog(configCache.quiet().config),
                     rootsFor,
-                    approvalsFor: () => local.approvals ?? defaultApprovalsPath()
+                    approvalsFor: () => local.approvals ?? defaultApprovalsPath(),
+                    credentials
                 }),
             stop: (terminal) => stopTerminal(terminal),
             table: () => readTable(),
@@ -439,6 +450,7 @@ export function createServerContext(
         opsWrites,
         terminals,
         streamTerminals,
+        credentials,
         open,
         follow: (listener) => workspace.subscribe(() => listener()),
         target: () => target(engine, configCache.quiet().config, held(), context),
@@ -459,27 +471,30 @@ export function createServerContext(
     const autofetch = startAutofetchWatcher();
     const bookmarks = startBookmarks();
     const schedules = startSchedules();
-    const hostWords = hostWordsOf(config);
-    // Recover's watcher comes first: its cluster section rides on Live HPC's batch, and a press on
-    // the cluster asks Live HPC for a poll, which a request reaches only once `polled` is built.
+    // The clusters of `slurm.resource` with their connections, from the latest portfolio and this
+    // machine's `clusters:` rows as they stand at the start; live-settings.ts hands later changes.
+    const hpcStart = clustersOf({
+        hub,
+        primary: open().primary,
+        config: () => config,
+        accounts: () => local.clusters
+    });
+    // Recover's watcher comes first: its section rides on each cluster's Live HPC batch, and a
+    // press on a cluster asks that cluster's watcher for a poll, which a request reaches only once
+    // `polled` is built.
     const recover = make.watchRecover(hub, {
         home: homedir(),
         places: () => recoverPlaces(hub),
         hubs: () => open().hubs.map((one) => one.name),
-        pollCluster: () => void polled.hpc.refresh(),
-        readCluster: () => void polled.hpc.recover()
+        pollCluster: (resource) => void polled.hpc.watcher(resource)?.refresh(),
+        readCluster: (resource) => void polled.hpc.watcher(resource)?.recover()
     });
     const polled = startPollers(
         make,
         hub,
         local,
         {
-            hpc: hpcSettingsOf(
-                slurm,
-                local.hpcHost,
-                latestResources(hub, open().primary),
-                hostWords
-            ),
+            hpc: hpcStart,
             recover: recover.section,
             calendar: calendarConfig,
             mail: mailConfig,
@@ -505,10 +520,17 @@ export function createServerContext(
     built.live = liveSettings(
         hub,
         {
-            hpcHost: () => local.hpcHost,
-            resources: () => latestResources(hub, open().primary),
-            hostWords,
+            connections: (resources, words) =>
+                clusterConnections({
+                    resources,
+                    entries: latestResources(hub, open().primary),
+                    accounts: local.clusters,
+                    words
+                }),
+            hostWords: hostWordsOf(config),
             slurm,
+            failures: failureRows(config),
+            signIn,
             calendar: calendarConfig,
             mail: mailConfig,
             refresh,
@@ -576,6 +598,8 @@ export function createServerContext(
         fsWrites: writes,
         opsWrites,
         gitRunning: createRunningGit(),
+        fetchFailures: gitFetchFailures,
+        credentials,
         cloning: new Set<string>(),
         ignoredCache: ignoredCache(),
         folderPicker: pickerState(),
@@ -587,6 +611,14 @@ export function createServerContext(
         mailDir: polled.mailDir,
         literature: new LiteratureDesk(),
         providerDir: polled.providerDir,
+        gitSignIns: gitSignIns({
+            fetcher: timedFetcher(fetch),
+            sleep,
+            open: () => context.opener,
+            providerDir: polled.providerDir,
+            writes,
+            now: () => Date.now()
+        }),
         accounts: {
             file: () => {
                 const primary = open().primaryDir;
@@ -620,6 +652,7 @@ export function createServerContext(
             const current = owned();
             current.usageRefresh.close();
             polled.mail.close();
+            context.gitSignIns.close();
             polled.calendar.close();
             polled.hpc.close();
             hpcSubmits.close();
@@ -781,7 +814,7 @@ export function createServerContext(
         rebuild(rebuiltBy(changed), previous);
         if (changed.includes('lsp')) relay.reload();
         if (changed.includes('openBin')) context.opener = machineOpener(local);
-        if (changed.includes('hpcHost')) built.live?.hostChanged();
+        if (changed.includes('clusters')) built.live?.clustersChanged();
         if (changed.includes('calendars') || changed.includes('calendarDir')) {
             context.calendarDir = local.calendarDir ?? defaultConnectDir('calendar');
             polled.calendar.setAccounts(local.calendars, context.calendarDir);

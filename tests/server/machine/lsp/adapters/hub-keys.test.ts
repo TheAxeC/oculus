@@ -35,7 +35,7 @@ const VENUE_AT = { line: 3, character: 10 };
 const PEOPLE = '.oculus/data/people/people.yml';
 
 /** The value of `slurm.resource` in the planted workspace file, and the cluster `hpc`. */
-const SETTING_AT = { line: 5, character: 21 };
+const SETTING_AT = { line: 5, character: 22 };
 const HPC_DEFINED = { start: { line: 4, character: 11 }, end: { line: 4, character: 14 } };
 const RESOURCES = '.oculus/data/research/resources.yml';
 

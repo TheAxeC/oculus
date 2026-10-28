@@ -198,10 +198,118 @@ options:
     slurm.resource:
         heading: cluster
         section: Slurm
-        help: "The cluster the Live HPC poller queries: the key of a cluster entry of the resources registry, whose host is the ssh alias. This is a setting of the hub, kept in the hub's .oculus/config.yml. The machine's own hpc_host in local.yml takes precedence. Empty sets no cluster, and the HPC view says so and polls nothing. A key that names no cluster with a host shows why in the HPC view."
-        control: choice
-        empty: no cluster
+        help: "The clusters the Live HPC poller queries, each the key of a cluster entry of the resources registry, in the order the HPC view draws them. A cluster entry's host is the ssh alias, the DNS name or the address ssh connects to, and the user name and the key file are this machine's, a row of clusters: in local.yml. This is a setting of the hub, kept in the hub's .oculus/config.yml and read from the primary hub alone. The empty list sets no cluster, and the HPC view says so and polls nothing. A value that is not a list is a finding and no cluster is polled, a key named twice is a finding and polled once, mac, which names this Mac, is a finding and is not polled, and a key that names no cluster with a host shows why in the HPC view."
+        control: multi
         from: clusters
+    clusters.key_type:
+        heading: cluster
+        section: Cluster keys
+        help: "The type of the key Account setup makes for a cluster with ssh-keygen: ed25519, ecdsa or rsa. This is a setting of the hub, kept in the hub's .oculus/config.yml and read from the primary hub alone. Empty makes no key, and Account setup says that the type is missing and where it is set."
+        control: choice
+        options: [ed25519, ecdsa, rsa]
+        empty: no key type
+    clusters.key_file:
+        heading: cluster
+        section: Cluster keys
+        help: "The path of the key file Account setup makes for a cluster, in which {type} stands for clusters.key_type and {resource} for the cluster's key, such as ~/.ssh/id_{type}_{resource}. The path, with ~/ standing for the home folder, must lie under the home folder and its last part must be letters, digits, dots, dashes and underscores, else Make key refuses it. This is a setting of the hub, kept in the hub's .oculus/config.yml and read from the primary hub alone. Empty makes no key, and Account setup says that the path is missing and where it is set."
+        control: text
+    connections.failures:
+        heading: cluster
+        section: Connections
+        help: "The rows that tell a failed connection apart, read in order: the first row whose match a line of ssh's or git's error output holds names the failure with its kind and its fix, in the section of the cluster on the HPC view and on the repository in Source Control. A row's for names the connections it reads, cluster for the ssh of a cluster's poll and git for a fetch, and a row without it reads both; a word outside the two is a finding naming the row, and the row is not read. A failure no row matches is shown as ssh or git wrote it. This is a setting of the hub, kept in the hub's .oculus/config.yml and read from the primary hub alone. Empty tells no failure apart."
+        fields:
+            kind:
+                help: the words that name the failure
+                control: text
+            for:
+                help: the connections whose error output the row reads, cluster for the ssh of a cluster's poll and git for a fetch; a row without it reads both, and an empty list is a finding and the row is not read
+                control: multi
+                options: [cluster, git]
+                empty: true
+            match:
+                help: a text that a line of the error output holds, compared as written
+                control: text
+            fix:
+                help: the words of the failure's fix
+                control: text
+    sign_in:
+        heading: calendar
+        section: Sign in
+        help: "The providers a reader signs in with, one row each: google and microsoft for the mail and the calendars, read by those keys, and a git host, any row with a credential_address, for git. Every address is an https address as the provider gives it; {tenant} stands for a Microsoft account's directory and {id} for a message's id in mail_link. A row whose key repeats an earlier row's, or whose address is no https address, is a finding and is not read; a credential_address that is no https origin is a finding and the row is no git host. With no row for a provider, or a row missing the address a step needs, Connect, the refresh and Account setup say which key and field are missing. This is a setting of the hub, kept in the hub's .oculus/config.yml and read from the primary hub alone. Oculus ships none."
+        key: key
+        fields:
+            key:
+                help: the provider's key, google, microsoft or a git host's own, lowercase letters, digits, dashes and underscores
+                control: text
+                form: row_key
+            name:
+                help: the provider's name, as Account setup shows it
+                control: text
+                empty: true
+            authorize:
+                help: the address a reader's consent is asked at
+                control: text
+                form: https_address
+                empty: true
+            token:
+                help: the address a token is asked and refreshed at
+                control: text
+                form: https_address
+                empty: true
+            device_code:
+                help: the address a git host's device code is asked at
+                control: text
+                form: https_address
+                empty: true
+            user:
+                help: the address the signed-in user's login is read from
+                control: text
+                form: https_address
+                empty: true
+            calendar:
+                help: the address the calendars are read from
+                control: text
+                form: https_address
+                empty: true
+            mail:
+                help: the address the mail is read from
+                control: text
+                form: https_address
+                empty: true
+            mail_link:
+                help: the address a message opens at, {id} standing for the message's id
+                control: text
+                form: https_address
+                empty: true
+            calendar_scope:
+                help: the scopes the calendar is read with, separated by spaces
+                control: text
+                empty: true
+            mail_scope:
+                help: the scopes the mail is read and sent with, separated by spaces
+                control: text
+                empty: true
+            git_scope:
+                help: the scopes a git host's token is asked with, separated by spaces
+                control: text
+                empty: true
+            credential_address:
+                help: the origin git asks credentials for, the scheme, the host and an optional port, which makes the row a git host
+                control: text
+                form: https_origin
+                empty: true
+            register:
+                help: the page where the reader registers the OAuth App a git host signs in with
+                control: text
+                form: https_address
+                empty: true
+    recover.node_download:
+        heading: cluster
+        section: Recover
+        help: "The https address of the folder Node.js's releases are downloaded from, which Recover's cluster side fetches the build for the cluster from, such as https://nodejs.org/dist/. This is a setting of the hub, kept in the hub's .oculus/config.yml and read from the primary hub alone. Empty downloads nothing, and Recover on a cluster says that it is missing and where it is set."
+        control: text
+        form: https_address
+        empty: true
     slurm.days:
         heading: cluster
         section: Slurm
@@ -786,7 +894,10 @@ groups:
     focus: The Focus board and its command center, how far ahead each kind of date is listed, when a feed or a manifest counts as stale, and which statuses count as open or sent.
     focus.refresh_stale_days: The days after which the Focus refresh strip prompts to refresh a feed, one key for each feed it prompts for.
     file_index: The file finder of the project cards, whether it runs, how many files it lists for a project and which extensions it lists.
-    slurm: The Live HPC poller, the cluster it queries, how often it reads the job queue and the disk quota, how far back it reads finished jobs and whether it resolves their logs ahead of time.
+    slurm: The Live HPC poller, the clusters it queries, how often it reads the job queue and the disk quota, how far back it reads finished jobs and whether it resolves their logs ahead of time.
+    clusters: The key Account setup makes for a cluster, its type and the path it is written to.
+    connections: The rows that tell a failed ssh or git connection apart, each with the words naming the failure and its fix.
+    recover: Recover's cluster side, and the address it downloads Node.js from for the cluster.
     processes: The Processes view and the programs it lists beside oculus's own terminals.
     chat: The in-page chat sessions and the model they start with.
     calendar: The reads of the calendar accounts, how often they run and the window of days they read.

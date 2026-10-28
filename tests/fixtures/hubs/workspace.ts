@@ -19,7 +19,7 @@ import {
     type WorkspacesState
 } from '../../../src/lib/state/sources/fs-transport.ts';
 import { scratchDir } from '../scratch.ts';
-import { noop } from '../doubles.ts';
+import { noCredentials, noop } from '../doubles.ts';
 
 /** A folder of a case's workspace: the name it is served under and where it lies. */
 export type FolderSpec = { name: string; dir: string };
@@ -127,7 +127,8 @@ export async function writeFs(
         machine: { set: [], defaults: {}, values: {}, hubs: {}, portRefused: null },
         bookmarks: null,
         writes: fsWrites(),
-        ignored: ignoredCache()
+        ignored: ignoredCache(),
+        credentials: noCredentials()
     });
     return { status: response.status, body: (await response.json()) as Record<string, unknown> };
 }

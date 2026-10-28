@@ -23,18 +23,32 @@
 // needs a person fails, is said on standard error, and is tried again the next period. When the
 // older `GIT_SSH` program is the only ssh setting, nothing is added for ssh.
 //
+// A fetch that fails is also kept for the root's state as `fetchFailure`, told apart by the hub's
+// `connections.failures` (core/git/state.ts, `fetchFailureOf`), and a fetch that succeeds clears
+// it, before the root's state is read again.
+//
 // This module runs no process of its own. It calls `remoteNames`, `fetchIn` and the one read
 // `sshCommand`, the call sites that server/git/git-write.ts and server/core/git/run.ts own, and it
 // takes the repositories to fetch from the published `git` payload, which is the rule that
 // git-write.ts states for a write's root.
 
 import { z } from 'zod';
-import { autofetchMin, droppedFile } from '../../../data/sources/config.ts';
+import type { GitFetchFailure } from '../../../data/model/index.ts';
+import {
+    autofetchMin,
+    droppedFile,
+    failureRows,
+    textCatalog,
+    type FailureRow
+} from '../../../data/sources/config.ts';
 import { mapShape, readAs } from '../../../data/shapes/shapes.ts';
 import type { Hub } from '../../core/channels.ts';
 import { systemClock, type Clock, type Timer } from '../../core/file-poll.ts';
+import type { GitCredentials } from '../../core/git/credentials.ts';
+import { failureLine } from '../../core/git/failure.ts';
 import { sshCommand } from '../../core/git/reads.ts';
-import { fetchIn, remoteNames } from '../../git/git-write.ts';
+import { fetchFailureOf, type FetchFailures } from '../../core/git/state.ts';
+import { failed, fetchIn, remoteNames, type GitAt } from '../../git/git-write.ts';
 
 /** Milliseconds between two looks. Fixed: the period itself is the key's. */
 export const TICK = 60000;
@@ -59,8 +73,15 @@ export type AutofetchOptions = {
     remotes?: (root: string) => Promise<Answer>;
     /** The fetch of a repository; an unattended `git fetch --prune` when absent. */
     fetch?: (root: string) => Promise<Answer>;
+    /**
+     * Where a fetch's outcome is kept for the root's state: a failure set, told apart by the hub's
+     * `connections.failures` as the newest `config` message holds them, and a success cleared.
+     */
+    failures?: FetchFailures;
     /** Where a line of the module's own is said; standard error when absent. */
     log?: (line: string) => void;
+    /** The server context's git credentials, which the default listing and fetch run git with. */
+    credentials: GitCredentials;
 };
 
 export type AutofetchWatcher = { close(): void };
@@ -110,11 +131,11 @@ function hasRemote(output: string): boolean {
  * in git's order. A read that fails skips the repository, so a fetch never runs with the command
  * the repository names left out, and the answer says so without a refresh.
  */
-async function unattendedFetch(root: string): Promise<Answer> {
+async function unattendedFetch(at: GitAt): Promise<Answer> {
     const named = (process.env.GIT_SSH_COMMAND ?? '') !== '';
-    const configured = named ? '' : await sshCommand(root);
+    const configured = named ? '' : await sshCommand(at.credentials, at.root);
     if (configured === null) throw new Error(`core.sshCommand could not be read: ${UNREADABLE}`);
-    return fetchIn(root, {
+    return fetchIn(at, {
         unattended: true,
         sshCommand: unattendedSsh(process.env, configured)
     });
@@ -124,8 +145,9 @@ export function watchAutofetch(hub: Hub, options: AutofetchOptions): AutofetchWa
     const clock = options.clock ?? systemClock;
     const now = options.now ?? Date.now;
     const tick = options.tick ?? TICK;
-    const remotes = options.remotes ?? remoteNames;
-    const fetch = options.fetch ?? unattendedFetch;
+    const { credentials } = options;
+    const remotes = options.remotes ?? ((root: string) => remoteNames({ root, credentials }));
+    const fetch = options.fetch ?? ((root: string) => unattendedFetch({ root, credentials }));
     const log = options.log ?? ((line: string) => console.error(line));
     let timer: Timer | null = null;
     let closed = false;
@@ -192,7 +214,33 @@ export function watchAutofetch(hub: Hub, options: AutofetchOptions): AutofetchWa
         return roots;
     }
 
-    /** One repository: its remotes, then one fetch if it has any, then a re-read of its state. */
+    /**
+     * A failed fetch as the root's state carries it: told apart by the hub's
+     * `connections.failures`, else said by git's reason, a fetch that ended with no reason of git's
+     * own worded from the text catalog, each as the newest `config` message holds them.
+     */
+    function failureOf(fetched: Answer): GitFetchFailure {
+        const shaped = configShape.safeParse(hub.latest('config')?.payload);
+        const config = shaped.success ? readAs(mapShape, shaped.data.config) : null;
+        let rows: FailureRow[] = [];
+        let said = fetched.error;
+        if (config !== null) {
+            try {
+                rows = failureRows(config);
+                if (fetched.failure !== undefined) {
+                    said = failureLine(fetched.failure, textCatalog(config));
+                }
+            } catch (error) {
+                log(`autofetch: ${reason(error)}`);
+            }
+        }
+        return fetchFailureOf(fetched.stderr ?? '', said, rows, new Date(now()));
+    }
+
+    /**
+     * One repository: its remotes, then one fetch if it has any, its outcome kept for the root's
+     * state, then a re-read of that state. A fetch that throws before git answers is a failed one.
+     */
     async function visit(root: string): Promise<void> {
         try {
             const listed = await remotes(root);
@@ -202,9 +250,13 @@ export function watchAutofetch(hub: Hub, options: AutofetchOptions): AutofetchWa
                 return;
             }
             if (!hasRemote(listed.output)) return;
-            const fetched = await fetch(root);
+            const fetched = await fetch(root).catch((error: unknown) => failed(reason(error)));
             if (stopped()) return;
-            if (!fetched.ok) log(`autofetch: ${root}: ${fetched.error}`);
+            if (fetched.ok) options.failures?.clear(root);
+            else {
+                log(`autofetch: ${root}: ${fetched.error}`);
+                options.failures?.set(root, failureOf(fetched));
+            }
             await options.refresh(root);
         } catch (error) {
             if (!stopped()) log(`autofetch: ${root}: ${reason(error)}`);

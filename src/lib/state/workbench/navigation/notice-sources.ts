@@ -114,7 +114,15 @@ const endedJobShape = z.object({
  * The poll's status and the jobs of it that read as ended jobs. Only a poll the cluster answered
  * lists ended jobs: a failed poll says nothing about which jobs ended.
  */
-const pollShape = z.object({ status: z.string(), recent: rowsShape(endedJobShape).catch([]) });
+const pollShape = z.object({
+    resource: z.string(),
+    name: z.string(),
+    status: z.string(),
+    recent: rowsShape(endedJobShape).catch([])
+});
+
+/** The clusters of the `hpc` channel's message; a cluster that does not read is left out. */
+const messageShape = z.object({ clusters: rowsShape(pollShape).catch([]) });
 
 /**
  * Whether an ended job finished: Slurm's COMPLETED with a zero exit code, or no code given. Any
@@ -272,7 +280,8 @@ export function createNoticeSources(
     open: NoticeOpeners
 ): NoticeSourcesStore {
     const sessions = memory();
-    const jobs = memory();
+    /** The jobs each cluster has shown, by the cluster's key. */
+    const jobs = new Map<string, (keys: readonly string[]) => string[]>();
     const feeds = runMemory();
     const notes = runMemory();
     /** The tasks the tray offers, each with its hub, as the `schedule` channel last said them. */
@@ -299,23 +308,41 @@ export function createNoticeSources(
     }
 
     /**
-     * A poll the cluster did not answer is not read at all, so it neither starts the reading nor
-     * makes the jobs of the next answered poll look new.
+     * Each cluster is read on its own, with the jobs it has shown kept apart from another
+     * cluster's, since a job id names one job on one cluster. A poll the cluster did not answer is
+     * not read at all, so it neither starts that cluster's reading nor makes the jobs of its next
+     * answered poll look new.
      */
     function hpcHeard(payload: unknown): void {
-        const poll = readAs(pollShape, payload);
-        if (poll?.status !== 'ok') return;
-        const now = poll.recent;
-        for (const id of jobs(now.map((job) => job.id))) {
-            const job = now.find((one) => one.id === id);
-            if (job === undefined) continue;
-            const finished = jobFinished(job);
-            notices.post(
-                finished
-                    ? t('statusbar.notice_job_finished', job.name, job.id)
-                    : t('statusbar.notice_job_failed', job.name, job.id, job.state, job.exit),
-                { tone: finished ? 'info' : 'error', actions: action(() => open.openView('hpc')) }
-            );
+        for (const poll of readAs(messageShape, payload)?.clusters ?? []) {
+            if (poll.status !== 'ok') continue;
+            let seen = jobs.get(poll.resource);
+            if (seen === undefined) {
+                seen = memory();
+                jobs.set(poll.resource, seen);
+            }
+            const now = poll.recent;
+            for (const id of seen(now.map((job) => job.id))) {
+                const job = now.find((one) => one.id === id);
+                if (job === undefined) continue;
+                const finished = jobFinished(job);
+                notices.post(
+                    finished
+                        ? t('statusbar.notice_job_finished', job.name, job.id, poll.name)
+                        : t(
+                              'statusbar.notice_job_failed',
+                              job.name,
+                              job.id,
+                              job.state,
+                              job.exit,
+                              poll.name
+                          ),
+                    {
+                        tone: finished ? 'info' : 'error',
+                        actions: action(() => open.openView('hpc'))
+                    }
+                );
+            }
         }
     }
 

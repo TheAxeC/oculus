@@ -13,9 +13,10 @@
 // A refusal the page words itself is answered as a code: `provider`, `label` or `taken` for the
 // account the page named, `link` for a published calendar link that is missing or is not an
 // https or webcal address, `setup` for a provider with no client half on this machine, `file` with
-// the sentence for a machine file the edit would not leave readable. The page runs the same rules
-// before it sends (data/accounts/connect.ts and data/accounts/calendar.ts), so a code is what a
-// race or a hand edit produced.
+// the sentence for a machine file the edit would not leave readable, and `sign_in` with the
+// sentence for a provider the hub's `sign_in` gives no row of, or a row lacking a field. The page
+// runs the same rules before it sends (data/accounts/connect.ts and data/accounts/calendar.ts), so
+// a code other than `sign_in` is what a race or a hand edit produced.
 //
 // A published link is added with no consent and no client half: its row names the provider `ics`
 // and the label alone, the link itself goes into the account's own file, and the Add answers once
@@ -42,6 +43,7 @@ import {
     type Fetcher,
     type Opener
 } from './oauth.ts';
+import { missingSentence, providerFor, type Providers } from './providers.ts';
 import { addAccountRow, removeAccountRow, type AccountList } from './rows.ts';
 import {
     providerReady,
@@ -55,12 +57,17 @@ import {
 /** The list of a hub's `.oculus/local.yml` each connector's accounts are rows of. */
 const LIST: Record<ConnectKind, AccountList> = { calendar: 'calendars', mail: 'mail' };
 
-/** What starting one consent needs: the folders, the redirect, the states and the opener. */
+/**
+ * What starting one consent needs: the folders, the hub's `sign_in` rows, the redirect, the states
+ * and the opener.
+ */
 export type ConsentTarget = {
     /** The folder the account files live in, already resolved. */
     dir: string;
     /** The folder the providers' client halves live in, already resolved. */
     providerDir: string;
+    /** The hub's `sign_in` rows and the sentences a missing row or field is said in. */
+    providers: Providers;
     /** The loopback address the provider sends the browser back to. */
     redirect: string;
     states: ConnectStates;
@@ -97,6 +104,7 @@ export type CallbackTarget = {
     accounts: AccountRow[];
     dir: string;
     providerDir: string;
+    providers: Providers;
     states: ConnectStates;
     fetcher: Fetcher;
     refresh: () => Promise<void>;
@@ -140,14 +148,21 @@ export function accountFor<A extends AccountRow>(accounts: A[], key: unknown): A
 
 /**
  * Start one consent: build the provider's page from the account's client half, its own or its
- * provider's, and open it. An account with no half on this machine is refused with `setup`, the
- * code the page answers by opening the account setup page.
+ * provider's, at the addresses of the provider's `sign_in` row, and open it. A provider with no
+ * row, or a row lacking a field the consent needs, is refused with `sign_in` and the sentence
+ * naming the key and the field; an account with no half on this machine is refused with `setup`,
+ * the code the page answers by opening the account setup page.
  */
 export async function startConsent(
     kind: ConnectKind,
     target: ConsentTarget,
     account: ConnectAccountConfig
 ): Promise<Response> {
+    const found = providerFor(target.providers.rows, account.provider, kind, 'consent');
+    if ('missing' in found) {
+        const sentence = missingSentence(found.missing, target.providers.words);
+        return json({ error: 'sign_in', reason: sentence }, { status: 400 });
+    }
     let credentials;
     try {
         credentials = readCredentials(target.dir, account, target.providerDir);
@@ -157,7 +172,7 @@ export async function startConsent(
     if (credentials === null) return json({ error: 'setup' }, { status: 400 });
     const { state, verifier } = target.states.mint(connectKey(account), target.redirect);
     await target.open(
-        consentUrl(kind, credentials, { state, verifier, redirect: target.redirect })
+        consentUrl(kind, credentials, found.row, { state, verifier, redirect: target.redirect })
     );
     return json({ ok: true });
 }
@@ -338,6 +353,8 @@ export async function handleConnectCallback(
     if (pending === null || code === null || code === '') return page(400, target.words.bad);
     const account = accountFor(target.accounts, pending.key);
     if (account === undefined || !signsIn(account)) return page(400, target.words.bad);
+    const found = providerFor(target.providers.rows, account.provider, kind, 'consent');
+    if ('missing' in found) return page(400, target.words.bad);
     let credentials;
     try {
         credentials = readCredentials(target.dir, account, target.providerDir);
@@ -350,6 +367,7 @@ export async function handleConnectCallback(
         refreshToken = await exchangeCode(
             kind,
             credentials,
+            found.row,
             { code, verifier: pending.verifier, redirect: pending.redirect },
             target.fetcher
         );

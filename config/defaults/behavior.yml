@@ -1,6 +1,6 @@
 # ===========================================================================
 # behavior.yml
-# oculus's shipped thresholds, horizons and behaviours: the soft limits an audit warns on, the conventions it holds a hub's projects to (off until the hub sets them), how long before a feed counts as stale, how far ahead each kind of date is shown, the cadences of the pollers, the editor, LaTeX, the linters, the apps' limits and the status bar. The source roots and the editor language of each file extension live in sources.yml. loadConfig() merges it with the other files of config/defaults/; a workspace file's `settings:` sets a key over the value here, a hub's .oculus/config.yml sets the keys of the hub list (`slurm.resource`, `lint.writing_skip`, `lint.writing_glyphs`, `audit` and `app_settings`), and the options of config/options/behavior.yml describe every key. Nothing writes this file.
+# oculus's shipped thresholds, horizons and behaviours: the soft limits an audit warns on, the conventions it holds a hub's projects to (off until the hub sets them), how long before a feed counts as stale, how far ahead each kind of date is shown, the cadences of the pollers, the editor, LaTeX, the linters, the apps' limits and the status bar. The source roots and the editor language of each file extension live in sources.yml. loadConfig() merges it with the other files of config/defaults/; a workspace file's `settings:` sets a key over the value here, a hub's .oculus/config.yml sets the keys of the hub list (`slurm.resource`, `clusters.key_type`, `clusters.key_file`, `connections.failures`, `sign_in`, `recover.node_download`, `lint.writing_skip`, `lint.writing_glyphs`, `audit` and `app_settings`), and the options of config/options/behavior.yml describe every key. Nothing writes this file.
 # ===========================================================================
 
 
@@ -68,13 +68,29 @@ file_index:
 
 # === Served mode: live SLURM poller and in-page chat =========================
 # Live HPC polling cadences are minutes. `prewarm: false` defers finished-job log resolution.
-# `resource` is the key of a cluster entry of the hub's resources registry, whose `host` is the ssh alias the poller uses; empty means the hub names no cluster and nothing is polled. A hub sets it in .oculus/config.yml.
+# `resource` lists the keys of the cluster entries of the hub's resources registry the poller queries, each entry's `host` the ssh alias, DNS name or address it connects to; the empty list means the hub names no cluster and nothing is polled. A hub sets it in .oculus/config.yml.
 slurm:
-  resource: ''
+  resource: []
   days: 3
   poll_min: 20
   quota_min: 60
   prewarm: true
+
+# The key Account setup makes for a cluster: the type ssh-keygen makes and the path of the key file, in which {type} stands for the type and {resource} for the cluster's key. Oculus ships none; a hub sets them in .oculus/config.yml, and with either empty Account setup says which is missing.
+clusters:
+  key_type: ''
+  key_file: ''
+
+# The rows that tell a failed ssh or git connection apart, each a text a line of the error output holds, the words naming the failure and the words of its fix. Oculus ships none; a hub sets them in .oculus/config.yml.
+connections:
+  failures: []
+
+# The providers a reader signs in with, each with its addresses and scopes: Google and Microsoft for the mail and the calendars, and a git host for git. Oculus ships none; a hub sets them in .oculus/config.yml.
+sign_in: []
+
+# Where Recover's cluster side downloads Node.js from, the folder of its releases. Oculus ships none; a hub sets it in .oculus/config.yml.
+recover:
+  node_download: ''
 
 # The Processes view lists the local processes whose program is one of these names, beside oculus's own terminals.
 processes:

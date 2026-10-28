@@ -24,7 +24,7 @@ import type { AgentAccount } from '../../data/model/index.ts';
 import { usageAccountLabel, type LocalConfig } from '../../data/sources/config.ts';
 import { words } from '../core/words.ts';
 import { accountEnv, agentAccounts } from '../machine/pty/start/compose.ts';
-import { allowedRoots, MAX_OUTPUT, type Outcome } from './git-write.ts';
+import { allowedRoots, MAX_OUTPUT, type GitAt, type Outcome } from './git-write.ts';
 import { stagedDiff } from './git-diffs.ts';
 
 /** Milliseconds the CLI is given to answer. */
@@ -37,7 +37,7 @@ export type Ask = (prompt: string, model: string, input: string) => Promise<Outc
 
 export type MessageOptions = {
     /** What is staged; server/git/git-diffs.ts's own reader when absent. */
-    diff?: (root: string, text: Record<string, string>, roots: string[]) => Promise<Outcome>;
+    diff?: (at: GitAt, text: Record<string, string>, roots: string[]) => Promise<Outcome>;
     /** How the CLI is asked; the real subprocess when absent. */
     ask?: Ask;
     /** The model to pass, or the empty string for the CLI's default. */
@@ -79,7 +79,7 @@ export function messageModel(config: Record<string, unknown>): string {
  * CLI is started, since there is nothing for it to read and a minute of waiting would say so.
  */
 export async function suggestMessage(
-    root: string,
+    at: GitAt,
     prompt: string,
     text: Record<string, string>,
     claudeBin: string,
@@ -90,7 +90,7 @@ export async function suggestMessage(
     const account = options.account ?? null;
     const asked =
         options.ask ?? ((one, model, input) => run(claudeBin, account, one, model, input, text));
-    const diff = await read(root, text, roots);
+    const diff = await read(at, text, roots);
     if (!diff.ok) return diff;
     if (diff.output.trim() === '') {
         return {

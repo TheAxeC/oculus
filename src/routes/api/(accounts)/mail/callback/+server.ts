@@ -6,6 +6,7 @@
 // GET only, and the only thing it writes is the one account's refresh token.
 
 import { handleMailCallback } from '$lib/server/accounts/mail/routes';
+import { providersOf } from '$lib/server/accounts/connect/providers';
 import { textCatalog } from '$lib/data/sources/config';
 import type { RequestHandler } from './$types';
 
@@ -15,6 +16,7 @@ export const GET: RequestHandler = ({ request, locals }) => {
         accounts: locals.server.local.mail,
         dir: locals.server.mailDir,
         providerDir: locals.server.providerDir,
+        providers: providersOf(config),
         states: locals.server.mailConnects,
         fetcher: fetch,
         refresh: () => locals.server.mail.refresh(),

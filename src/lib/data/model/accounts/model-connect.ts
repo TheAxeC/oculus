@@ -39,10 +39,67 @@ export type ConnectStatus = 'ok' | 'error' | 'unconfigured';
  * What the account setup page reads from `GET /api/connect`: which providers this machine holds
  * the client half of, and the redirect addresses and scopes the connect flow uses, which the page
  * shows as they are so what the reader registers at a provider is what the server sends there.
- * The client half itself is never in it.
+ * `missing` is, for each provider, the sentence naming the hub's `sign_in` row of it and the field
+ * that row lacks, or the empty string when the row has every field the connect flow needs; a
+ * provider with a sentence is shown with it and nothing to press. The client half itself is never
+ * in it.
  */
 export type ConnectSetup = {
     ready: Record<ConnectProvider, boolean>;
     redirects: Record<ConnectKind, string>;
     scopes: Record<ConnectKind, Record<ConnectProvider, string>>;
+    missing: Record<ConnectProvider, string>;
+    git: GitHosts;
+};
+
+/**
+ * One git host of the hub's `sign_in` (a row with `credential_address`) as Account setup's git
+ * section draws it: the row's key and name, the page its OAuth App is registered at, the origin
+ * git is given the token for, the sentence naming the field the row lacks for Sign in (empty when
+ * it has every one), whether this machine holds the client id, the login a Sign in read (empty
+ * when no token is held), and the device flow of a Sign in that runs. The client id and the token
+ * are never in it.
+ */
+export type GitHostSetup = {
+    key: string;
+    name: string;
+    register: string;
+    address: string;
+    missing: string;
+    clientSaved: boolean;
+    login: string;
+    flow: GitFlow | null;
+};
+
+/**
+ * A Sign in by the device flow as the page draws it: the code the reader types at the address,
+ * the address, and where it stands: `waiting` on the reader, `granted`, `denied` (`access_denied`),
+ * `expired` (`expired_token`), `cancelled`, or `failed` with the sentence of what went wrong.
+ */
+export type GitFlow = {
+    code: string;
+    address: string;
+    state: 'waiting' | 'granted' | 'denied' | 'expired' | 'cancelled' | 'failed';
+    said: string;
+};
+
+/**
+ * A key whose file in `~/.oculus/connect/` holds a token that no git host row of `sign_in` names
+ * with the file's address, as Account setup lists it with its Sign out: the key, the login the
+ * token belongs to, and the sentence saying the row is missing or names another address, so the
+ * token is given to no git. The token is never in it.
+ */
+export type GitUnlisted = { key: string; login: string; missing: string };
+
+/**
+ * Account setup's git section: one part per git host row, the keys holding a token no row names
+ * (`unlisted`), the sentence saying none is set and where it is set (`none`, empty when a row
+ * is), and the sentence saying git is given no sign-in because a path of the credential helper's
+ * command holds a single quote (`helperRefused`, empty otherwise).
+ */
+export type GitHosts = {
+    hosts: GitHostSetup[];
+    unlisted: GitUnlisted[];
+    none: string;
+    helperRefused: string;
 };

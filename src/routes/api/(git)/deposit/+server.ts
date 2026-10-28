@@ -16,7 +16,13 @@ const options = (locals: App.Locals) => {
     return {
         idsFor: () => knownIds(projectIds(server.hub), server.engine, config, carried),
         running: server.gitRunning,
-        deposit: { plans: server.depositPlans, engine: server.engine, config, carried }
+        deposit: {
+            plans: server.depositPlans,
+            engine: server.engine,
+            config,
+            carried,
+            credentials: server.credentials
+        }
     };
 };
 

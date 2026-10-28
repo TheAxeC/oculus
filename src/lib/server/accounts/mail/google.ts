@@ -25,8 +25,6 @@ import {
 } from './plate.ts';
 import type { Signal } from './plate.ts';
 
-const BASE = 'https://www.googleapis.com/gmail/v1/users/me';
-
 /** A field of Gmail's answer that is text where it is there, and read as absent otherwise. */
 const optionalTextShape = z.string().optional().catch(undefined);
 
@@ -64,9 +62,13 @@ const threadBodyShape = z.object({
 /** The account's profile: the address it sends from, when Gmail names one. */
 const profileShape = z.object({ emailAddress: optionalTextShape });
 
-/** The reader's own page for one thread, which is where the card's link goes. */
-function threadLink(id: string): string | undefined {
-    return httpsLink(`https://mail.google.com/mail/u/0/#inbox/${encodeURIComponent(id)}`);
+/**
+ * The reader's own page for one thread, which is where the card's link goes: the row's `mail_link`
+ * with the thread's id put in where it says `{id}`, or none when the row gives no link.
+ */
+function threadLink(link: string, id: string): string | undefined {
+    if (link === '') return undefined;
+    return httpsLink(link.replaceAll('{id}', () => encodeURIComponent(id)));
 }
 
 /** The search each signal is read with, which is the plate rule written in Gmail's own query. */
@@ -78,7 +80,7 @@ function queryFor(signal: Signal): string {
 
 /** The thread ids one signal answers with, newest first and capped at the configured count. */
 async function idsFor(args: MailReadArgs, signal: Signal): Promise<string[]> {
-    const url = new URL(`${BASE}/threads`);
+    const url = new URL(`${args.base}/threads`);
     url.searchParams.set('q', queryFor(signal));
     url.searchParams.set('maxResults', String(args.perSignal));
     const body = await getJson('google', url.toString(), args);
@@ -109,7 +111,7 @@ const HEADERS = ['From', 'Subject', 'Date', 'Message-Id', 'References', 'Reply-T
 
 /** One thread read as metadata: the messages with their headers and labels, and nothing else. */
 async function readThread(args: MailReadArgs, id: string): Promise<Record<string, unknown>> {
-    const url = new URL(`${BASE}/threads/${encodeURIComponent(id)}`);
+    const url = new URL(`${args.base}/threads/${encodeURIComponent(id)}`);
     url.searchParams.set('format', 'metadata');
     for (const name of HEADERS) url.searchParams.append('metadataHeaders', name);
     return getJson('google', url.toString(), args);
@@ -122,14 +124,14 @@ function replyTo(newest: Message): string {
 }
 
 /** One thread in the shape the plate rules take, out of what the metadata read answered. */
-function threadOf(id: string, body: Record<string, unknown>): PlateThread | null {
+function threadOf(id: string, body: Record<string, unknown>, linkOf: string): PlateThread | null {
     const thread = threadBodyShape.safeParse(body);
     if (!thread.success) return null;
     const { messages } = thread.data;
     const newest = messages.at(-1);
     if (newest === undefined) return null;
     const carried = newest.labelIds;
-    const link = threadLink(id);
+    const link = threadLink(linkOf, id);
     return {
         id,
         sender: header(newest, 'from'),
@@ -150,7 +152,7 @@ export async function readGoogleMail(args: MailReadArgs): Promise<Candidate[]> {
     const read = new Map<string, PlateThread | null>();
     for (const signal of SIGNALS) {
         for (const id of await idsFor(args, signal)) {
-            if (!read.has(id)) read.set(id, threadOf(id, await readThread(args, id)));
+            if (!read.has(id)) read.set(id, threadOf(id, await readThread(args, id), args.link));
             const thread = read.get(id) ?? null;
             if (thread !== null) candidates.push({ signal, thread });
         }
@@ -217,7 +219,7 @@ export async function replyGoogle(
     if (newest === undefined) throw new Error('google: the thread holds no message');
     const messageId = header(newest, 'message-id');
     const references = header(newest, 'references');
-    const profile = profileShape.safeParse(await getJson('google', `${BASE}/profile`, args));
+    const profile = profileShape.safeParse(await getJson('google', `${args.base}/profile`, args));
     const raw = await rawMessage({
         sender: (profile.success ? profile.data.emailAddress : undefined) ?? '',
         to: replyTo(newest),
@@ -226,7 +228,7 @@ export async function replyGoogle(
         references: references === '' ? messageId : `${references} ${messageId}`,
         body
     });
-    await postJson('google', `${BASE}/messages/send`, {
+    await postJson('google', `${args.base}/messages/send`, {
         token: args.token,
         fetcher: args.fetcher,
         body: { raw, threadId }
@@ -235,7 +237,7 @@ export async function replyGoogle(
 
 /** Take one thread off the inbox by removing the label the inbox is. */
 export async function archiveGoogle(args: MailReadArgs, threadId: string): Promise<void> {
-    await postJson('google', `${BASE}/threads/${encodeURIComponent(threadId)}/modify`, {
+    await postJson('google', `${args.base}/threads/${encodeURIComponent(threadId)}/modify`, {
         token: args.token,
         fetcher: args.fetcher,
         body: { removeLabelIds: ['INBOX'] }

@@ -5,14 +5,19 @@
 // asks of the watcher in force. They are read from the open workspace and the configuration at each
 // call, so a folder added to the workspace, a changed depth and a changed catalog are in force when
 // the move that follows reaches the watcher. The configuration is the parse the server context's
-// config cache keeps, which is parsed again only when one of its files changed.
+// config cache keeps, which is parsed again only when one of its files changed. Both are handed the
+// one store of failed fetches the server keeps, so a watcher built again reads what was kept, and
+// the server context's git credentials, which every git they start runs with.
 
 import { repositoryScanDepth, textCatalog } from '../../../../data/sources/config.ts';
 import type { Hub } from '../../../core/channels.ts';
+import type { FetchFailures } from '../../../core/git/state.ts';
 import { project, projectIds } from '../../../sessions/stores/hooks.ts';
 import { hubFolders, repositoryDepths, repositoryRoots } from '../../../files/roots.ts';
 import type { Workspace } from '../../../files/workspace/follow.ts';
 import type { AutofetchOptions, AutofetchWatcher } from '../autofetch.ts';
+import type { GitCredentials } from '../../../core/git/credentials.ts';
+import { cloneGit } from '../../../git/clone/clone-git.ts';
 import { syncNested } from '../../../git/clone/exclude.ts';
 import type { GitWatcher, GitWatchOptions } from '../git.ts';
 import type { NestedFound } from './nested.ts';
@@ -43,11 +48,15 @@ export type NestedHold = { repositories: readonly string[]; write: Promise<void>
  * nested repositories into the exclude file of each hub's repository, one write at a time, and ask
  * for the portfolio to be read again, since the clones of its projects are among them.
  */
-export function nestedFound(hold: NestedHold, rescan: () => void): (found: NestedFound) => void {
+export function nestedFound(
+    hold: NestedHold,
+    rescan: () => void,
+    credentials: GitCredentials
+): (found: NestedFound) => void {
     return (found) => {
         hold.repositories = found.repositories;
         hold.write = hold.write
-            .then(() => syncNested(found.hubs))
+            .then(() => syncNested(found.hubs, cloneGit(credentials)))
             .then(() => undefined)
             .catch((error: unknown) => {
                 const said = error instanceof Error ? error.message : String(error);
@@ -66,9 +75,13 @@ export function startGit(
     hub: Hub,
     config: () => Record<string, unknown>,
     workspace: Pick<Workspace, 'open' | 'subscribe'>,
-    found: (found: NestedFound) => void
+    found: (found: NestedFound) => void,
+    fetchFailures: FetchFailures,
+    credentials: GitCredentials
 ): GitWatcher {
     return make.watchGit(hub, {
+        fetchFailures,
+        credentials,
         roots: () => repositoryRoots(workspace.open()),
         text: () => textCatalog(config()),
         depth: () => repositoryScanDepth(config()),
@@ -82,12 +95,19 @@ export function startGit(
 
 /**
  * The timer reads the `config` and `git` channels, so it is started after the git watcher has its
- * roots, and re-reads a root's state through the git watcher `current` returns after each fetch.
+ * roots, keeps each fetch's outcome in `failures`, which the git watcher reads, and re-reads a
+ * root's state through the git watcher `current` returns after each fetch.
  */
 export function startAutofetch(
     make: GitStart,
     hub: Hub,
-    current: () => GitWatcher
+    current: () => GitWatcher,
+    failures: FetchFailures,
+    credentials: GitCredentials
 ): AutofetchWatcher {
-    return make.watchAutofetch(hub, { refresh: (root) => current().refresh(root) });
+    return make.watchAutofetch(hub, {
+        refresh: (root) => current().refresh(root),
+        failures,
+        credentials
+    });
 }

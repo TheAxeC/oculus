@@ -4,9 +4,11 @@
 // this one takes the `-C` its caller puts at the head of the vector and applies no folder rule of
 // its own. A command that fails answers `{ ok: false, error }` with the program's own sentence, or
 // with the code `classifyFailure` names when it gave none, and never throws. The GitHub CLI is run
-// the same way.
+// the same way. git is given the `-c` arguments of the server context's credentials before the
+// caller's (server/core/git/credentials.ts).
 
 import { execFile } from 'node:child_process';
+import type { GitCredentials } from '../../core/git/credentials.ts';
 import { endWith } from '../../core/git/running.ts';
 import { GIT } from '../../core/git/run.ts';
 import { classifyFailure } from '../../core/git/parse.ts';
@@ -78,9 +80,11 @@ function execute(
     });
 }
 
-/** The real git. */
-export const cloneGit: InputRunner = (args, timeout, signal, input) =>
-    execute(GIT, args, timeout, signal, input);
+/** The real git, given these credentials' arguments before the caller's. */
+export function cloneGit(credentials: GitCredentials): InputRunner {
+    return (args, timeout, signal, input) =>
+        execute(GIT, [...credentials.args(), ...args], timeout, signal, input);
+}
 
 /** The real GitHub CLI, which the list of the account's repositories is read with. */
 export const cloneGh: GhRun = (args, timeout, signal) => execute('gh', args, timeout, signal);

@@ -101,7 +101,14 @@ export const FLAG_SOURCES: Partial<Record<Source, Source>> = {
 };
 
 /** The forms a text can be held to, which value-rule.ts says what each looks like. */
-export const FORMS = ['program', 'extension', 'bundle_id'] as const;
+export const FORMS = [
+    'program',
+    'extension',
+    'bundle_id',
+    'https_address',
+    'https_origin',
+    'row_key'
+] as const;
 
 /** One of the words of FORMS. */
 export type Form = (typeof FORMS)[number];

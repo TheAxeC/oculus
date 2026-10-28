@@ -13,7 +13,7 @@ A hub's data files, the view that shows each, the keys that link them, and the f
 | File | What it is |
 |---|---|
 | `.oculus/config.yml` | the hub's settings, among them `bookmarks`, `schedules` and `apps_dir`, where the bookmarks file, the schedules file and the machine's apps folder are; a folder holding it is a hub |
-| `.oculus/local.yml` | this machine's values (port, cluster alias, programs, accounts); out of git |
+| `.oculus/local.yml` | this machine's values (port, cluster user names and key files, programs, accounts); out of git |
 | `.oculus/bookmarks.yml` | the bookmarked folders and files of the Files view |
 | `.oculus/workspaces/<name>.yml` | one workspace: its folders, its primary hub and `settings:`, the workspace's own values of oculus's options |
 | `.oculus/schedules.yml` | the scheduled tasks of the update tray |
@@ -61,7 +61,7 @@ A duplicate or empty primary key is a finding, and so is a file whose schema fla
 | View | Page | Draws |
 |---|---|---|
 | Focus | Focus | projects by `stage` and the chips `parked` and `blocked`, the dated lines, follow-ups and subtasks of every file, the live leads, the career banner |
-| Live HPC | the float at the right edge | the cluster `slurm.resource` names |
+| Live HPC | the float at the right edge | the clusters `slurm.resource` names, one section each |
 | Projects, Supervision, Coauthor, Archive, Personal, Software | Projects | the projects whose `tier`, `stage` and your role (the field of `roles` that names you: `lead`, `supervisors`, `collaborators`) the board's keys in `boards` take |
 | Project, Editor | opened from a card | one project, and its form |
 | Position Leads | Incoming | the `leads` feed |
@@ -78,7 +78,7 @@ A duplicate or empty primary key is a finding, and so is a file whose schema fla
 
 ## The hub's settings
 
-`.oculus/config.yml` may set these 52 keys and no others; any other key is a finding and is not applied. A key of `vocab.yml` is laid over oculus's value by its shape: a map word by word, a word the hub names replacing oculus's in oculus's place, a new word coming after oculus's and `<word>: null` taking one out; `categories` row by row by `key`, `{ key: <key>, removed: true }` taking a row out; `focus_clusters`, `focus_lanes`, `fund_stages`, `position_stages`, `teaching_stages`, `roles`, `venue_categories`, `pillar_kinds`, `venue_tiers` and `radar_buckets` whole; and `rail_color` by the hub's value in place of oculus's. A list replaced whole other than `focus_clusters` with a row of the wrong kind, or with two rows naming one `key` (one `label` in a list of stages), is a finding naming the hub's file and the row's place, and oculus's list stands; `focus_clusters` is read row by row, a row of the wrong kind or naming the key of an earlier row being a finding and not read. A word the hub's values no longer give, taken out with `<word>: null` or left out of a list the hub replaces whole such as `roles`, is also taken out of every word list that names it, each option and each field of an option's rows that the options of `config/options/` describe with a `from` naming that list (a category's stage words, a Focus lane's stages and chips and the words of its `move_writes`, a funding, position or teaching stage's statuses, a count's `match`, a board's `tier` and `role`, `research_audit`'s `skip_tiers`): in oculus's own values a row left with no word stays and a single word of a field that takes a list becomes an empty list, and in a list or a row the hub writes itself each such word is a finding naming the hub's file at the word's place there, and the word is not read. `manifest_fields` adds its rows to the form of the hub's own projects. Any other key set here replaces oculus's value whole. The hub's records are drawn in its own words. The defaults and a comment on each are in the `config.yml` template.
+`.oculus/config.yml` may set these 57 keys and no others; any other key is a finding and is not applied. A key of `vocab.yml` is laid over oculus's value by its shape: a map word by word, a word the hub names replacing oculus's in oculus's place, a new word coming after oculus's and `<word>: null` taking one out; `categories` row by row by `key`, `{ key: <key>, removed: true }` taking a row out; `focus_clusters`, `focus_lanes`, `fund_stages`, `position_stages`, `teaching_stages`, `roles`, `venue_categories`, `pillar_kinds`, `venue_tiers` and `radar_buckets` whole; and `rail_color` by the hub's value in place of oculus's. A list replaced whole other than `focus_clusters` with a row of the wrong kind, or with two rows naming one `key` (one `label` in a list of stages), is a finding naming the hub's file and the row's place, and oculus's list stands; `focus_clusters` is read row by row, a row of the wrong kind or naming the key of an earlier row being a finding and not read. A word the hub's values no longer give, taken out with `<word>: null` or left out of a list the hub replaces whole such as `roles`, is also taken out of every word list that names it, each option and each field of an option's rows that the options of `config/options/` describe with a `from` naming that list (a category's stage words, a Focus lane's stages and chips and the words of its `move_writes`, a funding, position or teaching stage's statuses, a count's `match`, a board's `tier` and `role`, `research_audit`'s `skip_tiers`): in oculus's own values a row left with no word stays and a single word of a field that takes a list becomes an empty list, and in a list or a row the hub writes itself each such word is a finding naming the hub's file at the word's place there, and the word is not read. `manifest_fields` adds its rows to the form of the hub's own projects. Any other key set here replaces oculus's value whole. The hub's records are drawn in its own words. The defaults and a comment on each are in the `config.yml` template.
 
 ```yaml
 scan:                     # the folders projects are found in
@@ -122,7 +122,12 @@ pillar_kinds:             # the kinds of pillar lines, rows { key, label, color 
 venue_tiers:              # the tiers of venues, in order (whole)
 radar_buckets:            # the buckets of Lit Watch, in order (whole)
 manifest_fields:          # the fields the hub adds to the form of its own projects (by row)
-slurm.resource:           # the cluster Live HPC polls
+slurm.resource:           # the clusters Live HPC polls, in order
+clusters.key_type:        # the type of the key Account setup makes for a cluster
+clusters.key_file:        # the path of that key, {type} and {resource} put in
+connections.failures:     # the rows that tell a failed ssh or git connection apart (kind, for, match, fix)
+sign_in:                  # the providers a reader signs in with: google, microsoft and git hosts
+recover.node_download:    # the folder of Node.js's releases Recover's cluster side downloads from
 lint.writing_skip:        # the files the writing rules skip
 lint.writing_glyphs:      # the files the writing rules let draw arrows and glyphs
 audit.required_files:     # the files the Audit asks a project to hold
@@ -208,7 +213,7 @@ A link between a project and another record is written on one side only. A proje
 
 The vocabulary keeps each word in one list: a project's `stage:` is a word of `stages`, its `form:` a word of `forms` and each of its `status.chips` a word of `chips`; a collection entry's `status` is a word of `statuses` and a Position Lead's a word of `lead_statuses`; a project's `tier:` is a word of `tiers`, and its category on the boards is the first row of `categories` whose `stages` and `forms` blocks hold it. A status that is no word of its list is a finding naming the closest word of the list when that word is within half the written word's length in single-letter changes, rounded down, and a stage word or a form written as a chip is a finding naming the field it belongs in.
 
-One key of `config.yml` names a primary key and is not checked by the Findings view: `slurm.resource` is a `resources` key of an entry with `kind: cluster` and a `host`; Live HPC says which condition fails.
+One key of `config.yml` names primary keys and is not checked by the Findings view: each key `slurm.resource` lists is a `resources` key of an entry with `kind: cluster` and a `host`, resolved in the primary hub first, then in the one other hub that holds it; Live HPC says, in that cluster's section, which condition fails.
 
 A project is named by its folder name. Fields that name a path are not keys: an Audit row reports a missing path for the `link` of the `funding`, `events`, `education` and `applications` files.
 
@@ -218,7 +223,7 @@ A project is named by its folder name. Fields that name a path are not keys: an 
 - `events`: `link` is required when `role: present`.
 - `funding`: `statement` is required when `status` is `awarded` or `contributing`.
 - `people`: the key `self` of the primary hub's `.oculus/local.yml` names the key of one entry of any hub, the user's own, read from the primary hub first; a key no hub's entry carries, or one two hubs other than the primary carry, is a finding on that file.
-- `resources`: `host` is needed for `slurm.resource` to poll the cluster.
+- `resources`: `host` is needed for `slurm.resource` to poll the cluster; it is an ssh alias, a DNS name or an address, with no user name, which is this machine's row of `clusters:` in `local.yml`.
 - `radar`: an `idea` entry carries `motif`, `maps_to` and `idea_spark`; the other buckets carry `project`, `relevance` and `why`, and a `preemption` entry also `threatens`.
 - `project.yml`: `followup:` is a list of notes, each `{ do, after, done, lead, supervisors, collaborators }`; a note's `after` hides it until that date, and `done: true` keeps it on its card, struck through, and off the Focus board. The three people fields each hold a person key or a list of keys, which Mine only and the Role list read in place of the project's own people, and a `subtasks:` line takes the same three fields. The Focus lane is no key: a project sits on the lane of `focus_lanes` whose `stages` holds its `stage`, or on Blocked or Backburner when its `status.chips` carry `blocked` or `parked`, and the Idea lane holds `nascent` projects of any tier. A project at a stage carrying `terminal` sits on no chip lane.
 
@@ -263,7 +268,7 @@ The field flagged `primary_key: true` is the one a write finds the entry by, and
 
 A folder of the workspace that holds `.oculus/config.yml` is a hub of its own, and oculus merges it into the one portfolio.
 
-- Its `config.yml` paths are read from its own folder. Its `portfolio_deck`, `career_file`, `bookmarks`, `schedules`, `apps_dir`, `wallpaper.image`, `docs`, `counts`, `slurm.resource`, `lint.writing_skip`, `lint.writing_glyphs` and `app_settings` are not read: those keys are read from the primary hub's file alone. Its `audit:` holds its own projects to the conventions it names and checks them against its own website feed.
+- Its `config.yml` paths are read from its own folder. Its `portfolio_deck`, `career_file`, `bookmarks`, `schedules`, `apps_dir`, `wallpaper.image`, `docs`, `counts`, `slurm.resource`, `clusters.key_type`, `clusters.key_file`, `connections.failures`, `sign_in`, `recover.node_download`, `lint.writing_skip`, `lint.writing_glyphs` and `app_settings` are not read: those keys are read from the primary hub's file alone, and each of the six keys from `slurm.resource` to `recover.node_download` that it sets is a finding naming the hub. Its `audit:` holds its own projects to the conventions it names and checks them against its own website feed.
 - Every record of every hub, the primary's included, has the id `<hub name>:<key>`. The files hold keys: a reference names the record of its key in its own hub, and else the record of the one other hub that holds the key; a key two other hubs hold and its own hub does not names no record, and the Audit reports it.
 - A change to a record goes to its own hub's file. A new record goes to a hub that could take it: a new project to any hub of the workspace, and a new entry (Add, Add Task, an application from a lead, Save to Literature) to a hub that holds its collection, named in its `collections:` or, for Literature, at the engine's path. When more than one hub could take it, the path asks which, the primary first in the list; when one could, the record goes there, primary or not.
 - A collection's view is shown when any hub of the workspace lists its key.
@@ -272,16 +277,16 @@ A folder of the workspace that holds `.oculus/config.yml` is a hub of its own, a
 
 The workspace file's `primary:` names one of its hubs. Its records are kept and resolved like any other hub's; what is specific to it is what belongs to the person and the machine rather than to one body of work, which oculus reads from the primary alone:
 
-- This machine's values: only the primary's `.oculus/local.yml` is read (the port, who you are (`self`), `hpc_host`, the programs, the calendar, mail and download accounts, the Literature keys), its account rows joined over every hub's file.
+- This machine's values: only the primary's `.oculus/local.yml` is read (the port, who you are (`self`), the programs, the calendar, mail and download accounts, the Literature keys), its account rows and its `clusters:` rows (this machine's user name and key file on each cluster) joined over every hub's file, the primary's row of a cluster used before another hub's; Account setup and Settings write a `clusters:` row into the primary's file alone.
 - Who you are: the "this is me" button is drawn on the primary's people.
 - The person's own files: `.oculus/bookmarks.yml`, `.oculus/schedules.yml`, the update tasks under `.oculus/tasks/`, the machine apps under `.oculus/apps/` (or the folder its `apps_dir` names) and their values under `app_settings` of its `config.yml`.
-- Twelve keys of a hub's `config.yml` are read from the primary's alone: `portfolio_deck`, `career_file`, `bookmarks`, `schedules`, `apps_dir`, `app_settings`, `wallpaper.image`, `docs`, `counts`, `slurm.resource`, `lint.writing_skip` and `lint.writing_glyphs`.
-- Settings writes those twelve keys to the primary's `config.yml`; any other key of a hub's `config.yml` it writes to the hub the row names, the primary first and chosen.
-- `slurm.resource` resolves in the primary first, then in the one other hub that holds the key.
+- Seventeen keys of a hub's `config.yml` are read from the primary's alone: `portfolio_deck`, `career_file`, `bookmarks`, `schedules`, `apps_dir`, `app_settings`, `wallpaper.image`, `docs`, `counts`, `slurm.resource`, `clusters.key_type`, `clusters.key_file`, `connections.failures`, `sign_in`, `recover.node_download`, `lint.writing_skip` and `lint.writing_glyphs`; each of the six from `slurm.resource` to `recover.node_download` that another hub sets is a finding naming that hub.
+- Settings writes those seventeen keys to the primary's `config.yml`; any other key of a hub's `config.yml` it writes to the hub the row names, the primary first and chosen.
+- Each key `slurm.resource` lists resolves in the primary first, then in the one other hub that holds the key.
 - Where a new record goes: when more than one hub could take it, the path lists the primary first and selected; New Note on the Notes head writes into the primary; an app writes records to the primary alone.
 - Word order: a list drawn over the records of several hubs holds the primary's words first, and the records of a folder that is no hub are the primary's.
 
-In a workspace with no primary hub, Settings refuses the twelve keys and writes a hub's other keys only once a hub is picked, an update task and an app's new record are refused, and no schedule runs.
+In a workspace with no primary hub, Settings refuses the seventeen keys and writes a hub's other keys only once a hub is picked, an update task and an app's new record are refused, and no schedule runs.
 
 ## Repositories below a hub
 

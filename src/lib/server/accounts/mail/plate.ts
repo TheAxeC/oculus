@@ -84,6 +84,13 @@ function byNewest(one: PlateThread, two: PlateThread): number {
 /** Everything a provider reader is given: one access token, the cap per signal, the fetcher. */
 export type MailReadArgs = {
     token: string;
+    /** The provider's mail address, the `mail` of its `sign_in` row, with no `/` after it. */
+    base: string;
+    /**
+     * The address of a thread's own page at the provider, the row's `mail_link`, with `{id}` for
+     * the thread's id; empty when the row gives none, and a thread then has no link.
+     */
+    link: string;
     /** The account's key, which prefixes every thread id so two accounts cannot collide. */
     key: string;
     perSignal: number;

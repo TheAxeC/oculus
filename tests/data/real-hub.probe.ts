@@ -16,6 +16,7 @@ import { ENTITY_KINDS } from '../../src/lib/data/snapshot/normalise.ts';
 import { sessions } from '../../src/lib/server/sessions/index.ts';
 import { sessionFolders } from '../../src/lib/server/sessions/folders.ts';
 import { readState } from '../../src/lib/server/core/git/state.ts';
+import { noCredentials } from '../fixtures/doubles.ts';
 import type { Finding, RegistryName } from '../../src/lib/data/model/index.ts';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -136,7 +137,7 @@ for (const workspace of first.workspaces) {
 
 // The hub's own git state, through server/core/git/state.ts's four read-only commands and nothing
 // else. It reads the repository and changes nothing in it, like everything else in this file.
-const state = (await readState(hub, TEXT)).state;
+const state = (await readState(noCredentials(), hub, TEXT)).state;
 console.log(
     `git ${hub}: branch ${state.branch || '(none)'}, ahead ${state.ahead}, behind ${state.behind}, ` +
         `staged ${state.staged.length}, unstaged ${state.unstaged.length}, ` +

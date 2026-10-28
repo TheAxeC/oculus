@@ -72,11 +72,21 @@ export type RuleLists = {
     config?: Record<string, unknown>;
 };
 
-/** What each form of a text looks like. */
+/**
+ * What each form of a text looks like. An `https_address` is an `https://` address whose host is a
+ * DNS name, with an optional port and a path holding no white space, quote or backslash, so a
+ * placeholder such as `{tenant}` may stand in it; an `https_origin` is the scheme, the host and an
+ * optional port and nothing after, so it can name a git credential context with nothing a git
+ * config line splits on; a `row_key` is lowercase letters, digits, dashes and underscores, the
+ * words a file name may be made of.
+ */
 export const FORM_PATTERNS: Record<Form, RegExp> = {
     program: /^[^/\s]+$/,
     extension: /^\.[^./\s]+$/,
-    bundle_id: /^[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)+$/
+    bundle_id: /^[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)+$/,
+    https_address: /^https:\/\/[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)*(:[0-9]{1,5})?(\/[^\s'"\\]*)?$/,
+    https_origin: /^https:\/\/[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)*(:[0-9]{1,5})?$/,
+    row_key: /^[a-z0-9_-]+$/
 };
 
 /** Whether a text has a form: `program` (no slash or white space), `extension` or `bundle_id`. */
@@ -109,8 +119,12 @@ function numberProblem(spec: CatalogEntry, value: number): ValueProblem | null {
     return null;
 }
 
-/** What is wrong with a text that must have the entry's form, if it names one. */
+/**
+ * What is wrong with a text that must have the entry's form, if it names one. The empty text is
+ * the value of an entry that sets `empty`, such as an address the hub leaves out.
+ */
 function formProblem(spec: CatalogEntry, text: string): ValueProblem | null {
+    if (text === '' && spec.empty !== undefined) return null;
     if (spec.form === undefined || hasForm(spec.form, text)) return null;
     return { kind: 'form', form: spec.form };
 }

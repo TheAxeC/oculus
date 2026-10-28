@@ -12,7 +12,7 @@ import { join } from 'node:path';
 import { describe, expect, vi } from 'vitest';
 import { trashUntracked } from '../../../../src/lib/server/git/git-index.ts';
 import { it } from '../../../fixtures/scratch.ts';
-import { isolateGit, put, scratchRepo } from '../refs/repo.ts';
+import { gitAt, isolateGit, put, scratchRepo } from '../refs/repo.ts';
 import { TEXT } from '../../text.ts';
 
 isolateGit();
@@ -30,7 +30,7 @@ describe('trashUntracked', () => {
         const root = scratchRepo();
         put(root, 'u.txt', 'loose\n');
         const { spy, into } = deps();
-        const answer = await trashUntracked(root, ['u.txt'], into, TEXT, [root]);
+        const answer = await trashUntracked(gitAt(root), ['u.txt'], into, TEXT, [root]);
         expect(answer.ok).toBe(true);
         expect(spy).toHaveBeenCalledTimes(1);
         expect(spy).toHaveBeenCalledWith(join(realpathSync(root), 'u.txt'), { glob: false });

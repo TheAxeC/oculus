@@ -17,14 +17,16 @@ import { join, resolve } from 'node:path';
 import { afterEach, describe, expect } from 'vitest';
 import { Hub, type Sink } from '../../../src/lib/server/core/channels.ts';
 import type { GitPayload } from '../../../src/lib/data/model/index.ts';
-import {
-    subrepositories,
-    watchGit,
-    type GitWatcher
-} from '../../../src/lib/server/root/watch/git.ts';
+import { watchGit, type GitWatcher } from '../../../src/lib/server/root/watch/git.ts';
+import { subrepositories } from '../../../src/lib/server/root/watch/repos/paths.ts';
+import { cloneGit } from '../../../src/lib/server/git/clone/clone-git.ts';
 import { syncNested } from '../../../src/lib/server/git/clone/exclude.ts';
+import { noCredentials } from '../../fixtures/doubles.ts';
 import { it, scratchDir } from '../../fixtures/scratch.ts';
 import { git, isolateGit, repositoryAt } from './refs/repo.ts';
+
+/** The git credentials of a server signed in nowhere, which every git of these cases runs with. */
+const NONE = noCredentials();
 
 isolateGit();
 
@@ -101,6 +103,7 @@ function until(hub: Hub, wanted: string[]): Promise<void> {
 /** The watcher over `root`, the global depth `depth` and the depths of its own. */
 function watching(hub: Hub, root: string, depth: number, own: [string, number][]): GitWatcher {
     watcher = watchGit(hub, {
+        credentials: NONE,
         throttle: 0,
         roots: () => [root],
         depth: () => depth,
@@ -160,6 +163,7 @@ describe('the top folder and the workspace mark of each root', { tags: ['slow'] 
         repositoryAt(away);
         hub.publish('sessions', { workspaces: [{ key: away }] });
         watcher = watchGit(hub, {
+            credentials: NONE,
             throttle: 0,
             roots: () => [root, inner],
             depth: () => 1
@@ -188,6 +192,7 @@ describe('the repositories cloned for projects', () => {
         mkdirSync(notCloned, { recursive: true });
         let listed: string[] = [];
         watcher = watchGit(hub, {
+            credentials: NONE,
             throttle: 0,
             roots: () => [root],
             depth: () => 1,
@@ -228,12 +233,13 @@ describe('the block of nested repositories of a hub', { tags: ['slow'] }, () => 
         let writing: Promise<unknown> = Promise.resolve();
         let waiting: { lines: string; resume: () => void }[] = [];
         watcher = watchGit(hub, {
+            credentials: NONE,
             throttle: 0,
             roots: () => [dir],
             hubs: () => [dir],
             found: (found) => {
                 writing = writing.then(async () => {
-                    await syncNested(found.hubs);
+                    await syncNested(found.hubs, cloneGit(NONE));
                     const now = JSON.stringify(blockOf(dir));
                     const met = waiting.filter((one) => one.lines === now);
                     waiting = waiting.filter((one) => one.lines !== now);

@@ -68,7 +68,8 @@ text:
         refused_access: A service the sources need has no row in local.yml that it accepts.
         refused_credential: A downloads row holds a line break, which no curl config line can carry.
         refused_dataset: This dataset is not in the hub's data file.
-        refused_host: The settings of this hub name no cluster host.
+        refused_download: No address of the Node builds is set, so Unpack cannot fetch one on the cluster; it is set in recover.node_download of the hub's .oculus/config.yml, in Settings.
+        refused_host: This cluster has no host ssh can connect to.
         refused_kind: Recover runs only a set whose sources are all downloads.
         refused_listing: A source gave no file list; see the line below the actions.
         refused_nothing: No file is in the state this action takes.
@@ -79,7 +80,7 @@ text:
         refused_send: The files of the run could not be copied to the cluster.
         refused_start: The fetch did not start on this Mac.
         refused_submit: sbatch did not accept the job.
-        refused_target: The target is neither this Mac nor the cluster.
+        refused_target: The target is neither this Mac nor a cluster of slurm.resource in the hub's .oculus/config.yml.
         refused_unreachable: The cluster did not answer over ssh.
         relist: Read the sources again
         relist_title: Ask every source for its file list again instead of the list kept for this recipe
@@ -112,7 +113,6 @@ text:
         stop_none: No run of this dataset goes
         stop_title: End this dataset's run
         target: Target
-        target_cluster: Cluster
         target_mac: This Mac
         tb: '{0} TB'
         title: Recover {0}

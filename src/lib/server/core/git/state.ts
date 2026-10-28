@@ -8,19 +8,23 @@
 // slow mount must not stall a watcher: a read that fails is collapsed into the empty shape with a
 // short reason, and nothing here rejects. `readState` also says whether every command of the read
 // finished within its time limit, since a state read from a git that ran out of time is a state
-// nobody saw, which the git watcher reads again.
+// nobody saw, which the git watcher reads again. A failed fetch is built here too, from the error
+// output and the hub's `connections.failures`, and held per root until a fetch, a pull or a sync
+// of the root succeeds; the watcher puts it on the state it reads.
 
 import { existsSync, readFileSync, realpathSync } from 'node:fs';
 import { isAbsolute, join, sep } from 'node:path';
 import type {
     GitCommit,
     GitEntry,
+    GitFetchFailure,
     GitSequence,
     GitStash,
     GitState,
     GitWorktree
 } from '../../../data/model/index.ts';
 import { ignoresWorktrees } from '../../../data/helpers/worktrees.ts';
+import { failuresFor, type FailureRow } from '../../../data/sources/config.ts';
 import {
     LOG_FORMAT,
     STASH_FORMAT,
@@ -33,6 +37,7 @@ import {
     statusCollector,
     type RefRows
 } from './parse.ts';
+import type { GitCredentials } from './credentials.ts';
 import type { RecordVisit } from './records.ts';
 import {
     NO_REPOSITORY,
@@ -123,6 +128,7 @@ export function empty(error: string | null = null): GitState {
  * config makes a repository disappear. A caller renders every workspace without a special case.
  */
 export async function readState(
+    credentials: GitCredentials,
     root: string,
     text: Record<string, string>,
     timeout: number = TIMEOUT_MS
@@ -133,9 +139,10 @@ export async function readState(
         if (!done.answered) finished = false;
         return done;
     };
-    const git: Git = Object.assign(async (args: string[]) => seenBy(await run(root, args, ms)), {
+    const once = async (args: string[]) => seenBy(await run(credentials, root, args, ms));
+    const git: Git = Object.assign(once, {
         records: async (args: string[], visit: RecordVisit) =>
-            seenBy(await runRecords(root, args, ms, visit))
+            seenBy(await runRecords(credentials, root, args, ms, visit))
     });
     try {
         const found = await state(root, text, git);
@@ -143,6 +150,60 @@ export async function readState(
     } catch (error) {
         return { state: empty(short(error)), finished };
     }
+}
+
+// ---------------------------------------------------------------- a failed fetch
+
+/**
+ * A failed fetch out of the error output git and ssh wrote: the line the first row of the hub's
+ * `connections.failures` whose `for` holds `git` matches, with that row's kind and fix, else
+ * `reason`, the line git's own failure is said by everywhere else (its last `fatal: ` line, or the
+ * sentence of a fetch that ran out of time). Rows are tried in their order, as `toldFailure` tries
+ * them.
+ */
+export function fetchFailureOf(
+    output: string,
+    reason: string,
+    rows: readonly FailureRow[],
+    at: Date
+): GitFetchFailure {
+    const lines = output
+        .split('\n')
+        .map((line) => line.trim())
+        .filter((line) => line !== '');
+    const time = at.toISOString();
+    for (const row of failuresFor(rows, 'git')) {
+        const line = lines.find((one) => one.includes(row.match));
+        if (line === undefined) continue;
+        return {
+            ...(row.kind === '' ? {} : { kind: row.kind }),
+            ...(row.fix === '' ? {} : { fix: row.fix }),
+            line,
+            at: time
+        };
+    }
+    return { line: reason, at: time };
+}
+
+/**
+ * The last failed fetch of each root, which the git watcher puts on the root's state when it reads
+ * the root: set by a fetch that fails, cleared by a fetch, a pull or a sync that succeeds. One is
+ * made per server and handed to the watcher, the automatic fetch and the git routes.
+ */
+export type FetchFailures = {
+    get(root: string): GitFetchFailure | undefined;
+    set(root: string, failure: GitFetchFailure): void;
+    clear(root: string): void;
+};
+
+/** An empty set of failed fetches, for one server. */
+export function fetchFailures(): FetchFailures {
+    const held = new Map<string, GitFetchFailure>();
+    return {
+        get: (root) => held.get(root),
+        set: (root, failure) => void held.set(root, failure),
+        clear: (root) => void held.delete(root)
+    };
 }
 
 // ---------------------------------------------------------------- one root
@@ -343,10 +404,11 @@ function sequenceOf(root: string, gitDir: string, found: GitState): void {
  * one vocabulary reaches the page and the checks a write makes.
  */
 export async function worktrees(
+    credentials: GitCredentials,
     root: string,
     timeout: number = TIMEOUT_MS
 ): Promise<GitWorktree[]> {
-    return worktreesOf(root, (args) => run(root, args, timeout));
+    return worktreesOf(root, (args) => run(credentials, root, args, timeout));
 }
 
 /** The worktrees of the repository at `root`, listed through the git of one read. */

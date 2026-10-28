@@ -25,6 +25,7 @@ export { collectionViews, workspaceCollectionViews } from '../snapshot/normalise
 export { unplacedGroup } from './config/rail.ts';
 
 export {
+    type ClusterAccount,
     type DownloadAccount,
     type DownloadService,
     type LocalConfig,
@@ -63,14 +64,23 @@ export {
 } from './config/catalogs.ts';
 export {
     type CalendarSettings,
+    type FailureRow,
+    type KeyType,
     type LiteratureSettings,
     type MailSettings,
+    type SignInRow,
     type SlurmSettings,
     calendarSettings,
+    clusterKeySettings,
+    failureRows,
+    failuresFor,
     literatureSettings,
     mailSettings,
+    nodeDownload,
     refreshSettings,
+    signInRows,
     slurmSettings,
+    toldFailure,
     usageTiers
 } from './config/settings/connectors.ts';
 export {

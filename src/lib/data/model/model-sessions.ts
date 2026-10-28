@@ -1,8 +1,9 @@
-// Layer 1, data. Session, project command, git, HPC and usage records carried by runtime
-// channels. This concern module keeps the live operational wire types separate from portfolio
-// snapshots. The project commands of a repository are here as the server lists them and the page
-// draws them: the command, where it was read from, what could not be read, the context the page
-// sends with a run, and the diagnostics a task terminal's output gives.
+// Layer 1, data. Session, project command, git and usage records carried by runtime channels
+// (the HPC records are machine/model-hpc.ts's). This concern module keeps the live operational
+// wire types separate from portfolio snapshots. The project commands of a repository are here as
+// the server lists them and the page draws them: the command, where it was read from, what could
+// not be read, the context the page sends with a run, and the diagnostics a task terminal's output
+// gives.
 
 import type { Id } from './model-entities.ts';
 import type { AppTaskRef } from './apps/model-apps-tools.ts';
@@ -459,8 +460,17 @@ export type DiffAttributes = {
 export type GitMergeDeleted = '' | 'ours' | 'theirs' | 'both';
 
 /**
+ * The last fetch of a repository that failed, the automatic one or the reader's Fetch: `line` the
+ * line of git's or ssh's error output it is shown by, `kind` and `fix` the words of the hub's
+ * `connections.failures` row whose `match` that line holds (absent when no row matches), and `at`
+ * the moment it failed, as an ISO 8601 time.
+ */
+export type GitFetchFailure = { kind?: string; fix?: string; line: string; at: string };
+
+/**
  * One workspace's git state. Every field is filled, `error` saying why when the rest is empty, and
- * `repository` saying whether the root is a repository whatever else failed.
+ * `repository` saying whether the root is a repository whatever else failed; `fetchFailure` alone
+ * is absent until a fetch fails, and again from the next fetch, pull or sync that succeeds.
  */
 export type GitState = {
     /** The branch name, `HEAD` when nothing is checked out, empty when git said nothing. */
@@ -552,6 +562,8 @@ export type GitState = {
      * Why a read failed, or null. Set on a repository as well, so it does not mean "no repository".
      */
     error: string | null;
+    /** The last fetch that failed, until a fetch, a pull or a sync of the root succeeds. */
+    fetchFailure?: GitFetchFailure;
 };
 
 /** The payload of the `git` channel: one state per workspace root. */
@@ -609,111 +621,6 @@ export type HubNotes = {
     state: 'ok' | 'none' | 'refused' | 'unreadable';
     error: string;
     entries: NoteEntry[];
-};
-
-// ------------------------------------------------------------------ hpc
-/**
- * A failed poll is `unreachable` (ssh did not connect), `slurm_down` (ssh connected and Slurm did
- * not answer) or `error` (anything else). `unconfigured` is a hub whose settings name no cluster:
- * there is nothing to ask, so nothing is polled and the payload carries the sentence that says so
- * as `hint`.
- */
-type HpcStatus = 'starting' | 'ok' | 'unreachable' | 'slurm_down' | 'error' | 'unconfigured';
-export type HpcJob = {
-    id: string;
-    name: string;
-    partition: string;
-    state: string;
-    time: string;
-    limit: string;
-    nodes: string;
-    cpus: string;
-    gpus: string;
-    mem: string;
-    priority: string;
-    start: string;
-    reason: string;
-};
-export type HpcRecent = {
-    id: string;
-    name: string;
-    state: string;
-    exit: string;
-    elapsed: string;
-    end: string;
-    memPct: number | null;
-    memUsed: string;
-    memReq: string;
-    cpuPct: number | null;
-};
-export type HpcPartition = {
-    partition: string;
-    avail: string;
-    nodes: number;
-    state: string;
-    gres: string;
-};
-export type HpcQuotaItem = { name: string; used: string; limit: string; pct: number };
-export type HpcPayload = {
-    status: HpcStatus;
-    hint?: string;
-    jobs: HpcJob[];
-    running: number;
-    pending: number;
-    total: number;
-    recent: HpcRecent[];
-    sinfo: HpcPartition[];
-    quota: HpcQuotaItem[];
-    updated: string;
-    /**
-     * When the cluster last answered for the queue, so a failed poll can say how old the queue
-     * under it is. A payload whose `lastOk` equals `updated` has this poll's queue.
-     */
-    lastOk?: string;
-    /**
-     * Present on a failed poll whose Recent or Capacity table is older than its queue, which is a
-     * poll whose `squeue` answered and whose `sacct` or `sinfo` did not, and every later failed
-     * poll while a table kept so is still older than the queue. It names each such table with the
-     * time (ISO) of the poll its rows came from, or `null` when no poll has answered for that table
-     * since the server started (its rows then empty). A payload of a good poll, of `starting`, of
-     * `unconfigured`, and of a failed poll whose tables are as old as its queue carries none.
-     */
-    stale?: { recent?: string | null; sinfo?: string | null };
-    pollMin: number;
-    /**
-     * Minutes between attempts while the cluster is not answering; absent while the status is
-     * `unconfigured`, which retries nothing.
-     */
-    retryMin?: number;
-    host: string;
-};
-
-/**
- * Whether a payload's queue is this poll's: a good poll, or a failed one in which the cluster
- * answered for the queue (`lastOk` equal to `updated`). The server reads Recover's section and the
- * page reads the queue as live by it.
- */
-export function queueIsCurrent(
-    payload: Pick<HpcPayload, 'status' | 'lastOk' | 'updated'>
-): boolean {
-    return payload.status === 'ok' || payload.lastOk === payload.updated;
-}
-
-/** What Submit will do with a job script, computed by the server and confirmed by the reader. */
-export type SubmitPlan = {
-    root: string;
-    path: string;
-    project: string;
-    host: string;
-    source: string; // the absolute local code folder, ending in '/'
-    target: string; // '<host>:<cluster folder>/'
-    files: number;
-    bytes: number;
-    digest: string; // sha256 of the sorted paths joined by NUL, hex
-    rsync: string[]; // the rsync arguments as run, without the program name
-    remote: string; // the one remote command, `cd <folder> && sbatch --parsable <script>`
-    /** Whether the script or a file it sources names the scratch folder, and what was unread. */
-    scratch: { named: boolean; unread: string[] };
 };
 
 // ------------------------------------------------------------------ usage

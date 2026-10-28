@@ -45,7 +45,8 @@ const target = (locals: App.Locals): FsTarget => {
         },
         bookmarks: own.bookmarks,
         writes: server.fsWrites,
-        ignored: server.ignoredCache
+        ignored: server.ignoredCache,
+        credentials: server.credentials
     };
 };
 

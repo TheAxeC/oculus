@@ -20,7 +20,7 @@ import {
     stopTerminal
 } from '../../../../src/lib/server/machine/pty/sessions.ts';
 import { control, inputChunks, run } from '../../../../src/lib/server/machine/pty/tmux.ts';
-import { noop } from '../../../fixtures/doubles.ts';
+import { noCredentials, noop } from '../../../fixtures/doubles.ts';
 import { it } from '../../../fixtures/scratch.ts';
 import { privateTmux, tmuxOptions } from './tmux-server.ts';
 
@@ -51,7 +51,7 @@ describe('a private tmux server', { tags: ['slow'] }, () => {
     it('starts, lists, feeds, resizes, captures and stops a terminal', async () => {
         const started = await startTerminal(
             { kind: 'shell', cwd: server.dir, cols: 80, rows: 24, name: 'a named terminal' },
-            { ...options, command: 'cat' }
+            { ...options, command: 'cat', credentials: noCredentials() }
         );
         expect(started.kind).toBe('shell');
         expect(started.name).toBe('a named terminal');

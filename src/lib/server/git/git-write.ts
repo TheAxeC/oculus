@@ -72,7 +72,10 @@
 // core/git/run.ts's `pathInside`. The `status` is read record by record as git writes it
 // (`statusIn`, through core/git/records.ts), with no limit on the output, and each check keeps only
 // what it asks: whether a record of a kind is there, which ends git at the first, or the paths it
-// names, so no number of untracked files makes a check fail.
+// names, so no number of untracked files makes a check fail. Every operation takes a `GitAt`, the
+// root and the `GitCredentials` of the server context (core/git/credentials.ts), and every git here
+// is given their `-c` arguments before its own, so a fetch, a pull or a push to a git host the
+// reader signed in to in Account setup is answered with its token.
 
 import { execFile, spawn } from 'node:child_process';
 import { existsSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
@@ -91,6 +94,7 @@ import {
     type CommandFailure,
     type StatusRecord
 } from '../core/git/parse.ts';
+import type { GitCredentials } from '../core/git/credentials.ts';
 import { readRecords, type RecordVisit } from '../core/git/records.ts';
 import { endWith } from '../core/git/running.ts';
 import { GIT, pathInside } from '../core/git/run.ts';
@@ -122,6 +126,11 @@ export type Outcome = {
     error: string;
     code?: string;
     failure?: CommandFailure;
+    /**
+     * The whole error stream of a command that failed and wrote one, every line of it, which a
+     * failed fetch is told apart by (core/git/state.ts, `fetchFailureOf`); `error` holds one line.
+     */
+    stderr?: string;
 };
 
 /** One row of `git branch --format`, as the branch menu draws it. */
@@ -131,16 +140,21 @@ export function failed(error: string): Outcome {
     return { ok: false, output: '', error };
 }
 
+/** The repository a write runs in, and the credentials every git it starts is given. */
+export type GitAt = { root: string; credentials: GitCredentials };
+
 /**
  * What one command may carry beside its arguments: its standard input, as one text or as a stream
  * written while git runs, variables, the codes of refusals the page acts on, each named by a phrase
- * of git's whole error stream, and the signal that ends the run when Cancel aborts it.
+ * of git's whole error stream, the signal that ends the run when Cancel aborts it, and whether a
+ * failure keeps that whole stream as `stderr`.
  */
 type Extra = {
     input?: string | Readable;
     env?: Record<string, string>;
     codes?: Record<string, string>;
     signal?: AbortSignal;
+    stream?: boolean;
 };
 
 /**
@@ -152,8 +166,8 @@ type Extra = {
  * stopped on conflicts, a commit with nothing to commit); a command that gave none is answered with
  * its code.
  */
-function run(root: string, args: string[], timeout: number, extra: Extra = {}): Promise<Outcome> {
-    const argv = ['-C', root, ...args];
+function run(at: GitAt, args: string[], timeout: number, extra: Extra = {}): Promise<Outcome> {
+    const argv = [...at.credentials.args(), '-C', at.root, ...args];
     return new Promise((settle) => {
         // A list, never a shell. A path or a branch name from the page is an argument and can
         // therefore never be read as syntax.
@@ -167,11 +181,13 @@ function run(root: string, args: string[], timeout: number, extra: Extra = {}): 
                 env: extra.env === undefined ? process.env : { ...process.env, ...extra.env }
             },
             (error, stdout, stderr) => {
-                settle(
-                    error === null
-                        ? { ok: true, output: typeof stdout === 'string' ? stdout : '', error: '' }
-                        : refusalOf(ended(error) ?? error, stdout, stderr, timeout, extra.codes)
-                );
+                if (error === null) {
+                    const output = typeof stdout === 'string' ? stdout : '';
+                    settle({ ok: true, output, error: '' });
+                    return;
+                }
+                const said = refusalOf(ended(error) ?? error, stdout, stderr, timeout, extra.codes);
+                settle(extra.stream === true ? keptStream(said, stderr) : said);
             }
         );
         const ended = endWith(child, extra.signal);
@@ -210,6 +226,12 @@ function refusalOf(
     const whole = typeof stderr === 'string' ? stderr : '';
     const code = Object.entries(codes).find(([phrase]) => whole.includes(phrase))?.[1];
     return code === undefined ? failed(said.reason) : { ...failed(said.reason), code };
+}
+
+/** A command's failure with the whole of its error stream kept, as a fetch's is. */
+function keptStream(said: Outcome, stderr: unknown): Outcome {
+    if (said.ok || typeof stderr !== 'string' || stderr.trim() === '') return said;
+    return { ...said, stderr };
 }
 
 // ---------------------------------------------------------------- what may be written where
@@ -252,26 +274,26 @@ export function checkPaths(
 
 /** Stage the given paths. */
 export async function stage(
-    root: string,
+    at: GitAt,
     paths: string[],
     text: Record<string, string>,
     roots: string[] = allowedRoots()
 ): Promise<Outcome> {
-    const wrong = checkPaths(root, paths, text, roots);
+    const wrong = checkPaths(at.root, paths, text, roots);
     if (wrong !== '') return failed(wrong);
-    return addTo(root, ['--', ...paths]);
+    return addTo(at, ['--', ...paths]);
 }
 
 /** Take the given paths back out of the index, leaving the worktree as it is. */
 export async function unstage(
-    root: string,
+    at: GitAt,
     paths: string[],
     text: Record<string, string>,
     roots: string[] = allowedRoots()
 ): Promise<Outcome> {
-    const wrong = checkPaths(root, paths, text, roots);
+    const wrong = checkPaths(at.root, paths, text, roots);
     if (wrong !== '') return failed(wrong);
-    return restore(root, paths, true);
+    return restore(at, paths, true);
 }
 
 /**
@@ -280,18 +302,18 @@ export async function unstage(
  * a dashboard that can lose work nobody can get back.
  */
 export async function discard(
-    root: string,
+    at: GitAt,
     paths: string[],
     text: Record<string, string>,
     roots: string[] = allowedRoots()
 ): Promise<Outcome> {
-    const loose = await untrackedAmong(root, paths, text, roots);
+    const loose = await untrackedAmong(at, paths, text, roots);
     if (!(loose instanceof Set)) return loose;
     const refused = paths.filter((path) => loose.has(path));
     if (refused.length > 0) {
         return failed(words(text, 'server.git.not_tracked', refused[0]));
     }
-    return restore(root, paths, false);
+    return restore(at, paths, false);
 }
 
 /**
@@ -303,23 +325,23 @@ export async function discard(
  * on from there is a forced push, which nothing here runs.
  */
 export async function commit(
-    root: string,
+    at: GitAt,
     message: string,
     text: Record<string, string>,
     roots: string[] = allowedRoots(),
     amend = false,
     signal?: AbortSignal
 ): Promise<Outcome> {
-    if (!permitted(root, roots)) return failed(words(text, 'server.git.unknown_directory'));
+    if (!permitted(at.root, roots)) return failed(words(text, 'server.git.unknown_directory'));
     const body = typeof message === 'string' ? message : '';
     if (!amend && body.trim() === '') return failed(words(text, 'server.git.commit_needs_message'));
     if (amend) {
-        const pushed = await pushedAlready(root);
+        const pushed = await pushedAlready(at);
         if (pushed) return failed(words(text, 'server.git.amend_pushed'));
-        if (body.trim() === '') return commitWith(root, ['--amend', '--no-edit'], signal);
+        if (body.trim() === '') return commitWith(at, ['--amend', '--no-edit'], signal);
     }
     return withFile('oculus-commit-', body, (file) =>
-        commitWith(root, [...(amend ? ['--amend'] : []), '-F', file], signal)
+        commitWith(at, [...(amend ? ['--amend'] : []), '-F', file], signal)
     );
 }
 
@@ -346,14 +368,10 @@ export async function withFile(
  * Whether the upstream already holds HEAD. A branch with no upstream holds nothing anywhere, so
  * its HEAD is not pushed; git answering that HEAD is an ancestor of the upstream is the one yes.
  */
-async function pushedAlready(root: string): Promise<boolean> {
-    const up = await upstream(root);
+async function pushedAlready(at: GitAt): Promise<boolean> {
+    const up = await upstream(at);
     if (!up.ok) return false;
-    const held = await run(
-        root,
-        ['merge-base', '--is-ancestor', 'HEAD', '@{upstream}'],
-        TIMEOUT_MS
-    );
+    const held = await run(at, ['merge-base', '--is-ancestor', 'HEAD', '@{upstream}'], TIMEOUT_MS);
     return held.ok;
 }
 
@@ -363,25 +381,25 @@ async function pushedAlready(root: string): Promise<boolean> {
  * is the user's at a terminal rather than a side effect of a button. This push never forces.
  */
 export async function push(
-    root: string,
+    at: GitAt,
     text: Record<string, string>,
     roots: string[] = allowedRoots(),
     signal?: AbortSignal
 ): Promise<Outcome> {
-    if (!permitted(root, roots)) return failed(words(text, 'server.git.unknown_directory'));
-    const up = await upstream(root);
+    if (!permitted(at.root, roots)) return failed(words(text, 'server.git.unknown_directory'));
+    const up = await upstream(at);
     if (!up.ok) return failed(words(text, 'server.git.push_no_upstream'));
-    return pushTo(root, [], signal);
+    return pushTo(at, [], signal);
 }
 
 /** Every branch, with its upstream and which one is checked out. A read, and the only one here. */
 export async function branches(
-    root: string,
+    at: GitAt,
     text: Record<string, string>,
     roots: string[] = allowedRoots()
 ): Promise<Outcome> {
-    if (!permitted(root, roots)) return failed(words(text, 'server.git.unknown_directory'));
-    return branch(root, [REFS_FORMAT]);
+    if (!permitted(at.root, roots)) return failed(words(text, 'server.git.unknown_directory'));
+    return branch(at, [REFS_FORMAT]);
 }
 
 /**
@@ -402,19 +420,19 @@ export function checkStart(start: string, text: Record<string, string>): string 
  * judge, so git judges it first.
  */
 export async function createBranch(
-    root: string,
+    at: GitAt,
     name: string,
     text: Record<string, string>,
     roots: string[] = allowedRoots(),
     start?: string,
     signal?: AbortSignal
 ): Promise<Outcome> {
-    const wrong = await checkName(root, name, text, roots);
+    const wrong = await checkName(at, name, text, roots);
     if (wrong !== '') return failed(wrong);
-    if (start === undefined) return switchTo(root, ['-c', name], signal);
+    if (start === undefined) return switchTo(at, ['-c', name], signal);
     const refusal = checkStart(start, text);
     if (refusal !== '') return failed(refusal);
-    return switchTo(root, ['-c', name, start], signal);
+    return switchTo(at, ['-c', name, start], signal);
 }
 
 /**
@@ -446,18 +464,18 @@ async function switched(run: Promise<Outcome>, text: Record<string, string>): Pr
  * would be overwritten.
  */
 export async function switchBranch(
-    root: string,
+    at: GitAt,
     name: string,
     text: Record<string, string>,
     roots: string[] = allowedRoots(),
     signal?: AbortSignal
 ): Promise<Outcome> {
-    const wrong = await checkName(root, name, text, roots);
+    const wrong = await checkName(at, name, text, roots);
     if (wrong !== '') return failed(wrong);
-    const dirty = await statusHolds(root, trackedChange);
+    const dirty = await statusHolds(at, trackedChange);
     if (dirty !== false)
         return dirty === true ? failed(words(text, 'server.git.dirty_switch')) : dirty;
-    return switched(switchTo(root, [name], signal), text);
+    return switched(switchTo(at, [name], signal), text);
 }
 
 /**
@@ -465,18 +483,18 @@ export async function switchBranch(
  * `switchBranch`, for the same reason: git carries uncommitted changes across a switch.
  */
 export async function switchDetached(
-    root: string,
+    at: GitAt,
     ref: string,
     text: Record<string, string>,
     roots: string[] = allowedRoots(),
     signal?: AbortSignal
 ): Promise<Outcome> {
-    const wrong = await checkName(root, ref, text, roots);
+    const wrong = await checkName(at, ref, text, roots);
     if (wrong !== '') return failed(wrong);
-    const dirty = await statusHolds(root, trackedChange);
+    const dirty = await statusHolds(at, trackedChange);
     if (dirty !== false)
         return dirty === true ? failed(words(text, 'server.git.dirty_switch')) : dirty;
-    return switched(switchTo(root, ['--detach', ref], signal), text);
+    return switched(switchTo(at, ['--detach', ref], signal), text);
 }
 
 // ---------------------------------------------------------------- worktrees and the merge back
@@ -503,18 +521,18 @@ export function worktreeUnder(root: string, path: string): boolean {
  * already be there: a worktree over an existing folder is a merge of two unrelated things.
  */
 export async function createWorktree(
-    root: string,
+    at: GitAt,
     name: string,
     text: Record<string, string>,
     roots: string[] = allowedRoots(),
     signal?: AbortSignal
 ): Promise<Outcome> {
-    const wrong = await checkName(root, name, text, roots);
+    const wrong = await checkName(at, name, text, roots);
     if (wrong !== '') return failed(wrong);
     if (!validName(name)) return failed(words(text, 'server.git.worktree_name', name));
-    const path = worktreePath(root, name);
+    const path = worktreePath(at.root, name);
     if (existsSync(path)) return failed(words(text, 'server.git.already_something', path));
-    return worktree(root, ['add', '-b', name, path, 'HEAD'], signal);
+    return worktree(at, ['add', '-b', name, path, 'HEAD'], signal);
 }
 
 /**
@@ -524,26 +542,27 @@ export async function createWorktree(
  * upstream, or into HEAD when it has none, so such a branch stays and the answer says so.
  */
 export async function removeWorktree(
-    root: string,
+    at: GitAt,
     path: string,
     text: Record<string, string>,
     roots: string[] = allowedRoots()
 ): Promise<Outcome> {
-    if (!permitted(root, roots)) return failed(words(text, 'server.git.unknown_directory'));
-    if (!worktreeUnder(root, path)) return failed(words(text, 'server.git.outside_worktrees'));
+    if (!permitted(at.root, roots)) return failed(words(text, 'server.git.unknown_directory'));
+    if (!worktreeUnder(at.root, path)) return failed(words(text, 'server.git.outside_worktrees'));
     if (!existsSync(path)) return failed(words(text, 'server.git.no_worktree_at', path));
     // Untracked files count here, unlike the merge: `git worktree remove` would take the folder and
     // them with it, and a file git never saw is a file nobody can get back.
-    const dirty = await statusHolds(path, () => true);
+    const tree: GitAt = { ...at, root: path };
+    const dirty = await statusHolds(tree, () => true);
     if (dirty !== false) {
         return dirty === true ? failed(words(text, 'server.git.worktree_dirty')) : dirty;
     }
-    const head = await revParse(path, ['--abbrev-ref', 'HEAD']);
+    const head = await revParse(tree, ['--abbrev-ref', 'HEAD']);
     const name = head.ok ? head.output.trim() : '';
-    const gone = await worktree(root, ['remove', path]);
+    const gone = await worktree(at, ['remove', path]);
     if (!gone.ok) return gone;
     if (name === '' || name === 'HEAD') return gone;
-    const dropped = await branch(root, ['-d', name]);
+    const dropped = await branch(at, ['-d', name]);
     if (dropped.ok) return { ok: true, output: `${gone.output}${dropped.output}`, error: '' };
     return {
         ok: true,
@@ -555,17 +574,17 @@ export async function removeWorktree(
 // ---------------------------------------------------------------- the shared call sites
 
 /** The one `restore` call site: staged is the unstage, unstaged is the discard. */
-export function restore(root: string, paths: string[], staged: boolean): Promise<Outcome> {
+export function restore(at: GitAt, paths: string[], staged: boolean): Promise<Outcome> {
     const flags = staged ? ['--staged'] : [];
-    return run(root, ['restore', ...flags, '--', ...paths], TIMEOUT_MS);
+    return run(at, ['restore', ...flags, '--', ...paths], TIMEOUT_MS);
 }
 
 /**
  * The one `rm` call site: Accept Deletion over a conflicted path a side deleted, which takes the
  * path from the index and the worktree.
  */
-export function removeIn(root: string, args: string[]): Promise<Outcome> {
-    return run(root, ['rm', ...args], TIMEOUT_MS);
+export function removeIn(at: GitAt, args: string[]): Promise<Outcome> {
+    return run(at, ['rm', ...args], TIMEOUT_MS);
 }
 
 /**
@@ -574,12 +593,12 @@ export function removeIn(root: string, args: string[]): Promise<Outcome> {
  * write's time limit or `NO_TIME_LIMIT` where Cancel ends it.
  */
 export function addTo(
-    root: string,
+    at: GitAt,
     args: string[],
     extra: Extra = {},
     timeout: number = TIMEOUT_MS
 ): Promise<Outcome> {
-    return run(root, ['add', ...args], timeout, extra);
+    return run(at, ['add', ...args], timeout, extra);
 }
 
 /**
@@ -587,16 +606,16 @@ export function addTo(
  * standard input. `--recount` has git count the lines itself, since a patch cut down to some of
  * a hunk's lines no longer matches the counts in its head.
  */
-export function applyPatch(root: string, flags: string[], patch: string): Promise<Outcome> {
-    return run(root, ['apply', ...flags, '--recount', '-'], TIMEOUT_MS, { input: patch });
+export function applyPatch(at: GitAt, flags: string[], patch: string): Promise<Outcome> {
+    return run(at, ['apply', ...flags, '--recount', '-'], TIMEOUT_MS, { input: patch });
 }
 
 /**
  * The one `commit` call site: a message from a file, an amend, and a merge's commit. It runs the
  * repository's commit hooks, so it has no time limit.
  */
-function commitWith(root: string, args: string[], signal?: AbortSignal): Promise<Outcome> {
-    return run(root, ['commit', ...args], NO_TIME_LIMIT, { env: CONFIG_ONLY, signal });
+function commitWith(at: GitAt, args: string[], signal?: AbortSignal): Promise<Outcome> {
+    return run(at, ['commit', ...args], NO_TIME_LIMIT, { env: CONFIG_ONLY, signal });
 }
 
 /**
@@ -613,8 +632,8 @@ const CONFIG_ONLY = {
  * The one `cherry-pick` call site: a commit picked onto the checked-out branch, which runs the
  * repository's hooks and has no time limit, and the abort, which runs none and keeps the limit.
  */
-export function cherryPickIn(root: string, args: string[], signal?: AbortSignal): Promise<Outcome> {
-    return run(root, ['cherry-pick', ...args], limitOf(args), { signal });
+export function cherryPickIn(at: GitAt, args: string[], signal?: AbortSignal): Promise<Outcome> {
+    return run(at, ['cherry-pick', ...args], limitOf(args), { signal });
 }
 
 /** The time limit of a command whose `--abort` form runs no hook: it keeps the local limit. */
@@ -626,16 +645,16 @@ function limitOf(args: string[]): number {
  * The one `push` call site: the branch to its upstream, a branch published, and the tags. It runs
  * the pre-push hook, so it has no time limit.
  */
-export function pushTo(root: string, args: string[], signal?: AbortSignal): Promise<Outcome> {
-    return run(root, ['push', ...args], NO_TIME_LIMIT, { signal });
+export function pushTo(at: GitAt, args: string[], signal?: AbortSignal): Promise<Outcome> {
+    return run(at, ['push', ...args], NO_TIME_LIMIT, { signal });
 }
 
 /**
  * The one `pull` call site, with the repository's own configuration and nothing imposed. A pull
  * merges and runs the post-merge hook, so it has no time limit.
  */
-export function pullIn(root: string, signal?: AbortSignal): Promise<Outcome> {
-    return run(root, ['pull'], NO_TIME_LIMIT, { signal });
+export function pullIn(at: GitAt, signal?: AbortSignal): Promise<Outcome> {
+    return run(at, ['pull'], NO_TIME_LIMIT, { signal });
 }
 
 /** How a fetch nobody pressed is told never to wait for a person. */
@@ -658,14 +677,20 @@ function unattendedEnv(options: FetchOptions): Record<string, string> | undefine
     return env;
 }
 
-/** The one `fetch` call site: every remote branch, and the ones gone from the remote taken away. */
-export function fetchIn(root: string, options: FetchOptions = {}): Promise<Outcome> {
-    return run(root, ['fetch', '--prune'], PUSH_TIMEOUT_MS, { env: unattendedEnv(options) });
+/**
+ * The one `fetch` call site: every remote branch, and the ones gone from the remote taken away. A
+ * failure keeps its whole error stream, which ssh's own line is in.
+ */
+export function fetchIn(at: GitAt, options: FetchOptions = {}): Promise<Outcome> {
+    return run(at, ['fetch', '--prune'], PUSH_TIMEOUT_MS, {
+        env: unattendedEnv(options),
+        stream: true
+    });
 }
 
 /** The one `remote` call site: the remotes by name, which a branch may be published to. */
-export function remoteNames(root: string): Promise<Outcome> {
-    return run(root, ['remote'], TIMEOUT_MS);
+export function remoteNames(at: GitAt): Promise<Outcome> {
+    return run(at, ['remote'], TIMEOUT_MS);
 }
 
 /**
@@ -674,32 +699,32 @@ export function remoteNames(root: string): Promise<Outcome> {
  * message as it stands, since no one is at a terminal to write it.
  */
 export function rebaseIn(
-    root: string,
+    at: GitAt,
     step: '--abort' | '--continue',
     signal?: AbortSignal
 ): Promise<Outcome> {
-    return run(root, ['rebase', step], limitOf([step]), {
+    return run(at, ['rebase', step], limitOf([step]), {
         env: { GIT_EDITOR: 'true' },
         signal
     });
 }
 
 /** The one `stash` call site: every form of it, the push, the apply, the pop and the drop. */
-export function stashIn(root: string, args: string[]): Promise<Outcome> {
-    return run(root, ['stash', ...args], TIMEOUT_MS);
+export function stashIn(at: GitAt, args: string[]): Promise<Outcome> {
+    return run(at, ['stash', ...args], TIMEOUT_MS);
 }
 
 /** The one `tag` call site: a tag made at HEAD, plain or annotated, and a tag deleted. */
-export function tagIn(root: string, args: string[]): Promise<Outcome> {
-    return run(root, ['tag', ...args], TIMEOUT_MS);
+export function tagIn(at: GitAt, args: string[]): Promise<Outcome> {
+    return run(at, ['tag', ...args], TIMEOUT_MS);
 }
 
 /**
  * The one `switch` call site, for both the branch that exists and the one being made. A switch
  * runs the post-checkout hook, so it has no time limit.
  */
-function switchTo(root: string, args: string[], signal?: AbortSignal): Promise<Outcome> {
-    return run(root, ['switch', ...args], NO_TIME_LIMIT, { signal });
+function switchTo(at: GitAt, args: string[], signal?: AbortSignal): Promise<Outcome> {
+    return run(at, ['switch', ...args], NO_TIME_LIMIT, { signal });
 }
 
 /**
@@ -712,16 +737,22 @@ function switchTo(root: string, args: string[], signal?: AbortSignal): Promise<O
  * answers as `run` answers.
  */
 export function statusIn(
-    root: string,
+    at: GitAt,
     visit: RecordVisit,
     untracked: 'all' | 'normal' = 'all'
 ): Promise<Outcome> {
     const child = spawn(
         GIT,
-        ['-C', root, 'status', '--porcelain=v1', '-z', `--untracked-files=${untracked}`],
-        {
-            stdio: ['ignore', 'pipe', 'pipe']
-        }
+        [
+            ...at.credentials.args(),
+            '-C',
+            at.root,
+            'status',
+            '--porcelain=v1',
+            '-z',
+            `--untracked-files=${untracked}`
+        ],
+        { stdio: ['ignore', 'pipe', 'pipe'] }
     );
     return readRecords(child, { timeout: TIMEOUT_MS }, visit).then(({ error, stderr }) =>
         error === null
@@ -735,11 +766,11 @@ export function statusIn(
  * the outcome of a read that failed.
  */
 export async function statusHolds(
-    root: string,
+    at: GitAt,
     wanted: (record: StatusRecord) => boolean
 ): Promise<boolean | Outcome> {
     let found = false;
-    const done = await statusIn(root, (record) => {
+    const done = await statusIn(at, (record) => {
         found = wanted(record);
         return !found;
     });
@@ -750,64 +781,64 @@ export async function statusHolds(
  * The one `rev-parse` call site: the upstream of the current branch, what HEAD is, whether a merge
  * is in progress, and where git keeps a rebase's state.
  */
-export function revParse(root: string, args: string[]): Promise<Outcome> {
-    return run(root, ['rev-parse', ...args], TIMEOUT_MS);
+export function revParse(at: GitAt, args: string[]): Promise<Outcome> {
+    return run(at, ['rev-parse', ...args], TIMEOUT_MS);
 }
 
 /** Whether the current branch has somewhere to push to. */
-export function upstream(root: string): Promise<Outcome> {
-    return revParse(root, ['--abbrev-ref', '@{upstream}']);
+export function upstream(at: GitAt): Promise<Outcome> {
+    return revParse(at, ['--abbrev-ref', '@{upstream}']);
 }
 
 /** The one `diff` call site: the staged diff, one file's, a worktree's range, and the conflicts. */
-export function diff(root: string, args: string[]): Promise<Outcome> {
-    return run(root, ['diff', ...args], TIMEOUT_MS);
+export function diff(at: GitAt, args: string[]): Promise<Outcome> {
+    return run(at, ['diff', ...args], TIMEOUT_MS);
 }
 
 /**
  * The one `branch` call site: the listing the menu draws, the `-d` a worktree removal and Delete
  * Branch make, and the `-D` Delete Anyway makes after its question.
  */
-export function branch(root: string, args: string[], extra: Extra = {}): Promise<Outcome> {
-    return run(root, ['branch', ...args], TIMEOUT_MS, extra);
+export function branch(at: GitAt, args: string[], extra: Extra = {}): Promise<Outcome> {
+    return run(at, ['branch', ...args], TIMEOUT_MS, extra);
 }
 
 /**
  * The one `worktree` call site: the add, which runs the post-checkout hook and has no time limit,
  * and the remove, which keeps the local limit. The list is server/core/git/state.ts's read.
  */
-function worktree(root: string, args: string[], signal?: AbortSignal): Promise<Outcome> {
+function worktree(at: GitAt, args: string[], signal?: AbortSignal): Promise<Outcome> {
     const limit = args[0] === 'add' ? NO_TIME_LIMIT : TIMEOUT_MS;
-    return run(root, ['worktree', ...args], limit, { signal });
+    return run(at, ['worktree', ...args], limit, { signal });
 }
 
 /**
  * The one `merge` call site: the merge itself, which runs the hooks and has no time limit, and the
  * abort that takes a conflicted one back, which keeps the local limit.
  */
-export function mergeIn(root: string, args: string[], signal?: AbortSignal): Promise<Outcome> {
-    return run(root, ['merge', ...args], limitOf(args), { signal });
+export function mergeIn(at: GitAt, args: string[], signal?: AbortSignal): Promise<Outcome> {
+    return run(at, ['merge', ...args], limitOf(args), { signal });
 }
 
 /** Whether a name is a branch name git accepts, judged by git, or the empty string when it is. */
 export async function checkName(
-    root: string,
+    at: GitAt,
     name: string,
     text: Record<string, string>,
     roots: string[]
 ): Promise<string> {
-    if (!permitted(root, roots)) return words(text, 'server.git.unknown_directory');
+    if (!permitted(at.root, roots)) return words(text, 'server.git.unknown_directory');
     if (typeof name !== 'string' || name.trim() === '') {
         return words(text, 'server.git.branch_needs_name');
     }
     if (name.startsWith('-')) return words(text, 'server.git.not_branch_name', name);
-    const judged = await refFormat(root, ['--branch', name]);
+    const judged = await refFormat(at, ['--branch', name]);
     return judged.ok ? '' : words(text, 'server.git.not_branch_name', name);
 }
 
 /** The one `check-ref-format` call site: git's own answer on a branch name or a whole ref. */
-export function refFormat(root: string, args: string[]): Promise<Outcome> {
-    return run(root, ['check-ref-format', ...args], TIMEOUT_MS);
+export function refFormat(at: GitAt, args: string[]): Promise<Outcome> {
+    return run(at, ['check-ref-format', ...args], TIMEOUT_MS);
 }
 
 // ---------------------------------------------------------------- small stuff
@@ -818,16 +849,16 @@ export function refFormat(root: string, args: string[]): Promise<Outcome> {
  * kept, however many untracked files git lists.
  */
 export async function untrackedAmong(
-    root: string,
+    at: GitAt,
     paths: string[],
     text: Record<string, string>,
     roots: string[]
 ): Promise<Set<string> | Outcome> {
-    const wrong = checkPaths(root, paths, text, roots);
+    const wrong = checkPaths(at.root, paths, text, roots);
     if (wrong !== '') return failed(wrong);
     const asked = new Set(paths);
     const loose = new Set<string>();
-    const state = await statusIn(root, (record) => {
+    const state = await statusIn(at, (record) => {
         if (record.code === '??' && asked.has(record.path)) loose.add(record.path);
         return loose.size < asked.size;
     });

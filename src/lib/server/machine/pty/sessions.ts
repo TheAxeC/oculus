@@ -9,7 +9,11 @@
 // A composer's start is an argument vector of at least two words, which tmux runs directly, with
 // the prompt as one word of it and the account as one `-e NAME=folder` pair, or, for the default
 // account, `env -u NAME` leading the argument vector; every start also carries `GRID_ENV` as a `-e`
-// pair. What the page types into a running terminal and the text of a steer go out as their bytes,
+// pair, and the `GIT_CONFIG_COUNT`, `GIT_CONFIG_KEY_<n>` and `GIT_CONFIG_VALUE_<n>` pairs of the
+// server context's git credentials, which name oculus's credential helper for the git hosts
+// signed in to when it starts (server/core/git/credentials.ts); a shell that sets
+// `GIT_CONFIG_COUNT` itself replaces them.
+// What the page types into a running terminal and the text of a steer go out as their bytes,
 // through `send-keys -H` in pieces (inputArgs), a steer then Enter, and an interrupt is the one
 // Escape key.
 //
@@ -33,6 +37,7 @@ import type {
     TerminalKind,
     TerminalResume
 } from '../../../data/model/index.ts';
+import type { GitCredentials } from '../../core/git/credentials.ts';
 import { PREFIX, USAGE_PREFIX } from '../../transcripts/names.ts';
 import { captureArgs } from './capture.ts';
 import { TerminalRefused } from './refusal.ts';
@@ -198,6 +203,8 @@ export type StartOptions = RunOptions & {
      * only, and only beside `task`.
      */
     taskEnv?: Record<string, string>;
+    /** The server context's git credentials, whose `GIT_CONFIG_*` pairs the session carries. */
+    credentials: GitCredentials;
 };
 
 /** The environment names a start may set: the two agents' account folders. */
@@ -654,7 +661,7 @@ function quietEndArgs(session: string): string[] {
  */
 export async function startTerminal(
     request: StartRequest,
-    options: StartOptions = {}
+    options: StartOptions
 ): Promise<Terminal> {
     const kind = request.kind;
     if (!isTerminalKind(kind)) throw new Error(`kind must be one of ${KINDS.join(', ')}`);
@@ -693,7 +700,7 @@ export async function startTerminal(
         startArgs(id, { kind, cwd, cols, rows, env: request.env }, command, {
             task: options.task,
             taskEnv: options.taskEnv,
-            fixedEnv: [GRID_ENV],
+            fixedEnv: [GRID_ENV, ...options.credentials.env()],
             options: labels
         }),
         options

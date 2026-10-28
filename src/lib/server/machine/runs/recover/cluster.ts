@@ -1,7 +1,8 @@
-// Layer 2, server. Recover on the cluster, every command through the HPC `Runner` (one remote
-// command string over ssh) and every file sent by the HPC copier, so a test replaces both and
-// nothing here opens a connection. Every value in a remote command string is one shell word
-// (`shellWord`, and `pathWord` for a path under the home folder).
+// Layer 2, server. Recover on one cluster of `slurm.resource`, every command through the HPC
+// `Runner` (one remote command string over ssh, on that cluster's connection) and every file sent
+// by the HPC copier, so a test replaces both and nothing here opens a connection. Every value in a
+// remote command string is one shell word (`shellWord`, and `pathWord` for a path under the home
+// folder).
 //
 // A Fetch is the fetch script of plan.ts run on the login node inside
 // `tmux -L oculus-recover new-session -d -s <hub>-<key>`, its log `recover.log` in the dataset's
@@ -15,15 +16,17 @@
 // through the runner; its work is under `/local/$SLURM_JOB_ID`. The job checks with `sha256sum`,
 // `md5sum` or `sha1sum`, appending a line per file to `~/.oculus/recover/<hub>/<key>.checks.txt`,
 // and unpacks with 7z-wasm under the official Node build of the server's own version, which the
-// login node fetches once into `~/.oculus/recover/node/<version>/` with its `SHASUMS256.txt` and
-// the job checks before unpacking it. The job's id is kept here in `<key>.job.json`.
+// login node fetches once, from the address the hub's `recover.node_download` names, into
+// `~/.oculus/recover/node/<version>/` with its `SHASUMS256.txt` and the job checks before
+// unpacking it; with no such address an Unpack is refused. The job's id is kept here in
+// `clusters/<resource>/<key>.job.json` of the hub's Recover folder, one record per cluster.
 
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { DownloadAccount, DownloadService } from '../../../../data/sources/config.ts';
 import { cancel, validId } from '../../hpc/actions.ts';
 import { scratchText } from '../../hpc/scratch.ts';
-import type { Runner } from '../../hpc/ssh.ts';
+import type { Connection, Runner } from '../../hpc/ssh.ts';
 import { copyVector, type Copier } from '../../hpc/transfer.ts';
 import { shellWord } from '../../pty/shell-word.ts';
 import { CLUSTER_LOG, lastLines, LOG_LINES } from './live/log.ts';
@@ -52,15 +55,22 @@ const COMMAND_MS = 60000;
 /** The partition of the check and unpack jobs, open to every user (docs/HPC-UTwente-howto.md). */
 const PARTITION = 'main-cpu';
 
-/** What the cluster's runs are handed. */
+/** What the runs on one cluster are handed. */
 export type ClusterDeps = {
-    host: string;
+    /** The cluster's key in `slurm.resource`, which names its job records here. */
+    resource: string;
+    connection: Connection;
     runner: Runner;
     copy: Copier;
     /** This Mac's home folder, where the files sent are written first. */
     home: string;
     /** The Node version the job unpacks with, the server's own (`process.version`). */
     nodeVersion: string;
+    /**
+     * The hub's `recover.node_download`: the address the official Node builds are listed under, one
+     * folder per version, or '' when the hub names none.
+     */
+    nodeDownload: string;
     sevenZip: () => string;
 };
 
@@ -97,7 +107,7 @@ function remoteFiles(hub: string, key: string) {
 /** The names of oculus's sessions on the socket; none when no tmux server runs there. */
 async function clusterSessions(deps: ClusterDeps): Promise<string[]> {
     const done = await deps.runner(
-        deps.host,
+        deps.connection,
         `tmux -L ${SOCKET} ls -F '#{session_name}'`,
         COMMAND_MS
     );
@@ -129,7 +139,7 @@ export async function clusterDisk(
         `cat ${pathWord(remoteFiles(place.hub, place.key).checks)} 2>/dev/null`,
         'true'
     ].join('; ');
-    const done = await deps.runner(deps.host, remote, COMMAND_MS);
+    const done = await deps.runner(deps.connection, remote, COMMAND_MS);
     if (!done.stdout.includes(`${DF}\n`)) return null;
     const [files = '', rest = ''] = done.stdout.split(`${DF}\n`);
     const [df = '', checks = ''] = rest.split(`${CHECKS}\n`);
@@ -148,10 +158,11 @@ export async function clusterDisk(
 
 /**
  * The remote command printing the last lines of the fetch log in the dataset's folder and of the
- * latest job's output; the Live HPC batch runs it for a run Recover follows (live/batch.ts).
+ * latest job's output on the cluster `resource`; the Live HPC batch of that cluster runs it for a
+ * run Recover follows there (live/batch.ts).
  */
-export function clusterLogTails(place: ClusterPlace, home: string): string {
-    const job = readJob(home, place);
+export function clusterLogTails(place: ClusterPlace, home: string, resource: string): string {
+    const job = readJob(home, place, resource);
     const output =
         job === null
             ? ''
@@ -162,8 +173,8 @@ export function clusterLogTails(place: ClusterPlace, home: string): string {
 /** The last lines of the fetch log in the dataset's folder and of the latest job's output. */
 export async function clusterLog(place: ClusterPlace, deps: ClusterDeps): Promise<string[]> {
     const done = await deps.runner(
-        deps.host,
-        `${clusterLogTails(place, deps.home)}; true`,
+        deps.connection,
+        `${clusterLogTails(place, deps.home, deps.resource)}; true`,
         COMMAND_MS
     );
     return lastLines(done.stdout);
@@ -172,13 +183,26 @@ export async function clusterLog(place: ClusterPlace, deps: ClusterDeps): Promis
 /** A job of a dataset as it is kept here: its id and what it does. */
 type JobRecord = { id: string; action: RunAction };
 
-function jobFile(home: string, place: ClusterPlace): string {
-    return join(recoverFiles(home, place.hub, place.key).dir, `${place.key}.job.json`);
+/** The folder of a hub's job records, one folder per cluster below it. */
+export function jobsRoot(home: string, hub: string): string {
+    return join(recoverFiles(home, hub, '').dir, 'clusters');
 }
 
-export function readJob(home: string, place: ClusterPlace): JobRecord | null {
+/** The folder of a hub's job records of one cluster. */
+export function jobFolder(home: string, hub: string, resource: string): string {
+    return join(jobsRoot(home, hub), resource);
+}
+
+function jobFile(home: string, place: ClusterPlace, resource: string): string {
+    return join(jobFolder(home, place.hub, resource), `${place.key}.job.json`);
+}
+
+/** The job of a dataset kept for the cluster `resource`, or null. */
+export function readJob(home: string, place: ClusterPlace, resource: string): JobRecord | null {
     try {
-        const held = JSON.parse(readFileSync(jobFile(home, place), 'utf8')) as Partial<JobRecord>;
+        const held = JSON.parse(
+            readFileSync(jobFile(home, place, resource), 'utf8')
+        ) as Partial<JobRecord>;
         return typeof held.id === 'string' &&
             validId(held.id) &&
             (held.action === 'verify' || held.action === 'unpack')
@@ -202,16 +226,17 @@ export async function clusterState(
 ): Promise<RunState | null> {
     const live = sessions ?? (await clusterSessions(deps));
     if (live.includes(sessionName(place.hub, place.key))) return { action: 'fetch' };
-    const job = readJob(deps.home, place);
+    const job = readJob(deps.home, place, deps.resource);
     if (job === null) return null;
-    const done = await deps.runner(deps.host, `squeue -h -j ${job.id} -o %T`, COMMAND_MS);
+    const done = await deps.runner(deps.connection, `squeue -h -j ${job.id} -o %T`, COMMAND_MS);
     return done.code === 0 && done.stdout.trim() !== ''
         ? { action: job.action, job: job.id }
         : null;
 }
 
 /** Why a cluster run did not start. */
-export type ClusterRefusal = 'running' | 'credential' | 'nothing' | 'send' | 'scratch' | 'submit';
+export type ClusterRefusal =
+    'running' | 'credential' | 'nothing' | 'send' | 'scratch' | 'submit' | 'download';
 
 /** Send files of a local folder to a folder under the cluster's home, made first. */
 async function send(
@@ -221,14 +246,14 @@ async function send(
     to: string
 ): Promise<boolean> {
     const made = await deps.runner(
-        deps.host,
+        deps.connection,
         `mkdir -p ${pathWord(to)} && chmod 700 ${pathWord(to)}`,
         COMMAND_MS
     );
     if (made.code !== 0) return false;
     const sent = await deps.copy({
         cwd: from,
-        vector: copyVector(`${deps.host}:${to.replace(/^~\//, '')}/`),
+        vector: copyVector(deps.connection, to.replace(/^~\//, '')),
         files,
         signal: AbortSignal.timeout(COMMAND_MS * 5)
     });
@@ -250,12 +275,12 @@ export async function startClusterFetch(
     if (items.length === 0) return 'nothing';
     const remote = remoteFiles(place.hub, place.key);
     const cleared = await deps.runner(
-        deps.host,
+        deps.connection,
         `rm -f ${(['physionet', 'kaggle', 'synapse'] as const).map((one) => pathWord(remote.config(one))).join(' ')} ${pathWord(remote.script)}`,
         COMMAND_MS
     );
     if (cleared.code !== 0) return 'send';
-    const stage = join(recoverFiles(deps.home, place.hub, place.key).dir, 'cluster');
+    const stage = stageOf(deps, place);
     rmSync(stage, { recursive: true, force: true });
     mkdirSync(stage, { recursive: true, mode: 0o700 });
     try {
@@ -291,21 +316,32 @@ export async function startClusterFetch(
         rmSync(stage, { recursive: true, force: true });
     }
     const started = await deps.runner(
-        deps.host,
+        deps.connection,
         `tmux -L ${SOCKET} new-session -d -s ${shellWord(sessionName(place.hub, place.key))} ${shellWord(`sh ${pathWord(remote.script)}`)}`,
         COMMAND_MS
     );
     return started.code === 0 ? null : 'send';
 }
 
-/** The official Node build for Linux of a version, and its folder on the cluster. */
-function nodeBuild(version: string) {
+/**
+ * The folder a run's files are written to here before they are sent: one per dataset and cluster,
+ * so two runs pressed at once never write into one.
+ */
+function stageOf(deps: ClusterDeps, place: ClusterPlace): string {
+    return join(jobFolder(deps.home, place.hub, deps.resource), `${place.key}.stage`);
+}
+
+/**
+ * The official Node build for Linux of a version, its folder on the cluster, and its address
+ * under `download` (`recover.node_download`), one folder per version.
+ */
+function nodeBuild(version: string, download = '') {
     const name = `node-${version}-linux-x64`;
     return {
         name,
         tarball: `${name}.tar.xz`,
         folder: `~/.oculus/recover/node/${version}`,
-        url: `https://nodejs.org/dist/${version}/`
+        url: `${download.replace(/\/+$/, '')}/${version}/`
     };
 }
 
@@ -385,10 +421,10 @@ function jobScript(
  * the next press fetches it again.
  */
 async function prepareUnpack(deps: ClusterDeps): Promise<boolean> {
-    const node = nodeBuild(deps.nodeVersion);
+    const node = nodeBuild(deps.nodeVersion, deps.nodeDownload);
     const folder = pathWord(node.folder);
     const fetched = await deps.runner(
-        deps.host,
+        deps.connection,
         [
             `mkdir -p ${folder}`,
             `cd ${folder}`,
@@ -413,11 +449,11 @@ export async function startClusterJob(
 ): Promise<ClusterRefusal | null> {
     if ((await clusterState(place, deps)) !== null) return 'running';
     if (rows.length === 0) return 'nothing';
+    if (action === 'unpack' && deps.nodeDownload === '') return 'download';
     const script = jobScript(action, rows, place, deps.nodeVersion);
     if (!(await scratchText(script))) return 'scratch';
     if (action === 'unpack' && !(await prepareUnpack(deps))) return 'send';
-    const own = recoverFiles(deps.home, place.hub, place.key).dir;
-    const stage = join(own, 'jobs');
+    const stage = stageOf(deps, place);
     rmSync(stage, { recursive: true, force: true });
     mkdirSync(stage, { recursive: true, mode: 0o700 });
     const name = `${place.hub}-${place.key}-${action}.sh`;
@@ -430,13 +466,14 @@ export async function startClusterJob(
         rmSync(stage, { recursive: true, force: true });
     }
     const done = await deps.runner(
-        deps.host,
+        deps.connection,
         `cd ${pathWord('~/.oculus/recover/jobs')} && sbatch --parsable ${shellWord(name)}`,
         COMMAND_MS
     );
     const id = done.stdout.trim().split(';')[0];
     if (done.code !== 0 || !validId(id)) return 'submit';
-    writeFileSync(jobFile(deps.home, place), `${JSON.stringify({ id, action })}\n`, {
+    mkdirSync(jobFolder(deps.home, place.hub, deps.resource), { recursive: true, mode: 0o700 });
+    writeFileSync(jobFile(deps.home, place, deps.resource), `${JSON.stringify({ id, action })}\n`, {
         mode: 0o600
     });
     return null;
@@ -451,13 +488,14 @@ export async function stopCluster(place: ClusterPlace, deps: ClusterDeps): Promi
     if (state === null) return false;
     if (state.action === 'fetch') {
         const done = await deps.runner(
-            deps.host,
+            deps.connection,
             `tmux -L ${SOCKET} kill-session -t ${shellWord(`=${sessionName(place.hub, place.key)}`)}`,
             COMMAND_MS
         );
         return done.code === 0;
     }
     return (
-        state.job !== undefined && (await cancel(deps.host, state.job, deps.runner)).status === 'ok'
+        state.job !== undefined &&
+        (await cancel(deps.connection, state.job, deps.runner)).status === 'ok'
     );
 }

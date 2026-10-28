@@ -29,9 +29,9 @@ docs:
   - { label: "About the demo hub", path: README.md, group: help }
 
 
-# `resource` is the key of a cluster entry of .oculus/data/research/resources.yml, whose `host` is the ssh alias the poller uses.
+# `resource` lists the clusters the poller queries, each the key of a cluster entry of .oculus/data/research/resources.yml, whose `host` is the ssh alias, the DNS name or the address ssh connects to.
 slurm:
-  resource: utwente
+  resource: [utwente]
 
 
 # The colour of a Position Lead's fit chip, by its fit.

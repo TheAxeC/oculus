@@ -19,6 +19,7 @@ import { ConnectStates } from '../../../../src/lib/server/accounts/connect/oauth
 import { fsWrites } from '../../../../src/lib/server/core/json.ts';
 import { noop } from '../../../fixtures/doubles.ts';
 import { it, scratchDir } from '../../../fixtures/scratch.ts';
+import { PROVIDERS } from '../providers.ts';
 
 const SENTENCE = 'the workspace has no primary hub';
 
@@ -48,6 +49,7 @@ function targetOf(
     return {
         dir,
         providerDir: join(dir, 'connect'),
+        providers: PROVIDERS,
         redirect: 'http://127.0.0.1:8791/callback',
         states: new ConnectStates(),
         open: noop,

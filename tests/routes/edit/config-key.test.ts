@@ -75,31 +75,31 @@ const ROWS: {
     },
     {
         row: 'a key of the hub list, whose settings file the write made',
-        key: 'slurm.resource',
-        value: 'other',
+        key: 'clusters.key_type',
+        value: 'rsa',
         file: (into) => join(into.hub, HUB_FILE),
         after: () => null,
-        back: { kind: 'config-key', field: 'slurm.resource', before: 'other' }
+        back: { kind: 'config-key', field: 'clusters.key_type', before: 'rsa' }
     },
     {
         row: 'a key of the hub list, whose settings file holds other keys and comments',
-        key: 'slurm.resource',
-        value: 'other',
+        key: 'clusters.key_type',
+        value: 'rsa',
         settings:
-            '# the cluster of this hub\nscan:\n  - { dir: work }\nslurm:\n  resource: utwente  # the ssh alias\n',
+            '# the keys of this hub\nscan:\n  - { dir: work }\nclusters:\n  key_type: ed25519  # the key type\n',
         file: (into) => join(into.hub, HUB_FILE),
         after: () =>
-            '# the cluster of this hub\nscan:\n  - { dir: work }\nslurm:\n  resource: utwente  # the ssh alias\n',
-        back: { kind: 'config-key', field: 'slurm.resource', before: 'other' }
+            '# the keys of this hub\nscan:\n  - { dir: work }\nclusters:\n  key_type: ed25519  # the key type\n',
+        back: { kind: 'config-key', field: 'clusters.key_type', before: 'rsa' }
     },
     {
         row: 'a key of the hub list, whose settings file is the empty map',
-        key: 'slurm.resource',
-        value: 'other',
+        key: 'clusters.key_type',
+        value: 'rsa',
         settings: '{}\n',
         file: (into) => join(into.hub, HUB_FILE),
         after: () => '{}\n',
-        back: { kind: 'config-key', field: 'slurm.resource', before: 'other' }
+        back: { kind: 'config-key', field: 'clusters.key_type', before: 'rsa' }
     }
 ];
 

@@ -21,6 +21,7 @@ import {
 import { GOOGLE, cleanup, scratch, writeAccount } from './fixture.ts';
 import { noop } from '../../../fixtures/doubles.ts';
 import { bookIn } from '../book.ts';
+import { PROVIDERS } from '../providers.ts';
 import { it } from '../../../fixtures/scratch.ts';
 
 afterEach(cleanup);
@@ -66,6 +67,7 @@ function target(
         accounts: [GOOGLE],
         dir,
         providerDir: join(dir, 'connect'),
+        providers: PROVIDERS,
         book: bookIn(dir),
         redirect: callbackUrl(8791, 'mail'),
         states: over.states ?? new ConnectStates(),
@@ -103,6 +105,7 @@ describe('the mail callback', () => {
             {
                 accounts: [GOOGLE],
                 dir,
+                providers: PROVIDERS,
                 states: new ConnectStates(),
                 fetcher,
                 refresh: () => Promise.resolve(),

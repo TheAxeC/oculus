@@ -28,22 +28,36 @@ import type {
     CalendarListEntry,
     CalendarPayload
 } from '../../../data/model/index.ts';
-import type { CalendarSettings } from '../../../data/sources/config.ts';
+import type { CalendarSettings, SignInRow } from '../../../data/sources/config.ts';
 import type { Hub } from '../../core/channels.ts';
 import type { Reading, Window } from './api.ts';
 import { readGoogle } from './google.ts';
 import { readIcs } from './ics.ts';
 import { readMicrosoft } from './microsoft.ts';
-import { accountLoop, signIn, takeLoopSettings, type AccountLoop } from '../connect/loop.ts';
+import {
+    accountLoop,
+    roundSignIn,
+    takeLoopSettings,
+    watcherControls,
+    type AccountLoop,
+    type WatcherHeld
+} from '../connect/loop.ts';
 import { hasOwnHalf, readPublishedLink } from '../connect/store.ts';
 import { ReadTimeout, timedFetcher, type Fetcher } from '../connect/oauth.ts';
+import { readAddress, type SignInWords } from '../connect/providers.ts';
 
 /**
  * The sentences an account's row may carry, from the catalog: a published link's file holds no
  * link, its link could not be read (`{0}` the label), and a request had no answer in time (`{0}`
  * the seconds waited).
  */
-export type CalendarWords = { icsNoLink: string; icsFailed: string; timedOut: string };
+export type CalendarWords = {
+    icsNoLink: string;
+    icsFailed: string;
+    timedOut: string;
+    /** The sentences of a provider with no `sign_in` row of the hub, or a row lacking a field. */
+    signIn: SignInWords;
+};
 
 export type CalendarOptions = {
     accounts: CalendarAccountConfig[];
@@ -51,6 +65,8 @@ export type CalendarOptions = {
     dir: string;
     /** The folder the providers' client halves live in, already resolved. */
     providerDir: string;
+    /** The hub's `sign_in` rows, which give each provider's addresses and scopes. */
+    providers: readonly SignInRow[];
     pollMin: number;
     daysBack: number;
     daysAhead: number;
@@ -74,6 +90,8 @@ export type CalendarWatcher = {
     setSettings(settings: CalendarSettings): void;
     /** Take new sentences, used from the next row that carries one. */
     setWords(words: CalendarWords): void;
+    /** Take the hub's `sign_in` rows as they now stand; changed rows read every account at once. */
+    setProviders(rows: readonly SignInRow[]): void;
     /**
      * Poll a new account list from a new folder, as the hubs' `.oculus/local.yml` files name them.
      */
@@ -141,7 +159,8 @@ export function watchCalendar(hub: Hub, options: CalendarOptions): CalendarWatch
         daysAhead: options.daysAhead
     };
     let words = options.words;
-    let closed = false;
+    /** Whether the watcher is closed, and the hub's `sign_in` rows it reads its accounts with. */
+    const watched: WatcherHeld = { closed: false, rows: options.providers };
     /** The sentence a request that had no answer in time leaves on its account's row. */
     const timedOut = (error: ReadTimeout): string =>
         fillPlaceholders(words.timedOut, [String(error.ms / 1000)]);
@@ -269,14 +288,15 @@ export function watchCalendar(hub: Hub, options: CalendarOptions): CalendarWatch
         };
         if (!signsIn(account)) return pollLink(account, dir, live, base);
         try {
-            const signed = await signIn('calendar', account, { dir, providerDir }, fetcher);
-            if ('waiting' in signed) {
-                state.set(key, { ...base, ...signed.waiting });
-                return true;
-            }
-            if (!live()) return true;
+            const signed = await roundSignIn('calendar', account, { dir, providerDir }, fetcher, {
+                providers: { rows: watched.rows, words: words.signIn },
+                wait: (waiting) => state.set(key, { ...base, ...waiting }),
+                live
+            });
+            if (signed === null) return true;
             const args = {
                 token: signed.token,
+                base: readAddress(signed.row, 'calendar'),
                 key,
                 label: account.label,
                 window: windowOf(now(), settings.daysBack, settings.daysAhead),
@@ -318,7 +338,7 @@ export function watchCalendar(hub: Hub, options: CalendarOptions): CalendarWatch
     return {
         refresh: () => loop.run(true),
         setSettings(next): void {
-            if (closed) return;
+            if (watched.closed) return;
             const before = settings;
             settings = { ...next };
             takeLoopSettings(
@@ -329,12 +349,8 @@ export function watchCalendar(hub: Hub, options: CalendarOptions): CalendarWatch
             );
         },
         setWords(next): void {
-            if (!closed) words = { ...next };
+            if (!watched.closed) words = { ...next };
         },
-        setAccounts: loop.set,
-        close(): void {
-            closed = true;
-            loop.close();
-        }
+        ...watcherControls(loop, watched, { pollMin: () => settings.pollMin, publish })
     };
 }

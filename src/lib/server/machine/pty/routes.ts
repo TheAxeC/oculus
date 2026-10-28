@@ -73,6 +73,7 @@ import {
     startTerminal,
     steerTerminal,
     stopTerminal,
+    type RunOptions,
     type StartOptions
 } from './sessions.ts';
 import { TmuxFailed, TerminalRefused, refusal, refusalFor } from './refusal.ts';
@@ -127,7 +128,7 @@ export type TerminalOptions = StartOptions &
     };
 
 /** The options a list request takes: a tmux runner and the shell a busy read compares against. */
-export type ListOptions = StartOptions & { shell?: string; streams?: StreamTerminalSet };
+export type ListOptions = RunOptions & { shell?: string; streams?: StreamTerminalSet };
 
 /** What every answer of this route carries besides its type: nothing of it is cached. */
 const NO_STORE = { 'cache-control': 'no-store' };

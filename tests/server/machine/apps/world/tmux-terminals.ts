@@ -9,6 +9,7 @@ import { StreamTerminalSet } from '../../../../../src/lib/server/machine/apps/to
 import { terminalsEnv } from '../../../../../src/lib/server/machine/apps/tools/run/terminals-env.ts';
 import { Terminals } from '../../../../../src/lib/server/machine/pty/channel.ts';
 import { privateTmux, tmuxOptions } from '../../pty/tmux-server.ts';
+import { noCredentials } from '../../../../fixtures/doubles.ts';
 
 /**
  * A private tmux server named by `prefix`, ended after each case of the suite that calls this at
@@ -34,7 +35,13 @@ export function tmuxTerminals(prefix: string) {
                 tmux: options,
                 poll: over.poll ?? 0
             });
-            const env = terminalsEnv({ terminals, streams, tmux: options, shell: () => '/bin/sh' });
+            const env = terminalsEnv({
+                terminals,
+                streams,
+                tmux: options,
+                shell: () => '/bin/sh',
+                credentials: noCredentials()
+            });
             /** Resolves when `done` holds, at once or after the list changes so that it does. */
             const until = (done: () => boolean): Promise<void> =>
                 new Promise((resolve) => {

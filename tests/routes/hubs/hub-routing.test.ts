@@ -18,6 +18,7 @@ import {
     type WriteTarget
 } from '../../../src/lib/server/edit/writes.ts';
 import { words } from '../../../src/lib/server/core/words.ts';
+import { noCredentials } from '../../fixtures/doubles.ts';
 import { it, scratchDir, test } from '../../fixtures/scratch.ts';
 import { copies, indexedOnce } from '../../data/hubs/hubs-fixture.ts';
 import {
@@ -127,9 +128,10 @@ describe('a write names its record by its hub and its key', () => {
         const { into } = twoHubs();
         const mirrors = scratchDir('oculus-mirrors-');
         expect(projectIds({ into }).sort()).toEqual(['hub:alpha', 'lab:beta']);
-        expect(mirrorOf('hub:alpha', { mirrors, into })).toBe(join(mirrors, 'alpha'));
-        expect(mirrorOf('lab:beta', { mirrors, into })).toBe(join(mirrors, 'beta'));
-        expect(mirrorOf('alpha', { mirrors, into })).toBe('');
+        const credentials = noCredentials();
+        expect(mirrorOf('hub:alpha', { mirrors, into, credentials })).toBe(join(mirrors, 'alpha'));
+        expect(mirrorOf('lab:beta', { mirrors, into, credentials })).toBe(join(mirrors, 'beta'));
+        expect(mirrorOf('alpha', { mirrors, into, credentials })).toBe('');
     });
 });
 

@@ -701,8 +701,8 @@ export type Organisation = Rooted & {
 
 /**
  * One resource, from the resources registry: a cluster, a machine or a storage a project runs on.
- * A manifest's `compute:` and `slurm.resource` of behavior.yml are keys into it. `host` is the ssh
- * alias of a cluster or a remote machine.
+ * A manifest's `compute:` and the list `slurm.resource` of behavior.yml are keys into it. `host` is
+ * what ssh connects to for a cluster or a remote machine: an ssh alias, a DNS name or an address.
  */
 export type Resource = Rooted & {
     id: Id;

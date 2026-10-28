@@ -73,7 +73,10 @@
 //
 // Nothing here may ever change a repository. Every writing subcommand belongs to the user alone,
 // and a dashboard watcher must never be the thing that runs one. compare.ts lists its own forms in
-// its head.
+// its head. Each command is given, before `-C`, the `-c` arguments that name oculus's credential
+// helper for the git hosts the reader signed in to, from the `GitCredentials` (credentials.ts) the
+// caller passes, as every git oculus starts is; none of these commands reaches a remote, so the
+// helper is never asked here.
 //
 // A repository on a slow mount must not stall the server, so each of the two call sites runs git as
 // a child process and answers a promise: the event loop goes on serving requests while git works,
@@ -97,6 +100,7 @@ import { isUtf8 } from 'node:buffer';
 import { lstatSync, statSync } from 'node:fs';
 import { isAbsolute, join } from 'node:path';
 import { inside } from '../paths.ts';
+import type { GitCredentials } from './credentials.ts';
 import { failureLine } from './failure.ts';
 import { classifyFailure, shortReason, type CommandFailure } from './parse.ts';
 import { readRecords, type RecordError, type RecordVisit } from './records.ts';
@@ -154,13 +158,23 @@ export function pathInside(root: string, path: string): boolean {
 // ---------------------------------------------------------------- git output
 
 /** The one `show` call site: an index stage of a path, and a commit's files and diffs. */
-export function show(root: string, args: string[], timeout: number): Promise<Outcome> {
-    return run(root, ['show', ...args], timeout);
+export function show(
+    credentials: GitCredentials,
+    root: string,
+    args: string[],
+    timeout: number
+): Promise<Outcome> {
+    return run(credentials, root, ['show', ...args], timeout);
 }
 
 /** The call site of the diffs read on demand: a file's gutter marks and a stash's changes. */
-export function readDiff(root: string, args: string[], timeout: number): Promise<Outcome> {
-    return run(root, ['diff', ...args], timeout);
+export function readDiff(
+    credentials: GitCredentials,
+    root: string,
+    args: string[],
+    timeout: number
+): Promise<Outcome> {
+    return run(credentials, root, ['diff', ...args], timeout);
 }
 
 /**
@@ -222,9 +236,11 @@ function outcomeOf(
  * on an open one. A non-zero exit, a broken git, or a repository too slow to answer all come back
  * as not ok with a reason, and only the non-zero exit as answered. The output is read as bytes,
  * `utf8` says whether they were UTF-8, and `text` is them decoded as UTF-8. This is one of the
- * module's two call sites; `runRecords` is the other.
+ * module's two call sites; `runRecords` is the other. `credentials` gives the `-c` arguments
+ * before `-C`.
  */
 export function run(
+    credentials: GitCredentials,
     root: string,
     args: string[],
     timeout: number,
@@ -237,7 +253,7 @@ export function run(
         // never a shell, and a timeout: a hung git must not hang a watcher.
         const child = execFile(
             GIT,
-            ['-C', root, '--no-optional-locks', ...args],
+            [...credentials.args(), '-C', root, '--no-optional-locks', ...args],
             {
                 timeout,
                 maxBuffer: MAX_OUTPUT,
@@ -260,12 +276,13 @@ export function run(
  * what `visit` kept.
  */
 export function runRecords(
+    credentials: GitCredentials,
     root: string,
     args: string[],
     timeout: number,
     visit: RecordVisit
 ): Promise<Outcome> {
-    const child = spawn(GIT, ['-C', root, '--no-optional-locks', ...args], {
+    const child = spawn(GIT, [...credentials.args(), '-C', root, '--no-optional-locks', ...args], {
         stdio: ['ignore', 'pipe', 'pipe']
     });
     return readRecords(child, { timeout }, visit).then(({ error, stderr }) =>

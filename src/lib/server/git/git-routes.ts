@@ -24,11 +24,12 @@ import { permitted } from '../core/paths.ts';
 import { json } from '@sveltejs/kit';
 import trashLibrary from 'trash';
 import { z } from 'zod';
-import { textCatalog } from '../../data/sources/config.ts';
+import { failureRows, textCatalog, type FailureRow } from '../../data/sources/config.ts';
 import { byKey, isMap } from '../../data/helpers/guards.ts';
 import { tokenedBody } from '../core/auth.ts';
 import { failureLine } from '../core/git/failure.ts';
 import { createRunningGit, type RunningGit } from '../core/git/running.ts';
+import { fetchFailureOf, type FetchFailures } from '../core/git/state.ts';
 import { words } from '../core/words.ts';
 import { chained, type FsWrites } from '../core/json.ts';
 import {
@@ -44,6 +45,7 @@ import {
     switchBranch,
     switchDetached,
     unstage,
+    type GitAt,
     type Outcome
 } from './git-write.ts';
 import { fetchAll, publish, pull, pushTags, sync } from './git-remote.ts';
@@ -216,7 +218,46 @@ export type GitOptions = {
      * The writes in flight, so Cancel ends the one a root is running; one of its own when absent.
      */
     running?: RunningGit;
+    /**
+     * Where the reader's Fetch keeps a failure for the root's state, told apart by the hub's
+     * `connections.failures`; a fetch, a pull or a sync that succeeds clears it. None kept when
+     * absent.
+     */
+    fetchFailures?: FetchFailures;
 } & ReadOptions;
+
+/** Whether an action's success clears a root's failed fetch: it reached the remote and answered. */
+function reachedRemote(action: string): boolean {
+    return action === 'fetch' || action === 'pull' || action === 'sync';
+}
+
+/**
+ * Keep a fetch's outcome for the root's state: a failed fetch set with the line it is said by, and
+ * a fetch, a pull or a sync that succeeded cleared. A catalog with no rule for the failures key
+ * tells nothing apart.
+ */
+function keepFetchOutcome(
+    options: GitOptions,
+    action: string,
+    root: string,
+    outcome: Outcome,
+    said: string
+): void {
+    const failures = options.fetchFailures;
+    if (failures === undefined) return;
+    if (outcome.ok) {
+        if (reachedRemote(action)) failures.clear(root);
+        return;
+    }
+    if (action !== 'fetch') return;
+    let rows: FailureRow[];
+    try {
+        rows = failureRows(options.config);
+    } catch {
+        rows = [];
+    }
+    failures.set(root, fetchFailureOf(outcome.stderr ?? '', said, rows, new Date()));
+}
 
 /** What every answer of this route carries besides its type: nothing of it is cached. */
 const NO_STORE = { 'cache-control': 'no-store' };
@@ -301,7 +342,7 @@ export function messagePrompt(config: Record<string, unknown>): string {
  * the account the route read.
  */
 async function suggestFor(
-    root: string,
+    at: GitAt,
     roots: string[],
     config: Record<string, unknown>,
     text: Record<string, string>,
@@ -309,7 +350,7 @@ async function suggestFor(
     options: MessageOptions = {}
 ): Promise<Outcome> {
     return suggestMessage(
-        root,
+        at,
         messagePrompt(config),
         text,
         claudeBin,
@@ -319,11 +360,12 @@ async function suggestFor(
 }
 
 /**
- * One real operation: the root, the parsed body, the text catalog its sentences are worded from,
- * the roots a request may name and the signal that ends the run when Cancel aborts it.
+ * One real operation: the root with the credentials its git runs with, the parsed body, the text
+ * catalog its sentences are worded from, the roots a request may name and the signal that ends the
+ * run when Cancel aborts it.
  */
 type GitOperation = (
-    root: string,
+    at: GitAt,
     fields: GitBody,
     text: Record<string, string>,
     roots: string[],
@@ -338,62 +380,60 @@ function ordered(options: GitOptions, work: () => Promise<Outcome>): Promise<Out
 
 /** The real operations, one per action. `suggest` is answered before this is reached. */
 export const OPERATIONS: Record<string, GitOperation> = {
-    stage: (root, fields, text, roots) => stage(root, fields.paths, text, roots),
-    unstage: (root, fields, text, roots) => unstage(root, fields.paths, text, roots),
-    discard: (root, fields, text, roots) => discard(root, fields.paths, text, roots),
-    stagePatch: (root, fields, text, roots) => applyHunk(root, fields.patch, 'stage', text, roots),
-    unstagePatch: (root, fields, text, roots) =>
-        applyHunk(root, fields.patch, 'unstage', text, roots),
-    revertPatch: (root, fields, text, roots) =>
-        applyHunk(root, fields.patch, 'revert', text, roots),
-    stageAll: (root, fields, text, roots, _options, signal) =>
-        stageAll(root, fields.group, text, roots, signal),
-    unstageAll: (root, _fields, text, roots) => unstageAll(root, text, roots),
-    discardAll: (root, _fields, text, roots) => discardAll(root, text, roots),
-    commit: (root, fields, text, roots, _options, signal) =>
-        commit(root, fields.message, text, roots, fields.amend, signal),
-    push: (root, _fields, text, roots, _options, signal) => push(root, text, roots, signal),
-    pull: (root, _fields, text, roots, _options, signal) => pull(root, text, roots, signal),
-    fetch: (root, _fields, text, roots) => fetchAll(root, text, roots),
-    sync: (root, _fields, text, roots, _options, signal) => sync(root, text, roots, signal),
-    publish: (root, fields, text, roots, _options, signal) =>
-        publish(root, fields.remote, text, roots, signal),
-    createBranch: (root, fields, text, roots, _options, signal) =>
-        createBranch(root, fields.name, text, roots, fields.start, signal),
-    switchBranch: (root, fields, text, roots, _options, signal) =>
-        switchBranch(root, fields.name, text, roots, signal),
-    createWorktree: (root, fields, text, roots, _options, signal) =>
-        createWorktree(root, fields.name, text, roots, signal),
-    removeWorktree: (root, fields, text, roots) => removeWorktree(root, fields.path, text, roots),
-    merge: (root, fields, text, roots, _options, signal) =>
-        merge(root, fields.branch, text, roots, signal),
-    abortMerge: (root, _fields, text, roots) => abortMerge(root, text, roots),
-    continueRebase: (root, _fields, text, roots, _options, signal) =>
-        continueRebase(root, text, roots, signal),
-    resolve: (root, fields, text, roots) =>
-        resolveMerge(root, fields.path, fields.content, text, roots),
-    markResolved: (root, fields, text, roots) => markResolved(root, fields.path, text, roots),
-    acceptDeletion: (root, fields, text, roots) => acceptDeletion(root, fields.path, text, roots),
-    stash: (root, fields, text, roots) => stash(root, fields.mode, fields.message, text, roots),
-    stashApply: (root, fields, text, roots) => stashAct(root, 'apply', fields.ref, text, roots),
-    stashPop: (root, fields, text, roots) => stashAct(root, 'pop', fields.ref, text, roots),
-    stashDrop: (root, fields, text, roots) => stashAct(root, 'drop', fields.ref, text, roots),
-    createTag: (root, fields, text, roots) =>
-        createTag(root, fields.name, fields.message, text, roots, fields.start),
-    deleteTag: (root, fields, text, roots) => deleteTag(root, fields.name, text, roots),
-    pushTags: (root, _fields, text, roots, _options, signal) => pushTags(root, text, roots, signal),
-    cherryPick: (root, fields, text, roots, _options, signal) =>
-        cherryPick(root, fields.ref, text, roots, signal),
-    checkoutDetached: (root, fields, text, roots, _options, signal) =>
-        switchDetached(root, fields.ref, text, roots, signal),
-    deleteBranch: (root, fields, text, roots) => deleteBranch(root, fields.name, text, roots),
-    deleteBranchAnyway: (root, fields, text, roots) =>
-        deleteBranchAnyway(root, fields.name, text, roots),
-    ignore: (root, fields, text, roots, options) =>
-        ordered(options, () => addToGitignore(root, fields.paths, text, roots)),
-    trashUntracked: (root, fields, text, roots, options) => {
+    stage: (at, fields, text, roots) => stage(at, fields.paths, text, roots),
+    unstage: (at, fields, text, roots) => unstage(at, fields.paths, text, roots),
+    discard: (at, fields, text, roots) => discard(at, fields.paths, text, roots),
+    stagePatch: (at, fields, text, roots) => applyHunk(at, fields.patch, 'stage', text, roots),
+    unstagePatch: (at, fields, text, roots) => applyHunk(at, fields.patch, 'unstage', text, roots),
+    revertPatch: (at, fields, text, roots) => applyHunk(at, fields.patch, 'revert', text, roots),
+    stageAll: (at, fields, text, roots, _options, signal) =>
+        stageAll(at, fields.group, text, roots, signal),
+    unstageAll: (at, _fields, text, roots) => unstageAll(at, text, roots),
+    discardAll: (at, _fields, text, roots) => discardAll(at, text, roots),
+    commit: (at, fields, text, roots, _options, signal) =>
+        commit(at, fields.message, text, roots, fields.amend, signal),
+    push: (at, _fields, text, roots, _options, signal) => push(at, text, roots, signal),
+    pull: (at, _fields, text, roots, _options, signal) => pull(at, text, roots, signal),
+    fetch: (at, _fields, text, roots) => fetchAll(at, text, roots),
+    sync: (at, _fields, text, roots, _options, signal) => sync(at, text, roots, signal),
+    publish: (at, fields, text, roots, _options, signal) =>
+        publish(at, fields.remote, text, roots, signal),
+    createBranch: (at, fields, text, roots, _options, signal) =>
+        createBranch(at, fields.name, text, roots, fields.start, signal),
+    switchBranch: (at, fields, text, roots, _options, signal) =>
+        switchBranch(at, fields.name, text, roots, signal),
+    createWorktree: (at, fields, text, roots, _options, signal) =>
+        createWorktree(at, fields.name, text, roots, signal),
+    removeWorktree: (at, fields, text, roots) => removeWorktree(at, fields.path, text, roots),
+    merge: (at, fields, text, roots, _options, signal) =>
+        merge(at, fields.branch, text, roots, signal),
+    abortMerge: (at, _fields, text, roots) => abortMerge(at, text, roots),
+    continueRebase: (at, _fields, text, roots, _options, signal) =>
+        continueRebase(at, text, roots, signal),
+    resolve: (at, fields, text, roots) =>
+        resolveMerge(at, fields.path, fields.content, text, roots),
+    markResolved: (at, fields, text, roots) => markResolved(at, fields.path, text, roots),
+    acceptDeletion: (at, fields, text, roots) => acceptDeletion(at, fields.path, text, roots),
+    stash: (at, fields, text, roots) => stash(at, fields.mode, fields.message, text, roots),
+    stashApply: (at, fields, text, roots) => stashAct(at, 'apply', fields.ref, text, roots),
+    stashPop: (at, fields, text, roots) => stashAct(at, 'pop', fields.ref, text, roots),
+    stashDrop: (at, fields, text, roots) => stashAct(at, 'drop', fields.ref, text, roots),
+    createTag: (at, fields, text, roots) =>
+        createTag(at, fields.name, fields.message, text, roots, fields.start),
+    deleteTag: (at, fields, text, roots) => deleteTag(at, fields.name, text, roots),
+    pushTags: (at, _fields, text, roots, _options, signal) => pushTags(at, text, roots, signal),
+    cherryPick: (at, fields, text, roots, _options, signal) =>
+        cherryPick(at, fields.ref, text, roots, signal),
+    checkoutDetached: (at, fields, text, roots, _options, signal) =>
+        switchDetached(at, fields.ref, text, roots, signal),
+    deleteBranch: (at, fields, text, roots) => deleteBranch(at, fields.name, text, roots),
+    deleteBranchAnyway: (at, fields, text, roots) =>
+        deleteBranchAnyway(at, fields.name, text, roots),
+    ignore: (at, fields, text, roots, options) =>
+        ordered(options, () => addToGitignore(at.root, fields.paths, text, roots)),
+    trashUntracked: (at, fields, text, roots, options) => {
         const trash = options.trash ?? ((path, flags) => trashLibrary(path, flags));
-        return ordered(options, () => trashUntracked(root, fields.paths, { trash }, text, roots));
+        return ordered(options, () => trashUntracked(at, fields.paths, { trash }, text, roots));
     }
 };
 
@@ -409,7 +449,8 @@ async function operate(
     if (operation === undefined) {
         return failed(words(text, 'server.git.no_action_named', fields.action));
     }
-    return operation(root, fields, text, roots, options, signal);
+    const at: GitAt = { root, credentials: options.credentials };
+    return operation(at, fields, text, roots, options, signal);
 }
 
 /**
@@ -440,11 +481,13 @@ export async function handleGit(
     if (action === 'suggest') {
         const answer = await (
             options.suggest ??
-            ((selected, allowed) =>
-                suggestFor(selected, allowed, options.config, text, options.claudeBin, {
+            ((selected, allowed) => {
+                const at: GitAt = { root: selected, credentials: options.credentials };
+                return suggestFor(at, allowed, options.config, text, options.claudeBin, {
                     ...options.message,
                     account: options.account ?? null
-                }))
+                });
+            })
         )(root, roots);
         if (!answer.ok) return json({ error: answer.error }, { status: 400, headers: NO_STORE });
         return json({ ok: true, output: answer.output }, { headers: NO_STORE });
@@ -466,6 +509,9 @@ export async function handleGit(
     } finally {
         running.end(root, signal);
     }
+    const error =
+        outcome.failure === undefined ? outcome.error : failureLine(outcome.failure, text);
+    keepFetchOutcome(options, action, root, outcome, error);
     // The watcher would find this at its next event, up to two seconds later and only if the write
     // touched a path it watches; re-reading here, and answering once the read has landed, is what
     // makes the panel answer the click with the state the write left. A write git refused may still
@@ -474,8 +520,6 @@ export async function handleGit(
     await options.refresh?.(root);
     if (!outcome.ok) {
         const refusal = outcome.code === undefined ? {} : { code: outcome.code };
-        const error =
-            outcome.failure === undefined ? outcome.error : failureLine(outcome.failure, text);
         return json({ error, ...refusal }, { status: 400, headers: NO_STORE });
     }
     return json({ ok: true, output: outcome.output }, { headers: NO_STORE });

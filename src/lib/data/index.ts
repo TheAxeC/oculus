@@ -40,7 +40,8 @@ import {
 import { readCareer } from './sources/documents/career.ts';
 import { readFeeds } from './sources/documents/feeds.ts';
 import { projectDocs } from './sources/documents/docs.ts';
-import type { TextCatalog } from './helpers/finding-text.ts';
+import { findingText, type TextCatalog } from './helpers/finding-text.ts';
+import { PRIMARY_CONNECTION_KEYS } from './shapes/hub-keys.ts';
 import {
     DATA_FOLDER,
     FEED_REGISTRIES,
@@ -595,6 +596,26 @@ export type OtherHub = HubRoot & {
     vocab: HubVocab;
 };
 
+/**
+ * A finding for each key of PRIMARY_CONNECTION_KEYS the settings file of a hub other than the
+ * primary sets, naming that hub: the key is read from the primary hub's file alone.
+ */
+function primaryKeyFindings(
+    root: HubRoot,
+    config: Record<string, unknown>,
+    from: Record<string, string>
+): Finding[] {
+    const catalog = textCatalog(config);
+    const file = join(root.dir, HUB_FILE);
+    return PRIMARY_CONNECTION_KEYS.filter(
+        (key) => Object.hasOwn(from, key) && fromHubFile(from[key])
+    ).map((key) => ({
+        file,
+        key,
+        message: findingText(catalog, 'findings.config.hub_key_primary', key, root.key)
+    }));
+}
+
 /** The settings of a hub other than the primary, from the parse `loaded` of its settings. */
 export function readOtherHub(root: HubRoot, loaded: ReturnType<typeof loadConfig>): OtherHub {
     const { config, findings, from } = loaded;
@@ -606,6 +627,7 @@ export function readOtherHub(root: HubRoot, loaded: ReturnType<typeof loadConfig
         vocab: hubVocabOf(root.dir, portfolio),
         findings: [
             ...findings,
+            ...primaryKeyFindings(root, config, from),
             ...sourcesFindings(
                 config,
                 {

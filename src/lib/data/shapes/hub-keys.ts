@@ -51,6 +51,21 @@ export const OWN_HUB_KEYS: readonly string[] = [
     'audit.website.kinds'
 ];
 
+/**
+ * The keys of the hub list that set this machine's connections: the clusters, the key Account
+ * setup makes, the rows that tell a failure apart, the sign-in providers and Recover's Node.js
+ * download. They are read from the primary hub's file alone, and a hub other than the primary that
+ * sets one is a finding naming that hub, so a value that is not used is not taken for one that is.
+ */
+export const PRIMARY_CONNECTION_KEYS: readonly string[] = [
+    'slurm.resource',
+    'clusters.key_type',
+    'clusters.key_file',
+    'connections.failures',
+    'sign_in',
+    'recover.node_download'
+];
+
 /** Whether the option `key` of the defaults file `file` is read from each hub's own file. */
 export function readPerHub(file: string, key: string): boolean {
     return OWN_HUB_KEYS.includes(key) && hubFileOf(key) === file;

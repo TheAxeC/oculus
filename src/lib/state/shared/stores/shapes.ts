@@ -22,7 +22,7 @@ import type {
     FeedsPayload,
     FilesPayload,
     GitPayload,
-    HpcPayload,
+    HpcMessage,
     InboxPayload,
     Jump,
     ChangesPayload,
@@ -44,7 +44,7 @@ export type Payloads = {
     sessions: SessionsPayload;
     feeds: FeedsPayload;
     git: GitPayload;
-    hpc: HpcPayload;
+    hpc: HpcMessage;
     recover: RecoverLive;
     processes: ProcessesPayload;
     schedule: SchedulePayload;
@@ -83,8 +83,9 @@ export type EntitiesStore = {
     sessions: () => SessionsPayload | null;
     feeds: () => FeedsPayload | null;
     git: () => GitPayload | null;
-    hpc: () => HpcPayload | null;
-    /** The Recover runs and the login node's sessions, or null before the first push. */
+    /** Every cluster as its watcher last read it, or null before the first push. */
+    hpc: () => HpcMessage | null;
+    /** The Recover runs and each cluster's login node sessions, or null before the first push. */
     recover: () => RecoverLive | null;
     processes: () => ProcessesPayload | null;
     schedule: () => SchedulePayload | null;

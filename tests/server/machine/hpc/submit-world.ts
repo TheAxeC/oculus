@@ -12,6 +12,7 @@ import {
     type SubmitDeps
 } from '../../../../src/lib/server/machine/hpc/submit.ts';
 import type { SubmitPlan } from '../../../../src/lib/data/model/index.ts';
+import type { Connection } from '../../../../src/lib/server/machine/hpc/ssh.ts';
 import { fixtureProject } from '../../../fixtures/entities-fixture.ts';
 import { plantScratch } from '../../../fixtures/scratch.ts';
 
@@ -48,8 +49,9 @@ export function world(
     const hub = plantScratch('oculus-submit-', planted);
     const code = join(hub, 'projects', 'p', 'code');
     const copy = vi.fn((_input: unknown) => Promise.resolve(OK));
-    const ssh = vi.fn((_host: string, _remote: string, _timeout: number, _signal?: AbortSignal) =>
-        Promise.resolve({ stdout: '12345;utwente\n', stderr: '', code: 0 })
+    const ssh = vi.fn(
+        (_connection: Connection, _remote: string, _timeout: number, _signal?: AbortSignal) =>
+            Promise.resolve({ stdout: '12345;utwente\n', stderr: '', code: 0 })
     );
     const deps: SubmitDeps = {
         roots: () => [{ key: 'hub', dir: hub, hub: true }],
@@ -68,7 +70,14 @@ export function world(
             })
         ],
         catalog: () => ({}),
-        where: () => ({ host: 'utwente' }),
+        connection: (resource) =>
+            resource === 'utwente' || resource === 'b'
+                ? { connection: { resource, name: resource, host: resource } }
+                : { missing: `${resource} is not listed`, unlisted: true },
+        clusters: () => [
+            { resource: 'utwente', name: 'utwente', id: 'hub:utwente' },
+            { resource: 'b', name: 'b', id: 'hub:b' }
+        ],
         kept,
         copy,
         ssh,
@@ -82,9 +91,10 @@ export function world(
 /** The plan of the script, which the table rows then send back to run. */
 export async function planned(
     deps: SubmitDeps,
-    path = 'projects/p/code/hpc/a.slurm'
+    path = 'projects/p/code/hpc/a.slurm',
+    resource = 'utwente'
 ): Promise<SubmitPlan> {
-    const answer = await planSubmit({ root: 'hub', path }, deps);
+    const answer = await planSubmit({ root: 'hub', path, resource }, deps);
     if (answer.status !== 'ok') throw new Error(`no plan: ${answer.reason}`);
     return answer.plan;
 }

@@ -16,9 +16,14 @@ export type Window = { start: Date; end: Date };
 /** What one account's read answers with. */
 export type Reading = { calendars: CalendarListEntry[]; events: CalendarEvent[] };
 
-/** Everything a provider reader is given: one access token, one account label, one window. */
+/**
+ * Everything a provider reader is given: one access token, the address its reads are asked at,
+ * one account label, one window.
+ */
 export type ReadArgs = {
     token: string;
+    /** The provider's calendar address: its `sign_in` row's `calendar`, with no `/` after it. */
+    base: string;
     /** The account's key, which prefixes every event id so two accounts cannot collide. */
     key: string;
     /** The account's label, which names the account an event was read from. */

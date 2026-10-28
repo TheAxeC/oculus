@@ -1,11 +1,12 @@
 // The Recover endpoint. A route module may export only its verbs, so everything it does lives in
 // lib/server/machine/runs/recover/routes.ts and this joins them: the GET of a dataset's plan, run
-// and log on this Mac or the cluster, and the POST of a fetch, a check, an unpack or a stop behind
-// the write token. This Mac's runs and the `recover` channel are the server context's Recover
-// watcher (`recover`), held for the server's life, which each press is told of.
+// and log on this Mac or on a cluster of `slurm.resource`, and the POST of a fetch, a check, an
+// unpack or a stop behind the write token. This Mac's runs and the `recover` channel are the server
+// context's Recover watcher (`recover`), held for the server's life, which each press is told of.
 
 import { homedir } from 'node:os';
-import { hpcRouteHost } from '$lib/server/machine/hpc/host';
+import { nodeDownload } from '$lib/data/sources/config';
+import { connectionFor } from '$lib/server/machine/hpc/clusters/connections';
 import { run } from '$lib/server/machine/hpc/ssh';
 import { copy } from '$lib/server/machine/hpc/transfer';
 import {
@@ -33,20 +34,25 @@ const target = (locals: App.Locals): RecoverTarget => {
         downloads: () => server.local.downloads,
         fetch,
         local: server.recover.local,
-        cluster: () => {
-            const where = hpcRouteHost({
-                hpcHost: server.local.hpcHost,
-                hub: server.hub,
-                primary: open.primary,
-                config: () => locals.config().config
-            });
-            if (where.host === '') return { missing: where.missing ?? '' };
+        cluster: (resource) => {
+            const found = connectionFor(
+                {
+                    hub: server.hub,
+                    primary: open.primary,
+                    config: () => locals.config().config,
+                    accounts: () => server.local.clusters
+                },
+                resource
+            );
+            if ('missing' in found) return found;
             return {
-                host: where.host,
+                resource,
+                connection: found.connection,
                 runner: run,
                 copy,
                 home: homedir(),
                 nodeVersion: process.version,
+                nodeDownload: nodeDownload(locals.config().config),
                 sevenZip: sevenZipFolder
             };
         },

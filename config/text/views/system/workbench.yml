@@ -21,7 +21,7 @@ text:
         desc_icons: 'The line icon each glyph name is drawn as, one row per name in the glyph vocabulary.'
         desc_latex: 'What the LaTeX editing aids read: the notice of the project the tables follow, the @ suggestions, the keys of the formatting chords and the math symbol groups the TeX view lists.'
         desc_layout: "How things are arranged: the rail's pages and the arrangements each starts as, the view catalogue's groups, the hub documents, the board chrome, the boards and their counts, and the live badges."
-        desc_local: "This machine's own values, kept in the .oculus/local.yml of each hub of the workspace, read on their own and never merged into the configuration: the port, the ssh alias of the cluster, the Claude command, the program an address is opened with, the account folders, the calendar accounts, the mail accounts and where the machine-local state is kept. The account, calendar and mail lists join over every hub's file; every other value is read from the primary hub's file."
+        desc_local: "This machine's own values, kept in the .oculus/local.yml of each hub of the workspace, read on their own and never merged into the configuration: the port, the user name and key file of each cluster, the Claude command, the program an address is opened with, the account folders, the calendar accounts, the mail accounts and where the machine-local state is kept. The cluster, account, calendar and mail lists join over every hub's file; every other value is read from the primary hub's file."
         desc_manifest_schema: 'The project.yml edit form as data: its sections, its fields, the widget each field is edited by, where a widget takes its choices from, and the rule the editor checks each field by.'
         desc_present: 'What every deck the Present view draws starts from: the hue each tag class of a project slide wears.'
         desc_sources: "What the portfolio reads: the scan paths, the registry and collection files, the feeds, where the bookmarks, the schedules and the apps live, and the roots a local file is served from (the folders of the default workspace, which the Files view's Add Folder to Workspace and Remove Folder from Workspace write, keeping the file's comments), and the language each file name opens in."
@@ -158,6 +158,9 @@ text:
         settings_changed_since: 'The file changed since this edit was started, so it was not saved.'
         settings_draft_dropped: 'The file now holds this setting in a form the editor does not draw, so the unsaved edit was dropped.'
         settings_clear: Clear search
+        settings_clusters_add: Add a row for a cluster
+        settings_clusters_add_go: Add row
+        settings_clusters_in: 'In the .oculus/local.yml of {0}.'
         settings_contents: Settings contents
         settings_copy_id: Copy Setting ID
         settings_copy_refused: The clipboard refused the copy.
@@ -236,6 +239,9 @@ text:
         settings_not_program: 'It must be a program name, with no slash and no white space.'
         settings_not_extension: 'It must be an extension with its dot, such as .pdf.'
         settings_not_bundle_id: 'It must be the bundle id of an application, such as com.apple.Preview.'
+        settings_not_https_address: 'It must be an https address, such as https://example.org/path.'
+        settings_not_https_origin: 'It must be an https origin, the scheme, the host and an optional port and nothing after, such as https://github.com.'
+        settings_not_row_key: 'It must be lowercase letters, digits, dashes and underscores.'
         settings_not_this_kind: 'The value is not of the kind this setting takes.'
         settings_not_yaml: 'Entry {0}, {1}: the text is not valid YAML.'
         settings_origin_also: 'Also set in {0}: {1}'

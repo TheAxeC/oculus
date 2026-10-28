@@ -15,7 +15,9 @@ export type {
     ConnectStatus,
     ConnectKind,
     ConnectProvider,
-    ConnectSetup
+    ConnectSetup,
+    GitFlow,
+    GitHosts
 } from '../../data/model/index.ts';
 
 /** The words of one connector's head, each read from that view's own catalog. */

@@ -17,6 +17,7 @@ import type { RecoverSource, RecoverState } from '../../../../../src/lib/data/mo
 import type { DownloadAccount } from '../../../../../src/lib/data/sources/config.ts';
 import {
     clusterPlace,
+    jobFolder,
     startClusterFetch,
     startClusterJob
 } from '../../../../../src/lib/server/machine/runs/recover/cluster.ts';
@@ -447,9 +448,8 @@ describe('a credential reaches curl only through its config file', () => {
                 ['mitdb.synapse.curl', 0o600, true],
                 ['mitdb.fetch.sh', 0o600, false]
             ]);
-            expect(
-                existsSync(join(node.deps.home, '.oculus', 'recover', 'research-hub', 'cluster'))
-            ).toBe(false);
+            const stage = join(jobFolder(node.deps.home, 'research-hub', 'cluster'), 'mitdb.stage');
+            expect(existsSync(stage)).toBe(false);
             expect(existsSync(join(remote, 'mitdb.kaggle.curl'))).toBe(false);
             const tmux = stand.calls().filter((one) => one.program === 'tmux');
             expect(tmux.map((one) => one.args)).toEqual([
@@ -499,9 +499,8 @@ describe('a credential reaches curl only through its config file', () => {
             ).toBe('credential');
             expect(node.sent).toEqual([]);
             expect(stand.calls().map((one) => one.args[2])).toEqual(['ls']);
-            expect(
-                existsSync(join(node.deps.home, '.oculus', 'recover', 'research-hub', 'cluster'))
-            ).toBe(false);
+            const stage = join(jobFolder(node.deps.home, 'research-hub', 'cluster'), 'mitdb.stage');
+            expect(existsSync(stage)).toBe(false);
         }
     );
 });

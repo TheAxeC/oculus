@@ -27,7 +27,7 @@ import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
 import { fileText } from '../../../src/lib/data/sources/documents/templates.ts';
 import type { ChangeLog } from '../../../src/lib/server/core/changes.ts';
 import { fsWrites } from '../../../src/lib/server/core/json.ts';
-import { pagePost } from '../../fixtures/doubles.ts';
+import { noCredentials, pagePost } from '../../fixtures/doubles.ts';
 import { TEXT } from '../../server/text.ts';
 import {
     enterHome,
@@ -92,7 +92,8 @@ function press(name: string) {
     return runCommand(repo, name, 'file', {}, SIZE, {
         run: taskTmux(repo).run,
         rootsFor: () => [repo],
-        approvalsFor: () => defaultApprovalsPath()
+        approvalsFor: () => defaultApprovalsPath(),
+        credentials: noCredentials()
     });
 }
 

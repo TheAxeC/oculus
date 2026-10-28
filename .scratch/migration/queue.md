@@ -1,17 +1,17 @@
-In flight (2 of 6 slots in use):
-- O98 (accounts and connections, rulings 507 to 510 and 516): reviewed (`agents/reviews/O98-refuter.md`), round 1 reviewed, in repair round 2 (`agents/briefs/O98-round2.md`, the one round past the cap, for the red boundaries check), base 54304adb4.
+In flight (1 of 6 slots in use):
 - O97 (the journal browser from configuration and one configurable reader, rulings 509, 511, 517 and 518): building beside O98 by ruling 526 (a) (builder launched 2026-10-28), base f4535f495.
 
 Queued:
-- O99 (every setting edited in Settings and a form for every file that is no setting, rulings 519 to 522): after O98 and O97 have landed (ruling 526 (a)), since it rewrites the Settings files both change.
+- O99 (every setting edited in Settings and a form for every file that is no setting, rulings 519 to 522): after O97 has landed (ruling 526 (a)); O98 has landed, since it rewrites the Settings files both change.
 
 Waiting on a ruling: none.
 
-Landing next: O98, when its review and rounds close.
+Landing next: O97, when its review and round close.
 
-Owed looks: O98 at its landing, on 8790.
+Owed looks: O97 at its landing, on 8790.
 
 Landed, newest first:
+- O98 (accounts and connections: several clusters, each connection written out, git signed in from Account setup), 2026-10-28, the landing commit; hub 7c2dd40fe.
 - O100 (the Awaiting box's names underlined under the pointer), 2026-10-27, 89c1a9bc.
 - O95 (Focus, what a press opens), 2026-10-27, 5a51074e.
 - O96 (the cards' project strip: its filters and its groups by category), 2026-10-27, 01bb9024.

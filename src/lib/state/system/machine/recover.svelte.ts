@@ -5,9 +5,10 @@
 // after every action it sends and on its refresh control, and at no other time.
 //
 // Between those the runs come from the `recover` channel the server pushes: each run's state,
-// bytes, rate and last log lines, and the login node's sessions, which the Login node section
-// draws. A pushed run reading is newer than the answer when its version is above the channel's
-// version the answer was given at. An action is a POST with the write token
+// bytes, rate and last log lines, and each cluster's login node sessions, which that cluster's
+// Login node section draws. A target is this Mac (`mac`) or the key of a cluster of
+// `slurm.resource`. A pushed run reading is newer than the answer when its version is above the
+// channel's version the answer was given at. An action is a POST with the write token
 // (state/shared/stores/token-post.ts), answered with the run started or the reason it was refused,
 // which the view words from its catalog.
 
@@ -24,8 +25,10 @@ import { inBrowser } from '../../shared/stores/in-browser.ts';
 import type { Queries } from '../../shared/stores/shapes.ts';
 import { postWithToken, type TokenSource } from '../../shared/stores/token-post.ts';
 
-/** The target a dataset is shown on. */
-export type RecoverTarget = 'mac' | 'cluster';
+/** The target a dataset is shown on: `mac` for this Mac, else the key of a cluster. */
+export type RecoverTarget = string;
+
+export { MAC_TARGET } from '../../../data/model/index.ts';
 
 /** What a Recover action does. */
 export type RecoverAction = 'fetch' | 'verify' | 'unpack' | 'stop';
@@ -55,7 +58,7 @@ const runShape = z
     .nullable();
 
 const stateShape = z.object({
-    target: z.enum(['mac', 'cluster']),
+    target: z.string(),
     folder: z.string(),
     access: z.array(
         z.object({
@@ -91,13 +94,16 @@ const stateShape = z.object({
     live: z.number()
 }) satisfies z.ZodType<RecoverState>;
 
-/** A refusal of the route: its reason, and for no host the sentence that says why. */
+/**
+ * A refusal of the route: its reason, and for a cluster with no host or a target that is no
+ * cluster of `slurm.resource` the sentence that says why.
+ */
 const refusalShape = z.object({ refused: z.string(), hint: z.string().optional() });
 
 const liveRunShape = z.object({
     hub: z.string(),
     key: z.string(),
-    target: z.enum(['mac', 'cluster']),
+    target: z.string(),
     state: z.enum(['running', 'ended']),
     run: runShape,
     bytes: z.number(),
@@ -130,8 +136,11 @@ type Held = {
 
 const PENDING: Held = { state: null, refused: '', hint: '', error: '', loading: true };
 
-/** What an action answers: the run started, or the reason it was not. */
-type ActionAnswer = { ok: true } | { ok: false; refused: string; error: string };
+/**
+ * What an action answers: the run started, or the reason it was not, with the sentence the route
+ * gives for a cluster it cannot reach (`hint`, else empty).
+ */
+type ActionAnswer = { ok: true } | { ok: false; refused: string; hint: string; error: string };
 
 /** The Recover answers and pushes of one client. */
 export type RecoverStore = {
@@ -154,8 +163,8 @@ export type RecoverStore = {
         target: RecoverTarget,
         after: number
     ) => RecoverLiveRun | null;
-    /** The login node's sessions at the last reading of the cluster, or null before one. */
-    sessions: () => RecoverSession[] | null;
+    /** The login node's sessions of the cluster `resource` at its last reading, or null before. */
+    sessions: (resource: string) => RecoverSession[] | null;
 };
 
 /** The address of the GET of one dataset. */
@@ -237,13 +246,19 @@ export function createRecover(
             const raw = await readJson(response);
             reload(hub, key, target);
             const refusal = refusalShape.safeParse(raw);
-            if (refusal.success) return { ok: false, refused: refusal.data.refused, error: '' };
-            if (!response.ok) return { ok: false, refused: '', error: failedAnswer(response, raw) };
+            if (refusal.success) {
+                const { refused, hint = '' } = refusal.data;
+                return { ok: false, refused, hint, error: '' };
+            }
+            if (!response.ok) {
+                return { ok: false, refused: '', hint: '', error: failedAnswer(response, raw) };
+            }
             return { ok: true };
         } catch (error) {
             return {
                 ok: false,
                 refused: '',
+                hint: '',
                 error: error instanceof Error ? error.message : String(error)
             };
         }
@@ -262,9 +277,11 @@ export function createRecover(
         return found !== undefined && found.version > after ? found : null;
     }
 
-    function sessions(): RecoverSession[] | null {
+    function sessions(resource: string): RecoverSession[] | null {
         const held = live()?.sessions;
-        return held === null || held === undefined ? null : itemsOf(held, sessionShape);
+        const listed =
+            held !== undefined && Object.hasOwn(held, resource) ? held[resource] : undefined;
+        return listed === undefined ? null : itemsOf(listed, sessionShape);
     }
 
     return { dataset, reload, act, pushed, sessions };

@@ -19,8 +19,14 @@
     // half is saved from, once for every account of that provider in the Calendar and the Inbox.
     //
     // The redirect addresses and the scopes are the server's answer (GET /api/connect), read from
-    // the constants the connect flow uses, so what the page asks the reader to register is what the
-    // server sends. The page draws whether a provider is set up and never a saved half.
+    // what the connect flow uses, the hub's `sign_in` rows among it, so what the page asks the
+    // reader to register is what the server sends. A provider whose row is missing or lacks a field
+    // is drawn as the server's sentence naming them, with no steps and no form. The page draws
+    // whether a provider is set up and never a saved half.
+    //
+    // Below the providers are the git hosts of `sign_in`, one part each (GitSteps.svelte), and the
+    // clusters of `slurm.resource`, one part each under its name (ClusterSteps.svelte), read from
+    // POST /api/clusters and read again once a row is saved.
     //
     // Each provider is the group every grouping of a view is drawn as
     // (ui/controls/heads/GroupHead.svelte), its ready tag at the heading's right end, folded by the
@@ -36,6 +42,9 @@
     import GoogleSteps from './GoogleSteps.svelte';
     import HalfForm from './HalfForm.svelte';
     import MicrosoftSteps from './MicrosoftSteps.svelte';
+    import ClusterSteps from './ClusterSteps.svelte';
+    import GitSteps from './GitSteps.svelte';
+    import type { ClusterSetup } from '$lib/state/system/machine/hpc/setup';
     import { t } from '$lib/state/shared/words/text';
     import { scopesOf, type ConnectProvider } from '$lib/state/life/accounts';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
@@ -43,7 +52,8 @@
     import { usePaneFold } from '$lib/views/shared/card/pane-fold';
 
     const {
-        accounts: { loadSetup, setup, setupFailed, waiting }
+        accounts: { loadSetup, setup, setupFailed, waiting },
+        hpc: { readSetup }
     } = useState();
     let { instance }: ViewProps = $props();
 
@@ -52,7 +62,18 @@
 
     $effect(() => {
         void loadSetup();
+        void loadClusters();
     });
+
+    /** The clusters of `slurm.resource` and this machine's rows, or null before they are read. */
+    let clusters: ClusterSetup | null = $state(null);
+    let clustersFailed = $state(false);
+
+    async function loadClusters(): Promise<void> {
+        const read = await readSetup();
+        clustersFailed = read === null;
+        if (read !== null) clusters = read;
+    }
 
     const held = $derived(setup());
     const pending = $derived(waiting());
@@ -103,10 +124,14 @@
                     <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
                     {@render ready('google')}
                 {/snippet}
-                <div class="provider">
-                    <GoogleSteps scopes={scopesOf(held, 'google')} />
-                    <HalfForm provider="google" named={named('google')} />
-                </div>
+                {#if held.missing.google !== ''}
+                    <p class="missing" data-missing="google">{held.missing.google}</p>
+                {:else}
+                    <div class="provider">
+                        <GoogleSteps scopes={scopesOf(held, 'google')} />
+                        <HalfForm provider="google" named={named('google')} />
+                    </div>
+                {/if}
             </GroupHead>
             <GroupHead
                 data-provider="microsoft"
@@ -118,15 +143,45 @@
                     <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
                     {@render ready('microsoft')}
                 {/snippet}
-                <div class="provider">
-                    <MicrosoftSteps
-                        redirects={[held.redirects.calendar, held.redirects.mail]}
-                        permissions={scopesOf(held, 'microsoft')}
-                    />
-                    <HalfForm provider="microsoft" named={named('microsoft')} />
-                </div>
+                {#if held.missing.microsoft !== ''}
+                    <p class="missing" data-missing="microsoft">{held.missing.microsoft}</p>
+                {:else}
+                    <div class="provider">
+                        <MicrosoftSteps
+                            redirects={[held.redirects.calendar, held.redirects.mail]}
+                            permissions={scopesOf(held, 'microsoft')}
+                        />
+                        <HalfForm provider="microsoft" named={named('microsoft')} />
+                    </div>
+                {/if}
             </GroupHead>
+            <GitSteps hosts={held.git} />
         {/if}
+        <GroupHead
+            data-provider="clusters"
+            label={t('accounts.clusters_heading')}
+            open={fold.open('clusters')}
+            ontoggle={() => fold.toggle('clusters')}
+        >
+            {#if clusters === null && clustersFailed}
+                <Empty error message={t('accounts.cluster_unreachable')} />
+            {:else if clusters === null}
+                <Intro html={t('accounts.reading')} trusted />
+            {:else if clusters.clusters.length === 0}
+                <p class="missing">{clusters.hint}</p>
+            {:else}
+                {#each clusters.clusters as cluster (cluster.resource)}
+                    <section class="provider" data-cluster-part={cluster.resource}>
+                        <h3>{cluster.name}</h3>
+                        <ClusterSteps
+                            {cluster}
+                            keyMissing={clusters.keyMissing}
+                            onsaved={() => void loadClusters()}
+                        />
+                    </section>
+                {/each}
+            {/if}
+        </GroupHead>
     </div>
 </Pane>
 
@@ -144,5 +199,14 @@
     .provider {
         display: grid;
         gap: 10px;
+    }
+    h3 {
+        margin: 0;
+        font-size: var(--fs-md);
+    }
+    .missing {
+        margin: 0;
+        color: var(--c-amber-txt, var(--muted));
+        font-size: var(--fs-md);
     }
 </style>

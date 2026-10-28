@@ -12,6 +12,7 @@ import { REPO_SETTINGS } from '../../../../src/lib/data/helpers/editor/editor.ts
 import type { FilesPayload } from '../../../../src/lib/data/model/index.ts';
 import { Hub, type Sink } from '../../../../src/lib/server/core/channels.ts';
 import { watchGit, type GitWatcher } from '../../../../src/lib/server/root/watch/git.ts';
+import { noCredentials } from '../../../fixtures/doubles.ts';
 import { it, scratchDir } from '../../../fixtures/scratch.ts';
 
 /** The text the case writes into each settings file. */
@@ -85,7 +86,11 @@ describe('the git watch of a root with a settings file', () => {
         const hub = new Hub();
         const files = filesOf(hub);
         const first = read(hub, root);
-        watcher = watchGit(hub, { throttle: 0, roots: () => [root] });
+        watcher = watchGit(hub, {
+            throttle: 0,
+            roots: () => [root],
+            credentials: noCredentials()
+        });
         await first;
         // The events of the folders made above, which the watch may still hear, come before the
         // probe's, so what is heard after the probe is what the writes below cause.

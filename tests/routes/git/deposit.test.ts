@@ -30,10 +30,10 @@ const ID = 'alpha';
 /** What ran, so a case can assert that a refusal refused before the operation. */
 let ran: { action: string; id: string; fields: Record<string, unknown> }[] = [];
 
-function options(extra: DepositOptions = {}): DepositOptions {
+function options(extra: Partial<DepositOptions> = {}): DepositOptions {
     ran = [];
     return {
-        deposit: { config: loadConfig(engineDir()).config },
+        deposit: { config: loadConfig(engineDir()).config, credentials: SERVER.credentials },
         idsFor: () => [ID],
         run: (action, id, fields) => {
             ran.push({ action, id, fields });

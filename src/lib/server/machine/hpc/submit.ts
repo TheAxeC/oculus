@@ -1,9 +1,12 @@
-// Layer 2, server. Submit on a job script: the plan of what will be copied and run, and the run of
-// a plan the reader confirmed. The plan names the code folder of the script's project, the folder
-// on the cluster it is copied to, the files sent, the rsync arguments and the one remote command,
-// and warns when the script never names the cluster's per-job scratch folder (scratch.ts). The run
-// computes the plan again at the press and runs it only when it equals the plan the reader
-// confirmed, so what runs is what the confirm showed.
+// Layer 2, server. Submit on a job script: the clusters the Submit box offers with the one its
+// project's `compute:` picks, the plan of what will be copied and run, and the run of a plan the
+// reader confirmed. The plan names the cluster of `slurm.resource` the reader picked, the code
+// folder of the script's project, the folder on the cluster it is copied to (one folder per
+// project, whichever cluster), the files sent, the rsync arguments and the one remote command, and
+// warns when the script never names the cluster's per-job scratch folder (scratch.ts). A plan
+// naming a key `slurm.resource` does not list is refused. The run computes the plan again at the
+// press and runs it only when it equals the plan the reader confirmed, so what runs is what the
+// confirm showed, on the connection of the cluster it names.
 //
 // The only processes started are rsync (transfer.ts) and one ssh that runs
 // `cd <folder> && sbatch --parsable <script>` (ssh.ts), both injected so a test starts neither. One
@@ -17,7 +20,7 @@ import { lstatSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { isDeepStrictEqual } from 'node:util';
 import { clusterFolder } from '../../../data/shapes/shapes.ts';
-import type { Finding, Project, SubmitPlan } from '../../../data/model/index.ts';
+import type { Finding, Id, Project, SubmitPlan } from '../../../data/model/index.ts';
 import { errorLine, readYamlMap } from '../../../data/sources/yaml-file.ts';
 import type { TextCatalog } from '../../../data/helpers/finding-text.ts';
 import { deepestHolding } from '../../../data/helpers/files/paths.ts';
@@ -27,20 +30,25 @@ import type { Read } from '../../core/git/run.ts';
 import { projectDirectory, resolveRootPath, type Root } from '../../files/files.ts';
 import { shellWord } from '../pty/shell-word.ts';
 import { validId } from './actions.ts';
+import type { ClusterConnection, ConnectionFound } from './clusters/connections.ts';
 import { scratchRule } from './scratch.ts';
 import type { Runner } from './ssh.ts';
-import { copyVector, type Copier } from './transfer.ts';
+import { copyTarget, copyVector, type Copier } from './transfer.ts';
 
 /** Milliseconds the remote `sbatch` is given: one command that queues the job or does not. */
 const SUBMIT_TIMEOUT_MS = 30000;
 
-/** The words a refusal comes in. `outside`: the path is no file under a served root. */
+/**
+ * The words a refusal comes in. `outside`: the path is no file under a served root;
+ * `unknown-cluster`: the plan names a key `slurm.resource` does not list.
+ */
 type SubmitReason =
     | 'outside'
     | 'not-slurm'
     | 'no-project'
     | 'outside-code'
     | 'bad-cluster'
+    | 'unknown-cluster'
     | 'no-host'
     | 'no-files'
     | 'not-sent'
@@ -58,6 +66,16 @@ type SubmitRefused = { status: 'refused'; reason: SubmitReason; detail?: string 
 /** What a plan answers, and what a run answers. */
 export type PlanAnswer = { status: 'ok'; plan: SubmitPlan } | SubmitRefused;
 export type RunAnswer = { status: 'ok'; job: string } | SubmitRefused;
+
+/** One cluster of `slurm.resource`: its key, its name and the id of its registry entry, if any. */
+type ClusterChoice = { resource: string; name: string; id: Id | null };
+
+/** What the Submit box offers: the clusters by key and name, and the one picked at the start. */
+export type SubmitChoices = {
+    status: 'ok';
+    clusters: { resource: string; name: string }[];
+    picked: string | null;
+};
 
 /**
  * The runs in flight: the `<host>:<folder>` of each with the controller that ends its children,
@@ -93,23 +111,31 @@ export type PlanDeps = {
     projects: () => Project[];
     /** The text catalog the manifest reader words its findings from. */
     catalog: () => TextCatalog;
-    /** The ssh alias to run against, or none and the sentence for why (host.ts). */
-    where: () => { host: string; missing?: string };
+    /**
+     * The connection of the cluster of `slurm.resource` a plan names, or the sentence for why there
+     * is none (clusters/connections.ts).
+     */
+    connection: (resource: string) => ConnectionFound;
+    /** The clusters of `slurm.resource`, in order, each with the id of its registry entry. */
+    clusters: () => readonly ClusterChoice[];
     /** The paths git keeps under a folder (`keptFiles`), its refusals worded from the catalog. */
     kept: (code: string, text: TextCatalog) => Promise<Read<string[]>>;
 };
 
-/** What a run adds: the two runners, the state, the poll to follow with and the console line. */
+/**
+ * What a run adds: the two runners, the state, the poll of a cluster to follow with and the
+ * console line.
+ */
 export type SubmitDeps = PlanDeps & {
     copy: Copier;
     ssh: Runner;
     submits: SubmitState;
-    refresh: () => Promise<void>;
+    refresh: (resource: string) => Promise<void>;
     say: (line: string) => void;
 };
 
-/** The plan with what the run needs and the plan does not carry: the files and the key. */
-type Planned = { plan: SubmitPlan; files: string[] };
+/** The plan with what the run needs and the plan does not carry: the files and the connection. */
+type Planned = { plan: SubmitPlan; files: string[]; connection: ClusterConnection };
 type Computed = Planned | SubmitRefused;
 
 const refuse = (reason: SubmitReason, detail?: string): SubmitRefused => ({
@@ -202,8 +228,14 @@ function sentFiles(code: string, listed: string[]): { files: string[]; bytes: nu
     return { files, bytes };
 }
 
-/** The plan for the script `path` under the root `root`, or the one refusal, running nothing. */
-async function compute(input: { root: string; path: string }, deps: PlanDeps): Promise<Computed> {
+/**
+ * The plan for the script `path` under the root `root` on the cluster `resource`, or the one
+ * refusal, running nothing.
+ */
+async function compute(
+    input: { root: string; path: string; resource: string },
+    deps: PlanDeps
+): Promise<Computed> {
     const found = resolveRootPath(deps.roots(), input.root, input.path);
     if ('error' in found) return refuse('outside');
     const file = realPath(found.path, true);
@@ -220,29 +252,32 @@ async function compute(input: { root: string; path: string }, deps: PlanDeps): P
     }
     const cluster = clusterOf(project, deps.catalog());
     if ('status' in cluster) return cluster;
-    const { host, missing } = deps.where();
-    if (host === '') return refuse('no-host', missing);
+    const reached = deps.connection(input.resource);
+    if ('missing' in reached) {
+        return refuse(reached.unlisted === true ? 'unknown-cluster' : 'no-host', reached.missing);
+    }
+    const { connection } = reached;
     const listed = await deps.kept(code, deps.catalog());
     if (!listed.ok) return refuse('no-files', listed.error);
     const { files, bytes } = sentFiles(code, listed.value);
     const script = file.slice(code.length + 1);
     if (!files.includes(script)) return refuse('not-sent');
-    const target = `${host}:${cluster.folder}/`;
     const plan: SubmitPlan = {
         root: input.root,
         path: input.path,
         project: project.id,
-        host,
+        resource: input.resource,
+        host: connection.host,
         source: `${code}/`,
-        target,
+        target: copyTarget(connection, cluster.folder),
         files: files.length,
         bytes,
         digest: createHash('sha256').update(files.join('\0')).digest('hex'),
-        rsync: copyVector(target),
+        rsync: copyVector(connection, cluster.folder),
         remote: remoteOf(cluster.folder, script),
         scratch: await scratchRule(file, code, cluster.folder)
     };
-    return { plan, files };
+    return { plan, files, connection };
 }
 
 /** Whether the path is a file. */
@@ -254,13 +289,35 @@ function isFile(path: string): boolean {
     }
 }
 
-/** What Submit will do with the script `path` under `root`, or why it will not. */
+/** What Submit will do with the script `path` under `root` on `resource`, or why it will not. */
 export async function planSubmit(
-    input: { root: string; path: string },
+    input: { root: string; path: string; resource: string },
     deps: PlanDeps
 ): Promise<PlanAnswer> {
     const computed = await compute(input, deps);
     return 'plan' in computed ? { status: 'ok', plan: computed.plan } : computed;
+}
+
+/**
+ * The clusters the Submit box offers for the script `path` under `root`, in `slurm.resource`'s
+ * order, and the one picked at the start: the one cluster of them the project's `compute:` names,
+ * or none when it names none or several, or the script is in no project.
+ */
+export function submitChoices(
+    input: { root: string; path: string },
+    deps: PlanDeps
+): SubmitChoices {
+    const clusters = deps.clusters();
+    const shown = clusters.map(({ resource, name }) => ({ resource, name }));
+    const found = resolveRootPath(deps.roots(), input.root, input.path);
+    const project = 'error' in found ? null : projectOf(asked(deps.roots(), input), deps);
+    const ids = project?.resourceIds ?? [];
+    const named = clusters.filter((one) => one.id !== null && ids.includes(one.id));
+    return {
+        status: 'ok',
+        clusters: shown,
+        picked: named.length === 1 ? named[0].resource : null
+    };
 }
 
 /** The last line a program wrote, or the word for why it wrote none. */
@@ -285,7 +342,10 @@ function copyFailureLine(stderr: string, fallback: string): string {
  * printed. One line goes to the server's console for each run.
  */
 export async function runSubmit(
-    request: { plan: { root: string; path: string; project?: unknown }; confirm: unknown },
+    request: {
+        plan: { root: string; path: string; resource: string; project?: unknown };
+        confirm: unknown;
+    },
     deps: SubmitDeps
 ): Promise<RunAnswer> {
     const answer = await attempt(request, deps);
@@ -306,7 +366,7 @@ function closedOf(deps: SubmitDeps): boolean {
 
 /** The checks before the copy, the key held while it runs, and the run itself. */
 async function attempt(
-    request: { plan: { root: string; path: string }; confirm: unknown },
+    request: { plan: { root: string; path: string; resource: string }; confirm: unknown },
     deps: SubmitDeps
 ): Promise<RunAnswer> {
     if (request.confirm !== true) return refuse('unconfirmed');
@@ -316,22 +376,20 @@ async function attempt(
     if (!isDeepStrictEqual(computed.plan, request.plan)) return refuse('changed');
     // The plan took time; a state closed meanwhile starts nothing.
     if (closedOf(deps)) return refuse('closed');
-    const { plan, files } = computed;
-    const key = plan.target.slice(0, -1);
+    const key = computed.plan.target.slice(0, -1);
     if (deps.submits.running.has(key)) return refuse('busy');
     const controller = new AbortController();
     deps.submits.running.set(key, controller);
     try {
-        return await execute(plan, files, controller.signal, deps);
+        return await execute(computed, controller.signal, deps);
     } finally {
         if (deps.submits.running.get(key) === controller) deps.submits.running.delete(key);
     }
 }
 
-/** The copy and the sbatch of one confirmed plan, under the signal of its run. */
+/** The copy and the sbatch of one confirmed plan on its cluster, under the signal of its run. */
 async function execute(
-    plan: SubmitPlan,
-    files: string[],
+    { plan, files, connection }: Planned,
     signal: AbortSignal,
     deps: SubmitDeps
 ): Promise<RunAnswer> {
@@ -341,7 +399,7 @@ async function execute(
     if (signal.aborted) return refuse('submit-failed', 'aborted');
     let printed: string;
     try {
-        const queued = await deps.ssh(plan.host, plan.remote, SUBMIT_TIMEOUT_MS, signal);
+        const queued = await deps.ssh(connection, plan.remote, SUBMIT_TIMEOUT_MS, signal);
         if (queued.code !== 0) {
             return refuse('submit-failed', lastLine(queued.stderr, `exit ${queued.code}`));
         }
@@ -352,7 +410,7 @@ async function execute(
     const first = printed.split('\n')[0] ?? '';
     const job = first.split(';')[0].trim();
     if (!validId(job)) return refuse('no-job-id', first);
-    // The job is queued whatever the poll does; the next poll lists it.
-    await deps.refresh().catch(() => undefined);
+    // The job is queued whatever the poll does; the next poll of its cluster lists it.
+    await deps.refresh(plan.resource).catch(() => undefined);
     return { status: 'ok', job };
 }

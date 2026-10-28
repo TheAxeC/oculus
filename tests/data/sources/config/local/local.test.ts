@@ -5,7 +5,7 @@
 
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join, sep } from 'node:path';
-import { tmpdir } from 'node:os';
+import { homedir, tmpdir } from 'node:os';
 import { describe, expect, vi } from 'vitest';
 import {
     DEFAULT_PORT,
@@ -63,7 +63,6 @@ describe('checkLocal', () => {
         ['hub: 3\nport: x', 'local.yml: port must be an integer'],
         ['lsp: 3', 'local.yml: lsp must be a path'],
         ['port: x', 'local.yml: port must be an integer'],
-        ["hpc_host: ''", 'local.yml: hpc_host must be a non-empty string'],
         ["rite_dap_bin: ''", 'local.yml: rite_dap_bin must be a non-empty string'],
         ['rite_dap_bin: 5', 'local.yml: rite_dap_bin must be a non-empty string'],
         [
@@ -112,10 +111,10 @@ describe('readLocalText', () => {
     const hub = '/hub';
 
     it('keeps the good keys when one is wrong', () => {
-        const read = readLocalText('port: x\nhpc_host: a', hub);
+        const read = readLocalText('port: x\nrite_dap_bin: a', hub);
         expect(read.config.port).toBe(DEFAULT_PORT);
-        expect(read.config.hpcHost).toBe('a');
-        expect(named(hub, 'port: x\nhpc_host: a')).toStrictEqual(['port: value']);
+        expect(read.config.riteDapBin).toBe('a');
+        expect(named(hub, 'port: x\nrite_dap_bin: a')).toStrictEqual(['port: value']);
         expect(read.unread).toBe(false);
 
         const wrongMap = readLocalText('port: 9001\nliterature: abc', hub);
@@ -229,7 +228,7 @@ describe('localFindings', () => {
     it('words each problem against local.yml with no value of the file in it', () => {
         const hub = hubWith(null);
         const texts = [
-            'port: x\nhpc_host: a',
+            'port: x\nrite_dap_bin: a',
             'accounts: [{ tool: claude, dir: d, label: A b }, { tool: gemini, dir: e, label: a-b }, { tool: claude, dir: f, label: a-b }]',
             'a: [',
             'port: 9001\nliterature: abc',
@@ -251,5 +250,74 @@ describe('localFindings', () => {
                 }
             }
         }
+    });
+});
+
+describe('clusters', () => {
+    const hub = hubWith(null);
+    const rows = (text: string) => readLocalText(text, hub).config.clusters;
+
+    it('reads the user name and the key file of each row, ~/ resolved, a field left out absent (G13)', () => {
+        const text = [
+            'clusters:',
+            '  - { resource: utwente, user: axel, key_file: ~/.ssh/k }',
+            '  - { resource: b }',
+            '  - { resource: c, user: me, key_file: /keys/c }'
+        ].join('\n');
+        expect(rows(text)).toEqual([
+            { resource: 'utwente', user: 'axel', keyFile: join(homedir(), '.ssh', 'k') },
+            { resource: 'b' },
+            { resource: 'c', user: 'me', keyFile: '/keys/c' }
+        ]);
+        expect(named(hub, text)).toEqual([]);
+    });
+
+    it.each([
+        [
+            'a user name that would read as an option',
+            "resource: a, user: '-oProxyCommand=x'",
+            'clusters[0].user'
+        ],
+        ['a user name holding a space', "resource: a, user: 'a b'", 'clusters[0].user'],
+        ['a relative key file', 'resource: a, key_file: relative/k', 'clusters[0].key_file'],
+        ['a public key file', 'resource: a, key_file: ~/.ssh/k.pub', 'clusters[0].key_file'],
+        [
+            'a key file holding a single quote',
+            `resource: a, key_file: "/keys/a'b"`,
+            'clusters[0].key_file'
+        ],
+        [
+            'the resource mac, which names this Mac',
+            'resource: mac, user: me',
+            'clusters[0].resource'
+        ]
+    ])(
+        'leaves out a row with %s, with a problem naming the row and the field (G13)',
+        (_row, fields, key) => {
+            const text = `clusters:\n  - { ${fields} }\n  - { resource: b, user: me }\n`;
+            expect(rows(text)).toEqual([{ resource: 'b', user: 'me' }]);
+            expect(readLocalText(text, hub).problems.map((one) => one.key)).toEqual([key]);
+            expect(checkLocal(text)).not.toContain('ProxyCommand');
+        }
+    );
+
+    it('says that the resource mac names this Mac (G13)', () => {
+        const read = readLocalText('clusters:\n  - { resource: mac }\n', hub);
+        expect(read.problems.map((one) => one.sentence)).toEqual([
+            'clusters[0].resource must be the key of a cluster other than mac, which names this Mac'
+        ]);
+    });
+
+    it('uses the first of two rows of one cluster, naming the second, and names a value that is no list (G13)', () => {
+        const text = 'clusters:\n  - { resource: a, user: one }\n  - { resource: a, user: two }\n';
+        expect(rows(text)).toEqual([{ resource: 'a', user: 'one' }]);
+        expect(named(hub, text)).toEqual(['clusters[1].resource: row']);
+        expect(readLocalText(text, hub).problems.map((one) => one.sentence)).toEqual([
+            'clusters[1].resource must be the key of a cluster no earlier row names'
+        ]);
+        expect(rows('clusters: x\n')).toEqual([]);
+        expect(readLocalText('clusters: x\n', hub).problems.map((one) => one.key)).toEqual([
+            'clusters'
+        ]);
     });
 });

@@ -34,7 +34,7 @@ function hubWith(text: string | null): string {
 
 describe('the keys that are one per oculus', () => {
     it("are the primary hub's, with a problem naming the other hub that sets one", () => {
-        const first = hubWith('port: 8800\nclaude_bin: x\nhpc_host: h\nmail_dir: rel/mail\n');
+        const first = hubWith('port: 8800\nclaude_bin: x\nrite_dap_bin: h\nmail_dir: rel/mail\n');
         const second = hubWith('port: 8801\n');
         const read = readMachine(
             [
@@ -45,7 +45,7 @@ describe('the keys that are one per oculus', () => {
         );
         expect(read.config.port).toBe(8800);
         expect(read.config.claudeBin).toBe('x');
-        expect(read.config.hpcHost).toBe('h');
+        expect(read.config.riteDapBin).toBe('h');
         expect(read.config.mailDir).toBe(join(first, 'rel/mail'));
         expect(
             read.problems.map(({ file, problem }) => [
@@ -55,7 +55,7 @@ describe('the keys that are one per oculus', () => {
                 'hub' in problem ? problem.hub : ''
             ])
         ).toEqual([[localFile(second), 'port', 'other-hub', 'second']]);
-        expect(read.set.sort()).toEqual(['claude_bin', 'hpc_host', 'mail_dir', 'port']);
+        expect(read.set.sort()).toEqual(['claude_bin', 'mail_dir', 'port', 'rite_dap_bin']);
     });
 
     it('are the defaults when the workspace has no primary', () => {
@@ -205,5 +205,31 @@ describe('a key the reader does not know', () => {
         } finally {
             warn.mockRestore();
         }
+    });
+});
+
+describe('the cluster accounts', () => {
+    it("are joined over every hub, the primary hub's row of a cluster used and the other hub's named (G13)", () => {
+        const lab = hubWith(
+            'clusters:\n  - { resource: utwente, user: lab }\n  - { resource: b, user: x }\n'
+        );
+        const primary = hubWith('clusters:\n  - { resource: utwente, user: me }\n');
+        const read = readMachine(
+            [
+                { name: 'lab', dir: lab },
+                { name: 'primary', dir: primary }
+            ],
+            'primary'
+        );
+        expect(read.config.clusters).toEqual([
+            { resource: 'utwente', user: 'me', hub: 'primary' },
+            { resource: 'b', user: 'x', hub: 'lab' }
+        ]);
+        expect(read.problems.map(({ file, problem }) => [file, problem.key])).toEqual([
+            [localFile(lab), 'clusters']
+        ]);
+        expect(read.problems.map(({ problem }) => problem.sentence)).toEqual([
+            'clusters must be rows of clusters that no earlier hub has a row for'
+        ]);
     });
 });

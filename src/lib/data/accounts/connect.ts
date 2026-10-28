@@ -142,3 +142,34 @@ export function providerHalf(
     }
     return { refused: 'provider' };
 }
+
+/**
+ * The key of a git host row of `sign_in`, the rule the hub's reader holds a row's key to; it
+ * becomes part of the file name the host's client id and token are kept in.
+ */
+const GIT_HOST_KEY = /^[a-z0-9_-]+$/;
+
+/** Whether a value the page sent is a key a git host row may have. */
+export function isGitHostKey(value: unknown): value is string {
+    return typeof value === 'string' && GIT_HOST_KEY.test(value);
+}
+
+/**
+ * The name of the file a git host's client id and token are kept in, beside the providers' files:
+ * `git-<key>.json`, which no Google or Microsoft file is named.
+ */
+export function gitHostFileName(key: string): string {
+    return `git-${key}.json`;
+}
+
+/** A git host's OAuth App client id: letters, digits, dots, dashes and underscores. */
+const GIT_CLIENT_ID = /^[A-Za-z0-9._-]{1,100}$/;
+
+/**
+ * The client id the page typed for a git host, its surrounding space taken off, or null when it
+ * is no client id. The page runs this before it sends and the server when it receives.
+ */
+export function gitClientId(value: unknown): string | null {
+    const id = typed(value);
+    return GIT_CLIENT_ID.test(id) ? id : null;
+}

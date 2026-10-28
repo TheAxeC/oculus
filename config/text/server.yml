@@ -96,6 +96,9 @@ text:
             not_program: This option takes a program name, with no slash and no white space
             not_extension: This option takes an extension with its dot, such as .pdf
             not_bundle_id: This option takes the bundle id of an application, such as com.apple.Preview
+            not_https_address: This option takes an https address, such as https://example.org/path
+            not_https_origin: This option takes an https origin, the scheme, the host and an optional port and nothing after, such as https://github.com
+            not_row_key: This option takes lowercase letters, digits, dashes and underscores
             not_text: This option takes text
             not_choice: 'This option takes one of: {0}'
             not_in_source: 'This option takes one of the items of the list {0}'
@@ -449,7 +452,6 @@ text:
             paper_in_file: This paper is in Literature already.
             paper_needs_address: A paper needs a title, a DOI or an address.
         machine_default:
-            hpc_host: the host of the cluster that slurm.resource of behavior.yml names
             no_accounts: no accounts
             no_key: none
             no_opener: none on this platform

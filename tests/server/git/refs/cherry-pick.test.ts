@@ -8,8 +8,9 @@
 import { describe, expect } from 'vitest';
 import { cherryPick } from '../../../../src/lib/server/git/git-index.ts';
 import { readState } from '../../../../src/lib/server/core/git/state.ts';
+import { noCredentials } from '../../../fixtures/doubles.ts';
 import { it } from '../../../fixtures/scratch.ts';
-import { commitFile, git, isolateGit, scratchRepo } from './repo.ts';
+import { commitFile, git, gitAt, isolateGit, scratchRepo } from './repo.ts';
 import { TEXT } from '../../text.ts';
 
 isolateGit();
@@ -31,11 +32,11 @@ function diverged(conflict: boolean): { root: string; pick: string } {
 describe('cherryPick', () => {
     it('makes a new commit on the checked-out branch with the commit message', async () => {
         const { root, pick } = diverged(false);
-        const answer = await cherryPick(root, pick, TEXT, [root]);
+        const answer = await cherryPick(gitAt(root), pick, TEXT, [root]);
         expect(answer.ok).toBe(true);
         expect(git(root, 'log', '-1', '--format=%s').trim()).toBe('Other file');
         expect(git(root, 'rev-parse', 'HEAD').trim()).not.toBe(pick);
         expect(git(root, 'show', '--name-only', '--format=', 'HEAD').trim()).toBe('o.txt');
-        expect((await readState(root, TEXT)).state.sequence).toBe('');
+        expect((await readState(noCredentials(), root, TEXT)).state.sequence).toBe('');
     });
 });

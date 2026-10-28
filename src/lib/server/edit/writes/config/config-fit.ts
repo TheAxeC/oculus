@@ -30,7 +30,8 @@ import {
     pickedSources,
     readsOther,
     type CatalogEntry,
-    type FieldSpec
+    type FieldSpec,
+    type Form
 } from '../../../../data/sources/config/catalog/options.ts';
 import {
     valueProblem as ruleProblem,
@@ -75,6 +76,24 @@ function stringList(value: unknown): value is string[] {
     return Array.isArray(value) && value.every((one) => typeof one === 'string');
 }
 
+/** The sentence for a text that does not have its form. */
+function formSentence(form: Form, text: Record<string, string>): string {
+    switch (form) {
+        case 'program':
+            return words(text, 'server.config_key.not_program');
+        case 'extension':
+            return words(text, 'server.config_key.not_extension');
+        case 'bundle_id':
+            return words(text, 'server.config_key.not_bundle_id');
+        case 'https_address':
+            return words(text, 'server.config_key.not_https_address');
+        case 'https_origin':
+            return words(text, 'server.config_key.not_https_origin');
+        case 'row_key':
+            return words(text, 'server.config_key.not_row_key');
+    }
+}
+
 /** The sentence for a word that is not in a field's list. */
 function notListed(spec: CatalogEntry, text: Record<string, string>): string {
     const named = [...listedSources(spec), ...Object.values(pickedSources(spec)?.sources ?? {})];
@@ -105,9 +124,7 @@ function sentenceOf(
         case 'source':
             return notListed(spec, text);
         case 'form':
-            if (problem.form === 'program') return words(text, 'server.config_key.not_program');
-            if (problem.form === 'extension') return words(text, 'server.config_key.not_extension');
-            return words(text, 'server.config_key.not_bundle_id');
+            return formSentence(problem.form, text);
         case 'words':
             return words(text, 'server.config_key.not_words');
         case 'numbers':

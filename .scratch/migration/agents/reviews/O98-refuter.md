@@ -368,3 +368,167 @@ The red boundaries check and the builder's three options:
 - Whether the UT cluster offers password login: settled by an ssh to it, which I may not open.
 
 Usage: ab06a81d516bd9450, claude-opus-5-5, 309384 tokens, 67 tool uses, 22 min 30 s.
+
+## Repair round 2, refuted
+
+Step O98, worktree /Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O98, base 54304adb4, round snapshot /Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O98-round-2. I changed nothing in the worktree or the ledger.
+
+What the round changed: 28 paths of `files.txt` differ from the snapshot. Four of them are `docs/diagrams/*`, which `npm run diagrams` rewrote. 53 tracked paths that `files.txt` does not list now differ from the base. One file is new and untracked: `tests/routes/git/credentials.test.ts`. I read every hunk of these.
+
+```
+Verify 1: PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH npm run test:quick -- --base 54304adb4   (10:49:27 to 10:56:06, exit 0)
+test:quick: 267 changed file(s), from git since 54304adb4
+test:quick: 353 test file(s)
+ok      ASCII gate (1.2 s)
+ok      prettier (1.3 s): All matched files use Prettier code style!
+ok      svelte-kit sync (2.5 s)
+ok      eslint (29.6 s)
+ok      svelte-check (42.5 s): 1793181013113 COMPLETED 558 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest checks (217.1 s): Duration  205.17s (transform 76.89s, setup 0ms, import 240.57s, tests 459.64s, environment 7ms)
+ok      vitest (237.7 s): Duration  229.26s (transform 158.18s, setup 0ms, import 342.82s, tests 530.25s, environment 17.75s)
+ok      vitest slow (395.5 s): Duration  387.31s (transform 12.83s, setup 0ms, import 154.80s, tests 1381.74s, environment 21ms)
+test:quick: 398.2 s; every command passed
+ (the list covered tests/routes/git/credentials.test.ts and tests/server/core/credentials.test.ts as "changed", tests/checks/tree/boundaries.test.ts and tests/server/edit/config-value.test.ts at import depth 1)
+Verify 2 (perl ASCII gate over the 262 changed files that exist, local.yml paths left out): no output, exit 0.
+Verify 3 (sh utils/unused-exports.sh, exit 0, diffed against .agents/worktrees/O98-base/unused-exports.txt): removals only
+ < src/lib/data/accounts/connect.ts: PROVIDERS, CALENDAR_PROVIDERS      > src/lib/data/accounts/connect.ts: CALENDAR_PROVIDERS
+ < src/lib/server/root/watch/git.ts: THROTTLE, IGNORED, relevant, rootsOf, subrepositories      > src/lib/server/root/watch/git.ts: THROTTLE, rootsOf
+Verify 4a: grep -rn "hpc_host\|hpcHost" src tests config docs --exclude=local.yml: no output, exit 1.
+Verify 4b: three lines, none an address: credential-helper.mjs:47 `https://${host}`; git/signins.ts:3 (a comment); git/signins.ts:169 startsWith('https://').
+Verify 6: largest sources context.ts 879, settings.test.ts 878, git-write.ts 866, sessions.ts 863, deposit.ts 861, model/index.ts 860; largest component Source.svelte 520; sh utils/folder-check.sh exit 0.
+Verify 7: grep of the round's added comment lines and test titles for the history words: six hits, all "before" naming argument order ("before `-C`", "before the caller's", "before its own", "before a git's subcommand"). None is history.
+
+The evidence the round's report quotes, rerun:
+ npx vitest run tests/routes/git/credentials.test.ts --reporter=verbose:
+  v |unit| tests/routes/git/credentials.test.ts > the gits the git route starts > carry the pairs for Fetch, Pull, Push and Sync with 'a signed-in host whose sign_in row na<ellipsis>' (G135) 1775ms
+  v ... git route ... with 'the sign_in row removed' (G135) 1612ms
+  v ... the gits the clone route starts ... (both states) 1290ms, 1976ms
+  v ... the gits the deposit route starts ... (both states) 2896ms, 1535ms
+  v ... a terminal a request opens > carries the GIT_CONFIG pairs ... (both states) 1360ms, 1100ms
+  Test Files  1 passed (1)   Tests  8 passed (8)
+ npx vitest run tests/checks/tree/boundaries.test.ts: Test Files  1 passed (1)   Tests  11 passed (11)
+ git diff 54304adb4 --stat -- tests/checks/: only config-folder.test.ts (+4) and config.test.ts (+9 -7); boundaries.test.ts is unchanged.
+ grep -rn "gitCredentialArgs\|terminalCredentialEnv\|useSignInRows\|heldRows" src tests docs utils: no output, exit 1.
+ grep -rn "credentials?:\|credentials ??\|noCredentials" src: no output, exit 1.
+ grep -rn "gitCredentials(" src: credentials.ts:168 (the definition) and context.ts:305 only.
+ grep -n "credentials.args()" over the git starts: run.ts:256, :285; git-write.ts:170, :747; deposit-git.ts:159, :287; clone-git.ts:86. sessions.ts:703 `fixedEnv: [GRID_ENV, ...options.credentials.env()]`. (All match the report.)
+ git show 54304adb4:src/lib/server/core/git/run.ts | grep -n credential: no output, exit 1. The base copy's core/git/ holds no credentials.ts (count 0).
+ wc -l: watch/git.ts 811, the new test 292; tests/routes/git holds 6 items.
+ npx svelte-check --tsconfig ./tsconfig.json --output machine: 1793181473321 COMPLETED 4382 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ npx vitest run tests/server/edit/config-value.test.ts: Test Files  1 passed (1)   Tests  23 passed (23)
+ npx vitest run tests/checks/diagrams/diagrams.test.ts alone: 2 failed | 45 passed (47); both fail with "Test timed out in 5000ms" ("are what the source gives now, each file byte for byte" and "are named stale, every one at once, ..."). The file is unchanged and its tier is green in Verify 1. Under the rules file this is not the step's failure.
+```
+
+### Verdicts
+
+Items of the brief's "What to build", for the whole diff since the base. Items the round did not touch rest on Verify 1 green and on the earlier reviews' reading.
+
+- 1: holds. The settings and config tests are green in Verify 1. The `slurm.resource` `mac` residual is one of round items 2 to 6, which were withdrawn to landing.
+- 2: holds. Verify 4a prints nothing.
+- 3, 4, 5, 6, 8, 9, 10, 14, 15, 17: hold. Their tests are green in Verify 1. The round changed only the call shapes of their git reads.
+- 7: holds by reading. The look at landing settles the view.
+- 11: holds.
+- 12: holds. The empty-`for` residual is withdrawn to landing.
+- 13: holds. `fetchAll` and the automatic fetch now take a `GitAt` (git-remote.ts, autofetch.ts:131-150), and Verify 1 is green.
+- 16, 18: hold.
+- 19: holds.
+  - `credentials.ts` holds no mutable module state. I read the whole file; its module-level bindings are only the constants `HELPER_SOURCE` and `HOST_FILE`.
+  - One object is built at `context.ts:305`, `gitCredentials(() => built.live?.signIn() ?? signIn)`, and held on `ServerContext.credentials` (server-context.ts).
+  - Every git spawn takes it as a required argument, at the seven sites listed above. A terminal's `fixedEnv` takes it at sessions.ts:703, with `StartOptions.credentials` required.
+  - The eight routes reach it through `locals.server`.
+  - svelte-check over 4382 files gives 0 errors, so no caller leaves it out.
+  - One default is left, `places = machinePlaces` (credentials.ts:170). It reads `homedir()`, `engineDir()` and `process.execPath` at the call and reads no module state, so the round brief's "No default that reads module state is left" holds.
+- 20: holds. `docs/HELP.md:514` reads true of the code: pairs only for a host whose row names the token file's address, and a sign in or sign out holds for the next git. Three changed comments are not rewrapped (Standards 1 to 3).
+- 21: holds.
+- 22: partial (Spec 1). The three tests outside their entries are withdrawn to landing.
+
+Cases:
+
+- 1, 2, 3, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 21, 23, 24, 25: met. Their tests are green in Verify 1, as the earlier reviews read them.
+- 4: met at unit level for the counts. The pill and the badge are settled by the look.
+- 20: met.
+  - A git started through the git route (fetch, pull, push, sync), the clone route and the deposit route (adopt, plan) carries the four `-c` words first when the row names the address. With the row removed it carries no `credential.` word.
+  - A terminal's `new-session` carries the five `GIT_CONFIG_*` variables, or none.
+  - All of these run through a context built by `createServerContext` (the route test, 8 passed). No token is in the pairs: PAIRS and ENV name only the helper's shell line.
+- 22: met in code and unit tests. The view is settled by the look.
+
+Items of the round brief:
+
+- 1: closed, with Spec 1 and Standards 1 to 4.
+  - `heldRows` and `useSignInRows` are gone (grep above).
+  - The owned object exists, is passed with no default to every git start and terminal, and routes reach it through `locals.server`.
+  - The boundaries check is unchanged and green.
+  - The cases are G135 rows. Three of them go through the real `POST` of the git, clone and deposit `+server.ts` routes. The terminal row calls `handleTerminal` with options it builds itself, with `credentials: context.credentials`, so the terminal route's own wiring (`src/routes/api/(sessions)/terminal/+server.ts`, `credentials: server.credentials`) is shown by reading only.
+  - The `restartFindings` move to `process/context/findings.ts:76-93` is the base code unchanged. I checked it against `git show 54304adb4:src/lib/server/root/context.ts` lines 152-164: same file choice, same key, same `server.workspace.restart_key` words. `heldBack()` and the config are still read at each call through the arrow at context.ts:166-167. The move keeps context.ts at 879 lines, which the size rule needs. It goes beyond the finding only as the split the rules file asks for, and the report names it.
+- 2: holds.
+  - "Behaviour of every git start and terminal, before and after" and "Visible changes" give the before and the after.
+  - The report gives the before as "no git oculus starts carries a credential pair" at the base. That is right: the `git show` grep above prints nothing. The round brief's parenthesis, "pairs from the token files alone", describes the step's own first build, and the report states that one too.
+  - "Not done" does not repeat it, since nothing of it is undone.
+
+Specifically judged:
+- No closure by removing a check: boundaries.test.ts is unchanged.
+- I compared the 43 edited `expect(` lines of the round's test diffs, before and after. Every expected value is the same, and only the call shape (`repo` to `gitAt(repo)`, a credentials argument) and prettier's line breaks changed.
+
+### Findings
+
+#### 1. Spec
+
+- Report "## Repair round 2" (no Doc text). The section names `tests/routes/git/credentials.test.ts` as "new, the G135 rows" (its file table) and gives its titles in a run quote. It gives no Doc text line for `agents/guarded.md`.
+  - What is wrong: G135's Test line in the report's "Doc text" (report line 753, with the round 1 append at line 1175) does not name this file or its four titles. G135's Code line does not name `src/lib/server/root/context.ts`, where the one `GitCredentials` is built (`context.ts:305`). The rules file says a test exists only as the test of one entry, named there by file and title, and the orchestrator writes the entries at landing from the report's "Doc text" (brief item 22).
+  - Failure scenario: the orchestrator writes G135 from the Doc text as given. The new route test then sits in the suite under no entry, and a later step that deletes "the tests its change makes obsolete" has no entry to say this file guards G135.
+  - Verdict: item 22 partial. This is a line of Doc text, small enough to fix at landing.
+
+#### 2. Proof
+
+- Report "Repair round 2", Not done 2: "It calls `context.credentials` and route handlers that pass it, which the tree before item 1 did not have".
+  - What is wrong: vitest does not type-check. On the round 1 tree, the git, clone and deposit rows never read `context.credentials`, and they run in one module graph, where live-settings called `useSignInRows` inside `createServerContext`. So those rows would most likely have passed there. This is my judgment by reading and is not verified, since no round 1 tree exists to run them on.
+  - The test shows that a route's git gets the object's pairs. It does not show that the two-module-graph defect is gone. What shows that is the absence of module state (boundaries check, 11 passed) together with the required parameters (svelte-check, 0 errors), both of which I reran.
+  - Failure scenario: the landing report cites this test as the proof that route-started gits in the built server get the pairs. A later change that again holds the rows in a binding set in one graph would pass it, and only the boundaries check would stop that change.
+  - Verdict: none. Round item 1 stays closed.
+
+#### 3. Standards
+
+- `src/lib/server/git/clone/clone.ts:21-24`:
+  ```
+  // A command runs through the `GitRunner` the caller gives, the real git (clone-git.ts) with the
+  // server context's credentials, so a test drives the steps over scratch repositories or a runner
+  // of its own. Every
+  // operation answers `{ ok, output, error }` and never throws.
+  ```
+  - What is wrong: the rules file ("What every package obeys") says a comment the step edits is rewrapped as a whole paragraph at 100 columns. Line 23 is 20 columns and ends inside a sentence. The "so" clause also no longer follows from the clause before it: the runner is the caller's, and the real git is one caller's choice.
+  - Failure scenario: a reader takes the line break for a cut sentence, and reads "so a test drives the steps" as following from the credentials.
+  - Verdict: item 20 (comments say what is true): holds; this is the wrapping and wording at landing.
+- `tests/fixtures/doubles.ts:4-6`: "// driver that runs no tmux, the git credentials of a server signed in nowhere, and a language / // server channel that is open and takes what is sent. They / // exist once here so ...".
+  - What is wrong: line 5 is 59 columns and ends inside a sentence. The same rewrap rule applies.
+  - Failure scenario: the same as above.
+  - Verdict: none.
+- `src/lib/server/git/deposit/deposit-git.ts:37-39`: "// mirrors folder exactly as `run` does. Every git here is given the `-c` arguments of the / // credentials `Where` carries, the server context's, before its own / // (server/core/git/credentials.ts)."
+  - What is wrong: line 38 is 68 columns and ends inside a sentence. The same rewrap rule applies.
+  - Failure scenario: the same as above.
+  - Verdict: none.
+- Report "## Repair round 2", "The changed tests, before and after", and the file table ("34 other test files and helpers | credentials or `gitAt` passed").
+  - What is wrong: the rules file asks the report to list every edit to an existing assertion with its before and after, one row per changed line, made from a diff. The round edited 43 `expect(` lines (for example `tests/server/git/git-ops.test.ts`, `expect((await fetchAll(repo, TEXT, ROOTS)).ok).toBe(true);` to the `gitAt(repo)` form; `tests/server/core/credentials.test.ts`, `expect(gitCredentialArgs(places)).toEqual([]);` to `expect(credentialsOf(places).args()).toEqual([]);`), and the report lists none of them. My comparison of the before and after lines finds every expected value unchanged.
+  - Failure scenario: the orchestrator cannot see from the report that no expected value moved, and has to diff 34 files to learn it.
+  - Verdict: none.
+
+#### 4. Behaviour
+
+- None. The round changes no key, text or view. The behaviour change of git starts and terminals is stated under "Visible changes", and it matches the code: pairs only through `signedInHosts` (credentials.ts:102-128), which keeps a file only when a row of its key names its address.
+
+### Declined to judge
+
+- `npm run diagrams` and `npm run docs:palette`: both write files.
+- The report's "before" run of the 56 changed test files on the round 1 tree (09:44:14 to 09:45:24), and whether the new route test would have failed there: no round 1 tree exists, and building one would write files.
+- The report's "after" run of the same 56 files: the report does not name them. No decision rests on its counts, and Verify 1 covers the changed tests.
+- The report's statement that no program wrote a source, test, config or doc file this round: the transcript is not mine to read. I read every hunk of the round, and none shows damage.
+- The looks (Live HPC, Account setup, Recover's pick, the status bar tip): the look on 8790 at landing, which I may not touch.
+- Whether the credential helper runs under a packaged Electron app (asar path in `process.execPath`): settled by a packaged build.
+
+Usage: a3b236225c0b704c9, claude-opus-5-5, 273317 tokens, 61 tool uses, 14 min 15 s.
+
+### Closed
+
+- Spec 1: fixed at landing. The orchestrator writes G135's Code line with `src/lib/server/root/context.ts` and its Test line with `tests/routes/git/credentials.test.ts` and its four titles.
+- Proof 2: no change. The landing report names the boundaries check and svelte-check as what shows the module state gone, and the route test as what shows a route's git gets the pairs.
+- Standards 1 to 3: fixed at landing, each comment rewrapped as one paragraph at 100 columns; the clone.ts sentence reworded so its clauses follow.
+- Standards 4: no change in code. The reviewer's comparison of the 43 edited `expect(` lines, every expected value unchanged, is quoted in the landing report.

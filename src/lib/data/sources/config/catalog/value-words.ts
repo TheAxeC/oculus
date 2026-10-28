@@ -43,6 +43,12 @@ function formWords(catalog: TextCatalog, form: Form): string {
             return findingText(catalog, 'findings.words.form_extension');
         case 'bundle_id':
             return findingText(catalog, 'findings.words.form_bundle_id');
+        case 'https_address':
+            return findingText(catalog, 'findings.words.form_https_address');
+        case 'https_origin':
+            return findingText(catalog, 'findings.words.form_https_origin');
+        case 'row_key':
+            return findingText(catalog, 'findings.words.form_row_key');
     }
 }
 

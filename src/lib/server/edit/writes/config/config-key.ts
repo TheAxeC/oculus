@@ -25,6 +25,11 @@
 // stand between the edited text and the file are config-checks.ts's, which config-value.ts runs as
 // well.
 //
+// Beside it is the one writer of a `clusters:` row of the primary's file (`writeClusterRow`), which
+// Account setup's Save and Settings' This machine section both write through: the row alone is set
+// or taken out over the bytes (accounts/connect/rows.ts), and the machine's reader must read the
+// row back as written before the file is written.
+//
 // The function is synchronous from the read of the file to its write, which is what lets two
 // writes made at once both land: each reads the file the other has already written.
 
@@ -32,8 +37,19 @@ import { dirname, join } from 'node:path';
 import { isDeepStrictEqual } from 'node:util';
 import { isAlias, isMap as isYamlMap, isScalar, parseDocument } from 'yaml';
 import type { Scalar } from 'yaml';
+import { isMap } from '../../../../data/helpers/guards.ts';
 import { LOCAL_NAME, localFile } from '../../../../data/sources/config.ts';
-import { readLocalText } from '../../../../data/sources/config/local.ts';
+import { keyFilePath, readLocalText } from '../../../../data/sources/config/local.ts';
+import {
+    flowRow,
+    listRows,
+    onlyListChanged,
+    rowAdded,
+    rowIndex,
+    rowRemoved,
+    rowReplaced,
+    valuesOf
+} from '../../../accounts/connect/rows.ts';
 import type { ReplacedText } from '../../../core/changes.ts';
 import { writeTextAtomic } from '../../../core/json.ts';
 import { readBack } from '../../list-edit.ts';
@@ -399,4 +415,93 @@ export function resetSelf(
     text: Record<string, string>
 ): ConfigKeyOutcome {
     return selfOutcome(file, key, writeSelf(hub, null), text);
+}
+
+/**
+ * One row of `clusters:` as Account setup's Save and Settings' This machine section write it: the
+ * cluster's key, the user name and the key file as typed, the empty text for one left out.
+ */
+export type ClusterRowFields = { resource: string; user: string; keyFile: string };
+
+/** A write of a `clusters:` row done (the file), refused (the sentence), or with nothing to do. */
+export type ClusterRowWritten = { path: string } | { refused: string } | null;
+
+/** The fields a row is written with, in the file's own names, the empty ones left out. */
+function clusterFields(row: ClusterRowFields): [string, string][] {
+    const fields: [string, string][] = [['resource', row.resource]];
+    if (row.user !== '') fields.push(['user', row.user]);
+    if (row.keyFile !== '') fields.push(['key_file', row.keyFile]);
+    return fields;
+}
+
+/**
+ * Whether the machine's reader reads the edited file's row of the resource as `row`: its user
+ * name and its key file, `~/` resolved, or no row at all for a row taken out.
+ */
+function clusterReadBack(
+    edited: string,
+    hub: string,
+    resource: string,
+    row: ClusterRowFields | null
+): boolean {
+    const read = readLocalText(edited, hub).config.clusters.find(
+        (one) => one.resource === resource
+    );
+    if (row === null) return read === undefined;
+    if (read === undefined) return false;
+    const file = row.keyFile === '' ? undefined : (keyFilePath(row.keyFile) ?? '');
+    return read.user === (row.user === '' ? undefined : row.user) && read.keyFile === file;
+}
+
+/**
+ * Set the `clusters:` row of `resource` in the `local.yml` of the hub at `hub` to `row`, or take
+ * it out for null, and keep every other byte: the row is written in place of the row of that
+ * resource, or added at the end of the list (the list and the file made when they are not there),
+ * as one flow map on one line (connect/rows.ts). The edit must read back as the file with that one
+ * row changed, the machine's reader must read the row back as written and give no problem the file
+ * did not give, and only then is the file written, keeping its mode; a file that is not there is
+ * made at mode 600 and named in the hub's `.oculus/.gitignore`. A refusal is the sentence of its
+ * cause, and for a field the reader refuses the reader's own sentence naming the row and the field.
+ * A file that cannot be read or written throws.
+ */
+export function writeClusterRow(
+    hub: string,
+    resource: string,
+    row: ClusterRowFields | null,
+    text: Record<string, string>
+): ClusterRowWritten {
+    const path = localFile(hub);
+    const onDisk = heldText(path);
+    const source = onDisk ?? '';
+    const before = valuesOf(source);
+    if (before === null) return { refused: words(text, 'server.config_key.not_parsed') };
+    const matches = (one: unknown): boolean => isMap(one) && one.resource === resource;
+    const at = rowIndex(source, 'clusters', matches);
+    const rows = listRows(before, 'clusters');
+    if (row === null && at < 0) return null;
+    const fields = row === null ? [] : clusterFields(row);
+    const wanted = row === null ? null : Object.fromEntries(fields);
+    const edit =
+        row === null
+            ? rowRemoved(source, 'clusters', at)
+            : at < 0
+              ? rowAdded(source, 'clusters', flowRow(fields))
+              : rowReplaced(source, 'clusters', at, flowRow(fields));
+    if ('reason' in edit) return { refused: edit.reason };
+    const listed =
+        wanted === null
+            ? rows.filter((_, index) => index !== at)
+            : at < 0
+              ? [...rows, wanted]
+              : rows.map((one, index) => (index === at ? wanted : one));
+    const changed = onlyListChanged(before, edit.text, 'clusters', listed);
+    if (changed !== null) return { refused: words(text, 'server.config_key.not_kept') };
+    const problem = localProblemAdded(source, edit.text);
+    if (problem !== null) return { refused: problem };
+    if (!clusterReadBack(edit.text, hub, resource, row)) {
+        return { refused: words(text, 'server.config_key.not_kept') };
+    }
+    writeTextAtomic(path, edit.text, 0o600);
+    if (onDisk === null) ignoreLocal(dirname(path));
+    return { path };
 }

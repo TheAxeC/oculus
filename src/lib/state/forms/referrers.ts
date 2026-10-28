@@ -1,7 +1,7 @@
 // Layer 2, client state. What refers to a record: the projects whose manifest names a pillar, a
 // domain, a venue, a dataset, a funding scheme or a resource; the people and funding schemes that
 // name an organisation; the projects that name a person in their `lead:`, `collaborators:`,
-// `supervisors:` or `waiting-on:`; and the `slurm.resource` setting that names a resource. A
+// `supervisors:` or `waiting-on:`; and the `slurm.resource` setting that lists a resource. A
 // record's page lists them and the question that asks before a delete names them, so both read
 // this one answer.
 //
@@ -13,7 +13,14 @@
 // registry its collection's entry names in its hub's `collections:` list.
 
 import { byKey, isMap } from '../../data/helpers/guards.ts';
-import { addressOfId, bareId, hubId, type RegistryWord } from '../../data/helpers/hub-names.ts';
+import {
+    addressOfId,
+    bareId,
+    holdersOf,
+    hubId,
+    resolvedId,
+    type RegistryWord
+} from '../../data/helpers/hub-names.ts';
 import type { Collection, Project, Snapshot } from '../../data/model/index.ts';
 
 /** The settings of behavior.yml that name a resource. */
@@ -58,11 +65,16 @@ function projectsWhere(snapshot: Snapshot, test: (project: Project) => boolean):
         .map((project) => ({ kind: 'project', id: project.id, label: projectLabel(project) }));
 }
 
-/** The setting of the configuration at `key.field`, as text, or the empty text. */
-function settingOf(config: Record<string, unknown>, key: string, field: string): string {
+/**
+ * The keys the setting of the configuration at `key.field` lists, or none when it is no list, as
+ * the setting's reader reads none then.
+ */
+function settingKeys(config: Record<string, unknown>, key: string, field: string): string[] {
     const section = config[key];
     const value = isMap(section) ? section[field] : undefined;
-    return typeof value === 'string' ? value : '';
+    return Array.isArray(value)
+        ? value.filter((one): one is string => typeof one === 'string')
+        : [];
 }
 
 /**
@@ -102,13 +114,15 @@ function organisationReferrers(snapshot: Snapshot, id: string): Referrer[] {
 /**
  * What refers to the entry `id` of the collection `collection`, by the registry the collection's
  * entry names in the hub of the entry's id. `config` is the merged configuration, whose settings
- * can name a resource.
+ * can name a resource; a setting is the primary hub's (`primary`), so a key it lists names the
+ * resource that key resolves to read in the primary, as the setting's readers resolve it.
  */
 export function referrersOf(
     snapshot: Snapshot,
     config: Record<string, unknown>,
     collection: string,
-    id: string
+    id: string,
+    primary: string | null
 ): Referrer[] {
     const held = byKey(snapshot.entities.collections, hubId(addressOfId(id).hub, collection));
     const registry = held?.registry;
@@ -120,8 +134,10 @@ export function referrersOf(
     if (registry === 'people') return personReferrers(snapshot, id);
     if (registry === 'organisations') return organisationReferrers(snapshot, id);
     if (registry !== 'resources') return [];
-    const settings = RESOURCE_SETTINGS.filter(
-        (one) => settingOf(config, one.key, one.field) === id
+    const holders = holdersOf(Object.values(snapshot.entities.resources));
+    const names = (key: string): boolean => resolvedId(holders, primary ?? '', key) === id;
+    const settings = RESOURCE_SETTINGS.filter((one) =>
+        settingKeys(config, one.key, one.field).some(names)
     ).map((one): Referrer => ({
         kind: 'setting',
         id: `${one.key}.${one.field}`,

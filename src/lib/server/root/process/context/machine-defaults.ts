@@ -32,17 +32,16 @@ export function secretWord(text: Record<string, string>): string {
 
 /**
  * The default of each key of the file, by the key. The sentences for a default that is no value
- * (the HPC host, the rows of the calendar and mail lists, the literature keys) come from `text`.
+ * (the rows of the cluster, calendar and mail lists, the literature keys) come from `text`.
  */
 export function machineDefaults(text: Record<string, string>): Record<string, string> {
     const defaults = localDefaults();
-    const noHost = words(text, 'server.machine_default.hpc_host');
     const noAccounts = words(text, 'server.machine_default.no_accounts');
     const noKey = words(text, 'server.machine_default.no_key');
     return {
         port: String(DEFAULT_PORT),
         self: defaults.self,
-        hpc_host: noHost,
+        clusters: noAccounts,
         sessions_cache: defaultCachePath(),
         sessions_overrides: defaultOverridesPath(),
         changes: defaultChangesPath(),

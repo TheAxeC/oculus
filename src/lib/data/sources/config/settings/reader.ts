@@ -3,8 +3,10 @@
 // (catalog/value-rule.ts), the same rule the Settings view and the server's write refuse a value
 // by: a key that is missing is the entry's `default`, and a key whose value the rule refuses is the
 // `default` too and comes back as a problem naming the key, so a typo costs one setting and the
-// server starts. A reader throws only when the catalog holds no rule for a key it reads, or no
-// default that reads, since without one no value can be read.
+// server starts. The rows of a list of records are read the same way field by field, a row a
+// field of which the rule refuses left out (checkedRows). A reader throws only when the catalog
+// holds no rule for a key it reads, or no default that reads, since without one no value can be
+// read.
 
 import { byKey } from '../../../helpers/guards.ts';
 import { mapShape, readAs } from '../../../shapes/shapes.ts';
@@ -17,10 +19,11 @@ import { valueProblem, type RuleLists, type ValueProblem } from '../catalog/valu
  * read; `spec` is the entry or field that holds the rule. `block` is a block that is not a map,
  * whose keys all take their defaults, and `family` a family that is not a map, none of whose
  * entries is read. `repeat` is a row of a list of records whose name an earlier row already took,
- * and `unnamed` a row with no name; neither is read.
+ * and `unnamed` a row with no name; neither is read. `this-mac` is a list of cluster keys holding
+ * the key that names this Mac, which is left out.
  */
 export type SettingProblem =
-    | { key: string; where: 'block' | 'family' }
+    | { key: string; where: 'block' | 'family' | 'this-mac' }
     | { key: string; where: 'repeat'; name: string }
     | { key: string; where: 'unnamed' }
     | {
@@ -89,6 +92,57 @@ export function heldAt(
     const rest = key.slice(dot + 1);
     const value = Object.hasOwn(block, rest) ? block[rest] : undefined;
     return value === undefined ? { present: false } : { present: true, value };
+}
+
+/** A row of a list of records whose every field the entry's rule takes, with its dotted place. */
+export type CheckedRow = { at: string; row: Record<string, unknown> };
+
+/**
+ * The rows of a list of records of behavior.yml, each read by the entry's own fields: a list that
+ * is missing or null holds none, a value that is no list is a problem and holds none, and a row
+ * that is no map, or a field of which the rule refuses, is not read and comes back as a problem at
+ * `<key>[<index>]`. A field a row leaves out is not checked when its spec sets `empty`, so such a
+ * field is optional. `lenient` names the fields whose refusal costs the field alone: the problem is
+ * pushed and the row is read without that field. The rows are handed one at a time, each after its
+ * own problems are pushed, so a caller's problems of a row follow the row's field problems in the
+ * file's order.
+ */
+export function* checkedRows(
+    config: Record<string, unknown>,
+    key: string,
+    problems: SettingProblem[],
+    lenient: readonly string[] = []
+): Generator<CheckedRow> {
+    const entry = settingEntry(config, key);
+    const held = heldAt(config, key, problems);
+    if (!held.present || held.value === null) return;
+    if (!Array.isArray(held.value)) {
+        problems.push({ key, where: 'family' });
+        return;
+    }
+    for (const [index, raw] of held.value.entries()) {
+        const at = `${key}[${index}]`;
+        const read = readAs(mapShape, raw);
+        if (read === null) {
+            problems.push({ key: at, where: 'entry', problem: { kind: 'records' }, spec: entry });
+            continue;
+        }
+        const dropped = new Set<string>();
+        let refused = false;
+        for (const [name, spec] of Object.entries(entry.fields ?? {})) {
+            if (read[name] === undefined && spec.empty !== undefined) continue;
+            const problem = valueProblem(spec, read[name]);
+            if (problem === null) continue;
+            problems.push({ key: `${at}.${name}`, where: 'field', problem, spec });
+            if (!lenient.includes(name)) {
+                refused = true;
+                break;
+            }
+            dropped.add(name);
+        }
+        const row = Object.fromEntries(Object.entries(read).filter(([name]) => !dropped.has(name)));
+        if (!refused) yield { at, row };
+    }
 }
 
 /** The entry of a key of behavior.yml in the merged map's catalog; throws without one. */

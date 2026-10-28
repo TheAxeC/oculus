@@ -1,11 +1,10 @@
 <script lang="ts">
-    // Layer 3, view partial. The Live HPC bar presents the connection states at its end and
-    // keeps refresh as an explicit server action. While a poll fails (ssh not connecting, Slurm
-    // not answering or another error, each with its own word), the refresh control is the retry of
-    // the error box (Hpc.svelte) and the bar holds the failure word, the time the cluster last
-    // answered and the retry. A failed poll whose queue is this poll's holds the failure word, the
-    // queue, its time and the retry. With no cluster named (`unconfigured`) the bar holds its words
-    // alone, in the plain tone, with no "as of" time and no overdue mark.
+    // Layer 3, view partial. The head of one cluster's section of Live HPC presents its connection
+    // state at its end and keeps refresh, of that cluster alone, as an explicit server action.
+    // While a poll fails (ssh not connecting, Slurm not answering or another error, each with its
+    // own word), the refresh control is the retry of the cluster's error box (Cluster.svelte) and
+    // the head holds the failure word, the time the cluster last answered and the retry. A failed
+    // poll whose queue is this poll's holds the failure word, the queue, its time and the retry.
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { t } from '$lib/state/shared/words/text';
@@ -27,26 +26,25 @@
     const {
         clock: { minuteNow, startMinuteClock }
     } = useState();
-    let { data, onrefresh }: { data: HpcPayload | null; onrefresh: () => void } = $props();
+    let { data, onrefresh }: { data: HpcPayload; onrefresh: () => void } = $props();
 
     // The head ages between publishes, so the minute the page is in is read as state.
     $effect(startMinuteClock);
     const now = $derived(minuteNow());
 
     /** The words of the poll's failure, which the error box in the body says in full, or null. */
-    const failure = $derived(data === null ? null : failureWords(data));
+    const failure = $derived(failureWords(data));
     const failed = $derived(failure !== null);
 
     function status(): string {
-        if (data === null || data.status === 'starting') return t('hpc.polling');
+        if (data.status === 'starting') return t('hpc.polling');
         if (failure !== null) return failure.word;
-        if (data.status === 'unconfigured') return t('hpc.unconfigured');
         return t('hpc.live');
     }
 
     /** Whether the answer on screen is older than the poll that should have replaced it. */
     function late(): boolean {
-        if (data?.status !== 'ok') return false;
+        if (data.status !== 'ok') return false;
         const updated = Date.parse(data.updated);
         return Number.isFinite(updated) && now - updated > (data.pollMin + LATE_GRACE_MIN) * 60000;
     }
@@ -60,12 +58,8 @@
 
     /** The meta parts after the state word; the overdue one carries the failure tone. */
     function parts(): { text: string; late: boolean }[] {
-        if (data === null) return [];
         if (failed) {
-            const retry =
-                data.retryMin === undefined
-                    ? []
-                    : [{ text: t('hpc.retrying', data.retryMin), late: false }];
+            const retry = [{ text: t('hpc.retrying', data.retryMin), late: false }];
             if (queueIsCurrent(data))
                 return [
                     { text: queue(data), late: false },
@@ -94,13 +88,14 @@
     }
 </script>
 
-<!-- The pane carries the view's name, so the bar is the refresh control and the status line. -->
-<Toolbar label={t('hpc.toolbar')}>
-    {#if !failed && data?.status !== 'unconfigured'}
+<!-- The section's heading carries the cluster's name, so the head is the refresh control and the
+     status line. -->
+<Toolbar label={t('hpc.toolbar', data.name)}>
+    {#if !failed}
         <ToolButton label={t('hpc.refresh_now')} onclick={onrefresh} />
     {/if}
     <p class="meta">
-        <span class:ok={data?.status === 'ok'} class:bad={failed}>
+        <span class:ok={data.status === 'ok'} class:bad={failed}>
             {status()}
         </span>
         {#each parts() as part (part.text)}

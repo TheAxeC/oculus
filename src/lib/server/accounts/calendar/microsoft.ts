@@ -20,8 +20,6 @@ import type {
 } from '../../../data/model/index.ts';
 import { getJson, httpsLink, PAGE_MAX, rowsOf, type ReadArgs, type Reading } from './api.ts';
 
-const BASE = 'https://graph.microsoft.com/v1.0';
-
 /** How many rows one page asks for; a calendar with more is followed by its next link. */
 const PER_PAGE = 250;
 
@@ -82,7 +80,7 @@ async function paged(args: ReadArgs, first: string): Promise<Record<string, unkn
 
 /** Every calendar of the account. */
 async function calendars(args: ReadArgs): Promise<CalendarListEntry[]> {
-    const url = new URL(`${BASE}/me/calendars`);
+    const url = new URL(`${args.base}/me/calendars`);
     url.searchParams.set('$top', String(PER_PAGE));
     const found: CalendarListEntry[] = [];
     for (const row of await paged(args, url.toString())) {
@@ -114,7 +112,9 @@ function edge(at: string | undefined, allDay: boolean): string | null {
 
 /** One calendar's events inside the window. */
 async function events(args: ReadArgs, calendar: CalendarListEntry): Promise<CalendarEvent[]> {
-    const url = new URL(`${BASE}/me/calendars/${encodeURIComponent(calendar.id)}/calendarView`);
+    const url = new URL(
+        `${args.base}/me/calendars/${encodeURIComponent(calendar.id)}/calendarView`
+    );
     url.searchParams.set('startDateTime', args.window.start.toISOString());
     url.searchParams.set('endDateTime', args.window.end.toISOString());
     url.searchParams.set('$top', String(PER_PAGE));

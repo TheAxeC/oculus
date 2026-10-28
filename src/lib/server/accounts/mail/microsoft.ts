@@ -35,8 +35,6 @@ import {
 } from './plate.ts';
 import type { Signal } from './plate.ts';
 
-const BASE = 'https://graph.microsoft.com/v1.0';
-
 /** A field of Graph's answer that is text where it is there, and read as absent otherwise. */
 const optionalTextShape = z.string().optional().catch(undefined);
 
@@ -120,7 +118,8 @@ export type MailboxFacts = { sentFolder: string; trashFolder: string };
 
 /** The id of one well-known folder, or the empty string when Graph would not name it. */
 async function folderId(args: MailReadArgs, name: string): Promise<string> {
-    const folder = await getJson('microsoft', `${BASE}/me/mailFolders/${name}?$select=id`, args);
+    const address = `${args.base}/me/mailFolders/${name}?$select=id`;
+    const folder = await getJson('microsoft', address, args);
     const held = folderShape.safeParse(folder);
     return held.success ? held.data.id : '';
 }
@@ -193,7 +192,7 @@ async function page(
 
 /** The address one signal's first page is asked for. */
 function listingUrl(args: MailReadArgs, signal: Signal): string {
-    const url = new URL(`${BASE}/me/mailFolders/inbox/messages`);
+    const url = new URL(`${args.base}/me/mailFolders/inbox/messages`);
     url.searchParams.set('$select', SELECT);
     url.searchParams.set('$top', String(args.perSignal));
     const filter = filterFor(signal);
@@ -229,7 +228,7 @@ async function messagesFor(args: MailReadArgs, signal: Signal): Promise<Message[
 
 /** Every message of one conversation, newest first, which is the whole of what a thread is here. */
 async function conversation(args: MailReadArgs, id: string): Promise<Message[]> {
-    const url = new URL(`${BASE}/me/messages`);
+    const url = new URL(`${args.base}/me/messages`);
     url.searchParams.set('$filter', `conversationId eq '${id.replace(/'/g, "''")}'`);
     url.searchParams.set('$select', SELECT);
     url.searchParams.set('$top', String(args.perSignal));
@@ -288,7 +287,7 @@ export async function replyMicrosoft(
     const messages = await conversation(args, conversationId);
     const id = newestMessageId(messages);
     if (id === undefined) throw new Error('microsoft: the conversation holds no message');
-    await postJson('microsoft', `${BASE}/me/messages/${encodeURIComponent(id)}/reply`, {
+    await postJson('microsoft', `${args.base}/me/messages/${encodeURIComponent(id)}/reply`, {
         token: args.token,
         fetcher: args.fetcher,
         body: { comment: body }
@@ -303,7 +302,7 @@ export async function archiveMicrosoft(args: MailReadArgs, conversationId: strin
         const id = message.id;
         if (id === undefined) continue;
         if (inboxId !== '' && message.parentFolderId !== inboxId) continue;
-        await postJson('microsoft', `${BASE}/me/messages/${encodeURIComponent(id)}/move`, {
+        await postJson('microsoft', `${args.base}/me/messages/${encodeURIComponent(id)}/move`, {
             token: args.token,
             fetcher: args.fetcher,
             body: { destinationId: 'archive' }

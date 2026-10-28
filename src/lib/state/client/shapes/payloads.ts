@@ -51,32 +51,11 @@ const feedsShape = unchangedAs<Payloads['feeds']>(
 const gitShape = unchangedAs<Payloads['git']>(mapShape);
 
 const hpcShape = unchangedAs<Payloads['hpc']>(
-    z.object({
-        status: z.string(),
-        hint: z.string().optional(),
-        jobs: listShape,
-        running: anyNumberShape,
-        pending: anyNumberShape,
-        total: anyNumberShape,
-        recent: listShape,
-        sinfo: listShape,
-        quota: listShape,
-        updated: z.string(),
-        lastOk: z.string().optional(),
-        stale: z
-            .object({
-                recent: z.string().nullable().optional(),
-                sinfo: z.string().nullable().optional()
-            })
-            .optional(),
-        pollMin: anyNumberShape,
-        retryMin: anyNumberShape.optional(),
-        host: z.string()
-    })
+    z.object({ clusters: listShape, hint: z.string().optional() })
 );
 
 const recoverShape = unchangedAs<Payloads['recover']>(
-    z.object({ runs: listShape, sessions: listShape.nullable() })
+    z.object({ runs: listShape, sessions: z.record(z.string(), listShape) })
 );
 
 const processesShape = unchangedAs<Payloads['processes']>(

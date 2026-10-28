@@ -13,7 +13,7 @@ import { settingsGroups } from '../../../../src/lib/state/system/config/groups.t
 import type { ConfigRow, LocalRow } from '../../../../src/lib/state/system/config/rows.ts';
 import { shipped } from './fixture.ts';
 
-const DEFAULTS = { port: '8790', hpc_host: 'the cluster host', claude_bin: 'claude' };
+const DEFAULTS = { port: '8790', rite_dap_bin: 'rite_dap', claude_bin: 'claude' };
 
 /** The group and rows of the section for the machine state given. */
 function machineGroup(machine: Parameters<typeof settingsGroups>[5]) {
@@ -36,7 +36,7 @@ describe('the "This machine" section', () => {
         });
         expect(byKey('port')).toMatchObject({ setIn: 'lab', fallback: '8790' });
         expect(byKey('claude_bin')).toMatchObject({ setIn: 'lab', fallback: 'claude' });
-        expect(byKey('hpc_host')).toMatchObject({ setIn: null, fallback: 'the cluster host' });
+        expect(byKey('rite_dap_bin')).toMatchObject({ setIn: null, fallback: 'rite_dap' });
         expect(group.about).toBe('');
     });
 

@@ -10,6 +10,7 @@ import { join } from 'node:path';
 import { describe, expect } from 'vitest';
 import type { ScheduleEntry } from '../../../../../src/lib/data/model/index.ts';
 import { runEntry } from '../../../../../src/lib/server/machine/runs/schedules/run.ts';
+import { noCredentials } from '../../../../fixtures/doubles.ts';
 import { it } from '../../../../fixtures/scratch.ts';
 import { lineOf, tmux } from '../../../../routes/sessions/terminal-fixture.ts';
 import { TEXT } from '../../../text.ts';
@@ -176,7 +177,8 @@ describe('runEntry', () => {
                 claudeBin: CLAUDE,
                 text: TEXT,
                 rootsFor: () => roots,
-                approvalsFor: () => w.approvals
+                approvalsFor: () => w.approvals,
+                credentials: noCredentials()
             });
             const created = driver.calls.filter((args) => args.includes('new-session'));
             if ('refused' in row.expected) {

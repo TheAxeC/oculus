@@ -43,6 +43,7 @@ import { readLocalText, type LocalProblem } from '../../../../data/sources/confi
 import { READER_FINDINGS } from '../../../../data/sources/config/sections/findings.ts';
 import type { Finding } from '../../../../data/model/index.ts';
 import { docsFindings } from '../../../content/docs.ts';
+import { helperFindings } from '../../../core/git/credentials.ts';
 import type { ReplacedText } from '../../../core/changes.ts';
 import { writeTextAtomic } from '../../../core/json.ts';
 import { readBack } from '../../list-edit.ts';
@@ -77,14 +78,16 @@ const READERS: ((config: Merged) => unknown)[] = [textCatalog];
 
 /**
  * The readers that return findings: every reader of the merged configuration
- * (data/sources/config/sections/findings.ts) and the documents of `docs:` checked against the disk.
+ * (data/sources/config/sections/findings.ts), the documents of `docs:` checked against the disk,
+ * and the credential helper's paths checked against the git hosts of `sign_in`.
  * A finding one gives after the edit that it did not give before, compared by its words, refuses
  * the write, and so does a finder that throws after the edit; a finder that threw before the edit
  * is not compared, since it has no findings to compare with.
  */
 const FINDERS: ((where: ConfigWhere, config: Merged) => Finding[])[] = [
     ...READER_FINDINGS,
-    docsFindings
+    docsFindings,
+    (where, config) => helperFindings(where, config)
 ];
 
 /**

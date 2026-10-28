@@ -86,6 +86,8 @@ text:
         diff_whole: Stage or revert this file from Changes
         diff_whole_staged: Unstage this file from Staged Changes
         fetch: Fetch
+        fetch_failed: 'The last fetch failed: {0}'
+        fetch_failed_kind: 'The last fetch failed: {0}. {1}'
         file_fold: Fold this file
         file_unfold: Unfold this file
         folder_bar: Repositories folder

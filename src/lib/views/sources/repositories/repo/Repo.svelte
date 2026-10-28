@@ -3,9 +3,11 @@
     // view shows, under a header row in the explorer's section-head style: the repositories glyph,
     // the name the list's row draws for it and, whenever a branch is known, the branch as the row's
     // Branch control draws it (repo/branch-words.ts), with the path as the header's hover words.
-    // Under the header: its commit box, a line saying a merge, a rebase or a cherry pick is in
-    // progress with Abort and, for a rebase, Continue (a cherry pick is finished by committing, so
-    // it has none), then Changes, Graph, Stashes, Tags, Branches and Worktrees as collapsible
+    // Under the header: its commit box, a line saying the last fetch failed while it has (the kind
+    // and the fix the hub's `connections.failures` tell it apart by, else the line ssh or git
+    // wrote, which is the line's hover words), a line saying a merge, a rebase or a cherry pick is
+    // in progress with Abort and, for a rebase, Continue (a cherry pick is finished by committing,
+    // so it has none), then Changes, Graph, Stashes, Tags, Branches and Worktrees as collapsible
     // sections of explorer rows, each with its count as a badge at the right edge of its head. How
     // far the branch is from its upstream is on the repository's row in the list above. The
     // sections are one tree and one stop of the focus order through ui/tree/TreeView.svelte, moved
@@ -62,6 +64,7 @@
     import type { WorktreeStart } from '$lib/state/sources/repositories/repositories.svelte';
     import type { GitState } from '$lib/state/client/selectors.svelte';
     import { t } from '$lib/state/shared/words/text';
+    import { fetchFailureWords } from '$lib/state/workbench/navigation/status';
     import { branchOf } from './branch-words';
     import { useState } from '$lib/state/client/use';
     import { askBranchDelete, askTagDelete } from '../menus/graph-menu';
@@ -274,6 +277,13 @@
         <div class="commit">
             <CommitBox {root} {git} />
         </div>
+        {#if git.fetchFailure !== undefined}
+            <!-- The line ssh or git wrote as the hover words, the attribute the failed read's row
+                 carries git's reason on. -->
+            <p class="fetch-failed" data-fetch-failure title={git.fetchFailure.line}>
+                {fetchFailureWords(git.fetchFailure)}
+            </p>
+        {/if}
         {#if git.sequence !== ''}
             <div class="sequence" data-sequence={git.sequence}>
                 <span class="said">
@@ -423,5 +433,14 @@
 
     .sequence .said {
         margin-right: auto;
+    }
+
+    /* The last failed fetch, in line with the message box above it, in the warning hue. */
+    .fetch-failed {
+        margin: 0;
+        padding: 0 12px 0 11px;
+        color: var(--c-amber-txt, var(--muted));
+        font-size: var(--fs-md);
+        overflow-wrap: anywhere;
     }
 </style>

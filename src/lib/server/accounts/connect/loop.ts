@@ -21,11 +21,16 @@
 //
 // What each round does first for an account is the same in both pollers, so it is here too: the
 // account's credentials read from its file and its provider's, and the access token asked for,
-// with a refresh token the provider hands back in its place kept in the account's file.
+// with a refresh token the provider hands back in its place kept in the account's file. So are the
+// controls both watchers take besides their own settings and sentences: the hub's new `sign_in`
+// rows, a new account list, and the close.
 
+import { isDeepStrictEqual } from 'node:util';
 import { connectKey } from '../../../data/accounts/connect.ts';
 import type { AccountRow, ConnectAccountConfig, ConnectKind } from '../../../data/model/index.ts';
+import type { SignInRow } from '../../../data/sources/config.ts';
 import { accessToken, type Fetcher } from './oauth.ts';
+import { missingSentence, providerFor, type Providers } from './providers.ts';
 import { keepRotatedToken, readCredentials } from './store.ts';
 
 /** Where a poller's accounts come from: its own options, as the machine's file first named them. */
@@ -68,27 +73,40 @@ export type AccountLoop<A extends AccountRow> = {
     close: () => void;
 };
 
-/** One account's access token, or the fields of its row while it waits for setup or Connect. */
+/**
+ * One account's access token with its provider's `sign_in` row, or the fields of its account row
+ * while it waits for setup or Connect, or for the hub's row of its provider.
+ */
 export type SignIn =
-    { token: string } | { waiting: { status: 'not-connected'; needsSetup?: true } };
+    | { token: string; row: SignInRow }
+    | { waiting: { status: 'not-connected'; needsSetup?: true; hint?: string } };
 
 /**
- * Sign one account in for one round. An account whose provider has no client half on this machine
- * waits for the provider's setup, and one with a half and no refresh token waits for Connect;
- * neither is a failure. A file that cannot be read, or a token call the provider refuses, throws.
+ * Sign one account in for one round. An account whose provider has no `sign_in` row of the hub,
+ * or a row missing a field the round needs, waits with the sentence naming the key and the field;
+ * one whose provider has no client half on this machine waits for the provider's setup, and one
+ * with a half and no refresh token waits for Connect. None of them is a failure. A file that cannot
+ * be read, or a token call the provider refuses, throws.
  */
 export async function signIn(
     kind: ConnectKind,
     account: ConnectAccountConfig,
     dirs: { dir: string; providerDir: string },
-    fetcher: Fetcher
+    fetcher: Fetcher,
+    providers: Providers
 ): Promise<SignIn> {
+    const found = providerFor(providers.rows, account.provider, kind, 'poll');
+    if ('missing' in found) {
+        const hint = missingSentence(found.missing, providers.words);
+        return { waiting: { status: 'not-connected', hint } };
+    }
     const credentials = readCredentials(dirs.dir, account, dirs.providerDir);
     if (credentials === null) return { waiting: { status: 'not-connected', needsSetup: true } };
     const refreshToken = credentials.refreshToken;
     if (refreshToken === undefined) return { waiting: { status: 'not-connected' } };
     const keep = (next: string): void => keepRotatedToken(dirs.dir, account, next);
-    return { token: await accessToken(kind, credentials, refreshToken, fetcher, keep) };
+    const token = await accessToken(kind, credentials, found.row, refreshToken, fetcher, keep);
+    return { token, row: found.row };
 }
 
 export function accountLoop<A extends AccountRow>(
@@ -239,4 +257,71 @@ export function takeLoopSettings<A extends AccountRow>(
     // With no account there is no round to publish the new values, so the state is published here.
     if (askedChanged && loop.accounts().length > 0) void loop.run(true);
     else if (askedChanged || period.after !== period.before) publish();
+}
+
+/**
+ * What a calendar or a mail watcher holds that its shared controls change: whether it is closed,
+ * and the `sign_in` rows it reads its accounts with, which Settings may replace as it runs.
+ */
+export type WatcherHeld = { closed: boolean; rows: readonly SignInRow[] };
+
+/** The controls the calendar and the mail watchers share. */
+export type WatcherControls<A extends AccountRow> = {
+    /**
+     * Take the hub's new `sign_in` rows: they are held and every account is read again at once
+     * with them; nothing happens once the watcher is closed or when they equal the held rows.
+     */
+    setProviders: (rows: readonly SignInRow[]) => void;
+    /** Take a new account list and folder (AccountLoop's `set`). */
+    setAccounts: (accounts: A[], dir: string) => void;
+    close: () => void;
+};
+
+/**
+ * The controls of one watcher over its loop and what it holds. The rows are held before the
+ * round they start, since a round reads them as it starts; `closing` runs last in the close, for
+ * what the watcher holds besides its loop.
+ */
+export function watcherControls<A extends AccountRow>(
+    loop: AccountLoop<A>,
+    held: WatcherHeld,
+    watcher: { pollMin: () => number; publish: () => void; closing?: () => void }
+): WatcherControls<A> {
+    return {
+        setProviders(rows): void {
+            if (held.closed || isDeepStrictEqual(rows, held.rows)) return;
+            held.rows = rows;
+            const period = { before: watcher.pollMin(), after: watcher.pollMin() };
+            takeLoopSettings(loop, period, true, watcher.publish);
+        },
+        setAccounts: loop.set,
+        close(): void {
+            held.closed = true;
+            loop.close();
+            watcher.closing?.();
+        }
+    };
+}
+
+/** The fields of an account row SignIn waits with. */
+export type SignInWaiting = Extract<SignIn, { waiting: unknown }>['waiting'];
+
+/**
+ * One account's sign-in for a round of a watcher (signIn): its token and its provider's row, or
+ * null when the round ends here for the account, either waiting, which `wait` sets on its row, or
+ * a round the loop has given up (`live` false).
+ */
+export async function roundSignIn(
+    kind: ConnectKind,
+    account: ConnectAccountConfig,
+    dirs: { dir: string; providerDir: string },
+    fetcher: Fetcher,
+    round: { providers: Providers; wait: (waiting: SignInWaiting) => void; live: () => boolean }
+): Promise<{ token: string; row: SignInRow } | null> {
+    const signed = await signIn(kind, account, dirs, fetcher, round.providers);
+    if ('waiting' in signed) {
+        round.wait(signed.waiting);
+        return null;
+    }
+    return round.live() ? signed : null;
 }

@@ -1,7 +1,14 @@
 // Layer 1, data. The shapes GET /api/recover answers (server/machine/runs/recover/routes.ts) and
 // the Recover view's store reads (state/system/machine/recover.svelte.ts), declared once here and
-// re-exported by data/model/index.ts. A dataset's sources, `RecoverSource`, belong to the dataset
-// registry's entity and are declared in data/model/model-entities.ts.
+// re-exported by data/model/index.ts, with the one target word that names this Mac, which the
+// routes, the store and the reader of `clusters:` share. A dataset's sources, `RecoverSource`,
+// belong to the dataset registry's entity and are declared in data/model/model-entities.ts.
+
+/**
+ * The Recover target of this Mac; every other target is the key of a cluster of `slurm.resource`,
+ * so no cluster may be named by it.
+ */
+export const MAC_TARGET = 'mac';
 
 /** The checksum a source publishes for a file. */
 export type RecoverChecksum = { kind: 'sha256' | 'md5' | 'sha1'; value: string };
@@ -80,7 +87,8 @@ export type RecoverRun = {
 
 /** One dataset on one target, as the Recover view is told it. */
 export type RecoverState = {
-    target: 'mac' | 'cluster';
+    /** `mac` for this Mac, else the key of a cluster of `slurm.resource`. */
+    target: string;
     /** The dataset's folder as `path:` names it. */
     folder: string;
     access: RecoverAccess[];
@@ -95,7 +103,7 @@ export type RecoverState = {
 };
 
 /**
- * One of oculus's sessions on the cluster's socket `oculus-recover`, as Live HPC lists it: the
+ * One of oculus's sessions on a cluster's socket `oculus-recover`, as Live HPC lists it: the
  * bytes of its dataset's folder, the bytes the kept listing names, and the bytes per second
  * between the last two Live HPC answers.
  */
@@ -111,12 +119,13 @@ export type RecoverSession = {
 export type RecoverLiveRun = {
     hub: string;
     key: string;
-    target: 'mac' | 'cluster';
+    /** `mac` for this Mac, else the key of the cluster it runs on. */
+    target: string;
     /** `running` while the run goes, `ended` from the push after it stopped. */
     state: 'running' | 'ended';
     /** What the run does; null once it has ended. */
     run: RecoverRun | null;
-    /** The bytes the folder holds: of the listed files on this Mac, in all on the cluster. */
+    /** The bytes the folder holds: of the listed files on this Mac, in all on a cluster. */
     bytes: number;
     /** The bytes the kept listing names, or null when none is kept. */
     size: number | null;
@@ -132,6 +141,9 @@ export type RecoverLiveRun = {
 /** The payload of the `recover` channel. */
 export type RecoverLive = {
     runs: RecoverLiveRun[];
-    /** The login node's sessions as the last Live HPC answer read them, or null before one. */
-    sessions: RecoverSession[] | null;
+    /**
+     * Each cluster's login node sessions as the last Live HPC answer of that cluster read them, by
+     * the cluster's key; a cluster is absent before its first answer.
+     */
+    sessions: Record<string, RecoverSession[]>;
 };

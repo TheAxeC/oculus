@@ -42,14 +42,18 @@ import {
     type FolderMarks,
     type MakeItems
 } from '../../../src/lib/data/helpers/hub-names.ts';
+import { noCredentials } from '../../fixtures/doubles.ts';
 import { pageWorkspaces, plantState } from '../../fixtures/hubs/workspace.ts';
 import { it, plantScratch, scratchDir } from '../../fixtures/scratch.ts';
 
 const TOKEN = 'a-make-token';
 
+/** The git credentials of a server signed in nowhere, which every git of these cases runs with. */
+const NONE = noCredentials();
+
 /** `git init -q` in a folder by the real git, as the route hands it in. */
 function initGit(folder: string) {
-    return cloneGit(['-C', folder, 'init', '-q'], LOCAL_TIMEOUT_MS);
+    return cloneGit(NONE)(['-C', folder, 'init', '-q'], LOCAL_TIMEOUT_MS);
 }
 
 /** A planted folder by its real path, so the paths the route answers compare with it. */
@@ -557,7 +561,7 @@ describe('what the Files view holds of a folder before its menu opens', () => {
             ['free', undefined, undefined],
             ['inside', undefined, true]
         ]);
-        const listed = await listShown(open.roots, 'free', '');
+        const listed = await listShown(open.roots, 'free', '', NONE);
         expect(
             'entries' in listed ? listed.entries.map((one) => [one.name, one.marks]) : listed
         ).toEqual([
@@ -594,7 +598,7 @@ describe('what the Files view holds of a folder before its menu opens', () => {
             const names = path === '' ? [] : path.split('/');
             const below: FolderMarks[] = [];
             for (let at = 0; at < names.length; at += 1) {
-                const found = await listShown(open.roots, key, names.slice(0, at).join('/'));
+                const found = await listShown(open.roots, key, names.slice(0, at).join('/'), NONE);
                 const entries = JSON.parse(
                     JSON.stringify('entries' in found ? found.entries : [])
                 ) as { name: string; marks?: FolderMarks }[];

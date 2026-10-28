@@ -6,9 +6,10 @@
 // it names can be refused. A key with no value in force has no entry, and the view shows its
 // default.
 //
-// The three lists (`accounts`, `calendars`, `mail`) join the rows of every hub's file, so each
-// shows one line per row in YAML flow form followed by the hub whose file holds it in parentheses,
-// and `hubs` names the hubs whose files set the list, whether or not a row of the file is in force.
+// The four lists (`clusters`, `accounts`, `calendars`, `mail`) join the rows of every hub's file,
+// so each shows one line per row in YAML flow form followed by the hub whose file holds it in
+// parentheses, and `hubs` names the hubs whose files set the list, whether or not a row of the
+// file is in force.
 // `downloads` is read from the primary's file alone and shows one line per row.
 //
 // No secret reaches the page: each literature key and token that holds a value, and the `secret` of
@@ -20,6 +21,7 @@ import {
     LITERATURE_KEYS,
     PROGRAM_KEYS,
     STATE_PATHS,
+    type ClusterAccount,
     type LocalConfig
 } from '../../../../data/sources/config.ts';
 
@@ -37,6 +39,16 @@ function lineOf(row: { hub?: string; [field: string]: unknown }): string {
     const { hub, ...fields } = row;
     const flow = stringify(fields, { collectionStyle: 'flow', lineWidth: 0 }).trim();
     return hub === undefined ? flow : `${flow} (${hub})`;
+}
+
+/** A row of `clusters:` with its fields named as the file names them. */
+function clusterLine(row: ClusterAccount): { hub?: string; [field: string]: unknown } {
+    return {
+        resource: row.resource,
+        ...(row.user === undefined ? {} : { user: row.user }),
+        ...(row.keyFile === undefined ? {} : { key_file: row.keyFile }),
+        ...(row.hub === undefined ? {} : { hub: row.hub })
+    };
 }
 
 /**
@@ -95,6 +107,7 @@ export function machineValues(
         }
     }
     const joined: [string, { hub?: string }[]][] = [
+        ['clusters', config.clusters.map(clusterLine)],
         ['accounts', config.accounts],
         ['calendars', config.calendars],
         ['mail', config.mail]

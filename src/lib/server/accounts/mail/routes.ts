@@ -22,6 +22,7 @@ import { mailKey } from '../../../data/accounts/mail.ts';
 import type { InboxThread, MailAccountConfig } from '../../../data/model/index.ts';
 import { signIn } from '../connect/loop.ts';
 import type { Fetcher } from '../connect/oauth.ts';
+import { readAddress } from '../connect/providers.ts';
 import { gatedBody } from '../../core/auth.ts';
 import {
     accountAction,
@@ -101,10 +102,17 @@ function addressed(target: MailTarget, id: unknown): Addressed | null {
 
 /** One access token for a write, held for the length of that call and never answered. */
 async function writeArgs(target: MailTarget, account: MailAccountConfig): Promise<MailReadArgs> {
-    const signed = await signIn('mail', account, target, target.fetcher);
-    if ('waiting' in signed) throw new Error('the account is not connected');
-    const { token } = signed;
-    return { token, key: mailKey(account), perSignal: target.perSignal, fetcher: target.fetcher };
+    const signed = await signIn('mail', account, target, target.fetcher, target.providers);
+    if ('waiting' in signed) throw new Error(signed.waiting.hint ?? 'the account is not connected');
+    const { token, row } = signed;
+    return {
+        token,
+        base: readAddress(row, 'mail'),
+        link: row.mailLink ?? '',
+        key: mailKey(account),
+        perSignal: target.perSignal,
+        fetcher: target.fetcher
+    };
 }
 
 /** Send one reply on the thread, through the provider and never as a draft. */

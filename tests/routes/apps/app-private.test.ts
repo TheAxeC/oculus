@@ -211,6 +211,7 @@ describe('the folders closed to every app', () => {
             calendars: [],
             mail: [],
             downloads: [],
+            clusters: [],
             self: '',
             history: join(base, 'placed', 'history')
         };

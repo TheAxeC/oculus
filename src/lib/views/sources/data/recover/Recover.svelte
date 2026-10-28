@@ -14,7 +14,8 @@
 
 <script lang="ts">
     // Layer 3, view. Recover of one dataset, by the hub and the key its instance state carries, on
-    // the target the tab holds (this Mac or the cluster): the dataset's folder there with the free
+    // the target the tab holds (this Mac or a cluster of `slurm.resource`, listed by its name, as
+    // the `hpc` channel names them): the dataset's folder there with the free
     // space of its disk, the access of each credentialed service with the setup steps of one that
     // is missing, the actions, the progress, the plan of every file the sources list, and the log.
     //
@@ -43,7 +44,11 @@
         type Rates,
         type RecoverState
     } from '$lib/state/system/machine/recover-words';
-    import type { RecoverAction, RecoverTarget } from '$lib/state/system/machine/recover.svelte';
+    import {
+        MAC_TARGET,
+        type RecoverAction,
+        type RecoverTarget
+    } from '$lib/state/system/machine/recover.svelte';
     import { t } from '$lib/state/shared/words/text';
     import { instanceChoice, instanceText } from '$lib/state/workbench/layout/instance';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
@@ -51,17 +56,31 @@
 
     const {
         recover: { dataset, reload, act, pushed },
+        hpc: { clusters },
         ui: { instanceState, setInstanceState }
     } = useState();
 
     let { instance }: ViewProps = $props();
 
-    const TARGETS: RecoverTarget[] = ['mac', 'cluster'];
+    /**
+     * This Mac and each cluster of `slurm.resource` by its name, in its order. A cluster keyed
+     * `mac` is not offered, since that key names this Mac.
+     */
+    const segments = $derived([
+        { id: MAC_TARGET, label: t('recover.target_mac') },
+        ...clusters()
+            .filter((one) => one.resource !== MAC_TARGET)
+            .map((one) => ({ id: one.resource, label: one.name }))
+    ]);
 
     const key = $derived(instanceText(instance.state, 'key'));
     const hub = $derived(instanceText(instance.state, 'hub'));
-    const target = $derived(
-        instanceChoice(instanceState(instance.id), 'target', TARGETS) as RecoverTarget
+    const target: RecoverTarget = $derived(
+        instanceChoice(
+            instanceState(instance.id),
+            'target',
+            segments.map((one) => one.id)
+        )
     );
     const held = $derived(dataset(hub, key, target));
     // Named `now` rather than `state`: a variable called `state` in a component is read as the
@@ -113,11 +132,6 @@
     /** Set while an action is in flight, so a second press cannot send a second one. */
     let busy = $state(false);
 
-    const segments = $derived([
-        { id: 'mac', label: t('recover.target_mac') },
-        { id: 'cluster', label: t('recover.target_cluster') }
-    ]);
-
     /** Why an action that starts a run cannot be pressed now, or the empty text when it can. */
     const why = $derived(
         busy ? t('recover.why_busy') : running ? t('recover.refused_running') : ''
@@ -145,7 +159,9 @@
         const answer = await act(hub, key, target, action, file);
         busy = false;
         if (answer.ok) outcome = '';
-        else outcome = answer.refused === '' ? answer.error : refusalWords(answer.refused);
+        else
+            outcome =
+                answer.refused === '' ? answer.error : refusalWords(answer.refused, answer.hint);
     }
 </script>
 

@@ -20,7 +20,7 @@ import {
 import type { SessionRecord } from '../../../src/lib/data/model/index.ts';
 import { Turns } from '../../../src/lib/server/machine/pty/latex/turns.ts';
 import { contextFixture } from '../../server/root/context-fixture.ts';
-import { pagePost } from '../../fixtures/doubles.ts';
+import { noCredentials, pagePost } from '../../fixtures/doubles.ts';
 import { plantHub, workspaceWith } from '../../fixtures/hubs/workspace.ts';
 
 export const HOST = '127.0.0.1:8791';
@@ -202,12 +202,12 @@ export function configOf(engine: string): () => Record<string, unknown> {
  * and the folder `other` after it as a second hub named `other` when one is named, else a workspace
  * with no folder and the defaults of local.yml. The settings of another hub are the shipped
  * engine's under that hub's own file, parsed at each call as the server's cache parses them on a
- * change.
+ * change. The git credentials are those of a server signed in nowhere.
  */
 export function worldOf(
     hub?: string,
     other?: string
-): Pick<TerminalOptions, 'openFor' | 'localFor' | 'hubSettings'> {
+): Pick<TerminalOptions, 'openFor' | 'localFor' | 'hubSettings' | 'credentials'> {
     const workspace = workspaceWith(
         hub === undefined
             ? []
@@ -221,7 +221,8 @@ export function worldOf(
         openFor: () => workspace.open(),
         localFor: () =>
             hub === undefined ? localDefaults() : loadMachine([{ name: 'hub', dir: hub }], 'hub'),
-        hubSettings: (dir) => loadConfig(engineDir(), { hub: dir })
+        hubSettings: (dir) => loadConfig(engineDir(), { hub: dir }),
+        credentials: noCredentials()
     };
 }
 
@@ -239,7 +240,10 @@ export type ChatWorld = {
     at: (name: string) => string;
     /** The sessions file, beside which the chat's index is written. */
     sessions: string;
-    options: Pick<TerminalOptions, 'openFor' | 'localFor' | 'hubSettings' | 'configFor'>;
+    options: Pick<
+        TerminalOptions,
+        'openFor' | 'localFor' | 'hubSettings' | 'configFor' | 'credentials'
+    >;
 };
 
 /**
@@ -247,7 +251,8 @@ export type ChatWorld = {
  * `primary` as its primary hub when one is named. A request reads the primary's settings as its
  * merged config (oculus's alone with no primary) and every other hub's from that hub's own file,
  * each parsed once, as the server keeps one parse of a hub while no file of it changes; its machine
- * values are oculus's defaults with the sessions file in the scratch folder.
+ * values are oculus's defaults with the sessions file in the scratch folder, and its git
+ * credentials those of a server signed in nowhere.
  */
 export function chatWorld(folders: readonly ChatFolder[], primary?: string): ChatWorld {
     const root = scratchDir('oculus-chat-world-');
@@ -285,7 +290,8 @@ export function chatWorld(folders: readonly ChatFolder[], primary?: string): Cha
             openFor: () => workspace.open(),
             localFor: () => ({ ...localDefaults(), sessionsOverrides: sessions }),
             hubSettings: settingsOf,
-            configFor: () => merged
+            configFor: () => merged,
+            credentials: noCredentials()
         }
     };
 }

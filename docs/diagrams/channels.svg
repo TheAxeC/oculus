@@ -225,11 +225,11 @@
 <path fill="none" stroke="currentColor" d="M228.82,-1315C296.89,-1315 364.95,-1315 433.02,-1315 433.02,-1525 433.02,-1735 433.02,-1945 507.35,-1945 581.67,-1945 656,-1945"/>
 <polygon fill="currentColor" stroke="currentColor" points="655.85,-1947.1 661.85,-1945 655.85,-1942.9 655.85,-1947.1"/>
 </g>
-<!-- server/machine/hpc/poll -->
+<!-- server/machine/hpc/clusters/watch -->
 <g id="node10" class="node">
-<title>server/machine/hpc/poll</title>
-<polygon fill="none" stroke="currentColor" points="97.21,-1412 97.21,-1434 213.81,-1434 213.81,-1412 97.21,-1412"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="start" x="102.21" y="-1419" font-family="Helvetica,Arial,sans-serif" font-size="10.00">server/machine/hpc/poll</text>
+<title>server/machine/hpc/clusters/watch</title>
+<polygon fill="none" stroke="currentColor" points="73.31,-1412 73.31,-1434 237.71,-1434 237.71,-1412 73.31,-1412"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="start" x="78.31" y="-1419" font-family="Helvetica,Arial,sans-serif" font-size="10.00">server/machine/hpc/clusters/watch</text>
 </g>
 <!-- ch hpc -->
 <g id="node37" class="node">
@@ -237,10 +237,10 @@
 <path fill="none" stroke="currentColor" d="M678.58,-2796C678.58,-2796 687.96,-2796 687.96,-2796 692.64,-2796 697.33,-2800.69 697.33,-2805.37 697.33,-2805.37 697.33,-2820.63 697.33,-2820.63 697.33,-2825.31 692.64,-2830 687.96,-2830 687.96,-2830 678.58,-2830 678.58,-2830 673.9,-2830 669.21,-2825.31 669.21,-2820.63 669.21,-2820.63 669.21,-2805.37 669.21,-2805.37 669.21,-2800.69 673.9,-2796 678.58,-2796"/>
 <text fill="currentColor" xml:space="preserve" text-anchor="start" x="675.21" y="-2809" font-family="Helvetica,Arial,sans-serif" font-size="10.00">hpc</text>
 </g>
-<!-- server/machine/hpc/poll&#45;&gt;ch hpc -->
+<!-- server/machine/hpc/clusters/watch&#45;&gt;ch hpc -->
 <g id="edge145" class="edge">
-<title>server/machine/hpc/poll&#45;&gt;ch hpc</title>
-<path fill="none" stroke="currentColor" d="M213.81,-1423C278.88,-1423 343.95,-1423 409.02,-1423 409.02,-1886.33 409.02,-2349.67 409.02,-2813 493.31,-2813 577.6,-2813 661.9,-2813"/>
+<title>server/machine/hpc/clusters/watch&#45;&gt;ch hpc</title>
+<path fill="none" stroke="currentColor" d="M237.7,-1423C294.81,-1423 351.91,-1423 409.02,-1423 409.02,-1886.33 409.02,-2349.67 409.02,-2813 493.31,-2813 577.6,-2813 661.9,-2813"/>
 <polygon fill="currentColor" stroke="currentColor" points="661.7,-2815.1 667.7,-2813 661.7,-2810.9 661.7,-2815.1"/>
 </g>
 <!-- server/machine/processes/watch -->

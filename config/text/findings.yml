@@ -135,6 +135,8 @@ text:
         config:
             directory_missing: config directory does not exist
             hub_key_unknown: "key {0} is not one the hub's settings file takes; it is not applied"
+            hub_key_primary: "{0} is read from the primary hub's settings file only, and the hub {1} is not the primary; the value is not used"
+            git_helper_quote: "the path of oculus's program or of its credential helper holds a single quote, so git is given no sign-in for the git hosts of sign_in"
             hub_word_gone: "{0} names {1}, which the hub's words no longer hold; it is not read"
             hub_key_not_map: "{0} must be a map holding keys the hub's settings file takes; it is not applied"
             settings_not_a_map: 'settings must be a map of options; none of it is applied'
@@ -185,6 +187,7 @@ text:
             setting_entry: '{0} must be {1}; the entry is not read'
             setting_repeat: '{0} holds the name {1} more than once; the first is read and the others are not'
             setting_unnamed: '{0} has no name; the row is not read'
+            setting_this_mac: '{0} holds {1}, which names this Mac and no cluster; it is left out'
             setting_field: '{0} must be {1}; the field is not read'
             focus_block: 'focus must be a map; none of its keys is read'
             focus_value: '{0} must be {1}; it is not read'
@@ -249,7 +252,7 @@ text:
             heading_missing: the option names no heading; it is listed under Without a heading
             heading_unknown: the heading {0} is not one the Settings view lists; the option is listed under Without a heading
             whole: whole is not true; the option is drawn as a text box
-            form: 'the form {0} is not one of program, extension, bundle_id; the option is drawn as a text box'
+            form: 'the form {0} is not one of program, extension, bundle_id, https_address, https_origin, row_key; the option is drawn as a text box'
             key: "key {0} names no field of the family's records; a workspace file's settings: replaces the list whole"
             groups: 'groups is not a map of group paths to help lines; no group of the file is described'
             group_missing: 'the group {0} has no help line in groups:; the editor shows no description for it'
@@ -270,6 +273,9 @@ text:
             form_program_list: a list of program names with no slash or white space
             form_extension: an extension with its dot
             form_bundle_id: the bundle id of an application
+            form_https_address: an https address
+            form_https_origin: an https origin, the scheme, the host and an optional port and nothing after
+            form_row_key: lowercase letters, digits, dashes and underscores
             words: a list of words
             numbers: a list of numbers
             strings: a list of texts

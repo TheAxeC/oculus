@@ -8,7 +8,7 @@
 import { describe, expect } from 'vitest';
 import { deleteBranch, deleteBranchAnyway } from '../../../../src/lib/server/git/git-refs.ts';
 import { it } from '../../../fixtures/scratch.ts';
-import { commitFile, git, isolateGit, scratchRepo } from './repo.ts';
+import { commitFile, git, gitAt, isolateGit, scratchRepo } from './repo.ts';
 import { TEXT } from '../../text.ts';
 
 isolateGit();
@@ -20,7 +20,7 @@ describe('deleteBranch', () => {
     it('deletes a branch that is merged', async () => {
         const root = scratchRepo();
         git(root, 'branch', 'merged');
-        const answer = await deleteBranch(root, 'merged', TEXT, [root]);
+        const answer = await deleteBranch(gitAt(root), 'merged', TEXT, [root]);
         expect(answer.ok).toBe(true);
         expect(has(root, 'merged')).toBe(false);
     });
@@ -30,7 +30,7 @@ describe('deleteBranch', () => {
         git(root, 'switch', '-q', '-c', 'unmerged');
         commitFile(root, 'u.txt', 'u\n', 'Unmerged work');
         git(root, 'switch', '-q', 'main');
-        const answer = await deleteBranchAnyway(root, 'unmerged', TEXT, [root]);
+        const answer = await deleteBranchAnyway(gitAt(root), 'unmerged', TEXT, [root]);
         expect(answer.ok).toBe(true);
         expect(has(root, 'unmerged')).toBe(false);
     });

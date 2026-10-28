@@ -9,6 +9,7 @@ import { describe, expect, vi } from 'vitest';
 import { handleGit, type GitOptions } from '../../../src/lib/server/git/git-routes.ts';
 import { mintToken } from '../../../src/lib/server/core/auth.ts';
 import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
+import { noCredentials } from '../../fixtures/doubles.ts';
 import { it } from '../../fixtures/scratch.ts';
 import { gitPost } from './request.ts';
 import { isolateGit, put, scratchRepo } from '../../server/git/refs/repo.ts';
@@ -31,6 +32,7 @@ function over(root: string, extra: Partial<GitOptions> = {}) {
         claudeBin: 'claude',
         rootsFor: () => [root],
         trash,
+        credentials: noCredentials(),
         ...extra
     };
     return { trash, options };

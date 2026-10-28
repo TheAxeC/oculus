@@ -11,7 +11,7 @@ import { parse } from 'yaml';
 import { z } from 'zod';
 import { findingText, type TextCatalog } from '../../helpers/finding-text.ts';
 import { isMap } from '../../helpers/guards.ts';
-import type { Finding } from '../../model/index.ts';
+import { MAC_TARGET, type Finding } from '../../model/index.ts';
 import { standInShape } from '../../shapes/catalog-files/glyphs.ts';
 import { mapOfShape, mapShape, readAs, readOr } from '../../shapes/shapes.ts';
 import { mustBe } from './catalog/value-words.ts';
@@ -253,6 +253,13 @@ function settingText(catalog: TextCatalog, problem: EditorProblem): string {
             );
         case 'unnamed':
             return findingText(catalog, 'findings.config.setting_unnamed', problem.key);
+        case 'this-mac':
+            return findingText(
+                catalog,
+                'findings.config.setting_this_mac',
+                problem.key,
+                MAC_TARGET
+            );
         case 'unknown-language':
             return findingText(catalog, 'findings.config.editor_unknown_language', problem.key);
         case 'unknown-field':

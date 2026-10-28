@@ -28,6 +28,7 @@ import { z } from 'zod';
 import { isMap } from '../../data/helpers/guards.ts';
 import type { FolderLines, LanguageLines, LineCount, LineTally } from '../../data/model/index.ts';
 import { SHIPPED_SOURCES } from '../../data/places/shipped.ts';
+import type { GitCredentials } from '../core/git/credentials.ts';
 import { trackedFiles } from '../core/git/files.ts';
 
 /** The folder name of the files no folder holds. */
@@ -96,9 +97,16 @@ export type LinesAnswer = LineCount | { error: string };
 /**
  * What a count may be pointed at other than the installed cloc and the perl on the PATH, which is
  * what a test does, and the signal of the request it answers: a request closed before the count
- * ends stops cloc, since nobody is left to read the answer.
+ * ends stops cloc, since nobody is left to read the answer. The tracked files are asked of git with
+ * the server context's credentials.
  */
-export type LinesOptions = { cloc?: string; perl?: string; timeout?: number; signal?: AbortSignal };
+export type LinesOptions = {
+    cloc?: string;
+    perl?: string;
+    timeout?: number;
+    signal?: AbortSignal;
+    credentials: GitCredentials;
+};
 
 /** What cloc is run with: the perl, the script, the timeout and the signal that stops it. */
 type ClocRun = { perl: string; script: string; timeout: number; signal?: AbortSignal };
@@ -295,9 +303,13 @@ function inRepository(engine: string): boolean {
  * so a git that fails there is said as such, and the shipped entries walked when it lies in none,
  * as a release app's folder does.
  */
-async function countedFrom(engine: string, text: Record<string, string>): Promise<string[]> {
+async function countedFrom(
+    credentials: GitCredentials,
+    engine: string,
+    text: Record<string, string>
+): Promise<string[]> {
     if (!inRepository(engine)) return shippedFiles(engine);
-    const tracked = await trackedFiles(engine, text);
+    const tracked = await trackedFiles(credentials, engine, text);
     if (!tracked.ok) throw new Error(`git could not list the tracked files: ${tracked.error}`);
     return tracked.value;
 }
@@ -310,12 +322,12 @@ async function countedFrom(engine: string, text: Record<string, string>): Promis
 export async function countLines(
     engine: string,
     text: Record<string, string>,
-    options: LinesOptions = {}
+    options: LinesOptions
 ): Promise<LinesAnswer> {
     try {
         let listed: string[];
         try {
-            listed = await countedFrom(engine, text);
+            listed = await countedFrom(options.credentials, engine, text);
         } catch (error) {
             const reason = error instanceof Error ? error.message.split('\n')[0] : String(error);
             return { error: `The files to count could not be listed: ${reason}.` };

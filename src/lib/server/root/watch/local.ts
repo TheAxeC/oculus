@@ -108,7 +108,7 @@ export function changedPaths(held: PerOculus, next: PerOculus): (keyof PerOculus
 const FIELDS: (keyof LocalConfig)[] = [
     'port',
     'self',
-    'hpcHost',
+    'clusters',
     'sessionsCache',
     'sessionsOverrides',
     'changes',

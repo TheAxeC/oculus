@@ -1,54 +1,69 @@
-// Layer 2, client state. Derived Live HPC queue counts and pill words read the single socket entity
-// shared by the Focus view and rail, and one command reaches the cluster endpoint.
+// Layer 2, client state. The clusters of the `hpc` channel, the queue counts summed over every
+// cluster whose queue is current (the Command Center pill, the rail badge and the status bar read
+// those), and the commands that reach the Live HPC endpoint, each naming the cluster it acts on.
 
 import { fields, text as textOf } from '../../../../data/helpers/guards.ts';
-import type { SubmitPlan } from '../../../../data/model/index.ts';
+import type { ClusterSetup, HpcPayload, SubmitPlan } from '../../../../data/model/index.ts';
+import { setupOf, stepOf, type StepAnswer } from './setup.ts';
 import { t } from '../../../shared/words/text.ts';
 import type { EntitiesStore, WritesStore } from '../../../shared/stores/shapes.ts';
-import { queueIsCurrent } from './hpc.ts';
-import { jobOf, planOf, type JobResult, type PlanResult } from './submit.ts';
+import { clustersOf, summedCounts } from './hpc.ts';
+import {
+    choicesOf,
+    jobOf,
+    planOf,
+    type ChoicesResult,
+    type JobResult,
+    type PlanResult
+} from './submit.ts';
 
-/** One client's reader of the Live HPC queue, its one command and the two requests of Submit. */
+/** One client's reader of the Live HPC clusters, its one command and the requests of Submit. */
 export type HpcStore = {
-    queue: () => ReturnType<EntitiesStore['hpc']>;
+    /** Every cluster of `slurm.resource` as its watcher last read it, in order. */
+    clusters: () => HpcPayload[];
+    /** The sentence of a hub that names no cluster, or the empty string. */
+    hint: () => string;
+    /** Whether the channel has said anything yet. */
+    heard: () => boolean;
     counts: () => { running: number; pending: number };
     pillText: () => string;
     badgeText: () => string;
     command: (body: Record<string, unknown>) => Promise<Record<string, unknown>>;
-    /** What Submit would do with the job script at `path` under `root`, or why it will not. */
-    planSubmit: (root: string, path: string) => Promise<PlanResult>;
+    /** The clusters the Submit box offers for the job script at `path` under `root`. */
+    submitChoices: (root: string, path: string) => Promise<ChoicesResult>;
+    /** What Submit would do with the job script on the cluster `resource`, or why it will not. */
+    planSubmit: (root: string, path: string, resource: string) => Promise<PlanResult>;
     /** Run the plan the reader confirmed. */
     submitJob: (plan: SubmitPlan) => Promise<JobResult>;
-    jobLog: (id: string) => Promise<{ status: string; output: string }>;
+    /** One job's log on the cluster `resource`. */
+    jobLog: (resource: string, id: string) => Promise<{ status: string; output: string }>;
+    /** The clusters of `slurm.resource` and this machine's rows, or null when not read. */
+    readSetup: () => Promise<ClusterSetup | null>;
+    /** One step of the cluster setup, or a row's save or remove (POST /api/clusters). */
+    setupStep: (body: Record<string, unknown>) => Promise<StepAnswer>;
 };
 
 export function createHpc(entities: EntitiesStore, writes: WritesStore): HpcStore {
-    function queue() {
-        return entities.hpc();
+    function clusters(): HpcPayload[] {
+        return clustersOf(entities.hpc());
     }
 
     function counts(): { running: number; pending: number } {
-        const value = entities.hpc();
-        return value !== null && queueIsCurrent(value)
-            ? { running: value.running, pending: value.pending }
-            : { running: 0, pending: 0 };
+        const { running, pending } = summedCounts(clusters());
+        return { running, pending };
     }
 
     function pillText(): string {
-        const value = entities.hpc();
-        return value !== null && queueIsCurrent(value) && value.total > 0
-            ? (value.running === 1
-                  ? t('hpc.pill_running_one')
-                  : t('hpc.pill_running', value.running)) +
-                  (value.pending ? t('hpc.pill_pending', value.pending) : '')
+        const sum = summedCounts(clusters());
+        return sum.total > 0
+            ? (sum.running === 1 ? t('hpc.pill_running_one') : t('hpc.pill_running', sum.running)) +
+                  (sum.pending ? t('hpc.pill_pending', sum.pending) : '')
             : '';
     }
 
     function badgeText(): string {
-        const value = entities.hpc();
-        return value !== null && queueIsCurrent(value) && value.total > 0
-            ? `${value.running} ${value.pending}`
-            : '';
+        const sum = summedCounts(clusters());
+        return sum.total > 0 ? `${sum.running} ${sum.pending}` : '';
     }
 
     /**
@@ -64,8 +79,11 @@ export function createHpc(entities: EntitiesStore, writes: WritesStore): HpcStor
     }
 
     /** One job's log: the status word the endpoint answered with, and the text it returned. */
-    async function jobLog(id: string): Promise<{ status: string; output: string }> {
-        const answer = await command({ action: 'log', id });
+    async function jobLog(
+        resource: string,
+        id: string
+    ): Promise<{ status: string; output: string }> {
+        const answer = await command({ action: 'log', resource, id });
         return { status: textOf(answer.status, 'error'), output: textOf(answer.log) };
     }
 
@@ -81,13 +99,41 @@ export function createHpc(entities: EntitiesStore, writes: WritesStore): HpcStor
         }
     }
 
-    async function planSubmit(root: string, path: string): Promise<PlanResult> {
-        return planOf(await submitRequest({ action: 'plan', root, path }));
+    async function submitChoices(root: string, path: string): Promise<ChoicesResult> {
+        return choicesOf(await submitRequest({ action: 'clusters', root, path }));
+    }
+
+    async function planSubmit(root: string, path: string, resource: string): Promise<PlanResult> {
+        return planOf(await submitRequest({ action: 'plan', root, path, resource }));
     }
 
     async function submitJob(plan: SubmitPlan): Promise<JobResult> {
         return jobOf(await submitRequest({ action: 'submit', plan, confirm: true }));
     }
 
-    return { queue, counts, pillText, badgeText, command, planSubmit, submitJob, jobLog };
+    /** One request of the cluster setup endpoint, or null when no JSON answer came. */
+    async function setupRequest(body: Record<string, unknown>): Promise<unknown> {
+        try {
+            const answer = await writes.postCommand('/api/clusters', body);
+            return answer.body;
+        } catch {
+            return null;
+        }
+    }
+
+    return {
+        clusters,
+        hint: () => entities.hpc()?.hint ?? '',
+        heard: () => entities.hpc() !== null,
+        counts,
+        pillText,
+        badgeText,
+        command,
+        submitChoices,
+        planSubmit,
+        submitJob,
+        jobLog,
+        readSetup: async () => setupOf(await setupRequest({ action: 'read' })),
+        setupStep: async (body) => stepOf(await setupRequest(body))
+    };
 }

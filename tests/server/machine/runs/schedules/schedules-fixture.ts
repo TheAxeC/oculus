@@ -23,7 +23,7 @@ import {
     type SchedulesOptions,
     type SchedulesWatcher
 } from '../../../../../src/lib/server/machine/runs/schedules/watch.ts';
-import { noop } from '../../../../fixtures/doubles.ts';
+import { noCredentials, noop } from '../../../../fixtures/doubles.ts';
 import { scratchDir } from '../../../../fixtures/scratch.ts';
 import { TEXT } from '../../../text.ts';
 import { type tmux } from '../../../../routes/sessions/terminal-fixture.ts';
@@ -169,7 +169,8 @@ export function watcherOver(
                 claudeBin: CLAUDE,
                 text: TEXT,
                 rootsFor,
-                approvalsFor: () => w.approvals
+                approvalsFor: () => w.approvals,
+                credentials: noCredentials()
             }),
         stop: (terminal) => stopTerminal(terminal, { run: driver.run }),
         table,

@@ -15,9 +15,16 @@ options:
         control: choice
         empty: nobody is marked as you
         from: people
-    hpc_host:
-        section: HPC host
-        help: This machine's ssh alias for the Live HPC view. It takes precedence over the host of the cluster that slurm.resource of behavior.yml names. A change is read again at once.
+    clusters:
+        section: Cluster accounts
+        help: "This machine's account on each cluster of slurm.resource, a list of resource, user and key_file: the user name ssh logs in with and the key file it offers, each passed to ssh as its own argument. A cluster with no row connects as ssh's own configuration says. The user is letters, digits, dots, dashes and underscores, starting with a letter, a digit or an underscore; the key file is an absolute path or one under ~/, holding no single quote and not ending in .pub. A row that breaks either is a finding and is not used, and so is a row of the resource mac, which names this Mac. The rows of every hub's file are read together, the primary hub's first, each marked with its hub; a second row for one cluster is a finding and the first is used. Account setup's Save and this row write it. A change is read again at once."
+        fields:
+            resource:
+                help: the key of the cluster entry of the resources registry, one that slurm.resource names
+                control: choice
+                from: clusters
+            user: the user name on that cluster
+            key_file: the key file ssh offers, an absolute path or one under ~/
     sessions_cache:
         section: Sessions
         help: Where the session layer keeps its byte-offset cache. Without it the file is ~/.oculus/transcript-cache.json. A value of ~ or one starting with ~/ is under the home folder, and any other relative value is resolved against the folder of the hub that holds this file. A change is read again at once.

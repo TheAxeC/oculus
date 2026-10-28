@@ -11,6 +11,7 @@ import { join } from 'node:path';
 import { describe, expect, vi } from 'vitest';
 import type { RecoverLive } from '../../../src/lib/data/model/index.ts';
 import { Hub } from '../../../src/lib/server/core/channels.ts';
+import type { Connection } from '../../../src/lib/server/machine/hpc/ssh.ts';
 import { watchRecover } from '../../../src/lib/server/machine/runs/recover/live/watch.ts';
 import { localDeps } from '../../../src/lib/server/machine/runs/recover/local.ts';
 import {
@@ -82,10 +83,17 @@ describe('the recover route', () => {
             refused: 'request'
         },
         {
-            name: 'an unknown target',
-            body: { action: 'fetch', target: 'cloud', hub: 'research-hub', key: 'mitdb' },
+            name: 'a target that is no key',
+            body: { action: 'fetch', target: '../cloud', hub: 'research-hub', key: 'mitdb' },
             status: 400,
             refused: 'request'
+        },
+        {
+            name: 'a target slurm.resource does not list',
+            body: { action: 'fetch', target: 'cloud', hub: 'research-hub', key: 'mitdb' },
+            status: 400,
+            refused: 'target',
+            hint: 'cloud is not listed'
         },
         {
             name: 'a file that is no text',
@@ -169,8 +177,9 @@ describe('the recover route', () => {
         const { target } = recoverTarget();
         const commands: string[] = [];
         const cluster = {
-            host: 'login',
-            runner: (_host: string, remote: string) => {
+            resource: 'cluster',
+            connection: { host: 'login' },
+            runner: (_connection: Connection, remote: string) => {
                 commands.push(remote);
                 return Promise.resolve({
                     stdout: '',
@@ -181,6 +190,7 @@ describe('the recover route', () => {
             copy: () => Promise.resolve({ stdout: '', stderr: '', code: 0 }),
             home: scratchDir('oculus-recover-mac-'),
             nodeVersion: 'v24.0.0',
+            nodeDownload: '',
             sevenZip: () => ''
         };
         const entry = datasetOf([{ kind: 'url', urls: [{ url: URL_A }] }]);
@@ -210,11 +220,14 @@ describe('the recover route', () => {
                 readCluster: () => undefined
             });
             try {
-                const section = shell(watcher.section.command(), stand, node.remoteHome);
-                watcher.section.take(section.stdout, []);
-                expect(liveOf(channels).sessions).toEqual([
-                    { hub: 'research-hub-two', key: 'mitdb', done: 0, total: null, rate: null }
-                ]);
+                const one = watcher.section('cluster');
+                const section = shell(one.command(), stand, node.remoteHome);
+                one.take(section.stdout, []);
+                expect(liveOf(channels).sessions).toEqual({
+                    cluster: [
+                        { hub: 'research-hub-two', key: 'mitdb', done: 0, total: null, rate: null }
+                    ]
+                });
             } finally {
                 watcher.close();
             }

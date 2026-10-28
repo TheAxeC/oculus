@@ -48,7 +48,8 @@
     // something other than text. A file the route says is gone opens here too, so this is the tab
     // that says it cannot be opened. While the draft is read the pane is empty.
     //
-    // Submit Job, on a .slurm file on disk under a served root, is actions/submit-job.svelte.ts.
+    // Submit Job, on a .slurm file on disk under a served root, is actions/submit-job.svelte.ts,
+    // and its box with the pick of the cluster is actions/SubmitBox.svelte.
     //
     // A tab over a library file a language server named is this view too, read-only and with no
     // root or path (status/library-tab.svelte.ts).
@@ -86,7 +87,7 @@
     import SourceBody from './SourceBody.svelte';
     import BarActions from './actions/BarActions.svelte';
     import Gutter from './Gutter.svelte';
-    import AskConfirm from '$lib/views/shared/writes/AskConfirm.svelte';
+    import SubmitBox from './actions/SubmitBox.svelte';
     import LatexDialogs from './latex/LatexDialogs.svelte';
     import { createLatexTab } from './latex/latex-tab.svelte';
     import { createSaid } from './save/tab-said.svelte';
@@ -514,6 +515,6 @@
     <Prompt request={tabSave.asking} cancel={t('ui.confirm_cancel')} oncancel={tabSave.release} />
 {/if}
 
-<AskConfirm asking={submit.asking} onclose={submit.release} />
+<SubmitBox {submit} />
 
 <LatexDialogs tab={latexTab} />

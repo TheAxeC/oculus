@@ -16,7 +16,7 @@
     const {
         entities: { portfolio },
         pages: { pageOf },
-        selectors: { configMap },
+        selectors: { configMap, hubVocabs },
         writes
     } = useState();
 
@@ -34,7 +34,9 @@
     const page = $derived(pageOf(collection, id));
     const snapshot = $derived(portfolio());
     const referrers = $derived(
-        snapshot === null ? [] : referrersOf(snapshot, configMap(), collection, id)
+        snapshot === null
+            ? []
+            : referrersOf(snapshot, configMap(), collection, id, hubVocabs()?.primary ?? null)
     );
 
     async function remove(): Promise<void> {

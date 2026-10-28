@@ -189,23 +189,23 @@ const ROWS: {
     {
         row: 'a key of the hub list, with a settings file that holds other keys and comments',
         settings: '',
-        hubSettings: '# the cluster of this hub\nslurm:\n  resource: utwente  # the ssh alias\n',
+        hubSettings: '# the keys of this hub\nclusters:\n  key_type: ed25519  # the key type\n',
         file: 'behavior.yml',
-        key: 'slurm.resource',
-        value: 'other',
+        key: 'clusters.key_type',
+        value: 'rsa',
         left: (before, at) => ({
-            changed: ['behavior.yml:slurm.resource'],
+            changed: ['behavior.yml:clusters.key_type'],
             refused: [],
             defaults: before.defaults,
             workspace: before.workspace,
-            layer: '# the cluster of this hub\nslurm:\n  resource: other  # the ssh alias\n',
+            layer: '# the keys of this hub\nclusters:\n  key_type: rsa  # the key type\n',
             records: [
                 {
                     file: join(at.hub, HUB_FILE),
                     key: 'behavior.yml',
-                    field: 'slurm.resource',
-                    before: 'utwente',
-                    after: 'other',
+                    field: 'clusters.key_type',
+                    before: 'ed25519',
+                    after: 'rsa',
                     undo: 'field'
                 }
             ]
@@ -216,23 +216,23 @@ const ROWS: {
         settings: null,
         hubSettings: '{}\n',
         file: 'behavior.yml',
-        key: 'slurm.resource',
-        value: 'other',
+        key: 'clusters.key_type',
+        value: 'rsa',
         left: (before, at) => ({
-            changed: ['behavior.yml:slurm.resource'],
+            changed: ['behavior.yml:clusters.key_type'],
             refused: [],
             defaults: before.defaults,
             workspace: null,
-            layer: 'slurm: { resource: other }\n',
+            layer: 'clusters: { key_type: rsa }\n',
             records: [
                 {
                     file: join(at.hub, HUB_FILE),
                     key: 'behavior.yml',
-                    field: 'slurm.resource',
+                    field: 'clusters.key_type',
                     before: '',
-                    after: 'other',
+                    after: 'rsa',
                     undo: 'field',
-                    replaced: { offset: 0, before: '{', after: 'slurm: { resource: other ' },
+                    replaced: { offset: 0, before: '{', after: 'clusters: { key_type: rsa ' },
                     created: []
                 }
             ]
@@ -289,10 +289,10 @@ describe('one value written at its place', { tags: ['slow'] }, () => {
     it('refuses a key of the hub list with no primary hub, and writes nothing', () => {
         const at = world('');
         const before = textOf(at.workspace);
-        const outcome = writeConfigKey(at.engine, 'behavior.yml', 'slurm.resource', 'other', {
+        const outcome = writeConfigKey(at.engine, 'behavior.yml', 'clusters.key_type', 'rsa', {
             ...(at.workspace === null ? {} : { workspace: at.workspace })
         });
-        expect(refusalOf(outcome, 'behavior.yml:slurm.resource')).toBe(
+        expect(refusalOf(outcome, 'behavior.yml:clusters.key_type')).toBe(
             words(CATALOG, 'server.workspace.no_primary')
         );
         expect(textOf(at.workspace)).toBe(before);
@@ -378,8 +378,8 @@ const NAMED: {
     },
     {
         row: 'a key read from the primary alone, refused for lab',
-        body: { file: 'behavior.yml', key: 'slurm.resource', value: 'other', root: LAB },
-        refused: () => words(CATALOG, 'server.workspace.primary_only', 'slurm.resource', LAB),
+        body: { file: 'behavior.yml', key: 'clusters.key_type', value: 'rsa', root: LAB },
+        refused: () => words(CATALOG, 'server.workspace.primary_only', 'clusters.key_type', LAB),
         hub: '{}\n',
         lab: (before) => before
     },
@@ -410,15 +410,15 @@ const NAMED: {
     {
         row: 'a key read from the primary alone, with no primary and lab named, refused',
         primary: false,
-        body: { file: 'behavior.yml', key: 'slurm.resource', value: 'other', root: LAB },
-        refused: () => words(CATALOG, 'server.workspace.primary_only', 'slurm.resource', LAB),
+        body: { file: 'behavior.yml', key: 'clusters.key_type', value: 'rsa', root: LAB },
+        refused: () => words(CATALOG, 'server.workspace.primary_only', 'clusters.key_type', LAB),
         hub: '{}\n',
         lab: (before) => before
     },
     {
         row: 'a key read from the primary alone, with no primary and no hub named, refused',
         primary: false,
-        body: { file: 'behavior.yml', key: 'slurm.resource', value: 'other' },
+        body: { file: 'behavior.yml', key: 'clusters.key_type', value: 'rsa' },
         refused: () => words(CATALOG, 'server.workspace.no_primary'),
         hub: '{}\n',
         lab: (before) => before
@@ -509,13 +509,13 @@ describe("the machine's own file", { tags: ['slow'] }, () => {
         const outcome = writeConfigKey(
             engine,
             'behavior.yml',
-            'slurm.resource',
-            'other',
+            'clusters.key_type',
+            'rsa',
             { hub },
             undefined,
             [hub]
         );
-        expect(refusalOf(outcome, 'behavior.yml:slurm.resource')).toBe(why('local'));
+        expect(refusalOf(outcome, 'behavior.yml:clusters.key_type')).toBe(why('local'));
         expect(readFileSync(local, 'utf8')).toBe('port: 8791\n');
     });
 

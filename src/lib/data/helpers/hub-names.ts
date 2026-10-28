@@ -685,11 +685,13 @@ export function offerAlong(
  * to the project form, is read row by row; every other key replaces oculus's value whole. They are
  * the keys that describe this hub rather than the engine: its folders and the files of its records,
  * which of its records a chat's index holds, where the reader's bookmarks, the schedules and the
- * machine's apps are kept, the cluster its jobs run on, the files its writing rules skip or let
- * draw arrows, the conventions its audit holds its projects to (`audit:`: the files and sections it
- * requires, the folders a stage keeps a project in and its website's feed), the values its apps'
- * settings hold, the counts its tabs draw, its vocabulary (every list of vocab.yml) and the fields
- * it adds to the project form. Its domains and theme words are its own registry files'.
+ * machine's apps are kept, the clusters its jobs run on and the key Account setup makes for each,
+ * the rows that tell a failed connection apart, the providers its readers sign in with, where
+ * Recover downloads Node.js from, the files its writing rules skip or let draw arrows, the
+ * conventions its audit holds its projects to (`audit:`: the files and sections it requires, the
+ * folders a stage keeps a project in and its website's feed), the values its apps' settings hold,
+ * the counts its tabs draw, its vocabulary (every list of vocab.yml) and the fields it adds to the
+ * project form. Its domains and theme words are its own registry files'.
  */
 const HUB_LIST: readonly { key: string; file: string }[] = [
     { key: 'scan', file: 'sources.yml' },
@@ -734,6 +736,11 @@ const HUB_LIST: readonly { key: string; file: string }[] = [
     { key: 'ticker_categories', file: 'catalogs/vocab.yml' },
     { key: 'manifest_fields', file: 'schemas/manifest-schema.yml' },
     { key: 'slurm.resource', file: 'behavior.yml' },
+    { key: 'clusters.key_type', file: 'behavior.yml' },
+    { key: 'clusters.key_file', file: 'behavior.yml' },
+    { key: 'connections.failures', file: 'behavior.yml' },
+    { key: 'sign_in', file: 'behavior.yml' },
+    { key: 'recover.node_download', file: 'behavior.yml' },
     { key: 'lint.writing_skip', file: 'behavior.yml' },
     { key: 'lint.writing_glyphs', file: 'behavior.yml' },
     { key: 'audit.required_files', file: 'behavior.yml' },

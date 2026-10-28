@@ -1,12 +1,13 @@
 // Layer 4, test helper. The inert callback a case hands to a component, a fixture or a double when
 // it asserts nothing about the call, the stand-in for the words function, the write request a page
 // sends, the entries of a hand-built folder listing, a clock the case moves by hand, a terminal
-// driver that runs no tmux, and a language server channel that is open and takes what is sent. They
-// exist once here so a case says "nothing happens on this callback" in one word rather than writing
-// an empty function at every prop, every route test posts the same page request, and every listing
-// is built from the same two entries.
+// driver that runs no tmux, the git credentials of a server signed in nowhere, and a language
+// server channel that is open and takes what is sent. They exist once here so a case says "nothing
+// happens on this callback" in one word rather than writing an empty function at every prop, every
+// route test posts the same page request, and every listing is built from the same two entries.
 
 import type { Clock } from '../../src/lib/server/core/file-poll.ts';
+import { gitCredentials, type GitCredentials } from '../../src/lib/server/core/git/credentials.ts';
 import type { FsEntry } from '../../src/lib/state/sources/fs.ts';
 import type { TerminalDriver } from '../../src/lib/server/machine/pty/channel.ts';
 import type { LspPort } from '../../src/lib/ui/controls/editor/kit/lsp/services.ts';
@@ -80,6 +81,14 @@ export function idleDriver(): TerminalDriver {
         serverRuns: () => Promise.resolve(false),
         close: noop
     };
+}
+
+/**
+ * The git credentials of a server with no `sign_in` row: the real `gitCredentials` over no rows, so
+ * every git and terminal it is handed starts with no credential pairs and nothing is read.
+ */
+export function noCredentials(): GitCredentials {
+    return gitCredentials(() => []);
 }
 
 /**

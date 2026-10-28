@@ -1,17 +1,20 @@
-// Layer 2, server. The Live HPC watcher publishes one complete state message, with quota refreshed
-// on its slower independent cadence. Its one ssh command per poll also carries Recover's section
-// (the sessions on the socket `oculus-recover`, their folders' bytes and the logs Recover follows),
-// which it hands back to Recover's watcher; Recover asks for that section alone, with the queue,
-// once a minute while a run on the cluster is followed (`recover`). A failed poll is published as
-// one of three: ssh did not connect (`unreachable`), ssh connected and one of `squeue`, `sacct` and
-// `sinfo` did not answer (`slurm_down`), or anything else (`error`), each over the rows earlier
-// polls left. A poll in which `squeue` answered and only `sacct` or `sinfo` did not is `slurm_down`
-// with this poll's queue and every table whose command answered, so the queue and Recover's
-// reading stay live; the table whose command failed keeps the rows of the last poll in which that
-// command answered, and the payload names it in `stale` with the time they came from.
+// Layer 2, server. The Live HPC watcher of one cluster hands one complete state message of that
+// cluster to its output (clusters/watch.ts gathers every cluster's into the `hpc` channel), with
+// quota refreshed on its slower independent cadence. Its one ssh command per poll, on the
+// cluster's connection, also carries Recover's section of that cluster (the sessions on the socket
+// `oculus-recover`, their folders' bytes and the logs Recover follows), which it hands back to
+// Recover's watcher; Recover asks for that section alone, with the queue, once a minute while a run
+// on the cluster is followed (`recover`). A failed poll is published as one of three: ssh did not
+// connect (`unreachable`), ssh connected and one of `squeue`, `sacct` and `sinfo` did not answer
+// (`slurm_down`), or anything else (`error`), each over the rows earlier polls left, and with the
+// failure its hint is told apart as by the hub's `connections.failures` when a row matches it. A
+// poll in which `squeue` answered and only `sacct` or `sinfo` did not is `slurm_down` with this
+// poll's queue and every table whose command answered, so the queue and Recover's reading stay
+// live; the table whose command failed keeps the rows of the last poll in which that command
+// answered, and the payload names it in `stale` with the time they came from.
 import { queueIsCurrent, type HpcJob, type HpcPayload } from '../../../data/model/index.ts';
+import { toldFailure, type FailureRow } from '../../../data/sources/config.ts';
 import { fillPlaceholders } from '../../../data/helpers/finding-text.ts';
-import type { Hub } from '../../core/channels.ts';
 import type { LogPaths } from './actions.ts';
 import {
     dateFrom,
@@ -32,7 +35,7 @@ import {
     splitSections
 } from './parse.ts';
 import { isFinished, PREWARM_MAX, prewarmLogs } from './prewarm.ts';
-import { run, RunTimeout, type Runner, type RunResult } from './ssh.ts';
+import { run, RunTimeout, type Connection, type Runner, type RunResult } from './ssh.ts';
 
 /**
  * The sentences of the text catalog a failed poll's hint is made of: `sshExited` takes the exit
@@ -42,20 +45,30 @@ import { run, RunTimeout, type Runner, type RunResult } from './ssh.ts';
 export type PollWords = { sshExited: string; slurmLate: string; overrun: string };
 
 /**
- * What the poller is told: the ssh alias to query, or the empty host and the sentence for why there
- * is none (the resolver in host.ts), the cadences and the window, and the sentences a failed poll's
- * hint is made of.
+ * What the poller of one cluster is told: the cluster's key and name, its connection, or the empty
+ * host and the sentence for why there is none (the resolver in clusters/connections.ts), the
+ * cadences and the window, the sentences a failed poll's hint is made of, and the rows that tell a
+ * failure apart.
  */
-export type HpcSettings = {
-    host: string;
+export type HpcSettings = Connection & {
+    resource: string;
+    name: string;
     missing?: string;
-    /** The hub names no cluster: nothing is polled and `missing` is the answer. */
-    unconfigured?: true;
     days: number;
     pollMin: number;
     quotaMin: number;
     prewarm: boolean;
     words: PollWords;
+    failures: readonly FailureRow[];
+};
+
+/**
+ * Where one cluster's watcher hands its payload, and the payload it handed last. The output of a
+ * watcher that was stopped takes nothing more (clusters/watch.ts).
+ */
+export type ClusterOut = {
+    publish: (payload: HpcPayload) => void;
+    latest: () => HpcPayload | undefined;
 };
 
 /**
@@ -85,11 +98,11 @@ export type HpcWatcher = {
     recover(): Promise<void>;
     /**
      * Take new settings. A period moves the next run to the sooner of the one waiting and the new
-     * period from now; a changed host or a changed sentence for having none drops what the old one
-     * answered, the rows and the time each came from included, and polls now; a changed window
-     * drops the answers in flight and polls now, keeping the rows and their times. Settings that
-     * name no cluster publish `unconfigured` and stop the polling; settings that name a cluster
-     * again poll at once.
+     * period from now; a changed connection (host, user name or key file) or a changed sentence
+     * for having none drops what the old one answered, the rows and the time each came from
+     * included, and polls now; a changed window drops the answers in flight and polls now, keeping
+     * the rows and their times. A changed name is published at once, and changed failure rows are
+     * used from the next failed poll on.
      */
     set(settings: HpcSettings): void;
     close(): void;
@@ -162,6 +175,16 @@ const TIMED_OUT = 124;
 
 /** A failed poll: its status word and the hint the page shows under that status's sentence. */
 type Failure = { status: 'unreachable' | 'slurm_down' | 'error'; hint?: string };
+
+/** Whether two settings name one connection, so the answers of the one hold for the other. */
+function sameConnection(one: HpcSettings, two: HpcSettings): boolean {
+    return (
+        one.host === two.host &&
+        one.user === two.user &&
+        one.keyFile === two.keyFile &&
+        one.missing === two.missing
+    );
+}
 
 /**
  * The hint of a poll Slurm did not answer, from its Slurm commands whose code is not 0, in the
@@ -268,24 +291,40 @@ const NO_ROWS: Rows = { jobs: [], running: 0, pending: 0, total: 0, recent: [], 
 type Times = { recent: string | null; sinfo: string | null };
 const NO_TIMES: Times = { recent: null, sinfo: null };
 
-export function watchHpc(hub: Hub, options: HpcOptions): HpcWatcher {
-    let current: HpcSettings = {
-        host: options.host,
+/** The connection of the settings, its host, user name and key file alone. */
+export function connectionOf(settings: HpcSettings): Connection {
+    return {
+        host: settings.host,
+        ...(settings.user === undefined ? {} : { user: settings.user }),
+        ...(settings.keyFile === undefined ? {} : { keyFile: settings.keyFile })
+    };
+}
+
+/** The settings out of the options, the connection, the cluster and the cadences alone. */
+function settingsOf(options: HpcSettings): HpcSettings {
+    return {
+        ...connectionOf(options),
+        resource: options.resource,
+        name: options.name,
         ...(options.missing === undefined ? {} : { missing: options.missing }),
-        ...(options.unconfigured === undefined ? {} : { unconfigured: true as const }),
         days: options.days,
         pollMin: options.pollMin,
         quotaMin: options.quotaMin,
         prewarm: options.prewarm,
-        words: options.words
+        words: options.words,
+        failures: options.failures
     };
+}
+
+export function watchHpc(out: ClusterOut, options: HpcOptions): HpcWatcher {
+    let current: HpcSettings = settingsOf(options);
     /**
-     * Counts the changes of host, sentence or window. A poll, quota read or prewarm that began
-     * under an older count answers for a cluster or a window nobody asks for any more, and drops
-     * its result.
+     * Counts the changes of connection, sentence or window. A poll, quota read or prewarm that
+     * began under an older count answers for a cluster or a window nobody asks for any more, and
+     * drops its result.
      */
     let asking = 0;
-    /** Counts the changes of host alone: a quota read does not depend on the window. */
+    /** Counts the changes of connection alone: a quota read does not depend on the window. */
     let hosts = 0;
     const runner = options.runner ?? run;
     const timeout = options.timeoutMs ?? 40000;
@@ -336,9 +375,13 @@ export function watchHpc(hub: Hub, options: HpcOptions): HpcWatcher {
         updated = new Date().toISOString()
     ): HpcPayload => {
         const stale = staleTables();
+        const failure = hint === undefined ? null : toldFailure(current.failures, hint);
         return {
+            resource: current.resource,
+            name: current.name,
             status,
             ...(hint ? { hint } : {}),
+            ...(failure === null ? {} : { failure }),
             ...rows,
             quota,
             updated,
@@ -349,29 +392,19 @@ export function watchHpc(hub: Hub, options: HpcOptions): HpcWatcher {
             host: current.host
         };
     };
-    /** The answer of a hub that names no cluster: the sentence, no rows and no retry. */
-    const unconfigured = (): HpcPayload => ({
-        status: 'unconfigured',
-        ...(current.missing ? { hint: current.missing } : {}),
-        ...NO_ROWS,
-        quota: [],
-        updated: new Date().toISOString(),
-        pollMin: current.pollMin,
-        host: ''
-    });
-    hub.publish('hpc', current.unconfigured === true ? unconfigured() : degraded('starting'));
+    out.publish(degraded('starting'));
 
     const publishQuota = async (): Promise<void> => {
         if (stopped() || current.host === '') return;
         const began = hosts;
         try {
-            const result = await runner(current.host, quotaCommand, 25000);
+            const result = await runner(connectionOf(current), quotaCommand, 25000);
             if (stopped() || began !== hosts) return;
             const next = parseQuota(result.stdout);
             if (result.code === 0 && next.length) {
                 quota = next;
-                const held = hub.latest('hpc')?.payload as HpcPayload | undefined;
-                if (held !== undefined) hub.publish('hpc', { ...held, quota });
+                const held = out.latest();
+                if (held !== undefined) out.publish({ ...held, quota });
             }
         } catch {
             // A failed quota read preserves the last good meters.
@@ -397,8 +430,13 @@ export function watchHpc(hub: Hub, options: HpcOptions): HpcWatcher {
         );
     };
     const schedule = (minutes: number): void => {
-        if (stopped() || current.unconfigured === true) return;
+        if (stopped()) return;
         arm(Date.now() + minutes * 60000);
+    };
+    /** Hand a payload to the output, with one console line naming the cluster and its status. */
+    const publish = (payload: HpcPayload): void => {
+        out.publish(payload);
+        console.log(`hpc publish: ${current.resource} ${payload.status}`);
     };
     const poll = async (): Promise<void> => {
         let good = false;
@@ -406,20 +444,17 @@ export function watchHpc(hub: Hub, options: HpcOptions): HpcWatcher {
         try {
             if (current.host === '') {
                 // No host to ask: the sentence for why is the answer; the retry cadence applies.
-                hub.publish('hpc', degraded('unreachable', current.missing));
-                console.log('hpc publish: unreachable');
+                publish(degraded('unreachable', current.missing));
                 return;
             }
             const command = batchCommand(current.days, options.recover?.command() ?? '');
-            const result = await runner(current.host, command, timeout);
+            const result = await runner(connectionOf(current), command, timeout);
             if (stopped() || began !== asking) return;
             const parts = splitSections(result.stdout);
             const failure = answerFailure(result, parts, current.words);
             if (failure !== null && !partialAnswer(result, parts)) {
                 prewarmDue = false;
-                const payload = degraded(failure.status, failure.hint);
-                hub.publish('hpc', payload);
-                console.log(`hpc publish: ${payload.status}`);
+                publish(degraded(failure.status, failure.hint));
                 return;
             }
             // The queue is this poll's, and so is each table whose command answered.
@@ -443,9 +478,11 @@ export function watchHpc(hub: Hub, options: HpcOptions): HpcWatcher {
             lastOk = now;
             good = failure === null;
             prewarmDue = current.prewarm && recentRead;
-            const payload: HpcPayload =
+            publish(
                 failure === null
                     ? {
+                          resource: current.resource,
+                          name: current.name,
                           status: 'ok',
                           ...rows,
                           quota,
@@ -455,16 +492,13 @@ export function watchHpc(hub: Hub, options: HpcOptions): HpcWatcher {
                           retryMin: RETRY_MIN,
                           host: current.host
                       }
-                    : degraded(failure.status, failure.hint, now);
-            hub.publish('hpc', payload);
-            console.log(`hpc publish: ${payload.status}`);
+                    : degraded(failure.status, failure.hint, now)
+            );
         } catch (error) {
             prewarmDue = false;
             if (stopped() || began !== asking) return;
             const failure = rejectionFailure(error, current.words);
-            const payload = degraded(failure.status, failure.hint);
-            hub.publish('hpc', payload);
-            console.log(`hpc publish: ${payload.status}`);
+            publish(degraded(failure.status, failure.hint));
         } finally {
             schedule(good ? current.pollMin : RETRY_MIN);
             startPrewarm();
@@ -493,7 +527,7 @@ export function watchHpc(hub: Hub, options: HpcOptions): HpcWatcher {
                 .map((job) => job.id);
             if (todo.length > 0) {
                 for (const id of todo) asked.add(id);
-                const found = await prewarmLogs(current.host, todo, current.days, runner);
+                const found = await prewarmLogs(connectionOf(current), todo, current.days, runner);
                 if (stopped() || began !== asking) {
                     // Dropped under an older host or window: the next prewarm asks about them.
                     for (const id of todo) asked.delete(id);
@@ -538,10 +572,6 @@ export function watchHpc(hub: Hub, options: HpcOptions): HpcWatcher {
     let queued: Promise<void> | null = null;
     const refresh = (): Promise<void> => {
         if (stopped()) return Promise.resolve();
-        if (current.unconfigured === true) {
-            hub.publish('hpc', unconfigured());
-            return Promise.resolve();
-        }
         if (running === null) {
             running = poll().finally(() => (running = null));
             return running;
@@ -569,11 +599,15 @@ export function watchHpc(hub: Hub, options: HpcOptions): HpcWatcher {
     const recover = async (): Promise<void> => {
         const section = options.recover;
         if (stopped() || section === undefined || current.host === '') return;
-        const held = hub.latest('hpc')?.payload as HpcPayload | undefined;
+        const held = out.latest();
         if (held === undefined || !queueIsCurrent(held)) return;
         const began = asking;
         try {
-            const result = await runner(current.host, recoverCommand(section.command()), timeout);
+            const result = await runner(
+                connectionOf(current),
+                recoverCommand(section.command()),
+                timeout
+            );
             if (stopped() || began !== asking) return;
             const parts = splitSections(result.stdout);
             if (result.code !== 0 || parts.squeueCode !== 0) return;
@@ -588,20 +622,20 @@ export function watchHpc(hub: Hub, options: HpcOptions): HpcWatcher {
         set(next): void {
             if (stopped()) return;
             const before = current;
-            current = { ...next };
+            current = settingsOf(next);
             if (next.pollMin !== before.pollMin) {
                 if (queueAt !== null) arm(Math.min(queueAt, Date.now() + next.pollMin * 60000));
-                const held = hub.latest('hpc')?.payload as HpcPayload | undefined;
-                if (held !== undefined) hub.publish('hpc', { ...held, pollMin: next.pollMin });
+                const held = out.latest();
+                if (held !== undefined) out.publish({ ...held, pollMin: next.pollMin });
             }
             if (next.quotaMin !== before.quotaMin) {
                 armQuota(Math.min(quotaAt, Date.now() + next.quotaMin * 60000));
             }
-            if (
-                next.host !== before.host ||
-                next.missing !== before.missing ||
-                next.unconfigured !== before.unconfigured
-            ) {
+            if (next.name !== before.name) {
+                const held = out.latest();
+                if (held !== undefined) out.publish({ ...held, name: next.name });
+            }
+            if (!sameConnection(next, before)) {
                 asking += 1;
                 hosts += 1;
                 rows = NO_ROWS;
@@ -611,14 +645,7 @@ export function watchHpc(hub: Hub, options: HpcOptions): HpcWatcher {
                 prewarmDue = false;
                 asked.clear();
                 options.logPaths?.clear();
-                if (next.unconfigured === true) {
-                    if (queueTimer !== null) clearTimeout(queueTimer);
-                    queueTimer = null;
-                    queueAt = null;
-                    hub.publish('hpc', unconfigured());
-                    return;
-                }
-                hub.publish('hpc', degraded('starting'));
+                out.publish(degraded('starting'));
                 void publishQuota();
                 void refresh();
             } else if (next.days !== before.days) {

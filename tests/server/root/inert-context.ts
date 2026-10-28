@@ -45,6 +45,7 @@ export function inertDependencies(): Partial<ContextDependencies> {
         watchBookmarks: () => inert(),
         watchSchedules: () => inert(),
         watchHpc: () => inert(),
+        resolveConnection: () => Promise.resolve(null),
         watchProcesses: () => inert(),
         watchCalendar: () => inert(),
         watchMail: () => inert(),

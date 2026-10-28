@@ -471,6 +471,12 @@ function formMessage(form: Form): Message {
             return message('notExtension');
         case 'bundle_id':
             return message('notBundleId');
+        case 'https_address':
+            return message('notHttpsAddress');
+        case 'https_origin':
+            return message('notHttpsOrigin');
+        case 'row_key':
+            return message('notRowKey');
     }
 }
 

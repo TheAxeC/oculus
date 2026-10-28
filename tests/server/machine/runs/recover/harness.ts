@@ -147,14 +147,16 @@ export function loginNode(stand: Stand): {
     };
     return {
         deps: {
-            host: 'login',
-            runner: (_host, remote) => {
+            resource: 'cluster',
+            connection: { host: 'login' },
+            runner: (_connection, remote) => {
                 commands.push(remote);
                 return Promise.resolve(shell(remote, stand, remoteHome));
             },
             copy,
             home: scratchDir('oculus-recover-mac-'),
             nodeVersion: 'v24.0.0',
+            nodeDownload: 'https://nodejs.org/dist',
             sevenZip: () =>
                 plantScratch(
                     'oculus-recover-7z-',
@@ -240,7 +242,11 @@ export function targetOf(
         downloads: () => DOWNLOADS,
         fetch,
         local,
-        cluster: () => cluster ?? { missing: 'no host' },
+        cluster: (resource) => {
+            if (resource !== 'cluster')
+                return { missing: `${resource} is not listed`, unlisted: true };
+            return cluster ?? { missing: 'no host' };
+        },
         live
     };
 }

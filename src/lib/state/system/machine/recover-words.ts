@@ -53,6 +53,7 @@ export function timeWords(seconds: number): string {
 /** The sentence of each reason the route refuses an action or a GET with. */
 const REFUSALS: Record<string, () => string> = {
     dataset: () => t('recover.refused_dataset'),
+    host: () => t('recover.refused_host'),
     kind: () => t('recover.refused_kind'),
     place: () => t('recover.refused_place'),
     target: () => t('recover.refused_target'),
@@ -66,15 +67,17 @@ const REFUSALS: Record<string, () => string> = {
     send: () => t('recover.refused_send'),
     scratch: () => t('recover.refused_scratch'),
     submit: () => t('recover.refused_submit'),
+    download: () => t('recover.refused_download'),
     unreachable: () => t('recover.refused_unreachable')
 };
 
 /**
- * The sentence for a refusal of the route; `host` is worded by the sentence the route gives with
- * it, and a reason the catalog does not word is shown as it came.
+ * The sentence for a refusal of the route; `host` and `target` are worded by the sentence the
+ * route gives with them when it gives one, and a reason the catalog does not word is shown as it
+ * came.
  */
 export function refusalWords(reason: string, hint = ''): string {
-    if (reason === 'host') return hint === '' ? t('recover.refused_host') : hint;
+    if ((reason === 'host' || reason === 'target') && hint !== '') return hint;
     const words = REFUSALS[reason] as (() => string) | undefined;
     return words === undefined ? reason : words();
 }

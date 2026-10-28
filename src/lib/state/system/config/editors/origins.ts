@@ -43,6 +43,7 @@ function skippedReason(where: RepoProblem['where']): string {
         case 'field':
         case 'block':
         case 'family':
+        case 'this-mac':
             return t('workbench.settings_origin_value');
         case 'unknown-language':
             return t('workbench.settings_origin_language');

@@ -16,8 +16,9 @@
 // The ids a deposit may name are the hub's own project manifests and the projects the last
 // published `portfolio` payload holds; anything else is a 404, before any command is run.
 //
-// Every operation is an option with a real default, so tests/routes/git/deposit.test.ts drives the
-// whole endpoint without running git or `gh` at all.
+// The real operations run with the `deposit` options the route builds from the server context,
+// its git credentials among them, and every operation is an option with a real default, so
+// tests/routes/git/deposit.test.ts drives the whole endpoint without running git or `gh` at all.
 
 import { json } from '@sveltejs/kit';
 import { z } from 'zod';
@@ -88,9 +89,10 @@ export type DepositOptions = {
     /** The two texts of a file a GET asks for; the real ones when absent. */
     textsFor?: (id: string, against: string, path: string) => Promise<TextsOutcome>;
     /**
-     * What the real operations run with: the context's plan memory, the mirrors folder, the hub.
+     * What the real operations run with: the context's plan memory, the mirrors folder, the hub and
+     * the context's git credentials.
      */
-    deposit?: ServerDepositOptions;
+    deposit: ServerDepositOptions;
     /** The writes in flight, so Cancel ends the one a deposit runs; one of its own when absent. */
     running?: RunningGit;
 };
@@ -114,8 +116,8 @@ type DepositBody = z.output<typeof depositBodyShape>;
 /** The catalog the request's sentences are worded from, read at the call. */
 function textOf(options: DepositOptions): Record<string, string> {
     const held = options.deposit;
-    if (held?.config !== undefined) return textCatalog(held.config);
-    return held?.into?.config.text ?? {};
+    if (held.config !== undefined) return textCatalog(held.config);
+    return held.into?.config.text ?? {};
 }
 
 /** The refusal of a body that is no deposit action, answered before anything else is read. */
@@ -201,7 +203,7 @@ export function knownIds(
  */
 export async function handleDepositState(
     request: Request,
-    options: DepositOptions = {}
+    options: DepositOptions
 ): Promise<Response> {
     const id = new URL(request.url).searchParams.get('id') ?? '';
     const text = textOf(options);
@@ -228,7 +230,7 @@ export async function handleDepositState(
 export async function handleDeposit(
     request: Request,
     token: string,
-    options: DepositOptions = {}
+    options: DepositOptions
 ): Promise<Response> {
     const text = textOf(options);
     const shaped = await shapedBody(request, token, depositBodyShape, text, () =>
@@ -251,7 +253,7 @@ export async function handleDeposit(
     const signal = running.begin(key);
     let outcome: DepositAnswer;
     try {
-        outcome = await (options.run ?? operate(options.deposit ?? {}, shaped.read, text))(
+        outcome = await (options.run ?? operate(options.deposit, shaped.read, text))(
             action,
             id,
             body,

@@ -71,14 +71,15 @@ const snapshot = {
             veni: { id: 'veni', title: 'Veni', funder: 'nwo' },
             fwo: { id: 'fwo', title: '', funder: 'kuleuven' }
         },
+        resources: { utwente: { id: 'utwente', name: 'UT', kind: 'cluster' } },
         collections
     }
 } as unknown as Snapshot;
 
-const config = { slurm: { resource: 'utwente' } };
+const config = { slurm: { resource: ['utwente'] } };
 
 const ids = (collection: string, id: string, settings: Record<string, unknown> = config) =>
-    referrersOf(snapshot, settings, collection, id).map((one) => `${one.kind}:${one.id}`);
+    referrersOf(snapshot, settings, collection, id, null).map((one) => `${one.kind}:${one.id}`);
 
 describe('referrersOf', () => {
     it.each([
@@ -102,7 +103,7 @@ describe('referrersOf', () => {
     });
 
     it('names for a person the projects with them as collaborator or awaited', () => {
-        const referrers = referrersOf(snapshot, config, 'people', 'wim');
+        const referrers = referrersOf(snapshot, config, 'people', 'wim', null);
         expect(referrers.map((one) => `${one.kind}:${one.id}`)).toEqual([
             'project:raw-pls',
             'project:hccnet'
@@ -110,7 +111,7 @@ describe('referrersOf', () => {
     });
 
     it('names for an organisation the people affiliated and the schemes it funds', () => {
-        const referrers = referrersOf(snapshot, config, 'organisations', 'kuleuven');
+        const referrers = referrersOf(snapshot, config, 'organisations', 'kuleuven', null);
         expect(referrers).toEqual([
             { kind: 'person', id: 'wim', label: 'Wim' },
             { kind: 'person', id: 'an', label: 'an' },
@@ -124,14 +125,51 @@ describe('referrersOf', () => {
             'project:hccnet',
             'setting:slurm.resource'
         ]);
-        expect(ids('resources', 'utwente', { slurm: { resource: 'other' } })).toEqual([
+        expect(ids('resources', 'utwente', { slurm: { resource: ['other', 'utwente'] } })).toEqual([
+            'project:raw-pls',
+            'project:hccnet',
+            'setting:slurm.resource'
+        ]);
+        expect(ids('resources', 'utwente', { slurm: { resource: ['other'] } })).toEqual([
+            'project:raw-pls',
+            'project:hccnet'
+        ]);
+        expect(ids('resources', 'utwente', { slurm: { resource: 'utwente' } })).toEqual([
             'project:raw-pls',
             'project:hccnet'
         ]);
     });
 
+    it('names the setting for the resource its key resolves to in the primary hub alone', () => {
+        const resource = (root: string) => ({
+            id: `${root}:utwente`,
+            root,
+            name: 'UT',
+            kind: 'cluster'
+        });
+        const hubs = {
+            ...snapshot,
+            entities: {
+                ...snapshot.entities,
+                projects: {},
+                collections: {
+                    'lab:resources': registry('lab:resources', 'resources')[1],
+                    'other:resources': registry('other:resources', 'resources')[1]
+                },
+                resources: { 'lab:utwente': resource('lab'), 'other:utwente': resource('other') }
+            }
+        } as unknown as Snapshot;
+        const named = (id: string, primary: string | null) =>
+            referrersOf(hubs, config, 'resources', id, primary).map((one) => one.id);
+        expect(named('lab:utwente', 'lab')).toEqual(['slurm.resource']);
+        expect(named('other:utwente', 'lab')).toEqual([]);
+        expect(named('other:utwente', 'other')).toEqual(['slurm.resource']);
+    });
+
     it('labels a project by its short name, else its title', () => {
-        const labels = referrersOf(snapshot, config, 'pillars', 'tensor').map((one) => one.label);
+        const labels = referrersOf(snapshot, config, 'pillars', 'tensor', null).map(
+            (one) => one.label
+        );
         expect(labels).toEqual(['RP', 'HCCNet']);
     });
 });

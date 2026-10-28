@@ -246,11 +246,11 @@ const ROWS: Row[] = [
     },
     {
         name: 'the clusters of the options catalog, the resources of kind cluster',
-        at: ['engine', 'defaults/behavior.yml', 2, 12],
+        at: ['engine', 'defaults/behavior.yml', 2, 13],
         kind: 'reference',
         key: 'hpc',
         targets: ['hub:.oculus/data/research/resources.yml:4'],
-        references: ['engine:defaults/behavior.yml:2:12']
+        references: ['engine:defaults/behavior.yml:2:13']
     },
     {
         name: 'a vocabulary value, defined as a key of its map in vocab.yml',
@@ -383,22 +383,22 @@ const ROWS: Row[] = [
     },
     {
         name: 'an open text under the hub root of a config file that lies inside the hub folder',
-        at: ['hub', 'tools/oculus/config/defaults/behavior.yml', 3, 12],
+        at: ['hub', 'tools/oculus/config/defaults/behavior.yml', 3, 13],
         options: { engineInHub: true },
         open: { 'hub:tools/oculus/config/defaults/behavior.yml': BEHAVIOR_WITH_HEADING },
         kind: 'reference',
         key: 'hpc',
         targets: ['hub:.oculus/data/research/resources.yml:4'],
-        references: ['hub:tools/oculus/config/defaults/behavior.yml:3:12']
+        references: ['hub:tools/oculus/config/defaults/behavior.yml:3:13']
     },
     {
         name: 'an open text under the hub root of a config file that another workspace folder holds',
-        at: ['engine', 'defaults/behavior.yml', 2, 12],
+        at: ['engine', 'defaults/behavior.yml', 2, 13],
         open: { 'hub:tools/oculus/config/defaults/behavior.yml': BEHAVIOR_WITH_HEADING },
         kind: 'reference',
         key: 'hpc',
         targets: ['hub:.oculus/data/research/resources.yml:4'],
-        references: ['engine:defaults/behavior.yml:2:12']
+        references: ['engine:defaults/behavior.yml:2:13']
     },
     {
         name: 'a from picked by another field of the record, the person source',
@@ -571,9 +571,14 @@ function workspaceAt(where: Where): Workspace {
     const listed = folders.map((one) => `  - { name: ${one.name}, path: ${one.dir} }`);
     writeFileSync(
         file,
-        ['folders:', ...listed, 'primary: hub', 'settings:', '  slurm: { resource: hpc }', ''].join(
-            '\n'
-        )
+        [
+            'folders:',
+            ...listed,
+            'primary: hub',
+            'settings:',
+            '  slurm: { resource: [hpc] }',
+            ''
+        ].join('\n')
     );
     const state = scratchDir('oculus-workspace-state-');
     writeState(state, { open: file, recent: [file], unsaved: { folders: [] } });

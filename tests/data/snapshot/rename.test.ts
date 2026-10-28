@@ -124,8 +124,8 @@ const HPC_RENAMED: Texts = {
         '.oculus/data/research/resources.yml'
     ].replace('{ key: hpc,', '{ key: hpc-2,'),
     'engine:defaults/behavior.yml': ENGINE_FILES['defaults/behavior.yml'].replace(
-        'resource: hpc',
-        'resource: hpc-2'
+        'resource: [hpc]',
+        'resource: [hpc-2]'
     )
 };
 
@@ -247,7 +247,7 @@ const EDITED: Edited[] = [
         hub: { 'projects/active/beta/project.yml': `${BETA}domain: heart\n` },
         // Config files that name the domain by keys oculus does not read stay as they are.
         engine: {
-            'defaults/behavior.yml': 'data_domains: [heart]\nslurm:\n  resource: hpc\n',
+            'defaults/behavior.yml': 'data_domains: [heart]\nslurm:\n  resource: [hpc]\n',
             'catalogs/vocab.yml': 'domains:\n  heart: { color: "#e2374d", label: Heart }\n'
         },
         after: {
@@ -264,7 +264,10 @@ const EDITED: Edited[] = [
         workspace: { text: WORKSPACE_TEXT, folder: 'hub' },
         after: {
             ...HPC_RENAMED,
-            [`hub:${WORKSPACE_FILE}`]: WORKSPACE_TEXT.replace('resource: hpc', 'resource: hpc-2')
+            [`hub:${WORKSPACE_FILE}`]: WORKSPACE_TEXT.replace(
+                'resource: [hpc]',
+                'resource: [hpc-2]'
+            )
         }
     },
     {
@@ -274,7 +277,10 @@ const EDITED: Edited[] = [
         workspace: { text: WORKSPACE_TEXT, folder: 'lab' },
         after: {
             ...HPC_RENAMED,
-            [`lab:${WORKSPACE_FILE}`]: WORKSPACE_TEXT.replace('resource: hpc', 'resource: hpc-2')
+            [`lab:${WORKSPACE_FILE}`]: WORKSPACE_TEXT.replace(
+                'resource: [hpc]',
+                'resource: [hpc-2]'
+            )
         }
     },
     {

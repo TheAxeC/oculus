@@ -206,6 +206,7 @@ text:
         submit_done: 'Submitted batch job {0}'
         submit_failed: Submit failed.
         submit_no_files: 'The code folder has no files to send: {0}'
+        submit_no_clusters: The settings of this hub name no cluster (slurm.resource in .oculus/config.yml), so the job has nowhere to go.
         submit_no_host: '{0}'
         submit_no_job_id: 'sbatch printed no job id: {0}'
         submit_no_project: This file is in no project folder, so there is no code to send with it.
@@ -213,10 +214,15 @@ text:
         submit_not_slurm: This is not a .slurm file on disk.
         submit_outside: This script is outside the folders oculus serves.
         submit_outside_code: This job script is not inside the code folder of its project.
+        submit_pick: 'Pick the cluster to submit {0} to.'
+        submit_picked: '{0} (picked)'
         submit_planning: Preparing the job...
+        submit_planning_on: 'Preparing the job on {0}...'
+        submit_refused_on: 'Submit cannot run on {0}:'
         submit_running: Copying the code and submitting the job...
         submit_submit_failed: 'sbatch failed: {0}'
         submit_unconfirmed: The question was not answered, so nothing was run.
+        submit_unknown_cluster: '{0}'
         submit_unread: 'Not read: {0}.'
         submit_warning: 'This job script never names /local/$SLURM_JOB_ID, the per-job scratch folder of the cluster.'
         toggle_word_wrap: 'View: Toggle Word Wrap'

@@ -1,5 +1,6 @@
 // Layer 4, test helper. The scratch repositories the cases over the git writes and reads of
-// commits, branches, tags and untracked files share, and the git command that sets them up.
+// commits, branches, tags and untracked files share, the git command that sets them up, and a
+// root as the writes take it.
 //
 // Every repository is made under the system temporary directory by tests/fixtures/scratch.ts. The
 // machine's and the user's git configuration are replaced by an empty file for the whole file that
@@ -10,6 +11,8 @@ import { execFileSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import { resolve, sep } from 'node:path';
 import { expect } from 'vitest';
+import type { GitAt } from '../../../../src/lib/server/git/git-write.ts';
+import { noCredentials } from '../../../fixtures/doubles.ts';
 import { plantFile, scratchDir, test } from '../../../fixtures/scratch.ts';
 
 /** The variables that take git's global and system configuration away from a command. */
@@ -47,6 +50,11 @@ export function git(root: string, ...args: string[]): string {
 
 /** A file written at a path relative to the root, with the folders on the way made. */
 export const put = plantFile;
+
+/** A root as a git write takes it, with the git credentials of a server signed in nowhere. */
+export function gitAt(root: string): GitAt {
+    return { root, credentials: noCredentials() };
+}
 
 /** A repository on `main` with an identity of its own and one commit holding `a.txt`, at `dir`. */
 export function repositoryAt(dir: string): void {
