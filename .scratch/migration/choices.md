@@ -5552,3 +5552,15 @@ O98's review found (B5) that the ssh poll (`clusters/connections.ts:166-176`) an
 
 Where it applies: `agents/briefs/O98-round1.md` item 5, O98's Hub text. Booked in `plan.md` Rulings (open item 528) and the state file's closed log.
 Builds on it: O98
+
+
+## Z1056 (2026-10-28, O97's brief check, the orchestrator, automode): the row keys the tree's sources need beyond the named ones
+
+O97's brief check found mechanisms of the present sources that no named row key can say: the browser's ask by ISSN, Copy BibTeX by a Semantic Scholar id (`bibtex.ts:53-60`), Scopus's empty result as one `error` entry (`scopus.ts:78-79`), a DOI lookup's 404 as no hit (`common.ts:211-221`), the entry fields that pick files (DANDI's `assets`, TCIA's `series`, Hugging Face's `patterns` glob), Kaggle's `owner/slug`, figshare's repeated names put under the article id, PhysioNet's `throttle`, and a Europe PMC link whose source is not `MED`.
+
+- Chosen: (a) the keys `query.issn`, `query.id`, `none_when`, `missing: none`, `pick` with `glob`, `{hole|path}`, `clash`, `pace.field`, and `links` holes filled from the hit's fields.
+- Not chosen: (b) those mechanisms kept in code per source, which leaves service code in oculus against ruling 509.
+- The lazy option: (b).
+
+Where it applies: `agents/briefs/O97.md` "What to build" items 2, 4, 5, 6 and 7, decision 6, cases 8, 24 to 26 and 28. Booked in `plan.md` Rulings (open item 530) and the state file's closed log.
+Builds on it: O97
