@@ -3260,6 +3260,7 @@ Independent of each other; two may run side by side under R9's rule when their b
 - Open item 523 (2026-10-27): (a) Don't use the program's output. Cases 1 to 8 then rest on the test rows: they pass now, and the reviewer read them as rows that would fail without the change. The booking says those cases have no recorded run on the unchanged tree. (Axel: "523 (a)") (the user).
 - Open item 524 (2026-10-27): Add O100 to the plan as a small text step: one style rule in `Focus.svelte`, one review, no repair round, and a hover check on 8790 at its landing. It doesn't touch any file O98 changes, so it can run beside O98. In `Focus.svelte`, the box's name buttons get the band's rule: an underline under the pointer and with keyboard focus. Blocked's red stays red. The names keep the box's colour until hovered, as the command center lines do. (Axel: "Please do") (the user).
 - Open item 513 (2026-10-27): (a), a name of the Awaiting box counts its distinct projects, a project counted once however many of its `waiting-on:` values give that name, sent with O95's repair round 1 with a G124 row of one project naming one person twice; the lazy option (b) not chosen (Axel: "513 (a)") (the user).
+- Open item 525 (2026-10-28): (a), the review dispatched outside `/refute` (ace99e5278712884d) let finish and its report discarded, and `/refute migration O98` run for a fresh reviewer (Axel: "Why didn't you take the recommendation") (the user).
 
 ## Agents
 

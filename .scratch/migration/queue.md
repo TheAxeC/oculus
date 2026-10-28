@@ -1,18 +1,18 @@
 In flight (1 of 6 slots in use):
-- O98 (accounts and connections, rulings 507 to 510 and 516): building, builder launched 2026-10-27, base 54304adb4.
+- O98 (accounts and connections, rulings 507 to 510 and 516): built, under review (reviewer launched 2026-10-28), base 54304adb4.
 
 Queued:
 - O99 (every setting edited in Settings and a form for every file that is no setting, rulings 519 to 522): waits for O98 to land, since both change `config/options/local.yml` and the This machine part of Settings (`src/lib/state/system/config/`, `src/lib/views/system/workbench/settings/`), which do not merge simply; then next, before O97.
 - O97 (the journal browser from configuration and one configurable reader, rulings 509, 511, 517 and 518): after O99.
 
-Waiting on a ruling: none.
+Waiting on a ruling: 526 (whether O97 runs now beside O98, before O99).
 
-Landing next: O98, when its builder reports and its review and rounds close.
+Landing next: O98, when its review and rounds close.
 
 Owed looks: O98 at its landing, on 8790.
 
 Landed, newest first:
-- O100 (the Awaiting box's names underlined under the pointer), 2026-10-27, landing commit.
+- O100 (the Awaiting box's names underlined under the pointer), 2026-10-27, 89c1a9bc.
 - O95 (Focus, what a press opens), 2026-10-27, 5a51074e.
 - O96 (the cards' project strip: its filters and its groups by category), 2026-10-27, 01bb9024.
 - O92 (the collection's Add and bar, and the Map's bar), 2026-10-27, 0414282f.
