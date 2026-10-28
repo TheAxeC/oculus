@@ -121,3 +121,250 @@ Confirmed without finding: submit.ts `submitChoices` picks the one compute: matc
 - Whether the UT cluster offers password login at all, which decides whether Put the key works there: settled by an ssh to the cluster, which I may not open.
 
 Usage: a7bc5df274463e2fa, claude-opus-5-5, 85779 tokens, 90 tool uses, 25 min 29 s.
+
+## Repair round 1, refuted
+
+Step O98, worktree /Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O98, base 54304adb4, round snapshot /Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O98-round-1. I changed nothing and wrote no file.
+
+The round's delta: 40 paths of `files.txt` differ from the snapshot (not counting `docs/diagrams`, which `npm run diagrams` rewrote). Two paths are new since the round was sent: `tests/server/machine/hpc/clusters/failure-rows.test.ts` and `tests/views/personal/account-setup/cluster-steps.test.ts`.
+
+```
+Verify 1: PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH npm run test:quick -- --base 54304adb4   (09:17:02 to 09:25:14)
+test:quick: 212 changed file(s), from git since 54304adb4
+test:quick: 352 test file(s)
+ok      prettier (1.2 s): All matched files use Prettier code style!
+ok      ASCII gate (1.2 s)
+ok      svelte-kit sync (3.3 s)
+ok      eslint (11.9 s)
+ok      svelte-check (36.8 s): 1793175463014 COMPLETED 558 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+FAILED  vitest checks (272.6 s)
+ FAIL  |unit| tests/checks/tree/boundaries.test.ts > layer boundaries > holds no process-wide state under src
+AssertionError: expected [ Array(1) ] to deeply equal []
+ Test Files  1 failed | 15 passed (16)
+      Tests  1 failed | 307 passed | 9 skipped (317)
+FAILED  vitest (326.2 s)
+ FAIL  tests/routes/files/file-undo.test.ts > ... writes a 1 KB file back with its text: Test timed out in 5000ms.
+ FAIL  tests/routes/hubs/hub-routing.test.ts > ...: Test timed out in 5000ms.
+ FAIL  tests/routes/hubs/hub-secrets.test.ts > ... (G3): Test timed out in 5000ms.
+ FAIL  tests/routes/hubs/make.test.ts > ... (G9): Test timed out in 5000ms.
+ FAIL  tests/routes/hubs/make.test.ts > ... (G32): Test timed out in 5000ms.
+ FAIL  tests/data/hubs/workspace-projects.test.ts > ...: Test timed out in 5000ms.
+ FAIL  tests/server/machine/apps/manifest/manifest-tools.test.ts > ...: Test timed out in 5000ms.
+ Test Files  6 failed | 255 passed | 75 skipped (336)
+      Tests  7 failed | 3194 passed | 894 skipped (4095)
+FAILED  vitest slow (488.1 s)
+ FAIL  tests/data/hubs/hub-portfolio.test.ts > ... (G32): Test timed out in 20000ms.
+ FAIL  tests/data/hubs/hub-portfolio.test.ts > ... (C6): Test timed out in 20000ms.
+ Test Files  1 failed | 93 passed (94)
+      Tests  2 failed | 892 passed | 313 skipped (1207)
+test:quick: 491.5 s; failed: vitest checks, vitest, vitest slow
+npx vitest run tests/checks/tree/boundaries.test.ts:
+ +   "lib/server/core/git/credentials.ts holds module-level state in heldRows",
+ Test Files  1 failed (1) / Tests  1 failed | 10 passed (11)
+The timed-out files, each alone with npx vitest run <file> --reporter=dot:
+ file-undo 8 passed; hub-routing 7 passed; hub-secrets 10 passed; make 35 passed; workspace-projects 5 passed; manifest-tools 15 passed; hub-portfolio 16 passed
+ (tasks.test.ts, which the builder could not run alone, passed inside my slow tier: it is not among the failures.)
+
+Verify 2 (perl ASCII gate over the 211 changed files that exist): no output, exit 0.
+Verify 3 (comm against .agents/worktrees/O98-base/unused-exports.txt):
+ added:   src/lib/data/accounts/connect.ts: CALENDAR_PROVIDERS ; src/lib/server/root/watch/git.ts: THROTTLE, rootsOf
+ removed: src/lib/data/accounts/connect.ts: PROVIDERS, CALENDAR_PROVIDERS ; src/lib/server/root/watch/git.ts: THROTTLE, IGNORED, relevant, rootsOf, subrepositories
+ (only removals: the two "added" lines are shortened forms of the removed ones)
+Verify 4a: grep -rn "hpc_host\|hpcHost" src tests config docs --exclude=local.yml: no output, exit 1.
+Verify 4b: two lines, neither an address:
+ src/lib/server/accounts/connect/credential-helper.mjs:47:    const origin = `https://${host}`;
+ src/lib/server/accounts/connect/git/signins.ts:169:        if (started.verificationUri.startsWith('https://')) {
+Verify 6: sh utils/folder-check.sh exit 0; the round's files are within 880/520 (model/index.ts 860, Source.svelte 520, per the builder's table; not re-counted file by file).
+Verify 7: grep of the round's added comment lines and test titles for the history words: 13 hits ("earlier row", "was granted for", "before its subcommand", "before the helper ... starts", "before any password"), each about order or run-time tense. None is history.
+
+The evidence the round's report quotes, rerun:
+ credentials.test + git/routes.test: Test Files 2 passed (2), Tests 29 passed (29)
+ the same + local/machine.test + cluster-steps.test + clusters/setup.test: Test Files 5 passed (5), Tests 53 passed (53)
+ put-key.test: Tests 10 passed (10)
+ clusters/setup.test + cluster-steps.test: Test Files 2 passed (2), Tests 12 passed (12)
+ connection-keys.test + failure-rows.test: Test Files 2 passed (2), Tests 20 passed (20)
+ askpass.test: Tests 2 passed (2)
+ app-setting.test alone: Test Files 1 passed (1), Tests 12 passed (12)
+ local.test + machine.test + routes/machine/recover.test + recover/runs.test + recover/safety.test: Test Files 5 passed (5), Tests 126 passed (126) (the report's "8 files, 190 tests" set does not name its files)
+ grep -n "module-tag" over the three files:
+  put-key.test.ts:8:// @module-tag slow: the cases of the remote command start sh.
+  credentials.test.ts:10:// @module-tag slow: every case of the helper starts node.
+  askpass.test.ts:7:// @module-tag slow: every case starts the helper's program, which starts node.
+ Names grep (grep -rn --exclude=local.yml -F <name> src tests docs config | wc -l): every count the report gives reproduces (hpcRouteHost 0 ... MAC_TARGET 11, CLUSTERS_ONCE_WORDS 3, publicKeyOf 5, cluster_public_key 4).
+ P6 leftovers: ls of every path under "Removed": No such file or directory for each; no $TMPDIR/o98-case* or caserun-* remains.
+ S4: docs/templates.md:173-180 holds the microsoft row, with the same addresses as the Hub text's microsoft row.
+My own runs (node --input-type=module -e, nothing written):
+ case 9: readLocalText('hpc_host: x\n', ...) -> unknown ["hpc_host"], config holds x: false
+ mac row: clusters [{resource: mac},{resource: b}] -> [{"resource":"b","user":"me"}] with problem "clusters[0].resource must be the key of a cluster other than mac, which names this Mac"
+ slurmSettings with resource [mac, utwente] -> ["mac","utwente"] []
+ failureRows for: [] -> row read with "for":[] ; for: [mail] -> [] ; no for -> ["cluster","git"] ; for: 'git' -> ["git"] ; [git, git] -> ["git"]
+```
+
+### Verdicts
+
+Items of the brief's "What to build", over the whole diff since the base. Items the round did not touch rest on the tests my Verify 1 ran green and on the first review's reading; I did not re-read them this round.
+
+- 1: holds. The settings.test and config.test rows pass in Verify 1. My `slurmSettings` run gives the list.
+- 2: holds. Verify 4a prints nothing, and case 9 is met by my run.
+- 3: holds. The local.test set passes (126). My run shows a `mac` row is refused with its problem.
+- 4, 5, 6, 8, 9, 10, 13, 14, 15, 17: hold. Their tests pass in Verify 1. For item 5, put-key.ts now passes `-o BatchMode=no` (put-key.test, 10 passed).
+- 7: holds by reading; the look at landing settles the view.
+- 11: holds. The new layout is stated under "Visible changes" and `docs/HELP.md:324`, and the Data move is given. No code reads the old layout (the cluster.ts diff).
+- 12: holds, with Spec 1 (an empty `for`).
+- 16: holds. B2 is closed in put-key.ts. B3 is closed in setup.ts and ClusterSteps.svelte (12 passed).
+- 18: holds. An unlisted key is listed with its Sign out, and Sign out deletes its file (git/routes.test).
+- 19: violated (Behaviour 1). The red boundaries check comes from the same binding.
+- 20: partial. `docs/HELP.md:514` says "Every git oculus starts is given ..." and "every terminal oculus opens is given the same pairs". While Behaviour 1 stands, that is false for every git and terminal started by a route. The rest of the documents say the new shapes.
+- 21: holds. The Hub text has the `for` rows and the new "Git key refused" row. The first review checked the addresses against the base.
+- 22: partial (Standards 2).
+
+Cases:
+
+- 1, 2, 3, 5, 6, 7, 8, 10, 11, 12, 14, 15, 16, 17, 18, 21, 23, 24, 25: met. Their tests pass in Verify 1, as the first review read them.
+- 4: met at unit level for the counts. The pill and the badge are settled by the look.
+- 9: met (my run).
+- 13: met. A row with no `for` reads both connections; failure-rows.test passes.
+- 19: met. credentials.test passes, with the helper named for the key and the address.
+- 20: partial. It is met for a git that a watcher of the server context starts. It is unmet for every git a route starts (Fetch, Push, Pull, Sync, clone, deposit) and for every terminal (Behaviour 1).
+- 22: met in code and unit tests. The view is settled by the look.
+
+Items of the round brief:
+
+- 1 (B1, P2): partial. These parts are built and pass (29 tests): the row gate in `signedInHosts`, the helper named for the key and the address, Sign out of an unlisted key, the unlisted list, and the store.ts sentence. The rows reach `credentials.ts` through module-level state, which turns the boundaries check red and leaves route-started gits and terminals with no pairs (Behaviour 1).
+- 2 (B2): closed (put-key.ts:40, put-key.test 10 passed).
+- 3 (B3): closed (setup.ts:143-150 and :171, ClusterSteps.svelte; 12 passed).
+- 4 (B4, P1): closed. The Data move is judged correct below.
+- 5 (B5): closed, with Spec 1.
+- 6 (P5): closed for the `clusters:` row (my run). Folding the word into `MAC_TARGET` (model-recover.ts:11), now read by watch.ts and routes.ts, goes beyond the finding but stays inside its concern and is judged sound. The `slurm.resource` half stays open (Spec 2).
+- 7 (P3): closed. It removes a test as the ruling asked, and its case is a run (met).
+- 8 (S1): closed. 9 (S2): closed. 10 (S3): closed; the snapshot already had a one-line doc comment, which is now longer. 11 (S4): closed. 12 (S5): closed in form, with Standards 3.
+- 13 (P6): closed.
+- 14 (R1, R2): closed. The name counts and the history grep reproduce.
+- 15 (R3): partial (Proof 1).
+- 16 (P4): not verifiable from the tree (Declined).
+
+The builder's statement about scripts: in this round it wrote `credentials.ts` with a python script and appended to `routes.test.ts` with `cat >>`. In the first phase it wrote `AccountSetup.svelte` with python and appended to `docs/HELP.md` and `settings.test.ts` with `cat >>`. This breaks spec.md "What every package obeys" (an inline program that changes a file is a script needing approval) and the brief's "No script is written for this step". No approval is quoted in plan.md. The standing ruling "Unapproved builder scripts" in plan.md (2026-10-25) closes it in automode: the orchestrator records it and reads each hunk, keeping only what the read confirms. I read each of the five whole or by every hunk:
+
+- `credentials.ts`, all 201 lines: coherent, apart from `heldRows` (Behaviour 1).
+- `AccountSetup.svelte`, whole file and its diff against the base: coherent, nothing truncated or duplicated.
+- `routes.test.ts`, all 145 lines: coherent, apart from Standards 2.
+- `docs/HELP.md`, its eight hunks against the base and the closing section "Git hosts and clusters": coherent; the file ends in a newline.
+- `settings.test.ts`, its four hunks: coherent; the new test is named under G13 in the Doc text.
+
+The Data move (report "Data move"): it holds. The job record's shape `{id, action}` is the same in the old and new layouts (cluster.ts diff), so a moved record reads. `jobFolder` is `~/.oculus/recover/<hub>/clusters/<resource>`. The `mkdir -m 700` names both folders, so both get 700, as the code's own `mkdirSync(..., { mode: 0o700 })` does. `<key>.list.json` stays where `recoverFiles` reads it. The stage folders it moves are transient (the code removes them after each send), so moving them is harmless. One edge: if both an old `cluster` and an old `jobs` stage exist for one key, the second `mv` puts `jobs` inside `<key>.stage/`. This loses nothing, since the next run's `rmSync` clears the stage. The move assumes every old record is utwente's, which holds for the one hub whose `slurm.resource` was `utwente`.
+
+The red boundaries check and the builder's three options:
+
+- The check is right to refuse `heldRows`, and it is a defect, not only a rule breach (Behaviour 1).
+- (a) is the better option, as a judgment. It is the owned object in the context, handed to every git start and to `fixedEnv`, and reached by routes through `locals.server`. It ends the defect in both module graphs and changes no user-visible shape, so it needs no ruling from Axel.
+- (a2) narrows item 19's "every git oculus starts", which is a ruling.
+- (b) is the lazy option. It adds a stored file and its format under `~/.oculus`, which is a shape needing a ruling, and it leaves a window in which a git reads stale rows.
+- The hand-back as a stop is not one of the stop kinds, since (a) is a fix within the plan and changes no user-visible shape. It is a red verification command whose fix is too large for landing, which is the case where the refute skill allows one more round.
+
+### Findings
+
+#### 1. Spec
+
+- `src/lib/data/sources/config/settings/connectors.ts:106-111`:
+  ```
+  function connectionsOf(row: Record<string, unknown>): FailureConnection[] {
+      const held = row.for;
+      if (held === undefined) return [...FAILURE_CONNECTIONS];
+      const named: unknown[] = Array.isArray(held) ? held : [held];
+      return FAILURE_CONNECTIONS.filter((one) => named.includes(one));
+  ```
+  With `config/options/behavior.yml:228` `empty: true`.
+  - What is wrong: a row with `for: []` is read with no problem as `"for":[]` (my run), so neither the cluster poll nor the fetch ever tries it. spec.md asks that every key a step introduces is checked empty and that the report states what the code does. The report names `empty: true` and says nothing of an empty `for`.
+  - Failure scenario: Axel writes `for: []` meaning "both" (the help says a row without `for` reads both). The row silently matches nothing, and no finding says why.
+  - Verdict: item 12 holds, with this gap.
+- Report "Repair round 1", item 6:
+  > "Not done by the ruling's scope: a `slurm.resource` naming `mac` is still read with no finding, and that cluster is not offered in Recover's pick."
+  - What is wrong: the half of P5 that concerns `slurm.resource` is open. My run shows `slurmSettings` with `[mac, utwente]` gives `["mac","utwente"]` and no problem, while `Recover.svelte:72` filters `mac` out of the pick. The report names it but neither books it nor raises it as an open item.
+  - Failure scenario: a hub whose cluster key is `mac` gets a Live HPC section for it, but Recover never offers it and says nothing about why.
+  - Verdict: none against the round's ruled item. It is a residual of P5 for the orchestrator to fold or raise.
+
+#### 2. Proof
+
+- Report, round item 15:
+  > "The cases 18 to 23 are runs of the code in `<scratchpad>/o98-caserun/tests/r3.test.ts` ..."
+  
+  and item 7:
+  > "The case stays the run of case 9 of `<scratchpad>/o98-caserun/tests/r3.test.ts`"
+  
+  and the probe run "with `node probe.mts`".
+  - What is wrong: spec.md requires a case-run program's source to be quoted in the report so the reviewer can run it again. Neither the source of `r3.test.ts` nor that of `probe.mts` is quoted, and both were deleted under "Removed" (ls: No such file or directory). The report says so itself: "they would have to be written again".
+  - My reruns: case 9 is met by my own run. Cases 18 to 23 are covered by suite tests that pass (credentials, askpass, put-key, setup, and the signins and keys tests in Verify 1). R3's closure for those runs cannot be reproduced.
+  - Failure scenario: the reader of the landing report takes the quoted case-20 line ("git through run.ts reads helpers [...]") as proof that git starts get the helper. It ran in one module graph, with the rows set in that graph, and so does not show what a route-started git gets (Behaviour 1).
+  - Verdict: round item 15 partial.
+- Report "Repair round 1", Not done 1:
+  > "Item 1 is built and its cases pass, but the `sign_in` rows reach every git start through a module-level binding ... The rules of the check forbid it"
+  - What is wrong: the report presents the red check as a rule breach only. It does not state the behaviour that follows: in the request handler's module graph, `heldRows` is never set (Behaviour 1).
+  - On tests: every test passes explicit `places` with `rows` (`tests/server/core/credentials.test.ts:160-216`). No test reaches the default `machinePlaces()` path that every real git start uses.
+  - Failure scenario: the orchestrator weighs the three options as a question of style, when the code as it stands takes the token from every route-started git and every terminal.
+  - Verdict: item 19 violated (with Behaviour 1).
+
+#### 3. Standards
+
+- `src/lib/server/core/git/credentials.ts:141-147`:
+  ```
+  let heldRows: readonly SignInRow[] = [];
+  export function useSignInRows(rows: readonly SignInRow[]): void {
+      heldRows = rows;
+  ```
+  - What is wrong: this breaks spec.md "The principles every package is judged on" ("No globals ... no module-level mutable state shared across module graphs ... A package that adds one is not landed"). `tests/checks/tree/boundaries.test.ts` "holds no process-wide state under src" is red on it. The check was not loosened: `FROZEN` is unchanged.
+  - Failure scenario: see Behaviour 1.
+  - Verdict: item 19 violated. The step cannot land while this stands.
+- Tests outside their entry's guarantee (spec.md: a test exists only as the test of one entry, named there; a new entry or unit needs Axel's yes; guarded.md's head: "Views have no entry"):
+  - `tests/server/accounts/connect/git/routes.test.ts:135`, `it('refuses Sign out of a key with no row and no file, and writes nothing', ...)`, is named under no entry in the Doc text (grep for its title in the report finds nothing).
+  - `tests/views/personal/account-setup/cluster-steps.test.ts:47` and `:54` are view tests filed under G135. G135's ruled units are the token store, the refresh, the device flow, the credential helper, the password helper and the key setup's remote command. Drawing a public key is none of them.
+  - `tests/server/machine/hpc/clusters/failure-rows.test.ts:51` and `:62` are filed under G13, but they test which rows a fetch and a poll try. G13 guarantees that a wrong config value is refused with a finding.
+  - Failure scenario: the orchestrator writes these titles into guarded.md as the Doc text gives them, which widens G135 and G13 with units Axel did not rule. The unnamed routes.test.ts case stays in the suite with no entry.
+  - Verdict: item 22 partial.
+- `src/lib/data/sources/config/machine.ts:61`:
+  ```
+  const CLUSTERS_ONCE_WORDS = 'rows of clusters no hub read before has a row of';
+  ```
+  It gives the sentence "clusters must be rows of clusters no hub read before has a row of".
+  - What is wrong: spec.md's prose rule asks for plain words. This sentence is hard to parse; the sentence it replaced ("clusters repeats the resource of a row of a hub read before") said the fact directly. The report's Verify 8 says it found no departure.
+  - Failure scenario: Axel sees this finding in Settings for a second hub's row of one cluster and cannot tell what to fix.
+  - Verdict: round item 12, closed in form.
+- The python and `cat >>` writes, as stated above. This breaks spec.md "What every package obeys" and the brief's "No script is written for this step". It is closed by the plan.md ruling "Unapproved builder scripts" (record it, read each hunk). My read of the five files finds no damage beyond the findings above.
+  - Verdict: none beyond the record.
+
+#### 4. Behaviour
+
+- `src/lib/server/core/git/credentials.ts:160-168`, with `src/lib/server/root/live-settings.ts:153` and `:208`:
+  ```
+  function machinePlaces(): CredentialPlaces {
+      return { folder: connectFolder(), engine: engineDir(), execPath: process.execPath, rows: heldRows };
+  ```
+  ```
+  useSignInRows(current.signIn);
+  ```
+  - What is wrong: the rows are set only in the module graph that builds the server context. That graph is where `live-settings.ts` runs, inside `createServerContext`, which `vite-plugin.ts:37` calls.
+  - The request handler is a second module graph. It receives the context through `event.platform.req.oculus` (`src/hooks.server.ts:183-185`, `src/lib/server/root/context.ts:871-876`), and its route modules import the git code directly:
+    - `src/routes/api/(git)/git/+server.ts:10` imports `$lib/server/git/git-routes`, which reaches `git-write.ts:166` and `:746`.
+    - `src/routes/api/(sessions)/terminal/+server.ts:6` imports `$lib/server/machine/pty/routes`, which calls `startTerminal`, which reaches `sessions.ts:700` `fixedEnv: [GRID_ENV, ...terminalCredentialEnv()]`.
+    - The boundaries check's own comment says the same: "The server runs as two module graphs (the built handler and the Node entry)" (`tests/checks/tree/boundaries.test.ts:440-441`).
+    - In that graph `heldRows` stays `[]`, so `signedInHosts(folder, [])` keeps no host and `gitCredentialArgs()` and `terminalCredentialEnv()` give nothing.
+  - What a user sees change: before this round, the pairs came from the token files alone and reached route-started gits too. After it:
+    - Source Control's Fetch (`fetchAll`), Push, Pull and Sync, the clone and the deposit routes, and every terminal carry no `-c credential.<address>.helper` and no `GIT_CONFIG_*` pairs.
+    - Only the gits that watchers and the automatic fetch start in the context graph get them.
+  - The report should have stated this under "Not done" and "Visible changes"; it states only the check.
+  - This is shown by reading the code above. No run of mine opens two module graphs.
+  - Failure scenario: Axel signs in to GitHub in Account setup. The automatic fetch of an https remote works, but pressing Push in Source Control fails with git's own authentication failure. A `git push` typed in an oculus terminal asks the reader's own helper or fails, since that terminal holds no pairs.
+  - Verdict: item 19 violated; item 20 partial; case 20 partial.
+
+### Declined to judge
+
+- `npm run diagrams` and `npm run docs:palette`: both write files.
+- The "before" runs of each new or changed test on the tree as the round found it: the snapshot holds only the changed files, not a runnable tree, and building one would write files.
+- The Data move script run on a scratch HOME: it writes files. I judged it by reading.
+- Reruns of `r3.test.ts`, `probe.mts`, `case.config.mts` and the hub-text program: deleted, with no source quoted (Proof 1).
+- The report's "8 files, 190 tests" run for items 6 and 12: the files are not named. My five-file set gives 126 passed, and no decision rests on the count.
+- P4 (that no git command other than status, diff and show was run this round): the transcript is not mine to read.
+- The looks (Account setup's public key line and the unlisted tokens list, Live HPC, Recover's pick, the status bar tip): the look on 8790 at landing, which I may not touch.
+- Whether the credential helper runs under a packaged Electron app (asar path): settled by a packaged build.
+- Whether the UT cluster offers password login: settled by an ssh to it, which I may not open.
+
+Usage: ab06a81d516bd9450, claude-opus-5-5, 309384 tokens, 67 tool uses, 22 min 30 s.

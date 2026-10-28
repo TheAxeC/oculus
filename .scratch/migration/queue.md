@@ -1,5 +1,5 @@
 In flight (2 of 6 slots in use):
-- O98 (accounts and connections, rulings 507 to 510 and 516): reviewed (`agents/reviews/O98-refuter.md`), in repair round 1 (`agents/briefs/O98-round1.md`), base 54304adb4.
+- O98 (accounts and connections, rulings 507 to 510 and 516): reviewed (`agents/reviews/O98-refuter.md`), round 1 reviewed, in repair round 2 (`agents/briefs/O98-round2.md`, the one round past the cap, for the red boundaries check), base 54304adb4.
 - O97 (the journal browser from configuration and one configurable reader, rulings 509, 511, 517 and 518): building beside O98 by ruling 526 (a) (builder launched 2026-10-28), base f4535f495.
 
 Queued:
