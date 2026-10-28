@@ -34,7 +34,7 @@ dispatch:          # steps in flight, up to six (Z632)
   session_id: a0fed28c88758e2aa (claude-opus-5-5)
   launched: 2026-10-28
   report: .scratch/migration/agents/reviews/O97-report.md
-  builder_usage: round 0 hand-back 291761 tokens, 120 tool uses, 28 min 53 s
+  builder_usage: round 0 hand-back 291761 tokens, 120 tool uses, 28 min 53 s; after the cases ruling, paused at Axel's word on 2026-10-28 (stopped, no usage notice), resumed by a message to the same agent id
   round: 0 (cases ruling agents/briefs/O97-cases.md)
   landing: not-started
 ```
@@ -690,6 +690,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-10-28 (O97 paused). At Axel's word O97's builder a0fed28c88758e2aa is stopped mid-build (it was fixing a 403 token refusal and a skipped ISSN case); its worktree `.agents/worktrees/migration-O97` is kept as it stands, and a message to the same agent id resumes it with its context. In flight (1 of 6): O97, paused. Next: resume O97's builder at Axel's word; then its report, /refute, its round and /land; then /spec O99.
 - 2026-10-28 (O98 landed; O97 building; O99 waits for O97). O98 is on main (booked under O98 in `plan.md`, `agents/reviews/O98-landing.md`) with the research hub's commit of its Hub text, checked in the gate worktree (every command passed but one slow test that timed out under load and passes alone) and on main (`cmp` same), looked at on 8790 (Live HPC's UTwente HPC section, the status bar's HPC tip, Account setup's git and cluster steps, Settings' failure rows and cluster pick, Recover's target pick). O97's builder a0fed28c88758e2aa (claude-opus-5-5) is building from base f4535f495. In flight (1 of 6): O97. Next: O97's report, /refute, its round and /land with its look on 8790; then /spec O99.
 - 2026-10-27 (O100 landed; O98 building; O99 waits for O98, then O97). O100 is on main (booked under O100 in `plan.md`, `agents/reviews/O100-landing.md`), checked in the gate worktree (every command passed, 46.1 s) and on main (`cmp` same), looked at on 8790 (the Awaiting box's names underlined under the pointer and with keyboard focus). O98's builder a8cc0514e57924553 (claude-opus-5-5) is building from base 54304adb4. In flight (1 of 6): O98. Next: O98's report, /refute, its rounds and /land with its look on 8790; then /spec O99, then O97.
 - 2026-10-27 (O100 building; O98 building). Ruling 524 added O100, a small text step: the Awaiting box's names underlined under the pointer (brief `agents/briefs/O100.md`, base 249bd5b57, worktree `.agents/worktrees/migration-O100`, no brief check). O100's builder a40dc274a49422bab and O98's builder a8cc0514e57924553 (both claude-opus-5-5) are building. In flight (2 of 6): O100, O98. Next: each builder's report, /refute (O100 one review, no repair round), /land with its look on 8790; then /spec O99, then O97.
