@@ -1,8 +1,8 @@
-In flight (1 of 6 slots in use):
+In flight (2 of 6 slots in use):
 - O98 (accounts and connections, rulings 507 to 510 and 516): reviewed (`agents/reviews/O98-refuter.md`), in repair round 1 (`agents/briefs/O98-round1.md`), base 54304adb4.
+- O97 (the journal browser from configuration and one configurable reader, rulings 509, 511, 517 and 518): building beside O98 by ruling 526 (a) (builder launched 2026-10-28), base f4535f495.
 
 Queued:
-- O97 (the journal browser from configuration and one configurable reader, rulings 509, 511, 517 and 518): being prepared beside O98 by ruling 526 (a): brief checked, builder launching.
 - O99 (every setting edited in Settings and a form for every file that is no setting, rulings 519 to 522): after O98 and O97 have landed (ruling 526 (a)), since it rewrites the Settings files both change.
 
 Waiting on a ruling: open item 529 (guarded entries for O97's reader, the browser and the sparse Settings card); O97's build is not held for it.

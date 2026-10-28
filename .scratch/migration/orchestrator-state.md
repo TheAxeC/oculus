@@ -41,7 +41,15 @@ dispatch:          # steps in flight, up to six (Z632)
 - step: O97
   brief_check: "agents/reviews/O97-brief-check.md (a7747d4cd7b199a87, claude-opus-5-5, 258490 tokens, 89 tool uses, 12 min 30 s)"
   shared_paths: with O98, `config/options/local.yml` (O98 lines 15-31, O97 lines 88-120), `config/options/behavior.yml` (O98 lines 198-310 and 786-795, O97 the four families beside `literature:` at 640-662), `config/defaults/behavior.yml`, `src/lib/data/helpers/hub-names.ts`, `src/lib/server/machine/runs/recover/routes.ts` (O98 lines 2, 91-120 and 210-394, O97 lines 47-56 and 141-188), `src/routes/api/(machine)/recover/+server.ts`, `src/lib/data/model/machine/model-recover.ts`, `src/lib/state/system/machine/recover-words.ts`, `src/lib/views/sources/data/recover/Recover.svelte`, `src/lib/state/system/config/editors/fields.ts`, `src/lib/views/system/workbench/settings/`, `config/text/` and the recover and local tests: separate hunks, simple merges; `src/lib/data/sources/config/local.ts` (O98 hunks at 139 and 376 beside O97's lines 143-155 and 380-402): adjacent, resolved at landing as ruling 526 (a) accepts. The docs and `guarded.md` are O97's "Doc text", written at landing.
-  landing: preparing
+  base: f4535f495
+  worktree: .agents/worktrees/migration-O97
+  executor: agent
+  worker: claude:opus
+  session_id: a0fed28c88758e2aa (claude-opus-5-5)
+  launched: 2026-10-28
+  report: .scratch/migration/agents/reviews/O97-report.md
+  round: 0
+  landing: not-started
 ```
 
 ## The standing demands (from Axel, in force)
