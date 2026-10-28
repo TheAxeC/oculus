@@ -1,5 +1,5 @@
 In flight (1 of 6 slots in use):
-- O97 (the journal browser from configuration and one configurable reader, rulings 509, 511, 517 and 518): building (builder launched 2026-10-28, paused and resumed at Axel's word the same day), base f4535f495.
+- O97 (the journal browser from configuration and one configurable reader, rulings 509, 511, 517 and 518): paused (builder launched 2026-10-28, paused, resumed and paused again at Axel's word the same day), base f4535f495.
 
 Queued:
 - O99 (every setting edited in Settings and a form for every file that is no setting, rulings 519 to 522): after O97 has landed (ruling 526 (a)); O98 has landed, since it rewrites the Settings files both change.
