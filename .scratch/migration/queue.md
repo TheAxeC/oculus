@@ -3,6 +3,7 @@ In flight (1 of 6 slots in use):
 
 Queued:
 - O99 (every setting edited in Settings and a form for every file that is no setting, rulings 519 to 522): after O97 has landed (ruling 526 (a)); O98 has landed, since it rewrites the Settings files both change.
+- O101 (the Zenodo deposit through Zenodo's REST API, with Deposit for review, rulings 533 and 534): after O97 and O99 have landed.
 
 Waiting on a ruling: none.
 
