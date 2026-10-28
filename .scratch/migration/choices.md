@@ -5576,3 +5576,14 @@ O97's builder found on its first run that GEO's old reader refuses a page withou
 
 Where it applies: `agents/briefs/O97-cases.md`, the first run's rulings (b) and the ISSN line; O97's Hub text. Booked in `plan.md` Rulings (open item 531) and the state file's closed log.
 Builds on it: O97
+
+## Z1058 (2026-10-29, O97's round 1, the orchestrator, automode): the row keys the built rows use beyond the named ones
+
+O97's review (Spec 1) found row keys in the reader's grammar that item 2, rulings 511 (3) and 517 (1) and the brief's decisions 2 and 6 do not name. Round 1 removed every key no row uses (`text: true`, `names`, `with_terms`, `expect`'s `path`) and listed the rest, each with the row of `tests/server/core/reader/rows.yml` that reads with it: the operations `last`, `split` and `resolve`, the field keys `value`, `each`, `map`, `pattern`, `suffix`, `all`, `host` and `markup`, the records, term, row and step keys, the hole operations, and the formats `text` and `none` (the table in `agents/reviews/O97-report.md`, "Repair round 1", item 1).
+
+- Chosen: (a) keep them as built, each a general mechanism a source's row needs, with its line in the options catalog.
+- Not chosen: (b) remove some and write those rows another way, which breaks each row that uses one and needs another mechanism in its place.
+- The lazy option: none; (b) costs more and fixes nothing.
+
+Where it applies: `src/lib/data/sources/config/settings/rows/grammar.ts`, `config/options/behavior.yml`, O97's Hub text. Booked in `plan.md` Rulings and the state file's closed log, the kind of open item 530.
+Builds on it: O97

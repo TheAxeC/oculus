@@ -3274,6 +3274,7 @@ Independent of each other; two may run side by side under R9's rule when their b
 - Open item 533 (2026-10-28): (a), the Zenodo deposit is one full step, O101, after O97 and O99; (b), a roadmap entry outside this plan, only moved the work (Axel: "533 (a)") (the user).
 - Open item 534 (2026-10-28): (a), every Zenodo deposit goes through Zenodo's REST API, replacing the GitHub integration of the ruling "Zenodo deposit": Deposit for review makes the anonymous restricted copy reviewers get, in place of Anonymous GitHub, and at acceptance a new version of the same record carries the real files and names, one DOI from submission to publication; the token is kept in the gitignored local configuration. (b), keeping Anonymous GitHub for review, was the lazy option (Axel: "534 (a)") (the user).
 - Open item 535 (2026-10-28): (a), O101's buttons are "For review" and "Publish" in a Zenodo section of the Deposit view, each with a tip saying what it sends; none of the three options was the lazy one (Axel: "535 (a)") (the user).
+- Open item 536 (2026-10-29, O97's round 1, the orchestrator, automode): (a), the row keys the built rows use beyond rulings 511 and 517 and decisions 2 and 6, each used by a row of `tests/server/core/reader/rows.yml`, kept as built, every key no row uses removed; booked in `choices.md` Z1058 (self-rule).
 
 ## Agents
 
