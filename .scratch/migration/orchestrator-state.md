@@ -34,10 +34,14 @@ dispatch:          # steps in flight, up to six (Z632)
   launched: 2026-10-27
   report: .scratch/migration/agents/reviews/O98-report.md
   builder_usage: 327915 tokens, 2155 tool uses, 4 h 9 min 32 s
-  reviewer_report: "(ace99e5278712884d, claude-opus-5-5, 249353 tokens, 136 tool uses, 26 min 20 s, dispatched outside /refute, report discarded by ruling 525 (a))"
-  round: 0
+  reviewer_report: "(ace99e5278712884d, claude-opus-5-5, 249353 tokens, 136 tool uses, 26 min 20 s, dispatched outside /refute, report discarded by ruling 525 (a)); agents/reviews/O98-refuter.md (a7bc5df274463e2fa, claude-opus-5-5, 85779 tokens, 90 tool uses, 25 min 29 s)"
+  round: 1
   shared_paths: with O95 and O96, `docs/HELP.md` (O98 the Live HPC, Recover, Account setup, Settings, Source Control and local.yml lines, 252, 258, 315-324, 337, 532, 553 and 585 among them; O95 line 294; O96 lines 277, 296 and 301; separate lines, simple merges) and the generated `docs/diagrams/*`, regenerated at each landing.
   landing: not-started
+- step: O97
+  brief_check: "running: a7747d4cd7b199a87"
+  shared_paths: with O98, `config/options/local.yml` (O98 lines 15-31, O97 lines 88-120), `config/options/behavior.yml` (O98 lines 198-310 and 786-795, O97 the four families beside `literature:` at 640-662), `config/defaults/behavior.yml`, `src/lib/data/helpers/hub-names.ts`, `src/lib/server/machine/runs/recover/routes.ts` (O98 lines 2, 91-120 and 210-394, O97 lines 47-56 and 141-188), `src/routes/api/(machine)/recover/+server.ts`, `src/lib/data/model/machine/model-recover.ts`, `src/lib/state/system/machine/recover-words.ts`, `src/lib/views/sources/data/recover/Recover.svelte`, `src/lib/state/system/config/editors/fields.ts`, `src/lib/views/system/workbench/settings/`, `config/text/` and the recover and local tests: separate hunks, simple merges; `src/lib/data/sources/config/local.ts` (O98 hunks at 139 and 376 beside O97's lines 143-155 and 380-402): adjacent, resolved at landing as ruling 526 (a) accepts. The docs and `guarded.md` are O97's "Doc text", written at landing.
+  landing: preparing
 ```
 
 ## The standing demands (from Axel, in force)
@@ -178,9 +182,11 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
-- 526 (2026-10-28), when O97 runs. **What it is about:** your ruling 519 puts O99 before O97, and O99 waits for O98 to land, so nothing but O98's review runs until O98 lands. O97 shares less with O98 than O99 does: the config catalog files `config/options/behavior.yml` and `src/lib/data/sources/config/catalog/schemas/options.ts` (separate keys) and Recover's `routes.ts` and `live/` files, while O99 rewrites the very files O98 changes (`local.ts`, the `local.yml` options, `settings/Item.svelte`, `state/system/config/`). **Options:** (a) O97 now, beside O98's review, round and landing, and O99 after O98 and O97 have landed; pros: O97, the larger step, uses the hours O98 still takes, and O99 then gives O97's new rows their controls as part of "every setting a control"; cons: it reverses the order of ruling 519, O97's service cards in Settings (ruling 518 (2)) are built on today's Settings and partly rebuilt by O99, and O97's landing merges the catalog and Recover files after O98's. (b) the order as ruled: O99 after O98 lands, O97 after O99; pros: ruling 519 kept, no card rework; cons: only O98 runs until it lands, and O97 waits for the whole of O99. (c) O99 and O97 together once O98 has landed; cons: both rewrite Settings, which does not merge simply, so one of them is reworked at landing. **Recommendation:** (a), since it finishes all three soonest and the rework it costs is small beside O99's rebuild of Settings. **Lazy option:** (b). **Status:** waiting on your ruling; it reverses the order of a ruling of yours, so automode does not close it.
 
 ## Closed items
+- 526 (2026-10-28): (a), O97 runs now beside O98, and O99 after O98 and O97 have landed (Axel: "526 (a)"); booked in `plan.md` Rulings.
+- 527 (2026-10-28, O97's /spec, the orchestrator, automode): (a), the keys O97's rows need beyond rulings 511 and 517 and the catalog key `sparse: true`, taken in O97's brief; booked in `plan.md` Rulings and `choices.md` Z1054.
+- 528 (2026-10-28, O98's round 1, the orchestrator, automode): (a), a `connections.failures` row's `for` (`cluster`, `git`), sent in O98's round 1; booked in `plan.md` Rulings and `choices.md` Z1055.
 - 525 (2026-10-28): (a), the held review discarded and `/refute migration O98` run (Axel: "Why didn't you take the recommendation").
 - 524 (2026-10-27): ruled by Axel ("Please do"): step O100 added; booked in `plan.md` Rulings.
 - 523 (2026-10-27): ruled by Axel, (a); booked in `plan.md` Rulings.

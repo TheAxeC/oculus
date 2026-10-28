@@ -1,11 +1,11 @@
 In flight (1 of 6 slots in use):
-- O98 (accounts and connections, rulings 507 to 510 and 516): built, under review (reviewer launched 2026-10-28), base 54304adb4.
+- O98 (accounts and connections, rulings 507 to 510 and 516): reviewed (`agents/reviews/O98-refuter.md`), in repair round 1 (`agents/briefs/O98-round1.md`), base 54304adb4.
 
 Queued:
-- O99 (every setting edited in Settings and a form for every file that is no setting, rulings 519 to 522): waits for O98 to land, since both change `config/options/local.yml` and the This machine part of Settings (`src/lib/state/system/config/`, `src/lib/views/system/workbench/settings/`), which do not merge simply; then next, before O97.
-- O97 (the journal browser from configuration and one configurable reader, rulings 509, 511, 517 and 518): after O99.
+- O97 (the journal browser from configuration and one configurable reader, rulings 509, 511, 517 and 518): being prepared beside O98 by ruling 526 (a): brief written, brief check running.
+- O99 (every setting edited in Settings and a form for every file that is no setting, rulings 519 to 522): after O98 and O97 have landed (ruling 526 (a)), since it rewrites the Settings files both change.
 
-Waiting on a ruling: 526 (whether O97 runs now beside O98, before O99).
+Waiting on a ruling: none.
 
 Landing next: O98, when its review and rounds close.
 

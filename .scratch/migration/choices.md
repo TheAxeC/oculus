@@ -5528,3 +5528,27 @@ O98's brief check found readers of `hpc_host`, `slurm.resource`, the `hpc` chann
 
 Where it applies: `agents/briefs/O98.md` "What is on the tree", "What to build" items 1, 2, 4, 6, 13, 17, 18 and 20, and "Paths this step writes". Booked in `plan.md` Rulings (open item 516) and the state file's closed log.
 Builds on it: O98
+
+
+## Z1054 (2026-10-28, O97's /spec, the orchestrator, automode): the keys O97's rows need beyond rulings 511 and 517
+
+O97's worked rows in its Step 0 need keys rulings 511 (3) and 517 (1) do not name: Recover's access check names PhysioNet, Kaggle and Synapse in code (`access.ts:20-25`, `:52-70`), WoS and Scopus are off without a key, the setup sentences are words per service (`config/text/views/sources/data.yml:93-104`), GEO's series folder is computed, Stanford picks the md5 element of a list, a checksum carries its kind, and `DOWNLOAD_SERVICES` fixes four services. Ruling 518 (2) (b) asks for cards showing set fields with an Add field menu on families whose options entry says so, and names no key.
+
+- Chosen: (a) a Recover row's `access` address (2xx open, 401 or 403 credentialed), `auth[].required`, `auth[].help`, `{hole|series}`, `[name=value]` in a path, a field record's `kind` and `else`, a `downloads` row's `service` any key a row's `auth` names, and the catalog key `sparse: true`.
+- Not chosen: (b) the services kept in code for access, the setup words and the four download services, which leaves service names in code against ruling 509.
+- The lazy option: (b).
+
+Where it applies: `agents/briefs/O97.md` "Decisions taken in this brief" 2 and 3, "What to build" items 2, 5, 8 and 9. Booked in `plan.md` Rulings (open item 527) and the state file's closed log.
+Builds on it: O97
+
+
+## Z1055 (2026-10-28, O98's round 1, the orchestrator, automode): which connections a failure row reads
+
+O98's review found (B5) that the ssh poll (`clusters/connections.ts:166-176`) and the git fetch (`core/git/state.ts:154-160`) read the same `connections.failures` rows, so a git fetch to GitHub failing with `Permission denied (publickey)` shows the fix "Put the key on the cluster in Account setup", which points at the wrong service.
+
+- Chosen: (a) a row's `for`, a list of `cluster` and `git`, both when absent; the cluster rows of the Hub text get `for: [cluster]`, the git sign-in row `for: [git]`, and a new git row for a refused key.
+- Not chosen: (b) one fix sentence worded for both, which cannot name the right place to put a key for both a cluster and a git host.
+- The lazy option: (b).
+
+Where it applies: `agents/briefs/O98-round1.md` item 5, O98's Hub text. Booked in `plan.md` Rulings (open item 528) and the state file's closed log.
+Builds on it: O98
