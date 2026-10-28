@@ -33,7 +33,7 @@ dispatch:          # steps in flight, up to six (Z632)
   session_id: a8cc0514e57924553 (claude-opus-5-5)
   launched: 2026-10-27
   report: .scratch/migration/agents/reviews/O98-report.md
-  builder_usage: 327915 tokens, 2155 tool uses, 4 h 9 min 32 s; round 1: 370072 tokens, 535 tool uses, 69 min 16 s
+  builder_usage: 327915 tokens, 2155 tool uses, 4 h 9 min 32 s; round 1: 370072 tokens, 535 tool uses, 69 min 16 s; round 2: 51 min before Axel's pause (stopped, no usage notice), then 270540 tokens, 124 tool uses, 15 min 28 s
   reviewer_report: "(ace99e5278712884d, claude-opus-5-5, 249353 tokens, 136 tool uses, 26 min 20 s, dispatched outside /refute, report discarded by ruling 525 (a)); agents/reviews/O98-refuter.md (a7bc5df274463e2fa, claude-opus-5-5, 85779 tokens, 90 tool uses, 25 min 29 s); over round 1: ab06a81d516bd9450, claude-opus-5-5, 309384 tokens, 67 tool uses, 22 min 30 s"
   round: 2 (the one round past the cap, for the red boundaries check whose fix is too large for landing)
   fixes_at_landing: the review over round 1's new findings, never sent to a round: a `connections.failures` row with `for: []` a problem (Spec 1); `slurm.resource` `mac` a problem through `wrong()` and `MAC_TARGET` (Spec 2); `routes.test.ts:135` named under G135, `cluster-steps.test.ts` and `failure-rows.test.ts` removed with their cases run and the empty-`for` problem a G13 row (Standards 2); `CLUSTERS_ONCE_WORDS` reworded (Standards 3); the case runs quoted with their sources (Proof 1).

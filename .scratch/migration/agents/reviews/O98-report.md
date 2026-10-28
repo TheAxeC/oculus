@@ -1519,3 +1519,118 @@ Removed after the quotes above were written (`rm -rf`, then `ls -d` of each prin
 - `<scratchpad>/o98-added.txt`, `o98-base-changed.txt`, `o98-base-moved.txt`, `o98-case-titles.txt`, `o98-changed-final.txt`, `o98-changed-tests.txt`, `o98-check.txt`, `o98-checks.txt`, `o98-datamap-base.md`, `o98-eslint.txt`, `o98-exports-run.txt`, `o98-first-run.txt`, `o98-format.txt`, `o98-format2.txt`, `o98-guarded-now.txt`, `o98-history.txt`, `o98-quick.txt`, `o98-related.txt`, `o98-related2.txt`, `o98-rerun-checks.txt`, `o98-rerun-timeouts.txt`, `o98-slurm-fixtures.txt`, `o98-slurm-fixtures-after.txt`, `o98-snapshot-after.txt`, `o98-status-before-format.txt`, `o98-swaps-after.txt`, `o98-tests-base.txt`, `o98-titles.txt`, `o98-unused-after.txt`, `o98-unused-final.txt`, `o98-wc-final.txt`, `o98-wc.txt`, `changed.txt`, `demo-users.txt`, `extra.txt`, `st1.txt`, `st2.txt`, `tsc.txt`, `live-settings.new.ts`.
 
 With the case programs and the base copy gone, the runs of cases 9 and 18 to 23 quoted above cannot be repeated from the scratchpad; they would have to be written again. The `o98*` files left in the scratchpad (`O98-brief-draft.md`, `O98-rest.md`, `O98.diff`, `o98.txt`, `o98paths.txt`, `o98-files.txt`, `o98-review-quick.txt`, `o98-review.diff`, `o98-unused-now.txt`) were not written by me.
+
+## Repair round 2
+
+The round is item 1 of `agents/briefs/O98-round2.md` and its item 2 (the before and after in this report). Items 2 to 6 of the round as first sent were withdrawn by the correction; no file was changed for them.
+
+### Not done
+
+1. Verify 1 has one red line, in a file this round did not change: `tests/server/edit/config-value.test.ts` > "adds the list under settings, then rewrites it in place, and leaves the defaults file", `Error: Test timed out in 20000ms.` Run alone after the list: `Test Files  1 passed (1)`, `Tests  23 passed (23)`. For part of the list's run two shell loops of mine that waited on its output file were spinning on the machine (stopped with TaskStop while the slow tier ran), which loaded the machine while the slow tier ran. The list was not run again, as the brief says for a red line in an unchanged file.
+2. The new file `tests/routes/git/credentials.test.ts` has no run before the change. It calls `context.credentials` and route handlers that pass it, which the tree before item 1 did not have, and the round-1 tree is no longer present in the worktree to run it on. Its after-run is quoted below.
+3. The before-run quoted below (09:44:14 to 09:45:24) included `tests/server/machine/pty/sessions.test.ts` and `tests/server/machine/pty/pane-screen.test.ts`, which start a tmux server on a private socket in a scratch directory (their head comments say so). My after-run left both out; Verify 1 ran them (listed as `changed` at lines 87 and 88 of its output) and its slow tier has them green.
+
+Nothing else of item 1 or item 2 is undone.
+
+### Item 1: one owned credentials object, passed to every git start and terminal
+
+- `src/lib/server/core/git/credentials.ts` holds no state: `heldRows` and `useSignInRows` are gone. `gitCredentials(rows, places = machinePlaces)` answers `{ args(), env() }`, each reading the rows and the connect folder at the call; with no row naming an address the connect folder is not read. `grep -rn "gitCredentialArgs\|terminalCredentialEnv\|useSignInRows\|heldRows" src tests docs utils` prints nothing.
+- `src/lib/server/root/context.ts:305` builds the one object, `const credentials = gitCredentials(() => built.live?.signIn() ?? signIn);`, over the primary hub's `sign_in` rows as `live-settings.ts` reads them (`signIn()` there answers `current.signIn`, which its reread replaces when the rows change). It is on the server context (`process/server-context.ts`, `credentials: GitCredentials`) and passed to `nestedFound`, `startGit`, `startAutofetch`, `runEntry` and `startHosts`. `grep -rn "gitCredentials(" src` prints only the definition and that line.
+- Every git start takes it as an argument, with no default: `run` and `runRecords` of `core/git/run.ts` and the readers of `state.ts`, `reads.ts`, `compare.ts` and `files.ts` (credentials first); `server/git/git-write.ts` and the modules over it (`git-index`, `git-refs`, `git-remote`, `git-diffs`, `git-message`, `git-reads`, `git-routes`) through `GitAt = { root, credentials }`; `cloneGit(credentials)` of `clone-git.ts`, required as `git` by `clone.ts`, `github.ts`, `clone-routes.ts` and `exclude.ts`; both starts of `deposit-git.ts` through `Where.credentials`; `watch/git.ts`, `watch/autofetch.ts` and `watch/repos/git-start.ts`; `files/fs.ts` and `machine/lines.ts`. A terminal's `fixedEnv` is `[GRID_ENV, ...options.credentials.env()]` (`machine/pty/sessions.ts:703`), with `StartOptions.credentials` required, and `terminals-env.ts` and `process/apps-hosts.ts` pass it on.
+- Routes reach it through `locals.server`: `api/(git)/git`, `api/(git)/clone`, `api/(git)/deposit`, `api/(sessions)/terminal`, `api/(files)/fs`, `api/(files)/folders/make`, `api/(machine)/lines`, `api/(machine)/hpc`. `grep -rn "credentials?:\|credentials ??\|noCredentials" src` prints nothing, so no optional field and no default is left; every spawn of `GIT` in `src` puts `credentials.args()` or `at.credentials.args()` first (`run.ts:256` and `:285`, `git-write.ts:170` and `:747`, `deposit-git.ts:159` and `:287`, `clone-git.ts:86`).
+- To keep `context.ts` within 880 lines, the restart findings it built inline moved to `restartFindings(open, stateFolder, held, config)` in `process/context/findings.ts`; `context.ts` is 879 lines.
+- `tests/checks/tree/boundaries.test.ts` is unchanged and passes: `Test Files  1 passed (1)`, `Tests  11 passed (11)`.
+- `docs/HELP.md:514` holds after the change: every git oculus starts is given the two `-c credential.<address>.helper=` arguments and every terminal the `GIT_CONFIG_*` variables, for a host whose `sign_in` row names the address its token file was granted for; a sign in or a sign out holds for the next git, since the object reads the rows and the token files at each call.
+
+### Behaviour of every git start and terminal, before and after
+
+- Before, on the base `54304adb4`: no git oculus starts carries a credential pair, and no terminal carries `GIT_CONFIG_*` for one. `git show 54304adb4:src/lib/server/core/git/run.ts | grep -n credential` prints nothing, and the base copy holds no `core/git/credentials.ts` (`ls .agents/worktrees/O98-base/src/lib/server/core/git/`). Within this step's round 1, the pairs were built from the token files and from rows held in a module binding that only the Vite plugin's module graph set, so a git or a terminal a route started got none (the review over round 1, `agents/reviews/O98-refuter.md`, "Repair round 1, refuted", Behaviour 1).
+- After: every git oculus starts, whichever module graph starts it (a route, a watcher, the autofetch, a schedule, an app host), is given `-c credential.<address>.helper=` and `-c credential.<address>.helper=!ELECTRON_RUN_AS_NODE=1 '<node>' '<engine>/src/lib/server/accounts/connect/credential-helper.mjs' '<key>' '<address>'` ahead of its own arguments, and every terminal is started with `GIT_CONFIG_COUNT=2` and the two key and value pairs, for each host whose token file in `~/.oculus/connect/` names a `credential_address` that the `sign_in` row of the same key names. A token whose row is gone, or whose row names another address, gives no pair.
+
+### Cases (G135), through `createServerContext` and the route handlers
+
+`tests/routes/git/credentials.test.ts` (new, `// @module-tag slow`) builds a whole context with `createServerContext` over a scratch workspace: a hub whose `.oculus/config.yml` holds the GitHub row of `sign_in`, or holds none; a clone of a local bare repository; HOME a scratch folder whose `.oculus/connect/git-github.json` holds a token for `https://github.com`. The git, clone and deposit rows call the real `POST` of `src/routes/api/(git)/git/+server.ts`, `clone/+server.ts` and `deposit/+server.ts` with the locals `hooks.server.ts` sets (`server`, `token`, `config`); the terminal row calls `handleTerminal` with the terminal route's options from that context and the recording tmux double, since the route's own runner is the real tmux. Which gits started is read from git's own trace (`GIT_TRACE2_EVENT`, the top-level `start` events): each row asserts that a git of its subcommand started and that every git started has the pairs first, or, with the row removed, no `credential.` argument at all; the terminal row asserts the `-e GIT_CONFIG_*` words equal the five variables, or none.
+
+After (`npx vitest run tests/routes/git/credentials.test.ts --reporter=verbose`):
+
+```
+ v ... > the gits the git route starts > carry the pairs for Fetch, Pull, Push and Sync with 'a signed-in host whose sign_in row na...' (G135)
+ v ... > the gits the git route starts > carry the pairs for Fetch, Pull, Push and Sync with 'the sign_in row removed' (G135)
+ v ... > the gits the clone route starts > carry the pairs for a clone of a repository with 'a signed-in host whose sign_in row na...' (G135)
+ v ... > the gits the clone route starts > carry the pairs for a clone of a repository with 'the sign_in row removed' (G135)
+ v ... > the gits the deposit route starts > carry the pairs for an adopt and a plan with 'a signed-in host whose sign_in row na...' (G135)
+ v ... > the gits the deposit route starts > carry the pairs for an adopt and a plan with 'the sign_in row removed' (G135)
+ v ... > a terminal a request opens > carries the GIT_CONFIG pairs with 'a signed-in host whose sign_in row na...' (G135)
+ v ... > a terminal a request opens > carries the GIT_CONFIG pairs with 'the sign_in row removed' (G135)
+ Test Files  1 passed (1)
+      Tests  8 passed (8)
+```
+
+(vitest's check mark is written `v` and its ellipsis `...`; the `...` after the mark stands for `|unit| tests/routes/git/credentials.test.ts`.)
+
+### The changed tests, before and after
+
+The same file list both times, the after-run with the new route test and `tests/routes/sessions/latex.test.ts` added and the two tmux files of Not done 3 left out:
+
+- Before, on the round-1 tree, 09:44:14 to 09:45:24 (the first file this round changed, `credentials.ts`, has the mtime 09:47:19): `Test Files  2 failed | 54 passed (56)`, `Tests  3 failed | 428 passed (431)`; red were `tests/checks/diagrams/diagrams.test.ts:84:5` and `:88:5` and `tests/routes/git/git.test.ts:117:5`.
+- After, 10:32:31 to 10:33:35: `Test Files  1 failed | 55 passed (56)`, `Tests  3 failed | 435 passed (438)`; red were only `diagrams.test.ts:85:87` (the committed diagrams stale before `npm run diagrams`, which Verify 1 runs first), `:88:5` and `:800:5`. Run alone, `:800:5` passes and `:88:5` ("are named stale, every one at once, when an import and a publish are added") times out at 5000 ms, as it did before the change; Verify 1's checks tier, after `npm run diagrams`, has the whole diagrams file green (`ok      vitest checks`).
+- The test helpers changed for item 1: `noCredentials()` in `tests/fixtures/doubles.ts` (credentials over no row), `gitAt(root)` in `tests/server/git/refs/repo.ts`, `credentials` in `context-fixture.ts`, `fixtures/hubs/workspace.ts`, `terminal-fixture.ts` (`worldOf` and `chatWorld`), `schedules-fixture.ts` and `tmux-terminals.ts`.
+
+### Verify, after the last change
+
+Verify 1, run once (`PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH npm run diagrams && npm run docs:palette && npm run test:quick -- --base 54304adb4`, 10:34:45 to 10:44:24, exit 1):
+
+```
+test:quick: 267 changed file(s), from git since 54304adb4
+test:quick: 353 test file(s)
+ok      ASCII gate (1.3 s)
+ok      svelte-kit sync (3.4 s)
+ok      prettier (3.5 s): All matched files use Prettier code style!
+ok      eslint (30.0 s)
+ok      svelte-check (89.5 s): 1793180209749 COMPLETED 558 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest checks (334.5 s): Duration  316.03s (transform 121.47s, setup 0ms, import 353.62s, tests 791.33s, environment 6ms)
+ok      vitest (392.5 s): Duration  375.92s (transform 360.45s, setup 0ms, import 718.97s, tests 704.81s, environment 28.65s)
+FAILED  vitest slow (544.6 s)
+ FAIL  |unit| tests/server/edit/config-value.test.ts > a list written into the workspace file > adds the list under settings, then rewrites it in place, and leaves the defaults file
+Error: Test timed out in 20000ms.
+ Test Files  1 failed | 94 passed (95)
+      Tests  1 failed | 901 passed | 313 skipped (1215)
+test:quick: 549.0 s; failed: vitest slow
+```
+
+The list covered `tests/routes/sessions/terminal-actions.test.ts`, `latex-approvals.test.ts`, `tests/server/machine/apps/tools/terminals/terminals-tmux.test.ts` and `tasks.test.ts` (lines 156, 158, 180, 182 of its output), all green in the slow tier.
+
+The other checks, over the 78 files this round changed (those with an mtime after 09:46 today, `.scratch` left out):
+
+- ASCII: `LC_ALL=C grep -n "[^ -~<tab>]"` over them prints nothing.
+- `wc -l`: the largest are `context.ts` 879, `git-write.ts` 866, `sessions.ts` 863, `deposit.ts` 861, `watch/git.ts` 811; the new test 292.
+- `sh utils/folder-check.sh`: exit 0, nothing printed; `tests/routes/git` holds 6 items.
+- `sh utils/unused-exports.sh` (exit 0) against `O98-base/unused-exports.txt`: only removals, `src/lib/data/accounts/connect.ts: PROVIDERS` and `src/lib/server/root/watch/git.ts: IGNORED, relevant, subrepositories`, the same two as round 1.
+- prettier and eslint over the 230 changed code files of the step: `All matched files use Prettier code style!`, eslint silent.
+- `npx svelte-check --tsconfig ./tsconfig.json --output machine`: `COMPLETED 4382 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS`.
+- History words: the grep of the added comment lines and test titles for `before|used to|no longer|still|always has been|always had|as before|previously|round|O<n>` finds eight lines, each `before` naming a position ("before `-C`", "before the caller's", "before its own", "before the root's state is read again", "before git answers"), none a comparison with an earlier state; the new test file has no hit.
+
+### Visible changes
+
+- A git that a page's action starts (Source Control's Fetch, Pull, Push, Sync and every other write, Clone and Clone from GitHub, Make Folder a Git Repository, a deposit), and a terminal a page opens, now get the credential helper for a signed-in git host whose `sign_in` row names the same `credential_address`; at the base none did. The gits the watchers, the autofetch and the schedules start get the same pairs from the same object. Nothing else a reader sees changes: no key, text or view changed this round.
+
+### Files of this round
+
+| File | What changed |
+|---|---|
+| `src/lib/server/core/git/credentials.ts` | no module state; `gitCredentials(rows, places)` |
+| `src/lib/server/core/git/{run,state,files,reads,compare}.ts` | credentials first parameter |
+| `src/lib/server/git/{git-write,git-index,git-refs,git-remote,git-diffs,git-message,git-reads,git-routes}.ts` | `GitAt` |
+| `src/lib/server/git/clone/{clone-git,clone,github,clone-routes,exclude}.ts` | `cloneGit(credentials)`, `git` required |
+| `src/lib/server/git/deposit/{deposit-git,deposit,deposit-routes}.ts` | `Where.credentials`, options required |
+| `src/lib/server/machine/pty/{sessions,routes}.ts`, `machine/apps/tools/run/terminals-env.ts`, `root/process/apps-hosts.ts` | terminal credentials |
+| `src/lib/server/files/fs.ts`, `machine/lines.ts` | credentials passed to the reads |
+| `src/lib/server/root/{context,live-settings}.ts`, `process/server-context.ts`, `process/context/findings.ts` | the owned object; `restartFindings` moved in |
+| `src/lib/server/root/watch/{git,autofetch}.ts`, `watch/repos/git-start.ts` | credentials required |
+| the eight `+server.ts` routes named in item 1 | `locals.server.credentials` |
+| `tests/routes/git/credentials.test.ts` | new, the G135 rows |
+| 34 other test files and helpers | credentials or `gitAt` passed |
+
+### Commands that wrote a file
+
+No program wrote a source, test, config or doc file of the worktree this round; every such edit was made with the Edit and Write tools. Files written by commands: `npm run diagrams` and `npm run docs:palette` inside Verify 1 rewrote the generated `docs/diagrams/*.dot` and `*.svg` (ten files newer than the last test edit); shell redirection wrote the run outputs and lists `<scratchpad>/check.txt`, `round2.txt`, `round2-files.txt`, `changed-code.txt`, `o98r2-unused.txt` and `o98r2-verify1.txt`; the tests wrote their scratch folders under `$TMPDIR`. `python3` was run twice to read my own transcript (no file written).
