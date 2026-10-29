@@ -32,6 +32,7 @@ dispatch:          # steps in flight, up to six (Z632)
   worker: claude:opus
   session_id: a4c10c31eedf15f05 (claude-opus-5-5)
   launched: 2026-10-29
+  builder_usage: round 0 hand-back 182961 tokens, 47 tool uses, 6 min 33 s
   round: 0
   report: .scratch/migration/agents/reviews/O99-report.md
   landing: not-started
@@ -175,6 +176,7 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
+- 545 (2026-10-29, O99's round-0 hand-back, case 7). A test that a `downloads` secret written through Settings into a hub's `.oculus/local.yml` never reaches a route answer, a config or workspaces channel push, a History record or a log needs a guarded entry, and a new guarantee is Axel's (`agents/spec.md:59`, as open item 529 was). G76 today covers the apps keyring alone (`src/lib/server/machine/apps/secrets/`). (a) G76 widened to that second store, its Code naming the Settings write route, the History record and the machine-values answer, with one test row per unit. Pros: one guarantee, "a secret's value never leaves", for both stores. Cons: none found. (b) A new entry with the same text. Pros: the keyring entry stays as it is. Cons: two entries for one guarantee. (c) No test, checked by reading: the lazy option. Recommended: (a). O99 builds everything else meanwhile; the test waits on the ruling.
 
 ## Closed items
 - 544 (2026-10-29): (a), the stage `accepted`, the FLICS symposium in `book`, no `pub_post` override (Axel: "544 (a)"); booked in `plan.md` Rulings and on O102's line.
@@ -701,6 +703,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-10-29 (O99 round-0 ruling sent; open item 545 raised). O99's builder a4c10c31eedf15f05 handed back three cases before any change: case 2 and case 16 were wrong under the brief's rules and are ruled in `agents/briefs/O99-cases.md`; case 7's test needs a guarded entry, open item 545 for Axel. The builder is resumed with the ruling and builds everything else. In flight (1 of 6): O99, building. Next: its report, /refute, its round and /land. Open items: 545.
 - 2026-10-29 (O99 launched). At Axel's green light, `/spec migration O99` wrote the brief (`agents/briefs/O99.md`), its brief check (a5e0fbddd32b98bcf, claude-opus-5-5) found 12 premise and 7 name findings, all closed in the brief (`agents/reviews/O99-brief-check.md`, "Closed"); preparation commit a5281619a is the base; the worktree `.agents/worktrees/migration-O99` and the base copy `O99-base` are made. Builder a4c10c31eedf15f05 (claude-opus-5-5) is building. In flight (1 of 6): O99, building. Next: its report, /refute, its round and /land with its look; then /spec O101, then O102. Open items: none.
 - 2026-10-29 (544 ruled). Booked in `plan.md` Rulings and on O102's line. No open items. No /spec runs until Axel gives the green light. In flight (0 of 6): none. Next: Axel's green light, then /spec O99, then O101, then O102. Open items: none.
 - 2026-10-29 (543 ruled; 544 raised). Booked in `plan.md` Rulings and on O102's line; the two `pub_post` exceptions are open item 544. No /spec runs until Axel gives the green light. In flight (0 of 6): none. Next: Axel's green light, then /spec O99, then O101, then O102 once 544 is ruled. Open items: 544.
