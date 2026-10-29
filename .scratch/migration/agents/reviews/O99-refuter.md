@@ -190,3 +190,252 @@ Cases of the brief's "Cases":
 - Whether a hub's whole-row replacement (case 19's `{ key: openalex, name: Renamed }` replaces oculus's row and drops its address) is what Axel means by "changes one": the vocabulary merge's rule, which the brief names, gives it; Axel's call if a field-by-field change was meant.
 
 Reviewer usage: aeb88e56ffde106e9, claude-opus-5-5, 355591 tokens, 114 tool uses, 18 min 27 s.
+
+## Repair round 1, refuted
+
+The rules file (`.scratch/migration/agents/spec.md`) names no output filter, so every command below ran unfiltered. All ran from the worktree root `/Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O99` with `PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH`, in the foreground, with no other vitest or svelte-check running (`ps -Ao pid,etime,command | grep -E 'vitest|svelte-check|test:quick'` printed nothing). The harness moved the Verify 1 run to the background after 180 s. I waited for its completion notice and did not poll it. Its first lines (the changed-file and test-file counts) were cut off by my own `tail -60` and are not quoted.
+
+Round delta: I compared every path of `migration-O99-round-1/files.txt` (git status format, first 3 columns cut) with `cmp` and `diff -u`. Changed since the snapshot: `config/defaults/behavior.yml`, `docs/diagrams/{layer-state,layer-views,layers,writes}.{dot,svg}`, `src/lib/state/sessions/source/autosave.svelte.ts`, `src/lib/state/system/config/editors/{draft,fields,slots}.ts`, `src/lib/views/system/workbench/editors/FieldControl.svelte`, `tests/server/core/reader/rows.yml` (back to the base), `tests/state/system/config/sparse-card.test.ts`, `src/lib/server/edit/writes/config/save/local-save.ts`, `src/lib/state/system/machine/debug/launch-form.ts`, `src/lib/state/system/machine/lsp/clangd/cpp-form.ts`, `src/lib/views/system/workbench/settings/scopes/scopes.svelte.ts`, and the tests `primary-key`, `config-save`, `settings-secrets`, `cpp` and `entry-forms`. Changed now but not in `files.txt`: `config/options/catalogs/agents.yml`, `src/routes/+page.svelte`, `src/lib/state/system/config/editors/offers.ts` (new), `tests/state/sessions/autosave.client.test.ts`, `tests/state/system/settings/collection-fields.test.ts`, `tests/state/system/settings/theme-groups.test.ts` and `tests/views/system/workbench/scopes.client.test.ts` (new).
+
+```
+Verify 1
+$ npm run diagrams && npm run docs:palette && npm run test:quick -- --base a5281619a 2>&1 | tail -60; echo exit=${pipestatus[1]} $?
+ok      svelte-kit sync (2.5 s)
+ok      ASCII gate (2.8 s)
+ok      prettier (3.7 s): All matched files use Prettier code style!
+ok      svelte-check (42.4 s): 1793302730075 COMPLETED 568 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      eslint (56.2 s)
+FAILED  vitest checks (128.0 s)
+ FAIL  |unit| tests/checks/config/config-folder.test.ts > oculus's own config directory > passes every config file through the schema it is matched to
++   "defaults/behavior.yml:765 literature.sources[5].fields.oa does not fit the schema of this file",
+ <heavy right-pointing angle quotation mark ornament> tests/checks/config/config-folder.test.ts:683:26          (the <heavy right-pointing angle> glyph is vitest's)
+ Test Files  1 failed | 14 passed (15)
+      Tests  1 failed | 252 passed | 9 skipped (262)
+ok      vitest (169.9 s): Duration  161.03s (transform 153.47s, setup 0ms, import 305.10s, tests 291.39s, environment 17.83s)
+ok      vitest slow (244.9 s): Duration  236.12s (transform 16.69s, setup 0ms, import 135.80s, tests 798.80s, environment 18ms)
+test:quick: 248.0 s; failed: vitest checks
+test:quick: not covered: tests that reach no changed file within the import depth, other than the checks under tests/checks/source and tests/checks/tree, which run for any change under src, tests or utils; the build, the lint of unchanged files
+(md5 of git status --short: ab9f6143976add27a6bb4a470bf587dc before and after)
+
+The red line, alone (a file the step changes):
+$ npx vitest run tests/checks/config/config-folder.test.ts --reporter=dot
+ Test Files  1 failed (1)
+      Tests  1 failed | 27 passed | 2 skipped (30)
+(the same assertion at config-folder.test.ts:683:26)
+
+Verify 2 (the 220 files git status lists, untracked folders expanded, deleted paths and secret local.yml files left out; config/options/local.yml included):
+$ files | tr '\n' '\0' | xargs -0 env LC_ALL=C perl -ne '...as the brief gives it...'; echo verify2 exit=$?
+verify2 exit=0          (nothing printed)
+
+Verify 3: .agents/worktrees/O99-base/unused-exports.txt is gone
+$ ls ../O99-base/unused-exports.txt
+ls: ../O99-base/unused-exports.txt: No such file or directory
+$ sh utils/unused-exports.sh | grep -n "Unused\|...the changed modules..."
+1:Unused exports (228)
+41:src/lib/server/core/files/yaml/yaml-edit.ts: BLOCK_LISTS, pathOf, renameKey
+178:src/lib/state/system/config/groups.ts: FILES
+230:Unused exported types (109)
+315:src/lib/state/system/config/editors/fields.ts: Scalar
+(round 0, by the first review: 228 and 108. Each line naming a file the step changes was checked against git show a5281619a:<file>. The only names missing there are the moved yaml-edit.ts, a known round-0 line, and fields.ts: Scalar, which is new in round 1:
+ chk src/lib/state/system/config/editors/fields.ts Scalar -> base:0; grep -rn "Scalar\b" src tests outside fields.ts finds only yaml's own Scalar type.)
+
+Verify 4 (the first grep run as grep -rn, since git grep is not a command I may run):
+$ grep -rn "EditLink\|settings_machine_edit_in\|settings_machine_edit_tip" src config tests --exclude=local.yml; echo $?
+v4a exit=1
+$ grep -n "EditLink\|..." config/options/local.yml   -> v4a-local exit=1
+$ grep -n "ships none\|ships neither" config/defaults/behavior.yml src/lib/data/sources/config/settings/rows/read.ts   -> v4b exit=1
+$ grep -nE "Empty makes no key|Empty tells no failure apart|Empty downloads nothing|says no source is configured" config/options/behavior.yml   -> v4c exit=1
+
+Verify 6:
+$ wc -l <changed src/tests/utils .ts/.svelte>, with any .svelte over 520 or source over 880 printed: (nothing)
+  520 FieldControl.svelte / 520 Palette.svelte / 519 Settings.svelte; 871 model/index.ts / 869 writes.svelte.ts / 867 catalog/options.ts
+$ sh utils/folder-check.sh; echo $?
+folder exit=0
+
+Verify 7 (the + lines of the round's delta and offers.ts / scopes.client.test.ts grepped for the history words, a package id, a date, "round"):
+hits are only identifiers or run-time order: settings-secrets.test.ts `const before = textOf(...)`, entry-forms.test.ts `'before'` (a launch field key), scopes.client.test.ts `ScopeGround`/`GROUND`, offers.ts "before it is sent" and "still loading". No history.
+
+The builder's round-1 evidence, rerun:
+$ npx vitest run <settings-secrets, config-save, cpp, primary-key, debug, entry-forms, autosave.client, scopes.client, sparse-card, collection-fields, theme-groups, comment-width> --reporter=verbose
+  every round-1 row passes (the G1/G2 rows of cpp and primary-key, "the History record holds no secret", "the undo of a save of the port and a secret ...", 'writes an existing local.yml at mode 644 ...', the two G77 rows, the three scopes.client rows, the six entry-forms separator rows, the three constant-value rows)
+ Test Files  12 passed (12)
+      Tests  147 passed (147)
+$ git diff a5281619a --stat -- tests/server/core/reader/rows.yml      -> prints nothing
+Hub text (the hub's .oculus/config.yml, 760 lines; read with sed -n, no local.yml):
+$ diff <(sed -n '95,100p' hub | sed 's/^    - //') <(sed -n '87,92p' config/defaults/behavior.yml | sed 's/^ *- //')
+  2,3c2,3 and 6c6 only (Unknown host, No route to the cluster, Git key refused), as the report says
+$ diff -w (comments and blanks left out) hub 104-128 vs defaults 96-121, hub 132-324 vs 124-317, hub 335-710 vs 479-854, hub 753-760 vs 868-878
+  same / same / same / same
+  each range end read: 87 comment, 88-90 clusters, 91 blank, 92 comment kept, 101 blank, 102 comment, 103-128 sign_in, 129 blank, 130 comment, 131-324 recover, 325 blank, 333 literature:, 334-710 sources, 711 prefer:, 716-750 venues, 751 blank, 752-760 links
+Item 12's program: the quoted source equals o99notes/r1/o99-cases.test.ts.source (diff prints nothing) and the quoted output equals item12-out.txt (336 lines, diff prints nothing); ls tests/o99* finds none. I did not rerun it: that would need a file written into the worktree's tests/.
+Item 13's table: jq over o99notes/base-batch.json gives the same failed/total and "Cannot find module" lines per file.
+Item 15's checks: ls $TMPDIR | grep -c o99-case -> 0; ls .agents/worktrees/ -> gate, migration-O99, migration-O99-round-1; the scratchpad holds no o99base, o99tools or o99probe (caserun/ holds files dated 2026-10-27, before O99).
+```
+
+### Verdicts
+
+Items of the brief's "What to build", for the whole diff since the base:
+
+- 1: holds. The round did not touch the scope code. The first review read `scope.ts`, `scopes/rows.ts` and `scopes.svelte.ts`, and `hub-scope`, `machine-section` and `row-writer` pass in my Verify 1 vitest tier.
+- 2: holds. The File menu's Save All is `saveJoined` (`autosave.svelte.ts:177`, `src/routes/+page.svelte:359`), an app's `saveAll` stays `saveEvery` (`context.ts:734`), and the two G77 rows are green.
+- 3: holds. `local-save.ts:313` records `undo: 'field'` and `undoLocal`/`unmasked` keep the stored secret. The five `settings-secrets` rows are green. The `agents` `lists` are now described (`config/options/catalogs/agents.yml`), and the case-9 output reads "values kept as the file has them: []". Verify 4 exits 1.
+- 4: violated, Spec 1 (the record `reader_value` describes `value` as a text, the shipped `oa: { value: true }` is a flag, and Verify 1 is red).
+- 5: holds. Debug, cpp and entry-forms are green, and the separator guard is in. The remaining loss of whitespace or empty parts is Behaviour 1.
+- 6: holds by reading `LineCounts.svelte`. The round did not change it, and the look settles it.
+- 7: holds. The shipped rows equal the hub's except the three failure rows the hub keeps (my diff), `ROW_SHAPES` is at `in-place.ts:133-139`, and Verify 4 (b) and (c) exit 1. The Hub text ranges reproduce. The merge test rows are landing work under ruling 547 (a).
+- 8: holds. The round did not change it, and the case program's output for cases 21, 22, 22a and 35 agrees.
+
+Cases of the brief's "Cases" (as ruled in `O99-cases.md`):
+
+- 1: met, `config-save.test.ts` row 'two options of the workspace file', and the reading. The press is the look.
+- 2: met, by `takes` and the `config-save` row "an option of the primary's settings file".
+- 3: met by reading `fileOf`; the look.
+- 4: met by reading `hubsOf` and `reposOf`; the look.
+- 5: met by reading `ask`, `named` and `resume`; the look.
+- 6: met by reading `saveAll` and `save`, with the one-record rows. The File menu path now goes through `saveJoined`. The press is the look.
+- 7: met, the `config-save` port row and the five `settings-secrets` rows, the undo row among them.
+- 8: met by reading `saveLocal` and `saveRepo`, and the 'writes $row' table (a made `local.yml` at 600, named in `.gitignore`).
+- 9: met by the quoted case program's output (235 options drawn in some scope, 21 of 21 `LOCAL_KEYS`, no record or list on a one-value control, nothing kept, no NO EDITOR row). I read the program; I did not rerun it (Declined). The Hub scope of a second hub is not in it.
+- 10: met, the case-10 output ("no empty editor: ["layout.yml:rail"]", the rail drawn by `RailEditor`).
+- 11: met, the case-11 output (`settings_mismatch_list` for a list held as a map, `settings_undrawn` for a family held as 7).
+- 12: met, `sparse-card` "a reader row's values at any depth ...", every row green with the shipped boolean `oa`.
+- 13: met, the `debug.test.ts` edit and delete rows green.
+- 14: met, `cpp.test.ts` green.
+- 15: met, `deck-slides` "writing a deck's keys" green.
+- 16: met, the four `primary-key.test.ts` rows and its choices row green.
+- 17: not verifiable here; it is a drawing, settled by the look at the narrowest and widest pane.
+- 18: met, the row comparison above, `connection-keys` green, `ed25519` and `~/.ssh/id_{type}_{resource}`.
+- 19, 20, 30, 31: met by reading `ROW_SHAPES` and `in-place.ts`, and by the first review's probe (not rerun by me). The test rows are written at landing under ruling 547 (a), so their absence is no finding.
+- 21, 22, 22a, 35: met, the case program's output lines for cases 21, 22, 22a and 35.
+- 23: met, Verify 4 (b) exits 1.
+- 24: met, the `settings-secrets` row 'a row sent with no secret'.
+- 25, 26: met by reading `fileOf` and the changes keyed by hub name.
+- 27: met, the four `config-save` folder-name rows.
+- 28: met, the `config-save` digest refusal row.
+- 29: met, the `machine-section` and `hub-scope` rows green.
+- 32, 33: met by reading `saveAll`/`resume` and `saveTarget`/`scopeGone`; the look.
+- 34: met under the corrected premise (Repository draws `editor.languages` alone).
+- 36: met, the G29 row green.
+
+Items of the round-1 brief:
+
+- 1: holds. `local-save.ts:313`, `undoLocal`/`unmasked` (`local-save.ts:333-360`), the row at `settings-secrets.test.ts:82` green, and its before-failure quoted (`item1-before.txt`, expected 404 to be 200).
+- 2: holds. The premise did not reproduce: `writeTextAtomic(path, content, newMode)` gives `newMode` only to a new file (`src/lib/server/core/json.ts:89-92`). The two mode rows pass after the change (my run), and the head comment and the G8 Doc text say so.
+- 3: holds. Both refusal rows are green. The handlers already called `tokenedBody`, `repositoryOf` and `hubFor`, so the rows test a behaviour the round keeps; their passing run after the change is mine. The G1 and G2 Doc text is present.
+- 4: holds. `saveJoined` is split from `saveEvery`. The rows fail before the change (`item4-before.txt`) and pass now, and the G77 Doc text is present.
+- 5: holds. `joined` stands above `saveEvery`'s doc comment, and the comment states what it does now.
+- 6: holds. The Doc text's line 344 reads "Each heading has Show Defaults, ...".
+- 7: holds. The G8 Doc text names `launchForm`, `launchChanges`, `cppFields` and `cppChanges` and the describe 'the changes an entry form sends'.
+- 8: holds. The ranges reproduce, the three hub rows are kept, and comments 87, 102 and 130 go with their blocks while 92 stays.
+- 9: partial. The shipped `oa: { value: true }` is in and the card draws it (Spec 1, Spec 2).
+- 10: holds for the separator. The launch rows have no before-run (Proof 2), and whitespace or empty parts are still lost (Behaviour 1).
+- 11: holds. `sentSecrets` and `typed` restaged (`scopes.svelte.ts:186-200`), the row's before-failure quoted, 3 of 3 green.
+- 12: holds. The source and output are quoted whole and equal the notes, and the program is deleted. The report's "run once" is Proof 1.
+- 13: holds. Three runs are named with their times and results, and the base lines equal `base-batch.json`.
+- 14: partial. The Port and `sign_in`/`connections.failures` before-and-after statements are given, but the base's cluster offer was not built (Spec 3).
+- 15: partial. The commands and files are listed but not their hunks, and the orchestrator's base copy was deleted (Spec 4).
+
+### 1. Spec
+
+- **Spec 1.** `config/defaults/behavior.yml:765` `oa: { value: true }`, with `config/options/behavior.yml:1314-1322` (`reader_value` ... `value: a fixed value, with holes`, a text) and `src/lib/data/sources/config/catalog/schemas/options.ts:81-87` (`textSchema`, `{ type: 'string' }`).
+  - What is wrong: the described record of a reader row says its constant is a text, while the row oculus ships holds a flag. Verify 1 is red on `defaults/behavior.yml:765 literature.sources[5].fields.oa does not fit the schema of this file`, and my run of that file alone reproduces it.
+  - On point (1), no existing word or mechanism fits a constant that may be a text, a number or a flag:
+    - `CONTROLS` (`src/lib/data/shapes/catalog-words.ts:13-31`) has no such control.
+    - `HOLDS` (`:40`) has `lists` and `record` only.
+    - `OWN_READER` (`schemas/options.ts`, "A text field of such a family takes any value") is a hard-coded list of the two layout-tree families `arrangements` and `workbench`. Adding a description record to it would hard-code a vocabulary name and make the field take any value, records included.
+    - The pairs rule `scalar()` (`catalog/value-rule.ts:257-262,271-273`) applies only to the values of a key/value family, inside the value rule; its JSON schema (`familySchema`, `fieldSchema(fields.value)`) still says string.
+  - So a new catalog word is needed. That is a config vocabulary nothing names, so it is Axel's open item. The builder named it correctly and did not take it on its own.
+  - Option (b), shipping the text `'true'`, is the lazy option and contradicts round item 9.
+  - My judgment is option (a), a control word for a scalar value given to `reader_value`'s `value`. The same word should also scope the card's scalar reading of Spec 2 to that word, which closes Spec 2 in the same change.
+  - Failure scenario: at landing the gate's Verify 1 is red on `config-folder.test.ts:683`, and the editor marks oculus's own `defaults/behavior.yml:765` as not fitting its schema.
+  - Verdict: item 4 violated, round item 9 partial.
+- **Spec 2.** `src/lib/state/system/config/editors/fields.ts:301-305` (`case 'text': ... if (typeof held === 'boolean') return scalarText(held); if (typeof held === 'number' && Number.isFinite(held)) return scalarText(held);`) and `fields.ts:692-693` (`const made = control === 'text' ? scalarOf(held, reading) : held; if (typeof made !== 'string') return done(made);`).
+  - What is wrong: round item 9 asked that "the card of a constant `value`" be drawn whatever its scalar type. The change reads and writes every `text` field of every family card, pairs values included (`draft.ts:215,531,684`), so it reaches beyond item 9.
+    - A flag or number a text field holds used to be kept as the file has it, with the row's kept-value sentence. It is now drawn as editable text and written back in the held type whenever the typed text reads as that type.
+    - On that path `valueProblem` and the field's `form` check are skipped (`return done(made)` comes before `troubleOf(valueProblem(...))`).
+    - The G138 Doc text describes only "a constant `value`", so the guarded entry would understate what the code does. The host-visible changes section does not state the wider change.
+  - Failure scenario: a hub row holds an unquoted number at a text field, such as a `sign_in` row's text field written `42`. The reader types `042`, `decimalOf` reads it as 42 (`DECIMAL`, `fields.ts:85`), and the save writes the number 42, so the leading zero the reader typed is lost and no form check ran.
+  - Verdict: round item 9 partial.
+- **Spec 3.** The report's item 14: "A new row's `resource` is a choice `from: clusters` (`config/options/local.yml:22-25`), which offers every cluster entry of the resources registry ... Offering exactly the clusters of `slurm.resource` with no row needs a source word the catalog does not have ... so it is not built".
+  - What is wrong: round item 14 asked, if the family editor does not offer the base's choice, to "give the row's `resource` field the choice of those clusters, as the base offered them". That choice is not built.
+  - On point (3), the stated reason holds only for the catalog route. The `clusters` source is every cluster-kind resource (`editors/sources.ts:190-193`), and `slurm.resource` draws from the same source (`config/options/behavior.yml:203`), so narrowing that source would break `slurm.resource`'s own choice. No choice in a card leaves out a value a sibling row holds (`offers.ts` `poolOf`).
+  - The Settings view already draws special rows through `settings/other-rows/` (on the base `ClusterRows.svelte` drew exactly this pick; `WallpaperPicker.svelte` and `AppControl.svelte` are there now). That mechanism offers the base's choice without a new catalog word, so the choice could have been built without one.
+  - Failure scenario: in This machine of the primary, the reader adds a `clusters:` row and picks a cluster that already has a row, which gives the finding "a second row for one cluster" (the catalog help, `config/options/local.yml:20`). The reader can also pick a cluster `slurm.resource` does not name. The base's pick offered neither.
+  - The report's first line ("Every other item of the round is done") does not name this.
+  - Verdict: round item 14 partial.
+- **Spec 4.** The report's item 15: "Their hunks cannot be told apart in the diff from later Edit hunks over the same files" and "Round 0, the base copies `.agents/worktrees/O99-base` (under the main checkout's `.agents/`, outside the worktree, which the rules forbid) ...: both are deleted."
+  - Hunks: round item 15 asked for "the hunks it made in the worktree", and none are given. Under the ruling "Unapproved builder scripts" the orchestrator must then read every file "Shell edits" lists whole.
+  - The base copy: the orchestrator made `O99-base` at launch (`orchestrator-state.md:723`, "the base copy `O99-base` are made"), and the brief names it as the step's given base copy (`O99.md:11`, Verify 3 at `:158`). The report calls it the builder's own copy, outside the worktree. Item 15 asked for it to be listed, not removed. Deleting it removed `unused-exports.txt`, so the brief's Verify 3 can no longer run as written. The builder had also, by its own account, written the step's tests into it in round 0.
+  - The report's first line does not name the missing hunks.
+  - Failure scenario: at landing, Verify 3 has no base list, so a new unused export (Standards 1) passes unless someone finds it by hand, as this review did. The heredoc-written files of `list-entries.ts`, `local-save.ts` and `writer.ts` are kept without the read the ruling asks for, unless the orchestrator reads each file whole.
+  - Verdict: round item 15 partial.
+
+### 2. Proof
+
+- **Proof 1.** The report's item 12: "The program `tests/o99-cases.test.ts` was written with Write, run once with `OUT=... npx vitest run tests/o99-cases.test.ts`", and item 15: "Round 1, the case-run program of item 12: written with Write, run once".
+  - The claim: one run.
+  - What the rerun showed: the notes hold two runs. `o99notes/r1/item12-cases.txt` (Start at 20:03:19, `Tests 1 failed | 3 passed (4)`, case 11 printing through stdout `lint.writing_skip held {"not":"a list"}: null`) was an earlier version of the program. `item12-run.txt` (Start at 20:04:59, 4 passed) is the quoted one. The report also says "Its first run found `catalogs/agents.yml:agents[0].lists` kept as the file has it", which is a run no file quotes.
+  - The decision resting on it: the `config/options/catalogs/agents.yml` change and the case-9 verdict rest on the quoted last version alone, and the earlier versions' sources and outputs are not quoted.
+  - Failure scenario: the orchestrator books one program run and reads the agents.yml change as the product of the quoted run, when it came from an unquoted one.
+  - Verdict: none.
+- **Proof 2.** `tests/state/system/entry-forms.test.ts:102-122` (point (2)): "draws no launch attribute whose %s holds the separator, and sends nothing for it".
+  - What is wrong: these four rows of a behaviour the round changes have no failure quoted from before the change; they were written after `launch-form.ts` changed. That `launch-form.ts` is new in the step does not excuse this: the round's unchanged tree is the snapshot, which holds the round-0 file.
+  - Judged by reading: the snapshot's `launch-form.ts` draws a list when every part is a string and a map when every value is a string (`wordMap`). So in all four rows both `list` and `words` would be drawn, and the keys assertion would fail there.
+  - By the rules no further run on the unchanged tree is asked. The builder states the gap in its first line.
+  - Failure scenario: none beyond the missing record, since the reading shows the rows check the new behaviour.
+  - Verdict: none.
+
+### 3. Standards
+
+- **Standards 1.** `src/lib/state/system/config/editors/fields.ts:74`: "export type Scalar = 'boolean' | 'number';".
+  - What is wrong: a new export with no importer outside its file (`sh utils/unused-exports.sh` prints "src/lib/state/system/config/editors/fields.ts: Scalar", and the base file holds no `Scalar`). This breaks the rules file's "The principles every package is judged on", which says an export the step adds with no importer is removed or made local, and the brief's Verify 3 ("no new unused export"). The round report ran no Verify 3.
+  - Failure scenario: the gate's unused-exports list grows by one line that no step owns.
+- **Standards 2.** `tests/views/system/workbench/scopes.client.test.ts:44-46`: "while (answers.length === 0) await new Promise((next) => setTimeout(next, 0));".
+  - What is wrong: the rules file ("What every package obeys") says a test waits on a signal (an event, a promise, a fake clock), never on a fixed sleep. This is a sleep loop polling a condition. A promise resolved from `send` is the signal that exists here.
+  - Failure scenario: a change that makes the Save never call `send` leaves the test spinning to vitest's 5 s timeout instead of failing at once.
+- **Standards 3.** `tests/state/system/entry-forms.test.ts:102-108`: the title "draws no launch attribute whose %s holds the separator, and sends nothing for it" with the names 'a list part' and 'a map key that holds ='.
+  - What is wrong: the titles print as "whose a list part holds the separator" and "whose a map key that holds = holds the separator", which breaks the brief's Verify 8 (each new sentence read against the prose rules).
+  - Failure scenario: a reader of a failing run cannot parse which input the row names.
+- **Standards 4.** The report's "Doc text", the bullet "G126 (proposal for the orchestrator to raise; nothing written)", which would add rows "for cases 18, 19, 20, 30 and 31", and "Anything in the brief that was wrong or impossible", which says such a row "is a new entry and Axel's".
+  - What is wrong: ruling 547 (a) has ruled. G126 is widened, and its Test line names the rows for cases 19, 20, 30 and 31. The Doc text the landing writes from still calls this a proposal and names case 18 too. The round brief told the builder not to write the rows; it did not ask it to keep the ruled entry's text stale.
+  - Failure scenario: the orchestrator copies the G126 Test line with case 18, which G136's 'case 15' row already holds.
+
+### 4. Behaviour
+
+- **Behaviour 1.** `src/lib/state/system/machine/debug/launch-form.ts:35-58,145-163` (`partsList`, `partsMap`, `answerValue`: `.split(PARTS).map((one) => one.trim()).filter((one) => one !== '')`) and `src/lib/state/system/machine/lsp/clangd/cpp-form.ts:51-62,89-93` (`drawnTags` takes a number or a flag and draws it as `String(one)`).
+  - What a user sees change: a list or map that the form's line does not read back is still drawn and rewritten once its field is edited. Examples are a part that is empty or has leading or trailing spaces (`args: ['--prefix', '']`, `env: { X: ' padded' }`), and in cpp.yml a `tags` part that is a number or a flag, which comes back as a text. The head comment's reason ("since its line would not read back as the value") covers these, but the guard lists only the separator.
+  - Where the report should have stated it: item 10's section.
+  - Failure scenario: in the Debug view the reader edits that configuration's `args` to add `--verbose`, and the save writes `['--prefix', '--verbose']`, dropping the empty argument the program needed.
+  - The fix is small and inside round item 10, so it can be made at landing.
+  - Verdict: none.
+
+### Declined to judge
+
+- Verify 3 against the base list: the base copy and its `unused-exports.txt` are gone (Spec 4). I compared with base facts readable by `git show a5281619a:<path>` for every line of a file the step changes, and the counts with the first review's round-0 figures. A full line-by-line comparison with the base list would need `sh utils/unused-exports.sh` run on a checkout of `a5281619a`, which is a git command I may not run.
+- Rerunning item 12's case program: it needs `tests/o99-cases.test.ts` written into the worktree, and I write no file. I compared its quoted source and output with the notes instead (both equal).
+- When and by whom `.agents/worktrees/O99-base` was removed is taken from the report and the state file. The file system's record is not read here, and no git command would settle it.
+- The red line's cause outside oculus's own files: whether a hub's `config.yml` holding `oa: { value: true }` (the research hub's, on the base too) gets the same schema mismatch in the editor. The base had it before the step, and no run over a hub's `config.yml` was made.
+- Items 2 and 3 of the round (point (4)): their rows test behaviour the round keeps. Their passing run after the change is mine. The builder's "pass before" is not quoted, and I cannot run it on the round-0 tree without writing a file.
+- The edits to round-0 assertions (point (5)) were read and hold. Removing `expect(change.undo).toBe('none')` at `settings-secrets.test.ts:72` follows round item 1. Adding `saved: false` to the NESTED row (`sparse-card.test.ts:420`) and `one.saved ?? one.value` follows the shipped flag of item 9. `rows.yml` is back to the base. None loosens a check.
+- The path widenings (point (6)): all of them except `src/routes/+page.svelte` fall inside the brief's write list: `src/lib/state/system/config/` (`offers.ts`, `draft.ts`, `slots.ts`), `config/defaults/behavior.yml`, `config/options/` with `catalogs/`, and `tests/`. The `offers.ts` split is forced by the size rule (`fields.ts` 863 in the snapshot, 757 now, and the moved functions equal their old text by diff). `+page.svelte` is where the File menu's Save All prop is passed, so round item 4 needs it. I find nothing to judge against there.
+- The views' cases (1 to 17, 21, 22, 22a, 24 to 35) in their drawing, the Settings card of a number- or flag-held text field (Spec 2), and the cluster pick (Spec 3): the look at landing.
+- `config/options/local.yml`: I read lines 15-35 only, by its path.
+- The files the first review declined and the round did not change remain unread here.
+
+Reviewer usage: a0a0fcdd662cc3122, claude-opus-5-5, 332257 tokens, 103 tool uses, 19 min 49 s.
+
+## Closed
+
+The dispositions of the findings of the run over repair round 1, which are never sent to the builder.
+
+- Spec 1 (the red verify line, the constant of `reader_value`): raised as open item 548.
+- Spec 2 (the scalar reading of every `text` box): closed by the fix of open item 548 (a), which scopes that reading to the new control word; raised with 548.
+- Spec 3 (the base's cluster pick not built): raised as open item 550, one more round under the exception for an unbuilt acceptance item.
+- Spec 4 (the hunks of the shell edits; the base copy deleted): at landing the orchestrator reads `list-entries.ts`, `local-save.ts` and `writer.ts` whole under the ruling "Unapproved builder scripts", and makes the base list of Verify 3 again from `git archive a5281619a` in the scratchpad.
+- Proof 1 (two runs of the case program, one quoted): booked at landing; the `config/options/catalogs/agents.yml` change is judged by the orchestrator's reading.
+- Proof 2 (the four launch rows with no before-failure): no change; the reading shows the rows check the new behaviour; booked at landing.
+- Standards 1 (`Scalar` exported with no importer): fixed at landing.
+- Standards 2 (the sleep loop in `scopes.client.test.ts`): fixed at landing, the test waiting on a promise resolved from `send`.
+- Standards 3 (the titles of the separator rows): fixed at landing.
+- Standards 4 (the G126 Doc text): fixed at landing to ruling 547 (a), the rows of cases 19, 20, 30 and 31.
+- Behaviour 1 (empty or padded parts, and number or flag `tags` parts, still drawn): fixed at landing, the guard of `launch-form.ts` and `cpp-form.ts` extended to every part its line would not read back.
