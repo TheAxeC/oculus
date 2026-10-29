@@ -1,8 +1,8 @@
-In flight (1 of 6 slots in use):
-- O102 (the website's data files generated from oculus): /spec, brief being written.
+In flight (0 of 6 slots in use): none.
 
-Queued, in order (1 step):
+Queued, in order (2 steps):
 - O101 (the Zenodo deposit): waits on Axel's ruling on where the Zenodo token is kept.
+- O102 (the website's data files generated from oculus): waits on Axel's rulings of 560.
 
 Owed looks: none.
 
