@@ -32,7 +32,7 @@ import { KEY_ROWS, PREFIX_ROWS } from '../../../src/lib/data/helpers/keys/oculus
 import { HUB_FILE } from '../../../src/lib/data/helpers/hub-names.ts';
 import { vocabKeys } from '../../../src/lib/data/shapes/vocab-keys.ts';
 import { boardsSource } from '../../../src/lib/state/boards/board/presets.ts';
-import { REFUSALS } from '../../../src/lib/server/edit/yaml/why.ts';
+import { REFUSALS } from '../../../src/lib/server/core/files/yaml/why.ts';
 import { SERVED_LANGUAGES, factsForLanguage } from '../../../src/lib/data/prose/lsp-servers.ts';
 import { LSP_EDIT_NOTICES } from '../../../src/lib/data/prose/text-edits.ts';
 import {
@@ -382,10 +382,10 @@ const COMPUTED_PREFIXES = [
         }
     },
     {
-        // A refusal an editor of edit/yaml or edit/entry-edit finds is a key of REFUSALS and the
-        // values that fill it; the entry point that holds the catalog words it. The keys are the
-        // table's own list, so a refusal added there without its words fails here.
-        file: 'lib/server/edit/yaml/why.ts',
+        // A refusal an editor of core/files/yaml or edit/entry-edit finds is a key of REFUSALS and
+        // the values that fill it; the entry point that holds the catalog words it. The keys are
+        // the table's own list, so a refusal added there without its words fails here.
+        file: 'lib/server/core/files/yaml/why.ts',
         start: 'words(text, found.key',
         keys: () => Object.values(REFUSALS)
     },

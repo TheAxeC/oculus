@@ -35,7 +35,23 @@ text:
         console_input_off: Evaluation needs a paused program
         continue: Continue
         default_name: Debug the open file
+        delete_configuration: Delete Configuration
+        delete_detail: The configuration is taken out of launch.yml; Undo in the History puts it back.
+        delete_title: 'Delete the configuration {0}?'
+        delete_verb: Delete
         disable_all: Disable All Breakpoints
+        edit_configuration: Edit Configuration
+        edit_detail: 'A list holds its parts and a map its key=value entries, each split by {0}. A field left empty is taken out of the configuration.'
+        edit_not_number: '{0} is not a number; nothing was written.'
+        edit_save: Save
+        edit_title: 'Edit the configuration {0}'
+        field_before: Command to run first
+        field_cwd: Folder it runs in
+        field_list: 'parts, split by commas'
+        field_map: 'key=value, split by commas'
+        field_name: Name
+        field_program: Program
+        field_unset: not set
         enable_all: Enable All Breakpoints
         enable_box: Enabled
         exception_condition: 'Condition of {0}'

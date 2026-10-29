@@ -10,10 +10,11 @@
 // file describes, as its file's whole-file shape gives it; any other key is not declared. A
 // workspace file's `settings:` takes every option of the defaults files and of the catalog options
 // files but the keys of the hub list, with the rows and keys that take oculus's entries out. A key
-// laid over oculus's value by its shape (merge/in-place.ts), a vocab key of a hub and a catalog of
-// the workspace, takes the form that merge reads: a map of words or names each its row or null, a
-// list of rows each a full row or the row of its key with `removed: true`, and a list replaced
-// whole as a list. The words of `text` are texts, with no null.
+// laid over oculus's value by its shape (merge/in-place.ts), a vocab key or a list of service rows
+// of a hub and a catalog of the workspace, takes the form that merge reads: a map of words or
+// names each its row or null, a list of rows each a full row or the row of its key with
+// `removed: true`, and a list replaced whole as a list. The words of `text` are texts, with no
+// null. A described record of an options file is one definition at the root of the file's schema.
 //
 // A group of dotted options is described by its help line in the options file's `groups:`.
 //
@@ -167,16 +168,27 @@ function shapedSchema(schema: JsonSchema, shape: InPlace): JsonSchema {
 }
 
 /**
- * The top-level keys of a file's schema laid over oculus's value by their shape, each put in the
- * form `shapedSchema` gives it, and `text`, whose words are texts, without the null of a map's
- * override.
+ * The keys of a file's schema laid over oculus's value by their shape, at the top or at a dotted
+ * path (`literature.sources`), each put in the form `shapedSchema` gives it.
+ */
+function shapeKeys(properties: Record<string, JsonSchema>, prefix: string): void {
+    for (const [key, one] of Object.entries(properties)) {
+        const path = prefix === '' ? key : `${prefix}.${key}`;
+        const shape = inPlaceOf(path);
+        if (shape !== undefined) properties[key] = shapedSchema(one, shape);
+        else if (one.properties !== undefined) {
+            shapeKeys(one.properties as Record<string, JsonSchema>, path);
+        }
+    }
+}
+
+/**
+ * A file's schema with its keys laid over oculus's value by their shape in the form the merge
+ * reads them (shapeKeys), and `text`, whose words are texts, without the null of a map's override.
  */
 function withShapes(schema: JsonSchema): JsonSchema {
     const properties = (schema.properties ?? {}) as Record<string, JsonSchema>;
-    for (const [key, one] of Object.entries(properties)) {
-        const shape = inPlaceOf(key);
-        if (shape !== undefined) properties[key] = shapedSchema(one, shape);
-    }
+    shapeKeys(properties, '');
     const text = properties[TEXT_KEY] as JsonSchema | undefined;
     if (text !== undefined) {
         const { items: _rows, ...words } = text;
@@ -246,9 +258,17 @@ function workspaceSchema(catalog: Catalog, groups: Groups, lists: OptionLists): 
         }
     }
     const properties = schema.properties as Record<string, JsonSchema>;
-    const settings = withShapes(optionsSchema(entries, { ...lists, overrides: true }, {}, lines));
+    const made = withShapes(optionsSchema(entries, { ...lists, overrides: true }, {}, lines));
+    // The definitions of the described records are read from the root of the file's schema.
+    const { definitions, ...settings } = made;
     const { description } = properties[SETTINGS_KEY] as { description?: string };
     properties[SETTINGS_KEY] = { ...settings, type: ['object', 'null'], description };
+    if (definitions !== undefined) {
+        schema.definitions = {
+            ...(schema.definitions as object | undefined),
+            ...(definitions as object)
+        };
+    }
     return schema;
 }
 

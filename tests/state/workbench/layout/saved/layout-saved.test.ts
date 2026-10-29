@@ -1,7 +1,7 @@
 // Layer 2, client-state tests. The saved form of a layout: the envelope of the current version is
-// read with every page and tab kept. A rail page records the paths of the documents it was given,
-// and a Files or LaTeX tab keeps the state it was saved with, in a workbench page and in a kept
-// layout.
+// read with every page and tab kept. A rail page records the paths of the documents it was given
+// and the views it was given, and a Files or LaTeX tab keeps the state it was saved with, in a
+// workbench page and in a kept layout.
 //
 // Nothing here touches the page state or the DOM: every case reads a hand-built envelope.
 
@@ -72,6 +72,8 @@ describe('a saved envelope of the current version', () => {
         trees: Workbench[];
         /** The paths each page records as the documents it was given. */
         docs?: unknown[];
+        /** The views each page records as given. */
+        views?: unknown[];
         /** The tree of each kept layout. */
         kept?: Layout[];
     }[] = [
@@ -115,6 +117,28 @@ describe('a saved envelope of the current version', () => {
             ]),
             trees: [bench(help('t0')), bench(help('t1')), bench(help('t2')), bench(help('t3'))],
             docs: [['x.md', 'y.md'], undefined, undefined, undefined]
+        },
+        {
+            name: 'rail pages: the views a rail page records, an empty and a repeated entry left out',
+            envelope: latest([
+                {
+                    id: 'page-0',
+                    label: 'Registries',
+                    workbench: workbenchOf(help('t5')),
+                    rail: 'registries',
+                    views: ['venues', '', 'data', 'venues']
+                },
+                {
+                    id: 'page-1',
+                    label: 'Bad',
+                    workbench: workbenchOf(help('t6')),
+                    rail: 'focus',
+                    views: 'venues'
+                },
+                { id: 'page-2', label: 'Page', workbench: workbenchOf(help('t7')), views: ['data'] }
+            ]),
+            trees: [bench(help('t5')), bench(help('t6')), bench(help('t7'))],
+            views: [['venues', 'data'], undefined, undefined]
         },
         {
             name: 'Files and LaTeX tabs: the state is kept on a workbench page',
@@ -166,11 +190,12 @@ describe('a saved envelope of the current version', () => {
         }
     ];
 
-    it.each(rows)('reads $name', ({ envelope, trees, docs, kept }) => {
+    it.each(rows)('reads $name', ({ envelope, trees, docs, views, kept }) => {
         const read = parseLayout(envelope);
         if (read === null) throw new Error('the envelope was not read');
         expect(read.pages.map((page) => page.workbench)).toEqual(trees);
         expect(read.pages.map((page) => page.docs)).toEqual(docs ?? trees.map(() => undefined));
+        expect(read.pages.map((page) => page.views)).toEqual(views ?? trees.map(() => undefined));
         expect(read.current).toBe('page-0');
         expect((read.kept ?? []).map((one) => one.workbench.root)).toEqual(kept ?? []);
         const written = JSON.parse(serialiseLayout(read)) as { version: number };

@@ -504,6 +504,7 @@ export type {
     DeckCard,
     DeckGroup,
     DeckIdeaCard,
+    DeckKeys,
     DeckOrderEntry,
     DeckSlide,
     DeckState,
@@ -652,7 +653,14 @@ export { DECK_GAP } from './model-deck.ts';
 export { confirmValues } from './model-agents.ts';
 export { domainColorOf, statedKind } from './model-entities.ts';
 export { COLLECTION_FLAGS, FILTERED_TYPES, REGISTRY_WORDS } from './model-collections.ts';
-export { displayFields, entryIdOf, entryTitleOf, primaryKeyOf } from './model-collections.ts';
+export {
+    CHOSEN_KEY_CAUSES,
+    displayFields,
+    entryIdOf,
+    entryTitleOf,
+    keyChoices,
+    primaryKeyOf
+} from './model-collections.ts';
 export { optionKey, optionKeys, optionLabel } from './model-collections.ts';
 export type {
     AgentAccount,

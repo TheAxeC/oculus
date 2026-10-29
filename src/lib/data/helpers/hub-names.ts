@@ -589,10 +589,16 @@ export const REPOSITORY_FILES = [
 export const LOCAL_FILE = `${ROOT_FOLDER}/local.yml`;
 
 /**
- * The one key of the machine's own file a Settings write sets: the user's key, which names the
- * user's own person. The server places the write by it and the Settings view draws its row apart.
+ * The user's key of the machine's own file, which names the user's own person: the one key of it a
+ * write of a defaults file's option places, in the primary hub's file.
  */
 export const USER_KEY = 'self';
+
+/**
+ * The keys of the machine's own file read from every hub's file, their rows joined; every other
+ * key is read from the primary hub's file alone (data/sources/config/machine.ts).
+ */
+export const JOINED_LOCAL_KEYS: readonly string[] = ['clusters', 'accounts', 'calendars', 'mail'];
 
 /**
  * The hub files Make Folder a Hub... may write besides `config.yml`, by the name its request and
@@ -682,18 +688,21 @@ export function offerAlong(
  * its rows' `key`, `focus_clusters`, `focus_lanes`, `fund_stages`, `position_stages`,
  * `teaching_stages`, `roles`, `venue_categories`, `pillar_kinds`, `venue_tiers` and `radar_buckets`
  * whole, and `rail_color` as a colour written `#rrggbb`; `manifest_fields`, the fields the hub adds
- * to the project form, is read row by row; every other key replaces oculus's value whole. They are
- * the keys that describe this hub rather than the engine: its folders and the files of its records,
- * which of its records a chat's index holds, where the reader's bookmarks, the schedules and the
- * machine's apps are kept, the clusters its jobs run on and the key Account setup makes for each,
- * the rows that tell a failed connection apart, the providers its readers sign in with, where
- * Recover downloads Node.js from, the files its writing rules skip or let draw arrows, the
- * conventions its audit holds its projects to (`audit:`: the files and sections it requires, the
- * folders a stage keeps a project in and its website's feed), the values its apps' settings hold,
- * the counts its tabs draw, its vocabulary (every list of vocab.yml) and the fields it adds to the
- * project form, the reader rows of its literature sources, its Recover sources and its journal
- * browser, and the links every page link is built from. Its domains and theme words are its own
- * registry files'. Which of them each hub's own file is read for, and which the primary's alone, is
+ * to the project form, is read row by row; the service rows oculus ships (`literature.sources`,
+ * `recover.sources`, `links` and `sign_in` by their `key`, `connections.failures` by its `kind`)
+ * are laid over oculus's row by row, so a hub adds, changes or removes one row; every other key
+ * replaces oculus's value whole, oculus's value standing where the hub sets none. They are the keys
+ * that describe this hub rather than the engine: its folders and the files of its records, which of
+ * its records a chat's index holds, where the reader's bookmarks, the schedules and the machine's
+ * apps are kept, the clusters its jobs run on and the key Account setup makes for each, the rows
+ * that tell a failed connection apart, the providers its readers sign in with, where Recover
+ * downloads Node.js from, the files its writing rules skip or let draw arrows, the conventions its
+ * audit holds its projects to (`audit:`: the files and sections it requires, the folders a stage
+ * keeps a project in and its website's feed), the values its apps' settings hold, the counts its
+ * tabs draw, its vocabulary (every list of vocab.yml) and the fields it adds to the project form,
+ * the reader rows of its literature sources, its Recover sources and its journal browser, and the
+ * links every page link is built from. Its domains and theme words are its own registry files'.
+ * Which of them each hub's own file is read for, and which the primary's alone, is
  * data/shapes/hub-keys.ts's.
  */
 const HUB_LIST: readonly { key: string; file: string }[] = [

@@ -1,203 +1,131 @@
-// Layer 2, client state. The write sequence of the list and family editors of one view. A Save
-// sends one `config-value` with the whole value and the row's value in force as its base, and a
-// Reset one `config-reset`, which takes the user's value out of its file so the default is in
-// force; the server then answers, and the config channel pushes the new value in force, which the
-// view hands to `pushed`. An answer that the value sent is in force ends the draft and marks the
-// row saved, which the editor says until the row is edited or sent again, as the rail list's Save
-// says it; the editor shows the value sent (`shown`, the default for a Reset) until the push brings
-// it. A refusal or a failure keeps the draft and says why.
+// Layer 2, client state. The writes of the list, multi and family editors of one view. Each edit
+// of an editor's draft that reads back holds the draft's whole value as an unsaved change of the
+// scope on screen, through the `Stage` the view gives it (scopes/write.ts), and a draft equal to
+// the row's value drops the change; the scope's Save writes it. A draft that does not read back
+// holds nothing new and keeps the change it held. Discard drops the draft and the change, and a
+// Reset holds the taking out of the user's value and ends the draft.
 //
-// While a write is out the editor shows the draft and a second Save waits. A push that lands before
-// the answer carrying the value sent ends the draft and marks the row saved as the answer does. A
-// push carrying another value than the one sent and the one it was based on, which means the file
-// changed in the meantime, ends the draft, or the value shown, with the sentence that it did. A
-// push that leaves the row in a form the editor does not draw ends the draft the tab holds of it,
-// with the sentence that it was dropped, since a draft with no editor cannot be saved or discarded.
-// A closed sequence sends nothing, says nothing and moves no state. It is a plain closure with no
-// runes; the view hands it a callback that redraws, one that drops a draft, one that says whether
-// the tab holds a draft of a row, and the lists the draft's fields are checked against before it is
-// sent.
+// A push ends a draft the tab holds once the row's value is the draft's and no change is held,
+// which is what a Save of the scope leaves; a draft that reads back and differs from the row with
+// no change held, as one the tab kept over a reload, holds its change again. A push ends a draft
+// whose row it leaves in a form the editor does not draw, with the sentence that it was dropped,
+// since a draft with no editor cannot be held or discarded. A closed writer holds nothing and
+// moves no state. It is a plain closure with no runes; the view hands it a callback that redraws,
+// one that drops a draft, one that says whether the tab holds a draft of a row, and the lists the
+// draft's fields are checked against.
 //
-// A row with a hub other than the primary chosen (`row.hub`) names that hub in its Save and its
-// Reset, and what the sequence keeps for it, a write out included, is kept apart from the same key
-// with another hub chosen, so only a push of that hub's row ends it. A row that says why it writes
-// nothing (`row.blocked`) sends nothing.
+// What it keeps for a row of a hub other than the primary or of a repository (`row.slot`) is kept
+// apart from the same key of another file. A row that says why it writes nothing (`row.blocked`)
+// holds nothing.
 
-import { sameInOrder } from '../../../../data/helpers/guards.ts';
-import type { WriteAnswer } from '../../../shared/stores/shapes.ts';
 import { message, type Message } from '../messages.ts';
 import { writtenWhole, type ConfigRow } from '../rows.ts';
-import { answered, heldKey, type ResetConfig } from '../write.ts';
-import { draftValue, type Draft } from './draft.ts';
+import { heldKey, heldValue, type Stage } from '../scopes/write.ts';
+import { draftValue, holdsValue, type Draft } from './draft.ts';
 import type { Lists } from './sources.ts';
 import { drawsEditor } from './slots.ts';
 
 /**
- * The write of one list or family: the client writes store's `writeConfigValue`. `root` names the
- * hub whose settings file takes it, and is left out for the primary.
- */
-export type WriteConfigValue = (
-    file: string,
-    key: string,
-    value: unknown,
-    base: unknown,
-    copy?: boolean,
-    root?: string
-) => Promise<WriteAnswer>;
-
-/**
- * What the view gives the sequence: the reset, a redraw, the end of a row's draft, whether one is
- * held and the lists the controls of a row draw from, the chosen hub's for a row with one chosen.
+ * What the view gives the writer: the stage of the scope on screen, a redraw, the end of a row's
+ * draft, the draft held and whether the file moved under it, and the lists the controls of a row
+ * draw from.
  */
 export type EditorHooks = {
-    reset: ResetConfig;
+    stage: Stage;
     changed: () => void;
     ended: (row: ConfigRow) => void;
-    held: (row: ConfigRow) => boolean;
+    held: (row: ConfigRow) => Draft | undefined;
+    /** Whether the file has moved from the value the row's draft was started over. */
+    stale: (row: ConfigRow) => boolean;
     lists: (row: ConfigRow) => Lists;
 };
 
-/** The write sequence of the editors of a view. */
+/** The writes of the editors of a view. */
 export type EditorWriter = {
-    /** Send the draft of a row, unless it is equal to the file, does not read back or is out. */
-    save: (row: ConfigRow, draft: Draft) => Promise<void>;
-    /** Take the user's value of a list, multi, parked list or family out of its file. */
-    reset: (row: ConfigRow) => Promise<void>;
-    /** The row as the file holds it now: ends the draft the file has taken, overtaken or left. */
+    /** Hold the draft of a row as its change, or drop the change for a draft equal to the row. */
+    save: (row: ConfigRow, draft: Draft) => void;
+    /** Drop the draft of a row and the change it held. */
+    discard: (row: ConfigRow) => void;
+    /** Hold the taking out of the user's value of a list, multi, parked list or family. */
+    reset: (row: ConfigRow) => void;
+    /** The row as the file holds it now: ends a draft the file holds or the editor cannot draw. */
     pushed: (row: ConfigRow) => void;
-    /** Whether a write of the row is out and not answered. */
-    sending: (row: ConfigRow) => boolean;
-    /**
-     * The value the file answered it holds for the row, while the push has not brought it yet, and
-     * undefined otherwise: what the editor shows in place of the row's value.
-     */
+    /** The value held for the row, which the editor shows in place of the row's value. */
     shown: (row: ConfigRow) => unknown;
     /** The sentence under the row, or null. */
     said: (row: ConfigRow) => Message | null;
-    /** Whether the file took the row's last write, until the row is edited or sent again. */
-    saved: (row: ConfigRow) => boolean;
-    /** Take the sentence of a row, and its saved mark, away. */
+    /** Whether the row holds an unsaved change, which the editor marks. */
+    unsaved: (row: ConfigRow) => boolean;
+    /** Take the sentence of a row away. */
     clear: (row: ConfigRow) => void;
-    /** End the sequence: nothing is sent, and nothing on its way changes anything. */
+    /** End the writer: nothing is held, and nothing changes any more. */
     close: () => void;
 };
 
-/** One write of a row: what was sent and the value it was based on. */
-type Out = { sent: unknown; base: unknown; turn: number };
-
-/** Open the write sequence of a view's editors. */
-export function createEditorWriter(write: WriteConfigValue, hooks: EditorHooks): EditorWriter {
-    const out = new Map<string, Out>();
-    /** The writes the file has answered for and the push has not brought yet. */
-    const landed = new Map<string, Out>();
+/** Open the writes of a view's editors. */
+export function createEditorWriter(hooks: EditorHooks): EditorWriter {
     const saying = new Map<string, Message>();
-    const taken = new Set<string>();
-    let turns = 0;
     let closed = false;
-    /** Whether the sequence was closed, read afresh after every wait. */
-    const stopped = (): boolean => closed;
 
-    /** The Save or the Reset of a row, naming the hub chosen on it when that is not the primary. */
-    function sendTo(row: ConfigRow, value: unknown, resetting: boolean): Promise<WriteAnswer> {
-        if (row.hub === undefined) {
-            return resetting
-                ? hooks.reset(row.file, row.key)
-                : write(row.file, row.key, value, row.value);
-        }
-        return resetting
-            ? hooks.reset(row.file, row.key, row.hub)
-            : write(row.file, row.key, value, row.value, false, row.hub);
-    }
-
-    /** Send a whole value, or with `resetting` the reset, whose value in force is the default. */
-    async function send(row: ConfigRow, value: unknown, resetting = false): Promise<void> {
-        const key = heldKey(row);
-        if (closed || row.blocked !== undefined || out.has(key)) return;
-        turns += 1;
-        const turn = turns;
-        out.set(key, { sent: value, base: row.value, turn });
-        landed.delete(key);
-        saying.delete(key);
-        taken.delete(key);
-        hooks.changed();
-        const answer = await sendTo(row, value, resetting);
-        if (stopped() || out.get(key)?.turn !== turn) return;
-        const said = answered(answer, row);
-        if (said !== null) {
-            saying.set(key, said);
-            out.delete(key);
-        } else {
-            const held = out.get(key);
-            out.delete(key);
-            if (held !== undefined && answer.changed.length > 0) {
-                landed.set(key, held);
-                taken.add(key);
-            }
-            hooks.ended(row);
-        }
-        hooks.changed();
-    }
-
-    async function save(row: ConfigRow, draft: Draft): Promise<void> {
+    function save(row: ConfigRow, draft: Draft): void {
+        if (closed || row.blocked !== undefined) return;
         const made = draftValue(draft, row, hooks.lists(row));
-        if (!made.ok || sameInOrder(made.value, row.value)) return;
-        return send(row, made.value);
+        if (!made.ok) return;
+        saying.delete(heldKey(row));
+        if (!holdsValue(made.value, row)) hooks.stage.set(row, made.value);
+        else if (hooks.stage.held(row) !== undefined) hooks.stage.drop(row);
+        hooks.changed();
     }
 
-    async function reset(row: ConfigRow): Promise<void> {
-        if (!writtenWhole(row.control) || !row.own) return;
-        return send(row, row.default, true);
+    function discard(row: ConfigRow): void {
+        if (closed) return;
+        saying.delete(heldKey(row));
+        if (hooks.stage.held(row) !== undefined) hooks.stage.drop(row);
+        hooks.ended(row);
+        hooks.changed();
+    }
+
+    function reset(row: ConfigRow): void {
+        if (closed || row.blocked !== undefined || !writtenWhole(row.control)) return;
+        if (row.own) hooks.stage.reset(row);
+        else hooks.stage.drop(row);
+        hooks.ended(row);
+        hooks.changed();
     }
 
     function pushed(row: ConfigRow): void {
-        if (closed) return;
-        const key = heldKey(row);
-        if (hooks.held(row) && !drawsEditor(row)) {
-            out.delete(key);
-            saying.set(key, message('draftDropped'));
-            hooks.ended(row);
-            hooks.changed();
-            return;
-        }
-        const answeredFor = landed.get(key);
-        if (answeredFor !== undefined) {
-            if (sameInOrder(row.value, answeredFor.base)) return;
-            landed.delete(key);
-            if (!sameInOrder(row.value, answeredFor.sent)) {
-                taken.delete(key);
-                saying.set(key, message('changedSince', row.file));
-            }
-            hooks.changed();
-            return;
-        }
-        const held = out.get(key);
-        if (held === undefined) return;
-        if (sameInOrder(row.value, held.sent)) {
-            out.delete(key);
-            taken.add(key);
-            hooks.ended(row);
-        } else if (sameInOrder(row.value, held.base)) {
-            return;
+        const draft = hooks.held(row);
+        if (closed || draft === undefined) return;
+        if (!drawsEditor(row)) {
+            saying.set(heldKey(row), message('draftDropped'));
         } else {
-            out.delete(key);
-            saying.set(key, message('changedSince', row.file));
-            hooks.ended(row);
+            const made = draftValue(draft, row, hooks.lists(row));
+            const unheld = hooks.stage.held(row) === undefined;
+            if (made.ok && !holdsValue(made.value, row)) {
+                // A draft the tab kept over a reload holds its change again, unless the file has
+                // moved from the value it was started over.
+                if (unheld && !hooks.stale(row)) {
+                    hooks.stage.set(row, made.value);
+                    hooks.changed();
+                }
+                return;
+            }
+            if (!made.ok || !unheld) return;
         }
+        hooks.ended(row);
         hooks.changed();
     }
 
     return {
         save,
+        discard,
         reset,
         pushed,
-        sending: (row) => out.has(heldKey(row)),
-        shown: (row) => landed.get(heldKey(row))?.sent,
+        shown: (row) => heldValue(row, hooks.stage.held(row)),
         said: (row) => saying.get(heldKey(row)) ?? null,
-        saved: (row) => taken.has(heldKey(row)),
+        unsaved: (row) => hooks.stage.held(row) !== undefined,
         clear: (row) => {
-            const key = heldKey(row);
-            const said = saying.delete(key);
-            if (taken.delete(key) || said) hooks.changed();
+            if (saying.delete(heldKey(row))) hooks.changed();
         },
         close: () => {
             closed = true;

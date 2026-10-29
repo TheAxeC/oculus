@@ -72,6 +72,9 @@ const SIGN_IN = [
     `    credential_address: ${ADDRESS}`
 ];
 
+/** The hub's row that takes oculus's GitHub row of `sign_in` out. */
+const REMOVED = ['sign_in:', '  - { key: github, removed: true }'];
+
 /** The two states of the hub's settings a case runs in. */
 const STATES = [
     { state: 'a signed-in host whose sign_in row names the address', signedIn: true },
@@ -126,7 +129,9 @@ function world(signedIn: boolean): World {
 
     const hub = plantHub(
         join(dir, 'hub'),
-        [...(signedIn ? SIGN_IN : []), 'scan:', '  - { dir: projects/manuscripts }', ''].join('\n')
+        [...(signedIn ? SIGN_IN : REMOVED), 'scan:', '  - { dir: projects/manuscripts }', ''].join(
+            '\n'
+        )
     );
     const alpha = join('projects', 'manuscripts', 'alpha');
     writeInside(

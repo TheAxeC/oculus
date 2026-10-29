@@ -14,8 +14,8 @@
 // (editors/fields.ts).
 //
 // The user's value of an option lives in one file, the row's place: a hub's settings file,
-// `.oculus/config.yml`, for a key of the hub list (data/helpers/hub-names.ts), which is the hub the
-// row names for a key each hub's own file is read for and the primary otherwise
+// `.oculus/config.yml`, for a key of the hub list (data/helpers/hub-names.ts), which is the hub of
+// the Settings scope on screen for a key each hub's own file is read for and the primary otherwise
 // (view/hub-settings.svelte.ts), and the open workspace file's `settings:` map for any other. The
 // row says whether that file holds the key (`own`, which is what Reset takes out) and the line of
 // the key's name there. The file is parsed once with `yaml`, and each key path is walked through
@@ -23,11 +23,10 @@
 // reads the file's key or nothing; the value in force is walked the same way through the merged
 // configuration's own keys.
 //
-// The machine-local file's rows are made from the catalog alone, and its text is never a parameter.
-// They show what the server sent of the files and write nothing, but for the user's key `self`
-// (`machineRows`): a row of the primary hub's `local.yml` that writes, its value in force and
-// whether the file sets it being what the server sent. Every sentence is a message (messages.ts)
-// for the view to word; nothing here holds one.
+// The rows of a hub's `.oculus/local.yml` (`localRows`) are made from the catalog and the values
+// the server answers of that file, its secrets standing as `true`, so its text is never a
+// parameter and no secret reaches a row. Every sentence is a message (messages.ts) for the view to
+// word; nothing here holds one.
 
 import { isEqual } from 'lodash-es';
 import {
@@ -39,7 +38,10 @@ import {
     type Pair
 } from 'yaml';
 import { z } from 'zod';
-import { HUB_FILE, USER_KEY, hubKeysOf } from '../../../data/helpers/hub-names.ts';
+import { REPO_SETTINGS } from '../../../data/helpers/editor/editor.ts';
+import { isMap } from '../../../data/helpers/guards.ts';
+import { HUB_FILE, JOINED_LOCAL_KEYS, hubKeysOf } from '../../../data/helpers/hub-names.ts';
+import type { LocalFile } from '../../../data/shapes/config-save.ts';
 import type {
     CatalogEntry,
     Control,
@@ -69,15 +71,15 @@ export type RowBase = {
 
 /**
  * The file a row's user value lives in: a hub's settings file (`hub`), the open workspace file
- * (`workspace`) or, for the user's key, the primary hub's `local.yml` (`local`). `root` and `path`
- * are the served root and the path the file is read and opened at, the root `PRIMARY_ROOT` for the
- * primary's settings file and `local.yml` and the hub's name for another hub's settings file;
- * `root` is null when no folder of the workspace serves the workspace file, and `path` null for the
- * unsaved workspace, which has no workspace file, and for a workspace with no primary, which has no
- * `local.yml` to write. `present` says whether the file is there.
+ * (`workspace`), a hub's `local.yml` (`local`) or a repository's `.oculus/settings.yml` (`repo`).
+ * `root` and `path` are the served root and the path the file is read at, the root `PRIMARY_ROOT`
+ * for the primary's settings file and the hub's or the folder's name for any other hub's or
+ * repository's file; `root` is null when no folder of the workspace serves the workspace file, and
+ * `path` null for the unsaved workspace, which has no workspace file. `present` says whether the
+ * file is there.
  */
 type UserPlace = {
-    layer: 'hub' | 'workspace' | 'local';
+    layer: 'hub' | 'workspace' | 'local' | 'repo';
     root: string | null;
     path: string | null;
     present: boolean;
@@ -112,27 +114,24 @@ export type ConfigRow = RowBase & {
     ordered: boolean;
     place: UserPlace;
     /**
-     * The hub a write of the row names (`root`): a hub other than the primary chosen on a row of a
-     * key each hub's own file is read for, or the one hub of a workspace whose hub is not the
-     * primary. Undefined for the primary's own value, which a write names no hub for.
+     * The hub or the repository whose file the row is read from when it is not the primary's
+     * settings file: the hub of the Hub scope, the hub of a `local.yml` row, the folder of a
+     * repository's row. Undefined for the primary's own settings file and the workspace file.
      */
     hub?: string;
     /**
-     * The hub the row's typed text, editor draft and write state are kept under: the hub chosen
-     * when it is not the primary in a workspace of more than one hub. Undefined otherwise, when
-     * they are kept under the file and key alone.
+     * The hub or folder the row's typed text and editor draft are kept under when it is not the
+     * primary, so one key of two hubs' files keeps two. Undefined otherwise, when they are kept
+     * under the file and key alone.
      */
     slot?: string;
-    /**
-     * The hubs the row offers to pick in a workspace of more than one hub, the primary first, with
-     * the one chosen, none while no hub is chosen; undefined on a row that offers no choice.
-     */
-    choice?: { offered: string[]; chosen: string | undefined };
-    /** Why the row writes nothing: no hub is picked, or the chosen hub's settings are not read. */
+    /** Why the row writes nothing: its scope's file is not read, or does not parse. */
     blocked?: Message;
+    /** A sentence about the value in force the row says under its control, beside its help. */
+    note?: Message;
     /**
-     * Set while the settings of the hub chosen on the row are being read or could not be read: the
-     * row's value, default and line are not known, it draws none of them and no control, only why
+     * Set while the settings of the Hub scope's hub are being read or could not be read: the row's
+     * value, default and line are not known, it draws none of them and no control, only why
      * (`blocked`), and its place is that hub's settings file.
      */
     unread?: true;
@@ -145,7 +144,7 @@ export type ConfigRow = RowBase & {
  * the hubs whose files set each joined list, and the move to the port the file names that the
  * server could not make, with why (the port in force is then the one it stays on).
  */
-export type MachineState = {
+type MachineState = {
     primary: string | null;
     set: readonly string[];
     defaults: Readonly<Record<string, string>>;
@@ -155,22 +154,15 @@ export type MachineState = {
 };
 
 /**
- * One key of the machine's own file, listed from the catalog and what is known of the files:
- * `setIn` is the primary hub whose file sets it, else null, `fallback` is the default in force for
- * a key the file does not set, null when the key has none, `lines` is the value in force, one line
- * for each row of a joined list, none when the key has no value to show, `hubs` names the hubs
- * whose files set a joined list, and `refused` is the message saying why the value the file names
- * is not in force, null when it is.
+ * What the rows of one hub's `.oculus/local.yml` are made from: the hub, whether it is the
+ * primary, the file as the server answered it (undefined until it has), and what the server sent
+ * of the machine's files.
  */
-export type LocalRow = RowBase & {
-    kind: 'local';
-    file: typeof LOCAL_NAME;
-    key: string;
-    setIn: string | null;
-    fallback: string | null;
-    lines: string[];
-    hubs: string[];
-    refused: Message | null;
+export type LocalScope = {
+    hub: string;
+    primary: boolean;
+    file: LocalFile | undefined;
+    machine: MachineState;
 };
 
 /** What became of the read of a user's file: read (`rows`), or why its lines are not known. */
@@ -186,7 +178,7 @@ export type HubFile = { text: FileText; present: boolean };
 type WorkspaceText = { root: string | null; path: string; text: FileText } | null;
 
 /** One user's file as a heading's line shows it: its path, whether it is there, and its read. */
-export type UserFileResult = {
+type UserFileResult = {
     path: string;
     present: boolean;
     status: FileStatus;
@@ -202,27 +194,6 @@ export type FileResult = {
     hubFile?: UserFileResult;
     workspace?: UserFileResult;
 };
-
-/**
- * The root and the path of the user's file a row is written to and opened in, or null when it has
- * none to open: the unsaved workspace, or a workspace file no folder of the workspace serves. Where
- * the file is opened in an editor is `openTarget`'s.
- */
-export function placeOf(row: ConfigRow): { root: string; file: string } | null {
-    const { root, path } = row.place;
-    return root === null || path === null ? null : { root, file: path };
-}
-
-/**
- * The name a row's user file is shown under: its path, after the hub's name for the settings file
- * of a hub other than the primary, so two hubs' `.oculus/config.yml` are told apart. Null for the
- * unsaved workspace, which has no file.
- */
-export function placeName(row: ConfigRow): string | null {
-    const { path } = row.place;
-    if (path === null) return null;
-    return row.hub === undefined || row.place.layer !== 'hub' ? path : `${row.hub}/${path}`;
-}
 
 /**
  * Whether a row's control writes its value whole, as a list, a multi, a parked list, a word block
@@ -299,7 +270,9 @@ export const textShape = z.union([z.string(), z.number(), z.boolean()]) satisfie
 /** Whether a value is one the option's control cannot show. */
 function cannotShow(control: Control | 'family', entry: CatalogEntry, value: unknown): boolean {
     if (control === 'family') return false;
-    if (control === 'text' || control === 'long') return !textShape.safeParse(value).success;
+    if (control === 'text' || control === 'scalar' || control === 'long') {
+        return !textShape.safeParse(value).success;
+    }
     return readField(entry, value).kind !== 'value';
 }
 
@@ -359,10 +332,25 @@ function parsed(
     const lines = new LineCounter();
     const doc = parseDocument(held.text, { lineCounter: lines });
     if (doc.errors.length > 0) {
-        const first = doc.errors[0].message.split('\n')[0];
-        return { status: 'unparsed', said: message('unparsed', file, first) };
+        const [error] = doc.errors;
+        const first = error.message.split('\n')[0];
+        const line = error.linePos?.[0].line ?? lines.linePos(error.pos[0]).line;
+        return { status: 'unparsed', said: message('unparsed', file, line, first) };
     }
     return { ok: { doc, lines } };
+}
+
+/**
+ * What became of the read of a user's file `held`, named `named` in the sentence: read (a file that
+ * is not there reads as empty), or the status and sentence of why it is not.
+ */
+export function fileStatus(
+    named: string,
+    held: HubFile
+): { status: FileStatus; said: Message | null } {
+    if (!held.present) return { status: 'rows', said: null };
+    const made = parsed(named, held.text);
+    return 'ok' in made ? { status: 'rows', said: null } : { status: made.status, said: made.said };
 }
 
 /**
@@ -456,84 +444,129 @@ export function fileRows(
     };
 }
 
+/** The keys of a hub's `local.yml` whose rows every hub's file joins, which any hub takes. */
+const JOINED: readonly string[] = JOINED_LOCAL_KEYS;
+
 /**
- * The rows of the machine's own file that write nothing, every key but the user's, from its catalog
- * entries and what is known of the files. With no primary no one-per-oculus key is set and each
- * shows its default; a joined list shows the rows of every hub's file whatever the primary is.
+ * The default of a machine key as its control holds it: the text the server sent, a number for a
+ * number box, and none for a key with no default.
  */
-function localRows(entries: Record<string, CatalogEntry>, machine: MachineState): LocalRow[] {
-    const shown = Object.entries(entries).filter(([key]) => key !== USER_KEY);
-    return shown.map(([key, entry]) => ({
-        kind: 'local',
-        id: `${LOCAL_NAME}:${key}`,
-        file: LOCAL_NAME,
-        key,
-        path: key,
-        title: titleOf(key),
-        help: entry.help,
-        section: sectionOf(key, entry.section),
-        modified: false,
-        setIn: machine.primary !== null && machine.set.includes(key) ? machine.primary : null,
-        fallback: Object.hasOwn(machine.defaults, key) ? machine.defaults[key] : null,
-        lines: Object.hasOwn(machine.values, key) ? machine.values[key].split('\n') : [],
-        hubs: Object.hasOwn(machine.hubs, key) ? [...machine.hubs[key]] : [],
-        refused: key === 'port' ? portRefusal(machine) : null
-    }));
+function machineDefault(key: string, entry: CatalogEntry, machine: MachineState): unknown {
+    if (!Object.hasOwn(machine.defaults, key)) return undefined;
+    const text = machine.defaults[key];
+    return entry.control === 'number' && text.trim() !== '' && Number.isFinite(Number(text))
+        ? Number(text)
+        : text;
+}
+
+/** Why the rows of a hub's `local.yml` write nothing, or null when they write. */
+function localBlock(of: LocalScope): Message | null {
+    const named = `${of.hub}/${LOCAL_PATH}`;
+    if (of.file === undefined) return message('loading', named);
+    if (of.file.unparsed !== null) return message('unparsedAt', named, of.file.unparsed);
+    return null;
 }
 
 /**
- * The row of the user's key `self` of the primary hub's `local.yml`, which writes: its value in
- * force and whether the file sets it are what the server sent, its default the server's default of
- * the key (nobody), and its place the primary's `local.yml`. With no primary it writes nothing and
- * says why.
+ * The rows of one hub's `.oculus/local.yml` in its catalog's order: every key the hub's file
+ * takes, which is every key for the primary and the keys of the joined lists for another hub. A
+ * row's value is the file's own, read from the server's answer of the file (the `secret` of a
+ * `downloads` row standing as `true` when it is set), so a key the file does not set is missing
+ * and its control draws empty; its default is the default the server sent of the key. While the
+ * file is not answered yet, or when it does not parse, every row says so and writes nothing. The
+ * port's row of the primary says when the server could not move to the port the file names.
  */
-function userRow(key: string, entry: CatalogEntry, machine: MachineState): ConfigRow {
-    const fallback = Object.hasOwn(machine.defaults, key) ? machine.defaults[key] : '';
-    const value = Object.hasOwn(machine.values, key) ? machine.values[key] : undefined;
-    const primary = machine.primary !== null;
-    const own = primary && machine.set.includes(key);
+export function localRows(entries: Record<string, CatalogEntry>, of: LocalScope): ConfigRow[] {
+    const values = of.file?.values ?? {};
+    const blocked = localBlock(of);
+    const taken = Object.entries(entries).filter(([key]) => of.primary || JOINED.includes(key));
+    return taken.map(([key, entry]): ConfigRow => {
+        const control: ConfigRow['control'] =
+            entry.fields === undefined ? (entry.control ?? 'text') : 'family';
+        const held = valueAt(values, key);
+        const missing = held === undefined || held === null;
+        const fallback = machineDefault(key, entry, of.machine);
+        const note = key === 'port' && of.primary ? portRefusal(of.machine) : null;
+        return {
+            kind: 'config',
+            id: `${LOCAL_NAME}:${key}`,
+            file: LOCAL_NAME,
+            key,
+            path: key,
+            title: titleOf(key),
+            help: entry.help,
+            section: sectionOf(key, entry.section),
+            control,
+            entry,
+            fields: entry.fields ?? {},
+            default: fallback,
+            value: missing ? undefined : held,
+            line: undefined,
+            own: !missing,
+            state: missing ? 'missing' : 'set',
+            mismatch: !missing && cannotShow(control, entry, held),
+            ordered: true,
+            modified: !missing && !isEqual(held, fallback),
+            place: {
+                layer: 'local',
+                root: of.hub,
+                path: LOCAL_PATH,
+                present: of.file?.present === true
+            },
+            hub: of.hub,
+            ...(of.primary ? {} : { slot: of.hub }),
+            ...(blocked === null ? {} : { blocked }),
+            ...(note === null ? {} : { note })
+        };
+    });
+}
+
+/** The defaults file and key a repository's `.oculus/settings.yml` takes, as `languages:`. */
+export const REPO_OPTION = { file: 'behavior.yml', key: 'editor.languages' } as const;
+
+/**
+ * The row of a repository's `.oculus/settings.yml`: the records of `editor.languages`, which the
+ * file holds as `languages:` (data/sources/config/editor-options.ts `parseRepoSettings`), drawn by
+ * that option's catalog entry. The file's own records are the value and nothing is its default;
+ * a file that is not there, or holds no `languages:`, draws the editor empty. While the file is
+ * being read, or when it cannot be read or does not parse, the row says so and writes nothing.
+ */
+export function repoRow(entry: CatalogEntry, root: string, held: HubFile): ConfigRow {
+    const named = `${root}/${REPO_SETTINGS}`;
+    const made = held.present ? parsed(named, held.text) : null;
+    const top: unknown = made !== null && 'ok' in made ? made.ok.doc.toJS() : null;
+    const languages = isMap(top) ? top.languages : undefined;
+    const missing = languages === undefined || languages === null;
+    const pair = made !== null && 'ok' in made ? pairAt(made.ok.doc, 'languages') : null;
+    const blocked = made === null || 'ok' in made ? null : made.said;
     return {
         kind: 'config',
-        id: `${LOCAL_NAME}:${key}`,
-        file: LOCAL_NAME,
-        key,
-        path: key,
-        title: titleOf(key),
+        id: `${REPO_OPTION.file}:${REPO_OPTION.key}`,
+        file: REPO_OPTION.file,
+        key: REPO_OPTION.key,
+        path: REPO_OPTION.key,
+        title: titleOf(REPO_OPTION.key),
         help: entry.help,
-        section: sectionOf(key, entry.section),
-        control: entry.control ?? 'text',
+        section: sectionOf(REPO_OPTION.key, entry.section),
+        control: 'family',
         entry,
-        fields: {},
-        default: fallback,
-        value: value ?? fallback,
-        line: undefined,
-        own,
-        state: value === undefined ? 'missing' : 'set',
-        mismatch: false,
+        fields: entry.fields ?? {},
+        default: undefined,
+        value: missing ? undefined : languages,
+        line:
+            pair === null || made === null || !('ok' in made)
+                ? undefined
+                : lineOf(pair, made.ok.lines),
+        own: !missing,
+        state: missing ? 'missing' : 'set',
+        mismatch: !missing && cannotShow('family', entry, languages),
         ordered: true,
-        modified: value !== undefined && value !== fallback,
-        place: {
-            layer: 'local',
-            root: primary ? PRIMARY_ROOT : null,
-            path: primary ? LOCAL_PATH : null,
-            present: own
-        },
-        ...(primary ? {} : { blocked: message('noPrimary') })
+        modified: !missing,
+        place: { layer: 'repo', root, path: REPO_SETTINGS, present: held.present },
+        hub: root,
+        slot: root,
+        ...(blocked === null ? {} : { blocked })
     };
-}
-
-/**
- * The rows of the machine's own file in its catalog's order: the user's key as a row that writes
- * (`userRow`), and every other key as a row that writes nothing (`localRows`).
- */
-export function machineRows(
-    entries: Record<string, CatalogEntry>,
-    machine: MachineState
-): (LocalRow | ConfigRow)[] {
-    const local = new Map(localRows(entries, machine).map((row) => [row.key, row]));
-    return Object.entries(entries).map(
-        ([key, entry]) => local.get(key) ?? userRow(key, entry, machine)
-    );
 }
 
 /**

@@ -2,17 +2,18 @@
 // from its options file (`config/options/*.yml`): each entry's control says what its key may hold,
 // the entry's `help` is the key's description, a group of dotted options takes its help line from
 // the file's `groups:`, and a family describes the records of a list, the values of a map or the
-// one record of a field marked `holds: record` once.
+// one record of a field marked `holds: record` once. A record of the options file's
+// `descriptions:` that fields name is one definition at the schema's root, which they refer to.
 // The same schema, with every option of every defaults file, describes a workspace file's
 // `settings:`, where a keyed list also takes a row `{ <key>: x, removed: true }` and a map family
 // a key set to null (merge/keyed.ts).
 //
 // The schema is the catalog's rule (catalog/value-rule.ts) in JSON Schema's words, so the editor
-// marks what the Settings view refuses: a toggle holds a flag, a number its range, a choice the
-// words of its `options` and of the sources it names, a list its items and its slots, a word block
-// its four lists of the words and the flags of the list it names. A source that only the page holds
-// (the views, the theme classes, the usage tiers, the file icon themes) offers its words nowhere
-// else, so a choice drawn from one is any text.
+// marks what the Settings view refuses: a toggle holds a flag, a number its range, a scalar a text
+// of its form, a number or a flag, a choice the words of its `options` and of the sources it names,
+// a list its items and its slots, a word block its four lists of the words and the flags of the
+// list it names. A source that only the page holds (the views, the theme classes, the usage tiers,
+// the file icon themes) offers its words nowhere else, so a choice drawn from one is any text.
 
 import type { CatalogEntry, FieldSpec, Source } from '../options.ts';
 import {
@@ -21,7 +22,8 @@ import {
     hueNames,
     isPairs,
     listedSources,
-    pickedSources
+    pickedSources,
+    takesRecord
 } from '../options.ts';
 import { BLOCK_LISTS } from '../../../../shapes/boards/words.ts';
 import { glyphNames } from '../../rail.ts';
@@ -167,6 +169,8 @@ function controlSchema(spec: FieldSpec, lists: OptionLists): JsonSchema {
             const names = hueNames(lists.merged);
             return names.length > 0 ? { enum: names } : { type: 'string' };
         }
+        case 'scalar':
+            return { anyOf: [textSchema(spec), { type: 'number' }, { type: 'boolean' }] };
         default: {
             const schema = textSchema(spec);
             const offered = suggestions(spec, lists);
@@ -200,17 +204,38 @@ function pickedRules(name: string, spec: FieldSpec, lists: OptionLists): JsonSch
     return rules;
 }
 
+/**
+ * The schemas of the records of the files' `descriptions:` (catalog/options.ts, `described_by`)
+ * met while a schema is made, each by its definition name, null while it is being made. The file's
+ * schema carries them at its root as `definitions`, and every field that names a record refers to
+ * its definition, so a record that names itself describes a value nested at any depth.
+ */
+export type Definitions = Map<string, JsonSchema | null>;
+
+/** The name of the definition of a described record, `behavior.yml#reader_value`, in a pointer. */
+function definitionName(described: string): string {
+    return described.replace('#', '.');
+}
+
+/** The `definitions` a schema's root carries for the described records it refers to. */
+export function definitionsOf(defs: Definitions): Record<string, JsonSchema> {
+    const held: Record<string, JsonSchema> = {};
+    for (const [name, schema] of defs) if (schema !== null) held[name] = schema;
+    return held;
+}
+
 /** The schema of a record whose fields are those of a family. */
 export function recordSchema(
     fields: Record<string, FieldSpec>,
     lists: OptionLists,
+    defs: Definitions,
     loose = false
 ): JsonSchema {
     const properties: Record<string, JsonSchema> = {};
     const rules: JsonSchema[] = [];
     for (const [name, spec] of Object.entries(fields)) {
         const free = loose && spec.control === 'text' && spec.fields === undefined;
-        properties[name] = free ? described({}, spec.help) : fieldSchema(spec, lists);
+        properties[name] = free ? described({}, spec.help) : fieldSchema(spec, lists, defs);
         rules.push(...pickedRules(name, spec, lists));
     }
     const schema: JsonSchema = { type: 'object', properties, additionalProperties: false };
@@ -232,14 +257,18 @@ export { isPairs };
  */
 function pickedByKey(
     fields: Record<string, FieldSpec>,
-    lists: OptionLists
+    lists: OptionLists,
+    defs: Definitions
 ): Record<string, JsonSchema> | null {
     const picked = pickedSources(fields.value);
     if (picked?.field !== 'key') return null;
+    // Each value takes the one source of its key, so it is described on its own, not by the
+    // definition of a record it may name.
+    const { described: _record, ...value } = fields.value;
     return Object.fromEntries(
         Object.entries(picked.sources).map(([word, source]) => [
             word,
-            fieldSchema({ ...fields.value, from: [source] }, lists)
+            fieldSchema({ ...value, from: [source] }, lists, defs)
         ])
     );
 }
@@ -248,35 +277,58 @@ function pickedByKey(
  * The schema of a family: a list of its records, a map from a key to a record or a value, or for
  * a field that holds one record (`holds: record`) that record.
  */
-function familySchema(entry: CatalogEntry, lists: OptionLists, loose = false): JsonSchema {
+function familySchema(
+    entry: CatalogEntry,
+    lists: OptionLists,
+    defs: Definitions,
+    loose = false
+): JsonSchema {
     const fields = entry.fields ?? {};
-    if (entry.holds === 'record') return recordSchema(fields, lists, loose);
+    if (entry.holds === 'record') return recordSchema(fields, lists, defs, loose);
     const keyed = 'key' in fields;
-    if (loose && !keyed) return recordSchema(fields, lists, true);
-    const rows = recordSchema(fields, lists, loose);
+    if (loose && !keyed) return recordSchema(fields, lists, defs, true);
+    const rows = recordSchema(fields, lists, defs, loose);
     // A table holds one value a key, or a list of such values where it holds lists; a value that
     // is a list already is the list. Any other keyed family holds one record a key.
-    const value = isPairs(fields) ? fieldSchema(fields.value, lists) : null;
+    const value = isPairs(fields) ? fieldSchema(fields.value, lists, defs) : null;
     const wrapped = value !== null && entry.holds === 'lists' && fields.value.control !== 'list';
     const member: JsonSchema =
         value === null
-            ? recordSchema(withoutKey(fields), lists, loose)
+            ? recordSchema(withoutKey(fields), lists, defs, loose)
             : wrapped
               ? { anyOf: [value, { type: 'array', items: value }] }
               : value;
     const schema: JsonSchema = { type: keyed ? ['array', 'object'] : 'array', items: rows };
     if (keyed) schema.additionalProperties = member;
-    const byKey = value === null || wrapped ? null : pickedByKey(fields, lists);
+    const byKey = value === null || wrapped ? null : pickedByKey(fields, lists, defs);
     if (byKey !== null) schema.properties = byKey;
     return schema;
 }
 
-/** The schema of one field of a family: its control, or its help line alone as a text. */
-function fieldSchema(spec: FieldSpec, lists: OptionLists): JsonSchema {
-    if (spec.fields !== undefined) {
-        return described(familySchema(spec, lists), spec.help);
+/**
+ * The schema of one field of a family as it stands: its control, or its help line alone as a
+ * text; a text field that takes one record of its fields (takesRecord) takes either.
+ */
+function ownSchema(spec: FieldSpec, lists: OptionLists, defs: Definitions): JsonSchema {
+    if (spec.fields === undefined) return described(controlSchema(spec, lists), spec.help);
+    const family = familySchema(spec, lists, defs);
+    if (!takesRecord(spec)) return described(family, spec.help);
+    return described({ anyOf: [controlSchema(spec, lists), family] }, spec.help);
+}
+
+/**
+ * The schema of one field of a family: a field that is a described record refers to the record's
+ * definition, made the first time it is met and carrying no help line, with its own help line; any
+ * other is its own schema.
+ */
+function fieldSchema(spec: FieldSpec, lists: OptionLists, defs: Definitions): JsonSchema {
+    if (spec.described === undefined) return ownSchema(spec, lists, defs);
+    const name = definitionName(spec.described);
+    if (!defs.has(name)) {
+        defs.set(name, null);
+        defs.set(name, ownSchema({ ...spec, help: '' }, lists, defs));
     }
-    return described(controlSchema(spec, lists), spec.help);
+    return described({ allOf: [{ $ref: `#/definitions/${name}` }] }, spec.help);
 }
 
 /**
@@ -298,11 +350,16 @@ function withOverrides(schema: JsonSchema, entry: CatalogEntry): void {
 }
 
 /** The schema of one option or family of a config file. */
-function entrySchema(path: string, entry: CatalogEntry, lists: OptionLists): JsonSchema {
+function entrySchema(
+    path: string,
+    entry: CatalogEntry,
+    lists: OptionLists,
+    defs: Definitions
+): JsonSchema {
     const schema =
         entry.fields === undefined
             ? controlSchema({ ...entry, control: entry.control ?? 'text' }, lists)
-            : familySchema(entry, lists, OWN_READER.includes(path));
+            : familySchema(entry, lists, defs, OWN_READER.includes(path));
     if (lists.overrides === true && entry.fields !== undefined) withOverrides(schema, entry);
     if (Object.hasOwn(entry, 'default')) schema.default = entry.default;
     return described(schema, entry.help);
@@ -314,7 +371,8 @@ type Branch = { properties: Record<string, JsonSchema> };
 /**
  * The schema of a config file from its options, each group of dotted options described by its
  * help line in `groups` (group path to line), with the top-level keys of `extra` after the
- * options' own.
+ * options' own, and at its root the `definitions` of the described records its fields name. A
+ * caller that puts the schema inside another moves those definitions to that one's root.
  */
 export function optionsSchema(
     entries: Record<string, CatalogEntry>,
@@ -323,6 +381,7 @@ export function optionsSchema(
     groups: Record<string, string> = {}
 ): JsonSchema {
     const root: JsonSchema = { type: 'object', properties: {}, additionalProperties: false };
+    const defs: Definitions = new Map();
     for (const [path, entry] of Object.entries(entries)) {
         const names = path.split('.');
         let at: Branch = root as Branch;
@@ -335,9 +394,10 @@ export function optionsSchema(
             }
             at = at.properties[name] as Branch;
         }
-        at.properties[names[names.length - 1]] = entrySchema(path, entry, lists);
+        at.properties[names[names.length - 1]] = entrySchema(path, entry, lists, defs);
     }
     Object.assign((root as Branch).properties, extra);
+    if (defs.size > 0) root.definitions = definitionsOf(defs);
     return root;
 }
 

@@ -13,8 +13,10 @@
 // fields the hub adds to the project form, is read row by row here: a row is a field of
 // `manifest_schema` under the key `field` it adds to project.yml, and a row that would change a
 // field oculus's form has, that the form cannot draw, or whose `foreign_key:` names no collection
-// of the hub, `projects` or vocab list once the hub's own values are laid in, is left out. Every
-// other key replaces oculus's value whole.
+// of the hub, `projects` or vocab list once the hub's own values are laid in, is left out. The
+// lists of service rows oculus ships (`literature.sources`, `recover.sources`, `links`, `sign_in`
+// and `connections.failures`, in-place.ts's `ROW_SHAPES`) are laid over oculus's row by row, with
+// the same findings as `categories`. Every other key replaces oculus's value whole.
 
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -29,6 +31,7 @@ import { SOURCES, type Source } from '../../../shapes/catalog-words.ts';
 import { configItems } from '../catalog/options.ts';
 import {
     VOCAB_SHAPES,
+    hubShapeOf,
     layInPlace,
     problemFinding,
     wrongKindFinding,
@@ -42,11 +45,11 @@ import { keysShape, notAMap, unparsed, type PendingFinding } from './text.ts';
 import { setAt, valueAt } from './tree.ts';
 
 /**
- * A value the hub's settings file holds for a key of oculus's vocabulary, laid over oculus's by
- * the key's shape, with the finding of each part that cannot be applied, oculus's entry standing
- * for it; a value of the wrong kind, and a list replaced whole two of whose rows name one key,
- * leave oculus's value whole, the second marked `refused` so its rows are still read for their
- * kind. Undefined for a key merged whole.
+ * A value the hub's settings file holds for a key of oculus's vocabulary or a list of its service
+ * rows, laid over oculus's by the key's shape (`hubShapeOf`), with the finding of each part that
+ * cannot be applied, oculus's entry standing for it; a value of the wrong kind, and a list replaced
+ * whole two of whose rows name one key, leave oculus's value whole, the second marked `refused` so
+ * its rows are still read for their kind. Undefined for a key merged whole.
  */
 function vocabValue(
     path: string,
@@ -55,8 +58,8 @@ function vocabValue(
     file: string,
     pending: PendingFinding[]
 ): { value: unknown; wrong?: true; refused?: true } | undefined {
-    if (!Object.hasOwn(VOCAB_SHAPES, path)) return undefined;
-    const shape = VOCAB_SHAPES[path];
+    const shape = hubShapeOf(path);
+    if (shape === undefined) return undefined;
     const laid = layInPlace(shape, oculus, value);
     if ('wrong' in laid) {
         pending.push(wrongKindFinding(file, path, path, laid.wrong));
@@ -270,7 +273,7 @@ function prunedValue(
     lost: ReadonlyMap<Source, ReadonlySet<string>>,
     say: Say | null
 ): unknown {
-    const shape = Object.hasOwn(VOCAB_SHAPES, path) ? VOCAB_SHAPES[path] : WHOLE_LIST;
+    const shape = hubShapeOf(path) ?? WHOLE_LIST;
     const hub = say !== null && written !== undefined;
     const words = lostOf(entry, {}, lost);
     if (words.size > 0 && (Array.isArray(value) || typeof value === 'string')) {

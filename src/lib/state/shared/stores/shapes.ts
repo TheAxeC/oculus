@@ -400,7 +400,8 @@ export type WritesStore = {
     writeDeckSlides: (
         deck: { root: string; path: string },
         groups: { group: string; base: string[]; slides: string[] }[],
-        order?: { base: string[]; entries: string[] }
+        order?: { base: string[]; entries: string[] },
+        keys?: { path: string[]; base: unknown; value: unknown }[]
     ) => Promise<WriteAnswer>;
     /** One act on the files of a deck; the answer's `id` is what to show next. */
     writeDeckEdit: (act: DeckEditAct, said?: boolean) => Promise<WriteAnswer>;

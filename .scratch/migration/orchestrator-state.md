@@ -23,20 +23,7 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 ```
 
 ```yaml
-dispatch:          # steps in flight, up to six (Z632)
-- step: O99
-  brief_check: "agents/reviews/O99-brief-check.md (a5e0fbddd32b98bcf, claude-opus-5-5, 258157 tokens, 106 tool uses, 12 min 12 s)"
-  base: a5281619a
-  worktree: .agents/worktrees/migration-O99
-  executor: agent
-  worker: claude:opus
-  session_id: a4c10c31eedf15f05 (claude-opus-5-5)
-  launched: 2026-10-29
-  builder_usage: round 0 hand-back 182961 tokens, 47 tool uses, 6 min 33 s; round 0 after the cases ruling 323090 tokens, 2109 tool uses, 5 h 28 min 10 s; round 1 271922 tokens, 415 tool uses, 56 min 7 s; round 2 280640 tokens, 284 tool uses, 33 min 16 s
-  round: 2
-  report: .scratch/migration/agents/reviews/O99-report.md
-  reviewer_report: "agents/reviews/O99-refuter.md (aeb88e56ffde106e9, claude-opus-5-5, 355591 tokens, 114 tool uses, 18 min 27 s); over round 1: a0a0fcdd662cc3122, claude-opus-5-5, 332257 tokens, 103 tool uses, 19 min 49 s"
-  landing: not-started
+dispatch: []      # steps in flight, up to six (Z632)
 ```
 
 ## The standing demands (from Axel, in force)
@@ -709,6 +696,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-10-29 (O99 landed). O99 (every setting edited in Settings through its scope, the forms for the files that are no setting, the service rows shipped in oculus's defaults) is on main, booked under O99 in `plan.md` with its five agents in the Agents section, `agents/reviews/O99-landing.md`; the whole range from a5281619a with the fixes at landing, the gate green on its second run, main's staged diff equal to the gate's under `cmp` (229 files), the look on 8790. The Hub text is applied in the research hub's `.oculus/config.yml` after this commit, in a hub commit of its own. In flight (0 of 6): none. Next: `/spec migration O101` and `/spec migration O102` side by side (ruling 549 (b)), O102's brief naming the source of each paper's `Code:` link (the DOI when there, else `code_availability.url`). Open items: none.
 - 2026-10-29 (O99 round 2 built, under review). O99's builder a4c10c31eedf15f05 built round 2 (report section "Repair round 2", saved in the main ledger, usage under builder_usage): the control word `scalar` for `reader_value`'s `value`, and the cluster pick of This machine (`other-rows/cluster-rows.ts`, `other-rows/ClusterRows.svelte`, a `narrow` on `Lists`); its verify run passes; not done: the before-run of round 1's four launch rows, and the report's table of changed test lines is round 0's; one shell write (`npx prettier --write` on the two new files), closed under the ruling "Unapproved builder scripts". The orchestrator read the round's delta (971 lines). The reviewer over round 2 aade82c34310c3cf7 (claude-opus-5-5, from its transcript) runs. In flight (1 of 6): O99, review over round 2. Next: the review, then /land migration O99. Open items: none.
 - 2026-10-29 (round 2 brief read again; no message sent). Axel asked whether the round 2 brief is constrained enough and whether a correction is worth sending; nothing is sent. At landing: the paths the round writes are read from `git status` against `.agents/worktrees/migration-O99-round-2/files.txt`; the brief's sentence that a row already there keeps its own cluster in its choice is booked as a decision taken in the brief (the base's view drew a row's cluster fixed, the family editor of round 1 offers every cluster, the brief's choice of its own cluster and the clusters with no row stands between them and cannot make a second row of one cluster); the schema test's file is judged where the builder put it; the guarded entries of the new tests (G138 for the constant rows, the clusters entry for the pick) are named in the Doc text. In flight (1 of 6): O99, round 2. Open items: none.
 - 2026-10-29 (548, 549 and 550 ruled; O99 round 2 sent). Axel ruled 548 (a), 549 (b) and 550 (a), booked in `plan.md` Rulings, on O99's line and on O102's line. Round 2 (`agents/briefs/O99-round2.md`, the extra round for a red verify line and an unbuilt acceptance item: the control word `scalar` for `reader_value`'s `value`, and the base's cluster pick as a row of `settings/other-rows/`) is sent to the builder a4c10c31eedf15f05; snapshot `.agents/worktrees/migration-O99-round-2/` (226 paths, 10 deleted); the base copy `.agents/worktrees/O99-base/` made again with `unused-exports.txt` (230 exports, 109 types). The other findings of the review over round 1 are fixed at landing, as its "Closed" says. In flight (1 of 6): O99, round 2. Next: round 2's report, a fresh review over it, the landing of O99; then /spec O101 and /spec O102, side by side (549 (b)). Open items: none.

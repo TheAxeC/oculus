@@ -13,7 +13,7 @@
     import type { ClangdProps } from './props';
     import TreeItem from '$lib/ui/tree/TreeItem.svelte';
     import type { TreeNav } from '$lib/ui/tree/tree-keys';
-    import { memoryRows, type MemoryRow } from '$lib/state/system/machine/lsp/clangd';
+    import { memoryRows, type MemoryRow } from '$lib/state/system/machine/lsp/clangd/clangd';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
 

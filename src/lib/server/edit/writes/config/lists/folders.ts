@@ -28,8 +28,10 @@ import {
     expandHome,
     folderName,
     folderToAdd,
-    pathAsWritten
+    pathAsWritten,
+    validName
 } from '../../../../files/workspace/folders.ts';
+import { words } from '../../../../core/words.ts';
 import { SCAN_DEPTH } from '../../../../../data/sources/config/merge/workspace-file.ts';
 import { scalarText, type FolderRefusal } from '../../../../files/workspace/folders.ts';
 import type { OpenWorkspace } from '../../../../files/workspace/open.ts';
@@ -323,6 +325,89 @@ export function removeFolder(open: OpenWorkspace, name: string): FoldersOutcome 
         folders: held.folders.filter((one) => one.name !== name),
         primary: held.primary === name ? null : held.primary
     });
+}
+
+/** What a Settings save makes of a folders write: what it changed, or the one refusal. */
+type SaveOutcome = { changed: string[]; refused: { field: string; reason: string }[] };
+
+/**
+ * A folders write as a Settings save reads it: a refusal worded from the server's catalog, and a
+ * file that could not be written thrown, as every Settings writer throws it.
+ */
+function asSave(outcome: FoldersOutcome, text: Record<string, string>): SaveOutcome {
+    if (!('error' in outcome)) return { changed: outcome.changed, refused: [] };
+    if (outcome.error === 'unwritable') throw new Error('unwritable');
+    const reason =
+        outcome.error === 'unreadable'
+            ? words(text, 'server.config_save.folders_unreadable')
+            : words(text, 'server.config_save.folders_invalid');
+    return { changed: [], refused: [{ field: FOLDERS, reason }] };
+}
+
+/** The folder names, in order, and the primary a workspace file's text holds, or null. */
+export function workspaceNames(
+    source: string
+): { folders: string[]; primary: string | null } | null {
+    const value = valueOf(source);
+    if (value === null) return null;
+    return { folders: value.folders.map((one) => one.name), primary: value.primary };
+}
+
+/**
+ * Make the folder `name` the open workspace's primary, or take the primary out for an empty name.
+ * A name no folder of the workspace has, and a folder that is no hub, are refused, naming it.
+ */
+export function setPrimary(
+    open: OpenWorkspace,
+    name: string,
+    text: Record<string, string>
+): SaveOutcome {
+    const held = heldBy(open);
+    if (!isValue(held)) return asSave(held, text);
+    if (name !== '') {
+        const found = open.folders.find((one) => one.name === name);
+        if (found === undefined || !held.folders.some((one) => one.name === name)) {
+            return refusedName(words(text, 'server.config_save.no_folder', name));
+        }
+        if (!found.hub) return refusedName(words(text, 'server.config_save.not_hub', name));
+    }
+    return asSave(put(open, { folders: held.folders, primary: name === '' ? null : name }), text);
+}
+
+/**
+ * Give the folder `from` of the open workspace the name `to`; a folder that is the primary carries
+ * `primary` with it. An empty name, a name a folder name cannot be, a name another folder holds and
+ * a folder the workspace does not have are refused, naming the name.
+ */
+export function renameFolder(
+    open: OpenWorkspace,
+    from: string,
+    to: string,
+    text: Record<string, string>
+): SaveOutcome {
+    const held = heldBy(open);
+    if (!isValue(held)) return asSave(held, text);
+    if (!held.folders.some((one) => one.name === from)) {
+        return refusedName(words(text, 'server.config_save.no_folder', from));
+    }
+    if (to === from) return { changed: [], refused: [] };
+    if (to === '') return refusedName(words(text, 'server.config_save.name_empty', from));
+    if (!validName(to)) return refusedName(words(text, 'server.config_save.name_invalid', to));
+    if (held.folders.some((one) => one.name === to)) {
+        return refusedName(words(text, 'server.config_save.name_taken', to));
+    }
+    return asSave(
+        put(open, {
+            folders: held.folders.map((one) => (one.name === from ? { ...one, name: to } : one)),
+            primary: held.primary === from ? to : held.primary
+        }),
+        text
+    );
+}
+
+/** A refusal of a name, with the sentence that names it. */
+function refusedName(reason: string): SaveOutcome {
+    return { changed: [], refused: [{ field: FOLDERS, reason }] };
 }
 
 /**

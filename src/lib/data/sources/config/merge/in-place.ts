@@ -1,29 +1,31 @@
-// Layer 1, data, pure. How a hub's settings file lays its vocabulary over oculus's, and a
-// workspace file's `settings:` its catalogs, each key by its shape, so a hub changes one word of
-// oculus's lists without copying the rest and oculus's order stays the order every list is drawn
-// in.
+// Layer 1, data, pure. How a hub's settings file lays its vocabulary and its service rows over
+// oculus's, and a workspace file's `settings:` its catalogs, each key by its shape, so a hub
+// changes one word or one row of oculus's lists without copying the rest and oculus's order stays
+// the order every list is drawn in.
 //
 // A map is merged by its keys: a key named replaces oculus's entry of that key in oculus's place, a
 // new key comes after oculus's keys in the order it is written, and `<key>: null` takes oculus's
-// entry out. A list of rows told apart by a field (`categories` by `key`, `latex_unimath` by
-// `command`) is merged the same way, `{ <field>: x, removed: true }` taking oculus's row `x` out.
-// Any other list is replaced whole, since its order is its meaning, and a colour (`rail_color`)
-// replaces oculus's when it is written `#rrggbb`. What cannot be applied is a problem and oculus's
-// entry stands: a null or a removal naming an entry oculus does not hold, `removed` holding
-// anything but true, and two rows naming one key (none of the two is applied). A row with no key to
-// tell it by comes after oculus's rows as it is, and the reader of the list says what is wrong with
-// it. The rows of a list replaced whole are told apart by their `key`, or by their `label` in a
-// list of the Focus band's stages, which has no key: a row naming the key of an earlier row is a
-// problem naming its place, and oculus's list stands. The hub layer (hub-layer.ts) lets oculus's
-// list stand too when a row of such a list is not of the shape oculus's file takes, and takes a
-// word the hub's values no longer give out of the lists that name it. `focus_clusters` is applied
-// as written, since its reader (sections/vocab.ts) takes it row by row.
+// entry out. A list of rows told apart by a field (`categories`, `literature.sources`,
+// `recover.sources`, `links` and `sign_in` by `key`, `connections.failures` by `kind`,
+// `latex_unimath` by `command`) is merged the same way, `{ <field>: x, removed: true }` taking
+// oculus's row `x` out; a new failure row comes before oculus's, so a hub's own error text is
+// matched first. Any other list is replaced whole, since its order is its meaning, and a colour
+// (`rail_color`) replaces oculus's when it is written `#rrggbb`. What cannot be applied is a
+// problem and oculus's entry stands: a null or a removal naming an entry oculus does not hold,
+// `removed` holding anything but true, and two rows naming one key (none of the two is applied). A
+// row with no key to tell it by comes after oculus's rows as it is, and the reader of the list says
+// what is wrong with it. The rows of a list replaced whole are told apart by their `key`, or by
+// their `label` in a list of the Focus band's stages, which has no key: a row naming the key of an
+// earlier row is a problem naming its place, and oculus's list stands. The hub layer (hub-layer.ts)
+// lets oculus's list stand too when a row of such a list is not of the shape oculus's file takes,
+// and takes a word the hub's values no longer give out of the lists that name it. `focus_clusters`
+// is applied as written, since its reader (sections/vocab.ts) takes it row by row.
 //
 // The inverse is here too: the value a settings file holds for a value the reader sees, so the
-// merge over oculus's value gives the seen value back. It holds only the entries the reader
-// changed or added and a removal for each of oculus's the reader took out; an entry left as oculus
-// ships it is not written. The workspace's other keyed options keep the order of keyed.ts, the
-// workspace's entries first.
+// merge over oculus's value gives the seen value back. It holds only the entries the reader changed
+// or added and a removal for each of oculus's the reader took out; an entry left as oculus ships it
+// is not written. The workspace's other keyed options keep the order of keyed.ts, the workspace's
+// entries first.
 
 import { isEqual } from 'lodash-es';
 import { findingText, type TextCatalog } from '../../../helpers/finding-text.ts';
@@ -37,11 +39,12 @@ const REMOVED = 'removed';
 
 /**
  * How one key is laid over oculus's value: a map by its keys, rows by a field, a list whole, its
- * rows told apart by `field` when it names one, or a colour that replaces oculus's.
+ * rows told apart by `field` when it names one, or a colour that replaces oculus's. A list of rows
+ * marked `added: 'first'` puts the rows oculus lacks before oculus's, and any other after them.
  */
 export type InPlace =
     | { kind: 'map' }
-    | { kind: 'rows'; field: string }
+    | { kind: 'rows'; field: string; added?: 'first' }
     | { kind: 'whole'; field?: string }
     | { kind: 'colour' };
 
@@ -118,9 +121,33 @@ export const CATALOG_SHAPES: Readonly<Record<string, InPlace>> = {
     latex_unimath: { kind: 'rows', field: 'command' }
 };
 
-/** The shape a key of either table is merged by, or none for a key of neither. */
-export function inPlaceOf(key: string): InPlace | undefined {
+/** A list of reader rows, links or providers, told apart by its rows' `key`. */
+const BY_KEY: InPlace = { kind: 'rows', field: 'key' };
+
+/**
+ * The lists of rows of config/defaults/behavior.yml a hub's settings file lays over oculus's, by
+ * their dotted key, each by the field its rows are told apart by. A failure row oculus lacks is
+ * read before oculus's, so the hub's own error text is matched first; any other new row comes
+ * after oculus's.
+ */
+const ROW_SHAPES: Readonly<Record<string, InPlace>> = {
+    'literature.sources': BY_KEY,
+    'recover.sources': BY_KEY,
+    links: BY_KEY,
+    sign_in: BY_KEY,
+    'connections.failures': { kind: 'rows', field: 'kind', added: 'first' }
+};
+
+/** The shape a key of the hub's settings file is laid by, or none for a key replaced whole. */
+export function hubShapeOf(key: string): InPlace | undefined {
     if (Object.hasOwn(VOCAB_SHAPES, key)) return VOCAB_SHAPES[key];
+    return Object.hasOwn(ROW_SHAPES, key) ? ROW_SHAPES[key] : undefined;
+}
+
+/** The shape a key of any of the three tables is merged by, or none for a key of none. */
+export function inPlaceOf(key: string): InPlace | undefined {
+    const hub = hubShapeOf(key);
+    if (hub !== undefined) return hub;
     return Object.hasOwn(CATALOG_SHAPES, key) ? CATALOG_SHAPES[key] : undefined;
 }
 
@@ -227,13 +254,14 @@ function repeatedRows(rows: readonly unknown[], field: string): InPlaceProblem[]
 
 /**
  * A list of rows laid over oculus's list by the field `field`: oculus's rows in oculus's order,
- * each replaced by the row written for its key or taken out by a removal, then the new rows and
- * the rows with no key in the order written.
+ * each replaced by the row written for its key or taken out by a removal, with the new rows and
+ * the rows with no key in the order written after them, or before them when `first` is set.
  */
 function mergeRowsInPlace(
     oculus: readonly unknown[],
     over: readonly unknown[],
-    field: string
+    field: string,
+    first: boolean
 ): Merged<unknown[]> {
     const problems: OverrideProblem[] = [];
     const held = new Set(oculus.flatMap((row) => rowKey(row, field) ?? []));
@@ -265,7 +293,7 @@ function mergeRowsInPlace(
         const replaced = named.get(key);
         return replaced === null ? [] : [replaced];
     });
-    return { value: [...kept, ...tail], problems };
+    return { value: first ? [...tail, ...kept] : [...kept, ...tail], problems };
 }
 
 /**
@@ -292,7 +320,8 @@ export function layInPlace(
         const problems = shape.field === undefined ? [] : repeatedRows(value, shape.field);
         return { value: problems.length > 0 ? oculus : value, problems };
     }
-    return mergeRowsInPlace(Array.isArray(oculus) ? oculus : [], value, shape.field);
+    const base = Array.isArray(oculus) ? oculus : [];
+    return mergeRowsInPlace(base, value, shape.field, shape.added === 'first');
 }
 
 /**

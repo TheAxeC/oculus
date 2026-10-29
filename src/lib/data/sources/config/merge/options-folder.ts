@@ -4,9 +4,10 @@
 // describes the defaults file of its name (and local.yml, a hub's machine file); `catalogs/` and
 // `schemas/` describe the catalog and schema files of their name (`catalogs/vocab.yml`, whose words
 // a hub lays over oculus's by shape, and `schemas/manifest-schema.yml`); `text.yml` describes the
-// workspace's words, `text`. The folder is read on its own, after oculus's other files, into two
+// workspace's words, `text`. The folder is read on its own, after oculus's other files, into three
 // keys of the merged map: `options`, which maps each described file's name (the file's path under
-// config/options/) to its entries, and `option_groups`, which maps it to what its `groups:` holds.
+// config/options/) to its entries, `option_groups`, which maps it to what its `groups:` holds, and
+// `option_descriptions`, which maps it to its `descriptions:`, the field records its fields name.
 // Each entry is given oculus's own value at its path as its `default`, since the shipped file is
 // the one place a shipped value is written; local.yml has no shipped file and its entries carry
 // none, and neither does `text`, whose default would be the whole text catalog sent twice.
@@ -30,6 +31,12 @@ const OPTIONS_KEY = 'options';
 
 /** The key of the merged map that holds every options file's group help lines, by file. */
 const GROUPS_KEY = 'option_groups';
+
+/**
+ * The key of the merged map that holds every options file's named field records, by file: the
+ * records its fields name by `described_by` (catalog/options.ts).
+ */
+const DESCRIPTIONS_KEY = 'option_descriptions';
 
 /** A file of the folder read from this text instead of from the disk, named relative to config/. */
 type Instead = { name: string; text: string } | undefined;
@@ -104,6 +111,7 @@ export function readOptionsFolder(
     if (names.length === 0) return;
     const options: Record<string, unknown> = {};
     const groups: Record<string, unknown> = {};
+    const descriptions: Record<string, unknown> = {};
     for (const name of names) {
         const file = join(dir, name);
         const text = (): string =>
@@ -115,10 +123,11 @@ export function readOptionsFolder(
             options[described] = withDefaults(parsed.options, described, config);
         }
         if (Object.hasOwn(parsed, 'groups')) groups[described] = parsed.groups;
+        if (isMap(parsed.descriptions)) descriptions[described] = parsed.descriptions;
     }
     // The folder is named as a path relative to config/, as a catalog file is, for sourceFile.
     const folder = `${OPTIONS_DIR}/`;
-    for (const key of [OPTIONS_KEY, GROUPS_KEY]) {
+    for (const key of [OPTIONS_KEY, GROUPS_KEY, DESCRIPTIONS_KEY]) {
         if (!(key in config)) continue;
         const earlier = from[key];
         pending.push({
@@ -130,6 +139,8 @@ export function readOptionsFolder(
     }
     config[OPTIONS_KEY] = options;
     config[GROUPS_KEY] = groups;
+    config[DESCRIPTIONS_KEY] = descriptions;
     from[OPTIONS_KEY] = folder;
     from[GROUPS_KEY] = folder;
+    from[DESCRIPTIONS_KEY] = folder;
 }

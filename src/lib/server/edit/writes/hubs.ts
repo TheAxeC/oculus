@@ -95,7 +95,11 @@ export type Routed = { into: PrimaryTarget; id: string };
  * and null for a name no hub of the workspace carries and for a hub other than the primary when the
  * write comes from an app.
  */
-function hubTarget(into: WriteTarget, root: string, app: HeldApp | null): PrimaryTarget | null {
+export function hubTarget(
+    into: WriteTarget,
+    root: string,
+    app: HeldApp | null
+): PrimaryTarget | null {
     if (root !== '' && root === into.primary) return primaryOf(into);
     if (app !== null) return null;
     const one = (into.hubs ?? []).find((held) => held.key === root);

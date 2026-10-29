@@ -59,21 +59,35 @@ function optionLeaf(spec: Pick<FieldSpec, 'from'>): FieldNode | null {
         : { kind: 'leaf', sources: [], picked: { field: from.field, sources: picked } };
 }
 
-/** The record node of the fields of an options family, a nested family read as a family. */
-function optionRecord(fields: Record<string, FieldSpec>): FieldNode | null {
+/**
+ * The record node of the fields of an options family, a nested family read as a family. A family
+ * whose fields are already being read on the way here (a field record that names itself,
+ * catalog/options.ts) adds no place the first reading does not, so it is not read again.
+ */
+function optionRecord(
+    fields: Record<string, FieldSpec>,
+    open = new Set<object>()
+): FieldNode | null {
     const held: Record<string, FieldNode> = {};
+    open.add(fields);
     for (const [name, spec] of Object.entries(fields)) {
-        const node = spec.fields === undefined ? optionLeaf(spec) : familyNode(spec);
+        const inner = spec.fields;
+        if (inner !== undefined && open.has(inner)) continue;
+        const node = inner === undefined ? optionLeaf(spec) : familyNode(spec, open);
         if (node !== null) held[name] = node;
     }
+    open.delete(fields);
     return recordOf(held);
 }
 
 /** The node of an options family: a list of records, or a map from its `key` to a record. */
-function familyNode(entry: Pick<CatalogEntry, 'fields'>): FieldNode | null {
+function familyNode(
+    entry: Pick<CatalogEntry, 'fields'>,
+    open = new Set<object>()
+): FieldNode | null {
     const fields = entry.fields ?? {};
     if (!('key' in fields)) {
-        const record = optionRecord(fields);
+        const record = optionRecord(fields, open);
         return record === null ? null : { kind: 'records', record };
     }
     const key = optionLeaf(fields.key) ?? undefined;
@@ -83,7 +97,9 @@ function familyNode(entry: Pick<CatalogEntry, 'fields'>): FieldNode | null {
         if (key === undefined && value === undefined) return null;
         return { kind: 'family', key, record: null, value };
     }
-    const record = optionRecord(rest);
+    open.add(fields);
+    const record = optionRecord(rest, open);
+    open.delete(fields);
     if (key === undefined && record === null) return null;
     return { kind: 'family', key, record };
 }

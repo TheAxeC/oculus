@@ -38,10 +38,10 @@ import {
 } from '../entry-edit/index.ts';
 import { putBack, replacedLines } from '../writes/config/config-checks.ts';
 import { noPrimaryKey, saved, sharedRefusal, typeRefusals } from '../writes/entries.ts';
-import { asFieldValue } from '../yaml/yaml-edit.ts';
+import { asFieldValue } from '../../core/files/yaml/yaml-edit.ts';
 import type { ChangeRecord } from '../../core/changes.ts';
-import type { Refusal } from '../yaml/yaml-edit.ts';
-import type { FieldValue } from '../yaml/yaml-values.ts';
+import type { Refusal } from '../../core/files/yaml/yaml-edit.ts';
+import type { FieldValue } from '../../core/files/yaml/yaml-values.ts';
 import type {
     FeedData,
     FeedKind,

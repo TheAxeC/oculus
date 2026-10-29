@@ -6,15 +6,19 @@
     //
     // Each node is labelled by its kind alone for the roles expression, statement, declaration and
     // template name, else by kind then role, its detail beside it and its arcana as its tooltip,
-    // its icon by kind else by role (state/system/machine/lsp/clangd.ts). Every node with children
-    // is open. A press selects the node's range in the source tab without moving the focus out of
-    // the view, and the head's Close empties the section.
+    // its icon by kind else by role (state/system/machine/lsp/clangd/clangd.ts). Every node with
+    // children is open. A press selects the node's range in the source tab without moving the focus
+    // out of the view, and the head's Close empties the section.
 
     import ClangdSection from './ClangdSection.svelte';
     import type { ClangdProps } from './props';
     import TreeItem from '$lib/ui/tree/TreeItem.svelte';
     import type { TreeNav } from '$lib/ui/tree/tree-keys';
-    import { astGlyph, describeNode, type AstNode } from '$lib/state/system/machine/lsp/clangd';
+    import {
+        astGlyph,
+        describeNode,
+        type AstNode
+    } from '$lib/state/system/machine/lsp/clangd/clangd';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
 

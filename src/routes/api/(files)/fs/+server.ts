@@ -6,15 +6,16 @@
 //
 // The workspace, the machine's values and the write chain come off the ServerContext, which holds
 // the workspace and the values and reads them again only when a file of theirs changed, so a
-// request reads no workspace file. The bookmarks are kept where the merged config's `bookmarks`
-// names, by default the primary hub's `.oculus/bookmarks.yml`, and a workspace with no primary has
-// none at a relative place; the notes are each hub's own `.oculus/notes/` folder, read from the
-// workspace's hubs.
+// request reads no workspace file; it reads each hub's `.oculus/local.yml`, whose values with every
+// secret masked the This machine scope of Settings edits (`localFiles`). The bookmarks are kept
+// where the merged config's `bookmarks` names, by default the primary hub's
+// `.oculus/bookmarks.yml`, and a workspace with no primary has none at a relative place; the notes
+// are each hub's own `.oculus/notes/` folder, read from the workspace's hubs.
 
 import { textCatalog } from '$lib/data/sources/config';
 import { handleFs, handleFsWrite, type FsTarget } from '$lib/server/files/fs';
 import { machineDefaults, secretWord } from '$lib/server/root/process/context/machine-defaults';
-import { machineValues } from '$lib/server/root/process/context/machine-values';
+import { localFiles, machineValues } from '$lib/server/root/process/context/machine-values';
 import { perOculus } from '$lib/server/files/workspace/paths';
 import type { RequestHandler } from './$types';
 
@@ -41,7 +42,8 @@ const target = (locals: App.Locals): FsTarget => {
                 lists,
                 secretWord(text)
             ),
-            portRefused: server.portRefused()
+            portRefused: server.portRefused(),
+            files: localFiles(open.hubs)
         },
         bookmarks: own.bookmarks,
         writes: server.fsWrites,

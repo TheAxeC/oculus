@@ -20,6 +20,7 @@ import {
     deckOf,
     deckTarget,
     request,
+    undone,
     warmConfig
 } from './write-fixture.ts';
 
@@ -30,7 +31,12 @@ type Lists = { group: string; base: string[]; slides: string[] }[];
 /** The body of a write of the lists given, and the order when one is. */
 function body(
     groups: Lists,
-    over: Partial<{ path: string; root: string; order: { base: string[]; entries: string[] } }> = {}
+    over: Partial<{
+        path: string;
+        root: string;
+        order: { base: string[]; entries: string[] };
+        keys: { path: string[]; base: unknown; value: unknown }[];
+    }> = {}
 ): unknown {
     return { kind: 'deck-slides', root: 'hub', path: DECK_PATH, groups, ...over };
 }
@@ -199,5 +205,131 @@ describe('writing a deck lists', () => {
             after: entries,
             undo: 'field'
         });
+    });
+});
+
+/**
+ * The deck file as the write leaves it with only the records given applied, each replacement the
+ * first test makes kept only when its record is among them.
+ */
+function textWith(before: string, records: { key: string; field: string }[]): string {
+    const has = (key: string, field: string): boolean =>
+        records.some((one) => one.key === key && one.field === field);
+    let text = before;
+    if (has('deck', 'title'))
+        text = text.replace('    title: A deck\n', '    title: The new title\n');
+    if (has('groups.pillars', 'sort')) {
+        text = text.replace('            - alpha\n', '            - alpha\n        sort: title\n');
+    }
+    if (has('groups.more', 'discover')) {
+        text = text.replace('        slides: []\n', '        slides: []\n        discover: true\n');
+    }
+    if (has('groups.ideas', 'find'))
+        text = text.replace('tiers: [personal] }', 'tiers: [personal, research] }');
+    if (has('defaults', 'tag_tones')) {
+        // A key the file does not hold is added after its last key.
+        text = text.replace(
+            '    - { slides: more }\n',
+            '    - { slides: more }\ndefaults:\n    tag_tones:\n        measured: teal\n'
+        );
+    }
+    return text;
+}
+
+/** The body of a write of the keys given, each `[path, base, value]`, and no list. */
+function keysBody(keys: [string[], unknown, unknown][]): unknown {
+    return body([], { keys: keys.map(([path, base, value]) => ({ path, base, value })) });
+}
+
+describe("writing a deck's keys", () => {
+    it("sets the title, the tag tones and a group's sort, discover and find, changing only their lines, a record each, each undone", async () => {
+        const into = deckTarget();
+        const before = deckOf(into);
+        const written = await answered(
+            into,
+            keysBody([
+                [['deck', 'title'], 'A deck', 'The new title'],
+                [['defaults', 'tag_tones'], null, { measured: 'teal' }],
+                [['groups', 'pillars', 'sort'], null, 'title'],
+                [['groups', 'more', 'discover'], null, true],
+                [
+                    ['groups', 'ideas', 'find'],
+                    { folders: 'projects/*/*/present', tiers: ['personal'] },
+                    { folders: 'projects/*/*/present', tiers: ['personal', 'research'] }
+                ]
+            ])
+        );
+        const after = deckOf(into);
+        expect([written.status, written.answer.changed]).toEqual([
+            200,
+            [
+                'deck.title',
+                'defaults.tag_tones',
+                'groups.pillars.sort',
+                'groups.more.discover',
+                'groups.ideas.find'
+            ]
+        ]);
+        expect(after).toBe(textWith(before, changesOf(into)));
+        const records = changesOf(into);
+        expect(records.map((one) => [one.key, one.field, one.before, one.after])).toEqual([
+            [
+                'groups.ideas',
+                'find',
+                { folders: 'projects/*/*/present', tiers: ['personal'] },
+                { folders: 'projects/*/*/present', tiers: ['personal', 'research'] }
+            ],
+            ['groups.more', 'discover', null, true],
+            ['groups.pillars', 'sort', null, 'title'],
+            ['defaults', 'tag_tones', null, { measured: 'teal' }],
+            ['deck', 'title', 'A deck', 'The new title']
+        ]);
+        // Each record is undone newest first, each undo leaving only the older records' lines and
+        // logged at the head, and the last undo leaves the file as it was.
+        for (const [at, record] of records.entries()) {
+            expect((await undone(into, record)).status).toBe(200);
+            expect(deckOf(into)).toBe(textWith(before, records.slice(at + 1)));
+            expect(changesOf(into)[0]).toMatchObject({ kind: 'deck-slides', undoes: record.at });
+        }
+        expect(deckOf(into)).toBe(before);
+    });
+
+    it('refuses a key the view does not set, a value the key does not take, a base the file does not hold, and a group it does not have', async () => {
+        const into = deckTarget();
+        const rows: { row: string; key: [string[], unknown, unknown]; reason: string }[] = [
+            {
+                row: 'a key the view does not set',
+                key: [['deck', 'author'], null, 'me'],
+                reason: 'deck.author is not a key the Slides view sets'
+            },
+            {
+                row: 'an empty title',
+                key: [['deck', 'title'], 'A deck', ' '],
+                reason: 'deck.title cannot hold that value: it takes a text that is not empty'
+            },
+            {
+                row: 'a sort of another word',
+                key: [['groups', 'pillars', 'sort'], null, 'date'],
+                reason: 'groups.pillars.sort cannot hold that value: it takes folder or title'
+            },
+            {
+                row: 'a find with no folders',
+                key: [['groups', 'pillars', 'find'], null, { tiers: ['research'] }],
+                reason: 'groups.pillars.find cannot hold that value: it takes a map whose folders is a glob or a list of globs, with the lists tiers, stages, forms and status beside it'
+            },
+            {
+                row: 'a base the file does not hold',
+                key: [['deck', 'title'], 'Another deck', 'X'],
+                reason: 'deck.title changed on disk while you were working. Read the deck again and make the change again.'
+            },
+            {
+                row: 'a group the deck does not have',
+                key: [['groups', 'nothing', 'sort'], null, 'title'],
+                reason: 'The deck has no group named nothing'
+            }
+        ];
+        for (const { row, key, reason } of rows) {
+            expect(await refusedWith(into, keysBody([key])), row).toEqual([reason]);
+        }
     });
 });

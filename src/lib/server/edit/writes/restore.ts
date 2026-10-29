@@ -21,10 +21,10 @@ import {
     settable,
     splice,
     type EditResult
-} from '../yaml/yaml-edit.ts';
-import { REFUSALS, said, why } from '../yaml/why.ts';
-import type { Why } from '../yaml/why.ts';
-import type { FieldValue } from '../yaml/yaml-values.ts';
+} from '../../core/files/yaml/yaml-edit.ts';
+import { REFUSALS, said, why } from '../../core/files/yaml/why.ts';
+import type { Why } from '../../core/files/yaml/why.ts';
+import type { FieldValue } from '../../core/files/yaml/yaml-values.ts';
 
 /** Whether an index falls between the two halves of a surrogate pair. */
 function splitsPair(text: string, at: number): boolean {

@@ -1,5 +1,6 @@
 // Layer 2, client state. Add Configuration of the Debug view: the configurations it offers and the
-// write of the one chosen into `.oculus/launch.yml` of a repository.
+// write of the one chosen into `.oculus/launch.yml` of a repository; and the edit and the deletion
+// of a configuration the file holds, each written by the server in the entry's place.
 //
 // What is offered is oculus's own configuration (it runs the open `.rite` file) and, for each
 // debugger of an app that acts, the snippets it declares (`configurationSnippets`), its
@@ -112,6 +113,32 @@ export async function addConfiguration(
     else queries.hold(['debug', repo], read);
     deps.openFile(repo, LAUNCH_FILE, answer.kind === 'line' ? answer.line : 1);
     return name;
+}
+
+/**
+ * Make `changes` to the configuration of `name` in the repository's launch file (its form's
+ * answers, launch-form.ts), or take it out when `changes` is null, and read the file again.
+ * Whether the server wrote it; a refusal is said as a notice.
+ */
+export async function editConfiguration(
+    deps: DebugDeps,
+    queries: Queries,
+    repo: string,
+    name: string,
+    changes: Record<string, unknown> | null
+): Promise<boolean> {
+    const answer = await postDebug(
+        { action: 'editConfiguration', repo, name, changes },
+        deps.writes
+    );
+    if (answer.kind === 'refused') {
+        deps.notices.post(answer.error, { tone: 'error' });
+        return false;
+    }
+    const read = await readLaunches(repo);
+    if ('error' in read) queries.mark(['debug', repo], 'replace');
+    else queries.hold(['debug', repo], read);
+    return true;
 }
 
 /**

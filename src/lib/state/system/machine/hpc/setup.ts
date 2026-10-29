@@ -9,11 +9,7 @@ import { z } from 'zod';
 import type { ClusterSetup } from '../../../../data/model/index.ts';
 import { readAs, unchanged } from '../../../../data/shapes/shapes.ts';
 import { t } from '../../../shared/words/text.ts';
-export type {
-    ClusterRow,
-    ClusterSetup,
-    ClusterSetupCluster
-} from '../../../../data/model/index.ts';
+export type { ClusterSetup, ClusterSetupCluster } from '../../../../data/model/index.ts';
 
 /** What `ssh -G` resolved a cluster's connection to, or the line it refused it with. */
 export const resolutionShape = z.union([

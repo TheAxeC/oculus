@@ -11,10 +11,12 @@
     // about first, in a confirm naming the path or the files, and approved on the reader's yes
     // before anything runs; taking the configuration's approval back asks nothing. The approval
     // names the key of the files the list showed, so one made after they changed approves nothing
-    // and leaves the list open with the files as they are now.
+    // and leaves the list open with the files as they are now. The compile database list ends with
+    // the rows that edit `.oculus/cpp.yml` (CppRows.svelte).
 
     import { onMount } from 'svelte';
     import ApprovalAsk from '$lib/shell/keys/rows/approve/ApprovalAsk.svelte';
+    import CppRows from '$lib/shell/keys/rows/approve/CppRows.svelte';
     import PaletteRow from '$lib/shell/keys/PaletteRow.svelte';
     import type { ChoiceMode, ChoiceRow } from '$lib/shell/keys/palette-modes';
     import type { LspAnswer } from '$lib/state/system/machine/lsp/lsp.svelte';
@@ -28,13 +30,22 @@
         /** The tab's root and the language its server serves. */
         served: { root: string; language: string };
         rows: ChoiceRow[];
+        /** What is typed after the command, which narrows the rows. */
+        argument: string;
         /** Whether the relay has not listed the root's choices yet. */
         loading: boolean;
         onclose: () => void;
         onsaid: (words: string) => void;
     };
 
-    let { mode, served, rows, loading, onclose, onsaid }: Props = $props();
+    let { mode, served, rows, argument, loading, onclose, onsaid }: Props = $props();
+
+    /** The key of the database in force, for the rows that edit `.oculus/cpp.yml`. */
+    const inForce = $derived(
+        rows.flatMap((one) =>
+            one.active && one.pick?.kind === 'database' ? one.pick.key : []
+        )[0] ?? null
+    );
 
     // A root's choices are asked for each time the list opens, since a configuration or a database
     // may have been added since the last answer, and arrive as a message.
@@ -143,6 +154,9 @@
         }}
     />
 {/each}
+{#if mode === 'database'}
+    <CppRows {served} {argument} {inForce} {onsaid} />
+{/if}
 {#if rows.length === 0}
     <p class="empty" data-palette-choices-empty>
         {loading

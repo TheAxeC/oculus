@@ -125,6 +125,30 @@ export function keyFaultOf(schema: KeyedSchema, named?: string): KeyFault | null
     return null;
 }
 
+/** The causes of no primary key that the choice of a field as the key mends. */
+export const CHOSEN_KEY_CAUSES: readonly KeyFault['cause'][] = ['none', 'two', 'beside', 'missing'];
+
+/**
+ * The fields a file of entries offers as its primary key, in the order its entries first hold
+ * them: each field an entry holds whose every value is no list and no map, and in a file with a
+ * schema only the ones the schema describes with a type a primary key may be (`UNKEYED_TYPES`).
+ */
+export function keyChoices(
+    schema: KeyedSchema,
+    entries: readonly Record<string, unknown>[]
+): string[] {
+    const held: string[] = [];
+    for (const entry of entries) {
+        for (const key of Object.keys(entry)) if (!held.includes(key)) held.push(key);
+    }
+    const scalar = (key: string): boolean =>
+        entries.every((entry) => typeof entry[key] !== 'object' || entry[key] === null);
+    const described = (key: string): boolean =>
+        schema === undefined ||
+        (schema?.some((one) => one.field === key && !UNKEYED_TYPES.includes(one.type)) ?? false);
+    return held.filter((key) => scalar(key) && described(key));
+}
+
 /**
  * The primary key of a file of entries, the field an entry is addressed by in every read and
  * write: the one field of the file's schema flagged `primary_key: true`, and for a file with no

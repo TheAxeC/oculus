@@ -3,20 +3,21 @@
     // override it: each folder of the workspace whose `.oculus/settings.yml` sets a language, a
     // folder whose file was not read and why, one with no file that reads as text, and the entries
     // of a read file that were skipped. The settings texts come with the folder list. The folder's
-    // name opens its settings file in a source tab.
+    // name shows the Repository scope of that folder, where its languages are set; no line opens
+    // the file.
 
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import { sourceTabState } from '$lib/state/sessions/source/draft';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
     import { repoOrigins } from '$lib/state/system/config/editors/origins';
-    import { REPO_SETTINGS } from '$lib/state/workbench/navigation/editor-text';
 
     const {
         fs: { workspaces },
-        layout: { openView },
         selectors: { repoSettings }
     } = useState();
+
+    /** Show the Repository scope of a folder. */
+    let { onrepo }: { onrepo: (root: string) => void } = $props();
 
     /** The folders of the open workspace, in the order the workspace gives them. */
     const roots = $derived(workspaces().folders);
@@ -27,9 +28,9 @@
     <p class="origin" data-origin={origin.kind}>
         {origin.lead}<ToolButton
             label={origin.label}
-            title={t('workbench.settings_edit_in_tip', `${origin.root}/${REPO_SETTINGS}`)}
+            title={t('workbench.settings_origin_tip', origin.root)}
             plain
-            onclick={() => openView('source', sourceTabState(origin.root, REPO_SETTINGS))}
+            onclick={() => onrepo(origin.root)}
         />{origin.tail}
     </p>
 {/each}

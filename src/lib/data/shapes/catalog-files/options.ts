@@ -1,6 +1,7 @@
 // Layer 1, data. The whole-file shape of an options file, config/options/<file>.yml: every option
-// of one defaults file (or of a hub's local.yml) by dotted key path, and the help line of each
-// group of its dotted options, with a description on every key. The descriptions say what the head
+// of one defaults file (or of a hub's local.yml) by dotted key path, the field records its fields
+// name by `described_by`, and the help line of each group of its dotted options, with a
+// description on every key. The descriptions say what the head
 // of config/options/appearance.yml says each word of an entry holds. The options reader
 // (data/sources/config/catalog/options.ts) words its own refusals; `readSpecWords` names them.
 
@@ -94,7 +95,12 @@ const optionField: z.ZodType<OptionField> = z.lazy(() =>
                         'The fields of a nested family by name: a list of records, a map from a key to a value, or one record.'
                     ),
                 holds: holdsWord,
-                sparse: sparseWord
+                sparse: sparseWord,
+                described_by: text
+                    .optional()
+                    .describe(
+                        "The name of a record of the file's descriptions: that this field is described by, its own help line, when it has one, standing for the record's; a record may name itself in a field of its own, which describes a value nested at any depth."
+                    )
             })
         ])
         .describe('One field of the records: its help line alone, or its control and words.')
@@ -133,15 +139,23 @@ export const optionsFileShape = z.strictObject({
             text.describe('What the settings under the group govern, shown as its description.')
         )
         .optional()
-        .describe('The help line of each group of dotted options, by its path.')
+        .describe('The help line of each group of dotted options, by its path.'),
+    descriptions: z
+        .record(z.string(), optionField)
+        .optional()
+        .describe(
+            'The field records the fields of this file name by described_by, each by its name, so a record used in several places is described once.'
+        )
 });
 
 /**
  * The keys of an options file that readSpec (data/sources/config/catalog/options.ts) words itself:
  * a control, a source, a form, a heading, a `whole`, a list of slots, a help line, a key field, a
- * `holds`, a `sparse` or a group line it refuses.
+ * `holds`, a `sparse`, a `described_by` or a group line it refuses.
  */
 export const readSpecWords: Owned = (key) =>
     key === 'groups' ||
     key.startsWith('groups.') ||
-    /(^|\.)(control|from|form|heading|whole|slots|help|key|holds|sparse)(\.|$)/.test(key);
+    /(^|\.)(control|from|form|heading|whole|slots|help|key|holds|sparse|described_by)(\.|$)/.test(
+        key
+    );

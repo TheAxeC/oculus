@@ -23,14 +23,14 @@
 // A draft that does not read back is not an error: `draftValue` answers the problems, each with the
 // message to word it, and Save waits until there are none. A draft the page held in the form that
 // kept every field as one line of YAML flow text (flow.ts) is read into typed fields by
-// `typedDraft`. The rail and the page reset, a row the file does not hold, a row flagged mismatch,
-// a list holding anything but text and a family whose nested list holds anything but records have
-// no draft.
+// `typedDraft`. A row no layer gives a value has an empty draft, which the editor draws with no
+// entry and its Add. The rail, which has its own editor, a row flagged mismatch, a list holding
+// anything but text and a family whose nested list holds anything but records have no draft.
 
 import { byKey, isMap, sameInOrder } from '../../../../data/helpers/guards.ts';
 import { familyForm, type FieldSpec } from '../../../../data/sources/config/catalog/options.ts';
 import { message, type Message } from '../messages.ts';
-import { PAGES_ROW, RAIL_ROW, WORKBENCH_ROW } from '../groups.ts';
+import { RAIL_ROW } from '../groups.ts';
 import type { ConfigRow } from '../rows.ts';
 import {
     cardOf,
@@ -40,6 +40,7 @@ import {
     drawsCards,
     emptyCard,
     pairValueSpec,
+    putRead,
     readField,
     troubleMessage,
     wordsOf,
@@ -137,13 +138,45 @@ function single(name: string, value: FieldValue): Card {
 }
 
 /**
+ * The empty draft of a list, a multi or a family no layer gives a value, whose editor starts with
+ * no entry and an Add: a list of as many empty items as its slots, a multi with no word picked, a
+ * family that holds one record as one empty card, and any other family with no card, a map's
+ * entries keyed as the defaults file's value is (a map keyed by its key, a list not).
+ */
+function emptyDraft(row: ConfigRow): Draft | null {
+    if (row.control === 'list' || row.control === 'parked') {
+        const cards = (row.entry.slots ?? []).map(() => single('item', ''));
+        return { form: 'items', keyed: false, fields: ['item'], cards };
+    }
+    if (row.control === 'multi' || row.control === 'words') {
+        const read = readField(row.entry, []);
+        if (read.kind !== 'value') return null;
+        const cards = [single('value', read.value)];
+        return { form: 'multi', keyed: false, fields: ['value'], cards };
+    }
+    if (row.control !== 'family') return null;
+    const names = Object.keys(row.fields);
+    if (row.entry.holds === 'record') {
+        const card: Card = { fields: {}, kept: {}, order: [] };
+        return { form: 'records', keyed: false, fields: names, cards: [card], one: true };
+    }
+    if (isTable(names)) return { form: 'pairs', keyed: true, fields: ['key', 'value'], cards: [] };
+    if (isMap(row.default)) {
+        return { form: 'records', keyed: true, fields: cardFields(row, true), cards: [] };
+    }
+    return { form: 'records', keyed: false, fields: names, cards: [] };
+}
+
+/**
  * The draft of a row, or null when the row has no editor of this kind: it is not a list, a multi
- * or a family the file holds as one, it is the rail or the page reset, the file's value is not
- * what its control shows, or an item is not what the editor holds.
+ * or a family the file holds as one, it is the rail, which has an editor of its own, the file's
+ * value is not what its control shows, or an item is not what the editor holds. A row no layer
+ * gives a value has its empty draft.
  */
 export function draftOf(row: ConfigRow): Draft | null {
-    if (row.state !== 'set' || row.mismatch) return null;
-    if (row.id === RAIL_ROW || row.id === PAGES_ROW || row.id === WORKBENCH_ROW) return null;
+    if (row.mismatch) return null;
+    if (row.id === RAIL_ROW) return null;
+    if (row.state === 'missing') return emptyDraft(row);
     const value = row.value;
     if (row.control === 'list' || row.control === 'parked') {
         const read = readField(row.entry, value);
@@ -179,10 +212,8 @@ export function draftOf(row: ConfigRow): Draft | null {
     if (isTable(names)) {
         const cards: Card[] = [];
         for (const [key, held] of entries) {
-            const read = readField(row.fields.value, held);
             const card: Card = { fields: { key }, kept: {}, order: [] };
-            if (read.kind === 'value') card.fields.value = read.value;
-            else card.kept.value = held;
+            putRead(card, 'value', readField(row.fields.value, held), held);
             cards.push(card);
         }
         return { form: 'pairs', keyed: true, fields: ['key', 'value'], cards };
@@ -395,7 +426,8 @@ function recordOf(
             lists,
             record: card.fields,
             held: heldAt(base, name),
-            trust
+            trust,
+            scalar: card.scalars?.[name]
         };
         const written = writtenField(spec, held, reading);
         if (!written.ok) problems.push(problemOf(place, name, written.trouble));
@@ -496,7 +528,7 @@ function pairsValue(cards: Card[], at: Nested): Plain {
             put(value, key, cardRecord(held, valueSpec, where, lists, trust, problems));
             return;
         }
-        const written = writtenField(valueSpec, held, reading);
+        const written = writtenField(valueSpec, held, { ...reading, scalar: card.scalars?.value });
         if (!written.ok) {
             problems.push(problemOf(where, 'value', written.trouble));
             return;
@@ -649,7 +681,7 @@ export function draftValue(draft: Draft, row: ConfigRow, lists: Lists): Made {
                 put(value, keys[index], cardRecord(held, spec, place, lists, false, problems));
                 return;
             }
-            const reading = { lists, record: card.fields, held: [] };
+            const reading = { lists, record: card.fields, held: [], scalar: card.scalars?.value };
             const written = writtenField(spec, held, reading);
             if (!written.ok) {
                 problems.push(
@@ -705,10 +737,23 @@ export function movedFrom(base: unknown, row: ConfigRow): boolean {
     return !sameInOrder(base, row.value);
 }
 
+/**
+ * Whether a value is the one the row holds: the same in order, or, for a row no layer gives a
+ * value, an empty list or map, which is what its empty draft reads back as before an entry is
+ * added, so an entry added and removed again holds no change.
+ */
+export function holdsValue(value: unknown, row: ConfigRow): boolean {
+    if (sameInOrder(value, row.value)) return true;
+    if (row.state !== 'missing') return false;
+    return Array.isArray(value)
+        ? value.length === 0
+        : isMap(value) && Object.keys(value).length === 0;
+}
+
 /** Whether the draft differs from what the row holds: a draft that does not read back does. */
 export function isEdited(draft: Draft, row: ConfigRow, lists: Lists): boolean {
     const made = draftValue(draft, row, lists);
-    return !made.ok || !sameInOrder(made.value, row.value);
+    return !made.ok || !holdsValue(made.value, row);
 }
 
 // ---- a draft held in the form of flow text ----------------------------------------------------
@@ -737,11 +782,13 @@ function raw(name: string): boolean {
 }
 
 /**
- * The controls that cannot show a text that did not read as YAML: a toggle, a picker and a
- * collection. A box (a number, a text, a folder, a file, a path) holds the text as typed.
+ * The controls that cannot show a text that did not read as YAML: a toggle, a secret, a picker and
+ * a collection. A box (a number, a text, a scalar, a folder, a file, a path) holds the text as
+ * typed.
  */
 const NOT_A_BOX = [
     'toggle',
+    'secret',
     'choice',
     'glyph',
     'hue',
@@ -766,9 +813,7 @@ function readText(card: Card, name: string, spec: FieldSpec, text: string): void
         return;
     }
     if (flow.value === undefined) return;
-    const read = readField(spec, flow.value);
-    if (read.kind === 'value') card.fields[name] = read.value;
-    else card.kept[name] = flow.value;
+    putRead(card, name, readField(spec, flow.value), flow.value);
 }
 
 /** A card of text read into typed fields. */

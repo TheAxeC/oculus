@@ -22,11 +22,11 @@ Every YAML file oculus reads, and the Markdown file of each update task, as a fi
 | `project.yml` | `<project>/project.yml` or `<repository>/.oculus/project.yml` | Make Folder a Project, or you |
 | `settings.yml` | `<repository>/.oculus/settings.yml` | Add Repository Configuration..., or you |
 | `commands.yml` | `<repository>/.oculus/commands.yml` | Add Repository Configuration..., Add Command..., or you |
-| `launch.yml` | `<repository>/.oculus/launch.yml` | Add Repository Configuration..., Add Configuration, or you |
-| `cpp.yml` | `<repository>/.oculus/cpp.yml` | Add Repository Configuration..., or you |
+| `launch.yml` | `<repository>/.oculus/launch.yml` | Add Repository Configuration..., Add, Edit and Delete Configuration, or you |
+| `cpp.yml` | `<repository>/.oculus/cpp.yml` | Add Repository Configuration..., the compile database item's Add, Edit and Delete Configuration, or you |
 | `app.yml` | `<apps folder>/<name>/app.yml` | you |
 | the hub's data files | the paths `collections:` names | oculus's views, or you |
-| `present.yml` | a deck folder | you |
+| `present.yml` | a deck folder | the Slides view, or you |
 
 Oculus writes these itself, so they have no template:
 
@@ -59,19 +59,19 @@ The hub's own settings. A key of oculus's `config/catalogs/vocab.yml` set here i
 # portfolio_deck: deck
 
 # The hub's data files, one entry each, a `key` and a `file`, and fields that say what the file is
-# and which features read it, so a hub keys its files as it likes: `registry:` the registry or
-# feed it is (datasets, venues, pillars, domains, funding, people, organisations, resources,
-# literature, leads, radar); the flags `band_positions`, `band_teaching`, `awaiting`,
-# `open_badge`, `lead_applications`, `dissemination` (with `dissemination_skip:`) and `tasks`;
-# `ticker:` the word of `ticker_categories` its lines carry, naming the command center group of
-# its dated lines, with `undated: true` for open work with no date (the lines of the file flagged
-# `tasks` are Tasks lines, dated or not); `group:`, `order:`, `label:`, `glyph:` and `about:`, its
-# place in the view catalogue and the dotted keys of its name, glyph and line in Make Folder a
-# Hub; and `primary_key:`, the field an entry is found by, for a file with no `schema:` only,
-# since a schema flags its own. The domains registry holds each domain's colour and label and
-# which domains expect a dataset; the venues and datasets registries hold their theme words as the
-# options of their `themes` field. A file the list leaves out has no view, and Make Folder a Hub
-# writes the ticked entries as they stand here.
+# and which features read it, so a hub keys its files as it likes: `registry:` the registry or feed
+# it is (datasets, venues, pillars, domains, funding, people, organisations, resources, literature,
+# leads, radar); the flags `band_positions`, `band_teaching`, `awaiting`, `open_badge`,
+# `lead_applications`, `dissemination` (with `dissemination_skip:`) and `tasks`; `ticker:` the word
+# of `ticker_categories` its lines carry, naming the command center group of its dated lines, with
+# `undated: true` for open work with no date (the lines of the file flagged `tasks` are Tasks lines,
+# dated or not); `group:`, `order:`, `label:`, `glyph:` and `about:`, its place in the view
+# catalogue and the dotted keys of its name, glyph and line in Make Folder a Hub; and
+# `primary_key:`, the field an entry is found by, for a file with no `schema:` only (the Findings
+# view's Set as primary key writes it), since a schema flags its own. The domains registry holds
+# each domain's colour and label and which domains expect a dataset; the venues and datasets
+# registries hold their theme words as the options of their `themes` field. A file the list leaves
+# out has no view, and Make Folder a Hub writes the ticked entries as they stand here.
 # collections:
 #   - { key: data, file: ".oculus/data/research/data.yml", registry: datasets, about: files.make_collection_line_data }
 #   - { key: venues, file: ".oculus/data/research/venues.yml", registry: venues, ticker: { category: conference }, about: files.make_collection_line_venues }
@@ -131,20 +131,17 @@ The hub's own settings. A key of oculus's `config/catalogs/vocab.yml` set here i
 
 # The key Account setup makes for a cluster: the type ssh-keygen makes (ed25519, ecdsa or rsa) and
 # the path of the key file, `{type}` standing for the type and `{resource}` for the cluster's key.
-# Both empty by default, and Account setup then says which is missing. Read from the primary hub
-# alone.
+# oculus ships `ed25519` and `~/.ssh/id_{type}_{resource}`. Read from the primary hub alone.
 # clusters:
-#   key_type: ''
-#   key_file: ''
-#   example:
-#   clusters:
-#     key_type: ed25519
-#     key_file: ~/.ssh/id_{type}_{resource}
+#   key_type: ed25519
+#   key_file: ~/.ssh/id_{type}_{resource}
 
 # The rows that tell a failed ssh or git connection apart, read in order: the first row whose
 # `match` a line of the error output holds names the failure with its `kind` and its `fix`. A row's
 # `for` names the connections whose output it reads, `cluster` for a cluster's poll and `git` for a
-# fetch; a row without it reads both. None by default. Read from the primary hub alone.
+# fetch; a row without it reads both. oculus ships six rows; a hub's rows are laid over them by
+# `kind`, a new row read before oculus's, `{ kind: x, removed: true }` taking one out. Read from the
+# primary hub alone.
 # connections:
 #   failures: []
 #   example:
@@ -156,8 +153,9 @@ The hub's own settings. A key of oculus's `config/catalogs/vocab.yml` set here i
 # The providers a reader signs in with, one row each: `google` and `microsoft` for the mail and the
 # calendars, and a git host, any row with a `credential_address`, for git. Every address is an
 # https address; `{tenant}` stands for a Microsoft account's directory and `{id}` for a message's
-# id. None by default, and Connect, the refresh and Account setup then say which row or field is
-# missing. Read from the primary hub alone.
+# id. oculus ships the `google`, `microsoft` and `github` rows; a hub's rows are laid over them by
+# `key`, `{ key: x, removed: true }` taking one out, and Connect, the refresh and Account setup say
+# which row or field is missing. Read from the primary hub alone.
 # sign_in: []
 #   example:
 #   sign_in:
@@ -188,25 +186,23 @@ The hub's own settings. A key of oculus's `config/catalogs/vocab.yml` set here i
 #       credential_address: https://github.com
 
 # The folder of Node.js's releases Recover's cluster side downloads the build for the cluster from.
-# Empty by default, and Recover's Unpack on a cluster then says it is missing. Read from the
-# primary hub alone. `sources` are the Recover sources of this hub's datasets: one reader row per
-# source kind, the `kind` of a dataset's source being the row's `key` and the source's other fields
-# filling the row's holes. A row may also hold `access`, `archive`, `pick`, `clash`, `expect` and
-# `pace.field`. A source of a kind no row names is not fetched, and the Data view says so.
+# oculus ships `https://nodejs.org/dist/`. Read from the primary hub alone. `sources` are the
+# Recover sources of this hub's datasets: one reader row per source kind, the `kind` of a dataset's
+# source being the row's `key` and the source's other fields filling the row's holes. A row may
+# also hold `access`, `archive`, `pick`, `clash`, `expect` and `pace.field`. oculus ships eleven
+# rows, laid over by the hub's by `key`; a source of a kind no row names is not fetched, and the
+# Data view says so.
 # recover:
-#   node_download: ''
+#   node_download: https://nodejs.org/dist/
 #   sources: []
-#   example:
-#   recover:
-#     node_download: https://nodejs.org/dist/
 
 # The literature sources of the Literature search, read from the primary hub, in the order the
 # search lists them. A row is a reader row: `key`, `name`, `format` (json, xml, html, text or
 # none), `address` with `{name}` holes, `query` (each term of the search form to the parameter it
 # is sent as), `paging`, `pace`, `wait`, `auth` (the `downloads` row of local.yml it reads, with
-# `required: true` for a source that is off without it), `records` and `fields`. oculus ships no
-# row; with none the search says that no source is configured. `prefer` names, by source key,
-# whose value a merged paper takes for its fields, its abstract and its PDF.
+# `required: true` for a source that is off without it), `records` and `fields`. oculus ships
+# eight rows, laid over by the hub's by `key`, `{ key: x, removed: true }` taking one out. `prefer`
+# names, by source key, whose value a merged paper takes for its fields, its abstract and its PDF.
 # literature:
 #   sources: []
 #   prefer: {}
@@ -254,7 +250,8 @@ The hub's own settings. A key of oculus's `config/catalogs/vocab.yml` set here i
 
 # The addresses of the page links, read from the primary hub: a row is a `key` and an `address`
 # holding `{id}`, and other holes filled from the hit's fields. A link whose row is missing is not
-# drawn.
+# drawn. oculus ships seven rows, laid over by the hub's by `key`, `{ key: x, removed: true }`
+# taking one out.
 # links: []
 #   example:
 #   links:

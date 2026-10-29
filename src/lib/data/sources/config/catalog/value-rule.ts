@@ -7,9 +7,10 @@
 // The rule answers what is wrong as a kind and its arguments and holds no sentence; each caller
 // words the kind from its own text catalog. What needs the disk or the value the file held stays
 // with its caller: a folder or file that is there, a parked list's items, the fields of a family's
-// records. A family field is held to its form (a list of records, a map, or one record). A word
-// block (the control `words`) is checked against the list its `from` names for its words and
-// against that list's flags (`flagged`) for its flags.
+// records. A scalar is a text held to its form, a finite number or a flag, and nothing else. A
+// family field is held to its form (a list of records, a map, or one record). A word block (the
+// control `words`) is checked against the list its `from` names for its words and against that
+// list's flags (`flagged`) for its flags.
 
 import { BLOCK_LISTS, type WordBlock } from '../../../shapes/boards/words.ts';
 import {
@@ -32,6 +33,7 @@ export type ValueProblem =
     | { kind: 'whole'; min: number | undefined; max: number | undefined }
     | { kind: 'range'; min: number | undefined; max: number | undefined }
     | { kind: 'text' }
+    | { kind: 'scalar' }
     | { kind: 'empty' }
     | { kind: 'form'; form: Form }
     | { kind: 'words' }
@@ -318,6 +320,9 @@ export function valueProblem(
             return familyProblem(spec, value);
         case 'words':
             return blockProblem(spec, value, lists);
+        case 'scalar':
+            if (typeof value === 'boolean' || finite(value)) return null;
+            return typeof value === 'string' ? formProblem(spec, value) : { kind: 'scalar' };
         case 'text':
         case 'long':
         case 'choice':

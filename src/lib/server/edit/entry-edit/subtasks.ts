@@ -9,10 +9,10 @@
 
 import { isMap as isYamlMap, isSeq, parseDocument } from 'yaml';
 import type { Node, Pair, Scalar, YAMLMap } from 'yaml';
-import { asFieldValue, sameValue } from '../yaml/yaml-edit.ts';
-import { REFUSALS, said, why } from '../yaml/why.ts';
-import type { EditResult, Refusal } from '../yaml/yaml-edit.ts';
-import type { FieldValue } from '../yaml/yaml-values.ts';
+import { asFieldValue, sameValue } from '../../core/files/yaml/yaml-edit.ts';
+import { REFUSALS, said, why } from '../../core/files/yaml/why.ts';
+import type { EditResult, Refusal } from '../../core/files/yaml/yaml-edit.ts';
+import type { FieldValue } from '../../core/files/yaml/yaml-values.ts';
 import { lineAt, listOf } from '../../../data/helpers/files/yaml/collection-text.ts';
 import { pairOf, rangeOf } from '../../../data/helpers/files/yaml/yaml-ranges.ts';
 import { renderFlowMap } from './render.ts';

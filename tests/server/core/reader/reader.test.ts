@@ -53,7 +53,7 @@ import type {
     LinkRow,
     ReaderRow
 } from '../../../../src/lib/data/sources/config/settings/rows/grammar.ts';
-import { scratchDir } from '../../../fixtures/scratch.ts';
+import { plantScratch, scratchDir } from '../../../fixtures/scratch.ts';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const EXPECTED = join(HERE, 'expected');
@@ -166,13 +166,14 @@ const ARXIV_ROWS: { name: string; query: Record<string, string>; asks: [string, 
     ];
 
 describe('case 15: a primary hub with no literature.sources', () => {
-    it('lists no source, refuses a search by any source key and sends nothing', async () => {
+    it('lists the sources oculus ships, in their order, and sends nothing for the list', async () => {
+        const hub = plantScratch('oculus-reader-shipped-', { '.oculus/config.yml': 'scan: []\n' });
+        const rows = literatureRows(loadConfig(engineDir(), { hub }).config);
         const { fetcher, sent } = standIn(() => ({ body: {} }));
-        const options = optionsOf(fetcher, { rows: [] });
-        expect(await asked('sources', options)).toEqual({ ok: true, sources: [] });
-        expect(await asked({ source: 'openalex', q: 'tensor' }, options)).toEqual({
-            error: 'source'
-        });
+        const answer = await asked('sources', optionsOf(fetcher, { rows }));
+        expect(answer).toMatchObject({ ok: true });
+        const listed = (answer as { sources: { id: string }[] }).sources;
+        expect(listed.map((one) => one.id)).toEqual(Object.keys(RECORDED));
         expect(sent).toEqual([]);
     });
 });
@@ -804,12 +805,12 @@ const ROW_FINDINGS: { name: string; text: string; names: string[] }[] = [
     {
         name: 'two rows of one key',
         text: 'literature:\n  sources:\n    - { key: mine, name: Mine, format: json, address: "https://example.org/a", records: items }\n    - { key: mine, name: Again, format: json, address: "https://example.org/b", records: items }\n',
-        names: ['mine', 'earlier row']
+        names: ['mine', 'more than one entry']
     },
     {
         name: 'a links key twice',
         text: 'links:\n  - { key: doi, address: "https://doi.org/{id|path}" }\n  - { key: doi, address: "https://dx.doi.org/{id|path}" }\n',
-        names: ['doi', 'earlier row']
+        names: ['doi', 'more than one entry']
     }
 ];
 

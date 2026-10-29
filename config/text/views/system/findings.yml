@@ -5,3 +5,7 @@ text:
         findings_glyph: warn
         findings_none: 'No findings: every id resolves and every status is in the vocabulary.'
         findings_none_glyph: circle_empty
+        findings_key_pick: Primary key
+        findings_key_none: Pick a field
+        findings_key_set: Set as primary key
+        findings_key_help: 'The field each entry of this file is found by. It is written as primary_key: true on that field of the schema, or on the collections entry of a file with no schema, and History lists the write.'

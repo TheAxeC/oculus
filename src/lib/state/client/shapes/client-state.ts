@@ -49,7 +49,7 @@ import type { SelectionStore } from '../../workbench/selection.svelte.ts';
 import type { ExplorerStore } from '../../sources/explorer/ops.svelte.ts';
 import type { SearchStore } from '../../sources/search/search.svelte.ts';
 import type { LintStore } from '../../system/machine/lint/lint.svelte.ts';
-import type { ClangdStore } from '../../system/machine/lsp/clangd.svelte.ts';
+import type { ClangdStore } from '../../system/machine/lsp/clangd/clangd.svelte.ts';
 import type { DocumentsStore } from '../../system/machine/lsp/documents.svelte.ts';
 import type { ProblemsStore } from '../../system/problems.svelte.ts';
 import type { LspEdits } from '../../system/machine/lsp/edits.ts';

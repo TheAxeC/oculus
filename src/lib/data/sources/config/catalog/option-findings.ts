@@ -61,6 +61,10 @@ function problemText(problem: OptionProblem, catalog: ReturnType<typeof textCata
             return findingText(catalog, 'findings.options.heading_unknown', problem.word);
         case 'key':
             return findingText(catalog, 'findings.options.key', problem.word);
+        case 'described_unknown':
+            return findingText(catalog, 'findings.options.described_unknown', problem.word);
+        case 'described_loop':
+            return findingText(catalog, 'findings.options.described_loop', problem.word);
         case 'groups':
             return findingText(catalog, 'findings.options.groups');
         case 'group_missing':

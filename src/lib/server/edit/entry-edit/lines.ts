@@ -6,11 +6,16 @@
 import { isDeepStrictEqual } from 'node:util';
 import { isMap as isYamlMap, isScalar, isSeq, parseDocument } from 'yaml';
 import type { Document, Node, Pair, Scalar, YAMLMap } from 'yaml';
-import type { EditResult } from '../yaml/yaml-edit.ts';
-import { REFUSALS, said, why } from '../yaml/why.ts';
-import type { Why } from '../yaml/why.ts';
-import { isBlockMap, isMetalist, renderBlockMap, renderMetalist } from '../yaml/yaml-values.ts';
-import type { FieldValue } from '../yaml/yaml-values.ts';
+import type { EditResult } from '../../core/files/yaml/yaml-edit.ts';
+import { REFUSALS, said, why } from '../../core/files/yaml/why.ts';
+import type { Why } from '../../core/files/yaml/why.ts';
+import {
+    isBlockMap,
+    isMetalist,
+    renderBlockMap,
+    renderMetalist
+} from '../../core/files/yaml/yaml-values.ts';
+import type { FieldValue } from '../../core/files/yaml/yaml-values.ts';
 import { lineAt, listOf, renderScalar } from '../../../data/helpers/files/yaml/collection-text.ts';
 import {
     lineStart,

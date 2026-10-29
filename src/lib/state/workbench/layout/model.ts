@@ -2,7 +2,7 @@
 // changes to the model should not involve tree or workbench algorithms.
 
 import { nameOf } from '../../../data/helpers/files/paths.ts';
-import { docPaths, newInstance } from './instance.ts';
+import { docPaths, newInstance, viewIds } from './instance.ts';
 
 /**
  * The view a pane's tab mounts. The view registry is its vocabulary. A saved layout may name a
@@ -130,7 +130,9 @@ export type FolderItem = { view: ViewId; state: unknown };
  * `rail` key. `item` is what the page was opened for. `docs` is the paths of the hub's documents
  * the page has been given as tabs, which a rail page records so that a document tab the reader
  * closed is not given again and a document added to the `docs:` list later is given once. A page
- * saved with no record has none, and is given every document of its group.
+ * saved with no record has none, and is given every document of its group. `views` is the same
+ * record for the views of the page's arrangement (saved/views.ts): a view added to the arrangement
+ * later is given once, and a page saved with no record is given every view of it the page lacks.
  */
 export type Page = {
     id: string;
@@ -138,6 +140,7 @@ export type Page = {
     workbench: Workbench;
     rail?: string;
     docs?: string[];
+    views?: string[];
     folder?: FolderRef;
     item?: FolderItem;
 };
@@ -409,7 +412,8 @@ export function defaultWorkbench(): Workbench {
 /**
  * A fresh page around a workbench, with the id every page operation addresses it by. The words are
  * the caller's: they come from the catalog, which the layout modules do not read. A page made for a
- * rail button records the paths of the documents its tabs hold (`Page.docs`).
+ * rail button records the paths of the documents its tabs hold (`Page.docs`) and their views
+ * (`Page.views`).
  */
 export function newPage(
     label: string,
@@ -420,6 +424,7 @@ export function newPage(
     if (rail !== undefined) {
         page.rail = rail;
         page.docs = docPaths(workbench.root);
+        page.views = viewIds(workbench.root);
     }
     return page;
 }

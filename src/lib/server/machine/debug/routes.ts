@@ -6,7 +6,8 @@
 // `console=1`, the whole console of the current session. A POST carries the write token and one
 // action: `launch` starts a session, `approve` approves a launch's text, the stepping actions, the
 // frame, the evaluation, the breakpoints, the function breakpoints and the watch expressions go to
-// the session, and `stop` signals the adapter once the page has confirmed it.
+// the session, `addConfiguration` and `editConfiguration` write the launch file (launch/write.ts),
+// and `stop` signals the adapter once the page has confirmed it.
 //
 // A launch runs only once its exact text is approved (`debugText`, kept under the same key kind as
 // a command's chain): an unapproved launch answers `{ approve: { name, cwd, program } }` and
@@ -30,7 +31,7 @@ import { refusal } from '../pty/refusal.ts';
 import { repositoryOf } from '../runs/commands/repo.ts';
 import type { OpsTarget } from '../../files/fs/ops.ts';
 import { readLaunch } from './launch/read.ts';
-import { appendConfiguration } from './launch/write.ts';
+import { editLaunch } from './launch/write.ts';
 import type { DebugClient, Resume } from './session.ts';
 import { fileRefusal, startSession } from './session/start.ts';
 
@@ -128,6 +129,12 @@ const bodyShape = z.discriminatedUnion('action', [
         action: z.literal('addConfiguration'),
         repo: z.unknown(),
         configuration: z.record(z.string(), z.unknown())
+    }),
+    z.object({
+        action: z.literal('editConfiguration'),
+        repo: z.unknown(),
+        name: z.string(),
+        changes: z.record(z.string(), z.unknown()).nullable()
     }),
     z.object({ action: z.literal('watch'), expressions: z.array(z.string()) }),
     z.object({ action: z.literal('stop'), confirmed: z.boolean().optional() })
@@ -245,14 +252,23 @@ export async function handleDebugPost(
             return refuse(words(catalog, 'server.debug.resolve_failed', String(error)));
         }
     }
-    if (body.action === 'addConfiguration') {
+    if (body.action === 'addConfiguration' || body.action === 'editConfiguration') {
         const found = repositoryOf(body.repo, options.rootsFor());
         if ('error' in found) return refuse(found.error);
-        const appended = await appendConfiguration(options.files(), found.repo, body.configuration);
+        const appended = await editLaunch(
+            options.files(),
+            found.repo,
+            body.action === 'addConfiguration'
+                ? { kind: 'add', configuration: body.configuration }
+                : { kind: 'set', name: body.name, changes: body.changes }
+        );
         if (appended.ok) return json({ line: appended.line }, { headers: NO_STORE });
         if (appended.word === 'name') return refuse(words(catalog, 'server.debug.config_name'));
         if (appended.word === 'exists') {
             return refuse(words(catalog, 'server.debug.config_exists', appended.detail));
+        }
+        if (appended.word === 'missing') {
+            return refuse(words(catalog, 'server.debug.config_missing', appended.detail));
         }
         if (appended.word === 'unwritable') {
             return refuse(words(catalog, 'server.debug.config_unwritable', appended.detail));

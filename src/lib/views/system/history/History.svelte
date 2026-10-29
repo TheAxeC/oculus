@@ -121,14 +121,19 @@
         return t(`history.kind_${word}`);
     }
 
+    /** The fields of the records of a deck's keys, which the Slides view sets beside its lists. */
+    const DECK_KEYS = new Set(['title', 'tag_tones', 'find', 'sort', 'discover']);
+
     /**
-     * The word a row's kind of write is called. The records of a deck's `order:` are told from
-     * those of a group's list by their field.
+     * The word a row's kind of write is called. The records of a deck's `order:` and of its keys
+     * are told from those of a group's list by their field.
      */
     function kindOf(row: Change): string {
         if (row.undoes !== undefined) return undidOf(row);
         if (row.kind === 'deck-slides' && row.field === 'order')
             return t('history.kind_deck_order');
+        if (row.kind === 'deck-slides' && DECK_KEYS.has(row.field))
+            return t('history.kind_deck_key');
         return kindWord(row.kind);
     }
 

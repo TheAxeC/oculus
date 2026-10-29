@@ -2,10 +2,11 @@
 // for a field of a family, in one place: what a held value reads into (what the control shows),
 // what an input makes of it (the value a pick, a box or a toggle commits), and what stops a value
 // before it is sent (a number outside its range, a text of the wrong form, a path the hub does not
-// hold).
+// hold). What a control offers (a choice's words, a box's suggestions) is offers.ts.
 //
 // A field is held in a draft as its typed value (FieldValue): a boolean for a toggle, the box's
-// text for a number, a string for text, long, choice, glyph, hue, colour, folder, file and path, a
+// text for a number and for a scalar that is a number or a flag (whose type the card keeps in
+// `scalars`), a string for text, scalar, long, choice, glyph, hue, colour, folder, file and path, a
 // list of words for multi, list and parked, a word block (its lists `words`, `not_words`, `flags`
 // and `not_flags`, each held while it has a word) for words, and a list of cards for a family
 // field: a card per record of a nested list, a card of `key` and `value` per key of a map, and the
@@ -32,20 +33,14 @@ import {
     type WordBlock
 } from '../../../../data/shapes/boards/words.ts';
 import {
-    classOfHex,
     familyForm,
-    flagSources,
     hueHex,
-    hueOfClass,
-    listedSources,
-    pickedSources,
     readsOther,
     takesRecord,
     type CatalogEntry,
     type Control,
     type FieldSpec,
-    type Form,
-    type Source
+    type Form
 } from '../../../../data/sources/config/catalog/options.ts';
 import {
     itemProblem,
@@ -64,15 +59,20 @@ export type FieldValue = boolean | string | string[] | Card[] | WordBlock;
 /**
  * One entry of an editor: the typed value of each field it holds, the fields of the record the
  * control cannot show or the catalog does not name, as the file holds them, the order the file
- * wrote the record's fields in so an edit does not reorder them, and the text of a field of a
- * draft saved in flow text that did not read as YAML.
+ * wrote the record's fields in so an edit does not reorder them, the text of a field of a draft
+ * saved in flow text that did not read as YAML, and the type of each scalar field the file held
+ * as a boolean or a number, which its text is written back in (`scalarOf`).
  */
 export type Card = {
     fields: Record<string, FieldValue>;
     kept: Record<string, unknown>;
     order: string[];
     unread?: Record<string, string>;
+    scalars?: Record<string, Scalar>;
 };
+
+/** The type of a value other than text that a scalar's text box shows as its text. */
+type Scalar = 'boolean' | 'number';
 
 /** What a spec's control is: the entry's own, `records` for a nested list, else text. */
 export function controlOf(spec: CatalogEntry): Control {
@@ -99,13 +99,34 @@ function decimalOf(input: string): number | null {
 
 // ---- reading a held value -------------------------------------------------------------------
 
-/** What a held value reads into: the typed value, a value the control cannot show, or no editor. */
-export type Read = { kind: 'value'; value: FieldValue } | { kind: 'stuck' } | { kind: 'broken' };
+/**
+ * What a held value reads into: the typed value, with the type of a boolean or a number a scalar's
+ * box shows as its text; a value the control cannot show; or no editor.
+ */
+export type Read =
+    { kind: 'value'; value: FieldValue; scalar?: Scalar } | { kind: 'stuck' } | { kind: 'broken' };
 
 const STUCK: Read = { kind: 'stuck' };
 
 function value(held: FieldValue): Read {
     return { kind: 'value', value: held };
+}
+
+/** A boolean or a number read into a scalar's box: its text, and its type. */
+function scalarText(held: boolean | number): Read {
+    return { kind: 'value', value: String(held), scalar: scalarType(held) };
+}
+
+/**
+ * A field's read put on its card: the value it reads into, else the value kept as the file has it.
+ */
+export function putRead(card: Card, name: string, read: Read, held: unknown): void {
+    if (read.kind !== 'value') {
+        card.kept[name] = held;
+        return;
+    }
+    card.fields[name] = read.value;
+    if (read.scalar !== undefined) card.scalars = { ...card.scalars, [name]: read.scalar };
 }
 
 /** The words of a joined text. */
@@ -158,21 +179,19 @@ export function cardOf(
     specs: Record<string, FieldSpec>,
     key?: string
 ): Card | null {
-    const fields: Record<string, FieldValue> = {};
-    const kept: Record<string, unknown> = {};
-    if (key !== undefined) fields.key = key;
+    const card: Card = { fields: {}, kept: {}, order: Object.keys(record) };
+    if (key !== undefined) card.fields.key = key;
     for (const [name, held] of Object.entries(record)) {
         const spec = byKey(specs, name);
         if (spec === undefined || (key !== undefined && name === 'key')) {
-            kept[name] = held;
+            card.kept[name] = held;
             continue;
         }
         const read = readField(spec, held);
         if (read.kind === 'broken') return null;
-        if (read.kind === 'stuck') kept[name] = held;
-        else fields[name] = read.value;
+        putRead(card, name, read, held);
     }
-    return { fields, kept, order: Object.keys(record) };
+    return card;
 }
 
 /** A card holding nothing. */
@@ -224,8 +243,7 @@ function readFamily(spec: CatalogEntry, held: unknown): Read {
             const cards = Object.entries(held).map(([key, at]): Card => {
                 const read = readField(Array.isArray(at) ? inner : one, at);
                 const card: Card = { fields: { key }, kept: {}, order: [] };
-                if (read.kind === 'value') card.fields.value = read.value;
-                else card.kept.value = at;
+                putRead(card, 'value', read, at);
                 return card;
             });
             return value(cards);
@@ -238,11 +256,17 @@ function readFamily(spec: CatalogEntry, held: unknown): Read {
     }
 }
 
-/** What a value the file holds for a field reads into, by the field's control. */
+/**
+ * What a value the file holds for a field reads into, by the field's control. A scalar's box shows
+ * a boolean or a number as its text, which `scalarOf` writes back in that type; a boolean or a
+ * number a text field holds does not read, so the card keeps it as the file has it.
+ */
 export function readField(spec: CatalogEntry, held: unknown): Read {
     switch (controlOf(spec)) {
         case 'toggle':
             return typeof held === 'boolean' ? value(held) : STUCK;
+        case 'secret':
+            return held === true ? value(true) : STUCK;
         case 'number':
             return typeof held === 'number' && Number.isFinite(held) ? value(String(held)) : STUCK;
         case 'multi':
@@ -272,10 +296,31 @@ export function readField(spec: CatalogEntry, held: unknown): Read {
             return isBlock(held)
                 ? value(Object.fromEntries(Object.entries(held).map(([k, v]) => [k, [...v]])))
                 : STUCK;
+        case 'scalar':
+            if (typeof held === 'boolean') return scalarText(held);
+            if (typeof held === 'number' && Number.isFinite(held)) return scalarText(held);
+            return typeof held === 'string' ? value(held) : STUCK;
         default:
             if (takesRecord(spec) && isMap(held)) return readFamily(spec, held);
             return typeof held === 'string' ? value(held) : STUCK;
     }
+}
+
+/**
+ * The value a scalar's text is written as: a boolean or a number when the file held one at the
+ * field (the card's `scalars`, or the option's value) and the text reads as one of that type
+ * (`true` or `false`, a decimal), else the text.
+ */
+function scalarOf(text: string, scalar: Scalar | undefined): string | number | boolean {
+    if (scalar === 'boolean' && (text === 'true' || text === 'false')) return text === 'true';
+    if (scalar === 'number') return decimalOf(text) ?? text;
+    return text;
+}
+
+/** The type of a value a scalar's box shows as its text, or undefined for a text. */
+function scalarType(held: unknown): Scalar | undefined {
+    if (typeof held === 'boolean') return 'boolean';
+    return typeof held === 'number' && Number.isFinite(held) ? 'number' : undefined;
 }
 
 // ---- the fields a sparse card draws ------------------------------------------------------------
@@ -378,105 +423,6 @@ export function fromBlock(
         words.length === 0 ? others : [...others, [list, words]]
     );
     return Object.keys(block).length === 0 ? undefined : block;
-}
-
-// ---- the lists a choice draws from ----------------------------------------------------------
-
-/**
- * The words a choice or multi may take, whether the lists they come from are there yet, and the
- * words and the group each item is drawn under where its source gives them.
- */
-export type Pool = {
-    items: string[];
-    state: 'ready' | 'loading' | 'failed';
-    error: string;
-    labels: Map<string, string>;
-    groups: Map<string, string>;
-};
-
-/** Add one source's answer to a pool, with the words and groups the source gives its items. */
-function addSource(pool: Pool, source: Source, lists: Lists): void {
-    const answer = lists.items(source);
-    if (answer.state === 'ready') {
-        pool.items.push(...answer.items);
-        for (const [item, label] of lists.labels(source)) pool.labels.set(item, label);
-        for (const [item, group] of lists.groups(source)) pool.groups.set(item, group);
-    } else if (answer.state === 'failed') {
-        pool.state = 'failed';
-        pool.error = answer.error;
-    } else if (pool.state === 'ready') pool.state = 'loading';
-}
-
-/**
- * The pool of a choice or multi: its fixed words, the items of every source it draws from, and the
- * items of the source another field of the record names. A word of that field the catalog maps to
- * no source gives no items. The first source still loading or failed decides the pool's state.
- */
-export function poolOf(spec: CatalogEntry, record: Record<string, FieldValue>, lists: Lists): Pool {
-    const pool: Pool = {
-        items: [...(spec.options ?? [])],
-        state: 'ready',
-        error: '',
-        labels: new Map(),
-        groups: new Map()
-    };
-    for (const source of listedSources(spec)) addSource(pool, source, lists);
-    const picked = pickedSources(spec);
-    if (picked !== undefined) {
-        const word = record[picked.field];
-        const source = typeof word === 'string' ? byKey(picked.sources, word) : undefined;
-        if (source !== undefined) addSource(pool, source, lists);
-    }
-    pool.items = [...new Set(pool.items)];
-    return pool;
-}
-
-/**
- * The pool one list of a word block draws from: for `words` and `not_words` the list the spec's
- * `from` names, for `flags` and `not_flags` the flags of that list (FLAG_SOURCES); a list with no
- * flags gives none.
- */
-export function blockPool(spec: CatalogEntry, list: BlockList, lists: Lists): Pool {
-    if (list === 'words' || list === 'not_words') return poolOf(spec, {}, lists);
-    return poolOf({ ...spec, options: [], from: flagSources(spec) }, {}, lists);
-}
-
-/** The hue a colour or hue field's held text stands for, or null when it stands for none. */
-export function hueOf(spec: CatalogEntry, held: string, lists: Lists): string | null {
-    if (controlOf(spec) === 'colour') {
-        const name = classOfHex(lists.config, held);
-        const hue = name === undefined ? undefined : hueOfClass(name);
-        return hue !== undefined && lists.hues.includes(hue) ? hue : null;
-    }
-    return lists.hues.includes(held) ? held : null;
-}
-
-/**
- * Whether a held word is outside the list its control offers, which the view marks: null while the
- * list is not there yet, since nothing is known of it.
- */
-export function isStray(
-    spec: CatalogEntry,
-    held: string,
-    record: Record<string, FieldValue>,
-    lists: Lists
-): boolean | null {
-    if (held === '') return false;
-    switch (controlOf(spec)) {
-        case 'glyph':
-            return !lists.glyphs.includes(held);
-        case 'hue':
-        case 'colour':
-            return hueOf(spec, held, lists) === null;
-        case 'choice':
-        case 'multi': {
-            const pool = poolOf(spec, record, lists);
-            if (pool.state !== 'ready') return null;
-            return !pool.items.includes(held);
-        }
-        default:
-            return false;
-    }
 }
 
 // ---- checks before the write -----------------------------------------------------------------
@@ -649,6 +595,8 @@ export type Reading = {
     held: unknown[];
     /** Every value passes the checks of the page, as in a record equal to one the file holds. */
     trust?: boolean;
+    /** The type the file held a scalar's value in, when it was no text. */
+    scalar?: Scalar;
 };
 
 /** Whether the file held this very value at the field, so the page's own checks leave it be. */
@@ -699,6 +647,9 @@ export function writtenField(
     switch (control) {
         case 'toggle':
             return typeof held === 'boolean' ? done(held) : failed({ is: 'type' });
+        case 'secret':
+            // The page holds a secret only as set; the Save sends the typed one in its place.
+            return held === true ? done(true) : OK_NOTHING;
         case 'number': {
             if (typeof held !== 'string') return failed({ is: 'type' });
             if (held.trim() === '') return OK_NOTHING;
@@ -744,6 +695,14 @@ export function writtenField(
                 : troubleOf(valueProblem(spec, held), spec);
             return trouble === null ? done(held) : failed(trouble);
         }
+        case 'scalar': {
+            if (typeof held !== 'string') return failed({ is: 'type' });
+            const made = scalarOf(held, reading.scalar);
+            const trouble = heldAlready(spec, made, reading)
+                ? null
+                : troubleOf(valueProblem(spec, made), spec);
+            return trouble === null ? done(made) : failed(trouble);
+        }
         default:
             return typeof held === 'string' ? done(held) : failed({ is: 'type' });
     }
@@ -761,9 +720,16 @@ export type Committed =
  * as `0`; empty text writes nothing and says so. A text is written once it has the form the entry
  * gives. A toggle gives its boolean. A choice, glyph, hue or colour gives its word, and the empty
  * choice writes `''` for an option that takes it and nothing for one that does not. A folder, file
- * or path is written once it passes the page's check.
+ * or path is written once it passes the page's check. A scalar's text is written in the type of
+ * the value the option holds (`held`) when it reads as one, and as a text otherwise, once it
+ * passes the rule.
  */
-export function commitValue(spec: CatalogEntry, input: string | boolean, lists: Lists): Committed {
+export function commitValue(
+    spec: CatalogEntry,
+    input: string | boolean,
+    lists: Lists,
+    held?: unknown
+): Committed {
     const control = controlOf(spec);
     if (control === 'toggle') {
         return typeof input === 'boolean' ? { write: true, value: input } : { write: false };
@@ -775,6 +741,13 @@ export function commitValue(spec: CatalogEntry, input: string | boolean, lists: 
             const trouble = troubleOf(valueProblem(spec, input), spec);
             return trouble === null
                 ? { write: true, value: input }
+                : { write: false, said: troubleMessage(trouble) };
+        }
+        case 'scalar': {
+            const made = scalarOf(input, scalarType(held));
+            const trouble = troubleOf(valueProblem(spec, made), spec);
+            return trouble === null
+                ? { write: true, value: made }
                 : { write: false, said: troubleMessage(trouble) };
         }
         case 'choice':
@@ -802,57 +775,4 @@ export function commitValue(spec: CatalogEntry, input: string | boolean, lists: 
         default:
             return { write: false };
     }
-}
-
-// ---- suggestions for a folder, file or text box ----------------------------------------------
-
-/** What a box offers: the suggestions, and a note while the list is not there. */
-export type Offer = {
-    items: string[];
-    note: 'loading' | 'failed' | null;
-    /** The reason, for a failed list. */
-    error: string;
-};
-
-/** Whether a text box suggests from a source: its `from` names one and no value is held to it. */
-export function suggests(spec: CatalogEntry): boolean {
-    return controlOf(spec) === 'text' && listedSources(spec).length > 0;
-}
-
-/** The offer of a text box whose spec names a source. */
-function sourceOffer(spec: CatalogEntry, lists: Lists): Offer {
-    if (!suggests(spec)) return { items: [], note: null, error: '' };
-    const [suggested] = listedSources(spec);
-    const answer = lists.items(suggested);
-    if (answer.state === 'ready') return { items: answer.items, note: null, error: '' };
-    return {
-        items: [],
-        note: answer.state === 'failed' ? 'failed' : 'loading',
-        error: answer.state === 'failed' ? answer.error : ''
-    };
-}
-
-/**
- * What a text, folder or file box offers for the text typed: the items of its source, or for a
- * folder or file the entries of the hub folder typed so far (folders only for a folder), each as
- * the path that would be written.
- */
-export function offerFor(spec: CatalogEntry, text: string, lists: Lists): Offer {
-    const control = controlOf(spec);
-    if (control !== 'folder' && control !== 'file') return sourceOffer(spec, lists);
-    if (text.startsWith('/') || text.includes('\\')) return { items: [], note: null, error: '' };
-    const cut = text.lastIndexOf('/');
-    const parent = cut < 0 ? '' : text.slice(0, cut);
-    const folder = lists.folder(parent);
-    if (folder.state === 'loading') return { items: [], note: 'loading', error: '' };
-    if (folder.state === 'failed') return { items: [], note: 'failed', error: folder.error };
-    const base = cut < 0 ? '' : `${text.slice(0, cut)}/`;
-    const items = folder.entries
-        .filter((entry) => control === 'file' || entry.kind === 'dir')
-        .map(
-            (entry) =>
-                `${base}${entry.name}${control === 'file' && entry.kind === 'dir' ? '/' : ''}`
-        )
-        .sort((left, right) => left.localeCompare(right));
-    return { items, note: null, error: '' };
 }

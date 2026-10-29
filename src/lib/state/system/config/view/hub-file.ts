@@ -1,9 +1,10 @@
-// Layer 2, client state. The hub's settings file for the Settings view: `.oculus/config.yml` in
-// the hub's root, as the file browser holds it. Whether the file is there is read from the
-// listings of the folders on its way (the hub root and `.oculus`), since a read that fails cannot
-// tell an absent file from one that cannot be read. A listing or text still being read makes the
-// file loading, a listing that failed makes it unreadable with the reason, and a file that is not
-// in its folder is absent, which reads as an empty file.
+// Layer 2, client state. A file of a workspace folder that a Settings scope reads and writes, as
+// the file browser holds it: a hub's settings file, `.oculus/config.yml`, or a repository's
+// `.oculus/settings.yml`. Whether the file is there is read from the listings of the folders on
+// its way (the folder root and `.oculus`), since a read that fails cannot tell an absent file from
+// one that cannot be read. A listing or text still being read makes the file loading, a listing
+// that failed makes it unreadable with the reason, and a file that is not in its folder is absent,
+// which reads as an empty file.
 
 import { HUB_FILE } from '../../../../data/helpers/hub-names.ts';
 import type { FileText } from '../../../sources/fs-transport.ts';
@@ -21,11 +22,16 @@ function noText(state: { loading?: boolean; error?: string }): FileText {
 }
 
 /**
- * The hub's settings file. `listing` answers the listing of a folder of the hub (the empty path is
- * the hub root) and `text` the text of a file of it.
+ * The file at `file` of a folder, the hub's settings file when none is named. `listing` answers
+ * the listing of a folder of it (the empty path is the folder root) and `text` the text of a file
+ * of it.
  */
-export function hubFileText(listing: ListingOf, text: (path: string) => FileText): HubFile {
-    const steps = HUB_FILE.split('/');
+export function hubFileText(
+    listing: ListingOf,
+    text: (path: string) => FileText,
+    file: string = HUB_FILE
+): HubFile {
+    const steps = file.split('/');
     let folder = '';
     for (const [at, step] of steps.entries()) {
         const held = listing(folder);
@@ -36,5 +42,5 @@ export function hubFileText(listing: ListingOf, text: (path: string) => FileText
         if (!found) return { text: noText({}), present: false };
         folder = folder === '' ? step : `${folder}/${step}`;
     }
-    return { text: text(HUB_FILE), present: true };
+    return { text: text(file), present: true };
 }

@@ -20,7 +20,8 @@ import {
     draftValue,
     type Draft
 } from '../../../../src/lib/state/system/config/editors/draft.ts';
-import { cardsOf, poolOf } from '../../../../src/lib/state/system/config/editors/fields.ts';
+import { cardsOf } from '../../../../src/lib/state/system/config/editors/fields.ts';
+import { poolOf } from '../../../../src/lib/state/system/config/editors/offers.ts';
 import { bareLists, shipped } from './fixture.ts';
 
 const FILE = 'sources.yml';

@@ -6,7 +6,13 @@
 
 import type { CatalogEntry, Source } from '../options.ts';
 import type { JsonSchema } from '../../../../snapshot/schema/json.ts';
-import { recordSchema, withoutKey, type OptionLists } from './options.ts';
+import {
+    definitionsOf,
+    recordSchema,
+    withoutKey,
+    type Definitions,
+    type OptionLists
+} from './options.ts';
 
 /** The path of the entry that describes a language's record in the options catalog. */
 const LANGUAGES_ENTRY = 'editor.languages';
@@ -22,7 +28,8 @@ export function settingsSchema(
     const entry = behavior === undefined ? undefined : behavior[LANGUAGES_ENTRY];
     if (entry?.fields === undefined) return null;
     const names = lists.items(LANGUAGES_SOURCE) ?? [];
-    const record = recordSchema(withoutKey(entry.fields), lists);
+    const defs: Definitions = new Map();
+    const record = recordSchema(withoutKey(entry.fields), lists, defs);
     const properties: Record<string, JsonSchema> = {};
     for (const name of names) properties[name] = { $ref: '#/definitions/language' };
     return {
@@ -37,6 +44,7 @@ export function settingsSchema(
         },
         additionalProperties: false,
         definitions: {
+            ...definitionsOf(defs),
             language: {
                 ...record,
                 type: ['object', 'null'],

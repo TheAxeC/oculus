@@ -2,15 +2,16 @@
     // Layer 3, view partial. The picker under the wallpaper rows of the Settings view: the images
     // of every hub's wallpaper folder as small tiles grouped by hub, with a Random tile (one image
     // of any hub, kept until the server restarts) and a None tile. The chosen tile is the value of
-    // `wallpaper.image`, written as `<hub name>/<file path>`, `random` or the empty text into the
-    // primary hub's .oculus/config.yml by the row writer, as every other pick of the view is. The
-    // thumbnails are the images themselves, drawn small by the browser from the image route.
+    // `wallpaper.image`, `<hub name>/<file path>`, `random` or the empty text, held by the row
+    // writer as a change of the scope on screen and written into that hub's .oculus/config.yml by
+    // its Save, as every other pick of the view is. The thumbnails are the images themselves, drawn
+    // small by the browser from the image route.
 
     import ThumbGrid, { type ThumbGroup } from '$lib/ui/display/ThumbGrid.svelte';
     import { t } from '$lib/state/shared/words/text';
     import { wallpaperUrl, WALLPAPER_RANDOM } from '$lib/state/life/pictures/wallpapers.svelte';
     import type { ConfigRow } from '$lib/state/system/config/rows';
-    import type { RowWriter } from '$lib/state/system/config/write';
+    import type { RowWriter } from '$lib/state/system/config/scopes/write';
     import { useState } from '$lib/state/client/use';
 
     const {
@@ -24,16 +25,17 @@
         reload();
     });
 
-    // While a pick's write is out the page's wallpaper layer draws it, until the file holds it.
+    // While a pick is held unsaved the page's wallpaper layer draws it, so the reader sees it
+    // before the Save.
     $effect(() => {
         const out = writer.shown(row);
         hold(typeof out === 'string' ? out : null);
         return () => hold(null);
     });
 
-    /** The value in force: the one sent while its write is out, else the file's. */
+    /** The tile chosen: the pick held while one is, else the file's. */
     const chosen = $derived.by(() => {
-        const held = writer.shown(row) ?? row.value;
+        const held = writer.pending(row) ? writer.shown(row) : row.value;
         return typeof held === 'string' ? held : '';
     });
 
@@ -68,7 +70,7 @@
         {groups}
         {chosen}
         label={t('workbench.settings_wallpaper_label')}
-        onpick={(id: string) => void writer.submit(row, id)}
+        onpick={(id: string) => writer.submit(row, id)}
     />
     {#if found.error !== ''}
         <p class="note">{t('workbench.settings_wallpaper_failed', found.error)}</p>

@@ -16,9 +16,12 @@
 // Closing a tab with unsaved text saves it first when the mode would have saved it already (every
 // `on_focus_change` close, and an `after_delay` close when the delay is one second or less); the
 // tabs it could not save are the ones the close still asks about. An app's `workspace.saveAll` asks
-// for every tab with unsaved text to be saved whatever the mode (`saveEvery`), as a press of Save
-// on each does, formatting where the language's record says so and the tab's editor is mounted. The
-// Save of a close question saves one tab the same way (`saveAsked`).
+// for every tab with unsaved text to be saved whatever the mode (`saveEvery`), and nothing else, so
+// an app never writes a view's held changes. The File menu's Save All saves the same tabs and then
+// runs the saves a view joined it with (`saveJoined`, `joinSaveEvery`: a Settings view's changes
+// in every scope). Each tab is saved as a press of Save on it does, formatting where the
+// language's record says so and the tab's editor is mounted. The Save of a close question saves
+// one tab the same way (`saveAsked`).
 //
 // A note (a Markdown file of a hub's notes folder, `note` says which tab holds one and how long it
 // waits) saves itself `notes.autosave_ms` after its last edit whatever the mode, through the same
@@ -59,8 +62,21 @@ export type AutosaveStore = {
     blurred: (id: string) => void;
     /** The page lost focus. */
     pageBlurred: () => void;
-    /** Save every tab with unsaved text; whether every one was written. */
+    /**
+     * Save every tab with unsaved text and nothing else, for an app's `workspace.saveAll`; whether
+     * every one was written.
+     */
     saveEvery: () => Promise<boolean>;
+    /**
+     * The File menu's Save All: every tab with unsaved text, then every save that joined it;
+     * whether every one was written.
+     */
+    saveJoined: () => Promise<boolean>;
+    /**
+     * Join the File menu's Save All with a save of a view's own (a Settings view's changes in every
+     * scope), which answers whether it wrote everything; the answer takes it out again.
+     */
+    joinSaveEvery: (save: () => Promise<boolean>) => () => void;
     /**
      * Save one tab as a press of Save does, for the Save of a close question; whether it was
      * written. A tab that cannot be written (untitled, read-only, changed on disk) is not.
@@ -135,9 +151,14 @@ export function createAutosave(deps: AutosaveDeps): AutosaveStore {
         return written;
     }
 
+    /** The saves that joined Save All: a Settings view's save of every scope. */
+    const joined = new Set<() => Promise<boolean>>();
+
     /**
-     * Save every tab that holds unsaved text, as a press of Save on each does; whether every such
-     * tab was written. A tab that cannot be written (read-only, changed on disk) counts as not.
+     * Save every tab that holds unsaved text, as a press of Save on each does, and nothing else; an
+     * app's `workspace.saveAll` runs this, so it never reaches a save a view joined. Whether every
+     * such tab was written. A tab that cannot be written (read-only, changed on disk) counts as
+     * not.
      */
     async function saveEvery(): Promise<boolean> {
         const dirty = source.openDrafts().filter((id) => {
@@ -147,6 +168,16 @@ export function createAutosave(deps: AutosaveDeps): AutosaveStore {
         const writable = dirty.filter((id) => eligible(id, true));
         const written = await Promise.all(writable.map((id) => save(id, true)));
         return writable.length === dirty.length && written.every(Boolean);
+    }
+
+    /**
+     * The File menu's Save All: every tab as `saveEvery` saves it, then every save a view joined
+     * (`joined`); whether every one wrote everything.
+     */
+    async function saveJoined(): Promise<boolean> {
+        const tabs = await saveEvery();
+        const others = await Promise.all([...joined].map((one) => one()));
+        return tabs && others.every(Boolean);
     }
 
     function cancel(id: string): void {
@@ -225,6 +256,13 @@ export function createAutosave(deps: AutosaveDeps): AutosaveStore {
         pageBlurred,
         saveBeforeClose,
         saveEvery,
+        saveJoined,
+        joinSaveEvery: (save) => {
+            joined.add(save);
+            return () => {
+                joined.delete(save);
+            };
+        },
         saveAsked: (id) => (eligible(id, true) ? save(id, true) : Promise.resolve(false)),
         followPage,
         drop: cancel

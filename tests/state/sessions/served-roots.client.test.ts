@@ -40,7 +40,7 @@ function read(roots: FsRoot[]): WorkspacesState {
         engine: null,
         recent: [],
         available: [],
-        machine: { set: [], defaults: {}, values: {}, hubs: {}, portRefused: null },
+        machine: { set: [], defaults: {}, values: {}, hubs: {}, portRefused: null, files: {} },
         error: '',
         loading: false
     };

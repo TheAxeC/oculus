@@ -25,15 +25,18 @@
     // primitive. A row names its file relative to the folder of the root that holds it (its hub's,
     // or a repository's), as VS Code's Problems view names a file relative to the workspace, on one
     // line cut with an ellipsis at its end, the whole path in its tooltip; a file no root holds is
-    // named by its whole path.
+    // named by its whole path. A finding of a data file with no primary key whose cause a chosen
+    // field mends offers that choice under its row (KeyChoice.svelte), once for each file.
 
     import Empty from '$lib/ui/frame/Empty.svelte';
+    import KeyChoice from './KeyChoice.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import { allFindings } from '$lib/state/workbench/navigation/status';
     import { t } from '$lib/state/shared/words/text';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
     import { fileUnder } from '$lib/state/shared/page/hubs';
+    import { keyChoicesOf } from '$lib/state/boards/collection/key-choice';
 
     const {
         apps: { findings: appFindings },
@@ -53,6 +56,11 @@
         )
     );
 
+    /** The choice of a primary key each finding that offers one carries, by its place. */
+    const keyed = $derived(
+        keyChoicesOf(found, Object.values(portfolio()?.entities.collections ?? {}))
+    );
+
     /** A finding's file under the root that holds it, with its line when it names one. */
     function named(file: string, line: number | undefined): string {
         const path = fileUnder(file, roots(), primary())?.path ?? file;
@@ -67,12 +75,16 @@
         {:else}
             <ul>
                 {#each found as finding, index (`${finding.file}:${finding.key}:${index}`)}
+                    {@const choice = keyed.get(index)}
                     <li>
                         <span class="file" title={finding.file}
                             >{named(finding.file, finding.line)}</span
                         >
                         <span class="key">{finding.key}</span>
                         <span class="message">{finding.message}</span>
+                        {#if choice !== undefined}
+                            <KeyChoice {choice} />
+                        {/if}
                     </li>
                 {/each}
             </ul>

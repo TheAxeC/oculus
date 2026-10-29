@@ -8,12 +8,12 @@
 
 import { isScalar, isSeq } from 'yaml';
 import type { Node } from 'yaml';
-import { DEFAULT_INDENT } from '../../../data/helpers/files/yaml/yaml-ranges.ts';
+import { DEFAULT_INDENT } from '../../../../data/helpers/files/yaml/yaml-ranges.ts';
 import {
     renderScalar,
     type ScalarFieldValue
-} from '../../../data/helpers/files/yaml/collection-text.ts';
-import { isMap } from '../../../data/helpers/guards.ts';
+} from '../../../../data/helpers/files/yaml/collection-text.ts';
+import { isMap } from '../../../../data/helpers/guards.ts';
 
 /** One row of a metalist: a flat map whose values are scalars. */
 export type ScalarMap = Record<string, ScalarFieldValue>;

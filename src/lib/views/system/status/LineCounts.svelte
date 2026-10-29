@@ -158,8 +158,12 @@
         color: var(--c-red-txt);
     }
 
-    /* The table scrolls inside this box, so a narrow pane scrolls the table and not itself. */
+    /* The table scrolls inside this box, so a narrow pane scrolls the table and not itself. A box
+       that scrolls sideways is the box the header row sticks in, and it never scrolls up or down,
+       so the header row stands at its top: offset by the group's heading strip, as Table.svelte
+       offsets it in the view's own scroller, it would sit over the first row of counts. */
     .scroller {
+        --group-strip: 0px;
         min-width: 0;
         max-width: 100%;
         overflow-x: auto;

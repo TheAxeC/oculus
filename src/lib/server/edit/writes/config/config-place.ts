@@ -21,7 +21,8 @@
 import { readFileSync, rmSync, rmdirSync } from 'node:fs';
 import { basename, join } from 'node:path';
 import { parseDocument, isMap as isYamlMap, isScalar } from 'yaml';
-import { HUB_FILE, USER_KEY, hubFileOf } from '../../../../data/helpers/hub-names.ts';
+import { HUB_FILE, USER_KEY, hubFileOf, ofHub } from '../../../../data/helpers/hub-names.ts';
+import { readPerHub } from '../../../../data/shapes/hub-keys.ts';
 import { LOCAL_NAME, loadConfig, textCatalog } from '../../../../data/sources/config.ts';
 import { localFile } from '../../../../data/sources/config/local.ts';
 import { isHubFolder } from '../../../../data/sources/manifests.ts';
@@ -35,8 +36,10 @@ import { SETTINGS_KEY } from '../../../../data/sources/config/merge/workspace-la
 import { words } from '../../../core/words.ts';
 import { isMachineFile } from '../../../files/workspace/machine-file.ts';
 import type { OpenWorkspace } from '../../../files/workspace/open.ts';
-import type { Refusal } from '../../yaml/yaml-edit.ts';
+import type { Refusal } from '../../../core/files/yaml/yaml-edit.ts';
 import type { ChangeRecord } from '../../../core/changes.ts';
+import type { WriteTarget } from '../../writes.ts';
+import type { SourceInputs } from './config-sources.ts';
 
 /**
  * The layers a write may land in: the folder of the hub it writes (the primary's, none without a
@@ -206,7 +209,7 @@ function pathLike(name: string): boolean {
  * since a folder without it is no hub and a write never makes one. Null for an empty name, a name
  * that holds path characters, and a name no other hub of the workspace has.
  */
-export function otherHubLayers(
+function otherHubLayers(
     into: { workspace?: OpenWorkspace; hubs?: readonly { key: string; hub: string }[] },
     name: string
 ): ConfigLayers | null {
@@ -243,6 +246,52 @@ export function machineHubs(into: {
     hubs?: readonly { hub: string }[];
 }): string[] {
     return [...(into.hub === null ? [] : [into.hub]), ...(into.hubs ?? []).map((one) => one.hub)];
+}
+
+/** What the target holds that the lists of a choice, a multi or a suggestion are built from. */
+function sourcesOf(into: WriteTarget): SourceInputs {
+    return {
+        hub: into.hub,
+        primary: into.primary,
+        projects: into.projects,
+        entities: into.entities
+    };
+}
+
+/** Where a Settings write of one option lands: the layers, and the lists it is checked by. */
+export type Landing = { layers: ConfigLayers; inputs: SourceInputs };
+
+/**
+ * Where a Settings write of the option `key` of `file` that names the hub `root` lands, or the
+ * refusal that writes nothing: the target's own layers for no root and for the primary's name,
+ * else the layers of the hub named, its folder and its records standing for the primary's in the
+ * lists, for a key of the hub list each hub's own file is read for.
+ */
+export function landing(
+    into: WriteTarget,
+    file: string,
+    key: string,
+    root: string | undefined
+): Landing | ConfigKeyOutcome {
+    if (root === undefined || (into.primary !== null && root === into.primary)) {
+        return { layers: layersOf(into), inputs: sourcesOf(into) };
+    }
+    const text = into.config.text;
+    const refuse = refusing(file, key);
+    const layers = otherHubLayers(into, root);
+    if (layers === null) return refuse(words(text, 'server.workspace.no_hub_named', root));
+    if (!readPerHub(file, key)) {
+        return refuse(words(text, 'server.workspace.primary_only', key, root));
+    }
+    return {
+        layers,
+        inputs: {
+            ...sourcesOf(into),
+            hub: layers.hub ?? null,
+            primary: root,
+            projects: () => ofHub(into.projects(), root)
+        }
+    };
 }
 
 /** Remove a file a write created, and the folders it created above it, innermost first. */

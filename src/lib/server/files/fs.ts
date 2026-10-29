@@ -70,6 +70,7 @@ import {
     selectWorkspace
 } from './workspace/actions.ts';
 import type { OpenWorkspace } from './workspace/open.ts';
+import type { LocalFile } from '../../data/shapes/config-save.ts';
 
 /**
  * One entry of one directory, as the tree draws it. `link` is true for a symbolic link, whose
@@ -137,7 +138,9 @@ export type WorkspacesAnswer = {
 /**
  * The names of the keys the primary's `local.yml` sets, the default text by key, the text of the
  * value in force by key (one line for each row of a joined list), the hubs whose files set each
- * joined list, and the move to the port the file names that the server could not make.
+ * joined list, the move to the port the file names that the server could not make, and each hub's
+ * own file as the This machine scope edits it, by the hub's name, every secret masked (none from a
+ * target built without the hubs' files).
  */
 type MachineAnswer = {
     set: readonly string[];
@@ -145,6 +148,7 @@ type MachineAnswer = {
     values: Record<string, string>;
     hubs: Record<string, string[]>;
     portRefused: { port: number; reason: string } | null;
+    files?: Record<string, LocalFile>;
 };
 
 /**

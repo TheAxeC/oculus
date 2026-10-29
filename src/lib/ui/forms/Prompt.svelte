@@ -22,9 +22,11 @@
         /** The cancelling control's words, already translated. */
         cancel: string;
         oncancel: () => void;
+        /** Where the box stands (Modal.svelte): `sheet` for a prompt asked from the palette. */
+        level?: 'dialog' | 'sheet';
     };
 
-    let { request, cancel, oncancel }: Props = $props();
+    let { request, cancel, oncancel, level = 'dialog' }: Props = $props();
 
     let box: HTMLDivElement | undefined = $state();
     // The fields begin with what the request holds, once; after that what is typed and picked is
@@ -47,7 +49,7 @@
     }
 </script>
 
-<Modal onclose={oncancel} onopen={() => box?.querySelector('input')?.focus()}>
+<Modal {level} onclose={oncancel} onopen={() => box?.querySelector('input')?.focus()}>
     {#snippet children(props)}
         <div {...props} class="box" aria-label={request.message} bind:this={box}>
             <form class="form" onsubmit={submitted}>

@@ -92,6 +92,20 @@ export function docPaths(layout: Layout): string[] {
         .filter((path) => path !== '');
 }
 
+/**
+ * The views a tree holds as tabs, each once, in the order of its first tab: every view but the
+ * document view, whose tabs `docPaths` names by their documents.
+ */
+export function viewIds(layout: Layout): string[] {
+    return [
+        ...new Set(
+            tabsOf(layout)
+                .map((tab) => tab.view)
+                .filter((view) => view !== DOC_VIEW)
+        )
+    ];
+}
+
 /** The words a tab's saved state carries as its `label`, or null when it carries none. */
 export function instanceLabel(state: unknown): string | null {
     return readAs(labelShape, state)?.label ?? null;

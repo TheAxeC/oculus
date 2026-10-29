@@ -1,6 +1,6 @@
 # ===========================================================================
 # options/local.yml
-# Every key a hub's .oculus/local.yml takes described once, the machine's own values, and a help line for each group of its dotted keys, in the shape the head of options/appearance.yml describes. local.yml has no defaults file in oculus: each key is listed under This machine with the value in force. loadConfig() reads it into the merged map's `options` and `option_groups` under local.yml; readLocalText() in src/lib/data/sources/config/local.ts reads a local.yml, whose keys (LOCAL_KEYS there) are the ones described here.
+# Every key a hub's .oculus/local.yml takes described once, the machine's own values, and a help line for each group of its dotted keys, in the shape the head of options/appearance.yml describes. local.yml has no defaults file in oculus: each key is edited in the This machine scope of Settings, in the file of the hub picked there, the primary's taking every key and any other hub's the lists whose rows every hub's file joins. loadConfig() reads it into the merged map's `options` and `option_groups` under local.yml; readLocalText() in src/lib/data/sources/config/local.ts reads a local.yml, whose keys (LOCAL_KEYS there) are the ones described here.
 # ===========================================================================
 
 options:
@@ -101,6 +101,8 @@ options:
         fields:
             service: the key an `auth` entry of a reader row names this row by
             user: the user name an `auth` entry that signs in with `basic` sends; absent otherwise
-            secret: the password, API key or token, shown as set
+            secret:
+                help: the password, API key or token, shown as set or not set and never as itself; a new one replaces it, and Clear takes it out
+                control: secret
 groups:
     literature: The contact address the Literature search's sources are called with from this machine.

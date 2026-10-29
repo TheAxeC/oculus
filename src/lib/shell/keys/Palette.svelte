@@ -416,6 +416,7 @@
                                                         mode={lists.choiceMode}
                                                         {served}
                                                         rows={lists.choiceRows}
+                                                        argument={parsed.argument}
                                                         loading={lists.choiceView === null}
                                                         {onclose}
                                                         onsaid={(words: string) => (said = words)}

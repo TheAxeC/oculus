@@ -41,7 +41,7 @@ import { manifestSource } from './manifest.ts';
 import { identityOf, readCollection } from '../../files/fs/collections.ts';
 import { saved, typeRefusals } from './entries.ts';
 import type { ChangeRecord } from '../../core/changes.ts';
-import type { EditResult, Refusal } from '../yaml/yaml-edit.ts';
+import type { EditResult, Refusal } from '../../core/files/yaml/yaml-edit.ts';
 import type { LineBlock, LineRange } from '../entry-edit/index.ts';
 import type { PortfolioConfig } from '../../../data/model/index.ts';
 import type { WriteOutcome } from '../writes.ts';

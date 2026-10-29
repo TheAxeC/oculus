@@ -11,6 +11,7 @@
 // the joined accounts: a label no `claude` row holds, compared reduced, is a problem naming the
 // key, and no account is used.
 
+import { JOINED_LOCAL_KEYS } from '../../helpers/hub-names.ts';
 import type {
     CalendarAccountConfig,
     MailAccountConfig,
@@ -55,7 +56,7 @@ export type MachineRead = {
 };
 
 /** The keys that are rows of a list joined over every hub's file. */
-const JOINED = ['clusters', 'accounts', 'calendars', 'mail'];
+const JOINED = JOINED_LOCAL_KEYS;
 
 /** What the `clusters:` rows of a hub must be, in the form of local.ts's `wrong` problems. */
 const CLUSTERS_ONCE_WORDS = 'rows of clusters that no earlier hub has a row for';

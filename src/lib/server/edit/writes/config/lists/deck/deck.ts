@@ -1,22 +1,27 @@
 // Layer 2, server. The lists of a deck's `present.yml` written, and taken back: the `slides:` of
-// any number of groups and the `order:` list, in one edit of the file.
+// any number of groups, the `order:` list and the keys the Slides view sets beside them
+// (deck-keys.ts), in one edit of the file.
 //
 // The file is any `present.yml` under a served root: the hub's portfolio deck, a project's deck or
 // a custom deck. The request names the root and the file's path under it, one `{ group, base,
-// slides }` for each group it changes, and `order: { base, entries }` for the order. It is refused
-// whole, with nothing written, unless the path is a `present.yml` inside a served root, the file
-// holds each `base`, no name is repeated in a list, `entries` is a permutation of the order's
-// `base`, and every name of a group's list is a member, a candidate, a missing name or a
-// conflicting deck of that group as the reader sees it now (server/content/deck/read.ts), or a name
-// that group's `find:` does not see and which the request takes out of another list. That last name
-// is refused with a sentence of its own. The edits are over the bytes (server/edit/deck-edit.ts),
-// each read back, and the one result is written atomically.
+// slides }` for each group it changes, `order: { base, entries }` for the order, and `{ path, base,
+// value }` for each key, `base` the value the page read and `value` null to take the key out. It is
+// refused whole, with nothing written, unless every key is one the Slides view sets, of a group the
+// file holds, holding its `base` and given a value it takes, and unless the path is a `present.yml`
+// inside a served root, the file holds each `base`, no name is repeated in a list, `entries` is a
+// permutation of the order's `base`, and every name of a group's list is a member, a candidate, a
+// missing name or a conflicting deck of that group as the reader sees it now
+// (server/content/deck/read.ts), or a name that group's `find:` does not see and which the request
+// takes out of another list. That last name is refused with a sentence of its own. The edits are
+// over the bytes (server/edit/deck-edit.ts), each read back, and the one result is written
+// atomically.
 //
 // A record carries the file, the list it holds (the group under `slides:<group>`, the order under
-// `order`), its `before` and its `after`, and an undo writes the `before` list back while the file
-// holds the `after` list, through the same edit without the check of names, since the `before`
-// list is what the file held. A record whose key is a group's bare name is read as that group's
-// list and taken back through the same path.
+// `order`, a key under the map that holds it with the key as its field), its `before` and its
+// `after`, and an undo writes the `before` list or value back while the file holds the `after` one,
+// through the same edit without the check of names, since the `before` is what the file held. A
+// record whose key is a group's bare name is read as that group's list and taken back through the
+// same path.
 
 import { readFileSync } from 'node:fs';
 import { basename, dirname, resolve } from 'node:path';
@@ -28,8 +33,16 @@ import { inside, realPath } from '../../../../../core/paths.ts';
 import { words } from '../../../../../core/words.ts';
 import { readDeck } from '../../../../../content/deck/read.ts';
 import { resolveRootPath } from '../../../../../files/files.ts';
-import { groupSlides, setGroupSlides, setOrder } from '../../../../deck-edit.ts';
+import {
+    deckKeyAt,
+    groupSlides,
+    setDeckKeys,
+    setGroupSlides,
+    setOrder,
+    type DeckKey
+} from '../../../../deck-edit.ts';
 import { deckSourceOf, hubSpelling } from './deck-files.ts';
+import { KEY_FIELDS, keyRefusal, recordKey, recordPath } from './deck-keys.ts';
 import type { Change, ChangeRecord } from '../../../../../core/changes.ts';
 import type { WriteOutcome, WriteTarget } from '../../../../writes.ts';
 
@@ -40,6 +53,9 @@ export type DeckSlidesOutcome =
 
 /** One group's list of a request. */
 export type GroupList = { group: string; base: string[]; slides: string[] };
+
+/** One key of a request: its path, the value the page read, and the value to write. */
+export type KeyEdit = { path: string[]; base: unknown; value: unknown };
 
 /** The key a group's list is recorded under, and the field and key of the order's record. */
 const SLIDES_KEY = 'slides:';
@@ -55,8 +71,8 @@ function recordOf(
     file: string,
     key: string,
     field: string,
-    before: string[],
-    after: string[]
+    before: unknown,
+    after: unknown
 ): ChangeRecord {
     return { file, key, field, before, after, undo: 'field' };
 }
@@ -89,7 +105,8 @@ function put(
     into: WriteTarget,
     file: string,
     lists: GroupList[],
-    order: string[] | undefined
+    order: string[] | undefined,
+    keys: DeckKey[] = []
 ): DeckSlidesOutcome | null {
     const source = readFileSync(file, 'utf8');
     const spelled = hubSpelling(into.hub, file);
@@ -117,6 +134,18 @@ function put(
             records.push(recordOf(spelled, ORDER_FIELD, ORDER_FIELD, before, order));
         }
     }
+    if (keys.length > 0) {
+        const before = keys.map((one) => deckKeyAt(text, one.path));
+        const edited = setDeckKeys(text, keys);
+        if (edited === null) return null;
+        text = edited;
+        keys.forEach((one, at) => {
+            if (isDeepStrictEqual(before[at], one.value)) return;
+            const field = one.path[one.path.length - 1];
+            changed.push(one.path.join('.'));
+            records.push(recordOf(spelled, recordKey(one.path), field, before[at], one.value));
+        });
+    }
     if (text === source) return { changed: [], refused: [] };
     writeTextAtomic(file, text);
     return { changed, refused: [], records };
@@ -133,9 +162,11 @@ export function writeDeckSlides(
         path: string;
         groups: GroupList[];
         order?: { base: string[]; entries: string[] };
+        keys?: KeyEdit[];
     }
 ): DeckSlidesOutcome {
     const { root, path, groups, order } = request;
+    const keys = request.keys ?? [];
     const text = into.config.text;
     const roots = into.files?.roots();
     if (roots === undefined) return { error: 'unwritable' };
@@ -167,6 +198,16 @@ export function writeDeckSlides(
             return refuse(words(text, 'server.deck_slides.order_not_a_permutation'));
         }
     }
+    for (const key of keys) {
+        const refused = keyRefusal(text, key.path, key.value);
+        if (refused !== null) return refuse(refused);
+        if (key.path[0] === 'groups' && groupSlides(source, key.path[1]) === null) {
+            return refuse(words(text, 'server.deck_slides.no_group', key.path[1]));
+        }
+        if (!isDeepStrictEqual(deckKeyAt(source, key.path), key.base ?? null)) {
+            return refuse(words(text, 'server.deck_slides.key_changed', key.path.join('.')));
+        }
+    }
 
     const deck = readDeck(deckSourceOf(into, roots), root, dirname(path));
     if (deck === 'outside') return refuse(words(text, 'server.deck_slides.outside'));
@@ -185,8 +226,9 @@ export function writeDeckSlides(
         }
     }
 
+    const edits = keys.map((one) => ({ path: one.path, value: one.value }));
     return (
-        put(into, at.path, groups, order?.entries) ??
+        put(into, at.path, groups, order?.entries, edits) ??
         refuse(words(text, 'server.deck_slides.not_kept'))
     );
 }
@@ -203,11 +245,19 @@ function deckFileOf(into: WriteTarget, change: Change): string | null {
     return roots.some((one) => inside(file, realPath(one.dir) ?? one.dir)) ? file : null;
 }
 
-/** The list a record's group or order holds now, and whether the file and the list exist. */
+/** Whether a record is of a key rather than of a list. */
+function ofKey(change: Change): boolean {
+    return (KEY_FIELDS as readonly string[]).includes(change.field);
+}
+
+/**
+ * The list a record's group or order holds now, or the value of its key, and whether the file and
+ * the list exist; a key is there whenever the file is.
+ */
 export function deckSlidesNow(
     into: WriteTarget,
     change: Change
-): { found: boolean; value: string[] | null } {
+): { found: boolean; value: unknown } {
     const file = deckFileOf(into, change);
     if (file === null) return { found: false, value: null };
     let source: string;
@@ -217,6 +267,9 @@ export function deckSlidesNow(
         if ((error as NodeJS.ErrnoException).code === 'EACCES') throw error;
         return { found: false, value: null };
     }
+    if (ofKey(change)) {
+        return { found: true, value: deckKeyAt(source, recordPath(change.key, change.field)) };
+    }
     const held =
         change.field === ORDER_FIELD
             ? orderTokensIn(source)
@@ -224,15 +277,23 @@ export function deckSlidesNow(
     return { found: held !== null, value: held };
 }
 
-/** Put a record's `before` list back into its group, or the order. */
+/**
+ * Put a record's `before` back: a list into its group or the order, a value into its key. Null
+ * when the record names no deck file of a served root, or a list record's `before` is no list.
+ */
 export function undoDeckSlides(
     into: WriteTarget,
     change: Change,
-    before: string[]
+    held: unknown
 ): DeckSlidesOutcome | null {
     const file = deckFileOf(into, change);
     if (file === null) return null;
-    if (change.field === ORDER_FIELD) return put(into, file, [], before);
+    if (ofKey(change)) {
+        const path = recordPath(change.key, change.field);
+        return put(into, file, [], undefined, [{ path, value: held ?? null }]);
+    }
+    if (!Array.isArray(held) || !held.every((one) => typeof one === 'string')) return null;
+    if (change.field === ORDER_FIELD) return put(into, file, [], held);
     const group = groupOf(change.key);
-    return put(into, file, [{ group, base: [], slides: before }], undefined);
+    return put(into, file, [{ group, base: [], slides: held }], undefined);
 }

@@ -8,10 +8,30 @@ options:
     agents:
         heading: sessions
         section: Agents
-        help: "The composer's choices for a new agent session, per agent: its label and its pickers (lists), each picker with its words, the one flag every value passes, its default and its values. The Settings view writes an agent's entry whole; its pickers are edited in the file."
+        help: "The composer's choices for a new agent session, per agent: its label and its pickers (lists), each picker with its words, the one flag every value passes, its default and its values. The Settings view writes an agent's entry whole."
         fields:
             key: the agent, claude or codex
             label: the words the agent is offered with
-            lists: "the agent's pickers by name, in the order the composer draws them, each with label, flag, default and values"
+            lists:
+                help: "the agent's pickers by name, in the order the composer draws them"
+                fields:
+                    key: the picker's name
+                    value:
+                        help: the picker
+                        holds: record
+                        fields:
+                            label: the words the picker is labelled with
+                            flag: the one flag every value of the picker passes
+                            default: the id of the value the picker starts on
+                            cache: the file of the account whose list of models replaces the values when it lists models
+                            values:
+                                help: the picker's values
+                                fields:
+                                    id: the value's id
+                                    label: the words the value shows
+                                    pass: what the value passes after the flag; a value with none passes nothing
+                                    confirm:
+                                        help: a start with this value is asked about first
+                                        control: toggle
 
 groups: {}

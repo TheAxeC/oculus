@@ -34,25 +34,28 @@ function readOver(
     return { value, problems: found.map(named) };
 }
 
+/** The key path oculus ships in config/defaults/behavior.yml. */
+const SHIPPED_FILE = '~/.ssh/id_{type}_{resource}';
+
 describe('clusterKeySettings', () => {
     it.each([
         [
             'a type and a path',
-            { key_type: 'ed25519', key_file: '~/.ssh/id_{type}_{resource}' },
-            { keyType: 'ed25519', keyFile: '~/.ssh/id_{type}_{resource}' },
+            { key_type: 'rsa', key_file: '~/.ssh/cluster_{resource}' },
+            { keyType: 'rsa', keyFile: '~/.ssh/cluster_{resource}' },
             []
         ],
-        ['neither', {}, { keyType: '', keyFile: '' }, []],
+        ['neither', {}, { keyType: 'ed25519', keyFile: SHIPPED_FILE }, []],
         [
             'a type no key is made of',
             { key_type: 'dsa' },
-            { keyType: '', keyFile: '' },
+            { keyType: 'ed25519', keyFile: SHIPPED_FILE },
             ['clusters.key_type: choice']
         ],
         [
             'a path that is no text',
             { key_type: 'rsa', key_file: 3 },
-            { keyType: 'rsa', keyFile: '' },
+            { keyType: 'rsa', keyFile: SHIPPED_FILE },
             ['clusters.key_file: text']
         ]
     ])(

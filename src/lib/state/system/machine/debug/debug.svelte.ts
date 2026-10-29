@@ -24,7 +24,8 @@
 // in `launch.yml` runs the debugger whose `languages` holds the file's language, with the first of
 // its `initialConfigurations` or else the first configuration its providers give. Add
 // Configuration lists the snippets, the `initialConfigurations` and the provided configurations of
-// the acting debuggers beside oculus's own and writes the chosen one into `launch.yml`.
+// the acting debuggers beside oculus's own and writes the chosen one into `launch.yml`; a
+// configuration the file holds is edited in a form of its fields and deleted (launch-form.ts).
 //
 // A question the reader must answer (the launch's approval, the stop's confirmation, the failed
 // command) is held as `asking`, which the shell draws once.
@@ -54,6 +55,7 @@ import { postDebug, readConsole, readLaunches, type DebugAnswer } from './debug-
 import {
     addConfiguration,
     configurationChoices,
+    editConfiguration,
     givenConfiguration,
     LAUNCH_FILE
 } from './debug-file.ts';
@@ -681,6 +683,23 @@ export function createDebug(deps: DebugDeps) {
         if (name !== null) keep({ ...saved, chosen: { ...saved.chosen, [path]: name } });
     }
 
+    /**
+     * Make `changes` to the configuration of `name`, or take it out with null; the picker follows
+     * the configuration under its name, renamed or not, and falls back to the first for a deleted
+     * one.
+     */
+    async function changeConfiguration(
+        path: string,
+        name: string,
+        changes: Record<string, unknown> | null
+    ): Promise<void> {
+        if (!(await editConfiguration(deps, queries, path, name, changes))) return;
+        const { [path]: _was, ...others } = saved.chosen;
+        const now =
+            changes === null ? null : typeof changes.name === 'string' ? changes.name : name;
+        keep({ ...saved, chosen: now === null ? others : { ...others, [path]: now } });
+    }
+
     /** The reader picked the offered configuration at this place. */
     async function pickConfiguration(at: number): Promise<void> {
         const offered = held.choosing;
@@ -789,6 +808,8 @@ export function createDebug(deps: DebugDeps) {
         toggleAtCaret,
         ...lists,
         addConfiguration: startAdding,
+        editConfiguration: changeConfiguration,
+        debuggers: deps.debuggers,
         choosing: () => held.choosing,
         pickConfiguration,
         cancelChoosing: () => {

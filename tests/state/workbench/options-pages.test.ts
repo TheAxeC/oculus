@@ -1,8 +1,9 @@
 // Layer 2, client-state tests. The options the page's controls set, over two pages of one server:
-// the text size row of Settings, the theme list and the status bar's Hide each write their option
-// into the open workspace file's `settings:`, and the second page, which wrote nothing, shows the
-// new value once the config push that follows the write is installed. Before the push the page
-// that wrote shows the value it wrote and the other page the old one.
+// the text size row of Settings holds its change until the Save of its scope writes it, and the
+// theme list and the status bar's Hide write theirs at once, each into the open workspace file's
+// `settings:`; the second page, which wrote nothing, shows the new value once the config push that
+// follows the write is installed. Before the push the page that wrote shows the value it wrote and
+// the other page the old one.
 //
 // The server stand-in is a scratch engine (a copy of config/) and a scratch hub with a saved
 // workspace file: a write goes through the server's own writers, and the push is the merged config
@@ -27,16 +28,24 @@ import {
     type ConfigLayers
 } from '../../../src/lib/server/edit/writes/config/config-place.ts';
 import { writeConfigValue } from '../../../src/lib/server/edit/writes/config/config-value.ts';
+import { textDigest } from '../../../src/lib/data/shapes/config-save.ts';
+import { handleWrite } from '../../../src/lib/server/edit/writes.ts';
 import type { ClientState } from '../../../src/lib/state/client/context.ts';
 import type { WriteAnswer } from '../../../src/lib/state/shared/stores/shapes.ts';
 import type { Lists } from '../../../src/lib/state/system/config/editors/sources.ts';
 import { fileRows } from '../../../src/lib/state/system/config/rows.ts';
-import { createRowWriter } from '../../../src/lib/state/system/config/write.ts';
+import { createRowWriter } from '../../../src/lib/state/system/config/scopes/write.ts';
 import { createUi, type UiStore } from '../../../src/lib/state/workbench/ui.svelte.ts';
-import { plantSaved } from '../../fixtures/hubs/workspace.ts';
-import { it, scratchDir } from '../../fixtures/scratch.ts';
+import { it } from '../../fixtures/scratch.ts';
 import { stateServer } from '../../fixtures/state-server.ts';
-import { defaultsFile, scratchEngine } from '../../routes/edit/write-fixture.ts';
+import {
+    TOKEN,
+    configTarget,
+    defaultsFile,
+    request,
+    workspaceFileOf
+} from '../../routes/edit/write-fixture.ts';
+import { memoryStage } from '../../views/system/workbench/workbench-fixture.ts';
 
 /** The writes of the Settings write path a ui store sends an option through. */
 type OptionWrites = NonNullable<NonNullable<Parameters<typeof createUi>[0]>['writes']>;
@@ -62,9 +71,9 @@ function settle(): Promise<void> {
  * merged config pushed to both once.
  */
 function world() {
-    const engine = scratchEngine();
-    const hub = scratchDir('oculus-hub-');
-    const workspace = plantSaved(hub).file;
+    const into = configTarget();
+    const { engine, hub } = into;
+    const workspace = workspaceFileOf(into);
     const layers: ConfigLayers = { hub, workspace };
     const writes: OptionWrites = {
         writeConfigKey: (file, key, value) =>
@@ -101,36 +110,44 @@ function world() {
     }
     const defaults = (file: string): string => readFileSync(defaultsFile(engine, file), 'utf8');
     const config = push();
-    return { workspace, writes, pages, config, push, settings, defaults };
+    return { into, workspace, writes, pages, config, push, settings, defaults };
 }
 
 describe('an option set on one page, over two pages of one server', { tags: ['slow'] }, () => {
-    it('writes the text size row into the workspace file, shown on the other page after the push', async () => {
+    it("holds the text size row's change, writes it into the workspace file at the Save, shown on the other page after the push", async () => {
         const at = world();
         const [one, two] = at.pages;
         const before = at.defaults('appearance.yml');
+        const held = readFileSync(at.workspace, 'utf8');
         const open = {
             root: 'hub',
             path: WORKSPACE,
-            text: {
-                text: readFileSync(at.workspace, 'utf8'),
-                truncated: false,
-                error: '',
-                loading: false
-            }
+            text: { text: held, truncated: false, error: '', loading: false }
         };
         const entries = catalogOf(at.config)['appearance.yml'];
         const rows = fileRows('appearance.yml', entries, at.config, { workspace: open }).rows;
         const row = rows.find((each) => each.key === 'text_size');
         if (row === undefined) throw new Error('no text_size row');
+        const stage = memoryStage();
         const writer = createRowWriter(
-            at.writes.writeConfigKey,
-            at.writes.resetConfig,
+            stage,
             () => undefined,
             () => ({}) as Lists
         );
         expect([one.ui.textScale(), two.ui.textScale()]).toEqual([null, null]);
-        await writer.submit(row, '1.2');
+        writer.submit(row, '1.2');
+        expect([stage.held(row), at.settings()]).toEqual([{ value: 1.2 }, undefined]);
+        const answer = await handleWrite(
+            request({
+                kind: 'config-save',
+                scope: 'settings',
+                digest: textDigest(held),
+                changes: [{ file: 'appearance.yml', key: 'text_size', value: 1.2 }]
+            }),
+            TOKEN,
+            at.into
+        );
+        expect(answer.status).toBe(200);
         expect(at.settings()).toEqual({ text_size: 1.2 });
         expect(at.defaults('appearance.yml')).toBe(before);
         expect(two.ui.textScale()).toBe(null);

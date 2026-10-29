@@ -1,13 +1,14 @@
 <script lang="ts">
-    // Layer 3, view partial. The control of one option of a config file or of one field of a family
-    // entry, drawn from its catalog spec: a checkbox for true or false (with a third state, unset,
-    // for a field a record may lack), a number box held to its range, a text box (with suggestions
-    // when the spec names a source), a text area, a choice or a multi-pick over the list the spec
-    // names, a glyph picker, a hue or colour picker drawing the palette, a folder, file or path
-    // box, an inline list of items, and a word block as four multi-picks (one of these words, none
-    // of them, a word with one of these flags, none with one), the words from the list the spec
-    // names and the flags from that list's flags. The rules each control follows are
-    // state/system/config/editors/fields.ts; this draws them.
+    // Layer 3, view partial. The control of one option of a config file or of one field of a
+    // family entry, drawn from its catalog spec: a checkbox for true or false (with a third state,
+    // unset, for a field a record may lack), a number box held to its range, a text box for a text
+    // or a scalar (with suggestions when the spec names a source), a text area, a choice or a
+    // multi-pick over the list the spec names, a glyph picker, a hue or colour picker drawing the
+    // palette, a folder, file or path box, an inline list of items, and a word block as four
+    // multi-picks (one of these words, none of them, a word with one of these flags, none with
+    // one), the words from the list the spec names and the flags from that list's flags, and for a
+    // secret its password box (SecretBox.svelte), held by the record's `service`. The rules each
+    // control follows are state/system/config/editors/fields.ts and offers.ts; this draws them.
     //
     // The partial holds nothing: the value comes in as the field's typed value and every change
     // goes out as a call. A box hands on its text at each keystroke (`ontext`) and, when the caller
@@ -49,17 +50,11 @@
     import {
         BLOCK_LISTS,
         blockIn,
-        blockPool,
         controlOf,
         fromBlock,
         fromPick,
         fromWords,
-        hueOf,
-        isStray,
-        offerFor,
-        poolOf,
         numberRefusal,
-        suggests,
         textOf,
         toggleOf,
         wordsOf,
@@ -67,12 +62,21 @@
         type CatalogEntry,
         type FieldValue
     } from '$lib/state/system/config/editors/fields';
+    import {
+        blockPool,
+        hueOf,
+        isStray,
+        offerFor,
+        poolOf,
+        suggests
+    } from '$lib/state/system/config/editors/offers';
     import type { Lists } from '$lib/state/system/config/editors/sources';
     import { addPerson, personToAdd, unlessReverted } from '$lib/state/forms/new-entry';
     import { entryChoices } from '$lib/state/forms/schema';
     import type { RegistryWord } from '$lib/state/shared/page/hubs';
     import { useState } from '$lib/state/client/use';
     import { said } from '../settings/said';
+    import SecretBox from './SecretBox.svelte';
 
     const {
         fs: { primary },
@@ -330,6 +334,12 @@
         {#if stray === true}
             <Tag label={t('settings.not_in_list')} tone="amber" />
         {/if}
+    {:else if control === 'secret'}
+        <SecretBox
+            {label}
+            stored={value === true}
+            service={typeof record.service === 'string' ? record.service : ''}
+        />
     {:else if control === 'glyph'}
         <GlyphSelect
             value={held}

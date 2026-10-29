@@ -360,6 +360,9 @@ export const FILE_FIELDS = [
     'copy',
     'upload',
     'add-configuration',
+    'edit-configuration',
+    'delete-configuration',
+    'set-primary-key',
     'write-file',
     'trash',
     'delete',
@@ -372,10 +375,21 @@ export const FILE_FIELDS = [
 export type FileField = (typeof FILE_FIELDS)[number];
 
 /**
- * What an upload made by a caller other than the page is recorded as: Add Configuration's write of
- * `launch.yml`, and a file an app's host writes with `workspace.fs.writeFile`.
+ * What an upload made by a caller other than the page is recorded as: the writes of a
+ * configuration of `launch.yml` and of `cpp.yml` (Add Configuration, and the edit and the deletion
+ * of a configuration), the choice of a data file's primary key (Set Primary Key, one record for
+ * each file it writes), and a file an app's host writes with `workspace.fs.writeFile`.
  */
-export const UPLOAD_AS = ['add-configuration', 'write-file'] as const;
+export const UPLOAD_AS = [
+    'add-configuration',
+    'edit-configuration',
+    'delete-configuration',
+    'set-primary-key',
+    'write-file'
+] as const;
+
+/** What one upload made by a caller other than the page is recorded as. */
+export type UploadAs = (typeof UPLOAD_AS)[number];
 
 /** A field an upload is recorded under. */
 export type UploadField = 'upload' | (typeof UPLOAD_AS)[number];

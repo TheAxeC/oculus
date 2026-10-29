@@ -2,7 +2,9 @@
 // `.oculus/config.yml`: `literature.sources` and `links`, read from the primary hub, and
 // `recover.sources` and `venues.browser`, read from each hub for its own records; with
 // `literature.prefer`, the order the Literature search's merge takes a field from its sources in.
-// oculus ships none of them, so with no key the feature that needs it says what is missing.
+// Oculus ships the rows of `literature.sources`, `recover.sources` and `links` in its defaults, and
+// a hub lays its own rows over them row by row (merge/in-place.ts); `venues.browser` is each hub's
+// own. With no row, the feature that needs it says what is missing.
 //
 // Each reader takes the merged config of the hub it reads and pushes what is wrong with a row as a
 // SettingProblem `row` (check.ts), which the findings of the hub's file word, so Settings and the

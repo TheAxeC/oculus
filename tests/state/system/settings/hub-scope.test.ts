@@ -1,16 +1,14 @@
-// Layer 2, client state tests. The hub a Settings row of a key each hub's own file is read for
-// names (state/system/config/view/hub-settings.svelte.ts): in a workspace of more than one hub
-// the row offers every hub, the primary first and chosen, none chosen with no primary; a row of a
-// key read from the primary alone offers none; in a workspace of one hub the row names that hub.
-// With a hub other than the primary chosen the row shows that hub's value, default and line, read
-// from the slice of its merged settings the server answers (server/files/source/hub-settings.ts)
-// and from its own settings file, and a row whose hub file or settings are not read yet, or whose
-// hub is not picked, says why and writes nothing. The texts typed in a box are kept under the hub
-// chosen, beside the drafts of editor-saved.test.ts.
+// Layer 2, client state tests. The rows of the Settings view's Hub scope with a hub other than the
+// primary picked (state/system/config/view/hub-settings.svelte.ts): a row of a key each hub's own
+// file is read for is that hub's, showing its value, default and line, read from the slice of its
+// merged settings the server answers (server/files/source/hub-settings.ts) and from its own
+// settings file, and kept under that hub; a row whose hub file or settings are not read yet, or
+// could not be, says why and writes nothing; a row of a key read from the primary alone is left
+// as the Primary hub scope draws it. The texts typed in a box are kept under the hub, beside the
+// drafts of editor-saved.test.ts.
 //
-// What this does NOT cover: the choice the item draws and the look of the row, which the look on
-// TEST does, and the route's reach from an app, which the same-origin guard of the /api routes
-// closes.
+// What this does NOT cover: the scope bar and the look of the rows, which the look on TEST does,
+// and the route's reach from an app, which the same-origin guard of the /api routes closes.
 
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -22,7 +20,6 @@ import { hubSettingsAnswer } from '../../../../src/lib/server/files/source/hub-s
 import { slotOf } from '../../../../src/lib/state/system/config/editors/slots.ts';
 import { settingsGroups } from '../../../../src/lib/state/system/config/groups.ts';
 import { catalogOf } from '../../../../src/lib/data/sources/config/catalog/options.ts';
-import { placeName, placeOf } from '../../../../src/lib/state/system/config/rows.ts';
 import { typedText, withTypedText } from '../../../../src/lib/state/system/config/typed.ts';
 import {
     hubReader,
@@ -31,7 +28,6 @@ import {
 } from '../../../../src/lib/state/system/config/view/hub-settings.svelte.ts';
 import { scratchDir } from '../../../fixtures/scratch.ts';
 import {
-    LAB_CHOSEN,
     LAB_FILE,
     LAB_SLICE,
     LAB_STAGES,
@@ -50,150 +46,69 @@ const NO_LAB = 'The workspace has no hub named lab';
 const LAB_FAILED: HubRead = { state: 'failed', error: NO_LAB };
 
 /**
- * One row per outcome of a case: the hubs offered, the hub chosen, the hub a write names, the hub
- * its drafts are kept under, and whether it says why it writes nothing.
+ * One row per outcome of a case: the hub a write names, the hub its drafts are kept under, and
+ * whether it says why it writes nothing.
  */
 const ROWS: {
     row: string;
     id: string;
     one: Case;
-    offered: string[] | undefined;
-    chosen: string | undefined;
     hub: string | undefined;
     slot: string | undefined;
     blocked: string | undefined;
 }[] = [
     {
-        row: 'two hubs: the primary first and chosen',
+        row: 'the Primary hub scope: the row is the primary hub file',
         id: STAGES,
-        one: { hubs: ['hub', 'lab'], primary: 'hub' },
-        offered: ['hub', 'lab'],
-        chosen: 'hub',
+        one: {},
         hub: undefined,
         slot: undefined,
         blocked: undefined
     },
     {
-        row: 'two hubs, lab chosen',
+        row: "the Hub scope of lab: the row is lab's and kept under lab",
         id: STAGES,
-        one: { hubs: ['hub', 'lab'], primary: 'hub', chosen: LAB_CHOSEN },
-        offered: ['hub', 'lab'],
-        chosen: 'lab',
+        one: { hub: 'lab' },
         hub: 'lab',
         slot: 'lab',
         blocked: undefined
     },
     {
-        row: 'a key read from the primary alone: no choice',
+        row: 'a key read from the primary alone, in the Hub scope of lab: left as it is',
         id: 'behavior.yml:lint.writing_skip',
-        one: { hubs: ['hub', 'lab'], primary: 'hub' },
-        offered: undefined,
-        chosen: undefined,
+        one: { hub: 'lab' },
         hub: undefined,
         slot: undefined,
         blocked: undefined
     },
     {
-        row: 'one hub, the primary: no choice',
+        row: "the Hub scope of lab while lab's file does not parse",
         id: STAGES,
-        one: { hubs: ['hub'], primary: 'hub' },
-        offered: undefined,
-        chosen: undefined,
-        hub: undefined,
-        slot: undefined,
-        blocked: undefined
-    },
-    {
-        row: 'one hub that is not the primary: no choice, the write names it',
-        id: STAGES,
-        one: { hubs: ['lab'], primary: null },
-        offered: undefined,
-        chosen: undefined,
-        hub: 'lab',
-        slot: undefined,
-        blocked: undefined
-    },
-    {
-        row: 'two hubs and no primary: none chosen, nothing written',
-        id: STAGES,
-        one: { hubs: ['hub', 'lab'], primary: null },
-        offered: ['hub', 'lab'],
-        chosen: undefined,
-        hub: undefined,
-        slot: undefined,
-        blocked: 'workbench.settings_pick_hub'
-    },
-    {
-        row: 'two hubs and no primary, lab picked',
-        id: STAGES,
-        one: { hubs: ['hub', 'lab'], primary: null, chosen: LAB_CHOSEN },
-        offered: ['hub', 'lab'],
-        chosen: 'lab',
-        hub: 'lab',
-        slot: 'lab',
-        blocked: undefined
-    },
-    {
-        row: 'lab chosen and gone from the workspace: the primary chosen again',
-        id: STAGES,
-        one: { hubs: ['hub', 'other'], primary: 'hub', chosen: LAB_CHOSEN },
-        offered: ['hub', 'other'],
-        chosen: 'hub',
-        hub: undefined,
-        slot: undefined,
-        blocked: undefined
-    },
-    {
-        row: "lab chosen while lab's file does not parse",
-        id: STAGES,
-        one: {
-            hubs: ['hub', 'lab'],
-            primary: 'hub',
-            chosen: LAB_CHOSEN,
-            file: { text: text('stages: [\n'), present: true }
-        },
-        offered: ['hub', 'lab'],
-        chosen: 'lab',
+        one: { hub: 'lab', file: { text: text('stages: [\n'), present: true } },
         hub: 'lab',
         slot: 'lab',
         blocked: 'workbench.settings_unparsed'
     },
     {
-        row: "lab chosen while lab's file is being read",
+        row: "the Hub scope of lab while lab's file is being read",
         id: STAGES,
-        one: {
-            hubs: ['hub', 'lab'],
-            primary: 'hub',
-            chosen: LAB_CHOSEN,
-            file: { text: text('', { loading: true }), present: true }
-        },
-        offered: ['hub', 'lab'],
-        chosen: 'lab',
+        one: { hub: 'lab', file: { text: text('', { loading: true }), present: true } },
         hub: 'lab',
         slot: 'lab',
         blocked: 'workbench.settings_loading'
     },
     {
-        row: "lab chosen while lab's settings are being read",
+        row: "the Hub scope of lab while lab's settings are being read",
         id: STAGES,
-        one: {
-            hubs: ['hub', 'lab'],
-            primary: 'hub',
-            chosen: LAB_CHOSEN,
-            read: { state: 'loading' }
-        },
-        offered: ['hub', 'lab'],
-        chosen: 'lab',
+        one: { hub: 'lab', read: { state: 'loading' } },
         hub: 'lab',
         slot: 'lab',
         blocked: 'workbench.settings_hub_loading'
     },
     {
-        row: "lab chosen after lab's settings could not be read",
+        row: "the Hub scope of lab after lab's settings could not be read",
         id: STAGES,
-        one: { hubs: ['hub', 'lab'], primary: 'hub', chosen: LAB_CHOSEN, read: LAB_FAILED },
-        offered: ['hub', 'lab'],
-        chosen: 'lab',
+        one: { hub: 'lab', read: LAB_FAILED },
         hub: 'lab',
         slot: 'lab',
         blocked: 'workbench.settings_hub_failed'
@@ -209,32 +124,25 @@ const UNREAD: { name: string; read: HubRead; said: string; args: unknown[] }[] =
     { name: 'could not be read', read: LAB_FAILED, said: 'hub_failed', args: ['lab', NO_LAB] }
 ];
 
-describe('the hub a Settings row names', () => {
-    it.each(ROWS)('$row', ({ id, one, offered, chosen, hub, slot, blocked }) => {
+describe('a row of the Hub scope', () => {
+    it.each(ROWS)('$row', ({ id, one, hub, slot, blocked }) => {
         const row = rowOf(id, one);
-        expect(row.choice?.offered).toEqual(offered);
-        expect(row.choice?.chosen).toEqual(chosen);
         expect([row.hub, row.slot, row.blocked?.key]).toEqual([hub, slot, blocked]);
     });
 
-    it("names lab's file in the sentence of a lab file that does not parse", () => {
+    it("names lab's file and the line in the sentence of a lab file that does not parse", () => {
         const file = { text: text('stages: [\n'), present: true };
-        const row = rowOf(STAGES, {
-            hubs: ['hub', 'lab'],
-            primary: 'hub',
-            chosen: LAB_CHOSEN,
-            file
-        });
-        expect(row.blocked?.args[0]).toBe(`lab/${HUB_FILE}`);
+        const row = rowOf(STAGES, { hub: 'lab', file });
+        // The flow list opened on line 1 is left open at the end of the text, on line 2.
+        expect(row.blocked?.args.slice(0, 2)).toEqual([`lab/${HUB_FILE}`, 2]);
     });
 
     it.each(UNREAD)(
         "holds no value, default or line of the primary, and names lab's file, while lab's settings $name",
         ({ read, said, args }) => {
-            const one = { hubs: ['hub', 'lab'], primary: 'hub', primaryFile: PRIMARY_FILE };
-            const primary = rowOf(STAGES, one);
+            const primary = rowOf(STAGES, { primaryFile: PRIMARY_FILE });
             expect([primary.own, primary.line]).toEqual([true, 1]);
-            const row = rowOf(STAGES, { ...one, chosen: LAB_CHOSEN, read });
+            const row = rowOf(STAGES, { hub: 'lab', primaryFile: PRIMARY_FILE, read });
             expect([row.value, row.default, row.modified, row.own, row.line]).toEqual([
                 undefined,
                 undefined,
@@ -247,16 +155,18 @@ describe('the hub a Settings row names', () => {
                 `workbench.settings_${said}`,
                 args
             ]);
-            expect([placeOf(row), placeName(row)]).toEqual([
-                { root: 'lab', file: HUB_FILE },
-                `lab/${HUB_FILE}`
+            expect([row.place.root, row.place.path, row.place.layer, row.hub]).toEqual([
+                'lab',
+                HUB_FILE,
+                'hub',
+                'lab'
             ]);
         }
     );
 
-    it("shows lab's value, default and line, and opens lab's file, with lab chosen", () => {
-        const primary = rowOf(STAGES, { hubs: ['hub', 'lab'], primary: 'hub' });
-        const row = rowOf(STAGES, { hubs: ['hub', 'lab'], primary: 'hub', chosen: LAB_CHOSEN });
+    it("shows lab's value, default and line, and writes lab's file", () => {
+        const primary = rowOf(STAGES, {});
+        const row = rowOf(STAGES, { hub: 'lab' });
         expect(primary.value).toEqual(stages);
         expect([row.value, row.default, row.modified, row.own, row.line]).toEqual([
             LAB_STAGES,
@@ -269,14 +179,10 @@ describe('the hub a Settings row names', () => {
     });
 });
 
-describe('the text typed in a box with a hub chosen', () => {
+describe('the text typed in a box of the Hub scope', () => {
     it("is kept under lab and not shown on the primary's row, and both are kept", () => {
-        const row = rowOf('sources.yml:memories_dir', {
-            hubs: ['hub', 'lab'],
-            primary: 'hub',
-            chosen: { 'sources.yml:memories_dir': 'lab' }
-        });
-        const primary = rowOf('sources.yml:memories_dir', { hubs: ['hub', 'lab'], primary: 'hub' });
+        const row = rowOf('sources.yml:memories_dir', { hub: 'lab' });
+        const primary = rowOf('sources.yml:memories_dir', {});
         const typed = withTypedText({}, slotOf(row), 'pictures');
         expect([typedText(typed, slotOf(row)), typedText(typed, slotOf(primary))]).toEqual([
             'pictures',
@@ -360,9 +266,7 @@ describe('the route that answers the settings of a hub', { tags: ['slow'] }, () 
                 workspace: null
             }),
             {
-                hubs: ['hub', 'lab'],
-                primary: 'hub',
-                chosen: { 'catalogs/vocab.yml:categories': 'lab' },
+                hub: 'lab',
                 config: primary,
                 read: () => read,
                 file: () => ({ text: text(LAB_FILE), present: true })

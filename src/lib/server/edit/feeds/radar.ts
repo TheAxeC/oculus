@@ -14,7 +14,7 @@ import { words } from '../../core/words.ts';
 import { appendEntry, renderEntry, takeOutAppended } from '../entry-edit/index.ts';
 import { replacedText } from '../writes/config/config-checks.ts';
 import { saved } from '../writes/entries.ts';
-import { asFieldValue } from '../yaml/yaml-edit.ts';
+import { asFieldValue } from '../../core/files/yaml/yaml-edit.ts';
 import {
     feedFile,
     outcome,
@@ -24,7 +24,7 @@ import {
     unkeyed
 } from './feeds.ts';
 import type { FeedRead } from './feeds.ts';
-import type { FieldValue } from '../yaml/yaml-values.ts';
+import type { FieldValue } from '../../core/files/yaml/yaml-values.ts';
 import type { PortfolioConfig } from '../../../data/model/index.ts';
 import type { WriteOutcome } from '../writes.ts';
 

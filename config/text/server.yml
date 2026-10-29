@@ -100,6 +100,7 @@ text:
             not_https_origin: This option takes an https origin, the scheme, the host and an optional port and nothing after, such as https://github.com
             not_row_key: This option takes lowercase letters, digits, dashes and underscores
             not_text: This option takes text
+            not_scalar: This option takes a text, a number or true or false
             not_choice: 'This option takes one of: {0}'
             not_in_source: 'This option takes one of the items of the list {0}'
             no_list_for: 'The field {0} of this record names no list for {1}, so this field is left out'
@@ -142,6 +143,14 @@ text:
             title_empty: A presentation needs a title
         deck_slides:
             changed: The group's slides list changed on disk while you were working. Read the deck again and make the change again.
+            key_changed: '{0} changed on disk while you were working. Read the deck again and make the change again.'
+            key_unknown: '{0} is not a key the Slides view sets'
+            key_value: '{0} cannot hold that value: {1}'
+            value_discover: it takes true or false
+            value_find: it takes a map whose folders is a glob or a list of globs, with the lists tiers, stages, forms and status beside it
+            value_sort: it takes folder or title
+            value_title: it takes a text that is not empty
+            value_tones: it takes a map from a slide tag to the name of a hue
             no_group: 'The deck has no group named {0}'
             not_a_deck: That path is not a present.yml
             not_found_by: 'The deck {0} is not one that the group {1} finds, so it cannot join it'
@@ -151,14 +160,32 @@ text:
             outside: That deck is outside the folders oculus serves
             repeated: A deck is listed twice in the group
             unknown_name: 'No deck named {0} belongs to the group'
+        cpp:
+            bad_body: 'The body must name the repository, the place of the configuration or null for a new one, and its changes or null to delete it'
+            changed: 'cpp.yml no longer holds configuration {0} as it was read; read the list again'
+            exists: 'The name {0} is taken by another configuration or by a compile database oculus found'
+            fault: 'The configuration is not written: {0}'
+            name: A configuration needs a name
+            unreadable: 'cpp.yml is not a map with a configurations list: {0}'
+            unwritable: 'cpp.yml could not be written: {0}'
+        primary_key:
+            bad_body: 'The body must name the hub, the collection and the field that is to be its primary key'
+            field: 'The field {0} is not one the file can be found by: a primary key is a field its entries hold that is no list or map, and in a file with a schema one the schema describes'
+            half: '{0} now flags the primary key, but {1}'
+            keyed: 'The file of {0} has a primary key already, or a schema that does not read, so there is no key to choose'
+            no_entry: "the hub's .oculus/config.yml lists no collections entry for {0}, since the hub reads oculus's own list; the key of a file with no schema is written on the hub's own entry"
+            no_file: 'The hub lists no readable file for the collection {0}'
+            no_hub: 'No hub of the workspace is named {0}'
+            unwritable: '{0} could not be written with the primary key changed'
         debug:
             aborted: The debug configuration provider gave no configuration, so the launch was abandoned
             adapter_lost: The debug adapter ended while the program was still running
-            bad_action: action must be launch, approve, continue, next, stepIn, stepOut, finishFrame, frame, evaluate, breakpoints, functions, exceptions, watch, pause, restart, setVariable, completions, loadedSources, configurations, addConfiguration or stop, with the fields that action takes
+            bad_action: action must be launch, approve, continue, next, stepIn, stepOut, finishFrame, frame, evaluate, breakpoints, functions, exceptions, watch, pause, restart, setVariable, completions, loadedSources, configurations, addConfiguration, editConfiguration or stop, with the fields that action takes
             bad_header: rite_dap sent a message with no usable Content-Length header
             bad_lines: lines must be whole numbers from 1
             bad_path: path must be an absolute path under a root the file browser serves
             config_exists: 'launch.yml already holds a configuration named {0}'
+            config_missing: 'launch.yml holds no configuration named {0}; it may have been changed since it was read'
             config_name: A configuration needs a name
             config_unreadable: 'launch.yml is not a map with a configurations list: {0}'
             config_unwritable: 'launch.yml could not be written: {0}'
@@ -195,7 +222,7 @@ text:
         config_value:
             local: a hub's .oculus/local.yml is the machine's own file and is not written from here
             no_entry: The options catalog has no list or family of that name in a tracked config file
-            own_write: The rail and the arrangements are set from the rail editor and the pages, and the workbench layout in the workspace file, not from here
+            own_write: The rail's list is written by its own write, which checks it by the rail's rule, not from here
             single: This option is one value, so it is set one key at a time
             not_parsed: The file does not parse
             not_in_file: The file does not hold this key as a list or a map written in place
@@ -217,6 +244,23 @@ text:
             field_problem: 'Entry {0}, field {1}: {2}'
             unsupported: The way this value is written in the file cannot be edited in place, so the file is left as it is
             not_kept: The edit would change more than this value, so the file is left as it is
+        config_save:
+            changed: '{0} changed on disk since it was read, so nothing was written; the changes are kept'
+            two_files: 'One save writes one file, and these changes are for {0}'
+            rail: "The rail's list holds a row the rail cannot draw, so nothing was written"
+            not_here: '{0} is not a setting of this file'
+            not_parsed: '{0} does not parse at line {1}, so nothing was written'
+            unsaved: The workspace is not saved yet, so it has no file to write this in
+            primary_only: "{0} is read from the primary hub's local.yml alone, so it is not set for another hub"
+            repo_key: "A repository's .oculus/settings.yml takes editor.languages alone"
+            repo_problem: '{0} would no longer read: {1}'
+            no_folder: The workspace has no folder named {0}
+            not_hub: '{0} is no hub, since it holds no .oculus/config.yml, so it cannot be the primary'
+            name_empty: 'A folder name cannot be empty, so {0} keeps its name'
+            name_invalid: '{0} is no folder name: a name is letters, digits, dots, dashes and underscores, and not . or ..'
+            name_taken: The workspace has a folder named {0} already
+            folders_unreadable: The workspace file does not read, so its folders were not written
+            folders_invalid: The folders of the workspace file are written in a form this cannot edit in place, so the file is left as it is
         deposit:
             branch_needs_name: A branch needs a name
             cloned: Cloned {0}

@@ -3,34 +3,32 @@
     // file's entries laid over it by page) as the Settings view edits it: one row per button with
     // its label, icon and page, the chord and heading glyph of its group in the view catalogue,
     // whose heading is the label, the tick that makes the group the one taking the collection views
-    // whose entry names no group, the tick that makes it the one taking the project boards, the
-    // controls that move a row and take it away, and Save, which writes the list through the `rail`
-    // write of api/write into the workspace file's `settings:`. The watcher pushes the file back
-    // within a second, and the rail redraws from that push, so the rail always shows the list in
-    // force.
+    // whose entry names no group, the tick that makes it the one taking the project boards, and the
+    // controls that move a row and take it away. A list that differs from the file's is held as an
+    // unsaved change of the Workspace scope (settings/scopes/scopes.svelte.ts), and the scope's
+    // Save writes it into the workspace file's `settings:` through the rail's own write
+    // (server/edit/writes/config/lists/rail.ts). The watcher pushes the file back within a second,
+    // and the rail redraws from that push, so the rail always shows the list in force.
     //
     // The rows are drawn under a disclosure line (editors/Fold.svelte) with the row's title and
     // their number, folded at first past five rows; the problems and the actions stay drawn under a
     // folded line, and an edit keeps the line unfolded.
     //
-    // A sentence under the heading says what a row is, and each field has its word before it on
-    // the same line. The word is decoration beside a field whose accessible name already holds it,
-    // so it is hidden from a screen reader, and it wraps with its field at a narrow width. The icon
+    // A sentence under the heading says what a row is, and each field has its word before it on the
+    // same line. The word is decoration beside a field whose accessible name already holds it, so
+    // it is hidden from a screen reader, and it wraps with its field at a narrow width. The icon
     // field is ui/forms/choice/GlyphSelect.svelte, whose trigger draws the row's icon beside its
     // name, so the row draws the icon nowhere else.
     //
     // What is being typed is the tab's own state, so it is there again after the tab is switched
-    // away from and after a reload, and a tab holding a list that differs from the file's is one
-    // holding unsaved text. A row the shared rule refuses is named under the list and Save waits
-    // for it, so the server's own refusal is the answer to a race and never to a typo. A row whose
-    // glyph the vocabulary does not hold (a new row has none yet) draws its icon field with no
-    // icon, and the rule's line names what the row lacks.
-    //
-    // The save key on the tab (Cmd+S, Ctrl+S off macOS) saves a list that differs from the file's,
-    // as Save does (ui.svelte.ts's registerTabSave), and so does the Save of a close question.
+    // away from and after a reload, when it is held as the scope's change again; once the file
+    // holds it the list being typed is dropped. A row the shared rule refuses is named under the
+    // list, and the scope's Save is refused for it with the rail named. A row whose glyph the
+    // vocabulary does not hold (a new row has none yet) draws its icon field with no icon, and the
+    // rule's line names what the row lacks. Revert drops the list being typed and its change.
     //
     // Until the configuration is read, the file's list is not known: no row is drawn from it, the
-    // sentence that the rail has no button waits for the read, and Save waits with it.
+    // sentence that the rail has no button waits for the read, and nothing is held.
     //
     // The partial has no heading: it is drawn inside the `rail` row of the Settings view
     // (settings/Item.svelte), whose title is the heading. The rail's Settings choice opens that row
@@ -41,13 +39,13 @@
     import Select from '$lib/ui/forms/choice/Select.svelte';
     import TextInput from '$lib/ui/forms/TextInput.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import { untrack } from 'svelte';
     import {
         arrangementKeys,
         glyphNames,
         configRail,
         moveRailEntry,
         railDraft,
-        railRefusal,
         readRail,
         sameRail,
         withRailDraft,
@@ -56,27 +54,31 @@
     } from '$lib/state/workbench/navigation/rail';
     import { t } from '$lib/state/shared/words/text';
     import { RAIL_ROW } from '$lib/state/system/config/groups';
+    import type { ConfigRow } from '$lib/state/system/config/rows';
     import { heldFold, withFold } from '$lib/state/system/config/view/fold';
     import { useState } from '$lib/state/client/use';
     import Fold from './editors/Fold.svelte';
+    import { scopesHere } from './settings/scopes/context';
 
     const {
         entities: { config },
-        layout: { instanceView },
-        ui: { instanceState, setInstanceState, registerTabSave },
-        writes: { writeRail }
+        ui: { instanceState, setInstanceState }
     } = useState();
+
+    const scopes = scopesHere();
 
     type Props = {
         /** The Settings tab's instance id. */
         id: string;
-        /** The rail row's title, which the disclosure line carries. */
-        title: string;
+        /** The rail row, whose change the list being typed is held as. */
+        row: ConfigRow;
         /** Whether the query stands and is found inside the rail list. */
         searched: boolean;
     };
 
-    let { id, title, searched }: Props = $props();
+    let { id, row, searched }: Props = $props();
+
+    const title = $derived(row.title);
 
     const merged = $derived(config()?.config);
     /** Whether the configuration has been read, before which the file's list is not known. */
@@ -87,27 +89,47 @@
     const pages = $derived(arrangementKeys(merged?.arrangements));
     const glyphs = $derived(glyphNames(merged) ?? []);
     const problems = $derived(readRail(rows, pages, glyphs).problems);
-    const dirty = $derived(read && draft !== null && !sameRail(draft, saved));
 
-    /** Whether a save is on its way, which is what keeps Save from being pressed twice. */
-    let sending = $state(false);
-
-    /** The line under the list after a save: what it did, or why it did not. */
-    let outcome = $state('');
+    /** Hold the list as the scope's change, or drop the change for the list in force. */
+    function hold(next: RailEntry[] | null): void {
+        if (scopes === null) return;
+        if (next === null || sameRail(next, saved)) {
+            if (scopes.stage.held(row) !== undefined) scopes.stage.drop(row);
+        } else {
+            scopes.stage.set(row, next);
+        }
+    }
 
     /**
-     * Put the list being typed in the tab's state, and keep the line unfolded. A list equal to the
-     * one in force is no draft.
+     * Put the list being typed in the tab's state, hold it as the scope's change, and keep the line
+     * unfolded. A list equal to the one in force is no draft.
      */
     function edit(next: RailEntry[]): void {
-        outcome = '';
         const kept = instanceState(id);
         const held =
             heldFold(kept, RAIL_ROW, 'entries') === undefined
                 ? withFold(kept, RAIL_ROW, 'entries', false)
                 : kept;
-        setInstanceState(id, withRailDraft(held, sameRail(next, saved) ? null : next));
+        const same = sameRail(next, saved);
+        setInstanceState(id, withRailDraft(held, same ? null : next));
+        hold(same ? null : next);
     }
+
+    // A list kept in the tab's state from before a reload is held as the change again; one the
+    // file now holds, with no change left, is dropped.
+    $effect(() => {
+        if (!read || draft === null) return;
+        const typed = draft;
+        untrack(() => {
+            const staged = scopes?.stage.held(row);
+            if (sameRail(typed, saved)) {
+                if (staged === undefined)
+                    setInstanceState(id, withRailDraft(instanceState(id), null));
+            } else if (staged === undefined) {
+                hold(typed);
+            }
+        });
+    });
 
     /** One field of one row changed. */
     function change(at: number, field: keyof RailEntry, value: string | boolean): void {
@@ -135,36 +157,10 @@
     /** The letters a group's chord may be, one lowercase letter each. */
     const LETTERS = 'abcdefghijklmnopqrstuvwxyz'.split('');
 
-    /**
-     * Write the list. The answer lands on the tab it was sent from only while that tab is still
-     * open and still holds the list that was sent: a tab closed while the write was out keeps no
-     * state, and a list typed on while it was out is the reader's newer word and is kept.
-     */
-    async function save(): Promise<boolean> {
-        if (sending || problems.length > 0 || draft === null) return false;
-        const sent = draft;
-        sending = true;
-        const answer = await writeRail(sent);
-        sending = false;
-        if (instanceView(id) === undefined) return answer.ok;
-        if (!answer.ok) {
-            outcome = railRefusal(answer.error);
-            return false;
-        }
-        const now = railDraft(instanceState(id));
-        if (now !== null && sameRail(now, sent)) {
-            setInstanceState(id, withRailDraft(instanceState(id), null));
-        }
-        outcome = t('workbench.rail_saved');
-        return true;
-    }
-
-    $effect(() => registerTabSave(id, () => (dirty ? save() : Promise.resolve(true))));
-
-    /** Forget the list being typed; the file's list is shown again. */
+    /** Forget the list being typed and its change; the file's list is shown again. */
     function revert(): void {
-        outcome = '';
         setInstanceState(id, withRailDraft(instanceState(id), null));
+        hold(null);
     }
 </script>
 
@@ -295,22 +291,11 @@
                 ])}
         />
         <ToolButton
-            label={t('workbench.rail_save')}
-            glyph="save"
-            disabled={!dirty || sending || problems.length > 0}
-            onclick={save}
-        />
-        <ToolButton
             label={t('workbench.rail_revert')}
             glyph="note_back"
-            disabled={draft === null || sending}
+            disabled={draft === null}
             onclick={revert}
         />
-        {#if sending}
-            <span class="outcome" role="status">{t('workbench.rail_saving')}</span>
-        {:else if outcome !== ''}
-            <span class="outcome" role="status">{outcome}</span>
-        {/if}
     </div>
 </div>
 
@@ -347,8 +332,7 @@
         margin: 0;
     }
 
-    .about,
-    .outcome {
+    .about {
         color: var(--muted-txt, var(--muted));
         font-size: var(--fs-sm);
     }

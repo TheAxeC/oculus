@@ -225,6 +225,17 @@ export type DeckOrderEntry = {
 };
 
 /**
+ * The keys of a deck's `present.yml` the Slides view sets, each as the file holds it, null for a
+ * key the file does not hold: `deck.title`, `defaults.tag_tones`, and each group's `find`, `sort`
+ * and `discover`. A write names one of them by its path and this value as its base.
+ */
+export type DeckKeys = {
+    title: unknown;
+    tagTones: unknown;
+    groups: { name: string; find: unknown; sort: unknown; discover: unknown }[];
+};
+
+/**
  * Why a deck draws nothing, or `ok` when it draws slides. `unnamed` is the portfolio deck of a hub
  * whose own `sources.yml` does not name `portfolio_deck`, when the engine's default folder is not
  * in that hub: the hub never asked for a deck, so its absence is no failure.
@@ -250,5 +261,7 @@ export type Deck = {
     order: DeckOrderEntry[];
     groups: DeckGroup[];
     tagTones: Record<string, string>;
+    /** The keys the Slides view sets, as the file holds them; null for a file that was not read. */
+    keys: DeckKeys | null;
     findings: Finding[];
 };

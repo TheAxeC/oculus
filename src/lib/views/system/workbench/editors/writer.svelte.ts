@@ -1,43 +1,30 @@
-// Layer 3, view helper. The write sequence of the list, multi and family editors
-// (state/system/config/editors/writer.ts) made reactive: the sequence is a plain closure, and this
-// reads a version number that its `changed` callback moves, so a template that asks whether a write
-// is out or what it said is drawn again when a write is sent or answered.
+// Layer 3, view helper. The writes of the list, multi and family editors
+// (state/system/config/editors/writer.ts) made reactive: the writer is a plain closure, and this
+// reads a version number that its `changed` callback moves, so a template that asks what a row
+// holds or what it said is drawn again when a change is held or dropped.
 
 import {
     createEditorWriter,
-    type EditorWriter,
-    type WriteConfigValue
+    type EditorHooks,
+    type EditorWriter
 } from '$lib/state/system/config/editors/writer';
-import type { Lists } from '$lib/state/system/config/editors/sources';
-import type { ConfigRow } from '$lib/state/system/config/rows';
-import type { ResetConfig } from '$lib/state/system/config/write';
 
 /**
- * An editors' write sequence whose `sending`, `shown`, `said` and `saved` redraw whatever read
- * them. `lists` answers the lists a row's fields draw from.
+ * An editors' writer whose `shown`, `said` and `unsaved` redraw whatever read them. The hooks are
+ * the writer's own but for `changed`, which this supplies.
  */
-export function reactiveEditors(
-    write: WriteConfigValue,
-    reset: ResetConfig,
-    ended: (row: ConfigRow) => void,
-    held: (row: ConfigRow) => boolean,
-    lists: (row: ConfigRow) => Lists
-): EditorWriter {
+export function reactiveEditors(hooks: Omit<EditorHooks, 'changed'>): EditorWriter {
     let version = $state(0);
-    const inner = createEditorWriter(write, {
-        reset,
+    const inner = createEditorWriter({
+        ...hooks,
         changed: () => {
             version += 1;
-        },
-        ended,
-        held,
-        lists
+        }
     });
     return {
         ...inner,
-        sending: (row) => (version < 0 ? false : inner.sending(row)),
         shown: (row) => (version < 0 ? undefined : inner.shown(row)),
         said: (row) => (version < 0 ? null : inner.said(row)),
-        saved: (row) => (version < 0 ? false : inner.saved(row))
+        unsaved: (row) => (version < 0 ? false : inner.unsaved(row))
     };
 }

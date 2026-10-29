@@ -1,8 +1,13 @@
 // Layer 2, server. Flow-map and collection-entry rendering lives here because output formatting
 // changes independently of locating or applying edits.
 
-import { isBlockMap, isMetalist, renderBlockMap, renderMetalist } from '../yaml/yaml-values.ts';
-import type { FieldValue } from '../yaml/yaml-values.ts';
+import {
+    isBlockMap,
+    isMetalist,
+    renderBlockMap,
+    renderMetalist
+} from '../../core/files/yaml/yaml-values.ts';
+import type { FieldValue } from '../../core/files/yaml/yaml-values.ts';
 import { renderScalar } from '../../../data/helpers/files/yaml/collection-text.ts';
 import { byKey } from '../../../data/helpers/guards.ts';
 import { flowScalar, renderFlowList } from './lines.ts';

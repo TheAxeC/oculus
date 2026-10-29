@@ -1,6 +1,6 @@
 # ===========================================================================
 # options/layout.yml
-# Every option of defaults/layout.yml described once, in the shape the head of options/appearance.yml describes. layout.yml has no dotted options, so `groups:` is empty. loadConfig() reads it into the merged map's `options` and `option_groups` under layout.yml.
+# Every option of defaults/layout.yml described once, in the shape the head of options/appearance.yml describes. layout.yml has no dotted options, so `groups:` is empty. `descriptions:` describes the nodes of a layout tree once, which the page layouts and the workbench name by `described_by`, a node's children naming them again. loadConfig() reads it into the merged map's `options`, `option_groups` and `option_descriptions` under layout.yml.
 # ===========================================================================
 
 options:
@@ -63,13 +63,20 @@ options:
         help: "What each rail page is first made from, and what Reset gives it back. After the first press the page is the one the reader arranged, kept in the saved layout. An arrangement that does not add up makes no page. A workspace file's settings: overrides a page's arrangement by its page key, adds one for a new page, and takes one of oculus's out with <page>: null."
         fields:
             key: a page key that a rail entry names
-            root: the page's one layout tree, a split of dir, sizes and children or a pane of view, where view is one view id or a list of tabs and a tab may be a view id or a view with its own state
+            root:
+                help: the page's one layout tree, a split of panes and splits or a pane of tabs
+                described_by: layout_nodes
+                holds: record
     workbench:
         heading: rail
         section: Page layouts
         help: What every workbench page is made from, and what its Reset layout gives back. A workbench is a page that belongs to one folder, and each of its tabs is given the folder when the page is made. It is the shape of one entry of the page layouts, and no rail entry can name it. A layout that does not add up makes no workbench.
+        holds: record
         fields:
-            root: the workbench page's one layout tree, a split of dir, sizes and children or a pane of view, where view is one view id or a list of tabs and a tab may be a view id or a view with its own state
+            root:
+                help: the workbench page's one layout tree, a split of panes and splits or a pane of tabs
+                described_by: layout_nodes
+                holds: record
     floats:
         heading: rail
         section: Floats
@@ -291,3 +298,50 @@ options:
         control: choice
         options: [short, full]
 groups: {}
+descriptions:
+    layout_nodes:
+        help: the nodes of a split, in order, each a split of its own or a pane
+        sparse: true
+        fields:
+            kind:
+                help: split for a node that divides its space among its children, pane for one that holds tabs
+                control: choice
+                options: [split, pane]
+            dir:
+                help: for a split, row to lay its children side by side, col to lay them one under another
+                control: choice
+                options: [row, col]
+            sizes:
+                help: for a split, each child's share of its space, one a child, adding up to 1
+                control: list
+                items: number
+                min: 0
+                max: 1
+            children:
+                help: for a split, its nodes, as many as its sizes
+                described_by: layout_nodes
+            view:
+                help: for a pane, its tabs in order; none makes the pane the one a view opened for something lands in
+                sparse: true
+                fields:
+                    view:
+                        help: the view the tab shows
+                        control: choice
+                        from: views
+                    pinned:
+                        help: the tab starts pinned, first in its pane, and Close All, Close Others and Cmd+W leave it open
+                        control: toggle
+                    state:
+                        help: the state the tab opens in, which its view reads
+                        holds: record
+                        sparse: true
+                        fields:
+                            follow:
+                                help: the Files tab follows the session selected in the sessions list
+                                control: toggle
+                            id: the id a document tab is kept under
+                            path: the path of the document a doc tab shows
+                            label: the words of a doc tab
+                            engine:
+                                help: the document is one of oculus's own, read from its folder
+                                control: toggle

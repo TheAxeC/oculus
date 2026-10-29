@@ -1,12 +1,13 @@
 <script lang="ts">
     // Layer 3, view partial. The numbered steps of one cluster of `slurm.resource` in Account
-    // setup: the user name; the key file, filled from the hub's `clusters.key_file` and changeable
-    // until the key is made; Make key; the host's key, read when `~/.ssh/known_hosts` does not hold
-    // the host and shown as its fingerprints for the reader to confirm, the next step offered only
-    // once it is trusted; Put the key on the cluster, with a password field whose value goes to
-    // that one ssh and is emptied once it is sent; and Save, which writes this machine's
-    // `clusters:` row. Under them is what `ssh -G` resolves the connection to. Every step is a
-    // request to POST /api/clusters, and its sentence is drawn under the step.
+    // setup: the user name; the key file, filled from `clusters.key_file`, which oculus ships and
+    // the primary hub may set, and changeable until the key is made; Make key; the host's key, read
+    // when `~/.ssh/known_hosts` does not hold the host and shown as its fingerprints for the reader
+    // to confirm, the next step offered only once it is trusted; Put the key on the cluster, with a
+    // password field whose value goes to that one ssh and is emptied once it is sent; and Save,
+    // which writes this machine's `clusters:` row. Under them is what `ssh -G` resolves the
+    // connection to. Every step is a request to POST /api/clusters, and its sentence is drawn under
+    // the step.
     //
     // Beside the Put step, the public key of the key file in the field is drawn with its copy press
     // whenever the server found a `.pub` file beside it, read when the section is drawn and again

@@ -27,7 +27,7 @@ import { words } from '../../../core/words.ts';
 import type { AppsHeld } from '../../../machine/apps/read/held.ts';
 import type { WriteTarget } from '../../writes.ts';
 import { readBack } from '../../list-edit.ts';
-import { refusedBy, written } from './config-checks.ts';
+import { refusedBy, written } from '../config/config-checks.ts';
 import {
     layersOf,
     loadLayers,
@@ -37,7 +37,7 @@ import {
     removeMade,
     type ConfigKeyOutcome,
     type OptionNow
-} from './config-place.ts';
+} from '../config/config-place.ts';
 
 /** The file the map lives in. */
 const FILE = 'behavior.yml';

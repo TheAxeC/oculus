@@ -11,18 +11,15 @@
 // @module-tag slow: a launch row runs over the 5 s limit on a loaded machine.
 
 import { EventEmitter } from 'node:events';
-import { existsSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { PassThrough } from 'node:stream';
 import { afterEach, beforeEach, describe, expect } from 'vitest';
-import { it, scratchDir } from '../../fixtures/scratch.ts';
+import { parse } from 'yaml';
+import { it } from '../../fixtures/scratch.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
 import { Hub } from '../../../src/lib/server/core/channels.ts';
-import { readChanges, type Change } from '../../../src/lib/server/core/changes.ts';
 import { fsWrites } from '../../../src/lib/server/core/json.ts';
-import { undoFiles } from '../../../src/lib/server/edit/writes/file-undo.ts';
-import type { WriteTarget } from '../../../src/lib/server/edit/writes.ts';
-import type { OpsTarget } from '../../../src/lib/server/files/fs/ops.ts';
 import { defaultApprovalsPath } from '../../../src/lib/server/machine/approvals/approvals.ts';
 import {
     handleDebugPost,
@@ -35,6 +32,7 @@ import {
     leaveHome,
     plantRepo
 } from '../../server/machine/runs/commands/commands-fixture.ts';
+import { WriteLog } from '../write-log.ts';
 
 const TOKEN = 'the write token of this test';
 const HOST = 'http://127.0.0.1:8791';
@@ -51,16 +49,14 @@ class FakeChild extends EventEmitter {
 }
 
 let repo = '';
-let base = '';
+/** The writer Add Configuration runs over, with the change log History lists. */
+const log = new WriteLog('repo', () => repo);
 let client: DebugClient;
 let spawned: { command: string; args: readonly string[]; cwd: string }[] = [];
 
 beforeEach(() => {
     enterHome();
-    base = scratchDir('oculus-debug-writes-');
-    ops = fsWrites();
-    // The change log waits on a chain of its own, as the process's does, apart from the writes'.
-    changeLog = { file: join(base, 'changes.jsonl'), keep: 500, writes: fsWrites() };
+    log.start('oculus-debug-writes-');
     spawned = [];
     repo = plantRepo(
         {
@@ -87,24 +83,13 @@ afterEach(() => {
     leaveHome();
 });
 
-/** One writer over the repository, with the change log History lists and a history folder. */
-const writer = (): OpsTarget => ({
-    roots: [{ key: 'repo', dir: repo }],
-    writes: ops,
-    changes: changeLog,
-    history: join(base, 'history')
-});
-
-let ops = fsWrites();
-let changeLog = { file: '', keep: 500, writes: fsWrites() };
-
 function mine(): DebugRouteOptions {
     return {
         rootsFor: () => [repo],
         approvalsFor: () => defaultApprovalsPath(),
         configFor: () => loadConfig(engineDir()).config,
         writes: fsWrites(),
-        files: writer,
+        files: () => log.writer(),
         client
     };
 }
@@ -153,51 +138,16 @@ describe('POST /api/debug', () => {
         expect(spawned).toEqual([{ command: 'rite_dap', args: [`${repo}/a.rite`], cwd: repo }]);
     });
 
-    describe('Add Configuration', () => {
+    describe('the writes of launch.yml', () => {
         const added = { name: 'third', type: 'rite', program: 'a.rite' };
         const launch = (): string => join(repo, '.oculus', 'launch.yml');
-
-        /** The `at` of each write this case undid, which the History route records as `undoes`. */
-        let undone = new Set<string>();
-        beforeEach(() => {
-            undone = new Set();
-        });
-
-        /** The writes History lists that no undo has taken back, newest first. */
-        function listedWrites(): Change[] {
-            return readChanges(changeLog).filter((one) => !undone.has(one.at));
-        }
-
-        /** Undo the newest write History lists, the way its Undo button does. */
-        async function undoNewest(): Promise<Change> {
-            const newest = listedWrites()[0];
-            const target = {
-                files: {
-                    roots: () => writer().roots,
-                    history: join(base, 'history'),
-                    writes: ops
-                }
-            } as unknown as WriteTarget;
-            const done = await undoFiles(target, newest, {
-                trash: (path) => {
-                    rmSync(path, { recursive: true, force: true });
-                    return Promise.resolve();
-                }
-            });
-            expect((done as { error?: string }).error).toBeUndefined();
-            undone.add(newest.at);
-            return newest;
-        }
 
         it('lists the write of an existing launch.yml and undoes it to the old text', async () => {
             const old = readFileSync(launch(), 'utf8');
             const answered = await post({ action: 'addConfiguration', repo, configuration: added });
             const text = readFileSync(launch(), 'utf8');
-            const listed = listedWrites().map((one) => [
-                one.field,
-                (one.before as unknown[]).length
-            ]);
-            await undoNewest();
+            const listed = log.listed().map((one) => [one.field, (one.before as unknown[]).length]);
+            await log.undoNewest();
             expect([answered.status, text.includes('name: third'), listed]).toEqual([
                 200,
                 true,
@@ -210,11 +160,8 @@ describe('POST /api/debug', () => {
             repo = plantRepo({ 'a.rite': '(print 1)\n' }, []);
             const answered = await post({ action: 'addConfiguration', repo, configuration: added });
             const made = existsSync(launch());
-            const listed = listedWrites().map((one) => [
-                one.field,
-                (one.before as unknown[]).length
-            ]);
-            await undoNewest();
+            const listed = log.listed().map((one) => [one.field, (one.before as unknown[]).length]);
+            await log.undoNewest();
             expect([answered.status, made, listed, existsSync(launch())]).toEqual([
                 200,
                 true,
@@ -233,11 +180,80 @@ describe('POST /api/debug', () => {
                 repo,
                 configuration: { ...added, name: '' }
             });
-            expect([answered.status, existsSync(join(repo, '.oculus')), listedWrites()]).toEqual([
+            expect([answered.status, existsSync(join(repo, '.oculus')), log.listed()]).toEqual([
                 400,
                 false,
                 []
             ]);
+        });
+
+        /** The names of the configurations launch.yml lists now. */
+        function names(): string[] {
+            const read = parse(readFileSync(launch(), 'utf8')) as {
+                configurations: { name: string }[];
+            };
+            return read.configurations.map((one) => one.name);
+        }
+
+        /** The changes to the configuration `name`, or its delete when `changes` is null. */
+        function editing(name: string, changes: Record<string, unknown> | null): unknown {
+            return { action: 'editConfiguration', repo, name, changes };
+        }
+
+        it('changes only the keys an edit names, every other line of the file kept byte for byte', async () => {
+            const long = `a/${'deep/'.repeat(20)}main.rite`;
+            const written = `configurations:\n  - name: run # the first\n    type: rite\n    request: launch\n    program: ${long}\n    args: [one, two]\n  - name: other\n    program: b.rite\n    env: {A: x}\n`;
+            repo = plantRepo({ 'a.rite': '(print 1)\n', '.oculus/launch.yml': written }, []);
+            const answered = await post(editing('run', { cwd: 'sub' }));
+            expect([answered.status, readFileSync(launch(), 'utf8')]).toEqual([
+                200,
+                written.replace('    args: [one, two]\n', '    args: [one, two]\n    cwd: sub\n')
+            ]);
+        });
+
+        it('writes an edited configuration in its place with the comments kept, lists it and undoes it', async () => {
+            const commented =
+                '# the runs of this repository\nconfigurations:\n    - name: run\n      program: a.rite\n    - name: other # the second\n      program: b.rite\n';
+            repo = plantRepo({ 'a.rite': '(print 1)\n', '.oculus/launch.yml': commented }, []);
+            const edited = { name: 'renamed', program: 'b.rite', cwd: '.' };
+            const answered = await post(editing('run', edited));
+            const text = readFileSync(launch(), 'utf8');
+            const read = parse(text) as { configurations: Record<string, unknown>[] };
+            const listed = log.listed().map((one) => one.field);
+            await log.undoNewest();
+            expect([answered.status, answered.body]).toEqual([200, { line: 3 }]);
+            expect([read.configurations, listed]).toEqual([
+                [edited, { name: 'other', program: 'b.rite' }],
+                ['edit-configuration']
+            ]);
+            expect([text.includes('# the runs'), text.includes('# the second')]).toEqual([
+                true,
+                true
+            ]);
+            expect(readFileSync(launch(), 'utf8')).toBe(commented);
+        });
+
+        it('takes a deleted configuration out, lists the delete and undoes it', async () => {
+            const old = readFileSync(launch(), 'utf8');
+            const answered = await post(editing('other', null));
+            const after = names();
+            const listed = log.listed().map((one) => one.field);
+            await log.undoNewest();
+            expect([answered.status, after, listed]).toEqual([
+                200,
+                ['run'],
+                ['delete-configuration']
+            ]);
+            expect(readFileSync(launch(), 'utf8')).toBe(old);
+        });
+
+        it('refuses an edit of a name the file does not hold, to a name another entry holds, or to no name', async () => {
+            const old = readFileSync(launch(), 'utf8');
+            const missing = await post(editing('gone', null));
+            const taken = await post(editing('run', { name: 'other', program: 'a.rite' }));
+            const unnamed = await post(editing('run', { name: '', program: 'a.rite' }));
+            expect([missing.status, taken.status, unnamed.status]).toEqual([400, 400, 400]);
+            expect([readFileSync(launch(), 'utf8'), log.listed()]).toEqual([old, []]);
         });
     });
 });

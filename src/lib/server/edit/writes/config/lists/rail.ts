@@ -24,7 +24,7 @@ import { mergedAt } from '../config-checks.ts';
 
 /** The option the rail's list is, and the defaults file it belongs to. */
 export const RAIL = 'rail';
-const LAYOUT = 'layout.yml';
+export const RAIL_FILE = 'layout.yml';
 
 /** What a rail write answers with: what it changed or why it was refused, or `invalid`. */
 export type RailOutcome = ConfigKeyOutcome | { error: 'invalid' };
@@ -46,23 +46,24 @@ function written(entry: RailEntry): Record<string, string | boolean> {
 }
 
 /**
- * Write the rail's list over the layers. Every entry must be one the rule keeps, against the
- * arrangements and the glyph names of the merged config, or nothing is written (`invalid`); a list
- * equal to the rail in force writes nothing and answers so.
+ * Write the rail's list over the layers. The list must be a list and every entry one the rule
+ * keeps, against the arrangements and the glyph names of the merged config, or nothing is written
+ * (`invalid`); a list equal to the rail in force writes nothing and answers so.
  */
 export function writeRail(
     engine: string,
     layers: ConfigLayers,
-    rail: RailEntry[],
+    rail: unknown,
     glyphs: string[],
     hubs: readonly string[] = []
 ): RailOutcome {
+    if (!Array.isArray(rail)) return { error: 'invalid' };
     const merged = loadLayers(engine, layers).config;
     const read = readRail(rail, arrangementKeys(merged.arrangements), glyphs);
     if (read.problems.length > 0) return { error: 'invalid' };
     return writeConfigValue(
         engine,
-        LAYOUT,
+        RAIL_FILE,
         RAIL,
         read.entries.map(written),
         mergedAt(merged, RAIL),

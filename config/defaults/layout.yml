@@ -127,6 +127,7 @@ arrangements:
       kind: pane
       view:
         - { view: venues, pinned: true }
+        - { view: venues-browser, pinned: true }
         - { view: data, pinned: true }
         - { view: statements, pinned: true }
         - { view: people, pinned: true }

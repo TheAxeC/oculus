@@ -7,9 +7,9 @@
 // `catalogs/vocab.yml`), the key one of their entries, and the entry a list-valued control (`list`,
 // `multi`, `parked`), a word block (`words`) or a family (`fields`). A single value goes through
 // config-key.ts, the rail and the audit's mute list have a write of their own that checks the value
-// by its own rule and then comes here (`own`), the workbench layout is edited in the file, and the
-// machine's own file, a hub's `.oculus/local.yml` or a link to one, is refused before the file is
-// read.
+// by its own rule and then comes here (`own`), and the machine's own file, a hub's
+// `.oculus/local.yml` or a link to one, is refused before the file is read. The page layouts and
+// the workbench layout are families like any other, their trees described in options/layout.yml.
 //
 // The value lands where config-place.ts places the key: a key of the hub list in the settings file
 // of the hub whose layers config-write.ts hands it, the primary's unless the write names another
@@ -77,8 +77,8 @@ import {
 /** The keys that name something on every object, which no key or field of a value may be. */
 const RESERVED = ['__proto__', 'constructor', 'prototype'];
 
-/** The options with a write of their own: the rail, the arrangements and the workbench. */
-const OWN_WRITE = ['rail', 'arrangements', 'workbench'];
+/** The option with a write of its own, the rail's list (lists/rail.ts). */
+const OWN_WRITE = ['rail'];
 
 /** The collection a key names in a file's text: its parsed value, or why there is none. */
 type Held =

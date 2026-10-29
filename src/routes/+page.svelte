@@ -356,6 +356,6 @@
     waiting={waitingCount()}
     walkProblem={problems.walk}
     history={client.history}
-    saveAll={() => void client.autosave.saveEvery()}
+    saveAll={() => void client.autosave.saveJoined()}
     appThemes={data.appThemes}
 />

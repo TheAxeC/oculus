@@ -281,7 +281,10 @@ describe("oculus's own config directory", () => {
     ];
 
     /** The keys of the merged map the options folder fills. */
-    const OPTION_KEYS = ['options', 'option_groups'];
+    const OPTION_KEYS = ['options', 'option_groups', 'option_descriptions'];
+
+    /** The options files that hold a `descriptions:` of field records beside their options. */
+    const DESCRIBED = ['options/behavior.yml', 'options/layout.yml'];
 
     const CATALOG_FILES = [
         'app.yml',
@@ -833,7 +836,10 @@ describe("oculus's own config directory", () => {
         }
         for (const name of [...OPTION_FILES, ...OPTION_SUBFILES]) {
             const parsed = parse(readFileSync(join(dir, name), 'utf8')) as Record<string, unknown>;
-            expect(Object.keys(parsed).sort(), name).toEqual(['groups', 'options']);
+            // The reader rows of behavior.yml and the layout trees of layout.yml name the field
+            // records their file's `descriptions:` holds.
+            const described = DESCRIBED.includes(name) ? ['descriptions'] : [];
+            expect(Object.keys(parsed).sort(), name).toEqual([...described, 'groups', 'options']);
         }
         for (const key of OPTION_KEYS) expect(seen[key]).toBe(undefined);
         expect(tracked(dir)).toEqual([...Object.keys(EXPECTED), ...OPTION_FILES].sort());

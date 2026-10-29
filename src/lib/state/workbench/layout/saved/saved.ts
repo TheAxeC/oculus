@@ -98,7 +98,10 @@ const workbenchShape = z.object({
     focus: z.unknown().optional()
 });
 
-/** The paths of the documents a rail page has been given; a value that is no list is none. */
+/**
+ * The paths of the documents a rail page has been given, and the views; a value that is no list of
+ * texts is no record. An empty or repeated view is left out of the record read.
+ */
 const docsShape = z.array(z.string());
 
 /** A page of the pages envelope: its id and label, with its tree and its rail key read apart. */
@@ -108,6 +111,7 @@ const savedPageShape = z.object({
     workbench: z.unknown().optional(),
     rail: filledTextShape,
     docs: z.unknown().optional(),
+    views: z.unknown().optional(),
     folder: z.unknown().optional(),
     item: z.unknown().optional()
 });
@@ -543,6 +547,8 @@ export function parseLayout(value: unknown): Pages | null {
             page.rail = rail;
             const docs = readAs(docsShape, entry.docs);
             if (docs !== null) page.docs = docs;
+            const views = readAs(docsShape, entry.views);
+            if (views !== null) page.views = [...new Set(views.filter((view) => view !== ''))];
         }
         const folder = folderOf(entry.folder, pages);
         if (folder !== null) {

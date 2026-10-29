@@ -439,3 +439,224 @@ The dispositions of the findings of the run over repair round 1, which are never
 - Standards 3 (the titles of the separator rows): fixed at landing.
 - Standards 4 (the G126 Doc text): fixed at landing to ruling 547 (a), the rows of cases 19, 20, 30 and 31.
 - Behaviour 1 (empty or padded parts, and number or flag `tags` parts, still drawn): fixed at landing, the guard of `launch-form.ts` and `cpp-form.ts` extended to every part its line would not read back.
+
+## Repair round 2, refuted
+
+A page this report cites (the rules file, a standard, a skill's text) is named with its section, never with a line number. A finding in code keeps its `file:line`.
+
+The rules file (`.scratch/migration/agents/spec.md`) names no output filter, so every command below ran unfiltered. All of them ran from the worktree root `/Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O99` with `PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH`. No other vitest or svelte-check was running (`ps -Ao pid,etime,command | grep -E 'vitest|svelte-check|test:quick'` printed nothing). The harness moved the Verify 1 run to the background after 180 s. I waited for its completion notice and did not poll it.
+
+Round delta: I compared every path of `migration-O99-round-2/files.txt` with `cmp` and `diff -u`.
+- Changed since the snapshot: `config/options/{appearance,behavior}.yml`, `config/text/{findings,server}.yml`, `docs/diagrams/{layer-state,layer-views,layers,writes}.{dot,svg}`, `catalog-words.ts`, `schemas/options.ts`, `config-key.ts` (head comment only), `editors/{fields,sources,offers}.ts`, `config/rows.ts`, `scopes/write.ts`, `FieldControl.svelte`, `Control.svelte`, `Item.svelte` and `sparse-card.test.ts`.
+- `other-rows/ClusterRows.svelte` is deleted in `files.txt` and present again now.
+- Changed now but not in `files.txt`: `catalog/value-rule.ts`, `catalog/value-words.ts`, `config-fit.ts`, `tests/data/sources/config/catalog/options-schema.test.ts`, and the new `src/lib/state/system/config/other-rows/cluster-rows.ts` and `tests/state/system/settings/cluster-rows.test.ts`.
+- The worktree's ledger copies of the briefs and the report equal the main ledger's under `cmp`. Its `O99-refuter.md` is the older copy, without the section over round 1.
+- Every changed path belongs to one of the round's two items, to the diagrams regenerated for them, or to the report.
+
+```
+Verify 1
+$ npm run diagrams && npm run docs:palette && npm run test:quick -- --base a5281619a   (output to scratchpad r2-verify1.txt)
+docs/diagrams/layers.dot ... docs/diagrams/writes.svg   (the 18 diagram files)
+docs/palette.md
+test:quick: 237 changed file(s), from git since a5281619a
+test:quick: 344 test file(s)
+ok      ASCII gate (1.1 s)
+ok      prettier (1.1 s): All matched files use Prettier code style!
+ok      svelte-kit sync (1.9 s)
+ok      eslint (19.7 s)
+ok      svelte-check (29.8 s): 1793306579006 COMPLETED 569 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest checks (119.6 s): Duration  110.35s (transform 36.53s, setup 0ms, import 142.42s, tests 252.48s, environment 4ms)
+ok      vitest (140.5 s): Duration  132.81s (transform 109.88s, setup 0ms, import 236.18s, tests 272.20s, environment 14.69s)
+ok      vitest slow (229.4 s): Duration  221.74s (transform 15.28s, setup 0ms, import 125.48s, tests 751.30s, environment 19ms)
+test:quick: 231.7 s; every command passed
+test:quick: not covered: tests that reach no changed file within the import depth,
+            other than the checks under tests/checks/source and tests/checks/tree,
+            which run for any change under src, tests or utils; the build, the lint
+            of unchanged files
+exit=0
+(md5 of git status --short: 4b13f61dce5c72319c8cbc661fcf6a0a before and after)
+
+Verify 2 (228 paths: git status --short -uall, deleted paths and secret local.yml files left out, config/options/local.yml included)
+$ ... | tr '\n' '\0' | xargs -0 env LC_ALL=C perl -ne '...as the brief gives it...'; echo verify2 exit=$?
+verify2 exit=0          (nothing printed)
+
+Verify 3
+$ sh utils/unused-exports.sh > r2-unused.txt; diff ../O99-base/unused-exports.txt r2-unused.txt
+1c1  < Unused exports (230)  > Unused exports (228)
+40a41 > src/lib/server/core/files/yaml/yaml-edit.ts: BLOCK_LISTS, pathOf, renameKey
+52d52 < src/lib/server/edit/writes/config/lists/rail.ts: RAIL
+56d55 < src/lib/server/edit/yaml/yaml-edit.ts: BLOCK_LISTS, pathOf, renameKey
+179c178 < src/lib/state/system/config/groups.ts: FILES, CATALOGS_GROUP, TEXTS_GROUP  > src/lib/state/system/config/groups.ts: FILES
+182d180 < src/lib/state/system/config/write.ts: commit
+232c230 < Unused exported types (109)  > Unused exported types (108)
+318d315 < src/lib/state/system/config/write.ts: Committed
+(no new unused export; the one added line is the moved yaml-edit.ts)
+
+Verify 4 (the first grep as grep -rn, since git grep is not a command I may run)
+$ grep -rn "EditLink\|settings_machine_edit_in\|settings_machine_edit_tip" src config tests --exclude=local.yml   -> v4a exit=1
+$ grep -n "EditLink\|..." config/options/local.yml                                                             -> v4a-local exit=1
+$ grep -n "ships none\|ships neither" config/defaults/behavior.yml src/lib/data/sources/config/settings/rows/read.ts -> v4b exit=1
+$ grep -nE "Empty makes no key|Empty tells no failure apart|Empty downloads nothing|says no source is configured" config/options/behavior.yml -> v4c exit=1
+
+Verify 6
+$ wc -l of every changed .ts/.svelte under src, tests, utils, printing any .svelte over 520 or other over 880: (nothing printed)
+  cluster-rows.ts 82, ClusterRows.svelte 69, cluster-rows.test.ts 83, fields.ts 778, sources.ts 227, offers.ts 179,
+  FieldControl.svelte 520, Control.svelte 143, Item.svelte 358, schemas/options.ts 428, value-rule.ts 363, rows.ts 601,
+  sparse-card.test.ts 718, options-schema.test.ts 145
+$ sh utils/folder-check.sh; echo folder exit=$?
+folder exit=0
+
+Verify 7 (the + lines of the round's delta and the three new files, grepped for the history words, a package id, a date, "round", "again", "was")
+hits: fields.ts "when it was no text"; sparse-card.test.ts "saved, as it was"; cluster-rows.ts "counts before the scope is saved", "a setup still being read"; ClusterRows.svelte "read ... again whenever the row's value moves", "after the value moved again". All are run-time order. No history.
+
+The round 2 report's evidence, rerun:
+$ npx vitest run tests/state/system/settings/cluster-rows.test.ts tests/state/system/config/sparse-card.test.ts tests/data/sources/config/catalog/options-schema.test.ts --reporter=verbose
+ Test Files  3 passed (3)
+      Tests  49 passed (49)          (same as the report)
+$ npx vitest run tests/state/system/settings/ tests/state/system/config/ tests/data/sources/config/catalog/ tests/checks/config/config-folder.test.ts --reporter=dot
+ Test Files  12 passed (12)
+      Tests  165 passed | 2 skipped (167)   (same as the report)
+$ npx svelte-check --tsconfig ./tsconfig.json --threshold error
+1793307236705 COMPLETED 4537 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS   (same)
+$ npx prettier --check <the 22 non-md files of o99notes/r2/files.txt>   -> All matched files use Prettier code style!
+$ npx eslint <the .ts/.svelte files of o99notes/r2/files.txt>          -> eslint exit=0
+$ character set over o99notes/r2/files.txt (23 files) and the report, with perl /[^\x00-\x7F]/ (grep -P is not this machine's grep under xargs) -> charset exit=0, nothing printed
+$ git diff a5281619a --stat -- docs/HELP.md docs/templates.md docs/data-map.md   -> prints nothing (same)
+$ grep -c "toggle, number" / "text area" in docs/templates.md docs/HELP.md docs/data-map.md -> 0 each; grep -n scalar -> only docs/templates.md:655 (a YAML scalar); grep -c -i control -> templates 0, data-map 0, HELP 34 (same)
+$ grep -rnI -E "toggle.*(text|long).*(glyph|hue|colour|folder)" src ; grep -rnI "toggle, number" src config docs tests README.md --exclude=local.yml
+  src/lib/server/edit/writes/config/config-key.ts:2 and config/options/appearance.yml:10, each naming scalar. The report's Control.svelte:4 and FieldControl.svelte:5 span two lines and were read: both name scalar.
+o99notes/r2/before.txt: "Start at 21:12:52", before the round's first source edit (catalog-words.ts mtime 21:13:12);
+  "Cannot find module '../../../../src/lib/state/system/config/other-rows/cluster-rows.ts'"; "AssertionError: expected 'true' to be undefined";
+  "AssertionError: expected '7' to be undefined"; options-schema "3: literature.sources[0].fields.oa does not fit the schema of this file" x3;
+  "Test Files  3 failed (3)", "Tests  4 failed | 43 passed (47)"   (as the report quotes)
+o99notes/r2/verify.txt: "test:quick: 348.6 s; every command passed", "exit 0"   (as the report quotes)
+ls docs/adr -> No such file or directory
+```
+
+### Verdicts
+
+Items of the brief's "What to build", for the whole diff since the base:
+
+- 1: holds. The round did not touch the scope code (the delta lists no `scopes/` file but `scopes/write.ts:35`, which now passes `row.value` to `commitValue`). The `hub-scope`, `machine-section` and `row-writer` tests pass in Verify 1.
+- 2: holds. The round did not change the saves. The G77 and `config-save` rows pass in Verify 1.
+- 3: holds. The `settings-secrets` rows pass in Verify 1, and Verify 4 (a) exits 1.
+- 4: holds. `reader_value`'s `value` is `control: scalar` (`config/options/behavior.yml:1322-1324`), and `config-folder.test.ts` passes in Verify 1's checks tier. Every row of `sparse-card.test.ts` passes.
+- 5: holds as the review over round 1 gave it. The launch guard of Behaviour 1 is left to landing ("Closed").
+- 6: holds by reading. The round did not change it, and the look settles it.
+- 7: holds. The round did not change the shipped rows or the merge, and Verify 4 (b) and (c) exit 1. The merge test rows are landing work under ruling 547 (a).
+- 8: holds. The round did not change it.
+
+Cases of the brief's "Cases" (as ruled in `O99-cases.md`). The round changed none of the code behind them except cases 9 and 12. The verdicts below rest on the two earlier reviews' readings, carried over because the files are unchanged since the round-2 snapshot, and on Verify 1:
+
+- 1, 2, 7, 8, 13, 14, 15, 16, 24, 27, 28, 29, 36: met, by their tests, all green in Verify 1. These are `config-save`, `settings-secrets`, `debug`, `cpp`, `deck-slides`, `primary-key`, `machine-section`, `hub-scope` and the G29 row.
+- 3, 4, 5, 6, 25, 26, 32, 33: met by the readings the earlier reviews give, since the round did not touch the code. The presses are seen at the look.
+- 9: met by the case program's output quoted in round 1, which was not rerun (Declined). The one control the round changed is `reader_value.value`, now `scalar`. FieldControl draws it in its default text box (`FieldControl.svelte:459`), and `readField` reads a flag, a number or a text into it (`fields.ts:299-302`).
+- 10, 11: met by the case program's output.
+- 12: met. In `sparse-card.test.ts`, the constant rows of round 1 and the two new rows 'keeps %s that a text field holds as the file has it' pass in my rerun.
+- 17: not verifiable here. The look at the narrowest and widest pane settles it.
+- 18: met, `connection-keys` green.
+- 19, 20, 30, 31: met by reading `ROW_SHAPES` and `in-place.ts`, as before. The test rows are written at landing under 547 (a), so their absence is no finding.
+- 21, 22, 22a, 35: met by the case program's output.
+- 23: met, Verify 4 (b) exits 1.
+- 34: met under the corrected premise (`editor.languages` alone).
+
+Items of the round-1 brief, for the whole diff:
+
+- 1 to 8: hold, as the review over round 1 gave them. The round did not change their files, and their rows pass in Verify 1.
+- 9: holds. The shipped `oa: { value: true }` fits the `scalar` field, and `config-folder.test.ts` is green. The scalar reading is scoped to `scalar` (`fields.ts:299`). The `text` cases of `readField`, `writtenField` and `commitValue` are the base's again (compared with `git show a5281619a:src/lib/state/system/config/editors/fields.ts`).
+- 10: holds for the separator. The empty or padded parts are fixed at landing (Behaviour 1 of the review over round 1, "Closed").
+- 11, 12, 13: hold, as before.
+- 14: holds. The choice of round 2 item 2 is built, and its test gap is Proof 1 below.
+- 15: partial, Spec 4 of the review over round 1. "Closed" sends it to landing, and the round did not change it.
+
+Items of the round-2 brief:
+
+- 1: holds. The details:
+  - `scalar` is in `CONTROLS` (`catalog-words.ts:18`).
+  - The schema is `anyOf: [textSchema(spec), number, boolean]` (`schemas/options.ts:173-174`). Ajv here runs with its default `strictNumbers`, which refuses NaN and Infinity (`node_modules/ajv/dist/core.js:74`; `check.ts:41` passes no override).
+  - The value rule takes a flag, a finite number, or a string held to its form, and nothing else (`value-rule.ts:323-325`). `takesRecord` is false for any control but `text` (`catalog/options.ts:119`).
+  - `config-fit.ts:123-124` and `value-words.ts:96-97` word the new kind.
+  - The card reads the type with `scalarText` and writes it back through `scalarOf`, then through `valueProblem`, except a value equal to one the file holds (`heldAlready`), as for `text` (`fields.ts:698-705`).
+  - `commitValue` has one caller (`scopes/write.ts:35`), which passes `row.value`. Its `scalar` case runs `valueProblem` (`fields.ts:746-752`).
+  - A `text` field holding a flag or a number falls to `default` and reads as stuck, as on the base.
+  - No doc page lists the control words (the greps above). The comment findings are Standards 1 and 4.
+- 2: partial, Proof 1. What holds:
+  - `clusterLists` narrows `clusters` per record through the new optional `narrow` of `Lists` (`sources.ts:91-96`), which `offers.ts:45` `addSource` reads. No catalog word is added, and the `clusters` source is not narrowed.
+  - `ClusterRows.svelte` only reads the setup (`readSetup`, `:42`). It hands the scope's own `editors` to `Editor.svelte`, so its changes are held and saved by the scope's Save. It writes nothing itself.
+  - The setup is read again when `row.value` moves (`$effect(() => readFor(row.value))`, `:53`), and a superseded or unmounted read is dropped (`gone`).
+  - `clusterChoice` counts as held the setup's rows whose `hub` is not the row's (`cluster-rows.ts:39`) and the draft's cards (`:40,45`). For this row `row.hub` is always set: `rows.ts:516` gives every `local.yml` row `hub: of.hub`, and `LocalScope.hub` is a string (`rows.ts:162`). The scope's own saved rows are therefore left out, and a row taken out in the draft is offered again before the Save. The arm for an undefined `row.hub` is Standards 2.
+  - A held cluster that `slurm.resource` no longer names is drawn as the selected stray option with "not in the list". Select keeps a stray value shown and selected (`Select.svelte:75-92`), and the report states this.
+
+### 1. Spec
+
+- **Spec 1.** The report's first line and its "Table of changed test lines" lead: "the 'Table of changed test lines' is round 0's and is not regenerated for the repair rounds".
+  - What is wrong: the round-2 brief asks for the report to be rewritten whole for the state after the round, "the round 1 and round 0 parts kept where still true and corrected where not". The rules file ("What every package obeys") asks for one row per changed line of each changed test file, made from a diff against the base copy. The base copy is there again, so the table could have been made again. Instead it is kept as round 0 left it and marked not done. That is a deferral of work inside the brief.
+  - Failure scenario: at landing, the orchestrator checks the table's rows against the tree for edits to existing assertions. Rows of `sparse-card.test.ts`, `settings-secrets.test.ts`, `config-save.test.ts`, `cpp.test.ts`, `primary-key.test.ts`, `entry-forms.test.ts` and `options-schema.test.ts` point at lines rounds 1 and 2 moved, and the table holds none of the lines those rounds added. Each edit then has to be found again from the per-round sections and a fresh diff.
+  - Verdict: none. This is the round brief's report instruction, not an item.
+
+### 2. Proof
+
+- **Proof 1.** `tests/state/system/settings/cluster-rows.test.ts:71`: "const lists = clusterLists(registryLists(), { named: ['held', 'free'], held: ['held'] });". The file's head comment (`:1-6`) and `FILE` (`:32-38`, "The primary's `local.yml`, which holds a row for the cluster `held`") present the held cluster as coming from the file's rows.
+  - What is wrong: the test hands `clusterLists` a choice it builds itself, and no test calls `clusterChoice` (`grep -rn "clusterChoice" tests` finds nothing).
+    - `clusterChoice` (`cluster-rows.ts:34-51`) decides which clusters "have a row". It reads the setup rows of the other hubs, leaves out the scope's own, and adds the draft's cards.
+    - The round-2 brief asked for a row showing that the offer "leaves out a cluster that has one". In this test, the cluster that "has one" is the test's own input. `FILE` feeds only the row's construction, never `held`.
+    - Read against the code, the test stays green if `clusterChoice` counted no row, counted the scope's own saved rows, or ignored the draft.
+  - Failure scenario: a change to the hub filter at `cluster-rows.ts:39`, for example counting every setup row, keeps both rows green. Yet a cluster whose row the reader took out in the draft is then not offered to a new row until the Save, and nothing catches it.
+  - Verdict: round 2 item 2 partial.
+
+### 3. Standards
+
+- **Standards 1.** Three comment paragraphs the round edited are not rewrapped as a whole at 100 columns:
+  - `src/lib/data/sources/config/catalog/schemas/options.ts:11-17`: line 15, "// the list it names. A source that only the page holds", is 55 columns, and the next line starts "(the views, ...".
+  - `src/lib/data/sources/config/catalog/value-rule.ts:7-13`: line 11, "// family field is held to its form (a list of records, a map, or one record). A word", is 85 columns, and the next word, "block", fits.
+  - `src/lib/views/system/workbench/settings/Item.svelte:12-17`: line 14, "// `slurm.resource` no row holds (other-rows/ClusterRows.svelte). A list or a", is 81 columns, and the next word, "family", fits.
+  - What is wrong: the rules file, "What every package obeys", says "A comment edited by the step is rewrapped as a whole paragraph at 100 columns, so no line inside a sentence ends short."
+  - Failure scenario: a reader meets a ragged break in the middle of each sentence. The next edit of these paragraphs inherits the short lines, so the comment-width rule is broken again without any check catching it.
+- **Standards 2.** `src/lib/state/system/config/other-rows/cluster-rows.ts:39`: "const others = setup.rows.filter((one) => row.hub === undefined || one.hub !== row.hub);".
+  - What is wrong: `clusterChoice` serves only the row `CLUSTERS_ROW` (`Item.svelte:220`). Every `local.yml` row carries `hub` (`rows.ts:516`), so the `row.hub === undefined` arm is never taken. If it were taken, it would count the scope's own saved rows as held, against the head comment ("the rows of every other hub's file"). A cluster whose row was taken out in the draft would then stay out of the offer until the Save.
+  - This is code larger than its job, a branch for an input that has not happened (refute's "The four headings", Standards; the rules file's "The principles every package is judged on", YAGNI).
+  - Failure scenario: a later reader takes the arm as the rule for a row with no hub and reuses `clusterChoice` for a row of the primary's own settings file. `hub` is undefined there by `rows.ts:117-121`, so that row offers no cluster the file held, even after the reader removes it in the draft.
+- **Standards 3.** The report's "Doc text", section `agents/guarded.md`, names neither new test of the round.
+  - The two tests: `tests/state/system/settings/cluster-rows.test.ts`, describe "the cluster a row of This machine's clusters: is for", and `tests/data/sources/config/catalog/options-schema.test.ts`, describe "the schema of a reader row's constant value, a scalar".
+  - G13's Test line (`guarded.md:242`) names only that file's describe 'the schema of a collections entry'. No entry's Code line names `cluster-rows.ts` or the `scalar` case.
+  - What is wrong: the rules file, "What every package obeys", says "A test exists only as the test of one entry of `agents/guarded.md`, and `agents/guarded.md` names it there by file and title". The round brief asked for both tests. It did not lift the rule that their entry is named, or the rule that a test needing a new entry is handed back.
+  - Failure scenario: guarded.md is landed from this Doc text and names neither test. A later step that changes `clusterChoice` or `schemas/options.ts` `scalar` is not pointed at them by any entry ("A step whose change touches an entry's code runs that entry's test").
+- **Standards 4.** Two comments list the box controls without `scalar`:
+  - `src/lib/state/system/config/editors/draft.ts:785-786`: "A box (a number, a text, a folder, a file, a path) holds the text as typed." `scalar` is not in `NOT_A_BOX` (`:788-800`), so it is a box.
+  - `src/lib/state/system/config/typed.ts:2-3`: "the text typed into a box (a number, a text, a suggestion box, a folder, file or path) and not yet held as a change of its scope". `Control.svelte:61-63` now counts `scalar` among those boxes.
+  - What is wrong: round-2 item 1 says "Every page and comment that lists the control words names `scalar`". The round added `scalar` to the like subset lists of `config-key.ts:2` and `Control.svelte:4`, but not to these two.
+  - Failure scenario: a reader of `typed.ts` concludes that the text typed into a scalar's box is not kept in the tab's instance state, though it is.
+
+### 4. Behaviour
+
+- none. The round states the clusters editor's before (the base's `ClusterRows.svelte`), its round-1 state and its after. That includes the loading and failed choice and the stray mark for a cluster `slurm.resource` no longer names. It also states that a `text` field holding a flag or a number is kept as on the base.
+
+### Declined to judge
+
+- The shell write `npx prettier --write` on `cluster-rows.ts` and `ClusterRows.svelte`, under the ruling "Unapproved builder scripts".
+  - I judge it is not a program of the kind the ruling names (an inline `python3`, `perl`, `sed -i`, `awk` or a script file). It is the repository's pinned formatter, which the rules file asks a builder to run on what it wrote ("run `npm run format` on what you wrote"; `package.json:21` is `prettier --write .`).
+  - The builder listed the command and both files. Both files are new, so their hunks are the whole files, and I read both whole: plain formatting, no logic beyond the item.
+  - The claim that prettier changed "only their layout" cannot be checked, since no copy of the text before the format exists. So I raise no finding.
+- The report's two "not done" lines:
+  - The first, the launch rows with no run before the change, is Proof 2 of the review over round 1, which "Closed" books at landing. It is no new finding.
+  - The second is Spec 1 above.
+- The drawing of `ClusterRows.svelte` (the choice while loading, after a failed read, the stray mark, the cluster names as labels) and of a scalar card: these are for the look at landing.
+- Whether a workspace folder name (`scope.hub`, the Settings scope's hub) always equals the hub name `readLocal` marks the setup rows with (`machine.ts:139-141`, `local.ts:645,691-693`). I read that both come from the workspace's hub names (`context.ts:509`, `Settings.svelte:284-285`), but ran no case over a workspace where they could differ.
+- The case program of round 1 (cases 9, 10, 11, 21, 22, 22a, 35): not rerun, since it needs a file written into `tests/`. The cases round 2 touched were judged by reading and by Verify 1.
+- How yaml-language-server, as against ajv, reads `{ type: 'number' }` for a YAML `.inf`: not run.
+- The verdicts on parts the round did not change rest on the two earlier reviews' readings plus Verify 1. Those files equal the round-2 snapshot under `cmp`.
+- Git commands outside the three named: I ran `git status --short -uall` once, to list the untracked files one by one for Verify 2. I also ran path-limited and `--stat` forms of `git diff a5281619a` (`-- <path>`). All of them only read.
+- The orchestrator's landing fixes listed in "Closed" for the review over round 1 (Standards 1 to 4 and Behaviour 1 of that review): still in the tree, as expected. The round did not make them worse.
+
+Reviewer usage: aade82c34310c3cf7, claude-opus-5-5, 294967 tokens, 106 tool uses, 19 min 53 s.
+
+### Closed (over round 2)
+
+The findings of the run over the last round, never sent to the builder; each is small and inside the brief, so each is fixed at landing on main.
+
+- Spec 1 (the table of changed test lines left at round 0): at landing the orchestrator reads every changed line of each changed test file from `git diff a5281619a` and checks each edit to an existing assertion.
+- Proof 1 (no test of `clusterChoice`): rows that call `clusterChoice` over a setup and a draft (a row of another hub's file counts, the scope's own saved row does not, a row taken out in the draft is offered again) are added at landing to `tests/state/system/settings/cluster-rows.test.ts`.
+- Standards 1 (three comment paragraphs not rewrapped): rewrapped at landing.
+- Standards 2 (the `row.hub === undefined` arm of `clusterChoice`): taken out at landing.
+- Standards 3 (the guarded entries of the two new tests): named in the Doc text of `agents/guarded.md` at landing.
+- Standards 4 (`draft.ts` and `typed.ts` comments without `scalar`): written at landing.

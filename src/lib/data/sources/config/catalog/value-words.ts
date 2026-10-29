@@ -93,6 +93,8 @@ export function mustBe(
             return numberWords(catalog, spec.whole === true, problem.min, problem.max);
         case 'text':
             return findingText(catalog, 'findings.words.text');
+        case 'scalar':
+            return findingText(catalog, 'findings.words.scalar');
         case 'form':
             return formWords(catalog, problem.form);
         case 'words':

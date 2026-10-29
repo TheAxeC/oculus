@@ -46,8 +46,7 @@ text:
         editor_kept: 'Kept as the file has it:'
         editor_more: 'Show {0} more of {1} entries'
         editor_remove: 'Remove entry {0}'
-        editor_save: Save
-        editor_saved: Saved.
+        editor_unsaved: Changed and not saved yet; Save writes it into the file of this scope.
         editor_stuck: 'The control cannot show these values, so they are kept as the file has them:'
         editor_unread: 'These fields hold text that is not valid YAML, so Save will refuse until they are mended:'
         editor_up: 'Move entry {0} up'
@@ -64,15 +63,10 @@ text:
         block_list: '{0}, {1}'
         local_tag: This machine
         not_in_list: not in the list
-        open_settings_file: Open Settings File
-        open_settings_file_tip: 'Open {0}, which keeps your values of these settings, in a source tab'
-        save_workspace: Save Workspace As...
-        save_workspace_tip: 'Save this workspace to a file: your values of these settings are kept in it'
         show_defaults: Show Defaults
         show_defaults_tip: "Open oculus's {0}, the values in force where you set none, to read"
         title_appearance: Look and theme
         title_behavior: Behavior
-        title_config: This hub
         title_layout: Pages and arrangements
         title_local: This machine
         title_present: Decks
@@ -91,6 +85,41 @@ text:
         texts_about: The words the views draw, one file per view, in config/text/ and the folders under it.
         texts_title: Texts
         unset: Not set
+        scope_kind: Scope
+        scope_workspace: Workspace
+        scope_primary: Primary hub
+        scope_hub: Hub
+        scope_local: This machine
+        scope_repo: Repository
+        scope_pick_hub: Hub of the scope
+        scope_pick_repo: Repository of the scope
+        scope_file: '{0}'
+        scope_file_new: '{0}, not there yet; the first change saved makes it'
+        scope_unsaved: This workspace is not saved to a file; its first change asks for a name
+        scope_clean: No unsaved change
+        scope_unsaved_one: 1 unsaved change
+        scope_unsaved_many: '{0} unsaved changes'
+        scope_save: Save
+        scope_held: '{0} holds {1} unsaved changes of another scope.'
+        scope_gone_held: '{0} is no longer in this workspace, so its {1} unsaved changes are kept and nothing is written to it.'
+        scope_discard: Discard
+        scope_name_ask: Save this workspace to a file
+        scope_name_detail: The workspace is saved under this name as Save Workspace As saves it, and the settings changed in it are then written into its file.
+        scope_name_label: Name of the workspace
+        scope_name_verb: Save
+        secret_set: Set
+        secret_unset: Not set
+        secret_typed: A new secret is typed; Save replaces the stored one with it.
+        secret_cleared: The stored secret is taken out when the scope is saved.
+        secret_placeholder: Type a new secret to replace the stored one
+        secret_clear: Clear
+        secret_keep: Keep the stored secret
+        workspace_primary: Primary hub
+        workspace_primary_help: The hub whose .oculus/config.yml and .oculus/local.yml give the values that have one value per workspace, kept as primary in the workspace file.
+        workspace_primary_none: No primary
+        workspace_folders: Folder names
+        workspace_folders_help: The name each folder of the workspace is shown and served under, unique in the workspace; a renamed folder that is the primary stays the primary under its new name.
+        workspace_folder_name: 'Name of the folder {0}'
     workbench:
         catalogue_hint: A click opens the view on the page you came from and shows that page; a shift-click opens it in a pane beside, on that page. Drag a view onto a pane, or right-click it, to open it on this page.
         catalogue_key: '{0}, key {1}'
@@ -132,9 +161,6 @@ text:
         rail_refused: 'The rail list was not saved: {0}'
         rail_remove: Remove button {0}
         rail_revert: Revert
-        rail_save: Save
-        rail_saved: Saved.
-        rail_saving: Saving...
         rail_unwritable: the workspace file could not be written
         rail_up: Move button {0} up
         rail_word_icon: Icon
@@ -160,9 +186,6 @@ text:
         settings_changed_since: 'The file changed since this edit was started, so it was not saved.'
         settings_draft_dropped: 'The file now holds this setting in a form the editor does not draw, so the unsaved edit was dropped.'
         settings_clear: Clear search
-        settings_clusters_add: Add a row for a cluster
-        settings_clusters_add_go: Add row
-        settings_clusters_in: 'In the .oculus/local.yml of {0}.'
         settings_contents: Settings contents
         settings_copy_id: Copy Setting ID
         settings_copy_refused: The clipboard refused the copy.
@@ -172,8 +195,6 @@ text:
         settings_default_item_one: 'Default: 1 item'
         settings_default_items: 'Default: {0} items'
         settings_duplicate_key: 'Two entries are named {0}. Each needs its own name.'
-        settings_edit_in: 'Edit in {0}'
-        settings_edit_in_tip: 'Open {0} in a source tab'
         settings_empty: 'The field is empty, so nothing was written.'
         settings_empty_item: 'Item {0} is empty. Fill it in or remove it.'
         settings_empty_key: 'Entry {0} has no name. Give it one or remove it.'
@@ -183,14 +204,7 @@ text:
         settings_wallpaper_label: Wallpaper images
         settings_wallpaper_none: None
         settings_wallpaper_random: Random
-        settings_machine_default: 'Not set in the primary hub. The default is {0}.'
-        settings_machine_edit_in: 'Edit {0} of {1}'
-        settings_machine_edit_tip: 'Open {0} of {1} in a source tab'
-        settings_machine_in_force: 'The value in force:'
         settings_machine_port_refused: 'local.yml: port {0} cannot be used ({1}); the server stays on {2}.'
-        settings_machine_no_primary: This workspace has no primary hub, so no file sets a key that has one value here and each of them shows its default; the lists of accounts, calendars and mail show the rows of every hub's file.
-        settings_machine_set: 'Set in {0}.'
-        settings_machine_unset: Not set in the primary hub, and the key has no default.
         settings_open_unavailable: '{0} can be opened once a folder of this workspace holds it.'
         settings_fields: 'Each entry has:'
         settings_filter: Filter settings
@@ -215,22 +229,21 @@ text:
         settings_list_failed: 'The folder {0} could not be listed: {1}'
         settings_list_loading: 'Reading the folder {0}...'
         settings_loading: 'Reading {0}...'
+        settings_unparsed_at: '{0} does not parse at line {1}, so nothing is written to it; mend the line and the scope reads it again.'
+        settings_not_served: '{0} is in a hub that is no folder of this workspace, so this scope cannot read or write it.'
+        settings_origin_tip: 'Show the Repository scope of {0}, where its languages are set'
+        settings_undrawn: "{0} holds {1}, which this setting's editor does not draw, so it is kept as the file has it and this row changes nothing."
+        settings_scope_gone: '{0} is no longer in this workspace, so nothing was written to it; its changes are kept.'
+        settings_scope_saved: 'Saved into {0}.'
         settings_mismatch_list: 'The value in force is {0}, which is not a list.'
         settings_mismatch_block: 'The value in force is {0}, which is not a map of the lists words, not_words, flags and not_flags.'
         settings_mismatch_number: 'The value in force is {0}, which is not a number.'
         settings_mismatch_text: 'The value in force is {0}, which is not text.'
         settings_mismatch_toggle: 'The value in force is {0}, which is not true or false.'
-        settings_missing: 'This setting has no value in force; it is set in {0}.'
         settings_hub_file_absent: '{0} is not there. A change to a setting of the hub creates it.'
-        settings_hub_choice: Hub
-        settings_hub_choice_tip: 'The hub whose .oculus/config.yml this setting is read from and written to'
-        settings_hub_choice_none: Pick a hub
-        settings_pick_hub: 'Pick the hub this setting is written to; nothing is written until a hub is picked.'
         settings_hub_loading: 'Reading the settings of the hub {0}...'
         settings_hub_failed: 'The settings of the hub {0} could not be read, so nothing is written: {1}'
         settings_network: 'Not written: the server could not be reached.'
-        settings_no_workspace: 'This workspace is not saved to a file, so a change to these settings is refused until it is.'
-        settings_no_primary: This workspace has no primary hub, so no file sets these keys and each of them shows oculus's value.
         settings_blank: 'It must not be blank.'
         settings_no_file: 'The file {0} is not in the hub.'
         settings_no_folder: 'The folder {0} is not in the hub.'
@@ -268,7 +281,7 @@ text:
         settings_reset: Reset Setting
         settings_search: Search settings
         settings_timed_out: 'Not written: no answer came in time, so the write may not have landed.'
-        settings_unparsed: '{0} is not valid YAML, so the line of a setting in it is not shown: {1}'
+        settings_unparsed: '{0} does not parse at line {1}, so nothing is written to it: {2}'
         settings_unreadable: '{0} could not be read: {1}'
         settings_unwritable: 'Not written: {0} could not be written.'
         settings_where: 'Entry {0}, {1}:'

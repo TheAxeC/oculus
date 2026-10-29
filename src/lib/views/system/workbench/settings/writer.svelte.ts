@@ -1,30 +1,21 @@
-// Layer 3, view helper. The write sequence of state/system/config/write.ts made reactive: the
-// sequence is a plain closure, and this reads a version number that its `changed` callback moves,
-// so a `$derived` or a template that asks what a row shows or says is drawn again when a write is
-// sent or answered.
+// Layer 3, view helper. The writer of state/system/config/scopes/write.ts made reactive: the writer
+// is a plain closure, and this reads a version number that its `changed` callback moves, so a
+// `$derived` or a template that asks what a row shows or says is drawn again when a change is held
+// or dropped.
 
 import type { Lists } from '$lib/state/system/config/editors/sources';
 import type { ConfigRow } from '$lib/state/system/config/rows';
-import {
-    createRowWriter,
-    type ResetConfig,
-    type RowWriter,
-    type WriteConfigKey
-} from '$lib/state/system/config/write';
+import { createRowWriter, type RowWriter, type Stage } from '$lib/state/system/config/scopes/write';
 
 /**
- * A write sequence whose `shown`, `pending` and `said` redraw whatever read them when a write
- * moves. `lists` answers the lists a row's control draws from.
+ * A writer whose `shown`, `pending` and `said` redraw whatever read them when a change moves.
+ * `stage` holds a row's change in the scope on screen, `lists` answers the lists a row's control
+ * draws from.
  */
-export function reactiveWriter(
-    write: WriteConfigKey,
-    reset: ResetConfig,
-    lists: (row: ConfigRow) => Lists
-): RowWriter {
+export function reactiveWriter(stage: Stage, lists: (row: ConfigRow) => Lists): RowWriter {
     let version = $state(0);
     const inner = createRowWriter(
-        write,
-        reset,
+        stage,
         () => {
             version += 1;
         },

@@ -8,9 +8,47 @@ options:
     latex_editing:
         heading: editor
         section: LaTeX
-        help: 'What the LaTeX editing aids read, by section: the notice of the project the tables follow, the @ suggestions (at), the environments, the keys of the formatting chords (chords) and the math symbol groups the TeX view lists (symbols). A section is set whole; its rows are edited in the file.'
+        help: 'What the LaTeX editing aids read, by section: the notice of the project the tables follow, the @ suggestions (at), the environments, the keys of the formatting chords (chords) and the math symbol groups the TeX view lists (symbols). A section changed here is set whole, and the sections left as oculus ships them are not written.'
+        holds: record
         fields:
-            key: the section, one of notice, at, environments, chords and symbols
-            value: the section's value, as catalogs/latex.yml writes it
+            notice:
+                help: the notice of the project the tables follow
+                control: long
+            at:
+                help: the @ suggestions, each typed as its prefix and inserting its body
+                fields:
+                    prefix: the text typed, @ and one character
+                    body: the snippet inserted, with its tab stops
+                    description: the words the suggestion is listed with
+            environments:
+                help: the environments \begin offers
+                fields:
+                    name: the name of the environment
+                    arguments: the arguments inserted after its name, with their tab stops
+            chords:
+                help: the keys of the formatting chords
+                holds: record
+                fields:
+                    text:
+                        help: in text, each key and the command the chord wraps the selection in
+                        fields:
+                            key: the key of the chord
+                            value: the command, without its backslash
+                    math:
+                        help: in math, each key and the command the chord wraps the selection in
+                        fields:
+                            key: the key of the chord
+                            value: the command, without its backslash
+            symbols:
+                help: the math symbol groups the TeX view lists
+                fields:
+                    name: the name of the group
+                    items:
+                        help: the symbols of the group
+                        fields:
+                            name: the name of the symbol
+                            source: the LaTeX the symbol is drawn from
+                            insert: the text inserted
+                            keywords: the words a search finds the symbol by
 
 groups: {}

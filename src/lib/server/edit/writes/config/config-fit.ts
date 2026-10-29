@@ -120,6 +120,8 @@ function sentenceOf(
             return rangeSentence(problem.min, problem.max, text);
         case 'text':
             return words(text, 'server.config_key.not_text');
+        case 'scalar':
+            return words(text, 'server.config_key.not_scalar');
         case 'empty':
         case 'choice':
         case 'source':

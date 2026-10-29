@@ -18,6 +18,33 @@ text:
         kind_candidate: found, not in the group
         kind_conflict: 'found by {0} too; tick it to put it in this group'
         kind_found: found by the group
+        key_discover: takes the decks it finds beyond the ones it names
+        key_discover_none: unset, takes only the decks it names
+        key_find: Find
+        key_find_folders: 'folders {0} finds decks in'
+        key_find_folders_hint: 'folder globs, such as projects/*/*/present, separated by commas'
+        key_find_forms: forms
+        key_find_help: Which project folders the group finds, and the tiers, stages, forms and status chips their projects must have; a list left empty keeps every project.
+        key_find_list: '{0} of {1}'
+        key_find_stages: stages
+        key_find_status: status chips
+        key_find_tiers: tiers
+        key_sort: Sort
+        key_sort_folder: by folder
+        key_sort_help: How the found decks are ordered.
+        key_sort_none: unset, by folder
+        key_sort_of: 'sort of {0}'
+        key_sort_title: by title
+        key_title: Title
+        key_title_help: The title shown on the first slide and in the deck list.
+        key_tone_add: Add
+        key_tone_hue: hue of the new tag
+        key_tone_none: no hue
+        key_tone_of: 'hue of {0}'
+        key_tone_tag: new tag
+        key_tones: Tag tones
+        key_tones_help: The hue each slide tag's chip wears; no hue takes the tag out.
+        keys: Deck
         kind_missing: no deck has this name
         loading: Reading the deck ...
         moved: '{0} is now {1} of {2}'

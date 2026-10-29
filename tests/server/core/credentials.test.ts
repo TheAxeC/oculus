@@ -252,9 +252,11 @@ describe('the credential config of a git start and a terminal', () => {
         const found = helperFindings(where, read.config, quoted);
         expect(found.map((one) => [one.file, one.key])).toEqual([[join(hub, HUB_FILE), 'sign_in']]);
         expect(helperFindings(where, read.config, '/usr/bin/node')).toEqual([]);
-        const none = loadConfig(engineDir()).config;
-        expect(helperFindings({ engine: engineDir(), hub: null, from: {} }, none, quoted)).toEqual(
-            []
-        );
+        const removed = plantScratch('oculus-credentials-none-', {
+            [HUB_FILE]: 'sign_in:\n  - { key: github, removed: true }\n'
+        });
+        const none = loadConfig(engineDir(), { hub: removed });
+        const noHost = { engine: engineDir(), hub: removed, from: none.from };
+        expect(helperFindings(noHost, none.config, quoted)).toEqual([]);
     });
 });

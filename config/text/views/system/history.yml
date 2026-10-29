@@ -56,6 +56,7 @@ text:
         kind_linkedin_post: LinkedIn post
         kind_deck: deck
         kind_deck_edit: deck file
+        kind_deck_key: deck key
         kind_deck_order: deck order
         kind_deck_slides: deck group
         kind_new_idea: idea scaffolded
@@ -99,6 +100,9 @@ text:
         file_copy: Copy
         file_upload: Upload
         file_add_configuration: Add Configuration
+        file_edit_configuration: Edit Configuration
+        file_delete_configuration: Delete Configuration
+        file_set_primary_key: Set Primary Key
         file_write_file: Write File
         file_trash: Delete
         file_delete: Delete Permanently

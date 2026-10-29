@@ -1,6 +1,6 @@
 // Layer 2, server. One option of oculus's defaults files set to a value: the Settings view's write
-// for a toggle, a number, a text, a choice, a glyph, a hue, a colour, a folder, a file or a path,
-// and the write every control of the shell that sets an option sends.
+// for a toggle, a number, a text, a scalar, a choice, a glyph, a hue, a colour, a folder, a file
+// or a path, and the write every control of the shell that sets an option sends.
 //
 // The value lands where config-place.ts places the key: a key of the hub list in the settings file
 // of the hub whose layers config-write.ts hands it, the primary's unless the write names another
@@ -55,9 +55,9 @@ import { writeTextAtomic } from '../../../core/json.ts';
 import { readBack } from '../../list-edit.ts';
 import { catalogOf, type CatalogEntry } from '../../../../data/sources/config/catalog/options.ts';
 import { words } from '../../../core/words.ts';
-import { replaceValue } from '../../yaml/yaml-edit.ts';
-import { REFUSALS, why } from '../../yaml/why.ts';
-import type { Why } from '../../yaml/why.ts';
+import { replaceValue } from '../../../core/files/yaml/yaml-edit.ts';
+import { REFUSALS, why } from '../../../core/files/yaml/why.ts';
+import type { Why } from '../../../core/files/yaml/why.ts';
 import { isCollection, leafProblem } from './config-fit.ts';
 import { sourcesFor, type SourceInputs } from './config-sources.ts';
 import {
@@ -265,7 +265,7 @@ const IGNORED = LOCAL_NAME;
  * line when it is not there, the line added when the file does not name it, and nothing written
  * when a line of it does.
  */
-function ignoreLocal(folder: string): void {
+export function ignoreLocal(folder: string): void {
     const path = join(folder, '.gitignore');
     const held = heldText(path);
     if (held === null) {

@@ -229,7 +229,7 @@ const ROWS: {
                     file: join(at.hub, HUB_FILE),
                     key: 'behavior.yml',
                     field: 'clusters.key_type',
-                    before: '',
+                    before: 'ed25519',
                     after: 'rsa',
                     undo: 'field',
                     replaced: { offset: 0, before: '{', after: 'clusters: { key_type: rsa ' },

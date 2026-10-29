@@ -14,13 +14,21 @@
 // The work is held against the lists it was made over. A push that changes a group's `slides:`
 // leaves the two out of step, and the view then draws what the file says and says that the unsaved
 // work was dropped, rather than saving a list over a deck that has moved underneath it.
+//
+// The keys the view sets beside the lists (`deck.title`, `defaults.tag_tones` and each group's
+// `find`, `sort` and `discover`, the keys config/schemas/deck-schema.yml describes) are work of the
+// same kind: each value the reader set is held by its key's path, held against the keys the file
+// holds with the lists, and sent with them, each with the value the file held as its base.
 
+import { isEqual } from 'lodash-es';
 import { z } from 'zod';
+import { hueNames } from '../../data/sources/config/catalog/options.ts';
+import { fields, isMap, strings } from '../../data/helpers/guards.ts';
 import { mapOfShape, readAs, stringItemsShape } from '../../data/shapes/shapes.ts';
 import { movedOrder } from '../boards/collection/index.ts';
 import { instanceFolded } from '../shared/page/folds.ts';
 import { t } from '../shared/words/text.ts';
-import type { DeckGroup, DeckOrderEntry } from '../../data/model/index.ts';
+import type { DeckGroup, DeckKeys, DeckOrderEntry } from '../../data/model/index.ts';
 
 export type { DeckOrderEntry };
 
@@ -38,7 +46,12 @@ export type SlidesState = {
     said: string;
     /** The folded groups, each by its name after `group:`, and the order's list under `order`. */
     folded: string[];
+    /** The values the reader set for the deck's keys, by `keyId`; null takes a key out. */
+    keys: KeyWork;
 };
+
+/** The values the reader set for the deck's keys, each by `keyId` of its path. */
+export type KeyWork = Record<string, unknown>;
 
 /** What a write answered, as much of it as the status line depends on. */
 export type SaveAnswer = {
@@ -53,7 +66,8 @@ const slidesStateShape = z.object({
     work: mapOfShape(stringItemsShape).catch(() => ({})),
     order: stringItemsShape.catch(() => []),
     at: z.string().catch(''),
-    said: z.string().catch('')
+    said: z.string().catch(''),
+    keys: z.record(z.string(), z.unknown()).catch(() => ({}))
 });
 
 /**
@@ -66,7 +80,8 @@ export function parseSlidesState(value: unknown): SlidesState {
         order: held?.order ?? [],
         at: held?.at ?? '',
         said: held?.said ?? '',
-        folded: instanceFolded(value)
+        folded: instanceFolded(value),
+        keys: held?.keys ?? {}
     };
 }
 
@@ -74,10 +89,15 @@ export function parseSlidesState(value: unknown): SlidesState {
  * The lists a piece of work was made over. Work held against different ones is the reader's edits
  * over a deck whose file has since changed, so it is dropped and the file answers.
  */
-export function listsSignature(groups: DeckGroup[], order: DeckOrderEntry[]): string {
+export function listsSignature(
+    groups: DeckGroup[],
+    order: DeckOrderEntry[],
+    keys: DeckKeys | null = null
+): string {
     return JSON.stringify([
         groups.map((group) => [group.name, group.slides]),
-        order.map((entry) => entry.token)
+        order.map((entry) => entry.token),
+        keys
     ]);
 }
 
@@ -224,4 +244,147 @@ export function saveMessage(answer: SaveAnswer): string {
     if (answer.network === true) return t('slides.failed_network');
     if (answer.error === 'unwritable') return t('slides.failed_file');
     return t('slides.failed_other');
+}
+
+/** One key of a deck the view sets: its path from the top of the file and the value it holds. */
+type DeckKeyRow = { path: string[]; held: unknown };
+
+/** The id a key's work is held under: its path, which a group name with a dot keeps apart. */
+function keyId(path: readonly string[]): string {
+    return JSON.stringify(path);
+}
+
+/** The path of a group's key. */
+export function groupKey(group: string, key: 'find' | 'sort' | 'discover'): string[] {
+    return ['groups', group, key];
+}
+
+/** The deck's title key and its tag tones key. */
+export const TITLE_KEY = ['deck', 'title'];
+export const TONES_KEY = ['defaults', 'tag_tones'];
+
+/** Every key the view sets for a deck, with the value the file holds; none for an unread file. */
+function keyRows(keys: DeckKeys | null): DeckKeyRow[] {
+    if (keys === null) return [];
+    return [
+        { path: TITLE_KEY, held: keys.title },
+        { path: TONES_KEY, held: keys.tagTones },
+        ...keys.groups.flatMap((group) => [
+            { path: groupKey(group.name, 'find'), held: group.find },
+            { path: groupKey(group.name, 'sort'), held: group.sort },
+            { path: groupKey(group.name, 'discover'), held: group.discover }
+        ])
+    ];
+}
+
+/** The value a key shows: the reader's when they set one, else the file's; null for none. */
+export function keyShown(keys: DeckKeys | null, work: KeyWork, path: readonly string[]): unknown {
+    const id = keyId(path);
+    if (Object.hasOwn(work, id)) return work[id];
+    return keyRows(keys).find((row) => keyId(row.path) === id)?.held ?? null;
+}
+
+/** The work with one key set; a value equal to the file's drops the key's work. */
+export function withKey(
+    keys: DeckKeys | null,
+    work: KeyWork,
+    path: readonly string[],
+    value: unknown
+): KeyWork {
+    const id = keyId(path);
+    const held = keyRows(keys).find((row) => keyId(row.path) === id)?.held ?? null;
+    const { [id]: _was, ...rest } = work;
+    return isEqual(value, held) ? rest : { ...rest, [id]: value };
+}
+
+/** The keys whose work differs from the file, each with the file's value as its base. */
+export function keyChanges(
+    keys: DeckKeys | null,
+    work: KeyWork
+): { path: string[]; base: unknown; value: unknown }[] {
+    return keyRows(keys).flatMap(({ path, held }) => {
+        const id = keyId(path);
+        if (!Object.hasOwn(work, id) || isEqual(work[id], held)) return [];
+        return [{ path, base: held, value: work[id] }];
+    });
+}
+
+/** The tag tones a value holds, each tag with its hue, in the file's order. */
+export function tonesOf(value: unknown): [string, string][] {
+    return Object.entries(fields(value)).flatMap(([tag, hue]) =>
+        typeof hue === 'string' ? [[tag, hue] as [string, string]] : []
+    );
+}
+
+/**
+ * The tag tones with one tag given a hue, or taken out with the empty hue; null when no tag is
+ * left, which takes the key out.
+ */
+export function withTone(value: unknown, tag: string, hue: string): Record<string, string> | null {
+    const tones = Object.fromEntries(tonesOf(value).filter(([one]) => one !== tag));
+    if (hue !== '') tones[tag] = hue;
+    return Object.keys(tones).length === 0 ? null : tones;
+}
+
+/** The hue names a tag tone may name, from the palette of the engine's configuration. */
+export function deckHues(config: Record<string, unknown> | undefined): string[] {
+    return config === undefined ? [] : hueNames(config);
+}
+
+/** The lists a group's `find:` holds beside its folders, and the vocabulary each is a word of. */
+export const FIND_LISTS = [
+    { key: 'tiers', vocab: 'tiers' },
+    { key: 'stages', vocab: 'stages' },
+    { key: 'forms', vocab: 'forms' },
+    { key: 'status', vocab: 'chips' }
+] as const;
+
+/** One of those lists. */
+export type FindList = (typeof FIND_LISTS)[number]['key'];
+
+/** A group's `find:` as the form draws it: the folder globs as one text and each list's words. */
+export type FindForm = { folders: string } & Record<FindList, string[]>;
+
+/** The text the folder globs are written in, one after another. */
+const GLOBS = ', ';
+
+/** A `find:` value as the form draws it. */
+export function findForm(value: unknown): FindForm {
+    const held = fields(value);
+    const folders = typeof held.folders === 'string' ? [held.folders] : strings(held.folders);
+    return {
+        folders: folders.join(GLOBS),
+        tiers: strings(held.tiers),
+        stages: strings(held.stages),
+        forms: strings(held.forms),
+        status: strings(held.status)
+    };
+}
+
+/**
+ * The `find:` a form writes: the folder globs, one glob as the text alone when the file held them
+ * so or held none, and each list that holds a word. Null for a form with nothing in it, which takes
+ * the key out.
+ */
+export function findValue(base: unknown, form: FindForm): Record<string, unknown> | null {
+    const globs = form.folders
+        .split(',')
+        .map((one) => one.trim())
+        .filter((one) => one !== '');
+    const listed = isMap(base) && Array.isArray(base.folders);
+    const out: Record<string, unknown> = {};
+    if (globs.length > 0) out.folders = globs.length === 1 && !listed ? globs[0] : globs;
+    for (const { key } of FIND_LISTS) if (form[key].length > 0) out[key] = form[key];
+    return Object.keys(out).length === 0 ? null : out;
+}
+
+/** The words of a vocabulary of the engine's configuration, each with its label. */
+export function vocabChoices(
+    config: Record<string, unknown> | undefined,
+    vocab: string
+): { id: string; label: string }[] {
+    return Object.entries(fields(config?.[vocab])).map(([id, about]) => {
+        const label = fields(about).label;
+        return { id, label: typeof label === 'string' ? label : id };
+    });
 }

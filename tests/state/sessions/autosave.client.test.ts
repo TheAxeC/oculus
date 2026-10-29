@@ -418,3 +418,23 @@ describe('the autosave store', () => {
         env.stop();
     });
 });
+
+describe("an app's workspace.saveAll and the File menu's Save All (G77)", () => {
+    it.each([
+        { row: "an app's saveAll saves the source tab and runs no save a view joined", joined: 0 },
+        { row: "the File menu's Save All saves the source tab and every joined save", joined: 1 }
+    ])('$row', async (one) => {
+        const env = make({ mode: 'off', delay: 0, format: false, note: false });
+        env.files.set(KEY, 'one\n');
+        await env.source.loadSourceDraft('one', 'fixture', 'a.md');
+        env.source.editSourceDraft('one', 'typed\n');
+        const settings = vi.fn(() => Promise.resolve(true));
+        const leave = env.autosave.joinSaveEvery(settings);
+        const all = one.joined === 0 ? env.autosave.saveEvery() : env.autosave.saveJoined();
+        expect(await all).toBe(true);
+        await env.settled();
+        expect([env.files.get(KEY), settings.mock.calls.length]).toEqual(['typed\n', one.joined]);
+        leave();
+        env.stop();
+    });
+});

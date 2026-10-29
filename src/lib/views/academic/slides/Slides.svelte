@@ -14,20 +14,23 @@
 </script>
 
 <script lang="ts">
-    // Layer 3, view. One deck's order and groups. The order is the deck's `order:` as one list of
-    // entries, each dragged or stepped to another place. For each group, the decks it holds in the
-    // order it shows them and the decks it found and does not hold, each with a tick saying whether
-    // the group holds it and the controls that move it: a deck is dragged within its group or onto
-    // another group, where it leaves the group it came from. Save writes every list the reader
-    // changed into the deck's `present.yml` as one edit, and the deck is live at the next push.
+    // Layer 3, view. One deck's keys, order and groups: every key config/schemas/deck-schema.yml
+    // describes for a deck has a control here. The deck's title and tag tones are the Deck group
+    // (Keys.svelte). The order is the deck's `order:` as one list of entries, each dragged or
+    // stepped to another place. For each group, its find, sort and discover (GroupKeys.svelte),
+    // then the decks it holds in the order it shows them and the decks it found and does not hold,
+    // each with a tick saying whether the group holds it and the controls that move it: a deck is
+    // dragged within its group or onto another group, where it leaves the group it came from. Save
+    // writes every key and list the reader changed into the deck's `present.yml` as one edit, and
+    // the deck is live at the next push.
     //
     // The groups are the deck route's, so a deck added on disk is in this list at the next push.
-    // What is the pane's own is the reader's unsaved work: the list they have dragged a group into
-    // and the line the status region shows, all in the instance state, so the pane is where it was
-    // when its page comes back. The work is held against the lists it was made over, so a push that
-    // changes a group's `slides:` draws the file again and says that the unsaved work was dropped,
-    // rather than saving a list over a deck that has moved underneath it. The pane's own save is
-    // not such a push: a saved group's work is cleared with the write, so the file answers.
+    // What is the pane's own is the reader's unsaved work: the keys they set, the list they have
+    // dragged a group into and the line the status region shows, all in the instance state, so the
+    // pane is where it was when its page comes back. The work is held against the keys and lists
+    // it was made over, so a push that changes them draws the file again and says that the unsaved
+    // work was dropped, rather than saving over a deck that has moved underneath it. The pane's own
+    // save is not such a push: the work it wrote is cleared with the write, so the file answers.
     //
     // A name the group's `slides:` holds that matches no deck is drawn as missing and a deck two
     // discovering groups both find is drawn as a conflict; neither is skipped in silence. A deck
@@ -49,11 +52,19 @@
     import Checkbox from '$lib/ui/forms/Checkbox.svelte';
     import GroupHead from '$lib/ui/controls/heads/GroupHead.svelte';
     import Order from './Order.svelte';
+    import Keys from './Keys.svelte';
+    import GroupKeys from './GroupKeys.svelte';
     import Steps from './Steps.svelte';
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import {
         changedGroups,
+        deckHues,
+        keyChanges,
+        keyShown,
+        vocabChoices,
+        withKey,
+        FIND_LISTS,
         groupRows,
         listOf,
         listsSignature,
@@ -66,6 +77,7 @@
         withMove,
         withTick,
         type GroupRow,
+        type FindList,
         type RowKind,
         type SlideWork
     } from '$lib/state/life/slides';
@@ -76,6 +88,7 @@
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
 
     const {
+        entities: { config },
         present: { deck: deckOf, shown: shownDeck },
         ui: { instanceState, setInstanceState },
         writes: { writeDeckSlides }
@@ -91,7 +104,7 @@
     const entries = $derived(deck?.order ?? []);
 
     /** The lists the reader's unsaved work was made over; a different set drops it. */
-    const signature = $derived(listsSignature(groups, entries));
+    const signature = $derived(listsSignature(groups, entries, deck?.keys ?? null));
 
     /** Whether the work the pane is holding was made over the lists now on screen. */
     const current = $derived(held.at !== '' && held.at === signature);
@@ -103,10 +116,34 @@
     const work = $derived<SlideWork>(current ? held.work : {});
     const changes = $derived(changedGroups(groups, work));
 
+    /** The keys the reader set, and those that differ from the file, which Save writes. */
+    const keyWork = $derived(current ? held.keys : {});
+    const keyEdits = $derived(keyChanges(deck?.keys ?? null, keyWork));
+
+    /** The value a key shows, and the press that sets it. */
+    function shown(path: string[]): unknown {
+        return keyShown(deck?.keys ?? null, keyWork, path);
+    }
+    function setKey(path: string[], value: unknown): void {
+        const keys = withKey(deck?.keys ?? null, keyWork, path, value);
+        setInstanceState(instance.id, { ...held, work, order: arranged, keys, at: signature });
+    }
+
+    /** The engine's configuration, whose palette and vocabulary the keys offer. */
+    const engine = $derived(config()?.config);
+    const hues = $derived(deckHues(engine));
+    function findChoices(list: FindList): { id: string; label: string }[] {
+        const vocab = FIND_LISTS.find((one) => one.key === list)?.vocab ?? list;
+        return vocabChoices(engine, vocab);
+    }
+
     /** The order's tokens as the reader arranged them, and whether that differs from the file. */
     const arranged = $derived(current ? held.order : []);
     const tokens = $derived(orderTokens(entries, arranged));
     const reordered = $derived(orderChanged(entries, arranged));
+
+    /** Whether there is anything for Save to write. */
+    const unsaved = $derived(changes.length > 0 || reordered || keyEdits.length > 0);
 
     /** What the status region shows: the last line, or the note that a push dropped the work. */
     const said = $derived(dropped ? t('slides.dropped') : held.said);
@@ -118,7 +155,15 @@
     let busy = $state(false);
 
     function keep(next: SlideWork, words: string, order: string[] = arranged): void {
-        setInstanceState(instance.id, { ...held, work: next, order, at: signature, said: words });
+        const keys = keyWork;
+        setInstanceState(instance.id, {
+            ...held,
+            work: next,
+            order,
+            keys,
+            at: signature,
+            said: words
+        });
     }
 
     /**
@@ -126,6 +171,8 @@
      * whose name is `order` folds apart from the order.
      */
     const ORDER_FOLD = 'order';
+    /** The key the Deck group folds by, which no group name after `group:` can be. */
+    const KEYS_FOLD = 'keys';
     function groupFold(name: string): string {
         return `group:${name}`;
     }
@@ -208,11 +255,11 @@
     }
 
     /**
-     * Write every list the reader changed as one edit, the order included. A refusal is told in the
-     * server's own sentence and writes nothing: the work stays as the reader left it.
+     * Write every key and list the reader changed as one edit, the order included. A refusal is
+     * told in the server's own sentence and writes nothing: the work stays as the reader left it.
      */
     async function save(): Promise<void> {
-        if (busy || ref === null || (changes.length === 0 && !reordered)) return;
+        if (busy || ref === null || !unsaved) return;
         busy = true;
         keep(work, t('slides.saving'));
         const lists = changes.map(({ group, slides }) => ({
@@ -223,13 +270,15 @@
         const order = reordered
             ? { base: entries.map((one) => one.token), entries: tokens }
             : undefined;
-        const reply = await writeDeckSlides({ root: ref.root, path: deckFile(ref) }, lists, order);
+        const target = { root: ref.root, path: deckFile(ref) };
+        const reply = await writeDeckSlides(target, lists, order, keyEdits);
         busy = false;
         const written = reply.ok && reply.refused.length === 0;
         setInstanceState(instance.id, {
             ...held,
             work: written ? {} : work,
             order: written ? [] : arranged,
+            keys: written ? {} : keyWork,
             at: written ? '' : signature,
             said: saveMessage(reply)
         });
@@ -241,7 +290,7 @@
         <ToolButton
             label={t('slides.save')}
             onclick={() => void save()}
-            disabled={busy || blocked || (changes.length === 0 && !reordered)}
+            disabled={busy || blocked || !unsaved}
         />
         <span class="said" role="status">{said}</span>
     </Toolbar>
@@ -269,9 +318,18 @@
                 error
                 glyph={t('slides.empty_glyph')}
             />
-        {:else if groups.length === 0 && entries.length === 0}
-            <Empty message={t('slides.empty', deck.path)} glyph={t('slides.empty_glyph')} />
         {:else}
+            <Keys
+                {shown}
+                onset={setKey}
+                {hues}
+                {busy}
+                open={!held.folded.includes(KEYS_FOLD)}
+                ontoggle={() => folds.toggle(KEYS_FOLD)}
+            />
+            {#if groups.length === 0 && entries.length === 0}
+                <Empty message={t('slides.empty', deck.path)} glyph={t('slides.empty_glyph')} />
+            {/if}
             {#if entries.length > 0}
                 <Order
                     rows={orderRows(entries, tokens)}
@@ -297,6 +355,14 @@
                         drop(group.name, list, '');
                     }}
                 >
+                    <div inert={busy}>
+                        <GroupKeys
+                            group={group.name}
+                            {shown}
+                            onset={setKey}
+                            choices={findChoices}
+                        />
+                    </div>
                     <div class="rows" role="list" inert={busy}>
                         {#each rows as row (row.name)}
                             {@const at = list.indexOf(row.name)}

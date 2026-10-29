@@ -14,14 +14,21 @@
 //
 // No secret reaches the page: the `secret` of each `downloads` row is sent as the catalog's word
 // for a value that is set. `literature.mailto` is a contact address and is sent as written.
+//
+// Beside the values in force, `localFiles` answers each hub's own file as the This machine scope
+// edits it: the values the file writes, its `downloads` secrets as `true`, and its digest.
 
-import { stringify } from 'yaml';
+import { readFileSync } from 'node:fs';
+import { parseDocument, stringify } from 'yaml';
+import { fields, isMap } from '../../../../data/helpers/guards.ts';
+import { textDigest, type LocalFile } from '../../../../data/shapes/config-save.ts';
 import {
     PROGRAM_KEYS,
     STATE_PATHS,
     type ClusterAccount,
     type LocalConfig
 } from '../../../../data/sources/config.ts';
+import { localFile } from '../../../../data/sources/config/local.ts';
 
 /** What the Settings answer carries of the values: the text of each key, and the hubs of a list. */
 export type MachineValues = {
@@ -108,4 +115,58 @@ export function machineValues(
             .join('\n');
     }
     return { values, hubs };
+}
+
+/** A `downloads` value with each row's secret as `true` when it holds one, and left out else. */
+function maskedRows(value: unknown): unknown {
+    if (!Array.isArray(value)) return value;
+    return (value as unknown[]).map((row) => {
+        if (!isMap(row) || !Object.hasOwn(row, 'secret')) return row;
+        const { secret, ...rest } = row;
+        return typeof secret === 'string' && secret !== '' ? { ...rest, secret: true } : rest;
+    });
+}
+
+/**
+ * Each hub's `.oculus/local.yml` for the This machine scope of Settings, by the hub's name: its
+ * values as the file writes them, each `downloads` secret as `true`, and the digest of its text,
+ * which a save of the scope is checked against. A file that does not parse gives the line it
+ * stops at and no word of its text; a file that cannot be read is answered as not there.
+ */
+export function localFiles(
+    hubs: readonly { name: string; dir: string }[]
+): Record<string, LocalFile> {
+    const files: Record<string, LocalFile> = {};
+    for (const hub of hubs) {
+        let text: string | null;
+        try {
+            text = readFileSync(localFile(hub.dir), 'utf8');
+        } catch {
+            text = null;
+        }
+        if (text === null) {
+            files[hub.name] = {
+                present: false,
+                digest: textDigest(null),
+                values: {},
+                unparsed: null
+            };
+            continue;
+        }
+        const doc = parseDocument(text);
+        const line = doc.errors.length > 0 ? (doc.errors[0].linePos?.[0].line ?? 1) : null;
+        const read = line === null ? fields(doc.toJS()) : null;
+        files[hub.name] = {
+            present: true,
+            digest: textDigest(text),
+            values:
+                read === null
+                    ? null
+                    : Object.hasOwn(read, 'downloads')
+                      ? { ...read, downloads: maskedRows(read.downloads) }
+                      : read,
+            unparsed: line
+        };
+    }
+    return files;
 }

@@ -3,8 +3,12 @@
 // `categories` row by row by `key`, and the lists whose order is their meaning whole; what cannot
 // be applied is a finding naming the hub's file and the dotted key, oculus's value standing. A word
 // the hub's values no longer give leaves oculus's own lists that name it, and is a finding at its
-// place in a list the hub writes. The hub's file is given as text, so no file is read for it; the
-// cases that read a manifest plant a hub in a scratch directory and build it.
+// place in a list the hub writes. The service lists a hub lays over oculus's rows
+// (merge/in-place.ts `ROW_SHAPES`) go the same way, each row by its `key`, a row of
+// `connections.failures` by its `kind` with a new one read before oculus's; the cases take
+// `literature.sources`, `links` and `connections.failures`. The hub's file is given as text, so no
+// file is read for it; the cases that read a manifest plant a hub in a scratch directory and build
+// it.
 
 import { describe, expect } from 'vitest';
 import { portfolioConfigFrom } from '../../../../../src/lib/data/index.ts';
@@ -15,6 +19,11 @@ import {
     VOCAB_SHAPES,
     inPlaceOverride
 } from '../../../../../src/lib/data/sources/config/merge/in-place.ts';
+import {
+    failureRows,
+    failuresFor,
+    toldFailure
+} from '../../../../../src/lib/data/sources/config/settings/connectors.ts';
 import { buildOneHub } from '../../../../fixtures/hubs/hub-build.ts';
 import { it, plantScratch } from '../../../../fixtures/scratch.ts';
 import {
@@ -451,5 +460,73 @@ describe("the vocabulary a hub lays over oculus's", () => {
             Object.entries(mapOf(added.config, 'stages')).filter(([word]) => word !== 'trialling')
         );
         expect(inPlaceOverride(VOCAB_SHAPES.stages, shipped, kept)).toEqual({});
+    });
+});
+
+/** The value of the merged config at a dotted key. */
+function valueAt(config: Record<string, unknown>, dotted: string): unknown {
+    return dotted
+        .split('.')
+        .reduce<unknown>((at, part) => (at as Record<string, unknown>)[part], config);
+}
+
+/** The rows of a service list of the merged config. */
+function rowsAt(config: Record<string, unknown>, dotted: string): Record<string, unknown>[] {
+    return valueAt(config, dotted) as Record<string, unknown>[];
+}
+
+describe("the service lists a hub lays over oculus's rows", () => {
+    const shipped = rowsAt(OCULUS, 'literature.sources');
+
+    it('case 19: replaces a source of a shipped key in its place and adds a new one last', () => {
+        const [first] = shipped;
+        const renamed = { ...first, name: 'Renamed' };
+        const added = { ...first, key: 'mine', name: 'Mine' };
+        const read = withHub(`literature: { sources: ${JSON.stringify([renamed, added])} }\n`);
+        expect(said(read)).toEqual([]);
+        const sources = rowsAt(read.config, 'literature.sources');
+        expect(sources.map((row) => row.key)).toEqual([...shipped.map((row) => row.key), 'mine']);
+        expect(sources[0]).toEqual(renamed);
+        expect(sources.slice(1, -1)).toEqual(shipped.slice(1));
+    });
+
+    it('case 20: takes a shipped link out, and offers every other', () => {
+        const links = rowsAt(OCULUS, 'links');
+        const read = withHub(`links: [ { key: ${String(links[0].key)}, removed: true } ]\n`);
+        expect(said(read)).toEqual([]);
+        expect(rowsAt(read.config, 'links')).toEqual(links.slice(1));
+    });
+
+    it("case 30: words a shipped source taken out and added again in one list, oculus's row standing", () => {
+        const [first] = shipped;
+        const read = withHub(
+            `literature: { sources: ${JSON.stringify([{ key: first.key, removed: true }, first])} }\n`
+        );
+        expect(said(read)).toEqual([
+            `${FILE} | literature.sources | literature.sources names ${String(first.key)} in more than one entry; none of them is applied and oculus's entry stands`
+        ]);
+        expect(rowsAt(read.config, 'literature.sources')).toEqual(shipped);
+    });
+
+    it("case 31: matches a hub's new failure row before a shipped row that matches the same text", () => {
+        const failures = rowsAt(OCULUS, 'connections.failures');
+        const own = {
+            kind: 'Key refused on the UT cluster',
+            for: ['cluster'],
+            match: 'Permission denied (publickey)',
+            fix: 'Put the key on the UT cluster'
+        };
+        const shippedMatch = failuresFor(failureRows(OCULUS), 'cluster').map((row) => row.match);
+        expect(shippedMatch).toContain(own.match);
+        const read = withHub(`connections: { failures: ${JSON.stringify([own])} }\n`);
+        expect(said(read)).toEqual([]);
+        const rows = failureRows(read.config);
+        expect(rows.map((row) => row.kind)).toEqual([own.kind, ...failures.map((row) => row.kind)]);
+        expect(toldFailure(failuresFor(rows, 'cluster'), 'Permission denied (publickey).')).toEqual(
+            {
+                kind: own.kind,
+                fix: own.fix
+            }
+        );
     });
 });

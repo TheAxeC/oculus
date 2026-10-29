@@ -171,8 +171,9 @@ export type LiteratureSaveWrite = {
 /**
  * The lists of a deck's `present.yml` to write in one edit: the served root and the file's path
  * under it, each group's `slides:` as `{ group, base, slides }` (`base` is the list the page read,
- * which the file must hold, and `slides` the list to write), and the `order:` list as `{ base,
- * entries }`, both the tokens of its entries. The body names at least one list.
+ * which the file must hold, and `slides` the list to write), the `order:` list as `{ base,
+ * entries }`, both the tokens of its entries, and each key the Slides view sets as `{ path, base,
+ * value }`, `value` null to take the key out. The body names at least one list or key.
  */
 export type DeckSlidesWrite = {
     kind: 'deck-slides';
@@ -180,6 +181,7 @@ export type DeckSlidesWrite = {
     path: string;
     groups: { group: string; base: string[]; slides: string[] }[];
     order?: { base: string[]; entries: string[] };
+    keys?: { path: string[]; base: unknown; value: unknown }[];
 };
 
 /**
@@ -462,10 +464,13 @@ const deckSlidesShape = z
         root: wordShape,
         path: wordShape,
         groups: z.array(z.object({ group: wordShape, base: keysShape, slides: keysShape })),
-        order: z.object({ base: keysShape, entries: keysShape }).optional()
+        order: z.object({ base: keysShape, entries: keysShape }).optional(),
+        keys: z
+            .array(z.object({ path: keysShape, base: z.unknown(), value: z.unknown() }))
+            .optional()
     })
     .refine(
-        (body) => body.groups.length > 0 || body.order !== undefined
+        (body) => body.groups.length > 0 || body.order !== undefined || (body.keys ?? []).length > 0
     ) satisfies z.ZodType<DeckSlidesWrite>;
 
 const deckEditShape = z.discriminatedUnion('act', [

@@ -16,12 +16,18 @@
 // entries are permuted among the slots, so a block entry such as the grid's lines moves whole and
 // the comment lines between entries stay where they are. The same read-back guard holds each edit
 // to the original with only the order list changed.
+//
+// The keys the Slides view sets beside its lists (`deck.title`, `defaults.tag_tones` and a group's
+// `find`, `sort` and `discover`) are set over the bytes too, a key at a time
+// (server/core/files/yaml/key-path.ts), and the read-back guard holds the result to the original
+// with only those keys changed.
 
 import { isDeepStrictEqual } from 'node:util';
 import { parse } from 'yaml';
-import { fields, strings } from '../../data/helpers/guards.ts';
+import { fields, isMap, strings } from '../../data/helpers/guards.ts';
 import { orderText, orderTokensIn } from '../../data/sources/deck/order-text.ts';
 import { entryText, readBack, setItems, setList } from './list-edit.ts';
+import { setKeyPath } from '../core/files/yaml/key-path.ts';
 
 /** The key of a deck's groups and the key of the list a group holds. */
 const GROUPS = 'groups';
@@ -180,4 +186,64 @@ export function removeOrderEntries(source: string, places: number[]): string | n
         edited = out + source.slice(from);
     }
     return orderKept(source, edited, expected) ? edited : null;
+}
+
+/**
+ * One key of a deck the Slides view sets: its path from the top of the file and the value it is
+ * given, null to take it out.
+ */
+export type DeckKey = { path: string[]; value: unknown };
+
+/** The value the file holds at a path, or null when it holds none. */
+export function deckKeyAt(source: string, path: readonly string[]): unknown {
+    const read = readBack(source, source);
+    if (read === null) return null;
+    let held: unknown = read.before;
+    for (const part of path) {
+        held = fields(held)[part];
+        if (held === undefined) return null;
+    }
+    return held ?? null;
+}
+
+/** The parsed document with each key set or taken out, which the written text must read back as. */
+function keysApplied(before: Record<string, unknown>, keys: readonly DeckKey[]): unknown {
+    const expected = structuredClone(before);
+    for (const { path, value } of keys) {
+        const maps: Record<string, unknown>[] = [expected];
+        for (const part of path.slice(0, -1)) {
+            const map = maps[maps.length - 1];
+            if (!isMap(map[part])) map[part] = {};
+            maps.push(map[part] as Record<string, unknown>);
+        }
+        const last = path[path.length - 1];
+        if (value !== null) {
+            maps[maps.length - 1][last] = value;
+            continue;
+        }
+        Reflect.deleteProperty(maps[maps.length - 1], last);
+        for (let depth = maps.length - 1; depth > 0; depth -= 1) {
+            if (Object.keys(maps[depth]).length > 0) break;
+            Reflect.deleteProperty(maps[depth - 1], path[depth - 1]);
+        }
+    }
+    return expected;
+}
+
+/**
+ * The source with each key set to its value, or taken out when the value is null, each over the
+ * bytes of the file (server/core/files/yaml/key-path.ts), so every other line stays as the file
+ * has it. Null when a key cannot be written that way or the result does not read back as the
+ * original with exactly these keys changed.
+ */
+export function setDeckKeys(source: string, keys: readonly DeckKey[]): string | null {
+    let edited: string | null = source;
+    for (const { path, value } of keys) {
+        if (edited === null) return null;
+        edited = setKeyPath(edited, path, value);
+    }
+    if (edited === null) return null;
+    const read = readBack(source, edited);
+    if (read === null) return null;
+    return isDeepStrictEqual(read.after, keysApplied(read.before, keys)) ? edited : null;
 }

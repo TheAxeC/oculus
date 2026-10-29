@@ -90,7 +90,9 @@ type ValuesBy = { field: string; sources: Record<string, Source> };
  * while the named toggle field of the record is true; `fields` describes the records of a
  * `records` field. A text field with `fields` and `holds: record` takes a text or one record of
  * its fields (takesRecord). `sparse` on a family draws each card with the fields its record sets
- * and a menu that adds the others.
+ * and a menu that adds the others. `described` names the record of the file's `descriptions:` the
+ * field is, as `<file>#<name>`, with `.record` after it for a field that holds one record of a
+ * family record, so the field's schema is described once (schemas/options.ts).
  */
 export type FieldSpec = {
     help: string;
@@ -109,6 +111,7 @@ export type FieldSpec = {
     fields?: Record<string, FieldSpec>;
     holds?: Holds;
     sparse?: true;
+    described?: string;
 };
 
 /** Whether a field takes a text or one record of its fields: a text with `holds: record`. */
@@ -228,6 +231,8 @@ export type OptionProblem = {
         | 'heading_missing'
         | 'heading_unknown'
         | 'key'
+        | 'described_unknown'
+        | 'described_loop'
         | 'groups'
         | 'group_missing'
         | 'group_unknown';
@@ -251,6 +256,99 @@ export function groupProblem(problem: OptionProblem): boolean {
 
 /** Where in the catalog a spec is read from. */
 type Spot = { file: string; path: string; field: string | null };
+
+/** The prefix of the path a problem of a record of a file's `descriptions:` is named by. */
+const DESCRIPTIONS = 'descriptions';
+
+/**
+ * The named field records of one options file, read once each: the raw records by name, the
+ * records read so far, and the fields that name one by `described_by` with their own help line,
+ * each given the record's words once every record of the file is read.
+ */
+type Described = {
+    raw: Record<string, unknown>;
+    read: Map<string, CatalogEntry>;
+    named: { field: CatalogEntry; name: string; help: string; record: boolean; spot: Spot }[];
+};
+
+/**
+ * The record a file's `descriptions:` holds under `name`, read the first time it is asked for. The
+ * object is made before the record is read, so a field of the record that names the record itself
+ * is that same object and describes a value nested at any depth. A record that is itself only a
+ * `described_by` is a loop with no fields at its end, so it is a problem and reads as a text.
+ */
+function describedRecord(
+    name: string,
+    file: string,
+    described: Described,
+    problems: OptionProblem[]
+): CatalogEntry {
+    const held = described.read.get(name);
+    if (held !== undefined) return held;
+    const made: CatalogEntry = { help: '' };
+    described.read.set(name, made);
+    const raw = described.raw[name];
+    const spot = { file, path: `${DESCRIPTIONS}.${name}`, field: null };
+    if (isMap(raw) && Object.hasOwn(raw, 'described_by')) {
+        problems.push({ ...spot, kind: 'described_loop', word: name });
+        Object.assign(made, { help: str(raw.help) ?? '', control: 'text' });
+        return made;
+    }
+    const read = readSpec(raw, spot, false, false, problems, described);
+    Object.assign(made, read, { control: read.control ?? 'text', described: `${file}#${name}` });
+    return made;
+}
+
+/**
+ * A field that names a record of the file's `descriptions:`: an object given the record's words
+ * once every record is read, its own help line standing for the record's; a name the file does not
+ * describe is a problem and the field reads as a text. `holds: record` beside the name makes the
+ * field one record of a family record's fields, as a family that describes a list of nodes also
+ * describes the one node at its root.
+ */
+function namedField(
+    map: Record<string, unknown>,
+    spot: Spot,
+    described: Described,
+    problems: OptionProblem[]
+): CatalogEntry {
+    const name = map.described_by;
+    const help = str(map.help) ?? '';
+    if (typeof name !== 'string' || !Object.hasOwn(described.raw, name)) {
+        problems.push({ ...spot, kind: 'described_unknown', word: String(name) });
+        return { help, control: 'text' };
+    }
+    if (map.holds !== undefined && map.holds !== 'record') {
+        const word = typeof map.holds === 'string' ? map.holds : JSON.stringify(map.holds);
+        problems.push({ ...spot, kind: 'holds', word });
+    }
+    describedRecord(name, spot.file, described, problems);
+    const field: CatalogEntry = { help, control: 'text' };
+    described.named.push({ field, name, help, record: map.holds === 'record', spot });
+    return field;
+}
+
+/**
+ * Give every field that names a record the record's words, its own help line kept, and one record
+ * of them to a field that holds one: a family record with no `key` field, else a problem and the
+ * record's words alone.
+ */
+function fillNamed(file: string, described: Described, problems: OptionProblem[]): void {
+    for (const { field, name, help, record: one, spot } of described.named) {
+        const record = described.read.get(name);
+        if (record === undefined) continue;
+        Object.assign(field, record, help === '' ? {} : { help });
+        if (!one) continue;
+        const fields = record.fields;
+        if (fields !== undefined && record.control === 'records' && !Object.hasOwn(fields, 'key')) {
+            // One record is a value of its own shape, so its schema is a definition of its own.
+            field.holds = 'record';
+            field.described = `${file}#${name}.record`;
+        } else {
+            problems.push({ ...spot, kind: 'holds', word: 'record' });
+        }
+    }
+}
 
 /** A value that is a finite number, and nothing else. */
 function finite(value: unknown): number | undefined {
@@ -285,16 +383,21 @@ function valuesByOf(value: unknown, flag: (word: string) => void): ValuesBy | un
  * `local` an entry of `local.yml` (a control only where it takes a number or a choice, no heading).
  * Everything wrong is pushed to `problems`; a problem with the control reads the control as `text`,
  * one with the heading puts the entry under `unheaded`, and one with the key leaves the entry
- * without it.
+ * without it. A field that names a record of the file's `descriptions:` by `described_by` is that
+ * record (namedField).
  */
 function readSpec(
     raw: unknown,
     spot: Spot,
     top: boolean,
     local: boolean,
-    problems: OptionProblem[]
+    problems: OptionProblem[],
+    described: Described
 ): CatalogEntry {
     const map = isMap(raw) ? raw : typeof raw === 'string' ? { help: raw } : {};
+    if (!top && Object.hasOwn(map, 'described_by')) {
+        return namedField(map, spot, described, problems);
+    }
     const fieldString = !top && typeof raw === 'string';
     const wrong = { any: false };
     const flag = (kind: OptionProblem['kind'], word = ''): void => {
@@ -317,8 +420,10 @@ function readSpec(
         const fields: Record<string, FieldSpec> = {};
         for (const [name, field] of Object.entries(map.fields)) {
             const inner = { ...spot, field: spot.field === null ? name : `${spot.field}.${name}` };
-            const read = readSpec(field, inner, false, false, problems);
-            fields[name] = { ...read, control: read.control ?? 'text' };
+            // The object read is kept as it is: a field naming a record is filled in place later.
+            const read = readSpec(field, inner, false, false, problems, described);
+            read.control ??= 'text';
+            fields[name] = read as FieldSpec;
         }
         entry.fields = fields;
     }
@@ -476,26 +581,35 @@ function readGroups(
 }
 
 /**
- * Every entry of the merged config's `options` key, read as readSpec says, and every file's group
- * help lines of `option_groups`, read as readGroups says.
+ * Every entry of the merged config's `options` key, read as readSpec says, with the records of
+ * `option_descriptions` its fields name, and every file's group help lines of `option_groups`, read
+ * as readGroups says. A record no field names is read too, so what is wrong with it is said.
  */
 export function readCatalog(config: Record<string, unknown>): ReadCatalog {
     const catalog: Catalog = {};
     const groups: Groups = {};
     const problems: OptionProblem[] = [];
     const lines = readOr(mapShape, config.option_groups, {});
+    const records = readOr(mapShape, config.option_descriptions, {});
     for (const [file, entries] of Object.entries(readOr(mapShape, config.options, {}))) {
         if (!isMap(entries)) continue;
+        const raw = byKey(records, file);
+        const described: Described = { raw: isMap(raw) ? raw : {}, read: new Map(), named: [] };
+        for (const name of Object.keys(described.raw)) {
+            describedRecord(name, file, described, problems);
+        }
         const read: Record<string, CatalogEntry> = {};
-        for (const [path, raw] of Object.entries(entries)) {
+        for (const [path, one] of Object.entries(entries)) {
             read[path] = readSpec(
-                raw,
+                one,
                 { file, path, field: null },
                 true,
                 file === 'local.yml',
-                problems
+                problems,
+                described
             );
         }
+        fillNamed(file, described, problems);
         catalog[file] = read;
         groups[file] = readGroups(file, Object.keys(entries), byKey(lines, file), problems);
     }

@@ -1,23 +1,26 @@
 // Layer 2, client state tests. The rows of the Settings view and their writes over the layers: a
 // row shows the value in force, is Modified when it differs from the defaults file's value, and
 // names the file the user's value of it lives in (the open workspace file's `settings:`, or the
-// primary hub's settings file for a key of the hub list) with the line of the key there. Reset
-// sends the reset of a key that file holds, and nothing for a key it does not; a change is sent
-// whatever file it lands in, and the server refuses it when there is none (the unsaved workspace).
+// primary hub's settings file for a key of the hub list) with the line of the key there. A change
+// a control makes is held as an unsaved change of the scope on screen, a value equal to the row's
+// drops it, and nothing is sent until the scope's Save; Reset holds the taking out of a key that
+// file holds, and nothing for a key it does not. A row of a hub other than the primary keeps its
+// change apart from the primary's row of the same key, and a row that says why it writes nothing
+// holds nothing.
 //
-// What this does NOT cover: the server's write into the workspace file or the hub's settings file
-// and its refusal for the unsaved workspace (tests/server/edit/config-key.test.ts).
+// What this does NOT cover: the Save that sends the changes of a scope and the server's write into
+// the workspace file or a hub's settings file (tests/routes/edit/undo/config-save.test.ts).
 
-import { describe, expect, it, vi } from 'vitest';
-import { createRowWriter } from '../../../../src/lib/state/system/config/write.ts';
+import { describe, expect, it } from 'vitest';
+import { createRowWriter } from '../../../../src/lib/state/system/config/scopes/write.ts';
 import {
     fileRows,
-    placeOf,
     type ConfigRow,
     type UserFiles
 } from '../../../../src/lib/state/system/config/rows.ts';
 import type { Lists } from '../../../../src/lib/state/system/config/editors/sources.ts';
 import { message } from '../../../../src/lib/state/system/config/messages.ts';
+import { memoryStage } from '../../../views/system/workbench/workbench-fixture.ts';
 import { shipped } from './fixture.ts';
 
 const FILE = 'appearance.yml';
@@ -50,19 +53,29 @@ function rowOf(
     return row;
 }
 
-/** What the writer sends for a Reset of a row: the writes and the resets. */
-async function resetOf(row: ConfigRow): Promise<{ writes: unknown[]; resets: unknown[] }> {
-    const answer = () => Promise.resolve({ ok: true, changed: [], refused: [] });
-    const write = vi.fn((_file: string, _key: string, _value: unknown) => answer());
-    const reset = vi.fn((_file: string, _key: string) => answer());
+/** Lists whose folders are being read, so a folder box's value is checked for its form alone. */
+const LOADING = { folder: () => ({ state: 'loading' }) } as unknown as Lists;
+
+/** A writer over a stage in memory, and the rows the lists were asked for, by their hub. */
+function writerOf() {
+    const stage = memoryStage();
+    const listed: (string | undefined)[] = [];
     const writer = createRowWriter(
-        write,
-        reset,
+        stage,
         () => undefined,
-        () => ({}) as Lists
+        (row) => {
+            listed.push(row.hub);
+            return LOADING;
+        }
     );
-    await writer.reset(row);
-    return { writes: write.mock.calls, resets: reset.mock.calls };
+    return { writer, stage, listed };
+}
+
+/** What a Reset of a row holds in the scope's changes. */
+function resetOf(row: ConfigRow): unknown {
+    const { writer, stage } = writerOf();
+    writer.reset(row);
+    return stage.held(row);
 }
 
 describe('a Settings row over the layers', () => {
@@ -79,7 +92,7 @@ describe('a Settings row over the layers', () => {
             true,
             3
         ]);
-        expect(placeOf(row)).toEqual({ root: 'hub', file: WORKSPACE });
+        expect([row.place.root, row.place.path]).toEqual(['hub', WORKSPACE]);
     });
 
     it('is not Modified and holds no line when no file of the user sets the key', () => {
@@ -99,40 +112,49 @@ describe('a Settings row over the layers', () => {
 
     it('has no file to open for the unsaved workspace', () => {
         const row = rowOf('code_theme', { code_theme: 'tokens' }, null);
-        expect([placeOf(row), row.place.present]).toEqual([null, false]);
+        expect([row.place.path, row.place.present]).toEqual([null, false]);
+    });
+});
+
+describe('a change of a Settings row', () => {
+    it("is held as an unsaved change, shown, and dropped when the value is the row's again", () => {
+        const row = rowOf('code_theme', { code_theme: 'tokens' }, workspace(''));
+        const { writer, stage } = writerOf();
+        writer.submit(row, 'vscode-dark-2026');
+        expect(stage.held(row)).toEqual({ value: 'vscode-dark-2026' });
+        expect([writer.pending(row), writer.shown(row)]).toEqual([true, 'vscode-dark-2026']);
+        writer.submit(row, 'tokens');
+        expect([stage.held(row), writer.pending(row)]).toEqual([undefined, false]);
     });
 });
 
 describe('Reset of a Settings row', () => {
-    it('sends the reset of a key the workspace file holds, and no write', async () => {
+    it('holds the reset of a key the workspace file holds', () => {
         const row = rowOf(
             'code_theme',
             { code_theme: 'vscode-dark-2026' },
             workspace('settings:\n  code_theme: vscode-dark-2026\n')
         );
-        expect(await resetOf(row)).toEqual({ writes: [], resets: [[FILE, 'code_theme']] });
+        expect(resetOf(row)).toEqual({ reset: true });
     });
 
-    it('sends the reset of a key the workspace file sets to the default value', async () => {
+    it('holds the reset of a key the workspace file sets to the default value', () => {
         const row = rowOf(
             'code_theme',
             { code_theme: 'tokens' },
             workspace('settings:\n  code_theme: tokens\n')
         );
         expect(row.modified).toBe(false);
-        expect(await resetOf(row)).toEqual({ writes: [], resets: [[FILE, 'code_theme']] });
+        expect(resetOf(row)).toEqual({ reset: true });
     });
 
-    it('sends nothing for a key no file of the user holds', async () => {
+    it('holds nothing for a key no file of the user holds', () => {
         const row = rowOf('code_theme', { code_theme: 'tokens' }, workspace(''));
-        expect(await resetOf(row)).toEqual({ writes: [], resets: [] });
+        expect(resetOf(row)).toBeUndefined();
     });
 });
 
-/** Lists whose folders are being read, so a folder box's value is checked for its form alone. */
-const LOADING = { folder: () => ({ state: 'loading' }) } as unknown as Lists;
-
-describe('a Settings row with a hub chosen', () => {
+describe('a Settings row of a hub other than the primary', () => {
     /** The `memories_dir` row of the primary's file, which sets the key, as a row reads it. */
     function primaryRow(): ConfigRow {
         const row = fileRows(
@@ -148,67 +170,32 @@ describe('a Settings row with a hub chosen', () => {
         return row;
     }
 
-    /** The same row with the hub `lab` chosen. */
+    /** The same row in the Hub scope of `lab`. */
     const labRow = (): ConfigRow => ({ ...primaryRow(), hub: 'lab', slot: 'lab' });
 
-    it("names lab in its write and its reset, and keeps lab's answer apart from the primary's", async () => {
-        let release = (): void => undefined;
-        const held = new Promise<void>((done) => (release = done));
-        const write = vi.fn(async (_file: string, _key: string, value: unknown) => {
-            if (value === 'held') await held;
-            return value === 'refused'
-                ? {
-                      ok: true,
-                      changed: [],
-                      refused: [{ field: 'sources.yml:memories_dir', reason: 'no' }]
-                  }
-                : { ok: true, changed: ['sources.yml:memories_dir'], refused: [] };
-        });
-        const reset = vi.fn((_file: string, _key: string) =>
-            Promise.resolve({ ok: true, changed: ['sources.yml:memories_dir'], refused: [] })
-        );
-        const listed: (string | undefined)[] = [];
-        const writer = createRowWriter(
-            write,
-            reset,
-            () => undefined,
-            (row) => {
-                listed.push(row.hub);
-                return LOADING;
-            }
-        );
-        await writer.submit(primaryRow(), 'refused');
-        expect(writer.said(primaryRow())?.key).toBe('workbench.settings_refused');
-        expect(writer.said(labRow())).toBeNull();
-        const out = writer.submit(primaryRow(), 'held');
+    it("keeps lab's change and reset apart from the primary's, and checks lab's against lab's lists", () => {
+        const { writer, stage, listed } = writerOf();
+        writer.submit(primaryRow(), 'photos');
         expect([writer.pending(primaryRow()), writer.pending(labRow())]).toEqual([true, false]);
         expect(writer.shown(labRow())).toBeUndefined();
-        release();
-        await out;
-        await writer.submit(labRow(), 'other');
-        await writer.reset(labRow());
-        expect(write.mock.calls.at(-1)).toEqual([
-            'sources.yml',
-            'memories_dir',
-            'other',
-            false,
-            'lab'
+        writer.submit(labRow(), 'other');
+        expect([stage.held(primaryRow()), stage.held(labRow())]).toEqual([
+            { value: 'photos' },
+            { value: 'other' }
         ]);
-        expect(reset.mock.calls).toEqual([['sources.yml', 'memories_dir', 'lab']]);
-        expect(listed).toEqual([undefined, undefined, 'lab']);
+        writer.reset(labRow());
+        expect([stage.held(primaryRow()), stage.held(labRow())]).toEqual([
+            { value: 'photos' },
+            { reset: true }
+        ]);
+        expect(listed).toEqual([undefined, 'lab']);
     });
 
-    it('sends nothing for a row that says why it writes nothing', async () => {
-        const blocked = { ...labRow(), blocked: message('pickHub') };
-        expect(await resetOf(blocked)).toEqual({ writes: [], resets: [] });
-        const write = vi.fn(() => Promise.resolve({ ok: true, changed: [], refused: [] }));
-        const writer = createRowWriter(
-            write,
-            write,
-            () => undefined,
-            () => LOADING
-        );
-        await writer.submit(blocked, 'other');
-        expect(write).not.toHaveBeenCalled();
+    it('holds nothing for a row that says why it writes nothing', () => {
+        const blocked = { ...labRow(), blocked: message('hubLoading', 'lab') };
+        expect(resetOf(blocked)).toBeUndefined();
+        const { writer, stage } = writerOf();
+        writer.submit(blocked, 'other');
+        expect(stage.held(blocked)).toBeUndefined();
     });
 });

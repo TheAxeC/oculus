@@ -75,6 +75,9 @@ export function fileOperation(field: string, after: unknown): string {
     if (field === 'copy') return t('history.file_copy');
     if (field === 'upload') return t('history.file_upload');
     if (field === 'add-configuration') return t('history.file_add_configuration');
+    if (field === 'edit-configuration') return t('history.file_edit_configuration');
+    if (field === 'delete-configuration') return t('history.file_delete_configuration');
+    if (field === 'set-primary-key') return t('history.file_set_primary_key');
     if (field === 'write-file') return t('history.file_write_file');
     if (field === 'trash') return t('history.file_trash');
     if (field === 'delete') return t('history.file_delete');

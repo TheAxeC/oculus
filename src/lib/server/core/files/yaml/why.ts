@@ -1,13 +1,13 @@
 // Layer 2, server. The refusals the surgical editors find, as the catalog key of the sentence that
 // says each one and the values that fill it.
 //
-// The editors under edit/yaml and edit/entry-edit are pure: they hold no text catalog, so a
-// function that finds a refusal answers which refusal it is (`Why`) and the function that holds the
-// request's catalog, the editor's entry point, words it with `said`. Every key is a line of
+// The editors of this folder and of server/edit/entry-edit are pure: they hold no text catalog, so
+// a function that finds a refusal answers which refusal it is (`Why`) and the function that holds
+// the request's catalog, the editor's entry point, words it with `said`. Every key is a line of
 // config/text/server.yml; the table below is the one list of them, which tests/checks/source/
 // keys.test.ts reads in both directions.
 
-import { words } from '../../core/words.ts';
+import { words } from '../../words.ts';
 
 /** The refusals of the editors, each the catalog key of its sentence. */
 export const REFUSALS = {

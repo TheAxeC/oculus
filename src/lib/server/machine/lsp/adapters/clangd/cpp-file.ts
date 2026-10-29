@@ -93,17 +93,25 @@ function databaseProblem(repo: string, folder: string): string | null {
 export function readCppFile(repo: string, found: readonly string[]): CppFile {
     const file = join(repo, CPP_FILE);
     if (!existsSync(file)) return { configurations: [], findings: [] };
-    const findings: CommandFinding[] = [];
-    const finding = (field: string, message: string): void => {
-        findings.push({ file, field, message });
-    };
     let text: string;
     try {
         text = readFileSync(file, 'utf8');
     } catch {
-        finding('', 'cannot be read');
-        return { configurations: [], findings };
+        return { configurations: [], findings: [{ file, field: '', message: 'cannot be read' }] };
     }
+    return readCppText(repo, text, found);
+}
+
+/**
+ * The configurations of a text of `<repo>/.oculus/cpp.yml`, read as the file is: what a write of
+ * the file would leave there, read before it is written.
+ */
+export function readCppText(repo: string, text: string, found: readonly string[]): CppFile {
+    const file = join(repo, CPP_FILE);
+    const findings: CommandFinding[] = [];
+    const finding = (field: string, message: string): void => {
+        findings.push({ file, field, message });
+    };
     const doc = parseDocument(text);
     if (doc.errors.length > 0) {
         const at = doc.errors[0].linePos?.[0].line;

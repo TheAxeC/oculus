@@ -81,7 +81,7 @@ describe('optionFindings', () => {
         expect(optionFindings(ENGINE, records).map((one) => [one.key, one.message])).toEqual([
             [
                 'probe',
-                'holds: lists is not read here: lists is taken only by a family whose fields are key and value, and record only by a family, or by a family field with no key field; the entry is read without it'
+                'holds: lists is not read here: lists is taken only by a family whose fields are key and value, and record only by a family, by a family field with no key field, or by a field whose described_by names such a family; the entry is read without it'
             ]
         ]);
         expect(catalogOf(records)['behavior.yml'].probe.holds).toBeUndefined();
@@ -104,7 +104,7 @@ describe('optionFindings', () => {
         expect(optionFindings(ENGINE, kept)).toEqual([]);
         expect(catalogOf(kept)['behavior.yml'].probe.fields?.inner.holds).toBe('record');
         const sentence = (word: string) =>
-            `holds: ${word} is not read here: lists is taken only by a family whose fields are key and value, and record only by a family, or by a family field with no key field; the entry is read without it`;
+            `holds: ${word} is not read here: lists is taken only by a family whose fields are key and value, and record only by a family, by a family field with no key field, or by a field whose described_by names such a family; the entry is read without it`;
         const keyed = entry({ ...record, fields: { key: 'a key', value: 'a value' } });
         expect(optionFindings(ENGINE, keyed).map((one) => [one.key, one.message])).toEqual([
             ['probe.inner', sentence('record')]
@@ -117,6 +117,47 @@ describe('optionFindings', () => {
         });
         expect(optionFindings(ENGINE, top)).toEqual([]);
         expect(catalogOf(top)['behavior.yml'].probe.holds).toBe('record');
+    });
+
+    // Fails when a field naming a record of `descriptions:` is not read as that record, when
+    // `holds: record` beside the name does not make it one record of a family record, or when a
+    // name the file does not describe is not a finding.
+    it('reads a described_by field as the record it names, and one record of it with holds: record', () => {
+        const node = {
+            help: 'A node.',
+            fields: {
+                kind: 'a kind',
+                children: { help: 'the nodes under it', described_by: 'node' }
+            }
+        };
+        const entry = (root: Record<string, unknown>) => ({
+            ...holding({
+                help: 'A family.',
+                heading: 'editor',
+                holds: 'record',
+                fields: { title: 'a title', root }
+            }),
+            option_descriptions: { 'behavior.yml': { node } }
+        });
+        const one = entry({ help: 'the root node', described_by: 'node', holds: 'record' });
+        expect(optionFindings(ENGINE, one)).toEqual([]);
+        const root = catalogOf(one)['behavior.yml'].probe.fields?.root;
+        expect(root?.holds).toBe('record');
+        expect(root?.described).toBe('behavior.yml#node.record');
+        expect(root?.help).toBe('the root node');
+        expect(Object.keys(root?.fields ?? {})).toEqual(['kind', 'children']);
+        expect(root?.fields?.children.control).toBe('records');
+        expect(root?.fields?.children.fields?.children).toBe(root?.fields?.children);
+        const many = catalogOf(entry({ help: 'the nodes', described_by: 'node' }));
+        expect(many['behavior.yml'].probe.fields?.root.holds).toBeUndefined();
+        expect(many['behavior.yml'].probe.fields?.root.described).toBe('behavior.yml#node');
+        const unknown = entry({ help: 'the root', described_by: 'leaf' });
+        expect(optionFindings(ENGINE, unknown).map((found) => [found.key, found.message])).toEqual([
+            [
+                'probe.root',
+                "described_by leaf names no record of the file's descriptions:; the field is drawn as a text box"
+            ]
+        ]);
     });
 });
 

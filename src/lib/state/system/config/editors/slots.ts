@@ -1,23 +1,30 @@
 // Layer 2, client state. Where a Settings tab keeps the drafts of its list and family editors: the
 // tab's instance state, under the key `editors`, one record per slot, beside the unsent field texts
-// (typed.ts) without meeting them. A slot is a file and key, and the hub chosen on the row when it
-// is not the primary in a workspace of more than one hub (`slotOf`), so a draft made with one hub
-// chosen is drawn, sent and ended only while that hub is chosen. A tab switch or a reload brings a
-// draft back, and a tab holding one holds unsaved work. What the state holds is read back through a
-// schema: a record that is not a draft is taken as none.
+// (typed.ts) without meeting them. A slot is a file and key, and the hub or folder of the scope the
+// row is drawn in when it is not the primary or the workspace (`slotOf`, from the row's `slot`), so
+// a draft made in one hub's scope is drawn, held and ended only in that scope. A tab switch or a
+// reload brings a draft back. What the state holds is read back through a schema: a record that is
+// not a draft is taken as none. The sentence of a value its editor does not draw is here too
+// (`undrawnMessage`).
 
 import { z } from 'zod';
 import { draftOf, typedDraft, type Draft, type TextDraft } from './draft.ts';
 import type { Card, FieldValue } from './fields.ts';
-import type { ConfigRow } from '../rows.ts';
+import { RAIL_ROW } from '../groups.ts';
+import { message, type Message } from '../messages.ts';
+import { writtenWhole, type ConfigRow } from '../rows.ts';
 
-/** One entry of an editor: what its fields hold, what the record keeps beside them, their order. */
+/**
+ * One entry of an editor: what its fields hold, what the record keeps beside them, their order, and
+ * the type of each text box field the file held as a boolean or a number.
+ */
 const cardShape: z.ZodType<Card> = z.lazy(() =>
     z.object({
         fields: z.record(z.string(), fieldShape),
         kept: z.record(z.string(), z.unknown()),
         order: z.array(z.string()).default([]),
-        unread: z.record(z.string(), z.string()).optional()
+        unread: z.record(z.string(), z.string()).optional(),
+        scalars: z.record(z.string(), z.enum(['boolean', 'number'])).optional()
     })
 );
 
@@ -50,8 +57,8 @@ const textDraftShape = z.object({
 }) satisfies z.ZodType<TextDraft>;
 
 /**
- * Where a row's draft or typed text is kept: its file and key, and the hub chosen on it when that
- * is not the primary in a workspace of more than one hub.
+ * Where a row's draft or typed text is kept: its file and key, and the hub or folder of its scope
+ * when that is not the primary (`row.slot`).
  */
 export type Slot = { file: string; key: string; hub?: string };
 
@@ -115,11 +122,6 @@ export function savedDraft(state: unknown, row: ConfigRow): Draft | undefined {
     return text === undefined ? undefined : typedDraft(text, row);
 }
 
-/** Whether a tab holds a draft for a slot, of whatever form. */
-export function hasSavedDraft(state: unknown, slot: Slot): boolean {
-    return heldList(state).some((one) => inSlot(one, slot));
-}
-
 /** The value the file held when the draft of a slot was started, or undefined. */
 export function savedBase(state: unknown, slot: Slot): unknown {
     return heldList(state).find((one) => inSlot(one, slot))?.base;
@@ -156,4 +158,24 @@ export function draftsHeld(state: unknown): number {
  */
 export function drawsEditor(row: ConfigRow): boolean {
     return draftOf(row) !== null;
+}
+
+/** The longest text of a value the sentence about its shape quotes, before it is cut. */
+const QUOTED = 160;
+
+/**
+ * The finding of a list, a multi, a parked list or a family whose value is in a shape its editor
+ * does not draw: the key and the value as the file gives it, cut at QUOTED characters. Null for a
+ * row the editor draws, the rail, which has its own editor, and a row flagged mismatch, whose own
+ * sentence says what the control cannot show.
+ */
+export function undrawnMessage(row: ConfigRow): Message | null {
+    if (!writtenWhole(row.control) || row.mismatch || row.id === RAIL_ROW) return null;
+    if (row.state !== 'set' || drawsEditor(row)) return null;
+    const text = row.value === undefined ? '' : JSON.stringify(row.value);
+    return message(
+        'undrawn',
+        row.path,
+        text.length > QUOTED ? `${text.slice(0, QUOTED)}...` : text
+    );
 }

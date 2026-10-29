@@ -65,7 +65,7 @@ import {
     openSourceFile
 } from '$lib/views/shared/links/source-file';
 import type { RefFile, RefLine, RefSearch } from '$lib/state/system/machine/lsp/references';
-import type { AstNode, MemoryTree } from '$lib/state/system/machine/lsp/clangd';
+import type { AstNode, MemoryTree } from '$lib/state/system/machine/lsp/clangd/clangd';
 import { symbolRowsOf, type SymbolRow } from '$lib/state/system/machine/lsp/workspace-symbols';
 import { t } from '$lib/state/shared/words/text';
 import { isPrivateFile } from '$lib/state/system/config/config-files';

@@ -5,17 +5,17 @@
 // configuration alone holds are read through `configItems` of the options catalog's module, which
 // the server's write checks read as well, so the page and the server cannot disagree on them. The
 // domains and the clusters are the keys of the records of the hub the lists are built for
-// (`hubRecords`), the primary's or a hub chosen on a Settings row, since a setting names a record
-// of that hub by the key its file gives it. The people are the keys that name a person when read
-// from the primary hub (`resolvedRecords`, which the server's check reads too), since the key
+// (`hubRecords`), the primary's or the hub of the Hub scope on screen, since a setting names a
+// record of that hub by the key its file gives it. The people are the keys that name a person when
+// read from the primary hub (`resolvedRecords`, which the server's check reads too), since the key
 // `self` of the primary's `local.yml` is resolved from the primary against every hub: each is drawn
 // by their name, a person of another hub followed by that hub's name.
 //
 // A list that is not there yet answers `loading` (no snapshot, no usage payload, a listing in
-// flight) and one that could not be read answers `failed` with the reason, so a control says
-// which of the two it is waiting on instead of offering an empty list. A folder is listed by its
-// path under the hub, which is also how a folder or file box finds the entries of the folder it
-// has typed so far.
+// flight) and one that could not be read answers `failed` with the reason, so a control says which
+// of the two it is waiting on instead of offering an empty list. A folder is listed by its path
+// under the hub, which is also how a folder or file box finds the entries of the folder it has
+// typed so far.
 
 import type { Person, Project } from '../../../../data/model/index.ts';
 import { registered } from '../../../../data/prose/languages.ts';
@@ -36,7 +36,7 @@ import { fileIconThemes, themes } from '../../../shared/words/appearance.ts';
 import { t } from '../../../shared/words/text.ts';
 
 /** The items of one list, or why there are none. */
-type SourceItems =
+export type SourceItems =
     { state: 'ready'; items: string[] } | { state: 'loading' } | { state: 'failed'; error: string };
 
 /** One hub folder as the file browser holds it. */
@@ -88,6 +88,12 @@ export type Lists = {
     /** The names of the palette's hues. */
     hues: string[];
     folder: (path: string) => Folder;
+    /**
+     * What a choice or multi of one row offers of a source in place of all its items, by the
+     * record the field is in, or undefined where it offers them all: a row of the Settings view's
+     * other rows narrows the clusters (other-rows/cluster-rows.ts).
+     */
+    narrow?: (source: Source, record: Readonly<Record<string, unknown>>) => SourceItems | undefined;
 };
 
 const READY = (items: string[]): SourceItems => ({ state: 'ready', items });

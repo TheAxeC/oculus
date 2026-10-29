@@ -60,37 +60,39 @@ export const LAB_SLICE = { hub: 'lab', config: hubSlice({ ...config, stages: LAB
 /** Lab's settings, read. */
 export const LAB_READ: HubRead = { state: 'ready', slice: LAB_SLICE };
 
-/** The row of the stages, and the pick of lab on it. */
+/** The row of the stages. */
 export const STAGES = 'catalogs/vocab.yml:stages';
-export const LAB_CHOSEN = { [STAGES]: 'lab' };
 
 /**
- * What one case gives the rows: the hubs, the primary, the hub chosen per row, lab's read, lab's
- * settings file and the primary's (`{}` unless named).
+ * What one case gives the rows: the hub the Hub scope picks (none for the Primary hub scope, whose
+ * rows are the primary's), lab's read, lab's settings file and the primary's (`{}` unless named).
  */
 export type HubCase = {
-    hubs: string[];
-    primary: string | null;
-    chosen?: Record<string, string>;
+    hub?: string;
     read?: HubRead;
     file?: HubFile;
     primaryFile?: string;
 };
 
-/** The row of one id over the shipped config, as the Settings view draws it for a case. */
+/**
+ * The row of one id over the shipped config, as the Settings view draws it in the Hub scope of the
+ * case's hub, or in the Primary hub scope with none.
+ */
 export function hubRowOf(id: string, one: HubCase): ConfigRow {
     const groups = settingsGroups(shipped, config, {
         hubFile: { text: text(one.primaryFile ?? '{}\n'), present: true },
         workspace: null
     });
-    const rows = withHubs(groups, {
-        hubs: one.hubs,
-        primary: one.primary,
-        chosen: one.chosen ?? {},
-        config,
-        read: () => one.read ?? LAB_READ,
-        file: () => one.file ?? { text: text(LAB_FILE), present: true }
-    }).flatMap((group) => group.sections.flatMap((section) => section.rows));
+    const drawn =
+        one.hub === undefined
+            ? groups
+            : withHubs(groups, {
+                  hub: one.hub,
+                  config,
+                  read: () => one.read ?? LAB_READ,
+                  file: () => one.file ?? { text: text(LAB_FILE), present: true }
+              });
+    const rows = drawn.flatMap((group) => group.sections.flatMap((section) => section.rows));
     const row = rows.find((found) => found.id === id);
     if (row?.kind !== 'config') throw new Error(`no row ${id}`);
     return row;

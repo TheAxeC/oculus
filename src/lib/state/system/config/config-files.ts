@@ -68,17 +68,6 @@ export function workspaceFilePlace(saved: {
 export const LOCAL_PATH = `${ROOT_FOLDER}/${LOCAL_NAME}`;
 
 /**
- * Where the machine file of the hub named `hub` is opened in an editor: through the workspace
- * folder of that name. Null when no folder of the workspace has the name.
- */
-export function hubFileTarget(
-    hub: string,
-    saved: { folders: readonly { key: string }[] }
-): { root: string; path: string } | null {
-    return saved.folders.some((one) => one.key === hub) ? { root: hub, path: LOCAL_PATH } : null;
-}
-
-/**
  * Whether a file of a served root is in a folder that is private to the machine: under the
  * `secrets` folder of any hub or under `~/.oculus`. The folders are the relay's
  * (data/helpers/files/private-folders.ts); the roots are as the file listing answers them, with

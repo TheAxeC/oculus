@@ -8,11 +8,11 @@ import { isDeepStrictEqual } from 'node:util';
 import { isMap, scalar } from '../../../data/helpers/guards.ts';
 import { isMap as isYamlMap, isScalar, isSeq } from 'yaml';
 import type { Node, YAMLMap } from 'yaml';
-import { asFieldValue, sameValue } from '../yaml/yaml-edit.ts';
-import { REFUSALS, said, why } from '../yaml/why.ts';
-import { isBlockMap } from '../yaml/yaml-values.ts';
+import { asFieldValue, sameValue } from '../../core/files/yaml/yaml-edit.ts';
+import { REFUSALS, said, why } from '../../core/files/yaml/why.ts';
+import { isBlockMap } from '../../core/files/yaml/yaml-values.ts';
 import { pairOf, rangeOf } from '../../../data/helpers/files/yaml/yaml-ranges.ts';
-import type { EditResult, Refusal } from '../yaml/yaml-edit.ts';
+import type { EditResult, Refusal } from '../../core/files/yaml/yaml-edit.ts';
 import {
     LIST,
     entryPlace,

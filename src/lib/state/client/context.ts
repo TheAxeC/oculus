@@ -99,7 +99,7 @@ import { NO_NOTES_HOOKS } from '../sources/explorer/notes/note-moves.ts';
 import { taggedHits } from '../sources/explorer/notes/note-index.ts';
 import { createSearch } from '../sources/search/search.svelte.ts';
 import { createLint } from '../system/machine/lint/lint.svelte.ts';
-import { createClangd } from '../system/machine/lsp/clangd.svelte.ts';
+import { createClangd } from '../system/machine/lsp/clangd/clangd.svelte.ts';
 import { createDocuments } from '../system/machine/lsp/documents.svelte.ts';
 import {
     languageProblems,

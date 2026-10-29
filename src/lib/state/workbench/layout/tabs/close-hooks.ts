@@ -25,8 +25,11 @@ export type TerminalOwner = {
 
 /** The registrations of one client, and the questions a close asks of them. */
 export type CloseHooks = {
-    /** Register what answers whether one instance holds text no save has taken. */
-    registerUnsaved: (reports: (id: string) => boolean) => void;
+    /**
+     * Register what answers whether one instance holds text no save has taken; the answer takes it
+     * out again, for a view that registers while it is drawn.
+     */
+    registerUnsaved: (reports: (id: string) => boolean) => () => void;
     /** Whether the instance holds unsaved text, which is what a close asks a confirmation about. */
     unsaved: (id: string) => boolean;
     /** Register what answers whether a file is deleted on disk under a tab that holds it. */
@@ -147,6 +150,10 @@ export function createCloseHooks(): CloseHooks {
     return {
         registerUnsaved: (reports) => {
             unsavedReports.push(reports);
+            return () => {
+                const at = unsavedReports.indexOf(reports);
+                if (at >= 0) unsavedReports.splice(at, 1);
+            };
         },
         unsaved,
         registerGone: (reports) => {

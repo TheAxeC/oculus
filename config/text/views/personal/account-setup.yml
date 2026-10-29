@@ -125,8 +125,8 @@ text:
         saving: saving...
         set_up_provider: Set up provider
         setup_intro: 'Each provider is set up once on this machine: the application you register there serves every account of it, in the Calendar and the Inbox. The values below are the ones this server uses.'
-        sign_in_no_field: "The sign_in row {0} of the hub's .oculus/config.yml sets no {1}. Set it under sign_in in Settings."
-        sign_in_no_row: "The hub's .oculus/config.yml has no sign_in row with the key {0}. Add one under sign_in in Settings."
+        sign_in_no_field: 'The sign_in row {0} sets no {1}. Set it under sign_in in Settings.'
+        sign_in_no_row: 'No sign_in row has the key {0}. Add one under sign_in in Settings.'
         timed_out: 'The provider did not answer within {0} s.'
         toolbar: Account actions
         unreachable: 'The server did not answer. Try again once oculus is running.'

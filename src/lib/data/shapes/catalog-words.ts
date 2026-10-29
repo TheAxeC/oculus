@@ -5,11 +5,17 @@
 
 import type { AgentId } from '../model/index.ts';
 
-/** The controls an option or a family field is set with, which decide what a value may be. */
+/**
+ * The controls an option or a family field is set with, which decide what a value may be. A
+ * `secret` is a text the page never holds: it is shown as set or not set, and a new value replaces
+ * it. A `scalar` is a text (with the holes and the form a text has), a number or a flag, drawn as
+ * a text box and written in the type the file held it in.
+ */
 export const CONTROLS = [
     'toggle',
     'number',
     'text',
+    'scalar',
     'long',
     'choice',
     'multi',
@@ -22,7 +28,8 @@ export const CONTROLS = [
     'path',
     'parked',
     'records',
-    'words'
+    'words',
+    'secret'
 ] as const;
 
 /** One of the words of CONTROLS. */

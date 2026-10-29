@@ -6,6 +6,7 @@
 // the rest of the file is read, so one mistyped entry costs its own place and not the deck.
 
 import { isMap, str, strings } from '../../helpers/guards.ts';
+import type { DeckKeys } from '../../model/index.ts';
 
 /** Reports one finding: the key it is about, the catalog key of its sentence and its words. */
 export type Raise = (key: string, id: string, ...args: (string | number)[]) => void;
@@ -73,7 +74,37 @@ export type DeckSpec = {
     tagTones: Record<string, string>;
     groups: GroupSpec[];
     order: OrderEntry[];
+    /** The keys the Slides view sets, as the file holds them. */
+    keys: DeckKeys;
 };
+
+/** The value a map holds at a key, null for a key it does not hold or a value that is no map. */
+function heldAt(map: unknown, key: string): unknown {
+    return isMap(map) ? (map[key] ?? null) : null;
+}
+
+/**
+ * The keys the Slides view sets, as the parsed file holds them; a group that is no map has none.
+ */
+function readKeys(value: Record<string, unknown>): DeckKeys {
+    const groups = isMap(value.groups) ? Object.entries(value.groups) : [];
+    return {
+        title: heldAt(value.deck, 'title'),
+        tagTones: heldAt(value.defaults, 'tag_tones'),
+        groups: groups.flatMap(([name, body]) =>
+            isMap(body)
+                ? [
+                      {
+                          name,
+                          find: heldAt(body, 'find'),
+                          sort: heldAt(body, 'sort'),
+                          discover: heldAt(body, 'discover')
+                      }
+                  ]
+                : []
+        )
+    };
+}
 
 /** The tones a deck's own `defaults.tag_tones` map, each a hue name. */
 function tones(value: unknown): Record<string, string> {
@@ -186,6 +217,7 @@ export function readSpec(value: unknown, raise: Raise): DeckSpec | null {
         title: str(deck.title) ?? null,
         tagTones: tones(defaults.tag_tones),
         groups: groupsOf(value.groups, raise),
-        order: orderOf(value.order, raise)
+        order: orderOf(value.order, raise),
+        keys: readKeys(value)
     };
 }

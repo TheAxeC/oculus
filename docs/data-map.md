@@ -123,11 +123,11 @@ venue_tiers:              # the tiers of venues, in order (whole)
 radar_buckets:            # the buckets of Lit Watch, in order (whole)
 manifest_fields:          # the fields the hub adds to the form of its own projects (by row)
 slurm.resource:           # the clusters Live HPC polls, in order
-clusters.key_type:        # the type of the key Account setup makes for a cluster
-clusters.key_file:        # the path of that key, {type} and {resource} put in
-connections.failures:     # the rows that tell a failed ssh or git connection apart (kind, for, match, fix)
-sign_in:                  # the providers a reader signs in with: google, microsoft and git hosts
-recover.node_download:    # the folder of Node.js's releases Recover's cluster side downloads from
+clusters.key_type:        # the type of the key Account setup makes for a cluster (oculus's ed25519)
+clusters.key_file:        # the path of that key, {type} and {resource} put in (oculus's ~/.ssh/id_{type}_{resource})
+connections.failures:     # the rows that tell a failed ssh or git connection apart (kind, for, match, fix; by kind)
+sign_in:                  # the providers a reader signs in with: google, microsoft and git hosts (by key)
+recover.node_download:    # the folder of Node.js's releases Recover's cluster side downloads from (oculus's nodejs.org)
 lint.writing_skip:        # the files the writing rules skip
 lint.writing_glyphs:      # the files the writing rules let draw arrows and glyphs
 audit.required_files:     # the files the Audit asks a project to hold
@@ -138,11 +138,11 @@ audit.website.list:       # the key of a feed section's entries
 audit.website.title:      # the key of a feed entry's title
 audit.website.kinds:      # the sections of the feed a project is expected in, by stage and form
 app_settings:             # the values of the settings apps declare
-literature.sources:       # the reader rows of the Literature search's sources (the primary hub's)
+literature.sources:       # the reader rows of the Literature search's sources (the primary hub's, by key)
 literature.prefer:        # the source a merged paper takes its fields, abstract and PDF from first (the primary hub's)
-recover.sources:          # the reader rows Recover lists a dataset's files with, one per source kind
+recover.sources:          # the reader rows Recover lists a dataset's files with, one per source kind (by key)
 venues.browser:           # the reader row of the hub's journal browser
-links:                    # the addresses page links are built from (the primary hub's)
+links:                    # the addresses page links are built from (the primary hub's, by key)
 ```
 
 ## The workspace's settings

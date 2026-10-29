@@ -7,7 +7,7 @@
 // and change the pages and floats together: where one is held, what a page or float made from the
 // config takes of it, and what the default page leaves out of it.
 
-import { docPaths, findInstance, findView, tabsOf } from '../../instance.ts';
+import { docPaths, findInstance, findView, tabsOf, viewIds } from '../../instance.ts';
 import {
     addedPane,
     clamp,
@@ -290,11 +290,14 @@ export function keptDefault(held: Pages, shipped: FloatSpec[], builds: Builds): 
 
 /**
  * A rail page made again: its words and workbench replaced, its id and rail key kept, and the
- * documents its new tabs hold recorded as the ones it has been given.
+ * documents and views its new tabs hold recorded as the ones it has been given.
  */
 function remade(page: Page, label: string, workbench: Workbench): Page {
     const made: Page = { ...page, label, workbench };
-    if (page.rail !== undefined) made.docs = docPaths(workbench.root);
+    if (page.rail !== undefined) {
+        made.docs = docPaths(workbench.root);
+        made.views = viewIds(workbench.root);
+    }
     return made;
 }
 

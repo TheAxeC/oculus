@@ -6,6 +6,9 @@
 // is a problem on the line that writes it, in the engine's file and in the hub's alike. Oculus's
 // own sources.yml passes, which config-folder.test.ts holds for every file of the folder, and so
 // does the .oculus/config.yml Make Folder a Hub writes from docs/templates.md (`hubConfigText`).
+// A reader row's constant `value`, a scalar (`control: scalar` in config/options/behavior.yml),
+// takes a text with holes, a number and a flag and refuses a record and a list, in oculus's
+// behavior.yml and in a hub's .oculus/config.yml alike.
 
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -100,6 +103,43 @@ describe('the schema of a collections entry', () => {
                 ],
                 ['3: collections[1].ticker.undated must be true or false, not a number']
             ]);
+        }
+    );
+});
+
+/** A `literature.sources` list of one source whose field `oa` is the constant `value`, line 3. */
+function sourceWith(value: string): string {
+    return [
+        'literature:',
+        '  sources:',
+        `    - { key: mine, name: Mine, format: json, address: 'https://example.org/works', records: items, fields: { oa: { value: ${value} } } }`,
+        ''
+    ].join('\n');
+}
+
+const SOURCE_READERS: [string, (text: string) => string[]][] = [
+    [
+        'config/defaults/behavior.yml',
+        (text) => problemsOf(schemas, 'config', 'defaults/behavior.yml', text)
+    ],
+    ['a hub .oculus/config.yml', (text) => problemsOf(hubSchemas, 'hub', HUB_FILE, text)]
+];
+
+describe("the schema of a reader row's constant value, a scalar", () => {
+    it.each(SOURCE_READERS)('takes a text with holes, a number and a flag in %s', (_file, read) => {
+        const found = ["'{id} preprint'", '3', '2.5', 'true'].map((value) =>
+            read(sourceWith(value))
+        );
+        expect(found).toEqual([[], [], [], []]);
+    });
+
+    it.each(SOURCE_READERS)(
+        'refuses a record and a list, each on its line, in %s',
+        (_file, read) => {
+            const found = ['{ a: 1 }', '[1, 2]'].map((value) =>
+                read(sourceWith(value)).map((line) => line.split(' ')[0])
+            );
+            expect(found).toEqual([['3:'], ['3:']]);
         }
     );
 });

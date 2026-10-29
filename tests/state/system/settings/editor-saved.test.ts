@@ -1,14 +1,13 @@
-// Layer 2, client state tests. The family editor's Save (state/system/config/editors/writer.ts):
-// once the write answers that the value sent is in force, the draft ends and the row is marked
-// saved, which the editor (views/system/workbench/editors/Editor.svelte) says as "Saved." until the
-// next edit, the value sent shown until the config channel's push brings it; a push that brings
-// another value says the value changed. The emptied `read_limits` family is the case. The write is
-// a stub that answers as the server does, and the push is the row read again from the merged
-// configuration the page then holds. Reset of a family the workspace file sets sends the reset and
-// shows the default until the push. A draft held for a hub other than the primary is kept under
-// that hub, and while the hub's settings are being read the row's item (settings/Item.svelte,
-// rendered on the server) draws neither the draft nor the primary's value, so the draft is not
-// drawn stale.
+// Layer 2, client state tests. The family editor's writes (state/system/config/editors/writer.ts):
+// an edit whose draft reads back is held as an unsaved change of the scope on screen, the editor
+// showing the value held, and nothing is written until the scope's Save; a draft equal to the
+// row's value drops the change; once the Save has left the file holding the value and no change is
+// held, the push of the row ends the draft, and a push that brings another value while the change
+// is held keeps it. The emptied `read_limits` family is the case, and the scope's changes are a
+// stage held in memory. Reset of a family the workspace file sets holds the taking out and shows
+// the default. A draft held for a hub other than the primary is kept under that hub, and while
+// the hub's settings are being read the row's item (settings/Item.svelte, rendered on the server)
+// draws neither the draft nor the primary's value, so the draft is not drawn stale.
 //
 // It does not cover the line the editor draws, nor the empty family's line, which the look does,
 // nor the server's write of the emptied family into the workspace file as every one of oculus's
@@ -16,22 +15,24 @@
 
 import { describe, expect, it, vi } from 'vitest';
 import { fileRows, type ConfigRow } from '../../../../src/lib/state/system/config/rows.ts';
-import { applyEdit, draftOf } from '../../../../src/lib/state/system/config/editors/draft.ts';
+import {
+    applyEdit,
+    draftOf,
+    type Draft
+} from '../../../../src/lib/state/system/config/editors/draft.ts';
 import { createEditorWriter } from '../../../../src/lib/state/system/config/editors/writer.ts';
 import type { Lists } from '../../../../src/lib/state/system/config/editors/sources.ts';
 import {
-    hasSavedDraft,
     savedBase,
     savedDraft,
     slotOf,
     withSavedDraft
 } from '../../../../src/lib/state/system/config/editors/slots.ts';
-import type { WriteAnswer } from '../../../../src/lib/state/shared/stores/shapes.ts';
 import { t } from '../../../../src/lib/state/shared/words/text.ts';
 import type { HubRead } from '../../../../src/lib/state/system/config/view/hub-settings.svelte.ts';
 import { emptyClient } from '../../../fixtures/client.ts';
-import { drawnItem } from '../../../views/system/workbench/workbench-fixture.ts';
-import { LAB_CHOSEN, LAB_READ, STAGES, hubRowOf, shipped, text } from './fixture.ts';
+import { drawnItem, memoryStage } from '../../../views/system/workbench/workbench-fixture.ts';
+import { LAB_READ, STAGES, hubRowOf, shipped, text } from './fixture.ts';
 
 const FILE = 'behavior.yml';
 
@@ -53,68 +54,100 @@ function limits(value: unknown, settings = ''): ConfigRow {
     return row;
 }
 
-const ROWS = [
-    {
-        row: 'is marked saved once the file holds the empty family, until it is edited',
-        pushed: {},
-        saved: true,
-        said: undefined
-    },
-    {
-        row: 'says the file changed when the push after the answer brings another value',
-        pushed: { next: 500 },
-        saved: false,
-        said: 'workbench.settings_changed_since'
-    }
-];
-
-/** A writer over stubs that answer as the server does when the value lands. */
-function writerOf(changed: string[]) {
-    const write = vi.fn(() => Promise.resolve({ ok: true, changed, refused: [] }));
-    const reset = vi.fn(() => Promise.resolve({ ok: true, changed, refused: [] }));
+/**
+ * A writer over a stage in memory, the tab holding `held` as the row's draft (the draft of
+ * `{ next: 300 }` unless given), the file moved under the draft when `stale` says so.
+ */
+function writerOf(stale = false, held?: Draft) {
+    const stage = memoryStage();
     const ended = vi.fn();
-    const writer = createEditorWriter(write, {
-        reset,
+    const writer = createEditorWriter({
+        stage,
         changed: () => undefined,
         ended,
-        held: () => true,
+        held: () => held ?? draftOf(limits({ next: 300 })) ?? undefined,
+        stale: () => stale,
         lists: () => ({}) as Lists
     });
-    return { writer, write, reset, ended };
+    return { writer, stage, ended };
 }
 
-describe('a family whose last entry is removed and saved', () => {
-    it.each(ROWS)('$row', async ({ pushed, saved, said }) => {
+/** The `read_limits` draft with its one entry removed. */
+function emptiedOf(row: ConfigRow) {
+    const draft = draftOf(row);
+    if (draft === null) throw new Error('no draft');
+    return { draft, emptied: applyEdit(draft, { do: 'remove', index: 0 }) };
+}
+
+describe('a family whose last entry is removed', () => {
+    it('is held as an unsaved change of the scope, shown, and written by nothing', () => {
         const row = limits({ next: 300 });
-        const draft = draftOf(row);
-        if (draft === null) throw new Error('no draft');
-        const emptied = applyEdit(draft, { do: 'remove', index: 0 });
-        const { writer, write, ended } = writerOf(['read_limits']);
-        await writer.save(row, emptied);
-        expect(write).toHaveBeenCalledWith(FILE, 'read_limits', {}, { next: 300 });
-        expect([writer.saved(row), writer.shown(row)]).toEqual([true, {}]);
-        expect(ended).toHaveBeenCalledWith(row);
-        writer.pushed(limits(pushed));
-        expect([writer.saved(row), writer.shown(row)]).toEqual([saved, undefined]);
-        expect(writer.said(row)?.key).toBe(said);
-        writer.clear(row);
-        expect(writer.saved(row)).toBe(false);
+        const { emptied } = emptiedOf(row);
+        const { writer, stage, ended } = writerOf();
+        writer.save(row, emptied);
+        expect(stage.held(row)).toEqual({ value: {} });
+        expect([writer.unsaved(row), writer.shown(row)]).toEqual([true, {}]);
+        expect(ended).not.toHaveBeenCalled();
+    });
+
+    it("drops the change when the draft is the row's value again", () => {
+        const row = limits({ next: 300 });
+        const { draft, emptied } = emptiedOf(row);
+        const { writer, stage } = writerOf();
+        writer.save(row, emptied);
+        writer.save(row, draft);
+        expect([stage.held(row), writer.unsaved(row)]).toEqual([undefined, false]);
+    });
+
+    it('holds no change for a family no layer gives a value, an entry added and removed again', () => {
+        const row = limits(undefined);
+        const empty = draftOf(row);
+        if (empty === null) throw new Error('no draft');
+        const added = applyEdit(empty, { do: 'add' });
+        const { writer, stage } = writerOf();
+        writer.save(row, applyEdit(added, { do: 'remove', index: 0 }));
+        expect([row.state, stage.held(row)]).toEqual(['missing', undefined]);
+    });
+
+    it("ends the draft at the push once the scope's Save left the file holding it", () => {
+        const row = limits({ next: 300 });
+        const { emptied } = emptiedOf(row);
+        const { writer, stage, ended } = writerOf(false, emptied);
+        writer.save(row, emptied);
+        stage.drop(row);
+        writer.pushed({ ...limits({}), value: {} });
+        expect(ended).toHaveBeenCalledTimes(1);
+    });
+
+    it('keeps the change held when a push brings another value', () => {
+        const row = limits({ next: 300 });
+        const { emptied } = emptiedOf(row);
+        const { writer, stage, ended } = writerOf();
+        writer.save(row, emptied);
+        writer.pushed(limits({ next: 500 }));
+        expect([stage.held(row), ended.mock.calls]).toEqual([{ value: {} }, []]);
+    });
+
+    it('holds a kept draft again at a push, unless the file moved from the value it was started over', () => {
+        const kept = writerOf();
+        kept.writer.pushed(limits({ next: 500 }));
+        expect(kept.stage.held(limits({ next: 500 }))).toEqual({ value: { next: 300 } });
+        const moved = writerOf(true);
+        moved.writer.pushed(limits({ next: 500 }));
+        expect(moved.stage.held(limits({ next: 500 }))).toBeUndefined();
     });
 });
 
-describe('a draft made with a hub other than the primary chosen', () => {
-    /** The `read_limits` row with `value` in force, with the hub `lab` chosen. */
+describe('a draft made in the Hub scope of a hub other than the primary', () => {
+    /** The `read_limits` row with `value` in force, in the Hub scope of `lab`. */
     const lab = (value: unknown): ConfigRow => ({ ...limits(value), hub: 'lab', slot: 'lab' });
 
-    it("is kept under lab, drawn again when lab is chosen again, and never shown on the primary's row", () => {
+    it("is kept under lab, drawn again in lab's scope, and never shown on the primary's row", () => {
         const row = lab({ next: 300 });
-        const draft = draftOf(row);
-        if (draft === null) throw new Error('no draft');
-        const emptied = applyEdit(draft, { do: 'remove', index: 0 });
+        const { draft, emptied } = emptiedOf(row);
         const state = withSavedDraft({}, slotOf(row), emptied, row.value);
         expect(savedDraft(state, row)).toEqual(emptied);
         expect(savedDraft(state, limits({ next: 300 }))).toBeUndefined();
-        expect(hasSavedDraft(state, slotOf(limits({ next: 300 })))).toBe(false);
         const both = withSavedDraft(state, slotOf(limits({ next: 300 })), draft, { next: 300 });
         expect([savedDraft(both, row), savedDraft(both, limits({ next: 300 }))]).toEqual([
             emptied,
@@ -123,36 +156,24 @@ describe('a draft made with a hub other than the primary chosen', () => {
         expect(savedBase(both, slotOf(row))).toEqual({ next: 300 });
     });
 
-    it("names lab in its write, is ended by lab's push alone, and says lab's refusal on lab's row", async () => {
+    it("holds its change under lab, apart from the primary's row of the same key", () => {
         const row = lab({ next: 300 });
-        const draft = draftOf(row);
-        if (draft === null) throw new Error('no draft');
-        const emptied = applyEdit(draft, { do: 'remove', index: 0 });
-        let answer = (_: WriteAnswer): void => undefined;
-        const write = vi.fn(() => new Promise<WriteAnswer>((done) => (answer = done)));
-        const ended = vi.fn();
-        const writer = createEditorWriter(write, {
-            reset: vi.fn(),
-            changed: () => undefined,
-            ended,
-            held: () => true,
-            lists: () => ({}) as Lists
-        });
-        const out = writer.save(row, emptied);
-        expect(write).toHaveBeenCalledWith(FILE, 'read_limits', {}, { next: 300 }, false, 'lab');
-        writer.pushed(limits({ next: 500 }));
-        expect([writer.sending(row), ended.mock.calls]).toEqual([true, []]);
-        answer({ ok: true, changed: [], refused: [{ field: 'x', reason: 'changed since' }] });
-        await out;
-        expect(writer.said(row)?.key).toBe('workbench.settings_refused');
-        expect(writer.said(limits({ next: 300 }))).toBeNull();
+        const { emptied } = emptiedOf(row);
+        const { writer, stage } = writerOf();
+        writer.save(row, emptied);
+        expect([stage.held(row), stage.held(limits({ next: 300 }))]).toEqual([
+            { value: {} },
+            undefined
+        ]);
+        expect(writer.unsaved(limits({ next: 300 }))).toBe(false);
     });
 });
 
 describe("a draft held for lab while lab's settings are being read", () => {
-    /** The stages row with lab chosen, as the Settings view draws it with lab's settings `read`. */
-    const lab = (read: HubRead): ConfigRow =>
-        hubRowOf(STAGES, { hubs: ['hub', 'lab'], primary: 'hub', chosen: LAB_CHOSEN, read });
+    /**
+     * The stages row of lab's Hub scope, as the Settings view draws it with lab's settings `read`.
+     */
+    const lab = (read: HubRead): ConfigRow => hubRowOf(STAGES, { hub: 'lab', read });
 
     it('is kept, not drawn stale nor offered for discard, and drawn again once they are read', () => {
         const ready = lab(LAB_READ);
@@ -174,21 +195,21 @@ describe("a draft held for lab while lab's settings are being read", () => {
 });
 
 describe('Reset on a family', () => {
-    it('sends the reset of a family the workspace file sets and shows the default', async () => {
+    it('holds the reset of a family the workspace file sets and shows the default', () => {
         const row = limits({ next: 300 }, 'settings:\n  read_limits: { next: 300 }\n');
         expect([row.own, row.line, row.modified]).toEqual([true, 2, true]);
-        const { writer, write, reset } = writerOf(['read_limits']);
-        await writer.reset(row);
-        expect(reset).toHaveBeenCalledWith(FILE, 'read_limits');
-        expect(write).not.toHaveBeenCalled();
+        const { writer, stage, ended } = writerOf();
+        writer.reset(row);
+        expect(stage.held(row)).toEqual({ reset: true });
         expect(writer.shown(row)).toEqual(row.default);
+        expect(ended).toHaveBeenCalledWith(row);
     });
 
-    it('sends nothing for a family the workspace file does not set', async () => {
+    it('holds nothing for a family the workspace file does not set', () => {
         const row = limits(shipped[FILE].read_limits.default);
         expect([row.own, row.modified]).toEqual([false, false]);
-        const { writer, reset } = writerOf([]);
-        await writer.reset(row);
-        expect(reset).not.toHaveBeenCalled();
+        const { writer, stage } = writerOf();
+        writer.reset(row);
+        expect(stage.held(row)).toBeUndefined();
     });
 });

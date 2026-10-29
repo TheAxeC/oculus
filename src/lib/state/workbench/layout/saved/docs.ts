@@ -9,8 +9,11 @@ import { DOC_VIEW, instanceText, newInstance, panes, tabsOf } from '../instance.
 import { pinned, pinnedRun, type Instance, type Page, type Pages } from '../model.ts';
 import { activate, insertInstance } from '../tree.ts';
 
-/** The documents a rail button's page lists: its arrangement key and the `docs:` entries of it. */
-export type DocSource = { page: string; docs: readonly DocEntry[] };
+/**
+ * What a rail button's page is given: its arrangement key, the `docs:` entries of it, and its
+ * arrangement as read, whose views saved/views.ts gives.
+ */
+export type DocSource = { page: string; docs: readonly DocEntry[]; node: unknown };
 
 /** The paths of the documents a tab in the page already shows. */
 function shownPaths(page: Page): Set<string> {

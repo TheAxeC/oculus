@@ -38,7 +38,7 @@ import { removeRadarEntry } from '../feeds/radar.ts';
 import { literatureEntry, removeLiterature } from '../feeds/literature.ts';
 import { overrides, setFlag, setOverride } from '../../sessions/overrides.ts';
 import { deckSlidesNow, undoDeckSlides } from './config/lists/deck/deck.ts';
-import { appSettingNow, undoAppSetting } from './config/app-setting.ts';
+import { appSettingNow, undoAppSetting } from './apps/app-setting.ts';
 import { configKeyNow, writeConfigKey } from './config/config-key.ts';
 import { configValueNow, putBackConfigValue, writeConfigValue } from './config/config-value.ts';
 import { takeOutAdded } from './config/config-checks.ts';
@@ -51,6 +51,8 @@ import {
     type OptionNow
 } from './config/config-place.ts';
 import { configResetNow, restoreReset } from './config/config-reset.ts';
+import { savedNow, undoSaved } from './config/save/save.ts';
+import { SAVE_KIND } from '../../../data/shapes/config-save.ts';
 import { foldersValueNow, workspaceValueShape, writeFolders } from './config/lists/folders.ts';
 import { hubOfFile } from '../../files/workspace/open.ts';
 import {
@@ -288,6 +290,7 @@ export function valueNow(into: WriteTarget, change: Change): { found: boolean; v
     }
     if (change.kind === 'deck-slides') return deckSlidesNow(into, change);
     if (CONFIG_KINDS.includes(change.kind)) return configNow(into, change);
+    if (change.kind === SAVE_KIND) return savedNow(into, change);
     if (change.kind === 'roots') {
         const file = fileOf(change);
         if (into.workspace === undefined || hubOfFile(file) === null) {
@@ -526,12 +529,16 @@ function apply(into: WriteTarget, change: Change): WriteOutcome | { error: 'unwr
         );
     }
     if (change.kind === 'deck-slides') {
-        const outcome = undoDeckSlides(into, change, wordsBeforeShape.parse(change.before));
+        const outcome = undoDeckSlides(into, change, change.before);
         if (outcome === null) return null;
         if ('error' in outcome) return outcome;
         return { found: true, ...outcome };
     }
     if (CONFIG_KINDS.includes(change.kind)) return configUndo(into, change);
+    if (change.kind === SAVE_KIND) {
+        const outcome = undoSaved(into, change);
+        return outcome === null ? null : { found: true, ...outcome };
+    }
     if (change.kind === 'roots') {
         const file = fileOf(change);
         if (into.workspace === undefined || hubOfFile(file) === null) return UNWRITABLE;

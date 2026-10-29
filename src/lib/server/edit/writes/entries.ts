@@ -56,10 +56,10 @@ import {
     type Collection
 } from '../../files/fs/collections.ts';
 import { putBack, replacedLines, replacedShape } from './config/config-checks.ts';
-import { asFieldValue } from '../yaml/yaml-edit.ts';
+import { asFieldValue } from '../../core/files/yaml/yaml-edit.ts';
 import type { ChangeRecord } from '../../core/changes.ts';
-import type { EditResult, Refusal } from '../yaml/yaml-edit.ts';
-import type { FieldValue } from '../yaml/yaml-values.ts';
+import type { EditResult, Refusal } from '../../core/files/yaml/yaml-edit.ts';
+import type { FieldValue } from '../../core/files/yaml/yaml-values.ts';
 import {
     entryIdOf,
     optionKeys,

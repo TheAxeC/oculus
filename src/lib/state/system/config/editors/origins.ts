@@ -6,7 +6,8 @@
 // come with the folder list (`settings` of each folder), so nothing here asks the server.
 //
 // Each sentence is one catalog entry. It is cut at the root's place in it into `lead`, `label` and
-// `tail`, so the view draws the root as a link inside the sentence.
+// `tail`, so the view draws the root inside the sentence as the control that shows its
+// Repository scope.
 
 import { REPO_SETTINGS } from '../../../../data/helpers/editor/editor.ts';
 import type { RepoProblem, RepoSettings } from '../../../../data/sources/config/editor-options.ts';
@@ -16,7 +17,7 @@ import type { FsRoot } from '../../../sources/explorer/view/place.ts';
 /** What one line says: a root's languages, no file read, a file not read, or an entry skipped. */
 export type Origin = {
     kind: 'also' | 'none' | 'unread' | 'skipped';
-    /** The root the line is about, which the label opens the settings file of. */
+    /** The root the line is about, whose Repository scope the label shows. */
     root: string;
     /** The words before, the name of, and the words after the root in the sentence. */
     lead: string;

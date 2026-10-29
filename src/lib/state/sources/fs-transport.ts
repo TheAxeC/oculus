@@ -6,6 +6,7 @@
 
 import { z } from 'zod';
 import type { OpsRefusal } from '../../data/file-ops.ts';
+import { localFileShape, type LocalFile } from '../../data/shapes/config-save.ts';
 import type { Entry, HubNotes, NoteEntry } from '../../data/model/index.ts';
 import { OCULUS_CONFIG_ROOT, fileBytesUrl, figureUrl } from '../../data/helpers/files/address.ts';
 import type { BookmarkKind } from './explorer/view/bookmark-rows.ts';
@@ -64,11 +65,13 @@ type WorkspaceMachine = {
     values: Record<string, string>;
     hubs: Record<string, string[]>;
     portRefused: { port: number; reason: string } | null;
+    /** Each hub's own `local.yml` as the This machine scope edits it, by the hub's name. */
+    files: Record<string, LocalFile>;
 };
 
 /** The machine's files before the server has answered, or when it sent nothing readable. */
 function noMachine(): WorkspaceMachine {
-    return { set: [], defaults: {}, values: {}, hubs: {}, portRefused: null };
+    return { set: [], defaults: {}, values: {}, hubs: {}, portRefused: null, files: {} };
 }
 
 /**
@@ -215,6 +218,7 @@ export const NO_BOOKMARKS: BookmarksState = { entries: [], error: '', loading: t
 export const NO_NOTES: NotesState = { hubs: [], error: '', loading: true };
 
 export { fileBytesUrl, figureUrl };
+export type { LocalFile };
 
 /**
  * What a folder holds that the make controls are offered by, as the endpoint sent it; a value that
@@ -281,7 +285,8 @@ const workspacesShape = z.object({
             defaults: z.record(z.string(), z.string()).catch({}),
             values: z.record(z.string(), z.string()).catch({}),
             hubs: z.record(z.string(), z.array(z.string())).catch({}),
-            portRefused: z.object({ port: z.number(), reason: z.string() }).nullable().catch(null)
+            portRefused: z.object({ port: z.number(), reason: z.string() }).nullable().catch(null),
+            files: z.record(z.string(), localFileShape).catch({})
         })
         .catch(() => noMachine())
 });

@@ -24,11 +24,16 @@ import {
     valueEnd
 } from '../../../data/helpers/files/yaml/yaml-ranges.ts';
 import { isMap } from '../../../data/helpers/guards.ts';
-import { asFieldValue, sameValue } from '../yaml/yaml-edit.ts';
-import { REFUSALS, said, why } from '../yaml/why.ts';
-import type { EditResult, Refusal } from '../yaml/yaml-edit.ts';
-import { isBlockMap, isBlockValue, renderBlockMap, renderListItem } from '../yaml/yaml-values.ts';
-import type { BlockMap, BlockValue, FieldValue } from '../yaml/yaml-values.ts';
+import { asFieldValue, sameValue } from '../../core/files/yaml/yaml-edit.ts';
+import { REFUSALS, said, why } from '../../core/files/yaml/why.ts';
+import type { EditResult, Refusal } from '../../core/files/yaml/yaml-edit.ts';
+import {
+    isBlockMap,
+    isBlockValue,
+    renderBlockMap,
+    renderListItem
+} from '../../core/files/yaml/yaml-values.ts';
+import type { BlockMap, BlockValue, FieldValue } from '../../core/files/yaml/yaml-values.ts';
 import {
     appendField,
     asJs,

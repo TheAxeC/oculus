@@ -20,7 +20,9 @@
     // the one focused last; its configurations are those of `.oculus/launch.yml`, and a repository
     // with none runs the open file with its debugger's first configuration. Add Configuration lists
     // what the acting debuggers offer beside oculus's own when there is any debugger of an app, and
-    // the one picked is written into the file. Start stays drawn while a session runs and answers
+    // the one picked is written into the file. The configuration the picker shows, while the file
+    // holds it, is edited in a form of its fields and deleted (LaunchEdit.svelte); there is no
+    // need to open the file for either. Start stays drawn while a session runs and answers
     // with the refusal then. The stepping controls are the floating toolbar's
     // (shell/commands/debug/DebugToolbar.svelte), drawn over the workbench while a session runs.
     //
@@ -36,6 +38,7 @@
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
+    import LaunchEdit from './LaunchEdit.svelte';
     import Breakpoints from './sections/Breakpoints.svelte';
     import CallStack from './sections/CallStack.svelte';
     import LoadedSources from './sections/LoadedSources.svelte';
@@ -113,6 +116,9 @@
                         glyph="open_file"
                         onclick={() => debug.openLaunch(repo, chosen?.line ?? 1)}
                     />
+                {/if}
+                {#if chosen !== null}
+                    <LaunchEdit {repo} configuration={chosen} />
                 {/if}
             </div>
             {#if choosing !== null && choosing.repo === repo}

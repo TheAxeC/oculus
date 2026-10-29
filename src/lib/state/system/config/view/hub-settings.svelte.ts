@@ -1,25 +1,17 @@
-// Layer 2, client state. The hub a Settings row of a key each hub's own settings file is read for
-// (data/shapes/hub-keys.ts `readPerHub`) shows and writes. In a workspace of more than one hub the
-// row offers every hub, the primary first (`hubList` order), with the primary chosen and none
-// chosen while there is no primary, as `chosenHub` of state/shared/page/hubs.ts picks for a new
-// record; the hub picked on a row is the view's own per row, kept while the tab is open and never
-// saved, and a hub that leaves the workspace gives the row back the first choice. A row of a key
-// read from the primary's file alone, and every row of a workspace of one hub, offers no choice; a
-// workspace of one hub that is not the primary writes that hub.
-//
-// With a hub other than the primary chosen the row is that hub's: its value and default are read
-// from the slice of that hub's merged settings that api/hub-settings answers
-// (server/files/source/hub-settings.ts), laid over the merged config the page holds, and its own
-// line and file are read from that hub's `.oculus/config.yml`. The row names the hub its write
-// names (`hub`) and the hub its drafts and typed text are kept under (`slot`). A row whose hub is
-// not picked, whose hub's settings are not read yet or could not be read, or whose hub's settings
-// file is being read, unreadable, cut or not parsed says why (`blocked`) and writes nothing. While
-// the chosen hub's settings are not read yet or could not be read the row holds no value, default
-// or line (`unread`) and is placed in that hub's settings file, so it shows and opens nothing of
+// Layer 2, client state. The rows of the Settings view's Hub scope with a hub other than the
+// primary picked: each row of a key each hub's own settings file is read for (data/shapes/
+// hub-keys.ts `readPerHub`) is that hub's. Its value and default are read from the slice of that
+// hub's merged settings that api/hub-settings answers (server/files/source/hub-settings.ts), laid
+// over the merged config the page holds, and its own line and file are read from that hub's
+// `.oculus/config.yml`. The row names the hub (`hub`) and the hub its drafts and typed text are
+// kept under (`slot`). A row whose hub's settings are not read yet or could not be read, or whose
+// hub's settings file is being read, unreadable, cut or not parsed says why (`blocked`) and holds
+// nothing. While the hub's settings are not read yet or could not be read the row holds no value,
+// default or line (`unread`) and is placed in that hub's settings file, so it shows nothing of
 // the primary's, and the drafts and typed text kept under the hub wait, undrawn, for the read.
 //
-// The reader asks for the slice of each hub a row has chosen, once per version of the settings the
-// config channel pushes, so a write that lands is read back; the slice it held keeps being shown
+// The reader asks for the slice of the hub the scope picks, once per version of the settings the
+// config channel pushes, so a save that lands is read back; the slice it held keeps being shown
 // while a new read is out, and an answer a later read overtook changes nothing.
 
 import { z } from 'zod';
@@ -33,7 +25,6 @@ import {
     unreachableAnswer,
     unreadableAnswer
 } from '../../../shared/answers/answers.ts';
-import { chosenHub } from '../../../shared/page/hubs.ts';
 import type { Group } from '../groups.ts';
 import { message, type Message } from '../messages.ts';
 import { fileRows, type ConfigRow, type HubFile } from '../rows.ts';
@@ -67,7 +58,7 @@ export function hubConfig(
     return read.state === 'ready' ? laidHubSlice(config, read.slice.config) : null;
 }
 
-/** The reads of the settings of the hubs a Settings view has chosen on its rows. */
+/** The reads of the settings of the hub a Settings view's Hub scope draws. */
 export type HubReader = {
     /** Read each hub of `hubs` whose settings are not read at `version`; forget every other hub. */
     want: (hubs: readonly string[], version: number) => void;
@@ -140,15 +131,11 @@ export function hubReader(get: (hub: string) => Promise<Response>): HubReader {
 }
 
 /**
- * What the rows of the hubs are made from: the hubs of the workspace, the primary first and the
- * others in the workspace's order; the primary, null when there is none; the hub picked on each
- * row, by row id; the merged config the page holds; the read of a hub's settings; and a hub's
- * settings file as the file browser holds it.
+ * What the rows of the Hub scope's hub are made from: the hub, the merged config the page holds,
+ * the read of the hub's settings and its settings file as the file browser holds it.
  */
 export type HubsOf = {
-    hubs: readonly string[];
-    primary: string | null;
-    chosen: Readonly<Partial<Record<string, string>>>;
+    hub: string;
     config: Record<string, unknown>;
     read: (hub: string) => HubRead;
     file: (hub: string) => HubFile;
@@ -156,13 +143,6 @@ export type HubsOf = {
 
 /** The merged config of one hub laid over the page's, and its options catalog. */
 type Laid = { config: Record<string, unknown>; catalog: Catalog };
-
-/** The hub a row has chosen: the hub picked on it while it is offered, else the first choice. */
-function chosenOn(row: ConfigRow, of: HubsOf): string | undefined {
-    const picked = of.chosen[row.id];
-    if (picked !== undefined && of.hubs.includes(picked)) return picked;
-    return chosenHub(of.hubs, of.primary);
-}
 
 /**
  * The row while the settings of the hub `hub` are being read or could not be read: none of the
@@ -213,23 +193,9 @@ function hubRow(row: ConfigRow, hub: string, of: HubsOf, laid: Map<string, Laid>
     return { ...drawn, hub, ...(said === null ? {} : { blocked: said }) };
 }
 
-/** A row of a key each hub's own file is read for, as the hub chosen on it holds it. */
-function chosenRow(row: ConfigRow, of: HubsOf, laid: Map<string, Laid>): ConfigRow {
-    if (of.hubs.length === 0) return row;
-    if (of.hubs.length === 1) {
-        const only = of.hubs[0];
-        return only === of.primary ? row : hubRow(row, only, of, laid);
-    }
-    const chosen = chosenOn(row, of);
-    const choice = { offered: [...of.hubs], chosen };
-    if (chosen === undefined) return { ...row, choice, blocked: message('pickHub') };
-    if (chosen === of.primary) return { ...row, choice };
-    return { ...hubRow(row, chosen, of, laid), slot: chosen, choice };
-}
-
 /**
  * The groups of the Settings view with each row of a key each hub's own file is read for made the
- * row of the hub chosen on it. Every other row is left as it is.
+ * row of the Hub scope's hub. Every other row is left as it is.
  */
 export function withHubs(groups: Group[], of: HubsOf): Group[] {
     const laid = new Map<string, Laid>();
@@ -239,21 +205,9 @@ export function withHubs(groups: Group[], of: HubsOf): Group[] {
             ...section,
             rows: section.rows.map((row) =>
                 row.kind === 'config' && readPerHub(row.file, row.key)
-                    ? chosenRow(row, of, laid)
+                    ? { ...hubRow(row, of.hub, of, laid), slot: of.hub }
                     : row
             )
         }))
     }));
-}
-
-/**
- * The hubs other than the primary whose settings the rows read: the one hub of a workspace whose
- * hub is not the primary, else each hub picked on a row while it is offered.
- */
-export function hubsRead(of: Pick<HubsOf, 'hubs' | 'primary' | 'chosen'>): string[] {
-    if (of.hubs.length === 1) return of.hubs[0] === of.primary ? [] : [of.hubs[0]];
-    const picked = Object.values(of.chosen).filter(
-        (hub): hub is string => hub !== undefined && hub !== of.primary && of.hubs.includes(hub)
-    );
-    return [...new Set(picked)];
 }

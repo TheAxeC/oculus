@@ -31,9 +31,9 @@ import { isDeepStrictEqual } from 'node:util';
 import { isMap as isYamlMap, isScalar, isSeq, parseDocument } from 'yaml';
 import type { Node, Pair, Scalar, YAMLMap } from 'yaml';
 import { z } from 'zod';
-import { isMap } from '../../../data/helpers/guards.ts';
-import type { RemovedText } from '../../core/changes.ts';
-import { unchanged } from '../../../data/shapes/shapes.ts';
+import { isMap } from '../../../../data/helpers/guards.ts';
+import type { RemovedText } from '../../changes.ts';
+import { unchanged } from '../../../../data/shapes/shapes.ts';
 import {
     isBlockMap,
     isBlockScalar,
@@ -45,7 +45,7 @@ import {
     renderMetalist
 } from './yaml-values.ts';
 import type { BlockMap, FieldValue, ScalarMap } from './yaml-values.ts';
-import { renderScalar } from '../../../data/helpers/files/yaml/collection-text.ts';
+import { renderScalar } from '../../../../data/helpers/files/yaml/collection-text.ts';
 import { REFUSALS, said, why } from './why.ts';
 import type { Why } from './why.ts';
 import {
@@ -58,7 +58,7 @@ import {
     pairOf,
     rangeOf,
     valueEnd
-} from '../../../data/helpers/files/yaml/yaml-ranges.ts';
+} from '../../../../data/helpers/files/yaml/yaml-ranges.ts';
 
 /** One field that was not written, and why. */
 export type Refusal = { field: string; reason: string };
@@ -93,7 +93,7 @@ type Splice = { from: number; to: number; length: number };
  * Either the new text with the splice that made it, or the reason there is none; every edit step
  * answers with one of the two.
  */
-type Written = { text: string; splice: Splice } | { why: Why };
+export type Written = { text: string; splice: Splice } | { why: Why };
 
 /** One edit that was made, kept so the verification can apply it to the parsed source. */
 type Applied = { path: string[]; value: FieldValue };
@@ -218,7 +218,7 @@ export function replaceValue(
 }
 
 /** Remove the whole lines a pair occupies, its trailing comment with them. */
-function removePair(text: string, pair: Pair<Scalar, Node>): Written {
+export function removePair(text: string, pair: Pair<Scalar, Node>): Written {
     const key = rangeOf(pair.key);
     const end = pairEnd(pair);
     if (key === null || end === null) return fail(REFUSALS.keyNoPlace);
@@ -227,7 +227,7 @@ function removePair(text: string, pair: Pair<Scalar, Node>): Written {
 }
 
 /** Remove one key of a flow map, with the comma that joined it to its neighbour. */
-function removeFlowChild(text: string, map: YAMLMap, index: number): Written {
+export function removeFlowChild(text: string, map: YAMLMap, index: number): Written {
     const items = map.items as Pair<Scalar, Node>[];
     const own = rangeOf(items[index].key);
     const ownEnd = pairEnd(items[index]);

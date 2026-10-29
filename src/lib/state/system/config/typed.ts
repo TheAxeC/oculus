@@ -1,13 +1,13 @@
 // Layer 2, client state. What a Settings tab remembers beside the rail list: the query typed in the
-// search box, and the text typed into a box (a number, a text, a suggestion box, a folder, file or
-// path) and not yet written, one record per slot: the file and key, and the hub chosen on the row
-// when it is not the primary (editors/slots.ts `slotOf`). The other controls write as they are
-// changed and hold nothing, and the typed values of a list, multi or family are the drafts of
-// editors/slots.ts. It is the tab's instance state (state/workbench/ui.svelte.ts), merged into the
-// blob the rail draft already lives in, so a tab switch or a reload brings it back and the rail
-// list is never replaced. A tab holding a typed field text or an editor's draft holds unsaved
-// work, since each write is a record in History and a half-typed value is not one yet; the query
-// alone is not.
+// search box, and the text typed into a box (a number, a text, a scalar, a suggestion box, a
+// folder, file or path) and not yet held as a change of its scope, one record per slot: the file
+// and key, and the hub or folder of the scope when it is not the primary or the workspace
+// (editors/slots.ts `slotOf`). The other controls hold their change as they are changed, and the
+// typed values of a list, multi or family are the drafts of editors/slots.ts. It is the tab's
+// instance state (state/workbench/ui.svelte.ts), merged into the blob the rail draft already lives
+// in, so a tab switch or a reload brings it back and the rail list is never replaced. A tab holding
+// a typed field text or an editor's draft holds unsaved work, since a half-typed value is not a
+// change yet; the query alone is not.
 
 import { z } from 'zod';
 import { draftsHeld, inSlot, mapOf, type Slot } from './editors/slots.ts';

@@ -544,6 +544,7 @@ export function createReader(context: DeckContext): DeckReader {
             order: [],
             groups: [],
             tagTones: { ...context.tagTones },
+            keys: null,
             findings: [...raised]
         };
     }
@@ -586,6 +587,7 @@ export function createReader(context: DeckContext): DeckReader {
             order: orderOfDeck(doc),
             groups: groupsOfDeck(doc),
             tagTones: { ...context.tagTones, ...(doc.spec?.tagTones ?? {}) },
+            keys: doc.spec?.keys ?? null,
             findings: [...raised]
         };
     }

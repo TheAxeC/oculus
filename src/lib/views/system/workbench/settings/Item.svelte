@@ -2,81 +2,70 @@
     // Layer 3, view partial. One setting, drawn as VS Code's Settings editor draws one: the bar on
     // its left edge when it is Modified (its value in force differs from the defaults file's), its
     // title with the section before the name, the gear on the right, the description, the control,
-    // the message lines, and the line with the default and, when the user's file sets the key, that
-    // file and the line of the key.
+    // the message lines, and the line with the default.
     //
-    // The kinds of row differ in what they put under the description. An option of a defaults file
-    // has its control (Control.svelte, which draws the control its catalog entry names) and a
-    // default line; the rail row and the arrangements row have the editors of the rail list and of
-    // the page reset, and the workbench row has none, since its layout tree is edited in the file;
-    // a row of the machine's own file has its description, its key path, where it is set and the
-    // value in force the server sent (a line for each row of a joined list, with a way to open the
-    // file of each hub that holds a row); the `clusters:` row has under it the editor of its rows
-    // (other-rows/ClusterRows.svelte). A list, multi, parked list or family with no value in
-    // force says so and has the way to edit the user's file; a row set one value at a time with no
-    // value in force draws its control empty (Control.svelte) and says nothing more.
+    // The kinds of row differ in what they put under the description. An option of a defaults file,
+    // of a hub's `local.yml` or of a repository's `.oculus/settings.yml` has its control
+    // (Control.svelte, which draws the control its catalog entry names, a list or family with no
+    // value in force drawn empty with its Add) and a default line; the rail row has the editor of
+    // the rail list, and the page layouts row the editor of its trees with Reset all pages under
+    // it. A setting an app declares has its control (other-rows/AppControl.svelte). This machine's
+    // `clusters:` row has its family editor with a row's cluster picked from the clusters of
+    // `slurm.resource` no row holds (other-rows/ClusterRows.svelte). A list or a family whose value
+    // is in a shape its editor does not draw has no control and says which key holds which value;
+    // no row opens the user's file. A row of the primary's `port` says when the server could not
+    // move to the port the file names.
     //
     // Each item is a stop the search's Down key can move the focus to, and the gear is drawn only
     // while the pointer is over the item or the focus is inside it, and only on a row whose menu
-    // holds something (state/system/config/view/gear.ts). Reset takes the user's value out of its
-    // file: a list, multi, parked list or family through the editors' write, which drops the
-    // editor's draft, any other row through the row's write, which drops the typed text.
-    //
-    // A list, a multi or a family in force in a shape the editor draws (editors/Editor.svelte) is
-    // set there; one it does not draw keeps the way to edit the user's file.
+    // holds something (state/system/config/view/gear.ts). Reset holds the taking out of the user's
+    // value as a change of the scope: a list, multi, parked list or family through the editors'
+    // writer, which drops the editor's draft, any other row through the row's writer, which drops
+    // the typed text, and a setting an app declares through the scopes.
     //
     // The editor of a row's entries and its Fields list are each drawn under a disclosure line
     // (editors/Fold.svelte), which the reader folds and unfolds; a folded row keeps its Modified
     // bar, its gear, its message lines and its default line, and Reset works on it unfolded or not.
     //
-    // A row of a key each hub's own settings file is read for, in a workspace of more than one hub,
-    // draws the pick of its hub under the description, the primary first and chosen, or the empty
-    // choice while no hub is chosen (state/system/config/view/hub-settings.svelte.ts); a pick
-    // redraws the row as that hub holds it. A row that says why it writes nothing draws the
-    // sentence under its control. While the chosen hub's settings are being read or could not be
-    // read the row draws that sentence alone, with no control, value, Modified bar or line, and
-    // the draft or typed text kept for that hub is drawn again once they are read.
+    // A row that says why it writes nothing draws the sentence under its control. While the Hub
+    // scope's hub's settings are being read or could not be read the row draws that sentence
+    // alone, with no control, value, Modified bar or line, and the draft or typed text kept for
+    // that hub is drawn again once they are read.
 
     import CodeText from '$lib/ui/display/text/CodeText.svelte';
-    import ClusterRows from './other-rows/ClusterRows.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import Select from '$lib/ui/forms/choice/Select.svelte';
-    import { sourceTabState } from '$lib/state/sessions/source/draft';
     import { WALLPAPER_KEY } from '$lib/state/life/pictures/wallpapers.svelte';
     import { t } from '$lib/state/shared/words/text';
     import type { EditorWriter } from '$lib/state/system/config/editors/writer';
     import type { Lists } from '$lib/state/system/config/editors/sources';
-    import { drawsEditor, slotOf, withSavedDraft } from '$lib/state/system/config/editors/slots';
-    import { PAGES_ROW, RAIL_ROW, WORKBENCH_ROW, type Row } from '$lib/state/system/config/groups';
-    import { message } from '$lib/state/system/config/messages';
-    import { LOCAL_PATH, hubFileTarget, openTarget } from '$lib/state/system/config/config-files';
     import {
-        mismatchMessage,
-        placeName,
-        placeOf,
-        writtenWhole
-    } from '$lib/state/system/config/rows';
+        drawsEditor,
+        slotOf,
+        undrawnMessage,
+        withSavedDraft
+    } from '$lib/state/system/config/editors/slots';
+    import { PAGES_ROW, RAIL_ROW, type Row } from '$lib/state/system/config/groups';
+    import { CLUSTERS_ROW } from '$lib/state/system/config/other-rows/cluster-rows';
+    import { mismatchMessage, writtenWhole } from '$lib/state/system/config/rows';
+    import type { RowWriter } from '$lib/state/system/config/scopes/write';
     import { settingsQuery, withTypedText } from '$lib/state/system/config/typed';
     import { foundInside, partTexts, type FoldPart } from '$lib/state/system/config/view/fold';
     import { gearEntries } from '$lib/state/system/config/view/gear';
-    import type { RowWriter } from '$lib/state/system/config/write';
     import { useState } from '$lib/state/client/use';
     import Fold from '../editors/Fold.svelte';
     import Origins from '../editors/Origins.svelte';
     import PagesReset from '../PagesReset.svelte';
     import RailEditor from '../RailEditor.svelte';
     import AppControl from './other-rows/AppControl.svelte';
+    import ClusterRows from './other-rows/ClusterRows.svelte';
     import WallpaperPicker from './other-rows/WallpaperPicker.svelte';
     import Control from './Control.svelte';
     import Gear from './Gear.svelte';
+    import { scopesHere } from './scopes/context';
     import { defaultWords, said } from './said';
 
-    const {
-        fs: { workspaces },
-        layout: { openView },
-        ui,
-        writes: { writeAppSetting }
-    } = useState();
+    const { ui } = useState();
+
+    const scopes = scopesHere();
 
     type Props = {
         row: Exclude<Row, { kind: 'file' }>;
@@ -84,34 +73,22 @@
         writer: RowWriter;
         editors: EditorWriter;
         lists: Lists;
-        /** Pick the hub a row of a key each hub's own file is read for shows and writes. */
-        onchoose: (row: string, hub: string) => void;
+        /** Show the Repository scope of a folder. */
+        onrepo: (root: string) => void;
     };
 
-    let { row, id, writer, editors, lists, onchoose }: Props = $props();
-
-    /** The hubs the row offers to pick, each by its name. */
-    const hubChoices = $derived(
-        row.kind === 'config' && row.choice !== undefined
-            ? row.choice.offered.map((hub) => ({ id: hub, label: hub }))
-            : []
-    );
-
-    /** The name the row's user file is shown under, the hub's before it for another hub. */
-    const named = $derived(row.kind === 'config' ? placeName(row) : null);
+    let { row, id, writer, editors, lists, onrepo }: Props = $props();
 
     /** Whether the clipboard refused the last copy of this setting's id. */
     let copyRefused = $state(false);
 
+    /** The sentence of a value in a shape its editor does not draw, or null. */
+    const undrawn = $derived(row.kind === 'config' ? undrawnMessage(row) : null);
+
     /** The kind of control the item draws, which the markup names. */
     const control = $derived.by(() => {
-        if (row.kind === 'local') return 'none';
-        if (row.kind === 'config' && row.state === 'missing' && writtenWhole(row.control)) {
-            return 'none';
-        }
         if (row.id === RAIL_ROW) return 'rail';
-        if (row.id === PAGES_ROW) return 'arrangements';
-        if (row.id === WORKBENCH_ROW) return 'workbench';
+        if (undrawn !== null) return 'none';
         return row.control;
     });
 
@@ -145,26 +122,16 @@
     const lines = $derived.by(() => {
         const found: string[] = [];
         if (row.kind !== 'config') {
-            return [
-                ...(row.kind === 'local' && row.refused !== null ? [said(row.refused)] : []),
-                ...(copyRefused ? [t('workbench.settings_copy_refused')] : [])
-            ];
+            return copyRefused ? [t('workbench.settings_copy_refused')] : [];
         }
         if (row.blocked !== undefined) found.push(said(row.blocked));
-        if (
-            row.state === 'missing' &&
-            row.unread === undefined &&
-            writtenWhole(row.control) &&
-            row.key !== WALLPAPER_KEY &&
-            named !== null
-        ) {
-            found.push(said(message('missing', named)));
-        }
+        if (row.note !== undefined) found.push(said(row.note));
+        if (undrawn !== null) found.push(said(undrawn));
         const mismatch = mismatchMessage(row);
         if (mismatch !== null) found.push(said(mismatch));
         const written = writer.said(row);
         if (written !== null) found.push(said(written));
-        const listed = drawsEditor(row) ? null : editors.said(row);
+        const listed = writtenWhole(row.control) && !drawsEditor(row) ? editors.said(row) : null;
         if (listed !== null) found.push(said(listed));
         if (copyRefused) found.push(t('workbench.settings_copy_refused'));
         return found;
@@ -172,17 +139,17 @@
 
     function reset(): void {
         if (row.kind === 'app') {
-            void writeAppSetting(row.setting.key, row.setting.default);
-        } else if (row.kind === 'config' && row.blocked !== undefined) {
+            scopes?.stageApp(row.setting.key, { reset: true });
+        } else if (row.blocked !== undefined) {
             return;
-        } else if (row.kind === 'config' && writtenWhole(row.control)) {
+        } else if (writtenWhole(row.control)) {
             editors.clear(row);
             ui.setInstanceState(id, withSavedDraft(ui.instanceState(id), slotOf(row), null));
-            void editors.reset(row);
-        } else if (row.kind === 'config') {
+            editors.reset(row);
+        } else {
             writer.clear(row);
             ui.setInstanceState(id, withTypedText(ui.instanceState(id), slotOf(row), null));
-            void writer.reset(row);
+            writer.reset(row);
         }
     }
 
@@ -192,25 +159,6 @@
             copyRefused = false;
         } catch {
             copyRefused = true;
-        }
-    }
-
-    /** Where the user's file of the row opens: through the workspace folder holding it, if any. */
-    const target = $derived.by(() => {
-        if (row.kind !== 'config') return null;
-        const place = placeOf(row);
-        return place === null ? null : openTarget(place.root, place.file, workspaces());
-    });
-
-    /** Open the machine file of a hub in a source tab, through the folder named for the hub. */
-    function openHubFile(hub: string): void {
-        const place = hubFileTarget(hub, workspaces());
-        if (place !== null) openView('source', sourceTabState(place.root, place.path));
-    }
-
-    function open(): void {
-        if (row.kind === 'config' && target !== null) {
-            openView('source', sourceTabState(target.root, target.path, row.line));
         }
     }
 </script>
@@ -244,68 +192,10 @@
     {#if control !== 'toggle'}
         <p class="description"><CodeText text={row.help} /></p>
     {/if}
-    {#if row.kind === 'config' && row.choice !== undefined}
-        {@const choice = row.choice}
-        <div class="hub" title={t('workbench.settings_hub_choice_tip')}>
-            <Select
-                value={choice.chosen ?? ''}
-                label={t('workbench.settings_hub_choice')}
-                empty={choice.chosen === undefined
-                    ? t('workbench.settings_hub_choice_none')
-                    : undefined}
-                choices={hubChoices}
-                onchange={(hub: string) => {
-                    if (hub !== '') onchoose(row.id, hub);
-                }}
-            />
-        </div>
-    {/if}
-    {#if row.kind === 'local'}
-        <p class="path"><CodeText text={`\`${row.path}\``} /></p>
-        <p class="standing" role="status">
-            {#if row.hubs.length > 0}
-                {t('workbench.settings_machine_set', row.hubs.join(', '))}
-            {:else if row.setIn !== null}
-                {t('workbench.settings_machine_set', row.setIn)}
-            {:else if row.fallback !== null}
-                {t('workbench.settings_machine_default', row.fallback)}
-            {:else}
-                {t('workbench.settings_machine_unset')}
-            {/if}
-        </p>
-        {#if row.lines.length > 0}
-            <p class="path">{t('workbench.settings_machine_in_force')}</p>
-            <ul class="field-list">
-                {#each row.lines as line, at (at)}
-                    <li><code>{line}</code></li>
-                {/each}
-            </ul>
-        {/if}
-        {#if row.key === 'clusters'}
-            <ClusterRows />
-        {/if}
-        {#if row.hubs.length > 0}
-            <div class="foot">
-                {#each row.hubs as hub (hub)}
-                    {#if hubFileTarget(hub, workspaces()) === null}
-                        <span class="default">
-                            {t('workbench.settings_open_unavailable', LOCAL_PATH)}
-                        </span>
-                    {:else}
-                        <ToolButton
-                            label={t('workbench.settings_machine_edit_in', LOCAL_PATH, hub)}
-                            glyph="edit"
-                            title={t('workbench.settings_machine_edit_tip', LOCAL_PATH, hub)}
-                            onclick={() => openHubFile(hub)}
-                        />
-                    {/if}
-                {/each}
-            </div>
-        {/if}
-    {:else if row.kind === 'app'}
+    {#if row.kind === 'app'}
         <AppControl {row} {lists} />
     {:else}
-        {#if control === 'family' || control === 'rail' || control === 'arrangements' || control === 'workbench'}
+        {#if control === 'family' || control === 'rail'}
             {#if fields.length > 0}
                 <Fold
                     {id}
@@ -324,16 +214,19 @@
             {/if}
         {/if}
         {#if control === 'rail'}
-            <RailEditor {id} title={row.title} searched={searched('entries')} />
-        {:else if control === 'arrangements'}
-            <PagesReset />
+            <RailEditor {id} {row} searched={searched('entries')} />
         {:else if row.key === WALLPAPER_KEY}
             <WallpaperPicker {row} {writer} />
-        {:else if control !== 'workbench' && row.unread === undefined}
+        {:else if row.id === CLUSTERS_ROW && drawsEditor(row) && row.unread === undefined}
+            <ClusterRows {row} {id} {editors} {lists} />
+        {:else if control !== 'none' && row.unread === undefined}
             <Control {row} {id} {writer} {editors} {lists} />
         {/if}
-        {#if row.kind === 'config' && row.key === 'editor.languages'}
-            <Origins />
+        {#if row.id === PAGES_ROW}
+            <PagesReset />
+        {/if}
+        {#if row.kind === 'config' && row.key === 'editor.languages' && row.place.layer !== 'repo'}
+            <Origins {onrepo} />
         {/if}
     {/if}
     {#each lines as line (line)}
@@ -346,24 +239,10 @@
             </span>
         </div>
     {/if}
-    {#if row.kind === 'config'}
+    {#if row.kind === 'config' && row.default !== undefined && defaultWords(row) !== ''}
+        <!-- A key the defaults leave out has no default to name; its help says what holds. -->
         <div class="foot">
-            <!-- A key the defaults leave out has no default to name; its help says what holds. -->
-            {#if row.default !== undefined && defaultWords(row) !== ''}
-                <span class="default">{defaultWords(row)}</span>
-            {/if}
-            {#if row.own && named !== null && target === null}
-                <span class="default">
-                    {t('workbench.settings_open_unavailable', named)}
-                </span>
-            {:else if row.own && named !== null}
-                <ToolButton
-                    label={row.line === undefined ? named : `${named}:${row.line}`}
-                    title={t('workbench.settings_edit_in_tip', named)}
-                    plain
-                    onclick={open}
-                />
-            {/if}
+            <span class="default">{defaultWords(row)}</span>
         </div>
     {/if}
 </div>
@@ -426,8 +305,7 @@
         }
     }
 
-    .description,
-    .path {
+    .description {
         margin: 4px 0 8px;
         color: var(--muted-txt, var(--muted));
         font-size: var(--fs-sm);
@@ -462,21 +340,9 @@
         background: var(--line);
     }
 
-    .hub {
-        width: 220px;
-        max-width: 100%;
-        margin: 0 0 8px;
-    }
-
     .said {
         margin: 6px 0 0;
         color: var(--c-red-txt);
-        font-size: var(--fs-md);
-    }
-
-    .standing {
-        margin: 6px 0 0;
-        color: var(--muted-txt, var(--muted));
         font-size: var(--fs-md);
     }
 

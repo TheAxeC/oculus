@@ -8,25 +8,16 @@
 // A heading draws from the files the options folder describes (the defaults files, and the catalog
 // and schema files of its subfolders and the workspace's words, FILES) that hold an option of its
 // subject, and shows one line for each (FileLine): the file's subject as a short title, its
-// description, the file Open Settings File opens and the file of oculus's Show Defaults opens
-// (`defaultsOf`). A file with a key the workspace sets opens the open workspace file, where the
-// user's values of its options are kept, with the sentence of why no line of a key is known when
-// the workspace file is still being read, unreadable, cut or not parsed, or that the workspace is
-// not saved to a file. A file whose keys under the heading are all keys of the hub list (the hub's
-// vocabulary, its form fields) opens the hub's settings file, `.oculus/config.yml`, read as that
-// file is. A heading that holds a key of the hub list from a file that also holds keys the
-// workspace sets has one more line, once whatever number of files it draws from: the hub's settings
-// file, opened in the hub's root, with its own status and, when it is not there, the sentence that
-// a change creates it. A heading exists only while the options catalog holds an option of its
-// subject, so a merged config with no catalog has none.
+// description and the file of oculus's Show Defaults opens (`defaultsOf`), which only shows it. No
+// line opens a user's file: the user's values are set in the rows. A heading exists only while the
+// options catalog holds an option of its subject, so a merged config with no catalog has none.
 //
 // The rows are read from the merged configuration and the user's files the caller hands in
-// (rows.ts); the machine's own file is never read here, since its rows are its catalog entries and
-// the values the server sent of it. After This machine come the Catalogs, Schemas and Texts groups,
-// one row per file of config/catalogs/, config/schemas/ and config/text/ and its subfolders, made
-// from the listings the caller hands in (view/folders.ts).
+// (rows.ts). The This machine group is there only when the caller hands in the `local.yml` of one
+// hub (`localRows`), which the This machine scope does; its line describes the file. After it come
+// the Catalogs, Schemas and Texts groups, one row per file of config/catalogs/, config/schemas/ and
+// config/text/ and its subfolders, made from the listings the caller hands in (view/folders.ts).
 
-import { hubKeysOf } from '../../../data/helpers/hub-names.ts';
 import {
     HEADINGS,
     UNHEADED,
@@ -35,23 +26,11 @@ import {
 } from '../../../data/sources/config/catalog/options.ts';
 import { toggled } from '../../shared/lists/lists.ts';
 import { t } from '../../shared/words/text.ts';
-import { HUB_FILE } from '../../../data/helpers/hub-names.ts';
-import { PRIMARY_ROOT } from './config-files.ts';
 import type { AppSettingRow } from './other-rows/app-rows.ts';
 import { LOCAL_NAME, LOCAL_PATH, defaultsOf, describedAs } from './config-files.ts';
-import { message, type Message } from './messages.ts';
+import type { Message } from './messages.ts';
 import type { FileRow, Listed } from './view/folders.ts';
-import {
-    fileRows,
-    machineRows,
-    type ConfigRow,
-    type FileResult,
-    type FileStatus,
-    type LocalRow,
-    type MachineState,
-    type UserFileResult,
-    type UserFiles
-} from './rows.ts';
+import { fileRows, localRows, type ConfigRow, type LocalScope, type UserFiles } from './rows.ts';
 
 export { catalogOf } from '../../../data/sources/config/catalog/options.ts';
 
@@ -78,57 +57,44 @@ export const FILES: readonly string[] = [
 ];
 
 /**
- * The ids of the rows the view draws its own editors in: the rail list and the page reset, and the
- * workbench layout, which has no editor and is edited in the file.
+ * The ids of the rows the view draws its own editors in: the rail list, and the page layouts with
+ * the reset of the pages.
  */
 export const RAIL_ROW = 'layout.yml:rail';
 export const PAGES_ROW = 'layout.yml:arrangements';
-export const WORKBENCH_ROW = 'layout.yml:workbench';
 
 /** The id of the group of the machine's own file. */
 const MACHINE_GROUP = 'machine';
 
 /** The ids of the groups listing the catalog files, the schema files and the text files. */
 export const CATALOGS_GROUP = 'catalogs';
-const SCHEMAS_GROUP = 'schemas';
+export const SCHEMAS_GROUP = 'schemas';
 export const TEXTS_GROUP = 'texts';
 
 /** Every kind of row a group holds and a search reads. */
-export type Row = ConfigRow | LocalRow | AppSettingRow | FileRow;
+export type Row = ConfigRow | AppSettingRow | FileRow;
 
 /** One section of a group: its title, a table-of-contents id, and its rows. */
 export type Section = { id: string; title: string; rows: Row[] };
 
-/**
- * One file a heading draws from: a file the options folder describes (`defaults`), the hub's
- * settings file (`hub`) or the machine's own file (`machine`), with what became of the read of the
- * file it opens.
- */
+/** One file a heading draws from: a file the options folder describes, or the machine's file. */
 type FileLine = {
-    kind: 'defaults' | 'hub' | 'machine';
     /**
      * The file's name: the described file's under config/options/ (`behavior.yml`,
-     * `catalogs/vocab.yml`), or the path of the hub's or the machine's file.
+     * `catalogs/vocab.yml`), or the path of the machine's file.
      */
     file: string;
     /** The file's subject in a few words. */
     title: string;
     /**
      * The file under config/ Show Defaults opens (`defaultsOf`), null for a line that has none: the
-     * hub's and the machine's file, and the workspace's words, whose default is the text catalog.
+     * machine's file, and the workspace's words, whose default is the text catalog.
      */
     defaults: string | null;
     /** What the file holds, in one sentence, or the empty string. */
     description: string;
     /** Whether the file is the machine's own, which the view tags. */
     local: boolean;
-    /**
-     * The file Open Settings File opens: its served root (`PRIMARY_ROOT` for a file of the primary
-     * hub, null when no folder serves it) and its path, null for the unsaved workspace.
-     */
-    opens: { root: string | null; path: string | null };
-    status: FileStatus;
-    said: Message | null;
 };
 
 /** One group: a subject heading, the machine's file or a folder's files. */
@@ -192,13 +158,9 @@ function sectionsOf(group: string, rows: Row[]): Section[] {
     return [...sections.values()];
 }
 
-/**
- * Whether a group holds no row and says why: its files are not read, or its folder is not listed.
- */
+/** Whether a group holds no row and says why: its folder is not listed. */
 export function saysWhyEmpty(group: Group): boolean {
-    if (group.sections.length > 0) return false;
-    if (group.lines.length === 0) return group.said !== null;
-    return group.lines.every((line) => line.status !== 'rows');
+    return group.sections.length === 0 && group.said !== null;
 }
 
 /** The group of the files of one folder: a row per file, or the sentence of the listing. */
@@ -263,8 +225,6 @@ function fileTitle(file: string): string {
             return t('settings.title_unimath');
         case 'text.yml':
             return t('settings.title_text');
-        case HUB_FILE:
-            return t('settings.title_config');
         case LOCAL_PATH:
             return t('settings.title_local');
         default:
@@ -272,101 +232,35 @@ function fileTitle(file: string): string {
     }
 }
 
-/**
- * The line of a file with a key the workspace sets: Open Settings File opens the open workspace
- * file, and the line says why no line of a key is known when that file is not read, or that the
- * workspace has no file.
- */
-function defaultsLine(file: string, result: FileResult, user: UserFiles): FileLine {
-    const open = user.workspace;
-    const said = open === null ? message('noWorkspace') : (result.workspace?.said ?? null);
+/** The line of a file the options folder describes: its subject, description and defaults. */
+function fileLine(file: string): FileLine {
     return {
-        kind: 'defaults',
         file,
         title: fileTitle(file),
         defaults: defaultsOf(file),
         description: describedAs(file),
-        local: false,
-        opens: { root: open?.root ?? null, path: open?.path ?? null },
-        status: open === null ? 'rows' : (result.workspace?.status ?? 'rows'),
-        said
+        local: false
     };
 }
 
-/**
- * The line of a file whose keys under a heading are all keys of the hub list: Open Settings File
- * opens the hub's settings file, read as `hubFile` says, and Show Defaults oculus's file. With no
- * primary hub (`hubFile` not given) no folder holds that file, and the line opens none and says so.
- */
-function hubDefaultsLine(file: string, hubFile: UserFileResult | undefined): FileLine {
-    const opens: Pick<FileLine, 'opens' | 'status' | 'said'> =
-        hubFile === undefined
-            ? { opens: { root: null, path: HUB_FILE }, status: 'rows', said: message('noPrimary') }
-            : hubFileLine(hubFile);
-    return {
-        opens: opens.opens,
-        status: opens.status,
-        said: opens.said,
-        local: false,
-        kind: 'defaults',
-        file,
-        title: fileTitle(file),
-        defaults: defaultsOf(file),
-        description: describedAs(file)
-    };
-}
-
-/**
- * The file line of the machine's own file: the `.oculus/local.yml` of the primary hub, which opens
- * through the primary's folder. With no primary no folder holds it and the view says so.
- */
+/** The line of the machine's own file: its subject and description, tagged as the machine's. */
 function machineLine(): FileLine {
     return {
-        kind: 'machine',
         file: LOCAL_PATH,
         title: fileTitle(LOCAL_PATH),
         defaults: null,
         description: describedAs(LOCAL_NAME),
-        local: true,
-        opens: { root: PRIMARY_ROOT, path: LOCAL_PATH },
-        status: 'rows',
-        said: null
+        local: true
     };
 }
-
-/** The file line of the hub's settings file: its path under the hub, read as the result says. */
-function hubFileLine(hubFile: UserFileResult): FileLine {
-    return {
-        kind: 'hub',
-        file: hubFile.path,
-        title: fileTitle(hubFile.path),
-        defaults: null,
-        description: describedAs(hubFile.path),
-        local: false,
-        opens: { root: PRIMARY_ROOT, path: hubFile.path },
-        status: hubFile.status,
-        said: hubFile.said
-    };
-}
-
-/** What the server sent of the machine's files before it has answered: nothing set. */
-const NO_MACHINE: MachineState = {
-    primary: null,
-    set: [],
-    defaults: {},
-    values: {},
-    hubs: {},
-    portRefused: null
-};
 
 /**
  * The groups of the view. `config` is the merged configuration, whose values are the values in
- * force, and `user` the user's files: the hub's settings file, given when there is a primary hub,
- * and the open workspace file, null for the unsaved workspace. `folders` are the listings of the
- * catalog, schema and text folders, and none leaves the three groups out. `apps` are the rows of
- * the settings the apps declare, which stand last in the Apps heading. `machine` is what the server
- * sent of the machine's `local.yml` files: which keys the primary's sets, the default of each key
- * and the value in force of each key that has one.
+ * force, and `user` the user's files: the hub's settings file, given when there is a primary hub
+ * or a hub is read, and the open workspace file, null for the unsaved workspace. `folders` are the
+ * listings of the catalog, schema and text folders, and none leaves the three groups out. `apps`
+ * are the rows of the settings the apps declare, which stand last in the Apps heading. `machine`
+ * is the `local.yml` of one hub the This machine group is made from, and none leaves it out.
  */
 export function settingsGroups(
     catalog: Catalog,
@@ -374,7 +268,7 @@ export function settingsGroups(
     user: UserFiles,
     folders?: FolderListings,
     apps: AppSettingRow[] = [],
-    machine: MachineState = NO_MACHINE
+    machine?: LocalScope
 ): Group[] {
     const groups: Group[] = [];
     const files = FILES.filter((file) => Object.hasOwn(catalog, file));
@@ -385,7 +279,6 @@ export function settingsGroups(
     for (const id of headings) {
         const lines: FileLine[] = [];
         const rows: Row[] = [];
-        let hubLine = false;
         for (const file of files) {
             const entries = Object.entries(catalog[file]).filter(
                 ([, entry]) => entry.heading === id
@@ -393,17 +286,7 @@ export function settingsGroups(
             if (entries.length === 0) continue;
             const result = results.get(file);
             if (result === undefined) continue;
-            const listed = hubKeysOf(file) ?? [];
-            const hubFile = result.hubFile;
-            if (entries.every(([key]) => listed.includes(key))) {
-                lines.push(hubDefaultsLine(file, hubFile));
-            } else {
-                lines.push(defaultsLine(file, result, user));
-                if (hubFile !== undefined && entries.some(([key]) => listed.includes(key))) {
-                    if (!hubLine) lines.push(hubFileLine(hubFile));
-                    hubLine = true;
-                }
-            }
+            lines.push(fileLine(file));
             rows.push(...result.rows.filter((row) => row.entry.heading === id));
         }
         if (lines.length === 0) continue;
@@ -416,14 +299,14 @@ export function settingsGroups(
             sections: sectionsOf(id, id === 'apps' ? [...rows, ...apps] : rows)
         });
     }
-    if (Object.hasOwn(catalog, LOCAL_NAME)) {
+    if (machine !== undefined && Object.hasOwn(catalog, LOCAL_NAME)) {
         groups.push({
             id: MACHINE_GROUP,
             title: t('workbench.settings_heading_machine'),
-            about: machine.primary === null ? t('workbench.settings_machine_no_primary') : '',
+            about: '',
             lines: [machineLine()],
             said: null,
-            sections: sectionsOf(MACHINE_GROUP, machineRows(catalog[LOCAL_NAME], machine))
+            sections: sectionsOf(MACHINE_GROUP, localRows(catalog[LOCAL_NAME], machine))
         });
     }
     if (folders !== undefined) {

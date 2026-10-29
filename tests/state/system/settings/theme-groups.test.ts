@@ -8,7 +8,7 @@
 // the code theme the editors draw. A group is its words, so a group worded as an app's title or as
 // the group of a Shiki row shares that one heading; a code theme id names one theme; and a Shiki
 // row with no label, no group or a repeated id is read row by row. The choice's pool is read as the
-// Settings view's choice field reads it (editors/fields.ts `poolOf`), and split by the rule its
+// Settings view's choice field reads it (editors/offers.ts `poolOf`), and split by the rule its
 // list draws by (`choiceGroups`).
 //
 // The choice `self` of local.yml offers the people of every hub whose key resolves to them from the
@@ -35,7 +35,7 @@ import {
     setAppearance,
     themes
 } from '../../../../src/lib/state/shared/words/appearance.ts';
-import { poolOf } from '../../../../src/lib/state/system/config/editors/fields.ts';
+import { poolOf } from '../../../../src/lib/state/system/config/editors/offers.ts';
 import { listsOf } from '../../../../src/lib/state/system/config/editors/sources.ts';
 import { choiceGroups } from '../../../../src/lib/ui/forms/choice/choices.ts';
 import { plantSaved } from '../../../fixtures/hubs/workspace.ts';
