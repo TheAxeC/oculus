@@ -9,7 +9,8 @@
 import { z } from 'zod';
 import { isMap } from '../../../data/helpers/guards.ts';
 import type { ConnectProvider } from '../../../data/model/index.ts';
-import { ReadTimeout, type Fetcher } from './oauth.ts';
+import { ReadTimeout } from '../../core/reader/timed.ts';
+import type { Fetcher } from './oauth.ts';
 
 /** A field of a provider's error that is text where it is there, and read as absent otherwise. */
 const optionalTextShape = z.string().optional().catch(undefined);

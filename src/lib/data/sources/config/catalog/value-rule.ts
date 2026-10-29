@@ -20,6 +20,7 @@ import {
     hueOfClass,
     listedSources,
     pickedSources,
+    takesRecord,
     type CatalogEntry,
     type Form
 } from './options.ts';
@@ -235,8 +236,9 @@ function listProblem(spec: CatalogEntry, value: unknown): ValueProblem | null {
 /**
  * What is wrong with the shape of a family field's value, by its form: a list of records, a map
  * whose every value is one text, number or flag (or a list of them where the field holds lists or
- * its value is a list), or one record. Each field of a record, a key and a value are the caller's
- * to check, against the lists of their own sources.
+ * its value is a list, a record where its value is a family of one record, and a text or a record
+ * where its value takes either), or one record. Each field of a record, a key and a value are the
+ * caller's to check, against the lists of their own sources.
  */
 function familyProblem(spec: CatalogEntry, value: unknown): ValueProblem | null {
     switch (familyForm(spec)) {
@@ -244,14 +246,20 @@ function familyProblem(spec: CatalogEntry, value: unknown): ValueProblem | null 
             return isMap(value) ? null : { kind: 'record' };
         case 'pairs': {
             if (!isMap(value)) return { kind: 'pairs' };
-            const control = spec.fields?.value.control;
+            const inner = spec.fields?.value;
+            const control = inner?.control;
             const lists =
                 spec.holds === 'lists' ||
                 control === 'list' ||
                 control === 'multi' ||
                 control === 'parked';
+            const records = control === 'records' && inner?.holds === 'record';
+            const either = inner !== undefined && takesRecord(inner);
             const fits = (one: unknown): boolean =>
-                scalar(one) || (lists && Array.isArray(one) && one.every(scalar));
+                (records && isMap(one)) ||
+                (either && isMap(one)) ||
+                (!records && scalar(one)) ||
+                (lists && Array.isArray(one) && one.every(scalar));
             return Object.values(value).every(fits) ? null : { kind: 'pairs' };
         }
         default:
@@ -284,15 +292,17 @@ function paletteProblem(spec: CatalogEntry, text: string, lists: RuleLists): Val
 }
 
 /**
- * What is wrong with a value for an entry or a field, or null when it fits. The type comes first,
- * then a whole number, then the range, then the lists; a list the caller does not hold is not
- * checked against, so a word is taken while its list is not there.
+ * What is wrong with a value for an entry or a field, or null when it fits. A record given to a
+ * text that takes one (takesRecord) fits here, its fields the caller's to check. The type comes
+ * first, then a whole number, then the range, then the lists; a list the caller does not hold is
+ * not checked against, so a word is taken while its list is not there.
  */
 export function valueProblem(
     spec: CatalogEntry,
     value: unknown,
     lists: RuleLists = {}
 ): ValueProblem | null {
+    if (takesRecord(spec) && isMap(value)) return null;
     switch (spec.control) {
         case 'toggle':
             return typeof value === 'boolean' ? null : { kind: 'boolean' };

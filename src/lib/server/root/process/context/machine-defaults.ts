@@ -14,17 +14,6 @@ import { openProgram } from '../../../../data/places/platform.ts';
 import { defaultOverridesPath } from '../../../sessions/overrides.ts';
 import { defaultCachePath } from '../../../sessions/stores/transcripts.ts';
 
-/** The keys under `literature:` of the file, as the catalog names them. */
-const LITERATURE_NAMES = [
-    'literature.wos_key',
-    'literature.scopus_key',
-    'literature.scopus_insttoken',
-    'literature.openalex_key',
-    'literature.semantic_scholar_key',
-    'literature.ncbi_key',
-    'literature.mailto'
-];
-
 /** The word the Settings view shows for a secret that holds a value, in place of the value. */
 export function secretWord(text: Record<string, string>): string {
     return words(text, 'server.machine_default.secret_set');
@@ -32,7 +21,7 @@ export function secretWord(text: Record<string, string>): string {
 
 /**
  * The default of each key of the file, by the key. The sentences for a default that is no value
- * (the rows of the cluster, calendar and mail lists, the literature keys) come from `text`.
+ * (the rows of the cluster, calendar and mail lists, the contact address) come from `text`.
  */
 export function machineDefaults(text: Record<string, string>): Record<string, string> {
     const defaults = localDefaults();
@@ -59,6 +48,6 @@ export function machineDefaults(text: Record<string, string>): Record<string, st
         calendar_dir: defaultConnectDir('calendar'),
         mail_dir: defaultConnectDir('mail'),
         downloads: noAccounts,
-        ...Object.fromEntries(LITERATURE_NAMES.map((name) => [name, noKey]))
+        'literature.mailto': noKey
     };
 }

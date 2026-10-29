@@ -41,7 +41,13 @@ const rowShape = z.object({
     checksum: checksumShape.nullable(),
     url: z.string(),
     source: z.number(),
-    service: z.enum(['physionet', 'kaggle', 'synapse']).optional(),
+    service: z.string().optional(),
+    credential: z
+        .union([
+            z.object({ basic: z.literal(true) }),
+            z.object({ header: z.string(), prefix: z.string().optional() })
+        ])
+        .optional(),
     unpack: z.object({ strip: z.number(), folder: z.string().optional() }).optional(),
     throttle: z.string().optional(),
     state: z.enum(['verified', 'present', 'partial', 'different', 'missing']),
@@ -62,7 +68,10 @@ const stateShape = z.object({
     folder: z.string(),
     access: z.array(
         z.object({
-            service: z.enum(['physionet', 'kaggle', 'synapse']),
+            service: z.string(),
+            name: z.string(),
+            basic: z.boolean(),
+            help: z.string().optional(),
             state: z.enum(['ok', 'missing', 'unreachable']),
             row: z.boolean(),
             status: z.number().optional()
@@ -83,7 +92,7 @@ const stateShape = z.object({
         .nullable(),
     refusal: z
         .object({
-            refused: z.enum(['access', 'status', 'answer', 'name', 'missing', 'network']),
+            refused: z.enum(['access', 'status', 'answer', 'name', 'missing', 'network', 'row']),
             source: z.string(),
             status: z.number().optional(),
             name: z.string().optional()
@@ -96,7 +105,8 @@ const stateShape = z.object({
 
 /**
  * A refusal of the route: its reason, and for a cluster with no host or a target that is no
- * cluster of `slurm.resource` the sentence that says why.
+ * cluster of `slurm.resource` the sentence that says why, for `row` the kind no row of the hub's
+ * `recover.sources` reads.
  */
 const refusalShape = z.object({ refused: z.string(), hint: z.string().optional() });
 
@@ -127,7 +137,7 @@ type Held = {
     state: RecoverState | null;
     /** The route's reason for answering no state (`host`, `place`, `kind`), or the empty text. */
     refused: string;
-    /** The sentence the route gives with `host`. */
+    /** The sentence the route gives with `host`, or the kind it gives with `row`. */
     hint: string;
     /** What the request failed with, or the empty text. */
     error: string;

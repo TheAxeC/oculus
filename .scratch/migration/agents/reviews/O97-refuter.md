@@ -177,3 +177,205 @@ Cases of the brief's "Cases":
 - Breakage testing: none was done by the reviewer; the builder's report and the scratch programs show none (no mutation, no revert of code under test).
 
 Reviewer usage: afd9d66fcf57bdd48, claude-opus-5-5, 126654 tokens, 127 tool uses, 20 min 25 s.
+
+## Repair round 1, refuted
+
+```
+Verify 1, from the worktree root, PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH. The rules file names no output filter (grep -n "filter" .scratch/migration/agents/spec.md prints nothing), so the output went to a file in the reviewer's scratchpad and the summary lines are quoted:
+$ (npm run diagrams && npm run docs:palette && npm run test:quick -- --base f4535f495) > <scratch>/verify1.txt 2>&1; echo "exit $?"
+exit 1
+test:quick: 201 changed file(s), from git since f4535f495
+test:quick: 343 test file(s)
+ok      ASCII gate (2.4 s)
+ok      svelte-kit sync (2.4 s)
+ok      prettier (2.4 s): All matched files use Prettier code style!
+ok      eslint (19.7 s)
+ok      svelte-check (34.4 s): ... COMPLETED 553 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+FAILED  vitest checks (213.8 s)
+ FAIL  tests/checks/config/templates.test.ts > docs/templates.md > shows every key of a hub settings file in the config.yml template, and no other   (missing: links, literature.prefer, literature.sources, recover.sources, venues.browser)
+ FAIL  tests/checks/config/templates.test.ts > docs/templates.md > shows every local.yml key of the options folder in the local.yml template, and no other   (extra: the six literature.*_key keys)
+ Test Files  1 failed | 16 passed (17)
+      Tests  2 failed | 308 passed | 9 skipped (319)
+FAILED  vitest (244.1 s)
+ FAIL  tests/routes/machine/recover.test.ts > ... starts a fetch with the token, and refuses a set Recover does not run   Error: Test timed out in 5000ms.
+ FAIL  tests/routes/hubs/hub-secrets.test.ts > ... (G3)   Error: Test timed out in 5000ms.
+ FAIL  tests/routes/hubs/make.test.ts > ... (G9)   Error: Test timed out in 5000ms.
+ FAIL  tests/server/machine/runs/lint/eslint-life.test.ts > ... ends after 15 minutes without a lint and not a moment before   Error: Test timed out in 5000ms.
+ FAIL  tests/server/machine/runs/lint/eslint-life.test.ts > ... keeps one child for the lints of a folder and restarts the idle wait at each   Error: Test timed out in 5000ms.
+ Test Files  4 failed | 250 passed | 72 skipped (326)
+      Tests  5 failed | 3210 passed | 862 skipped (4077)
+FAILED  vitest slow (415.2 s)
+ FAIL  tests/server/edit/config-value.test.ts > ... writes a family without a key as every key then the removed key set to null   Error: Test timed out in 20000ms.
+ Test Files  1 failed | 90 passed (91)
+      Tests  1 failed | 861 passed | 312 skipped (1174)
+test:quick: 417.9 s; failed: vitest checks, vitest, vitest slow
+test:quick: not covered: tests that reach no changed file within the import depth, other than the checks under tests/checks/source and tests/checks/tree, which run for any change under src, tests or utils; the build, the lint of unchanged files
+
+The six timed-out tests, each file run alone after verify 1:
+$ npx vitest run tests/routes/machine/recover.test.ts            Test Files 1 passed (1), Tests 14 passed (14)
+$ npx vitest run tests/routes/hubs/hub-secrets.test.ts           Test Files 1 passed (1), Tests 10 passed (10)
+$ npx vitest run tests/routes/hubs/make.test.ts                  Test Files 1 passed (1), Tests 35 passed (35)
+$ npx vitest run tests/server/machine/runs/lint/eslint-life.test.ts   Test Files 1 passed (1), Tests 7 passed (7)
+$ npx vitest run tests/server/edit/config-value.test.ts          Test Files 1 passed (1), Tests 23 passed (23)
+So verify 1 is red only on templates.test.ts, as the round allows. git status --short after the run equals the one taken before it, and the round's delta recomputed after the run equals the one before it (the generated docs unchanged).
+
+Verify 2, the ASCII gate over the 178 changed and added files (the 175 of the step plus the cases ruling, the round brief and the report):
+(prints nothing)
+
+Verify 3:
+$ sh utils/unused-exports.sh > <scratch>/unused.txt; diff .agents/worktrees/O97-base/unused-exports.txt <scratch>/unused.txt
+22c22
+< src/lib/server/accounts/connect/oauth.ts: READ_TIMEOUT_MS, callbackPath, CONNECT_MS
+---
+> src/lib/server/accounts/connect/oauth.ts: callbackPath, CONNECT_MS
+
+Verify 4:
+grep 1 (https?://, cluster.ts nodejs and comment lines left out): prints nothing
+grep 2: 62 lines, the same files as the report: config/text/views/sources/venues.yml 2, model-entities.ts 4, model-search.ts 2, content/literature/hits.ts 8, answers.ts 1, state/feeds/literature/bibtex.ts 1, lookup.ts 17, merge.ts 25, Literature.svelte 1, entry-add.ts 1 (identifier readers and venue fields, as cases ruling (a) allows)
+grep 3: prints nothing
+grep 4 as round item 9 amends it:
+$ git grep -n "LITERATURE_SOURCES\|...\|ncbi_key" -- src tests config docs ':!config/local.yml' ':!tests/data/sources/config/local/local.test.ts'
+docs/templates.md:438:#   wos_key: ""
+docs/templates.md:439:#   scopus_key: ""
+docs/templates.md:440:#   scopus_insttoken: ""
+docs/templates.md:441:#   openalex_key: ""
+docs/templates.md:442:#   semantic_scholar_key: ""
+docs/templates.md:443:#   ncbi_key: ""
+
+Verify 6: wc -l over the changed sources and tests: largest tests/checks/config/config.test.ts 879, src/lib/server/root/watch/git.ts 878, tests/checks/tree/boundaries.test.ts 876, src/lib/server/root/context.ts 864, fields.ts 852; largest component Cards.svelte 488; sh utils/folder-check.sh exit 0
+Verify 7: the report's Hub text block against tests/server/core/reader/rows.yml: diff exit 0
+Verify 8, over the round's added comment lines and test titles (the delta), the history words: two hits, sources.test.ts:5 "refused before any request" (an order of steps) and request.ts:40 "as if the row were missing" (a subjunctive); neither names a step, a date or an earlier form
+Verify 9, the round's added lines grepped for " - ", " -- " and "not ... but": only three YAML list items in local.test.ts
+
+The commands the round's section quotes as evidence:
+$ grep -rn "with_terms\|text: true\|names:\s*\[\|expect: { path" src tests config --exclude=local.yml
+  every hit is another module's `names` field (tasks.ts, recipes.ts, schedules, reader.test.ts:792-812 finding names, ...); none in the reader, the grammar or the catalog
+$ npx tsc --noEmit -p .                                          exit 0, prints nothing
+$ npx vitest run tests/server/core/reader tests/server/content/literature tests/routes/docs tests/server/edit tests/state/sources/registries tests/state/system/config --testTimeout 0
+  Test Files 19 passed (19), Tests 362 passed (362)
+$ npx vitest run tests/server/machine/runs/recover --testTimeout 0   Tests 129 passed (129)   (the report says 128, taken before item 6 added an access row; no decision rests on it)
+$ npx vitest run tests/server/core/reader --testTimeout 0            Tests 72 passed (72)
+$ npx vitest run tests/routes/docs/literature.test.ts                Tests 2 passed (2)
+$ npx vitest run tests/checks/config/config.test.ts --testTimeout 0  Tests 42 passed (42)
+$ grep -rn "row_primary_only\|primary: true" src config tests --exclude=local.yml
+  tests/state/boards/board/board-rules.test.ts:469:            primary: true,
+$ npx vitest run tests/data/sources/config/local tests/server/root --testTimeout 0   Test Files 13 passed (13), Tests 117 passed (117)
+$ npx vitest run tests/checks/tree/boundaries.test.ts tests/checks/source/history.test.ts --testTimeout 0   Tests 17 passed (17)
+$ ls <scratch>/caserun
+  case.config.mts case17-after.txt case17-before.txt dom final-out.txt final-r1.txt first-out.txt strip.config.mts tests
+$ ls -d .../T/case30-ksEmIr .../T/case30-SZnDt0 .../T/case30-yvIScH <scratch>/o97-history.sh
+  "No such file or directory" for each of the four
+$ ls -la .agents/worktrees/O97-base
+  config src tests unused-exports.txt utils (dated Oct 28 08:21-08:22)
+```
+
+### Verdicts
+
+The round's eleven items, each against its text in `O97-round1.md`:
+
+- Round item 1: holds. `text: true`, `names`, `with_terms` and `expect.path` are gone from `grammar.ts`, `fields.ts:183`, `formats.ts:103`, `request.ts:237-240` and `config/options/behavior.yml` (delta). The key table is in the report, and its row lines check out on a sample of 25 lines of `rows.yml`. Open item 536 (plan.md:3277, choices.md Z1058) rules (a) on that table.
+- Round item 2: holds. `label` is added in `listing.ts:299-308` and `routes.ts:149`, and `listingWords` names `refusal.label ?? refusal.source` (`recover-words.ts:91`). The new `sources.test.ts` row `ega` / "Genome Archive" passes in the recover rerun.
+- Round item 3: holds. `literature.test.ts:136-144` is back to `toStrictEqual` with the exact object, and the assertion-edit table is in the report.
+- Round item 4: holds. The runs were made in a scratch copy of the base copy, and the reason is given (`engineDir` resolves out of the base copy). Four of the nine copied files fail when they load (module not found, or an undefined fixture), not on their changed rows. For those four, the failure on the base comes from the control: the base's own rows pass under strict equality with expected values that differ from the changed rows'. The reviewer did not rerun this (Declined).
+- Round item 5: holds in code. The flag is gone from `hub-names.ts`. `primaryOnly` is in `hub-keys.ts:61-63`. `hub-layer.ts:564-570` gives `hub_key_primary` for every primary-only key. A new test is in `config.test.ts` (`career_file`, `slurm.resource`). The docs that describe these keys are not updated: Finding 2.
+- Round item 6: holds for the reader (`request.ts:44-46`, `plan.ts:182`) and for the finding at start and at each rebuild of the portfolio (`machine.ts:189-205`, `process/context/machine.ts:67-75`, `context.ts:298-307`). After a `local.yml` edit the finding is not refreshed: Finding 1. The row 'an empty service, an empty user' is judged again in the report.
+- Round item 7: holds. In `call.ts:11-12` the import now stands above the export.
+- Round item 8: holds. The `boundaries.test.ts:89-92` comment and its allowed rows at :349-351 are as asked. `history.test.ts:34` is a list, with `.some(...)` at :100, and its comments say "recorded or written". Both pass in verify 1 and alone.
+- Round item 9: holds. The amended grep prints only `docs/templates.md:438-443`.
+- Round item 10: holds. Both rows are in the look table with before and after. The look program was not rerun (Declined).
+- Round item 11: holds. Every program's source is quoted, which programs wrote files and where is stated, and the programs and their outputs are gone (the `ls` reruns above). The deleted check script ran a banned git command: Finding 5.
+
+Items of the brief's "What to build", for the whole diff since the base:
+
+- 1: holds. `src/lib/server/core/reader/` holds the reader, `core` has ten items, and the reader tests pass (72).
+- 2: holds. Every key outside the named ones is listed as one decision and ruled (a) under open item 536 / Z1058. Every key no row uses is removed (the grep above). The removal of `expect.path` is under Declined.
+- 3: holds. Encoding, `https:`, empty and repeated keys and the secret are unchanged from round 0. The primary-only finding now covers every key of HUB_LIST that `OWN_HUB_KEYS` does not hold (15 keys).
+- 4: holds. The reader rows, G3 (`literature.test.ts`, strict object) and the empty pane all pass.
+- 5: holds. G111 to G114 pass (recover 129). The refusal now carries the row's `name`.
+- 6: holds. The case 14 and 26 rows pass.
+- 7: holds. `browser.test.ts` and `entry-add.test.ts` pass in the item runs.
+- 8: holds. The six keys are gone, and a `downloads` row of any service is read. A basic row with no user is a finding, with Finding 1 on its refresh.
+- 9: holds within O97. The nested controls and the field description copied five times are O99's under ruling 526 (a), booked at plan.md:891.
+- 10: holds as Doc text for landing, with Findings 2 and 3 (lines the round's changes need are missing from the Doc text).
+- 11: holds. Verify 7 exits 0.
+
+Cases of the brief's "Cases", for the whole diff:
+
+- 1, 2, 3, 5, 6, 7, 12, 13, 14, 20, 24, 25, 26, 27: met. Their `reader.test.ts` rows pass (72).
+- 4: met. G3's rows pass, and the strict object is restored.
+- 8: met. Every refusal row of `sources.test.ts` carries the row's `name` as `label`, and the `ega` row checks that the line names "Genome Archive".
+- 9: met. It is in case 8's table (GEO `pre a`, `expect.select`).
+- 10: met. The `access.test.ts` rows pass, including the new row for a row that holds no user.
+- 11: met. Its `sources.test.ts` rows pass.
+- 15: met for the state half by test. The views half is not verifiable here: it needs the look at landing.
+- 16, 17, 18, 28, 32: met. `browser.test.ts` and `entry-add.test.ts` pass.
+- 19, 31: met for state and write by `sparse-card.test.ts`. The card's look is not verifiable here: it needs the look at landing.
+- 21: met. The `local.test.ts` case 21 describe passes.
+- 22: met under round item 9's amended grep 4. Greps 1 and 3 print nothing. Grep 2's 62 lines are identifier readers and venue fields under cases ruling (a). Grep 4's six `docs/templates.md` lines leave with the Doc text at landing.
+- 23: met by reading `retrieval.ts:143-157` and the quoted run of round 0.
+- 29: met. The `safety.test.ts` (G113) rows pass.
+- 30: met by reading `hub-layer.ts:564-570` and `hub-keys.ts:61-63`, and by the `config.test.ts` row for keys a second hub sets. The run quoted in the report is stale: Finding 4.
+
+### Findings
+
+1. `src/lib/server/root/context.ts:742` and `:780` (behaviour). Quoted: "const problemsBefore = machine.held().problems;" and "!isDeepStrictEqual(problemsBefore, machine.held().problems)".
+   - What is wrong: round item 6 adds the `local_user` problems outside `machine.held().problems`, through `heldProblems` in the `problems` closure (`context.ts:298-307`). `reloadLocal` still decides whether to tell the portfolio by `machine.held().problems` alone. A `local.yml` edit that only adds or removes the `user` of a `downloads` row that a basic `auth` entry names leaves those problems equal and `heldBack` equal, so no `heardHeld` listener fires. Nothing else rebuilds the payload that words them (`payload.ts:92`): `BUILT_FROM` in `watch/local.ts:160-170` has no `downloads` entry, and `namedByConfig` (`watch/portfolio/reads.ts:23-55`) does not name `local.yml`.
+   - Found by reading. No test covers this wiring.
+   - Failure scenario: the user adds `user: alice` to `{ service: physionet, secret: s }`. Recover then signs in, but Settings' This machine and the Findings view keep "the downloads row of physionet has no user, ..." until a restart or a change to a hub's file. Taking the user out of a row shows no finding until then either.
+   - Fix (small, inside round item 6): compare `problems()` before and after in `reloadLocal`.
+   - Verdict: none on an item; it is round item 6's refresh.
+2. The report's Doc text for `docs/data-map.md` line 278, and `docs/data-map.md:266` (standards: a sentence the diff makes false).
+   - Quoted: the replacement for 278, "Another hub that sets `literature.sources`, `literature.prefer` or `links` has a finding of its file, and the key is not applied."; and 266 as it stands, "Its `portfolio_deck`, `career_file`, ... and `app_settings` are not read: those keys are read from the primary hub's file alone."
+   - What is wrong: after round item 5, every one of the fifteen primary-only keys set in another hub is the finding `hub_key_primary` (`hub-layer.ts:564-570`; `config.test.ts` tests `career_file` and `slurm.resource`). The Doc text still limits the finding to three keys. Line 266 lists twelve keys and says only that they are not read, and the Doc text gives no line for it.
+   - Failure scenario: a hub author reads the data map, sets `career_file` in a lab hub expecting it to be ignored quietly, and meets an Audit finding the page does not mention.
+   - Fix at landing, in the Doc text.
+   - Verdict: none.
+3. The report's Doc text for `agents/guarded.md` (standards: spec.md "What every package obeys", the rule that a test exists only as the test of one entry and is named there by file and title).
+   - What is wrong: the round adds two tests that no Test line names.
+     - `tests/data/sources/config/local/local.test.ts`, describe 'a downloads row a reader row signs in to with a user'. It tests `userProblems` (`src/lib/data/sources/config/machine.ts`) and `basicServices` (`rows/read.ts`). G13's `local.ts` line names only the describe of `checkLocal`, and the G136 Doc text names only `reader.test.ts`.
+     - The G111 row "a refused answer's line names the row by its name, the refusal by its key". G111's Doc text Test line lists its extra rows by title and does not list this one.
+   - Failure scenario: at landing `guarded.md` is written from the Doc text, and a later step that deletes the user finding finds no entry for the test, or a reader cannot tell which entry the test guards.
+   - Fix at landing, in the Doc text.
+   - Verdict: none.
+4. The report's sections from round 0 that the round did not update (spec).
+   - "Files outside the brief's paths" does not name three paths outside both write lists (the brief's "Paths this step writes" and the round's "Paths this round writes"): `src/lib/data/sources/config/machine.ts`, `src/lib/server/root/process/context/machine.ts` and `tests/checks/config/config.test.ts`. They appear only inside the item 5 and item 6 text.
+   - Its `hub-layer.ts` reason still reads "(`literature.sources`, `literature.prefer`, `links`)".
+   - The file table's line counts are from before the round. In the table and now: `grammar.ts` 506 and 499, `context.ts` 855 and 864, `listing.ts` 329 and 346, `request.ts` 241 and 243, `local.test.ts` 277 and 307, `sources.test.ts` 658 and 693 (`wc -l`).
+   - The quoted case 30 run (report lines 205-206) prints "it is not used", the words of the removed `row_primary_only`. The finding now reads "it is not applied" (`config/text/findings.yml`, `hub_key_primary`).
+   - The decision that rests on these: the landing's check of the diff against the write lists, and case 30's quoted proof.
+   - Failure scenario: the orchestrator checks the paths against the report's outside list and misses three files, or reads the case 30 quote as the current wording.
+   - The three paths are reasonable homes for the code (judgment). Fix at landing, by correcting the report.
+   - Verdict: none.
+5. The builder's deleted check script `scratchpad/o97-history.sh`, quoted in the report under round item 11 (standards: spec.md "Where you work").
+   - Quoted: "git ls-files --others --exclude-standard -- src tests utils config | ... git diff -U0 --no-index /dev/null "$f"".
+   - What is wrong: `ls-files` is one of the git commands spec.md says a builder never runs, and the script is a program outside the case-run form.
+   - Its output (verify 8) is reproduced by the reviewer's own grep over the round's delta (two hits, both acceptable).
+   - Failure scenario: none at run time. The rule on builder git commands is broken.
+   - Disposition: the orchestrator's, under the standing ruling "Unapproved builder scripts".
+   - Verdict: none.
+
+### Declined to judge
+
+- Round item 4's runs on the base were not rerun, because they need a scratch copy of the base copy written and run. The report's item 4 recipe would settle them: `cp -R` of the base copy, with the base's `package.json` and `node_modules` linked.
+- Round item 10's look program was not rerun, because it is deleted. The two look rows are judged by reading `words.ts` and `bibtex.ts`. The look at landing settles them.
+- The view halves of cases 15 and 19, and every row of the look table, are left to the look at landing, because the reviewer starts no server.
+- Whether the removal of `expect.path` departs from ruling 531's text ("a path or selector an answer must hold", plan.md:3272). Z1058 records the removal, so reading whether ruling 536 amends ruling 531 is the orchestrator's call.
+- Whether `docs/apps.md:404` (the `datasets` row: "`recover` (true when every source is a download)") still holds. The dataset model gains `unread?` (`model-entities.ts:569`), and `recover` now depends on the hub's `recover.sources` rows (`retrieval.ts:153-156`). This is round 0 material, and it is not checked whether the apps record carries these fields. `grep -rn "datasets" src/lib/server/machine/apps` and a read of the record builder would settle it.
+- Finding 1 is from reading the code alone. A run of the server with a `local.yml` edit would confirm it, and the reviewer starts no server.
+- The reviewer's own runs: the runner moved verify 1 to the background after 180 s. The reviewer waited for its completion notice and started nothing heavy beside it. Command outputs went to files in the reviewer's scratchpad, never into a worktree or the ledger.
+- Breakage testing: the reviewer did none. The round's report and its quoted programs show none.
+
+Reviewer usage: a6849cfbb9aa72906, claude-opus-5-5, 298674 tokens, 99 tool uses, 19 min 46 s.
+
+### Closed
+
+The findings of the review over round 1 are never sent to the builder; each is closed here.
+
+- Finding 1 (the `local_user` finding not refreshed after a `local.yml` edit): fixed at landing in `src/lib/server/root/context.ts`, `reloadLocal` comparing `problems()` before and after, small and inside round item 6.
+- Finding 2 (the data map limits the primary-only finding to three keys): fixed at landing in the Doc text for `docs/data-map.md`, lines 266 and 278.
+- Finding 3 (two tests no entry names): fixed at landing in the Doc text for `agents/guarded.md`, the `local.test.ts` describe under G13 and the G111 row under G111.
+- Finding 4 (report sections not updated): fixed at landing in the saved report: the three outside paths named, the `hub-layer.ts` reason and the line counts corrected, and case 30's quote set to the current words.
+- Finding 5 (the builder's script ran `git ls-files`): closed under the standing ruling "Unapproved builder scripts" (`plan.md` Rulings); the breach is recorded in the booking, and nothing the script produced is used, the reviewer's own grep giving verify 8.
+- Declined, `expect.path`: ruling 531 was the orchestrator's own (automode, Z1057); Z1058 (open item 536) records its narrowing to a selector, which no row needed as a path.
+- Declined, `docs/apps.md:404`: checked at landing against the apps record builder.
+

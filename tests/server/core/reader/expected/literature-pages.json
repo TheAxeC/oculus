@@ -1,0 +1,513 @@
+[
+    {
+        "id": "openalex",
+        "requests": 1,
+        "page": {
+            "total": 305,
+            "more": true,
+            "cursor": "1",
+            "hits": [
+                {
+                    "source": "openalex",
+                    "id": "https://openalex.org/W2008114373",
+                    "title": "Tensor decomposition of EEG signals: A brief review",
+                    "authors": [
+                        "Fengyu Cong",
+                        "Qiu\u2010Hua Lin",
+                        "Li\u2010Dan Kuang",
+                        "Xiao\u2010Feng Gong",
+                        "Piia Astikainen",
+                        "Tapani Ristaniemi"
+                    ],
+                    "type": "article",
+                    "rank": 1,
+                    "doi": "10.1016/j.jneumeth.2015.03.018",
+                    "pmid": "25840362",
+                    "venue": "Journal of Neuroscience Methods",
+                    "year": 2015,
+                    "date": "2015-04-05",
+                    "abstract": "Electroencephalography (EEG) is one fundamental tool for functional brain imaging. EEG signals tend to be represented by a vector or a matrix to facilitate data processing and analysis with generally understood methodologies like time-series analysis, spectral analysis and matrix decomposition. Indeed, EEG signals are often naturally born with more than two modes of time and space, and they can be denoted by a multi-way array called as tensor. This review summarizes the current progress of tensor decomposition of EEG signals with three aspects. The first is about the existing modes and tensors of EEG signals. Second, two fundamental tensor decomposition models, canonical polyadic decomposition (CPD, it is also called parallel factor analysis-PARAFAC) and Tucker decomposition, are introduced and compared. Moreover, the applications of the two models for EEG signals are addressed. Particularly, the determination of the number of components for each mode is discussed. Finally, the N-way partial least square and higher-order partial least square are described for a potential trend to process and analyze brain signals of two modalities simultaneously.",
+                    "cites": 335,
+                    "oa": true,
+                    "pdf": "https://www.sciencedirect.com/science/article/pii/S0165027015001016/pdf",
+                    "url": "https://doi.org/10.1016/j.jneumeth.2015.03.018"
+                },
+                {
+                    "source": "openalex",
+                    "id": "https://openalex.org/W7112568898",
+                    "title": "EEG tensor decomposition",
+                    "authors": ["Burcu Tutuk"],
+                    "type": "preprint",
+                    "rank": 2,
+                    "venue": "OSF Preprints (OSF Preprints)",
+                    "year": 2025,
+                    "date": "2025-07-24",
+                    "cites": 0,
+                    "url": "https://osf.io/aj2mh"
+                },
+                {
+                    "source": "openalex",
+                    "id": "https://openalex.org/W2512572635",
+                    "title": "Nonnegative Matrix and Tensor Decomposition of EEG",
+                    "authors": ["Fengyu Cong"],
+                    "type": "chapter",
+                    "rank": 3,
+                    "doi": "10.1007/978-981-10-1822-0_14",
+                    "venue": "Springer eBooks",
+                    "year": 2016,
+                    "date": "2016-01-01",
+                    "cites": 3,
+                    "url": "https://doi.org/10.1007/978-981-10-1822-0_14"
+                }
+            ]
+        }
+    },
+    {
+        "id": "semantic_scholar",
+        "requests": 1,
+        "page": {
+            "total": 1847,
+            "more": true,
+            "cursor": "3",
+            "hits": [
+                {
+                    "source": "semantic_scholar",
+                    "id": "9f2a31c4e0b8d7a6f5e4c3b2a1908f7e6d5c4b3a",
+                    "title": "Tensor decomposition of EEG signals: A brief review",
+                    "authors": ["F. Cong", "Qiu-Hua Lin", "Li-Dan Kuang"],
+                    "type": "review",
+                    "rank": 1,
+                    "doi": "10.1016/j.jneumeth.2015.03.018",
+                    "pmid": "25840362",
+                    "venue": "Journal of Neuroscience Methods",
+                    "year": 2015,
+                    "date": "2015-04-01",
+                    "abstract": "Electroencephalography (EEG) is one fundamental tool for functional brain imaging.",
+                    "cites": 312,
+                    "oa": true,
+                    "pdf": "https://arxiv.org/pdf/1502.00093",
+                    "url": "https://www.semanticscholar.org/paper/9f2a31c4e0b8d7a6f5e4c3b2a1908f7e6d5c4b3a",
+                    "bibtex": "@['JournalArticle', 'Review']{Cong2015TensorDO,\n author = {F. Cong and Qiu-Hua Lin and Li-Dan Kuang},\n journal = {Journal of Neuroscience Methods},\n pages = {59-69},\n title = {Tensor decomposition of EEG signals: A brief review},\n volume = {248},\n year = {2015}\n}\n"
+                },
+                {
+                    "source": "semantic_scholar",
+                    "id": "4b7c2d9e1f0a3b5c6d8e7f9a0b1c2d3e4f5a6b7c",
+                    "title": "Tensor Decomposition of Large-scale Clinical EEGs Reveals Interpretable Patterns of Brain Physiology",
+                    "authors": ["Teja Gupta", "Neeraj Wagh"],
+                    "type": "conference",
+                    "rank": 2,
+                    "doi": "10.1109/ner52421.2023.10123787",
+                    "pmid": "36921000",
+                    "arxiv": "2211.13793",
+                    "venue": "International IEEE/EMBS Conference on Neural Engineering",
+                    "year": 2022,
+                    "date": "2022-11-24",
+                    "cites": 9,
+                    "url": "https://www.semanticscholar.org/paper/4b7c2d9e1f0a3b5c6d8e7f9a0b1c2d3e4f5a6b7c",
+                    "bibtex": "@['Conference']{Gupta2022TensorDO,\n author = {Teja Gupta and Neeraj Wagh},\n booktitle = {International IEEE/EMBS Conference on Neural Engineering},\n title = {Tensor Decomposition of Large-scale Clinical EEGs Reveals Interpretable Patterns of Brain Physiology},\n year = {2022}\n}\n"
+                },
+                {
+                    "source": "semantic_scholar",
+                    "id": "c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9",
+                    "title": "Nonnegative Matrix and Tensor Decomposition of EEG",
+                    "authors": ["F. Cong"],
+                    "type": "other",
+                    "rank": 3,
+                    "doi": "10.1007/978-981-10-1822-0_14",
+                    "venue": "Signal Processing in Neuroscience",
+                    "url": "https://www.semanticscholar.org/paper/c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9"
+                }
+            ]
+        }
+    },
+    {
+        "id": "crossref",
+        "requests": 1,
+        "page": {
+            "total": 334798,
+            "more": true,
+            "cursor": "3",
+            "hits": [
+                {
+                    "source": "crossref",
+                    "id": "10.1007/978-981-10-1822-0_14",
+                    "title": "Nonnegative Matrix and Tensor Decomposition of EEG",
+                    "authors": ["Fengyu Cong"],
+                    "type": "chapter",
+                    "rank": 1,
+                    "doi": "10.1007/978-981-10-1822-0_14",
+                    "venue": "Signal Processing in Neuroscience",
+                    "year": 2016,
+                    "date": "2016",
+                    "cites": 2,
+                    "url": "https://doi.org/10.1007/978-981-10-1822-0_14"
+                },
+                {
+                    "source": "crossref",
+                    "id": "10.1101/685941",
+                    "title": "Extraction of common task features in EEG-fMRI data using coupled tensor-tensor decomposition",
+                    "authors": [
+                        "Yaqub Jonmohamadi",
+                        "Suresh Muthukumaraswamy",
+                        "Joseph Chen",
+                        "Jonathan Roberts",
+                        "Ross Crawford",
+                        "Ajay Pandey"
+                    ],
+                    "type": "preprint",
+                    "rank": 2,
+                    "doi": "10.1101/685941",
+                    "year": 2019,
+                    "date": "2019-07-02",
+                    "abstract": "Abstract The fusion of simultaneously recorded EEG and fMRI data is of great value to neuroscience research due to the complementary properties of the individual modalities. Traditionally, techniques such as PCA and ICA, which rely on strong strong non-physiological assumptions such as orthogonality and statistical independence, have been used for this purpose. Recently, tensor decomposition techniques such as parallel factor analysis have gained more popularity in neuroimaging applications as they are able to inherently contain the multidimensionality of neuroimaging data and achieve uniqueness in decomposition without imposing strong assumptions. Previously, the coupled matrix-tensor decomposition (CMTD) has been applied for the fusion of the EEG and fMRI. Only recently the coupled tensor-tensor decomposition (CTTD) has been proposed. Here for the first time, we propose the use of CTTD of a 4th order EEG tensor (space, time, frequency, and participant) and 3rd order fMRI tensor (space, time, participant), coupled partially in time and participant domains, for the extraction of the task related features in both modalities. We used both the sensor-level and source-level EEG for the coupling. The phase shifted paradigm signals were incorporated as the temporal initializers of the CTTD to extract the task related features. The validation of the approach is demonstrated on simultaneous EEG-fMRI recordings from six participants performing an N-Back memory task. The EEG and fMRI tensors were coupled in 9 components out of which 7 components had a high correlation (more than 0.85) with the task. The result of the fusion recapitulates the well-known attention network as being positively, and the default mode network working negatively time-locked to the memory task.",
+                    "cites": 0,
+                    "url": "https://doi.org/10.1101/685941"
+                },
+                {
+                    "source": "crossref",
+                    "id": "10.64898/2025.12.21.695795",
+                    "title": "Low-Rank Tensor Decomposition for Cross-Bispectral Analysis of EEG Data",
+                    "authors": ["Dionysia Kaziki", "Andreas K. Engel", "Guido Nolte"],
+                    "type": "preprint",
+                    "rank": 3,
+                    "doi": "10.64898/2025.12.21.695795",
+                    "year": 2025,
+                    "date": "2025-12-23",
+                    "abstract": "Abstract Cross-bispectral measures provide a rich description of interactions in EEG signals, but their third-order tensor structure poses substantial challenges for interpretation and dimensionality reduction. We introduce a low-rank tensor decomposition framework specifically designed for cross-bispectral EEG data. The model expresses the bispectrum as a product of a single spatial mixing matrix and a compact source-interaction tensor, yielding a structured and interpretable representation of the data. Unlike classical tensor decompositions such as Tucker and its special case PARAFAC, where either the core tensor is unconstrained or restricted to rank-one terms, our formulation incorporates a source-space interpretation directly through the tensor Q mnp , making the decomposition well suited for identifying dominant coupling components. After obtaining the low-rank representation, spatial demixing is performed using MOCA to derive clear and interpretable source maps. Through simulations, we show that the method consistently retrieves the dominant structure of the bispectrum across a wide range of conditions, including changes in SNR, dipole orientation, amplitude balance, and source complexity. Applied to resting-state EEG, the method produces anatomically plausible parietal generators associated with the strongest alpha-band bispectral interactions. Overall, the framework provides a principled and computationally efficient approach for reducing and interpreting cross-bispectral EEG data, offering source-level insights that are difficult to obtain using standard tensor factorization techniques.",
+                    "cites": 0,
+                    "url": "https://doi.org/10.64898/2025.12.21.695795"
+                }
+            ]
+        }
+    },
+    {
+        "id": "pubmed",
+        "requests": 2,
+        "page": {
+            "total": 101,
+            "more": true,
+            "cursor": "3",
+            "hits": [
+                {
+                    "source": "pubmed",
+                    "id": "25840362",
+                    "title": "Tensor decomposition of EEG signals: a brief review.",
+                    "authors": [
+                        "Fengyu Cong",
+                        "Qiu-Hua Lin",
+                        "Li-Dan Kuang",
+                        "Xiao-Feng Gong",
+                        "Piia Astikainen",
+                        "Tapani Ristaniemi"
+                    ],
+                    "type": "review",
+                    "rank": 1,
+                    "doi": "10.1016/j.jneumeth.2015.03.018",
+                    "pmid": "25840362",
+                    "venue": "Journal of neuroscience methods",
+                    "year": 2015,
+                    "date": "2015-06-15",
+                    "abstract": "Electroencephalography (EEG) is one fundamental tool for functional brain imaging. EEG signals tend to be represented by a vector or a matrix to facilitate data processing and analysis with generally understood methodologies like time-series analysis, spectral analysis and matrix decomposition. Indeed, EEG signals are often naturally born with more than two modes of time and space, and they can be denoted by a multi-way array called as tensor. This review summarizes the current progress of tensor decomposition of EEG signals with three aspects. The first is about the existing modes and tensors of EEG signals. Second, two fundamental tensor decomposition models, canonical polyadic decomposition (CPD, it is also called parallel factor analysis-PARAFAC) and Tucker decomposition, are introduced and compared. Moreover, the applications of the two models for EEG signals are addressed. Particularly, the determination of the number of components for each mode is discussed. Finally, the N-way partial least square and higher-order partial least square are described for a potential trend to process and analyze brain signals of two modalities simultaneously.",
+                    "url": "https://pubmed.ncbi.nlm.nih.gov/25840362/"
+                },
+                {
+                    "source": "pubmed",
+                    "id": "38420472",
+                    "title": "A tensor decomposition scheme for EEG-based diagnosis of mild cognitive impairment.",
+                    "authors": [
+                        "Alireza Faghfouri",
+                        "Vahid Shalchyan",
+                        "Hamza Ghazanfar Toor",
+                        "Imran Amjad",
+                        "Imran Khan Niazi"
+                    ],
+                    "type": "article",
+                    "rank": 2,
+                    "doi": "10.1016/j.heliyon.2024.e26365",
+                    "pmid": "38420472",
+                    "venue": "Heliyon",
+                    "year": 2024,
+                    "date": "2024-02-29",
+                    "abstract": "Mild Cognitive Impairment (MCI) is the primary stage of acute Alzheimer's disease, and early detection is crucial for the person and those around him. It is difficult to recognize since this mild stage does not have clear clinical signs, and its symptoms are between normal aging and severe dementia. Here, we propose a tensor decomposition-based scheme for automatically diagnosing MCI using Electroencephalogram (EEG) signals. A new projection is proposed, which preserves the spatial information of the electrodes to construct a data tensor. Then, using parallel factor analysis (PARAFAC) tensor decomposition, the features are extracted, and a support vector machine (SVM) is used to discriminate MCI from normal subjects. The proposed scheme was tested on two different datasets. The results showed that the tensor-based method outperformed conventional methods in diagnosing MCI with an average classification accuracy of 93.96% and 78.65% for the first and second datasets, respectively. Therefore, it seems that maintaining the spatial topology of the signals plays a vital role in the processing of EEG signals.",
+                    "url": "https://pubmed.ncbi.nlm.nih.gov/38420472/"
+                },
+                {
+                    "source": "pubmed",
+                    "id": "38825216",
+                    "title": "EEG tensor decomposition delineates neurophysiological principles underlying conflict-modulated action restraint and action cancellation.",
+                    "authors": [
+                        "Negin Gholamipourbarogh",
+                        "Elena Eggert",
+                        "Alexander M\u00fcnchau",
+                        "Christian Frings",
+                        "Christian Beste"
+                    ],
+                    "type": "article",
+                    "rank": 3,
+                    "doi": "10.1016/j.neuroimage.2024.120667",
+                    "pmid": "38825216",
+                    "venue": "NeuroImage",
+                    "year": 2024,
+                    "date": "2024-07-15",
+                    "abstract": "Executive functions are essential for adaptive behavior. One executive function is the so-called 'interference control' or conflict monitoring another one is inhibitory control (i.e., action restraint and action cancelation). Recent evidence suggests an interplay of these processes, which is conceptually relevant given that newer conceptual frameworks imply that nominally different action/response control processes are explainable by a small set of cognitive and neurophysiological processes. The existence of such overarching neural principles has as yet not directly been examined. In the current study, we therefore use EEG tensor decomposition methods, to look into possible common neurophysiological signatures underlying conflict-modulated action restraint and action cancelation as mechanism underlying response inhibition. We show how conflicts differentially modulate action restraint and action cancelation processes and delineate common and distinct neural processes underlying this interplay. Concerning the spatial information modulations are similar in terms of an importance of processes reflected by parieto-occipital electrodes, suggesting that attentional selection processes play a role. Especially theta and alpha activity seem to play important roles. The data also show that tensor decomposition is sensitive to the manner of task implementation, thereby suggesting that switch probability/transitional probabilities should be taken into consideration when choosing tensor decomposition as analysis method. The study provides a blueprint of how to use tensor decomposition methods to delineate common and distinct neural mechanisms underlying action control functions using EEG data.",
+                    "url": "https://pubmed.ncbi.nlm.nih.gov/38825216/"
+                }
+            ]
+        }
+    },
+    {
+        "id": "europe_pmc",
+        "requests": 1,
+        "page": {
+            "total": 91,
+            "more": true,
+            "cursor": "3|AoIIQKiwcSg1NTU3OTY0Ng==",
+            "hits": [
+                {
+                    "source": "europe_pmc",
+                    "id": "MED:42082088",
+                    "title": "Equivalence of modified k-means and tensor decomposition in EEG microstates: Implications for analysis and interpretation.",
+                    "authors": ["Ro\u0161\u0165\u00e1kov\u00e1 Z", "Rosipal R"],
+                    "type": "article",
+                    "rank": 1,
+                    "doi": "10.1016/j.neuroimage.2026.121962",
+                    "pmid": "42082088",
+                    "venue": "NeuroImage",
+                    "year": 2026,
+                    "date": "2026-05-02",
+                    "abstract": "In the resting state, the human brain quickly transitions among a limited set of quasi-stable states known as EEG microstates, which characterize brain spatio-temporal activity with high temporal resolution. EEG microstates are typically identified using a clustering algorithm that analyzes peaks in the EEG global field power. In this study, we focus on the modified k-means algorithm (modKM), one of the most commonly employed methods for detecting EEG microstates. We demonstrate, both theoretically and through simulation and real EEG data, its equivalence with a different method known as the Implicit Slice Canonical Decomposition (IMSCAND), which is a special kind of tensor decomposition for symmetric higher order arrays. This relationship opens new avenues for EEG microstate detection, interpretation, and analysis by utilizing tensor decomposition methods and related techniques.",
+                    "cites": 0,
+                    "url": "https://europepmc.org/article/MED/42082088"
+                },
+                {
+                    "source": "europe_pmc",
+                    "id": "MED:42638687",
+                    "title": "High-accuracy EEG-based driver fatigue detection using feature-coupled tensor decomposition for multimodal brain connectivity analysis.",
+                    "authors": [
+                        "Yan T",
+                        "Su H",
+                        "Yang Z",
+                        "Zhang A",
+                        "Ma Y",
+                        "Wang X",
+                        "Wu Y",
+                        "Yan L",
+                        "Wang Y",
+                        "Cao J"
+                    ],
+                    "type": "article",
+                    "rank": 2,
+                    "doi": "10.1007/s11571-026-10531-2",
+                    "pmid": "42638687",
+                    "venue": "Cognitive neurodynamics",
+                    "year": 2026,
+                    "date": "2026-08-24",
+                    "abstract": "Driver fatigue is a major threat to road safety, and electroencephalography (EEG)-based monitoring offers an effective approach for assessing a driver's cognitive state. However, existing brain network feature-extraction methods often rely on single-modality connectivity metrics, which may not fully capture the complex multidimensional reorganization of neural dynamics during the transition to fatigue. To address this methodological gap, this study proposes a Feature-Coupled Tensor Decomposition (FCTD) framework for multimodal brain network analysis. The framework constructs independent high-order tensors for three complementary connectivity metrics: signal covariance (representing amplitude coupling), phase-locking value (representing phase synchronization), and Liang-Kleeman information flow (representing directed information transfer). Using Tucker decomposition, FCTD learns spatial bases at the scalp-electrode level and employs a cross-mapping strategy to integrate latent inter-modality dependencies. The proposed framework was evaluated on two publicly available driver fatigue EEG datasets. Under a chronological block-wise 10-fold cross-validation protocol designed to reduce the risk of temporal leakage, the method achieved average accuracies of 99.42% and 93.62% on Dataset 1 and Dataset 2, respectively. Leave-one-subject-out (LOSO) cross-validation on Dataset 2 yielded an accuracy of 75.18%, indicating that cross-subject generalization remains challenging under substantial inter-subject variability. By integrating complementary connectivity views, this study provides a computationally efficient framework with feature projections for multimodal EEG feature extraction in fatigue monitoring systems.",
+                    "cites": 0,
+                    "url": "https://europepmc.org/article/MED/42638687"
+                },
+                {
+                    "source": "europe_pmc",
+                    "id": "PPR:PPR1230389",
+                    "title": "Low-Rank Tensor Decomposition for Cross-Bispectral Analysis of EEG Data",
+                    "authors": ["Kaziki D", "Engel AK", "Nolte G"],
+                    "type": "preprint",
+                    "rank": 3,
+                    "doi": "10.64898/2025.12.21.695795",
+                    "year": 2025,
+                    "date": "2025-12-23",
+                    "abstract": "Cross-bispectral measures provide a rich description of interactions in EEG signals, but their third-order tensor structure poses substantial challenges for interpretation and dimensionality reduction. We introduce a low-rank tensor decomposition framework specifically designed for cross-bispectral EEG data. The model expresses the bispectrum as a product of a single spatial mixing matrix and a compact source-interaction tensor, yielding a structured and interpretable representation of the data. Unlike classical tensor decompositions such as Tucker and its special case PARAFAC, where either the core tensor is unconstrained or restricted to rank-one terms, our formulation incorporates a source-space interpretation directly through the tensor Q mnp , making the decomposition well suited for identifying dominant coupling components. After obtaining the low-rank representation, spatial demixing is performed using MOCA to derive clear and interpretable source maps. Through simulations, we show that the method consistently retrieves the dominant structure of the bispectrum across a wide range of conditions, including changes in SNR, dipole orientation, amplitude balance, and source complexity. Applied to resting-state EEG, the method produces anatomically plausible parietal generators associated with the strongest alpha-band bispectral interactions. Overall, the framework provides a principled and computationally efficient approach for reducing and interpreting cross-bispectral EEG data, offering source-level insights that are difficult to obtain using standard tensor factorization techniques.",
+                    "cites": 0,
+                    "oa": true,
+                    "pdf": "https://europepmc.org/api/fulltextRepo?pprId=PPR1230389&type=FILE&fileName=EMS214651-pdf.pdf&mimeType=application/pdf",
+                    "url": "https://europepmc.org/article/PPR/PPR1230389"
+                }
+            ]
+        }
+    },
+    {
+        "id": "arxiv",
+        "requests": 1,
+        "page": {
+            "total": 20,
+            "more": true,
+            "cursor": "3",
+            "hits": [
+                {
+                    "source": "arxiv",
+                    "id": "1807.01541",
+                    "title": "Tensor Decomposition for EEG Signal Retrieval",
+                    "authors": ["Zehong Cao", "Mukesh Prasad", "M. Tanveer", "Chin-Teng Lin"],
+                    "type": "preprint",
+                    "rank": 1,
+                    "doi": "10.1109/smc.2019.8914076",
+                    "arxiv": "1807.01541",
+                    "year": 2018,
+                    "date": "2018-07-04",
+                    "abstract": "Prior studies have proposed methods to recover multi-channel electroencephalography (EEG) signal ensembles from their partially sampled entries. These methods depend on spatial scenarios, yet few approaches aiming to a temporal reconstruction with lower loss. The goal of this study is to retrieve the temporal EEG signals independently which was overlooked in data pre-processing. We considered EEG signals are impinging on tensor-based approach, named nonlinear Canonical Polyadic Decomposition (CPD). In this study, we collected EEG signals during a resting-state task. Then, we defined that the source signals are original EEG signals and the generated tensor is perturbed by Gaussian noise with a signal-to-noise ratio of 0 dB. The sources are separated using a basic non-negative CPD and the relative errors on the estimates of the factor matrices. Comparing the similarities between the source signals and their recovered versions, the results showed significantly high correlation over 95%. Our findings reveal the possibility of recoverable temporal signals in EEG applications.",
+                    "oa": true,
+                    "pdf": "https://arxiv.org/pdf/1807.01541",
+                    "url": "https://arxiv.org/abs/1807.01541"
+                },
+                {
+                    "source": "arxiv",
+                    "id": "2211.13793",
+                    "title": "Tensor Decomposition of Large-scale Clinical EEGs Reveals Interpretable Patterns of Brain Physiology",
+                    "authors": [
+                        "Teja Gupta",
+                        "Neeraj Wagh",
+                        "Samarth Rawal",
+                        "Brent Berry",
+                        "Gregory Worrell",
+                        "Yogatheesan Varatharajah"
+                    ],
+                    "type": "preprint",
+                    "rank": 2,
+                    "arxiv": "2211.13793",
+                    "year": 2022,
+                    "date": "2022-11-24",
+                    "abstract": "Identifying abnormal patterns in electroencephalography (EEG) remains the cornerstone of diagnosing several neurological diseases. The current clinical EEG review process relies heavily on expert visual review, which is unscalable and error-prone. In an effort to augment the expert review process, there is a significant interest in mining population-level EEG patterns using unsupervised approaches. Current approaches rely either on two-dimensional decompositions (e.g., principal and independent component analyses) or deep representation learning (e.g., auto-encoders, self-supervision). However, most approaches do not leverage the natural multi-dimensional structure of EEGs and lack interpretability. In this study, we propose a tensor decomposition approach using the canonical polyadic decomposition to discover a parsimonious set of population-level EEG patterns, retaining the natural multi-dimensional structure of EEGs (time x space x frequency). We then validate their clinical value using a cohort of patients including varying stages of cognitive impairment. Our results show that the discovered patterns reflect physiologically meaningful features and accurately classify the stages of cognitive impairment (healthy vs mild cognitive impairment vs Alzheimer's dementia) with substantially fewer features compared to classical and deep learning-based baselines. We conclude that the decomposition of population-level EEG tensors recovers expert-interpretable EEG patterns that can aid in the study of smaller specialized clinical cohorts.",
+                    "oa": true,
+                    "pdf": "https://arxiv.org/pdf/2211.13793",
+                    "url": "https://arxiv.org/abs/2211.13793"
+                },
+                {
+                    "source": "arxiv",
+                    "id": "2206.00635",
+                    "title": "Speech Artifact Removal from EEG Recordings of Spoken Word Production with Tensor Decomposition",
+                    "authors": [
+                        "Holy Lovenia",
+                        "Hiroki Tanaka",
+                        "Sakriani Sakti",
+                        "Ayu Purwarianti",
+                        "Satoshi Nakamura"
+                    ],
+                    "type": "preprint",
+                    "rank": 3,
+                    "doi": "10.1109/icassp.2019.8682414",
+                    "arxiv": "2206.00635",
+                    "year": 2022,
+                    "date": "2022-06-01",
+                    "abstract": "Research about brain activities involving spoken word production is considerably underdeveloped because of the undiscovered characteristics of speech artifacts, which contaminate electroencephalogram (EEG) signals and prevent the inspection of the underlying cognitive processes. To fuel further EEG research with speech production, a method using three-mode tensor decomposition (time x space x frequency) is proposed to perform speech artifact removal. Tensor decomposition enables simultaneous inspection of multiple modes, which suits the multi-way nature of EEG data. In a picture-naming task, we collected raw data with speech artifacts by placing two electrodes near the mouth to record lip EMG. Based on our evaluation, which calculated the correlation values between grand-averaged speech artifacts and the lip EMG, tensor decomposition outperformed the former methods that were based on independent component analysis (ICA) and blind source separation (BSS), both in detecting speech artifact (0.985) and producing clean data (0.101). Our proposed method correctly preserved the components unrelated to speech, which was validated by computing the correlation value between the grand-averaged raw data without EOG and cleaned data before the speech onset (0.92-0.94).",
+                    "oa": true,
+                    "pdf": "https://arxiv.org/pdf/2206.00635",
+                    "url": "https://arxiv.org/abs/2206.00635"
+                }
+            ]
+        }
+    },
+    {
+        "id": "wos",
+        "requests": 1,
+        "page": {
+            "total": 212,
+            "more": true,
+            "cursor": "1",
+            "hits": [
+                {
+                    "source": "wos",
+                    "id": "WOS:000355364600007",
+                    "title": "Tensor decomposition of EEG signals: A brief review",
+                    "authors": [
+                        "Cong, FY",
+                        "Lin, QH",
+                        "Kuang, LD",
+                        "Gong, XF",
+                        "Astikainen, P",
+                        "Ristaniemi, T"
+                    ],
+                    "type": "review",
+                    "rank": 1,
+                    "doi": "10.1016/j.jneumeth.2015.03.018",
+                    "venue": "JOURNAL OF NEUROSCIENCE METHODS",
+                    "year": 2015,
+                    "cites": 187,
+                    "url": "https://www.webofscience.com/wos/woscc/full-record/WOS:000355364600007"
+                },
+                {
+                    "source": "wos",
+                    "id": "WOS:001208790400001",
+                    "title": "A tensor decomposition scheme for EEG-based diagnosis of mild cognitive impairment",
+                    "authors": ["Faghfouri, A", "Shalchyan, V"],
+                    "type": "article",
+                    "rank": 2,
+                    "doi": "10.1016/j.heliyon.2024.e26365",
+                    "pmid": "38420472",
+                    "venue": "HELIYON",
+                    "year": 2024,
+                    "cites": 4,
+                    "url": "https://www.webofscience.com/wos/woscc/full-record/WOS:001208790400001"
+                },
+                {
+                    "source": "wos",
+                    "id": "WOS:000468112300019",
+                    "title": "Speech Artifact Removal from EEG Recordings of Spoken Word Production with Tensor Decomposition",
+                    "authors": ["Lovenia, H", "Tanaka, H", "Sakti, S"],
+                    "type": "conference",
+                    "rank": 3,
+                    "doi": "10.1109/icassp.2019.8682414",
+                    "venue": "2019 IEEE INTERNATIONAL CONFERENCE ON ACOUSTICS, SPEECH AND SIGNAL PROCESSING (ICASSP)",
+                    "year": 2019,
+                    "url": "https://www.webofscience.com/wos/woscc/full-record/WOS:000468112300019"
+                }
+            ]
+        }
+    },
+    {
+        "id": "scopus",
+        "requests": 1,
+        "page": {
+            "total": 348,
+            "more": true,
+            "cursor": "3",
+            "hits": [
+                {
+                    "source": "scopus",
+                    "id": "2-s2.0-84927153513",
+                    "title": "Tensor decomposition of EEG signals: A brief review",
+                    "authors": ["Cong F."],
+                    "type": "review",
+                    "rank": 1,
+                    "doi": "10.1016/j.jneumeth.2015.03.018",
+                    "pmid": "25840362",
+                    "venue": "Journal of Neuroscience Methods",
+                    "year": 2015,
+                    "date": "2015-06-15",
+                    "cites": 251,
+                    "oa": true,
+                    "url": "https://www.scopus.com/inward/record.uri?partnerID=HzOxMe3b&scp=84927153513&origin=inward"
+                },
+                {
+                    "source": "scopus",
+                    "id": "2-s2.0-85185595741",
+                    "title": "A tensor decomposition scheme for EEG-based diagnosis of mild cognitive impairment",
+                    "authors": ["Faghfouri A."],
+                    "type": "article",
+                    "rank": 2,
+                    "doi": "10.1016/j.heliyon.2024.e26365",
+                    "pmid": "38420472",
+                    "venue": "Heliyon",
+                    "year": 2024,
+                    "date": "2024-02-29",
+                    "cites": 4,
+                    "oa": true,
+                    "url": "https://www.scopus.com/inward/record.uri?partnerID=HzOxMe3b&scp=85185595741&origin=inward"
+                },
+                {
+                    "source": "scopus",
+                    "id": "SCOPUS_ID:85068984721",
+                    "title": "Speech Artifact Removal from EEG Recordings of Spoken Word Production with Tensor Decomposition",
+                    "authors": ["Lovenia H.", "Tanaka H.", "Sakti S."],
+                    "type": "conference",
+                    "rank": 3,
+                    "doi": "10.1109/icassp.2019.8682414",
+                    "venue": "ICASSP, IEEE International Conference on Acoustics, Speech and Signal Processing - Proceedings",
+                    "year": 2019,
+                    "date": "2019-05-01",
+                    "abstract": "Research about brain activities involving spoken word production is considerably underdeveloped because of the undiscovered characteristics of speech artifacts.",
+                    "cites": 11
+                }
+            ]
+        }
+    }
+]

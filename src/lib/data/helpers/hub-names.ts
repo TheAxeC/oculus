@@ -691,7 +691,10 @@ export function offerAlong(
  * conventions its audit holds its projects to (`audit:`: the files and sections it requires, the
  * folders a stage keeps a project in and its website's feed), the values its apps' settings hold,
  * the counts its tabs draw, its vocabulary (every list of vocab.yml) and the fields it adds to the
- * project form. Its domains and theme words are its own registry files'.
+ * project form, the reader rows of its literature sources, its Recover sources and its journal
+ * browser, and the links every page link is built from. Its domains and theme words are its own
+ * registry files'. Which of them each hub's own file is read for, and which the primary's alone, is
+ * data/shapes/hub-keys.ts's.
  */
 const HUB_LIST: readonly { key: string; file: string }[] = [
     { key: 'scan', file: 'sources.yml' },
@@ -750,7 +753,12 @@ const HUB_LIST: readonly { key: string; file: string }[] = [
     { key: 'audit.website.list', file: 'behavior.yml' },
     { key: 'audit.website.title', file: 'behavior.yml' },
     { key: 'audit.website.kinds', file: 'behavior.yml' },
-    { key: 'app_settings', file: 'behavior.yml' }
+    { key: 'app_settings', file: 'behavior.yml' },
+    { key: 'literature.sources', file: 'behavior.yml' },
+    { key: 'literature.prefer', file: 'behavior.yml' },
+    { key: 'recover.sources', file: 'behavior.yml' },
+    { key: 'venues.browser', file: 'behavior.yml' },
+    { key: 'links', file: 'behavior.yml' }
 ];
 
 /**

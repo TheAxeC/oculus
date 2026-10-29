@@ -20,7 +20,7 @@
 
 import { Worker } from 'node:worker_threads';
 import { extname, join } from 'node:path';
-import { systemClock, type Clock } from '../../../../core/file-poll.ts';
+import { systemClock, type Clock } from '../../../../core/files/file-poll.ts';
 import { ownFolder } from '../../../lsp/servers.ts';
 
 /** The Shiki grammar of each extension the writing rules read comments of. */

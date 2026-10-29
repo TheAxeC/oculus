@@ -13,7 +13,11 @@
 import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, vi } from 'vitest';
-import type { RecoverSource, RecoverState } from '../../../../../src/lib/data/model/index.ts';
+import type {
+    RecoverCredential,
+    RecoverSource,
+    RecoverState
+} from '../../../../../src/lib/data/model/index.ts';
 import type { DownloadAccount } from '../../../../../src/lib/data/sources/config.ts';
 import {
     clusterPlace,
@@ -31,7 +35,7 @@ import {
     type LocalRuns
 } from '../../../../../src/lib/server/machine/runs/recover/local.ts';
 import {
-    curlConfig,
+    credentialFiles,
     fetchItems,
     type PlanRow
 } from '../../../../../src/lib/server/machine/runs/recover/plan.ts';
@@ -101,18 +105,30 @@ function row(extra: Partial<PlanRow>): PlanRow {
     };
 }
 
+/** How the fixture rows carry a secret: PhysioNet's and Kaggle's user, Synapse's bearer header. */
+const BASIC: RecoverCredential = { basic: true };
+const BEARER: RecoverCredential = { header: 'Authorization', prefix: 'Bearer ' };
+
 /** The three rows each fetch case takes: an odd name, a partial file and a Synapse file. */
 const ROWS: PlanRow[] = [
     row({
         name: ODD,
         url: "https://physionet.org/files/mitdb/1.0.0/it's%20a.dat",
-        service: 'physionet'
+        service: 'physionet',
+        credential: BASIC
     }),
-    row({ name: 'part.dat', state: 'partial', have: 4, service: 'physionet' }),
+    row({
+        name: 'part.dat',
+        state: 'partial',
+        have: 4,
+        service: 'physionet',
+        credential: BASIC
+    }),
     row({
         name: 'syn/b.dat',
         url: 'https://www.synapse.org/file/b',
         service: 'synapse',
+        credential: BEARER,
         throttle: '2M'
     }),
     row({ name: 'held.dat', state: 'verified', have: 10 })
@@ -252,27 +268,36 @@ const NAMES: NameRow[] = [
     }
 ];
 
-type ConfigRow = { name: string; account: DownloadAccount; text: string | null };
+type ConfigRow = {
+    name: string;
+    account: DownloadAccount;
+    credential: RecoverCredential;
+    text: string | null;
+};
 
 const CONFIGS: ConfigRow[] = [
     {
         name: 'PhysioNet: the user and the secret, quotes and backslashes escaped',
         account: DOWNLOADS[0],
+        credential: BASIC,
         text: 'user = "john:pn-pass \\"with\\" \\\\ quote"\n'
     },
     {
         name: 'Kaggle: the user and the key',
         account: DOWNLOADS[1],
+        credential: BASIC,
         text: 'user = "johnsmith:kg-key-5f1e9c"\n'
     },
     {
         name: 'Synapse: the token as a header',
         account: DOWNLOADS[2],
+        credential: BEARER,
         text: 'header = "Authorization: Bearer syn-token-a8d2"\n'
     },
     {
         name: 'a secret with a line break: no config',
         account: { service: 'kaggle', user: 'u', secret: 'a\nb' },
+        credential: BASIC,
         text: null
     }
 ];
@@ -299,6 +324,7 @@ describe('Recover writes only inside its folders', () => {
         expect(((await answer.json()) as RecoverState).refusal).toEqual({
             refused: 'name',
             source: 'url',
+            label: 'Address',
             name: one.refused
         });
     });
@@ -348,7 +374,12 @@ describe('Recover writes only inside its folders', () => {
 
 describe('a credential reaches curl only through its config file', () => {
     it.each(CONFIGS)('$name', (one) => {
-        expect(curlConfig(one.account)).toBe(one.text);
+        const items = fetchItems([
+            row({ name: 'a.dat', service: one.account.service, credential: one.credential })
+        ]);
+        const files = credentialFiles(items, [one.account]);
+        const text = one.text;
+        expect(files).toEqual(text === null ? null : [{ service: one.account.service, text }]);
     });
 
     it(

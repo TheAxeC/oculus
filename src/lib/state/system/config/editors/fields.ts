@@ -9,10 +9,15 @@
 // list of words for multi, list and parked, a word block (its lists `words`, `not_words`, `flags`
 // and `not_flags`, each held while it has a word) for words, and a list of cards for a family
 // field: a card per record of a nested list, a card of `key` and `value` per key of a map, and the
-// one card of a field that holds one record. A field the record does not hold is absent from the
-// card, which is how a field is unset. A held value its control cannot show (`tab_size: "4"`) is
-// not read into the card's fields: it stays in the card's `kept` as the file has it, and is sent
-// back unchanged.
+// one card of a field that holds one record. A text field that takes a record as well (a reader
+// row's `fields`, whose values are a path or a `{ path, op }` record) holds its text, or the one
+// card of the record it holds. A field the record does not hold is absent from the card, which is
+// how a field is unset. A held value its control cannot show (`tab_size: "4"`) is not read into
+// the card's fields: it stays in the card's `kept` as the file has it, and is sent back unchanged.
+//
+// A card of a family marked `sparse` draws only the fields its record holds, and its Add field
+// menu offers the others; a field added from the menu is held at once with an empty value, so its
+// control is drawn.
 //
 // The sentences are messages (messages.ts) for the view to word; nothing here holds one. The page
 // refuses the number, form and path problems here, before the write, by the rule the server's write
@@ -35,6 +40,7 @@ import {
     listedSources,
     pickedSources,
     readsOther,
+    takesRecord,
     type CatalogEntry,
     type Control,
     type FieldSpec,
@@ -267,8 +273,57 @@ export function readField(spec: CatalogEntry, held: unknown): Read {
                 ? value(Object.fromEntries(Object.entries(held).map(([k, v]) => [k, [...v]])))
                 : STUCK;
         default:
+            if (takesRecord(spec) && isMap(held)) return readFamily(spec, held);
             return typeof held === 'string' ? value(held) : STUCK;
     }
+}
+
+// ---- the fields a sparse card draws ------------------------------------------------------------
+
+/**
+ * The fields a card draws of the names its list gives: every name the card does not keep as the
+ * file has it, and on a family marked `sparse` only the names the card holds.
+ */
+export function shownFields(card: Card, names: readonly string[], sparse: boolean): string[] {
+    return names.filter(
+        (name) => !Object.hasOwn(card.kept, name) && (!sparse || Object.hasOwn(card.fields, name))
+    );
+}
+
+/** The fields a sparse card's Add field menu offers: the names it neither holds nor keeps. */
+export function addableFields(card: Card, names: readonly string[]): string[] {
+    return names.filter(
+        (name) => !Object.hasOwn(card.fields, name) && !Object.hasOwn(card.kept, name)
+    );
+}
+
+/**
+ * The value a field is added with from the Add field menu: no cards for a family, no words for a
+ * list, a multi or a parked list, no lists for a word block, true for a toggle, and an empty text
+ * for any other control, so the card draws the field's control at once.
+ */
+export function addedValue(spec: CatalogEntry): FieldValue {
+    switch (controlOf(spec)) {
+        case 'records':
+        case 'list':
+        case 'multi':
+        case 'parked':
+            return [];
+        case 'words':
+            return {};
+        case 'toggle':
+            return true;
+        default:
+            return '';
+    }
+}
+
+/**
+ * Whether a field draws cards of its own: a family field, and a text that takes a record while it
+ * holds one.
+ */
+export function drawsCards(spec: CatalogEntry, held: FieldValue | undefined): boolean {
+    return controlOf(spec) === 'records' || (takesRecord(spec) && Array.isArray(held));
 }
 
 // ---- what an input makes of a field ---------------------------------------------------------

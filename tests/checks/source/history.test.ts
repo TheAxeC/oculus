@@ -27,10 +27,11 @@ const DOCS = ['README.md'];
 const GUIDES = 'docs';
 
 /**
- * The folder of the answers the Recover source readers' tests replay: data a server sent, read as
- * no prose by its path.
+ * The folders of the answers the Recover source readers' tests and the configured reader's tests
+ * replay: data a server sent, or written in the shape a service answers in, read as no prose by
+ * its path.
  */
-const ANSWERS = 'tests/server/machine/runs/recover/answers/';
+const ANSWERS = ['tests/server/machine/runs/recover/answers/', 'tests/server/core/reader/answers/'];
 
 /** The one file the vocabulary may appear in is the one carrying this word. */
 const MARKER = 'oculus-plan-id-audit';
@@ -88,14 +89,15 @@ function files(at: string): string[] {
  * The prose of each line of a file, by line: every line of a text file whole (a list, a Markdown
  * page or a LaTeX source of a fixture hub), the comment of a YAML line (a `#` opening the line or
  * following a space), for a file of code the comment text the code reader finds on the line,
- * trailing comments included and code and strings left out, and nothing for a recorded web answer
- * (a `.body` or `.headers` file under ANSWERS), which is data a server sent and holds no prose of
- * the tree. `file` is the path from the tree's root.
+ * trailing comments included and code and strings left out, and nothing for a recorded or written
+ * web answer (a `.body` or `.headers` file under a folder of ANSWERS), which is data in a service's
+ * shape and holds no prose of the tree. `file` is the path from the tree's root.
  */
 function proseLines(file: string, source: string): string[] {
     const lines = source.split('\n');
     if (/\.(txt|md|tex)$/.test(file)) return lines;
-    if (file.split(sep).join('/').startsWith(ANSWERS) && /\.(body|headers)$/.test(file)) {
+    const path = file.split(sep).join('/');
+    if (ANSWERS.some((folder) => path.startsWith(folder)) && /\.(body|headers)$/.test(file)) {
         return lines.map(() => '');
     }
     if (file.endsWith('.yml')) {
@@ -186,8 +188,9 @@ describe('no history in code', () => {
         plant('src/app.html', '<html>\n<!-- the page of D19c -->\n</html>\n');
         plant('utils/trail.sh', 'x=1 # Q12\n');
         plant('docs/x.md', 'the guide kept for Q51\n');
-        plant(`${ANSWERS}zenodo/x.body`, '{"updated": "2026-01-01", "id": "Q12"}\n');
-        plant(`${ANSWERS}zenodo/x.headers`, 'HTTP/2 200\nlast-modified: 2026-01-01\n');
+        plant(`${ANSWERS[0]}zenodo/x.body`, '{"updated": "2026-01-01", "id": "Q12"}\n');
+        plant(`${ANSWERS[0]}zenodo/x.headers`, 'HTTP/2 200\nlast-modified: 2026-01-01\n');
+        plant(`${ANSWERS[1]}browser/x.body`, '<p>indexed since 2026-01-01, Q12</p>\n');
         expect(commentHits(dir)).toEqual([
             'src/Page.svelte:1: <!-- drawn for O17 -->',
             'src/Page.svelte:2: <p>{x /* since Q3 */}</p>',

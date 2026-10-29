@@ -47,7 +47,7 @@ import {
     isWholeText
 } from '../../../data/helpers/files/text-kind.ts';
 import { tokenedBody } from '../../core/auth.ts';
-import { hashOf, splitMark, withMark } from '../../core/file-bytes.ts';
+import { hashOf, splitMark, withMark } from '../../core/files/file-bytes.ts';
 import { writeBytesAtomic } from '../../core/json.ts';
 import { namesMachineFile } from '../workspace/machine-file.ts';
 import { resolveRootFileResult, resolveRootPath, type Root } from '../files.ts';

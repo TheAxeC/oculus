@@ -9,14 +9,22 @@ import type {
     HitType,
     LiteratureRefusal,
     LiteratureSort,
-    LiteratureSource
+    LiteratureSource,
+    SourceInfo
 } from '$lib/state/feeds/literature/form';
 import type { SourceRun } from '$lib/state/feeds/literature/run.svelte';
-import { sourceName } from '$lib/state/feeds/literature/lookup';
 import { t } from '$lib/state/shared/words/text';
 
-// A source's name is said by the Literature view's Add as well, which is no partial of this view.
-export { sourceName };
+/** A source's name: the `name` of its row as the server lists it, else its key. */
+export function sourceName(sources: readonly SourceInfo[], source: LiteratureSource): string {
+    return sources.find((one) => one.id === source)?.name ?? source;
+}
+
+/** The tooltip of a source the machine cannot ask: the `downloads` row it needs and its help. */
+export function keyTip(source: SourceInfo): string | undefined {
+    if (source.available) return undefined;
+    return t('literature.key_tip', source.key ?? '', source.help ?? '').trim();
+}
 
 /** A wait of the source's, in the largest unit that keeps it a small number. */
 function waitWords(seconds: number): string {
@@ -26,11 +34,7 @@ function waitWords(seconds: number): string {
 }
 
 /** What a source's chip says: its count while it answers, otherwise why it does not. */
-export function stateWords(
-    source: LiteratureSource,
-    held: SourceRun | undefined,
-    timeoutS: number | null
-): string {
+export function stateWords(held: SourceRun | undefined, timeoutS: number | null): string {
     if (held === undefined) return '';
     if (held.asking && held.hits.length === 0) return t('literature.state_asking');
     const status = held.status === undefined ? '' : String(held.status);
@@ -43,9 +47,7 @@ export function stateWords(
                 : t('literature.state_ok', held.hits.length);
         case 'limited':
             if (held.wait === undefined) return t('literature.state_limited');
-            return source === 'openalex'
-                ? t('literature.state_daily', waitWords(held.wait))
-                : t('literature.state_limited_wait', waitWords(held.wait));
+            return t('literature.state_limited_wait', waitWords(held.wait));
         case 'timeout':
             return timeoutS === null
                 ? t('literature.state_timeout_plain')
@@ -99,10 +101,9 @@ export function sortWords(sort: LiteratureSort): string {
     return t('literature.sort_citations');
 }
 
-/** The sentence that says where a copied entry came from. */
-export function copiedWords(from: EntrySource): string {
-    if (from === 'doi') return t('literature.copied_doi');
-    if (from === 'semantic_scholar') return t('literature.copied_semantic_scholar');
-    if (from === 'arxiv') return t('literature.copied_arxiv');
-    return t('literature.copied_citation_js');
+/** Where a copied entry came from: the DOI link, a source by its name, or citation-js. */
+export function copiedWords(entry: EntrySource): string {
+    if (entry.from === 'doi') return t('literature.copied_doi');
+    if (entry.from === 'citation_js') return t('literature.copied_citation_js');
+    return t('literature.copied_from', entry.name ?? entry.from);
 }

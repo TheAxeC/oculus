@@ -17,7 +17,7 @@ import { z } from 'zod';
 import { languageOf } from '../../../../../data/helpers/files/languages.ts';
 import { globTest } from '../../../../../data/helpers/search/glob.ts';
 import { isWholeText } from '../../../../../data/helpers/files/text-kind.ts';
-import { hashOf } from '../../../../core/file-bytes.ts';
+import { hashOf } from '../../../../core/files/file-bytes.ts';
 import { skipped } from '../../../../files/fs.ts';
 import { RootWatch, type FileChange } from '../../../lsp/held/watch.ts';
 import { Refused, parsed, type HostHandler } from '../../host/connection.ts';

@@ -89,10 +89,13 @@ export type ReplacedFile =
  * workspace file (`workspace`), the source of the display language `locale` names (`language`), the
  * words of another parse laid in place of this parse's text catalog (`words`, which a hub other
  * than the primary is read with, so its findings and records are worded as the workspace's), and
- * one file's text read instead of the disk (`instead`).
+ * one file's text read instead of the disk (`instead`). `other` is the name of the hub when it is
+ * not the primary, so a key the primary alone is read for is a finding of its settings file naming
+ * that hub (hub-layer.ts).
  */
 export type ConfigOptions = {
     hub?: string;
+    other?: string;
     workspace?: WorkspaceLayer;
     language?: LanguageSource;
     words?: Readonly<Record<string, unknown>>;
@@ -198,7 +201,7 @@ export function loadConfig(
     }
     if (opts.hub !== undefined) {
         const replaced = opts.instead?.layer === 'hub' ? opts.instead.text : undefined;
-        mergeHub(opts.hub, replaced, config, from, pending);
+        mergeHub(opts.hub, replaced, config, from, pending, opts.other);
     }
     if (opts.workspace !== undefined) mergeWorkspace(opts.workspace, config, from, pending);
     const where = { engine, hub: opts.hub ?? null, from };

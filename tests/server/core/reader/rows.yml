@@ -1,0 +1,619 @@
+literature:
+    sources:
+        - key: openalex
+          name: OpenAlex
+          format: json
+          address: https://api.openalex.org/works
+          query:
+              words: { param: filter, text: 'title_and_abstract.search:{words|spaced}' }
+              doi: { param: filter, text: 'doi:{doi}' }
+              years: { param: filter, text: 'publication_year:{from}-{to}' }
+              type: { param: filter, text: 'type:{value}' }
+              open_access: { param: filter, text: 'is_oa:true' }
+              min_cited: { param: filter, text: 'cited_by_count:>{value-1}' }
+              author: { param: filter, text: 'raw_author_name.search:{value|spaced}' }
+          join: { filter: ',' }
+          types:
+              article: article
+              review: review
+              preprint: preprint
+              conference: conference-paper
+              book: book
+              chapter: book-chapter
+          paging: { kind: page, param: page, first: 1, size: per-page, total: meta.count }
+          params:
+              select: id,doi,display_name,publication_year,publication_date,type,cited_by_count,open_access,best_oa_location,primary_location,authorships,ids,abstract_inverted_index,locations
+          wait: { reset: x-ratelimit-reset, remaining: x-ratelimit-remaining }
+          auth:
+              - param: api_key
+                row: openalex
+                help: The `secret` is an OpenAlex API key, made under Settings on openalex.org. Without it OpenAlex allows about 100 searches a day.
+          contact: mailto
+          records: results
+          fields:
+              id: id
+              doi: doi
+              pmid: { path: ids.pmid, op: match, pattern: '(\d+)/?$' }
+              arxiv:
+                  path: 'locations[].landing_page_url'
+                  op: match
+                  pattern: 'arxiv\.org/(?:abs|pdf)/(.+)$'
+              title: display_name
+              authors: 'authorships[].author.display_name'
+              venue: primary_location.source.display_name
+              year: publication_year
+              date: publication_date
+              type: type
+              abstract: { path: abstract_inverted_index, op: inverted_index }
+              cites: cited_by_count
+              oa: open_access.is_oa
+              pdf: best_oa_location.pdf_url
+              url: { path: primary_location.landing_page_url, op: https, else: id }
+        - key: semantic_scholar
+          name: Semantic Scholar
+          format: json
+          address: https://api.semanticscholar.org/graph/v1/paper/search
+          query:
+              words: { param: query }
+              doi:
+                  address: 'https://api.semanticscholar.org/graph/v1/paper/DOI:{doi|path}'
+                  params:
+                      fields: title,abstract,year,venue,authors,externalIds,citationCount,isOpenAccess,openAccessPdf,publicationTypes,publicationDate,journal,url,citationStyles
+                  missing: none
+              id:
+                  address: 'https://api.semanticscholar.org/graph/v1/paper/{id}'
+                  params: { fields: citationStyles }
+                  fields: { bibtex: citationStyles.bibtex }
+              years: { param: year, text: '{from}-{to}' }
+              type: { param: publicationTypes }
+              open_access: { param: openAccessPdf, text: '' }
+              min_cited: { param: minCitationCount }
+              venue: { param: venue }
+          types:
+              review: Review
+              article: JournalArticle
+              conference: Conference
+              book: Book
+              chapter: BookSection
+          paging: { kind: offset, param: offset, size: limit, total: total }
+          params:
+              fields: title,abstract,year,venue,authors,externalIds,citationCount,isOpenAccess,openAccessPdf,publicationTypes,publicationDate,journal,url,citationStyles
+          pace: { gap: 1000 }
+          wait: { retry_after: retry-after }
+          auth:
+              - header: x-api-key
+                row: semantic_scholar
+                help: The `secret` is a Semantic Scholar API key, asked for on semanticscholar.org/product/api. Without it Semantic Scholar often answers that too many requests were made.
+          records: data
+          fields:
+              id: paperId
+              doi: externalIds.DOI
+              pmid: externalIds.PubMed
+              arxiv: externalIds.ArXiv
+              title: title
+              authors: 'authors[].name'
+              venue: { path: journal.name, else: venue }
+              year: year
+              date: publicationDate
+              type: publicationTypes
+              abstract: abstract
+              cites: citationCount
+              oa: isOpenAccess
+              pdf: openAccessPdf.url
+              url: url
+              bibtex: citationStyles.bibtex
+        - key: crossref
+          name: Crossref
+          format: json
+          address: https://api.crossref.org/works
+          query:
+              words: { param: query.bibliographic }
+              doi:
+                  address: 'https://api.crossref.org/works/{doi|path}'
+                  records: message
+                  missing: none
+              years: { param: filter, text: 'from-pub-date:{from},until-pub-date:{to}' }
+              type: { param: filter, text: 'type:{value}' }
+              author: { param: query.author }
+              venue: { param: query.container-title }
+          join: { filter: ',' }
+          types:
+              article: journal-article
+              preprint: posted-content
+              conference: proceedings-article
+              book: book
+              chapter: book-chapter
+          paging: { kind: offset, param: offset, size: rows, total: message.total-results }
+          params:
+              select: DOI,title,author,published,type,is-referenced-by-count,container-title,abstract,link,license
+          pace: { gap: 1000 }
+          wait: { retry_after: retry-after }
+          contact: mailto
+          records: message.items
+          fields:
+              id: DOI
+              doi: DOI
+              title: title.0
+              authors:
+                  path: 'author[]'
+                  each: { path: name, else: { op: join, parts: [given, family] } }
+              venue: container-title.0
+              date: { path: published.date-parts.0, op: date }
+              type: type
+              abstract: abstract
+              cites: is-referenced-by-count
+              url: { op: link, link: doi, id: DOI }
+        - key: pubmed
+          name: PubMed
+          format: json
+          address: https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi
+          query:
+              words: { param: term }
+              doi: { param: term, text: '{doi}[doi]' }
+              years: { param: term, text: '{from}:{to}[dp]' }
+              type: { param: term, text: '{value}[pt]' }
+              open_access: { param: term, text: 'free full text[sb]' }
+              venue: { param: term, text: '"{value|quote}"[ta]' }
+              author: { param: term, text: '{value|bare}[au]' }
+          join: { term: ' AND ' }
+          types:
+              review: review
+              preprint: preprint
+              article: journal article
+          paging: { kind: offset, param: retstart, size: retmax, total: esearchresult.count }
+          params: { db: pubmed, retmode: json, sort: relevance, tool: oculus }
+          pace: { gap: 340, gap_with_key: 100 }
+          wait: { retry_after: retry-after }
+          auth:
+              - param: api_key
+                row: ncbi
+                help: The `secret` is an NCBI API key, made under Account Settings on ncbi.nlm.nih.gov. It lets PubMed answer more requests a second.
+          contact: email
+          records: esearchresult.idlist
+          then:
+              - address: https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi
+                params: { db: pubmed, id: '{ids}', retmode: xml, tool: oculus }
+                ids: .
+                order_by: MedlineCitation.PMID
+                format: xml
+                records: { path: 'PubmedArticleSet.PubmedArticle[]', absent: none }
+                fields:
+                    id: MedlineCitation.PMID
+                    doi: 'PubmedData.ArticleIdList.ArticleId[@IdType=doi]'
+                    pmid: MedlineCitation.PMID
+                    title: { path: MedlineCitation.Article.ArticleTitle, markup: true }
+                    authors:
+                        path: 'MedlineCitation.Article.AuthorList.Author[]'
+                        each:
+                            path: CollectiveName
+                            else: { op: join, parts: [ForeName, LastName] }
+                    venue: MedlineCitation.Article.Journal.Title
+                    date:
+                        path: MedlineCitation.Article.Journal.JournalIssue.PubDate
+                        op: date
+                        parts: [Year, Month, Day]
+                        else:
+                            path: MedlineCitation.Article.Journal.JournalIssue.PubDate.MedlineDate
+                            op: match
+                            pattern: '\d{4}'
+                    type: 'MedlineCitation.Article.PublicationTypeList.PublicationType[]'
+                    abstract:
+                        path: 'MedlineCitation.Article.Abstract.AbstractText[]'
+                        op: join
+                        by: ' '
+                        markup: true
+                    url: { op: link, link: pubmed, id: MedlineCitation.PMID }
+        - key: europe_pmc
+          name: Europe PMC
+          format: json
+          address: https://www.ebi.ac.uk/europepmc/webservices/rest/search?format=json&resultType=core
+          query:
+              words: { param: query, text: 'TITLE_ABS:({words})' }
+              doi: { param: query, text: 'DOI:"{doi}"' }
+              years: { param: query, text: 'PUB_YEAR:[{from} TO {to}]' }
+              type: { param: query, text: '{value}' }
+              open_access: { param: query, text: 'OPEN_ACCESS:y' }
+              venue: { param: query, text: 'JOURNAL:"{value|quote}"' }
+              author: { param: query, text: 'AUTH:"{value|quote}"' }
+          join: { query: ' AND ' }
+          types:
+              article: 'PUB_TYPE:"journal article"'
+              review: 'PUB_TYPE:"review"'
+              preprint: 'SRC:PPR'
+          paging:
+              kind: cursor
+              param: cursorMark
+              start: '*'
+              from: nextCursorMark
+              size: pageSize
+              total: hitCount
+          wait: { retry_after: retry-after }
+          records: resultList.result
+          fields:
+              id: { value: '{source}:{id}', else: 'MED:{id}' }
+              doi: doi
+              pmid: { path: pmid, else: '[source=MED].id' }
+              title: title
+              authors: { path: authorString, op: split, suffix: '.', pattern: ',\s*' }
+              venue: journalInfo.journal.title
+              year: pubYear
+              date: firstPublicationDate
+              type:
+                  path: source
+                  map: { preprint: [PPR] }
+                  else:
+                      path: pubTypeList.pubType
+                      map: { review: [review], article: [journal article, research-article] }
+              abstract: abstractText
+              cites: citedByCount
+              oa: { path: isOpenAccess, map: { 'true': ['Y'] } }
+              pdf: 'fullTextUrlList.fullTextUrl[documentStyle=pdf][availabilityCode=OA].url'
+              url: { path: id, op: link, link: europepmc }
+        - key: arxiv
+          name: arXiv
+          format: xml
+          address: https://export.arxiv.org/api/query
+          query:
+              words: { param: search_query, text: 'all:{words}', per_word: true }
+              doi: { param: id_list, match: '^10\.48550/arxiv\.(.+)$' }
+              years: { param: search_query, text: 'submittedDate:[{from}01010000 TO {to}12312359]' }
+              author: { param: search_query, text: 'au:{value|phrase}' }
+              id:
+                  address: 'https://doi.org/10.48550/arXiv.{id|path}'
+                  headers: { accept: application/x-bibtex }
+                  format: text
+                  fields: { bibtex: . }
+                  by: arxiv
+          join: { search_query: ' AND ' }
+          skip_when: [venue, min_cited]
+          types: { preprint: '' }
+          types_only: true
+          paging:
+              kind: offset
+              param: start
+              size: max_results
+              total: 'feed.opensearch:totalResults'
+          params: { sortBy: relevance, sortOrder: descending }
+          pace: { gap: 3000 }
+          wait: { retry_after: retry-after }
+          records: { path: 'feed.entry[]', absent: none }
+          fields:
+              id: { path: id, op: match, pattern: '/abs/(.+?)(?:v\d+)?$' }
+              arxiv: { path: id, op: match, pattern: '/abs/(.+?)(?:v\d+)?$' }
+              doi: 'arxiv:doi'
+              title: title
+              authors: 'author[].name'
+              date: published
+              type: { value: preprint }
+              abstract: summary
+              oa: { value: true }
+              pdf: { op: link, link: arxiv_pdf, id: id }
+              url: { op: link, link: arxiv, id: id }
+        - key: wos
+          name: Web of Science
+          format: json
+          address: https://api.clarivate.com/apis/wos-starter/v1/documents
+          query:
+              words: { param: q, text: 'TS=({words})' }
+              doi: { param: q, text: 'DO=({doi})' }
+              years: { param: q, text: 'PY={from}-{to}' }
+              type: { param: q, text: 'DT=({value|phrase})' }
+              venue: { param: q, text: 'SO=({value|plain})' }
+              author: { param: q, text: 'AU=({value|plain})' }
+          join: { q: ' AND ' }
+          types:
+              article: Article
+              review: Review
+              conference: Proceedings Paper
+          paging: { kind: page, param: page, first: 1, size: limit, max: 50, total: metadata.total }
+          params: { db: WOS, sortField: RS D }
+          wait: { retry_after: retry-after }
+          auth:
+              - header: X-ApiKey
+                row: wos
+                required: true
+                help: The `secret` is a Web of Science Starter API key, made on developer.clarivate.com.
+          records: hits
+          fields:
+              id: uid
+              doi: identifiers.doi
+              pmid: identifiers.pmid
+              title: title
+              authors: 'names.authors[].displayName'
+              venue: source.sourceTitle
+              year: source.publishYear
+              type: types.0
+              cites: 'citations[db=WOS].count'
+              url: links.record
+        - key: scopus
+          name: Scopus
+          format: json
+          address: https://api.elsevier.com/content/search/scopus
+          query:
+              words: { param: query, text: 'TITLE-ABS-KEY({words})' }
+              doi: { param: query, text: 'DOI({doi})' }
+              years: { param: query, text: 'PUBYEAR > {from-1} AND PUBYEAR < {to+1}' }
+              type: { param: query, text: 'DOCTYPE({value})' }
+              open_access: { param: query, text: 'OPENACCESS(1)' }
+              venue: { param: query, text: 'SRCTITLE({value|plain})' }
+              author: { param: query, text: 'AUTH({value|plain})' }
+          join: { query: ' AND ' }
+          types:
+              article: ar
+              review: re
+              conference: cp
+              book: bk
+              chapter: ch
+          paging:
+              kind: offset
+              param: start
+              size: count
+              max: 25
+              total: 'search-results.opensearch:totalResults'
+          params: { sort: relevancy }
+          headers: { accept: application/json }
+          wait: { retry_after: retry-after }
+          auth:
+              - header: X-ELS-APIKey
+                row: scopus
+                required: true
+                help: The `secret` is an Elsevier API key, made on dev.elsevier.com.
+              - header: X-ELS-Insttoken
+                row: scopus-insttoken
+                help: The `secret` is the Elsevier institutional token that goes with the Scopus key, sent when the key needs one.
+          none_when: 'search-results.entry[].error'
+          records: { path: 'search-results.entry[]', absent: none }
+          fields:
+              id: { path: eid, else: 'dc:identifier' }
+              doi: 'prism:doi'
+              pmid: pubmed-id
+              title: 'dc:title'
+              authors: { path: 'author[].authname', else: 'dc:creator' }
+              venue: 'prism:publicationName'
+              date: 'prism:coverDate'
+              type: subtype
+              abstract: 'dc:description'
+              cites: citedby-count
+              oa: openaccessFlag
+              url: { path: 'link[@ref=scopus].@href', op: https, host: www.scopus.com }
+    prefer:
+        fields: [crossref, pubmed, europe_pmc, scopus, wos, openalex, semantic_scholar, arxiv]
+        abstract: [pubmed, europe_pmc, semantic_scholar, openalex, arxiv, crossref, scopus]
+        pdf: [openalex, europe_pmc, semantic_scholar, arxiv]
+recover:
+    sources:
+        - key: dandi
+          name: DANDI
+          format: json
+          address: 'https://api.dandiarchive.org/api/dandisets/{dandiset}/versions/{version}/assets/'
+          paging: { kind: next, from: next, size: page_size, sizes: [100] }
+          records: { path: results, refuse_when: zarr }
+          fields:
+              name: { path: path, op: last }
+              size: size
+              url: 'https://api.dandiarchive.org/api/assets/{asset_id}/download/'
+          pick: { field: assets, by: path }
+          then:
+              - address: 'https://api.dandiarchive.org/api/dandisets/{dandiset}/versions/{version}/assets/{asset_id}/'
+                for_each: asset_id
+                fields: { checksum: { path: 'digest.dandi:sha2-256', kind: sha256 } }
+        - key: figshare
+          name: figshare
+          format: json
+          address: 'https://api.figshare.com/v2/collections/{collection}/articles'
+          holes: { article: '^\d+$' }
+          given: { article: id }
+          paging: { kind: page, param: page, first: 1, size: page_size, sizes: [100] }
+          records: .
+          clash: id
+          pick: { field: files }
+          then:
+              - address: 'https://api.figshare.com/v2/articles/{id}'
+                for_each: id
+                records: files
+                fields:
+                    name: name
+                    size: size
+                    checksum: { path: computed_md5, kind: md5 }
+                    url: download_url
+        - key: geo
+          name: GEO
+          format: html
+          address: 'https://ftp.ncbi.nlm.nih.gov/geo/series/{accession|series}/{accession}/suppl/'
+          holes: { accession: '^GSE\d+$' }
+          expect: { select: title, holds: Index of }
+          records: { select: 'pre a:not([href^="/"]):not([href*="?"])' }
+          fields:
+              name: { attr: href, op: last }
+              url: { attr: href, op: resolve }
+              size: { op: first_byte_size }
+          pick: { field: files }
+        - key: huggingface
+          name: Hugging Face
+          format: json
+          address: 'https://huggingface.co/api/datasets/{repo|path}/tree/main?recursive=true&limit=100'
+          holes: { repo: '^[A-Za-z0-9][A-Za-z0-9._-]*/[A-Za-z0-9][A-Za-z0-9._-]*$' }
+          paging: { kind: link }
+          records: { path: ., where: { type: file } }
+          fields:
+              name: path
+              size: size
+              checksum: { path: lfs.oid, kind: sha256 }
+              url: 'https://huggingface.co/datasets/{repo|path}/resolve/main/{path|path}'
+          pick: { field: patterns, glob: true }
+        - key: kaggle
+          name: Kaggle
+          format: json
+          address: 'https://www.kaggle.com/api/v1/datasets/list/{dataset|path}'
+          holes: { dataset: '^[A-Za-z0-9][A-Za-z0-9_-]*/[A-Za-z0-9][A-Za-z0-9_.-]*$' }
+          auth:
+              - basic: true
+                row: kaggle
+                required: true
+                help: The `user` is your Kaggle user name and the `secret` the key of an API token made under Settings on kaggle.com.
+          access: { address: 'https://www.kaggle.com/api/v1/datasets/list/{dataset|path}' }
+          records: datasetFiles
+          archive:
+              address: 'https://www.kaggle.com/api/v1/datasets/download/{dataset|path}'
+              name: '{dataset|last}.zip'
+        - key: physionet
+          name: PhysioNet
+          format: text
+          address: 'https://physionet.org/files/{project}/{version}/SHA256SUMS.txt'
+          auth:
+              - basic: true
+                row: physionet
+                help: The `user` and `secret` are your PhysioNet login, on an account with access to this set.
+          access: { address: 'https://physionet.org/files/{project}/{version}/SHA256SUMS.txt' }
+          pace: { field: throttle }
+          records: { op: checksum_file, kind: sha256 }
+          fields:
+              name: name
+              checksum: { path: digest, kind: sha256 }
+              url: 'https://physionet.org/files/{project}/{version}/{name|path}'
+              size: { op: first_byte_size }
+          pick: { field: files }
+          archive:
+              address: 'https://physionet.org/content/{project}/get-zip/{version}/'
+              match: '\.zip$'
+              when: archive
+        - key: stanford
+          name: Stanford Digital Repository
+          format: json
+          address: 'https://purl.stanford.edu/{druid}.json'
+          holes: { druid: '^[a-z]{2}\d{3}[a-z]{2}\d{4}$' }
+          records: 'structural.contains[].structural.contains[]'
+          fields:
+              name: filename
+              size: size
+              checksum:
+                  path: 'hasMessageDigests[type=sha1].digest'
+                  kind: sha1
+                  else: { path: 'hasMessageDigests[type=md5].digest', kind: md5 }
+              url: 'https://stacks.stanford.edu/file/druid:{druid}/{filename|path}'
+          pick: { field: files }
+        - key: synapse
+          name: Synapse
+          format: json
+          address: 'https://repo-prod.prod.sagebase.org/repo/v1/entity/{ids}'
+          for_each: ids
+          holes: { ids: '^syn\d+$' }
+          auth:
+              - header: Authorization
+                prefix: 'Bearer '
+                row: synapse
+                required: true
+                help: The `secret` is a personal access token made under Account Settings on synapse.org.
+          access: { address: https://repo-prod.prod.sagebase.org/repo/v1/userProfile }
+          then:
+              - address: 'https://repo-prod.prod.sagebase.org/repo/v1/entity/{id}/filehandles'
+                for_each: id
+                when: { concreteType: org.sagebionetworks.repo.model.FileEntity }
+                records:
+                    path: list
+                    unless: { concreteType: org.sagebionetworks.repo.model.file.PreviewFileHandle }
+                    first: true
+                fields:
+                    name: '{folders}{fileName}'
+                    size: contentSize
+                    checksum: { path: contentMd5, kind: md5 }
+                    url: 'https://repo-prod.prod.sagebase.org/repo/v1/entity/{id}/file'
+              - address: https://repo-prod.prod.sagebase.org/repo/v1/entity/children
+                for_each: id
+                unless: { concreteType: org.sagebionetworks.repo.model.FileEntity }
+                method: post
+                body: { parentId: '{id}', includeTypes: [file, folder] }
+                paging: { kind: cursor, param: nextPageToken, in: body, from: nextPageToken }
+                records: page
+                recurse:
+                    when: { type: org.sagebionetworks.repo.model.Folder }
+                    id: id
+                    folder: name
+                    max_depth: 8
+                then:
+                    - address: 'https://repo-prod.prod.sagebase.org/repo/v1/entity/{id}/filehandles'
+                      for_each: id
+                      when: { type: org.sagebionetworks.repo.model.FileEntity }
+                      records:
+                          path: list
+                          unless:
+                              concreteType: org.sagebionetworks.repo.model.file.PreviewFileHandle
+                          first: true
+                      fields:
+                          name: '{folders}{fileName}'
+                          size: contentSize
+                          checksum: { path: contentMd5, kind: md5 }
+                          url: 'https://repo-prod.prod.sagebase.org/repo/v1/entity/{id}/file'
+        - key: tcia
+          name: TCIA
+          format: json
+          address: 'https://services.cancerimagingarchive.net/nbia-api/services/v1/getSeries?Collection={collection}&format=json'
+          records: .
+          fields:
+              name: '{SeriesInstanceUID}.zip'
+              url: 'https://services.cancerimagingarchive.net/nbia-api/services/v1/getImage?SeriesInstanceUID={SeriesInstanceUID}'
+          pick: { field: series, by: SeriesInstanceUID }
+        - key: url
+          name: Address
+          format: none
+          records: { field: urls }
+          fields:
+              name: { path: name, else: { path: url, op: last } }
+              size: { op: first_byte_size }
+              checksum: { path: sha256, kind: sha256, else: { path: md5, kind: md5 } }
+              url: url
+        - key: zenodo
+          name: Zenodo
+          format: json
+          address: 'https://zenodo.org/api/records/{record}'
+          records: files
+          fields:
+              name: key
+              size: size
+              checksum: { path: checksum, op: strip, prefix: 'md5:', kind: md5 }
+              url: links.self
+          pick: { field: files }
+venues:
+    browser:
+        key: utbrowser
+        name: UT Journal Browser
+        format: html
+        address: https://library.wur.nl/WebQuery/utbrowser
+        query:
+            words: { param: title }
+            issn: { param: q, params: { wq_fld: q } }
+        filters:
+            - label: Open access status
+              params: { wq_flt: journal/oa-status, wq_val: '{value}' }
+            - { label: JCR quartile, params: { wq_flt: jcr/category/kwartiel, wq_val: '{value}' } }
+        sorts:
+            - { label: CiteScore, params: { wq_srt_desc: citescore } }
+            - { label: SNIP, params: { wq_srt_desc: snip } }
+            - { label: SJR, params: { wq_srt_desc: sjr } }
+            - { label: 'Title, A to Z', params: { wq_srt_asc: journal/title } }
+            - { label: 'Title, Z to A', params: { wq_srt_desc: journal/title } }
+        paging:
+            kind: offset
+            param: wq_ofs
+            size: wq_max
+            sizes: [20, 50, 100]
+            total:
+                select: '#searchresult-functions .navbar-brand'
+                op: match
+                pattern: '/ (\d+)'
+        records: { select: 'table#records tbody tr' }
+        fields:
+            title: 'a[title="more info"]'
+            issn: { select: div.issns, op: match, pattern: '\d{4}-\d{3}[\dXx]', all: true }
+            publisher: div.author
+            fee: a.apc_discount
+            open_access: { select: li.open_access, attr: title }
+links:
+    - { key: doi, address: 'https://doi.org/{id|path}' }
+    - { key: arxiv, address: 'https://arxiv.org/abs/{id|path}' }
+    - { key: arxiv_pdf, address: 'https://arxiv.org/pdf/{id|path}' }
+    - { key: pubmed, address: 'https://pubmed.ncbi.nlm.nih.gov/{id}/' }
+    - { key: europepmc, address: 'https://europepmc.org/article/{source}/{id}' }
+    - key: scholar
+      address: 'https://scholar.google.com/scholar?q={id}&as_ylo={from}&as_yhi={to}'
+    - { key: shellcheck, address: 'https://www.shellcheck.net/wiki/{id}' }

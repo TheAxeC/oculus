@@ -1,12 +1,13 @@
 // Layer 2, server. The pacing of the literature sources and the cache of their answers: one object
 // the server context holds, handed to the handler, so no module keeps either as state of its own.
 //
-// Each source is a lane. One request of a lane is in flight at a time, and two requests start at
-// least the lane's gap apart; a request waiting its turn leaves the lane when its page aborts, and
-// the next one takes its place. The cache keeps answers that came back `ok`, at most CACHE_MAX,
-// the oldest dropped first, each for the minutes the setting gives; a setting of 0 keeps nothing.
+// Each source is a lane, named by its row's key. One request of a lane is in flight at a time, and
+// two requests start at least the lane's gap apart; a request waiting its turn leaves the lane when
+// its page aborts, and the next one takes its place. The cache keeps answers that came back `ok`,
+// at most CACHE_MAX, the oldest dropped first, each for the minutes the setting gives; a setting of
+// 0 keeps nothing.
 
-import type { LiteratureSource, SourceHits } from '../../../data/model/index.ts';
+import type { SourceHits } from '../../../data/model/index.ts';
 
 /** The most answers the cache holds. */
 const CACHE_MAX = 200;
@@ -59,7 +60,7 @@ function turnOrAbort(turn: Promise<void>, signal: AbortSignal): Promise<void> {
 type Lane = { tail: Promise<void>; started: number };
 
 export class LiteratureDesk {
-    private readonly lanes = new Map<LiteratureSource, Lane>();
+    private readonly lanes = new Map<string, Lane>();
     private readonly answers = new Map<string, { at: number; answer: SourceHits }>();
     private readonly clock: Clock;
 
@@ -74,7 +75,7 @@ export class LiteratureDesk {
      * order: the requests after an aborted one still wait for the request that is in flight.
      */
     async run<T>(
-        source: LiteratureSource,
+        source: string,
         gapMs: number,
         signal: AbortSignal,
         task: () => Promise<T>

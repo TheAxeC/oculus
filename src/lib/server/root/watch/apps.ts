@@ -42,7 +42,7 @@ import {
     type Clock,
     type FilePoll,
     type Timer
-} from '../../core/file-poll.ts';
+} from '../../core/files/file-poll.ts';
 import { fsWrites, type FsWrites } from '../../core/json.ts';
 import { expandHome, type Root } from '../../files/files.ts';
 import { perOculus } from '../../files/workspace/paths.ts';

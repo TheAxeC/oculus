@@ -67,7 +67,15 @@ const holdsWord = z
     .enum(HOLDS)
     .optional()
     .describe(
-        'lists marks a key/value family whose every key holds a list of values or one value; record marks a family field with no key field that holds one record of its fields.'
+        'lists marks a key/value family whose every key holds a list of values or one value; record marks a family, or a family field with no key field, that holds one record of its fields, and a text field with fields that takes a text or one such record.'
+    );
+
+/** What `sparse:` says of a family. */
+const sparseWord = z
+    .literal(true)
+    .optional()
+    .describe(
+        "true draws each of a family's cards with the fields its record sets and a menu that adds the others."
     );
 
 /** One field of a family: a help line alone, or the words of a control. */
@@ -85,7 +93,8 @@ const optionField: z.ZodType<OptionField> = z.lazy(() =>
                     .describe(
                         'The fields of a nested family by name: a list of records, a map from a key to a value, or one record.'
                     ),
-                holds: holdsWord
+                holds: holdsWord,
+                sparse: sparseWord
             })
         ])
         .describe('One field of the records: its help line alone, or its control and words.')
@@ -104,6 +113,7 @@ const optionEntry = z.strictObject({
         .describe('The subject the Settings view lists the option under.'),
     section: text.optional().describe('The group inside the heading the option is listed in.'),
     holds: holdsWord,
+    sparse: sparseWord,
     key: text
         .optional()
         .describe(
@@ -129,9 +139,9 @@ export const optionsFileShape = z.strictObject({
 /**
  * The keys of an options file that readSpec (data/sources/config/catalog/options.ts) words itself:
  * a control, a source, a form, a heading, a `whole`, a list of slots, a help line, a key field, a
- * `holds` or a group line it refuses.
+ * `holds`, a `sparse` or a group line it refuses.
  */
 export const readSpecWords: Owned = (key) =>
     key === 'groups' ||
     key.startsWith('groups.') ||
-    /(^|\.)(control|from|form|heading|whole|slots|help|key|holds)(\.|$)/.test(key);
+    /(^|\.)(control|from|form|heading|whole|slots|help|key|holds|sparse)(\.|$)/.test(key);

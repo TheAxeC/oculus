@@ -16,6 +16,12 @@
     // neither is left relative to the page's own address. A web address written in a plain item of
     // the metadata line (the timing) is a link (ui/display/text/LinkedText.svelte), and `wants` is
     // inline Markdown, which links its addresses itself.
+    //
+    // The metadata line holds the fee and the open-access status the entry stores. For a venue
+    // whose hub names a journal browser that asks by ISSN, the menu holds Read from the browser,
+    // which asks the browser by the venue's ISSNs and writes the fee and the open-access status of
+    // the one hit into the entry through the entry write, its History record with it; it is off,
+    // its title saying why, for a venue with no ISSN (state/sources/registries/browser.ts).
 
     import Tag from '$lib/ui/controls/Tag.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
@@ -42,6 +48,9 @@
         type Project,
         type Venue
     } from '$lib/state/sources/registries/venues';
+    import { readBlocked, readFromBrowser } from '$lib/state/sources/registries/browser';
+    import { routeBody } from '$lib/state/feeds/literature/answers';
+    import { refusalWords } from '$lib/views/shared/forms/answer-words';
     import { themeWordLabel, type ThemeWordLabels } from '$lib/state/shared/words/themes';
     import { rootOf } from '$lib/state/shared/page/hubs';
     import { useState } from '$lib/state/client/use';
@@ -101,13 +110,59 @@
         title: venue.name
     }));
 
+    /** Whether a Read from the browser press is under way. */
+    let reading = $state(false);
+
+    /**
+     * One Read from the browser press: the venue's ISSNs asked in order, and the fee and the
+     * open-access status of the one hit written into the venue's entry, or the sentence saying why
+     * nothing was.
+     */
+    async function read(target: Entry): Promise<void> {
+        reading = true;
+        try {
+            const token = client.writes.writeToken();
+            const outcome = await readFromBrowser(venue, (url) => routeBody(url, token));
+            if ('none' in outcome) {
+                onsaid(outcome.none);
+                return;
+            }
+            const answer = await client.writes.writeEntry(collection, target.id, outcome.write);
+            const refused = refusalWords(answer);
+            onsaid(refused === '' ? t('venues.read_done', outcome.issn) : refused);
+        } finally {
+            reading = false;
+        }
+    }
+
+    /**
+     * Read from the browser, for a venue the collection file holds whose hub names a journal
+     * browser that asks by ISSN: off with the reason while the venue has no ISSN or the file
+     * cannot be written.
+     */
+    const readAction = $derived.by((): RecordAction | null => {
+        if (venue.browsable !== true || entry === null) return null;
+        const target = entry;
+        const blocked = readBlocked(venue) || (card.dated?.blocked ?? '');
+        return {
+            id: 'read',
+            label: reading ? t('venues.read_reading') : t('venues.read'),
+            title: blocked === '' ? t('venues.read_tip') : blocked,
+            glyph: 'refresh',
+            turning: reading,
+            disabled: blocked !== '' || reading,
+            onclick: () => read(target)
+        };
+    });
+
     /**
      * The card's actions: Show in Files for a link that is a hub path, then Page, Edit in File and
-     * Delete for a venue the collection file holds.
+     * Delete for a venue the collection file holds, and Read from the browser.
      */
     const actions = $derived.by((): RecordAction[] => {
         const path = linkPath;
-        if (path === undefined) return card.actions;
+        const own = readAction === null ? card.actions : [...card.actions, readAction];
+        if (path === undefined) return own;
         const show: RecordAction = {
             id: `files:${path}`,
             label: t('venues.show_in_files'),
@@ -118,7 +173,7 @@
                 showInFiles(path, rootOf(venue));
             }
         };
-        return [show, ...card.actions];
+        return [show, ...own];
     });
 
     /** The moment the deadline's countdown is measured from. */
@@ -157,6 +212,8 @@
                 : null,
             indexed(venue.wos, venue.wosMark, (words) => t('venues.wos', words)),
             indexed(venue.scopus, venue.scopusMark, (words) => t('venues.scopus', words)),
+            venue.fee ? { label: t('venues.fee', venue.fee) } : null,
+            venue.openAccess ? { label: t('venues.open_access', venue.openAccess) } : null,
             venue.format ? { label: venue.format, bold: true } : null,
             venue.timing ? { label: venue.timing, glyph: 'timing' } : null,
             venue.link && linkPath === undefined

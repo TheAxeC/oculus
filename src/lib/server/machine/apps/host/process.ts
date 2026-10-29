@@ -16,7 +16,7 @@
 // group is killed, so no program the host started outlives it.
 
 import { spawn as nodeSpawn, type ChildProcessWithoutNullStreams } from 'node:child_process';
-import type { Clock, Timer } from '../../../core/file-poll.ts';
+import type { Clock, Timer } from '../../../core/files/file-poll.ts';
 import type { ActivationEvent } from '../read/activation.ts';
 import {
     connectHost,

@@ -10,7 +10,7 @@ import { createHash } from 'node:crypto';
 import { createReadStream, readFileSync, renameSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { z } from 'zod';
-import type { Checksum } from './files.ts';
+import type { RecoverChecksum as Checksum } from '../../../../data/model/index.ts';
 import type { CheckRow, PlanRow } from './plan.ts';
 
 const checksumShape = z.object({

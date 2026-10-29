@@ -1,10 +1,15 @@
 // Layer 2, client state. Pure dataset summaries, search, tones, the words of a source Recover does
-// not run, and saved state. The Data view receives records ready to draw and keeps its search
-// words and disabled facets.
+// not run and of a kind no row of the hub reads, and saved state. The Data view receives records
+// ready to draw and keeps its search words and disabled facets.
 
 import { dataAccessTone } from '../../shared/words/tones.ts';
 import { t } from '../../shared/words/text.ts';
-import type { Dataset, Project, RecoverSource } from '../../../data/model/index.ts';
+import {
+    statedKind,
+    type Dataset,
+    type Project,
+    type RecoverSource
+} from '../../../data/model/index.ts';
 import { bareId } from '../../../data/helpers/hub-names.ts';
 import { fieldItemsShape, readAs, searchRevealShape } from '../../../data/shapes/shapes.ts';
 
@@ -77,17 +82,31 @@ export function datasetUsers(ids: string[], projects: Project[]): Project[] {
  * to ask, or the sets the dataset is built from.
  */
 export function statedSource(source: RecoverSource): boolean {
-    return source.kind === 'library' || source.kind === 'request' || source.kind === 'derived';
+    return statedKind(source.kind);
+}
+
+/** A field of a source as text: a word as it is, a list of words joined, anything else ''. */
+function fieldText(source: RecoverSource, field: string): string {
+    const value = source[field];
+    if (typeof value === 'string') return value;
+    return Array.isArray(value) && value.every((one) => typeof one === 'string')
+        ? value.join(', ')
+        : '';
 }
 
 /** What the card says of a source that Recover does not run, '' for a download. */
 export function statedWords(source: RecoverSource): string {
-    if (source.kind === 'library') return t('data.stated_library', source.call);
-    if (source.kind === 'request') return t('data.stated_request', source.contact);
+    if (source.kind === 'library') return t('data.stated_library', fieldText(source, 'call'));
+    if (source.kind === 'request') return t('data.stated_request', fieldText(source, 'contact'));
     if (source.kind === 'derived') {
-        return t('data.stated_derived', source.from.join(', '), source.script);
+        return t('data.stated_derived', fieldText(source, 'from'), fieldText(source, 'script'));
     }
     return '';
+}
+
+/** What the card says of a kind of its sources that no row of its hub's `recover.sources` reads. */
+export function unreadWords(kind: string, hub: string): string {
+    return t('data.unread', kind, hub);
 }
 
 /** The key a dataset's Recover view opens under: its id as its own hub's files write it. */

@@ -92,36 +92,15 @@ options:
     mail_dir:
         section: Mail accounts
         help: Where the per-account mail credential files and the triage notes live. Without it the folder is ~/.oculus/mail. A value of ~ or one starting with ~/ is under the home folder, and any other relative value is resolved against the folder of the hub that holds this file. A change is read again at once.
-    literature.wos_key:
-        section: Literature search
-        help: Under `literature:`, the Web of Science Starter API key. Without it the Web of Science toggle of the Literature search is switched off. A change is read again at the next search.
-    literature.scopus_key:
-        section: Literature search
-        help: Under `literature:`, the Elsevier API key for Scopus. Without it the Scopus toggle of the Literature search is switched off. A change is read again at the next search.
-    literature.scopus_insttoken:
-        section: Literature search
-        help: Under `literature:`, the Elsevier institutional token that goes with the Scopus key, sent when the key needs one. A change is read again at the next search.
-    literature.openalex_key:
-        section: Literature search
-        help: Under `literature:`, an OpenAlex API key. Without it OpenAlex allows about 100 searches a day. A change is read again at the next search.
-    literature.semantic_scholar_key:
-        section: Literature search
-        help: Under `literature:`, a Semantic Scholar API key. Without it Semantic Scholar often answers that too many requests were made. A change is read again at the next search.
-    literature.ncbi_key:
-        section: Literature search
-        help: Under `literature:`, an NCBI API key, which lets PubMed answer more requests a second. A change is read again at the next search.
     literature.mailto:
         section: Literature search
-        help: Under `literature:`, the contact address that OpenAlex, Crossref and NCBI ask callers to send with a request. A change is read again at the next search.
+        help: Under `literature:`, the contact address a row of `literature.sources` sends as the parameter its `contact` names, for the sources that ask callers to say who they are. A change is read again at the next search.
     downloads:
         section: Download accounts
-        help: The accounts the Data view's Recover downloads with, a list of service (physionet, kaggle, kaggle-token or synapse), user and secret, one row per service. A physionet row holds the PhysioNet user name and password, a kaggle row the Kaggle user name and API key, a kaggle-token row Kaggle's API token and no user, and a synapse row a Synapse personal access token and no user. Recover sends the secret to curl through a file only it can read, deleted when the download ends, and never shows it. Recover signs in to Kaggle with the kaggle row alone; the kaggle-token row is kept for Kaggle's token and Recover does not use it. Without its row a credentialed PhysioNet set, a Kaggle set or a Synapse set cannot be fetched, and for a Kaggle set that row is the kaggle row. It is read from the primary hub's file only. A change is read again at the next Recover.
+        help: The secrets the reader rows of the hubs' `.oculus/config.yml` sign in with, a list of service, user and secret, one row per service. A row's service is the key an `auth` entry of a row of `literature.sources`, `recover.sources` or `venues.browser` names, and that entry's help says what the secret is and where it is made; a row no reader row names is read and unused. A literature source whose `auth` entry is required is switched off without its row, and Recover cannot fetch a set whose row's `auth` is required, or whose `access` address answers that it needs one, without it. Recover sends the secret to curl through a file only it can read, deleted when the download ends, and no secret is ever shown. It is read from the primary hub's file only. A change is read again at the next search and the next Recover.
         fields:
-            service:
-                help: physionet, kaggle, kaggle-token or synapse, the service the row signs in to
-                control: choice
-                options: [physionet, kaggle, kaggle-token, synapse]
-            user: the user name at PhysioNet or Kaggle; absent for kaggle-token and synapse
-            secret: the PhysioNet password, the Kaggle API key, Kaggle's API token or the Synapse token, shown as set
+            service: the key an `auth` entry of a reader row names this row by
+            user: the user name an `auth` entry that signs in with `basic` sends; absent otherwise
+            secret: the password, API key or token, shown as set
 groups:
-    literature: The keys and the contact address the Literature search's sources are called with from this machine.
+    literature: The contact address the Literature search's sources are called with from this machine.

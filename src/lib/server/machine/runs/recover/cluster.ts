@@ -23,7 +23,7 @@
 
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import type { DownloadAccount, DownloadService } from '../../../../data/sources/config.ts';
+import type { DownloadAccount } from '../../../../data/sources/config.ts';
 import { cancel, validId } from '../../hpc/actions.ts';
 import { scratchText } from '../../hpc/scratch.ts';
 import type { Connection, Runner } from '../../hpc/ssh.ts';
@@ -33,7 +33,7 @@ import { CLUSTER_LOG, lastLines, LOG_LINES } from './live/log.ts';
 import type { RunAction, RunState } from './local.ts';
 import { recoverFiles } from './local.ts';
 import {
-    curlConfig,
+    credentialFiles,
     dataPart,
     fetchScript,
     pathWord,
@@ -100,7 +100,9 @@ function remoteFiles(hub: string, key: string) {
         dir,
         script: `${dir}/${key}.fetch.sh`,
         checks: `${dir}/${key}.checks.txt`,
-        config: (service: DownloadService) => `${dir}/${key}.${service}.curl`
+        config: (service: string) => `${dir}/${key}.${service}.curl`,
+        /** Every credential file of the dataset, a glob the remote shell expands. */
+        configs: `${pathWord(`${dir}/${key}`)}.*.curl`
     };
 }
 
@@ -276,7 +278,7 @@ export async function startClusterFetch(
     const remote = remoteFiles(place.hub, place.key);
     const cleared = await deps.runner(
         deps.connection,
-        `rm -f ${(['physionet', 'kaggle', 'synapse'] as const).map((one) => pathWord(remote.config(one))).join(' ')} ${pathWord(remote.script)}`,
+        `rm -f ${remote.configs} ${pathWord(remote.script)}`,
         COMMAND_MS
     );
     if (cleared.code !== 0) return 'send';
@@ -284,12 +286,11 @@ export async function startClusterFetch(
     rmSync(stage, { recursive: true, force: true });
     mkdirSync(stage, { recursive: true, mode: 0o700 });
     try {
-        const configs: Partial<Record<DownloadService, string>> = {};
+        const credentials = credentialFiles(items, downloads);
+        if (credentials === null) return 'credential';
+        const configs: Record<string, string> = {};
         const names: string[] = [];
-        for (const service of new Set(items.flatMap(({ row }) => row.service ?? []))) {
-            const account = downloads.find((row) => row.service === service);
-            const text = account === undefined ? null : curlConfig(account);
-            if (text === null) return 'credential';
+        for (const { service, text } of credentials) {
             const name = `${place.key}.${service}.curl`;
             writeFileSync(join(stage, name), text, { mode: 0o600, flag: 'wx' });
             names.push(name);

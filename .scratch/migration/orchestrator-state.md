@@ -24,20 +24,6 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 
 ```yaml
 dispatch:          # steps in flight, up to six (Z632)
-- step: O97
-  brief_check: "agents/reviews/O97-brief-check.md (a7747d4cd7b199a87, claude-opus-5-5, 258490 tokens, 89 tool uses, 12 min 30 s)"
-  shared_paths: with O98, `config/options/local.yml` (O98 lines 15-31, O97 lines 88-120), `config/options/behavior.yml` (O98 lines 198-310 and 786-795, O97 the four families beside `literature:` at 640-662), `config/defaults/behavior.yml`, `src/lib/data/helpers/hub-names.ts`, `src/lib/server/machine/runs/recover/routes.ts` (O98 lines 2, 91-120 and 210-394, O97 lines 47-56 and 141-188), `src/routes/api/(machine)/recover/+server.ts`, `src/lib/data/model/machine/model-recover.ts`, `src/lib/state/system/machine/recover-words.ts`, `src/lib/views/sources/data/recover/Recover.svelte`, `src/lib/state/system/config/editors/fields.ts`, `src/lib/views/system/workbench/settings/`, `config/text/` and the recover and local tests: separate hunks, simple merges; `src/lib/data/sources/config/local.ts` (O98 hunks at 139 and 376 beside O97's lines 143-155 and 380-402): adjacent, resolved at landing as ruling 526 (a) accepts. The docs and `guarded.md` are O97's "Doc text", written at landing.
-  base: f4535f495
-  worktree: .agents/worktrees/migration-O97
-  executor: agent
-  worker: claude:opus
-  session_id: a0fed28c88758e2aa (claude-opus-5-5)
-  launched: 2026-10-28
-  report: .scratch/migration/agents/reviews/O97-report.md
-  builder_usage: round 0 hand-back 291761 tokens, 120 tool uses, 28 min 53 s; after the cases ruling, paused at Axel's word on 2026-10-28 (stopped, no usage notice), resumed by a message to the same agent id, paused again at Axel's word the same day (stopped, no usage notice), resumed again by a message to the same agent id, paused a third time at Axel's word the same day (stopped, no usage notice), resumed a third time by a message to the same agent id; final run 175220 tokens, 150 tool uses, 36 min 24 s (its completion notice); report saved; round 1 160003 tokens, 453 tool uses, 83 min 53 s (its completion notice), report saved
-  reviewer_report: agents/reviews/O97-refuter.md (afd9d66fcf57bdd48, claude-opus-5-5, 126654 tokens, 127 tool uses, 20 min 25 s)
-  round: 1 (agents/briefs/O97-round1.md; snapshot .agents/worktrees/migration-O97-round-1 with files.txt; round 0 the cases ruling agents/briefs/O97-cases.md)
-  landing: not-started
 ```
 
 ## The standing demands (from Axel, in force)
@@ -695,6 +681,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-10-29 (O97 landed). O97 the journal browser landed on main from base f4535f495, the whole range with repair round 1 and the fixes at landing (the two primary-only rules made one, the doubled `recover` entries of both behavior files, the `timedFetcher` timeout, `reloadLocal`, three test rows, the Doc text and the Hub text, hub commit 3f4d5d883); `npm install` added `cheerio` on main. The gate run is green but for one load timeout that passes alone; the look ran on a scratch server on port 8797, since Axel's server on 8790 runs the code it started with and shows O97 only after he restarts it. Booked in `plan.md` under O97, its four agents in the Agents section; the landing report `agents/reviews/O97-landing.md`. In flight (0 of 6): none. Next: /spec O99, then O101. Open items: none.
 - 2026-10-29 (O97 round 1 back; review over round 1 running). The builder's round 1 report is saved (`agents/reviews/O97-report.md`, 2017 lines, ASCII): verify 1 fails only on `tests/checks/config/templates.test.ts`, which the Doc text closes at landing. Its decision on the row keys is closed under automode as open item 536 (Z1058). `/refute migration O97` over round 1 dispatched reviewer a6849cfbb9aa72906 (claude-opus-5-5). In flight (1 of 6): O97, review over round 1. Next: that review, /land with the Doc text and its look on 8790; then /spec O99. Open items: none.
 - 2026-10-28 (O97 round 1 sent). Round 1 (`agents/briefs/O97-round1.md`, eleven items from the review, copied into the worktree; snapshot `.agents/worktrees/migration-O97-round-1` with `files.txt`) is sent to O97's builder a0fed28c88758e2aa. In flight (1 of 6): O97, round 1. Next: the round's report, /refute over round 1, /land with the Doc text and its look on 8790; then /spec O99. Open items: none.
 - 2026-10-28 (O97 reviewed; round 1 drafted, waiting on Axel's word). The review (`agents/reviews/O97-refuter.md`, afd9d66fcf57bdd48, claude-opus-5-5) reproduced verify 1's four failures and gave items 2 and 9 violated, cases 8 and 15/19 partial, case 22 unmet. The builder's new open item (nested values with no control) is closed by ruling 526 (a), O99 giving O97's rows their controls, booked under O99 in `plan.md`. Round 1 is drafted at `agents/briefs/O97-round1.md` (eleven items) and is not sent: Axel hears the round first. In flight (1 of 6): O97, reviewed. Next: Axel's word on round 1; then the round, its review and /land. Open items: none.

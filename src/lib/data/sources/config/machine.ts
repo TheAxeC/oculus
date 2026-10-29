@@ -207,6 +207,29 @@ export function readMachine(
     return { config, problems, unread, set, lists };
 }
 
+/**
+ * A problem of the primary hub's file `file` for each `downloads` row whose service is one of
+ * `basic`, the services a reader row signs in to with a user, and that holds no user. The reader
+ * takes no such row (server/core/reader/request.ts), so the source is off as with no row.
+ */
+export function userProblems(
+    read: MachineRead,
+    file: string,
+    basic: ReadonlySet<string>
+): MachineProblem[] {
+    return read.config.downloads
+        .filter((row) => basic.has(row.service) && row.user === undefined)
+        .map((row) => ({
+            file,
+            problem: {
+                key: 'downloads',
+                kind: 'user',
+                service: row.service,
+                sentence: `the downloads row of ${row.service} has no user`
+            }
+        }));
+}
+
 /** The joined values of the workspace's files, with the default of each key that is wrong. */
 export function loadMachine(hubs: readonly MachineHub[], primary: string | null): LocalConfig {
     return readMachine(hubs, primary, true).config;

@@ -154,7 +154,7 @@ describe('signInRows', () => {
 });
 
 describe('the connection keys of a hub that is not the primary', () => {
-    it('are each a finding naming the key and the hub, and a key it does not set is none (G13)', () => {
+    it('are each a finding naming the key and the hub, and a key each hub reads from its own file is none (G13)', () => {
         const lab = plantScratch('oculus-connection-keys-', {
             [HUB_FILE]: [
                 'slurm:',
@@ -165,15 +165,20 @@ describe('the connection keys of a hub that is not the primary', () => {
                 "  failures: [{ kind: K, match: 'Permission denied', fix: F }]",
                 'lint:',
                 '  writing_skip: []',
+                'memories_dir: .oculus/photos',
                 ''
             ].join('\n')
         });
-        const read = readOtherHub({ key: 'lab', dir: lab }, loadConfig(engineDir(), { hub: lab }));
+        const read = readOtherHub(
+            { key: 'lab', dir: lab },
+            loadConfig(engineDir(), { hub: lab, other: 'lab' })
+        );
         const named = read.findings.filter((one) => one.message.includes('primary hub'));
         expect(named.map((one) => [one.file, one.key])).toEqual([
             [join(lab, HUB_FILE), 'slurm.resource'],
+            [join(lab, HUB_FILE), 'sign_in'],
             [join(lab, HUB_FILE), 'connections.failures'],
-            [join(lab, HUB_FILE), 'sign_in']
+            [join(lab, HUB_FILE), 'lint.writing_skip']
         ]);
         for (const one of named) expect(one.message).toContain('lab');
     });

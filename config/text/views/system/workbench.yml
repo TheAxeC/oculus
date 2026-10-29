@@ -33,6 +33,8 @@ text:
         contents_hide: Hide the table of contents
         contents_show: Show the table of contents
         editor_add: Add
+        editor_add_field: 'Add field to entry {0}'
+        editor_add_field_none: Add field
         editor_discard: Discard
         editor_down: 'Move entry {0} down'
         editor_empty: This setting holds no entry.

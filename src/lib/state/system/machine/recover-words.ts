@@ -1,7 +1,7 @@
 // Layer 2, client state. The words and the figures the Recover view and Live HPC's Login node
 // section draw from the state GET /api/recover answers and the `recover` channel pushes: a size in
-// the unit that suits it, the reason an action or a listing was refused, the setup row of a
-// service, the state of a file a pushed reading changed, and the time left of a fetch. Every
+// the unit that suits it, the reason an action or a listing was refused, the setup row of an
+// access, the state of a file a pushed reading changed, and the time left of a fetch. Every
 // sentence is a literal catalog key, so the catalog gate sees each one. The types of the answers
 // are passed on from here, so the views read them through the state layer.
 //
@@ -12,8 +12,7 @@ import type {
     RecoverAccess,
     RecoverFileState,
     RecoverRefusal,
-    RecoverRow,
-    RecoverService
+    RecoverRow
 } from '../../../data/model/index.ts';
 import { t } from '../../shared/words/text.ts';
 
@@ -73,58 +72,57 @@ const REFUSALS: Record<string, () => string> = {
 
 /**
  * The sentence for a refusal of the route; `host` and `target` are worded by the sentence the
- * route gives with them when it gives one, and a reason the catalog does not word is shown as it
- * came.
+ * route gives with them when it gives one, `row` names the kind the route gives and the hub `hub`,
+ * and a reason the catalog does not word is shown as it came.
  */
-export function refusalWords(reason: string, hint = ''): string {
+export function refusalWords(reason: string, hint = '', hub = ''): string {
     if ((reason === 'host' || reason === 'target') && hint !== '') return hint;
+    if (reason === 'host') return t('recover.refused_host');
+    if (reason === 'row') return t('recover.refused_row', hint, hub);
     const words = REFUSALS[reason] as (() => string) | undefined;
     return words === undefined ? reason : words();
 }
 
-/** The sentence for a source that gave no file list, with its kind or host, status and name. */
-export function listingWords(refusal: RecoverRefusal): string {
+/**
+ * The sentence for a source that gave no file list, naming it by its row's `name` (by its kind, or
+ * the host it asked, when it has none), with its status and the file name; a kind no row reads
+ * names the hub `hub`.
+ */
+export function listingWords(refusal: RecoverRefusal, hub = ''): string {
     const status = refusal.status ?? '';
     const name = refusal.name ?? '';
+    const source = refusal.label ?? refusal.source;
     switch (refusal.refused) {
+        case 'row':
+            return t('recover.refused_row', refusal.source, hub);
         case 'access':
-            return t('recover.listing_access', refusal.source, status);
+            return t('recover.listing_access', source, status);
         case 'status':
-            return t('recover.listing_status', refusal.source, status);
+            return t('recover.listing_status', source, status);
         case 'answer':
-            return t('recover.listing_answer', refusal.source);
+            return t('recover.listing_answer', source);
         case 'name':
-            return t('recover.listing_name', refusal.source, name);
+            return t('recover.listing_name', source, name);
         case 'missing':
-            return t('recover.listing_missing', refusal.source, name);
+            return t('recover.listing_missing', source, name);
         case 'network':
-            return t('recover.listing_network', refusal.source);
+            return t('recover.listing_network', source);
     }
 }
 
-/** The name of a service as the service writes it. */
-export function serviceWords(service: RecoverService): string {
-    if (service === 'physionet') return t('recover.service_physionet');
-    return service === 'kaggle' ? t('recover.service_kaggle') : t('recover.service_synapse');
+/**
+ * The row of `downloads:` the setup of an access adds, as the template writes it: with a user when
+ * the row's `auth` entry sends the secret with one.
+ */
+export function setupRow(access: RecoverAccess): string {
+    return access.basic
+        ? t('recover.setup_row_user', access.service)
+        : t('recover.setup_row', access.service);
 }
 
-/** The row of `downloads:` the setup of a service adds, as the template writes it. */
-export function setupRow(service: RecoverService): string {
-    if (service === 'physionet') return t('recover.setup_row_physionet');
-    return service === 'kaggle' ? t('recover.setup_row_kaggle') : t('recover.setup_row_synapse');
-}
-
-/** Where the secret of a service's row comes from. */
-export function setupSecret(service: RecoverService): string {
-    if (service === 'physionet') return t('recover.setup_secret_physionet');
-    return service === 'kaggle'
-        ? t('recover.setup_secret_kaggle')
-        : t('recover.setup_secret_synapse');
-}
-
-/** What the access of one service says: set up, refused, missing or not reached. */
+/** What the access of one service says, by its row's name: set up, refused, missing, unreached. */
 export function accessWords(access: RecoverAccess): string {
-    const service = serviceWords(access.service);
+    const service = access.name;
     if (access.state === 'ok') return t('recover.access_ok', service);
     if (access.state === 'unreachable') return t('recover.access_unreachable', service);
     return access.row

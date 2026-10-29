@@ -3,6 +3,8 @@
 // and log on this Mac or on a cluster of `slurm.resource`, and the POST of a fetch, a check, an
 // unpack or a stop behind the write token. This Mac's runs and the `recover` channel are the server
 // context's Recover watcher (`recover`), held for the server's life, which each press is told of.
+// A dataset's sources are read by the rows of `recover.sources` of its own hub: the primary's
+// merged settings, or the settings of another hub read under that hub's `.oculus/config.yml`.
 
 import { homedir } from 'node:os';
 import { nodeDownload } from '$lib/data/sources/config';
@@ -16,6 +18,8 @@ import {
 } from '$lib/server/machine/runs/recover/routes';
 import { sevenZipFolder } from '$lib/server/machine/runs/recover/unpack';
 import { hubId } from '$lib/data/helpers/hub-names';
+import { recoverRows } from '$lib/data/sources/config';
+import { READER_AGENT } from '$lib/server/core/reader/agent';
 import { dataset } from '$lib/server/sessions/stores/hooks';
 import type { RequestHandler } from './$types';
 
@@ -32,6 +36,15 @@ const target = (locals: App.Locals): RecoverTarget => {
         },
         dataset: (hub, key) => dataset(server.hub, hubId(hub, key)),
         downloads: () => server.local.downloads,
+        rows: (hub) => {
+            const other = open.hubs.find((one) => one.name === hub && one.name !== open.primary);
+            const config =
+                other === undefined
+                    ? locals.config().config
+                    : server.configCache.hub(other.dir).config;
+            return recoverRows(config);
+        },
+        agent: READER_AGENT,
         fetch,
         local: server.recover.local,
         cluster: (resource) => {

@@ -9,6 +9,7 @@ import { homedir, tmpdir } from 'node:os';
 import { describe, expect, vi } from 'vitest';
 import {
     DEFAULT_PORT,
+    basicServices,
     checkLocal,
     engineDir,
     loadConfig,
@@ -17,7 +18,9 @@ import {
     localFindings
 } from '../../../../../src/lib/data/sources/config.ts';
 import { readLocal, readLocalText } from '../../../../../src/lib/data/sources/config/local.ts';
+import { readMachine, userProblems } from '../../../../../src/lib/data/sources/config/machine.ts';
 import { it, scratchDir } from '../../../../fixtures/scratch.ts';
+import { FIXTURE_CONFIG } from '../../../../server/core/reader/rows.ts';
 
 /** A scratch hub whose .oculus/local.yml holds the text, never a real file. */
 function hubWith(text: string | null): string {
@@ -82,7 +85,6 @@ describe('checkLocal', () => {
             'local.yml: mail[0].provider must be google or microsoft'
         ],
         ['literature: abc', 'local.yml: literature must be a map'],
-        ['literature: { wos_key: 3 }', 'local.yml: literature.wos_key must be a non-empty string'],
         ["literature: { mailto: '' }", 'local.yml: literature.mailto must be a non-empty string']
     ])('answers %j with the sentence it would throw', (text, expected) => {
         expect(sentence(text)).toBe(expected);
@@ -121,13 +123,36 @@ describe('readLocalText', () => {
         expect(wrongMap.config.port).toBe(9001);
         expect(wrongMap.config.literature).toBeUndefined();
         expect(wrongMap.problems.map((one) => one.key)).toStrictEqual(['literature']);
-        const wrongKey = readLocalText(
-            'port: 9001\nliterature: { wos_key: 3, mailto: a@b.c }',
-            hub
-        );
+        const wrongKey = readLocalText('port: 9001\nliterature: { mailto: 3 }', hub);
         expect(wrongKey.config.port).toBe(9001);
-        expect(wrongKey.config.literature).toStrictEqual({ mailto: 'a@b.c' });
-        expect(wrongKey.problems.map((one) => one.key)).toStrictEqual(['literature.wos_key']);
+        expect(wrongKey.config.literature).toBeUndefined();
+        expect(wrongKey.problems.map((one) => one.key)).toStrictEqual(['literature.mailto']);
+    });
+});
+
+describe('a literature key and the downloads rows of a reader row', () => {
+    it('reads literature.wos_key as a key it does not know, and takes a downloads row of any service', () => {
+        const text = [
+            'literature: { wos_key: x }',
+            'downloads:',
+            '  - { service: wos, secret: x }',
+            '  - { service: openalex, secret: y }'
+        ].join('\n');
+        expect(sentence(text)).toBeNull();
+        const hub = hubWith(text);
+        const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+        try {
+            const read = readLocal(hub, true);
+            expect(read.problems).toStrictEqual([]);
+            expect(read.unknown).toStrictEqual(['literature.wos_key']);
+            expect(read.config.literature).toBeUndefined();
+            expect(read.config.downloads).toStrictEqual([
+                { service: 'wos', secret: 'x' },
+                { service: 'openalex', secret: 'y' }
+            ]);
+        } finally {
+            warn.mockRestore();
+        }
     });
 });
 
@@ -137,11 +162,11 @@ describe('downloads', () => {
 
     it.each([
         [
-            'a wrong service, a physionet row with no user and a repeated kaggle row',
+            'an empty service, an empty user and a repeated kaggle row',
             [
                 'downloads:',
-                `  - { service: dropbox, user: dropper, secret: ${SECRET} }`,
-                `  - { service: physionet, secret: ${SECRET} }`,
+                `  - { service: '', user: dropper, secret: ${SECRET} }`,
+                `  - { service: dropbox, user: '', secret: ${SECRET} }`,
                 `  - { service: kaggle, user: kaggler, secret: ${SECRET} }`,
                 `  - { service: kaggle, user: kaggler, secret: ${SECRET} }`
             ],
@@ -161,10 +186,10 @@ describe('downloads', () => {
             ['physionet', 'kaggle', 'kaggle-token', 'synapse']
         ],
         [
-            'a kaggle-token row that names a user',
+            'a row of any service that names a user',
             ['downloads:', `  - { service: kaggle-token, user: kaggler, secret: ${SECRET} }`],
-            ['downloads[0].user: row'],
-            []
+            [],
+            ['kaggle-token']
         ]
     ])('reads %s', (_name, lines, problems, services) => {
         const hub = hubWith(lines.join('\n'));
@@ -205,13 +230,13 @@ describe('readLocal and loadMachine', () => {
             warn.mockRestore();
         }
 
-        const literature = hubWith('literature: { wos_key: k, foo: x }');
+        const literature = hubWith('literature: { mailto: a@b.c, foo: x }');
         const again = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
         try {
             const read = readLocal(literature, true);
             expect(read.problems).toStrictEqual([]);
             expect(read.unknown).toStrictEqual(['literature.foo']);
-            expect(read.config.literature).toStrictEqual({ wosKey: 'k' });
+            expect(read.config.literature).toStrictEqual({ mailto: 'a@b.c' });
             expect(again).toHaveBeenCalledTimes(1);
             expect(String(again.mock.calls[0][0])).toContain(
                 'ignoring unknown key(s) literature.foo'
@@ -219,6 +244,33 @@ describe('readLocal and loadMachine', () => {
         } finally {
             again.mockRestore();
         }
+    });
+});
+
+describe('a downloads row a reader row signs in to with a user', () => {
+    const config = loadConfig(engineDir()).config;
+
+    it('is a finding naming its service when it holds no user, and none when it holds one', () => {
+        const text = [
+            'downloads:',
+            '  - { service: physionet, secret: s }',
+            '  - { service: kaggle, user: k, secret: s }',
+            '  - { service: synapse, secret: s }'
+        ].join('\n');
+        const hub = hubWith(text);
+        const read = readMachine([{ name: 'hub', dir: hub }], 'hub');
+        expect(read.problems).toStrictEqual([]);
+        const basic = basicServices([FIXTURE_CONFIG]);
+        expect([...basic].sort()).toStrictEqual(['kaggle', 'physionet']);
+        const problems = userProblems(read, localFile(hub), basic);
+        expect(localFindings(config, problems)).toStrictEqual([
+            {
+                file: localFile(hub),
+                key: 'downloads',
+                message:
+                    'the downloads row of physionet has no user, which a reader row signs in to physionet with; the row is not used'
+            }
+        ]);
     });
 });
 
@@ -232,7 +284,7 @@ describe('localFindings', () => {
             'accounts: [{ tool: claude, dir: d, label: A b }, { tool: gemini, dir: e, label: a-b }, { tool: claude, dir: f, label: a-b }]',
             'a: [',
             'port: 9001\nliterature: abc',
-            'port: 9001\nliterature: { wos_key: 3, mailto: a@b.c }'
+            'port: 9001\nliterature: { mailto: 3 }'
         ];
         for (const text of texts) {
             const { problems } = readLocalText(text, hub);

@@ -34,7 +34,7 @@ import {
 } from '../../../../../data/model/index.ts';
 import type { LintSettings } from '../../../../../data/sources/config.ts';
 import { applyTextEdits, type TextEdit } from '../../../../../data/prose/text-edits.ts';
-import { hashOf, splitMark } from '../../../../core/file-bytes.ts';
+import { hashOf, splitMark } from '../../../../core/files/file-bytes.ts';
 import { realPath, under } from '../../../../core/paths.ts';
 import { words } from '../../../../core/words.ts';
 import { copyLimit } from '../../../../files/fs/history.ts';

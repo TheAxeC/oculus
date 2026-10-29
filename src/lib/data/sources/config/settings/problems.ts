@@ -28,6 +28,7 @@ import { latexBuild, latexFormatting } from './latex.ts';
 import { lintSettings } from './lint.ts';
 import { appsSettings, changesKeep, processesSettings } from './machine.ts';
 import type { SettingProblem } from './reader.ts';
+import { readRows } from './rows/read.ts';
 
 /** Every reader that takes the problems it finds, in the order of their blocks. */
 const PROBLEM_READERS: ((
@@ -42,6 +43,7 @@ const PROBLEM_READERS: ((
     calendarSettings,
     searchSettings,
     literatureSettings,
+    readRows,
     openSettings,
     confirmDelete,
     fileIconAtArrow,

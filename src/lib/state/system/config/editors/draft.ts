@@ -8,7 +8,9 @@
 // field per catalog field, the map's key being the card's `key` field when the file holds a map, a
 // family field drawn as cards of its own: a nested list of records (a board's `columns`), a map
 // from a key to a value (a board's `stages`, a collection's `dissemination_skip`) as a key and a
-// value per card, and a field that holds one record (a collection's `ticker`) as one card.
+// value per card, and a field that holds one record (a collection's `ticker`) as one card. A family
+// that holds one record (`venues.browser`) is one such card, read back as that record, and a map
+// whose value is a record (a reader row's `query`) holds that record as the value's one card.
 //
 // A field is held as its typed value (fields.ts): a toggle as a boolean, a number as the box's
 // text, a choice as its word, a multi as its words, a word block as its lists, a family field as
@@ -35,6 +37,7 @@ import {
     cardsFrom,
     cardsOf,
     controlOf,
+    drawsCards,
     emptyCard,
     pairValueSpec,
     readField,
@@ -48,12 +51,16 @@ import {
 import { readFlow } from './flow.ts';
 import type { Lists } from './sources.ts';
 
-/** The draft of one row. */
+/**
+ * The draft of one row. `one` marks a family that holds one record (`holds: record`): its one card
+ * reads back as that record.
+ */
 export type Draft = {
     form: 'items' | 'pairs' | 'records' | 'multi';
     keyed: boolean;
     fields: string[];
     cards: Card[];
+    one?: true;
 };
 
 /** One step down into a nested list: the card of the list above, and the field holding the list. */
@@ -158,6 +165,11 @@ export function draftOf(row: ConfigRow): Draft | null {
     }
     if (row.control !== 'family') return null;
     const names = Object.keys(row.fields);
+    if (row.entry.holds === 'record') {
+        const card = isMap(value) ? cardOf(value, row.fields) : null;
+        if (card === null) return null;
+        return { form: 'records', keyed: false, fields: names, cards: [card], one: true };
+    }
     if (Array.isArray(value)) {
         const cards = cardsFrom(value, row.fields);
         return cards === null ? null : { form: 'records', keyed: false, fields: names, cards };
@@ -373,7 +385,7 @@ function recordOf(
     for (const [name, spec] of Object.entries(specs)) {
         const held = byKey(card.fields, name);
         if (held === undefined) continue;
-        if (controlOf(spec) === 'records') {
+        if (drawsCards(spec, held)) {
             const nested = { spec, name, place, base, lists, trust, problems };
             const value = nestedValue(cardsOf(held), nested);
             if (value !== undefined) made[name] = value;
@@ -480,6 +492,10 @@ function pairsValue(cards: Card[], at: Nested): Plain {
         const held = card.fields.value;
         const one = typeof held === 'string' && spec.holds === 'lists';
         const valueSpec = one ? fields.value : pairValueSpec(spec);
+        if (drawsCards(valueSpec, held)) {
+            put(value, key, cardRecord(held, valueSpec, where, lists, trust, problems));
+            return;
+        }
         const written = writtenField(valueSpec, held, reading);
         if (!written.ok) {
             problems.push(problemOf(where, 'value', written.trouble));
@@ -489,6 +505,26 @@ function pairsValue(cards: Card[], at: Nested): Plain {
         put(value, key, written.value ?? (listed ? [] : ''));
     });
     return value;
+}
+
+/**
+ * The record the one card of a map's value makes, where the value is a record (a reader row's
+ * `query` term, or a `fields` entry that is a `{ path, op }` record): each field checked in full,
+ * since the file's map is keyed by names a record base does not follow. No card makes an empty
+ * record.
+ */
+function cardRecord(
+    held: FieldValue | undefined,
+    spec: FieldSpec,
+    place: Place,
+    lists: Lists,
+    trust: boolean,
+    problems: Problem[]
+): Plain {
+    const card = cardsOf(held).at(0);
+    if (card === undefined) return {};
+    const none = baseWith(poolOf([]), []);
+    return childOf(card, spec.fields ?? {}, place, none, lists, trust, problems);
 }
 
 /** The base of the one record a family field holds, for every card of the draft. */
@@ -608,6 +644,11 @@ export function draftValue(draft: Draft, row: ConfigRow, lists: Lists): Made {
                 return;
             }
             const held = card.fields.value;
+            const place = { index, label: String(index + 1) };
+            if (drawsCards(spec, held)) {
+                put(value, keys[index], cardRecord(held, spec, place, lists, false, problems));
+                return;
+            }
             const reading = { lists, record: card.fields, held: [] };
             const written = writtenField(spec, held, reading);
             if (!written.ok) {
@@ -620,6 +661,14 @@ export function draftValue(draft: Draft, row: ConfigRow, lists: Lists): Made {
             put(value, keys[index], written.value === undefined ? empty : written.value);
         });
         return result(value);
+    }
+    if (draft.one === true) {
+        const card = draft.cards.at(0);
+        const base = baseWith(poolOf(isMap(row.value) ? [row.value] : []), []);
+        const place = { index: 0, label: '1' };
+        const made =
+            card === undefined ? {} : childOf(card, specs, place, base, lists, false, problems);
+        return result(made);
     }
     const any = poolOf(recordsIn(row.value));
     if (!draft.keyed) {

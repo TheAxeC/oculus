@@ -171,6 +171,8 @@
                 slots={row.entry.slots}
                 removeOnly={row.control === 'parked'}
                 ordered={row.ordered}
+                single={draft.one === true}
+                sparse={row.entry.sparse === true}
                 {discards}
                 onedit={edit}
             />

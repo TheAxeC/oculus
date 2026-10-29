@@ -81,7 +81,7 @@ describe('optionFindings', () => {
         expect(optionFindings(ENGINE, records).map((one) => [one.key, one.message])).toEqual([
             [
                 'probe',
-                'holds: lists is not read here: lists is taken only by a family whose fields are key and value, and record only by a family field with no key field; the entry is read without it'
+                'holds: lists is not read here: lists is taken only by a family whose fields are key and value, and record only by a family, or by a family field with no key field; the entry is read without it'
             ]
         ]);
         expect(catalogOf(records)['behavior.yml'].probe.holds).toBeUndefined();
@@ -90,9 +90,9 @@ describe('optionFindings', () => {
         expect(catalogOf(table)['behavior.yml'].probe.holds).toBe('lists');
     });
 
-    // Fails when catalogOf keeps `holds: record` on an option of its own or on a family field with
-    // a key field, or drops it from a family field of record fields.
-    it('keeps holds: record only on a family field with no key field', () => {
+    // Fails when catalogOf keeps `holds: record` on a family field with a key field, or drops it
+    // from a family field of record fields or from a family of its own.
+    it('keeps holds: record on a family and on a family field with no key field', () => {
         const record = { help: 'A record.', holds: 'record', fields: { kind: 'a kind' } };
         const entry = (inner: Record<string, unknown>) =>
             holding({
@@ -104,17 +104,19 @@ describe('optionFindings', () => {
         expect(optionFindings(ENGINE, kept)).toEqual([]);
         expect(catalogOf(kept)['behavior.yml'].probe.fields?.inner.holds).toBe('record');
         const sentence = (word: string) =>
-            `holds: ${word} is not read here: lists is taken only by a family whose fields are key and value, and record only by a family field with no key field; the entry is read without it`;
+            `holds: ${word} is not read here: lists is taken only by a family whose fields are key and value, and record only by a family, or by a family field with no key field; the entry is read without it`;
         const keyed = entry({ ...record, fields: { key: 'a key', value: 'a value' } });
         expect(optionFindings(ENGINE, keyed).map((one) => [one.key, one.message])).toEqual([
             ['probe.inner', sentence('record')]
         ]);
         expect(catalogOf(keyed)['behavior.yml'].probe.fields?.inner.holds).toBeUndefined();
-        const top = holding({ heading: 'editor', ...record });
-        expect(optionFindings(ENGINE, top).map((one) => [one.key, one.message])).toEqual([
-            ['probe', sentence('record')]
-        ]);
-        expect(catalogOf(top)['behavior.yml'].probe.holds).toBeUndefined();
+        const top = holding({
+            heading: 'editor',
+            ...record,
+            fields: { key: 'a key', kind: 'a kind' }
+        });
+        expect(optionFindings(ENGINE, top)).toEqual([]);
+        expect(catalogOf(top)['behavior.yml'].probe.holds).toBe('record');
     });
 });
 

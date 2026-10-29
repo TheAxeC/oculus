@@ -14,7 +14,7 @@
 // before any function here runs.
 
 import { readFileSync, statSync } from 'node:fs';
-import { hashOf } from '../../core/file-bytes.ts';
+import { hashOf } from '../../core/files/file-bytes.ts';
 import { writeBytesAtomic } from '../../core/json.ts';
 import { isMachineFile } from '../workspace/machine-file.ts';
 import { resolveRootFileResult, type Root } from '../files.ts';

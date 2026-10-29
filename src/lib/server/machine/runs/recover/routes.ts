@@ -22,12 +22,15 @@ import { writeFileSync, mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 import {
     MAC_TARGET as MAC,
+    statedKind,
     type Dataset,
     type RecoverSource,
     type RecoverState
 } from '../../../../data/model/index.ts';
 import type { DownloadAccount } from '../../../../data/sources/config.ts';
+import type { ReaderRow } from '../../../../data/sources/config/settings/rows/grammar.ts';
 import { gatedBody } from '../../../core/auth.ts';
+import { listRow } from '../../../core/reader/listing.ts';
 import { accessGranted, accessOf } from './access.ts';
 import {
     clusterDisk,
@@ -43,23 +46,14 @@ import {
     isRefusal,
     placed,
     readKept,
+    rowOf,
     safeName,
+    senderOf,
     type Fetcher,
-    type ListAnswer,
     type ListDeps,
     type Refusal,
     type RemoteFile
 } from './files.ts';
-import { listDandi } from './sources/dandi.ts';
-import { listFigshare } from './sources/figshare.ts';
-import { listGeo } from './sources/geo.ts';
-import { listHuggingface } from './sources/huggingface.ts';
-import { listPhysionet } from './sources/physionet.ts';
-import { listStanford } from './sources/stanford.ts';
-import { listTcia } from './sources/tcia.ts';
-import { listKaggle, listSynapse } from './sources/tokened.ts';
-import { listUrls } from './sources/url.ts';
-import { listZenodo } from './sources/zenodo.ts';
 import {
     diskOf,
     freeOf,
@@ -95,6 +89,10 @@ export type RecoverTarget = {
     dataset: (hub: string, key: string) => Dataset | null;
     /** The `downloads` rows of the primary hub's `local.yml`. */
     downloads: () => DownloadAccount[];
+    /** The rows of `recover.sources` of a hub's `.oculus/config.yml`, which read its datasets. */
+    rows: (hub: string) => ReaderRow[];
+    /** The User-Agent every request to a source carries. */
+    agent: string;
     fetch: Fetcher;
     local: LocalDeps;
     /**
@@ -129,22 +127,15 @@ function refused(reason: string, status = 200, extra: Record<string, unknown> = 
     return json({ refused: reason, ...extra }, { status, headers: NO_STORE });
 }
 
-/** The reader of each kind Recover runs; `library`, `request` and `derived` list nothing. */
-const READERS: Partial<
-    Record<RecoverSource['kind'], (source: never, deps: ListDeps) => Promise<ListAnswer>>
-> = {
-    physionet: listPhysionet,
-    zenodo: listZenodo,
-    figshare: listFigshare,
-    dandi: listDandi,
-    huggingface: listHuggingface,
-    stanford: listStanford,
-    geo: listGeo,
-    kaggle: listKaggle,
-    tcia: listTcia,
-    synapse: listSynapse,
-    url: listUrls
-};
+/** What the listing of a hub's dataset is given: its fetch, `downloads` and the hub's rows. */
+function depsOf(target: RecoverTarget, hub: string): ListDeps {
+    return {
+        fetch: target.fetch,
+        downloads: target.downloads(),
+        rows: target.rows(hub),
+        agent: target.agent
+    };
+}
 
 /** How a file of an unpacking source unpacks: its strip, and its folder when the source has one. */
 function unpackOf(source: RecoverSource): NonNullable<RemoteFile['unpack']> {
@@ -154,10 +145,12 @@ function unpackOf(source: RecoverSource): NonNullable<RemoteFile['unpack']> {
 
 /**
  * Every file of a dataset's sources, in the sources' order, each named below the dataset's folder,
- * or the first refusal. A name that is absolute or climbs out of its folder, from the source or
- * from the entry's `into`, and a name two files would share, are refused before anything is
- * fetched. The sources are the snapshot's parse (data/snapshot/normalise-parts/retrieval.ts); no
- * registry text is parsed here.
+ * or the first refusal. Each source is read by the row of the hub's `recover.sources` its kind
+ * names (server/core/reader/listing.ts), its fields filling the row's holes; a kind no row names
+ * is refused `row` before any request, and a stated kind lists nothing. A name that is absolute or
+ * climbs out of its folder, from the source or from the entry's `into`, and a name two files would
+ * share, are refused before anything is fetched. The sources are the snapshot's parse
+ * (data/snapshot/normalise-parts/retrieval.ts); no registry text is parsed here.
  */
 async function listFiles(
     retrieval: RecoverSource[],
@@ -165,28 +158,28 @@ async function listFiles(
 ): Promise<RemoteFile[] | Refusal> {
     const files: RemoteFile[] = [];
     const names = new Set<string>();
+    const setup = { sender: senderOf(deps), downloads: deps.downloads, links: [] };
     for (const [index, source] of retrieval.entries()) {
-        const reader = READERS[source.kind];
-        if (reader === undefined) continue;
+        if (statedKind(source.kind)) continue;
+        const row = rowOf(deps.rows, source.kind);
+        if (row === undefined) return { refused: 'row', source: source.kind };
+        const named = { source: source.kind, label: row.name };
         if (source.into !== undefined && !safeName(source.into)) {
-            return { refused: 'name', source: source.kind, name: source.into };
+            return { refused: 'name', ...named, name: source.into };
         }
-        const answer = await reader(source as never, deps);
+        const answer = await listRow(row, (field) => source[field], setup);
         if (isRefusal(answer)) return answer;
         for (const one of answer) {
             const name = placed(one.name, source.into);
             if (!safeName(one.name) || names.has(name)) {
-                return { refused: 'name', source: source.kind, name: one.name };
+                return { refused: 'name', ...named, name: one.name };
             }
             names.add(name);
             files.push({
                 ...one,
                 name,
                 source: index,
-                ...(source.unpack === true ? { unpack: unpackOf(source) } : {}),
-                ...(source.kind === 'physionet' && source.throttle !== undefined
-                    ? { throttle: source.throttle }
-                    : {})
+                ...(source.unpack === true ? { unpack: unpackOf(source) } : {})
             });
         }
     }
@@ -206,10 +199,7 @@ async function filesOf(
     // No listing kept, one that does not read, or one of another recipe: the sources are asked.
     const kept = fresh ? null : readKept(file);
     if (kept !== null && kept.recipe === recipe) return kept.files;
-    const files = await listFiles(entry.retrieval, {
-        fetch: target.fetch,
-        downloads: target.downloads()
-    });
+    const files = await listFiles(entry.retrieval, depsOf(target, hub));
     if (!isRefusal(files)) {
         mkdirSync(dirname(file), { recursive: true, mode: 0o700 });
         writeFileSync(file, `${JSON.stringify({ recipe, files })}\n`, { mode: 0o600 });
@@ -224,6 +214,8 @@ function asked(target: RecoverTarget, hub: string, key: string): { entry: Datase
     }
     const entry = target.dataset(hub, key);
     if (entry === null) return refused('dataset', 404);
+    const unread = entry.unread?.[0];
+    if (unread !== undefined) return refused('row', 400, { hint: unread });
     if (!entry.recover) return refused('kind', 400);
     return { entry };
 }
@@ -299,8 +291,7 @@ export async function handleRecoverState(
     const live = target.live.version();
     const found = asked(target, hub, key);
     if (found instanceof Response) return found;
-    const downloads = { fetch: target.fetch, downloads: target.downloads() };
-    const access = await accessOf(found.entry.retrieval, downloads);
+    const access = await accessOf(found.entry.retrieval, depsOf(target, hub));
     const files = await filesOf(target, hub, key, found.entry, params.get('fresh') === '1');
     const listed = isRefusal(files) ? null : files;
     const state = await onTarget(target, where, hub, key, found.entry, listed);
@@ -342,10 +333,7 @@ export async function handleRecover(request: Request, target: RecoverTarget): Pr
         return json({ stopped });
     }
     if (action === 'fetch') {
-        const access = await accessOf(entry.retrieval, {
-            fetch: target.fetch,
-            downloads: target.downloads()
-        });
+        const access = await accessOf(entry.retrieval, depsOf(target, hub));
         if (!accessGranted(access)) return refused('access');
     }
     const files = await filesOf(target, hub, key, entry, false);

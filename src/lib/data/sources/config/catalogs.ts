@@ -24,6 +24,7 @@ import { TEXT_KEY, textCatalog } from './merge/text.ts';
 import { catalogOf } from './catalog/options.ts';
 import { closedPaths } from './settings/machine.ts';
 import { settingProblems } from './settings/problems.ts';
+import type { RowIssue } from './settings/rows/check.ts';
 import { focusFindings } from './sections/focus.ts';
 
 /**
@@ -237,6 +238,33 @@ export function behaviorFindings(where: ConfigWhere, config: Record<string, unkn
     return findings;
 }
 
+/** The sentence for one thing wrong with a reader row or a `links` row of the key `key`. */
+function rowText(catalog: TextCatalog, key: string, issue: RowIssue): string {
+    const { row, at } = issue;
+    switch (issue.kind) {
+        case 'unknown':
+            return findingText(catalog, 'findings.config.row_unknown', key, row, at);
+        case 'missing':
+            return findingText(catalog, 'findings.config.row_missing', key, row, at);
+        case 'value':
+            return findingText(catalog, 'findings.config.row_value', key, row, at);
+        case 'https':
+            return findingText(catalog, 'findings.config.row_https', key, row, at);
+        case 'origin':
+            return findingText(catalog, 'findings.config.row_origin', key, row, at);
+        case 'pattern':
+            return findingText(catalog, 'findings.config.row_pattern', key, row, at);
+        case 'op':
+            return findingText(catalog, 'findings.config.row_op', key, row, at);
+        case 'empty':
+            return findingText(catalog, 'findings.config.row_empty', key, row, at);
+        case 'repeat':
+            return findingText(catalog, 'findings.config.row_repeat', key, row, at);
+        case 'shape':
+            return findingText(catalog, 'findings.config.row_shape', key, row, at);
+    }
+}
+
 /** The sentence for one thing the readers of behavior.yml found wrong. */
 function settingText(catalog: TextCatalog, problem: EditorProblem): string {
     switch (problem.where) {
@@ -266,6 +294,8 @@ function settingText(catalog: TextCatalog, problem: EditorProblem): string {
             return findingText(catalog, 'findings.config.editor_unknown_field', problem.key);
         case 'not-a-map':
             return findingText(catalog, 'findings.config.editor_not_a_map', problem.key);
+        case 'row':
+            return rowText(catalog, problem.key, problem.issue);
         case 'value':
         case 'entry':
         case 'field':
@@ -339,6 +369,8 @@ function localText(catalog: TextCatalog, problem: LocalProblem): string {
                 problem.key,
                 findingText(catalog, 'findings.config.claude_label')
             );
+        case 'user':
+            return findingText(catalog, 'findings.config.local_user', problem.service);
         case 'unparsed':
             return findingText(catalog, 'findings.config.local_unparsed');
         case 'not-a-map':

@@ -135,10 +135,10 @@ text:
         config:
             directory_missing: config directory does not exist
             hub_key_unknown: "key {0} is not one the hub's settings file takes; it is not applied"
-            hub_key_primary: "{0} is read from the primary hub's settings file only, and the hub {1} is not the primary; the value is not used"
             git_helper_quote: "the path of oculus's program or of its credential helper holds a single quote, so git is given no sign-in for the git hosts of sign_in"
             hub_word_gone: "{0} names {1}, which the hub's words no longer hold; it is not read"
             hub_key_not_map: "{0} must be a map holding keys the hub's settings file takes; it is not applied"
+            hub_key_primary: "{0} is read from the primary hub's settings file only, and the hub {1} is not the primary; it is not applied"
             settings_not_a_map: 'settings must be a map of options; none of it is applied'
             settings_hub_key: "{0} is a key of the hub's settings file, .oculus/config.yml, which a workspace file does not set; it is not applied"
             settings_unknown: '{0} is not an option; it is not applied'
@@ -189,6 +189,16 @@ text:
             setting_unnamed: '{0} has no name; the row is not read'
             setting_this_mac: '{0} holds {1}, which names this Mac and no cluster; it is left out'
             setting_field: '{0} must be {1}; the field is not read'
+            row_unknown: 'the row {1} of {0} holds {2}, which is not a key a reader row takes; the row is read without it'
+            row_missing: 'the row {1} of {0} has no {2}, which its format needs; the row is not read'
+            row_value: 'the row {1} of {0} holds a value at {2} that is not of its shape; the row is not read'
+            row_https: 'the row {1} of {0} names an address at {2} that is not https:; the row is not read'
+            row_origin: 'the row {1} of {0} has a hole in the host of the address at {2}; the row is not read'
+            row_pattern: 'the row {1} of {0} holds a pattern at {2} that does not compile; the row is not read'
+            row_op: 'the row {1} of {0} names a hole operation at {2} that there is none of; the row is not read'
+            row_empty: 'a row of {0} has an empty key; the row is not read'
+            row_repeat: 'the row {1} of {0} has the key of an earlier row; the row is not read'
+            row_shape: '{0} holds a row {1} that is not of the shape of a row; it is not read'
             focus_block: 'focus must be a map; none of its keys is read'
             focus_value: '{0} must be {1}; it is not read'
             focus_sections: 'focus.sections must be a list of the sections of the Focus board; every section is drawn in the order the options list them'
@@ -221,6 +231,7 @@ text:
             local_row: '{0} must be {1}; the row is not read'
             local_repeat: '{0} repeats the value of an earlier row; the row is not read'
             local_other_hub: "{0} is read from the primary hub's file only, and the hub {1} is not the primary; the value is not used"
+            local_user: 'the downloads row of {0} has no user, which a reader row signs in to {0} with; the row is not used'
             local_unparsed: does not parse; every key takes its default
             local_not_a_map: is not a map of keys; every key takes its default
             local_unreadable: 'could not be read ({0}); every key takes its default'
@@ -248,7 +259,8 @@ text:
             no_fields: a records field names no fields; it is drawn as a text box
             range: min is above max; the option is drawn as a text box
             slots: slots is not a list of words; the option is drawn as a text box
-            holds: 'holds: {0} is not read here: lists is taken only by a family whose fields are key and value, and record only by a family field with no key field; the entry is read without it'
+            holds: 'holds: {0} is not read here: lists is taken only by a family whose fields are key and value, and record only by a family, or by a family field with no key field; the entry is read without it'
+            sparse: 'sparse is taken only by a family, as true; the entry is read without it'
             heading_missing: the option names no heading; it is listed under Without a heading
             heading_unknown: the heading {0} is not one the Settings view lists; the option is listed under Without a heading
             whole: whole is not true; the option is drawn as a text box

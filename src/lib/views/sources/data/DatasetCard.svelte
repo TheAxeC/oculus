@@ -5,15 +5,17 @@
     // the strip's Page open its page; the menu holds Page and Source in its Open run, the Add run,
     // Edit in File, Recover and Delete (views/shared/forms/registry/registry-card.svelte.ts).
     //
-    // A set whose sources are all downloads has the Recover action, which opens the dataset's
-    // Recover view beside this one for its own hub and key. A source of the kind `library`,
-    // `request` or `derived` is stated on the card instead: the library call, the contact to ask,
-    // or the sets it is built from and the script that builds it; a web address in it, a contact's
-    // form among them, is a link. The description and the notes are inline Markdown, which links
-    // its addresses itself.
+    // A set whose sources are all of kinds a row of its hub's `recover.sources` reads has the
+    // Recover action, which opens the dataset's Recover view beside this one for its own hub and
+    // key; a kind no row reads is a line naming that hub's `.oculus/config.yml`. A source of the
+    // kind `library`, `request` or `derived` is stated on the card instead: the library call, the
+    // contact to ask, or the sets it is built from and the script that builds it; a web address in
+    // it, a contact's form among them, is a link. The description and the notes are inline
+    // Markdown, which links its addresses itself.
 
     import Tag from '$lib/ui/controls/Tag.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
+    import CodeText from '$lib/ui/display/text/CodeText.svelte';
     import LinkedText from '$lib/ui/display/text/LinkedText.svelte';
     import Tooltip from '$lib/ui/menu/Tooltip.svelte';
     import RecordCard from '$lib/views/shared/card/record/RecordCard.svelte';
@@ -27,6 +29,7 @@
         recoverKey,
         statedSource,
         statedWords,
+        unreadWords,
         type Dataset
     } from '$lib/state/sources/registries/datasets';
     import { inlineMarkdown } from '$lib/ui/html';
@@ -158,6 +161,13 @@
         <div class="note">
             <Glyph name="note_back" />
             <span><LinkedText text={statedWords(source)} /></span>
+        </div>
+    {/each}
+
+    {#each dataset.unread ?? [] as kind (kind)}
+        <div class="note">
+            <Glyph name="note_back" />
+            <span><CodeText text={unreadWords(kind, rootOf(dataset))} /></span>
         </div>
     {/each}
 

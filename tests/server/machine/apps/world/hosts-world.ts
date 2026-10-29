@@ -30,7 +30,7 @@ import type {
 } from '../../../../../src/lib/data/model/index.ts';
 import type { AppsSettings } from '../../../../../src/lib/data/sources/config/settings/machine.ts';
 import { Hub, type Sink } from '../../../../../src/lib/server/core/channels.ts';
-import type { Clock } from '../../../../../src/lib/server/core/file-poll.ts';
+import type { Clock } from '../../../../../src/lib/server/core/files/file-poll.ts';
 import type {
     AppHosts,
     HostsOptions

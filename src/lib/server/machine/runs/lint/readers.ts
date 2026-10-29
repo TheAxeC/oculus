@@ -13,10 +13,13 @@
 // warning and a fatal message an error; ShellCheck `error` an error, `warning` a warning and `info`
 // and `style` an info. A row with no rule (a ruff syntax error, an ESLint parse error) has no code,
 // no documentation and no fix. A documentation address a linter names is kept only when it is an
-// `http:` or `https:` address (`webAddress`), since the page opens it.
+// `http:` or `https:` address (`webAddress`), since the page opens it; ShellCheck names none, and
+// its rows' address is the primary hub's `shellcheck` row of `links`.
 
 import { z } from 'zod';
 import { webAddress } from '../../../../data/places/hub-address.ts';
+import type { LinkRow } from '../../../../data/sources/config/settings/rows/grammar.ts';
+import { linkAddress } from '../../../../data/sources/config/settings/rows/links.ts';
 import { CHKTEX_FIXABLE } from '../../../../data/model/index.ts';
 import type { LintEdit, LintFix, LintRow } from '../../../../data/model/index.ts';
 import { chktexFix } from './chktex-fixes.ts';
@@ -235,8 +238,16 @@ const SHELLCHECK_SEVERITY: Record<string, LintRow['severity']> = {
     style: 'info'
 };
 
-/** ShellCheck's rows for a file; a fix of one or two replacements is offered, as VS Code's is. */
-export function readShellcheck(stdout: string, file: Source): LintRow[] | null {
+/**
+ * ShellCheck's rows for a file; a fix of one or two replacements is offered, as VS Code's is. A
+ * row's documentation is the address the `shellcheck` row of `links` builds from its code, and
+ * none without that row.
+ */
+export function readShellcheck(
+    stdout: string,
+    file: Source,
+    links: readonly LinkRow[]
+): LintRow[] | null {
     let found: z.infer<typeof shellcheckComments>['comments'];
     try {
         const parsed = shellcheckComments.safeParse(JSON.parse(stdout));
@@ -261,6 +272,7 @@ export function readShellcheck(stdout: string, file: Source): LintRow[] | null {
             };
         });
         const code = `SC${String(one.code)}`;
+        const href = linkAddress(links, 'shellcheck', code);
         return {
             line,
             column,
@@ -269,7 +281,7 @@ export function readShellcheck(stdout: string, file: Source): LintRow[] | null {
             severity: SHELLCHECK_SEVERITY[one.level] ?? 'warning',
             message: one.message,
             code,
-            href: `https://www.shellcheck.net/wiki/${code}`,
+            ...(href === undefined ? {} : { href }),
             fixes:
                 edits.length === 1 || edits.length === 2 ? [{ kind: 'fix', title: '', edits }] : []
         };

@@ -12,13 +12,11 @@
 // file is in force.
 // `downloads` is read from the primary's file alone and shows one line per row.
 //
-// No secret reaches the page: each literature key and token that holds a value, and the `secret` of
-// each `downloads` row, is sent as the catalog's word for a value that is set. `literature.mailto`
-// is a contact address and is sent as written.
+// No secret reaches the page: the `secret` of each `downloads` row is sent as the catalog's word
+// for a value that is set. `literature.mailto` is a contact address and is sent as written.
 
 import { stringify } from 'yaml';
 import {
-    LITERATURE_KEYS,
     PROGRAM_KEYS,
     STATE_PATHS,
     type ClusterAccount,
@@ -30,9 +28,6 @@ export type MachineValues = {
     values: Record<string, string>;
     hubs: Record<string, string[]>;
 };
-
-/** The literature keys whose value is shown as it is written: the contact address alone. */
-const SHOWN_LITERATURE: readonly string[] = ['mailto'];
 
 /** One row of a list as a line: its fields in flow form, then its hub in parentheses. */
 function lineOf(row: { hub?: string; [field: string]: unknown }): string {
@@ -52,16 +47,10 @@ function clusterLine(row: ClusterAccount): { hub?: string; [field: string]: unkn
 }
 
 /**
- * The keys with one value, each with the text of its value in force; the port is `listening`, the
- * user's key `self` is the key as written, and a literature key or token that holds a value is
- * `hidden`.
+ * The keys with one value, each with the text of its value in force; the port is `listening` and
+ * the user's key `self` is the key as written.
  */
-function scalarsOf(
-    config: LocalConfig,
-    listening: number,
-    hidden: string
-): [string, string | undefined][] {
-    const literature = config.literature;
+function scalarsOf(config: LocalConfig, listening: number): [string, string | undefined][] {
     return [
         ['port', String(listening)],
         ['self', config.self],
@@ -69,11 +58,7 @@ function scalarsOf(
             key,
             config[field]
         ]),
-        ...LITERATURE_KEYS.map(([name, field]): [string, string | undefined] => {
-            const value = literature?.[field];
-            const shown = value === undefined || SHOWN_LITERATURE.includes(name) ? value : hidden;
-            return [`literature.${name}`, shown];
-        })
+        ['literature.mailto', config.literature?.mailto]
     ];
 }
 
@@ -97,7 +82,7 @@ export function machineValues(
 ): MachineValues {
     const values: Record<string, string> = {};
     const hubs: Record<string, string[]> = {};
-    for (const [key, value] of scalarsOf(config, listening, hidden)) {
+    for (const [key, value] of scalarsOf(config, listening)) {
         const isSet = set.includes(key);
         const fallback = Object.hasOwn(defaults, key) ? defaults[key] : undefined;
         if (value === undefined) {

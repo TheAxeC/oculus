@@ -17,6 +17,7 @@ text:
         stated_derived: Built from {0} by {1}
         stated_library: 'Fetched by the library call: {0}'
         stated_request: 'Asked of: {0}'
+        unread: 'No row of `recover.sources` in the `.oculus/config.yml` of the hub {1} reads the source kind {0}, so Recover does not run this set.'
     recover:
         access: Access
         access_missing: '{0}: no row in the downloads list of local.yml'
@@ -75,6 +76,7 @@ text:
         refused_nothing: No file is in the state this action takes.
         refused_place: The dataset's path is not a folder under ~/data.
         refused_request: The request was not one Recover answers.
+        refused_row: 'No row of `recover.sources` in the `.oculus/config.yml` of the hub {1} reads the source kind {0}; add one there.'
         refused_running: A run of this dataset goes; it can be stopped.
         refused_scratch: The job script does not keep its work under /local/$SLURM_JOB_ID.
         refused_send: The files of the run could not be copied to the cluster.
@@ -91,18 +93,11 @@ text:
         run_none: No run goes.
         run_unpack: Unpacking
         run_verify: Checking
-        service_kaggle: Kaggle
-        service_physionet: PhysioNet
-        service_synapse: Synapse
         setup_add: 'Add this row under `downloads:` there: `{0}`'
         setup_again: Open this view again, or Read the sources again, to check the row.
         setup_file: Open the `local.yml` of the primary hub's `.oculus` folder.
-        setup_row_kaggle: '- { service: kaggle, user: <user name>, secret: <key> }'
-        setup_row_physionet: '- { service: physionet, user: <user name>, secret: <password> }'
-        setup_row_synapse: '- { service: synapse, secret: <token> }'
-        setup_secret_kaggle: The `secret` is the key of an API token made under Settings on kaggle.com.
-        setup_secret_physionet: The `user` and `secret` are your PhysioNet login, on an account with access to this set.
-        setup_secret_synapse: The `secret` is a personal access token made under Account Settings on synapse.org.
+        setup_row: '- { service: {0}, secret: <secret> }'
+        setup_row_user: '- { service: {0}, user: <user name>, secret: <secret> }'
         size_unknown: not stated
         state_different: different
         state_missing: missing

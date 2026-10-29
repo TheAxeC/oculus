@@ -1,10 +1,11 @@
-// Layer 4, server test. Recover's access to the credentialed services (G114): for PhysioNet, Kaggle
-// and Synapse, no `downloads` row of the service, or a row whose login request the service answers
-// with 401 or 403, is access missing, which keeps Fetch from starting; a row the service answers
-// with 200 is access granted. A PhysioNet set whose `SHA256SUMS.txt` answers 200 without a row is
-// open and needs none. The answers are the recorded ones and the answers the services' API
-// references give (recorded.ts). A home holding `~/.netrc` and `~/.kaggle/kaggle.json` lends no
-// credential, and no fetch script passes curl `--netrc`.
+// Layer 4, server test. Recover's access to the credentialed services (G114), through the `access`
+// addresses of the fixture rows of `recover.sources` (tests/server/core/reader/rows.yml): for
+// PhysioNet, Kaggle and Synapse, no `downloads` row of the service, or a row whose request the
+// service answers with 401 or 403, is access missing, which keeps Fetch from starting; a row the
+// service answers with 200 is access granted. A PhysioNet set whose `SHA256SUMS.txt` answers 200
+// without a row is open and needs none. The answers are the recorded ones and the answers the
+// services' API references give (recorded.ts). A home holding `~/.netrc` and
+// `~/.kaggle/kaggle.json` lends no credential, and no fetch script passes curl `--netrc`.
 
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -22,7 +23,14 @@ import {
     handleRecoverState
 } from '../../../../../src/lib/server/machine/runs/recover/routes.ts';
 import { it, scratchDir } from '../../../../fixtures/scratch.ts';
-import { DOWNLOADS, datasetOf, recoverRequest, targetOf } from './harness.ts';
+import {
+    DOWNLOADS,
+    RECOVER_ROWS,
+    datasetOf,
+    listDeps,
+    recoverRequest,
+    targetOf
+} from './harness.ts';
 import { answering, recorded, reply, type Asked, type Routes } from './recorded.ts';
 
 const MITDB_SUMS = 'https://physionet.org/files/mitdb/1.0.0/SHA256SUMS.txt';
@@ -38,6 +46,27 @@ const KAGGLE: RecoverSource = {
     dataset: 'awsaf49/brats20-dataset-training-validation'
 };
 const SYNAPSE: RecoverSource = { kind: 'synapse', ids: ['syn51514110'] };
+
+/** The `help` of the fixture row's `auth` entry that names the `downloads` row `service`. */
+function helpOf(service: string): string | undefined {
+    const entry = RECOVER_ROWS.flatMap((row) => row.auth ?? []).find((one) => one.row === service);
+    return entry?.help;
+}
+
+/** What an access entry says of each service besides its state: its row's name, user and help. */
+const PHYSIONET = {
+    service: 'physionet',
+    name: 'PhysioNet',
+    basic: true,
+    help: helpOf('physionet')
+};
+const KAGGLE_ACCESS = { service: 'kaggle', name: 'Kaggle', basic: true, help: helpOf('kaggle') };
+const SYNAPSE_ACCESS = {
+    service: 'synapse',
+    name: 'Synapse',
+    basic: false,
+    help: helpOf('synapse')
+};
 
 /** A login answer by whether the request carries a credential: the recorded 403 without one. */
 function login(status: number): (asked: Asked) => Response {
@@ -81,7 +110,15 @@ const ROWS: AccessRow[] = [
         sources: [MIMIC],
         downloads: [],
         routes: { [MIMIC_SUMS]: login(200) },
-        access: [{ service: 'physionet', state: 'missing', row: false, status: 403 }],
+        access: [{ ...PHYSIONET, state: 'missing', row: false, status: 403 }],
+        asked: [[MIMIC_SUMS, 'none']]
+    },
+    {
+        name: 'PhysioNet, a credentialed set with a row that holds no user: missing, as with no row',
+        sources: [MIMIC],
+        downloads: [{ service: 'physionet', secret: 'pw' }],
+        routes: { [MIMIC_SUMS]: login(200) },
+        access: [{ ...PHYSIONET, state: 'missing', row: false, status: 403 }],
         asked: [[MIMIC_SUMS, 'none']]
     },
     {
@@ -89,7 +126,7 @@ const ROWS: AccessRow[] = [
         sources: [MIMIC],
         downloads: ROW_OF.physionet,
         routes: { [MIMIC_SUMS]: login(200) },
-        access: [{ service: 'physionet', state: 'ok', row: true, status: 200 }],
+        access: [{ ...PHYSIONET, state: 'ok', row: true, status: 200 }],
         asked: [
             [MIMIC_SUMS, 'none'],
             [MIMIC_SUMS, 'Basic']
@@ -100,7 +137,7 @@ const ROWS: AccessRow[] = [
         sources: [MIMIC],
         downloads: ROW_OF.physionet,
         routes: { [MIMIC_SUMS]: login(401) },
-        access: [{ service: 'physionet', state: 'missing', row: true, status: 401 }],
+        access: [{ ...PHYSIONET, state: 'missing', row: true, status: 401 }],
         asked: [
             [MIMIC_SUMS, 'none'],
             [MIMIC_SUMS, 'Basic']
@@ -111,7 +148,7 @@ const ROWS: AccessRow[] = [
         sources: [MIMIC],
         downloads: [],
         routes: { [MIMIC_SUMS]: reply(500, 'down') },
-        access: [{ service: 'physionet', state: 'unreachable', row: false, status: 500 }],
+        access: [{ ...PHYSIONET, state: 'unreachable', row: false, status: 500 }],
         asked: [[MIMIC_SUMS, 'none']]
     },
     {
@@ -123,7 +160,7 @@ const ROWS: AccessRow[] = [
                 throw new Error('no answer');
             }
         },
-        access: [{ service: 'physionet', state: 'unreachable', row: true }],
+        access: [{ ...PHYSIONET, state: 'unreachable', row: true }],
         asked: [[MIMIC_SUMS, 'none']]
     },
     {
@@ -131,7 +168,7 @@ const ROWS: AccessRow[] = [
         sources: [KAGGLE],
         downloads: [],
         routes: {},
-        access: [{ service: 'kaggle', state: 'missing', row: false }],
+        access: [{ ...KAGGLE_ACCESS, state: 'missing', row: false }],
         asked: []
     },
     {
@@ -139,7 +176,7 @@ const ROWS: AccessRow[] = [
         sources: [KAGGLE],
         downloads: [{ service: 'kaggle-token', secret: 'kaggle-token-of-the-test-xyz' }],
         routes: {},
-        access: [{ service: 'kaggle', state: 'missing', row: false }],
+        access: [{ ...KAGGLE_ACCESS, state: 'missing', row: false }],
         asked: []
     },
     {
@@ -147,7 +184,7 @@ const ROWS: AccessRow[] = [
         sources: [KAGGLE],
         downloads: ROW_OF.kaggle,
         routes: { [KAGGLE_LIST]: recorded('kaggle/list') },
-        access: [{ service: 'kaggle', state: 'ok', row: true, status: 200 }],
+        access: [{ ...KAGGLE_ACCESS, state: 'ok', row: true, status: 200 }],
         asked: [[KAGGLE_LIST, 'Basic']]
     },
     {
@@ -155,7 +192,7 @@ const ROWS: AccessRow[] = [
         sources: [KAGGLE],
         downloads: ROW_OF.kaggle,
         routes: { [KAGGLE_LIST]: reply(401, 'Unauthorized') },
-        access: [{ service: 'kaggle', state: 'missing', row: true, status: 401 }],
+        access: [{ ...KAGGLE_ACCESS, state: 'missing', row: true, status: 401 }],
         asked: [[KAGGLE_LIST, 'Basic']]
     },
     {
@@ -163,7 +200,7 @@ const ROWS: AccessRow[] = [
         sources: [SYNAPSE],
         downloads: [],
         routes: {},
-        access: [{ service: 'synapse', state: 'missing', row: false }],
+        access: [{ ...SYNAPSE_ACCESS, state: 'missing', row: false }],
         asked: []
     },
     {
@@ -171,7 +208,7 @@ const ROWS: AccessRow[] = [
         sources: [SYNAPSE],
         downloads: ROW_OF.synapse,
         routes: { [SYNAPSE_PROFILE]: recorded('synapse/user-profile') },
-        access: [{ service: 'synapse', state: 'ok', row: true, status: 200 }],
+        access: [{ ...SYNAPSE_ACCESS, state: 'ok', row: true, status: 200 }],
         asked: [[SYNAPSE_PROFILE, 'Bearer']]
     },
     {
@@ -179,7 +216,7 @@ const ROWS: AccessRow[] = [
         sources: [SYNAPSE],
         downloads: ROW_OF.synapse,
         routes: { [SYNAPSE_PROFILE]: reply(403, 'Forbidden') },
-        access: [{ service: 'synapse', state: 'missing', row: true, status: 403 }],
+        access: [{ ...SYNAPSE_ACCESS, state: 'missing', row: true, status: 403 }],
         asked: [[SYNAPSE_PROFILE, 'Bearer']]
     },
     {
@@ -192,8 +229,8 @@ const ROWS: AccessRow[] = [
             [KAGGLE_LIST]: recorded('kaggle/list')
         },
         access: [
-            { service: 'physionet', state: 'missing', row: false, status: 403 },
-            { service: 'kaggle', state: 'ok', row: true, status: 200 }
+            { ...PHYSIONET, state: 'missing', row: false, status: 403 },
+            { ...KAGGLE_ACCESS, state: 'ok', row: true, status: 200 }
         ],
         asked: [
             [MITDB_SUMS, 'none'],
@@ -206,7 +243,7 @@ const ROWS: AccessRow[] = [
 describe('Recover access', () => {
     it.each(ROWS)('$name', async (one) => {
         const { fetch, asked } = answering(one.routes);
-        const access = await accessOf(one.sources, { fetch, downloads: one.downloads });
+        const access = await accessOf(one.sources, listDeps(fetch, one.downloads));
         expect(access).toEqual(one.access);
         expect(accessGranted(access)).toBe(one.access.every((each) => each.state === 'ok'));
         expect(asked.map((each) => [each.url, scheme(each)])).toEqual(one.asked);
@@ -229,9 +266,9 @@ describe('Recover access', () => {
                 [MIMIC_SUMS]: login(200),
                 [KAGGLE_LIST]: recorded('kaggle/list')
             });
-            expect(await accessOf([MIMIC, KAGGLE], { fetch, downloads: [] })).toEqual([
-                { service: 'physionet', state: 'missing', row: false, status: 403 },
-                { service: 'kaggle', state: 'missing', row: false }
+            expect(await accessOf([MIMIC, KAGGLE], listDeps(fetch, []))).toEqual([
+                { ...PHYSIONET, state: 'missing', row: false, status: 403 },
+                { ...KAGGLE_ACCESS, state: 'missing', row: false }
             ]);
             expect(asked.map(scheme)).toEqual(['none']);
         } finally {
@@ -282,9 +319,7 @@ describe('Recover access', () => {
                 target
             )
         ).json()) as { access: RecoverAccess[]; granted: boolean };
-        expect(state.access).toEqual([
-            { service: 'physionet', state: 'missing', row: true, status: 401 }
-        ]);
+        expect(state.access).toEqual([{ ...PHYSIONET, state: 'missing', row: true, status: 401 }]);
         expect(state.granted).toBe(false);
     });
 });

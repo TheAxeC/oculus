@@ -6,7 +6,7 @@
 // happens on this callback" in one word rather than writing an empty function at every prop, every
 // route test posts the same page request, and every listing is built from the same two entries.
 
-import type { Clock } from '../../src/lib/server/core/file-poll.ts';
+import type { Clock } from '../../src/lib/server/core/files/file-poll.ts';
 import { gitCredentials, type GitCredentials } from '../../src/lib/server/core/git/credentials.ts';
 import type { FsEntry } from '../../src/lib/state/sources/fs.ts';
 import type { TerminalDriver } from '../../src/lib/server/machine/pty/channel.ts';

@@ -1,4 +1,4 @@
-# Oculus text owned by the venues view.
+# Oculus text owned by the venues view and the journal browser view.
 text:
     venues:
         biennial_caveat: '| BIENNIAL (not every year)'
@@ -9,6 +9,7 @@ text:
         deadline: deadline
         dist: ~{0}mo
         empty: No venues yet; add some to the hub's venues file.
+        fee: fee {0}
         filters: Venue filters
         held: held
         jif: JIF {0}
@@ -20,6 +21,11 @@ text:
         months: Jan,Feb,Mar,Apr,May,Jun,Jul,Aug,Sep,Oct,Nov,Dec
         next: Next deadlines
         next_from: '(from {0}):'
+        open_access: open access {0}
+        read: Read from the browser
+        read_done: Read fee and open-access status from the browser by ISSN {0}.
+        read_reading: Reading from the browser
+        read_tip: Ask the hub's journal browser by the venue's ISSN and write the fee and the open-access status it gives into the entry
         scopus: Scopus {0}
         section_other: Other
         sep: ' | '
@@ -32,6 +38,48 @@ text:
         thismonth: this month
         tip: '{0} - {1} ~{2}{3}'
         wos: WoS {0}
+    venue_browser:
+        add: Add
+        choices: Browser choices
+        count: '{0} journals'
+        count_of: '{0} of {1} journals'
+        fee: 'Fee: {0}'
+        filter: Filter
+        filter_none: No filter
+        filter_value: Filter value
+        from: from {0}
+        hub: Hub
+        idle: Type words and press Search to ask the journal browser.
+        issn: 'ISSN {0}'
+        more: More
+        no_hits: The browser holds no journal for these words.
+        no_issn: No ISSN
+        none: "No hub names a journal browser. A hub's browser is the row venues.browser of its .oculus/config.yml, set in Settings."
+        open_access: 'Open access: {0}'
+        read_empty: "The browser's journal for ISSN {0} gives no fee and no open-access status; nothing was written."
+        read_no_browser: "This venue's hub names no journal browser that asks by ISSN: the row venues.browser of its .oculus/config.yml, with query.issn."
+        read_no_hit: 'The browser holds no journal for ISSN {0}; nothing was written.'
+        read_no_issn: This venue has no ISSN to ask the browser by; add one to its issn field.
+        read_several: 'The browser holds {1} journals for ISSN {0}; nothing was written.'
+        read_stopped: 'The browser did not answer for ISSN {0}: {1}'
+        refused: 'The browser route refused the request ({0}).'
+        search: Search
+        searching: Searching the journal browser
+        size: Page size
+        sort: Sort
+        sort_none: "The browser's order"
+        state_failed: its answer did not read.
+        state_limited: it asked to be asked less often.
+        state_limited_wait: it asked to be asked again in {0} s.
+        state_no_key: its downloads row is missing.
+        state_refused: it refused the request.
+        state_timeout: it gave no answer in time.
+        state_unread: the answer did not read.
+        toolbar: Journal browser
+        untitled: Untitled journal
+        words: Words to search the journal browser by
     views:
         venues: Venues
+        venues_browser: Journal Browser
+        venues_browser_glyph: journals
         venues_glyph: venue

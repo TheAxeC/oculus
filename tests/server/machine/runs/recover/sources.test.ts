@@ -1,8 +1,11 @@
-// Layer 4, server test. The Recover source readers (G111): one table, a row per kind read from a
-// recorded answer into the files it lists, each with its name, size and checksum, and a refusal row
-// per kind whose answer does not parse, which is refused with the source named and never read as an
-// empty list. Every row goes through the GET of routes.ts (`handleRecoverState`) for a dataset of
-// the row's one source, the one entry the requests call, and reads the plan's rows or its refusal.
+// Layer 4, server test. The Recover sources read through a `recover.sources` row (G111): one table,
+// a row per kind read from a recorded answer by its fixture row (tests/server/core/reader/rows.yml)
+// into the files it lists, each with its name, size and checksum, and a refusal row per kind whose
+// answer does not parse, which is refused with the row's key and the `name` its line reads, never
+// read as an empty list. A kind no row of its hub names is refused before any request, and a second
+// hub whose own rows name it serves its own dataset. Every row goes through the GET of routes.ts
+// (`handleRecoverState`) for a dataset of the row's one source, the one entry the requests call,
+// and reads the plan's rows or its refusal.
 //
 // The answers of zenodo, figshare's collection, DANDI's first page, Hugging Face's first two pages,
 // Stanford, GEO, TCIA and PhysioNet's open and credentialed `SHA256SUMS.txt` were recorded from the
@@ -26,15 +29,27 @@
 import { describe, expect } from 'vitest';
 import type {
     RecoverFile,
+    RecoverRefusal,
     RecoverSource,
     RecoverState
 } from '../../../../../src/lib/data/model/index.ts';
-import type { DownloadAccount } from '../../../../../src/lib/data/sources/config.ts';
+import {
+    engineDir,
+    loadConfig,
+    textCatalog,
+    type DownloadAccount
+} from '../../../../../src/lib/data/sources/config.ts';
+import { listingWords } from '../../../../../src/lib/state/system/machine/recover-words.ts';
+import { setCatalog } from '../../../../../src/lib/state/shared/words/text.ts';
 import { accessOf } from '../../../../../src/lib/server/machine/runs/recover/access.ts';
 import { localDeps } from '../../../../../src/lib/server/machine/runs/recover/local.ts';
-import { handleRecoverState } from '../../../../../src/lib/server/machine/runs/recover/routes.ts';
+import {
+    handleRecoverState,
+    type RecoverTarget
+} from '../../../../../src/lib/server/machine/runs/recover/routes.ts';
+import type { ReaderRow } from '../../../../../src/lib/data/sources/config/settings/rows/grammar.ts';
 import { it, scratchDir } from '../../../../fixtures/scratch.ts';
-import { datasetOf, recoverRequest, targetOf } from './harness.ts';
+import { RECOVER_ROWS, datasetOf, listDeps, recoverRequest, targetOf } from './harness.ts';
 import {
     answering,
     bodyOf,
@@ -45,6 +60,8 @@ import {
     type Asked,
     type Routes
 } from './recorded.ts';
+
+setCatalog(textCatalog(loadConfig(engineDir()).config));
 
 const PHYSIONET = 'https://physionet.org/files/';
 const ZENODO = 'https://zenodo.org/api/records/';
@@ -108,9 +125,32 @@ type Row = {
     /** How many files the listing gives. */
     count?: number;
     refused?: Record<string, unknown>;
+    /** The line the Recover view draws for the refusal. */
+    line?: string;
     /** A header every request carried. */
     header?: [string, string];
+    /** The hub the dataset is read from, `research-hub` when absent. */
+    hub?: string;
+    /** The rows of `recover.sources` of each hub, the fixture's for every hub when absent. */
+    rows?: Record<string, ReaderRow[]>;
+    /** How many requests the listing sends, when the row states it. */
+    requests?: number;
 };
+
+/** The fixture's rows without the row of a kind, as a hub that names no row for it holds them. */
+function rowsWithout(kind: string): ReaderRow[] {
+    return RECOVER_ROWS.filter((row) => row.key !== kind);
+}
+
+/** The fixture's `zenodo` row. */
+function zenodoRow(): ReaderRow {
+    const row = RECOVER_ROWS.find((one) => one.key === 'zenodo');
+    if (row === undefined) throw new Error('no fixture row zenodo');
+    return row;
+}
+
+/** Two hubs, the primary naming no `zenodo` row and `lab-hub` naming the fixture's. */
+const TWO_HUBS = { 'research-hub': rowsWithout('zenodo'), 'lab-hub': RECOVER_ROWS };
 
 const ROWS: Row[] = [
     {
@@ -185,7 +225,7 @@ const ROWS: Row[] = [
         routes: {
             [`${PHYSIONET}mimiciv/3.1/SHA256SUMS.txt`]: recorded('physionet/mimiciv-nologin')
         },
-        refused: { refused: 'access', source: 'physionet', status: 403 }
+        refused: { refused: 'access', source: 'physionet', label: 'PhysioNet', status: 403 }
     },
     {
         name: 'physionet refused: a SHA256SUMS.txt that holds no sums',
@@ -193,7 +233,7 @@ const ROWS: Row[] = [
         routes: {
             [`${PHYSIONET}mitdb/1.0.0/SHA256SUMS.txt`]: reply(200, '<html>moved</html>')
         },
-        refused: { refused: 'answer', source: 'physionet' }
+        refused: { refused: 'answer', source: 'physionet', label: 'PhysioNet' }
     },
     {
         name: "zenodo: the record API with each file's size and md5",
@@ -229,13 +269,38 @@ const ROWS: Row[] = [
         name: 'zenodo refused: a file the entry names that the record does not hold',
         source: { kind: 'zenodo', record: '6624726', files: ['fold9.zip'] },
         routes: { [`${ZENODO}6624726`]: recorded('zenodo/picai') },
-        refused: { refused: 'missing', source: 'zenodo', name: 'fold9.zip' }
+        refused: { refused: 'missing', source: 'zenodo', label: 'Zenodo', name: 'fold9.zip' }
     },
     {
         name: 'zenodo refused: a record answer with no files list',
         source: { kind: 'zenodo', record: '1199011' },
         routes: { [`${ZENODO}1199011`]: reply(200, '{"id": 1199011}') },
-        refused: { refused: 'answer', source: 'zenodo' }
+        refused: { refused: 'answer', source: 'zenodo', label: 'Zenodo' }
+    },
+    {
+        name: "a refused answer's line names the row by its name, the refusal by its key",
+        source: { kind: 'ega', record: '1199011' },
+        rows: { 'research-hub': [{ ...zenodoRow(), key: 'ega', name: 'Genome Archive' }] },
+        routes: { [`${ZENODO}1199011`]: reply(200, '{"id": 1199011}') },
+        refused: { refused: 'answer', source: 'ega', label: 'Genome Archive' },
+        line: 'Genome Archive answered with something that is not its file list.'
+    },
+    {
+        name: 'a kind no row of its hub names refused: the kind named, before any request',
+        source: { kind: 'zenodo', record: '1199011' },
+        rows: TWO_HUBS,
+        routes: { [`${ZENODO}1199011`]: recorded('zenodo/aad-dtu') },
+        refused: { refused: 'row', source: 'zenodo' },
+        requests: 0
+    },
+    {
+        name: 'a second hub whose own recover.sources names the kind serves its own dataset',
+        source: { kind: 'zenodo', record: '1199011' },
+        hub: 'lab-hub',
+        rows: TWO_HUBS,
+        routes: { [`${ZENODO}1199011`]: recorded('zenodo/aad-dtu') },
+        files: [{ name: 'AUDIO.zip', size: 385086237 }, { name: 'preproc_data.m' }],
+        requests: 1
     },
     {
         name: "figshare: a collection's articles, a file a former article gave put under its id",
@@ -277,7 +342,7 @@ const ROWS: Row[] = [
                 '{"message": "x"}'
             )
         },
-        refused: { refused: 'answer', source: 'figshare' }
+        refused: { refused: 'answer', source: 'figshare', label: 'figshare' }
     },
     {
         name: 'dandi: the assets of every page, the picked ones with the sha256 of their metadata',
@@ -319,7 +384,7 @@ const ROWS: Row[] = [
                 return reply(200, JSON.stringify({ ...page, next: null }));
             }
         },
-        refused: { refused: 'answer', source: 'dandi' }
+        refused: { refused: 'answer', source: 'dandi', label: 'DANDI' }
     },
     {
         name: 'huggingface: every page by its Link header, the files the patterns match, lfs sha256',
@@ -353,13 +418,18 @@ const ROWS: Row[] = [
         routes: {
             [`${HF}?recursive=true&limit=100`]: reply(200, bodyOf('huggingface/tree-p3'))
         },
-        refused: { refused: 'missing', source: 'huggingface', name: '*.parquet' }
+        refused: {
+            refused: 'missing',
+            source: 'huggingface',
+            label: 'Hugging Face',
+            name: '*.parquet'
+        }
     },
     {
         name: 'huggingface refused: a tree page that is no list',
         source: { kind: 'huggingface', repo: 'mathpluscode/ACDC' },
         routes: { [`${HF}?recursive=true&limit=100`]: reply(200, '{"error": "x"}') },
-        refused: { refused: 'answer', source: 'huggingface' }
+        refused: { refused: 'answer', source: 'huggingface', label: 'Hugging Face' }
     },
     {
         name: 'stanford: the purl record, a file with its sha1',
@@ -379,7 +449,7 @@ const ROWS: Row[] = [
         name: 'stanford refused: a record with no structural part',
         source: { kind: 'stanford', druid: 'zk881ps0522' },
         routes: { 'https://purl.stanford.edu/zk881ps0522.json': reply(200, '{"label": "x"}') },
-        refused: { refused: 'answer', source: 'stanford' }
+        refused: { refused: 'answer', source: 'stanford', label: 'Stanford Digital Repository' }
     },
     {
         name: 'geo: the supplementary index, each picked file sized by a probe, no checksum',
@@ -408,7 +478,7 @@ const ROWS: Row[] = [
         name: 'geo refused: a page that is no folder index',
         source: { kind: 'geo', accession: 'GSE180759', files: ['GSE180759_annotation.txt.gz'] },
         routes: { [GEO]: reply(200, '<html><title>Error</title></html>') },
-        refused: { refused: 'answer', source: 'geo' }
+        refused: { refused: 'answer', source: 'geo', label: 'GEO' }
     },
     {
         name: 'tcia: each series one zip of no stated size',
@@ -428,7 +498,7 @@ const ROWS: Row[] = [
         name: 'tcia refused: a series answer that is no list',
         source: { kind: 'tcia', collection: 'CBIS-DDSM' },
         routes: { [`${TCIA}getSeries?Collection=CBIS-DDSM&format=json`]: reply(200, '{}') },
-        refused: { refused: 'answer', source: 'tcia' }
+        refused: { refused: 'answer', source: 'tcia', label: 'TCIA' }
     },
     {
         name: 'kaggle: the file list checked, then the one zip Kaggle sends, with the row',
@@ -454,7 +524,7 @@ const ROWS: Row[] = [
         name: 'kaggle refused: no row, before any request',
         source: { kind: 'kaggle', dataset: 'awsaf49/brats20-dataset-training-validation' },
         routes: {},
-        refused: { refused: 'access', source: 'kaggle' }
+        refused: { refused: 'access', source: 'kaggle', label: 'Kaggle' }
     },
     {
         name: 'kaggle refused: a file list that lists no file',
@@ -466,7 +536,7 @@ const ROWS: Row[] = [
                 '{"datasetFiles": []}'
             )
         },
-        refused: { refused: 'answer', source: 'kaggle' }
+        refused: { refused: 'answer', source: 'kaggle', label: 'Kaggle' }
     },
     {
         name: 'synapse: a file entity and a folder read a page at a time, with the token',
@@ -495,14 +565,14 @@ const ROWS: Row[] = [
         name: 'synapse refused: no row, before any request',
         source: { kind: 'synapse', ids: ['syn51514110'] },
         routes: {},
-        refused: { refused: 'access', source: 'synapse' }
+        refused: { refused: 'access', source: 'synapse', label: 'Synapse' }
     },
     {
         name: 'synapse refused: an entity answer that is none',
         source: { kind: 'synapse', ids: ['syn51514110'] },
         downloads: [SYNAPSE_ROW],
         routes: { [`${SYNAPSE}entity/syn51514110`]: reply(200, 'not json') },
-        refused: { refused: 'answer', source: 'synapse' }
+        refused: { refused: 'answer', source: 'synapse', label: 'Synapse' }
     },
     {
         name: 'url: each address sized by a probe, named by its last part or the entry, its sha256',
@@ -565,7 +635,7 @@ const ROWS: Row[] = [
         name: 'url refused: an address that is not https',
         source: { kind: 'url', urls: [{ url: 'http://example.org/a.csv' }] },
         routes: {},
-        refused: { refused: 'answer', source: 'url' }
+        refused: { refused: 'answer', source: 'url', label: 'Address' }
     }
 ];
 
@@ -577,15 +647,21 @@ const ROWS: Row[] = [
  */
 async function listedBy(row: Row): Promise<{ answer: unknown; asked: Asked[] }> {
     const downloads = row.downloads ?? [];
+    const hub = row.hub ?? 'research-hub';
+    const rowsOf = (name: string): ReaderRow[] => row.rows?.[name] ?? RECOVER_ROWS;
     const before = answering(row.routes);
-    await accessOf([row.source], { fetch: before.fetch, downloads });
+    await accessOf([row.source], { ...listDeps(before.fetch, downloads), rows: rowsOf(hub) });
     const { fetch, asked } = answering(row.routes);
     const local = localDeps(scratchDir('oculus-recover-sources-'), new Map());
-    const target = {
-        ...targetOf(datasetOf([row.source]), fetch, local),
-        downloads: () => downloads
+    const entry = datasetOf([row.source]);
+    const target: RecoverTarget = {
+        ...targetOf(entry, fetch, local),
+        hubs: () => ['research-hub', 'lab-hub'],
+        dataset: (asked, key) => (asked === hub && key === entry.id ? entry : null),
+        downloads: () => downloads,
+        rows: rowsOf
     };
-    const query = new URLSearchParams({ target: 'mac', hub: 'research-hub', key: 'mitdb' });
+    const query = new URLSearchParams({ target: 'mac', hub, key: 'mitdb' });
     const body = (await (
         await handleRecoverState(recoverRequest(query), target)
     ).json()) as RecoverState;
@@ -595,11 +671,15 @@ async function listedBy(row: Row): Promise<{ answer: unknown; asked: Asked[] }> 
 describe('the Recover source readers', () => {
     it.each(ROWS)('$name', async (row) => {
         const { answer, asked } = await listedBy(row);
+        if (row.requests !== undefined) expect(asked).toHaveLength(row.requests);
         if (row.refused !== undefined) {
             expect(answer).toEqual(row.refused);
+            if (row.line !== undefined) {
+                expect(listingWords(answer as RecoverRefusal)).toBe(row.line);
+            }
             return;
         }
-        expect(Array.isArray(answer)).toBe(true);
+        expect(Array.isArray(answer), JSON.stringify(answer)).toBe(true);
         const files = answer as RecoverFile[];
         if (row.count !== undefined) expect(files).toHaveLength(row.count);
         expect(files.slice(0, row.files?.length ?? 0)).toMatchObject(row.files ?? []);

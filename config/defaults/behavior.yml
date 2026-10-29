@@ -88,9 +88,10 @@ connections:
 # The providers a reader signs in with, each with its addresses and scopes: Google and Microsoft for the mail and the calendars, and a git host for git. Oculus ships none; a hub sets them in .oculus/config.yml.
 sign_in: []
 
-# Where Recover's cluster side downloads Node.js from, the folder of its releases. Oculus ships none; a hub sets it in .oculus/config.yml.
+# Recover. `node_download` is where its cluster side downloads Node.js from, the folder of its releases. `sources` are the reader rows it lists a dataset's files with, one per `kind` a dataset source of the hub names; each hub's own .oculus/config.yml holds the rows for its own datasets. Oculus ships neither: a hub sets them in .oculus/config.yml, and a source of a kind no row names says so and sends no request.
 recover:
   node_download: ''
+  sources: []
 
 # The Processes view lists the local processes whose program is one of these names, beside oculus's own terminals.
 processes:
@@ -247,11 +248,25 @@ search:
   max_names: 100000
 
 # === Literature search ======================================================
-# The Literature search view asks every source toggled on for one page of hits. `timeout_s` is how many seconds one source is given; `per_source` is how many hits one page asks of each source; `cache_min` is how many minutes an answer is kept for the same request, 0 for none.
+# The Literature search view asks every source toggled on for one page of hits. `timeout_s` is how many seconds one source is given; `per_source` is how many hits one page asks of each source; `cache_min` is how many minutes an answer is kept for the same request, 0 for none. `sources` are the reader rows of the sources, each the address, the parameters and the fields one source is read by, and `prefer` the order the merge of a paper found by several sources takes a field from them; both are the primary hub's, in its .oculus/config.yml, and oculus ships none, so with no row the search says no source is configured.
 literature:
   timeout_s: 20
   per_source: 25
   cache_min: 30
+  sources: []
+  prefer:
+    fields: []
+    abstract: []
+    pdf: []
+
+# === The journal browser ====================================================
+# The reader row of the journal browser a hub's venues are searched in and read from: one row, in each hub's own .oculus/config.yml, and none shipped, so a hub with no row shows no browser.
+venues:
+  browser: {}
+
+# === Links ==================================================================
+# The addresses a page link is built from, each a `key` and an `address` with `{id}`: a paper's page by its DOI, an abstract page by a preprint id, a lint rule's page. They are the primary hub's, in its .oculus/config.yml, and oculus ships none, so a link whose row is missing is not drawn.
+links: []
 
 # === Open in its program ====================================================
 # Each extension a file may carry to be handed to a program on this machine, with the bundle id of the one application it opens in on macOS; on Linux the desktop's own program for the type opens it and the bundle id is not used. A file of any other extension, and a listed file with an execute bit, marked as a Finder alias on macOS or ending .desktop on Linux, is refused; a folder is shown in Finder on macOS and opened in the file manager on Linux. Read again at every request.

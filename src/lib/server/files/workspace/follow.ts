@@ -23,7 +23,13 @@ import {
     ROOT_FOLDER,
     WORKSPACES_FOLDER
 } from '../../../data/helpers/hub-names.ts';
-import { POLL, pollFile, systemClock, type Clock, type FilePoll } from '../../core/file-poll.ts';
+import {
+    POLL,
+    pollFile,
+    systemClock,
+    type Clock,
+    type FilePoll
+} from '../../core/files/file-poll.ts';
 import { openWorkspace, type OpenWorkspace } from './open.ts';
 import { stateFileOf } from './state.ts';
 

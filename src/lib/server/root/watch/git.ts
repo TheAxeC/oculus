@@ -97,7 +97,7 @@ import type {
     SessionsPayload
 } from '../../../data/model/index.ts';
 import type { Hub, Sink } from '../../core/channels.ts';
-import { systemClock, type Clock, type Timer } from '../../core/file-poll.ts';
+import { systemClock, type Clock, type Timer } from '../../core/files/file-poll.ts';
 import { readState, type FetchFailures, type StateRead } from '../../core/git/state.ts';
 import { TIMEOUT_MS } from '../../core/git/run.ts';
 import type { GitCredentials } from '../../core/git/credentials.ts';

@@ -29,6 +29,7 @@ import {
     listedSources,
     pickedSources,
     readsOther,
+    takesRecord,
     type CatalogEntry,
     type FieldSpec,
     type Form
@@ -344,6 +345,7 @@ function fullProblem(
     if (typeof lists === 'string') return lists;
     const problem = ruleProblem(spec, value, lists);
     if (problem !== null) return sentenceOf(spec, problem, ctx.fit.text);
+    if (takesRecord(spec) && isMap(value)) return nestedProblem(spec, value, ctx);
     switch (spec.control) {
         case 'parked':
             return parkedProblem(value as string[], ctx);
@@ -407,6 +409,9 @@ function isTableValue(value: unknown, lists: boolean): boolean {
  * none.
  */
 function itemsOf(entry: CatalogEntry, value: unknown): Item[] {
+    if (entry.holds === 'record') {
+        return isMap(value) ? [{ key: undefined, record: value, label: '1' }] : [];
+    }
     if (Array.isArray(value)) {
         return value.flatMap((record, at) =>
             isMap(record) ? [{ key: undefined, record, label: String(at + 1) }] : []
@@ -427,7 +432,14 @@ function allowedFields(
 ): { listed: Set<string>; keyed: Set<string> } {
     const names = Object.keys(entry.fields ?? {});
     const extra = new Set<string>();
-    const values: unknown[] = Array.isArray(held) ? held : isMap(held) ? Object.values(held) : [];
+    const one = entry.holds === 'record';
+    const values: unknown[] = Array.isArray(held)
+        ? held
+        : isMap(held)
+          ? one
+              ? [held]
+              : Object.values(held)
+          : [];
     const records = values.filter(isMap);
     for (const record of records) {
         for (const name of Object.keys(record)) extra.add(name);
@@ -458,7 +470,8 @@ function shapeOfRecord(
  * The sentence for a family value that is not the collection kind the file holds: a list of
  * records, a map of entries (a key/value table when its fields are `key` and `value`, which takes
  * a list of values only where the catalog entry says `holds: lists`, whatever the file holds now,
- * so an emptied table keeps its kind), or a map of records.
+ * so an emptied table keeps its kind), a map of records, or the one record of a family that holds
+ * one.
  */
 function shapeProblem(
     entry: CatalogEntry,
@@ -467,6 +480,10 @@ function shapeProblem(
     text: Record<string, string>
 ): string | null {
     const allowed = allowedFields(entry, held);
+    if (entry.holds === 'record') {
+        if (!isMap(value)) return words(text, 'server.config_value.wrong_map');
+        return shapeOfRecord(value, '1', allowed.listed, text);
+    }
     if (Array.isArray(held)) {
         if (!Array.isArray(value)) return words(text, 'server.config_value.wrong_list');
         for (const [at, record] of value.entries()) {

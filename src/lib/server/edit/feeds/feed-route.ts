@@ -12,6 +12,7 @@
 
 import { json } from '@sveltejs/kit';
 import { keyOf, type RegistryWord } from '../../../data/helpers/hub-names.ts';
+import { linkRows } from '../../../data/sources/config/settings/rows/read.ts';
 import { words } from '../../core/words.ts';
 import {
     feedDeleteWrite,
@@ -148,7 +149,15 @@ export function feedRoute(
             return refused(error, 404);
         }
         const path = engineLiteraturePath(into.engineConfig());
-        const outcome = saveLiterature(home.hub, home.config, path, paper.source, paper.paper);
+        const links = linkRows(into.config.merged);
+        const outcome = saveLiterature(
+            home.hub,
+            home.config,
+            path,
+            paper.source,
+            paper.paper,
+            links
+        );
         if (!outcome.found) {
             return refused(words(text, 'server.write_route.no_literature_file'), 404);
         }

@@ -2784,39 +2784,39 @@
 <polygon fill="none" stroke="currentColor" points="54.65,-6543.5 54.65,-6569.5 108.45,-6569.5 108.45,-6543.5 54.65,-6543.5"/>
 <text fill="currentColor" xml:space="preserve" text-anchor="start" x="59.65" y="-6552.5" font-family="Helvetica,Arial,sans-serif" font-size="10.00">options.ts</text>
 </g>
-<!-- ? src/lib/data/shapes/catalog&#45;files/options.ts:105 -->
+<!-- ? src/lib/data/shapes/catalog&#45;files/options.ts:114 -->
 <g id="node164" class="node">
-<title>? src/lib/data/shapes/catalog&#45;files/options.ts:105</title>
+<title>? src/lib/data/shapes/catalog&#45;files/options.ts:114</title>
 <polygon fill="none" stroke="currentColor" points="201.47,-6509.5 201.47,-6531.5 477.07,-6531.5 477.07,-6509.5 201.47,-6509.5"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="start" x="207.47" y="-6516.5" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/data/shapes/catalog&#45;files/options.ts:105 text.optional(</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="start" x="207.47" y="-6516.5" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/data/shapes/catalog&#45;files/options.ts:114 text.optional(</text>
 </g>
-<!-- lib/data/shapes/catalog&#45;files/options.ts&#45;&gt;? src/lib/data/shapes/catalog&#45;files/options.ts:105 -->
+<!-- lib/data/shapes/catalog&#45;files/options.ts&#45;&gt;? src/lib/data/shapes/catalog&#45;files/options.ts:114 -->
 <g id="edge148" class="edge">
-<title>lib/data/shapes/catalog&#45;files/options.ts&#45;&gt;? src/lib/data/shapes/catalog&#45;files/options.ts:105</title>
+<title>lib/data/shapes/catalog&#45;files/options.ts&#45;&gt;? src/lib/data/shapes/catalog&#45;files/options.ts:114</title>
 <path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M108.45,-6548.5C133.66,-6548.5 158.88,-6548.5 184.09,-6548.5 184.09,-6539.17 184.09,-6529.83 184.09,-6520.5 187.39,-6520.5 190.68,-6520.5 193.98,-6520.5"/>
 <polygon fill="currentColor" stroke="currentColor" points="193.97,-6522.6 199.97,-6520.5 193.97,-6518.4 193.97,-6522.6"/>
 </g>
-<!-- ? src/lib/data/shapes/catalog&#45;files/options.ts:123 -->
+<!-- ? src/lib/data/shapes/catalog&#45;files/options.ts:133 -->
 <g id="node165" class="node">
-<title>? src/lib/data/shapes/catalog&#45;files/options.ts:123</title>
+<title>? src/lib/data/shapes/catalog&#45;files/options.ts:133</title>
 <polygon fill="none" stroke="currentColor" points="200.09,-6545.5 200.09,-6567.5 478.45,-6567.5 478.45,-6545.5 200.09,-6545.5"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="start" x="206.09" y="-6552.5" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/data/shapes/catalog&#45;files/options.ts:123 text.describe(</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="start" x="206.09" y="-6552.5" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/data/shapes/catalog&#45;files/options.ts:133 text.describe(</text>
 </g>
-<!-- lib/data/shapes/catalog&#45;files/options.ts&#45;&gt;? src/lib/data/shapes/catalog&#45;files/options.ts:123 -->
+<!-- lib/data/shapes/catalog&#45;files/options.ts&#45;&gt;? src/lib/data/shapes/catalog&#45;files/options.ts:133 -->
 <g id="edge149" class="edge">
-<title>lib/data/shapes/catalog&#45;files/options.ts&#45;&gt;? src/lib/data/shapes/catalog&#45;files/options.ts:123</title>
+<title>lib/data/shapes/catalog&#45;files/options.ts&#45;&gt;? src/lib/data/shapes/catalog&#45;files/options.ts:133</title>
 <path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M108.45,-6556.5C131.66,-6556.5 154.88,-6556.5 178.09,-6556.5 182.94,-6556.5 187.79,-6556.5 192.64,-6556.5"/>
 <polygon fill="currentColor" stroke="currentColor" points="192.58,-6558.6 198.58,-6556.5 192.58,-6554.4 192.58,-6558.6"/>
 </g>
-<!-- ? src/lib/data/shapes/catalog&#45;files/options.ts:79 -->
+<!-- ? src/lib/data/shapes/catalog&#45;files/options.ts:87 -->
 <g id="node166" class="node">
-<title>? src/lib/data/shapes/catalog&#45;files/options.ts:79</title>
+<title>? src/lib/data/shapes/catalog&#45;files/options.ts:87</title>
 <polygon fill="none" stroke="currentColor" points="202.87,-6581.5 202.87,-6603.5 475.67,-6603.5 475.67,-6581.5 202.87,-6581.5"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="start" x="208.87" y="-6588.5" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/data/shapes/catalog&#45;files/options.ts:79 text.describe(</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="start" x="208.87" y="-6588.5" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/data/shapes/catalog&#45;files/options.ts:87 text.describe(</text>
 </g>
-<!-- lib/data/shapes/catalog&#45;files/options.ts&#45;&gt;? src/lib/data/shapes/catalog&#45;files/options.ts:79 -->
+<!-- lib/data/shapes/catalog&#45;files/options.ts&#45;&gt;? src/lib/data/shapes/catalog&#45;files/options.ts:87 -->
 <g id="edge150" class="edge">
-<title>lib/data/shapes/catalog&#45;files/options.ts&#45;&gt;? src/lib/data/shapes/catalog&#45;files/options.ts:79</title>
+<title>lib/data/shapes/catalog&#45;files/options.ts&#45;&gt;? src/lib/data/shapes/catalog&#45;files/options.ts:87</title>
 <path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M108.45,-6564.5C129.66,-6564.5 150.88,-6564.5 172.09,-6564.5 172.09,-6573.83 172.09,-6583.17 172.09,-6592.5 179.96,-6592.5 187.82,-6592.5 195.69,-6592.5"/>
 <polygon fill="currentColor" stroke="currentColor" points="195.36,-6594.6 201.36,-6592.5 195.36,-6590.4 195.36,-6594.6"/>
 </g>
@@ -2916,39 +2916,39 @@
 <path fill="none" stroke="currentColor" stroke-dasharray="1,5" d="M79.25,-6326.5C88.58,-6326.5 97.91,-6326.5 107.25,-6326.5 107.25,-6326.17 107.25,-6325.83 107.25,-6325.5 176.49,-6325.5 245.73,-6325.5 314.98,-6325.5"/>
 <polygon fill="currentColor" stroke="currentColor" points="314.91,-6327.6 320.91,-6325.5 314.91,-6323.4 314.91,-6327.6"/>
 </g>
-<!-- ? src/lib/data/sources/config/merge/hub&#45;layer.ts:121 -->
+<!-- ? src/lib/data/sources/config/merge/hub&#45;layer.ts:122 -->
 <g id="node175" class="node">
-<title>? src/lib/data/sources/config/merge/hub&#45;layer.ts:121</title>
+<title>? src/lib/data/sources/config/merge/hub&#45;layer.ts:122</title>
 <polygon fill="none" stroke="currentColor" points="194.69,-5905.5 194.69,-5927.5 504.15,-5927.5 504.15,-5905.5 194.69,-5905.5"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="start" x="200.69" y="-5912.5" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/data/sources/config/merge/hub&#45;layer.ts:121 SOURCES.filter(</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="start" x="200.69" y="-5912.5" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/data/sources/config/merge/hub&#45;layer.ts:122 SOURCES.filter(</text>
 </g>
-<!-- lib/data/sources/config/merge/hub&#45;layer.ts&#45;&gt;? src/lib/data/sources/config/merge/hub&#45;layer.ts:121 -->
+<!-- lib/data/sources/config/merge/hub&#45;layer.ts&#45;&gt;? src/lib/data/sources/config/merge/hub&#45;layer.ts:122 -->
 <g id="edge152" class="edge">
-<title>lib/data/sources/config/merge/hub&#45;layer.ts&#45;&gt;? src/lib/data/sources/config/merge/hub&#45;layer.ts:121</title>
+<title>lib/data/sources/config/merge/hub&#45;layer.ts&#45;&gt;? src/lib/data/sources/config/merge/hub&#45;layer.ts:122</title>
 <path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M79.25,-6254.5C84.58,-6254.5 89.91,-6254.5 95.25,-6254.5 95.25,-6141.83 95.25,-6029.17 95.25,-5916.5 125.98,-5916.5 156.72,-5916.5 187.46,-5916.5"/>
 <polygon fill="currentColor" stroke="currentColor" points="187.18,-5918.6 193.18,-5916.5 187.18,-5914.4 187.18,-5918.6"/>
 </g>
-<!-- ? src/lib/data/sources/config/merge/hub&#45;layer.ts:464 -->
+<!-- ? src/lib/data/sources/config/merge/hub&#45;layer.ts:465 -->
 <g id="node176" class="node">
-<title>? src/lib/data/sources/config/merge/hub&#45;layer.ts:464</title>
+<title>? src/lib/data/sources/config/merge/hub&#45;layer.ts:465</title>
 <polygon fill="none" stroke="currentColor" points="165.25,-5941.5 165.25,-5963.5 533.59,-5963.5 533.59,-5941.5 165.25,-5941.5"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="start" x="171.25" y="-5948.5" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/data/sources/config/merge/hub&#45;layer.ts:464 MANIFEST_WIDGETS.some(</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="start" x="171.25" y="-5948.5" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/data/sources/config/merge/hub&#45;layer.ts:465 MANIFEST_WIDGETS.some(</text>
 </g>
-<!-- lib/data/sources/config/merge/hub&#45;layer.ts&#45;&gt;? src/lib/data/sources/config/merge/hub&#45;layer.ts:464 -->
+<!-- lib/data/sources/config/merge/hub&#45;layer.ts&#45;&gt;? src/lib/data/sources/config/merge/hub&#45;layer.ts:465 -->
 <g id="edge153" class="edge">
-<title>lib/data/sources/config/merge/hub&#45;layer.ts&#45;&gt;? src/lib/data/sources/config/merge/hub&#45;layer.ts:464</title>
+<title>lib/data/sources/config/merge/hub&#45;layer.ts&#45;&gt;? src/lib/data/sources/config/merge/hub&#45;layer.ts:465</title>
 <path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M79.25,-6262.5C86.58,-6262.5 93.91,-6262.5 101.25,-6262.5 101.25,-6159.17 101.25,-6055.83 101.25,-5952.5 120.08,-5952.5 138.92,-5952.5 157.76,-5952.5"/>
 <polygon fill="currentColor" stroke="currentColor" points="157.74,-5954.6 163.74,-5952.5 157.74,-5950.4 157.74,-5954.6"/>
 </g>
-<!-- ? src/lib/data/sources/config/merge/hub&#45;layer.ts:470 -->
+<!-- ? src/lib/data/sources/config/merge/hub&#45;layer.ts:471 -->
 <g id="node177" class="node">
-<title>? src/lib/data/sources/config/merge/hub&#45;layer.ts:470</title>
+<title>? src/lib/data/sources/config/merge/hub&#45;layer.ts:471</title>
 <polygon fill="none" stroke="currentColor" points="166.62,-5977.5 166.62,-5999.5 532.22,-5999.5 532.22,-5977.5 166.62,-5977.5"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="start" x="172.62" y="-5984.5" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/data/sources/config/merge/hub&#45;layer.ts:470 manifestFieldRow.safeParse(</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="start" x="172.62" y="-5984.5" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/data/sources/config/merge/hub&#45;layer.ts:471 manifestFieldRow.safeParse(</text>
 </g>
-<!-- lib/data/sources/config/merge/hub&#45;layer.ts&#45;&gt;? src/lib/data/sources/config/merge/hub&#45;layer.ts:470 -->
+<!-- lib/data/sources/config/merge/hub&#45;layer.ts&#45;&gt;? src/lib/data/sources/config/merge/hub&#45;layer.ts:471 -->
 <g id="edge154" class="edge">
-<title>lib/data/sources/config/merge/hub&#45;layer.ts&#45;&gt;? src/lib/data/sources/config/merge/hub&#45;layer.ts:470</title>
+<title>lib/data/sources/config/merge/hub&#45;layer.ts&#45;&gt;? src/lib/data/sources/config/merge/hub&#45;layer.ts:471</title>
 <path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M79.25,-6270.5C92.58,-6270.5 105.91,-6270.5 119.25,-6270.5 119.25,-6176.5 119.25,-6082.5 119.25,-5988.5 132.54,-5988.5 145.84,-5988.5 159.13,-5988.5"/>
 <polygon fill="currentColor" stroke="currentColor" points="159.11,-5990.6 165.11,-5988.5 159.11,-5986.4 159.11,-5990.6"/>
 </g>
@@ -4746,15 +4746,15 @@
 <polygon fill="none" stroke="currentColor" points="55.49,-208 55.49,-230 120.95,-230 120.95,-208 55.49,-208"/>
 <text fill="currentColor" xml:space="preserve" text-anchor="start" x="60.49" y="-215" font-family="Helvetica,Arial,sans-serif" font-size="10.00">value&#45;rule.ts</text>
 </g>
-<!-- ? src/lib/data/sources/config/catalog/value&#45;rule.ts:187 -->
+<!-- ? src/lib/data/sources/config/catalog/value&#45;rule.ts:188 -->
 <g id="node337" class="node">
-<title>? src/lib/data/sources/config/catalog/value&#45;rule.ts:187</title>
+<title>? src/lib/data/sources/config/catalog/value&#45;rule.ts:188</title>
 <polygon fill="none" stroke="currentColor" points="201.43,-208 201.43,-230 540.37,-230 540.37,-208 201.43,-208"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="start" x="207.43" y="-215" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/data/sources/config/catalog/value&#45;rule.ts:187 BLOCK_LISTS.some(</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="start" x="207.43" y="-215" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/data/sources/config/catalog/value&#45;rule.ts:188 BLOCK_LISTS.some(</text>
 </g>
-<!-- lib/data/sources/config/catalog/value&#45;rule.ts&#45;&gt;? src/lib/data/sources/config/catalog/value&#45;rule.ts:187 -->
+<!-- lib/data/sources/config/catalog/value&#45;rule.ts&#45;&gt;? src/lib/data/sources/config/catalog/value&#45;rule.ts:188 -->
 <g id="edge302" class="edge">
-<title>lib/data/sources/config/catalog/value&#45;rule.ts&#45;&gt;? src/lib/data/sources/config/catalog/value&#45;rule.ts:187</title>
+<title>lib/data/sources/config/catalog/value&#45;rule.ts&#45;&gt;? src/lib/data/sources/config/catalog/value&#45;rule.ts:188</title>
 <path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M120.95,-219C142.44,-219 163.94,-219 185.43,-219 188.39,-219 191.35,-219 194.31,-219"/>
 <polygon fill="currentColor" stroke="currentColor" points="193.92,-221.1 199.92,-219 193.92,-216.9 193.92,-221.1"/>
 </g>

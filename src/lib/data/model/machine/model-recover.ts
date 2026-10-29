@@ -2,7 +2,9 @@
 // the Recover view's store reads (state/system/machine/recover.svelte.ts), declared once here and
 // re-exported by data/model/index.ts, with the one target word that names this Mac, which the
 // routes, the store and the reader of `clusters:` share. A dataset's sources, `RecoverSource`,
-// belong to the dataset registry's entity and are declared in data/model/model-entities.ts.
+// belong to the dataset registry's entity and are declared in data/model/model-entities.ts. No
+// shape names a service: a source's service is the `downloads` row its row of `recover.sources`
+// signs in with.
 
 /**
  * The Recover target of this Mac; every other target is the key of a cluster of `slurm.resource`,
@@ -13,8 +15,11 @@ export const MAC_TARGET = 'mac';
 /** The checksum a source publishes for a file. */
 export type RecoverChecksum = { kind: 'sha256' | 'md5' | 'sha1'; value: string };
 
-/** The service whose `downloads` row a source needs. */
-export type RecoverService = 'physionet' | 'kaggle' | 'synapse';
+/**
+ * How a download carries the secret of its `downloads` row: as a user and a password (`basic`), or
+ * in a header with its prefix (such as `Bearer `), as the row's `auth` entry says.
+ */
+export type RecoverCredential = { basic: true } | { header: string; prefix?: string };
 
 /** One file as a source lists it, named below the dataset's folder. */
 export type RecoverFile = {
@@ -25,7 +30,9 @@ export type RecoverFile = {
     url: string;
     /** The position of its source in the entry's `retrieval` list. */
     source: number;
-    service?: RecoverService;
+    /** The `downloads` row its download signs in with, and how it carries the secret. */
+    service?: string;
+    credential?: RecoverCredential;
     /**
      * Set when its source unpacks: the folder inside the archive whose contents alone are placed,
      * when the source names one, and how many leading folders each path below it loses.
@@ -52,9 +59,16 @@ export type RecoverTotals = {
     free: number | null;
 };
 
-/** The access of one service a dataset's sources need. */
+/**
+ * The access of one service a dataset's sources need: `service` the `downloads` row its row's
+ * `auth` entry names, `name` the name of the `recover.sources` row, `basic` whether the secret is
+ * sent with a user, and `help` the entry's sentence of where the secret is made.
+ */
 export type RecoverAccess = {
-    service: RecoverService;
+    service: string;
+    name: string;
+    basic: boolean;
+    help?: string;
     /** `ok` with a row the service accepts, `missing` without one, `unreachable` with no answer. */
     state: 'ok' | 'missing' | 'unreachable';
     /** Whether the primary hub's `local.yml` holds a row of the service. */
@@ -66,12 +80,14 @@ export type RecoverAccess = {
  * Why a source gives no file list: `access` (401 or 403), `status` (another answer that is no
  * success), `answer` (a body that is not the kind's answer), `name` (a file name that is absolute,
  * climbs out or is given twice), `missing` (a file the entry names that the source does not hold),
- * `network` (no answer).
+ * `network` (no answer), `row` (no row of the hub's `recover.sources` reads the kind).
  */
 export type RecoverRefusal = {
-    refused: 'access' | 'status' | 'answer' | 'name' | 'missing' | 'network';
-    /** The kind of the source, or for a `url` source its host. */
+    refused: 'access' | 'status' | 'answer' | 'name' | 'missing' | 'network' | 'row';
+    /** The kind of the source, or for a row with no address of its own the host it asked. */
     source: string;
+    /** The `name` of the row that read the source, which the line names it by. */
+    label?: string;
     status?: number;
     name?: string;
 };

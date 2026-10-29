@@ -1,8 +1,8 @@
 // Layer 2, route tests. What GET /api/fs, with no root, tells the Settings view of the machine's
 // `local.yml`: the names of the keys the primary hub's file sets and the default of each key. The
 // primary's file sets `port` and `claude_bin`. A workspace with no primary names no key as set. A
-// file holding a literature key and `downloads` rows of physionet, kaggle and kaggle-token gives an
-// answer holding none of their secrets, each row's secret drawn as the word for set.
+// file holding `downloads` rows of wos, physionet, kaggle and kaggle-token gives an answer holding
+// none of their secrets, each row's secret drawn as the word for set.
 //
 // What this does NOT cover: how the Settings view draws the lines (tests/state/system/settings/).
 
@@ -80,16 +80,16 @@ const KAGGLE_KEY = 'kaggle-key-of-the-test-xyz';
 const KAGGLE_TOKEN = 'kaggle-token-of-the-test-xyz';
 const MAILTO = 'reader@example.org';
 
-/** The route's answer over a primary hub whose file holds a literature key and downloads rows. */
+/** The route's answer over a primary whose file holds the contact address and downloads rows. */
 async function answeredSecrets(): Promise<string> {
     const hub = plantHub(scratchDir('oculus-machine-secrets-'));
     writeFileSync(
         join(hub, '.oculus', 'local.yml'),
         [
             'literature:',
-            `  wos_key: ${WOS}`,
             `  mailto: ${MAILTO}`,
             'downloads:',
+            `  - { service: wos, secret: ${WOS} }`,
             `  - { service: physionet, user: reader, secret: ${PASSWORD} }`,
             `  - { service: kaggle, user: kaggler, secret: ${KAGGLE_KEY} }`,
             `  - { service: kaggle-token, secret: ${KAGGLE_TOKEN} }`,
@@ -124,14 +124,13 @@ describe('GET /api/fs with secrets in the primary hub file', () => {
         const text = await answeredSecrets();
         const body = JSON.parse(text) as { machine: { values: Record<string, string> } };
         const hidden = words(TEXT, 'server.machine_default.secret_set');
-        expect(text).not.toContain(WOS);
-        for (const secret of [PASSWORD, KAGGLE_KEY, KAGGLE_TOKEN]) {
+        for (const secret of [WOS, PASSWORD, KAGGLE_KEY, KAGGLE_TOKEN]) {
             expect(text).not.toContain(secret);
         }
-        expect(body.machine.values['literature.wos_key']).toBe(hidden);
         expect(body.machine.values['literature.mailto']).toBe(MAILTO);
         expect(body.machine.values.downloads).toBe(
             [
+                `{ service: wos, secret: ${hidden} }`,
                 `{ service: physionet, user: reader, secret: ${hidden} }`,
                 `{ service: kaggle, user: kaggler, secret: ${hidden} }`,
                 `{ service: kaggle-token, secret: ${hidden} }`

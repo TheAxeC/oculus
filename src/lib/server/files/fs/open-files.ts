@@ -15,11 +15,11 @@
 // has an empty root key or an empty path, is never polled and never published; the socket leaves it
 // out of the hub subscription. A name that resolves is polled with `pollFile`, a stat each tick of
 // the path the name spells, on the server's clock: a darwin fs.watch can miss a write that lands
-// while it registers (core/file-poll.ts). The name is resolved again at every tick, against the
-// roots as the configuration and the open workspace last left them, because a link may now point
-// out of every root or a folder may be gone from the workspace or carry another name; such a name
-// has no path to stat, publishes null at the tick it stops resolving and reads nothing, and is
-// followed again when it resolves. Otherwise the file is read and hashed. A file over the read
+// while it registers (core/files/file-poll.ts). The name is resolved again at every tick, against
+// the roots as the configuration and the open workspace last left them, because a link may now
+// point out of every root or a folder may be gone from the workspace or carry another name; such a
+// name has no path to stat, publishes null at the tick it stops resolving and reads nothing, and
+// is followed again when it resolves. Otherwise the file is read and hashed. A file over the read
 // limit is not read, and its message is `stat:` and the hash of its inode, size, mtime and ctime.
 // Each message also says whether the name's root key is among the roots, so a tab learns from the
 // null of a removed folder that its folder is no longer served, and not that its file was deleted,
@@ -39,8 +39,14 @@ import { TEXT_LIMIT } from '../../../data/file-ops.ts';
 import { SOURCE_PREFIX, parseSourceChannel } from '../../../data/helpers/files/address.ts';
 import type { OpenFileMessage } from '../../../data/model/index.ts';
 import type { Hub, Sink } from '../../core/channels.ts';
-import { hashOf } from '../../core/file-bytes.ts';
-import { POLL, pollFile, systemClock, type Clock, type FilePoll } from '../../core/file-poll.ts';
+import { hashOf } from '../../core/files/file-bytes.ts';
+import {
+    POLL,
+    pollFile,
+    systemClock,
+    type Clock,
+    type FilePoll
+} from '../../core/files/file-poll.ts';
 import { realPath } from '../../core/paths.ts';
 import { resolveRootPath, type Root } from '../files.ts';
 

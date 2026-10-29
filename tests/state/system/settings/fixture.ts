@@ -9,6 +9,7 @@ import { setAppearance } from '../../../../src/lib/state/shared/words/appearance
 import { vscodeRuleIds } from '../../../../src/lib/data/places/code-rules.ts';
 import { setCatalog } from '../../../../src/lib/state/shared/words/text.ts';
 import type { FsEntry } from '../../../../src/lib/state/sources/fs.ts';
+import { listsOf, type Lists } from '../../../../src/lib/state/system/config/editors/sources.ts';
 import { settingsGroups } from '../../../../src/lib/state/system/config/groups.ts';
 import type { ConfigRow, HubFile } from '../../../../src/lib/state/system/config/rows.ts';
 import {
@@ -23,6 +24,20 @@ export const shipped = catalogOf(config);
 
 setCatalog(textCatalog(config));
 setAppearance(config, vscodeRuleIds());
+
+/** The lists of a render over a merged config, with no portfolio, views, themes or folder. */
+export function bareLists(merged: Record<string, unknown>): Lists {
+    return listsOf({
+        config: merged,
+        portfolio: null,
+        views: [],
+        tiers: null,
+        themeClasses: [],
+        codeThemeClasses: [],
+        offers: { themes: [], icons: [] },
+        folder: () => ({ state: 'ready', entries: [] })
+    });
+}
 
 /** A file's text as the file browser holds it, read unless `loading` says it is being read. */
 export const text = (body: string, more: { loading?: boolean } = {}) => ({

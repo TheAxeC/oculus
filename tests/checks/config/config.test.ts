@@ -349,6 +349,30 @@ describe("loadConfig with the hub's settings file", () => {
         expect(slurm.resource).toEqual(['x']);
     });
 
+    it('names a key the primary hub alone is read for, set in another hub, and applies none of it', () => {
+        const engine = engineCopy();
+        const hub = scratch();
+        const file = settings(
+            hub,
+            'career_file: other/career.yml\nslurm: { resource: x }\nmemories_dir: .oculus/photos\n'
+        );
+        const engineOnly = loadConfig(engine).config;
+        const { config, findings } = loadConfig(engine, { hub, other: 'lab' });
+        expect(findings.map((one) => [one.file, one.key])).toEqual([
+            [file, 'career_file'],
+            [file, 'slurm.resource']
+        ]);
+        expect(findings.map((one) => one.message)).toEqual([
+            sentence(config, 'hub_key_primary', 'career_file', 'lab'),
+            sentence(config, 'hub_key_primary', 'slurm.resource', 'lab')
+        ]);
+        expect(config.career_file).toBe(engineOnly.career_file);
+        expect((config.slurm as Record<string, unknown>).resource).toEqual(
+            (engineOnly.slurm as Record<string, unknown>).resource
+        );
+        expect(config.memories_dir).toBe('.oculus/photos');
+    });
+
     it.each([
         ['is empty', ''],
         ['is a list', '- a\n- b\n'],

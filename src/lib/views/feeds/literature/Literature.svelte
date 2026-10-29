@@ -16,8 +16,11 @@
 <script lang="ts">
     // Layer 3, view. One query asked of the scholarly sources at once, their hits merged into
     // papers by DOI, PubMed id or arXiv id, with filters, a sort, and per paper the abstract, the
-    // open PDF, Copy BibTeX and Add to Lit Watch. Google Scholar has no API and its terms forbid
-    // scraping, so it is a link that opens the same query on its site.
+    // open PDF, Copy BibTeX and Add to Lit Watch. The sources are the rows of `literature.sources`
+    // of the primary hub's `.oculus/config.yml`, as the server lists them; with none the view says
+    // that no source is configured and where it is set, and sends nothing. Google Scholar has no
+    // API and its terms forbid scraping, so it is a link that opens the same query on its site,
+    // drawn when the hub's `links` hold a `scholar` row.
     //
     // The query, the filters, the sort and the toggles are the tab's instance state, saved with the
     // layout. The answers are not: a tab drawn again with a query held asks it once more, which the
@@ -52,11 +55,17 @@
         parseForm,
         sourcesOn,
         timeoutSeconds,
-        type Availability,
         type LiteratureForm,
-        type LiteratureSource
+        type LiteratureSource,
+        type SourceInfo
     } from '$lib/state/feeds/literature/form';
-    import { filtersOf, mergeHits, passes, sortHits } from '$lib/state/feeds/literature/merge';
+    import {
+        filtersOf,
+        mergeHits,
+        orderOf,
+        passes,
+        sortHits
+    } from '$lib/state/feeds/literature/merge';
     import { inRadar } from '$lib/state/feeds/literature/radar';
     import { createRun } from '$lib/state/feeds/literature/run.svelte';
     import { scholarUrl } from '$lib/state/feeds/literature/scholar';
@@ -108,27 +117,19 @@
     );
     const timeoutS = $derived(timeoutSeconds(config()?.config ?? {}));
 
-    /** What the server says it can ask: unknown until `?sources` answers, keyless sources open. */
-    let listed: { available: Availability; keys: Partial<Record<LiteratureSource, string>> } =
-        $state({ available: {}, keys: {} });
-    const available = $derived<Availability>({
-        openalex: true,
-        semantic_scholar: true,
-        crossref: true,
-        pubmed: true,
-        europe_pmc: true,
-        arxiv: true,
-        wos: false,
-        scopus: false,
-        ...listed.available
-    });
+    /** The sources the server lists, in its order: null until `?sources` answers. */
+    let listed = $state<SourceInfo[] | null>(null);
+    const sources = $derived(listed ?? []);
+    const read = $derived(orderOf(config()?.config ?? {}));
+    const scholar = $derived(scholarUrl(form, read.links));
     let said = $state('');
 
     /** The form the list on screen was asked with; its filters are the ones applied to the list. */
     const asked = $derived(run.asked() ?? form);
     const papers = $derived.by(() => {
         const filters = filtersOf(asked, Date.now());
-        const merged = mergeHits(run.hits()).filter((paper) => passes(paper, filters));
+        const order = { sources: sources.map((one) => one.id), ...read };
+        const merged = mergeHits(run.hits(), order).filter((paper) => passes(paper, filters));
         return sortHits(merged, form.sort);
     });
     const typed = $derived(formRefusal(form, Date.now()));
@@ -141,7 +142,7 @@
 
     function go(): void {
         said = '';
-        run.search(form, sourcesOn(form, available));
+        run.search(form, sourcesOn(form, sources));
     }
 
     function toggle(source: LiteratureSource, on: boolean): void {
@@ -156,15 +157,8 @@
         void (async () => {
             const listing = sourceList(await routeBody(SOURCES_URL, writeToken()));
             if (closed) return;
-            if (listing !== null) {
-                listed = {
-                    available: Object.fromEntries(listing.map((one) => [one.id, one.available])),
-                    keys: Object.fromEntries(
-                        listing.flatMap((one) => (one.key === null ? [] : [[one.id, one.key]]))
-                    )
-                };
-            }
-            if (form.q.trim() !== '') go();
+            if (listing !== null) listed = listing;
+            if (form.q.trim() !== '' && sources.length > 0) go();
         })();
     });
 
@@ -183,19 +177,26 @@
             oninput={(q: string) => change({ q })}
             onenter={go}
         />
-        <ToolButton label={t('literature.search')} glyph="search" onclick={go} />
-        <!-- eslint-disable svelte/no-navigation-without-resolve -- Google Scholar is another site, rather than a route id resolve() takes -->
-        <a
-            class="scholar"
-            href={scholarUrl(form)}
-            target="_blank"
-            rel="noreferrer"
-            title={t('literature.scholar_tip')}
-        >
-            <Glyph name="link" />
-            {t('literature.scholar')}
-        </a>
-        <!-- eslint-enable svelte/no-navigation-without-resolve -->
+        <ToolButton
+            label={t('literature.search')}
+            glyph="search"
+            disabled={listed !== null && listed.length === 0}
+            onclick={go}
+        />
+        {#if scholar !== undefined}
+            <!-- eslint-disable svelte/no-navigation-without-resolve -- Google Scholar is another site, rather than a route id resolve() takes -->
+            <a
+                class="scholar"
+                href={scholar}
+                target="_blank"
+                rel="noreferrer"
+                title={t('literature.scholar_tip')}
+            >
+                <Glyph name="link" />
+                {t('literature.scholar')}
+            </a>
+            <!-- eslint-enable svelte/no-navigation-without-resolve -->
+        {/if}
     </Toolbar>
 {/snippet}
 
@@ -204,8 +205,7 @@
         <Surface>
             <Head
                 {form}
-                {available}
-                keys={listed.keys}
+                {sources}
                 runs={run.sources()}
                 {timeoutS}
                 onchange={change}
@@ -224,7 +224,9 @@
             </Surface>
         {/if}
 
-        {#if run.noneOn()}
+        {#if listed !== null && listed.length === 0}
+            <Empty message={t('literature.no_sources')} glyph="book" />
+        {:else if run.noneOn()}
             <Empty message={t('literature.none_on')} glyph="book" />
         {:else if run.asked() === null}
             <Empty message={t('literature.idle')} glyph="book" />
@@ -246,6 +248,7 @@
                     {#each papers as paper (paper.key)}
                         <LiteratureCard
                             hit={paper}
+                            {sources}
                             id={paper.key}
                             cursor={cursor === paper.key}
                             inRadar={inRadar(paper, entries)}

@@ -21,21 +21,11 @@ import {
     type Draft
 } from '../../../../src/lib/state/system/config/editors/draft.ts';
 import { cardsOf, poolOf } from '../../../../src/lib/state/system/config/editors/fields.ts';
-import { listsOf } from '../../../../src/lib/state/system/config/editors/sources.ts';
-import { shipped } from './fixture.ts';
+import { bareLists, shipped } from './fixture.ts';
 
 const FILE = 'sources.yml';
 const config = loadConfig(engineDir()).config;
-const lists = listsOf({
-    config,
-    portfolio: null,
-    views: [],
-    tiers: null,
-    themeClasses: [],
-    codeThemeClasses: [],
-    offers: { themes: [], icons: [] },
-    folder: () => ({ state: 'ready', entries: [] })
-});
+const lists = bareLists(config);
 
 /** The two entries the rows start from, as a hub's list writes them. */
 const LIST = [

@@ -36,7 +36,7 @@ import { isWholeText } from '../../../data/helpers/files/text-kind.ts';
 import { outsideEdits } from '../../../data/prose/markdown/note-names.ts';
 import { LOCAL_NAME, checkLocal } from '../../../data/sources/config.ts';
 import { applyTextEdits } from '../../../data/prose/text-edits.ts';
-import { hashOf, splitMark, withMark } from '../../core/file-bytes.ts';
+import { hashOf, splitMark, withMark } from '../../core/files/file-bytes.ts';
 import { writeBytesAtomic } from '../../core/json.ts';
 import { under } from '../../core/paths.ts';
 import { resolveRootPath, type Root } from '../files.ts';

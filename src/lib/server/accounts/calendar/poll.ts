@@ -43,8 +43,9 @@ import {
     type WatcherHeld
 } from '../connect/loop.ts';
 import { hasOwnHalf, readPublishedLink } from '../connect/store.ts';
-import { ReadTimeout, timedFetcher, type Fetcher } from '../connect/oauth.ts';
+import { READ_TIMEOUT_MS, type Fetcher } from '../connect/oauth.ts';
 import { readAddress, type SignInWords } from '../connect/providers.ts';
+import { ReadTimeout, timedFetcher } from '../../core/reader/timed.ts';
 
 /**
  * The sentences an account's row may carry, from the catalog: a published link's file holds no
@@ -150,7 +151,10 @@ function byStart(one: CalendarEvent, two: CalendarEvent): number {
 }
 
 export function watchCalendar(hub: Hub, options: CalendarOptions): CalendarWatcher {
-    const fetcher = timedFetcher(options.fetcher ?? fetch, options.readTimeoutMs);
+    const fetcher = timedFetcher(
+        options.fetcher ?? fetch,
+        options.readTimeoutMs ?? READ_TIMEOUT_MS
+    );
     const providerDir = options.providerDir;
     const now = options.now ?? ((): Date => new Date());
     let settings: CalendarSettings = {

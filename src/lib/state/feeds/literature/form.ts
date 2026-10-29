@@ -7,24 +7,26 @@
 // reader's hands; the request is made from them only when the search runs, and a value the route
 // would refuse is said in the view first (data/prose/literature.ts holds the bounds both share).
 // Which sources are on is kept only where the reader pressed a toggle: a source never pressed is
-// on when it needs no key, or when it needs one and the machine has it.
+// on when the server lists it as one it can ask (a row of `literature.sources` whose required
+// `downloads` row the machine holds). The sources are the rows the server lists, in their order,
+// so a toggle of a row the hub does not name is kept and draws nothing.
 
 import { z } from 'zod';
 import {
     DOC_TYPES,
-    LITERATURE_SOURCES,
     type DocType,
     type HitType,
     type LiteratureRefusal,
-    type LiteratureSource
+    type LiteratureSource,
+    type SourceInfo
 } from '../../../data/model/index.ts';
 import { boundsRefusal } from '../../../data/prose/literature.ts';
 import { readAs } from '../../../data/shapes/shapes.ts';
 
 // The vocabulary the view draws its lists from, handed on from the data layer which a view does
 // not import.
-export { DOC_TYPES, LITERATURE_SOURCES };
-export type { DocType, HitType, LiteratureRefusal, LiteratureSource };
+export { DOC_TYPES };
+export type { DocType, HitType, LiteratureRefusal, LiteratureSource, SourceInfo };
 
 /** The orders the merged list can be put in. */
 export const SORTS = ['relevance', 'date', 'citations'] as const;
@@ -45,8 +47,8 @@ export type LiteratureForm = {
     /** The citation minimum text, empty for none. */
     minCites: string;
     sort: LiteratureSort;
-    /** The toggles the reader pressed; a source not named here is on by its default. */
-    toggled: Partial<Record<LiteratureSource, boolean>>;
+    /** The toggles the reader pressed, by source; a source not named here is on by its default. */
+    toggled: Record<LiteratureSource, boolean>;
 };
 
 const formShape = z.object({
@@ -59,7 +61,7 @@ const formShape = z.object({
     author: z.string().catch(''),
     minCites: z.string().catch(''),
     sort: z.enum(SORTS).catch('relevance'),
-    toggled: z.partialRecord(z.enum(LITERATURE_SOURCES), z.boolean()).catch({})
+    toggled: z.record(z.string(), z.boolean()).catch({})
 });
 
 /** The tab's saved state as a form; any field of the wrong type takes its default. */
@@ -69,21 +71,17 @@ export function parseForm(raw: unknown): LiteratureForm {
     return formShape.parse({});
 }
 
-/** What the page knows of a source: whether the machine can ask it. */
-export type Availability = Partial<Record<LiteratureSource, boolean>>;
-
-/** Whether a source is on: the reader's toggle, else on when the machine can ask it. */
-export function sourceOn(
-    form: LiteratureForm,
-    source: LiteratureSource,
-    available: Availability
-): boolean {
-    return available[source] === true && (form.toggled[source] ?? true);
+/** Whether a listed source is on: the reader's toggle, else on when the machine can ask it. */
+export function sourceOn(form: LiteratureForm, source: SourceInfo): boolean {
+    return source.available && (form.toggled[source.id] ?? true);
 }
 
-/** The sources a search is sent to, in the route's order. */
-export function sourcesOn(form: LiteratureForm, available: Availability): LiteratureSource[] {
-    return LITERATURE_SOURCES.filter((source) => sourceOn(form, source, available));
+/** The sources a search is sent to, in the order the server lists them. */
+export function sourcesOn(
+    form: LiteratureForm,
+    sources: readonly SourceInfo[]
+): LiteratureSource[] {
+    return sources.filter((source) => sourceOn(form, source)).map((source) => source.id);
 }
 
 /** The first bound the form breaks, as the route would refuse it, or null for none. */

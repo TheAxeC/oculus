@@ -2,7 +2,8 @@
 // folder of stand-in programs (curl, tmux, sbatch, squeue) that record the argument vector each
 // call was given, a login node played by the system's `sh` over a scratch home, the copier that
 // sends into that home, a zip written byte by byte, and the target of the /api/recover route with
-// one dataset.
+// one dataset, its sources read by the fixture rows of `recover.sources`
+// (tests/server/core/reader/rows.yml).
 //
 // A stand-in records each call as its program's name and its arguments separated by NUL bytes, so
 // a value holding a space, a quote or a line break comes back as the one argument it was.
@@ -26,7 +27,12 @@ import type { Copier } from '../../../../../src/lib/server/machine/hpc/transfer.
 import type { ClusterDeps } from '../../../../../src/lib/server/machine/runs/recover/cluster.ts';
 import type { LocalDeps } from '../../../../../src/lib/server/machine/runs/recover/local.ts';
 import type { RecoverTarget } from '../../../../../src/lib/server/machine/runs/recover/routes.ts';
-import type { Fetcher } from '../../../../../src/lib/server/machine/runs/recover/files.ts';
+import type {
+    Fetcher,
+    ListDeps
+} from '../../../../../src/lib/server/machine/runs/recover/files.ts';
+import type { ReaderRow } from '../../../../../src/lib/data/sources/config/settings/rows/grammar.ts';
+import { fixtureRows } from '../../../core/reader/rows.ts';
 import { SEVEN_ZIP_FILES } from '../../../../../src/lib/server/machine/runs/recover/unpack.ts';
 import { plantScratch, scratchDir } from '../../../../fixtures/scratch.ts';
 
@@ -224,9 +230,21 @@ export function datasetOf(retrieval: RecoverSource[], extra: Partial<Dataset> = 
     };
 }
 
+/** The rows of `recover.sources` the tests read the sources with: the fixture's (rows.yml). */
+export const RECOVER_ROWS: ReaderRow[] = fixtureRows().recover;
+
+/** The User-Agent the tests' requests carry. */
+export const TEST_AGENT = 'oculus/test';
+
+/** What a listing or an access check of the tests is given: the fetch, the rows and the agent. */
+export function listDeps(fetch: Fetcher, downloads: DownloadAccount[]): ListDeps {
+    return { fetch, downloads, rows: RECOVER_ROWS, agent: TEST_AGENT };
+}
+
 /**
  * The route's target over one dataset, this Mac's deps and the played cluster, when given; the
- * Recover watcher is told nothing unless the case hands it one.
+ * Recover watcher is told nothing unless the case hands it one. Every hub reads its sources with
+ * the fixture's rows.
  */
 export function targetOf(
     entry: Dataset,
@@ -240,6 +258,8 @@ export function targetOf(
         hubs: () => ['research-hub'],
         dataset: (hub, key) => (hub === 'research-hub' && key === entry.id ? entry : null),
         downloads: () => DOWNLOADS,
+        rows: () => RECOVER_ROWS,
+        agent: TEST_AGENT,
         fetch,
         local,
         cluster: (resource) => {

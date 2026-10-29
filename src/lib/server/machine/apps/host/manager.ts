@@ -32,7 +32,7 @@ import type {
 } from '../../../../data/model/index.ts';
 import type { AppsSettings } from '../../../../data/sources/config/settings/machine.ts';
 import type { Hub } from '../../../core/channels.ts';
-import { systemClock, type Clock, type Timer } from '../../../core/file-poll.ts';
+import { systemClock, type Clock, type Timer } from '../../../core/files/file-poll.ts';
 import { words } from '../../../core/words.ts';
 import type { Root } from '../../../files/files.ts';
 import { declaredEvent, names, type ActivationEvent } from '../read/activation.ts';

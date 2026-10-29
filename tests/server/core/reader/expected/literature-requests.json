@@ -1,0 +1,148 @@
+{
+    "words": [
+        {
+            "id": "openalex",
+            "calls": [
+                {
+                    "url": "https://api.openalex.org/works?filter=title_and_abstract.search%3Atensor%2Cpublication_year%3A2020-2024%2Ctype%3Areview%2Cis_oa%3Atrue%2Ccited_by_count%3A%3E9%2Craw_author_name.search%3AO%27Brien++J.&per-page=25&page=3&select=id%2Cdoi%2Cdisplay_name%2Cpublication_year%2Cpublication_date%2Ctype%2Ccited_by_count%2Copen_access%2Cbest_oa_location%2Cprimary_location%2Cauthorships%2Cids%2Cabstract_inverted_index%2Clocations&mailto=reader%40example.org&api_key=oa-secret",
+                    "headers": {}
+                }
+            ]
+        },
+        {
+            "id": "semantic_scholar",
+            "calls": [
+                {
+                    "url": "https://api.semanticscholar.org/graph/v1/paper/search?query=tensor&offset=2&limit=25&fields=title%2Cabstract%2Cyear%2Cvenue%2Cauthors%2CexternalIds%2CcitationCount%2CisOpenAccess%2CopenAccessPdf%2CpublicationTypes%2CpublicationDate%2Cjournal%2Curl%2CcitationStyles&year=2020-2024&publicationTypes=Review&openAccessPdf=&minCitationCount=10&venue=Nature+%22Medicine%22",
+                    "headers": { "x-api-key": "s2-secret" }
+                }
+            ]
+        },
+        {
+            "id": "crossref",
+            "calls": [
+                {
+                    "url": "https://api.crossref.org/works?query.bibliographic=tensor&rows=25&offset=2&select=DOI%2Ctitle%2Cauthor%2Cpublished%2Ctype%2Cis-referenced-by-count%2Ccontainer-title%2Cabstract%2Clink%2Clicense&filter=from-pub-date%3A2020%2Cuntil-pub-date%3A2024&query.author=O%27Brien%2C+J.&query.container-title=Nature+%22Medicine%22&mailto=reader%40example.org",
+                    "headers": {}
+                }
+            ]
+        },
+        {
+            "id": "pubmed",
+            "calls": [
+                {
+                    "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=tensor+AND+2020%3A2024%5Bdp%5D+AND+review%5Bpt%5D+AND+free+full+text%5Bsb%5D+AND+%22Nature+Medicine%22%5Bta%5D+AND+O%27Brien%2C+J.%5Bau%5D&retmode=json&retmax=25&retstart=2&sort=relevance&tool=oculus&email=reader%40example.org&api_key=ncbi-secret",
+                    "headers": {}
+                },
+                {
+                    "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=11%2C12&retmode=xml&tool=oculus&email=reader%40example.org&api_key=ncbi-secret",
+                    "headers": {}
+                }
+            ]
+        },
+        {
+            "id": "europe_pmc",
+            "calls": [
+                {
+                    "url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=TITLE_ABS%3A%28tensor%29+AND+PUB_YEAR%3A%5B2020+TO+2024%5D+AND+PUB_TYPE%3A%22review%22+AND+OPEN_ACCESS%3Ay+AND+JOURNAL%3A%22Nature+Medicine%22+AND+AUTH%3A%22O%27Brien%2C+J.%22&format=json&resultType=core&pageSize=25&cursorMark=AoE",
+                    "headers": {}
+                }
+            ]
+        },
+        {
+            "id": "wos",
+            "calls": [
+                {
+                    "url": "https://api.clarivate.com/apis/wos-starter/v1/documents?q=TS%3D%28tensor%29+AND+PY%3D2020-2024+AND+DT%3D%28Review%29+AND+SO%3D%28Nature+Medicine%29+AND+AU%3D%28O%27Brien%2C+J.%29&db=WOS&limit=25&page=3&sortField=RS+D",
+                    "headers": { "x-apikey": "wos-secret" }
+                }
+            ]
+        },
+        {
+            "id": "scopus",
+            "calls": [
+                {
+                    "url": "https://api.elsevier.com/content/search/scopus?query=TITLE-ABS-KEY%28tensor%29+AND+PUBYEAR+%3E+2019+AND+PUBYEAR+%3C+2025+AND+DOCTYPE%28re%29+AND+OPENACCESS%281%29+AND+SRCTITLE%28Nature+Medicine%29+AND+AUTH%28O%27Brien%2C+J.%29&count=25&start=2&sort=relevancy",
+                    "headers": {
+                        "x-els-apikey": "scopus-secret",
+                        "accept": "application/json",
+                        "x-els-insttoken": "scopus-token"
+                    }
+                }
+            ]
+        }
+    ],
+    "doi": [
+        {
+            "id": "openalex",
+            "calls": [
+                {
+                    "url": "https://api.openalex.org/works?filter=doi%3A10.1000%2Fx1&per-page=25&page=1&select=id%2Cdoi%2Cdisplay_name%2Cpublication_year%2Cpublication_date%2Ctype%2Ccited_by_count%2Copen_access%2Cbest_oa_location%2Cprimary_location%2Cauthorships%2Cids%2Cabstract_inverted_index%2Clocations&mailto=reader%40example.org&api_key=oa-secret",
+                    "headers": {}
+                }
+            ]
+        },
+        {
+            "id": "semantic_scholar",
+            "calls": [
+                {
+                    "url": "https://api.semanticscholar.org/graph/v1/paper/DOI:10.1000/x1?fields=title%2Cabstract%2Cyear%2Cvenue%2Cauthors%2CexternalIds%2CcitationCount%2CisOpenAccess%2CopenAccessPdf%2CpublicationTypes%2CpublicationDate%2Cjournal%2Curl%2CcitationStyles",
+                    "headers": { "x-api-key": "s2-secret" }
+                }
+            ]
+        },
+        {
+            "id": "crossref",
+            "calls": [
+                {
+                    "url": "https://api.crossref.org/works/10.1000/x1?mailto=reader%40example.org",
+                    "headers": {}
+                }
+            ]
+        },
+        {
+            "id": "pubmed",
+            "calls": [
+                {
+                    "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=10.1000%2Fx1%5Bdoi%5D&retmode=json&retmax=25&retstart=0&sort=relevance&tool=oculus&email=reader%40example.org&api_key=ncbi-secret",
+                    "headers": {}
+                },
+                {
+                    "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=11%2C12&retmode=xml&tool=oculus&email=reader%40example.org&api_key=ncbi-secret",
+                    "headers": {}
+                }
+            ]
+        },
+        {
+            "id": "europe_pmc",
+            "calls": [
+                {
+                    "url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=DOI%3A%2210.1000%2Fx1%22&format=json&resultType=core&pageSize=25&cursorMark=*",
+                    "headers": {}
+                }
+            ]
+        },
+        {
+            "id": "wos",
+            "calls": [
+                {
+                    "url": "https://api.clarivate.com/apis/wos-starter/v1/documents?q=DO%3D%2810.1000%2Fx1%29&db=WOS&limit=25&page=1&sortField=RS+D",
+                    "headers": { "x-apikey": "wos-secret" }
+                }
+            ]
+        },
+        {
+            "id": "scopus",
+            "calls": [
+                {
+                    "url": "https://api.elsevier.com/content/search/scopus?query=DOI%2810.1000%2Fx1%29&count=25&start=0&sort=relevancy",
+                    "headers": {
+                        "x-els-apikey": "scopus-secret",
+                        "accept": "application/json",
+                        "x-els-insttoken": "scopus-token"
+                    }
+                }
+            ]
+        }
+    ]
+}

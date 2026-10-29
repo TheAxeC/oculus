@@ -20,7 +20,7 @@
 import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process';
 import { join } from 'node:path';
 import { createInterface, type Interface } from 'node:readline';
-import { systemClock, type Clock, type Timer } from '../../../core/file-poll.ts';
+import { systemClock, type Clock, type Timer } from '../../../core/files/file-poll.ts';
 import { inside } from '../../../core/paths.ts';
 import { ownFolder } from '../../lsp/servers.ts';
 

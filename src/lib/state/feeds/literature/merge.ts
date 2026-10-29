@@ -10,17 +10,26 @@
 // compared. A hit that carries none of the three is one hit with itself alone, and with a later
 // copy of itself from the same source.
 //
-// Which source's field a merged hit shows is a fixed order of sources, the published hits taken
-// before the preprints for the fields that describe the paper (title, venue, year, date, type), so
-// a published version's title is never replaced by its preprint's.
+// Which source's field a merged hit shows is the order of `literature.prefer` of the primary hub,
+// the published hits taken before the preprints for the fields that describe the paper (title,
+// venue, year, date, type), so a published version's title is never replaced by its preprint's: a
+// source the `fields` order does not name comes after those it names; the `abstract` order names
+// the sources an abstract is taken from first, and only the sources the `pdf` order names give an
+// open PDF. The paper's address is built from the `links` rows (its DOI's, else its arXiv id's,
+// else its PubMed id's), else it is the address a source gave.
 
-import {
-    LITERATURE_SOURCES,
-    type DocType,
-    type HitType,
-    type LiteratureHit,
-    type LiteratureSource
+import type {
+    DocType,
+    HitType,
+    LiteratureHit,
+    LiteratureSource
 } from '../../../data/model/index.ts';
+import type {
+    LinkRow,
+    LiteraturePrefer
+} from '../../../data/sources/config/settings/rows/grammar.ts';
+import { linkAddress } from '../../../data/sources/config/settings/rows/links.ts';
+import { linkRows, literaturePrefer } from '../../../data/sources/config/settings/rows/read.ts';
 import {
     arxivId,
     arxivOfDoi,
@@ -34,31 +43,23 @@ import type { LiteratureForm, LiteratureSort } from './form.ts';
 /** The constant of reciprocal rank fusion: a hit's score from one source is 1 / (60 + rank). */
 const FUSION = 60;
 
-/** The sources whose title, venue, year, date and type are taken first, in order. */
-const FIELD_ORDER: LiteratureSource[] = [
-    'crossref',
-    'pubmed',
-    'europe_pmc',
-    'scopus',
-    'wos',
-    'openalex',
-    'semantic_scholar',
-    'arxiv'
-];
+/**
+ * What a merge is ordered by: the sources in the order the server lists them, the orders of
+ * `literature.prefer`, and the `links` rows a paper's address is built from.
+ */
+export type MergeOrder = {
+    sources: readonly LiteratureSource[];
+    prefer: LiteraturePrefer;
+    links: readonly LinkRow[];
+};
 
-/** The sources whose abstract is taken first, in order. */
-const ABSTRACT_ORDER: LiteratureSource[] = [
-    'pubmed',
-    'europe_pmc',
-    'semantic_scholar',
-    'openalex',
-    'arxiv',
-    'crossref',
-    'scopus'
-];
-
-/** The sources whose open PDF is taken first, in order. */
-const PDF_ORDER: LiteratureSource[] = ['openalex', 'europe_pmc', 'semantic_scholar', 'arxiv'];
+/**
+ * The orders of `literature.prefer` and the `links` rows of the merged config the page holds, read
+ * by the readers the server reads them by.
+ */
+export function orderOf(config: Record<string, unknown>): Omit<MergeOrder, 'sources'> {
+    return { prefer: literaturePrefer(config), links: linkRows(config) };
+}
 
 /** One paper, with what every source that found it says. */
 export type MergedHit = {
@@ -74,15 +75,15 @@ export type MergedHit = {
     /** The highest count any source gives. */
     cites?: number;
     /** Each source's own count. */
-    citesBy: Partial<Record<LiteratureSource, number>>;
+    citesBy: Record<LiteratureSource, number>;
     oa: boolean;
     pdf?: string;
     url?: string;
     doi?: string;
     pmid?: string;
     arxiv?: string;
-    /** The Semantic Scholar paper id, when Semantic Scholar found it. */
-    s2?: string;
+    /** Each source's own id of the paper, by the source that found it. */
+    ids: Record<LiteratureSource, string>;
     /** The sources that found it, in the route's order. */
     sources: LiteratureSource[];
     /** The fused relevance: the higher, the earlier. */
@@ -146,7 +147,7 @@ function groupsOf(hits: LiteratureHit[]): LiteratureHit[][] {
 }
 
 /** The hits ordered by the sources' order, a hit of the same source keeping its place. */
-function inOrder(hits: LiteratureHit[], order: LiteratureSource[]): LiteratureHit[] {
+function inOrder(hits: LiteratureHit[], order: readonly LiteratureSource[]): LiteratureHit[] {
     const place = (hit: LiteratureHit): number => {
         const at = order.indexOf(hit.source);
         return at < 0 ? order.length : at;
@@ -171,11 +172,23 @@ function filled(text: string | undefined): string | undefined {
     return text === undefined || text.trim() === '' ? undefined : text;
 }
 
+/** The paper's address: its DOI's link, else its arXiv id's, else its PubMed id's. */
+function linkOf(
+    links: readonly LinkRow[],
+    ids: { doi?: string; arxiv?: string; pmid?: string }
+): string | undefined {
+    if (ids.doi !== undefined) return linkAddress(links, 'doi', ids.doi);
+    if (ids.arxiv !== undefined) return linkAddress(links, 'arxiv', ids.arxiv);
+    if (ids.pmid !== undefined) return linkAddress(links, 'pubmed', ids.pmid);
+    return undefined;
+}
+
 /** The hits of one group as one paper. */
-function mergeGroup(group: LiteratureHit[]): MergedHit {
+function mergeGroup(group: LiteratureHit[], order: MergeOrder): MergedHit {
+    const { prefer } = order;
     const published = group.filter((hit) => hit.type !== 'preprint');
-    const describing = inOrder(published.length > 0 ? published : group, FIELD_ORDER);
-    const all = inOrder(group, FIELD_ORDER);
+    const describing = inOrder(published.length > 0 ? published : group, prefer.fields);
+    const all = inOrder(group, prefer.fields);
     const authors = describing.reduce<string[]>(
         (longest, hit) => (hit.authors.length > longest.length ? hit.authors : longest),
         []
@@ -184,19 +197,22 @@ function mergeGroup(group: LiteratureHit[]): MergedHit {
     const pmid = firstOf(all, (hit) => hit.pmid);
     const arxiv = firstOf(all, (hit) => hit.arxiv) ?? firstOf(all, (hit) => arxivOfDoi(hit.doi));
     const best = new Map<LiteratureSource, number>();
-    const citesBy: Partial<Record<LiteratureSource, number>> = {};
+    const citesBy: Record<LiteratureSource, number> = {};
+    const ids: Record<LiteratureSource, string> = {};
     for (const hit of group) {
         best.set(hit.source, Math.min(best.get(hit.source) ?? Infinity, hit.rank));
+        ids[hit.source] ??= hit.id;
         if (hit.cites !== undefined) {
             citesBy[hit.source] = Math.max(citesBy[hit.source] ?? 0, hit.cites);
         }
     }
     const counts = Object.values(citesBy);
     const pdf = firstOf(
-        inOrder(group, PDF_ORDER).filter((hit) => PDF_ORDER.includes(hit.source)),
+        inOrder(group, prefer.pdf).filter((hit) => prefer.pdf.includes(hit.source)),
         (hit) => hit.pdf
     );
-    const sources = LITERATURE_SOURCES.filter((source) => best.has(source));
+    const listed = order.sources.filter((source) => best.has(source));
+    const sources = [...listed, ...[...best.keys()].filter((one) => !listed.includes(one))];
     const merged: MergedHit = {
         key:
             doi !== undefined
@@ -212,6 +228,7 @@ function mergeGroup(group: LiteratureHit[]): MergedHit {
             firstOf(describing, (hit) => (hit.type === 'other' ? undefined : hit.type)) ??
             describing[0].type,
         citesBy,
+        ids,
         oa: group.some((hit) => hit.oa === true || hit.pdf !== undefined),
         sources,
         relevance: [...best.values()].reduce((sum, rank) => sum + 1 / (FUSION + rank), 0)
@@ -219,16 +236,8 @@ function mergeGroup(group: LiteratureHit[]): MergedHit {
     const venue = firstOf(describing, (hit) => filled(hit.venue));
     const year = firstOf(describing, (hit) => hit.year);
     const date = firstOf(describing, (hit) => hit.date);
-    const abstract = firstOf(inOrder(group, ABSTRACT_ORDER), (hit) => filled(hit.abstract));
-    const url =
-        doi !== undefined
-            ? `https://doi.org/${doi}`
-            : arxiv !== undefined
-              ? `https://arxiv.org/abs/${arxiv}`
-              : pmid !== undefined
-                ? `https://pubmed.ncbi.nlm.nih.gov/${pmid}/`
-                : firstOf(all, (hit) => hit.url);
-    const s2 = group.find((hit) => hit.source === 'semantic_scholar')?.id;
+    const abstract = firstOf(inOrder(group, prefer.abstract), (hit) => filled(hit.abstract));
+    const url = linkOf(order.links, { doi, arxiv, pmid }) ?? firstOf(all, (hit) => hit.url);
     if (venue !== undefined) merged.venue = venue;
     if (year !== undefined) merged.year = year;
     if (date !== undefined) merged.date = date;
@@ -239,7 +248,6 @@ function mergeGroup(group: LiteratureHit[]): MergedHit {
     if (doi !== undefined) merged.doi = doi;
     if (pmid !== undefined) merged.pmid = pmid;
     if (arxiv !== undefined) merged.arxiv = arxiv;
-    if (s2 !== undefined) merged.s2 = s2;
     return merged;
 }
 
@@ -249,9 +257,9 @@ function dateOf(hit: MergedHit): string | undefined {
 }
 
 /** The hits of every source as one list of papers, the most relevant first. */
-export function mergeHits(hits: LiteratureHit[]): MergedHit[] {
+export function mergeHits(hits: LiteratureHit[], order: MergeOrder): MergedHit[] {
     return groupsOf(hits.map(tidy))
-        .map(mergeGroup)
+        .map((group) => mergeGroup(group, order))
         .sort((left, right) => right.relevance - left.relevance);
 }
 

@@ -17,8 +17,9 @@ import {
 import type { LintSettings } from '../../../../../src/lib/data/sources/config.ts';
 import { fsWrites } from '../../../../../src/lib/server/core/json.ts';
 import type { Root } from '../../../../../src/lib/server/files/files.ts';
-import type { Clock } from '../../../../../src/lib/server/core/file-poll.ts';
+import type { Clock } from '../../../../../src/lib/server/core/files/file-poll.ts';
 import { scratchDir } from '../../../../fixtures/scratch.ts';
+import { fixtureRows } from '../../../core/reader/rows.ts';
 import { TEXT } from '../../../text.ts';
 
 export const TOKEN = 'lint-test-token';
@@ -144,6 +145,7 @@ export function route(
         eslint,
         comments,
         catalog: () => TEXT,
+        links: () => fixtureRows().links,
         env: extra.env ?? process.env,
         ...(extra.limitMs === undefined ? {} : { limitMs: extra.limitMs })
     };

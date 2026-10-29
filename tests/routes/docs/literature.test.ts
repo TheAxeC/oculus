@@ -1,35 +1,46 @@
-// Layer 2, route tests. What the /api/literature route answers and what it never says. The route is
-// a few lines handing the request to lib/server/content/literature/handler.ts with the token the
-// server context minted, which is what this calls.
+// Layer 2, route tests. What the /api/literature route answers and what it never says (G3). The
+// route is a few lines handing the request to lib/server/content/literature/handler.ts with the
+// token the server context minted, the primary hub's `literature.sources` and `links` rows and the
+// machine's `downloads` rows, which is what this calls with the fixture's rows
+// (tests/server/core/reader/rows.yml).
 //
 // Every case hands the handler a fetcher the test owns, so no source is asked and no key is sent
-// anywhere. The keys here are made up and each one has a shape that is easy to find again in a
+// anywhere. The secrets here are made up and each one has a shape that is easy to find again in a
 // captured line.
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { mintToken } from '../../../src/lib/server/core/auth.ts';
-import { callFor, SourceStop } from '../../../src/lib/server/content/literature/ask.ts';
+import { ReaderStop, send } from '../../../src/lib/server/core/reader/call.ts';
+import type { Account } from '../../../src/lib/server/core/reader/request.ts';
 import { LiteratureDesk } from '../../../src/lib/server/content/literature/desk.ts';
 import {
     handleLiterature,
     type LiteratureOptions
 } from '../../../src/lib/server/content/literature/handler.ts';
+import { fixtureRows } from '../../server/core/reader/rows.ts';
 
 const TOKEN = mintToken();
 const HOST = 'http://127.0.0.1:8791';
+const ROWS = fixtureRows();
 
-/** Made-up keys, one per field of local.yml's `literature:` map that holds a secret. */
-const KEYS = {
-    wosKey: 'WOSKEY-aaaa-1111',
-    scopusKey: 'SCOPUSKEY-bbbb-2222',
-    scopusInsttoken: 'INSTTOKEN-cccc-3333',
-    openalexKey: 'OAKEY-dddd-4444',
-    semanticScholarKey: 'S2KEY-eeee-5555',
-    ncbiKey: 'NCBIKEY-ffff-6666',
-    mailto: 'someone@example.org'
-};
+/** Made-up `downloads` rows, one per `auth` entry of the fixture's literature rows. */
+const DOWNLOADS: Account[] = [
+    { service: 'wos', secret: 'WOSKEY-aaaa-1111' },
+    { service: 'scopus', secret: 'SCOPUSKEY-bbbb-2222' },
+    { service: 'scopus-insttoken', secret: 'INSTTOKEN-cccc-3333' },
+    { service: 'openalex', secret: 'OAKEY-dddd-4444' },
+    { service: 'semantic_scholar', secret: 'S2KEY-eeee-5555' },
+    { service: 'ncbi', secret: 'NCBIKEY-ffff-6666' }
+];
 
-const SECRETS = Object.values(KEYS);
+const MAILTO = 'someone@example.org';
+
+const SECRETS = [...DOWNLOADS.map((one) => one.secret), MAILTO];
+
+/** A made-up secret by the `downloads` row that holds it. */
+function secretOf(service: string): string {
+    return DOWNLOADS.find((one) => one.service === service)?.secret ?? '';
+}
 
 /** What a stubbed source does with a request: the status, the body and the time it takes. */
 type Stub = { status?: number; body?: string; headers?: Record<string, string>; hang?: boolean };
@@ -60,10 +71,14 @@ function options(stub: Stub = {}, over: Partial<LiteratureOptions> = {}) {
     const { fetcher, calls } = fetcherFor(stub);
     const given: LiteratureOptions = {
         token: TOKEN,
-        keys: KEYS,
+        rows: ROWS.literature,
+        links: ROWS.links,
+        downloads: DOWNLOADS,
+        mailto: MAILTO,
         settings: { timeoutS: 5, perSource: 25, cacheMin: 30 },
         desk: new LiteratureDesk(),
         fetcher,
+        agent: 'oculus/test',
         ...over
     };
     return { given, calls };
@@ -99,8 +114,9 @@ const OPENALEX_OK = JSON.stringify({
 });
 
 /**
- * What `?sources` answers: the eight sources in the route's order, and for the two keyed ones the
- * name of the key they need. With the keys held they are available, and with none they are not.
+ * What `?sources` answers: the rows in the order of `literature.sources`, and for the two whose
+ * `auth` entry is required the `downloads` row they need. With the rows held they are available,
+ * and with none they are not.
  */
 function namesKeys(held: boolean): (body: string) => void {
     return (body) => {
@@ -119,9 +135,12 @@ function namesKeys(held: boolean): (body: string) => void {
         ]);
         expect(sources.find((one) => one.id === 'wos')).toStrictEqual({
             id: 'wos',
+            name: 'Web of Science',
             keyed: true,
             available: held,
-            key: 'wos_key'
+            key: 'wos',
+            help: 'The `secret` is a Web of Science Starter API key, made on developer.clarivate.com.',
+            bibtex: null
         });
         expect(sources.filter((one) => !one.available).map((one) => one.id)).toStrictEqual(
             held ? [] : ['wos', 'scopus']
@@ -150,14 +169,14 @@ describe('the literature route', () => {
 
     it('never answers a key, in a hit, a failure line or the source list', async () => {
         const echo = JSON.stringify({
-            error: `invalid key ${KEYS.scopusKey} ${KEYS.wosKey}`,
-            code: KEYS.scopusKey
+            error: `invalid key ${secretOf('scopus')} ${secretOf('wos')}`,
+            code: secretOf('scopus')
         });
         const rows: {
             name: string;
             form: string;
             stub: Stub;
-            keys?: typeof KEYS | Record<string, never>;
+            downloads?: Account[];
             check?: (body: string) => void;
         }[] = [
             { name: 'ok', form: 'source=openalex&q=tensor', stub: { body: OPENALEX_OK } },
@@ -180,15 +199,15 @@ describe('the literature route', () => {
             {
                 name: 'an answer that does not read',
                 form: 'source=openalex&q=tensor',
-                stub: { body: `<html>${KEYS.openalexKey}</html>` }
+                stub: { body: `<html>${secretOf('openalex')}</html>` }
             },
             { name: '500', form: 'source=crossref&q=tensor', stub: { status: 500, body: echo } },
             { name: 'the source list', form: 'sources', stub: {}, check: namesKeys(true) },
             {
-                name: 'the source list with no key held',
+                name: 'the source list with no row held',
                 form: 'sources',
                 stub: {},
-                keys: {},
+                downloads: [],
                 check: namesKeys(false)
             }
         ];
@@ -196,7 +215,7 @@ describe('the literature route', () => {
         for (const row of rows) {
             const lines = captureConsole();
             const { given } = options(row.stub, {
-                keys: row.keys ?? KEYS,
+                downloads: row.downloads ?? DOWNLOADS,
                 settings: {
                     timeoutS: row.stub.hang === true ? 0.05 : 5,
                     perSource: 25,
@@ -214,21 +233,30 @@ describe('the literature route', () => {
             vi.restoreAllMocks();
         }
 
-        // The messages an adapter's request throws: the source, the status and a plain code.
+        // The messages a request of a row stops with: the row's name, the state and the status.
+        const scopus = ROWS.literature.find((one) => one.key === 'scopus');
+        if (scopus === undefined) throw new Error('the fixture has no scopus row');
         const thrown: string[] = [];
         for (const status of [401, 403, 429, 500]) {
             const { fetcher } = fetcherFor({ status, body: echo });
-            const call = callFor('scopus', fetcher, 1000, new AbortController().signal, SECRETS);
-            const error = await call(`https://api.example.org/x?api_key=${KEYS.openalexKey}`, {
-                'X-ELS-APIKey': KEYS.scopusKey
-            }).catch((caught: unknown) => caught);
-            expect(error).toBeInstanceOf(SourceStop);
+            const sender = { fetcher, agent: 'oculus/test', timeoutMs: 1000, maxBytes: 1 << 20 };
+            const request = {
+                url: `https://api.example.org/x?api_key=${secretOf('openalex')}`,
+                headers: { 'X-ELS-APIKey': secretOf('scopus') }
+            };
+            const error = await send(sender, request, scopus).catch((caught: unknown) => caught);
+            expect(error).toBeInstanceOf(ReaderStop);
             thrown.push((error as Error).message);
         }
         for (const message of thrown) {
             for (const secret of SECRETS) expect(message).not.toContain(secret);
         }
-        expect(thrown).toStrictEqual(['scopus: 401', 'scopus: 403', 'scopus: 429', 'scopus: 500']);
+        expect(thrown).toStrictEqual([
+            'Scopus: refused 401',
+            'Scopus: refused 403',
+            'Scopus: limited 429',
+            'Scopus: status 500'
+        ]);
         expect(seen.length).toBeGreaterThan(0);
     });
 });

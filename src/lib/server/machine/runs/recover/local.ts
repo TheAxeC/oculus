@@ -1,7 +1,8 @@
 // Layer 2, server. Recover on this Mac. Its files are under `~/.oculus/recover/<hub>/`, one set
 // per dataset key: the listing (`<key>.list.json`), the check rows (`<key>.checks.json`), the log
 // (`<key>.log`), and while a fetch runs its script (`<key>.fetch.sh`), its pid file
-// (`<key>.pid`) and a curl config file per service (`<key>.<service>.curl`, mode 600).
+// (`<key>.pid`) and a curl config file per `downloads` row its files sign in with
+// (`<key>.<service>.curl`, mode 600).
 //
 // A fetch is the script of plan.ts run by `sh` as a process group of its own, detached, so it
 // outlives the server. Its pid file records the pid, the process's start time and its command
@@ -14,6 +15,7 @@ import { spawn, spawnSync } from 'node:child_process';
 import {
     existsSync,
     mkdirSync,
+    readdirSync,
     readFileSync,
     rmSync,
     statfsSync,
@@ -22,10 +24,10 @@ import {
 } from 'node:fs';
 import { dirname, join } from 'node:path';
 import type { RecoverRun } from '../../../../data/model/index.ts';
-import type { DownloadAccount, DownloadService } from '../../../../data/sources/config.ts';
+import type { DownloadAccount } from '../../../../data/sources/config.ts';
 import { logLine } from './live/log.ts';
 import {
-    curlConfig,
+    credentialFiles,
     dataPart,
     fetchScript,
     validName,
@@ -153,12 +155,9 @@ export function recoverFiles(home: string, hub: string, key: string) {
         log: join(dir, `${key}.log`),
         pid: join(dir, `${key}.pid`),
         script: join(dir, `${key}.fetch.sh`),
-        config: (service: DownloadService) => join(dir, `${key}.${service}.curl`)
+        config: (service: string) => join(dir, `${key}.${service}.curl`)
     };
 }
-
-/** The services a credential file may be written for. */
-const SERVICES: DownloadService[] = ['physionet', 'kaggle', 'synapse'];
 
 /** The folder of Recover's files for a hub, made with mode 700 when absent. */
 function ownDir(home: string, hub: string): string {
@@ -233,10 +232,22 @@ export function localState(place: LocalPlace, deps: LocalDeps): RunState | null 
 /** Why a run did not start. */
 export type StartRefusal = 'running' | 'credential' | 'nothing' | 'start';
 
-/** Remove the credential files and the script an earlier fetch left. */
+/** Remove the credential files (`<key>.<service>.curl`) and the script an earlier fetch left. */
 function clearLeftovers(home: string, hub: string, key: string): void {
     const files = recoverFiles(home, hub, key);
-    for (const service of SERVICES) rmSync(files.config(service), { force: true });
+    let names: string[];
+    try {
+        names = readdirSync(files.dir);
+    } catch {
+        names = [];
+    }
+    const head = `${key}.`;
+    for (const name of names) {
+        const service = name.slice(head.length, -'.curl'.length);
+        if (name.startsWith(head) && name.endsWith('.curl') && validName(service)) {
+            rmSync(files.config(service), { force: true });
+        }
+    }
     rmSync(files.script, { force: true });
 }
 
@@ -256,14 +267,10 @@ export function startLocalFetch(
     ownDir(deps.home, place.hub);
     clearLeftovers(deps.home, place.hub, place.key);
     const files = recoverFiles(deps.home, place.hub, place.key);
-    const configs: Partial<Record<DownloadService, string>> = {};
-    for (const service of new Set(items.flatMap(({ row }) => row.service ?? []))) {
-        const account = downloads.find((row) => row.service === service);
-        const text = account === undefined ? null : curlConfig(account);
-        if (text === null) {
-            clearLeftovers(deps.home, place.hub, place.key);
-            return 'credential';
-        }
+    const credentials = credentialFiles(items, downloads);
+    if (credentials === null) return 'credential';
+    const configs: Record<string, string> = {};
+    for (const { service, text } of credentials) {
         writeFileSync(files.config(service), text, { mode: 0o600, flag: 'wx' });
         configs[service] = files.config(service);
     }

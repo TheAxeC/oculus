@@ -39,6 +39,8 @@ import { addressBase, citationBase, freeKey } from './literature-key.ts';
 import type { FieldValue } from '../yaml/yaml-values.ts';
 import type { LiteratureSaveWrite } from '../writes/bodies.ts';
 import type { PortfolioConfig } from '../../../data/model/index.ts';
+import type { LinkRow } from '../../../data/sources/config/settings/rows/grammar.ts';
+import { linkAddress } from '../../../data/sources/config/settings/rows/links.ts';
 import type { WriteOutcome } from '../writes.ts';
 
 /** The field a saved paper's citation key, made by literature-key.ts, is written under. */
@@ -128,15 +130,17 @@ function holds(entry: Record<string, unknown>, doi: string, title: string, url: 
 /**
  * Write one paper to the Literature file: the fields it carries, `source` where it came from and
  * `added` today, under the key literature-key.ts makes from the file just read. `found` is false
- * when the hub has no Literature file. The record carries the text the append added, which the undo
- * takes out again.
+ * when the hub has no Literature file. A paper with a DOI and no address gets the address the `doi`
+ * row of `links` (the primary hub's) builds, and none when there is no such row. The record carries
+ * the text the append added, which the undo takes out again.
  */
 export function saveLiterature(
     hub: string,
     config: PortfolioConfig,
     enginePath: string | undefined,
     source: LiteratureSource,
-    paper: Record<string, unknown>
+    paper: Record<string, unknown>,
+    links: readonly LinkRow[]
 ): WriteOutcome {
     const file = literatureFile(hub, config, enginePath);
     if (file === null) return { found: false, changed: [], refused: [] };
@@ -160,7 +164,7 @@ export function saveLiterature(
     const title = textOf(paper.title);
     const authors = authorsOf(paper.authors);
     const doi = normalDoi(textOf(paper.doi)) ?? '';
-    const url = textOf(paper.url) || (doi === '' ? '' : `https://doi.org/${doi}`);
+    const url = textOf(paper.url) || (linkAddress(links, 'doi', doi) ?? '');
     if (title === '' && doi === '' && url === '') {
         return refusal('title', words(config.text, 'server.literature.paper_needs_address'));
     }

@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html xmlns:v-on="https://vuejs.org/v2/api/#v-on">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta name="generator" content="WURLIB6">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="-1">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, follow">
+<meta name="description" content="The Journal Browser shows you the most important scientific journals, with their impact metrics, Open Access possibilities and APC discounts. A common initiative of the Dutch University Libraries">
+<title>NeuroImage</title>
+<link rel="icon" type="image/x-icon" href="/images/oa.ico">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css" integrity="sha384-B0vP5xmATw1+K9KRQjQERJvTumQW0nPEzvF6L/Z6nronJ3oUOFUFpCjEUQouq2+l" crossorigin="anonymous">
+<link rel="stylesheet" href="/css/wurlib/JQUI/jquery-ui.min.css">
+<link rel="stylesheet" href="/css/wurlib/JQUI/jquery-ui.theme.min.css">
+<link rel="stylesheet" type="text/css" href="/wurlib-6/css/wurlib6.min.css?ts=1782822175">
+<script src="https://use.fontawesome.com/30a06167df.js"></script><link rel="stylesheet" type="text/css" href="/css/journal-ut.css?ts=1718885133">
+<script>document.documentElement.className += " js";</script><script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script><script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js" integrity="sha256-lSjKY0/srUM9BE3dPm+c4fBo1dky2v27Gdjm2uoZaL0=" crossorigin="anonymous"></script><script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-Piv4xVNRyMGpqkS2by6br4gNJ7DXjqk09RmUpJ8jgGtD7zP9yug3goQfGII0yAns" crossorigin="anonymous"></script><script type="text/javascript" src="/wurlib-6/js/wurlib_core.min.js?ts=1782822177"></script><script type="text/javascript" src="/wurlib-6/js/wurlib_comm_plugins.min.js?ts=1782822177"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/vue/2.5.13/vue.min.js"></script><script type="text/javascript"
+                            src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.18.0/axios.min.js?ts="></script><script type="text/javascript"
+                            src="/javascript/googlecoverlookup.js?ts=1511348450"></script><script type="text/javascript"
+                            src="/javascript/jbrowser.js?ts=1776092468"></script><script type="text/javascript">var wqhost = 'https://library.wur.nl';var wqpath = '/WebQuery';var wqservice = 'utbrowser';var wqformat = '';var wquser = 'guest';var recordName = 'journal';var language = 'eng';var wlTitle = 'Journal Browser';</script><!--WUR_LIBRARY_DNT cookie=; HTTP DNT header=; result: tracking-cookies-allowed=yes--><script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+                        new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+                        j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+                        'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+                        })(window,document,'script','dataLayer','GTM-W2GN99S');
+                    </script>
+</head>
+<body>
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-W2GN99S" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+<div id="wl-lo-page-c13">
+<header id="header" class="mobile-optimized"><div class="container">
+<div class="container-nav-mobile d-flex d-lg-none">
+<div class="menu-icon-container p-1 collapsed" id="mobile-menu-icon">
+<button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar"><span><span class="sr-only">Toggle navigation</span><span class="icon-bar top-bar"></span><span class="icon-bar middle-bar"></span><span class="icon-bar bottom-bar"></span></span></button><span class="menu-text">menu</span>
+</div>
+<div class="header_topbar_bg d-flex align-items-center"><div class="container"><nav class="navbar navbar-toggleable-md navbar-inverse navbar-static-top bg-inverse ml-0 mr-0"><a class="navbar-brand active" href="https://www.openaccess.nl/"><img src="/images/ut-logo.png"></a><h1 class="apptitle">Journal Browser</h1></nav></div></div>
+</div>
+<div class="container-nav">
+<div class="header_topbar_bg d-flex align-items-center"><div class="container"><nav class="navbar navbar-toggleable-md navbar-inverse navbar-static-top bg-inverse ml-0 mr-0"><a class="navbar-brand active" href="https://www.openaccess.nl/"><img src="/images/ut-logo.png"></a><h1 class="apptitle">Journal Browser</h1></nav></div></div>
+<div class="header_bar_bg"><div class="container"><nav class="navbar navbar-toggleable-md navbar-inverse navbar-topbar bg-inverse ml-0 mr-0"><div id="header_topbar" class="d-flex flex-row flex-wrap align-items-end">
+<div id="pagetitle" class="mb-2"><h4>University of Twente. | Library, ICT Services &amp; Archive (LISA)</h4></div>
+<div id="topnav" class="ml-auto d-flex flex-row flex-wrap align-items-end ">
+<div class="ml-auto mr-3 mb-1 text-right"><span id="contact"><b><a class="btn btn-secondary btn-sm ml-2" id="contactbutton" href="mailto:open-access@utwente.nl?SUBJECT=Open%20access%20journal%20browser">Contact: Team Open Access UT</a></b></span></div>
+<div class="ml-auto mr-3 mb-1"></div>
+</div>
+</div></nav></div></div>
+</div>
+</div></header><main id="main"><div id="utbrowser" data-layout="wl-lo-page-c13"><div class="container-lg"><div class="row">
+<div class="col-lg-3">
+<div id="main_menu"><div class="list-group panel">
+<a href="/WebQuery/utbrowser" class="list-group-item list-group-item-success active">Search</a><span id="yourmarkedlist5" class="list-group-item list-group-item-success">Your marked list</span>
+</div></div>
+<div class="d-lg-block d-none"><div id="facet_list"><ul class="field_list">
+<li class="field">
+<h3 xmlns:str="http://exslt.org/strings" class="facet-header">Open Access costs <span class="help-facets"><button class="btn btn-secondary btn-sm fa fa-question" data-toggle="modal" data-target="#dialog_discount_help" title="About the costs for Open Access publishing"></button></span>
+</h3>
+<div xmlns:str="http://exslt.org/strings" class="modal fade" id="dialog_discount_help" style="display: none;" aria-hidden="true"><div class="modal-dialog modal-xl" role="popup"><div class="modal-content">
+<div class="modal-header">
+<h5 class="modal-title"> About the costs for Open Access publishing</h5>
+<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">X</span></button>
+</div>
+<div class="modal-body"><div class="scroll-section">
+<p>Some journals do not charge for Open Access publishing, while other journals do. To support researchers in publishing their research Open Access, deals have been negotiated with various publishers. Depending on the deal, the corresponding author may get a certain discount on the Article Processing Charges (APCs), which are the costs of publishing an article Open Access.</p>
+<p>To make use of an Open Access deal when publishing an article, the <b>corresponding author</b> of the article must be affiliated with a <b>Dutch university</b>, that makes use of the deal, at the moment of acceptance of the article. Moreover, the author must actively arrange the use of a deal; discounts are not applied automatically. See the journal detail page or contact your library for more information.</p>
+</div></div>
+<div class="modal-footer"><button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button></div>
+</div></div></div>
+<div xmlns:str="http://exslt.org/strings" class="modal fade" id="dialog_businessmodel_help" style="display: none;" aria-hidden="true"><div class="modal-dialog modal-xl" role="popup"><div class="modal-content">
+<div class="modal-header">
+<h5 class="modal-title"> About Open Access journals</h5>
+<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">X</span></button>
+</div>
+<div class="modal-body"><div class="scroll-section">
+<p>
+                    For some journals Open Access publishing is supported and all or part of their articles are freely available to readers.
+                    For other journals there is no information whether they make all or part of their articles freely available to readers and
+                    the Open Access support of these journals is set to unknown.
+                </p>
+<p>
+                    In case the complete contents of a journal is available to readers at no costs,
+                    it is also known as a full Open Access (Gold) journal. If only part of the articles are freely available to readers,
+                    the journal is known as a hybrid Open Access journal. For hybrid journals,
+                    authors can choose Open Access publishing once their article has been accepted for publication.
+                </p>
+</div></div>
+<div class="modal-footer"><button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button></div>
+</div></div></div>
+<div xmlns:str="http://exslt.org/strings" class="modal fade" id="dialog_fullopen_help" style="display: none;" aria-hidden="true"><div class="modal-dialog modal-xl" role="popup"><div class="modal-content">
+<div class="modal-header">
+<h5 class="modal-title"> About Full Open Access</h5>
+<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">X</span></button>
+</div>
+<div class="modal-body"><div class="scroll-section">
+<p>
+                    For some journals Open Access publishing is supported and all or part of their articles are freely available to readers.
+                    For other journals there is no information whether they make all or part of their articles freely available to readers and
+                    the Open Access support of these journals is set to unknown.
+                </p>
+<p>
+                    In case the complete contents of a journal is available to readers at no costs,
+                    it is also known as a full Open Access (Gold) journal. If only part of the articles are freely available to readers,
+                    the journal is known as a hybrid Open Access journal. For hybrid journals,
+                    authors can choose Open Access publishing once their article has been accepted for publication.
+                </p>
+</div></div>
+<div class="modal-footer"><button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button></div>
+</div></div></div>
+<div xmlns:str="http://exslt.org/strings" class="modal fade" id="dialog_kwartiel_help" style="display: none;" aria-hidden="true"><div class="modal-dialog modal-xl" role="popup"><div class="modal-content">
+<div class="modal-header">
+<h5 class="modal-title"> About Quartles</h5>
+<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">X</span></button>
+</div>
+<div class="modal-body"><div class="scroll-section">
+<p>Based upon Impact Factors, the Journal Citation Reports provide rankings of journals in subject categories. A journal is placed in one (or more) of relevant subject categories. </p>
+<p>Each journal with an Impact Factor can be placed in a quartile Q1 to Q4 according to the position it has in the Impact Factor distribution of the subject category it belongs to. Q1 represents the top 25%, Q2 the top 50% to top 25%, Q3 the top 75% to top 50% and Q4 the bottom 25% of the Impact Factor distribution for journals per subject category. In case a journal has multiple quartile scores (because it belongs to multiple subject categories), all scores (including the subject categories for which they have been determined) are presented.</p>
+</div></div>
+<div class="modal-footer"><button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button></div>
+</div></div></div>
+<ul class="facet_item" id="facet_journal_apc">
+<li value="1" class="active">No costs for UT authors<span class="facet-count"> (1)</span>
+</li>
+<div class="more">
+<span class="toggle_this wl_icon wl_plus inline"> more...</span><ul class="facet_item no_display">
+<li value="1" class="active">No costs for EUR/ErasmusMC authors<span class="facet-count"> (1)</span>
+</li>
+<li value="1" class="active">No costs for KNAW authors<span class="facet-count"> (1)</span>
+</li>
+<li value="1" class="active">No costs for NWO-I authors<span class="facet-count"> (1)</span>
+</li>
+<li value="1" class="active">No costs for OU authors<span class="facet-count"> (1)</span>
+</li>
+<li value="1" class="active">No costs for RU/RadboudUMC authors<span class="facet-count"> (1)</span>
+</li>
+<li value="1" class="active">No costs for RUG/UMCG authors<span class="facet-count"> (1)</span>
+</li>
+<li value="1" class="active">No costs for TU/e authors<span class="facet-count"> (1)</span>
+</li>
+<li value="1" class="active">No costs for TUD authors<span class="facet-count"> (1)</span>
+</li>
+<li value="1" class="active">No costs for TiU authors<span class="facet-count"> (1)</span>
+</li>
+<li value="1" class="active">No costs for UL/LUMC  authors<span class="facet-count"> (1)</span>
+</li>
+<li value="1" class="active">No costs for UM/MUMC+ authors<span class="facet-count"> (1)</span>
+</li>
+<li value="1" class="active">No costs for UU/UMC Utrecht authors<span class="facet-count"> (1)</span>
+</li>
+<li value="1" class="active">No costs for UvA/AMC authors<span class="facet-count"> (1)</span>
+</li>
+<li value="1" class="active">No costs for VU/VUMC authors<span class="facet-count"> (1)</span>
+</li>
+<li value="1" class="active">No costs for WUR authors<span class="facet-count"> (1)</span>
+</li>
+</ul>
+</div>
+</ul>
+</li>
+<li class="field">
+<h3 xmlns:str="http://exslt.org/strings" class="facet-header">Open Access journals <span class="help-facets"><button class="btn btn-secondary btn-sm fa fa-question" data-toggle="modal" data-target="#dialog_businessmodel_help" title="About Open Access journals"></button></span>
+</h3>
+<div xmlns:str="http://exslt.org/strings" class="modal fade" id="dialog_discount_help" style="display: none;" aria-hidden="true"><div class="modal-dialog modal-xl" role="popup"><div class="modal-content">
+<div class="modal-header">
+<h5 class="modal-title"> About the costs for Open Access publishing</h5>
+<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">X</span></button>
+</div>
+<div class="modal-body"><div class="scroll-section">
+<p>Some journals do not charge for Open Access publishing, while other journals do. To support researchers in publishing their research Open Access, deals have been negotiated with various publishers. Depending on the deal, the corresponding author may get a certain discount on the Article Processing Charges (APCs), which are the costs of publishing an article Open Access.</p>
+<p>To make use of an Open Access deal when publishing an article, the <b>corresponding author</b> of the article must be affiliated with a <b>Dutch university</b>, that makes use of the deal, at the moment of acceptance of the article. Moreover, the author must actively arrange the use of a deal; discounts are not applied automatically. See the journal detail page or contact your library for more information.</p>
+</div></div>
+<div class="modal-footer"><button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button></div>
+</div></div></div>
+<div xmlns:str="http://exslt.org/strings" class="modal fade" id="dialog_businessmodel_help" style="display: none;" aria-hidden="true"><div class="modal-dialog modal-xl" role="popup"><div class="modal-content">
+<div class="modal-header">
+<h5 class="modal-title"> About Open Access journals</h5>
+<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">X</span></button>
+</div>
+<div class="modal-body"><div class="scroll-section">
+<p>
+                    For some journals Open Access publishing is supported and all or part of their articles are freely available to readers.
+                    For other journals there is no information whether they make all or part of their articles freely available to readers and
+                    the Open Access support of these journals is set to unknown.
+                </p>
+<p>
+                    In case the complete contents of a journal is available to readers at no costs,
+                    it is also known as a full Open Access (Gold) journal. If only part of the articles are freely available to readers,
+                    the journal is known as a hybrid Open Access journal. For hybrid journals,
+                    authors can choose Open Access publishing once their article has been accepted for publication.
+                </p>
+</div></div>
+<div class="modal-footer"><button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button></div>
+</div></div></div>
+<div xmlns:str="http://exslt.org/strings" class="modal fade" id="dialog_fullopen_help" style="display: none;" aria-hidden="true"><div class="modal-dialog modal-xl" role="popup"><div class="modal-content">
+<div class="modal-header">
+<h5 class="modal-title"> About Full Open Access</h5>
+<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">X</span></button>
+</div>
+<div class="modal-body"><div class="scroll-section">
+<p>
+                    For some journals Open Access publishing is supported and all or part of their articles are freely available to readers.
+                    For other journals there is no information whether they make all or part of their articles freely available to readers and
+                    the Open Access support of these journals is set to unknown.
+                </p>
+<p>
+                    In case the complete contents of a journal is available to readers at no costs,
+                    it is also known as a full Open Access (Gold) journal. If only part of the articles are freely available to readers,
+                    the journal is known as a hybrid Open Access journal. For hybrid journals,
+                    authors can choose Open Access publishing once their article has been accepted for publication.
+                </p>
+</div></div>
+<div class="modal-footer"><button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button></div>
+</div></div></div>
+<div xmlns:str="http://exslt.org/strings" class="modal fade" id="dialog_kwartiel_help" style="display: none;" aria-hidden="true"><div class="modal-dialog modal-xl" role="popup"><div class="modal-content">
+<div class="modal-header">
+<h5 class="modal-title"> About Quartles</h5>
+<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">X</span></button>
+</div>
+<div class="modal-body"><div class="scroll-section">
+<p>Based upon Impact Factors, the Journal Citation Reports provide rankings of journals in subject categories. A journal is placed in one (or more) of relevant subject categories. </p>
+<p>Each journal with an Impact Factor can be placed in a quartile Q1 to Q4 according to the position it has in the Impact Factor distribution of the subject category it belongs to. Q1 represents the top 25%, Q2 the top 50% to top 25%, Q3 the top 75% to top 50% and Q4 the bottom 25% of the Impact Factor distribution for journals per subject category. In case a journal has multiple quartile scores (because it belongs to multiple subject categories), all scores (including the subject categories for which they have been determined) are presented.</p>
+</div></div>
+<div class="modal-footer"><button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button></div>
+</div></div></div>
+<ul class="facet_item" id="facet_journal_oa-status"><li value="1"><a rel="nofollow" href="/WebQuery/utbrowser?q=1053-8119&amp;wq_flt=journal/oa-status&amp;wq_val=Open%20Access%20supported&amp;wq_srt_desc=citescore">Open Access supported<span class="facet-count"> (1)</span></a></li></ul>
+</li>
+<li class="field">
+<h3 xmlns:str="http://exslt.org/strings" class="facet-header">Quartile <span class="help-facets"><button class="btn btn-secondary btn-sm fa fa-question" data-toggle="modal" data-target="#dialog_kwartiel_help" title="What does Quartile mean?"></button></span>
+</h3>
+<div xmlns:str="http://exslt.org/strings" class="modal fade" id="dialog_discount_help" style="display: none;" aria-hidden="true"><div class="modal-dialog modal-xl" role="popup"><div class="modal-content">
+<div class="modal-header">
+<h5 class="modal-title"> About the costs for Open Access publishing</h5>
+<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">X</span></button>
+</div>
+<div class="modal-body"><div class="scroll-section">
+<p>Some journals do not charge for Open Access publishing, while other journals do. To support researchers in publishing their research Open Access, deals have been negotiated with various publishers. Depending on the deal, the corresponding author may get a certain discount on the Article Processing Charges (APCs), which are the costs of publishing an article Open Access.</p>
+<p>To make use of an Open Access deal when publishing an article, the <b>corresponding author</b> of the article must be affiliated with a <b>Dutch university</b>, that makes use of the deal, at the moment of acceptance of the article. Moreover, the author must actively arrange the use of a deal; discounts are not applied automatically. See the journal detail page or contact your library for more information.</p>
+</div></div>
+<div class="modal-footer"><button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button></div>
+</div></div></div>
+<div xmlns:str="http://exslt.org/strings" class="modal fade" id="dialog_businessmodel_help" style="display: none;" aria-hidden="true"><div class="modal-dialog modal-xl" role="popup"><div class="modal-content">
+<div class="modal-header">
+<h5 class="modal-title"> About Open Access journals</h5>
+<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">X</span></button>
+</div>
+<div class="modal-body"><div class="scroll-section">
+<p>
+                    For some journals Open Access publishing is supported and all or part of their articles are freely available to readers.
+                    For other journals there is no information whether they make all or part of their articles freely available to readers and
+                    the Open Access support of these journals is set to unknown.
+                </p>
+<p>
+                    In case the complete contents of a journal is available to readers at no costs,
+                    it is also known as a full Open Access (Gold) journal. If only part of the articles are freely available to readers,
+                    the journal is known as a hybrid Open Access journal. For hybrid journals,
+                    authors can choose Open Access publishing once their article has been accepted for publication.
+                </p>
+</div></div>
+<div class="modal-footer"><button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button></div>
+</div></div></div>
+<div xmlns:str="http://exslt.org/strings" class="modal fade" id="dialog_fullopen_help" style="display: none;" aria-hidden="true"><div class="modal-dialog modal-xl" role="popup"><div class="modal-content">
+<div class="modal-header">
+<h5 class="modal-title"> About Full Open Access</h5>
+<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">X</span></button>
+</div>
+<div class="modal-body"><div class="scroll-section">
+<p>
+                    For some journals Open Access publishing is supported and all or part of their articles are freely available to readers.
+                    For other journals there is no information whether they make all or part of their articles freely available to readers and
+                    the Open Access support of these journals is set to unknown.
+                </p>
+<p>
+                    In case the complete contents of a journal is available to readers at no costs,
+                    it is also known as a full Open Access (Gold) journal. If only part of the articles are freely available to readers,
+                    the journal is known as a hybrid Open Access journal. For hybrid journals,
+                    authors can choose Open Access publishing once their article has been accepted for publication.
+                </p>
+</div></div>
+<div class="modal-footer"><button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button></div>
+</div></div></div>
+<div xmlns:str="http://exslt.org/strings" class="modal fade" id="dialog_kwartiel_help" style="display: none;" aria-hidden="true"><div class="modal-dialog modal-xl" role="popup"><div class="modal-content">
+<div class="modal-header">
+<h5 class="modal-title"> About Quartles</h5>
+<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">X</span></button>
+</div>
+<div class="modal-body"><div class="scroll-section">
+<p>Based upon Impact Factors, the Journal Citation Reports provide rankings of journals in subject categories. A journal is placed in one (or more) of relevant subject categories. </p>
+<p>Each journal with an Impact Factor can be placed in a quartile Q1 to Q4 according to the position it has in the Impact Factor distribution of the subject category it belongs to. Q1 represents the top 25%, Q2 the top 50% to top 25%, Q3 the top 75% to top 50% and Q4 the bottom 25% of the Impact Factor distribution for journals per subject category. In case a journal has multiple quartile scores (because it belongs to multiple subject categories), all scores (including the subject categories for which they have been determined) are presented.</p>
+</div></div>
+<div class="modal-footer"><button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button></div>
+</div></div></div>
+<ul class="facet_item" id="facet_jcr_category_kwartiel"><li value="1"><a rel="nofollow" href="/WebQuery/utbrowser?q=1053-8119&amp;wq_flt=jcr/category/kwartiel&amp;wq_val=Q1&amp;wq_srt_desc=citescore">Q1<span class="facet-count"> (1)</span></a></li></ul>
+</li>
+</ul></div></div>
+</div>
+<div class="col-12 col-lg-9"><div class="content-container">
+<div id="searchbox">
+<form id="searchform" name="searchform" action="/WebQuery/utbrowser" method="GET"><div class="row"><div class="col-md-12"><div class="input-group">
+<span class="input-group-prepend noborder"><i class="fa fa-search input-group-text" aria-hidden="true"></i></span><select xmlns:str="http://exslt.org/strings" id="selectfield" name="wq_fld"><option value="title">&nbsp;&nbsp;&nbsp;Search on words in title&nbsp;&nbsp;&nbsp;</option>
+<option value="q" selected>&nbsp;&nbsp;&nbsp;Search all fields&nbsp;&nbsp;&nbsp;</option></select><input xmlns:str="http://exslt.org/strings" id="searchfield" class="form-control" type="text" name="wq_val" placeholder='e.g. nature, science, "air pollution", asia* AND economi*, african journal, ecology, eco*, ps*' value="1053-8119"><input xmlns:str="http://exslt.org/strings" type="hidden" id="keeprefinements" name="newsearch" value="no"><span class="input-group-btn"><button class="btn btn-primary" type="submit">Search</button></span><span class="input-group-btn"><button id="btn_search_help" class="btn btn-secondary search_tips" name="/WebQuery/utbrowser/help/282?wq_inf_lang=eng"><i class="fa fa-question" aria-hidden="true"></i></button></span>
+</div></div></div></form>
+<div xmlns:str="http://exslt.org/strings" id="search_remark"><div>Check the information on costs for open access publishing by clicking on a journal title in the list below. This gives you an overview of open access publishing options, including any discounted open access costs and impact metrics for that journal.</div></div>
+</div>
+<div class="d-block d-lg-none mobile-facet-container">
+<a class="btn btn-info" id="filter-button" data-toggle="collapse" href="#collapseFilters" role="button" aria-expanded="false" aria-controls="collapseFilters">
+                Filters <span id="active_filters_count"></span></a><div class="collapse" id="collapseFilters">
+<div class="filters-header" name="filters-header">
+<span class="filters-text">Filters</span><span class="filters-close">&times;</span>
+</div>
+<div class="dropdown">
+<div class="btn-group">
+<a class="btn btn-secondary btn-sm dropdown-toggle" href="#" id="dropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Sort by CiteScore</a><div class="dropdown-menu">
+<a class="dropdown-item" href="/WebQuery/utbrowser?q=1053-8119&amp;wq_max=20&amp;wq_srt_desc=citescore">CiteScore</a><a class="dropdown-item" href="/WebQuery/utbrowser?q=1053-8119&amp;wq_max=20&amp;wq_srt_desc=snip">SNIP</a><a class="dropdown-item" href="/WebQuery/utbrowser?q=1053-8119&amp;wq_max=20&amp;wq_srt_desc=sjr">SJR</a><a class="dropdown-item" href="/WebQuery/utbrowser?q=1053-8119&amp;wq_max=20&amp;wq_srt_asc=journal/title">Title (A - Z)</a><a class="dropdown-item" href="/WebQuery/utbrowser?q=1053-8119&amp;wq_max=20&amp;wq_srt_desc=journal/title">Title (Z - A)</a>
+</div>
+</div>
+<span class="help-sort"><button class="btn btn-secondary btn-sm fa fa-question" data-toggle="modal" data-target="#dialog_sorting_help" title="What does sorting on, SNIP or SJR mean?"></button><div class="modal fade" id="dialog_sorting_help" style="display: none;" aria-hidden="true"><div class="modal-dialog modal-xl" role="popup"><div class="modal-content">
+<div class="modal-header">
+<h5 class="modal-title"> Explaining sort options</h5>
+<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">X</span></button>
+</div>
+<div class="modal-body"><div class="scroll-section">
+<p><strong>Impact (Scopus CiteScore):</strong>is the number of citations received by a journal in one year to documents published in the three previous years, divided by the number of documents indexed in Scopus published in those same three years..</p>
+<p>The impact factor and the CiteScore are not normalized for a subject field and therefore give a raw indication of the average number of citations a publication published in the journal will likely receive.</p>
+<p><strong>SNIP: </strong>Source-Normalized Impact per Paper measures contextual citation impact by weighting citations in Scopus based on the total number of citations in a subject field. The impact of a single citation is given higher value in subject areas where citations are less likely, and vice versa.</p>
+<p><strong>SJR: </strong>SCImago Journal Rank is a measure of scientific influence of scholarly journals that accounts for both the number of citations received by a journal in Scopus and the importance or prestige of the journals where such citations come from. With SCImago Journal Rank, the subject field, quality and reputation of the journal have a direct effect on the value of a citation.</p>
+</div></div>
+<div class="modal-footer"><button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button></div>
+</div></div></div></span>
+</div>
+<div id="facet_list"><ul class="field_list">
+<li class="field">
+<h3 xmlns:str="http://exslt.org/strings" class="facet-header">Open Access costs <span class="help-facets"><button class="btn btn-secondary btn-sm fa fa-question" data-toggle="modal" data-target="#dialog_discount_help" title="About the costs for Open Access publishing"></button></span>
+</h3>
+<div xmlns:str="http://exslt.org/strings" class="modal fade" id="dialog_discount_help" style="display: none;" aria-hidden="true"><div class="modal-dialog modal-xl" role="popup"><div class="modal-content">
+<div class="modal-header">
+<h5 class="modal-title"> About the costs for Open Access publishing</h5>
+<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">X</span></button>
+</div>
+<div class="modal-body"><div class="scroll-section">
+<p>Some journals do not charge for Open Access publishing, while other journals do. To support researchers in publishing their research Open Access, deals have been negotiated with various publishers. Depending on the deal, the corresponding author may get a certain discount on the Article Processing Charges (APCs), which are the costs of publishing an article Open Access.</p>
+<p>To make use of an Open Access deal when publishing an article, the <b>corresponding author</b> of the article must be affiliated with a <b>Dutch university</b>, that makes use of the deal, at the moment of acceptance of the article. Moreover, the author must actively arrange the use of a deal; discounts are not applied automatically. See the journal detail page or contact your library for more information.</p>
+</div></div>
+<div class="modal-footer"><button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button></div>
+</div></div></div>
+<div xmlns:str="http://exslt.org/strings" class="modal fade" id="dialog_businessmodel_help" style="display: none;" aria-hidden="true"><div class="modal-dialog modal-xl" role="popup"><div class="modal-content">
+<div class="modal-header">
+<h5 class="modal-title"> About Open Access journals</h5>
+<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">X</span></button>
+</div>
+<div class="modal-body"><div class="scroll-section">
+<p>
+                    For some journals Open Access publishing is supported and all or part of their articles are freely available to readers.
+                    For other journals there is no information whether they make all or part of their articles freely available to readers and
+                    the Open Access support of these journals is set to unknown.
+                </p>
+<p>
+                    In case the complete contents of a journal is available to readers at no costs,
+                    it is also known as a full Open Access (Gold) journal. If only part of the articles are freely available to readers,
+                    the journal is known as a hybrid Open Access journal. For hybrid journals,
+                    authors can choose Open Access publishing once their article has been accepted for publication.
+                </p>
+</div></div>
+<div class="modal-footer"><button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button></div>
+</div></div></div>
+<div xmlns:str="http://exslt.org/strings" class="modal fade" id="dialog_fullopen_help" style="display: none;" aria-hidden="true"><div class="modal-dialog modal-xl" role="popup"><div class="modal-content">
+<div class="modal-header">
+<h5 class="modal-title"> About Full Open Access</h5>
+<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">X</span></button>
+</div>
+<div class="modal-body"><div class="scroll-section">
+<p>
+                    For some journals Open Access publishing is supported and all or part of their articles are freely available to readers.
+                    For other journals there is no information whether they make all or part of their articles freely available to readers and
+                    the Open Access support of these journals is set to unknown.
+                </p>
+<p>
+                    In case the complete contents of a journal is available to readers at no costs,
+                    it is also known as a full Open Access (Gold) journal. If only part of the articles are freely available to readers,
+                    the journal is known as a hybrid Open Access journal. For hybrid journals,
+                    authors can choose Open Access publishing once their article has been accepted for publication.
+                </p>
+</div></div>
+<div class="modal-footer"><button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button></div>
+</div></div></div>
+<div xmlns:str="http://exslt.org/strings" class="modal fade" id="dialog_kwartiel_help" style="display: none;" aria-hidden="true"><div class="modal-dialog modal-xl" role="popup"><div class="modal-content">
+<div class="modal-header">
+<h5 class="modal-title"> About Quartles</h5>
+<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">X</span></button>
+</div>
+<div class="modal-body"><div class="scroll-section">
+<p>Based upon Impact Factors, the Journal Citation Reports provide rankings of journals in subject categories. A journal is placed in one (or more) of relevant subject categories. </p>
+<p>Each journal with an Impact Factor can be placed in a quartile Q1 to Q4 according to the position it has in the Impact Factor distribution of the subject category it belongs to. Q1 represents the top 25%, Q2 the top 50% to top 25%, Q3 the top 75% to top 50% and Q4 the bottom 25% of the Impact Factor distribution for journals per subject category. In case a journal has multiple quartile scores (because it belongs to multiple subject categories), all scores (including the subject categories for which they have been determined) are presented.</p>
+</div></div>
+<div class="modal-footer"><button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button></div>
+</div></div></div>
+<ul class="facet_item" id="facet_journal_apc">
+<li value="1" class="active">No costs for UT authors<span class="facet-count"> (1)</span>
+</li>
+<div class="more">
+<span class="toggle_this wl_icon wl_plus inline"> more...</span><ul class="facet_item no_display">
+<li value="1" class="active">No costs for EUR/ErasmusMC authors<span class="facet-count"> (1)</span>
+</li>
+<li value="1" class="active">No costs for KNAW authors<span class="facet-count"> (1)</span>
+</li>
+<li value="1" class="active">No costs for NWO-I authors<span class="facet-count"> (1)</span>
+</li>
+<li value="1" class="active">No costs for OU authors<span class="facet-count"> (1)</span>
+</li>
+<li value="1" class="active">No costs for RU/RadboudUMC authors<span class="facet-count"> (1)</span>
+</li>
+<li value="1" class="active">No costs for RUG/UMCG authors<span class="facet-count"> (1)</span>
+</li>
+<li value="1" class="active">No costs for TU/e authors<span class="facet-count"> (1)</span>
+</li>
+<li value="1" class="active">No costs for TUD authors<span class="facet-count"> (1)</span>
+</li>
+<li value="1" class="active">No costs for TiU authors<span class="facet-count"> (1)</span>
+</li>
+<li value="1" class="active">No costs for UL/LUMC  authors<span class="facet-count"> (1)</span>
+</li>
+<li value="1" class="active">No costs for UM/MUMC+ authors<span class="facet-count"> (1)</span>
+</li>
+<li value="1" class="active">No costs for UU/UMC Utrecht authors<span class="facet-count"> (1)</span>
+</li>
+<li value="1" class="active">No costs for UvA/AMC authors<span class="facet-count"> (1)</span>
+</li>
+<li value="1" class="active">No costs for VU/VUMC authors<span class="facet-count"> (1)</span>
+</li>
+<li value="1" class="active">No costs for WUR authors<span class="facet-count"> (1)</span>
+</li>
+</ul>
+</div>
+</ul>
+</li>
+<li class="field">
+<h3 xmlns:str="http://exslt.org/strings" class="facet-header">Open Access journals <span class="help-facets"><button class="btn btn-secondary btn-sm fa fa-question" data-toggle="modal" data-target="#dialog_businessmodel_help" title="About Open Access journals"></button></span>
+</h3>
+<div xmlns:str="http://exslt.org/strings" class="modal fade" id="dialog_discount_help" style="display: none;" aria-hidden="true"><div class="modal-dialog modal-xl" role="popup"><div class="modal-content">
+<div class="modal-header">
+<h5 class="modal-title"> About the costs for Open Access publishing</h5>
+<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">X</span></button>
+</div>
+<div class="modal-body"><div class="scroll-section">
+<p>Some journals do not charge for Open Access publishing, while other journals do. To support researchers in publishing their research Open Access, deals have been negotiated with various publishers. Depending on the deal, the corresponding author may get a certain discount on the Article Processing Charges (APCs), which are the costs of publishing an article Open Access.</p>
+<p>To make use of an Open Access deal when publishing an article, the <b>corresponding author</b> of the article must be affiliated with a <b>Dutch university</b>, that makes use of the deal, at the moment of acceptance of the article. Moreover, the author must actively arrange the use of a deal; discounts are not applied automatically. See the journal detail page or contact your library for more information.</p>
+</div></div>
+<div class="modal-footer"><button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button></div>
+</div></div></div>
+<div xmlns:str="http://exslt.org/strings" class="modal fade" id="dialog_businessmodel_help" style="display: none;" aria-hidden="true"><div class="modal-dialog modal-xl" role="popup"><div class="modal-content">
+<div class="modal-header">
+<h5 class="modal-title"> About Open Access journals</h5>
+<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">X</span></button>
+</div>
+<div class="modal-body"><div class="scroll-section">
+<p>
+                    For some journals Open Access publishing is supported and all or part of their articles are freely available to readers.
+                    For other journals there is no information whether they make all or part of their articles freely available to readers and
+                    the Open Access support of these journals is set to unknown.
+                </p>
+<p>
+                    In case the complete contents of a journal is available to readers at no costs,
+                    it is also known as a full Open Access (Gold) journal. If only part of the articles are freely available to readers,
+                    the journal is known as a hybrid Open Access journal. For hybrid journals,
+                    authors can choose Open Access publishing once their article has been accepted for publication.
+                </p>
+</div></div>
+<div class="modal-footer"><button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button></div>
+</div></div></div>
+<div xmlns:str="http://exslt.org/strings" class="modal fade" id="dialog_fullopen_help" style="display: none;" aria-hidden="true"><div class="modal-dialog modal-xl" role="popup"><div class="modal-content">
+<div class="modal-header">
+<h5 class="modal-title"> About Full Open Access</h5>
+<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">X</span></button>
+</div>
+<div class="modal-body"><div class="scroll-section">
+<p>
+                    For some journals Open Access publishing is supported and all or part of their articles are freely available to readers.
+                    For other journals there is no information whether they make all or part of their articles freely available to readers and
+                    the Open Access support of these journals is set to unknown.
+                </p>
+<p>
+                    In case the complete contents of a journal is available to readers at no costs,
+                    it is also known as a full Open Access (Gold) journal. If only part of the articles are freely available to readers,
+                    the journal is known as a hybrid Open Access journal. For hybrid journals,
+                    authors can choose Open Access publishing once their article has been accepted for publication.
+                </p>
+</div></div>
+<div class="modal-footer"><button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button></div>
+</div></div></div>
+<div xmlns:str="http://exslt.org/strings" class="modal fade" id="dialog_kwartiel_help" style="display: none;" aria-hidden="true"><div class="modal-dialog modal-xl" role="popup"><div class="modal-content">
+<div class="modal-header">
+<h5 class="modal-title"> About Quartles</h5>
+<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">X</span></button>
+</div>
+<div class="modal-body"><div class="scroll-section">
+<p>Based upon Impact Factors, the Journal Citation Reports provide rankings of journals in subject categories. A journal is placed in one (or more) of relevant subject categories. </p>
+<p>Each journal with an Impact Factor can be placed in a quartile Q1 to Q4 according to the position it has in the Impact Factor distribution of the subject category it belongs to. Q1 represents the top 25%, Q2 the top 50% to top 25%, Q3 the top 75% to top 50% and Q4 the bottom 25% of the Impact Factor distribution for journals per subject category. In case a journal has multiple quartile scores (because it belongs to multiple subject categories), all scores (including the subject categories for which they have been determined) are presented.</p>
+</div></div>
+<div class="modal-footer"><button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button></div>
+</div></div></div>
+<ul class="facet_item" id="facet_journal_oa-status"><li value="1"><a rel="nofollow" href="/WebQuery/utbrowser?q=1053-8119&amp;wq_flt=journal/oa-status&amp;wq_val=Open%20Access%20supported&amp;wq_srt_desc=citescore">Open Access supported<span class="facet-count"> (1)</span></a></li></ul>
+</li>
+<li class="field">
+<h3 xmlns:str="http://exslt.org/strings" class="facet-header">Quartile <span class="help-facets"><button class="btn btn-secondary btn-sm fa fa-question" data-toggle="modal" data-target="#dialog_kwartiel_help" title="What does Quartile mean?"></button></span>
+</h3>
+<div xmlns:str="http://exslt.org/strings" class="modal fade" id="dialog_discount_help" style="display: none;" aria-hidden="true"><div class="modal-dialog modal-xl" role="popup"><div class="modal-content">
+<div class="modal-header">
+<h5 class="modal-title"> About the costs for Open Access publishing</h5>
+<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">X</span></button>
+</div>
+<div class="modal-body"><div class="scroll-section">
+<p>Some journals do not charge for Open Access publishing, while other journals do. To support researchers in publishing their research Open Access, deals have been negotiated with various publishers. Depending on the deal, the corresponding author may get a certain discount on the Article Processing Charges (APCs), which are the costs of publishing an article Open Access.</p>
+<p>To make use of an Open Access deal when publishing an article, the <b>corresponding author</b> of the article must be affiliated with a <b>Dutch university</b>, that makes use of the deal, at the moment of acceptance of the article. Moreover, the author must actively arrange the use of a deal; discounts are not applied automatically. See the journal detail page or contact your library for more information.</p>
+</div></div>
+<div class="modal-footer"><button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button></div>
+</div></div></div>
+<div xmlns:str="http://exslt.org/strings" class="modal fade" id="dialog_businessmodel_help" style="display: none;" aria-hidden="true"><div class="modal-dialog modal-xl" role="popup"><div class="modal-content">
+<div class="modal-header">
+<h5 class="modal-title"> About Open Access journals</h5>
+<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">X</span></button>
+</div>
+<div class="modal-body"><div class="scroll-section">
+<p>
+                    For some journals Open Access publishing is supported and all or part of their articles are freely available to readers.
+                    For other journals there is no information whether they make all or part of their articles freely available to readers and
+                    the Open Access support of these journals is set to unknown.
+                </p>
+<p>
+                    In case the complete contents of a journal is available to readers at no costs,
+                    it is also known as a full Open Access (Gold) journal. If only part of the articles are freely available to readers,
+                    the journal is known as a hybrid Open Access journal. For hybrid journals,
+                    authors can choose Open Access publishing once their article has been accepted for publication.
+                </p>
+</div></div>
+<div class="modal-footer"><button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button></div>
+</div></div></div>
+<div xmlns:str="http://exslt.org/strings" class="modal fade" id="dialog_fullopen_help" style="display: none;" aria-hidden="true"><div class="modal-dialog modal-xl" role="popup"><div class="modal-content">
+<div class="modal-header">
+<h5 class="modal-title"> About Full Open Access</h5>
+<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">X</span></button>
+</div>
+<div class="modal-body"><div class="scroll-section">
+<p>
+                    For some journals Open Access publishing is supported and all or part of their articles are freely available to readers.
+                    For other journals there is no information whether they make all or part of their articles freely available to readers and
+                    the Open Access support of these journals is set to unknown.
+                </p>
+<p>
+                    In case the complete contents of a journal is available to readers at no costs,
+                    it is also known as a full Open Access (Gold) journal. If only part of the articles are freely available to readers,
+                    the journal is known as a hybrid Open Access journal. For hybrid journals,
+                    authors can choose Open Access publishing once their article has been accepted for publication.
+                </p>
+</div></div>
+<div class="modal-footer"><button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button></div>
+</div></div></div>
+<div xmlns:str="http://exslt.org/strings" class="modal fade" id="dialog_kwartiel_help" style="display: none;" aria-hidden="true"><div class="modal-dialog modal-xl" role="popup"><div class="modal-content">
+<div class="modal-header">
+<h5 class="modal-title"> About Quartles</h5>
+<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">X</span></button>
+</div>
+<div class="modal-body"><div class="scroll-section">
+<p>Based upon Impact Factors, the Journal Citation Reports provide rankings of journals in subject categories. A journal is placed in one (or more) of relevant subject categories. </p>
+<p>Each journal with an Impact Factor can be placed in a quartile Q1 to Q4 according to the position it has in the Impact Factor distribution of the subject category it belongs to. Q1 represents the top 25%, Q2 the top 50% to top 25%, Q3 the top 75% to top 50% and Q4 the bottom 25% of the Impact Factor distribution for journals per subject category. In case a journal has multiple quartile scores (because it belongs to multiple subject categories), all scores (including the subject categories for which they have been determined) are presented.</p>
+</div></div>
+<div class="modal-footer"><button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button></div>
+</div></div></div>
+<ul class="facet_item" id="facet_jcr_category_kwartiel"><li value="1"><a rel="nofollow" href="/WebQuery/utbrowser?q=1053-8119&amp;wq_flt=jcr/category/kwartiel&amp;wq_val=Q1&amp;wq_srt_desc=citescore">Q1<span class="facet-count"> (1)</span></a></li></ul>
+</li>
+</ul></div>
+</div>
+</div>
+<nav class="navbar navbar-expand-md navbar-light bg-light" id="searchresult-functions"><div class="navbar-brand">Record 1 / 1</div>
+<button class="navbar-toggler navbar-toggler-right" type="button" data-toggle="collapse" data-target="#navbarSearchResult" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation"><span class="navbar-toggler-icon"></span></button><div class="collapse navbar-collapse" id="navbarSearchResult"><ul class="navbar-nav ml-auto w-100 justify-content-end">
+<li class="nav-item">
+<li class="nav-item">
+<a href="#" class="nav-link" id="opendialog_export" title="Export search results in a chosen format, to use titles in other software"><i class="fa fa-save mr-1"></i>export </a><div class="modal fade" id="exportModal" tabindex="-1" role="dialog" aria-labelledby="alertbox for export functions" aria-hidden="true"><div class="modal-dialog" role="document"><div class="modal-content">
+<div class="modal-header">
+<h5 class="modal-title" id="markedListModalTitle">Export functions</h5>
+<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+</div>
+<div class="modal-body" id="markedListModalBody"><form name="export" id="export">
+<legend>Export search results</legend>
+<fieldset class="form-group row"><div class="col-sm-10"><div class="form-check"><label class="form-check-label"><input class="form-check-input" type="radio" name="format" value="csv" checked> &nbsp;CSV (Excel)</label></div></div></fieldset>
+</form></div>
+<div class="modal-footer">
+<input type="button" class="btn btn-primary" value="Export" onclick="window.location='https://library.wur.nl/WebQuery/utbrowser/utbrowser.' + $(&quot;input[name='format']:checked&quot;).val() + '?q=1053-8119&amp;wq_srt_desc=citescore&amp;wq_max=500'"><button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+</div>
+</div></div></div>
+</li>
+<li class="nav-item">
+<a href="#" class="showMarkedList5 nav-link" title="Titles in your marked list"><i class="fa fa-check mr-1"></i>marked list</a><div class="modal fade" id="markedListModal" tabindex="-1" role="dialog" aria-labelledby="alertbox for marked list" aria-hidden="true"><div class="modal-dialog" role="document"><div class="modal-content">
+<div class="modal-header">
+<h5 class="modal-title" id="markedListModalTitle">marked list</h5>
+<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+</div>
+<div class="modal-body" id="markedListModalBody"><span>Currently, there are no titles in your marked list</span></div>
+<div class="modal-footer"><button type="button" class="btn btn-secondary" data-dismiss="modal">OK</button></div>
+</div></div></div>
+</li>
+<li class="nav-item">
+</ul></div></nav><div id="markedlist_top" class="row">
+<div class="col-md-8 marked-list">
+<span><i class="wl_icon wl_arrow_down"></i>Check title to add to </span><span class="showMarkedList5 spanlink"><i class="fa fa-check mr-1"></i>marked list</span>
+</div>
+<div class="col-md-4 text-right"><div class="dropdown">
+<div class="btn-group">
+<a class="btn btn-secondary btn-sm dropdown-toggle" href="#" id="dropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Sort by CiteScore</a><div class="dropdown-menu">
+<a class="dropdown-item" href="/WebQuery/utbrowser?q=1053-8119&amp;wq_max=20&amp;wq_srt_desc=citescore">CiteScore</a><a class="dropdown-item" href="/WebQuery/utbrowser?q=1053-8119&amp;wq_max=20&amp;wq_srt_desc=snip">SNIP</a><a class="dropdown-item" href="/WebQuery/utbrowser?q=1053-8119&amp;wq_max=20&amp;wq_srt_desc=sjr">SJR</a><a class="dropdown-item" href="/WebQuery/utbrowser?q=1053-8119&amp;wq_max=20&amp;wq_srt_asc=journal/title">Title (A - Z)</a><a class="dropdown-item" href="/WebQuery/utbrowser?q=1053-8119&amp;wq_max=20&amp;wq_srt_desc=journal/title">Title (Z - A)</a>
+</div>
+</div>
+<span class="help-sort"><button class="btn btn-secondary btn-sm fa fa-question" data-toggle="modal" data-target="#dialog_sorting_help" title="What does sorting on, SNIP or SJR mean?"></button><div class="modal fade" id="dialog_sorting_help" style="display: none;" aria-hidden="true"><div class="modal-dialog modal-xl" role="popup"><div class="modal-content">
+<div class="modal-header">
+<h5 class="modal-title"> Explaining sort options</h5>
+<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">X</span></button>
+</div>
+<div class="modal-body"><div class="scroll-section">
+<p><strong>Impact (Scopus CiteScore):</strong>is the number of citations received by a journal in one year to documents published in the three previous years, divided by the number of documents indexed in Scopus published in those same three years..</p>
+<p>The impact factor and the CiteScore are not normalized for a subject field and therefore give a raw indication of the average number of citations a publication published in the journal will likely receive.</p>
+<p><strong>SNIP: </strong>Source-Normalized Impact per Paper measures contextual citation impact by weighting citations in Scopus based on the total number of citations in a subject field. The impact of a single citation is given higher value in subject areas where citations are less likely, and vice versa.</p>
+<p><strong>SJR: </strong>SCImago Journal Rank is a measure of scientific influence of scholarly journals that accounts for both the number of citations received by a journal in Scopus and the importance or prestige of the journals where such citations come from. With SCImago Journal Rank, the subject field, quality and reputation of the journal have a direct effect on the value of a citation.</p>
+</div></div>
+<div class="modal-footer"><button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button></div>
+</div></div></div></span>
+</div></div>
+</div>
+<div id="search_result"><table id="records" class="table table-striped">
+<thead></thead>
+<tbody><tr xmlns:str="http://exslt.org/strings" id="record_326" class="search_results_odd odd">
+<td class="marker"><input name="isnSelected" type="checkbox" value="326"></td>
+<td><div><img class="coversm" onerror="this.style.display='none'" src="https://ars.els-cdn.com/content/image/X10538119.jpg"></div></td>
+<td>
+<a title="more info" href="/WebQuery/utbrowser/326">NeuroImage</a><div class="issns">ISSN: 1053-8119 (1095-9572)</div>
+<div class="author">Elsevier</div>
+<div class="keywords">Neuroimaging - Neurosciences - Radiology, Nuclear Medicine &amp; Medical Imaging - Cognitive Neuroscience - Neurology</div>
+<b>CiteScore: </b><a class="button" target="viewonline" href="https://www.scopus.com/sourceid/17495" title="Show Scopus Journal analyzer page">9.6 </a>
+</td>
+<td class="search_result_record_column_3"><ul>
+<li class="open_access opendialog_helpbusinessmodel" title="Full Open Access. All articles in this journal are Open Access"><img alt="open_access_logo.gif" src="/images/logo-open-access-gold-small.png"></li>
+<a class="apc_discount" href="utbrowser/326#deal" title="A deal has been made for authors affiliated with UT to waive all Article Processing Charges for publishing in this journal. Sometimes there is a maximum number of publications per year that can be published within this deal. Make sure to look at the details for publishing in this journal">100% APC discount for UT authors</a>
+</ul></td>
+</tr></tbody>
+</table></div>
+<div id="markedlist_bottom" class="row">
+<div class="col-md-8 marked-list">
+<span><i class="wl_icon wl_arrow_up"></i>Check title to add to </span><span class="showMarkedList5 spanlink"><i class="fa fa-check mr-1"></i>marked list</span>
+</div>
+<div class="col-md-4 text-right"></div>
+</div>
+<div class="ym-grid sort_max_results">
+<div class="ym-gl ym-g50"><div class="ym-gbox-left"></div></div>
+<div class="ym-gr ym-g50"><div class="ym-gbox-right text_align_right"></div></div>
+</div>
+</div></div>
+</div></div></div></main>
+</div>
+<div class="modal fade" id="dialog_report_logon"><div class="modal-dialog" role="document"><div class="modal-content">
+<div class="modal-header">
+<h5 class="modal-title">Logon</h5>
+<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">X</span></button>
+</div>
+<div class="modal-body"><p>Please log in to use this service. Login as Wageningen University &amp; Research user or guest user in upper right hand corner of this page.</p></div>
+<div class="modal-footer"><button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button></div>
+</div></div></div>
+</body>
+</html>

@@ -650,7 +650,7 @@ export { queueIsCurrent } from './machine/model-hpc.ts';
 
 export { DECK_GAP } from './model-deck.ts';
 export { confirmValues } from './model-agents.ts';
-export { domainColorOf } from './model-entities.ts';
+export { domainColorOf, statedKind } from './model-entities.ts';
 export { COLLECTION_FLAGS, FILTERED_TYPES, REGISTRY_WORDS } from './model-collections.ts';
 export { displayFields, entryIdOf, entryTitleOf, primaryKeyOf } from './model-collections.ts';
 export { optionKey, optionKeys, optionLabel } from './model-collections.ts';
@@ -675,6 +675,10 @@ export type {
 } from './model-agents.ts';
 
 export type {
+    BrowserAnswer,
+    BrowserHit,
+    BrowserInfo,
+    BrowserRefusal,
     DocType,
     HitType,
     LiteratureHit,
@@ -689,14 +693,13 @@ export type {
     SourceAnswer,
     SourceHits,
     SourceInfo,
-    SourceNotOk,
     SourceState
 } from './model-search.ts';
 export {
+    BROWSER_REFUSALS,
     DOC_TYPES,
     FIELD_MAX,
     LITERATURE_REFUSALS,
-    LITERATURE_SOURCES,
     QUERY_MAX,
     SOURCE_STATES
 } from './model-search.ts';

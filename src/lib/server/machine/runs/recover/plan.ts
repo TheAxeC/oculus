@@ -11,10 +11,16 @@
 // The files a Fetch takes become one shell script that either machine runs (`fetchScript`), and a
 // credential reaches curl through a config file of its own (`curlConfig`), never the script.
 
-import type { RecoverFileState, RecoverRow, RecoverTotals } from '../../../../data/model/index.ts';
-import type { DownloadAccount, DownloadService } from '../../../../data/sources/config.ts';
+import type {
+    RecoverChecksum,
+    RecoverCredential,
+    RecoverFileState,
+    RecoverRow,
+    RecoverTotals
+} from '../../../../data/model/index.ts';
+import type { DownloadAccount } from '../../../../data/sources/config.ts';
 import { shellWord } from '../../pty/shell-word.ts';
-import { safeName, type Checksum, type RemoteFile } from './files.ts';
+import { safeName, type RemoteFile } from './files.ts';
 
 /** What a file of the plan is on the target. */
 type FileState = RecoverFileState;
@@ -23,7 +29,7 @@ type FileState = RecoverFileState;
 export type OnDisk = { size: number; mtime: number };
 
 /** A check row: the file it was made for, at its size and time, and the checksum it computed. */
-export type CheckRow = { name: string; size: number; mtime: number; checksum: Checksum };
+export type CheckRow = { name: string; size: number; mtime: number; checksum: RecoverChecksum };
 
 /** One row of the plan: the listed file, its state and the bytes the target holds of it. */
 export type PlanRow = RecoverRow;
@@ -166,17 +172,47 @@ function quotedForCurl(value: string): string | null {
 }
 
 /**
- * The text of a curl config file carrying a service's credential: `user` with the user and the
- * secret for PhysioNet and Kaggle, the `Authorization` header with the token for Synapse. Null when
- * a value holds a line break, which no config line can carry.
+ * The text of a curl config file carrying a `downloads` row's secret the way the file's
+ * `recover.sources` row says: `user` with the row's user and secret for `basic`, else the header
+ * the row names with its prefix and the secret (such as `Authorization: Bearer <token>`). Null
+ * when a value holds a line break, which no config line can carry, or `basic` has no user.
  */
-export function curlConfig(account: DownloadAccount): string | null {
-    const value =
-        account.service === 'synapse'
-            ? quotedForCurl(`Authorization: Bearer ${account.secret}`)
-            : quotedForCurl(`${account.user ?? ''}:${account.secret}`);
-    if (value === null) return null;
-    return `${account.service === 'synapse' ? 'header' : 'user'} = ${value}\n`;
+function curlConfig(account: DownloadAccount, credential: RecoverCredential): string | null {
+    if ('basic' in credential) {
+        if (account.user === undefined) return null;
+        const user = quotedForCurl(`${account.user}:${account.secret}`);
+        return user === null ? null : `user = ${user}\n`;
+    }
+    const header = quotedForCurl(
+        `${credential.header}: ${credential.prefix ?? ''}${account.secret}`
+    );
+    return header === null ? null : `header = ${header}\n`;
+}
+
+/** One credential file of a Fetch: the `downloads` row it carries and the file's text. */
+export type CredentialFile = { service: string; text: string };
+
+/**
+ * The credential file of each `downloads` row the items' files need, in the items' order. Null
+ * when a row is absent, when its name cannot stand in a file name, or when a value cannot go in a
+ * config file, so no Fetch starts with a file it cannot sign in for.
+ */
+export function credentialFiles(
+    items: FetchItem[],
+    downloads: readonly DownloadAccount[]
+): CredentialFile[] | null {
+    const files: CredentialFile[] = [];
+    for (const { row } of items) {
+        const service = row.service;
+        if (service === undefined || files.some((one) => one.service === service)) continue;
+        const account = downloads.find((one) => one.service === service);
+        if (account === undefined || row.credential === undefined || !validName(service))
+            return null;
+        const text = curlConfig(account, row.credential);
+        if (text === null) return null;
+        files.push({ service, text });
+    }
+    return files;
 }
 
 /** Where a fetch script runs: its dataset folder, its log, its own file and its config files. */
@@ -185,8 +221,8 @@ export type ScriptPlace = {
     folder: string;
     log: string;
     script: string;
-    /** The config file of each service a file of the fetch needs. */
-    configs: Partial<Record<DownloadService, string>>;
+    /** The config file of each `downloads` row a file of the fetch needs. */
+    configs: Record<string, string>;
 };
 
 /**

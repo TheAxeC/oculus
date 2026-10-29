@@ -6,21 +6,24 @@
 // Every source the search would ask is asked at once with the identifier as its query, the hits are
 // merged as the search merges them (merge.ts), and the merged paper that carries the identifier is
 // the one found: a source that searched the identifier as words may answer other papers, and they
-// are left out. A lookup whose sources all fail finds nothing and says which failed, so the reader
-// can try again; one where a source answered and none found the paper is the address's entry.
+// are left out. A lookup whose sources all fail finds nothing and names the sources that failed, so
+// the reader can try again; one where a source answered and none found the paper is the address's
+// entry, the address of the identifier's row of the primary hub's `links` (`doi`, `arxiv` or
+// `pubmed`), or none when the hub names no such row.
 
 import { arxivId, pubmedId, queryDoi } from '../../../data/prose/literature.ts';
 import { readJson } from '../../../data/shapes/shapes.ts';
-import { t } from '../../shared/words/text.ts';
+import type { LinkRow } from '../../../data/sources/config/settings/rows/grammar.ts';
+import { linkAddress } from '../../../data/sources/config/settings/rows/links.ts';
 import { SOURCES_URL, answerOf, routeBody, searchUrl, sourceList } from './answers.ts';
 import {
     parseForm,
     searchParams,
-    sourcesOn,
-    type Availability,
-    type LiteratureSource
+    sourceOn,
+    type LiteratureSource,
+    type SourceInfo
 } from './form.ts';
-import { mergeHits, type MergedHit } from './merge.ts';
+import { mergeHits, type MergedHit, type MergeOrder } from './merge.ts';
 import type { LiteratureHit } from '../../../data/model/index.ts';
 
 /** What a typed value names: a paper by one identifier, with the query that asks for it. */
@@ -30,8 +33,8 @@ type Lookup = {
     id: string;
     /** What the search route is asked. */
     q: string;
-    /** The address the paper's entry gets when no source finds it. */
-    url: string;
+    /** The address the paper's entry gets when no source finds it, absent with no `links` row. */
+    url?: string;
 };
 
 /** A PubMed address: the PubMed site or the NCBI one, the identifier as the last path word. */
@@ -42,21 +45,23 @@ const PUBMED =
 const ARXIV =
     /^(?:https?:\/\/(?:www\.)?arxiv\.org\/|arxiv:|\d{4}\.\d{4,5}|[a-z-]+(?:\.[A-Za-z]{2})?\/\d{7})/i;
 
+/** A lookup with the address of its identifier's `links` row, when the hub names one. */
+function linked(lookup: Omit<Lookup, 'url'>, links: readonly LinkRow[]): Lookup {
+    const url = linkAddress(links, lookup.by, lookup.id);
+    return url === undefined ? lookup : { ...lookup, url };
+}
+
 /** The paper a typed value names, or null for a value that is an address of anything else. */
-export function lookupOf(typed: string): Lookup | null {
+export function lookupOf(typed: string, links: readonly LinkRow[]): Lookup | null {
     const text = typed.trim();
     const doi = queryDoi(text);
-    if (doi !== undefined) return { by: 'doi', id: doi, q: doi, url: `https://doi.org/${doi}` };
+    if (doi !== undefined) return linked({ by: 'doi', id: doi, q: doi }, links);
     const arxiv = ARXIV.test(text) ? arxivId(text) : undefined;
     if (arxiv !== undefined) {
-        const url = `https://arxiv.org/abs/${arxiv}`;
-        return { by: 'arxiv', id: arxiv, q: `10.48550/arxiv.${arxiv}`, url };
+        return linked({ by: 'arxiv', id: arxiv, q: `10.48550/arxiv.${arxiv}` }, links);
     }
     const pmid = pubmedId(PUBMED.exec(text)?.[1] ?? text);
-    if (pmid !== undefined) {
-        const url = `https://pubmed.ncbi.nlm.nih.gov/${pmid}/`;
-        return { by: 'pubmed', id: pmid, q: pmid, url };
-    }
+    if (pmid !== undefined) return linked({ by: 'pubmed', id: pmid, q: pmid }, links);
     return null;
 }
 
@@ -67,8 +72,8 @@ function carries(paper: MergedHit, lookup: Lookup): boolean {
     return paper.pmid === lookup.id;
 }
 
-/** What a lookup came to: the paper, the sources that all failed, or nothing found. */
-export type Found = { paper: MergedHit } | { failed: LiteratureSource[] } | { none: true };
+/** What a lookup came to: the paper, the names of the sources that all failed, or nothing found. */
+export type Found = { paper: MergedHit } | { failed: string[] } | { none: true };
 
 /** What a lookup needs of the page: the write token and `fetch`. */
 type LookupOptions = { token: string; fetcher?: typeof fetch };
@@ -91,51 +96,32 @@ async function askOne(
     }
 }
 
-/** Ask every source for the paper a lookup names and merge what they answer. */
+/**
+ * Ask every source for the paper a lookup names and merge what they answer, in `order` (the
+ * sources' order of the merge is that of `sources`).
+ */
 export async function lookUp(
     lookup: Lookup,
-    sources: LiteratureSource[],
+    sources: readonly SourceInfo[],
+    order: Omit<MergeOrder, 'sources'>,
     options: LookupOptions
 ): Promise<Found> {
-    const answers = await Promise.all(sources.map((one) => askOne(one, lookup.q, options)));
-    const failed = sources.filter((_one, at) => answers[at] === null);
+    const answers = await Promise.all(sources.map((one) => askOne(one.id, lookup.q, options)));
+    const failed = sources.filter((_one, at) => answers[at] === null).map((one) => one.name);
     const hits = answers.flatMap((one) => one ?? []);
-    const paper = mergeHits(hits).find((one) => carries(one, lookup));
+    const merged = mergeHits(hits, { ...order, sources: sources.map((one) => one.id) });
+    const paper = merged.find((one) => carries(one, lookup));
     if (paper !== undefined) return { paper };
     if (sources.length > 0 && failed.length === sources.length) return { failed };
     return { none: true };
 }
 
-/** The name of a source. */
-export function sourceName(source: LiteratureSource): string {
-    if (source === 'openalex') return t('literature.source_openalex');
-    if (source === 'semantic_scholar') return t('literature.source_semantic_scholar');
-    if (source === 'crossref') return t('literature.source_crossref');
-    if (source === 'pubmed') return t('literature.source_pubmed');
-    if (source === 'europe_pmc') return t('literature.source_europe_pmc');
-    if (source === 'arxiv') return t('literature.source_arxiv');
-    if (source === 'wos') return t('literature.source_wos');
-    return t('literature.source_scopus');
-}
-
-/** What the page takes a source to be before the server lists them: the keyless ones open. */
-const KEYLESS: Availability = {
-    openalex: true,
-    semantic_scholar: true,
-    crossref: true,
-    pubmed: true,
-    europe_pmc: true,
-    arxiv: true,
-    wos: false,
-    scopus: false
-};
-
 /**
- * The sources a search the reader has not touched asks: those the machine can ask, by the server's
- * list of them, and the keyless ones when the list does not answer.
+ * The sources a search the reader has not touched asks: those the server lists as ones the
+ * machine can ask, in its order; none when the list does not answer.
  */
-export async function sourcesAsked(token: string): Promise<LiteratureSource[]> {
+export async function sourcesAsked(token: string): Promise<SourceInfo[]> {
     const listing = sourceList(await routeBody(SOURCES_URL, token)) ?? [];
-    const listed = Object.fromEntries(listing.map((one) => [one.id, one.available]));
-    return sourcesOn(parseForm({}), { ...KEYLESS, ...listed });
+    const form = parseForm({});
+    return listing.filter((one) => sourceOn(form, one));
 }

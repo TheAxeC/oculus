@@ -1,10 +1,29 @@
-// Layer 4, state tests. How the Literature search merges the hits of its sources into papers: hits
-// that share an identifier are one paper, and hits that share none are never one. The merge is a
-// function of the hits, so nothing here fetches or draws.
+// Layer 4, state tests. How the Literature search merges the hits of its sources into papers (G45):
+// hits that share an identifier are one paper, and hits that share none are never one. The merge
+// is ordered by the fixture's rows (tests/server/core/reader/rows.yml): the sources in the order
+// of `literature.sources`, the orders of `literature.prefer`, and the `links` rows a paper's
+// address is built from. The merge is a function of the hits, so nothing here fetches or draws.
 
 import { describe, expect, it } from 'vitest';
 import type { LiteratureHit, LiteratureSource } from '../../../src/lib/data/model/index.ts';
-import { mergeHits } from '../../../src/lib/state/feeds/literature/merge.ts';
+import {
+    mergeHits as mergeOrdered,
+    orderOf,
+    type MergedHit,
+    type MergeOrder
+} from '../../../src/lib/state/feeds/literature/merge.ts';
+import { FIXTURE_CONFIG, fixtureRows } from '../../server/core/reader/rows.ts';
+
+/** The fixture's order of the merge, read as the page reads it. */
+const ORDER: MergeOrder = {
+    sources: fixtureRows().literature.map((row) => row.key),
+    ...orderOf(FIXTURE_CONFIG)
+};
+
+/** The hits merged in the fixture's order. */
+function mergeHits(hits: LiteratureHit[]): MergedHit[] {
+    return mergeOrdered(hits, ORDER);
+}
 
 /** A hit with the fields a case does not name filled in. */
 function hit(

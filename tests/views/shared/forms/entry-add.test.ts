@@ -14,15 +14,25 @@
 // starting at the user, and a body that holds a pick as its id, a multi-pick as its list of ids, a
 // typed line trimmed and no field left empty that is not required; the Add of the hub asked handed
 // back when it is not the hub whose choices the box offered; and whether the box's yes is on
-// (`answered`), off while a required field, a typed line among them, is unanswered.
+// (`answered`), off while a required field, a typed line among them, is unanswered; and the Add of
+// a journal browser hit, which is the venues registry's Add with its name typed from the hit and
+// the hit's ISSNs, fee and open-access status written beside the answers, its body handed to the
+// write route over a hub of the write fixture's (tests/routes/edit/write-fixture.ts), which adds
+// one entry and one History record and leaves the file's other bytes as they were.
 
+import { readFileSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { parse } from 'yaml';
 import { describe, expect, it } from 'vitest';
 import { engineDir, loadConfig, textCatalog } from '../../../../src/lib/data/sources/config.ts';
-import type { SchemaField } from '../../../../src/lib/data/model/index.ts';
+import type { BrowserHit, SchemaField } from '../../../../src/lib/data/model/index.ts';
+import { handleWrite } from '../../../../src/lib/server/edit/writes.ts';
+import { TOKEN, changesOf, request, target } from '../../../routes/edit/write-fixture.ts';
 import type { ClientState } from '../../../../src/lib/state/client/context.ts';
 import { setCatalog, t } from '../../../../src/lib/state/shared/words/text.ts';
 import { answered, type PromptField } from '../../../../src/lib/ui/forms/prompt.ts';
 import {
+    browserHitAsk,
     collectionAsk,
     leadAsk,
     literatureAsk,
@@ -56,6 +66,7 @@ const PEOPLE: Record<string, { id: string; label: string }[]> = {
 function clientOf(hubs: string[], sent: Sent[], self: string[] = [`${PRIMARY}:axel`]): ClientState {
     const client = {
         fs: { primary: () => PRIMARY },
+        entities: { config: () => null },
         selectors: {
             collectionsOfKey: (key: string) =>
                 hubs.map((name) => ({ id: `${name}:${key}`, root: name })),
@@ -410,5 +421,87 @@ describe('the page an Add opens', () => {
         const opened: unknown[] = [];
         await leadAsk(openingClient({ ok: true, refused: [] }, opened)).submit(['A lead']);
         expect(opened).toEqual([]);
+    });
+});
+
+/** A venues file's schema with the fields a journal browser hit fills, its name required. */
+const VENUE_SCHEMA: SchemaField[] = [
+    { field: 'name', type: 'text', display: 1, required: true },
+    { field: 'id', type: 'text', primary_key: true },
+    { field: 'issn', type: 'tags' },
+    { field: 'fee', type: 'text' },
+    { field: 'open_access', type: 'text' }
+];
+
+/** The venues file the write lands in: that schema and one entry, which the write leaves alone. */
+const VENUES_FILE = [
+    'title: Venues',
+    'schema:',
+    '  - { field: name, type: text, display: 1, required: true }',
+    '  - { field: id, type: text, primary_key: true }',
+    '  - { field: issn, type: tags }',
+    '  - { field: fee, type: text }',
+    '  - { field: open_access, type: text }',
+    'venues:',
+    '  - name: Existing Venue',
+    '    id: existing',
+    ''
+].join('\n');
+
+/** A hit of the journal browser as its route answers it. */
+const HIT: BrowserHit = {
+    title: 'NeuroImage',
+    issn: ['1053-8119', '1095-9572'],
+    publisher: 'Elsevier',
+    fee: '100% APC discount for UT authors',
+    open_access: 'Full Open Access. All articles in this journal are Open Access'
+};
+
+describe("a journal browser hit's Add", () => {
+    it('asks the key with the name typed from the hit, and writes the name, ISSNs, fee and open-access status as one new entry with one History record (G134)', async () => {
+        const sent: Sent[] = [];
+        const client = clientOf([PRIMARY], sent);
+        const held = client.selectors.collectionsOfKey('venues');
+        const ask = browserHitAsk(client, HIT, 'venues', VENUE_SCHEMA, 'Venues', held, PRIMARY);
+        expect(ask.fields.map(asked)).toEqual([
+            { label: 'name', line: 'NeuroImage' },
+            { label: 'id', line: '' }
+        ]);
+        expect(await ask.submit(['NeuroImage', 'neuroimage'])).toBe('');
+        const fields = {
+            id: 'neuroimage',
+            name: 'NeuroImage',
+            issn: ['1053-8119', '1095-9572'],
+            fee: HIT.fee,
+            open_access: HIT.open_access
+        };
+        expect(sent).toEqual([{ what: 'venues', fields, root: PRIMARY }]);
+
+        const into = target();
+        const file = join(into.hub, '.oculus', 'data', 'research', 'venues.yml');
+        writeFileSync(file, VENUES_FILE);
+        const body = { kind: 'new-entry', collection: 'venues', fields: sent[0].fields };
+        expect((await handleWrite(request(body), TOKEN, into)).status).toBe(200);
+        expect(changesOf(into)).toHaveLength(1);
+        const after = readFileSync(file, 'utf8');
+        expect(after.startsWith(VENUES_FILE)).toBe(true);
+        const { venues } = parse(after) as { venues: Record<string, unknown>[] };
+        expect(venues).toEqual([{ name: 'Existing Venue', id: 'existing' }, fields]);
+    });
+
+    it('writes a hit with no ISSN with the fields it has and no issn (G134)', async () => {
+        const sent: Sent[] = [];
+        const client = clientOf([PRIMARY], sent);
+        const held = client.selectors.collectionsOfKey('venues');
+        const bare: BrowserHit = { title: 'A Journal', issn: [], fee: 'none' };
+        const ask = browserHitAsk(client, bare, 'venues', VENUE_SCHEMA, 'Venues', held, PRIMARY);
+        expect(await ask.submit(['A Journal', 'a-journal'])).toBe('');
+        expect(sent).toEqual([
+            {
+                what: 'venues',
+                fields: { id: 'a-journal', name: 'A Journal', fee: 'none' },
+                root: PRIMARY
+            }
+        ]);
     });
 });

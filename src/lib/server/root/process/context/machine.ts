@@ -8,8 +8,12 @@
 // stays held, and named by `heldBack()`, until a read agrees with the running value again.
 
 import { isDeepStrictEqual } from 'node:util';
-import type { LocalConfig } from '../../../../data/sources/config.ts';
-import type { MachineRead } from '../../../../data/sources/config/machine.ts';
+import { basicServices, localFile, type LocalConfig } from '../../../../data/sources/config.ts';
+import {
+    userProblems,
+    type MachineProblem,
+    type MachineRead
+} from '../../../../data/sources/config/machine.ts';
 import type { OpenWorkspace } from '../../../files/workspace/open.ts';
 
 /** The keys the process is started with and keeps until a restart, with the key of the file. */
@@ -54,6 +58,21 @@ export type Machine = {
     /** Every key held at its running value now, which a restart would change. */
     heldBack: () => HeldBack[];
 };
+
+/**
+ * The problems of the read `read`, with a problem of the primary's file for each `downloads` row a
+ * reader row of the merged settings `configs` (one per hub of the workspace) signs in to with a
+ * user and that holds none. With no primary no `downloads` row is read.
+ */
+export function heldProblems(
+    read: MachineRead,
+    primaryDir: string | null,
+    configs: readonly Record<string, unknown>[]
+): MachineProblem[] {
+    if (primaryDir === null) return read.problems;
+    const file = localFile(primaryDir);
+    return [...read.problems, ...userProblems(read, file, basicServices(configs))];
+}
 
 /** Make the holder over the context's values. */
 export function createMachine(deps: MachineDeps): Machine {

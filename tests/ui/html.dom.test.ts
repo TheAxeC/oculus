@@ -67,10 +67,14 @@ describe('a paper saved to Literature', () => {
         const config = portfolioConfigFrom(loadConfig(engineDir()).config);
         const sent =
             'Tested <i>in vivo</i> on <img src=x onerror="alert(1)">mice.<script>alert(1)</script>';
-        saveLiterature(hub, config, undefined, 'search', {
-            title: 'Tested in mice',
-            abstract: sent
-        });
+        saveLiterature(
+            hub,
+            config,
+            undefined,
+            'search',
+            { title: 'Tested in mice', abstract: sent },
+            []
+        );
         const saved = (parse(readFileSync(file, 'utf8')) as { entries: { abstract: string }[] })
             .entries[0].abstract;
         expect(saved).toBe('Tested in vivo on mice.');

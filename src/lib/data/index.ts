@@ -40,8 +40,7 @@ import {
 import { readCareer } from './sources/documents/career.ts';
 import { readFeeds } from './sources/documents/feeds.ts';
 import { projectDocs } from './sources/documents/docs.ts';
-import { findingText, type TextCatalog } from './helpers/finding-text.ts';
-import { PRIMARY_CONNECTION_KEYS } from './shapes/hub-keys.ts';
+import type { TextCatalog } from './helpers/finding-text.ts';
 import {
     DATA_FOLDER,
     FEED_REGISTRIES,
@@ -68,6 +67,7 @@ import {
 } from './sources/config/settings/scan.ts';
 import { fieldsOf } from './snapshot/schema/field.ts';
 import { normalise } from './snapshot/normalise.ts';
+import { browserRow, recoverRows } from './sources/config/settings/rows/read.ts';
 import { sortFindings, validate, withoutValidated } from './snapshot/validate.ts';
 import type { Checker } from './snapshot/schema/check.ts';
 import { REGISTRIES, unreadSources } from './snapshot/schema/lists.ts';
@@ -377,6 +377,20 @@ function configFolder(engine: EngineConfigIn | null): EngineConfigFolder | null 
 }
 
 /**
+ * What a hub's reader rows give its snapshot: whether its `venues.browser` row asks by ISSN, and
+ * the keys of its `recover.sources` rows, the kinds of source Recover reads for its datasets.
+ */
+function readersOf(merged: Record<string, unknown>): {
+    browsable: boolean;
+    kinds: Set<string>;
+} {
+    return {
+        browsable: browserRow(merged)?.query?.issn !== undefined,
+        kinds: new Set(recoverRows(merged).map((row) => row.key))
+    };
+}
+
+/**
  * One hub as its files were read, before any check: its folder, its name, settings and records.
  */
 type HubRead = { hub: string; root: string; config: PortfolioConfig; raw: RawPortfolio };
@@ -522,7 +536,14 @@ export function builtHub(read: HubRead, options: BuildOptions): HubBuild {
         deckFile: DECK_FILE
     });
     return {
-        snapshot: normalise(raw, findings, config.merged, options.version, options.others),
+        snapshot: normalise(
+            raw,
+            findings,
+            config.merged,
+            options.version,
+            options.others,
+            readersOf(config.merged)
+        ),
         schemas: resolvedSchemas(
             withSchemas(run.set, engineSchemas(raw, config)),
             root,
@@ -564,7 +585,14 @@ export function buildFolderProjects(
 ): HubBuild {
     const findings = sortFindings(raw.findings);
     return {
-        snapshot: normalise(raw, findings, config.merged, options.version, options.others),
+        snapshot: normalise(
+            raw,
+            findings,
+            config.merged,
+            options.version,
+            options.others,
+            readersOf(config.merged)
+        ),
         schemas: resolvedSchemas(
             withSchemas(emptySchemaSet(), engineSchemas(raw, config)),
             '',
@@ -596,26 +624,6 @@ export type OtherHub = HubRoot & {
     vocab: HubVocab;
 };
 
-/**
- * A finding for each key of PRIMARY_CONNECTION_KEYS the settings file of a hub other than the
- * primary sets, naming that hub: the key is read from the primary hub's file alone.
- */
-function primaryKeyFindings(
-    root: HubRoot,
-    config: Record<string, unknown>,
-    from: Record<string, string>
-): Finding[] {
-    const catalog = textCatalog(config);
-    const file = join(root.dir, HUB_FILE);
-    return PRIMARY_CONNECTION_KEYS.filter(
-        (key) => Object.hasOwn(from, key) && fromHubFile(from[key])
-    ).map((key) => ({
-        file,
-        key,
-        message: findingText(catalog, 'findings.config.hub_key_primary', key, root.key)
-    }));
-}
-
 /** The settings of a hub other than the primary, from the parse `loaded` of its settings. */
 export function readOtherHub(root: HubRoot, loaded: ReturnType<typeof loadConfig>): OtherHub {
     const { config, findings, from } = loaded;
@@ -627,7 +635,6 @@ export function readOtherHub(root: HubRoot, loaded: ReturnType<typeof loadConfig
         vocab: hubVocabOf(root.dir, portfolio),
         findings: [
             ...findings,
-            ...primaryKeyFindings(root, config, from),
             ...sourcesFindings(
                 config,
                 {

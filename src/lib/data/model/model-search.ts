@@ -1,7 +1,8 @@
 // Layer 1, data. What a search across files answers: the hits of one file, the files of one run,
 // and what the run cost. The literature search's vocabulary is here too: the sources, the states a
 // source answers in, the document types, the refusal words of its route, and the hit a source's
-// adapter reads out of its answer.
+// row reads out of its answer; and the journal browser's: its hits, its listing, its refusal words
+// and its answer.
 //
 // A hit is one match, so a line holding two matches is two hits. It carries the line's own text
 // rather than an offset into the file, so the page draws a result without reading the file, and it
@@ -89,20 +90,8 @@ export type NamesAnswer = {
     cut: boolean;
 };
 
-/** The eight scholarly sources, in the order the route lists them. */
-export const LITERATURE_SOURCES = [
-    'openalex',
-    'semantic_scholar',
-    'crossref',
-    'pubmed',
-    'europe_pmc',
-    'arxiv',
-    'wos',
-    'scopus'
-] as const;
-
-/** One scholarly source. */
-export type LiteratureSource = (typeof LITERATURE_SOURCES)[number];
+/** One scholarly source: the `key` of a row of `literature.sources` of the primary hub. */
+export type LiteratureSource = string;
 
 /** The document type a reader filters on; `any` is no filter. */
 export const DOC_TYPES = [
@@ -210,7 +199,7 @@ export type SourceHits = {
 };
 
 /** What a source that did not answer `ok` says. */
-export type SourceNotOk = {
+type SourceNotOk = {
     ok: true;
     source: LiteratureSource;
     state: Exclude<SourceState, 'ok'>;
@@ -223,11 +212,80 @@ export type SourceNotOk = {
 /** One source's whole answer to one request. */
 export type SourceAnswer = SourceHits | SourceNotOk;
 
-/** One source in the route's list: whether it needs a key, whether it can be asked, and the key. */
+/**
+ * One source in the route's list, a row of `literature.sources`: its name, whether it needs a
+ * secret, whether it can be asked, and the hit field its BibTeX lookup takes.
+ */
 export type SourceInfo = {
     id: LiteratureSource;
+    name: string;
     keyed: boolean;
     available: boolean;
-    /** The `local.yml` key a keyed source needs, never a value. */
+    /** The `downloads` row a keyed source needs (the one missing, when one is), never a value. */
     key: string | null;
+    /** The sentence of that row's `auth` entry that says where the secret is made. */
+    help: string | null;
+    /**
+     * The hit field the row's `query.id` asks a BibTeX entry by: `id` the row's own id of the
+     * paper, else the field of that name; null for a row with no `query.id`.
+     */
+    bibtex: string | null;
 };
+
+/** One hit of a journal browser: the fields its row reads, each absent when the hit holds none. */
+export type BrowserHit = {
+    title?: string;
+    /** Each ISSN the hit holds, in the order the answer gives them, none when it holds none. */
+    issn: string[];
+    publisher?: string;
+    /** The article fee as the browser words it. */
+    fee?: string;
+    /** The open-access status as the browser words it. */
+    open_access?: string;
+};
+
+/**
+ * The journal browser of one hub, the row of its `venues.browser`, as the browser route lists it:
+ * the row's name, the labels of its filters and sort orders, and the page sizes it offers.
+ */
+export type BrowserInfo = {
+    hub: string;
+    name: string;
+    filters: string[];
+    sorts: string[];
+    sizes: number[];
+};
+
+/** Why the browser route refused a request before the browser was asked. */
+export const BROWSER_REFUSALS = [
+    'token',
+    'hub',
+    'query_empty',
+    'query_long',
+    'issn',
+    'filter',
+    'sort',
+    'size',
+    'page'
+] as const;
+
+/** One refusal word of the browser route. */
+export type BrowserRefusal = (typeof BROWSER_REFUSALS)[number];
+
+/** What a journal browser answered: its hits and the next page, or the state it stopped in. */
+export type BrowserAnswer =
+    | {
+          ok: true;
+          state: 'ok';
+          hits: BrowserHit[];
+          /** The count the browser reports, null when it reports none. */
+          total: number | null;
+          /** What the next page is asked with, null when the browser holds none after this. */
+          cursor: string | null;
+      }
+    | {
+          ok: true;
+          state: Exclude<SourceState, 'ok' | 'skipped'>;
+          status?: number;
+          wait_s?: number;
+      };

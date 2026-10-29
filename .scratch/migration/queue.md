@@ -1,18 +1,18 @@
-In flight (1 of 6 slots in use):
-- O97 (the journal browser from configuration and one configurable reader, rulings 509, 511, 517 and 518): repair round 1 (builder launched 2026-10-28, reviewed, round 1 sent the same day), base f4535f495.
+In flight (0 of 6 slots in use): none.
 
 Queued:
-- O99 (every setting edited in Settings and a form for every file that is no setting, rulings 519 to 522): after O97 has landed (ruling 526 (a)); O98 has landed, since it rewrites the Settings files both change.
-- O101 (the Zenodo deposit through Zenodo's REST API, with Deposit for review, rulings 533 and 534): after O97 and O99 have landed.
+- O99 (every setting edited in Settings and a form for every file that is no setting, rulings 519 to 522, with the controls of O97's reader rows by ruling 526 (a)): next; O98 and O97 have landed.
+- O101 (the Zenodo deposit through Zenodo's REST API, with Deposit for review, rulings 533, 534 and 535): after O99 has landed; O97 has landed.
 
 Waiting on a ruling: none.
 
-Landing next: O97, when its review and round close.
+Landing next: none in flight.
 
-Owed looks: O97 at its landing, on 8790.
+Owed looks: none; O97's look ran on a scratch server on port 8797, and 8790 shows O97 once Axel's server is restarted.
 
 Landed, newest first:
-- O98 (accounts and connections: several clusters, each connection written out, git signed in from Account setup), 2026-10-28, the landing commit; hub 7c2dd40fe.
+- O97 (the journal browser from configuration and one configurable reader), 2026-10-29, the landing commit; hub 3f4d5d883.
+- O98 (accounts and connections: several clusters, each connection written out, git signed in from Account setup), 2026-10-28, a1eeb718; hub 7c2dd40fe.
 - O100 (the Awaiting box's names underlined under the pointer), 2026-10-27, 89c1a9bc.
 - O95 (Focus, what a press opens), 2026-10-27, 5a51074e.
 - O96 (the cards' project strip: its filters and its groups by category), 2026-10-27, 01bb9024.

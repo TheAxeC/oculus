@@ -24,6 +24,7 @@
     import { routeBody } from '$lib/state/feeds/literature/answers';
     import { entryFor } from '$lib/state/feeds/literature/bibtex';
     import type { MergedHit } from '$lib/state/feeds/literature/merge';
+    import type { SourceInfo } from '$lib/state/feeds/literature/form';
     import { posting } from '../../shared/card/feed/posting';
     import SaveToLiterature from '../../shared/card/feed/SaveToLiterature.svelte';
     import { createLiteratureSave } from '../../shared/card/feed/literature-save.svelte';
@@ -40,6 +41,8 @@
 
     type Props = {
         hit: MergedHit;
+        /** The sources the server lists, which name a hit's sources and give its BibTeX lookups. */
+        sources: SourceInfo[];
         id: string;
         cursor: boolean;
         /** Whether the radar holds this paper already. */
@@ -52,7 +55,8 @@
         onsaid: (words: string) => void;
     };
 
-    let { hit, id, cursor, inRadar, buckets, projects, radarMissing, onsaid }: Props = $props();
+    let { hit, sources, id, cursor, inRadar, buckets, projects, radarMissing, onsaid }: Props =
+        $props();
     let open = $state(false);
     let adding = $state(false);
     let copying = $state(false);
@@ -84,10 +88,7 @@
     );
     const citeTip = $derived(
         Object.entries(hit.citesBy)
-            .map(
-                ([source, count]) =>
-                    `${sourceName(source as keyof typeof hit.citesBy)}: ${String(count)}`
-            )
+            .map(([source, count]) => `${sourceName(sources, source)}: ${String(count)}`)
             .join(t('literature.sep'))
     );
 
@@ -141,9 +142,9 @@
         if (copying) return;
         copying = true;
         try {
-            const entry = await entryFor(hit, (url) => routeBody(url, writeToken()));
+            const entry = await entryFor(hit, sources, (url) => routeBody(url, writeToken()));
             await navigator.clipboard.writeText(entry.text);
-            if (!closed) onsaid(copiedWords(entry.from));
+            if (!closed) onsaid(copiedWords(entry));
         } catch {
             if (!closed) onsaid(t('literature.copy_failed'));
         } finally {
@@ -171,7 +172,7 @@
 
 {#snippet meta()}
     {#each hit.sources as source (source)}
-        <Tag label={sourceName(source)} />
+        <Tag label={sourceName(sources, source)} />
     {/each}
     {#if hit.oa}
         <Tag label={t('literature.open')} tone="green" />

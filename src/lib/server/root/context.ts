@@ -41,7 +41,8 @@ import type { HostInfo, Snapshot } from '../../data/model/index.ts';
 import { words } from '../core/words.ts';
 import type { Finding, FilesPayload } from '../../data/model/index.ts';
 import { defaultConnectDir } from '../accounts/connect/store.ts';
-import { ConnectStates, timedFetcher } from '../accounts/connect/oauth.ts';
+import { ConnectStates, READ_TIMEOUT_MS } from '../accounts/connect/oauth.ts';
+import { timedFetcher } from '../core/reader/timed.ts';
 import { gitSignIns, sleep } from '../accounts/connect/git/signins.ts';
 import { machineOpener, pathOpener } from '../files/open.ts';
 import { LiteratureDesk } from '../content/literature/desk.ts';
@@ -94,7 +95,8 @@ import { noApps, type AppsHeld } from '../machine/apps/read/held.ts';
 import { languageSource, languageStamp } from '../machine/apps/routes/localization.ts';
 import { liveSettings, type LiveSettings } from './live-settings.ts';
 import { createConfigCache } from './process/config-cache.ts';
-import { createMachine } from './process/context/machine.ts';
+import { createMachine, heldProblems } from './process/context/machine.ts';
+import type { MachineProblem } from '../../data/sources/config/machine.ts';
 import {
     newWorkspaceFindings,
     reportFindings,
@@ -189,7 +191,18 @@ export function createServerContext(
         workspace: () => open().file,
         load,
         loadHub: (dir, words) =>
-            make.loadConfig(engine, dir === null ? {} : { hub: dir, ...(words && { words }) }),
+            make.loadConfig(
+                engine,
+                dir === null
+                    ? {}
+                    : {
+                          hub: dir,
+                          ...(dir !== open().primaryDir && {
+                              other: open().hubs.find((one) => one.dir === dir)?.name ?? dir
+                          }),
+                          ...(words && { words })
+                      }
+            ),
         language: () => languageStamp(appsHeld.now()),
         report: reportFindings,
         primary: () => open().primary,
@@ -289,9 +302,17 @@ export function createServerContext(
     // install, so it is said once at startup rather than once per request.
     const icons: IconMemory = { set: iconSet(config) };
     let host = hostInfo(local.port);
-    reportFindings(
-        startFindings({ engine, config, from, open: first, problems: initial.problems })
-    );
+    // The machine's problems, with the `downloads` rows the reader rows of the hubs cannot use.
+    const problems = (): MachineProblem[] => {
+        const now = open();
+        const others = now.hubs.filter((one) => one.name !== now.primary);
+        const configs = others.map((one) => configCache.hub(one.dir).config);
+        return heldProblems(machine.held(), now.primaryDir, [
+            configCache.quiet().config,
+            ...configs
+        ]);
+    };
+    reportFindings(startFindings({ engine, config, from, open: first, problems: problems() }));
     // The watchers `reloadLocal` builds again. Each start function reads the machine's values and
     // the settings in force when it is called, so the same code builds a watcher at start and again
     // after a key it is built from changed.
@@ -323,7 +344,7 @@ export function createServerContext(
                 defaults: configCache.defaults,
                 language,
                 held: heldFindings,
-                problems: () => machine.held().problems,
+                problems,
                 self: () => local.self,
                 follow: followWorkspace
             },
@@ -612,7 +633,7 @@ export function createServerContext(
         literature: new LiteratureDesk(),
         providerDir: polled.providerDir,
         gitSignIns: gitSignIns({
-            fetcher: timedFetcher(fetch),
+            fetcher: timedFetcher(fetch, READ_TIMEOUT_MS),
             sleep,
             open: () => context.opener,
             providerDir: polled.providerDir,
@@ -754,7 +775,7 @@ export function createServerContext(
         const heldBefore = machine.heldBack().map((one) => one.file);
         const setBefore = machine.held().set;
         const selfBefore = local.self;
-        const problemsBefore = machine.held().problems;
+        const problemsBefore = problems();
         const read = machine.refresh(true);
         if (read.unread !== null) {
             const reason = localSentence(read.unread.problem, read.unread.file);
@@ -792,7 +813,7 @@ export function createServerContext(
         }
         if (
             !isDeepStrictEqual(heldBefore, heldNow) ||
-            !isDeepStrictEqual(problemsBefore, machine.held().problems)
+            !isDeepStrictEqual(problemsBefore, problems())
         ) {
             for (const listener of [...heardHeld]) listener();
         }

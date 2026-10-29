@@ -300,7 +300,13 @@ function project(
     });
 }
 
-function venue(entry: RawRegistryEntry): Venue {
+/**
+ * A venue. `browsable` is whether its hub names a journal browser that asks by ISSN (a
+ * `venues.browser` row with a `query.issn`), which the venue card's Read from the browser asks;
+ * `issn` is the entry's list of ISSNs, absent when it lists none.
+ */
+function venue(entry: RawRegistryEntry, browsable: boolean): Venue {
+    const issn = strings(entry.issn);
     const wos = indexing(str(entry.wos) ?? '');
     const scopus = indexing(str(entry.scopus) ?? '');
     return compact({
@@ -316,6 +322,10 @@ function venue(entry: RawRegistryEntry): Venue {
         scopus: scopus.words === '' ? undefined : scopus.words,
         scopusMark: scopus.mark,
         free: str(entry.free),
+        issn: issn.length === 0 ? undefined : issn,
+        fee: str(entry.fee),
+        openAccess: str(entry.open_access),
+        browsable: browsable ? true : undefined,
         format: str(entry.format),
         wants: str(entry.wants),
         link: str(entry.link),
@@ -329,8 +339,11 @@ function venue(entry: RawRegistryEntry): Venue {
     });
 }
 
-/** A dataset. `source` is the registry's URL for where the data comes from. */
-function dataset(entry: RawRegistryEntry): Dataset {
+/**
+ * A dataset. `source` is the registry's URL for where the data comes from; `kinds` are the keys of
+ * the rows of the hub's `recover.sources`, the kinds of source Recover reads in this hub.
+ */
+function dataset(entry: RawRegistryEntry, kinds: ReadonlySet<string>): Dataset {
     return compact({
         id: entry.key,
         name: str(entry.name) ?? '',
@@ -339,7 +352,7 @@ function dataset(entry: RawRegistryEntry): Dataset {
         size: str(entry.size),
         access: str(entry.access),
         source: str(entry.source),
-        ...retrievalOf(entry.retrieval),
+        ...retrievalOf(entry.retrieval, kinds),
         path: str(entry.path),
         notes: str(entry.notes),
         themes: strings(entry.themes),
@@ -573,14 +586,21 @@ function feeds(raw: RawFeeds): RawFeeds {
  * config, whose `tiers` the projects are read with. `others` holds the keys the other hubs of the
  * workspace hold, by source: a reference to one of them is kept beside the references to the hub's
  * own records, so the merge of the hubs (hubs/merge.ts) resolves it, and a reference no hub holds
- * is left out.
+ * is left out. `readers` is what the hub's reader rows give: `browsable`, whether its
+ * `venues.browser` row asks by ISSN, so its venues can be read from the journal browser, and
+ * `kinds`, the keys of its `recover.sources` rows, the kinds of source Recover reads for its
+ * datasets; with none, no venue is browsable and no source is read by Recover.
  */
 export function normalise(
     raw: RawPortfolio,
     findings: Finding[],
     merged: Record<string, unknown>,
     version = 0,
-    others: Readonly<Record<string, readonly string[]>> = {}
+    others: Readonly<Record<string, readonly string[]>> = {},
+    readers: { browsable: boolean; kinds: ReadonlySet<string> } = {
+        browsable: false,
+        kinds: new Set()
+    }
 ): HubSnapshot {
     const withId = (entries: RawRegistryEntry[]): RawRegistryEntry[] =>
         entries.filter((item) => item.key.length > 0);
@@ -589,8 +609,12 @@ export function normalise(
     const projects = raw.manifests.map((manifest) =>
         project(manifest, raw.docs[manifest.id], raw.decks[manifest.id], tiers)
     );
-    const venues = withId(raw.registries.venues.entries).map(venue);
-    const datasets = withId(raw.registries.datasets.entries).map(dataset);
+    const venues = withId(raw.registries.venues.entries).map((entry) =>
+        venue(entry, readers.browsable)
+    );
+    const datasets = withId(raw.registries.datasets.entries).map((entry) =>
+        dataset(entry, readers.kinds)
+    );
     const pillars = withId(raw.registries.pillars.entries).map(pillar);
     const domains = withId(raw.registries.domains.entries).map(domain);
     const schemes = raw.registries.funding.entries

@@ -27,10 +27,8 @@ export { unplacedGroup } from './config/rail.ts';
 export {
     type ClusterAccount,
     type DownloadAccount,
-    type DownloadService,
     type LocalConfig,
     DEFAULT_PORT,
-    LITERATURE_KEYS,
     LOCAL_NAME,
     PROGRAM_KEYS,
     STATE_PATHS,
@@ -95,6 +93,13 @@ export {
     searchSettings
 } from './config/settings/files.ts';
 export { type LatexFormatting, latexBuild, latexFormatting } from './config/settings/latex.ts';
+export {
+    basicServices,
+    browserRow,
+    linkRows,
+    literatureRows,
+    recoverRows
+} from './config/settings/rows/read.ts';
 export { type LintSettings, lintSettings } from './config/settings/lint.ts';
 export {
     type AppsSettings,

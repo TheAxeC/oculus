@@ -35,8 +35,9 @@ import {
     type LintRow
 } from '../../../../data/model/index.ts';
 import type { LintSettings } from '../../../../data/sources/config.ts';
+import type { LinkRow } from '../../../../data/sources/config/settings/rows/grammar.ts';
 import { tokenedBody } from '../../../core/auth.ts';
-import { hashOf } from '../../../core/file-bytes.ts';
+import { hashOf } from '../../../core/files/file-bytes.ts';
 import { chained, type FsWrites } from '../../../core/json.ts';
 import { inside, realPath } from '../../../core/paths.ts';
 import { run as runProgram } from '../../../core/program.ts';
@@ -76,6 +77,8 @@ export type LintRouteOptions = {
     comments: HeldComments;
     /** The text catalog the writing rules' rows and reasons are worded from. */
     catalog: () => Record<string, string>;
+    /** The primary hub's `links` rows, which a ShellCheck row's documentation address reads. */
+    links: () => readonly LinkRow[];
     /** The environment the programs are found and run in. */
     env?: NodeJS.ProcessEnv;
     /** The milliseconds a run is given; `LINT_LIMIT_MS` unless a test says otherwise. */
@@ -216,7 +219,7 @@ async function runProcess(
             rows = readRuff(ran.stdout, file);
             break;
         case 'shellcheck':
-            rows = readShellcheck(ran.stdout, file);
+            rows = readShellcheck(ran.stdout, file, options.links());
             break;
     }
     return rows === null ? failed('unreadable') : { ok: true, rows };

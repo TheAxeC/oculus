@@ -88,7 +88,9 @@ type ValuesBy = { field: string; sources: Record<string, Source> };
  * fixed items of a list; `items: number` makes a list's items numbers; `joined` writes a multi as
  * one text separated by spaces; `allow_missing` lets a folder or file be absent, always (true) or
  * while the named toggle field of the record is true; `fields` describes the records of a
- * `records` field.
+ * `records` field. A text field with `fields` and `holds: record` takes a text or one record of
+ * its fields (takesRecord). `sparse` on a family draws each card with the fields its record sets
+ * and a menu that adds the others.
  */
 export type FieldSpec = {
     help: string;
@@ -106,7 +108,13 @@ export type FieldSpec = {
     allow_missing?: boolean | string;
     fields?: Record<string, FieldSpec>;
     holds?: Holds;
+    sparse?: true;
 };
+
+/** Whether a field takes a text or one record of its fields: a text with `holds: record`. */
+export function takesRecord(spec: Pick<CatalogEntry, 'control' | 'fields' | 'holds'>): boolean {
+    return spec.control === 'text' && spec.holds === 'record' && spec.fields !== undefined;
+}
 
 /**
  * What the value of a family field is: `list`, a list of records; `pairs`, a map from a key to a
@@ -138,11 +146,12 @@ export function familyForm(spec: Pick<FieldSpec, 'fields' | 'holds'>): FamilyFor
  * workspace file's `settings:` tells its rows apart by. A `local.yml` key has a help line, and a
  * `control` only where it takes a number or a choice. A key/value family (fields `key` and
  * `value`), an entry or a field, may carry `holds: lists`, meaning each key of the map holds a list
- * of values or one value; a family field with no `key` field may carry `holds: record`, meaning it
- * holds one record of its fields. The reader refuses either word anywhere else, and a key/value
- * family without `holds: lists` takes no list at a key. `heading` is the subject the option is
- * listed under (`unheaded` when it names none a HEADINGS word is), and `section` the group inside
- * that heading, the first segment of the key path when absent.
+ * of values or one value; a family, or a family field with no `key` field, may carry `holds:
+ * record`, meaning it holds one record of its fields, and a text field may carry it with `fields`.
+ * The reader refuses either word anywhere else, and a key/value family without `holds: lists`
+ * takes no list at a key. `heading` is the subject the option is listed under (`unheaded` when it
+ * names none a HEADINGS word is), and `section` the group inside that heading, the first segment
+ * of the key path when absent.
  */
 export type CatalogEntry = Omit<FieldSpec, 'control'> & {
     control?: Control;
@@ -215,6 +224,7 @@ export type OptionProblem = {
         | 'form'
         | 'slots'
         | 'holds'
+        | 'sparse'
         | 'heading_missing'
         | 'heading_unknown'
         | 'key'
@@ -328,7 +338,9 @@ function readSpec(
     } else {
         entry.control = word;
     }
-    if (!top && family && entry.control !== 'records') delete entry.fields;
+    // A text field keeps its fields when it also takes one record of them (takesRecord).
+    const either = entry.control === 'text' && map.holds === 'record';
+    if (!top && family && entry.control !== 'records' && !either) delete entry.fields;
 
     const options = Array.isArray(map.options) ? strings(map.options) : undefined;
     if (options !== undefined) entry.options = options;
@@ -393,16 +405,22 @@ function readSpec(
         }
     }
     // Only a key/value family takes `holds: lists`, a map of lists of records being no shape, and
-    // only a family field with no `key` field takes `holds: record`.
+    // only a family, or a family field with no `key` field, takes `holds: record`: a family of one
+    // record reads its `key` as one more field, as a record of a list does.
     if (map.holds !== undefined) {
         const fields = entry.fields;
         const lists = map.holds === 'lists' && fields !== undefined && isPairs(fields);
         const record =
-            map.holds === 'record' && !top && fields !== undefined && !Object.hasOwn(fields, 'key');
+            map.holds === 'record' &&
+            fields !== undefined &&
+            (top || !Object.hasOwn(fields, 'key'));
         if (lists) entry.holds = 'lists';
         else if (record) entry.holds = 'record';
         else flag('holds', typeof map.holds === 'string' ? map.holds : JSON.stringify(map.holds));
     }
+    // Only a family is drawn sparse: its cards show the fields set, with a menu for the others.
+    if (map.sparse === true && entry.fields !== undefined) entry.sparse = true;
+    else if (map.sparse !== undefined) flag('sparse');
     if (wrong.any && entry.fields === undefined) entry.control = 'text';
     return entry;
 }

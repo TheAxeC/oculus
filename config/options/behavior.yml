@@ -756,7 +756,7 @@ options:
     literature.per_source:
         heading: editor
         section: Literature search
-        help: How many hits one page of the Literature search asks of each source. Semantic Scholar takes at most 100 and Web of Science at most 50, so a larger page is cut to what the source takes.
+        help: How many hits one page of the Literature search asks of each source. A source takes at most the `paging.max` of its row of `literature.sources`, so a larger page is cut to what the source takes.
         control: number
         min: 1
         max: 100
@@ -769,6 +769,927 @@ options:
         min: 0
         max: 1440
         whole: true
+    literature.sources:
+        heading: editor
+        section: Literature search
+        help: "The sources the Literature search asks, in the order it lists them, each a reader row: the address it is asked at, the parameters each term of the form is sent as, how its answers page, and the records and fields a hit is read from. Read from the primary hub's .oculus/config.yml; a hub other than the primary that sets it has a finding. With none, the search says no source is configured. A row with a key the reader does not take, or without a key its format needs, is a finding of the file."
+        sparse: true
+        fields:
+            key:
+                help: the source's id, which a hit names its source by, unique in the list
+                control: text
+            name:
+                help: the words the search's source list and every line about the source show
+                control: text
+            format:
+                help: how an answer is read, json, xml, html (by CSS selectors), text or none
+                control: choice
+                options: [json, xml, html, text, none]
+            address:
+                help: 'the https: address asked, with {name} holes filled from the terms and the entry, each encoded for its part, and the operations {hole|quote}, {hole|plain}, {hole|series} and {hole|path}'
+                control: text
+            query:
+                help: each term of the form (words, doi, years, type, open_access, venue, author, min_cited; issn and id for the lookups) to how it is sent; a term the row does not map is not sent
+                fields:
+                    key:
+                        help: the term
+                        control: choice
+                        options:
+                            - words
+                            - doi
+                            - years
+                            - type
+                            - open_access
+                            - venue
+                            - author
+                            - min_cited
+                            - issn
+                            - id
+                    value:
+                        help: how the term is sent
+                        holds: record
+                        fields:
+                            param: the parameter the term is sent in
+                            text: 'the value sent, with the holes {words}, {doi}, {from}, {to}, {value}, {from-1}, {to+1} and {value-1}'
+                            address: the address a lookup by this term is asked at instead of the row's
+                            match: the pattern whose capture is the value sent; a value that does not fit sits the search out
+                            per_word:
+                                help: send one text per word or quoted phrase
+                                control: toggle
+                            params:
+                                help: the parameters sent with the term alone, beside its parameter or with its lookup
+                                fields:
+                                    key: the parameter
+                                    value: its value
+                            headers:
+                                help: the headers a lookup alone is sent with
+                                fields:
+                                    key: the header
+                                    value: its value
+                            missing:
+                                help: none reads a 404 answer as no hit
+                                control: choice
+                                options: [none]
+                            records:
+                                help: where a lookup's answer holds its records, a path or a record of its path and how it is read
+                                control: text
+                                holds: record
+                                fields:
+                                    path: the path of the records
+                                    absent:
+                                        help: none reads a missing path as no records
+                                        control: choice
+                                        options: [none]
+                                    first:
+                                        help: keep the first record alone, and refuse an answer with none
+                                        control: toggle
+                            fields:
+                                help: the fields a lookup's records are read by
+                                fields:
+                                    key: the field
+                                    value: its path
+                            format:
+                                help: how a lookup's answer is read
+                                control: choice
+                                options: [json, xml, html, text, none]
+                            by: the hit field a lookup by id takes its id from
+            join:
+                help: each parameter that several terms fill to the text their values are joined by
+                fields:
+                    key: the parameter
+                    value: the text between the values
+            skip_when:
+                help: the terms the source cannot send, so a search holding one sits this source out with no request
+                control: multi
+                options: [words, doi, years, type, open_access, venue, author, min_cited, issn, id]
+            types:
+                help: each type of the form to the value the source takes for it
+                fields:
+                    key: the type of the form
+                    value: the source's value
+            types_only:
+                help: a type the row's types do not name sits the search out
+                control: toggle
+            filters:
+                help: the filters the browser offers, each a label and the parameters it sends, {value} the value picked
+                fields:
+                    label: the words the filter is offered under
+                    params:
+                        help: the parameters the filter sends
+                        fields:
+                            key: the parameter
+                            value: its value, with {value}
+            sorts:
+                help: the sort orders offered, each a label and the parameters it sends
+                fields:
+                    label: the words the order is offered under
+                    params:
+                        help: the parameters the order sends
+                        fields:
+                            key: the parameter
+                            value: its value
+            paging:
+                help: how the answers page
+                holds: record
+                fields:
+                    kind:
+                        help: offset, page (numbered from first), cursor (read from the answer), next (the address the answer names) or link (the Link header's next address)
+                        control: choice
+                        options: [offset, page, cursor, next, link]
+                    param: the parameter the offset, the page or the cursor is sent in
+                    first:
+                        help: the number of the first page
+                        control: number
+                        min: 0
+                        whole: true
+                    size: the parameter of the page size
+                    sizes:
+                        help: the page sizes offered, the first a listing's
+                        control: list
+                        items: number
+                    max:
+                        help: the most hits one page holds; a larger page is cut to it
+                        control: number
+                        min: 1
+                        whole: true
+                    total: the path of the answer's count of hits
+                    from: the path of the answer's cursor or next address
+                    in:
+                        help: body sends the cursor in the body
+                        control: choice
+                        options: [body]
+                    start: the first cursor
+            params:
+                help: the parameters every request is sent with
+                fields:
+                    key: the parameter
+                    value: its value, with holes
+            headers:
+                help: the headers every request is sent with
+                fields:
+                    key: the header
+                    value: its value, with holes
+            method:
+                help: post sends the request as a POST with the body
+                control: choice
+                options: [post]
+            body:
+                help: the JSON body of a POST, each key to its value with holes
+                fields:
+                    key: the key of the body
+                    value: its value
+            records:
+                help: where an answer holds its records, a path or `.` for the answer, a CSS selector for html, or a record of its path and how it is read
+                control: text
+                holds: record
+                fields:
+                    path: the path of the records
+                    select: the CSS selector of an html answer's records
+                    absent:
+                        help: none reads a missing path as no records
+                        control: choice
+                        options: [none]
+                    first:
+                        help: keep the first record alone, and refuse an answer with none
+                        control: toggle
+                    refuse_when: a path whose value in any record refuses the answer
+            fields:
+                help: the fields a hit is read by, each a path (`[]` a list, `[name=value]` the element whose field has that value), a CSS selector with attr for html, or a record of the path and its operation
+                fields:
+                    key: the field of the hit
+                    value:
+                        help: "the field's path, or a record: path or select with attr, the operation op (inverted_index, strip, first_byte_size, join, date, https, first, last, match, exists, link, split, resolve) with its arguments, kind the checksum's kind and else the field read when the first is empty"
+                        control: text
+                        holds: record
+                        fields:
+                            path: the path the value is read at
+                            select: the CSS selector of an html answer, whose element's text is read without attr
+                            attr: the attribute the selector's element is read by
+                            value: a fixed value
+                            op:
+                                help: the operation applied to what is read
+                                control: choice
+                                options:
+                                    - inverted_index
+                                    - strip
+                                    - first_byte_size
+                                    - join
+                                    - date
+                                    - https
+                                    - first
+                                    - last
+                                    - match
+                                    - exists
+                                    - link
+                                    - split
+                                    - resolve
+                            each: the field read on each element of a list
+                            map:
+                                help: each value the field gives to the texts read as it, compared without case
+                                holds: lists
+                                fields:
+                                    key: the value the field gives
+                                    value:
+                                        help: the texts read as it
+                                        control: list
+                            kind:
+                                help: the checksum kind of the value
+                                control: choice
+                                options: [sha256, md5, sha1]
+                            else: the field read when this one reads nothing
+                            prefix: the text strip takes off, or link and https put before the value
+                            suffix: the text put after the value
+                            by: the text join and split take
+                            parts:
+                                help: the fields join reads, in order
+                                control: list
+                            pattern: the pattern match reads
+                            all:
+                                help: match gives every match as a list
+                                control: toggle
+                            link: the links row link builds the address by
+                            id: the field or record path link fills the row's {id} with; without it, the value read at path
+                            host: the host whose http address https reads as https
+                            markup:
+                                help: keep an XML element's inner markup as its text
+                                control: toggle
+            then:
+                help: the follow-up requests, each with its own address, format, records and fields, and one of ids (the ids of the request before, joined by commas), for_each (one request per record) or recurse
+                sparse: true
+                fields:
+                    address: the address asked, with holes
+                    format:
+                        help: how the answer is read
+                        control: choice
+                        options: [json, xml, html, text, none]
+                    method:
+                        help: post sends the request as a POST
+                        control: choice
+                        options: [post]
+                    params:
+                        help: the parameters the request is sent with
+                        fields:
+                            key: the parameter
+                            value: its value, with holes
+                    headers:
+                        help: the headers the request is sent with
+                        fields:
+                            key: the header
+                            value: its value, with holes
+                    records:
+                        help: where the answer holds its records, a path or a record of its path and how it is read
+                        control: text
+                        holds: record
+                        fields:
+                            path: the path of the records
+                            absent:
+                                help: none reads a missing path as no records
+                                control: choice
+                                options: [none]
+                            first:
+                                help: keep the first record alone, and refuse an answer with none
+                                control: toggle
+                    fields:
+                        help: the fields its records are read by
+                        fields:
+                            key: the field
+                            value:
+                                help: the field's path, or a record of the path and its operation
+                                control: text
+                                holds: record
+                                fields:
+                                    path: the path the value is read at
+                                    value: a fixed value
+                                    op:
+                                        help: the operation applied to what is read
+                                        control: choice
+                                        options:
+                                            - inverted_index
+                                            - strip
+                                            - first_byte_size
+                                            - join
+                                            - date
+                                            - https
+                                            - first
+                                            - last
+                                            - match
+                                            - exists
+                                            - link
+                                            - split
+                                            - resolve
+                                    each: the field read on each element of a list
+                                    else: the field read when this one reads nothing
+                                    prefix: the text strip takes off, or link and https put before the value
+                                    suffix: the text put after the value
+                                    by: the text join and split take
+                                    parts:
+                                        help: the fields join reads, in order
+                                        control: list
+                                    pattern: the pattern match reads
+                                    all:
+                                        help: match gives every match as a list
+                                        control: toggle
+                                    link: the links row link builds the address by
+                                    id: the field or record path link fills the row's {id} with; without it, the value read at path
+                                    markup:
+                                        help: keep an XML element's inner markup as its text
+                                        control: toggle
+                    ids: the record field whose values are joined by commas into the request
+                    for_each: the record field whose value fills the hole of that name, one request per record
+                    order_by: the path in each record that holds the id it was asked for, so the records keep the order of the ids
+                    when:
+                        help: the fields a record must equal to be taken
+                        fields:
+                            key: the field
+                            value: the value
+                    unless:
+                        help: the fields a record must not equal to be taken
+                        fields:
+                            key: the field
+                            value: the value
+                    recurse:
+                        help: a request asked again with each folder record's id, down to max_depth folders
+                        holds: record
+                        fields:
+                            when:
+                                help: the fields a folder record equals
+                                fields:
+                                    key: the field
+                                    value: the value
+                            id: the field of a folder's id
+                            folder: the field of a folder's name, added to the names below it
+                            max_depth:
+                                help: the deepest folder followed; one below it refuses the listing
+                                control: number
+                                min: 0
+                                whole: true
+            pace:
+                help: the gap between two requests to the source
+                holds: record
+                fields:
+                    gap:
+                        help: the milliseconds between two requests
+                        control: number
+                        min: 0
+                        whole: true
+                    gap_with_key:
+                        help: the milliseconds between two requests while the row's key is set
+                        control: number
+                        min: 0
+                        whole: true
+            wait:
+                help: the headers a 429 answer's wait is read from
+                holds: record
+                fields:
+                    retry_after: the header of the seconds to wait
+                    reset: the header of the time the limit resets
+                    remaining: the header of the requests left; the reset is read only when it says 0
+            auth:
+                help: the secrets the requests carry, each read from the downloads row it names in the machine's local.yml
+                fields:
+                    header: the header the secret is sent in
+                    param: the parameter the secret is sent in
+                    basic:
+                        help: send the downloads row's user and secret as Basic
+                        control: toggle
+                    row: the service of the downloads row the secret is read from
+                    prefix: the text sent before the secret
+                    required:
+                        help: the source is off without its downloads row
+                        control: toggle
+                    help: the sentence that says where the secret is made, drawn when the source is off without it
+            contact: the parameter literature.mailto of local.yml is sent as
+            expect:
+                help: the element of an html answer the row's pages hold, which a page that lacks it refuses
+                holds: record
+                fields:
+                    select: the CSS selector
+                    holds: a text its value must hold
+            none_when: a path whose presence in an answer means no hits
+            holes:
+                help: each hole of the addresses to the term or entry field it is filled from
+                fields:
+                    key: the hole
+                    value: the field
+            given:
+                help: each field a hit is given whatever the answer, to its value
+                fields:
+                    key: the field
+                    value: the value
+    literature.prefer.fields:
+        heading: editor
+        section: Literature search
+        help: The order of the sources, by their key, that a paper found by several takes its title, venue, year, date and type from. Read from the primary hub's .oculus/config.yml.
+        control: list
+    literature.prefer.abstract:
+        heading: editor
+        section: Literature search
+        help: The order of the sources, by their key, that a paper found by several takes its abstract from.
+        control: list
+    literature.prefer.pdf:
+        heading: editor
+        section: Literature search
+        help: The sources, by their key and in order, whose open PDF a paper shows; a source not listed gives none.
+        control: list
+    recover.sources:
+        heading: sources
+        section: Recover
+        help: "The reader rows Recover lists a dataset's files with, each the kind a dataset source of this hub names as its key: the address its files are listed at, the records and fields a file's name, size, checksum and address are read from, its whole-set download, and the address that says whether a set needs a credential. Read from each hub's own .oculus/config.yml for its own datasets. A source of a kind no row names says so and sends no request."
+        sparse: true
+        fields:
+            key:
+                help: the kind a dataset source names, unique in the list
+                control: text
+            name:
+                help: the words every line about the source shows
+                control: text
+            format:
+                help: how an answer is read, json, xml, html (by CSS selectors), text or none (the files are the entry's own)
+                control: choice
+                options: [json, xml, html, text, none]
+            address:
+                help: "the https: address asked, with {name} holes filled from the dataset source's fields, each encoded for its part, and {hole|path} for a hole of several segments"
+                control: text
+            params:
+                help: the parameters every request is sent with
+                fields:
+                    key: the parameter
+                    value: its value, with holes
+            headers:
+                help: the headers every request is sent with
+                fields:
+                    key: the header
+                    value: its value, with holes
+            method:
+                help: post sends the request as a POST with the body
+                control: choice
+                options: [post]
+            body:
+                help: the JSON body of a POST, each key to its value with holes
+                fields:
+                    key: the key of the body
+                    value: its value
+            paging:
+                help: how the listing pages
+                holds: record
+                fields:
+                    kind:
+                        help: offset, page, cursor, next or link
+                        control: choice
+                        options: [offset, page, cursor, next, link]
+                    param: the parameter the offset, the page or the cursor is sent in
+                    first:
+                        help: the number of the first page
+                        control: number
+                        min: 0
+                        whole: true
+                    size: the parameter of the page size
+                    sizes:
+                        help: the page sizes offered, the first a listing's
+                        control: list
+                        items: number
+                    max:
+                        help: the most records one page holds
+                        control: number
+                        min: 1
+                        whole: true
+                    total: the path of the answer's count
+                    from: the path of the answer's cursor or next address
+                    in:
+                        help: body sends the cursor in the body
+                        control: choice
+                        options: [body]
+                    start: the first cursor
+            records:
+                help: where an answer holds its files, a path, a CSS selector for html, or a record of its path and how it is read
+                control: text
+                holds: record
+                fields:
+                    path: the path of the records
+                    select: the CSS selector of an html answer's records
+                    field: the entry field whose items are the records, for a row of format none
+                    op:
+                        help: checksum_file reads a line per file of a digest and a name
+                        control: choice
+                        options: [checksum_file]
+                    kind:
+                        help: the checksum kind of the digests checksum_file reads
+                        control: choice
+                        options: [sha256, md5, sha1]
+                    absent:
+                        help: none reads a missing path as no records
+                        control: choice
+                        options: [none]
+                    where:
+                        help: the fields a record must equal to be kept
+                        fields:
+                            key: the field
+                            value: the value
+                    unless:
+                        help: the fields a record must not equal to be kept
+                        fields:
+                            key: the field
+                            value: the value
+                    first:
+                        help: keep the first record alone, and refuse an answer with none
+                        control: toggle
+                    refuse_when: a path whose value in any record refuses the listing
+            for_each: the entry field whose values each fill the hole of that name, one request per value
+            fields:
+                help: the fields a file is read by (name, size, checksum, url), each a path, a CSS selector with attr, or a record of the path and its operation
+                fields:
+                    key: the field of the file
+                    value:
+                        help: the field's path, or a record of the path and its operation, kind the checksum's kind and else the field read when the first is empty
+                        control: text
+                        holds: record
+                        fields:
+                            path: the path the value is read at
+                            select: the CSS selector of an html answer
+                            attr: the attribute the selector's element is read by
+                            value: a fixed value
+                            op:
+                                help: the operation applied to what is read
+                                control: choice
+                                options:
+                                    - inverted_index
+                                    - strip
+                                    - first_byte_size
+                                    - join
+                                    - date
+                                    - https
+                                    - first
+                                    - last
+                                    - match
+                                    - exists
+                                    - link
+                                    - split
+                                    - resolve
+                            kind:
+                                help: the checksum kind of the value
+                                control: choice
+                                options: [sha256, md5, sha1]
+                            else: the field read when this one reads nothing
+                            prefix: the text strip takes off, or https puts before the value
+                            by: the text join and split take
+                            pattern: the pattern match reads
+            then:
+                help: the follow-up requests, each with its own address, format, records and fields, and one of ids, for_each (one request per record) or recurse (the folders below, down to max_depth)
+                sparse: true
+                fields:
+                    address: the address asked, with holes
+                    format:
+                        help: how the answer is read
+                        control: choice
+                        options: [json, xml, html, text, none]
+                    method:
+                        help: post sends the request as a POST
+                        control: choice
+                        options: [post]
+                    body:
+                        help: the JSON body of a POST, each key to its value with holes
+                        fields:
+                            key: the key of the body
+                            value: its value
+                    paging:
+                        help: how the request's answers page
+                        holds: record
+                        fields:
+                            kind:
+                                help: offset, page, cursor, next or link
+                                control: choice
+                                options: [offset, page, cursor, next, link]
+                            param: the parameter the offset, the page or the cursor is sent in
+                            first:
+                                help: the number of the first page
+                                control: number
+                                min: 0
+                                whole: true
+                            size: the parameter of the page size
+                            total: the path of the answer's count
+                            from: the path of the answer's cursor or next address
+                            in:
+                                help: body sends the cursor in the body
+                                control: choice
+                                options: [body]
+                            start: the first cursor
+                    records:
+                        help: where the answer holds its records, a path or a record of its path and how it is read
+                        control: text
+                        holds: record
+                        fields:
+                            path: the path of the records
+                            absent:
+                                help: none reads a missing path as no records
+                                control: choice
+                                options: [none]
+                            where:
+                                help: the fields a record must equal to be kept
+                                fields:
+                                    key: the field
+                                    value: the value
+                            unless:
+                                help: the fields a record must not equal to be kept
+                                fields:
+                                    key: the field
+                                    value: the value
+                            first:
+                                help: keep the first record alone, and refuse an answer with none
+                                control: toggle
+                    fields:
+                        help: the fields its records are read by
+                        fields:
+                            key: the field
+                            value:
+                                help: the field's path, or a record of the path and its operation
+                                control: text
+                                holds: record
+                                fields:
+                                    path: the path the value is read at
+                                    value: a fixed value
+                                    op:
+                                        help: the operation applied to what is read
+                                        control: choice
+                                        options:
+                                            - inverted_index
+                                            - strip
+                                            - first_byte_size
+                                            - join
+                                            - date
+                                            - https
+                                            - first
+                                            - last
+                                            - match
+                                            - exists
+                                            - link
+                                            - split
+                                            - resolve
+                                    kind:
+                                        help: the checksum kind of the value
+                                        control: choice
+                                        options: [sha256, md5, sha1]
+                                    else: the field read when this one reads nothing
+                                    prefix: the text strip takes off, or https puts before the value
+                                    by: the text join and split take
+                                    pattern: the pattern match reads
+                    ids: the record field whose values are joined by commas into the request
+                    for_each: the record field whose value fills the hole of that name, one request per record
+                    when:
+                        help: the fields a record must equal to be taken
+                        fields:
+                            key: the field
+                            value: the value
+                    unless:
+                        help: the fields a record must not equal to be taken
+                        fields:
+                            key: the field
+                            value: the value
+                    recurse:
+                        help: a request asked again with each folder record's id, down to max_depth folders
+                        holds: record
+                        fields:
+                            when:
+                                help: the fields a folder record equals
+                                fields:
+                                    key: the field
+                                    value: the value
+                            id: the field of a folder's id
+                            folder: the field of a folder's name, added to the names below it
+                            max_depth:
+                                help: the deepest folder followed; one below it refuses the listing
+                                control: number
+                                min: 0
+                                whole: true
+            pace:
+                help: the gap between two downloads
+                holds: record
+                fields:
+                    gap:
+                        help: the milliseconds between two requests
+                        control: number
+                        min: 0
+                        whole: true
+                    field: the entry field that gives the gap between downloads
+            wait:
+                help: the headers a 429 answer's wait is read from
+                holds: record
+                fields:
+                    retry_after: the header of the seconds to wait
+                    reset: the header of the time the limit resets
+                    remaining: the header of the requests left
+            auth:
+                help: the credentials the requests and the downloads carry, each read from the downloads row it names in the machine's local.yml
+                fields:
+                    header: the header the secret is sent in
+                    param: the parameter the secret is sent in
+                    basic:
+                        help: send the downloads row's user and secret as Basic
+                        control: toggle
+                    row: the service of the downloads row the secret is read from
+                    prefix: the text sent before the secret, such as Bearer and a space
+                    required:
+                        help: the source needs its downloads row, and is missing with nothing asked without it
+                        control: toggle
+                    help: the sentence that says where the secret is made, drawn where Recover asks for it
+            archive:
+                help: the whole-set download
+                holds: record
+                fields:
+                    address: the address of the download
+                    name: the file's name; without one, the last part of the address the probe ends at
+                    match: the pattern that name must fit
+                    when: the entry field that, set true, makes the download the listing
+            access:
+                help: the address asked first without the credential, to say whether a set is open (2xx), needs one (401 or 403) or cannot be reached
+                holds: record
+                fields:
+                    address: the address, with holes
+            pick:
+                help: the entry field whose values pick the files listed
+                holds: record
+                fields:
+                    field: the entry field
+                    by: the file field it is compared with, the name by default
+                    glob:
+                        help: the values are glob patterns
+                        control: toggle
+            clash: the record field a repeated file name is put under
+            expect:
+                help: the element of an html answer the row's pages hold, which a page that lacks it refuses
+                holds: record
+                fields:
+                    select: the CSS selector
+                    holds: a text its value must hold
+            holes:
+                help: each hole of the addresses to the entry field it is filled from
+                fields:
+                    key: the hole
+                    value: the field
+            given:
+                help: each field a file is given whatever the answer, to its value
+                fields:
+                    key: the field
+                    value: the value
+    venues.browser:
+        heading: sources
+        section: Journal browser
+        help: "The journal browser the hub's venues are searched in and read from: one reader row, its address, the parameters a search by words and a lookup by ISSN are sent as, its filters, sort orders and page sizes, and the selectors a hit's title, ISSN, publisher, fee and open-access status are read by. Read from each hub's own .oculus/config.yml. With none, the hub shows no browser and no venue card offers Read from the browser."
+        sparse: true
+        holds: record
+        fields:
+            key:
+                help: the browser's id
+                control: text
+            name:
+                help: the words the browser view and its lines show
+                control: text
+            format:
+                help: how an answer is read, json, xml, html (by CSS selectors) or text
+                control: choice
+                options: [json, xml, html, text, none]
+            address:
+                help: 'the https: address asked, with {name} holes'
+                control: text
+            query:
+                help: words, the search by words, and issn, the lookup by ISSN, each to how it is sent
+                fields:
+                    key:
+                        help: the term
+                        control: choice
+                        options: [words, issn]
+                    value:
+                        help: how the term is sent
+                        holds: record
+                        fields:
+                            param: the parameter the term is sent in
+                            text: the value sent, with the hole {value}
+                            address: the address a lookup is asked at instead of the row's
+                            match: the pattern whose capture is the value sent
+                            params:
+                                help: the parameters the term alone is sent with
+                                fields:
+                                    key: the parameter
+                                    value: its value
+            filters:
+                help: the filters the browser offers, each a label and the parameters it sends, {value} the value picked
+                fields:
+                    label: the words the filter is offered under
+                    params:
+                        help: the parameters the filter sends
+                        fields:
+                            key: the parameter
+                            value: its value, with {value}
+            sorts:
+                help: the sort orders offered, each a label and the parameters it sends
+                fields:
+                    label: the words the order is offered under
+                    params:
+                        help: the parameters the order sends
+                        fields:
+                            key: the parameter
+                            value: its value
+            paging:
+                help: how the hits page
+                holds: record
+                fields:
+                    kind:
+                        help: offset, page, cursor, next or link
+                        control: choice
+                        options: [offset, page, cursor, next, link]
+                    param: the parameter the offset or the page is sent in
+                    first:
+                        help: the number of the first page
+                        control: number
+                        min: 0
+                        whole: true
+                    size: the parameter of the page size
+                    sizes:
+                        help: the page sizes the view offers
+                        control: list
+                        items: number
+                    max:
+                        help: the most hits one page holds
+                        control: number
+                        min: 1
+                        whole: true
+                    total: the path or selector of the answer's count of hits
+            params:
+                help: the parameters every request is sent with
+                fields:
+                    key: the parameter
+                    value: its value
+            records:
+                help: where an answer holds its hits, a path, a CSS selector for html, or a record of the selector
+                control: text
+                holds: record
+                fields:
+                    path: the path of the hits
+                    select: the CSS selector of an html answer's hits
+                    absent:
+                        help: none reads a missing path as no hits
+                        control: choice
+                        options: [none]
+            fields:
+                help: the fields a hit is read by (name, issn, publisher, fee, open_access), each a path, a CSS selector with attr, or a record of the selector and its operation
+                fields:
+                    key: the field of the hit
+                    value:
+                        help: the field's path or selector, or a record of select with attr or text and the operation op with its arguments
+                        control: text
+                        holds: record
+                        fields:
+                            path: the path the value is read at
+                            select: the CSS selector, whose element's text is read without attr
+                            attr: the attribute the selector's element is read by
+                            op:
+                                help: the operation applied to what is read
+                                control: choice
+                                options:
+                                    - inverted_index
+                                    - strip
+                                    - first_byte_size
+                                    - join
+                                    - date
+                                    - https
+                                    - first
+                                    - last
+                                    - match
+                                    - exists
+                                    - link
+                                    - split
+                                    - resolve
+                            pattern: the pattern match reads
+                            all:
+                                help: match gives every match as a list
+                                control: toggle
+                            prefix: the text strip takes off
+            pace:
+                help: the gap between two requests
+                holds: record
+                fields:
+                    gap:
+                        help: the milliseconds between two requests
+                        control: number
+                        min: 0
+                        whole: true
+            expect:
+                help: the element of an html answer the row's pages hold, which a page that lacks it refuses
+                holds: record
+                fields:
+                    select: the CSS selector
+                    holds: a text its value must hold
+    links:
+        heading: sources
+        section: Links
+        help: "The addresses every page link is built from: a paper's page by its DOI or by a source's own id, a search by a paper's title and a lint rule's page, each a key and an https: address with {id} and holes filled from the hit's fields. Read from the primary hub's .oculus/config.yml; a link whose row is missing is not drawn."
+        sparse: true
+        fields:
+            key:
+                help: the link's id, which the readers ask for it by, unique in the list
+                control: text
+            address:
+                help: "the https: address, with {id} and the holes a hit's fields fill"
+                control: text
     open.program_ext:
         heading: editor
         section: Opening in programs
@@ -897,7 +1818,7 @@ groups:
     slurm: The Live HPC poller, the clusters it queries, how often it reads the job queue and the disk quota, how far back it reads finished jobs and whether it resolves their logs ahead of time.
     clusters: The key Account setup makes for a cluster, its type and the path it is written to.
     connections: The rows that tell a failed ssh or git connection apart, each with the words naming the failure and its fix.
-    recover: Recover's cluster side, and the address it downloads Node.js from for the cluster.
+    recover: Recover, the address its cluster side downloads Node.js from, and the reader rows a hub's dataset files are listed and fetched with.
     processes: The Processes view and the programs it lists beside oculus's own terminals.
     chat: The in-page chat sessions and the model they start with.
     calendar: The reads of the calendar accounts, how often they run and the window of days they read.
@@ -911,7 +1832,9 @@ groups:
     files: The Files view, whether a move to the Trash asks first, and where a file's icon sits beside its sibling folders' arrows.
     git: Git in oculus, the model a suggested commit message is asked of, and how often every repository with a remote is fetched.
     search: The Search view and the palette's file mode, how many hits and file names an answer carries, and how long one root is searched.
-    literature: The Literature search, how long a source is given, how many hits a page asks of each source and how long an answer is kept.
+    literature: The Literature search, how long a source is given, how many hits a page asks of each source, how long an answer is kept, the reader rows of its sources and the order a merged paper takes its fields from them.
+    literature.prefer: The order of the sources a paper found by several takes its fields, its abstract and its open PDF from.
+    venues: The journal browser, the reader row a hub's venues are searched in and read from.
     open: Handing a file to a program on this machine, which extensions may be handed over and the application each opens in.
     apps: The apps, the limits on what an app's frame and host may send, store, read and hold, and the folders an app never reaches.
     status_bar: The status bar at the foot of the window, the items hidden from it, whether notifications stay quiet, and the repository its repository item shows.

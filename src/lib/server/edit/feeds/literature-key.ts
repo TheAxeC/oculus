@@ -28,7 +28,7 @@ const PARTICLES = [
 
 /**
  * A word of one to three capital letters, each with or without a full stop after it, which is how
- * Europe PMC and other feeds write the given names after a surname: `MM`, `M.` or `M.M.`.
+ * several literature feeds write the given names after a surname: `MM`, `M.` or `M.M.`.
  */
 const INITIALS = /^(?:[A-Z]\.?){1,3}$/;
 

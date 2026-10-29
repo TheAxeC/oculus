@@ -1,50 +1,67 @@
-// Layer 2, server. What every reader of a dataset's sources (`sources/`, one per kind) shares: the
-// shape of a listed file and the reader of the listing kept on disk, the refusal that names the
-// source, the request with its timeout, the size probe, the credential headers built in memory
-// from the `downloads` rows, and the check of a name a source gives (`safeName`, passed on from
-// the registry read, data/snapshot/normalise-parts/retrieval.ts, whose `folder` follows the same
-// rule). The listing that runs the readers over an entry's sources is `listFiles` of routes.ts.
+// Layer 2, server. What Recover's listing and access check share: the shape of a listed file, the
+// reader of the listing kept on disk, the refusal that names the source, the check of a name a
+// source gives (`safeName`, passed on from the registry read,
+// data/snapshot/normalise-parts/retrieval.ts, whose `folder` follows the same rule), and the
+// sender every request to a source's row goes out with. The rows are the `recover.sources` of the
+// dataset's hub, read by the one reader (server/core/reader/); the listing that runs it over an
+// entry's sources is `listFiles` of routes.ts.
 //
-// A reader answers the files it lists or a refusal; an answer that does not parse is a refusal and
+// A row answers the files it lists or a refusal; an answer that does not parse is a refusal and
 // never an empty list, so a set whose source changed its answer is never read as having no files.
 // A kept listing whose unpack folder breaks the registry's rule reads as no listing, so the
 // sources are listed again from the registry.
 
 import { readFileSync } from 'node:fs';
 import { z } from 'zod';
-import type { DownloadAccount, DownloadService } from '../../../../data/sources/config.ts';
-import type { RecoverChecksum, RecoverFile, RecoverRefusal } from '../../../../data/model/index.ts';
+import type { DownloadAccount } from '../../../../data/sources/config.ts';
+import type { RecoverFile, RecoverRefusal } from '../../../../data/model/index.ts';
+import type { ReaderRow } from '../../../../data/sources/config/settings/rows/grammar.ts';
 import { archiveFolderShape } from '../../../../data/snapshot/normalise-parts/retrieval.ts';
+import type { Fetcher as ReaderFetcher, Sender } from '../../../core/reader/call.ts';
 
 export { safeName } from '../../../../data/snapshot/normalise-parts/retrieval.ts';
-
-/** The checksum a source publishes for a file. */
-export type Checksum = RecoverChecksum;
 
 /** One file of the dataset: its name below the dataset's folder and the source it came from. */
 export type RemoteFile = RecoverFile;
 
-/**
- * One file as its source's reader lists it, before the listing places it below the source's
- * `into` folder: its name, size (null when the source states none, as for a TCIA series, zipped as
- * it is sent), checksum, address, and the service whose `downloads` row its download needs.
- */
-export type Listed = Pick<RecoverFile, 'name' | 'size' | 'checksum' | 'url' | 'service'>;
-
 /** Why a source gives no list (data/model's RecoverRefusal). */
 export type Refusal = RecoverRefusal;
 
-/** What a reader answers. */
-export type ListAnswer = Listed[] | Refusal;
+/** The fetch a listing is handed, so a test answers it from a recorded answer. */
+export type Fetcher = ReaderFetcher;
 
-/** The fetch a reader is handed, so a test answers it from a recorded answer. */
-export type Fetcher = (url: string, init?: RequestInit) => Promise<Response>;
+/**
+ * What a listing is given: the fetch, the `downloads` rows of the primary hub's file, the rows of
+ * `recover.sources` of the dataset's hub, and the User-Agent its requests carry.
+ */
+export type ListDeps = {
+    fetch: Fetcher;
+    downloads: DownloadAccount[];
+    rows: readonly ReaderRow[];
+    agent: string;
+};
 
-/** What a reader is given: the fetch and the `downloads` rows of the primary hub's file. */
-export type ListDeps = { fetch: Fetcher; downloads: DownloadAccount[] };
+/** How long one request of a listing is given. */
+const REQUEST_MS = 30000;
+
+/** The most bytes of one answer of a listing that are read. */
+const ANSWER_MAX = 64 * 1024 * 1024;
+
+/** The sender of a listing's requests. */
+export function senderOf(deps: ListDeps): Sender {
+    return { fetcher: deps.fetch, agent: deps.agent, timeoutMs: REQUEST_MS, maxBytes: ANSWER_MAX };
+}
+
+/** The row of `recover.sources` a source's kind names, or undefined when none does. */
+export function rowOf(rows: readonly ReaderRow[], kind: string): ReaderRow | undefined {
+    return rows.find((row) => row.key === kind);
+}
 
 /** An address a file is fetched from: https, with no whitespace. */
-export const httpsShape = z.string().regex(/^https:\/\/\S+$/);
+const httpsShape = z.string().regex(/^https:\/\/\S+$/);
+
+/** A word a file name may be built from: a `downloads` row's key, a header's name. */
+const wordShape = z.string().regex(/^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/);
 
 /** A file as the listing kept on disk (`<key>.list.json`) holds it. */
 const keptFileShape = z.object({
@@ -55,7 +72,13 @@ const keptFileShape = z.object({
         .nullable(),
     url: httpsShape,
     source: z.number().int().min(0),
-    service: z.enum(['physionet', 'kaggle', 'synapse']).optional(),
+    service: wordShape.optional(),
+    credential: z
+        .union([
+            z.object({ basic: z.literal(true) }),
+            z.object({ header: wordShape, prefix: z.string().optional() })
+        ])
+        .optional(),
     unpack: z
         .object({ strip: z.number().int().min(0), folder: archiveFolderShape.optional() })
         .optional(),
@@ -77,195 +100,12 @@ export function readKept(file: string): Kept | null {
     }
 }
 
-/** How long one request of a listing is given. */
-const REQUEST_MS = 30000;
-
 /** Whether an answer is a refusal. */
 export function isRefusal(value: unknown): value is Refusal {
     return typeof value === 'object' && value !== null && 'refused' in value;
 }
 
-/**
- * The `Authorization` header of a service's `downloads` row, built in memory: Basic with the user
- * and the secret for PhysioNet and Kaggle, Bearer with the token for Synapse. None without a row.
- */
-export function authHeader(
-    service: DownloadService,
-    downloads: DownloadAccount[]
-): { authorization?: string } {
-    const row = downloads.find((one) => one.service === service);
-    if (row === undefined) return {};
-    if (service === 'synapse') return { authorization: `Bearer ${row.secret}` };
-    const pair = Buffer.from(`${row.user ?? ''}:${row.secret}`).toString('base64');
-    return { authorization: `Basic ${pair}` };
-}
-
-/** One answer read whole: its status, the address it came from after redirects, headers, body. */
-export type Answer = { status: number; url: string; headers: Headers; text: string };
-
-/**
- * A GET, or with a body a POST of that JSON, whose answer is read whole, or the refusal `network`
- * naming the source.
- */
-export async function getText(
-    deps: ListDeps,
-    source: string,
-    url: string,
-    headers: Record<string, string> = {},
-    body?: unknown
-): Promise<Answer | Refusal> {
-    try {
-        const response = await deps.fetch(url, {
-            ...(body === undefined
-                ? { headers }
-                : {
-                      method: 'POST',
-                      headers: { ...headers, 'content-type': 'application/json' },
-                      body: JSON.stringify(body)
-                  }),
-            redirect: 'follow',
-            signal: AbortSignal.timeout(REQUEST_MS)
-        });
-        return {
-            status: response.status,
-            url: response.url === '' ? url : response.url,
-            headers: response.headers,
-            text: await response.text()
-        };
-    } catch {
-        return { refused: 'network', source };
-    }
-}
-
-/** The answer when it is a success, else the refusal its status gives. */
-export function succeeded(answer: Answer | Refusal, source: string): Answer | Refusal {
-    if (isRefusal(answer)) return answer;
-    if (answer.status === 401 || answer.status === 403) {
-        return { refused: 'access', source, status: answer.status };
-    }
-    if (answer.status < 200 || answer.status > 299) {
-        return { refused: 'status', source, status: answer.status };
-    }
-    return answer;
-}
-
-/** A body read as JSON, or undefined when it is none. */
-function jsonOf(text: string): unknown {
-    try {
-        return JSON.parse(text) as unknown;
-    } catch {
-        return undefined;
-    }
-}
-
-/**
- * A GET, or with a body a POST, read as JSON: the parsed answer, or the refusal of its status or of
- * an answer that is none.
- */
-export async function getJson(
-    deps: ListDeps,
-    source: string,
-    url: string,
-    headers: Record<string, string> = {},
-    sent?: unknown
-): Promise<{ body: unknown; answer: Answer } | Refusal> {
-    const answer = succeeded(await getText(deps, source, url, headers, sent), source);
-    if (isRefusal(answer)) return answer;
-    const body = jsonOf(answer.text);
-    return body === undefined ? { refused: 'answer', source } : { body, answer };
-}
-
-/**
- * The size of the file at an address and the address it ends at, by a GET of its first byte: the
- * total of `Content-Range` on a 206, `Content-Length` on a 200 that ignored the range. The body is
- * not read. Null size when the answer states neither.
- */
-export async function sizeAt(
-    deps: ListDeps,
-    source: string,
-    url: string,
-    headers: Record<string, string> = {}
-): Promise<{ size: number | null; url: string } | Refusal> {
-    let response: Response;
-    try {
-        response = await deps.fetch(url, {
-            headers: { ...headers, range: 'bytes=0-0' },
-            redirect: 'follow',
-            signal: AbortSignal.timeout(REQUEST_MS)
-        });
-    } catch {
-        return { refused: 'network', source };
-    }
-    await response.body?.cancel().catch(() => undefined);
-    const ended = response.url === '' ? url : response.url;
-    if (response.status === 401 || response.status === 403) {
-        return { refused: 'access', source, status: response.status };
-    }
-    if (response.status === 206) {
-        const total = /\/(\d+)\s*$/.exec(response.headers.get('content-range') ?? '');
-        return { size: total === null ? null : Number(total[1]), url: ended };
-    }
-    if (response.status >= 200 && response.status <= 299) {
-        const length = response.headers.get('content-length');
-        return {
-            size: length !== null && /^\d+$/.test(length) ? Number(length) : null,
-            url: ended
-        };
-    }
-    return { refused: 'status', source, status: response.status };
-}
-
-/** How many size probes of one listing run at once. */
-const PROBES_AT_ONCE = 8;
-
-/**
- * The files with the size of each read by `sizeAt`, eight probes at a time, in the files' order;
- * the first refusal ends the listing.
- */
-export async function sized(
-    deps: ListDeps,
-    source: string,
-    files: Listed[],
-    headers: Record<string, string> = {}
-): Promise<Listed[] | Refusal> {
-    const out: Listed[] = new Array<Listed>(files.length);
-    let next = 0;
-    /** The first refusal, held in an object the workers share. */
-    const ended: { refusal: Refusal | null } = { refusal: null };
-    const worker = async (): Promise<void> => {
-        while (ended.refusal === null && next < files.length) {
-            const at = next;
-            next += 1;
-            const probe = await sizeAt(deps, source, files[at].url, headers);
-            if (isRefusal(probe)) ended.refusal = probe;
-            else out[at] = { ...files[at], size: probe.size };
-        }
-    };
-    await Promise.all(Array.from({ length: Math.min(PROBES_AT_ONCE, files.length) }, worker));
-    return ended.refusal ?? out;
-}
-
 /** A name with the source's `into` folder in front of it. */
 export function placed(name: string, into: string | undefined): string {
     return into === undefined ? name : `${into.replace(/\/+$/, '')}/${name}`;
-}
-
-/**
- * The listed files an entry names, in the entry's order, or every file when it names none; a name
- * the answer does not hold is the refusal `missing` naming it.
- */
-export function picked(
-    listed: Listed[],
-    wanted: string[] | undefined,
-    source: string
-): Listed[] | Refusal {
-    if (wanted === undefined || wanted.length === 0) return listed;
-    const byName = new Map(listed.map((one) => [one.name, one]));
-    const chosen: Listed[] = [];
-    for (const name of wanted) {
-        const found = byName.get(name);
-        if (found === undefined) return { refused: 'missing', source, name };
-        chosen.push(found);
-    }
-    return chosen;
 }

@@ -45,7 +45,7 @@ type Asked = { form: LiteratureForm; sources: LiteratureSource[] };
 /** One tab's run. */
 export type LiteratureRun = {
     /** Each asked source's state, in the order they were asked. */
-    sources: () => Partial<Record<LiteratureSource, SourceRun>>;
+    sources: () => Record<LiteratureSource, SourceRun>;
     /** The form the answers were asked with, or null before a search. */
     asked: () => LiteratureForm | null;
     /** The word the last search was refused with, before or by the route. */
@@ -79,7 +79,7 @@ export function createRun(options: RunOptions): LiteratureRun {
     const fetcher = options.fetcher ?? fetch;
     const now = options.now ?? Date.now;
     const state: {
-        sources: Partial<Record<LiteratureSource, SourceRun>>;
+        sources: Record<LiteratureSource, SourceRun>;
         refused: LiteratureRefusal | null;
         noneOn: boolean;
         asked: Asked | null;
@@ -189,10 +189,7 @@ export function createRun(options: RunOptions): LiteratureRun {
     function more(): void {
         const asked = state.asked;
         if (asked === null) return;
-        for (const [source, held] of Object.entries(state.sources) as [
-            LiteratureSource,
-            SourceRun
-        ][]) {
+        for (const [source, held] of Object.entries(state.sources)) {
             if (held.more && !held.asking && held.cursor !== null)
                 void ask(source, asked.form, held.cursor);
         }

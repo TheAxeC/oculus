@@ -490,6 +490,14 @@ export type Venue = Rooted & {
     scopus?: string;
     scopusMark?: 'yes' | 'no';
     free?: string;
+    /** The venue's ISSNs, print and electronic, in the order the entry lists them. */
+    issn?: string[];
+    /** The article fee as the journal browser words it, read from the browser into the entry. */
+    fee?: string;
+    /** The open-access status as the journal browser words it, read as `fee` is. */
+    openAccess?: string;
+    /** True when the venue's hub names a journal browser (`venues.browser`) that asks by ISSN. */
+    browsable?: true;
     format?: string;
     wants?: string;
     link?: string;
@@ -509,20 +517,13 @@ export type Venue = Rooted & {
     themes: string[];
 };
 
-/** The kinds of a dataset's sources whose files Recover lists, fetches, checks and unpacks. */
-export const FETCHED_KINDS = [
-    'physionet',
-    'zenodo',
-    'figshare',
-    'dandi',
-    'huggingface',
-    'stanford',
-    'geo',
-    'kaggle',
-    'tcia',
-    'synapse',
-    'url'
-] as const;
+/** The kinds of a dataset's sources the card states, which no row of `recover.sources` reads. */
+const STATED_KINDS = ['library', 'request', 'derived'] as const;
+
+/** Whether a kind is one the card states. */
+export function statedKind(kind: string): boolean {
+    return (STATED_KINDS as readonly string[]).includes(kind);
+}
 
 /**
  * Where a source's files land and what follows their check: `into` a folder below the dataset's
@@ -533,41 +534,13 @@ export const FETCHED_KINDS = [
 type SourcePlace = { into?: string; unpack?: true; strip?: number; folder?: string };
 
 /**
- * One file of a `url` source: its address, the sha256 or the md5 the entry gives for it when it
- * gives one (never both), and the name the file is saved under when the address's last part is not
- * that name.
+ * One source of a dataset's `retrieval` list: its `kind`, the place its files land, and its other
+ * fields as the registry writes them. A fetched kind is the `key` of a row of its hub's
+ * `recover.sources`, whose holes the fields fill: a word, a list of words, a list of maps of words
+ * (a `url` source's files) or a flag. A stated kind holds its own fields: `library` a `call`,
+ * `request` a `contact`, `derived` the sets it is built `from` and its `script`.
  */
-type SourceUrl = { url: string; sha256?: string; md5?: string; name?: string };
-
-/**
- * One source of a dataset's `retrieval` list: the kind and the fields that kind needs, as the
- * registry's schema states them.
- */
-export type RecoverSource = SourcePlace &
-    (
-        | {
-              kind: 'physionet';
-              project: string;
-              version: string;
-              files?: string[];
-              archive?: true;
-              /** The rate curl's `--limit-rate` holds the download to, such as `2M`. */
-              throttle?: string;
-          }
-        | { kind: 'zenodo'; record: string; files?: string[] }
-        | { kind: 'figshare'; collection?: string; article?: string; files?: string[] }
-        | { kind: 'dandi'; dandiset: string; version: string; assets?: string[] }
-        | { kind: 'huggingface'; repo: string; patterns?: string[] }
-        | { kind: 'stanford'; druid: string; files?: string[] }
-        | { kind: 'geo'; accession: string; files: string[] }
-        | { kind: 'kaggle'; dataset: string }
-        | { kind: 'tcia'; collection: string; series?: string[] }
-        | { kind: 'synapse'; ids: string[] }
-        | { kind: 'url'; urls: SourceUrl[] }
-        | { kind: 'library'; call: string }
-        | { kind: 'request'; contact: string }
-        | { kind: 'derived'; from: string[]; script: string }
-    );
+export type RecoverSource = SourcePlace & { kind: string; [field: string]: unknown };
 
 /** A dataset from the dataset registry, whose entry list is under `datasets`. */
 export type Dataset = Rooted & {
@@ -585,10 +558,15 @@ export type Dataset = Rooted & {
     /** Free text about where the set lives and how it is used, the entry's `notes:`. */
     notes?: string;
     /**
-     * True when the set has sources and every one is of a kind Recover runs (`FETCHED_KINDS`),
-     * which gives its card the Recover control.
+     * True when the set has sources and every one is of a kind a row of its hub's
+     * `recover.sources` reads, which gives its card the Recover control.
      */
     recover: boolean;
+    /**
+     * The kinds of its sources that are neither stated nor read by a row of its hub's
+     * `recover.sources`, each once in the file's order; absent when there are none.
+     */
+    unread?: string[];
     /** The dataset registry's own theme words (`ecg`, `single-cell`), which are not domain keys. */
     themes: string[];
     /**

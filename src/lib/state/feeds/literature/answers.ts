@@ -8,7 +8,6 @@ import { z } from 'zod';
 import {
     DOC_TYPES,
     LITERATURE_REFUSALS,
-    LITERATURE_SOURCES,
     SOURCE_STATES,
     type LiteratureHit,
     type LiteratureRefusal,
@@ -19,7 +18,8 @@ import { readAs, readJson } from '../../../data/shapes/shapes.ts';
 /** The route, which every request here is made to. */
 const LITERATURE_ROUTE = '/api/literature';
 
-const sourceShape = z.enum(LITERATURE_SOURCES);
+/** A source: the `key` of a row of `literature.sources`. */
+const sourceShape = z.string().min(1);
 
 const hitShape = z.object({
     source: sourceShape,
@@ -108,9 +108,12 @@ const listShape = z.object({
     sources: z.array(
         z.object({
             id: sourceShape,
+            name: z.string(),
             keyed: z.boolean(),
             available: z.boolean(),
-            key: z.string().nullable()
+            key: z.string().nullable(),
+            help: z.string().nullable(),
+            bibtex: z.string().nullable()
         })
     )
 });
@@ -122,18 +125,23 @@ export function sourceList(body: unknown): SourceInfo[] | null {
 
 const bibtexShape = z.object({
     bibtex: z.string().nullable(),
-    from: z.enum(['doi', 'semantic_scholar', 'arxiv']).optional()
+    from: z.string().optional(),
+    name: z.string().optional()
 });
 
+/**
+ * Where a served entry came from: `doi` the DOI link, else the key of the row that served it, with
+ * that row's name.
+ */
+export type ServedFrom = { from: string; name?: string };
+
 /** The entry a `?bibtex` body holds and where it came from, or null for none. */
-export function bibtexAnswer(
-    body: unknown
-): { bibtex: string; from: 'doi' | 'semantic_scholar' | 'arxiv' } | null {
+export function bibtexAnswer(body: unknown): ({ bibtex: string } & ServedFrom) | null {
     const held = readAs(bibtexShape, body);
     const bibtex = held?.bibtex;
     const from = held?.from;
     if (typeof bibtex !== 'string' || from === undefined) return null;
-    return { bibtex, from };
+    return { bibtex, from, ...(held?.name === undefined ? {} : { name: held.name }) };
 }
 
 /** The address of one source's search. */
@@ -144,9 +152,18 @@ export function searchUrl(params: URLSearchParams): string {
 /** The address of the list of sources. */
 export const SOURCES_URL = `${LITERATURE_ROUTE}?sources`;
 
-/** The address of one BibTeX entry, asked by the identifier the source takes. */
-export function bibtexUrl(by: 'doi' | 's2' | 'arxiv', id: string): string {
-    return `${LITERATURE_ROUTE}?${new URLSearchParams({ bibtex: '', [by]: id }).toString()}`;
+/**
+ * The address of one BibTeX entry: by a DOI, through the DOI link, or by a paper id the row
+ * `source` knows, through that row's `query.id`.
+ */
+export function bibtexUrl(asked: { doi: string } | { source: string; id: string }): string {
+    const params = new URLSearchParams({ bibtex: '' });
+    if ('doi' in asked) params.set('doi', asked.doi);
+    else {
+        params.set('source', asked.source);
+        params.set('id', asked.id);
+    }
+    return `${LITERATURE_ROUTE}?${params.toString()}`;
 }
 
 /** The JSON body a tokened GET answers, undefined when the request or the body fails. */

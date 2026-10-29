@@ -43,7 +43,7 @@ import {
 } from '../../../data/sources/config.ts';
 import { mapShape, readAs } from '../../../data/shapes/shapes.ts';
 import type { Hub } from '../../core/channels.ts';
-import { systemClock, type Clock, type Timer } from '../../core/file-poll.ts';
+import { systemClock, type Clock, type Timer } from '../../core/files/file-poll.ts';
 import type { GitCredentials } from '../../core/git/credentials.ts';
 import { failureLine } from '../../core/git/failure.ts';
 import { sshCommand } from '../../core/git/reads.ts';

@@ -7,7 +7,8 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve, sep } from 'node:path';
 import { parse } from 'yaml';
 import { describe, expect } from 'vitest';
-import { saveLiterature } from '../../../src/lib/server/edit/feeds/literature.ts';
+import { saveLiterature as saveWithLinks } from '../../../src/lib/server/edit/feeds/literature.ts';
+import { fixtureRows } from '../core/reader/rows.ts';
 import { portfolioConfigFrom } from '../../../src/lib/data/index.ts';
 import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
 import { words } from '../../../src/lib/server/core/words.ts';
@@ -28,6 +29,17 @@ schema:
   - { field: source,   type: select,   options: [search, lit-watch, hand] }
   - { field: added,    type: date }
 `;
+
+/** A paper saved with the fixture's `links` rows (tests/server/core/reader/rows.yml). */
+function saveLiterature(
+    hub: string,
+    config: PortfolioConfig,
+    enginePath: string | undefined,
+    source: Parameters<typeof saveWithLinks>[3],
+    paper: Record<string, unknown>
+): ReturnType<typeof saveWithLinks> {
+    return saveWithLinks(hub, config, enginePath, source, paper, fixtureRows().links);
+}
 
 /** The paper most cases save. */
 const PAPER = {

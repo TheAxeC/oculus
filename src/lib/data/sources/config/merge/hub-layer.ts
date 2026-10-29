@@ -22,6 +22,7 @@ import { parse } from 'yaml';
 import { findingText } from '../../../helpers/finding-text.ts';
 import { isMap } from '../../../helpers/guards.ts';
 import { HUB_FILE, hubFileOf, hubKeys } from '../../../helpers/hub-names.ts';
+import { primaryOnly } from '../../../shapes/hub-keys.ts';
 import { issueText, shapeIssues } from '../../../shapes/shape-issues.ts';
 import { readAs } from '../../../shapes/shapes.ts';
 import { SOURCES, type Source } from '../../../shapes/catalog-words.ts';
@@ -529,13 +530,17 @@ function rowsNamingLists(
  * in, so a list the hub adds counts. `from` names the hub's file for every key it set, and for a
  * map of the vocabulary, oculus's file for each of oculus's words the merged map holds and the hub
  * did not write. `text` is the file's text to read instead of the disk, null for the file removed.
+ * `other` is the hub's name when it is not the workspace's primary: a key the primary hub alone is
+ * read for (`primaryOnly`) is then a finding naming the hub, its file and the key, and is not
+ * applied.
  */
 export function mergeHub(
     hub: string,
     text: string | null | undefined,
     config: Record<string, unknown>,
     from: Record<string, string>,
-    pending: PendingFinding[]
+    pending: PendingFinding[],
+    other?: string
 ): void {
     const file = join(hub, HUB_FILE);
     const listed = hubKeys();
@@ -557,7 +562,14 @@ export function mergeHub(
     const walk = (node: Record<string, unknown>, prefix: string): void => {
         for (const [key, value] of Object.entries(node)) {
             const path = prefix === '' ? key : `${prefix}.${key}`;
-            if (listed.includes(path)) {
+            if (listed.includes(path) && other !== undefined && primaryOnly(path)) {
+                pending.push({
+                    file,
+                    key: path,
+                    words: (catalog) =>
+                        findingText(catalog, 'findings.config.hub_key_primary', path, other)
+                });
+            } else if (listed.includes(path)) {
                 setAt(written, path, value);
             } else if (listed.some((one) => one.startsWith(`${path}.`))) {
                 if (isMap(value)) walk(value, path);

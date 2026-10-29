@@ -9,7 +9,7 @@
 // next publish.
 //
 // The triage notes are the one thing published that no provider gave. They are read from the file
-// at every publish and the file is polled on a clock (core/file-poll.ts says why it is not
+// at every publish and the file is polled on a clock (core/files/file-poll.ts says why it is not
 // watched), so a note the skill writes from outside reaches the page without a round of provider
 // calls, whenever it lands; a note whose thread has left the plate is dropped from the payload and
 // kept in the file for thirty days.
@@ -37,7 +37,13 @@ import type {
 } from '../../../data/model/index.ts';
 import type { MailSettings, SignInRow } from '../../../data/sources/config.ts';
 import type { Hub } from '../../core/channels.ts';
-import { POLL, pollFile, systemClock, type Clock, type FilePoll } from '../../core/file-poll.ts';
+import {
+    POLL,
+    pollFile,
+    systemClock,
+    type Clock,
+    type FilePoll
+} from '../../core/files/file-poll.ts';
 import { hubMark } from '../../../data/accounts/connect.ts';
 import {
     accountLoop,
@@ -48,8 +54,9 @@ import {
     type WatcherHeld
 } from '../connect/loop.ts';
 import { hasOwnHalf } from '../connect/store.ts';
-import { ReadTimeout, timedFetcher, type Fetcher } from '../connect/oauth.ts';
+import { READ_TIMEOUT_MS, type Fetcher } from '../connect/oauth.ts';
 import { readAddress, type SignInWords } from '../connect/providers.ts';
+import { ReadTimeout, timedFetcher } from '../../core/reader/timed.ts';
 import { readGoogleMail } from './google.ts';
 import { readMicrosoftMail } from './microsoft.ts';
 import { plate, type Candidate, type MailReadArgs, type PlateThread } from './plate.ts';
@@ -142,7 +149,10 @@ function triageOf(held: TriageFile, id: string): InboxTriage {
 }
 
 export function watchMail(hub: Hub, options: MailOptions): MailWatcher {
-    const fetcher = timedFetcher(options.fetcher ?? fetch, options.readTimeoutMs);
+    const fetcher = timedFetcher(
+        options.fetcher ?? fetch,
+        options.readTimeoutMs ?? READ_TIMEOUT_MS
+    );
     const providerDir = options.providerDir;
     const now = options.now ?? ((): Date => new Date());
     let settings: MailSettings = { pollMin: options.pollMin, perSignal: options.perSignal };

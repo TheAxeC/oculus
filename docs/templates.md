@@ -189,12 +189,77 @@ The hub's own settings. A key of oculus's `config/catalogs/vocab.yml` set here i
 
 # The folder of Node.js's releases Recover's cluster side downloads the build for the cluster from.
 # Empty by default, and Recover's Unpack on a cluster then says it is missing. Read from the
-# primary hub alone.
+# primary hub alone. `sources` are the Recover sources of this hub's datasets: one reader row per
+# source kind, the `kind` of a dataset's source being the row's `key` and the source's other fields
+# filling the row's holes. A row may also hold `access`, `archive`, `pick`, `clash`, `expect` and
+# `pace.field`. A source of a kind no row names is not fetched, and the Data view says so.
 # recover:
 #   node_download: ''
+#   sources: []
 #   example:
 #   recover:
 #     node_download: https://nodejs.org/dist/
+
+# The literature sources of the Literature search, read from the primary hub, in the order the
+# search lists them. A row is a reader row: `key`, `name`, `format` (json, xml, html, text or
+# none), `address` with `{name}` holes, `query` (each term of the search form to the parameter it
+# is sent as), `paging`, `pace`, `wait`, `auth` (the `downloads` row of local.yml it reads, with
+# `required: true` for a source that is off without it), `records` and `fields`. oculus ships no
+# row; with none the search says that no source is configured. `prefer` names, by source key,
+# whose value a merged paper takes for its fields, its abstract and its PDF.
+# literature:
+#   sources: []
+#   prefer: {}
+
+# The journal browser of this hub's venues: one reader row, asked only when Search, More or Read
+# from the browser is pressed. `query.issn` is what Read from the browser asks by; `filters`,
+# `sorts` and `paging.sizes` are the choices the Journal Browser view offers.
+# venues:
+#   browser: {}
+#   example:
+#   browser:
+#       key: utbrowser
+#       name: UT Journal Browser
+#       format: html
+#       address: https://library.wur.nl/WebQuery/utbrowser
+#       query:
+#           words: { param: title }
+#           issn: { param: q, params: { wq_fld: q } }
+#       filters:
+#           - label: Open access status
+#             params: { wq_flt: journal/oa-status, wq_val: '{value}' }
+#           - { label: JCR quartile, params: { wq_flt: jcr/category/kwartiel, wq_val: '{value}' } }
+#       sorts:
+#           - { label: CiteScore, params: { wq_srt_desc: citescore } }
+#           - { label: SNIP, params: { wq_srt_desc: snip } }
+#           - { label: SJR, params: { wq_srt_desc: sjr } }
+#           - { label: 'Title, A to Z', params: { wq_srt_asc: journal/title } }
+#           - { label: 'Title, Z to A', params: { wq_srt_desc: journal/title } }
+#       paging:
+#           kind: offset
+#           param: wq_ofs
+#           size: wq_max
+#           sizes: [20, 50, 100]
+#           total:
+#               select: '#searchresult-functions .navbar-brand'
+#               op: match
+#               pattern: '/ (\d+)'
+#       records: { select: 'table#records tbody tr' }
+#       fields:
+#           title: 'a[title="more info"]'
+#           issn: { select: div.issns, op: match, pattern: '\d{4}-\d{3}[\dXx]', all: true }
+#           publisher: div.author
+#           fee: a.apc_discount
+#           open_access: { select: li.open_access, attr: title }
+
+# The addresses of the page links, read from the primary hub: a row is a `key` and an `address`
+# holding `{id}`, and other holes filled from the hit's fields. A link whose row is missing is not
+# drawn.
+# links: []
+#   example:
+#   links:
+#     - { key: doi, address: 'https://doi.org/{id|path}' }
+#     - { key: shellcheck, address: 'https://www.shellcheck.net/wiki/{id}' }
 
 # The writing rules: the globs of the files they leave alone, and of the files that draw arrows
 # as icons, matched against the path from the file's root. Both empty by default.
@@ -509,22 +574,18 @@ This machine's own values. Keep the file out of git. Oculus reads the keys from 
 #   - { provider: google, label: work }
 # mail_dir: ~/.oculus/mail
 
-# Keys for the Literature search. A source without its key is off, or limited.
+# The address the Literature search sends to a source whose row names a `contact` parameter.
 # literature:
-#   wos_key: ""
-#   scopus_key: ""
-#   scopus_insttoken: ""
-#   openalex_key: ""
-#   semantic_scholar_key: ""
-#   ncbi_key: ""
 #   mailto: you@example.org
 
-# Download accounts for the Data view's Recover. One row per service.
+# Accounts for the services the reader rows name, one row per service: a row's `auth` names the
+# `service` it reads, for the Literature search's keys and the Data view's Recover. A row no reader
+# row names is read and unused.
 # downloads:
 #   - { service: physionet, user: <user name>, secret: <password> }
 #   - { service: kaggle, user: <user name>, secret: <key> }
-#   - { service: kaggle-token, secret: <token> }
 #   - { service: synapse, secret: <token> }
+#   - { service: wos, secret: <key> }
 
 # Where oculus keeps this machine's files.
 # changes: ~/.oculus/changes.jsonl

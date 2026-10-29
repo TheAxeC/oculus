@@ -86,7 +86,11 @@ const LAYERS = ['data', 'server', 'server/transcripts', 'state', 'ui', 'shell', 
 // `files.confirm_delete`, so a delete asks only while the setting says so, and `lint.writing`, the
 // source editor the paint limit, the cards and the file view the `open.program_ext` map, the Usage
 // view the refresh cadence, the apps' frames their limits and the LaTeX tab what a build is set
-// by; and `data/sources/config/catalog/value-rule`, the rule a value of an option is wrong by (its
+// by; and `data/sources/config/settings/rows/grammar`, `rows/links` and `rows/read`, the grammar
+// of a reader row, the addresses of the `links` rows and the readers of `links` and
+// `literature.prefer`, which the Literature page reads by the rule the server reads them by, so
+// the links it draws and the order its merge takes a paper's fields in are the server's; and
+// `data/sources/config/catalog/value-rule`, the rule a value of an option is wrong by (its
 // control, `min`, `max` and values), which the Settings view refuses a value by before it is sent
 // and the server's write and readers by after it, so the three agree; and
 // `data/sources/config/editor-options`, the reader of the editor's options and of a repository's
@@ -342,6 +346,9 @@ const ALLOWED: Record<string, string[]> = {
         'data/sources/config/settings/machine',
         'data/sources/config/settings/problems',
         'data/sources/config/settings/reader',
+        'data/sources/config/settings/rows/grammar',
+        'data/sources/config/settings/rows/links',
+        'data/sources/config/settings/rows/read',
         'data/sources/config/editor-options',
         'data/sources/config/catalog/latex-tables',
         'data/sources/config/catalog/options',

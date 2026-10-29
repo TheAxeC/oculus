@@ -235,7 +235,7 @@
                     {/snippet}
                 </Empty>
             {:else if held.refused !== ''}
-                <Empty message={refusalWords(held.refused, held.hint)} />
+                <Empty message={refusalWords(held.refused, held.hint, hub)} />
             {:else if now === null && held.loading}
                 <Empty message={t('recover.loading', key)} />
             {:else if now !== null}
@@ -245,7 +245,7 @@
                 <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
                 {@render actions()}
                 {#if now.refusal !== null}
-                    <p class="warn">{listingWords(now.refusal)}</p>
+                    <p class="warn">{listingWords(now.refusal, hub)}</p>
                 {/if}
                 {#if now.plan !== null}
                     <RecoverProgress {rows} {run} {rates} bytes={live?.bytes ?? null} />

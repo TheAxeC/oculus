@@ -1,0 +1,99 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<feed xmlns:opensearch="http://a9.com/-/spec/opensearch/1.1/" xmlns:arxiv="http://arxiv.org/schemas/atom" xmlns="http://www.w3.org/2005/Atom">
+  <id>https://arxiv.org/api/D6CbBwMS1PQtDxu3HbQuYX8oBbE</id>
+  <title>arXiv Query: search_query=all:tensor AND all:decomposition AND all:EEG&amp;id_list=&amp;start=0&amp;max_results=3</title>
+  <updated>2026-10-28T07:35:16Z</updated>
+  <link href="https://arxiv.org/api/query?search_query=all:tensor+AND+(all:decomposition+AND+all:EEG)&amp;start=0&amp;max_results=3&amp;id_list=" type="application/atom+xml"/>
+  <opensearch:itemsPerPage>3</opensearch:itemsPerPage>
+  <opensearch:totalResults>20</opensearch:totalResults>
+  <opensearch:startIndex>0</opensearch:startIndex>
+  <entry>
+    <id>http://arxiv.org/abs/1807.01541v6</id>
+    <title>Tensor Decomposition for EEG Signal Retrieval</title>
+    <updated>2019-06-29T13:01:09Z</updated>
+    <link href="https://arxiv.org/abs/1807.01541v6" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/1807.01541v6" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Prior studies have proposed methods to recover multi-channel electroencephalography (EEG) signal ensembles from their partially sampled entries. These methods depend on spatial scenarios, yet few approaches aiming to a temporal reconstruction with lower loss. The goal of this study is to retrieve the temporal EEG signals independently which was overlooked in data pre-processing. We considered EEG signals are impinging on tensor-based approach, named nonlinear Canonical Polyadic Decomposition (CPD). In this study, we collected EEG signals during a resting-state task. Then, we defined that the source signals are original EEG signals and the generated tensor is perturbed by Gaussian noise with a signal-to-noise ratio of 0 dB. The sources are separated using a basic non-negative CPD and the relative errors on the estimates of the factor matrices. Comparing the similarities between the source signals and their recovered versions, the results showed significantly high correlation over 95%. Our findings reveal the possibility of recoverable temporal signals in EEG applications.</summary>
+    <category term="eess.SP" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2018-07-04T12:32:37Z</published>
+    <arxiv:primary_category term="eess.SP"/>
+    <arxiv:journal_ref>2019 IEEE International Conference on Systems, Man and Cybernetics (SMC)</arxiv:journal_ref>
+    <author>
+      <name>Zehong Cao</name>
+    </author>
+    <author>
+      <name>Mukesh Prasad</name>
+    </author>
+    <author>
+      <name>M. Tanveer</name>
+    </author>
+    <author>
+      <name>Chin-Teng Lin</name>
+    </author>
+    <arxiv:doi>10.1109/SMC.2019.8914076</arxiv:doi>
+    <link rel="related" href="https://doi.org/10.1109/SMC.2019.8914076" title="doi"/>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2211.13793v2</id>
+    <title>Tensor Decomposition of Large-scale Clinical EEGs Reveals Interpretable Patterns of Brain Physiology</title>
+    <updated>2023-02-04T23:44:54Z</updated>
+    <link href="https://arxiv.org/abs/2211.13793v2" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2211.13793v2" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Identifying abnormal patterns in electroencephalography (EEG) remains the cornerstone of diagnosing several neurological diseases. The current clinical EEG review process relies heavily on expert visual review, which is unscalable and error-prone. In an effort to augment the expert review process, there is a significant interest in mining population-level EEG patterns using unsupervised approaches. Current approaches rely either on two-dimensional decompositions (e.g., principal and independent component analyses) or deep representation learning (e.g., auto-encoders, self-supervision). However, most approaches do not leverage the natural multi-dimensional structure of EEGs and lack interpretability. In this study, we propose a tensor decomposition approach using the canonical polyadic decomposition to discover a parsimonious set of population-level EEG patterns, retaining the natural multi-dimensional structure of EEGs (time x space x frequency). We then validate their clinical value using a cohort of patients including varying stages of cognitive impairment. Our results show that the discovered patterns reflect physiologically meaningful features and accurately classify the stages of cognitive impairment (healthy vs mild cognitive impairment vs Alzheimer's dementia) with substantially fewer features compared to classical and deep learning-based baselines. We conclude that the decomposition of population-level EEG tensors recovers expert-interpretable EEG patterns that can aid in the study of smaller specialized clinical cohorts.</summary>
+    <category term="eess.SP" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.LG" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="stat.AP" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2022-11-24T20:39:22Z</published>
+    <arxiv:comment>4 pages, 3 Figures, 2 Tables; Accepted at IEEE NER 2023</arxiv:comment>
+    <arxiv:primary_category term="eess.SP"/>
+    <author>
+      <name>Teja Gupta</name>
+    </author>
+    <author>
+      <name>Neeraj Wagh</name>
+    </author>
+    <author>
+      <name>Samarth Rawal</name>
+    </author>
+    <author>
+      <name>Brent Berry</name>
+    </author>
+    <author>
+      <name>Gregory Worrell</name>
+    </author>
+    <author>
+      <name>Yogatheesan Varatharajah</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2206.00635v1</id>
+    <title>Speech Artifact Removal from EEG Recordings of Spoken Word Production with Tensor Decomposition</title>
+    <updated>2022-06-01T17:10:23Z</updated>
+    <link href="https://arxiv.org/abs/2206.00635v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2206.00635v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Research about brain activities involving spoken word production is considerably underdeveloped because of the undiscovered characteristics of speech artifacts, which contaminate electroencephalogram (EEG) signals and prevent the inspection of the underlying cognitive processes. To fuel further EEG research with speech production, a method using three-mode tensor decomposition (time x space x frequency) is proposed to perform speech artifact removal. Tensor decomposition enables simultaneous inspection of multiple modes, which suits the multi-way nature of EEG data. In a picture-naming task, we collected raw data with speech artifacts by placing two electrodes near the mouth to record lip EMG. Based on our evaluation, which calculated the correlation values between grand-averaged speech artifacts and the lip EMG, tensor decomposition outperformed the former methods that were based on independent component analysis (ICA) and blind source separation (BSS), both in detecting speech artifact (0.985) and producing clean data (0.101). Our proposed method correctly preserved the components unrelated to speech, which was validated by computing the correlation value between the grand-averaged raw data without EOG and cleaned data before the speech onset (0.92-0.94).</summary>
+    <category term="cs.SD" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.AI" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="eess.AS" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2022-06-01T17:10:23Z</published>
+    <arxiv:primary_category term="cs.SD"/>
+    <arxiv:journal_ref>2019 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP)</arxiv:journal_ref>
+    <author>
+      <name>Holy Lovenia</name>
+    </author>
+    <author>
+      <name>Hiroki Tanaka</name>
+    </author>
+    <author>
+      <name>Sakriani Sakti</name>
+    </author>
+    <author>
+      <name>Ayu Purwarianti</name>
+    </author>
+    <author>
+      <name>Satoshi Nakamura</name>
+    </author>
+    <arxiv:doi>10.1109/ICASSP.2019.8682414</arxiv:doi>
+    <link rel="related" href="https://doi.org/10.1109/ICASSP.2019.8682414" title="doi"/>
+  </entry>
+</feed>

@@ -57,6 +57,7 @@ Every registered view is listed by its words.
 | References | references |
 | Search | search |
 | Source | source |
+| Journal Browser | venues-browser |
 | Venues | venues |
 | Domains | domains |
 | Map | map |

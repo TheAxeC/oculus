@@ -1,27 +1,35 @@
 // Layer 2, client state. The BibTeX entry Copy BibTeX puts on the clipboard, and where it came
-// from. The entry is asked of the sources in this order, each source's entry copied as it serves it
-// (its key and its non-ASCII text included): `doi.org` for a paper with a DOI, Semantic Scholar's
-// own entry for a paper it found, `doi.org` for an arXiv paper's DataCite DOI. A paper none of them
-// serves is formatted by citation-js from CSL-JSON built from the hit, which does the escaping,
-// the name formatting and the entry type; no BibTeX text is written here.
+// from. The entry is asked in this order, each entry copied as it is served (its key and its
+// non-ASCII text included): the DOI link of the primary hub's `links` for a paper with a DOI, then
+// each row of `literature.sources` that has a `query.id`, in the order the server lists them, by
+// the field of the paper the row's `query.id` takes (`id`, the row's own id of the paper, or a
+// field such as `arxiv`). A paper none of them serves is formatted by citation-js from CSL-JSON
+// built from the hit, which does the escaping, the name formatting and the entry type; no BibTeX
+// text is written here.
 //
 // The key of a formatted entry of the search is citation-js's own: the plugin's `useIdAsLabel`
 // option is off, so the key is made from the first author, the year and the first word of the
-// title, where the option on would use the identifier of the hit, which is an OpenAlex or Semantic
-// Scholar id. An entry of the Literature collection is copied under its own key whichever way it
+// title, where the option on would use the identifier of the hit, which is a source's own id of
+// the paper. An entry of the Literature collection is copied under its own key whichever way it
 // was made: the served entry has its key replaced, and the formatted one is made with the option
 // on and the entry's key as the item's id. citation-js is loaded when the first entry is
 // formatted, so the page does not carry it until a paper needs it.
 
-import type { HitType } from '../../../data/model/index.ts';
-import { bibtexAnswer, bibtexUrl } from './answers.ts';
+import type { HitType, SourceInfo } from '../../../data/model/index.ts';
+import { bibtexAnswer, bibtexUrl, type ServedFrom } from './answers.ts';
 import type { MergedHit } from './merge.ts';
 
-/** Where an entry came from. */
-export type EntrySource = 'doi' | 'semantic_scholar' | 'arxiv' | 'citation_js';
+/**
+ * Where an entry came from: the DOI link (`doi`), a row of `literature.sources` (its key, with its
+ * name), or `citation_js` for an entry formatted on the page.
+ */
+export type EntrySource = ServedFrom;
 
 /** One entry and where it came from. */
-export type Entry = { text: string; from: EntrySource };
+export type Entry = { text: string } & EntrySource;
+
+/** What an entry formatted on the page says it came from. */
+const FORMATTED: EntrySource = { from: 'citation_js' };
 
 /** How the page asks the route for one address: the body it answered with, undefined for none. */
 export type AskRoute = (url: string) => Promise<unknown>;
@@ -73,17 +81,38 @@ async function formatted(item: Record<string, unknown>, byId: boolean): Promise<
     return new Cite([item]).format('bibtex', { format: 'text' }).trim();
 }
 
-/** The entry for a paper: the first source that serves one, else the one citation-js formats. */
-export async function entryFor(hit: MergedHit, ask: AskRoute): Promise<Entry> {
+/** The value of the paper a source's `query.id` asks by: the source's own id, or a field. */
+function idFor(hit: MergedHit, source: SourceInfo): string | undefined {
+    const by = source.bibtex;
+    if (by === null) return undefined;
+    if (by === 'id') return hit.ids[source.id];
+    const value: unknown = Object.hasOwn(hit, by) ? Reflect.get(hit, by) : undefined;
+    return typeof value === 'string' && value !== '' ? value : undefined;
+}
+
+/**
+ * The entry for a paper: the first of the DOI link and the `sources` with a BibTeX lookup that
+ * serves one, else the one citation-js formats.
+ */
+export async function entryFor(
+    hit: MergedHit,
+    sources: readonly SourceInfo[],
+    ask: AskRoute
+): Promise<Entry> {
     const asks: string[] = [];
-    if (hit.doi !== undefined) asks.push(bibtexUrl('doi', hit.doi));
-    if (hit.s2 !== undefined) asks.push(bibtexUrl('s2', hit.s2));
-    if (hit.arxiv !== undefined) asks.push(bibtexUrl('arxiv', hit.arxiv));
+    if (hit.doi !== undefined) asks.push(bibtexUrl({ doi: hit.doi }));
+    for (const source of sources) {
+        const id = idFor(hit, source);
+        if (id !== undefined) asks.push(bibtexUrl({ source: source.id, id }));
+    }
     for (const url of asks) {
         const served = bibtexAnswer(await ask(url));
-        if (served !== null) return { text: served.bibtex, from: served.from };
+        if (served !== null) {
+            const { bibtex, ...from } = served;
+            return { text: bibtex, ...from };
+        }
     }
-    return { text: await formatted(cslOf(hit), false), from: 'citation_js' };
+    return { text: await formatted(cslOf(hit), false), ...FORMATTED };
 }
 
 /** The fields of a Literature entry a BibTeX entry is made from. */
@@ -122,15 +151,18 @@ function savedCsl(paper: SavedPaper): Record<string, unknown> {
 }
 
 /**
- * The entry for a saved paper, under the paper's own key: the one `doi.org` serves for its DOI,
+ * The entry for a saved paper, under the paper's own key: the one the DOI link serves for its DOI,
  * else the one citation-js formats from its fields.
  */
 async function savedEntryFor(paper: SavedPaper, ask: AskRoute): Promise<Entry> {
     if (paper.doi !== '') {
-        const served = bibtexAnswer(await ask(bibtexUrl('doi', paper.doi)));
-        if (served !== null) return { text: rekeyed(served.bibtex, paper.key), from: served.from };
+        const served = bibtexAnswer(await ask(bibtexUrl({ doi: paper.doi })));
+        if (served !== null) {
+            const { bibtex, ...from } = served;
+            return { text: rekeyed(bibtex, paper.key), ...from };
+        }
     }
-    return { text: await formatted(savedCsl(paper), true), from: 'citation_js' };
+    return { text: await formatted(savedCsl(paper), true), ...FORMATTED };
 }
 
 /** What a copy of several entries came to: the text, and the keys copied and not copied. */

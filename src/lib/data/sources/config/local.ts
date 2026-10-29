@@ -26,16 +26,11 @@ import { ROOT_FOLDER } from '../../helpers/hub-names.ts';
 const portShape = z.number().refine(Number.isInteger);
 
 /**
- * The keys under `literature:` of the file: the API keys of the sources that take one and the
- * contact address three of them ask callers to send. Each is absent unless the machine sets it.
+ * The keys under `literature:` of the file: the contact address a literature source's row sends as
+ * its `contact` parameter. Absent unless the machine sets it; a source's secret is a `downloads`
+ * row.
  */
 type LiteratureKeys = {
-    wosKey?: string;
-    scopusKey?: string;
-    scopusInsttoken?: string;
-    openalexKey?: string;
-    semanticScholarKey?: string;
-    ncbiKey?: string;
     mailto?: string;
 };
 
@@ -129,16 +124,16 @@ export type LocalConfig = {
      */
     mailDir?: string;
     /**
-     * The literature sources' keys and contact address, `literature` in the file. Absent unless
-     * the machine sets at least one of them. The Settings view shows the contact address and, for
-     * each key, that it is set, and the file opens in a source tab like any file of the workspace;
-     * no log holds a value.
+     * The literature sources' contact address, `literature` in the file. Absent unless the machine
+     * sets it. The Settings view shows it, and the file opens in a source tab like any file of the
+     * workspace.
      */
     literature?: LiteratureKeys;
     /**
-     * The accounts the Data view's Recover downloads with, `downloads` in the file: one row per
-     * service. Empty unless the machine names any. No value of a row reaches a page, a log or a
-     * command line.
+     * The secrets the reader rows of the hubs' `.oculus/config.yml` sign in with, `downloads` in
+     * the file: one row per service, the key a row's `auth` entry names. Empty unless the machine
+     * names any; a row no reader row names is read and unused. No value of a row reaches a page, a
+     * log or a command line.
      */
     downloads: DownloadAccount[];
 };
@@ -156,20 +151,11 @@ export type ClusterAccount = { resource: string; user?: string; keyFile?: string
  */
 export const USER_NAME = /^[A-Za-z0-9_][A-Za-z0-9._-]*$/;
 
-/** The services a `downloads` row names. */
-const DOWNLOAD_SERVICES = ['physionet', 'kaggle', 'kaggle-token', 'synapse'] as const;
-
-export type DownloadService = (typeof DOWNLOAD_SERVICES)[number];
-
-/** The services whose row names a user: PhysioNet and Kaggle sign in with a user and a secret. */
-const USER_SERVICES: readonly DownloadService[] = ['physionet', 'kaggle'];
-
 /**
- * One row of `downloads:`: the service, the user name a PhysioNet or Kaggle row needs, and the
- * secret (a PhysioNet password, a Kaggle key, Kaggle's API token, a Synapse token). Recover signs
- * in to Kaggle with the `kaggle` row; the `kaggle-token` row is held and never used by it.
+ * One row of `downloads:`: the service, the key a reader row's `auth` entry names it by; the user
+ * name an entry that signs in with `basic` sends; and the secret.
  */
-export type DownloadAccount = { service: DownloadService; user?: string; secret: string };
+export type DownloadAccount = { service: string; user?: string; secret: string };
 
 /** The default development port. */
 export const DEFAULT_PORT = 8790;
@@ -203,15 +189,7 @@ export const LOCAL_KEYS = [
 ];
 
 /** The keys under `literature:`, with the field of LiteratureKeys each sets. */
-export const LITERATURE_KEYS = [
-    ['wos_key', 'wosKey'],
-    ['scopus_key', 'scopusKey'],
-    ['scopus_insttoken', 'scopusInsttoken'],
-    ['openalex_key', 'openalexKey'],
-    ['semantic_scholar_key', 'semanticScholarKey'],
-    ['ncbi_key', 'ncbiKey'],
-    ['mailto', 'mailto']
-] as const;
+const LITERATURE_KEYS = [['mailto', 'mailto']] as const;
 
 /**
  * The defaults: the port is 8790, nobody is the user, and Claude and the rite debug adapter are
@@ -260,6 +238,7 @@ export type LocalProblem =
     | { key: string; kind: 'repeat'; sentence: string }
     | { key: string; kind: 'other-hub'; hub: string; sentence: string }
     | { key: string; kind: 'label'; sentence: string }
+    | { key: string; kind: 'user'; service: string; sentence: string }
     | { key: ''; kind: 'unparsed' | 'not-a-map'; sentence: string }
     | { key: ''; kind: 'unreadable'; code: string; sentence: string };
 
@@ -501,16 +480,10 @@ function literatureKeys(
     return Object.keys(keys).length === 0 ? null : keys;
 }
 
-/** Whether a value is one of the services a `downloads` row names. */
-function isService(value: unknown): value is DownloadService {
-    return DOWNLOAD_SERVICES.some((one) => one === value);
-}
-
 /**
- * The rows of `downloads:` that read: a service, the user a PhysioNet or Kaggle row needs, and the
- * secret. A row that fails, or names a service an earlier row names, is left out with a problem
- * naming the row and what it must be; no problem holds a value of the file. A list that is not a
- * list is null.
+ * The rows of `downloads:` that read: a service, an optional user, and the secret. A row that
+ * fails, or names a service an earlier row names, is left out with a problem naming the row and
+ * what it must be; no problem holds a value of the file. A list that is not a list is null.
  */
 function downloadAccounts(value: unknown, problems: LocalProblem[]): DownloadAccount[] | null {
     const rows = readAs(itemsShape, value);
@@ -518,7 +491,7 @@ function downloadAccounts(value: unknown, problems: LocalProblem[]): DownloadAcc
         problems.push(wrong('downloads', 'a list'));
         return null;
     }
-    const seen = new Set<DownloadService>();
+    const seen = new Set<string>();
     const read: DownloadAccount[] = [];
     rows.forEach((item, index) => {
         const at = `downloads[${index}]`;
@@ -527,19 +500,14 @@ function downloadAccounts(value: unknown, problems: LocalProblem[]): DownloadAcc
             problems.push(wrong(at, 'a map', 'row'));
             return;
         }
-        const service = row.service;
-        if (!isService(service)) {
-            problems.push(wrong(`${at}.service`, DOWNLOAD_SERVICES.join(', '), 'row'));
+        const service = filledText(row.service);
+        if (service === undefined) {
+            problems.push(wrong(`${at}.service`, 'a non-empty string', 'row'));
             return;
         }
         const user = filledText(row.user);
-        const named = USER_SERVICES.includes(service);
-        if (named && user === undefined) {
+        if (row.user !== undefined && user === undefined) {
             problems.push(wrong(`${at}.user`, 'a user name', 'row'));
-            return;
-        }
-        if (!named && row.user !== undefined) {
-            problems.push(wrong(`${at}.user`, `absent for ${service}`, 'row'));
             return;
         }
         const secret = filledText(row.secret);

@@ -30,10 +30,15 @@
 //
 // Literature's Add looks a DOI, an arXiv paper or a PubMed paper up through the sources the
 // Literature search asks (state/feeds/literature/lookup.ts) and saves the paper they merge into;
-// any other address, or an identifier no source found, is saved as an entry of its address. An
-// empty answer turns the box into the collection's own Add, which asks the key.
+// any other address is saved as an entry of its address, and an identifier no source found as the
+// address its `links` row of the primary hub makes, or as typed with no such row. An empty answer
+// turns the box into the collection's own Add, which asks the key.
+//
+// A journal browser hit's Add is the venues registry's own Add, its typed lines starting from the
+// hit's fields, and it writes the hit's name, ISSNs, fee and open-access status into the entry.
 
 import type { PromptField } from '$lib/ui/forms/prompt';
+import type { BrowserHit } from '$lib/state/sources/registries/browser';
 import type { ClientState } from '$lib/state/client/context';
 import { primaryKeyOf, type Collection, type SchemaField } from '$lib/state/boards/collection';
 import { pageView } from '$lib/state/forms/page-entry';
@@ -51,8 +56,9 @@ import {
 import { askFields } from '$lib/state/forms/new-entry';
 import { radarBuckets } from '$lib/state/feeds/radar';
 import { vocabOf } from '$lib/state/shared/words/tones';
-import { lookUp, lookupOf, sourceName, sourcesAsked } from '$lib/state/feeds/literature/lookup';
+import { lookUp, lookupOf, sourcesAsked } from '$lib/state/feeds/literature/lookup';
 import { hitPaper } from '$lib/state/feeds/literature/saved';
+import { orderOf } from '$lib/state/feeds/literature/merge';
 import { t } from '$lib/state/shared/words/text';
 import { refusalWords } from '../answer-words';
 
@@ -230,7 +236,8 @@ function bodyOf(
  * those of the key `collection` unless given (a registry's, whose key each hub's list gives); the
  * entry is written under the key of the chosen hub's collection. Answered with a hub other than
  * the one it opened on, the Add writes nothing and answers with the Add of the hub answered, the
- * typed lines carried over by field (`typed`, by field name).
+ * typed lines carried over by field (`typed`, by field name). `given` holds the values of fields
+ * the box does not ask, written into the entry beside the answers (a journal browser hit's).
  */
 export function collectionAsk(
     client: ClientState,
@@ -239,7 +246,8 @@ export function collectionAsk(
     title: string,
     chosen?: string,
     held: Collection[] = client.selectors.collectionsOfKey(collection),
-    typed: Record<string, string> = {}
+    typed: Record<string, string> = {},
+    given: Record<string, string | string[]> = {}
 ): Ask {
     const named = held.find((one) => one.primary_key !== undefined)?.primary_key ?? null;
     const asked = askFields(schema, schema === undefined ? named : primaryKeyOf(schema));
@@ -268,12 +276,15 @@ export function collectionAsk(
                         .filter(([one]) => one.as === 'line' || one.as === 'list')
                         .map(([one, text]) => [one.field.field, text])
                 );
-                return collectionAsk(client, collection, schema, title, root, held, carried);
+                return collectionAsk(client, collection, schema, title, root, held, carried, given);
             }
             const key = keyIn(root);
+            const unasked = Object.entries(given).filter(
+                ([field]) => !asked.some((one) => one.field === field)
+            );
             const answer = await client.writes.newEntry(
                 key,
-                bodyOf(questions, values, picked),
+                { ...Object.fromEntries(unasked), ...bodyOf(questions, values, picked) },
                 root
             );
             const sentence = refusalWords(answer);
@@ -350,6 +361,36 @@ export function paperAsk(client: ClientState, chosen?: string): Ask {
 }
 
 /**
+ * The Add of a journal browser's hit to the venues registry: the collection's Add of `held` under
+ * the key `collection` (collectionAsk), its typed lines starting from the hit's fields, and the
+ * entry written with the hit's `name`, `issn`, `fee` and `open_access`, each field the hit does not
+ * hold left out, so a hit with no ISSN makes an entry with no `issn`. `chosen` is the hub of the
+ * browser the hit came from, chosen when more than one hub holds the registry.
+ */
+export function browserHitAsk(
+    client: ClientState,
+    hit: BrowserHit,
+    collection: string,
+    schema: SchemaField[] | undefined,
+    title: string,
+    held: Collection[],
+    chosen?: string
+): Ask {
+    const given: Record<string, string | string[]> = {};
+    if (hit.title !== undefined) given.name = hit.title;
+    if (hit.issn.length > 0) given.issn = hit.issn;
+    if (hit.fee !== undefined) given.fee = hit.fee;
+    if (hit.open_access !== undefined) given.open_access = hit.open_access;
+    const typed = Object.fromEntries(
+        Object.entries(given).map(([field, value]) => [
+            field,
+            Array.isArray(value) ? value.join(`${LIST_SEPARATOR} `) : value
+        ])
+    );
+    return collectionAsk(client, collection, schema, title, chosen, held, typed, given);
+}
+
+/**
  * The Add of the Literature collection, the one whose entry names the `literature` registry: one
  * value, a DOI or an address, and the hub to save it in when more than one hub holds such a
  * collection, the primary chosen when it is among them and none otherwise. `plain` is the
@@ -370,17 +411,18 @@ export function literatureAsk(
         submit: async ([typed, chosen]) => {
             const text = typed.trim();
             if (text === '') return plain(chosen);
-            const lookup = lookupOf(text);
+            const order = orderOf(client.entities.config()?.config ?? {});
+            const lookup = lookupOf(text, order.links);
             let paper: Record<string, unknown> = { url: text };
             if (lookup !== null) {
                 const token = client.writes.writeToken();
-                const found = await lookUp(lookup, await sourcesAsked(token), { token });
+                const found = await lookUp(lookup, await sourcesAsked(token), order, { token });
                 if ('failed' in found) {
-                    const names = found.failed.map((one) => sourceName(one)).join(', ');
-                    return t('entry_form.add_literature_failed', names);
+                    return t('entry_form.add_literature_failed', found.failed.join(', '));
                 }
                 if ('paper' in found) paper = hitPaper(found.paper);
-                else paper = lookup.by === 'doi' ? { doi: lookup.id } : { url: lookup.url };
+                else if (lookup.by === 'doi') paper = { doi: lookup.id };
+                else paper = { url: lookup.url ?? text };
             }
             const answer = await client.writes.saveLiterature('hand', paper, hub.rootOf(chosen));
             const sentence = refusalWords(answer);

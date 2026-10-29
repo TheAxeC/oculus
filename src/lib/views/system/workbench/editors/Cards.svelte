@@ -31,20 +31,29 @@
     // A list draws its first PAGE entries and a Show more line for the next PAGE, so a catalog of
     // thousands of entries (the interface words, the Unicode math symbols) unfolds without drawing
     // every card at once; Add draws through to the entry it adds.
+    //
+    // A family marked `sparse` (`sparse`) draws each card with the fields its record holds and an
+    // Add field menu of the others; a field picked there is held with an empty value
+    // (state/system/config/editors/fields.ts). A text field that takes a record draws the record's
+    // card while it holds one, and its box otherwise.
 
     import { tick } from 'svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import Select from '$lib/ui/forms/choice/Select.svelte';
     import { focusFirstQuietly } from '$lib/ui/frame/quiet-focus';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
     import { cardCursor } from '$lib/state/workbench/layout/instance';
     import type { Draft, Edit, Step } from '$lib/state/system/config/editors/draft';
     import {
+        addableFields,
+        addedValue,
         cardsOf,
-        controlOf,
+        drawsCards,
         familyForm,
         fromText,
         pairValueSpec,
+        shownFields,
         textOf,
         type Card,
         type FieldSpec,
@@ -82,6 +91,8 @@
          * keeps oculus's order.
          */
         ordered?: boolean;
+        /** A family drawn with the fields each card holds and an Add field menu of the others. */
+        sparse?: boolean;
         /** How many Discards the draft has had, which a control's Add person compares. */
         discards?: number;
         onedit: (edit: Edit) => void;
@@ -102,6 +113,7 @@
         removeOnly = false,
         single = false,
         ordered = true,
+        sparse = false,
         discards = 0,
         onedit
     }: Props = $props();
@@ -193,9 +205,21 @@
         return { key: fields.key, value: pairValueSpec(spec) };
     }
 
+    /** The form of the cards a family field draws, a map's or else a list's. */
+    function innerForm(spec: FieldSpec): 'pairs' | 'nested' {
+        return familyForm(spec) === 'pairs' ? 'pairs' : 'nested';
+    }
+
     /** The fields of a card its controls draw: not those it keeps as the file has them. */
     function drawnOf(card: Card): string[] {
-        return fields.filter((name) => !Object.hasOwn(card.kept, name));
+        return shownFields(card, fields, sparse);
+    }
+
+    /** Hold a field picked from a card's Add field menu, with the empty value its control takes. */
+    function addField(at: number, name: string): void {
+        const spec = specOf(name);
+        if (spec === undefined || name === '') return;
+        onedit(aimed({ do: 'set', index: at, field: name, value: addedValue(spec) }));
     }
 
     /** The catalog fields of a card the card kept because their control cannot show them. */
@@ -220,7 +244,7 @@
             <div class="fields" data-card-focus>
                 {#each drawnOf(card) as name (name)}
                     {@const spec = specOf(name)}
-                    {#if spec !== undefined && controlOf(spec) === 'records'}
+                    {#if spec !== undefined && drawsCards(spec, card.fields[name])}
                         {@const inner = innerSpecs(spec)}
                         <div class="nested" data-field={name}>
                             <span class="word">{name}</span>
@@ -228,8 +252,9 @@
                                 cards={cardsOf(card.fields[name])}
                                 fields={Object.keys(inner)}
                                 specs={inner}
-                                form={familyForm(spec) === 'pairs' ? 'pairs' : 'nested'}
+                                form={innerForm(spec)}
                                 single={familyForm(spec) === 'record'}
+                                sparse={spec.sparse === true}
                                 {lists}
                                 {instance}
                                 {base}
@@ -270,6 +295,20 @@
                         </span>
                     {/if}
                 {/each}
+                {#if sparse && addableFields(card, fields).length > 0}
+                    <span class="add-field">
+                        <Select
+                            value=""
+                            label={t('settings.editor_add_field', at + 1)}
+                            empty={t('settings.editor_add_field_none')}
+                            choices={addableFields(card, fields).map((one) => ({
+                                id: one,
+                                label: one
+                            }))}
+                            onchange={(picked: string) => addField(at, picked)}
+                        />
+                    </span>
+                {/if}
             </div>
             {#if !fixed || removeOnly}
                 <span class="controls">
@@ -417,6 +456,11 @@
     .controls {
         display: inline-flex;
         gap: 2px;
+    }
+
+    .add-field {
+        width: 220px;
+        max-width: 100%;
     }
 
     .kept {

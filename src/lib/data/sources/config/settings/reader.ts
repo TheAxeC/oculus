@@ -12,6 +12,7 @@ import { byKey } from '../../../helpers/guards.ts';
 import { mapShape, readAs } from '../../../shapes/shapes.ts';
 import { catalogOf, flaggedItems, sourcedItems, type CatalogEntry } from '../catalog/options.ts';
 import { valueProblem, type RuleLists, type ValueProblem } from '../catalog/value-rule.ts';
+import type { RowIssue } from './rows/check.ts';
 
 /**
  * A setting the rule refuses, by the dotted key it was written at. `value` is a key whose default
@@ -20,10 +21,12 @@ import { valueProblem, type RuleLists, type ValueProblem } from '../catalog/valu
  * whose keys all take their defaults, and `family` a family that is not a map, none of whose
  * entries is read. `repeat` is a row of a list of records whose name an earlier row already took,
  * and `unnamed` a row with no name; neither is read. `this-mac` is a list of cluster keys holding
- * the key that names this Mac, which is left out.
+ * the key that names this Mac, which is left out. `row` is a reader row or a `links` row of the key
+ * with what is wrong in it (rows/check.ts).
  */
 export type SettingProblem =
     | { key: string; where: 'block' | 'family' | 'this-mac' }
+    | { key: string; where: 'row'; issue: RowIssue }
     | { key: string; where: 'repeat'; name: string }
     | { key: string; where: 'unnamed' }
     | {

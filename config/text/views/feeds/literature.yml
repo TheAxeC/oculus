@@ -14,10 +14,9 @@ text:
         bibtex: Copy BibTeX
         cites: '{0} citations'
         cites_one: 1 citation
-        copied_arxiv: BibTeX copied, from the arXiv DOI at doi.org
         copied_citation_js: BibTeX copied, built by citation-js because no source served one
-        copied_doi: BibTeX copied, from doi.org
-        copied_semantic_scholar: BibTeX copied, from Semantic Scholar
+        copied_doi: BibTeX copied, from the DOI link
+        copied_from: BibTeX copied, from {0}
         copy_failed: Could not copy the BibTeX entry
         count: '{0} papers'
         count_one: 1 paper
@@ -26,12 +25,13 @@ text:
         idle: Type a query and press Search.
         in_radar: In Lit Watch
         in_radar_tip: Lit Watch holds this paper already
-        key_tip: 'Needs the {0} key under literature: in local.yml'
+        key_tip: 'Needs the downloads row {0} in local.yml. {1}'
         more: More
         min_cites: Minimum citations
         no_abstract: None of the sources sent an abstract.
         no_hits: No papers found.
         no_radar: Lit Watch has no file on this hub.
+        no_sources: No literature source is configured. The rows of literature.sources in the primary hub's .oculus/config.yml set them, in Settings.
         none_on: No source is on. Turn one on to search.
         oa: Open access only
         open: open access
@@ -62,17 +62,8 @@ text:
         sort_citations: Citations
         sort_date: Date
         sort_relevance: Relevance
-        source_arxiv: arXiv
-        source_crossref: Crossref
-        source_europe_pmc: Europe PMC
-        source_openalex: OpenAlex
-        source_pubmed: PubMed
-        source_scopus: Scopus
-        source_semantic_scholar: Semantic Scholar
-        source_wos: Web of Science
         sources: Sources
         state_asking: asking ...
-        state_daily: daily limit reached, resets in {0}
         state_failed: failed ({0})
         state_failed_plain: failed
         state_limited: rate limited
