@@ -192,3 +192,236 @@ The other visible changes are stated with their before and after (report lines 6
 - Every drawing half (cases 1, 7, 15, 21, 22, 24 and the heading style): it needs a page, so it is the look on landing.
 
 Reviewer usage: abb1b8f406af77f0a, claude-opus-5-5, 187340 tokens, 43 tool uses, 8 min 56 s.
+
+## Repair round 1, refuted
+
+```
+(all from /Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O103)
+
+$ for each path of files.txt: diff -u <snapshot>/<path> <path>
+config/catalogs/vocab.yml, config/defaults/sources.yml, config/text/views/boards/focus.yml,
+src/lib/ui/display/ticker/Ticker.svelte, src/lib/ui/display/ticker/ticker-rows.ts,
+src/lib/views/boards/focus/Tasks.svelte, tests/fixtures/hubs/demo/.oculus/config.yml: diff exit 0
+src/lib/state/boards/ticker.ts: diff exit 1, two hunks:
+@@ -137,10 +137,12 @@  (the Ticker type's doc comment)
+- * What the ticker answers. Each list is already in the order it is shown in. The lists split the
++ * What the ticker answers. Each list is already in the order its lines are shown in within the
++ * group they are drawn in: for `tasks`, the group `taskGroups` sorts each line into, a task's
++ * subtasks drawn under their task. The lists split the lines by who sets the date, which is the
+  ... (rest of the paragraph rewrapped, words unchanged)
+@@ -352,7 +354,7 @@
+-     * gives, `lead` on oculus's own list, so the leads stand in a Command Center group of their own
++     * gives, `lead` on oculus's own list, so the leads stand in a command center group of their own
+
+$ git status --short
+ M config/catalogs/vocab.yml
+ M config/defaults/sources.yml
+ M config/text/views/boards/focus.yml
+ M src/lib/state/boards/ticker.ts
+ M src/lib/ui/display/ticker/Ticker.svelte
+ M src/lib/ui/display/ticker/ticker-rows.ts
+ M src/lib/views/boards/focus/Tasks.svelte
+ M tests/fixtures/hubs/demo/.oculus/config.yml
+?? .scratch/migration/agents/briefs/O103-round1.md
+?? .scratch/migration/agents/reviews/O103-report.md
+(no file outside the brief's paths; no diagram file changed by `npm run diagrams`. The untracked
+round brief is byte-identical to main's: diff exit 0, born 16:21:32 with the snapshot's files.txt,
+so it is the orchestrator's ledger copy.)
+
+$ npm run test:quick   (tail)
+ok      prettier (0.6 s): All matched files use Prettier code style!
+ok      ASCII gate (1.0 s)
+ok      svelte-kit sync (5.7 s)
+ok      eslint (10.1 s)
+ok      vitest (21.9 s): Duration  14.46s (transform 12.41s, setup 0ms, import 24.91s, tests 10.54s, environment 1ms)
+ok      svelte-check (23.4 s): 1793287693367 COMPLETED 560 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest checks (55.4 s): Duration  48.18s (transform 13.19s, setup 0ms, import 42.19s, tests 73.47s, environment 2ms)
+test:quick: 61.2 s; every command passed
+
+$ LC_ALL=C grep -n '[^ -~]' src/lib/state/boards/ticker.ts src/lib/ui/display/ticker/Ticker.svelte src/lib/ui/display/ticker/ticker-rows.ts src/lib/views/boards/focus/Tasks.svelte tests/fixtures/hubs/demo/.oculus/config.yml .scratch/migration/agents/reviews/O103-report.md; echo "grep exit $?"
+grep exit 1
+$ (spec.md:102 perl form over config/catalogs/vocab.yml config/defaults/sources.yml config/text/views/boards/focus.yml); echo "perl exit $?"
+perl exit 0      (no line printed)
+$ LC_ALL=C grep -n '[^ -~]' (the same three config files); echo "grep config exit $?"
+grep config exit 1
+
+$ grep -rn --exclude=local.yml "category: position" config tests
+config/defaults/sources.yml:47:  - { key: applications, file: ".oculus/data/academic/applications.yml", band_positions: true, awaiting: true, open_badge: true, lead_applications: true, dissemination: true, ticker: { category: position }, group: academic, order: 3, label: views.applications, glyph: views.applications_glyph, about: files.make_collection_line_applications }
+tests/fixtures/hubs/demo/.oculus/config.yml:20:  - { key: applications, file: ".oculus/data/academic/applications.yml", band_positions: true, awaiting: true, open_badge: true, lead_applications: true, dissemination: true, ticker: { category: position }, group: academic, order: 3, label: views.applications, glyph: views.applications_glyph, about: files.make_collection_line_applications }
+
+$ grep -rn "same group as the applications" src; echo "exit $?"
+exit 1
+
+--- the round report's evidence, rerun in its own form ---
+
+Item 2:
+$ grep -n "Command Center" src/lib/state/boards/ticker.ts src/lib/views/boards/focus/Tasks.svelte src/lib/ui/display/ticker/Ticker.svelte src/lib/ui/display/ticker/ticker-rows.ts; echo "exit $?"
+exit 1
+$ grep -n -i "command center" src/lib/state/boards/ticker.ts
+143: ... the command center holds the dates of the records (`overdue`,
+189: * command center inside `deadline_horizon_days`; ...
+357:     * gives, `lead` on oculus's own list, so the leads stand in a command center group of their own
+709: * The row lists of the command center, ...
+718: * Whether the command center has a row to show, ...
+
+Item 4 (key check):
+$ grep -n "^ticker_categories:" -A9 config/catalogs/vocab.yml | grep -c "^[0-9]*-  lead:"
+1
+$ grep -rn -E "\.kind === '|\.kind !== '" src/lib/state/boards/ticker.ts src/lib/views/boards/focus/*.ts src/lib/views/boards/focus/*.svelte | grep -v target
+src/lib/state/boards/ticker.ts:697:        } else if (line.kind === 'followup') groups.followups.push(line);
+src/lib/views/boards/focus/CommandCenter.svelte:171:  one.kind === 'venue' ? ...
+src/lib/views/boards/focus/CommandCenter.svelte:173:  if (one.kind === 'inbox') {
+src/lib/views/boards/focus/CommandCenter.svelte:181:  if (one.kind === 'linkedin') {
+src/lib/views/boards/focus/CommandCenter.svelte:255:  if (line?.kind === 'inbox') openView('inbox');
+src/lib/views/boards/focus/CommandCenter.svelte:256:  else if (line?.kind === 'linkedin') openView('linkedin');
+src/lib/views/boards/focus/CommandCenter.svelte:257:  else if (line?.kind === 'venue' && line.id !== undefined) {
+$ grep -rn --exclude=local.yml -E "^\s+(dlcat_lead|glyph_lead|word_lead_deadline):" config | wc -l
+       3
+$ grep -rn --exclude=local.yml -E "dlcat_lead|glyph_lead|word_lead_deadline" config src tests
+config/catalogs/vocab.yml:219:  lead:       { label: focus.command.dlcat_lead, glyph: focus.command.glyph_lead, noun: focus.command.word_lead_deadline }
+config/text/views/boards/focus.yml:42:            dlcat_lead: position leads
+config/text/views/boards/focus.yml:54:            glyph_lead: scout
+config/text/views/boards/focus.yml:105:            word_lead_deadline: lead deadline
+$ grep -rn -E "\bheading\??:|\bunder\??:" src/lib/ui/display/ticker src/lib/views/boards/focus src/lib/views/system/gallery
+src/lib/ui/display/ticker/ticker-rows.ts:36:    heading?: boolean;
+src/lib/ui/display/ticker/ticker-rows.ts:38:    under?: boolean;
+src/lib/views/boards/focus/FocusFilter.svelte:70,78,94,106,118,131: (the Group type's heading)
+src/lib/views/boards/focus/Tasks.svelte:69:                { ...own, heading: true },
+src/lib/views/boards/focus/Tasks.svelte:73:                    under: true
+src/lib/views/system/gallery/Gallery.svelte:106:            heading: heading(row.list),
+$ grep -rn -E ":global\(.*\.(heading|under)" src; echo "exit $?"
+exit 1
+$ find src -name "*.css" | xargs grep -ln -E "\.(heading|under)\b"; echo "exit $?"
+exit 1
+$ grep -n "key: lead" config/catalogs/vocab.yml
+256:  - { key: lead,         label: Lead,         field: lead, unmarked: true }
+   (the report cites vocab.yml:255, the base's line: git show d364c1b7e:config/catalogs/vocab.yml prints it at 255)
+
+Item 5:
+$ grep -rn --exclude=local.yml -e "category: position" -e "category: lead" -e dlcat_position -e dlcat_lead -e glyph_position -e glyph_lead -e word_position_deadline -e word_lead_deadline -e word_application src tests config docs README.md | cut -c1-90
+tests/fixtures/hubs/demo/.oculus/config.yml:20 / :23
+config/defaults/sources.yml:47 / :50
+config/catalogs/vocab.yml:218 / :219
+config/text/views/boards/focus.yml:42 dlcat_lead, :44 dlcat_position, :54 glyph_lead, :57 glyph_position, :100 word_application, :105 word_lead_deadline, :107 word_position_deadline
+docs/templates.md:87 / :90
+   (seven focus.yml lines, as the corrected report says)
+
+Item 7 (cleanup):
+$ ls -d <scratch>/O103-caserun
+ls: .../scratchpad/O103-caserun: No such file or directory
+$ ls -d <tmpdir>/o103-cases-*
+(eval):1: no matches found: /var/folders/7r/49ks4w4558vcr57tvb9svmph0000gp/T/o103-cases-*
+$ grep -rls "o103-cases-" <tmpdir>/oculus-workspace-state-* | wc -l
+       0
+$ ls <scratch>/caserun/tests <scratch>/caserun/vitest.config.mjs
+ls: .../scratchpad/caserun/vitest.config.mjs: No such file or directory
+.../scratchpad/caserun/tests:
+final.test.ts
+first.test.ts
+$ stat -f '%SB birth | %Sm mod | %N' <scratch>/caserun/node_modules <scratch>/caserun/node_modules/.vite/vitest/*/results.json
+Oct 29 15:58:05 2026 birth | Oct 29 15:58:05 2026 mod | .../scratchpad/caserun/node_modules
+Oct 29 15:58:06 2026 birth | Oct 29 15:58:06 2026 mod | .../scratchpad/caserun/node_modules/.vite/vitest/da39a3ee5e6b4b0d3255bfef95601890afd80709/results.json
+$ cat <scratch>/caserun/node_modules/.vite/vitest/*/results.json
+{"version":"4.1.11","results":[[":tests/first.test.ts",{"duration":0,"failed":true}],[":tests/probe.test.ts",{"duration":1.6780409999998938,"failed":false}],[":tests/final.test.ts",{"duration":0,"failed":true}]]}
+   (the same folder also holds _svelte_metadata.json and deps___vitest__/, born 15:58)
+$ stat -f '%SB %N' <sessions>/tasks/{b1m9hdjuu,bkl9c6jjk,bpcrg6wir}.output
+Oct 29 15:51:16 2026 .../tasks/b1m9hdjuu.output
+Oct 29 15:57:29 2026 .../tasks/bkl9c6jjk.output
+Oct 29 15:56:37 2026 .../tasks/bpcrg6wir.output   (present, as the report says)
+
+Round's further checks:
+$ git diff d364c1b7e -U0 -- src | grep '^+' | grep -v '^+++' | grep -n -i -E "before|used to|no longer|still|always has been|always had|as before|previously|the step adds|after this package|O[0-9]+|20[0-9][0-9]-"; echo "exit $?"
+exit 1
+$ git diff d364c1b7e -U0 -- src | grep '^+' | grep -v '^+++' | awk '{ if (length($0)-1 > 100) print }'
+(nothing)
+$ npx prettier --check src/lib/state/boards/ticker.ts
+Checking formatting...
+All matched files use Prettier code style!
+$ git diff d364c1b7e --numstat
+1<tab>0<tab>config/catalogs/vocab.yml
+1<tab>1<tab>config/defaults/sources.yml
+5<tab>2<tab>config/text/views/boards/focus.yml
+59<tab>24<tab>src/lib/state/boards/ticker.ts
+25<tab>0<tab>src/lib/ui/display/ticker/Ticker.svelte
+7<tab>0<tab>src/lib/ui/display/ticker/ticker-rows.ts
+27<tab>7<tab>src/lib/views/boards/focus/Tasks.svelte
+1<tab>1<tab>tests/fixtures/hubs/demo/.oculus/config.yml
+$ wc -l src/lib/state/boards/ticker.ts src/lib/views/boards/focus/Tasks.svelte src/lib/ui/display/ticker/Ticker.svelte
+     727 src/lib/state/boards/ticker.ts
+     230 src/lib/views/boards/focus/Tasks.svelte
+     319 src/lib/ui/display/ticker/Ticker.svelte
+
+Doc text against the tree (docs/ unchanged: git diff d364c1b7e --stat -- docs prints nothing):
+$ grep -n -o "[^.]*command center holds the deadlines[^.]*\." docs/HELP.md
+295: The command center holds the deadlines and dates of the records: papers, venues, funding, positions, leads, events, teaching and joint work.
+$ grep -n -o "Due follow-ups, open subtasks[^.]*\." docs/HELP.md
+295:Due follow-ups, open subtasks and the open entries of the tasks file are lines of the Tasks section, dated or not, whatever `deadline_horizon_days` says.
+$ grep -n "key: leads" docs/templates.md
+90:#   - { key: leads, file: ".oculus/data/academic/leads.yml", registry: leads, ticker: { category: position }, about: files.make_collection_line_leads }
+$ grep -n -o -i "[^.]*dated lines come first[^.]*\." docs/*.md README.md
+docs/HELP.md:295: In each group of the section the dated lines come first, the most overdue first, then the undated ones.
+```
+
+### Verdicts
+
+The round's seven items:
+1. The `Ticker` type's comment: the closure holds. `ticker.ts:140-145` now says each list is in the order its lines are shown in within the group they are drawn in, and that for `tasks` the group is the one `taskGroups` sorts each line into, with a task's subtasks drawn under their task. I read it against `taskGroups` (`ticker.ts:680-698`), the `tasks` build (`:553-557`) and `deadlinesByCategory`, and it is true of every list. The fix touches only that comment.
+2. One name: the closure holds. `ticker.ts:357` writes "command center". The case-sensitive grep over the four files prints nothing.
+3. The HELP.md Doc text: the closure holds. The replacement now reads "with open subtasks that are not snoozed" and the rest is kept. Both "current" lines match `docs/HELP.md:295` on the tree. Finding 1 below is a separate sentence of the same paragraph that the change makes false and the Doc text leaves alone.
+4. The key check: the closure holds. Every command reproduces exactly as quoted, and the case-by-case statements match the code (`ticker.ts:216-220` `registryCategory`; `docs/data-map.md:81` lay-over; `rows.ts:267,290,409`; `CommandCenter.svelte:245`). One citation is stale (Finding 2).
+5. The count: the closure holds. The report now gives seven `focus.yml` lines, 42, 44, 54, 57, 100, 105 and 107, which the rerun prints.
+6. The visible changes: the closure holds. Report lines 602-603 give the before and after for the cut hover words and for the 4px above a first-row heading. They match the code: `Ticker.svelte` `title={shown.cutText(row)}`, `reveal.svelte.ts:246-254` `whole(row)`, `li.heading { margin-top: 4px; }`, and the list's `gap: 2px` at `:151`.
+7. The scripts: the closure partly holds.
+   - The listed leftovers are gone: `O103-caserun`, the `o103-cases-*` folders, the twelve state folders, the probe and `vitest.config.mjs`.
+   - The three harness `.output` files remain, as the report says.
+   - One more file group written by command 4, the vitest cache under `<scratch>/caserun/node_modules/.vite/`, is neither listed nor gone (Finding 3).
+
+No item was closed by removing a check. No fix reaches beyond its finding: the round's delta is the two comment hunks of `ticker.ts`, plus report text.
+
+The whole diff since d364c1b7e:
+- What to build, item 1 (applications and position leads, two Command Center groups): holds. `vocab.yml:219` has `lead` after `position` with no `overdue_noun`. `focus.yml` has the five words in alphabetical place. `sources.yml:50` and the demo hub's line 23 say `category: lead`. The leads-loop comment is true and its local is `scouted`. Checks 3 and 4 print as the brief asks.
+- What to build, item 2 (a task's subtasks under it as a subheading): holds. The `under` field stays under the round brief's ruling. Finding 1 is a Doc text sentence, applied at landing.
+- Cases. The round changed only comment text, so the code the cases run over is the code the first review judged. I did not rerun the case-run program (see Declined to judge).
+  - 1, 2, 3, 4, 5, 6: met.
+  - 7: met for the state half; the drawing half goes to the look.
+  - 8, 9, 10, 11, 12, 13, 14: met.
+  - 15: met for state and order; tone and drawing go to the look.
+  - 16, 17, 18, 19, 20, 21: met.
+  - 22: met by reading; the look confirms.
+  - 23: met.
+  - 24: met by reading; the look confirms.
+  - 25: met.
+
+### Findings
+
+1. **Standards (a document sentence the change makes false, spec.md "After changing a name ... A sentence in a document ... that the change makes false is a defect of the change").**
+   - Where: `docs/HELP.md:295`, which the Doc text does not rewrite: "In each group of the section the dated lines come first, the most overdue first, then the undated ones."
+   - What is wrong: `Tasks.svelte:64-76` draws the Tasks group as `lines.tasks.flatMap(task)`, with each heading's subtask rows right after it, dated first among themselves. The flat Tasks group can therefore hold an undated row above a dated one. Example: case 15's 3d heading with an undated subtask, followed by case 25's 9d plain task. It can also hold a dated subtask after dated plain tasks, under an undated heading.
+   - Failure scenario: a reader with a dated task whose subtask is undated, and a later dated task, sees an undated row above a dated row in Tasks. That contradicts the help page.
+   - Fix at landing: extend the Doc text so the sentence says the order holds among the group's lines, with a task's subtasks under its subheading in the same order among themselves.
+2. **Proof (a `file:line` taken before the last change, spec.md "Every count, line count, timing and `file:line` in the report is taken after your last change").**
+   - Where: report line 672, "the roles list's `key: lead` (`vocab.yml:255`)".
+   - What is wrong: on the tree the row is at `config/catalogs/vocab.yml:256` (`grep -n "key: lead" config/catalogs/vocab.yml` prints 256). Line 255 is its place on the base, before the step's added `lead:` line shifted it.
+   - Failure scenario: a reader following the citation lands on `roles:`, the list's header line, instead of the row. No decision rests on it.
+3. **Proof and spec (a closure the rerun does not reproduce; round brief item 7: "each with the files it wrote and that they are gone").**
+   - Where: report line 691, command 4, `npx vitest run --root <scratch>/caserun --config <scratch>/caserun/vitest.config.mjs`.
+   - What is wrong: the report lists the probe and the config as removed, but the run also wrote `<scratch>/caserun/node_modules/.vite/vitest/da39a3ee5e6b4b0d3255bfef95601890afd80709/`. That folder holds `results.json`, `_svelte_metadata.json` and `deps___vitest__/`, born Oct 29 15:58:05 to 15:58:06, and `results.json` names `tests/probe.test.ts`. The report does not list it, and it is still there.
+   - The same command also ran the other session's `first.test.ts` and `final.test.ts`. The report states this; both stopped at their first import.
+   - Failure scenario: the orchestrator books item 7 as fully cleaned while a cache the builder wrote remains in the scratchpad, inside another session's folder. A later vitest run rooted there reads this cache. Low severity: nothing reaches the diff.
+   - Fix at landing: name the folder in the report and remove `<scratch>/caserun/node_modules` (the folder had no `node_modules` before that run, by its birth time).
+
+### Declined to judge
+
+- The case-run program's output for cases 1 to 25 (the state halves). Its source and config are deleted, and rerunning it would mean writing a script, which my brief forbids. The round changed no code, only comment text in `ticker.ts`, so the first review's reading of `ticker.ts`, `ticker-lines.ts`, `rows.ts`, `Tasks.svelte` and `Ticker.svelte` against the quoted program output still applies.
+- Every drawing half (cases 1, 7, 15, 21, 22, 24, the heading style, the 1.25em set-in and the 4px above a first-row heading). Each needs a page, so it belongs to the look on landing.
+- Report line 689's "stopped with TaskStop after about three minutes": the `.output` file's birth time (15:51:16) and size (10 bytes) do not settle the duration.
+
+Reviewer usage: a88430fe571dffe66, claude-opus-5-5, 160915 tokens, 27 tool uses, 5 min 33 s.
+
+## Closed
+
+- First review, Spec 1 (`under`): kept, within ruling 546 (2) (a); the round brief says so.
+- First review, Spec 2 and 3, Standards 1 to 4, Proof, Behaviour 1 and 2: closed in round 1 (items 1 to 7), Spec 2 and 3 under the ruling "Unapproved builder scripts", the builder's list of commands and files in its report's "Repair round 1".
+- Round review, finding 1 (HELP.md's dated-first sentence): fixed at landing in the Doc text.
+- Round review, finding 2 (the stale `vocab.yml:255`): corrected at landing in the report, under "Corrected at landing".
+- Round review, finding 3 (the vitest cache): `scratchpad/caserun/node_modules` (born 15:58:05, the builder's run, holding only the `.vite` cache) removed by the orchestrator; `ls -d` prints "No such file or directory".

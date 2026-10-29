@@ -216,6 +216,7 @@ ticker_categories:
   event:      { label: focus.command.dlcat_event_label, glyph: focus.command.glyph_event,      noun: focus.command.word_event }
   teaching:   { label: focus.command.dlcat_teaching,    glyph: focus.command.glyph_teaching,   noun: focus.command.word_teaching, overdue_noun: focus.command.word_commitment }
   position:   { label: focus.command.dlcat_position,    glyph: focus.command.glyph_position,   noun: focus.command.word_position_deadline, overdue_noun: focus.command.word_application }
+  lead:       { label: focus.command.dlcat_lead,        glyph: focus.command.glyph_lead,       noun: focus.command.word_lead_deadline }
   task:       { label: focus.command.dlcat_task,        glyph: focus.command.glyph_task,       noun: focus.command.word_task }
   conference: { label: focus.command.dlcat_conference,  glyph: focus.command.glyph_conference, noun: focus.command.word_conference }
 

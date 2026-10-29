@@ -87,7 +87,7 @@ The hub's own settings. A key of oculus's `config/catalogs/vocab.yml` set here i
 #   - { key: applications, file: ".oculus/data/academic/applications.yml", band_positions: true, awaiting: true, open_badge: true, lead_applications: true, dissemination: true, ticker: { category: position }, group: academic, order: 3, label: views.applications, glyph: views.applications_glyph, about: files.make_collection_line_applications }
 #   - { key: tasks, file: ".oculus/data/academic/tasks.yml", tasks: true, ticker: { category: task, undated: true }, group: academic, order: 5, label: views.tasks, glyph: views.tasks_glyph, about: files.make_collection_line_tasks }
 #   - { key: literature, file: ".oculus/data/literature/literature.yml", registry: literature, group: literature, order: 2, label: views.literature, glyph: views.literature_glyph, about: files.make_collection_line_literature }
-#   - { key: leads, file: ".oculus/data/academic/leads.yml", registry: leads, ticker: { category: position }, about: files.make_collection_line_leads }
+#   - { key: leads, file: ".oculus/data/academic/leads.yml", registry: leads, ticker: { category: lead }, about: files.make_collection_line_leads }
 #   - { key: radar, file: ".oculus/data/literature/radar.yml", registry: radar, about: files.make_collection_line_radar }
 
 # The keys of the collections list whose files a chat's index holds for this hub, in this order.

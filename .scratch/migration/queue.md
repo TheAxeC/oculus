@@ -1,16 +1,16 @@
-In flight (2 of 6 slots in use):
+In flight (1 of 6 slots in use):
 - O99 (every setting edited in Settings by scope, a form for every file that is no setting, the generic service rows shipped): building, after the round-0 cases ruling.
-- O103 (the Command Center's Positions split into applications and position leads, a task's subtasks under it in Focus Tasks, ruling 546): building.
 
 Queued, in order (2 steps):
 - O101 (the Zenodo deposit through Zenodo's REST API, with Deposit for review, rulings 533, 534 and 535): after O99 has landed; O97 has landed.
 - O102 (the website's data files generated from the manifests and oculus's data files, ruling 539): after O101 has landed.
 
-Landing next: O99 or O103, whichever is built and reviewed first.
+Landing next: O99, once built and reviewed.
 
 Owed looks: none; O97's look ran on a scratch server on port 8797, and 8790 shows O97 once Axel's server is restarted.
 
 Landed, newest first:
+- O103 (the command center's applications and position leads, a task's subtasks under it in Focus Tasks), 2026-10-29, the landing commit.
 - O97 (the journal browser from configuration and one configurable reader), 2026-10-29, the landing commit; hub 3f4d5d883.
 - O98 (accounts and connections: several clusters, each connection written out, git signed in from Account setup), 2026-10-28, a1eeb718; hub 7c2dd40fe.
 - O100 (the Awaiting box's names underlined under the pointer), 2026-10-27, 89c1a9bc.

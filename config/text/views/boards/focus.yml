@@ -39,8 +39,9 @@ text:
             dlcat_conference: conference calls
             dlcat_event_label: talks & events
             dlcat_funding: funding
+            dlcat_lead: position leads
             dlcat_paper: papers
-            dlcat_position: positions
+            dlcat_position: applications
             dlcat_task: tasks
             dlcat_teaching: teaching
             emails: emails to reply / act on
@@ -50,9 +51,10 @@ text:
             glyph_event: events
             glyph_followup: followup
             glyph_funding: coin
+            glyph_lead: scout
             glyph_overdue: overdue
             glyph_paper: paper
-            glyph_position: scout
+            glyph_position: inbox
             glyph_subtask: pin
             glyph_task: tasks
             glyph_teaching: teaching
@@ -100,6 +102,7 @@ text:
             word_conference: conference call
             word_event: event
             word_funding: funding
+            word_lead_deadline: lead deadline
             word_paper: paper
             word_position_deadline: position deadline
             word_task: task

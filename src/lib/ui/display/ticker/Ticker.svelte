@@ -14,6 +14,13 @@
     // (ui/display/text/LinkedText.svelte); a row that is picked draws its name as its button. A
     // row's `detail` is drawn after its name in the muted colour, inside that button when it is
     // one.
+    //
+    // A row marked `heading` is drawn as a heading over the rows after it marked `under`: its name
+    // in bold in the ink colour, with 4px above it, and each row under it set in by 1.25em, so a
+    // reader sees one record with its lines under it. Both are rows of this list like any other:
+    // the same glyph, tail, tone, buttons, kept button and reveal, so a heading is reached and
+    // opened by the keyboard as a row is. The set-in is a margin, which the room a row measures for
+    // its buttons leaves out.
 
     import type { Snippet } from 'svelte';
     import Glyph from '../Glyph.svelte';
@@ -67,6 +74,8 @@
         {@const here = shown.opened(at)}
         <li
             class:open={here !== null}
+            class:heading={row.heading === true}
+            class:under={row.under === true}
             title={shown.cutText(row)}
             onpointerenter={(event) => shown.measureCut(event, row)}
             onfocusin={(event) => shown.measureCut(event, row)}
@@ -163,6 +172,22 @@
         font: inherit;
         font-weight: 400;
         color: var(--ink-txt, var(--ink));
+    }
+
+    /* A heading row's name is bold in the ink colour, in the row's own size and case, so it stands
+       apart from a plain row and from a group's label of small accent capitals. */
+    li.heading {
+        margin-top: 4px;
+    }
+
+    li.heading .name {
+        font-weight: 600;
+    }
+
+    /* A row under a heading is set in by a margin, which the row's clientWidth leaves out, so the
+       room the reveal measures for its buttons is the row's own. */
+    li.under {
+        margin-left: 1.25em;
     }
 
     /* The words that date a row belong to the row's own control, so the whole line opens what the

@@ -29,6 +29,13 @@ export type TickerRow = {
      * caller can open; this says so, rather than leaving a button that does nothing.
      */
     plain?: boolean;
+    /**
+     * Draw the row as a heading over the rows after it that are marked `under`: its name in bold,
+     * with its glyph, tail, buttons and the rest of a row's behaviour as any row has them.
+     */
+    heading?: boolean;
+    /** Draw the row set in under the heading row above it, as one of the heading's. */
+    under?: boolean;
 };
 
 /**

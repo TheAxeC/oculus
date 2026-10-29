@@ -137,10 +137,12 @@ export function venueWarn(config: Record<string, unknown>): number {
 export type TickerLists = Pick<HubVocabs, 'lists' | 'ownCollections'> | null;
 
 /**
- * What the ticker answers. Each list is already in the order it is shown in. The lists split the
- * lines by who sets the date, which is the split the board draws: the command center holds the
- * dates of the records (`overdue`, `deadlines`, `snoozed`), and the tasks section holds the work
- * the reader set down (`tasks`), with its date when it has one.
+ * What the ticker answers. Each list is already in the order its lines are shown in within the
+ * group they are drawn in: for `tasks`, the group `taskGroups` sorts each line into, a task's
+ * subtasks drawn under their task. The lists split the lines by who sets the date, which is the
+ * split the board draws: the command center holds the dates of the records (`overdue`,
+ * `deadlines`, `snoozed`), and the tasks section holds the work the reader set down (`tasks`),
+ * with its date when it has one.
  */
 export type Ticker = {
     /** The records' dates that have passed, the most overdue first. */
@@ -306,11 +308,11 @@ export function ticker(
 
     /**
      * The entries of every other collection whose entry gives a `ticker:` (talks, teaching, tasks
-     * and positions on the shipped list): one rule over every file, the category being the one that
-     * `ticker:` gives. The funding and venues registries' lines are their own loops'.
-     * An entry of the file flagged `tasks` is work the reader set down, so it is a line of the
-     * tasks section whatever its date, with no horizon; another file's dated entry is a line of the
-     * command center inside the horizon.
+     * and applications on the shipped list): one rule over every file, the category being the one
+     * that `ticker:` gives. The funding and venues registries' lines are their own loops'. An entry
+     * of the file flagged `tasks` is work the reader set down, so it is a line of the tasks section
+     * whatever its date, with no horizon; another file's dated entry is a line of the command
+     * center inside the horizon.
      */
     for (const collection of Object.values(collections)) {
         const source = collection.ticker;
@@ -349,21 +351,21 @@ export function ticker(
 
     /**
      * The position scout's live leads. They move fast, so they have a window of their own rather
-     * than the ninety-day planning horizon, and they sit in the same group as the applications the
-     * entry loop above found: both are positions. A closed status is left out here as well as where
-     * the snapshot is built, so the line the reader sees never outlives the lead's own status. The
+     * than the ninety-day planning horizon. A closed status is left out here as well as where the
+     * snapshot is built, so the line the reader sees never outlives the lead's own status. The
      * category is the one the `ticker:` of the entry the lead's hub reads the leads registry by
-     * gives.
+     * gives, `lead` on oculus's own list, so the leads stand in a command center group of their own
+     * beside the applications the entry loop above found.
      */
     const leadsWindow = setting(config, 'leads_horizon_days', 21);
     for (const lead of snapshot.entities.feeds.leads ?? []) {
-        const position = registryCategory(lead, 'leads');
-        if (position === undefined || isLeadClosed(at(lead), lead.status)) continue;
+        const scouted = registryCategory(lead, 'leads');
+        if (scouted === undefined || isLeadClosed(at(lead), lead.status)) continue;
         const days = daysUntil(lead.deadline ?? '', now);
         if (days === null || days < 0 || days > leadsWindow) continue;
         dated.push({
-            category: position,
-            line: item(position, glyphOf(categories, position), lead.title, days, {
+            category: scouted,
+            line: item(scouted, glyphOf(categories, scouted), lead.title, days, {
                 ...rootMark(lead),
                 target: { kind: 'lead', id: hubId(rootOf(lead), lead.title) }
             })
@@ -643,31 +645,64 @@ export function deadlinesByCategory(
         .filter((one) => one.lines.length > 0);
 }
 
+/**
+ * One line of the Tasks group and the subtask lines drawn under it: the open subtasks of a task of
+ * the file flagged `tasks` that the section holds, and none for every other line.
+ */
+export type TaskLine = { line: TickerItem; subtasks: TickerItem[] };
+
 /** The three groups of the tasks section, each holding its lines in the order given. */
 export type TaskGroups = {
     followups: TickerItem[];
     subtasks: TickerItem[];
-    tasks: TickerItem[];
+    tasks: TaskLine[];
 };
+
+/**
+ * The record a line of a collection entry names: its hub, the collection's key and the entry's id,
+ * and null for a line of anything else (a project, a funding scheme, a follow-up).
+ */
+function entryOfLine(line: TickerItem): string | null {
+    const target = line.target;
+    if (target?.kind !== 'entry' || target.collection === undefined) return null;
+    return JSON.stringify([line.root ?? '', target.collection, target.id]);
+}
 
 /**
  * The tasks section's lines by group, each group in the order `tasks` gives, its dated lines first:
  * a subtask carries the key of its own line, and a follow-up says so in its kind, which is what a
- * scheme's note has instead of a target; every other line is a task.
+ * scheme's note has instead of a target; every other line is a line of the Tasks group. A subtask
+ * of an entry whose own line in `lines` is a task of the file flagged `tasks` (`task: true`) is
+ * drawn under that line, matched by hub, collection and entry id, so two hubs' tasks of one key
+ * keep their subtasks apart; every other subtask, a task's whose own line is not in `lines`
+ * included (snoozed, dropped by its status, hidden by the filter), is a line of the Subtasks group.
+ * Should two task lines name one entry, its subtasks go under the first.
  */
 export function taskGroups(lines: readonly TickerItem[]): TaskGroups {
     const groups: TaskGroups = { followups: [], subtasks: [], tasks: [] };
+    const tasks = new Map<string, TaskLine>();
     for (const line of lines) {
-        if (line.target?.subtask !== undefined) groups.subtasks.push(line);
-        else if (line.kind === 'followup') groups.followups.push(line);
-        else groups.tasks.push(line);
+        if (line.target?.subtask !== undefined || line.kind === 'followup') continue;
+        const task: TaskLine = { line, subtasks: [] };
+        groups.tasks.push(task);
+        const entry = line.target?.task === true ? entryOfLine(line) : null;
+        if (entry !== null && !tasks.has(entry)) tasks.set(entry, task);
+    }
+    for (const line of lines) {
+        if (line.target?.subtask !== undefined) {
+            const entry = entryOfLine(line);
+            const task = entry === null ? undefined : tasks.get(entry);
+            if (task === undefined) groups.subtasks.push(line);
+            else task.subtasks.push(line);
+        } else if (line.kind === 'followup') groups.followups.push(line);
     }
     return groups;
 }
 
-/** Whether any group of the tasks section holds a line. */
+/** Whether any group of the tasks section holds a line, a subtask under a task included. */
 export function hasTasks(groups: TaskGroups): boolean {
-    return groups.followups.length + groups.subtasks.length + groups.tasks.length > 0;
+    const tasks = groups.tasks.reduce((sum, one) => sum + 1 + one.subtasks.length, 0);
+    return groups.followups.length + groups.subtasks.length + tasks > 0;
 }
 
 /**

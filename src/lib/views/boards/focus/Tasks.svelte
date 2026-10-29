@@ -6,11 +6,18 @@
     // tail ("in 3d", "3d ago") and the tone of its days, as a command center row does.
     //
     // It counts nothing. The lines are state/boards/ticker.ts's `tasks` list, already in the order
-    // the three groups are drawn in, the dated lines of each first; the rows, their buttons and
-    // what a button writes are views/boards/focus/rows.ts, which the command center draws its own
-    // rows with. A group with no line draws nothing, and a section with no group at all draws
-    // nothing either, unless the Focus filter hides lines of it, which its heading row then says
-    // ("3 hidden").
+    // the three groups are drawn in, the dated lines of each first, and `taskGroups` sorts them
+    // into the groups; the rows, their buttons and what a button writes are
+    // views/boards/focus/rows.ts, which the command center draws its own rows with. A group with no
+    // line draws nothing, and a section with no group at all draws nothing either, unless the Focus
+    // filter hides lines of it, which its heading row then says ("3 hidden").
+    //
+    // A task of the tasks file with open subtasks in the section is drawn in the Tasks group as a
+    // heading row of the ticker (ui/display/ticker/Ticker.svelte `heading`) at its own place in the
+    // group, with those subtasks as rows set in under it, each named by its own `do` alone since
+    // the heading names the task. The heading is the task's row, with its buttons, tail and tone.
+    // The Subtasks group holds the subtasks of every other record, and those of a task whose own
+    // line the section does not hold.
     //
     // A task entry's Remove asks the card's Delete question under the groups (views/shared/forms/
     // entry/DeleteAsk.svelte), naming any file that refers to the entry; its yes deletes the entry
@@ -21,7 +28,7 @@
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import Ticker from '$lib/ui/display/ticker/Ticker.svelte';
     import type { TickerRow } from '$lib/ui/display/ticker/ticker-rows';
-    import { hasTasks, taskGroups, type TickerItem } from '$lib/state/boards/ticker';
+    import { hasTasks, taskGroups, type TaskLine, type TickerItem } from '$lib/state/boards/ticker';
     import { t } from '$lib/state/shared/words/text';
     import FoldHead from '$lib/ui/controls/heads/FoldHead.svelte';
     import DeleteAsk from '../../shared/forms/entry/DeleteAsk.svelte';
@@ -54,12 +61,25 @@
         const { index, row, kept } = rowMaker('t', fileBlock(client));
         const rows = (group: TickerItem[]): TickerRow[] =>
             group.map((line) => row(line, dateTail(line)));
+        /** A line of the Tasks group: a plain row, or a heading with its subtasks under it. */
+        const task = ({ line, subtasks }: TaskLine): TickerRow[] => {
+            const own = row(line, dateTail(line));
+            if (subtasks.length === 0) return [own];
+            return [
+                { ...own, heading: true },
+                ...subtasks.map((one) => ({
+                    ...row(one, dateTail(one)),
+                    label: one.subtaskDo ?? one.label,
+                    under: true
+                }))
+            ];
+        };
         return {
             index,
             kept,
             followups: rows(lines.followups),
             subtasks: rows(lines.subtasks),
-            tasks: rows(lines.tasks)
+            tasks: lines.tasks.flatMap(task)
         };
     });
 
