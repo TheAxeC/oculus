@@ -1,5 +1,5 @@
 In flight (1 of 6 slots in use):
-- O99 (every setting edited in Settings by scope, a form for every file that is no setting, the generic service rows shipped): building.
+- O99 (every setting edited in Settings by scope, a form for every file that is no setting, the generic service rows shipped): building, after the round-0 cases ruling.
 
 Queued, in order (2 steps):
 - O101 (the Zenodo deposit through Zenodo's REST API, with Deposit for review, rulings 533, 534 and 535): after O99 has landed; O97 has landed.
