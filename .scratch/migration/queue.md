@@ -1,8 +1,8 @@
-In flight (1 of 6 slots in use):
-- O102 (the website's data files generated from oculus): /spec, worktree being made.
+In flight (2 of 6 slots in use):
+- O102 (the website's data files generated from oculus): building.
+- O101 (the Zenodo deposit): /spec, brief being written.
 
-Queued, in order (1 step):
-- O101 (the Zenodo deposit): /spec next, beside O102.
+Queued, in order (0 steps): none.
 
 Owed looks: none.
 
