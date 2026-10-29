@@ -25,8 +25,16 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 ```yaml
 dispatch:          # steps in flight, up to six (Z632)
 - step: O99
-  brief_check: "running: a5e0fbddd32b98bcf (claude-opus-5-5)"
-  landing: preparing
+  brief_check: "agents/reviews/O99-brief-check.md (a5e0fbddd32b98bcf, claude-opus-5-5, 258157 tokens, 106 tool uses, 12 min 12 s)"
+  base: a5281619a
+  worktree: .agents/worktrees/migration-O99
+  executor: agent
+  worker: claude:opus
+  session_id: a4c10c31eedf15f05 (claude-opus-5-5)
+  launched: 2026-10-29
+  round: 0
+  report: .scratch/migration/agents/reviews/O99-report.md
+  landing: not-started
 ```
 
 ## The standing demands (from Axel, in force)
@@ -693,6 +701,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-10-29 (O99 launched). At Axel's green light, `/spec migration O99` wrote the brief (`agents/briefs/O99.md`), its brief check (a5e0fbddd32b98bcf, claude-opus-5-5) found 12 premise and 7 name findings, all closed in the brief (`agents/reviews/O99-brief-check.md`, "Closed"); preparation commit a5281619a is the base; the worktree `.agents/worktrees/migration-O99` and the base copy `O99-base` are made. Builder a4c10c31eedf15f05 (claude-opus-5-5) is building. In flight (1 of 6): O99, building. Next: its report, /refute, its round and /land with its look; then /spec O101, then O102. Open items: none.
 - 2026-10-29 (544 ruled). Booked in `plan.md` Rulings and on O102's line. No open items. No /spec runs until Axel gives the green light. In flight (0 of 6): none. Next: Axel's green light, then /spec O99, then O101, then O102. Open items: none.
 - 2026-10-29 (543 ruled; 544 raised). Booked in `plan.md` Rulings and on O102's line; the two `pub_post` exceptions are open item 544. No /spec runs until Axel gives the green light. In flight (0 of 6): none. Next: Axel's green light, then /spec O99, then O101, then O102 once 544 is ruled. Open items: 544.
 - 2026-10-29 (542 ruled; 543 raised). Booked in `plan.md` Rulings and on O102's line; Axel's questions on the publication fields, the CV text and the industry profiles are open item 543. No /spec runs until Axel gives the green light. In flight (0 of 6): none. Next: Axel's green light, then /spec O99, then O101, then O102 once 543 is ruled. Open items: 543.
