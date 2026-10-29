@@ -5587,3 +5587,91 @@ O97's review (Spec 1) found row keys in the reader's grammar that item 2, ruling
 
 Where it applies: `src/lib/data/sources/config/settings/rows/grammar.ts`, `config/options/behavior.yml`, O97's Hub text. Booked in `plan.md` Rulings and the state file's closed log, the kind of open item 530.
 Builds on it: O97
+
+## Z1059 (2026-10-29, O101's /spec, the orchestrator, automode): the Zenodo calls written over oculus's own fetch
+
+No library is taken for the Zenodo REST API. The one candidate on npm, `zenodo` 4.1.1 (MIT, cheminfo, released 2026-10-07), calls InvenioRDM's `/api/records` endpoints for drafts, files, publish and versions, but has no access links, which the review record's share link needs, and it brings `ml-spectra-processing` and `@zip.js/zip.js`.
+
+- Chosen: (a) the calls written over `timedFetcher`.
+- Not chosen: (b) the package, with the share link written by hand beside it.
+- The lazy option: (b).
+
+Where it applies: `src/lib/server/git/deposit/`. Booked in `plan.md` Rulings and the state file's closed log, open item 551.
+Builds on it: O101
+
+## Z1060 (2026-10-29, O101's /spec, the orchestrator, automode): the terms the review copy replaces
+
+The step's line says the review copy replaces "the terms the project lists" and names no key.
+
+- Chosen: (a) `code_availability.anonymize`, rows `{ term, as }`, `as` "Anonymous" when absent, replaced in file names, text contents, the title and the description; a binary file holding a term refused by name.
+- Not chosen: (b) a plain list of terms each replaced by "Anonymous", which reads wrongly for an institution or a dataset.
+- The lazy option: none.
+
+Where it applies: `config/schemas/manifest-schema.yml`, the deposit's server code. Booked in `plan.md` Rulings and the state file's closed log, open item 552.
+Builds on it: O101
+
+## Z1061 (2026-10-29, O101's /spec, the orchestrator, automode): where Zenodo's address ships
+
+Rulings 509 and 537 put service addresses in oculus's defaults beside the feature that reads them; no key names Zenodo's deposit address.
+
+- Chosen: (a) `deposit.zenodo: https://zenodo.org/api` in `config/defaults/behavior.yml`, with its options entry.
+- Not chosen: (b) a row of `recover.sources`, a list of dataset readers.
+- The lazy option: none.
+
+Where it applies: `config/defaults/behavior.yml`, `config/options/behavior.yml`. Booked in `plan.md` Rulings and the state file's closed log, open item 553.
+Builds on it: O101
+
+## Z1062 (2026-10-29, O101's /spec, the orchestrator, automode): the grant of the published record
+
+Zenodo names a funder by id or name, and an award by id or by title and number. `funding.yml` has no award number, and its `funder` (a key of `organisations.yml`) is filled on none of its 11 entries.
+
+- Chosen: (a) `funding.yml` gains `award`; the funder's name from its `organisations.yml` entry; the award sent when `award` is set; the Hub text adds the funders and fills `funder`, and `award` where a statement gives the number.
+- Not chosen: (b) the funder read from the `meta` row labelled Funder, a free-text label.
+- The lazy option: (b).
+
+Where it applies: `funding.yml` and `organisations.yml` in the hub (Hub text), the deposit's metadata. Booked in `plan.md` Rulings and the state file's closed log, open item 554.
+Builds on it: O101
+
+## Z1063 (2026-10-29, O101's /spec, the orchestrator, automode): the creators' names
+
+A personal creator of a Zenodo record needs a family name and a given name; `people.yml` holds one `name`.
+
+- Chosen: (a) `people.yml` gains `family`, the given name being the rest of `name`; ORCID and affiliations from the entry; the Hub text fills `family` for the people the deposit names.
+- Not chosen: (b) `name` split at its last space, wrong for a family name such as Van Hulle.
+- The lazy option: (b).
+
+Where it applies: `people.yml` in the hub (Hub text), the deposit's metadata. Booked in `plan.md` Rulings and the state file's closed log, open item 555.
+Builds on it: O101
+
+## Z1064 (2026-10-29, O102's /spec, the orchestrator, automode): the hub setting the website button reads
+
+Ruling 542 (4) has the button write the three files and run "the CV command the hub names", and the audit build them in memory, replacing the title match of `audit.website`; no key names the website's folder or the command.
+
+- Chosen: (a) `website: { folder, cv, kinds }`, `kinds` moved from `audit.website.kinds`, `audit.website` removed.
+- Not chosen: (b) `audit.website` kept with a `cv` key, though the generation is no audit setting.
+- The lazy option: none.
+
+Where it applies: `config/defaults/behavior.yml`, `config/options/behavior.yml`, the hub's `.oculus/config.yml` (Hub text). Booked in `plan.md` Rulings and the state file's closed log, open item 557.
+Builds on it: O102
+
+## Z1065 (2026-10-29, O102's /spec, the orchestrator, automode): the supervised students' home
+
+`data.yml`'s `students` lists 17 students (name, thesis topic, degree and year); `education.yml` holds supervision entries that name the students in `sub` text; ruling 542 (1) names no home for a student.
+
+- Chosen: each supervised student of `data.yml`'s `students` a `people.yml` entry (its `name`, `role: student`), and the `education.yml` supervision entry of the student's year and programme listing them under `students:`, rows `{ person, topic, degree }`, the generator printing a row as `title` (the name), `location` (the topic) and `duration` (the degree); a supervision entry made where none holds the student.
+- Not chosen: (b) free-text rows `{ name, topic, degree }` on the supervision entry, not chosen, since a student is a person the hub already names in `education.yml`'s `sub` lines.
+- The lazy option: (b).
+
+Where it applies: the hub's data files (Hub text), the generator of `data.yml`. Booked in `plan.md` Rulings and the state file's closed log, open item 558.
+Builds on it: O102
+
+## Z1066 (2026-10-29, O102's /spec, the orchestrator, automode): the projects' homes
+
+None of `data.yml`'s 20 projects matches a manifest's, a funding entry's or an education entry's title (normalised title compare); four are funded research projects (FL4PHM, AI-HCC, FAIR's real-world-evidence use case, ELIXIR Belgium) and the rest are pieces of software and student projects. Ruling 543 (2) gives the manifests `role` and `min` for the projects.
+
+- Chosen: each project of `data.yml`'s `projects` on the entry that means it: a funded research project on its `funding.yml` entry, which gains `role` and `min` beside 543 (2)'s fields, any other project on the manifest of that work, a new manifest where none is the work (`tier: personal`, `type: finished`, under `side-projects/<id>/`, for a project that is no research); `role`, `min` and `hide` on the entry.
+- Not chosen: (b) every project a manifest, not chosen, since a funded project such as FL4PHM is a grant the hub keeps in `funding.yml`.
+- The lazy option: none.
+
+Where it applies: the hub's data files (Hub text), the generator of `data.yml`. Booked in `plan.md` Rulings and the state file's closed log, open item 559.
+Builds on it: O102

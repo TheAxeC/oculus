@@ -1,26 +1,24 @@
 In flight (1 of 6 slots in use):
-- O99 (every setting edited in Settings by scope, a form for every file that is no setting, the generic service rows shipped): repair round 1 (15 items from its review); the test of the service-list merge is written at landing under G126 (547 (a)).
+- O102 (the website's data files generated from oculus): /spec, brief being written.
 
-Queued, in order (2 steps):
-- O101 (the Zenodo deposit through Zenodo's REST API, with Deposit for review, rulings 533, 534 and 535): after O99 has landed; O97 has landed.
-- O102 (the website's data files generated from the manifests and oculus's data files, ruling 539): after O101 has landed.
+Queued, in order (1 step):
+- O101 (the Zenodo deposit): waits on Axel's ruling on where the Zenodo token is kept.
 
-Landing next: O99, once built and reviewed.
-
-Owed looks: none; O97's look ran on a scratch server on port 8797, and 8790 shows O97 once Axel's server is restarted.
+Owed looks: none.
 
 Landed, newest first:
-- O103 (the command center's applications and position leads, a task's subtasks under it in Focus Tasks), 2026-10-29, the landing commit.
-- O97 (the journal browser from configuration and one configurable reader), 2026-10-29, the landing commit; hub 3f4d5d883.
-- O98 (accounts and connections: several clusters, each connection written out, git signed in from Account setup), 2026-10-28, a1eeb718; hub 7c2dd40fe.
+- O99 (every setting edited in Settings by scope), 2026-10-29, 626ae2a6; hub 60f0c606d.
+- O103 (applications and leads split, a task's subtasks in Focus), 2026-10-29, bafb20bd.
+- O97 (the journal browser and one configurable reader), 2026-10-29, d909bafd; hub 3f4d5d883.
+- O98 (accounts and connections, git sign-in), 2026-10-28, a1eeb718; hub 7c2dd40fe.
 - O100 (the Awaiting box's names underlined under the pointer), 2026-10-27, 89c1a9bc.
 - O95 (Focus, what a press opens), 2026-10-27, 5a51074e.
 - O96 (the cards' project strip: its filters and its groups by category), 2026-10-27, 01bb9024.
 - O92 (the collection's Add and bar, and the Map's bar), 2026-10-27, 0414282f.
 - O90 (the board bar's Waiting on toggle and group), 2026-10-27, c72f0fcb.
-- O91 (joint work onto the people file, and the projects on people's, organisations' and resources' cards), 2026-10-27, 38481ec6; hub 6e868b885.
-- O88 (one heading, one card grid, no intro paragraph, Pillars by kind, and the app theme that failed to load), 2026-10-27, e3c6f005; hub 7b3271054.
-- O93 (Focus and the dated lines: people on a line, Done on a follow-up, Remove on Focus rows, the Pillar filter, the red waiting line), 2026-10-27, f9d6ac48.
+- O91 (joint work onto the people file), 2026-10-27, 38481ec6; hub 6e868b885.
+- O88 (one heading, one card grid, the app theme), 2026-10-27, e3c6f005; hub 7b3271054.
+- O93 (Focus and the dated lines), 2026-10-27, f9d6ac48.
 - O87 (the Focus band's positions and teaching, and the dated lines in Tasks), 2026-10-27, 744de6aa.
 - O94 (LinkedIn's Mark posted), 2026-10-27, 8dbb9021; hub 34232a90b.
 - O84 (who the user is), 2026-10-27, 813bf6e6; hub 5a7e8e025.
