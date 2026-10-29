@@ -5680,7 +5680,7 @@ Builds on it: O102
 
 Ruling 542 (1) puts the person facts of `data.yml`'s `personal`, its links among them, on the `self` entry of `people.yml`. `personal.links` is a map of six named links; `people.yml`'s `links` is a list of addresses (`type: tags`), filled on none of its 30 entries.
 
-- Chosen: (a) `links` a list of rows `{ name, url }`, written back by name by the generator; `website.yml` keeps the name and links it holds, as 542 (6) rules.
+- Chosen: (a) `links` a list of rows `{ name, url }`, written back by name by the generator.
 - Not chosen: (b) the plain list kept and the names guessed from each host, wrong for an address such as `mailto:`.
 - The lazy option: (b).
 
