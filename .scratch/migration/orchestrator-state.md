@@ -32,9 +32,10 @@ dispatch:          # steps in flight, up to six (Z632)
   worker: claude:opus
   session_id: a4c10c31eedf15f05 (claude-opus-5-5)
   launched: 2026-10-29
-  builder_usage: round 0 hand-back 182961 tokens, 47 tool uses, 6 min 33 s
-  round: 0
+  builder_usage: round 0 hand-back 182961 tokens, 47 tool uses, 6 min 33 s; round 0 after the cases ruling 323090 tokens, 2109 tool uses, 5 h 28 min 10 s
+  round: 1
   report: .scratch/migration/agents/reviews/O99-report.md
+  reviewer_report: "agents/reviews/O99-refuter.md (aeb88e56ffde106e9, claude-opus-5-5, 355591 tokens, 114 tool uses, 18 min 27 s)"
   landing: not-started
 ```
 
@@ -176,6 +177,7 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
+- Open item 547 (2026-10-29, O99's review, Spec 1): O99 ships the five service lists in `config/defaults/behavior.yml` and lays a hub's rows over them by `key` (`literature.sources`, `recover.sources`, `links`, `sign_in`) and by `kind` (`connections.failures`, a hub's new row read before oculus's). No guarded entry holds a test of that merge, so none is written. Without one, a later change that drops a hub's row, ignores a removal or puts a hub's failure text after oculus's passes every test. (a) G126 widened to "the service lists `literature.sources`, `recover.sources`, `links` and `sign_in` by `key` and `connections.failures` by `kind`, laid the same way, a new failure row read before oculus's", its Test line naming the rows of `tests/data/sources/config/layers/hub-vocab.test.ts` for cases 19, 20, 30 and 31; pro: one entry already guards the merge of hub rows over oculus's by key, and this is the same guarantee; con: G126 grows. (b) A new entry for the service lists; pro: a narrow entry; con: two entries guard one merge rule. (c) No test, the lazy option; con: the merge order of failure texts is unguarded. Recommendation: (a), as 545 (a) widened G76 for the same reason. On (a) or (b) the four rows are written in O99 at landing.
 
 ## Closed items
 
@@ -704,6 +706,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-10-29 (O99 reviewed; round 1 sent; open item 547 raised). The review (`agents/reviews/O99-refuter.md`, aeb88e56ffde106e9, claude-opus-5-5) gives items 3 and 7 violated, cases 19, 20, 30 and 31 partial, case 9 not verifiable; round 1 (`agents/briefs/O99-round1.md`, 15 items: the review's findings, two of the orchestrator's read of the diff, G8's mode kept for an existing `local.yml`, the shipped arxiv `oa` as `true`; snapshot `.agents/worktrees/migration-O99-round-1` with `files.txt`) is sent to builder a4c10c31eedf15f05. The scripts finding is closed under the standing ruling "Unapproved builder scripts" (round 1 item 15). The test of the service-list merge is open item 547. In flight (1 of 6): O99, round 1. Next: the round's report, /refute over the round, /land; then /spec O101, then O102. Open items: 547.
 - 2026-10-29 (O103 landed). O103 (the command center's applications and position leads as two groups, a task's subtasks under it as a subheading in Focus Tasks) is on main, booked under O103 in `plan.md`, `agents/reviews/O103-landing.md`; gate green, main's staged diff equal to the gate's under `cmp`, the look on 8790. In flight (1 of 6): O99, building. Next: O99's report, /refute, its round and /land; then /spec O101, then O102. Open items: none.
 - 2026-10-29 (O103 reviewed; round 1 sent). The review (`agents/reviews/O103-refuter.md`, abb1b8f406af77f0a, claude-opus-5-5) gives items 1 and 2 holds and cases 1 to 25 met; its findings go to the builder in round 1 (`agents/briefs/O103-round1.md`, seven items; snapshot `.agents/worktrees/migration-O103-round-1`): two comments, the HELP.md Doc text, the key check, a count, two visible changes, and the list of the builder's probe runs, closed under "Unapproved builder scripts". The `under` set-in stays, within ruling 546 (2) (a). In flight (2 of 6): O99, building; O103, round 1. Open items: none.
 - 2026-10-29 (O103 launched). `/spec migration O103` wrote the brief (`agents/briefs/O103.md`); its brief check (adb3d9f9523ef6aca, claude-opus-5-5) found eleven findings that change the build and several line slips, all closed in the brief (`agents/reviews/O103-brief-check.md`, "Closed"); preparation commit d364c1b7e is the base; worktree `.agents/worktrees/migration-O103`. Builder a34a055d6cb7b30b9 (claude-opus-5-5) is building. Shared with O99, judged simple: `config/text/views/boards/focus.yml` and the demo hub's `config.yml`. In flight (2 of 6): O99, building; O103, building. Next: each report, /refute, its round and /land. Open items: none.
