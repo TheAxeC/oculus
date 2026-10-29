@@ -1,8 +1,8 @@
-In flight (2 of 6 slots in use):
+In flight (1 of 6 slots in use):
 - O102 (the website's data files generated from oculus): building, after the cases ruling.
-- O101 (the Zenodo deposit): /spec, brief check running.
 
-Queued, in order (0 steps): none.
+Queued, in order (1 step):
+- O101 (the Zenodo deposit): stopped on open items 573, 575, 576, 577 and 583.
 
 Owed looks: none.
 

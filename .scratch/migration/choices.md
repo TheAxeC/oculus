@@ -5774,3 +5774,92 @@ O102's builder handed back seven cases (A to G) and four points (H) before any c
 
 Where it applies: the generator, the hub's data files, `website.yml`. Booked in `plan.md` Rulings and the state file's closed log, open item 571.
 Builds on it: O102
+
+
+## Z1076 (2026-10-30, O101's /spec, the orchestrator, automode): the review copy's file list
+
+The brief check found that what ships is git's answer in the mirror (`deposit.ts:688-700`) and that no gitignore matcher exists in `src`.
+
+- Chosen: (a) the file list made by git itself, as `restage` makes the mirror's, in a temporary folder with its own `git init`, so a project with no mirror needs no Adopt.
+- Not chosen: (b) a hand-written gitignore matcher, not chosen, since negation, `**` and directory patterns then differ from what the GitHub deposit ships; (c) For review refused until Adopt, not chosen, since a project deposited only on Zenodo would need a GitHub mirror.
+- The lazy option: (b).
+
+Where it applies: the Zenodo deposit. Booked in `plan.md` Rulings and the state file's closed log, open item 572.
+Builds on it: O101
+
+## Z1077 (2026-10-30, O101's /spec, the orchestrator, automode): For review on a project that holds a DOI
+
+Item 5 wrote `code_availability.doi` on every press, so a second press replaced the DOI.
+
+- Chosen: (a) refused while `status: deposited`; with `status: review-anon` it makes a new version of the same record with the anonymised copy, keeping the DOI, and a share link when `review_link` is empty.
+- Not chosen: (b) a new record each press, not chosen, since it breaks ruling 534's one DOI from submission to publication.
+- The lazy option: (b).
+
+Where it applies: the Zenodo deposit. Booked in `plan.md` Rulings and the state file's closed log, open item 574.
+Builds on it: O101
+
+## Z1078 (2026-10-30, O101's /spec, the orchestrator, automode): the time limit of a Zenodo upload
+
+spec.md asks a time limit to have its config key; the whole zip is one request.
+
+- Chosen: (a) `deposit.zenodo` gains `timeout_s`, shipped as 600, the limit of one upload; every other Zenodo call keeps the reader's limit.
+- Not chosen: (b) the reader's limit for every call, not chosen, since an upload of a large `code/` is held to the limit of a small answer.
+- The lazy option: (b).
+
+Where it applies: the Zenodo deposit. Booked in `plan.md` Rulings and the state file's closed log, open item 578.
+Builds on it: O101
+
+## Z1079 (2026-10-30, O101's /spec, the orchestrator, automode): the zip's name and entries
+
+The brief left the zip's root and its name's terms open.
+
+- Chosen: (a) `<repo>.zip` with the terms replaced in `<repo>`, its entries the paths relative to `code/` with no top folder, as the GitHub repository holds them.
+- Not chosen: (b) the zip's name left as the repository's, not chosen, since the name falls back to the project id, which can hold a person's key (`deposit.ts:263-268`).
+- The lazy option: (b).
+
+Where it applies: the Zenodo deposit. Booked in `plan.md` Rulings and the state file's closed log, open item 579.
+Builds on it: O101
+
+## Z1080 (2026-10-30, O101's /spec, the orchestrator, automode): two Zenodo presses at once
+
+`running.ts:36` answers a second run of a busy key a signal nothing can abort.
+
+- Chosen: (a) a Zenodo action refused while a run of the same project's key is registered, by a check `RunningGit` gains.
+- Not chosen: (b) the page's refusal only, not chosen, since a second page makes a second draft and record.
+- The lazy option: (b).
+
+Where it applies: the Zenodo deposit. Booked in `plan.md` Rulings and the state file's closed log, open item 580.
+Builds on it: O101
+
+## Z1081 (2026-10-30, O101's /spec, the orchestrator, automode): a failure after publish
+
+`DELETE .../draft` on a published record removes only the draft (InvenioRDM, Drafts and records).
+
+- Chosen: (a) the DOI written the moment the record's answer arrives; a failure of the share link or the manifest write after publish names the published DOI and the call that failed, and the next For review press goes by 574.
+- Not chosen: (b) the draft deleted on every failure, not chosen, since a published record has no draft to delete and its DOI would be lost.
+- The lazy option: (b).
+
+Where it applies: the Zenodo deposit. Booked in `plan.md` Rulings and the state file's closed log, open item 581.
+Builds on it: O101
+
+## Z1082 (2026-10-30, O101's /spec, the orchestrator, automode): the DOI Publish acts on
+
+The brief never said how the record id is read from the DOI.
+
+- Chosen: (a) the record id read from `10.5281/zenodo.<n>`, and a DOI whose record's `conceptdoi` is not that DOI refused, naming the concept DOI.
+- Not chosen: (b) the DOI taken as given, not chosen, since a version DOI typed in its place makes a new version of the wrong concept or fails at Zenodo.
+- The lazy option: (b).
+
+Where it applies: the Zenodo deposit. Booked in `plan.md` Rulings and the state file's closed log, open item 582.
+Builds on it: O101
+
+## Z1083 (2026-10-30, O101's /spec, the orchestrator, automode): the order of O101 and O102 and the family names of one-word names
+
+Both steps change the hub's `people.yml` entries `peeters`, `dongho` and `ward`.
+
+- Chosen: (a) O101 lands after O102, its hub patch applied after O102's; a one-word `name` takes its family name from the website's `_data/data.yml` (`dongho` Chun, `ward` Ceyssens), and a person no file gives one for is left without `family` and listed, never invented.
+- Not chosen: (b) O101's patch first, not chosen, since O102 changes the same `people.yml` entries and gives their full names.
+- The lazy option: (b).
+
+Where it applies: the Zenodo deposit. Booked in `plan.md` Rulings and the state file's closed log, open item 584.
+Builds on it: O101

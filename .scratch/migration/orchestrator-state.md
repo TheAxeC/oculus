@@ -36,9 +36,6 @@ dispatch:         # steps in flight, up to six (Z632)
   round: 0
   report: .scratch/migration/agents/reviews/O102-report.md
   landing: not-started
-- step: O101
-  brief_check: "running: ac906874df316b771 (claude-opus-5-5)"
-  landing: preparing
 ```
 
 ## The standing demands (from Axel, in force)
@@ -179,10 +176,22 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
-None.
+- 573 (2026-10-30, O101's /spec, the brief check): the deposit scan before a Zenodo upload. The scan's findings are a secret-like file, a file over the size limit and a missing README.md (`deposit-scan.ts:15-27`). (a) both Zenodo actions refused on any finding of the deposit scan (`deposit-scan.ts`), naming each file, as `commit` refuses (G30): it closes the finding; it adds a requirement beyond the step's line. (b) refused on secret-like files only, not chosen, since a published record cannot be withdrawn and a large file or a missing README.md reaches Zenodo. Recommendation (a); the lazy option is (b).
+- 575 (2026-10-30, O101's /spec, the brief check): the status a GitHub push writes after a Zenodo deposit. `push` writes `review-anon` for a private repository and `deposited` for a public one (`deposit.ts:447`). (a) once `code_availability.doi` is set, `push` writes only `url` and leaves `status` and `date` as the Zenodo action wrote them: it closes the finding; it adds a requirement beyond the step's line. (b) a separate GitHub status key, not chosen, since ruling 534 makes Zenodo the deposit of record and a second status word splits one state in two; (c) push unchanged, not chosen, since a private push then writes `review-anon` over a published `deposited`. Recommendation (a); the lazy option is (c).
+- 576 (2026-10-30, O101's /spec, the brief check): a term inside compressed content. The byte check of ruling 552 cannot see a term in compressed bytes. (a) zip-family files, `.gz` and `.tgz` inflated with `fflate` and their entries checked as files, the `FlateDecode` streams of a `.pdf` inflated and checked, any other compressed format refused by name: it closes the finding; it adds a requirement beyond the step's line. (b) the stored bytes checked only, not chosen, since a term in a compressed `.docx` or `.pdf` then reaches the reviewers. Recommendation (a); the lazy option is (b).
+- 577 (2026-10-30, O101's /spec, the brief check): a term in a file that is not UTF-8. A Latin-1 file counts as binary and its bytes do not hold the UTF-8 form of an accented term. (a) each term looked for, without regard to case, in every file's bytes as UTF-8, Latin-1 and UTF-16 (LE and BE): it closes the finding; it adds a requirement beyond the step's line. (b) UTF-8 bytes only, not chosen, since a Latin-1 file holding an accented name then passes. Recommendation (a); the lazy option is (b).
+- 583 (2026-10-30, O101's /spec, the brief check): how the project form writes `code_availability.anonymize`. The schema has no widget that writes a list of rows (`manifest-schema.yml:9-13`). (a) a widget kind `rows` in `manifest-schema.yml` with the row's fields named (`fields: [term, as]`), the form adding and removing a row by a button: it closes the finding; it adds a requirement beyond the step's line. (b) the key written in the YAML only, shown read-only, not chosen, since a key the form cannot write is a key the view does not hold. Recommendation (a); the lazy option is (b).
 
 ## Closed items
 
+- 584 (2026-10-30, the orchestrator, automode): the order of O101 and O102 and the family names of one-word names: (a) O101 lands after O102, its hub patch applied after O102's; a one-word `name` takes its family name from the website's `_data/data.yml` (`dongho` Chun, `ward` Ceyssens), and a person no file gives one for is left without `family` and listed, never invented (Z1083); booked in `plan.md` Rulings.
+- 582 (2026-10-30, the orchestrator, automode): the DOI Publish acts on: (a) the record id read from `10.5281/zenodo.<n>`, and a DOI whose record's `conceptdoi` is not that DOI refused, naming the concept DOI (Z1082); booked in `plan.md` Rulings.
+- 581 (2026-10-30, the orchestrator, automode): a failure after publish: (a) the DOI written the moment the record's answer arrives; a failure of the share link or the manifest write after publish names the published DOI and the call that failed, and the next For review press goes by 574 (Z1081); booked in `plan.md` Rulings.
+- 580 (2026-10-30, the orchestrator, automode): two Zenodo presses at once: (a) a Zenodo action refused while a run of the same project's key is registered, by a check `RunningGit` gains (Z1080); booked in `plan.md` Rulings.
+- 579 (2026-10-30, the orchestrator, automode): the zip's name and entries: (a) `<repo>.zip` with the terms replaced in `<repo>`, its entries the paths relative to `code/` with no top folder, as the GitHub repository holds them (Z1079); booked in `plan.md` Rulings.
+- 578 (2026-10-30, the orchestrator, automode): the time limit of a Zenodo upload: (a) `deposit.zenodo` gains `timeout_s`, shipped as 600, the limit of one upload; every other Zenodo call keeps the reader's limit (Z1078); booked in `plan.md` Rulings.
+- 574 (2026-10-30, the orchestrator, automode): For review on a project that holds a DOI: (a) refused while `status: deposited`; with `status: review-anon` it makes a new version of the same record with the anonymised copy, keeping the DOI, and a share link when `review_link` is empty (Z1077); booked in `plan.md` Rulings.
+- 572 (2026-10-30, the orchestrator, automode): the review copy's file list: (a) the file list made by git itself, as `restage` makes the mirror's, in a temporary folder with its own `git init`, so a project with no mirror needs no Adopt (Z1076); booked in `plan.md` Rulings.
 - 571 (2026-10-30, the orchestrator, automode): the O102 cases ruling `agents/briefs/O102-cases.md` (Z1075); booked in `plan.md` Rulings.
 - 570 (2026-10-29, the orchestrator, automode): (a) a term matches without regard to case, in file names, text contents, the title and the description, and is replaced by its `as` as written (Z1074); booked in `plan.md` Rulings.
 - 569 (2026-10-29, the orchestrator, automode): (a) each upload one file `<repo>.zip` of the copy, written in memory with `fflate` 0.8.3 (Z1073); booked in `plan.md` Rulings.
