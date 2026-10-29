@@ -36,6 +36,9 @@ dispatch:          # steps in flight, up to six (Z632)
   round: 0
   report: .scratch/migration/agents/reviews/O99-report.md
   landing: not-started
+- step: O103
+  brief_check: "running: adb3d9f9523ef6aca"
+  landing: preparing
 ```
 
 ## The standing demands (from Axel, in force)
