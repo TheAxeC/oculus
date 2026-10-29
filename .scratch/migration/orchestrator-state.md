@@ -164,9 +164,9 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
-- 544 (2026-10-29, the two `pub_post` exceptions of 543 (1)). "(Accepted)" is HCCNet-FL at FLTA 2026, accepted and not yet out; the website is right and the manifest's `stage: published` is ahead of it, since oculus's stages (`config/catalogs/vocab.yml:63-75`) have no accepted stage. The FLICS line is the FLLM 2025 paper's symposium (the manifest's `outcome` says so), which is part of the venue the website prints. (a) A stage `accepted` (label "accepted / to appear", in the done group before `published`, `public` and `placed`), HCCNet-FL set to it, `pub_post` "(Accepted)" generated from it; the FLICS symposium written into that paper's `book`; no `pub_post` override in the record, replacing that part of 543 (1). Recommended. (b) The typed `pub_post` override of 543 (1) kept for both. The lazy option.
 
 ## Closed items
+- 544 (2026-10-29): (a), the stage `accepted`, the FLICS symposium in `book`, no `pub_post` override (Axel: "544 (a)"); booked in `plan.md` Rulings and on O102's line.
 - 543 (2026-10-29): (1), (2) and (3) (a) (Axel: "543 (1) (a)", "543 (2) (a)", "543 (3) (a)"); the `pub_post` override open as 544; booked in `plan.md` Rulings and on O102's line.
 - 542 (2026-10-29): (1) to (6) (a) (Axel: "542 (1) (a)" to "542 (6) (a)"); booked in `plan.md` Rulings and on O102's line.
 - 541 (2026-10-29): (a), the three generic keys ship in oculus's defaults, folded into O99 (Axel: "541 (a)"); booked in `plan.md` Rulings and on O99's line.
@@ -690,6 +690,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-10-29 (544 ruled). Booked in `plan.md` Rulings and on O102's line. No open items. No /spec runs until Axel gives the green light. In flight (0 of 6): none. Next: Axel's green light, then /spec O99, then O101, then O102. Open items: none.
 - 2026-10-29 (543 ruled; 544 raised). Booked in `plan.md` Rulings and on O102's line; the two `pub_post` exceptions are open item 544. No /spec runs until Axel gives the green light. In flight (0 of 6): none. Next: Axel's green light, then /spec O99, then O101, then O102 once 544 is ruled. Open items: 544.
 - 2026-10-29 (542 ruled; 543 raised). Booked in `plan.md` Rulings and on O102's line; Axel's questions on the publication fields, the CV text and the industry profiles are open item 543. No /spec runs until Axel gives the green light. In flight (0 of 6): none. Next: Axel's green light, then /spec O99, then O101, then O102 once 543 is ruled. Open items: 543.
 - 2026-10-29 (540 (1), 540 (7) and 541 ruled). Booked in `plan.md` Rulings and on the lines of O99 and O102; the rest of 540 and Axel's questions are open item 542. No /spec runs until Axel gives the green light. In flight (0 of 6): none. Next: Axel's green light, then /spec O99 (rulings 537, 538 and 541), then O101, then O102 once 542 is ruled. Open items: 542.
