@@ -1,10 +1,11 @@
 In flight (0 of 6 slots in use): none.
 
 Queued:
-- O99 (every setting edited in Settings and a form for every file that is no setting, rulings 519 to 522, with the controls of O97's reader rows by ruling 526 (a)): next; O98 and O97 have landed.
+- O99 (every setting edited in Settings and a form for every file that is no setting, rulings 519 to 522, with the controls of O97's reader rows by ruling 526 (a), the generic service rows shipped in oculus by ruling 537, the journal browser on the Registries page by ruling 538): next; O98 and O97 have landed.
 - O101 (the Zenodo deposit through Zenodo's REST API, with Deposit for review, rulings 533, 534 and 535): after O99 has landed; O97 has landed.
+- O102 (the website's data files generated from the manifests and oculus's data files, ruling 539): after O101 has landed; its /spec waits on open item 540.
 
-Waiting on a ruling: none.
+Waiting on a ruling: open item 540 (O102's decisions), open item 541 (the other generic keys, for O99).
 
 Landing next: none in flight.
 
