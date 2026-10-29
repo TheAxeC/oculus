@@ -1,4 +1,4 @@
-Not done after repair round 1: `tests/checks/config/config-folder.test.ts` 'passes every config file through the schema it is matched to' is red on `defaults/behavior.yml:765 literature.sources[5].fields.oa does not fit the schema of this file`, because item 9 ships `oa: { value: true }` and the options catalog has no word for a field that takes a text, a number or a flag; making it green needs a decision (section "Repair round 1", item 9). The launch rows of item 10 have no run that fails before the change (same section, item 10). Every other item of the round is done.
+Not done after repair round 2: the launch rows of round 1's item 10 have no run that fails before the change (section "Repair round 1", item 10); the "Table of changed test lines" is round 0's and is not regenerated for the repair rounds (its lead says which sections name their test lines). Both items of round 2 are done and the full verify list passes (section "Repair round 2").
 
 # O99 builder report
 
@@ -8,7 +8,7 @@ Three points to read before the rest, each detailed below: the merge of the five
 
 ## Open items of the state file, verbatim
 
-From the worktree's `.scratch/migration/orchestrator-state.md` (the copy at the base), `awk 'NR>=166 && NR<=169'`:
+From the worktree's `.scratch/migration/orchestrator-state.md`, read in repair round 2 as this report was written, `awk 'NR>=166 && NR<=169'`:
 
 ```
 ## Open items (only what Axel must rule on; every report tells him these in plain words, decisions first, until he has ruled)
@@ -16,12 +16,13 @@ From the worktree's `.scratch/migration/orchestrator-state.md` (the copy at the 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 ```
 
-The list holds no entry at the base. Open item 545 was raised after the base; its ruling, 545 (a), reached this step as a message and is quoted below.
+The list holds no entry. Open items 545, 548 and 550 are not in this copy of the file; their rulings reached this step as messages and are quoted below.
 
 ## Rulings this step was built under
 
 - Round 0, `agents/briefs/O99-cases.md`: ruling 1 (case 2 uses `literature.prefer`), ruling 2 (where each of `key_none`, `key_two`, `key_beside` and `key_missing` writes its primary key), ruling 3 (case 7's test waits on 545), ruling 4 (a page with no `views` key was given no view).
 - 545 (a), verbatim: "G76 is widened to a `downloads` secret of a hub's `.oculus/local.yml` written through Settings: no route answer, config or workspaces channel push, History record or log holds its value. Write the test rows under G76, one per unit its Code will name (the Settings write route, the History record, the machine-values answer), each run on the unchanged tree first as the brief's Verify 5 says, with a made-up secret. G76's new text and Code line go in your report's "Doc text" for `agents/guarded.md`; you do not edit guarded.md. Everything else stands." The rows are in `tests/routes/hubs/settings-secrets.test.ts`; G76's text is under "Doc text".
+- 548 (a) and 550 (a), as the round-2 message gives them: "548 (a), the control word `scalar` for `reader_value`'s `value`, and 550 (a), the base's cluster pick of This machine built again as a row of the Settings view's other rows." Built under "Repair round 2", items 1 and 2.
 
 ## The cases' first run (on the unchanged tree)
 
@@ -136,6 +137,9 @@ The view cases are for the look at landing ("Host-visible changes" below). The r
 | Verify 6 sizes and folders | DONE | no file over its limit; `sh utils/folder-check.sh` exit 0 |
 | Verify 7 history words | DONE | grep below, each hit judged |
 | Verify 8 prose | DONE | below |
+| Round 2, item 1 `scalar` | DONE | `sparse-card.test.ts`, `options-schema.test.ts`, `config-folder.test.ts`; "Repair round 2" |
+| Round 2, item 2 the cluster pick | DONE | `cluster-rows.test.ts`; look at landing; "Repair round 2" |
+| Round 2, the verify list | DONE | `test:quick: 348.6 s; every command passed` |
 
 ### Verify 1
 
@@ -325,7 +329,7 @@ Every file change made by a shell command rather than Edit or Write, from `o99no
 9. A `downloads` change of a `local.yml` is written entry by entry (`intoRows` in `local-save.ts`): an entry the save leaves as it was keeps its bytes, a changed entry is set key by key, an entry past the new rows is taken out, and a new row is added in the list's style.
 10. A `local.yml` the This machine scope saves keeps its mode when it exists, and one the save makes is written at mode 600 and named in the hub's `.oculus/.gitignore`, as G8 says of the Settings writers (`writeAtomic` gives a made file the mode it is asked for and leaves an existing file's mode; `tests/routes/edit/undo/config-save.test.ts`, the table 'writes $row'). The earlier text of this call, that the save writes 600 whatever the file was, was wrong: the code never did, and the two rows of that table pass on the tree before and after round 1.
 11. The case-run programs stay out of the tests, each deleted after its run (the brief: "Every other case of a code step is checked by a run the report quotes, and no test is kept for it").
-12. The shipped arxiv row writes `oa: { value: true }` (`config/defaults/behavior.yml:765`), as the hub's row does, and the reader fixture `tests/server/core/reader/rows.yml:289` is the base's again. The Settings card draws a constant `value` as its text whether it is a text, a number or a flag, and saves it in the type it was held in (round 1, item 9). The generated schema of `config/options/behavior.yml` still describes that field as a text, so `tests/checks/config/config-folder.test.ts` 'passes every config file through the schema it is matched to' is red on `defaults/behavior.yml:765`; see "Repair round 1", item 9.
+12. The shipped arxiv row writes `oa: { value: true }` (`config/defaults/behavior.yml:765`), as the hub's row does, and the reader fixture `tests/server/core/reader/rows.yml:289` is the base's again. The field `value` of `reader_value` has the control `scalar` (ruling 548 (a), "Repair round 2", item 1): the schema takes a text of its form, a number or a flag there, the Settings card draws it as its text and saves it in the type it was held in, and `tests/checks/config/config-folder.test.ts` passes.
 13. `postForRefusal` and `WriteLog` were made to end the duplication findings rather than allow them.
 
 ## Host-visible changes, for the look at landing
@@ -442,7 +446,7 @@ These stay: the comment at 92 and `connections:` (93) with `failures:` (94) and 
 
 ## Line counts
 
-`wc -l` of every changed source file, sorted by path.
+`wc -l` of every changed source and test file, sorted by path, counted again after repair round 2.
 
 | Lines | File |
 |---|---|
@@ -452,14 +456,16 @@ These stay: the comment at 92 and `connections:` (93) with `failures:` (94) and 
 | 527 | `src/lib/data/model/model-collections.ts` |
 | 267 | `src/lib/data/model/model-deck.ts` |
 | 161 | `src/lib/data/shapes/catalog-files/options.ts` |
-| 131 | `src/lib/data/shapes/catalog-words.ts` |
+| 133 | `src/lib/data/shapes/catalog-words.ts` |
 | 116 | `src/lib/data/shapes/config-save.ts` |
 | 86 | `src/lib/data/sources/config/catalog/option-findings.ts` |
 | 867 | `src/lib/data/sources/config/catalog/options.ts` |
 | 338 | `src/lib/data/sources/config/catalog/schemas/engine.ts` |
-| 425 | `src/lib/data/sources/config/catalog/schemas/options.ts` |
+| 428 | `src/lib/data/sources/config/catalog/schemas/options.ts` |
 | 172 | `src/lib/data/sources/config/catalog/schemas/references.ts` |
 | 56 | `src/lib/data/sources/config/catalog/schemas/settings.ts` |
+| 363 | `src/lib/data/sources/config/catalog/value-rule.ts` |
+| 135 | `src/lib/data/sources/config/catalog/value-words.ts` |
 | 237 | `src/lib/data/sources/config/machine.ts` |
 | 653 | `src/lib/data/sources/config/merge/hub-layer.ts` |
 | 388 | `src/lib/data/sources/config/merge/in-place.ts` |
@@ -484,6 +490,7 @@ These stay: the comment at 92 and `connections:` (93) with `failures:` (94) and 
 | 781 | `src/lib/server/edit/writes.ts` |
 | 201 | `src/lib/server/edit/writes/apps/app-setting.ts` |
 | 777 | `src/lib/server/edit/writes/bodies.ts` |
+| 568 | `src/lib/server/edit/writes/config/config-fit.ts` |
 | 507 | `src/lib/server/edit/writes/config/config-key.ts` |
 | 375 | `src/lib/server/edit/writes/config/config-place.ts` |
 | 322 | `src/lib/server/edit/writes/config/config-value.ts` |
@@ -492,7 +499,7 @@ These stay: the comment at 92 and `connections:` (93) with `failures:` (94) and 
 | 299 | `src/lib/server/edit/writes/config/lists/deck/deck.ts` |
 | 432 | `src/lib/server/edit/writes/config/lists/folders.ts` |
 | 73 | `src/lib/server/edit/writes/config/lists/rail.ts` |
-| 368 | `src/lib/server/edit/writes/config/save/local-save.ts` |
+| 359 | `src/lib/server/edit/writes/config/save/local-save.ts` |
 | 137 | `src/lib/server/edit/writes/config/save/repo-save.ts` |
 | 41 | `src/lib/server/edit/writes/config/save/save.ts` |
 | 399 | `src/lib/server/edit/writes/config/save/settings-save.ts` |
@@ -518,20 +525,22 @@ These stay: the comment at 92 and `connections:` (93) with `failures:` (94) and 
 | 199 | `src/lib/state/client/shapes/client-state.ts` |
 | 869 | `src/lib/state/client/writes.svelte.ts` |
 | 390 | `src/lib/state/life/slides.ts` |
-| 252 | `src/lib/state/sessions/source/autosave.svelte.ts` |
+| 270 | `src/lib/state/sessions/source/autosave.svelte.ts` |
 | 28 | `src/lib/state/shared/answers/posted.ts` |
 | 550 | `src/lib/state/shared/stores/shapes.ts` |
 | 578 | `src/lib/state/sources/fs-transport.ts` |
 | 125 | `src/lib/state/system/config/config-files.ts` |
-| 839 | `src/lib/state/system/config/editors/draft.ts` |
-| 863 | `src/lib/state/system/config/editors/fields.ts` |
+| 837 | `src/lib/state/system/config/editors/draft.ts` |
+| 778 | `src/lib/state/system/config/editors/fields.ts` |
+| 179 | `src/lib/state/system/config/editors/offers.ts` |
 | 130 | `src/lib/state/system/config/editors/origins.ts` |
-| 177 | `src/lib/state/system/config/editors/slots.ts` |
-| 221 | `src/lib/state/system/config/editors/sources.ts` |
+| 181 | `src/lib/state/system/config/editors/slots.ts` |
+| 227 | `src/lib/state/system/config/editors/sources.ts` |
 | 134 | `src/lib/state/system/config/editors/writer.ts` |
 | 369 | `src/lib/state/system/config/groups.ts` |
 | 73 | `src/lib/state/system/config/messages.ts` |
-| 599 | `src/lib/state/system/config/rows.ts` |
+| 82 | `src/lib/state/system/config/other-rows/cluster-rows.ts` |
+| 601 | `src/lib/state/system/config/rows.ts` |
 | 191 | `src/lib/state/system/config/scopes/changes.ts` |
 | 133 | `src/lib/state/system/config/scopes/rows.ts` |
 | 72 | `src/lib/state/system/config/scopes/save.ts` |
@@ -543,11 +552,11 @@ These stay: the comment at 92 and `connections:` (93) with `failures:` (94) and 
 | 213 | `src/lib/state/system/config/view/hub-settings.svelte.ts` |
 | 176 | `src/lib/state/system/machine/debug/debug-file.ts` |
 | 843 | `src/lib/state/system/machine/debug/debug.svelte.ts` |
-| 177 | `src/lib/state/system/machine/debug/launch-form.ts` |
+| 194 | `src/lib/state/system/machine/debug/launch-form.ts` |
 | 118 | `src/lib/state/system/machine/hpc/setup.ts` |
 | 54 | `src/lib/state/system/machine/lsp/clangd/clangd.svelte.ts` |
 | 110 | `src/lib/state/system/machine/lsp/clangd/clangd.ts` |
-| 149 | `src/lib/state/system/machine/lsp/clangd/cpp-form.ts` |
+| 165 | `src/lib/state/system/machine/lsp/clangd/cpp-form.ts` |
 | 356 | `src/lib/state/workbench/layout/instance.ts` |
 | 436 | `src/lib/state/workbench/layout/model.ts` |
 | 636 | `src/lib/state/workbench/layout/open/float/pages.ts` |
@@ -572,24 +581,26 @@ These stay: the comment at 92 and `connections:` (93) with `failures:` (94) and 
 | 114 | `src/lib/views/system/machine/debug/LaunchEdit.svelte` |
 | 191 | `src/lib/views/system/status/LineCounts.svelte` |
 | 232 | `src/lib/views/system/workbench/editors/Editor.svelte` |
-| 518 | `src/lib/views/system/workbench/editors/FieldControl.svelte` |
+| 520 | `src/lib/views/system/workbench/editors/FieldControl.svelte` |
 | 48 | `src/lib/views/system/workbench/editors/Origins.svelte` |
 | 101 | `src/lib/views/system/workbench/editors/SecretBox.svelte` |
 | 30 | `src/lib/views/system/workbench/editors/writer.svelte.ts` |
 | 351 | `src/lib/views/system/workbench/RailEditor.svelte` |
 | 519 | `src/lib/views/system/workbench/Settings.svelte` |
-| 141 | `src/lib/views/system/workbench/settings/Control.svelte` |
-| 352 | `src/lib/views/system/workbench/settings/Item.svelte` |
+| 143 | `src/lib/views/system/workbench/settings/Control.svelte` |
+| 358 | `src/lib/views/system/workbench/settings/Item.svelte` |
 | 230 | `src/lib/views/system/workbench/settings/List.svelte` |
 | 138 | `src/lib/views/system/workbench/settings/other-rows/AppControl.svelte` |
+| 69 | `src/lib/views/system/workbench/settings/other-rows/ClusterRows.svelte` |
 | 92 | `src/lib/views/system/workbench/settings/other-rows/WallpaperPicker.svelte` |
 | 20 | `src/lib/views/system/workbench/settings/scopes/context.ts` |
 | 118 | `src/lib/views/system/workbench/settings/scopes/files.ts` |
 | 83 | `src/lib/views/system/workbench/settings/scopes/lists.svelte.ts` |
 | 229 | `src/lib/views/system/workbench/settings/scopes/ScopeBar.svelte` |
-| 298 | `src/lib/views/system/workbench/settings/scopes/scopes.svelte.ts` |
+| 304 | `src/lib/views/system/workbench/settings/scopes/scopes.svelte.ts` |
 | 116 | `src/lib/views/system/workbench/settings/scopes/WorkspaceRows.svelte` |
 | 30 | `src/lib/views/system/workbench/settings/writer.svelte.ts` |
+| 361 | `src/routes/+page.svelte` |
 | 36 | `src/routes/api/(docs)/primary-key/+server.ts` |
 | 62 | `src/routes/api/(files)/fs/+server.ts` |
 | 38 | `src/routes/api/(machine)/cpp/+server.ts` |
@@ -598,34 +609,40 @@ These stay: the comment at 92 and `connections:` (93) with `failures:` (94) and 
 | 529 | `tests/checks/tree/boundaries.test.ts` |
 | 358 | `tests/checks/tree/layer-rows.ts` |
 | 188 | `tests/data/hubs/connection-keys.test.ts` |
+| 145 | `tests/data/sources/config/catalog/options-schema.test.ts` |
 | 312 | `tests/data/sources/config/catalog/options.test.ts` |
-| 228 | `tests/routes/docs/primary-key.test.ts` |
+| 247 | `tests/routes/docs/primary-key.test.ts` |
 | 335 | `tests/routes/edit/deck-slides.test.ts` |
-| 239 | `tests/routes/edit/undo/config-save.test.ts` |
+| 262 | `tests/routes/edit/undo/config-save.test.ts` |
 | 297 | `tests/routes/git/credentials.test.ts` |
-| 91 | `tests/routes/hubs/settings-secrets.test.ts` |
-| 176 | `tests/routes/machine/cpp.test.ts` |
+| 122 | `tests/routes/hubs/settings-secrets.test.ts` |
+| 186 | `tests/routes/machine/cpp.test.ts` |
 | 259 | `tests/routes/machine/debug.test.ts` |
 | 85 | `tests/routes/write-log.ts` |
 | 262 | `tests/server/core/credentials.test.ts` |
 | 828 | `tests/server/core/reader/reader.test.ts` |
 | 701 | `tests/server/edit/config-key.test.ts` |
+| 440 | `tests/state/sessions/autosave.client.test.ts` |
 | 210 | `tests/state/sessions/served-roots.client.test.ts` |
-| 623 | `tests/state/system/config/sparse-card.test.ts` |
-| 65 | `tests/state/system/entry-forms.test.ts` |
+| 718 | `tests/state/system/config/sparse-card.test.ts` |
+| 125 | `tests/state/system/entry-forms.test.ts` |
+| 83 | `tests/state/system/settings/cluster-rows.test.ts` |
+| 162 | `tests/state/system/settings/collection-fields.test.ts` |
 | 215 | `tests/state/system/settings/editor-saved.test.ts` |
 | 109 | `tests/state/system/settings/fixture.ts` |
 | 285 | `tests/state/system/settings/hub-scope.test.ts` |
 | 150 | `tests/state/system/settings/machine-section.test.ts` |
 | 87 | `tests/state/system/settings/port-row.test.ts` |
 | 201 | `tests/state/system/settings/row-writer.test.ts` |
+| 465 | `tests/state/system/settings/theme-groups.test.ts` |
 | 204 | `tests/state/workbench/layout/saved/layout-saved.test.ts` |
 | 186 | `tests/state/workbench/options-pages.test.ts` |
+| 90 | `tests/views/system/workbench/scopes.client.test.ts` |
 | 85 | `tests/views/system/workbench/workbench-fixture.ts` |
 
 ## Table of changed test lines
 
-From `git diff -U0 a5281619a -- tests`, the deleted `chosen-hub.test.ts` and the moved `boundaries.test.ts` table left out; the line is the base line for a before row and the new line for an after row. A backtick inside a line is shown as a straight single quote.
+From `git diff -U0 a5281619a -- tests` as round 0 left the tests, the deleted `chosen-hub.test.ts` and the moved `boundaries.test.ts` table left out; the line is the base line for a before row and the new line for an after row. A backtick inside a line is shown as a straight single quote. The table is not regenerated after the repair rounds: the test lines round 1 changes are named under "Repair round 1" (its items and "Edits to existing assertions in round 1"), those round 2 changes under "Repair round 2", and a line number of a file those rounds changed (`settings-secrets`, `config-save`, `cpp`, `primary-key`, `sparse-card`, `entry-forms`, `options-schema`) may have moved since.
 
 | File | Line | Side | Text |
 |---|---|---|---|
@@ -1354,13 +1371,13 @@ From `git diff -U0 a5281619a -- tests`, the deleted `chosen-hub.test.ts` and the
 
 ## Repair round 1
 
-### Not done, and the decision it needs
+### Not done in round 1, and what became of it
 
-- **The schema of a constant `value` (item 9).** The verify run below is red on one line: `tests/checks/config/config-folder.test.ts` 'passes every config file through the schema it is matched to', `"defaults/behavior.yml:765 literature.sources[5].fields.oa does not fit the schema of this file"`. Item 9 ships `oa: { value: true }`, and the record `reader_value` of `config/options/behavior.yml` (`descriptions:`, its field `value: a fixed value, with holes`) describes the constant as a text, which the generated schema makes `{ type: 'string' }` (`textSchema` in `src/lib/data/sources/config/catalog/schemas/options.ts:81-87`). The Settings card draws and saves the boolean (item 9 below), and the reader takes any value (`src/lib/server/core/reader/fields.ts:181`, `if (spec.value !== undefined) return spec.value;`). The catalog has no word for a field that takes a text, a number or a flag: `CONTROLS` and `HOLDS` in `src/lib/data/shapes/catalog-words.ts:13-31,40` hold none. A new catalog word is a config vocabulary nothing names, so it is the orchestrator's to raise. The options:
+- **The schema of a constant `value` (item 9).** Ruled 548 (a) and built in repair round 2, item 1; `config-folder.test.ts` passes. What round 1 found and the options it put: the round-1 verify run below is red on one line: `tests/checks/config/config-folder.test.ts` 'passes every config file through the schema it is matched to', `"defaults/behavior.yml:765 literature.sources[5].fields.oa does not fit the schema of this file"`. Item 9 ships `oa: { value: true }`, and the record `reader_value` of `config/options/behavior.yml` (`descriptions:`, its field `value: a fixed value, with holes`) describes the constant as a text, which the generated schema makes `{ type: 'string' }` (`textSchema` in `src/lib/data/sources/config/catalog/schemas/options.ts:81-87`). The Settings card draws and saves the boolean (item 9 below), and the reader takes any value (`src/lib/server/core/reader/fields.ts:181`, `if (spec.value !== undefined) return spec.value;`). The catalog has no word for a field that takes a text, a number or a flag: `CONTROLS` and `HOLDS` in `src/lib/data/shapes/catalog-words.ts:13-31,40` hold none. A new catalog word is a config vocabulary nothing names, so it is the orchestrator's to raise. The options:
   - (a) A control word for a value of any scalar, for example `control: scalar` ("a text, a number or a flag, as written"), given to `reader_value`'s `value` field: the schema `anyOf` of the text (with its holes), a number and a flag; `valueProblem` in `catalog/value-rule.ts` takes any scalar for it; the card draws it as its text and saves it in the type held, as it does now. Cost: one word in `CONTROLS`, its schema case, its value rule case, its control in `FieldControl.svelte` (the text box it draws now) and a row of `tests/checks/config/config-folder.test.ts` that holds already. Recommended, as a judgment: the field means any scalar, and the word says so where the schema, the value rule and the card read it.
   - (b) Ship `oa: { value: 'true' }`, text, as round 0 did. The schema is green and the card draws both forms, but the shipped row then differs from the hub's `oa: { value: true }`, which item 9 rules against, and a hub that writes a boolean constant keeps whatever finding the schema of its `config.yml` gives it (not verified: no run over a hub's `config.yml` was made). This is the lazy option: it costs one line and leaves the catalog describing the constant wrongly.
   Making every text field's schema take a number and a flag too is not an option: it loosens the check of every text field.
-- **The launch rows of item 10 have no run that fails before the change.** They were written after `launch-form.ts` changed, and taking the change out to watch them fail is banned. By reading, the round-0 `launch-form.ts` drew a list as its parts joined by `, ` and split a typed line at `,`, so a part `a,b` came back as two parts after an edit and a save; the four rows check that such a field is not drawn and not sent. The two cpp rows of item 10 have their before-run, quoted below.
+- **The launch rows of item 10 have no run that fails before the change.** Still so after round 2. They were written after `launch-form.ts` changed, and taking the change out to watch them fail is banned. By reading, the round-0 `launch-form.ts` drew a list as its parts joined by `, ` and split a typed line at `,`, so a part `a,b` came back as two parts after an edit and a save; the four rows check that such a field is not drawn and not sent. The two cpp rows of item 10 have their before-run, quoted below.
 
 ### Item 1, the undo of a save that moves a secret
 
@@ -1397,10 +1414,10 @@ Corrected in place under "Hub text" from a re-read in this round (`wc -l`, `grep
 
 ### Item 9, the arxiv `oa` constant
 
-- Change: `config/defaults/behavior.yml:765` is `oa: { value: true }`, and `tests/server/core/reader/rows.yml` is the base's again (`git diff a5281619a --stat -- tests/server/core/reader/rows.yml` prints nothing). In `src/lib/state/system/config/editors/fields.ts`, a card carries `scalars` (the type, `'boolean'` or `'number'`, each text field was held in); `readField`'s text case reads a flag or a finite number as `String(held)` with its scalar, and `writtenField` writes the text back in that type (`'true'`/`'false'` as a flag, a number as `decimalOf(text) ?? text`), a text typed over it that is not of the type staying a text. `putRead` puts a read on its card. `draft.ts` passes the scalar of the value alone in a pairs card (the key reading has none), and `slots.ts`'s `cardShape` takes `scalars`.
+- Change: `config/defaults/behavior.yml:765` is `oa: { value: true }`, and `tests/server/core/reader/rows.yml` is the base's again (`git diff a5281619a --stat -- tests/server/core/reader/rows.yml` prints nothing). In `src/lib/state/system/config/editors/fields.ts`, a card carries `scalars` (the type, `'boolean'` or `'number'`, each scalar field was held in); `readField` reads a flag or a finite number as `String(held)` with its scalar, and `writtenField` writes the text back in that type (since round 2 for the control `scalar` alone; a `text` field reads and writes a text only, as on the base, round 2 item 1) (`'true'`/`'false'` as a flag, a number as `decimalOf(text) ?? text`), a text typed over it that is not of the type staying a text. `putRead` puts a read on its card. `draft.ts` passes the scalar of the value alone in a pairs card (the key reading has none), and `slots.ts`'s `cardShape` takes `scalars`.
 - Test: `tests/state/system/config/sparse-card.test.ts:536`, the table 'draws $name constant value as its text, and saves it and a text typed over it in its type', rows 'a boolean', 'a number' and 'a text'. Before (`o99notes/r1/item9-before.txt`): `Tests  5 failed | 30 passed (35)`, the boolean and number rows failing with `AssertionError: expected [ Array(1) ] to deeply equal []` (the value kept as the file has it, `literature.sources[0].fields[0].value[0].value`), and the two rows 'draws every value of the shipped / fixture's literature.sources and keeps none as the file has it' failing the same way once the shipped row holds `true`. After: 35 passed (verify run).
 - The NESTED row "arXiv's oa value" (line 411) gains `saved: false`, and the table's check writes `one.saved ?? one.value` at the held path: the text `'false'` typed over the flag is saved as the flag `false`. This is an edit to an assertion of round 0.
-- Open: the schema line under "Not done" above.
+- The schema line is closed by repair round 2, item 1.
 
 ### Item 10, the Debug view's and the compile database item's edit forms
 
@@ -2079,13 +2096,13 @@ Not in that batch: `tests/data/keys.test.ts` (an import path alone), `tests/chec
 
 ### Item 14, the host-visible changes
 
-- **This machine `clusters:`.** Before: `ClusterRows.svelte`, a Save and a Remove per row, and a pick that adds a row for a cluster of `slurm.resource` that has none. After: the family editor of the This machine scope, a card per row with `resource`, `user` and `key_file`, written by the scope's Save. A new row's `resource` is a choice `from: clusters` (`config/options/local.yml:22-25`), which offers every cluster entry of the resources registry; that includes every cluster `slurm.resource` can name, since `slurm.resource` draws from the same source (`config/options/behavior.yml:202-203`, `control: multi`, `from: clusters`). It is wider than the base's pick: it also offers a cluster `slurm.resource` does not name and one that has a row already. Offering exactly the clusters of `slurm.resource` with no row needs a source word the catalog does not have (`SOURCES` in `catalog-words.ts:65-93`), so it is not built; the orchestrator decides whether the wider offer stands.
+- **This machine `clusters:`.** Before: `ClusterRows.svelte`, a Save and a Remove per row, and a pick that adds a row for a cluster of `slurm.resource` that has none. After: the family editor of the This machine scope (`other-rows/ClusterRows.svelte` around `Editor.svelte`), a card per row with `resource`, `user` and `key_file`, written by the scope's Save. A new card's `resource` offers the clusters of `slurm.resource` that no row of the merged `clusters:` holds, a card keeps its own cluster in its choice, and each cluster is drawn by its name (ruling 550 (a), "Repair round 2", item 2).
 - **The Port row.** Before: the port the server listens on. After: the port `local.yml` names, in the This machine scope of the primary, with a note naming the port the server listens on and the reason when a move to it was refused.
 - **A hub with no `sign_in` or `connections.failures`.** Before: no provider in Account setup and no failure text. After: oculus's `google`, `microsoft` and `github` providers in Account setup and its six failure texts (`config/defaults/behavior.yml:85-92` and `95-120`).
 
 ### Item 15, the programs
 
-Every command of the build that wrote a file or ran a program the brief does not build. None is left: `ls tests/o99*`, `ls .agents/worktrees/` (which lists `gate`, `migration-O99` and `migration-O99-round-1`, none of them made by this step) and `ls` of the scratchpad for `o99base`, `o99tools` and `o99probe` find none; `ls $TMPDIR | grep -c o99-case` prints 0.
+Every command of the build that wrote a file or ran a program the brief does not build. None is left: `ls tests/o99*`, `ls .agents/worktrees/` of the main checkout (which lists, in round 2, `gate`, `migration-O99`, `migration-O99-round-1`, `migration-O99-round-2` and `O99-base`; the builder made none of the last four as they stand, `O99-base` being the base copy the orchestrator put back for round 2 and left as it is) and `ls` of the scratchpad for `o99base`, `o99tools` and `o99probe` find none; `ls $TMPDIR | grep -c o99-case` prints 0.
 
 - Round 0, the python3 heredocs, the `sed -i`, the `cat >` and `cat >>` and `rewrap.py`: the files each wrote are those of the section "Shell edits" above. Their hunks cannot be told apart in the diff from later Edit hunks over the same files. `scratchpad/o99tools` (`rewrap.py`, its `before/` copies, `rewrap.diff`, `files.txt`) is deleted; the section "Shell edits" said so before it was true, and it is now.
 - Round 0, the probes `caserun/rows.ts`, `c2.ts` and the folder `caserun/o99` (`views.test.ts`, `draws.test.ts`, `case.config.mts`): each read the tree and printed, wrote no file of the worktree, and is deleted.
@@ -2140,6 +2157,109 @@ ok      vitest slow (362.1 s): Duration  350.96s (transform 23.58s, setup 0ms, i
 test:quick: 366.0 s; failed: vitest checks
 ```
 
-The two comment lines over 100 columns are rewrapped with Edit (`autosave.svelte.ts:158-161`, `fields.ts:123-125`), and the comment-width check alone then passes: `npx vitest run tests/checks/source/comment-width.test.ts`, `Test Files  1 passed (1)`, `Tests  2 passed (2)` (`o99notes/r1/comment-width-after.txt`). The two files also pass `npx prettier --check` and `npx eslint`, and their tests (`autosave.client`, `sparse-card`, `collection-fields`, `theme-groups`) give `Tests  95 passed (95)`. The config-folder line stays red, as said under "Not done". `test:quick` does not cover the tests that reach no changed file within its import depth (other than the checks under `tests/checks/source` and `tests/checks/tree`), the build, or the lint of unchanged files.
+The two comment lines over 100 columns are rewrapped with Edit (`autosave.svelte.ts:158-161`, `fields.ts:123-125`), and the comment-width check alone then passes: `npx vitest run tests/checks/source/comment-width.test.ts`, `Test Files  1 passed (1)`, `Tests  2 passed (2)` (`o99notes/r1/comment-width-after.txt`). The two files also pass `npx prettier --check` and `npx eslint`, and their tests (`autosave.client`, `sparse-card`, `collection-fields`, `theme-groups`) give `Tests  95 passed (95)`. The config-folder line stayed red in round 1; it passes after repair round 2, item 1. `test:quick` does not cover the tests that reach no changed file within its import depth (other than the checks under `tests/checks/source` and `tests/checks/tree`), the build, or the lint of unchanged files.
 
 The character-set check over the 25 files round 1 changed (the 24 above and this report), `LC_ALL=C grep -nP '[^\x00-\x7F]' <files>`, prints no line. The line counts: `FieldControl.svelte` 520, `fields.ts` 757, `draft.ts` 837, every other changed source file under 880; `src/lib/state/system/config/editors/` holds 8 items.
+
+## Repair round 2
+
+Brief `.scratch/migration/agents/briefs/O99-round2.md`, rulings 548 (a) and 550 (a). Both items are built. Each new or changed test row was run once on the round-1 tree, before the round's source change, with the new tests in place: `npx vitest run tests/state/system/settings/cluster-rows.test.ts tests/state/system/config/sparse-card.test.ts tests/data/sources/config/catalog/options-schema.test.ts` (`o99notes/r2/before.txt`), `Test Files  3 failed (3)`, `Tests  4 failed | 43 passed (47)`.
+
+### Item 1, the control word `scalar`
+
+Change:
+
+- `src/lib/data/shapes/catalog-words.ts:18`: `'scalar'` in `CONTROLS`, after `'text'`; its doc comment says a scalar is a text (with the holes and the form a text has), a number or a flag, drawn as a text box and written in the type the file held it in.
+- `config/options/behavior.yml:1322-1324`: `reader_value`'s field `value` is `{ help: a fixed value, a text with holes, a number or true or false, control: scalar }`.
+- The schema, `src/lib/data/sources/config/catalog/schemas/options.ts:173`: `case 'scalar': return { anyOf: [textSchema(spec), { type: 'number' }, { type: 'boolean' }] };`, so a text keeps its holes and form, and nothing else passes.
+- The value rule, `src/lib/data/sources/config/catalog/value-rule.ts:323-325`, the same and nothing more:
+
+```ts
+case 'scalar':
+    if (typeof value === 'boolean' || finite(value)) return null;
+    return typeof value === 'string' ? formProblem(spec, value) : { kind: 'scalar' };
+```
+
+  The kind `scalar` is worded in each of the three places a kind is worded: `value-words.ts:96-97` (`findings.words.scalar`, `config/text/findings.yml:286`, "a text, a number or true or false"), `config-fit.ts:123-124` (`server.config_key.not_scalar`, `config/text/server.yml:103`, "This option takes a text, a number or true or false"), while the card's `troubleOf` (`fields.ts:448`) refuses a scalar's text by its form, as it does a text's; a value of the wrong type cannot come out of the card's text box, and `troubleOf` returns null for the kind `scalar`, as for `text`.
+- The card, `src/lib/state/system/config/editors/fields.ts`: `readField`'s case `scalar` reads a flag or a finite number as its text with its type (`scalarText`), a string as itself, anything else as stuck, so it is kept as the file has it. `writtenField`'s case `scalar` writes the text through `scalarOf(text, reading.scalar)` (`'true'` or `'false'` as a flag when the file held a flag, a decimal as a number when it held a number, otherwise the text) and then through `valueProblem`, so the form check runs on every text written; the only value that does not go through it is one equal to a value the file holds at that field (`heldAlready`), which every control of the card treats so. `commitValue` (an option set one key at a time) has the same case, the type taken from the value in force, which `scopes/write.ts:35` now passes (`commitValue(row.entry, input, lists, row.value)`); no shipped option has `control: scalar` at the top level, so that case is reached by no shipped row. The type `Scalar` is no longer exported.
+- Round 1's reading of a flag or a number into every `text` box is gone: `readField`'s case `text` is removed, so a text field falls to the base's `default` case (a record where the field takes one, else a string), and `writtenField`'s cases `text` and `long` are the base's. A `text` field holding a flag or a number is kept as the file has it, as on the base.
+- `Control.svelte:61-63` counts `scalar` among the boxes; `rows.ts:273-275` (`cannotShow`) treats a scalar as it treats a text; `FieldControl.svelte` draws a scalar in its default text box, and its head comment says "a text box for a text or a scalar", rewrapped within its ten lines (520 lines, as before).
+
+The pages and comments that list the control words, as `git grep -n -I -E "toggle.*(text|long).*(glyph|hue|colour|folder)" -- src` and `git grep -n -I -e "toggle, number" -- ':!config/local.yml'` find them outside the ledger: `config/options/appearance.yml:10` (now "toggle, number, text, scalar (a text, with the holes and the form a text has, a number or true or false, drawn as a text box and written in the type the file held it in), long (a text area), ..."), `src/lib/server/edit/writes/config/config-key.ts:2-3` ("for a toggle, a number, a text, a scalar, a choice, ..."), `Control.svelte:4` and `FieldControl.svelte:5`, and `schemas/options.ts:12` and `catalog-words.ts:11`, which name it.
+
+Doc text: none. No line of `docs/templates.md`, `docs/HELP.md` or `docs/data-map.md` lists the control words: `grep -c` of `toggle, number`, `text area` and `scalar` in each prints 0, but for `docs/templates.md:655`, "A scalar or a list without a key field replaces oculus's value whole", which means a YAML scalar and stays; `grep -c -i control docs/templates.md docs/data-map.md` prints 0 and 0, and the 34 lines of `docs/HELP.md` that say "control" name controls of the views (a fold control, a Recover control), none the catalog's words. `git diff --stat a5281619a -- docs/HELP.md docs/templates.md docs/data-map.md` prints nothing.
+
+Tests:
+
+- `tests/state/system/config/sparse-card.test.ts`, the table 'keeps %s that a text field holds as the file has it, and draws no box for it' (rows 'a boolean' and 'a number'): a reader row whose `name`, a text field, holds `true` or `7` has no `name` field on its card, keeps it under `literature.sources[0].name`, and saves the row unchanged. Before: `AssertionError: expected 'true' to be undefined` and `AssertionError: expected '7' to be undefined` (line 580). After: passes.
+- The table 'draws $name constant value as its text, and saves it and a text typed over it in its type' (round 1) passes before and after.
+- `tests/data/sources/config/catalog/options-schema.test.ts`, describe "the schema of a reader row's constant value, a scalar": 'takes a text with holes, a number and a flag in %s' (`'{id} preprint'`, `3`, `2.5`, `true`, in `config/defaults/behavior.yml` and in a hub's `.oculus/config.yml`), before `AssertionError: expected [ [], ...(3) ] to deeply equal [ [], [], [], [] ]` with `"3: literature.sources[0].fields.oa does not fit the schema of this file"` for `3`, `2.5` and `true`; 'refuses a record and a list, each on its line, in %s' (`{ a: 1 }`, `[1, 2]`), which passes before as after, since a text schema refuses both too. After: both pass. The head comment says what the describe holds.
+- `tests/checks/config/config-folder.test.ts` passes: in the verify run below, and alone with the settings, config and catalog tests (`npx vitest run tests/state/system/settings/ tests/state/system/config/ tests/data/sources/config/catalog/ tests/checks/config/config-folder.test.ts`, `Test Files  12 passed (12)`, `Tests  165 passed | 2 skipped (167)`).
+
+### Item 2, the cluster pick of This machine
+
+Behaviour:
+
+- Before (`git show a5281619a:src/lib/views/system/workbench/settings/other-rows/ClusterRows.svelte`): under the `clusters:` row, each row of every hub's file with its user and key file boxes and its own Save and Remove, which wrote through POST /api/clusters at once; the add pick offered exactly the clusters of the setup's `clusters` (those `slurm.resource` names) that no row of the setup's `rows` held, each drawn by its name; a row there had no choice of cluster.
+- Round 1: the family editor of the This machine scope, its `resource` a choice `from: clusters`, which offered every cluster entry of the resources registry of the scope's hub: also a cluster `slurm.resource` does not name and one that has a row.
+- After: the family editor, held and saved like every other This machine change (the scope's Save, Save All, the digest check), with no Save of its own. A new card's `resource` offers exactly the clusters of `slurm.resource`, in its order, that no row of another hub's file holds (the setup's `rows` whose `hub` is not the scope's hub) and no card of the draft holds, so a row added or taken out in the draft counts before the Save. A card keeps its own cluster in its choice when `slurm.resource` names it; a cluster it names no more is shown and marked as not in the list, as every choice marks a held word outside its list. Each cluster is drawn by the name the setup gives it. While the setup is being read the choice says it is loading; a setup that could not be read says `accounts.cluster_unreachable` in the choice. The setup is read when the editor is drawn and again whenever the file's value of the row moves, as after a Save. The `clusters` list is not narrowed (`slurm.resource` and the server's check of a write still read all of it), and no catalog word is added.
+
+Change:
+
+- `src/lib/state/system/config/editors/sources.ts`: `Lists` takes an optional `narrow(source, record)`, what a choice of one row offers of a source in place of its items, by the record the field is in; `SourceItems` is exported for it. `src/lib/state/system/config/editors/offers.ts` `addSource` uses `lists.narrow?.(source, record) ?? lists.items(source)`, and `poolOf` passes the record. Every other list is built as before.
+- New `src/lib/state/system/config/other-rows/cluster-rows.ts` (82 lines): `CLUSTERS_ROW` (`'local.yml:clusters'`), `clusterChoice(setup, row, draft)` (the named clusters, the held ones, the names), `clusterOffer` (not exported) and `clusterLists(lists, choice, failed)`, which narrows `clusters` and adds the names to its labels.
+- New `src/lib/views/system/workbench/settings/other-rows/ClusterRows.svelte` (69 lines): reads the setup (`hpc.readSetup()`), derives the draft as `Editor.svelte` does, and draws `<Editor {row} {id} {editors} lists={narrowed} />`.
+- `src/lib/views/system/workbench/settings/Item.svelte:220-221`: `{:else if row.id === CLUSTERS_ROW && drawsEditor(row) && row.unread === undefined}` draws `ClusterRows`; the head comment names it.
+
+Test: new `tests/state/system/settings/cluster-rows.test.ts`, over the This machine `clusters:` row of the primary (the shipped catalog of `local.yml`, a file with a row for `held`) and a resources registry of `free`, `held` and `unnamed`, with `slurm.resource` naming `held` and `free`: 'offers a new row the clusters of slurm.resource with no row, and no other' (`['free']`: `held` has a row, `unnamed` is not named) and 'offers a row its own cluster with the clusters of slurm.resource no row holds' (`['held', 'free']`). Before: the file does not load, `Error: Cannot find module '../../../../src/lib/state/system/config/other-rows/cluster-rows.ts'`. After: both pass. The drawing of the row is for the look at landing.
+
+### After the change
+
+`npx vitest run tests/state/system/settings/cluster-rows.test.ts tests/state/system/config/sparse-card.test.ts tests/data/sources/config/catalog/options-schema.test.ts --reporter=verbose`: `Test Files  3 passed (3)`, `Tests  49 passed (49)`. `npx svelte-check --tsconfig ./tsconfig.json --threshold error`: `COMPLETED 4537 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS`. `npx prettier --check` and `npx eslint` over the round's files: clean.
+
+The full verify list, once, after the round's last change (`npm run diagrams && npm run docs:palette && npm run test:quick -- --base a5281619a`, `o99notes/r2/verify.txt`, `exit 0`):
+
+```
+test:quick: 237 changed file(s), from git since a5281619a
+test:quick: 344 test file(s)
+ok      prettier (0.8 s): All matched files use Prettier code style!
+ok      ASCII gate (0.8 s)
+ok      svelte-kit sync (2.1 s)
+ok      eslint (11.7 s)
+ok      svelte-check (56.7 s): 1793305919261 COMPLETED 569 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest checks (197.9 s): Duration  186.70s (transform 64.35s, setup 0ms, import 232.42s, tests 483.36s, environment 5ms)
+ok      vitest (255.7 s): Duration  244.83s (transform 229.75s, setup 0ms, import 493.41s, tests 435.17s, environment 29.63s)
+ok      vitest slow (346.2 s): Duration  335.79s (transform 22.75s, setup 0ms, import 181.43s, tests 1149.07s, environment 22ms)
+test:quick: 348.6 s; every command passed
+test:quick: not covered: tests that reach no changed file within the import depth,
+            other than the checks under tests/checks/source and tests/checks/tree,
+            which run for any change under src, tests or utils; the build, the lint
+            of unchanged files
+```
+
+The other checks, after the last change:
+
+- Character set: `LC_ALL=C grep -nP '[^\x00-\x7F]'` over the 23 files of the round (`o99notes/r2/files.txt`) and this report prints no line (grep exit 1).
+- Unused exports: `diff ../O99-base/unused-exports.txt <(sh utils/unused-exports.sh)` gives only removals (`rail.ts: RAIL`, `groups.ts: CATALOGS_GROUP, TEXTS_GROUP`, `config/write.ts: commit, Committed`), the count lines (230 to 228, types 109 to 108) and the moved line `src/lib/server/core/files/yaml/yaml-edit.ts: BLOCK_LISTS, pathOf, renameKey` (the base's `server/edit/yaml/yaml-edit.ts`, moved in round 0). No new unused export.
+- `wc -l` of the round's source files: `catalog-words.ts` 133, `schemas/options.ts` 428, `value-rule.ts` 363, `value-words.ts` 135, `config-fit.ts` 568, `config-key.ts` 507, `fields.ts` 778, `offers.ts` 179, `sources.ts` 227, `scopes/write.ts` 149, `rows.ts` 601, `Control.svelte` 143, `FieldControl.svelte` 520, `Item.svelte` 358, `cluster-rows.ts` 82, `ClusterRows.svelte` 69; none over its limit.
+- `sh utils/folder-check.sh` prints nothing and exits 0; `tests/state/system/settings/` holds 9 items, `state/system/config/other-rows/` 2, `views/system/workbench/settings/other-rows/` 3.
+
+### Widenings of the path list in round 2
+
+The brief names the files each item names, the files of the control words and their pages, the tests and the report. Also written, each for its item:
+
+- Item 1: `value-words.ts`, `config/text/findings.yml`, `config/text/server.yml` and `config-fit.ts` (the kind `scalar` worded where every kind is worded), `scopes/write.ts` (the held value passed to `commitValue`), `Control.svelte` and `rows.ts` (a scalar drawn and shown as a box), `config-key.ts` (its head comment lists the controls).
+- Item 2: `editors/sources.ts` and `editors/offers.ts` (the `narrow` of a row's lists), `Item.svelte` (the row drawn by `ClusterRows`).
+- Both: `tests/state/system/config/sparse-card.test.ts:513-515`, a round-1 doc comment of 103 columns rewrapped.
+- The report's own sections of rounds 0 and 1 are corrected where round 2 changed what they say: the first line, the open items, the rulings, the DONE table, the line counts (counted again), judgment call 12, round 1's "Not done", items 9, 14 and 15 and its verify note, and the lead of the table of changed test lines.
+
+### Edits to existing assertions in round 2
+
+None. The new rows are added beside the old; `sparse-card.test.ts` gains `sourceRowOf(source)`, which `constantRowOf` now calls, and the head comments of `sparse-card.test.ts` and `options-schema.test.ts` say what their new rows hold.
+
+### Programs and shell writes in round 2
+
+- `npx prettier --write` formatted the two new files `cluster-rows.ts` and `ClusterRows.svelte` after their Write, a shell write the round's rules do not allow; it changed only their layout (the wrapping of one signature and one expression). Every other file of the round was written with Edit or Write.
+- Command output was redirected into the notes folder: `o99notes/r2/before.txt`, `o99notes/r2/verify.txt`, and `o99notes/r2/files.txt`, a list of the round's files, none of them in the worktree.
+- A first start of the verify list was stopped before it ended, since two exports were made private after it began; the run quoted above is the one after the last change.
+- No other program ran; no scratch server, scratch hub or tmux was used.
