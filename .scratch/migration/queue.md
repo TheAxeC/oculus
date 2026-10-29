@@ -1,8 +1,8 @@
 In flight (0 of 6 slots in use): none.
 
 Queued, in order (2 steps):
-- O101 (the Zenodo deposit): /spec next, its rulings given.
-- O102 (the website's data files generated from oculus): /spec next, beside O101.
+- O102 (the website's data files generated from oculus): /spec next.
+- O101 (the Zenodo deposit): /spec again once open items 562 and 563 are ruled.
 
 Owed looks: none.
 
