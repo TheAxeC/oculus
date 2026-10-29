@@ -5686,3 +5686,58 @@ Ruling 542 (1) puts the person facts of `data.yml`'s `personal`, its links among
 
 Where it applies: `people.yml` in the hub (Hub text), the generator of `data.yml`. Booked in `plan.md` Rulings and the state file's closed log, open item 561.
 Builds on it: O102
+
+## Z1068 (2026-10-29, O102's /spec, the orchestrator, automode): the order of the entries inside a website section
+
+The website keeps its entries in a hand-kept order inside each section (a `yaml.safe_load` read of `publications.yml`); no manifest field holds that order, and the generator must keep it.
+
+- Chosen: (a) a field `rank` of the `publication:` record, a number, lowest first, filled once in the hub patch from today's order.
+- Not chosen: (b) the order computed from `year` and the title, not chosen, since it moves entries the website places by hand.
+- The lazy option: (b).
+
+Where it applies: the hub's data files (Hub text), the generator. Booked in `plan.md` Rulings and the state file's closed log, open item 564.
+Builds on it: O102
+
+## Z1069 (2026-10-29, O102's /spec, the orchestrator, automode): the titles of the website's sections
+
+Each section of `publications.yml` has a title ("International Journal Papers", "Other publication" and six more); the rows of `audit.website.kinds`, which become `website.kinds`, carry none.
+
+- Chosen: (a) a field `title` on each row of `website.kinds`, filled once in the hub patch with today's titles.
+- Not chosen: (b) the titles in oculus's text catalog, not chosen, since they are the hub's words for its own website.
+- The lazy option: none.
+
+Where it applies: the hub's data files (Hub text), the generator. Booked in `plan.md` Rulings and the state file's closed log, open item 565.
+Builds on it: O102
+
+## Z1070 (2026-10-29, O102's /spec, the orchestrator, automode): the shape of a publication record's links
+
+The website's `links` is a map of a name to an address printed in key order; `people.yml`'s `links` becomes rows `{ name, url }` under 561.
+
+- Chosen: (a) the record's `links` a list of rows `{ name, url }` in the printed order, the generator writing the map back with `Code` last.
+- Not chosen: (b) the map kept as the website has it, not chosen, since the hub then holds two shapes for named links.
+- The lazy option: none.
+
+Where it applies: the hub's data files (Hub text), the generator. Booked in `plan.md` Rulings and the state file's closed log, open item 566.
+Builds on it: O102
+
+## Z1071 (2026-10-29, O102's /spec, the orchestrator, automode): the Dongho Chun paper's stage
+
+A change staged in the website's repository moves the Dongho Chun paper to `journal` with `pub_post: '(Accepted)'` (`git diff --cached` there); its manifest says `stage: published` (`projects/archive/published/2026/dongho-ecg-clustering/project.yml:2`), the case ruling 544 settled for HCCNet-FL. `audit.stage_folders` keeps `published` under `projects/archive/published`, `projects/coauthor` and `projects/archive/phd` (`.oculus/config.yml:37`).
+
+- Chosen: (a) the manifest set to `accepted` in the hub patch, as HCCNet-FL's is, and `accepted` added to the `published` row of `audit.stage_folders`, so an accepted paper stays in the folder it is in.
+- Not chosen: (b) the manifest left at `published`, not chosen, since the generated entry then drops the `(Accepted)` the website shows.
+- The lazy option: (b).
+
+Where it applies: the hub's data files (Hub text), the generator. Booked in `plan.md` Rulings and the state file's closed log, open item 567.
+Builds on it: O102
+
+## Z1072 (2026-10-29, O102's /spec, the orchestrator, automode): the website.yml keys head.html reads
+
+Ruling 542 (6) has `head.html` read the person's name and links from `website.yml`; its structured data also prints the given and family name, the job title, the affiliations, keywords and the subjects the person knows (`_includes/site/head.html`), which `website.yml` does not hold.
+
+- Chosen: (a) `website.yml` gains `given_name`, `family_name`, `job_title`, `affiliations`, `keywords` and `knows_about`, filled once in the website patch from the text `head.html` holds today.
+- Not chosen: (b) those values read from the generated `data.yml`, not chosen, since `data.yml` is the CV's file and these are the website's own.
+- The lazy option: none.
+
+Where it applies: the hub's data files (Hub text), the generator. Booked in `plan.md` Rulings and the state file's closed log, open item 568.
+Builds on it: O102
