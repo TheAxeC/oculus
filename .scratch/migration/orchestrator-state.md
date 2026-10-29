@@ -44,8 +44,10 @@ dispatch:          # steps in flight, up to six (Z632)
   worker: claude:opus
   session_id: a34a055d6cb7b30b9 (claude-opus-5-5)
   launched: 2026-10-29
-  round: 0
+  round: 1
+  builder_usage: round 0 280381 tokens, 118 tool uses, 20 min 56 s
   report: .scratch/migration/agents/reviews/O103-report.md
+  reviewer_report: "agents/reviews/O103-refuter.md (abb1b8f406af77f0a, claude-opus-5-5, 187340 tokens, 43 tool uses, 8 min 56 s)"
   shared_paths: "config/text/views/boards/focus.yml and tests/fixtures/hubs/demo/.oculus/config.yml, inside O99 (migration) brief folders config/text/ and tests/; simple: O103 changes five Focus command words and the demo leads row line 23, O99 the words and tests of the Settings views it changes"
   landing: not-started
 ```
@@ -716,6 +718,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-10-29 (O103 reviewed; round 1 sent). The review (`agents/reviews/O103-refuter.md`, abb1b8f406af77f0a, claude-opus-5-5) gives items 1 and 2 holds and cases 1 to 25 met; its findings go to the builder in round 1 (`agents/briefs/O103-round1.md`, seven items; snapshot `.agents/worktrees/migration-O103-round-1`): two comments, the HELP.md Doc text, the key check, a count, two visible changes, and the list of the builder's probe runs, closed under "Unapproved builder scripts". The `under` set-in stays, within ruling 546 (2) (a). In flight (2 of 6): O99, building; O103, round 1. Open items: none.
 - 2026-10-29 (O103 launched). `/spec migration O103` wrote the brief (`agents/briefs/O103.md`); its brief check (adb3d9f9523ef6aca, claude-opus-5-5) found eleven findings that change the build and several line slips, all closed in the brief (`agents/reviews/O103-brief-check.md`, "Closed"); preparation commit d364c1b7e is the base; worktree `.agents/worktrees/migration-O103`. Builder a34a055d6cb7b30b9 (claude-opus-5-5) is building. Shared with O99, judged simple: `config/text/views/boards/focus.yml` and the demo hub's `config.yml`. In flight (2 of 6): O99, building; O103, building. Next: each report, /refute, its round and /land. Open items: none.
 - 2026-10-29 (546 ruled; O103 added). Axel ruled 546 (1) (a), (2) (a), (3) (a): O103 is added to `plan.md` after O102 in the list and is prepared now, beside O99. In flight (1 of 6): O99, building. Next: /spec O103; O99's report, /refute, its round and /land. Open items: none.
 - 2026-10-29 (open item 546 raised). Axel asked for the Command Center's Positions group split into position leads and applications, and for a task's own subtasks shown under it in the Focus Tasks section; open item 546 holds the shape and the placement. In flight (1 of 6): O99, building. Next: its report, /refute, its round and /land; 546 on Axel's word. Open items: 546.
