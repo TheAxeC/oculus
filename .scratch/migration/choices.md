@@ -5741,3 +5741,36 @@ Ruling 542 (6) has `head.html` read the person's name and links from `website.ym
 
 Where it applies: the hub's data files (Hub text), the generator. Booked in `plan.md` Rulings and the state file's closed log, open item 568.
 Builds on it: O102
+
+## Z1073 (2026-10-29, O101's /spec, the orchestrator, automode): how the review copy and the published copy reach Zenodo
+
+Zenodo keeps no folders: a record's files are flat, and its help says to upload a zip of a folder, whose structure the record page then shows (support.zenodo.org, Can I upload folders). Node writes no zip file itself and oculus has no zip dependency (`package.json`). Candidates: `fflate` 0.8.3 (MIT, one maintainer, last change 2026-07-20, no dependencies) and `yazl` 3.3.1 (MIT, last change 2024-11-23, one dependency) (`npm view`); the system `zip` is at `/usr/bin/zip` on this Mac.
+
+- Chosen: (a) each upload one file `<repo>.zip` of the copy, written in memory with `fflate` 0.8.3.
+- Not chosen: (b) the system `zip` run through oculus's program runner, not chosen, since it depends on a program a machine may lack and the runner's 20 s limit; (c) `yazl`, not chosen, older and with a dependency; (d) the files uploaded one by one, not chosen, since their folders are lost.
+- The lazy option: (d).
+
+Where it applies: the Zenodo deposit. Booked in `plan.md` Rulings and the state file's closed log, open item 569.
+Builds on it: O101
+
+## Z1074 (2026-10-29, O101's /spec, the orchestrator, automode): how a term of code_availability.anonymize matches
+
+Ruling 552 replaces each `term` by its `as`; it does not say whether a term matches without regard to case. A name written "Faes" in a comment and "faes" in a path is the same identifying term.
+
+- Chosen: (a) a term matches without regard to case, in file names, text contents, the title and the description, and is replaced by its `as` as written.
+- Not chosen: (b) a term matches only as written, not chosen, since a term in another case then reaches the reviewers.
+- The lazy option: (b).
+
+Where it applies: the Zenodo deposit. Booked in `plan.md` Rulings and the state file's closed log, open item 570.
+Builds on it: O101
+
+## Z1075 (2026-10-30, O102's first run, the orchestrator, automode): the cases the brief got wrong
+
+O102's builder handed back seven cases (A to G) and four points (H) before any change (`agents/reviews/O102-report.md`); each was checked on the tree (`agents/briefs/O102-cases.md`, its first paragraph).
+
+- Chosen: (a) the cases ruling `agents/briefs/O102-cases.md`: key order inside an entry not compared; the seven manifest titles set to the website's; one section per `kinds` row with `form: journal` for Dongho Chun's manifest and the catch-all row removed; profile rows carrying their own location and duration where they differ; a `shared` block in `career.yml` `profiles`; six full names in `people.yml`; one `education.yml` entry per academic year; `cv_status` on funding entries, a `sections:` map in `website.yml` and link rows `{ name, url, handle }`.
+- Not chosen: (b) each record storing its key order, the seven titles left as differences, the catch-all kept, the records' values printed in the employer CVs, both emails on the `self` entry, the short names printed and a `runs:` list, not chosen.
+- The lazy option: the titles left as differences (B (b)), the catch-all kept (C (b)) and the short names printed (F (b)).
+
+Where it applies: the generator, the hub's data files, `website.yml`. Booked in `plan.md` Rulings and the state file's closed log, open item 571.
+Builds on it: O102

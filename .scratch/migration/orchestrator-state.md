@@ -32,10 +32,12 @@ dispatch:         # steps in flight, up to six (Z632)
   worker: claude:opus
   session_id: aa81f114239560b1f (claude-opus-5-5)
   launched: 2026-10-29
+  builder_usage: round 0 hand-back 206001 tokens, 41 tool uses, 6 min 5 s
   round: 0
   report: .scratch/migration/agents/reviews/O102-report.md
   landing: not-started
 - step: O101
+  brief_check: "running: ac906874df316b771 (claude-opus-5-5)"
   landing: preparing
 ```
 
@@ -181,6 +183,9 @@ None.
 
 ## Closed items
 
+- 571 (2026-10-30, the orchestrator, automode): the O102 cases ruling `agents/briefs/O102-cases.md` (Z1075); booked in `plan.md` Rulings.
+- 570 (2026-10-29, the orchestrator, automode): (a) a term matches without regard to case, in file names, text contents, the title and the description, and is replaced by its `as` as written (Z1074); booked in `plan.md` Rulings.
+- 569 (2026-10-29, the orchestrator, automode): (a) each upload one file `<repo>.zip` of the copy, written in memory with `fflate` 0.8.3 (Z1073); booked in `plan.md` Rulings.
 - 568 (2026-10-29, the orchestrator, automode): (a) `website.yml` gains `given_name`, `family_name`, `job_title`, `affiliations`, `keywords` and `knows_about`, filled once in the website patch from the text `head.html` holds today (Z1072); booked in `plan.md` Rulings.
 - 567 (2026-10-29, the orchestrator, automode): (a) the manifest set to `accepted` in the hub patch, as HCCNet-FL's is, and `accepted` added to the `published` row of `audit.stage_folders`, so an accepted paper stays in the folder it is in (Z1071); booked in `plan.md` Rulings.
 - 566 (2026-10-29, the orchestrator, automode): (a) the record's `links` a list of rows `{ name, url }` in the printed order, the generator writing the map back with `Code` last (Z1070); booked in `plan.md` Rulings.

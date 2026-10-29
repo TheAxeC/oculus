@@ -1,6 +1,6 @@
 In flight (2 of 6 slots in use):
-- O102 (the website's data files generated from oculus): building.
-- O101 (the Zenodo deposit): /spec, brief being written.
+- O102 (the website's data files generated from oculus): building, after the cases ruling.
+- O101 (the Zenodo deposit): /spec, brief check running.
 
 Queued, in order (0 steps): none.
 
