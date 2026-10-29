@@ -1,12 +1,12 @@
-In flight (1 of 6 slots in use; O103 next, beside O99):
+In flight (2 of 6 slots in use):
 - O99 (every setting edited in Settings by scope, a form for every file that is no setting, the generic service rows shipped): building, after the round-0 cases ruling.
+- O103 (the Command Center's Positions split into applications and position leads, a task's subtasks under it in Focus Tasks, ruling 546): building.
 
-Queued, in order (3 steps):
-- O103 (the Command Center's Positions split into position leads and applications, a task's subtasks under it in Focus Tasks, ruling 546): /spec now, built beside O99.
+Queued, in order (2 steps):
 - O101 (the Zenodo deposit through Zenodo's REST API, with Deposit for review, rulings 533, 534 and 535): after O99 has landed; O97 has landed.
 - O102 (the website's data files generated from the manifests and oculus's data files, ruling 539): after O101 has landed.
 
-Landing next: O99, once built and reviewed.
+Landing next: O99 or O103, whichever is built and reviewed first.
 
 Owed looks: none; O97's look ran on a scratch server on port 8797, and 8790 shows O97 once Axel's server is restarted.
 

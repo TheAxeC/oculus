@@ -37,8 +37,17 @@ dispatch:          # steps in flight, up to six (Z632)
   report: .scratch/migration/agents/reviews/O99-report.md
   landing: not-started
 - step: O103
-  brief_check: "running: adb3d9f9523ef6aca"
-  landing: preparing
+  brief_check: "agents/reviews/O103-brief-check.md (adb3d9f9523ef6aca, claude-opus-5-5, 223910 tokens, 74 tool uses, 10 min 1 s)"
+  base: d364c1b7e
+  worktree: .agents/worktrees/migration-O103
+  executor: agent
+  worker: claude:opus
+  session_id: a34a055d6cb7b30b9 (claude-opus-5-5)
+  launched: 2026-10-29
+  round: 0
+  report: .scratch/migration/agents/reviews/O103-report.md
+  shared_paths: "config/text/views/boards/focus.yml and tests/fixtures/hubs/demo/.oculus/config.yml, inside O99 (migration) brief folders config/text/ and tests/; simple: O103 changes five Focus command words and the demo leads row line 23, O99 the words and tests of the Settings views it changes"
+  landing: not-started
 ```
 
 ## The standing demands (from Axel, in force)
@@ -707,6 +716,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-10-29 (O103 launched). `/spec migration O103` wrote the brief (`agents/briefs/O103.md`); its brief check (adb3d9f9523ef6aca, claude-opus-5-5) found eleven findings that change the build and several line slips, all closed in the brief (`agents/reviews/O103-brief-check.md`, "Closed"); preparation commit d364c1b7e is the base; worktree `.agents/worktrees/migration-O103`. Builder a34a055d6cb7b30b9 (claude-opus-5-5) is building. Shared with O99, judged simple: `config/text/views/boards/focus.yml` and the demo hub's `config.yml`. In flight (2 of 6): O99, building; O103, building. Next: each report, /refute, its round and /land. Open items: none.
 - 2026-10-29 (546 ruled; O103 added). Axel ruled 546 (1) (a), (2) (a), (3) (a): O103 is added to `plan.md` after O102 in the list and is prepared now, beside O99. In flight (1 of 6): O99, building. Next: /spec O103; O99's report, /refute, its round and /land. Open items: none.
 - 2026-10-29 (open item 546 raised). Axel asked for the Command Center's Positions group split into position leads and applications, and for a task's own subtasks shown under it in the Focus Tasks section; open item 546 holds the shape and the placement. In flight (1 of 6): O99, building. Next: its report, /refute, its round and /land; 546 on Axel's word. Open items: 546.
 - 2026-10-29 (545 ruled). Axel ruled 545 (a); the ruling is sent to O99's builder a4c10c31eedf15f05, which writes the test rows under G76. In flight (1 of 6): O99, building. Next: its report, /refute, its round and /land. Open items: none.
