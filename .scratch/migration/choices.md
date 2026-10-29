@@ -5675,3 +5675,14 @@ None of `data.yml`'s 20 projects matches a manifest's, a funding entry's or an e
 
 Where it applies: the hub's data files (Hub text), the generator of `data.yml`. Booked in `plan.md` Rulings and the state file's closed log, open item 559.
 Builds on it: O102
+
+## Z1067 (2026-10-29, O102's brief check, the orchestrator, automode): the CV's named links on the person's entry
+
+Ruling 542 (1) puts the person facts of `data.yml`'s `personal`, its links among them, on the `self` entry of `people.yml`. `personal.links` is a map of six named links; `people.yml`'s `links` is a list of addresses (`type: tags`), filled on none of its 30 entries.
+
+- Chosen: (a) `links` a list of rows `{ name, url }`, written back by name by the generator; `website.yml` keeps the name and links it holds, as 542 (6) rules.
+- Not chosen: (b) the plain list kept and the names guessed from each host, wrong for an address such as `mailto:`.
+- The lazy option: (b).
+
+Where it applies: `people.yml` in the hub (Hub text), the generator of `data.yml`. Booked in `plan.md` Rulings and the state file's closed log, open item 561.
+Builds on it: O102
