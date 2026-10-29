@@ -1,13 +1,11 @@
-In flight (0 of 6 slots in use): none.
+In flight (1 of 6 slots in use):
+- O99 (every setting edited in Settings by scope, a form for every file that is no setting, the generic service rows shipped): /spec, brief check running.
 
-Queued:
-- O99 (every setting edited in Settings and a form for every file that is no setting, rulings 519 to 522, with the controls of O97's reader rows by ruling 526 (a), the generic service rows shipped in oculus by ruling 537, the journal browser on the Registries page by ruling 538): next; O98 and O97 have landed.
+Queued, in order (2 steps):
 - O101 (the Zenodo deposit through Zenodo's REST API, with Deposit for review, rulings 533, 534 and 535): after O99 has landed; O97 has landed.
 - O102 (the website's data files generated from the manifests and oculus's data files, ruling 539): after O101 has landed.
 
-Waiting on Axel's green light: /spec O99.
-
-Landing next: none in flight.
+Landing next: O99, once built and reviewed.
 
 Owed looks: none; O97's look ran on a scratch server on port 8797, and 8790 shows O97 once Axel's server is restarted.
 
