@@ -167,6 +167,7 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
 
 ## Closed items
 
+- 599 to 602 (2026-10-30): all (a): every copy from `website.yml` ends, the group headings move to it, `website.files` names the four files, the `programs:` check stays (Axel: "all (a)"); booked in `plan.md` Rulings and on O105's line.
 - 595 (2026-10-30): (d), For review reads the record an unmarked Zenodo DOI names and goes on only for the review copy (Axel: "(d)"); booked in `plan.md` Rulings; built in O101's repair round 1.
 - 594 (2026-10-30): (a), the editor section names as drafted (Axel: "594 (a)"); booked in `plan.md` Rulings; O104's brief takes them.
 - 596 (2026-10-30): (a), the guarded entry G142 for Publish, its tests built in O101's repair round 1 (Axel: "596 (a)"); booked in `plan.md` Rulings.
@@ -742,6 +743,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-10-30 (rulings 599 to 602; O105 booked). Axel ruled all (a), booked in `plan.md` Rulings; step O105 added, unticked and not started. In flight (0 of 6). Next: /spec migration O105 on his word. Open items: none.
 - 2026-10-30 (O104 landed). O104 is on main with hub commit 2db7d35dd; `agents/reviews/O104-landing.md` holds the booking. In flight (0 of 6). No step is left unticked. Open items: none.
 - 2026-10-30 (O104 reviewed; round 1 sent). The review's findings are in `agents/reviews/O104-refuter.md`; the builder's scripts, unapproved, closed in automode under the ruling "Unapproved builder scripts": breach recorded, the commands taken in round 1. The three hub sentences go in the hub patch.
 - 2026-10-30 (O104 at work). O104's builder a64b1775be113ff93 stopped on one case; open item 598 (a) closed in automode, ruled in `agents/briefs/O104-cases.md`, builder resumed.
