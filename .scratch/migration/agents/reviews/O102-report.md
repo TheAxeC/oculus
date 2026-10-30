@@ -1,117 +1,543 @@
-# O102 hand-back before any change: the first run finds cases the brief's own rules get wrong
+# O102 report: the website's data files generated from what oculus holds
 
-Nothing of the brief is built. The first run of the cases on the unchanged tree finds that case 1 (the generator's output equal to the website's three files, with only case 2's differences) cannot hold under the rules of items 2 and 4 against the data on disk. The brief says to stop there, before changing any code, and hand back the first run with each such case, its rule and the result it gives. No file of the hub or the website is changed, and the one file written in the worktree is this report (`git status --short` in the worktree: `?? .scratch/migration/agents/reviews/O102-report.md`); no patch is written.
+Everything in the brief is built. Two choices the hub patch raises are open items at the end of this report (the events `link` rule and the ELIXIR-BE statement): until they are ruled, the hub with the patch applied gives 20 data-check findings it does not give today (case 1 run, "data check findings: 21" against "1" before). The ruling this build carries is `.scratch/migration/agents/briefs/O102-cases.md` (open item 571, Z1075).
 
-## Premise that does not reproduce
+## Open items of the state file
 
-- Brief line 13: "Its `publications.yml` has a change staged in the website's repository that is not committed (`git diff --cached --stat` there: `_data/publications.yml | 24`)". In the website, `git diff --cached --stat` prints nothing and `git status --short` prints nothing; `git show --stat HEAD` prints commit 225a55d4 "Update publications: move ECG representation paper to 'Papers in Preparation' and adjust publication status", `_data/publications.yml | 24 ++++++++++++------------`. The change is committed. The file on disk is the same either way: `publications.yml:205-216` holds the Dongho Chun entry in `journal` with `pub_pre: ""` and `pub_post: '(Accepted)'`. Nothing in the step depends on it being staged.
+The worktree's copy of the state file (`.scratch/migration/orchestrator-state.md:165-169`) says "None."; main's state file has moved on since the worktree was made (`cmp` of the two: "differ: char 3518, line 28"). Its open items as they stand when this report is written, `/Users/axelfaes/workspace/oculus/.scratch/migration/orchestrator-state.md:175-184`, read and not changed, all five raised by O101:
 
-## The cases the brief's rules get wrong
+- 573 (2026-10-30, O101's /spec, the brief check): the deposit scan before a Zenodo upload. The scan's findings are a secret-like file, a file over the size limit and a missing README.md (`deposit-scan.ts:15-27`). (a) both Zenodo actions refused on any finding of the deposit scan (`deposit-scan.ts`), naming each file, as `commit` refuses (G30): it closes the finding; it adds a requirement beyond the step's line. (b) refused on secret-like files only, not chosen, since a published record cannot be withdrawn and a large file or a missing README.md reaches Zenodo. Recommendation (a); the lazy option is (b).
+- 575 (2026-10-30, O101's /spec, the brief check): the status a GitHub push writes after a Zenodo deposit. `push` writes `review-anon` for a private repository and `deposited` for a public one (`deposit.ts:447`). (a) once `code_availability.doi` is set, `push` writes only `url` and leaves `status` and `date` as the Zenodo action wrote them: it closes the finding; it adds a requirement beyond the step's line. (b) a separate GitHub status key, not chosen, since ruling 534 makes Zenodo the deposit of record and a second status word splits one state in two; (c) push unchanged, not chosen, since a private push then writes `review-anon` over a published `deposited`. Recommendation (a); the lazy option is (c).
+- 576 (2026-10-30, O101's /spec, the brief check): a term inside compressed content. The byte check of ruling 552 cannot see a term in compressed bytes. (a) zip-family files, `.gz` and `.tgz` inflated with `fflate` and their entries checked as files, the `FlateDecode` streams of a `.pdf` inflated and checked, any other compressed format refused by name: it closes the finding; it adds a requirement beyond the step's line. (b) the stored bytes checked only, not chosen, since a term in a compressed `.docx` or `.pdf` then reaches the reviewers. Recommendation (a); the lazy option is (b).
+- 577 (2026-10-30, O101's /spec, the brief check): a term in a file that is not UTF-8. A Latin-1 file counts as binary and its bytes do not hold the UTF-8 form of an accented term. (a) each term looked for, without regard to case, in every file's bytes as UTF-8, Latin-1 and UTF-16 (LE and BE): it closes the finding; it adds a requirement beyond the step's line. (b) UTF-8 bytes only, not chosen, since a Latin-1 file holding an accented name then passes. Recommendation (a); the lazy option is (b).
+- 583 (2026-10-30, O101's /spec, the brief check): how the project form writes `code_availability.anonymize`. The schema has no widget that writes a list of rows (`manifest-schema.yml:9-13`). (a) a widget kind `rows` in `manifest-schema.yml` with the row's fields named (`fields: [term, as]`), the form adding and removing a row by a button: it closes the finding; it adds a requirement beyond the step's line. (b) the key written in the YAML only, shown read-only, not chosen, since a key the form cannot write is a key the view does not hold. Recommendation (a); the lazy option is (b).
 
-### A. Map key order (cases 1 and 2, item 8)
-
-Rule: case 1 compares the generated files with the files on disk "parsed with map key order kept"; case 2 lists the only differences allowed, and key order is not among them.
-
-Result: the entries of one section are written in different key orders on disk, so no generator that writes one order per record shape gives them all. Examples:
-
-- `publications.yml:5-14` (FLKit): `authors, order, title, program, url, pub_pre, pub_post, book, pub_date, abstract`.
-- `publications.yml:15-23` (ERP signatures): `authors, title, program, pub_pre, url, order, pub_post, book, pub_date, abstract`.
-- `publications.yml:234-240` (GO-BTTR): `authors, title, program, book, url, order, pub_date`; `publications.yml:243-249`: `authors, order, title, program, pub_date, book, url`.
-- `data.yml:107-109` (`title, location, duration`) against `data.yml:110-112`, BKO (`title, duration, location`).
-
-The first write of each file therefore differs from today's file in key order on most entries. Item 8's audit is not affected after that first write, since the generator's order is then on disk.
-
-Options: (a) case 1 compares the parsed values with the key order of each entry ignored, and the report lists the key orders the first write changes as a text-level difference; (b) each record keeps its entry's key order (a stored key list per record), which carries the website's accidental order into the hub. Recommendation: (a). Lazy option: none of the two leaves work undone; (b) is the costlier and worse one.
-
-### B. The generated `title` (item 1, ruling 543 (1), case 1)
-
-Rule: `title` is generated from the manifest's `title`.
-
-Result: seven manifests' titles differ from the website's by case, a hyphen or a trailing full stop (each pair matched by the brief's normalised comparison, so the record goes on that manifest):
-
-| Manifest | Manifest `title` | Website title |
-| --- | --- | --- |
-| `projects/archive/phd/phd-thesis/project.yml:12` | Finger movement decoding: From source-localisation to tensor regression modelling | `publications.yml:415` Finger Movement Decoding: From Source-Localisation to Tensor Regression Modelling |
-| `projects/archive/published/2016/bachelor-network-ids/project.yml:10` | Machine Learning Techniques for Flow-Based Network Intrusion Detection Systems | `publications.yml:445` Machine learning techniques for flow-based network intrusion detection systems |
-| `projects/archive/published/2018/masters-eeg-infotheory/project.yml:11` | An Information-Theoretical Approach to EEG Source-Reconstructed Connectivity | `publications.yml:425` An Information Theoretical Approach to EEG Source-Reconstructed Connectivity |
-| `projects/archive/published/2021/volga-finger-trajectories/project.yml:11` | Reconstructing Single Finger Trajectories from Intracranial Brain Activity | `publications.yml:478` Reconstructing single finger trajectories from intracranial brain activity |
-| `projects/coauthor/published/2016/chi-purpose-centric/project.yml:11` | Purpose-Centric Appropriation of Everyday Objects as Game Controllers | `publications.yml:497` Purpose-centric appropriation of everyday objects as game controllers. |
-| `projects/coauthor/published/2023/modulation-lmp-bci/project.yml:10` | Modulation of LMPs Using the Gamma Band Increases the Stability of Finger Trajectories Decoded from ECoG | `publications.yml:472` Modulation of LMPs using the gamma band increases the stability of finger trajectories decoded from ECoG |
-| `projects/coauthor/published/2024/highgamma-event-detection/project.yml:10` | High-Gamma Band Event Detection Improves Stability of Finger Trajectories Decoded from ECoG-LMP Activity | `publications.yml:460` High-gamma band event detection improves stability of finger trajectories decoded from ECoG-LMP activity |
-
-Options: (a) the hub patch sets each of the seven manifests' `title` to the website's text, so the website shows what it shows today and the hub's cards show the website's wording; (b) the seven differences are added to case 2, so the first write changes seven titles on the website to the manifests' wording. Recommendation: (a), since the website's title is the one published under the paper (a judgment; Axel's choice of wording would settle it). Lazy option: (b), which leaves the two wordings unreconciled.
-
-### C. One section from a `kinds` row that names several (item 2)
-
-Rule: the section is "the first row of `website.kinds` whose `stages` and `forms` hold the manifest's", with the catch-all kept, and "a published paper with no matching row goes to `journal` or `conference` by its form as today".
-
-Result: the rule gives a list of sections where a row names several, and an entry needs one. The hub's rows (`.oculus/config.yml:42-51`) include `{ kind: [journal, other-publications], forms: [journal] }` (line 50) and the catch-all `{ kind: [abstracts, conference, journal, other-publications, posters, thesis] }` (line 51). The audit's `expectedSections` (`src/lib/server/content/audit/publications.ts:120-130`) returns that list, which is right for an expectation and gives no single section for a write. Two matched manifests reach the catch-all: `dongho-ecg-clustering` has no `form` (`grep -n "^form:" .../dongho-ecg-clustering/project.yml` prints nothing; on disk it is in `journal`), and `algebraic-effects-compilation` is `form: tech-report` (`project.yml:4`; on disk it is in `other-publications`). Every `journal`-form manifest reaches the `[journal, other-publications]` row. "By its form as today" has no today: no code places a paper in one section.
-
-Options: (a) the hub patch rewrites the rows so each names one section (`{ kind: [journal], forms: [journal] }`, `{ kind: [other-publications], forms: [tech-report] }`), the generator takes a row's first `kind` as the section, and Dongho Chun's manifest gains `form: journal`; (b) the generator takes the first `kind` of the row as it stands, which puts `tech-report` in `abstracts`, the catch-all's first word, and Dongho Chun's paper in `abstracts` too. Recommendation: (a). Lazy option: (b).
-
-### D. The industry profiles' location and duration (item 4, ruling 543 (3), case 1)
-
-Rule: a profile names each job, degree, project and award by key "with its own wording, location and duration read from the record".
-
-Result: nearly every profile row prints a location or duration that differs from the record it names, so `industry.yml` cannot come out equal. Examples:
-
-- `industry.yml:76-78`: "University of Twente / Medisch Spectrum Twente", "Jan 2026 - Present"; the record `data.yml:46-47`: "January 2026 - Current".
-- `industry.yml:83-84`: "UHasselt (Flanders AI Research Program)", "Jan 2024 - Jan 2026"; `data.yml:52-53`: "UHasselt", "January 2024 - January 2026 (Research Affiliate from 2026)".
-- `industry.yml:95-96`: "KU Leuven", "2018 - 2024", one row over two records, `data.yml:83-85` (Sep. 2018 - May 2023) and `data.yml:59-61` (May 2023 - January 2024).
-- `industry.yml:455-456`: "Idrogenet Srl (Gloreha), Italy", "2022 - 2023"; `data.yml:77-78`: "Lumezzane, Italy", "Dec. 2022 - Jan. 2023".
-- `industry.yml:126-128`: Cardinal at `https://github.com/TheAxeC/Cardinal`, "2015 - Present"; `data.yml:386-387`: `.../cardinal-revamped`, "Jan. 2015 - Current".
-- `industry.yml:142-145`: PhD "2018 - 2023"; `data.yml:282`: "Sep. 2018 - May 2023".
-- `industry.yml:162-165`: award "Brussels", date `"2016"`; `data.yml:549-552`: "Brussels, Belgium", `2016-02-01 15:59:00-0400`.
-
-Options: (a) a profile row names its record by key and carries its own `location`, `duration` (and `date`, `url`) where it prints them differently, the record's value used where the row has none; (b) the profiles print the records' values, and every difference above is added to case 2, which changes what the three employer CVs print. Recommendation: (a), since the profiles are tailored on purpose (a judgment). Lazy option: neither leaves work inside the step undone; (b) changes text sent to employers.
-
-### E. Two different personal blocks for one person (item 4, `personal`)
-
-Rule: the person facts (name, email, ORCID, links) live on the `self` entry of `people.yml`, and the generator writes `personal` back.
-
-Result: `industry.yml:13-25` `shared.personal` has `email: axel.faes[at]gmail.com` and a `location` link "Netherlands | EU citizen (no visa required)", and no `googlescholar` or `orcid`; `data.yml:18-24` has `email: axel.faes[at]utwente.nl` and six links. One `self` entry gives one email.
-
-Options: (a) `career.yml` `profiles` gains a shared block (the email and links the employer CVs print, by name), the `self` entry holding the academic ones; (b) the `self` entry holds both emails as two named links rows and the profiles pick by name. Recommendation: (a). Lazy option: none.
-
-### F. Names the CV prints against the people entries it reuses (item 4, `references`, `students`)
-
-Rule: "a reference already a person is that entry"; "a student already in `people.yml` reused with its role kept"; the generator prints the person's `name`.
-
-Result: the entries' names differ from the CV's. `people.yml:62` "Liesbet Peeters" against `data.yml:32` "Liesbet M. Peeters"; `people.yml:116` "Dongho", `:128` "Matteo", `:133` "Mohsen", `:138` "Ward", `:148` "Do" against `data.yml:162,153,156,168,150` "Dongho Chun", "Matteo Ramina", "Mohsen Soleimanisemsani", "Ward Ceyssens", "Anh Phuong DO".
-
-Options: (a) the hub patch gives each reused entry the full name the CV prints, so every card shows the full name; (b) the differences go into case 2 and the CV prints the short names. Recommendation: (a). Lazy option: (b).
-
-### G. The teaching entry printed twice is two runs (item 4, `academic`)
-
-Rule: "An entry the website prints twice ('Bioinformatics (3740) Coordinating lecturer') is one hub entry written twice by a field the generator reads."
-
-Result: the two printings differ: `data.yml:107-109` "Sept. 2025 - Sept. 2026" and `data.yml:119-121` "Sept. 2024 - Sept. 2025", and they are not adjacent (rows 1 and 5 of `academic`). The hub has one entry, `education.yml:40-49` (`sub: "UHasselt | Sept 2025 - Sept 2026 (also 2024-2025)"`). A field that writes the entry twice must carry two durations and two places in the list.
-
-Options: (a) the entry gains `runs:`, rows `{ duration, rank }`, one CV row per run; (b) two `education.yml` entries, one per academic year, as the other per-year entries (`msc-supervision-computer-science-2025-2026`) are. Recommendation: (b), since the file already keys teaching and supervision per year (a judgment). Lazy option: none.
-
-### H. Smaller points the build would otherwise decide silently
-
-- `grants` rows print `status: Submitted, decision pending` (`data.yml:328,335`); `funding.yml:28,61` hold `status: submitted`, a vocabulary word. Item 4 gives `funding.yml` `location`, `duration`, `about`, `url` (and `role`, `min`), with no field for the printed status text. Proposed: a field `cv_status` (text) on the funding entry.
-- The section titles of `data.yml` ("Work & Research Experience", `data.yml:43`, and nine others) have no home in item 4. Proposed: `website.yml` gains `sections:`, a map of section key to title, in the website patch.
-- `data.yml:18-24` `personal.links` hold handles, not addresses (`googlescholar: abRAHJEAAAAJ`, `linkedin: axelfaes`), so the rows `{ name, url }` of ruling 561 hold a handle in `url` for four of the six.
-- Case 5 names "form `journal-article`"; the form word is `journal` (`config/catalogs/vocab.yml:81`).
+O102 raises two new ones, under "Open items" at the end of this report.
 
 ## The cases' first run, on the unchanged tree
 
-Commands run from the worktree root unless named otherwise.
+The first run was handed back in round 1 with cases A to H; the ruling file above answers them. Commands run from the worktree root on the base tree unless named otherwise.
 
-1. No generator: `git grep -n "Generated by oculus" -- src tests` prints nothing. By reading, A to G above.
-2. By reading: the differences listed in case 2 exist on disk (`publications.yml:339-341`, the FLLM 2025 `book` and `pub_post`; `publications.yml:11`, FLKit's `'(Under Review)'`; `publications.yml:400-406`, the `other-publications` entry with no `pub_date`). A, B, C, D, F and G give more.
-3, 4, 7, 17, 18, 19: no generator. `git grep -n "code_availability" -- src` lists only the model, the snapshot normaliser and the deposit (`src/lib/data/model/model-entities.ts:193`, `src/lib/data/snapshot/normalise.ts:181,278`, `src/lib/server/git/deposit/deposit.ts:159,225,253,416,451-452`); no reader builds a `Code` link.
-5. `grep -n "^  accepted:" config/catalogs/vocab.yml` prints only `112:  accepted:      { color: "#2563eb", closes_deadline: true }`, the `statuses` map; no stage `accepted`.
-6. `git grep -n "programs" -- src` prints no reader of `website.yml`'s `programs:`.
-8, 9, 10, 12, 13, 14: `ls src/lib/views/academic` prints `latex math-preview present slides`, no Career view; `git grep -n -i "write the website\|website\.cv\|website\.folder" -- src config ':!config/local.yml'` prints nothing.
-11. The audit matches by title (`publications.ts:158-301`) and watches the one feed file: `audited.ts:94` `if (setting.website !== null) files.add(join(dir, setting.website.file));`.
-15. `audit.website.file`, `.list`, `.title`, `.kinds` are hub keys (`src/lib/data/helpers/hub-names.ts:761-764`, `src/lib/data/shapes/hub-keys.ts:48-51`), so the hub's `audit.website` raises no unknown-key finding today, and `website:` is no hub key.
-16. `grep -n "references\|positions" ~/workspace/research-hub/.oculus/data/academic/career.yml` prints nothing.
+1. No generator: `git grep -n "Generated by oculus" -- src tests` printed nothing. By reading, the rules of items 2 and 4 against the data gave differences beyond case 2 (cases A to G of the hand-back).
+2. By reading: the differences listed in case 2 exist on disk (`publications.yml:339-341`, the FLLM 2025 `book` and `pub_post`; `publications.yml:11`, FLKit's `'(Under Review)'`; `publications.yml:400-406`, the `other-publications` entry with no `pub_date`).
+3, 4, 7, 17, 18, 19: no generator. `git grep -n "code_availability" -- src` listed only the model, the snapshot normaliser and the deposit (`src/lib/data/model/model-entities.ts:193`, `src/lib/data/snapshot/normalise.ts:181,278`, `src/lib/server/git/deposit/deposit.ts:159,225,253,416,451-452`); no reader built a `Code` link.
+5. `grep -n "^  accepted:" config/catalogs/vocab.yml` printed only `112:  accepted:      { color: "#2563eb", closes_deadline: true }`, the `statuses` map; no stage `accepted`.
+6. `git grep -n "programs" -- src` printed no reader of `website.yml`'s `programs:`.
+8, 9, 10, 12, 13, 14: `ls src/lib/views/academic` printed `latex math-preview present slides`, no Career view; `git grep -n -i "write the website\|website\.cv\|website\.folder" -- src config ':!config/local.yml'` printed nothing.
+11. The audit matched by title (`publications.ts:158-301`) and watched the one feed file: `audited.ts:94` `if (setting.website !== null) files.add(join(dir, setting.website.file));`.
+15. `audit.website.file`, `.list`, `.title`, `.kinds` were hub keys (`src/lib/data/helpers/hub-names.ts:761-764`, `src/lib/data/shapes/hub-keys.ts:48-51`), so the hub's `audit.website` raised no unknown-key finding, and `website:` was no hub key.
+16. `grep -n "references\|positions" ~/workspace/research-hub/.oculus/data/academic/career.yml` printed nothing.
 20. `people.yml:14`: `- { field: links, type: tags, help: "Web addresses of the person." }`.
-21. `grep -n "group-strip\|scroller"` over `Usage.svelte` and `LineCounts.svelte`, and `git grep -n "group-strip" -- src`: `Usage.svelte:298` `<div class="scroller">` and `:391` `.scroller {` with no `--group-strip`; `LineCounts.svelte:166` `--group-strip: 0px;`; `src/lib/ui/display/table/Table.svelte:110` `top: var(--group-strip, 0);`. The defect is present.
+21. `Usage.svelte:298` `<div class="scroller">` and `:391` `.scroller {` with no `--group-strip`; `LineCounts.svelte:166` `--group-strip: 0px;`; `src/lib/ui/display/table/Table.svelte:110` `top: var(--group-strip, 0);`. The defect was present.
 
-## What happens next
+### The new and changed tests on the unchanged tree (verify 7)
 
-The orchestrator rules on A to G (and the proposals of H) and resumes the builder with the rulings; the build of items 1 to 13 starts from them, and the final report carries the rulings.
+The base tree is the base commit's files copied to `<scratch>/o102/basetree` (2759 files, equal by hash to `git ls-tree -r` of the base); `<scratch>/o102/basetest` is that copy with every new and changed file under `tests/` put in (the 18 files `git status --short -uall -- tests` lists). Run there: `vitest run <the 14 test files> --testTimeout 0`:
+
+```
+ <heavy right-pointing angle quotation mark> |unit| tests/routes/sessions/website.test.ts (0 test)
+ <heavy right-pointing angle quotation mark> |unit| tests/server/root/watch/website-watch.test.ts (0 test)
+ <heavy right-pointing angle quotation mark> |unit| tests/checks/tree/boundaries.test.ts (11 tests | 2 failed) 4263ms
+     <multiplication sign> holds across src/lib 3162ms
+     <multiplication sign> holds no process-wide state under src 437ms
+ <heavy right-pointing angle quotation mark> |unit| tests/data/hubs/website-files.test.ts (0 test)
+ <heavy right-pointing angle quotation mark> |unit| tests/routes/docs/audit.test.ts (0 test)
+ <heavy right-pointing angle quotation mark> |unit| tests/data/sources/career.test.ts (16 tests | 1 failed) 74ms
+     <multiplication sign> types the strategy alone, every other section staying in the sections 8ms
+ <heavy right-pointing angle quotation mark> |unit| tests/data/snapshot/normalise.test.ts (5 tests | 1 failed) 6ms
+     <multiplication sign> reads a person's `links:` as rows of a name, an address and an account name 4ms
+ <heavy right-pointing angle quotation mark> |unit| tests/checks/config/config-folder.test.ts (30 tests | 4 failed | 2 skipped) 6987ms
+     <multiplication sign> holds exactly the expected top-level keys, and no more 184ms
+     <multiplication sign> reads one catalog file per owner and no legacy catalog file 3ms
+     <multiplication sign> describes every flag of stages, forms, chips, statuses, lead_statuses and tiers and every key of a roles and categories row in the schema of vocab.yml 368ms
+     <multiplication sign> reads each file on its own and finds its own keys there and nowhere else 15ms
+ <heavy right-pointing angle quotation mark> |unit| tests/checks/source/keys.test.ts (10 tests | 2 failed) 2524ms
+     <multiplication sign> finds the place each documented prefix names in its file 3ms
+     <multiplication sign> has a reader for every catalog key 2306ms
+ FAIL  |unit| tests/data/hubs/website-files.test.ts [ tests/data/hubs/website-files.test.ts ]
+ FAIL  |unit| tests/routes/docs/audit.test.ts [ tests/routes/docs/audit.test.ts ]
+ FAIL  |unit| tests/routes/sessions/website.test.ts [ tests/routes/sessions/website.test.ts ]
+ FAIL  |unit| tests/server/root/watch/website-watch.test.ts [ tests/server/root/watch/website-watch.test.ts ]
+ Test Files  9 failed | 5 passed (14)
+      Tests  10 failed | 284 passed | 2 skipped (296)
+```
+
+The reasons it printed, one line each (`grep -E "^(Error|AssertionError)"`):
+
+```
+AssertionError: expected [ 'agents', 'app_theme', <ellipsis>(111) ] to deeply equal [ 'agents', 'app_theme', <ellipsis>(112) ]
+AssertionError: expected [ 'app.yml', 'desktop.yml', <ellipsis>(66) ] to deeply equal [ 'app.yml', 'desktop.yml', <ellipsis>(67) ]
+AssertionError: expected [ 'apps', 'audit', <ellipsis>(31) ] to deeply equal [ 'apps', 'audit', <ellipsis>(32) ]
+AssertionError: expected [ 'goal', 'milestone', <ellipsis>(6) ] to deeply equal [ 'goal', 'milestone', <ellipsis>(5) ]
+AssertionError: expected [ <ellipsis>(2) ] to deeply equal []
+AssertionError: expected [ { key: 'stages.idea', <ellipsis>(1) }, <ellipsis>(35) ] to have a length of 34 but got 36
+AssertionError: expected [ Array(1) ] to deeply equal [ { name: 'homepage', <ellipsis>(1) }, <ellipsis>(1) ]
+AssertionError: expected [ Array(1) ] to deeply equal []
+Error: Cannot find module '../../../../src/lib/server/content/audit/website/site.ts' imported from .../basetest/tests/server/root/watch/website-watch.test.ts
+Error: Cannot find module '../../../src/lib/server/content/audit/website/files.ts' imported from .../basetest/tests/data/hubs/website-files.test.ts
+Error: Cannot find module '../../../src/lib/server/content/audit/website/files.ts' imported from .../basetest/tests/routes/docs/audit.test.ts
+Error: Cannot find module '../../../src/lib/server/content/audit/website/site.ts' imported from .../basetest/tests/routes/sessions/website.test.ts
+Error: ENOENT: no such file or directory, open '.../basetest/src/lib/server/content/audit/website/site.ts'
+Error: ENOENT: no such file or directory, open '.../basetest/src/lib/state/sessions/source/website.svelte.ts'
+```
+
+Each failure is a behaviour the change adds or changes: the `website` key and the Career view's catalog file (config-folder), the `obtained` and `record` flags removed with the career panel (34 keys, not 36), the new computed reads (keys), the layer rows of the deleted career-text module and the removed `STOPWORDS` (boundaries), `situation` no longer typed (career), the people `links` rows (normalise), and the four new or rewritten test files whose modules do not exist on the base. The five files that pass on the base, `hub-names.test.ts`, `writes.test.ts`, `board-new-project.test.ts`, `board-rules.test.ts` and `page-entry.test.ts`, are tests of behaviour the change keeps, with rows of removed code taken out (the track record boards, `registryEntries`) or a fixture key renamed (`situation` to `facts`); they pass after as well (verify 1).
+
+## DONE / NOT DONE
+
+| Item | State | Proof |
+|---|---|---|
+| 1 The publication record | DONE | `publication:` typed in `config/schemas/manifest-schema.yml` and read by `src/lib/data/snapshot/normalise-parts/publication.ts`; on 48 manifests in the hub patch; case 1 |
+| 2 The generated fields | DONE | `src/lib/server/content/audit/website/papers.ts`; `tests/data/hubs/website-files.test.ts` rows (cases 2 to 7, 17 to 19) |
+| 3 The stage `accepted` | DONE | `config/catalogs/vocab.yml:73` with `terminal`, `placed`, `public`; the `publications` and `other-outputs` rows name it |
+| 4 The CV homes | DONE | home table below; case 1: `_data/data.yml: 0 differences`, `_data/industry.yml: 0 differences` |
+| 5 The generator | DONE | `src/lib/server/content/audit/website/files.ts`, `cv.ts`, `papers.ts`, `site.ts`; case 1 |
+| 6 The hub setting | DONE | `config/defaults/behavior.yml:35` `website: { folder: '', cv: '', kinds: [] }`; case 15 run below |
+| 7 Write the website | DONE | `src/lib/server/machine/runs/website.ts`, `src/routes/api/(sessions)/website/+server.ts`, `src/lib/state/sessions/source/website.svelte.ts`, the Career view's header; `tests/routes/sessions/website.test.ts` |
+| 8 The audit | DONE | `src/lib/server/content/audit/publications.ts`, `audited.ts`; `tests/routes/docs/audit.test.ts` 'the website of the audit', `tests/server/root/watch/website-watch.test.ts` |
+| 9 The Career view | DONE | `src/lib/views/academic/career/Career.svelte`, registered on the Academic page (`config/defaults/layout.yml:118`); the career panel and its code deleted; `tests/data/sources/career.test.ts` "the Career view's lists" |
+| 10 The website pass | DONE | `O102-website.patch`; Jekyll builds below |
+| 11 The usage table's header row | DONE (code); the look is the landing's | `--group-strip: 0px` in `Usage.svelte`, `hpc/Capacity.svelte`, `hpc/Login.svelte`, `hpc/Recent.svelte` |
+| 12 The data, moved once | DONE | both patches; dry runs below |
+| 13 Docs | DONE | `docs/templates.md` written; "Doc text" below |
+| Verify 1 | DONE | the fourth run: every command passed, exit 0 (below) |
+| Verify 2, ASCII gate | DONE | prints nothing over the 110 changed and new files other than the two patches and this report; the patches carry the hub's own text (below) |
+| Verify 3, unused exports | DONE | no new unused export (below) |
+| Verify 4, the grep | DONE | prints nothing, exit 1 |
+| Verify 5, case 1 | DONE | quoted below |
+| Verify 6, patch dry runs | DONE | quoted below |
+| Verify 7 | DONE | the base run above; the after run is verify 1 |
+| Verify 8, sizes | DONE | the file table below; `sh utils/folder-check.sh` exit 0 |
+| Verify 9, history words | DONE | below |
+| Verify 10, prose | DONE | below |
+
+### Verify 1
+
+`npm run diagrams && npm run docs:palette && npm run test:quick`, run from the worktree with `PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH` and nothing else running, its output in `<scratch>/o102/verify1d.txt`. Its final lines:
+
+```
+ok      ASCII gate (1.5 s)
+ok      prettier (2.1 s): All matched files use Prettier code style!
+ok      svelte-kit sync (2.9 s)
+ok      eslint (38.2 s)
+ok      svelte-check (56.4 s): 1793325518787 COMPLETED 570 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest checks (236.7 s): Duration  224.29s (transform 100.67s, setup 0ms, import 254.85s, tests 494.63s, environment 6ms)
+ok      vitest (279.3 s): Duration  269.32s (transform 249.28s, setup 0ms, import 500.79s, tests 502.90s, environment 22.86s)
+ok      vitest slow (354.6 s): Duration  344.83s (transform 28.43s, setup 0ms, import 176.65s, tests 1191.44s, environment 18ms)
+test:quick: 358.5 s; every command passed
+test:quick: not covered: tests that reach no changed file within the import depth,
+            other than the checks under tests/checks/source and tests/checks/tree,
+            which run for any change under src, tests or utils; the build, the lint
+            of unchanged files
+exit 0
+```
+
+What it does not cover is what its last lines say: the tests that reach no changed file, the build and the lint of unchanged files. The look at the Career view, the Audit's Website section and the four tables of item 11 on a running server is the landing's.
+
+### Verify 2
+
+Each file `git status --short -uall` lists, the 4 deleted files, the two patches and this report left out (110 files), through `LC_ALL=C perl -ne 'print "$ARGV:$.\n" if /[^\x09\x20-\x7E\n]/'` prints nothing; the verify list's own ASCII gate over `src tests bin config` is "ok" in its fourth run. Over the two patches the same line prints the tab of each `diff` header line and the hub's own letters; the patch's added lines carry, by `grep '^+' O102-hub.patch | perl -ne 'while (/([^\x09\x20-\x7E\n]+)/g) { print "$1\n" }' | sort | uniq -c`:
+
+```
+  14 <plus-minus sign>
+   1 <euro sign>
+   4 <e with acute>
+```
+
+Each is text moved from the website's `_data/` files into the hub's files byte for byte (the plus-minus sign of the abstracts, the euro sign of a grant amount, the accented e of a coauthor's given name), which case 1 needs equal. This report's quoted vitest output keeps vitest's own marks; its prose is ASCII.
+
+### Verify 3
+
+`sh utils/unused-exports.sh` compared with `.agents/worktrees/O102-base/unused-exports.txt` by `diff`:
+
+```
+1c1
+< Unused exports (228)
+---
+> Unused exports (227)
+30d29
+< src/lib/server/content/audit/publications.ts: normalTitle, titleWords, jaccard
+32c31
+< src/lib/server/content/audit/scan.ts: signatureOf, firstMarker, jaccard, normalTitle, titleWords
+---
+> src/lib/server/content/audit/scan.ts: signatureOf, firstMarker
+```
+
+### Verify 4
+
+`git grep -n "audit\.website\|jaccard\|normalTitle\|titleWords\|STOPWORDS\|CareerPanel\|career-rows" -- src config tests ':!config/local.yml'` prints nothing (exit 1).
+
+### Verify 5: case 1
+
+`./node_modules/.bin/jiti <scratch>/o102/case1/run.mts <scratch>/o102/run/after`, run from the worktree: the program imports the worktree's generator and runs it over a copy of the hub with the hub patch applied and of the website with the website patch applied (`diff -rq` of the hub's patched files against that copy prints no "differ" line). Its output, with the key-order lines grouped below:
+
+```
+== config check findings: 0
+self: research-hub:axel-faes
+website folder: side-projects/theaxec.github.io | kinds: 10
+
+== problems of the build: 0
+
+== _data/data.yml: 0 differences
+  first line written: # Generated by oculus from the research hub. Change the hub's files and write the website again.
+  key order inside an entry that the first write changes: 24
+
+== _data/publications.yml: 4 differences
+- at papers-in-review.papers.0.pub_post
+  generated: "(Under review)"
+  on disk:   "(Under Review)"
+- at conference.papers.3.book
+  generated: "The 3rd International Conference on Foundation and Large Language Models (FLLM2025), Symposium on Federated Learning and Intelligent Computing Systems (FLICS 2025)"
+  on disk:   "The 3rd International Conference on Foundation and Large Language Models (FLLM2025)"
+- at conference.papers.3.pub_post
+  generated: undefined
+  on disk:   "[Symposium on Federated Learning and Intelligent Computing Systems (FLICS 2025)]"
+- at other-publications.papers.0.pub_date
+  generated: 2017
+  on disk:   undefined
+  first line written: # Generated by oculus from the research hub. Change the hub's files and write the website again.
+  key order inside an entry that the first write changes: 48
+
+== _data/industry.yml: 0 differences
+  first line written: # Generated by oculus from the research hub. Change the hub's files and write the website again.
+  key order inside an entry that the first write changes: 36
+```
+
+The differences are compared on parsed values, the order of the keys inside an entry not counted (ruling A). The four differences of `publications.yml` are the four of case 2: FLKit's `pub_post`, the FLLM 2025 paper's `book` with the symposium and no `pub_post`, and the `other-publications` entry's `pub_date: 2017`.
+
+The key reorderings are text differences of the first write only. Each line of the program names the entry and both orders; grouped by `sed 's/^  - [^:]*: //' | sort | uniq -c` over them, every reordering is one of these (the whole list, one line per entry, is `<scratch>/o102/case1/after2.txt`):
+
+- `data.yml` (24): 16 entries written `[title, location, duration]` where the file has `[title, duration, location]`; 6 written `[title, location, duration, url]` against `[title, duration, url, location]`; `news.content.16` and `education.content.3` with `about` after them.
+- `publications.yml` (48): every entry is written in the order `authors, title, order, program, book, pub_pre, pub_post, pub_date, url, links, abstract, pub_last, hide` (the keys it has); the file holds 29 different orders of the same keys.
+- `industry.yml` (36): an award is written `[award, event, date, location]` against `[award, event, location, date]` (6); a role row `[role, title, duration, about, url]` against `[role, title, url, duration, about]` (9, three with `compact`); an experience row `[title, about, duration, location]` or `[title, duration, about, location]` against the file's `location` before `duration` (21).
+
+The audit and the data check, after against before (`<scratch>/o102/run/before` is the hub and website as they are), by `diff` of the two runs' output from `== audit` on, the data-check lines shortened to the file and the message:
+
+```
+1c1
+< == audit findings: 121
+---
+> == audit findings: 122
+29a30
+> - [data] education | Bioinformatics (3740) - Coordinating lecturer (2024-2025) | link path missing: education/courses/bioinformatics
+69d69
+< - [conform] .oculus/config.yml | audit.website | audit.website in .oculus/config.yml is not of the shape the audit setting takes, so that part is off
+122a123
+> - [publink] website | _data/publications.yml | _data/publications.yml differs from what the hub's files give, first at papers-in-review.papers.0.pub_post: write the website
+124,125c125,146
+< == data check findings: 1
+< - run/before/deck/present.yml |  | deck folder deck is not in run/before
+---
+> == data check findings: 21
+> - run/after/.oculus/data/academic/events.yml |  | key entries[10].link is required while role is present
+  (the same line for entries 11 to 26, 8 and 9)
+> - run/after/.oculus/data/academic/funding.yml |  | funding entry ELIXIR-BE is contributing and has no statement
+> - run/after/deck/present.yml |  | deck folder deck is not in run/after
+```
+
+The deck line is in both runs: it is a finding of the scratch copy, which has no deck folder.
+
+The Bioinformatics line is a finding of the scratch copy only: the hub holds `education/courses/bioinformatics`, which the scratch copy, made of the manifests and `.oculus` alone, does not. The publications finding is case 2's first difference, which the first Write the website clears. The 20 new data-check findings are the open items: 19 rows `.oculus/data/academic/events.yml | key entries[8..26].link is required while role is present` and one `funding entry ELIXIR-BE is contributing and has no statement`.
+
+Case 15, the same program's config check: over the hub as it is, `== config check findings: 1` with `.../run/before/.oculus/config.yml | audit.website | key audit.website is not one the hub's settings file takes; it is not applied`; over the patched copy, `== config check findings: 0`.
+
+### Verify 6
+
+From inside the hub, `patch -p1 --dry-run < .../O102-hub.patch | awk '{print $1,$2}' | sort | uniq -c` prints `69 patching file` and nothing else, exit 0. From inside the website, `patch -p1 --dry-run < .../O102-website.patch` prints:
+
+```
+patching file '_data/website.yml'
+patching file '_includes/site/head.html'
+```
+
+exit 0. macOS's BSD patch says "patching file" where GNU patch says "checking file" (brief errors, below).
+
+The website patch was also built with Jekyll over a copy of the website before and after (`bundle exec jekyll build` in `<scratch>/o102/webbuild/a/src` and `b/src`, both exit 0): the two built sites differ only in the stylesheet's `?v=` timestamp and the spacing of the JSON of `knowsAbout`; the default keywords are on 8 pages in each build.
+
+### Verify 8
+
+`wc -l` of every changed file is the table under "Files" below. Over it, `awk '$1>880'` restricted to `.ts`, `.js`, `.mjs`, `.sh` and `.css` prints nothing, and `awk '$1>520'` restricted to `.svelte` prints nothing. The largest are `src/lib/data/model/index.ts` 879, `src/lib/state/client/context.ts` 871, `tests/checks/source/keys.test.ts` 866, `src/lib/server/machine/pty/sessions.ts` 863. `sh utils/folder-check.sh` exits 0.
+
+### Verify 9
+
+The added comment lines of the diff and of the new files, grepped for `no longer|used to|previously|formerly|replaced|renamed|old |legacy|now |anymore|<a date>|session|O1nn|step `, give four hits, each read: three name `state/sessions/...` paths and one says "Every audit the hub publishes from now on" of a function that collects the audits published after it is called (`tests/server/root/watch/website-watch.test.ts`). None is history.
+
+### Verify 10
+
+Each new and changed sentence in comments, catalog words, help texts and `docs/templates.md` was read against the prose rules. Two places depart: the moved website texts in the hub patch keep their spaced hyphens and `--` and their trailing spaces, since they are the CV's own text and case 1 needs them equal (`"Role: Consortium partner (UHasselt), focusing on health data re-use and federated analyses  \n..."`); and the abstracts keep their plus-minus signs.
+
+## Homes of the sections of data.yml and industry.yml
+
+Counts over the patched copy `<scratch>/o102/run/after`: `cv_section:` values by `grep -h "cv_section:" <file> | sed ... | sort | uniq -c` (education.yml: 10 academic, 6 extracurricular, 4 students; events.yml: 22 news; funding.yml: 2 grants, 4 projects), the rows of each `career.yml` list by `awk` (positions 8, degrees 8, awards 8, references 4), `grep -c "records:"` of `career.yml` (58), and manifests with `cv:` (16) and with `publication:` (48) by `grep -rl --include=project.yml`. Case 1 gives no problem, so every person and record a row names exists.
+
+| Section | Home | Placed by judgment |
+|---|---|---|
+| `personal` | the `self` entry of `people.yml` (`axel-faes`): name, email, ORCID and `links` rows `{ name, url, handle }`; `website.yml`'s `cv:` block: `titles`, `portrait_url`, `footer`, `secondary-title`, `author`, `website` | the homepage link carries a `handle` (`theaxec.github.io`) |
+| `references` | `career.yml` `references`, 4 rows `{ person, reason }`, each person a `people.yml` key | six people entries given full names (ruling F) |
+| `experience` | `career.yml` `positions`, 8 rows | none |
+| `academic` | `education.yml`, 10 entries with `cv_section: academic` | "Bioinformatics (3740) Coordinating lecturer" is two entries, one per run (ruling G) |
+| `students` | the `students:` rows of the 4 supervision entries of `education.yml` with `cv_section: students` (17 rows: 3, 7, 2 and 5), each row `{ person, topic, degree }`, its person a `people.yml` key | none |
+| `news` | `events.yml`, 22 entries with `cv_section: news` | the news articles and the CHI video are events with `role: present` |
+| `education` | `career.yml` `degrees`, the 7 of its 8 rows with no `cv_section` | none |
+| `grants` | `funding.yml`, 2 entries with `cv_section: grants` (`nwo-veni-the-self-explaining-hospital`, `nwo-open-competition-domain-science-xs-enw-xs`) | none |
+| `projects` | 16 manifests' `cv:` records (13 existing manifests, 3 new ones under `side-projects/finished/`) and 4 `funding.yml` entries with `cv_section: projects`, `role` and `min` (`FAIR`, `ZonMw-AI-HCC`, `2025-fwo-project-fl4phm`, `ELIXIR-BE`) | `ELIXIR-BE` is a new funding entry, the programme the CV names; `starcraft-rl-agent`, `iot-sensor-platform` and `search-recommendation-vod` are new manifests, no manifest being that work |
+| `awards` | `career.yml` `awards`, 8 rows; the FWO fellowship row names `funding: FWO-PhD` and takes its title, place and text from it | none |
+| `extracurricular` | the degree `twente-health-school` (`cv_section: extracurricular`) and 6 `education.yml` entries with `cv_section: extracurricular` | none |
+| `industry.yml` `shared` | `career.yml` `profiles.shared` (ruling E) | none |
+| `industry.yml` `profiles` | `career.yml` `profiles.analyst`, `pharma`, `engine`; each row about a position, a degree, an award or a project names its records by key (`records:`), its own wording beside them (ruling D): 58 of the 76 rows of the profiles' `content:` lists (`grep -c "records:"` 58, an `awk` count of the rows 76) | the other 18 rows are the `skills` categories (6 per profile), which are about no record and are the profile's own wording |
+
+## Files, line counts and moves
+
+Line counts by `wc -l` of every file `git status --short -uall` lists as changed or new, the two patches left out (111 files):
+
+```
+20 .scratch/migration/agents/briefs/O102-cases.md
+307 config/catalogs/vocab.yml
+934 config/defaults/behavior.yml
+347 config/defaults/layout.yml
+114 config/defaults/sources.yml
+1564 config/options/behavior.yml
+413 config/options/catalogs/vocab.yml
+186 config/options/sources.yml
+121 config/schemas/manifest-schema.yml
+28 config/text/views/academic/career.yml
+147 config/text/views/boards/focus.yml
+107 config/text/views/boards/projects.yml
+39 config/text/views/shared/entry-form.yml
+79 config/text/views/system/audit.yml
+340 docs/diagrams/channels.dot
+1790 docs/diagrams/channels.svg
+97 docs/diagrams/layer-data.dot
+482 docs/diagrams/layer-data.svg
+162 docs/diagrams/layer-server.dot
+798 docs/diagrams/layer-server.svg
+173 docs/diagrams/layer-state.dot
+855 docs/diagrams/layer-state.svg
+184 docs/diagrams/layer-views.dot
+832 docs/diagrams/layer-views.svg
+101 docs/diagrams/layers.dot
+556 docs/diagrams/layers.svg
+1571 docs/diagrams/writes.dot
+5282 docs/diagrams/writes.svg
+204 docs/palette.md
+1868 docs/templates.md
+838 src/lib/data/helpers/hub-names.ts
+879 src/lib/data/model/index.ts
+843 src/lib/data/model/machine/model-machine.ts
+526 src/lib/data/model/model-collections.ts
+790 src/lib/data/model/model-entities.ts
+137 src/lib/data/shapes/boards/categories.ts
+224 src/lib/data/shapes/boards/roles.ts
+176 src/lib/data/shapes/boards/takes.ts
+533 src/lib/data/shapes/catalog-files/vocab.ts
+64 src/lib/data/shapes/hub-keys.ts
+78 src/lib/data/snapshot/normalise-parts/career.ts
+83 src/lib/data/snapshot/normalise-parts/publication.ts
+669 src/lib/data/snapshot/normalise.ts
+244 src/lib/data/sources/config/settings/files.ts
+81 src/lib/data/sources/config/settings/problems.ts
+28 src/lib/data/sources/documents/career.ts
+124 src/lib/server/content/audit/publications.ts
+352 src/lib/server/content/audit/rules.ts
+84 src/lib/server/content/audit/scan.ts
+167 src/lib/server/content/audit/setting.ts
+388 src/lib/server/content/audit/website/cv.ts
+134 src/lib/server/content/audit/website/files.ts
+180 src/lib/server/content/audit/website/papers.ts
+113 src/lib/server/content/audit/website/site.ts
+313 src/lib/server/files/source/list-entries.ts
+863 src/lib/server/machine/pty/sessions.ts
+231 src/lib/server/machine/runs/website.ts
+103 src/lib/server/root/watch/portfolio/audited.ts
+815 src/lib/server/root/watch/portfolio/portfolio.ts
+84 src/lib/state/boards/board/index.ts
+663 src/lib/state/boards/board/presets.ts
+764 src/lib/state/boards/focus.ts
+730 src/lib/state/boards/focus/filter.ts
+871 src/lib/state/client/context.ts
+202 src/lib/state/client/shapes/client-state.ts
+178 src/lib/state/forms/form-draft.ts
+394 src/lib/state/forms/page-entry.ts
+155 src/lib/state/sessions/source/draft-entry.ts
+202 src/lib/state/sessions/source/website.svelte.ts
+291 src/lib/state/sessions/source/write-files.ts
+105 src/lib/state/sessions/terminal/terminal-payloads.ts
+115 src/lib/ui/controls/heads/FoldHead.svelte
+205 src/lib/ui/controls/heads/GroupHead.svelte
+183 src/lib/ui/display/ticker/TickerGroup.svelte
+125 src/lib/views/academic/career/Career.svelte
+286 src/lib/views/boards/focus/CommandCenterView.svelte
+474 src/lib/views/boards/focus/Focus.svelte
+418 src/lib/views/boards/person/Person.svelte
+485 src/lib/views/boards/projects/Projects.svelte
+452 src/lib/views/personal/memories/Memories.svelte
+168 src/lib/views/shared/forms/entry-file.ts
+243 src/lib/views/shared/forms/entry/edit/EntryEditor.svelte
+122 src/lib/views/shared/forms/entry/edit/EntryForm.svelte
+136 src/lib/views/shared/forms/entry/edit/LabelRows.svelte
+60 src/lib/views/shared/forms/entry/edit/page-file.ts
+369 src/lib/views/system/audit/Audit.svelte
+168 src/lib/views/system/machine/hpc/Capacity.svelte
+165 src/lib/views/system/machine/hpc/Login.svelte
+160 src/lib/views/system/machine/hpc/Recent.svelte
+399 src/lib/views/system/machine/usage/Usage.svelte
+42 src/routes/api/(sessions)/website/+server.ts
+348 src/routes/views.ts
+849 tests/checks/config/config-folder.test.ts
+866 tests/checks/source/keys.test.ts
+528 tests/checks/tree/boundaries.test.ts
+357 tests/checks/tree/layer-rows.ts
+385 tests/data/helpers/hub-names.test.ts
+408 tests/data/hubs/website-files.test.ts
+381 tests/data/snapshot/normalise.test.ts
+227 tests/data/sources/career.test.ts
+170 tests/fixtures/hubs/demo/.oculus/data/academic/career.yml
+55 tests/fixtures/hubs/demo/.oculus/data/people/people.yml
+619 tests/routes/docs/audit.test.ts
+298 tests/routes/sessions/website.test.ts
+226 tests/server/edit/writes-fixture.ts
+730 tests/server/edit/writes.test.ts
+144 tests/server/root/watch/website-watch.test.ts
+349 tests/state/boards/board/board-new-project.test.ts
+665 tests/state/boards/board/board-rules.test.ts
+260 tests/state/forms/page-entry.test.ts
+```
+
+The report itself is the 111th file. The `.yml`, `.md`, `.dot` and `.svg` files have no line limit; `docs/diagrams/` is regenerated by `npm run diagrams`.
+
+Deleted with the career panel: `src/lib/views/boards/focus/career/CareerPanel.svelte`, `src/lib/views/boards/focus/career/career-rows.ts`, `src/lib/state/boards/career.ts`, `src/lib/data/helpers/files/yaml/career-text.ts`; and `registryEntries` of `src/lib/data/helpers/hub-names.ts`, whose one caller was `state/boards/career.ts`.
+
+Placed: the press of Write the website is `src/lib/server/machine/runs/website.ts`, beside the project commands' runs, since it imports `server/machine` (the approvals and the terminals), which `server/content` may not (`tests/checks/imports/order.test.ts`). `src/lib/server/machine/runs` holds 6 items. The generator is the new folder `src/lib/server/content/audit/website/` (4 files), so `src/lib/server/content` keeps its ten items. No file was split.
+
+## Judgment calls the brief left open
+
+- The `accepted` stage carries `terminal`, `placed` and `public` (a paper to appear is done work, has a venue and is listed), and not `live`, `on_map`, `pauses_countdown` or `deadline_met`; its icon is `done` and its colour `#65a30d`.
+- The `obtained` status flag and the `record` category flag are removed with the career panel, their only reader.
+- `website.kinds` rows carry `order: true` where your place among the authors is given; the hub's `abandoned-papers` row is not carried over, since a stopped paper gives no entry.
+- A manifest's `form` for Dongho Chun's paper is `journal` and its stage `accepted`; HCCNet-FL's stage is `accepted`.
+- The three new side-project manifests are `side-projects/finished/<id>/project.yml`, `tier: personal`, `stage: released`, with `hide: true` where the website hides the row.
+- The website texts that end lines with two spaces are written in the hub as double-quoted YAML strings with `\n`, which keeps the spaces.
+- The ELIXIR-BE entry's status is `contributing`, the funding file's word for a programme contributed to; it has no `statement` (open item).
+- The news articles and the CHI video are `events.yml` entries with `role: present` (open item for the `link` rule they meet).
+- `head.html` builds `sameAs` from `home.social` with the email link filtered out, so the links stay in one list the website already holds.
+- The press writes the three files after checking each as the writer's upload checks it, and a file the writer still refuses puts back the files of the press already written.
+- The terminal of the CV command is listed under the name `website` with the source `website` (`pty/sessions.ts`, `terminal-payloads.ts`).
+- The test of case 15 is not kept: the brief keeps tests for G139, G140, G125 and G32 only, and case 15 is checked by the case 1 program's config check (above).
+
+## Visible changes
+
+For the look at landing:
+
+- Academic Life page: a Career tab after the photo wall. Open it on the real hub with the patches applied: the goal, milestone and order of work, then Positions, Degrees, Awards, References and Profiles as record cards; a row added, edited and removed through the forms, Save writing `career.yml`. Header: Write the website, with the tip naming the three files and the command. With `self` unset the button is off and says the person is not known; with `website.folder` empty it is off and says the setting is not set.
+- A press: three History records, the command in a task terminal of the Processes view, the line under the header saying the files written and then the command's status. The first press asks for the approval of `python _scripts/cv_pdf_generator.py --save --quiet`.
+- Focus: no Career banner; the rest of the page as before.
+- Audit: the section "Website publications sync" is now "Website"; a file that differs is one finding naming the file and the first place it differs, with a Write the website action.
+- Person card: each link drawn by its address as before (case 20).
+- Usage view, History table, and the Live HPC float's Capacity, Login and Recent tables: the first row is drawn below the header row when the table scrolls sideways (case 21).
+
+The website after the patches: every page's `<head>` reads the name, job title, affiliations, keywords and `knowsAbout` from `website.yml`, and `sameAs` from `home.social`; the built pages are the same as before but for the stylesheet timestamp and the JSON spacing of `knowsAbout`.
+
+The first write of each generated file, against the file on disk:
+
+- Each file opens with `# Generated by oculus from the research hub. Change the hub's files and write the website again.`, and every other comment of the three files is dropped (the website's `cv:` titles keep their commented lines in `website.yml`, which is not generated).
+- Quoting follows the `yaml` package: a text is quoted only where YAML 1.1 would read it as something else, and an award's `date` is written unquoted.
+- The key order inside entries changes at the places case 1 lists: 24 in `data.yml`, 48 in `publications.yml`, 36 in `industry.yml`.
+- `publications.yml` takes the four differences of case 2.
+
+## Brief errors
+
+- Case 19 and item 4 say PyYAML reads `2018-01-01 15:59:00-0400` as a timestamp. PyYAML's YAML 1.1 timestamp needs a colon in the offset (`-04:00`), so it reads this text as a string. The generator writes the date unquoted, as today, so the CV generator reads exactly what it reads today; the test row asserts the unquoted text.
+- Verify 6 expects `checking file` lines; macOS's patch prints `patching file '<path>'` for a dry run.
+- Brief line 13 says the website's `publications.yml` change is staged; it is committed (225a55d4). Nothing depends on it.
+- Item 2 says a `kinds` row's `kind` is a list; ruling C makes it one section per row.
+
+## Process
+
+- The verify list ran four times. The first run was red (prettier, eslint, the type check over one test import, and tests named in the files list above); the fixes were made in files the step changes. The second run was stopped while files it read were being changed. The third run was red on one eslint line (`PROBLEM_KEYS` used only as a type in `site.ts`, now `type ProblemKey`), on `keys.test.ts`, which had been edited while the run read it, and on three tests of `tests/data/hubs/hub-portfolio.test.ts` that hit the 20 s timeout while other test runs of mine shared the machine. The two changed files were then run alone (prettier and eslint clean; `vitest run tests/checks/source/keys.test.ts tests/data/hubs/website-files.test.ts`: 27 passed). `hub-portfolio.test.ts`, a file the step does not change, was run alone on the base copy and on the worktree with `--reporter verbose`: 16 passed on each, every test between 1.1 s and 3.0 s on both, tests 33.41 s on the base and 34.42 s after. The fourth run, with nothing else running, is green and quoted under Verify 1.
+- Files were edited with the Edit and Write tools and `npm run format`; moves with `mv`. One `sed -i ''` aimed at `/dev/null` was refused by sed and changed no file. Earlier deviations of this build: one `sed -i ''` in round 0, two python3 commands that changed nothing, an empty temporary file, `rm` of the deleted modules, and one `python3 -c` query of `sys.path`.
+- No whole-suite command was run.
+
+## Doc text
+
+Each line as `grep -n` prints it on the base (the base tree at `<scratch>/o102/basetree`, and `git show HEAD:` for the ledger), then its replacement.
+
+### docs/HELP.md
+
+- Line 207, current: ``| `focus` | Focus | What wants attention: deadlines, follow-ups, the week's ticker, the lanes, the career strategy. |``
+  Replacement: ``| `focus` | Focus | What wants attention: deadlines, follow-ups, the week's ticker, the lanes. |``
+- A new row after line 257 (``| `memories` | Memories | The photo wall of every hub. |``): ``| `career` | Career | The career strategy and the career record the website's CV is written from, and Write the website. |``
+- Line 295 (the Focus note), three changes inside the line:
+  - ``oculus's list is the Career banner (`career`), the command center (`command_center`)`` becomes ``oculus's list is the command center (`command_center`)``.
+  - ``A calendar line, a lead, a refresh nudge and the Career banner are never hidden`` becomes ``A calendar line, a lead and a refresh nudge are never hidden``.
+  - The passage from ``The Career banner, headed Career, is open on a new Focus tab`` through ``A hub with no career file has no banner.`` (the end of the line) is deleted whole.
+- Line 342, current: ``- **Audit.** The conventions a hub sets under `audit:` in its `.oculus/config.yml` are each off until set, and Settings lists them under Audit checks. Mute writes a finding's signature to `audit_ignore:` in the open workspace file's `settings:`.``
+  Replacement: ``- **Audit.** The conventions a hub sets under `audit:` in its `.oculus/config.yml` are each off until set, and Settings lists them under Audit checks. Mute writes a finding's signature to `audit_ignore:` in the open workspace file's `settings:`. A finding of the Website section that a generated file differs offers Write the website, as the Career view's button does.``
+- A new note after line 343 (the Memories note): ``- **Career.** The career file of the primary hub (`career_file`, `.oculus/data/academic/career.yml` by default), drawn as the form its own `schema:` gives: the goal, the milestone and its day, the order of work with its note, and the career record the website's CV is written from, the positions, the degrees, the awards, the references and the employer CVs' profiles, each list drawn as record cards whose rows are added, edited and removed in the form, and Save writes the file. A hub with no career file, or a career file with no `schema:`, draws the line saying so. Write the website, in the header, builds `_data/data.yml`, `_data/publications.yml` and `_data/industry.yml` of the folder `website.folder` names from the hub's files and writes them through the Files view's writer, one History record each that Undo takes back, then runs the command `website.cv` names in that folder as a task terminal of the Processes view; the first run of a command text asks for its approval, and nothing is written or run until it is given. The line under the header says the files written and the command's run, running or ended with its status, or why a press was refused: the user not known, `website.folder` empty or naming a folder that is not there, the last run of the command still running, or a file the writer could not take, which it names, none of the three then being written. While the user is not known or `website.folder` is empty the button is off, its tip saying which.``
+- Line 556, the sentence ``"`website` names the website's publications feed (`file`), the key of each section's entries (`list`), the key of an entry's title (`title`) and the sections a project is expected in by its stage and form (`kinds`); every hub that sets it is checked against its own feed."`` is deleted, the rest of the line kept.
+- A new note after line 556: ``- The primary hub names the website its files are written into under `website:` in its `.oculus/config.yml`, read from the primary hub alone. `folder` is the website's folder in the hub: empty, the default, writes nothing and checks nothing, and a folder that is not there is an Audit finding naming it. `cv` is the command run in that folder after a write; empty runs none. `kinds` lists the sections of `_data/publications.yml`: a manifest that carries `publication:` goes to the first row whose `stages` and `forms` hold its own, a side left out holding every one; the sections come in the rows' order, each titled by its first row's `title`, and a row's `order`, `pub_pre` and `pub_post` say whether an entry gives your place among the authors and which words stand before and after the venue. A manifest that carries `publication:` at a stage without `public`, or with `negative` or `dead_end`, gives no entry and a finding, and so does a paper that names you in none of `lead`, `supervisors` and `collaborators` under a row with `order`. The Audit's Website section compares the three files the hub gives with the files on disk by their parsed values, the order of the sections, of the entries and of a links list counted and the order of the keys inside an entry not, and names each file that differs with the first place it differs at. The template shows each key ([templates](templates.md)).``
+
+### docs/data-map.md
+
+- Line 55, current: ``Two files are named by keys of their own rather than by `collections:`: the career strategy, one map with no entries drawn by Focus's career banner, at `career_file` (`.oculus/data/academic/career.yml` by default), and a project's `project.yml`, whose primary key is its folder name and which the Projects, Coauthor, Archive, Personal and Project views draw.``
+  Replacement: ``Two files are named by keys of their own rather than by `collections:`: the career file, one map of the strategy and the career record the website's CV is written from, drawn by the Career view, at `career_file` (`.oculus/data/academic/career.yml` by default), and a project's `project.yml`, whose primary key is its folder name and which the Projects, Coauthor, Archive, Personal and Project views draw.``
+- Line 63, current: ``| Focus | Focus | projects by `stage` and the chips `parked` and `blocked`, the dated lines, follow-ups and subtasks of every file, the live leads, the career banner |``
+  Replacement: ``| Focus | Focus | projects by `stage` and the chips `parked` and `blocked`, the dated lines, follow-ups and subtasks of every file, the live leads |``
+- Line 70, current: ``| Funding, Talks & Events, Education & Service, Applications, Tasks, Memories | Academic Life | their files, and the photo wall's pictures |``
+  Replacement: ``| Funding, Talks & Events, Education & Service, Applications, Tasks, Memories, Career | Academic Life | their files, the photo wall's pictures, and the career file |``
+- Line 76, current: ``| Audit | System | the rules over projects and files, and the conventions the hub's `audit:` sets: the files and headings a project must hold, the folders a stage is kept under, and the website's publications feed against the projects |``
+  Replacement: ``| Audit | System | the rules over projects and files, the conventions the hub's `audit:` sets (the files and headings a project must hold, the folders a stage is kept under), and the website's three generated files against what the hub's files give |``
+- Line 90, current: ``career_file:              # the career strategy file the Focus board's banner reads``
+  Replacement: ``career_file:              # the career file the Career view edits and the website's CV is written from``
+- Lines 136 to 139, current:
+  ```
+  audit.website.file:       # the website's publications feed the Audit checks the projects against
+  audit.website.list:       # the key of a feed section's entries
+  audit.website.title:      # the key of a feed entry's title
+  audit.website.kinds:      # the sections of the feed a project is expected in, by stage and form
+  ```
+  Replacement:
+  ```
+  website.folder:           # the website's folder, which Write the website writes its three data files into
+  website.cv:               # the command run in that folder after a write
+  website.kinds:            # the sections of the website's publications, by stage and form
+  ```
+- Line 276: in ``... `literature.sources`, `literature.prefer` and `links` are not read`` the list gains `website.folder`, `website.cv` and `website.kinds` before `links`; the last sentence, ``Its `audit:` holds its own projects to the conventions it names and checks them against its own website feed.``, becomes ``Its `audit:` holds its own projects to the conventions it names.``
+- Line 288, current: ``- Twenty keys of a hub's `config.yml` are read from the primary's alone: ... `literature.sources`, `literature.prefer` and `links`.``
+  Replacement: ``- Twenty-three keys of a hub's `config.yml` are read from the primary's alone: ... `literature.sources`, `literature.prefer`, `website.folder`, `website.cv`, `website.kinds` and `links`.`` (the rest of the line kept).
+
+### .scratch/migration/agents/guarded.md
+
+- Line 189, G125, current: ``- G125. The audit holds a hub to the conventions its own `audit:` setting names, and to none it does not name: a file a `required_files` row requires when every key the row names holds (the stage, the folder in the project, the hub folders), a heading a `required_sections` row requires when the manifest key it names holds a value, the website's feed read from the file, list key and title key `website` names with the sections its `kinds` gives, and a hub project at a stage a `stage_folders` row names kept under one of its folders; a project of a tier `research_audit.skip_tiers` names is held to none, a project of a workspace repository to no row naming hub folders, a hub without `audit:` gets none of these findings, and a part of `audit:` that is not of its shape is a finding and is off while the rest runs.``
+  Replacement: ``- G125. The audit holds a hub to the conventions its own `audit:` setting names, and to none it does not name: a file a `required_files` row requires when every key the row names holds (the stage, the folder in the project, the hub folders), a heading a `required_sections` row requires when the manifest key it names holds a value, and a hub project at a stage a `stage_folders` row names kept under one of its folders; a project of a tier `research_audit.skip_tiers` names is held to none, a project of a workspace repository to no row naming hub folders, a hub without `audit:` gets none of these findings, and a part of `audit:` that is not of its shape is a finding and is off while the rest runs. For the primary hub whose `website.folder` names a folder, the audit builds the website's three generated files in memory and compares each with the file on disk by parsed value, the order of the sections, of the entries and of a links list counted and the order of the keys inside an entry not: a file that differs is one finding naming the file and the first place it differs at, offering Write the website; a folder that is not there is one finding naming it, an empty `website.folder` gives none, a user who is not known is one finding and no file is compared, and a change on disk to any of the three raises or clears its finding without a restart.``
+- Line 190, G125's Code, current: ``  Code: `src/lib/server/content/audit/rules.ts`, `projects.ts`, `publications.ts`, and the reader of `audit:` in that folder.``
+  Replacement: ``  Code: `src/lib/server/content/audit/rules.ts`, `projects.ts`, `publications.ts`, `website/`, the reader of `audit:` in that folder, and `src/lib/server/root/watch/portfolio/audited.ts` (the three files watched).``
+- Line 191, G125's Test: the line gains ``; `tests/server/root/watch/website-watch.test.ts`, 'publishes the audit again for a change on disk to each of the three generated files'`` before its final full stop.
+- Line 264, G32: ``(manifests, registries, collections, career, feeds, docs, present, the snapshot built from them).`` becomes ``(manifests, registries, collections, career, feeds, docs, present, the snapshot built from them), the career file's `positions`, `degrees`, `awards`, `references` and `profiles` read as the file holds them and drawn by the Career view's forms as record cards.``
+- Line 266, G32's Test: ``career: `tests/data/sources/career.test.ts`, 'parses it as the map it is, with no key renamed', 'reads the title, the milestone and the situation strip', describe 'normalising it', the rows 'reads $name' and 'reads none of the sections the banner does not draw into the model';`` becomes ``career: `tests/data/sources/career.test.ts`, 'parses it as the map it is, with no key renamed', 'reads the title, the goal, the milestone and the order of work', describe 'normalising it', the rows 'reads $name' and 'types the strategy alone, every other section staying in the sections'; describe "the Career view's lists", every row;``
+- New entries after line 224 (G138's Test line):
+  ``- G139. The website's three data files are what the hub's files give: a manifest that carries `publication:` is an entry of the section of the first `website.kinds` row whose stages and forms hold its own, the sections in the rows' order under the first row's title and the entries by the record's `rank`; `order` is `first`, `senior` or `coauthor` from your place in `lead`, `supervisors` or `collaborators`; `pub_pre` and `pub_post` are the row's; the `Code` link, last in `links`, is `https://doi.org/<doi>` for a deposited manifest with a DOI, else its `code_availability.url`; `hide` is written through, true and false alike; a manifest at a stage that gives no section, or with `negative` or `dead_end`, a paper that names you in none of the three fields under a row with `order`, a research line `website.yml`'s `programs:` lacks and a CV row naming no person or record are each a finding and give no entry; an award's day is written unquoted; the CV's sections and the employer CVs are written from the people, career, collection and manifest records that name them.``
+  ``  Code: `src/lib/server/content/audit/website/` (`files.ts`, `papers.ts`, `cv.ts`, `site.ts`); `src/lib/data/snapshot/normalise-parts/publication.ts`.``
+  ``  Test: `tests/data/hubs/website-files.test.ts`, describe 'the website files the hub gives', every row.``
+  ``- G140. Write the website writes the three files through the Files view's writer, one History record each that its Undo takes back, then runs `website.cv` in the website's folder as a task terminal of the Processes view after the approval a project command takes, the command named in the button's tip; a press is refused with nothing written while the user is not known, while `website.folder` is empty or names a folder that is not there, while the command's last run still runs, and when the writer cannot take one of the three files, which the refusal names, the files already written being put back.``
+  ``  Code: `src/lib/server/machine/runs/website.ts`, `src/routes/api/(sessions)/website/+server.ts`, `src/lib/state/sessions/source/website.svelte.ts`, `src/lib/views/academic/career/Career.svelte`.``
+  ``  Test: `tests/routes/sessions/website.test.ts`, every row of the describes 'a press of Write the website that is refused' and 'a press of Write the website that is taken'.``
+
+## The patches
+
+- `.scratch/migration/agents/reviews/O102-hub.patch`, 2962 lines, 69 files (added and removed lines per file by counting `+` and `-` lines):
+  - `.oculus/config.yml` +18 -16; `.oculus/data/academic/career.yml` +907 -20; `.oculus/data/academic/education.yml` +182 -2; `.oculus/data/academic/events.yml` +249 -0; `.oculus/data/academic/funding.yml` +80 -0; `.oculus/data/people/people.yml` +56 -7;
+  - 60 existing manifests, each given `publication:` and, where the CV lists the work, `cv:` (6 to 16 lines each; `year` filled where a manifest had none, Dongho Chun's and HCCNet-FL's stage `accepted`, the seven titles of ruling B, the FLLM 2025 `book`, `algebraic-effects-compilation`'s `code_availability`);
+  - 3 new manifests: `side-projects/finished/starcraft-rl-agent/project.yml`, `iot-sensor-platform/project.yml`, `search-recommendation-vod/project.yml`, +21 each.
+- `.scratch/migration/agents/reviews/O102-website.patch`, 102 lines, 2 files: `_data/website.yml` +49 -0 (the person block, the `cv:` block and the `sections:` map), `_includes/site/head.html` +9 -11.
+
+## Open items
+
+1. **The events `link` rule against the talks the CV lists.** `events.yml`'s schema says `{ field: link, ..., required: { when: { role: present } } }` (the deck folder of a talk you give). The 19 events that hold the CV's past talks, articles and video carry `role: present` and no deck, so the data check names each (`entries[8..26].link is required while role is present`).
+   - (a) Narrow the rule to the talks still ahead: `required: { when: { role: present, status: [upcoming, planned] } }`. Pro: a past talk with no deck is no finding, and a coming talk still needs its deck; one line of the hub's schema. Con: a past talk's missing deck is no longer named.
+   - (b) Give each past talk a deck folder under `network/`. Pro: the rule stands. Con: 19 folders with nothing in them, made only to quiet the check.
+   - (c) Give the articles and the video another role. Pro: the rule stands for talks. Con: the CV's news rows are talks too, so most findings remain, and `role` stops saying what the entry is.
+   Recommendation: (a), since the rule exists to ask for the deck of a talk still to give. (b) is the lazy option: it ends the findings without ending the cause.
+2. **ELIXIR-BE has no acknowledgement statement.** The status `contributing` carries `acknowledged`, so the data check asks for a `statement` (`funding entry ELIXIR-BE is contributing and has no statement`).
+   - (a) Axel supplies ELIXIR Belgium's acknowledgement wording, written as the entry's `statement`. Pro: the entry is complete, and a manuscript of the programme can carry it. Con: needs the wording from him.
+   - (b) Add a status such as `completed` to the funding file's status options and use it. Pro: no wording needed. Con: the programme was contributed to, and a manuscript of it would then not be asked for its acknowledgement.
+   Recommendation: (a), since the statement is what the flag is for. (b) is the lazy option.

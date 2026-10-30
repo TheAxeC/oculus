@@ -1,0 +1,2962 @@
+diff -ruN a/.oculus/config.yml b/.oculus/config.yml
+--- a/.oculus/config.yml	2026-10-30 01:43:50
++++ b/.oculus/config.yml	2026-10-30 01:44:18
+@@ -26,7 +26,7 @@
+ # The portfolio deck: the folder, relative to the hub, whose present.yml and Markdown slides the Present view opens when a pane names no deck. A project's deck is its own present/ folder and a custom deck is any folder, so this key names the one deck that belongs to the hub as a whole.
+ portfolio_deck: deck
+ 
+-# The conventions the Audit holds this hub's projects to, each off unless set here: the files a project must hold (a README unless its stage is terminal, a code/README.md once it has a code folder), the Data section of the README of a project that names datasets, the folders a published project is kept under, and the website's publications feed the projects are checked against, with the sections a project is expected in by its stage and form. The feed is a separate repository folder, and its check is skipped when it is not checked out.
++# The conventions the Audit holds this hub's projects to, each off unless set here: the files a project must hold (a README unless its stage is terminal, a code/README.md once it has a code folder), the Data section of the README of a project that names datasets, and the folders a published or accepted project is kept under.
+ audit:
+   required_files:
+     - { file: README.md, stages: { not_flags: [terminal] } }
+@@ -34,21 +34,23 @@
+   required_sections:
+     - { file: README.md, heading: "## Data", key: datasets, folders: [projects/ideas, side-projects, projects/active, projects/manuscripts, projects/software, projects/archive] }
+   stage_folders:
+-    - { stages: { words: [published] }, folders: [projects/archive/published, projects/coauthor, projects/archive/phd] }
+-  website:
+-    file: side-projects/theaxec.github.io/_data/publications.yml
+-    list: papers
+-    title: title
+-    kinds:
+-      - { kind: [thesis], forms: [thesis] }
+-      - { kind: [papers-in-review], stages: [submitted] }
+-      - { kind: [papers-in-preparation], stages: [in-prep, submit-ready, revision] }
+-      - { kind: [abandoned-papers], stages: [stopped] }
+-      - { kind: [abstracts], forms: [abstract] }
+-      - { kind: [posters], forms: [poster] }
+-      - { kind: [conference], forms: [conference] }
+-      - { kind: [journal, other-publications], forms: [journal] }
+-      - { kind: [abstracts, conference, journal, other-publications, posters, thesis] }
++    - { stages: { words: [published, accepted] }, folders: [projects/archive/published, projects/coauthor, projects/archive/phd] }
++
++# The website the hub's files are written into by the Career view's Write the website: its folder, the command that builds the CV's PDF there once the files are written, and the sections of its publications. A paper that carries a `publication:` record goes to the section of the first row whose stages and forms hold its own (a side left out holds every one); the sections come in the rows' order, each titled by its first row, and a row's `order`, `pub_pre` and `pub_post` say whether an entry gives your place among the authors and which words stand before and after the venue. The Audit compares the three files the hub gives with the website's files and is skipped while the folder is not checked out.
++website:
++  folder: side-projects/theaxec.github.io
++  cv: python _scripts/cv_pdf_generator.py --save --quiet
++  kinds:
++    - { kind: papers-in-review, title: Papers in Review, stages: [submitted], order: true, pub_pre: "Submitted to ", pub_post: "(Under review)" }
++    - { kind: papers-in-preparation, title: Papers in Preparation, stages: [in-prep, submit-ready, revision], order: true, pub_pre: "", pub_post: "(In preparation)" }
++    - { kind: journal, title: International Journal Papers, stages: [accepted], forms: [journal], order: true, pub_pre: "", pub_post: "(Accepted)" }
++    - { kind: journal, stages: [published], forms: [journal], order: true }
++    - { kind: conference, title: Conference Papers, stages: [accepted], forms: [conference], order: true, pub_pre: "", pub_post: "(Accepted)" }
++    - { kind: conference, stages: [published], forms: [conference], order: true }
++    - { kind: other-publications, title: Other publication, stages: [published], forms: [tech-report] }
++    - { kind: thesis, title: Thesis, stages: [published], forms: [thesis] }
++    - { kind: abstracts, title: Extended Abstracts, stages: [published], forms: [abstract] }
++    - { kind: posters, title: Posters, stages: [published], forms: [poster] }
+ 
+ # LinkedIn view: the posts pipeline from the website (_linkedin/: numbered = posted, xx- = ideas).
+ linkedin_dir: side-projects/theaxec.github.io/_linkedin
+diff -ruN a/.oculus/data/academic/career.yml b/.oculus/data/academic/career.yml
+--- a/.oculus/data/academic/career.yml	2026-10-30 01:43:50
++++ b/.oculus/data/academic/career.yml	2026-10-30 02:10:51
+@@ -1,17 +1,13 @@
+-# Career strategy: drawn by oculus as the Focus page's career banner, the Career strategy panel.
+-# This file holds the goal, the next milestone with its day, the situation and the order of work. Funding and career deadlines live as `deadline:` on the entries of .oculus/data/academic/funding.yml, where they drive the "This week" ticker. The FWO Senior hosts, the host criteria and the eligibility are in funding/2026-fwo-senior-transplant/hosts.md.
+-# Form schema: the sections of this file, one field each. A records field lists the fields of each row, and open: true lets a row carry keys the schema does not name (the situation's labels).
++# Career: the strategy and the career record, edited in oculus's Career view on the Academic page.
++# The strategy is the goal, the next milestone with its day and the order of work. Funding and career deadlines live as `deadline:` on the entries of .oculus/data/academic/funding.yml, where they drive the "This week" ticker. The FWO Senior hosts, the host criteria and the eligibility are in funding/2026-fwo-senior-transplant/hosts.md.
++# The career record is what the website's CV is written from by the Career view's Write the website: the positions (the CV's experience), the degrees (its education), the awards and the references, and the employer CVs under `profiles`. A row goes to its list's section unless it names another in `cv_section`, `cv_rank` orders the rows of a section, and `key` names the row for a profile row's `records`. A reference names a person of .oculus/data/people/people.yml, whose name and email the CV prints; an award that names a funding entry (`funding`) takes its title, place and text from it. A profile row names the records it stands for and takes from the first one the place, period, day or address its section prints where it prints none of its own.
++# Form schema: the sections of this file, one field each; a records field lists the fields of each row.
+ schema:
+-  - { field: title, type: text, help: "The name the Career strategy panel is listed under." }
++  - { field: title, type: text, help: "The title of the career file's editor page." }
+   - { field: goal, type: text, help: "The position the career plan works toward." }
+-  - { field: milestone, type: text, help: "The next milestone, shown at the head of the panel." }
+-  - { field: milestone_date, type: date, help: "The day of the next milestone, YYYY-MM-DD; the panel counts the days left to it." }
+-  - field: situation
+-    type: records
+-    open: true
+-    help: "Facts about where the hub owner stands now, one label and one sentence each."
+-    fields: []
+-  - { field: order_note, type: textarea, help: "A note drawn over the order of work." }
++  - { field: milestone, type: text, help: "The next milestone." }
++  - { field: milestone_date, type: date, help: "The day of the next milestone, YYYY-MM-DD." }
++  - { field: order_note, type: textarea, help: "A note over the order of work." }
+   - field: order
+     type: records
+     help: "The order of work, in priority order."
+@@ -19,22 +15,913 @@
+       - { field: task, type: text, required: true, help: "What to do." }
+       - { field: when, type: text, help: "When it is due, as text." }
+       - { field: note, type: text, help: "An optional remark on the task." }
++  - field: positions
++    type: records
++    help: "The positions held, the CV's experience."
++    fields:
++      - { field: key, type: text, help: "The key a profile row names this position by." }
++      - { field: title, type: text, required: true, help: "The position as the CV prints it." }
++      - { field: location, type: text, help: "Where." }
++      - { field: duration, type: text, help: "When, as the CV prints it." }
++      - { field: url, type: text, help: "An address the title links to." }
++      - { field: about, type: textarea, help: "What the CV prints under it." }
++      - { field: hide, type: checkbox, help: "Kept off the CV." }
++      - { field: cv_section, type: text, help: "Another CV section the row goes to." }
++      - { field: cv_rank, type: text, help: "The row's place in its section, a whole number." }
++  - field: degrees
++    type: records
++    help: "The degrees and the courses taken, the CV's education."
++    fields:
++      - { field: key, type: text, help: "The key a profile row names this degree by." }
++      - { field: title, type: text, required: true, help: "The degree as the CV prints it." }
++      - { field: location, type: text, help: "Where." }
++      - { field: duration, type: text, help: "When, as the CV prints it." }
++      - { field: url, type: text, help: "An address the title links to." }
++      - { field: about, type: textarea, help: "What the CV prints under it." }
++      - { field: hide, type: checkbox, help: "Kept off the CV." }
++      - { field: cv_section, type: text, help: "Another CV section the row goes to." }
++      - { field: cv_rank, type: text, help: "The row's place in its section, a whole number." }
++  - field: awards
++    type: records
++    help: "The awards, the CV's awards."
++    fields:
++      - { field: key, type: text, help: "The key a profile row names this award by." }
++      - { field: award, type: text, help: "The award as the CV prints it." }
++      - { field: event, type: text, help: "The event it was given at." }
++      - { field: date, type: text, help: "The day, written as the CV reads it." }
++      - { field: location, type: text, help: "Where." }
++      - { field: content, type: textarea, help: "What the CV prints under it." }
++      - { field: funding, type: text, help: "A funding entry, by key, whose title, place and text the award takes." }
++      - { field: hide, type: checkbox, help: "Kept off the CV." }
++      - { field: cv_rank, type: text, help: "The row's place in its section, a whole number." }
++  - field: references
++    type: records
++    help: "The references the CV names."
++    fields:
++      - { field: person, type: text, required: true, foreign_key: people, help: "The person, by key." }
++      - { field: reason, type: text, help: "What the reference can speak to." }
++  - field: profiles
++    type: records
++    map: true
++    help: "The employer CVs by name, and `shared`, the block they all print."
++    fields:
++      - { field: location, type: text, help: "In shared: the place every employer CV prints." }
++      - { field: email, type: text, help: "In shared: the email every employer CV prints." }
++      - { field: parts, type: tags, help: "In shared: the keys of the website's cv: block every employer CV prints." }
++      - { field: links, type: tags, help: "In shared: the names of the user's links every employer CV prints." }
++      - { field: titles, type: tags, help: "The lines printed under the name." }
++      - field: summary
++        type: records
++        help: "The profile paragraph."
++        fields:
++          - { field: title, type: text, help: "The heading." }
++          - { field: text, type: textarea, help: "The paragraph." }
++          - { field: text_compact, type: textarea, help: "The paragraph of the one-page CV." }
++      - field: skills
++        type: records
++        help: "The skills, by category."
++        fields:
++          - { field: title, type: text, help: "The heading." }
++          - field: content
++            type: records
++            help: "One row per category."
++            fields:
++              - { field: category, type: text, help: "The category." }
++              - { field: items, type: textarea, help: "The skills of the category." }
++              - { field: compact, type: checkbox, help: "Whether the one-page CV prints the row; a row without it is printed." }
++      - field: experience
++        type: records
++        help: "The positions this CV prints."
++        fields: &profile-rows
++          - { field: title, type: text, help: "The heading." }
++          - field: content
++            type: records
++            help: "One row per entry. A row names the records it stands for, and takes from the first one the place and period, in projects the period and address, where it prints none of its own."
++            fields:
++              - { field: records, type: tags, help: "The keys of the records the row stands for: career rows, collection entries or projects." }
++              - { field: title, type: text, help: "The entry as this CV prints it." }
++              - { field: role, type: text, help: "The role, for a project." }
++              - { field: location, type: text, help: "Where, when this CV prints it differently." }
++              - { field: duration, type: text, help: "When, when this CV prints it differently." }
++              - { field: url, type: text, help: "An address, when this CV prints another." }
++              - { field: about, type: textarea, help: "What this CV prints under it." }
++              - { field: about_compact, type: textarea, help: "What the one-page CV prints under it." }
++              - { field: compact, type: checkbox, help: "Whether the one-page CV prints the row; a row without it is printed." }
++      - { field: projects, type: records, help: "The projects this CV prints.", fields: *profile-rows }
++      - { field: education, type: records, help: "The degrees this CV prints.", fields: *profile-rows }
++      - { field: teaching, type: records, help: "The teaching this CV prints.", fields: *profile-rows }
++      - field: awards
++        type: records
++        help: "The awards this CV prints."
++        fields:
++          - { field: title, type: text, help: "The heading." }
++          - field: content
++            type: records
++            help: "One row per award. A row names the records it stands for, and takes the first one's place and day where it prints none of its own."
++            fields:
++              - { field: records, type: tags, help: "The keys of the records the row stands for." }
++              - { field: award, type: text, help: "The award as this CV prints it." }
++              - { field: event, type: text, help: "The event it was given at." }
++              - { field: location, type: text, help: "Where, when this CV prints it differently." }
++              - { field: date, type: text, help: "The day, when this CV prints it differently." }
++              - { field: compact, type: checkbox, help: "Whether the one-page CV prints the row; a row without it is printed." }
++      - field: letter
++        type: records
++        help: "The cover letter of the application."
++        fields:
++          - { field: recipient_name, type: text, help: "Who it is to." }
++          - { field: recipient_address, type: text, help: "Their address." }
++          - { field: date, type: text, help: "The date as the letter prints it." }
++          - { field: title, type: text, help: "The subject line." }
++          - { field: opening, type: text, help: "The greeting." }
++          - { field: closing, type: text, help: "The closing words." }
++          - { field: body, type: textarea, help: "The letter." }
+ 
+ title: Career strategy
+ goal: "Assistant professor / tenure-track (NL UD or Flemish ZAP)"
+ milestone: "FWO Senior"
+ milestone_date: "2026-11-17"
+ 
+-# Situation: a key-value fact strip
+-situation:
+-  PhD: "May 2023, KU Leuven (Marc Van Hulle)"
+-  Postdoc (KU Leuven): "May 2023 - Jan 2024 (ECoG sign-language decoding, Marc Van Hulle)"
+-  Postdoc (UHasselt): "Jan 2024 - Jan 2026 (Biomedical Data Sciences, Liesbet Peeters)"
+-  Now: "Postdoc, U Twente, CoDE group (Cognition, Data and Education) - AI for HCC (ZonMw AI-HCC), since Jan 2026"
+-  Also: "Research Affiliate, UHasselt; BKO completed"
+-
+ # Order of work, in priority order (task, when and an optional note)
+ order:
+   - { task: "Quantitative Researcher", when: "", note: "" }
+   - { task: "Diplomat", when: "", note: "" }
+   - { task: "ERC Starting Grant", when: "Oct 2027", note: "" }
++
++positions:
++  - key: postdoc-twente
++    title: "Postdoctoral Researcher: Foundation Models & Multi-Modal Federated Learning for Precision Medicine and Liver Cancer Detection"
++    location: University of Twente / Medisch Spectrum Twente
++    duration: January 2026 - Current
++    about: |
++      Developing advanced deep learning and foundation models integrating longitudinal MRI data, multi-omics profiles, and clinical variables for early detection and risk prediction of hepatocellular carcinoma (HCC).
++      Building explainable AI (XAI) frameworks that link imaging features and molecular markers to clinically meaningful outcomes in precision oncology within the AI-HCC ZonMw project.
++  - key: postdoc-uhasselt
++    title: "Postdoctoral Researcher: Federated Learning in Healthcare & Real-World Evidence"
++    location: UHasselt
++    duration: January 2024 - January 2026 (Research Affiliate from 2026)
++    about: |
++      Scientific Coordinator of the Flanders AI Research Program Use Case Real World Evidence, leading multi-institutional research on privacy-preserving healthcare analytics. As Technical Machine Learning Lead of the Biomedical Data Sciences Group, developed federated learning frameworks enabling collaborative clinical research across Belgian healthcare institutions without sharing sensitive patient data.
++
++      Research encompasses federated tensor regression for longitudinal health data, distributed learning architectures for heterogeneous clinical datasets, and translation of federated AI methods into practical healthcare applications.
++  - key: postdoc-kuleuven
++    title: "Postdoctoral Researcher: Deep Learning & Tensor Regression for Sign Language Alphabet Decoding via Brain-Computer Interfaces"
++    location: KU Leuven
++    duration: May 2023 - January 2024
++    about: |
++      Developed advanced machine learning methods for decoding sign language alphabet gestures from high-density intracranial brain activity (ECoG). Combined deep learning architectures with tensor regression models to capture complex spatiotemporal patterns in neural signals associated with linguistic motor control.
++
++      Technical contributions included implementing block-term tensor decomposition for multi-dimensional neural data and exploring cross-subject generalization for robust BCI performance. The research advances both fundamental understanding of neural encoding of sign language and practical assistive communication technology. Conducted at the Laboratory for Neuro- and Psychophysiology under supervision of Prof. Marc Van Hulle, extending previous doctoral research in motor decoding to linguistic applications.
++  - key: consultant-flanders-bci
++    title: Data Science Consultant
++    location: Flanders BCI
++    duration: 2022 - 2024
++    about: "Provided consultancy for physical experiments using Synamps RT and Neuvo EEG Systems.\nSupported the data analysis for hybrid BCI with new analytical EEG modeling techniques & signal detection- and classification algorithms. \nInfer emotion from EEG signals using machine learning techniques.\nUsage of ECoG signals from semi-invasive recording for imagined movement detection and language processing.\n"
++  - key: research-stay-gloreha
++    title: "Research Stay Idrogenet Srl, Gloreha: Robotic Rehabilitation"
++    location: Lumezzane, Italy
++    duration: Dec. 2022 - Jan. 2023
++    about: "Develop custom software for the control of the Gloreha robotic rehabilitation device, \nSpecifically the R-TOUCH PRO Sinfonia, a custom-built robotic exoskeleton for hand rehabilitation.\n"
++  - key: phd-kuleuven
++    title: PhD Researcher in Computational Neuroscience
++    location: KU Leuven
++    duration: Sep. 2018 - May 2023
++    about: |
++      Cognitive and Molecular Neuroscience
++      PhD Thesis: Finger Movement Decoding: From Source-Localisation to Tensor Regression Modelling
++  - key: internship-web-performance
++    title: "Web Performance Research Internship"
++    location: UHasselt
++    duration: Jul. 2016 - Sep. 2016
++    about: |
++      I worked on the iMinds PRO-FLOW project @ Expertise centre for Digital Media (EDM)
++      focus on the difference between the http versions (http1.1, https, http2).
++  - key: internship-physical-computing
++    title: Summer Research Internship Physical Computing
++    location: UHasselt
++    duration: Aug. 2015 - Sep. 2015
++    about: "Interfacing between human entity, a drone and virtual objects @ Expertise centre for Digital Media (EDM). \n(C++, Optitrack motion capture, custom built drone)\n"
++
++degrees:
++  - key: sign-language
++    title: Flemish Sign Language course
++    location: Flemish Sign Language Centre
++    duration: Sep. 2022 - May 2024
++    about: |
++      Graduates are able to engage in day-to-day conversations with deaf and hard-of-hearing individuals.
++  - key: phd
++    title: Doctoral Programme in Biomedical Science (PhD) in Computational Neuroscience
++    location: KU Leuven
++    duration: Sep. 2018 - May 2023
++    about: |
++      Cognitive and Molecular Neuroscience
++      PhD Thesis: Finger Movement Decoding: From Source-Localisation to Tensor Regression Modelling
++  - key: msc-ai
++    title: Advanced Master of Science in Engineering (M.Sc.) in Artificial Intelligence
++    location: KU Leuven
++    duration: Sep. 2017 - Jul. 2019
++    about: |
++      Engineering and Computer Science (76% - Cum Laude)
++      Thesis: An Information Theoretical Approach to EEG Source-Reconstructed Connectivity (on Github)
++  - key: honours
++    title: Honours programme of the Faculty of Engineering Science (Research Track)
++    url: https://eng.kuleuven.be/studeren/engineering-essentials/honoursprogramma
++    location: KU Leuven
++    duration: Sep. 2016 - Oct. 2018
++    about: |
++      Research Assistant: design of type-&-effect system for Eff  based on row polymorphism
++      Research Assistent: efficient compilation of algebraic effect handlers (in Eff)
++  - key: msc-cs
++    title: Master of Science in Engineering (M.Sc.) in Computer Science (Burgerlijk Ingenieur - ir.)
++    location: KU Leuven
++    duration: Sep. 2016 - Sep. 2018
++    about: |
++      Artificial Intelligence & Theoretical Computer Science (76% - Cum Laude)
++      Thesis: Algebraic Subtyping for Algebraic Effects and Handlers (on Github)
++  - key: summer-school-manchester
++    title: "Business Summer School: United in Manchester (0739)"
++    location: The University of Manchester
++    duration: Jul. 2015 - Aug. 2015
++    about: International Business
++  - key: bsc
++    title: "Bachelor of Science (B.Sc.) in Computer Science"
++    location: UHasselt
++    duration: Sep. 2013 - Jul. 2016
++    about: |
++      Physics and General courses (79% - Magna Cum Laude)
++      Thesis: Machine learning techniques for flow-based network intrusion detection systems (on Github)
++  - key: twente-health-school
++    title: Twente Health School (summer school)
++    location: University of Twente
++    duration: 2026
++    about: Interdisciplinary health-research summer school at the University of Twente.
++    cv_section: extracurricular
++    cv_rank: 1
++
++awards:
++  - key: efsa
++    award: Selected for EFSA Framework Contract
++    event: European Food Safety Authority
++    date: 2025-06-01 15:59:00-0400
++    location: Europe
++    content: "Statistical & Epidemiological Analysis - Ranked 4th among international contractors in competitive evaluation - Contributed to case studies demonstrating expertise in Bayesian spatial modeling, \n  AI/ML applications for data classification, and advanced statistical training design\n- Quality score: 130.5/170 across methodology, implementation, and risk management criteria\n"
++  - key: fwo-grant
++    funding: FWO-PhD
++    event: FWO
++    date: 2018-01-01 15:59:00-0400
++  - key: cyber-security
++    award: Finalist
++    event: Cyber Security Challenge 2018
++    date: 2018-03-24 15:59:00-0400
++    location: Brussels, Belgium
++    content: "A Capture The Flag (CTF) challenge-based game covering a wide range of security issues. \n"
++  - key: icfp-src
++    award: 3rd place
++    event: ICFP 2017 Student Research Competition
++    date: 2017-09-01 15:59:00-0400
++    location: Oxford, UK
++  - key: bachelor-award
++    award: Bachelor Award
++    event: in Computer Science
++    date: 2016-07-01 15:59:00-0400
++    location: UHasselt, Belgium
++    content: >
++      Award presented by the examination committee of Computer Science at Hasselt University for meritorious achievements, and contribution to a positive image of the bachelor in Computer Science.
++  - key: chi-sdc
++    award: 3rd place
++    event: ACM CHI 2016 Student Design Competition
++    date: 2016-05-01 15:59:00-0400
++    location: San Jose, CA, USA
++  - key: begdc
++    award: 2nd place
++    event: BeGDC (Belgian Game Development Championship)
++    date: 2016-02-01 15:59:00-0400
++    location: Brussels, Belgium
++  - key: ielts
++    award: IELTS
++    event: Academic Module (8.0/9.0)
++    date: 2016-01-01 15:59:00-0400
++    location: Brussels, Belgium
++
++references:
++  - { person: amir-haeri, reason: "Associate Professor (Postdoc advisor)" }
++  - { person: peeters, reason: "Associate Professor (Postdoc advisor) Biomedical Data Sciences" }
++  - { person: van-hulle, reason: "Full Professor (PhD advisor) Laboratory for Neuro- and Psychophysiology" }
++  - { person: moreau, reason: "Full Professor (Collaborator)" }
++
++# The employer CVs, written to the website's _data/industry.yml and rendered by its _industry/cv_pdf_generator.py (select one with --profile). Keep every profile true to the career record: these go to real employers.
++profiles:
++  shared:
++    location: "Netherlands | EU citizen (no visa required)"
++    email: axel.faes[at]gmail.com
++    parts: [portrait_url, author, website]
++    links: [linkedin, github, homepage]
++
++  # Senior Data Analyst, Guerrilla Games (Amsterdam)
++  analyst:
++    titles:
++      - Data Scientist & Quantitative Analyst
++      - Behavioural & Telemetry Analytics
++      - SQL | Python | Experimentation
++
++    summary:
++      title: Profile
++      text: |
++        Quantitative scientist (PhD) with 8 years turning large, noisy behavioural and sensor
++        datasets into decisions that non-technical teams act on. I design experiments, build
++        analysis pipelines in Python and SQL, and translate ambiguous questions into well-scoped,
++        reproducible analyses. Equally comfortable defining success metrics with stakeholders and
++        digging into raw event streams to check whether the data can even answer the question.
++        Long-time gamer and former game-dev competitor (2nd place, Belgian Game Development
++        Championship) who wants to put rigorous analytics behind the moment-to-moment player
++        experience.
++      text_compact: |
++        Quantitative scientist (PhD) with 8 years turning large, noisy behavioural and sensor
++        datasets into decisions non-technical teams can act on. I design experiments, build
++        analysis pipelines in Python and SQL, and turn ambiguous questions into well-scoped,
++        reproducible analyses. Long-time gamer and former game-dev competitor (2nd place, Belgian
++        Game Development Championship) who wants rigorous analytics behind the player experience.
++
++    skills:
++      title: Skills
++      content:
++        - category: Querying & Data
++          items: "Advanced SQL on large event / time-series datasets; data modelling and event-taxonomy design; data-quality and completeness validation; aggregation, window functions and joins at scale."
++        - category: Programming
++          items: "Python (pandas, NumPy, scikit-learn), Jupyter; R; Git / version control; reproducible analysis workflows."
++        - category: Experimentation & Statistics
++          items: "A/B testing and experimental design; hypothesis testing; regression and survival models; Bayesian and spatial modelling; causal / observational analysis."
++        - category: Machine Learning
++          items: "Pragmatic ML for prediction and clustering; deep learning (PyTorch); tensor methods; representation / foundation models."
++        - category: Visualisation & Communication
++          items: "Tableau; matplotlib / Plotly; dashboards; presenting actionable insight to designers, producers, engineers and executives."
++        - category: Domains
++          items: "Behavioural and sensor telemetry; high-density time-series; instrumentation; product and player analytics."
++          compact: false   # one-pager: folded into the profile line
++
++    experience:
++      title: Experience
++      content:
++        - title: "Postdoctoral Researcher - AI & Data Science"
++          records: [postdoc-twente]
++          duration: Jan 2026 - Present
++          about: |
++            Build predictive models over large, longitudinal multi-modal datasets (imaging, molecular, clinical), owning the full pipeline from raw data to validated insight.
++            Design explainable analytics that connect model outputs to the outcomes stakeholders care about, communicated to non-technical decision-makers.
++        - title: "Scientific Coordinator & Machine-Learning Lead - Real-World Evidence"
++          records: [postdoc-uhasselt, FAIR]
++          location: UHasselt (Flanders AI Research Program)
++          duration: Jan 2024 - Jan 2026
++          about: |
++            Led a ~10-person, 4-institution analytics programme; converted open-ended objectives into concrete, measurable KPIs and well-scoped analyses for diverse stakeholders.
++            Built distributed / federated analytics pipelines over heterogeneous, messy real-world datasets; owned data-quality, completeness and reliability checks across sites.
++            Designed experiments and statistical evaluations; delivered findings as clear, actionable recommendations to partners, clinicians and funders.
++            Mentored junior researchers and students; set analytical roadmaps and reproducibility standards (Git, notebooks).
++          about_compact: |
++            Led a ~10-person, 4-institution analytics programme; converted open-ended objectives into measurable KPIs and well-scoped analyses, designing the experiments and statistical evaluations to answer them.
++            Built distributed / federated pipelines over heterogeneous real-world data; owned data quality across sites and delivered findings as clear recommendations.
++            Mentored junior researchers; set reproducibility standards (Git, notebooks).
++        - title: "Researcher - Behavioural Signal Decoding (Brain-Computer Interfaces)"
++          records: [phd-kuleuven, postdoc-kuleuven]
++          duration: 2018 - 2024
++          about: |
++            Analysed high-density behavioural and neural time-series (millions of events per session) to detect patterns and predict actions, using SQL-style querying and aggregation over large event streams.
++            Designed and validated instrumentation and event pipelines for real-time behavioural data; monitored signal quality end-to-end.
++            Translated complex quantitative results into intuitive visual stories for cross-disciplinary audiences.
++          about_compact: |
++            Analysed high-density behavioural time-series (millions of events per session) to detect patterns and predict actions, using SQL-style querying and aggregation over large event streams.
++            Designed and validated event pipelines and instrumentation; monitored data quality end-to-end and presented results visually to cross-disciplinary audiences.
++        - title: "Data Science Consultant"
++          records: [consultant-flanders-bci]
++          about: |
++            Delivered analytics consultancy for external partners: experiment design, signal detection / classification, and pragmatic ML modelling on behavioural sensor data.
++
++    projects:
++      title: Selected Projects
++      content:
++        - role: Researcher / Developer
++          title: "Household Survival - room-scale game using everyday objects as controllers (Unity, OptiTrack)"
++          records: [chi-household-survival]
++          duration: 2015 - 2016
++          about: |
++            Built a room-scale game where brooms, fans and vacuums became controllers; 2nd place at the Belgian Game Development Championship and still used as a university teaching example.
++        - role: Lead Developer
++          title: "iCal for KU Leuven - schedule generator (Node.js)"
++          records: [ical-kuleuven]
++          duration: 2016 - Present
++          about: |
++            A small product shipped to real users: generates calendar feeds for KU Leuven courses, with 1000+ active users.
++        - role: Lead Developer
++          title: "Cardinal - VM & language platform (C++20)"
++          records: [cardinal-revamped]
++          url: https://github.com/TheAxeC/Cardinal
++          duration: 2015 - Present
++          about: |
++            A clear, well-documented virtual machine used as a platform for student theses and language / compiler experiments.
++        - role: Author
++          title: "Reproducible federated-learning tutorial (Wisconsin Breast Cancer)"
++          records: [federated-learning-tutorial]
++          duration: 2025 - Present
++          compact: false   # one-pager: dropped (3 projects carry the story)
++          about: |
++            Step-by-step, reproducible analysis walkthrough with documented markdown guides for newcomers.
++
++    education:
++      title: Education
++      content:
++        - title: "PhD, Computational Neuroscience"
++          records: [phd]
++          about: Large-scale time-series & tensor modelling
++          duration: 2018 - 2023
++        - title: "M.Sc. Artificial Intelligence (Cum Laude)"
++          records: [msc-ai]
++          about: Engineering & Computer Science
++          duration: 2017 - 2019
++        - title: "M.Sc. Computer Science Engineering (Cum Laude)"
++          records: [msc-cs]
++          about: AI & theoretical computer science
++          duration: 2016 - 2018
++        - title: "B.Sc. Computer Science (Magna Cum Laude)"
++          records: [bsc]
++          about: ""
++          duration: 2013 - 2016
++
++    awards:
++      title: Awards & Highlights
++      content:
++        - award: "2nd place - Belgian Game Development Championship"
++          records: [begdc]
++          event: Game development competition
++          location: Brussels
++          date: "2016"
++        - award: "3rd place - ACM CHI Student Design Competition"
++          records: [chi-sdc]
++          event: Everyday objects as game controllers
++          location: San Jose, USA
++          date: "2016"
++        - award: "Selected (ranked 4th) - EFSA Framework Contract"
++          records: [efsa]
++          event: Statistical & epidemiological analysis
++          date: "2025"
++        - award: "3rd place - ACM SIGPLAN Student Research Competition (ICFP)"
++          records: [icfp-src]
++          event: Programming languages & compilers
++          date: "2017"
++        - award: "IELTS Academic - 8.0 / 9.0"
++          records: [ielts]
++          event: English proficiency
++          location: ""
++          date: "2016"
++          compact: false   # one-pager: dropped
++
++    letter:
++      recipient_name: "Guerrilla Games - Analytics Team"
++      recipient_address: "Amsterdam, The Netherlands"
++      date: "June 2026"
++      title: "Application - Senior Data Analyst"
++      opening: "Dear Hiring Team,"
++      closing: "Kind regards,"
++      body: |
++        I'm applying for the Senior Data Analyst role on Guerrilla's analytics team. I've spent
++        my career making large, noisy behavioural datasets answer questions that people without a
++        statistics background can act on -- and I'd love to do that for the moment-to-moment
++        experience of games I actually play. As a long-time player, and a former game-dev
++        competitor whose team took second at the Belgian Game Development Championship, I keep
++        catching myself asking the analyst's question: how would you even measure whether a combat
++        encounter's pacing works, or whether players are quietly running dry on a resource?
++
++        Turning a vague design intuition into a well-scoped, measurable analysis is exactly what I
++        do. Coordinating a four-institution research programme, I converted open-ended objectives
++        into concrete KPIs, designed the experiments to test them, and delivered the findings as
++        clear recommendations to a mix of designers, engineers and decision-makers. I'm fluent in
++        SQL over large event-style datasets, build my analysis in Python and Jupyter, work in Git,
++        and care a great deal about reproducibility and A/B-test discipline -- your preferred
++        qualifications read like my toolbox.
++
++        Much of my work has been gameplay-analytics-shaped without the game: high-density
++        behavioural and sensor telemetry, millions of events per session, where half the battle is
++        designing the instrumentation and validating that the data is complete and trustworthy
++        before anyone draws a conclusion. Owning telemetry and event taxonomy, and guarding data
++        quality, is familiar territory for me.
++
++        At a senior level I try to do more than answer the questions I'm handed: I look for the
++        analytical opportunities a team hasn't spotted yet, and I enjoy mentoring junior analysts
++        toward rigorous, reproducible work. I'm based in the Netherlands and an EU citizen, so
++        joining the Amsterdam studio is straightforward. I'd welcome the chance to talk about how I
++        could help Guerrilla understand its players more deeply.
++
++  # Biomedical / health and life-sciences data science
++  pharma:
++    titles:
++      - Biomedical Data Scientist
++      - Statistics & Machine Learning
++      - Clinical & Real-World Data
++
++    summary:
++      title: Profile
++      text: |
++        PhD data scientist specialising in statistics and machine learning for health and
++        life-sciences data. Eight years building predictive and federated models across hospitals
++        and institutions, with a focus on rigorous, reproducible analysis of clinical, imaging,
++        omics and real-world data. Scientific coordinator of a multi-institution real-world-evidence
++        programme and selected for the EFSA statistical-analysis framework. I translate complex
++        methods into decisions that clinical and regulatory stakeholders can trust.
++
++    skills:
++      title: Skills
++      content:
++        - category: Statistics
++          items: "Survival and competing-risks models; regression; Bayesian and spatial modelling; experimental and study design; causal / observational inference."
++        - category: Machine Learning
++          items: "Predictive modelling, clustering, deep learning (PyTorch), representation / foundation models, tensor methods, explainable AI (XAI)."
++        - category: Health Data
++          items: "Clinical, longitudinal MRI / imaging, multi-omics, real-world evidence; OMOP / OHDSI; data harmonisation and quality."
++        - category: Federated & Privacy
++          items: "Federated learning across institutions; privacy-preserving analytics; distributed pipelines for sensitive data."
++        - category: Programming
++          items: "Python (pandas, scikit-learn, PyTorch), R, SQL, Jupyter; Git; reproducible pipelines."
++        - category: Communication & Domain
++          items: "Precision oncology and neuroscience; presenting to clinicians, regulators and funders; teaching and mentoring."
++
++    experience:
++      title: Experience
++      content:
++        - title: "Postdoctoral Researcher - AI for Healthcare & Precision Oncology"
++          records: [postdoc-twente]
++          duration: Jan 2026 - Present
++          about: |
++            Develop deep-learning and foundation models integrating longitudinal MRI, multi-omics and clinical variables for early detection and risk prediction of hepatocellular carcinoma (AI-HCC, ZonMw).
++            Build explainable-AI frameworks linking imaging and molecular markers to clinically meaningful outcomes.
++        - title: "Scientific Coordinator & ML Lead - Real-World Evidence"
++          records: [postdoc-uhasselt, FAIR]
++          location: UHasselt (Flanders AI Research Program)
++          duration: Jan 2024 - Jan 2026
++          about: |
++            Led multi-institutional privacy-preserving healthcare analytics across Belgian institutions, enabling collaborative clinical research without sharing patient data.
++            Developed federated tensor regression for longitudinal health data and distributed learning for heterogeneous clinical datasets; owned data quality and harmonisation.
++            Translated federated AI methods into practical applications; mentored junior researchers and students.
++        - title: "Researcher - Computational Neuroscience & Biomedical ML"
++          records: [phd-kuleuven, postdoc-kuleuven]
++          duration: 2018 - 2024
++          about: |
++            Built ML and tensor-regression models for high-density biomedical time-series; designed statistical evaluations and reproducible analysis pipelines.
++            Supervised graduate and doctoral students across clinical and engineering projects.
++        - title: "Statistical & Epidemiological Analysis - EFSA Framework"
++          records: [efsa]
++          location: European Food Safety Authority
++          duration: 2025
++          about: |
++            Selected (ranked 4th among international contractors) for the EFSA framework; contributed Bayesian spatial modelling and AI / ML for data classification.
++
++    projects:
++      title: Selected Projects
++      content:
++        - role: Lead Researcher & Developer
++          title: "Block-Term Tensor Regression (BTTR) - open-source Python package"
++          records: [bttr-block-term-tensor-regression]
++          duration: 2022 - Present
++          about: |
++            Accessible, reproducible tensor-regression tooling for neuroscience and biomedical data.
++        - role: Contributor
++          title: "Federated Learning Kit (FLkit) for the life sciences"
++          records: [fl-kit-elixir-federated-learning-kit]
++          duration: 2025 - Present
++          about: |
++            Guidance, techniques and tools helping life scientists apply privacy-preserving federated learning to sensitive, decentralised data.
++        - role: Author
++          title: "Reproducible federated-learning tutorial (Wisconsin Breast Cancer)"
++          records: [federated-learning-tutorial]
++          duration: 2025 - Present
++          about: |
++            End-to-end, documented walkthrough of a federated study using the FL4E framework.
++
++    education:
++      title: Education
++      content:
++        - title: "PhD, Computational Neuroscience"
++          records: [phd]
++          about: Biomedical ML & tensor regression
++          duration: 2018 - 2023
++        - title: "M.Sc. Artificial Intelligence (Cum Laude)"
++          records: [msc-ai]
++          about: Engineering & Computer Science
++          duration: 2017 - 2019
++        - title: "M.Sc. Computer Science Engineering (Cum Laude)"
++          records: [msc-cs]
++          about: AI & theoretical computer science
++          duration: 2016 - 2018
++        - title: "B.Sc. Computer Science (Magna Cum Laude)"
++          records: [bsc]
++          about: ""
++          duration: 2013 - 2016
++
++    awards:
++      title: Awards & Highlights
++      content:
++        - award: "Selected (ranked 4th) - EFSA Framework Contract"
++          records: [efsa]
++          event: Statistical & epidemiological analysis
++          date: "2025"
++        - award: "FWO Fundamental Research Grant"
++          records: [fwo-grant]
++          event: Research Foundation Flanders
++          date: "2018"
++        - award: "Bachelor Award in Computer Science"
++          records: [bachelor-award]
++          event: Examination committee distinction
++          location: UHasselt
++          date: "2016"
++        - award: "IELTS Academic - 8.0 / 9.0"
++          records: [ielts]
++          event: English proficiency
++          location: ""
++          date: "2016"
++
++    letter:
++      recipient_name: "Hiring Team"
++      recipient_address: ""
++      date: "June 2026"
++      title: "Application - Data Scientist (Health & Life Sciences)"
++      opening: "Dear Hiring Team,"
++      closing: "Kind regards,"
++      body: |
++        I'm writing to apply for your data-science role in health and life sciences. I'm a PhD data
++        scientist who has spent eight years building statistical and machine-learning models for
++        clinical, imaging, omics and real-world data -- and, just as importantly, making those
++        results trustworthy and intelligible to the clinicians and regulators who rely on them.
++
++        Most recently I develop deep-learning and explainable-AI models that integrate longitudinal
++        MRI, multi-omics and clinical variables for early cancer detection and risk prediction.
++        Before that I coordinated a multi-institution real-world-evidence programme, building
++        privacy-preserving federated pipelines that let hospitals collaborate without sharing
++        patient data, and owning data quality and harmonisation across sites. I was also selected
++        for the EFSA statistical-analysis framework, contributing Bayesian spatial modelling and
++        ML-based classification.
++
++        I work in Python, R and SQL with reproducible, version-controlled pipelines, and I'm
++        comfortable across the full arc of an analysis -- from study design and the right
++        statistical method through to a clear recommendation for a non-technical audience. I care
++        about rigour: honest uncertainty, validated data, and conclusions that hold up.
++
++        I'm based in the Netherlands and an EU citizen, available without visa sponsorship. I'd
++        welcome the opportunity to discuss how my background could contribute to your team.
++
++  # Engine Programmer, Larian Studios
++  engine:
++    titles:
++      - Engine & Systems Programmer
++      - C++ | Runtime | Performance
++      - Compilers, VMs & Game Tech
++
++    summary:
++      title: Profile
++      text: |
++        Systems and C++ engineer at heart. I designed and maintain Cardinal, a C++20 virtual
++        machine and runtime with its own bytecode compiler, fiber-based concurrency and a clean
++        embedding API. Alongside that, eight years of research have meant writing performant,
++        GPU-accelerated, multithreaded code over very large datasets, and profiling it to hit real
++        runtime and memory targets. Trained as a computer-science engineer (ir.) with a
++        compiler / programming-languages focus (ACM SIGPLAN and ICFP research-competition medals)
++        and a former game-dev competitor (2nd place, Belgian Game Development Championship). I care
++        about robust, profiled, maintainable low-level code, and I want to build engines full-time.
++      text_compact: |
++        Systems and C++ engineer: author of Cardinal, a C++20 virtual machine and runtime (bytecode
++        compiler, fiber concurrency, embedding API), plus eight years writing performant,
++        GPU-accelerated, multithreaded code over very large datasets. Computer-science engineer
++        (ir.) with a compiler / PL focus (ACM SIGPLAN and ICFP medals) and a former game-dev
++        competitor (2nd place, Belgian Game Development Championship). I want to build engines.
++
++    skills:
++      title: Skills
++      content:
++        - category: Languages & Systems
++          items: "C++20 (virtual machine, bytecode compiler, runtime, memory management, language embedding); C; Python; systems and compiler design; low-level reasoning about data layout."
++        - category: Performance & Optimisation
++          items: "Profiling and optimisation of compute-heavy code; GPU programming (CUDA / PyTorch) and GPU-accelerated pipelines; large-scale numerical / tensor computation; HPC / SLURM clusters."
++        - category: Concurrency & Multithreading
++          items: "Fiber-based concurrency and cooperative scheduling; parallel and distributed pipelines; reasoning about throughput, contention and memory pressure."
++        - category: Game & Real-Time
++          items: "Unity; room-scale / AR gameplay; OptiTrack motion capture; real-time device control and physical computing in C++; data- and script-driven runtime design."
++        - category: Tools & Practice
++          items: "Git and code review; testing, documentation and reproducible builds; data-driven / config-driven development; mentoring and technical leadership."
++        - category: Foundations
++          items: "Compilers, programming-language theory, type systems, algorithms; M.Sc. Computer Science Engineering (ir.), Cum Laude."
++          compact: false   # one-pager: folded into the profile line
++
++    experience:
++      title: Experience
++      content:
++        - title: "Postdoctoral Researcher - AI & High-Performance Computing"
++          records: [postdoc-twente]
++          duration: Jan 2026 - Present
++          about: |
++            Design and optimise performance-critical pipelines over large multi-modal datasets, owning the full path from raw data to validated result.
++            Write GPU-accelerated (CUDA / PyTorch) code and profile it to hit runtime and memory targets on shared HPC clusters.
++          about_compact: |
++            Design and optimise performance-critical, GPU-accelerated (CUDA / PyTorch) pipelines over large datasets, profiling to hit runtime and memory targets on HPC clusters.
++        - title: "Machine-Learning Lead & Scientific Coordinator"
++          records: [postdoc-uhasselt, FAIR]
++          location: UHasselt (Flanders AI Research Program)
++          duration: Jan 2024 - Jan 2026
++          about: |
++            Led a ~10-person, 4-institution engineering programme; turned open-ended goals into concrete, measurable deliverables.
++            Built distributed, multithreaded data pipelines over heterogeneous systems; owned reliability and data quality across sites.
++            Set code-review, Git and reproducibility standards; mentored and supported junior engineers and students.
++          about_compact: |
++            Led a ~10-person, 4-institution programme; built distributed, multithreaded pipelines, set code-review / Git / reproducibility standards, and mentored junior engineers.
++        - title: "Postdoctoral Researcher - Deep Learning & Tensor Methods"
++          records: [postdoc-kuleuven]
++          duration: 2023 - 2024
++          about: |
++            Built GPU deep-learning and tensor-decomposition models for high-density neural time-series (millions of samples per session).
++            Implemented block-term tensor decomposition and cross-subject generalisation; profiled and optimised compute- and memory-bound routines.
++          about_compact: |
++            Built GPU deep-learning and tensor-decomposition models for high-density time-series; implemented block-term decomposition and optimised compute- and memory-bound routines.
++        - title: "PhD Researcher - High-Performance Numerical & Systems Code"
++          records: [phd-kuleuven]
++          duration: 2018 - 2023
++          about: |
++            Wrote high-performance numerical and tensor code for very large time-series; designed reproducible, version-controlled pipelines.
++            Supervised MSc theses on engine-adjacent systems work: single-pass compiler optimisation and a redesign of VM bytecode for faster execution and lower memory use.
++          about_compact: |
++            Wrote and optimised high-performance numerical / tensor code; supervised MSc theses on single-pass compiler optimisation and VM bytecode redesign for speed and memory.
++        - title: "Research Stay - Real-Time C++ for Robotic Control"
++          records: [research-stay-gloreha]
++          location: Idrogenet Srl (Gloreha), Italy
++          duration: 2022 - 2023
++          about: |
++            Developed custom C++ software to control a robotic hand-rehabilitation exoskeleton (R-TOUCH PRO Sinfonia), including real-time device I/O.
++          about_compact: |
++            Developed custom C++ software for real-time control of a robotic hand-rehabilitation exoskeleton (Gloreha R-TOUCH PRO Sinfonia).
++        - title: "Research Intern - Real-Time C++, Motion Capture & Web Performance"
++          records: [internship-physical-computing, internship-web-performance]
++          location: UHasselt (Expertise Centre for Digital Media)
++          duration: 2015 - 2016
++          about: |
++            Built real-time C++ software interfacing a custom-built drone, human motion and virtual objects through OptiTrack motion capture.
++            Profiled and compared HTTP/1.1, HTTPS and HTTP/2 performance in a follow-up web-performance research internship.
++          about_compact: |
++            Built real-time C++ software interfacing a custom drone, motion and virtual objects via OptiTrack; later profiled HTTP/1.1 vs HTTP/2 performance.
++
++    projects:
++      title: Selected Projects
++      content:
++        - role: Lead Developer
++          title: "Cardinal - C++20 virtual machine & language platform"
++          records: [cardinal-revamped]
++          url: https://github.com/TheAxeC/Cardinal
++          duration: 2015 - Present
++          about: |
++            A from-scratch C++20 virtual machine and runtime: bytecode compiler, fiber-based concurrency, managed memory and a clean C embedding API.
++            Built for clarity and performance, and used as a platform for MSc theses on compiler optimisation and bytecode efficiency.
++        - role: Researcher / Developer
++          title: "Household Survival - room-scale game with everyday objects as controllers (Unity, OptiTrack)"
++          records: [chi-household-survival]
++          duration: 2015 - 2016
++          about: |
++            A room-scale game turning brooms, fans and vacuums into motion-tracked controllers; 2nd place at the Belgian Game Development Championship and still used as a university teaching example.
++        - role: Supervisor
++          title: "Wren VM optimisation - bytecode redesign & single-pass compiler tuning (MSc research)"
++          records: [msc-supervision-computer-science-2025-2026]
++          url: https://github.com/TheAxeC/Cardinal
++          duration: 2025 - Present
++          compact: false   # one-pager: dropped (covered in Experience)
++          about: |
++            Supervised MSc research redesigning VM bytecode for faster execution and lower memory footprint, and optimising a single-pass compiler, directly on runtime performance and memory.
++        - role: Lead Developer
++          title: "Block-Term Tensor Regression (BTTR) - open-source library"
++          records: [bttr-block-term-tensor-regression]
++          duration: 2022 - Present
++          compact: false   # one-pager: dropped
++          about: |
++            An open-source library for tensor-based regression: reproducible, documented, and actively maintained for research use.
++        - role: Lead Developer
++          title: "iCal for KU Leuven - schedule generator (Node.js)"
++          records: [ical-kuleuven]
++          duration: 2016 - Present
++          compact: false   # one-pager: dropped (Cardinal + Household Survival carry the story)
++          about: |
++            A small product shipped to real users: generates calendar feeds for KU Leuven courses, with 1000+ active users.
++
++    education:
++      title: Education
++      content:
++        - title: "PhD, Computational Neuroscience"
++          records: [phd]
++          about: Large-scale time-series & tensor computation
++          duration: 2018 - 2023
++        - title: "M.Sc. Artificial Intelligence (Cum Laude)"
++          records: [msc-ai]
++          about: Engineering & Computer Science
++          duration: 2017 - 2019
++        - title: "M.Sc. Computer Science Engineering (ir., Cum Laude)"
++          records: [msc-cs]
++          about: AI & theoretical CS; thesis on algebraic subtyping (type systems / compilers)
++          duration: 2016 - 2018
++        - title: "Honours Programme, Faculty of Engineering (Research Track)"
++          records: [honours]
++          about: Compiler research - efficient compilation of algebraic effect handlers
++          duration: 2016 - 2018
++        - title: "B.Sc. Computer Science (Magna Cum Laude)"
++          records: [bsc]
++          about: Physics & general engineering courses
++          duration: 2013 - 2016
++          compact: false   # one-pager: dropped
++
++    teaching:
++      title: Teaching & Mentoring
++      content:
++        - title: "Lecturer & Guest Lecturer"
++          records: [bioinformatics, data-science-in-healthcare-4747-lecturer, advanced-topics-in-data-science, brain-computer-interfacing-b-kul-h08m0a-guest-lecturer]
++          location: UHasselt / KU Leuven
++          duration: 2022 - Present
++          about: |
++            Coordinating lecturer in Bioinformatics (UHasselt) and lecturer in Data Science in Healthcare and Advanced Topics in Data Science.
++            Guest lecturer in Brain-Computer Interfacing (KU Leuven, 2022 - 2025).
++        - title: "Student Supervision"
++          records: [msc-supervision-computer-science-2025-2026, student-supervision, phd-daily-supervision-biomedical-sciences-2022-2023, internship-msc-ai-students-2020-2021]
++          location: KU Leuven / UHasselt
++          duration: 2020 - Present
++          about: |
++            Supervised 15+ MSc and PhD students, including theses on compiler optimisation and VM bytecode redesign, tensor methods, and federated learning.
++        - title: "Programming Coach & Outreach"
++          records: [coach-coderdojo, coach-djangogirls]
++          location: CoderDojo, DjangoGirls
++          duration: 2014 - 2025
++          about: |
++            Taught programming to children and adults (Scratch, Python, Lego Mindstorms) and coached beginners toward confident, independent coding.
++
++    awards:
++      title: Awards & Highlights
++      content:
++        - award: "2nd place - Belgian Game Development Championship"
++          records: [begdc]
++          event: Game development competition
++          location: Brussels
++          date: "2016"
++        - award: "3rd place - ACM SIGPLAN Student Research Competition (ICFP)"
++          records: [icfp-src]
++          event: Programming languages & compilers
++          date: "2017"
++        - award: "3rd place - ACM CHI Student Design Competition"
++          records: [chi-sdc]
++          event: Everyday objects as game controllers
++          location: San Jose, USA
++          date: "2016"
++        - award: "Finalist - Cyber Security Challenge"
++          records: [cyber-security]
++          event: Capture-the-Flag, low-level & systems security
++          location: Brussels
++          date: "2018"
++          compact: false   # one-pager: dropped
++        - award: "FWO Fundamental Research Grant"
++          records: [fwo-grant]
++          event: Research Foundation Flanders
++          date: "2018"
++          compact: false   # one-pager: dropped
++        - award: "Bachelor Award in Computer Science"
++          records: [bachelor-award]
++          event: Examination committee distinction
++          location: UHasselt
++          date: "2016"
++          compact: false   # one-pager: dropped
++        - award: "IELTS Academic - 8.0 / 9.0"
++          records: [ielts]
++          event: English proficiency
++          location: ""
++          date: "2016"
++          compact: false   # one-pager: dropped
++
++    letter:
++      recipient_name: "Larian Studios - Engine Team"
++      recipient_address: "Ghent, Belgium"
++      date: "July 2026"
++      title: "Application - Engine Programmer"
++      opening: "Dear Hiring Team,"
++      closing: "Kind regards,"
++      body: |
++        I'm applying for the Engine Programmer role. I'll be direct about where I'm coming from: I'm
++        a C++ systems engineer who spends his research career writing performant, multithreaded,
++        GPU-accelerated code, and who builds engines and runtimes for the love of it. In my own
++        time I designed and maintain Cardinal, a C++20 virtual machine with its own bytecode
++        compiler, fiber-based concurrency and an embedding API, the kind of low-level, performance-
++        and memory-sensitive work an engine lives on. I want to do that full-time, on real games.
++
++        The games matter to me as a player, Baldur's Gate 3 and Divinity: Original Sin 2 among
++        them, and game development is where I started: my team took second place at the Belgian
++        Game Development Championship for a room-scale game built in Unity with motion-tracked
++        physical controllers, and my earliest engineering work was real-time C++ against OptiTrack
++        motion capture. I trained as a computer-science engineer with a compiler and
++        programming-languages focus (ACM SIGPLAN and ICFP research-competition medals), so bytecode,
++        runtimes, data-driven systems and profiling are native territory, not a stretch.
++
++        I'll be honest about the gaps too: I haven't shipped a AAA title, and my hands-on time with
++        modern graphics APIs and console SDKs is limited. What I bring is strong C++, genuine
++        systems depth, a habit of profiling and optimising toward hard targets, and the ability to
++        get productive fast in an unfamiliar codebase, plus real enthusiasm for going deep on
++        engine and animation systems. I mentor naturally and I like collaborating, iterating and
++        experimenting on a feature until it's right.
++
++        On the practical side, the Ghent studio suits me well: I'm Belgian, I studied and worked in
++        Belgium for years, so being on-site is a return home rather than a relocation. I'd welcome
++        the chance to talk about how I could contribute to Larian's engine team.
+diff -ruN a/.oculus/data/academic/education.yml b/.oculus/data/academic/education.yml
+--- a/.oculus/data/academic/education.yml	2026-10-30 01:43:50
++++ b/.oculus/data/academic/education.yml	2026-10-30 02:41:23
+@@ -1,4 +1,4 @@
+-# Education: teaching, supervision, academic service. Schema: the `schema:` block below (editable by hand). Source of record: side-projects/theaxec.github.io/_data/data.yml (`academic:` + `students:`). Keep in sync with the CV. An entry with a `deadline:` (ISO) surfaces in the Focus deadline radar (90-day look-ahead). To clear one, set its `status:` to a done/not-pursuing state (completed | done | skipped | declined | passed | cancelled | withdrawn) and rebuild; the entry stays here as a record but stops nagging (no in-browser dismiss).
++# Education: teaching, supervision, academic service. Schema: the `schema:` block below (editable by hand). The source of record for the website's CV: an entry with `cv_section` is a row of that section of the website's _data/data.yml, and a supervision entry's `students` are its `students:` rows, written by the Career view's Write the website. An entry with a `deadline:` (ISO) surfaces in the Focus deadline radar (90-day look-ahead). To clear one, set its `status:` to a done/not-pursuing state (completed | done | skipped | declined | passed | cancelled | withdrawn) and rebuild; the entry stays here as a record but stops nagging (no in-browser dismiss).
+ # Each entry has a `key`, its short name, unique in this file; a write and Edit in File address the entry by it.
+ title: Education & Service
+ # Schema: field -> type / options / required / help. Drives the fields a new entry is built with, the in-place controls, the editor's completion and marks, the type check of a write and selftest.
+@@ -17,6 +17,21 @@
+   - { field: lead,          type: tags,     foreign_key: people, required: true, help: "Who leads it." }
+   - { field: collaborators, type: tags,     foreign_key: people, help: "Who works on it with the lead." }
+   - { field: supervisors,   type: tags,     foreign_key: people, help: "Who supervises it." }
++  - { field: cv_section, type: text,     help: "The CV section the entry is listed in: academic, students or extracurricular; none keeps it off the CV." }
++  - { field: cv_rank,    type: text,     help: "The entry's place in its CV section, a whole number." }
++  - { field: cv_title,   type: text,     help: "The title the CV prints, when it is not the title." }
++  - { field: cv_url,     type: text,     help: "The address the CV links." }
++  - { field: location,   type: text,     help: "Where, as the CV prints it." }
++  - { field: duration,   type: text,     help: "The period as the CV prints it." }
++  - { field: about,      type: textarea, help: "What the CV prints under it." }
++  - { field: hide,       type: checkbox, help: "Kept off the CV while it stays listed." }
++  - field: students
++    type: records
++    help: "The students supervised, each a row of the CV's students in place of the entry."
++    fields:
++      - { field: person, type: text, required: true, foreign_key: people, help: "The student, by key." }
++      - { field: topic,  type: text, help: "The topic, as the CV prints it." }
++      - { field: degree, type: text, help: "The degree and year, as the CV prints them." }
+ 
+ entries:
+   - key: student-supervision-2026-2027
+@@ -40,14 +55,35 @@
+   - key: bioinformatics
+     title: "Bioinformatics (3740) - Coordinating lecturer"
+     lead: [axel-faes]
+-    sub: "UHasselt | Sept 2025 - Sept 2026 (also 2024-2025)"
++    sub: "UHasselt | Sept 2025 - Sept 2026"
+     status: completed
+     date: "2025-2026"
+     meta:
+       - { label: Institution, value: "UHasselt" }
+     tags: [teaching]
+     link: "education/courses/bioinformatics"
++    cv_section: academic
++    cv_rank: 1
++    cv_title: Bioinformatics (3740) Coordinating lecturer
++    location: UHasselt
++    duration: Sept. 2025 - Sept. 2026
+ 
++  - key: bioinformatics-2024-2025
++    title: "Bioinformatics (3740) - Coordinating lecturer (2024-2025)"
++    lead: [axel-faes]
++    sub: "UHasselt | Sept 2024 - Sept 2025"
++    status: completed
++    date: "2024-2025"
++    meta:
++      - { label: Institution, value: "UHasselt" }
++    tags: [teaching]
++    link: "education/courses/bioinformatics"
++    cv_section: academic
++    cv_rank: 5
++    cv_title: Bioinformatics (3740) Coordinating lecturer
++    location: UHasselt
++    duration: Sept. 2024 - Sept. 2025
++
+   - key: msc-supervision-computer-science-2025-2026
+     title: "MSc supervision - Computer Science (2025-2026)"
+     lead: [axel-faes]
+@@ -60,6 +96,12 @@
+     tags: [supervision]
+     related: [brecht-fl-partitioning]
+     note: "Brecht Heeren - Federated Machine Learning for Health Data; Denzell Mgbokwere - Optimization & Type Checking in Single-Pass Compilers (Wren); Robert Rysskin - Redesign of Wren Bytecode."
++    cv_section: students
++    cv_rank: 1
++    students:
++      - { person: brecht-heeren, topic: "Federated Machine Learning for Health Data", degree: "Master of Science in Computer Science (2025-2026)" }
++      - { person: denzell-mgbokwere, topic: "Optimization and Type Checking in Single-Pass Compilers - a Case Study with the Wren Programming Language", degree: "Master of Science in Computer Science (2025-2026)" }
++      - { person: robert-rysskin, topic: "Redesign of Wren Bytecode - Towards More Efficient Execution and Memory Usage", degree: "Master of Science in Computer Science (2025-2026)" }
+ 
+   - key: reader-2026
+     title: "MSc thesis assessor / reader (2026)"
+@@ -68,6 +110,12 @@
+     date: "2026"
+     tags: [service]
+     link: "education/thesis-students-assessor/reader-2026"
++    cv_section: academic
++    cv_rank: 10
++    cv_title: MSc thesis assessor (second reader)
++    location: UHasselt
++    duration: "2026"
++    hide: true
+ 
+   - key: advanced-topics-in-data-science
+     title: "Advanced Topics in Data Science (4569 & 4585) - Lecturer (Federated Learning)"
+@@ -79,6 +127,11 @@
+       - { label: Institution, value: "UHasselt" }
+     tags: [teaching]
+     link: "education/courses/advanced-topics-in-data-science"
++    cv_section: academic
++    cv_rank: 4
++    cv_title: Advanced Topics in Data Science (4569 & 4585) Lecturer Federated Learning (teaching team member)
++    location: UHasselt
++    duration: June 2024 - Sept. 2025
+ 
+   - key: data-science-in-healthcare-4747-lecturer
+     title: "Data Science in Healthcare (4747) - Lecturer"
+@@ -89,6 +142,11 @@
+     meta:
+       - { label: Institution, value: "UHasselt" }
+     tags: [teaching]
++    cv_section: academic
++    cv_rank: 3
++    cv_title: Data Science in Healthcare (4747) Lecturer (teaching team member)
++    location: UHasselt
++    duration: Sept. 2025 - Dec. 2025
+ 
+   - key: brain-computer-interfacing-b-kul-h08m0a-guest-lecturer
+     title: "Brain-Computer Interfacing (B-KUL-H08M0A) - Guest lecturer"
+@@ -99,6 +157,11 @@
+     meta:
+       - { label: Institution, value: "KU Leuven" }
+     tags: [teaching]
++    cv_section: academic
++    cv_rank: 9
++    cv_title: Brain-Computer Interfacing (B-KUL-H08M0A) Guest Lecturer
++    location: KU Leuven
++    duration: 2022-2025
+ 
+   # -- Teaching qualification --------------------------------------------------
+ 
+@@ -114,6 +177,11 @@
+     tags: [qualification]
+     link: "education/bko"
+     note: "BKO (Basic Teaching Qualification) track - Teacher Professionalization."
++    cv_section: academic
++    cv_rank: 2
++    cv_title: BKO (Basic Teaching Qualification) - Teacher Professionalization
++    location: UHasselt
++    duration: 2025
+ 
+   # -- Student supervision (by cohort) -----------------------------------------
+ 
+@@ -129,6 +197,16 @@
+     related: [ward-bttr-crosssubject, dongho-ecg-clustering, dries-bttr-ecg, bttn-incident-af, meseret-cirrhosis, individual-reference-intervals]
+     link: "education/student-supervision"
+     note: "Matteo Ramina - Estimating Household Wealth in Guyana (remote sensing + CNN); Mohsen Soleimanisemsani - AI for time-series imputation; Meseret Assefa Kerga - Predicting Cirrhosis Patient Survival with ML; Dongho Chun - Clustering with Cardiovascular Health Data; Dries Cornelissen - BTTR for arrhythmia detection/prediction on sinus rhythms; Ward Ceyssens - Cross-subject finger-movement decoding with HD-ECoG; Anh Phuong DO - Individual Reference Intervals for Clinical Event Prediction (Doctoral, Statistics; co-supervisor). Five lines feed published/active projects."
++    cv_section: students
++    cv_rank: 2
++    students:
++      - { person: do, topic: "Individual Reference Intervals for Clinical Event Prediction", degree: "Doctoral Program in Sciences, Statistics (co-supervisor, 2024 - 2025)" }
++      - { person: matteo, topic: "Estimating Household Wealth in Guyana - Remote Sensing and Convolutional Neural Network Approach", degree: "Master Statistics & Data Science (2024-2025)" }
++      - { person: mohsen, topic: "AI for time series imputation", degree: "Master Statistics & Data Science (2024-2025)" }
++      - { person: kerga, topic: "Predicting Cirrhosis Patient Survival Using Machine Learning - A Data-Driven Approach", degree: "Master Statistics & Data Science (2024-2025)" }
++      - { person: dongho, topic: "Clustering with Cardiovascular Health Data", degree: "Master of Science in Computer Science (2024-2025)" }
++      - { person: dries-cornelissen, topic: "BTTR for arrhythmia detection/prediction on sinus rhythms", degree: "Master of Science in Computer Science (2024-2025)" }
++      - { person: ward, topic: "Cross Subject training for finger movement decoding with high-density ECoG", degree: "Master of Science in Computer Science (2024-2025)" }
+ 
+   - key: phd-daily-supervision-biomedical-sciences-2022-2023
+     title: "PhD daily supervision - Biomedical Sciences (2022-2023)"
+@@ -142,6 +220,11 @@
+     tags: [supervision]
+     related: [proprioception-exoskeleton]
+     note: "Qiang Sun - Hand-exoskeleton dexterity via shared control with a semi-invasive BCI; Eva Calvo Merino - Restoring finger dexterity with an exoskeleton controlled by intracranial recordings."
++    cv_section: students
++    cv_rank: 3
++    students:
++      - { person: qiang-sun, topic: "Hand exoskeleton dexterity achieved by shared control with a semi-invasive brain-computer interface", degree: "Doctoral Program in Biomedical Sciences (daily supervision 2022-2023)" }
++      - { person: eva-calvo-merino, topic: "Restoring finger dexterity with an exoskeleton controlled by human intracranial recordings", degree: "Doctoral Program in Biomedical Sciences (daily supervision 2022-2023)" }
+ 
+   - key: internship-msc-ai-students-2020-2021
+     title: "Internship & MSc AI students (2020-2021)"
+@@ -155,6 +238,14 @@
+     tags: [supervision]
+     related: [bttd-source-eeg, connectivity-iris]
+     note: "Interns (2021): Aurélie de Borman - source mixing on directed connectivity (simulated reconstructed EEG); Diogo Sousa Morais - effectiveness of source-localized EEG for BCIs; Guilherme de Borras Silva - cluster-permutation analysis of N-back EEG-ERP. MSc AI (2020-2021): Iris Vantieghem - neural networks for directed connectivity between reconstructed EEG sources; Didier Quintius - neural-network approach to the inverse problem."
++    cv_section: students
++    cv_rank: 4
++    students:
++      - { person: aurelie-de-borman, topic: "Investigating the effect of Source Mixing on Directed Connectivity estimated between Simulated Reconstructed EEG Sources", degree: "Internship Student 2021" }
++      - { person: diogo-sousa-morais, topic: "Estimating the effectiveness of source localized EEG for BCIs", degree: "Internship Student 2021" }
++      - { person: guilherme-de-borras-silva, topic: "Cluster Permutation Analysis of N-Back related EEG-ERP Data", degree: "Internship Student 2021" }
++      - { person: iris-vantieghem, topic: "Using Neural Networks to derive Directed Connectivity between Reconstructed EEG Sources", degree: "Master of Science in Artificial Intelligence (2020-2021)" }
++      - { person: didier-quintius, topic: "Neural Network Approach to the Inverse Problem", degree: "Master of Science in Artificial Intelligence (2020-2021)" }
+ 
+   # -- Academic service --------------------------------------------------------
+ 
+@@ -167,6 +258,11 @@
+     meta:
+       - { label: Venue, value: "Frontiers in Immunology" }
+     tags: [service, editorial]
++    cv_section: academic
++    cv_rank: 6
++    cv_title: Guest Associate Editor Use of Big Data and Artificial Intelligence in Multiple Sclerosis
++    location: Frontiers in Immunology
++    duration: "2024 - 2025"
+ 
+   - key: vlaio-baekeland-spin-off-mandates-evaluator
+     title: "VLAIO Baekeland spin-off mandates - Evaluator"
+@@ -176,6 +272,11 @@
+     meta:
+       - { label: Body, value: "VLAIO" }
+     tags: [service]
++    cv_section: academic
++    cv_rank: 7
++    cv_title: VLAIO Evaluator for BAEKELAND SPIN OFF MANDATES
++    location: VLAIO
++    duration: "2025"
+ 
+   - key: student-research-competition-judge-icfp
+     title: "Student Research Competition Judge - ICFP"
+@@ -186,6 +287,93 @@
+     meta:
+       - { label: Venue, value: "ICFP" }
+     tags: [service]
++    cv_section: academic
++    cv_rank: 8
++    cv_title: Student Research Competition Judge (International Conference on Functional Programming)
++    location: ICFP
++    duration: "2024"
++
++  # Tutoring, coaching and student representation ---------------------------
++
++  - key: tutoring
++    title: "Mathematics & Natural Sciences Tutor"
++    lead: [axel-faes]
++    sub: "Freelance | Sept. 2015 - 2024"
++    status: completed
++    date: "2015-2024"
++    tags: [teaching]
++    cv_section: extracurricular
++    cv_rank: 2
++    location: Freelance
++    duration: Sept. 2015 - 2024
++    about: Supporting high school and university students in mastering mathematics (and other natural sciences) through personalized tutoring
++
++  - key: coach-djangogirls
++    title: Coach
++    lead: [axel-faes]
++    sub: "DjangoGirls | Mar. 2018 - 2024"
++    status: completed
++    date: "2018-2024"
++    tags: [teaching, outreach]
++    cv_section: extracurricular
++    cv_rank: 3
++    location: DjangoGirls
++    duration: Mar. 2018 - 2024
++    about: Inspire women to fall in love with programming (Python, Django workshops)
++
++  - key: coach-coderdojo
++    title: Coach
++    lead: [axel-faes]
++    sub: "CoderDojo (UHasselt, PXL) | Sep. 2014 - 2025"
++    status: completed
++    date: "2014-2025"
++    tags: [teaching, outreach]
++    cv_section: extracurricular
++    cv_rank: 4
++    location: CoderDojo (UHasselt, PXL)
++    duration: Sep. 2014 - 2025
++    about: Teach children programming (Scratch, Python, Minecraft and Lego mindstorm).
++
++  - key: student-representative-kuleuven
++    title: Student Representative
++    lead: [axel-faes]
++    sub: "KU Leuven | Sep. 2017 - Sep. 2018"
++    status: completed
++    date: "2017-2018"
++    tags: [service]
++    cv_section: extracurricular
++    cv_rank: 5
++    location: KU Leuven
++    duration: Sep. 2017 - Sep. 2018
++    about: "POC (Education Committee) of Master Computer Science Engineering, \nPOC (Education Committee) of Advanced Master Artificial Intelligence, \nMember of Departmental council of Computer Science, Department board of Computer Science and Faculty council of Engineering Science\n"
++
++  - key: student-council-stura-uhasselt
++    title: Student Council Member
++    lead: [axel-faes]
++    sub: "StuRa UHasselt | Mar. 2015 - Aug. 2016"
++    status: completed
++    date: "2015-2016"
++    tags: [service]
++    cv_section: extracurricular
++    cv_rank: 6
++    location: StuRa UHasselt
++    duration: Mar. 2015 - Aug. 2016
++    about: |
++      Member of Board of Education, Faculty Council. Board of Student Facilities, Diversity Commission,
++      Temporary representative in VVS (Flemish Union of Students)
++
++  - key: student-representative-uhasselt
++    title: Student Representative
++    lead: [axel-faes]
++    sub: "UHasselt | Sep. 2013 - Jul. 2016"
++    status: completed
++    date: "2013-2016"
++    tags: [service]
++    cv_section: extracurricular
++    cv_rank: 7
++    location: UHasselt
++    duration: Sep. 2013 - Jul. 2016
++    about: "Representing students interests in a Computer Science education context. \nRepresenting Computer Science education for high school students\n"
+ 
+   # -- Thesis-proposal submissions (UHasselt, 2026-2027) -----------------------
+   # Calls to submit MSc/BSc thesis topics, by programme. `deadline:` is the submission month (approximate,
+diff -ruN a/.oculus/data/academic/events.yml b/.oculus/data/academic/events.yml
+--- a/.oculus/data/academic/events.yml	2026-10-30 01:43:50
++++ b/.oculus/data/academic/events.yml	2026-10-30 01:47:07
+@@ -18,6 +18,14 @@
+   - { field: lead,          type: tags,     foreign_key: people, required: true, help: "Who leads it." }
+   - { field: collaborators, type: tags,     foreign_key: people, help: "Who works on it with the lead." }
+   - { field: supervisors,   type: tags,     foreign_key: people, help: "Who supervises it." }
++  - { field: cv_section, type: text,     help: "The CV section the event is listed in, news; none keeps it off the CV." }
++  - { field: cv_rank,    type: text,     help: "The event's place in its CV section, a whole number." }
++  - { field: cv_title,   type: text,     help: "The title the CV prints, when it is not the title." }
++  - { field: cv_url,     type: text,     help: "The address the CV links." }
++  - { field: location,   type: text,     help: "Where, as the CV prints it." }
++  - { field: duration,   type: text,     help: "When, as the CV prints it." }
++  - { field: about,      type: textarea, help: "What the CV prints under it." }
++  - { field: hide,       type: checkbox, help: "Kept off the CV while it stays listed." }
+ 
+ entries:
+   - key: 3mi-labs-talk
+@@ -40,6 +48,11 @@
+     snooze: 2026-08-30
+     role: attend
+     sub: "IEEE Fed. Learning Technologies & Applications - HCCNet-FL"
++    cv_section: news
++    cv_rank: 1
++    cv_title: "Federate What Transfers: Component-Aware Federation of Self-Supervised Backbones for Longitudinal 3D MRI"
++    location: IEEE FLTA (International Conference on Federated Learning Technologies and Applications)
++    duration: 2026
+     status: completed
+     date: "2026-10-29"   # 27-30 Oct 2026, Paris, submission deadline was 2026-07-01 (on funding/projects)
+     meta:
+@@ -104,6 +117,11 @@
+     lead: [axel-faes]
+     role: present
+     sub: "FL for Healthcare: From Brain-Computer Interfaces to Disease Prediction"
++    cv_section: news
++    cv_rank: 4
++    cv_title: Federated Learning for Healthcare - From Brain-Computer Interfaces to Disease Prediction
++    location: IEEE FLTA (International Conference on Federated Learning Technologies and Applications)
++    duration: 2025
+     status: completed
+     date: "2025"
+     meta:
+@@ -119,6 +137,11 @@
+     lead: [axel-faes]
+     role: present
+     sub: "Optimizing Federated Block-Term Tensor Regression: Strategy Comparisons and Applications"
++    cv_section: news
++    cv_rank: 3
++    cv_title: Optimizing Federated Block-Term Tensor Regression - Strategy Comparisons and Applications
++    location: Symposium on Federated Learning and Intelligent Computing Systems (FLICS)
++    duration: 2025
+     status: completed
+     date: "2025"
+     meta:
+@@ -140,3 +163,229 @@
+       - { label: Type, value: pitch }
+     link: "network/inkendaal"
+     note: "Supporting slide deck for a hospital pitch."
++
++  # The talks, demonstrations and media the CV lists from before this calendar.
++
++  - key: xai-nl-meetup-2026
++    title: Modality-Specific Encoding with a Shared Backbone for Early HCC Prediction from Multi-Modal Liver MRI
++    lead: [axel-faes]
++    role: present
++    status: completed
++    date: "2026"
++    related: [hcc-modality-poster]
++    cv_section: news
++    cv_rank: 2
++    location: 4th XAI-NL Meet-Up
++    duration: 2026
++
++  - key: ohdsi-europe-2025
++    title: OHDSI Europe Symposium 2025
++    lead: [axel-faes]
++    role: present
++    status: completed
++    date: "2025"
++    cv_section: news
++    cv_rank: 5
++    location: OHDSI Europe Symposium
++    duration: 2025
++
++  - key: guest-lecture-kuleuven-2025
++    title: Guest Lecture "Federated Finger movement decoding - brain-computer interfacing"
++    lead: [axel-faes]
++    role: present
++    status: completed
++    date: "2025"
++    cv_section: news
++    cv_rank: 6
++    location: KULeuven
++    duration: 2025
++
++  - key: fair-research-day-2024
++    title: Use Case - Real-World Evidence
++    lead: [axel-faes]
++    role: present
++    status: completed
++    date: "2024"
++    cv_section: news
++    cv_rank: 7
++    location: Flanders Artificial Intelligence Research Program (FAIR) Research Day
++    duration: 2024
++
++  - key: fair-rwe-kickoff-2024
++    title: FAIR Use Case Real World Evidence Kick-off Event
++    lead: [axel-faes]
++    role: present
++    status: completed
++    date: "2024"
++    cv_section: news
++    cv_rank: 8
++    location: Flanders Artificial Intelligence Research Program (FAIR)
++    duration: 2024
++
++  - key: mindseed-2023
++    title: Decoding finger movements from invasive recordings in human motor cortex
++    lead: [axel-faes]
++    role: present
++    status: completed
++    date: "2023"
++    cv_section: news
++    cv_rank: 9
++    cv_url: "https://www.ntxl.org/mindseed"
++    location: Mindseed event Leuven, NeuroTech Leuven
++    duration: 2023
++
++  - key: guest-lecture-kuleuven-2023
++    title: Guest Lecture "Finger movement decoding - brain-computer interfacing"
++    lead: [axel-faes]
++    role: present
++    status: completed
++    date: "2023"
++    cv_section: news
++    cv_rank: 10
++    location: KULeuven
++    duration: 2023
++
++  - key: humanities-vs-sciences-2022
++    title: Coordinated Finger Movements Predicted from Intracranial Brain Activity
++    lead: [axel-faes]
++    role: present
++    status: completed
++    date: "2022"
++    cv_section: news
++    cv_rank: 11
++    cv_url: /publications/other/hum-vs-sciences.pdf
++    location: "International Congress Humanities vs Sciences & the Knowledge Accelerating in Modern World: Parallels an Interaction,"
++    duration: 2022
++
++  - key: ae-expo-2022
++    title: BCI demo - Advanced Engineering, Antwerp Expo
++    lead: [axel-faes]
++    role: present
++    status: completed
++    date: "2022"
++    cv_section: news
++    cv_rank: 12
++    cv_url: "https://www.ae-expo.be/en/"
++    location: AI Flanders, Flanders Industry 4.0
++    duration: 2022
++
++  - key: guest-lecture-kuleuven-2022
++    title: Guest Lecture "Decoding single and coordinated finger actions from intracranial brain activity"
++    lead: [axel-faes]
++    role: present
++    status: completed
++    date: "2022"
++    cv_section: news
++    cv_rank: 13
++    location: KULeuven
++    duration: 2022
++
++  - key: leuven-ai-workshop-2022
++    title: "Finger abduction trajectory prediction from high-density ECoG"
++    lead: [axel-faes]
++    role: present
++    status: completed
++    date: "2022"
++    related: [abduction]
++    cv_section: news
++    cv_rank: 14
++    location: Leuven AI Scientific Workshop
++    duration: 2022
++
++  - key: science-for-peace-2021
++    title: Decoding single and coordinated finger actions from intracranial brain activity.
++    lead: [axel-faes]
++    role: present
++    status: completed
++    date: "2021"
++    cv_section: news
++    cv_rank: 15
++    location: XIV World Scientific Congress - SCIENCE FOR PEACE Modern Science, Global and Regional Theory and Practice
++    duration: 2021
++
++  - key: guest-lecture-kuleuven-2021
++    title: Guest Lecture "Finger Movement Decoding - From Source-Localisation to Tensor Regression Modelling"
++    lead: [axel-faes]
++    role: present
++    status: completed
++    date: "2021"
++    cv_section: news
++    cv_rank: 16
++    location: KULeuven
++    duration: 2021
++
++  - key: volga-neuroscience-meeting-2021
++    title: Reconstructing single finger trajectories from intracranial brain activity
++    lead: [axel-faes]
++    role: present
++    status: completed
++    date: "2021"
++    related: [volga-finger-trajectories]
++    cv_section: news
++    cv_rank: 17
++    cv_url: /publications/abstracts/VNM2021.pdf
++    location: III International Conference "Volga Neuroscience Meeting 2021"
++    duration: 2021
++    about: |
++      Leading scientists from all over the world will meet together to discuss topical problems in the field of neuroscience and artificial intelligence. The conference is organized by Lobachevsky State University of Nizhny Novgorod (UNN).
++
++  - key: technopolis-day-of-science-2021
++    title: BCI demo - Day of Science
++    lead: [axel-faes]
++    role: present
++    status: cancelled
++    date: "2021"
++    cv_section: news
++    cv_rank: 18
++    location: Technopolis (canceled due to the COVID-19 situation)
++    duration: 2021
++
++  - key: mindspeller-concert-2019
++    title: Presentation "'MINDSPELLER' Medical Research Project on Brain Computer Interfaces" and concert (with Tigran Maytesian and his Mind Speller Chamber Orchestra)
++    lead: [axel-faes]
++    role: present
++    status: completed
++    date: "2019"
++    cv_section: news
++    cv_rank: 19
++    location: Cathedral of St. Michael and St. Gudula, Brussels
++    duration: 2019
++
++  - key: kuleuven-news-bronze-medal-2017
++    title: Honours student Axel Faes wins bronze medal in ACM SIGPLAN
++    lead: [axel-faes]
++    role: present
++    status: completed
++    date: "2017"
++    related: [icfp-src-abstract]
++    cv_section: news
++    cv_rank: 20
++    cv_url: "http://wms.cs.kuleuven.be/cs/nieuws/honours-student-axel-faes-wins-bronze-model-in-acm-sigplan"
++    location: KU Leuven, Department of Computer Science
++    duration: 2017
++
++  - key: dtai-news-bronze-medal-2017
++    title: Student Axel Faes wins bronze medal in the ACM SIGPLAN Student Research Competition in ICFP conference
++    lead: [axel-faes]
++    role: present
++    status: completed
++    date: "2017"
++    related: [icfp-src-abstract]
++    cv_section: news
++    cv_rank: 21
++    cv_url: "https://dtai.cs.kuleuven.be/news/student-axel-faes-wins-bronze-medal-acm-sigplan-student-research-competition-icfp-conference"
++    location: KU Leuven, Department of Computer Science, DTAI
++    duration: 2017
++
++  - key: chi-2016-video
++    title: Purpose-Centric Appropriation of Everyday Objects as Game Controllers
++    lead: [axel-faes]
++    role: present
++    status: completed
++    date: "2016"
++    related: [chi-purpose-centric]
++    cv_section: news
++    cv_rank: 22
++    cv_url: "https://www.youtube.com/watch?v=Q4_rK2upGEY"
++    location: ACM SIGCHI
++    duration: 2016
+diff -ruN a/.oculus/data/academic/funding.yml b/.oculus/data/academic/funding.yml
+--- a/.oculus/data/academic/funding.yml	2026-10-30 01:43:50
++++ b/.oculus/data/academic/funding.yml	2026-10-30 02:13:37
+@@ -19,12 +19,32 @@
+   - { field: lead,          type: tags,     foreign_key: people, required: true, help: "Who leads it." }
+   - { field: collaborators, type: tags,     foreign_key: people, help: "Who works on it with the lead." }
+   - { field: supervisors,   type: tags,     foreign_key: people, help: "Who supervises it." }
++  - { field: cv_section, type: text,     help: "The CV section the entry is listed in, grants or projects; none keeps it off the CV." }
++  - { field: cv_rank,    type: text,     help: "The entry's place in its CV section, a whole number." }
++  - { field: cv_title,   type: text,     help: "The title the CV prints, when it is not the title." }
++  - { field: cv_url,     type: text,     help: "The address the CV links, when it is not the url." }
++  - { field: cv_status,  type: text,     help: "The status the CV prints for the grant." }
++  - { field: role,       type: text,     help: "Your role as the CV prints it." }
++  - { field: location,   type: text,     help: "Where, as the CV prints it." }
++  - { field: duration,   type: text,     help: "The period as the CV prints it." }
++  - { field: about,      type: textarea, help: "What the CV prints under it." }
++  - { field: min,        type: checkbox, help: "Left out of the short CV." }
++  - { field: hide,       type: checkbox, help: "Kept off the CV while it stays listed." }
+ 
+ entries:
+   - key: nwo-veni-the-self-explaining-hospital
+     title: "NWO Veni - The Self-Explaining Hospital"
+     lead: [axel-faes]
+     sub: "Trustworthy AI that travels between institutions"
++    cv_section: grants
++    cv_rank: 1
++    cv_title: "The Self-Explaining Hospital: Readable, Private Clinical Models That Travel Between Institutions"
++    cv_url: ""
++    cv_status: "Submitted, decision pending"
++    role: Applicant
++    duration: 2026
++    about: |
++      Funder: NWO, Veni scheme (pre-proposal)
+     status: submitted
+     date: "2026"
+     deadline: "2026-09-01"   # pre-proposal (~1 Sep); full proposal ~late Jan 2027
+@@ -58,6 +78,15 @@
+     title: "NWO Open Competition - Domain Science XS (ENW-XS)"
+     lead: [axel-faes]
+     sub: "Curiosity-driven, high-risk small grant (€50k)"
++    cv_section: grants
++    cv_rank: 2
++    cv_title: "Before the tumour: an interpretable pre-lesional field trajectory that anticipates lesion emergence in the cirrhotic liver"
++    cv_url: ""
++    cv_status: "Submitted, decision pending"
++    role: Applicant
++    duration: 2026
++    about: |
++      Funder: NWO, Open Competition Domain Science XS (ENW-XS), Life Sciences cluster
+     status: submitted
+     date: "2026"
+     deadline: "2026-10-20"   # assessor duty: assessment form due 14:00 CEST or the own proposal is withdrawn; call deadline (package 26-3) was 15 Sep, submitted 14 Sep; decision expected 19 Nov 2026
+@@ -74,6 +103,15 @@
+     lead: [axel-faes]
+     key: FAIR                 # manifests reference this via `funding: FAIR` -> clickable chip
+     sub: "Flemish-government Impulse Program - leading the health use cases"
++    cv_section: projects
++    cv_rank: 3
++    cv_title: "Use Case Real World Evidence - Flanders AI Research Program"
++    cv_url: ""
++    role: Scientific Coordinator
++    duration: 2024 - Jan. 2026
++    about: |
++      Role: Scientific coordinator (UHasselt) and AI Researcher
++      Team: approx. 10 researchers across 4 institutions
+     status: contributing
+     meta:
+       - { label: Funder, value: "Flemish Ministry of Economy, Science & Innovation" }
+@@ -116,6 +154,15 @@
+     collaborators: [axel-faes]
+     key: ZonMw-AI-HCC         # manifests reference this via `funding: ZonMw-AI-HCC` -> clickable chip
+     sub: "Predicting the Development of Primary Liver Cancer Using the AI-HCC Model"
++    cv_section: projects
++    cv_rank: 2
++    cv_title: "AI-HCC: Predicting the Development of Primary Liver Cancer Using the AI-HCC Model - ZonMw"
++    cv_url: ""
++    role: Postdoctoral Researcher
++    duration: 2026 - Current
++    about: |
++      Role: Postdoctoral researcher (University of Twente / Medisch Spectrum Twente)
++      Funder: ZonMw, The Netherlands Organisation for Health Research and Development
+     status: contributing
+     meta:
+       - { label: Funder, value: ZonMw }
+@@ -131,6 +178,9 @@
+     sub: "Finger movement decoding: from source-localisation to graph-based regression modelling"
+     status: awarded
+     date: "2018"
++    location: Belgium
++    about: >
++      FWO fundamental research grant for the project "Finger movement decoding: From source-localisation to graph-based regression modelling"
+     # `statement:` = the verbatim acknowledgment to paste into a manuscript's Funding section.
+     statement: 'AF was supported by the National Fund for Scientific Research - Flanders (FWO 1157019N).'
+     meta:
+@@ -146,6 +196,21 @@
+     sub: "Federated Learning for Population Health Management"
+     status: rejected
+     date: "2025"
++    cv_section: projects
++    cv_rank: 1
++    cv_title: "Federated Learning for Population Health Management (FL4PHM)"
++    cv_url: ""
++    role: Co-supervisor
++    duration: 2025 - Current
++    min: true
++    hide: true
++    about: |
++      FWO Senior Research Project (2025)
++      Project: "Federated Learning for Population Health Management"
++      Role: Co-supervisor
++      Team: Prof. Yves Moreau (KU Leuven), Prof. Liesbet M. Peeters (UHasselt), Prof. Bert Vaes (KU Leuven)
++      Funding: Research Foundation Flanders (FWO), Belgium (applied, result expected in September 2025)
++      Amount: approx. €1,150,000 (including salaries and operational costs for 4 years)
+     meta:
+       - { label: Scheme, value: "FWO research project" }
+       - { label: Ref, value: "G067526N" }
+@@ -176,3 +241,18 @@
+     tags: [fellowship, block-term, federated]
+     link: "funding/2024-fwo-postdoc-fbttr"
+     note: "Not funded. Federated block-term tensor regression, the earlier (2024) iteration of the FERMAT theme."
++
++  - key: ELIXIR-BE
++    title: "ELIXIR Belgium - Roadmap 2023-2025"
++    lead: [axel-faes]
++    sub: "Consortium partner (UHasselt): health data re-use and federated analyses"
++    status: contributing
++    date: "2023-2025"
++    tags: [federated, health]
++    note: "A funded programme contributed to as a consortium partner, not an own grant."
++    cv_section: projects
++    cv_rank: 4
++    cv_url: ""
++    role: Consortium Partner
++    duration: 2023 - 2025
++    about: "Role: Consortium partner (UHasselt), focusing on health data re-use and federated analyses  \nCollaborations: KU Leuven (Yves Moreau), University of Antwerp (Geert Vandeweyer), VIB (Frederik Coppens)  \nContext: ELIXIR Belgium is part of ELIXIR Europe, an ESFRI initiative funded by the European Commission and national agencies\n"
+diff -ruN a/.oculus/data/people/people.yml b/.oculus/data/people/people.yml
+--- a/.oculus/data/people/people.yml	2026-10-30 01:43:50
++++ b/.oculus/data/people/people.yml	2026-10-30 01:45:03
+@@ -11,7 +11,13 @@
+   - { field: role,         type: text,     help: "What this person is to the hub." }
+   - { field: orcid,        type: text, help: "The person's ORCID identifier." }
+   - { field: email,        type: text, help: "The person's email address." }
+-  - { field: links,        type: tags, help: "Web addresses of the person." }
++  - field: links
++    type: records
++    help: "Web addresses of the person, in the order a CV prints them."
++    fields:
++      - { field: name,   type: text, required: true, help: "What the address is, such as linkedin." }
++      - { field: url,    type: text, required: true, help: "The full address." }
++      - { field: handle, type: text, help: "The account name a CV prints in place of the address." }
+   - { field: work,         type: text, help: "What the work with the person is about." }
+   - { field: tags,         type: tags, help: "Words that describe the person and the work with them." }
+   - { field: note,         type: textarea, help: "Free notes on the person and the work with them." }
+@@ -22,6 +28,7 @@
+     name: "Maryam Amir Haeri"
+     affiliations: ["university-of-twente"]
+     role: "postdoc co-supervisor (ML / XAI methodology)"
++    email: "m.amirhaeri@utwente.nl"
+     work: "Twente co-supervisor - ML / explainable-AI methodology"
+     tags: [methodology, ml, xai]
+     note: "Twente co-supervisor on the machine-learning / explainable-AI methodology side; co-author across the Twente-based lines (HCC imaging, tensor, federated)."
+@@ -54,14 +61,16 @@
+     name: "Yves Moreau"
+     affiliations: ["ku-leuven"]
+     role: "co-author | FWO Senior host candidate"
++    email: "yves.moreau[at]kuleuven.be"
+     work: "Privacy-preserving ML for health & genomics"
+     tags: [federated, privacy, methods]
+     note: "Co-author on the federated / privacy-preserving line; a host candidate for an FWO Senior (Belgian). Methods-aligned (block-term, federated tensor)."
+ 
+   - key: "peeters"
+-    name: "Liesbet Peeters"
++    name: "Liesbet M. Peeters"
+     affiliations: ["uhasselt"]
+     role: "co-author | former advisor (host fallback)"
++    email: "liesbet.peeters[at]uhasselt.be"
+     work: "MS data / federated health; editorial"
+     tags: [ms, federated, editorial]
+     note: "Co-author (federated MS data, the big-data/AI-in-MS editorial). Former advisor, so an FWO host fallback only (independence signal)."
+@@ -85,6 +94,7 @@
+     name: "Marc Van Hulle"
+     affiliations: ["ku-leuven"]
+     role: "PhD advisor | ongoing co-author"
++    email: "marc.vanhulle[at]kuleuven.be"
+     work: "Neuro & psychophysiology (ECoG / BCI)"
+     tags: [ecog, bci, tensor]
+     note: "PhD advisor; ongoing co-author on the ECoG finger-decoding / ERP line. Former advisor, so host fallback only."
+@@ -113,7 +123,7 @@
+     role: "FWO Senior host candidate (clinician-scientist)"
+ 
+   - key: "dongho"
+-    name: "Dongho"
++    name: "Dongho Chun"
+     role: "student"
+     folder: "education/student-supervision/dongho-2024"
+ 
+@@ -125,17 +135,17 @@
+     folder: "education/student-supervision/kerga-2024"
+ 
+   - key: "matteo"
+-    name: "Matteo"
++    name: "Matteo Ramina"
+     role: "student"
+     folder: "education/student-supervision/matteo-2024"
+ 
+   - key: "mohsen"
+-    name: "Mohsen"
++    name: "Mohsen Soleimanisemsani"
+     role: "student"
+     folder: "education/student-supervision/mohsen-2024"
+ 
+   - key: "ward"
+-    name: "Ward"
++    name: "Ward Ceyssens"
+     role: "student"
+     folder: "education/student-supervision/ward-2024"
+ 
+@@ -143,9 +153,16 @@
+     name: "Axel Faes"
+     affiliations: ["university-of-twente"]
+     role: "postdoc"
++    email: "axel.faes[at]utwente.nl"
++    orcid: "0000-0002-1637-255X"
++    links:
++      - { name: googlescholar, url: "https://scholar.google.be/citations?hl=en&user=abRAHJEAAAAJ", handle: "abRAHJEAAAAJ" }
++      - { name: linkedin, url: "https://www.linkedin.com/in/axelfaes", handle: "axelfaes" }
++      - { name: github, url: "https://github.com/TheAxeC", handle: "TheAxeC" }
++      - { name: homepage, url: "https://theaxec.github.io", handle: "theaxec.github.io" }
+ 
+   - key: "do"
+-    name: "Do"
++    name: "Anh Phuong DO"
+ 
+   - key: "jasper-van-leengoed"
+     name: "Jasper van Leengoed"
+@@ -176,3 +193,35 @@
+ 
+   - key: "jakob-nolte"
+     name: "Jakob Nolte"
++
++  - key: "brecht-heeren"
++    name: "Brecht Heeren"
++    role: "student"
++
++  - key: "denzell-mgbokwere"
++    name: "Denzell Mgbokwere"
++    role: "student"
++
++  - key: "robert-rysskin"
++    name: "Robert Rysskin"
++    role: "student"
++
++  - key: "aurelie-de-borman"
++    name: "Aurélie de Borman"
++    role: "student"
++
++  - key: "diogo-sousa-morais"
++    name: "Diogo Sousa Morais"
++    role: "student"
++
++  - key: "guilherme-de-borras-silva"
++    name: "Guilherme de Borras Silva"
++    role: "student"
++
++  - key: "iris-vantieghem"
++    name: "Iris Vantieghem"
++    role: "student"
++
++  - key: "didier-quintius"
++    name: "Didier Quintius"
++    role: "student"
+diff -ruN a/projects/archive/phd/phd-thesis/project.yml b/projects/archive/phd/phd-thesis/project.yml
+--- a/projects/archive/phd/phd-thesis/project.yml	2026-10-30 01:43:50
++++ b/projects/archive/phd/phd-thesis/project.yml	2026-10-30 02:01:04
+@@ -9,9 +9,19 @@
+ domain: brainbci
+ pillars: [tensor]
+ related: [source-localization, block-term-tensor-regression, extended-bttr-note]
+-title: "Finger movement decoding: From source-localisation to tensor regression modelling"
++title: "Finger Movement Decoding: From Source-Localisation to Tensor Regression Modelling"
+ eli5: "Axel Faes's PhD thesis (KU Leuven, 2023) on decoding single and coordinated finger movements from electrocorticography (ECoG). It compiles four papers, from EEG source localisation and directed connectivity to the block-term tensor-regression decoders (BTTR, eBTTR) that became the core method line, with an emphasis on fast, real-time-capable decoding."
+ year: 2023
+ outcome: "PhD Thesis, KU Leuven, February 2023 (Faes; promotor Marc Van Hulle). A compilation thesis of four journal papers: Sparse eLORETA source localisation (J. Neural Eng. 2021) and neural-network directed connectivity (Applied Sciences 2022), then the block-term tensor-regression finger decoders BTTR (IEEE TNNLS 2022) and eBTTR (J. Neural Eng. 2022). The BTTR/eBTTR chapters seeded the later Go-BTTR line."
+ funding: [FWO-PhD]
+ lead: [axel-faes]
++publication:
++  authors: Axel Faes
++  book: PhD Thesis
++  program: [tensor]
++  url: "/publications/thesis/axel-faes-phd-thesis.pdf"
++  abstract: >-
++    Brain-Computer Interfaces (BCIs) are hailed for bypassing defective neural pathways by translating brain activity directly into actions that convey the user's intent. How the kinematics of muscular activity relate to the motor- and somatosensory activity in the brain has been the focus of recent advancements. With such motor BCIs, amputees are able to gain control over a prosthesis and stroke patients to regain control over a paralyzed limb via electrical stimulation of their dysfunctional muscles or via an exoskeleton that supports the intended movements.
++    The superior spatio-temporal resolution, bandwidth, and recording stability of electrocorticography (ECoG), a partially invasive brain recording technique, yields a new outlook on motor BCI applications. Despite some stunning successes in arm- and hand movement control from ECoG, the precise decoding of finger movements, which is essential for daily activities, is still lacking. A possible reason is that current decoders rely on conventional one- or two-way regression models, which might not adequately capture the intricate relation between neural activity and intended and unintended (such as coactivations) finger movements.
++    The main objective of this PhD is to develop a robust, accurate, and quick-to-train decoder that predicts single- and coordinated finger trajectories from ECoG recordings. We used multiway decoders as they preserve the multilinear structure of the data while taking advantage of potentially hidden multilinear components. We demonstrated cutting-edge performance with the proposed decoders. As multiway models tend to be slow to train, which may become a significant obstacle for their clinical adoption, we also investigated whether the proposed multiway decoders could be used in a real-time setting. The findings support the relevance of the proposed multiway decoders for real-time ECoG-based finger activity, providing an outlook on achieving hand dexterity.
++  rank: 1
+diff -ruN a/projects/archive/published/2016/bachelor-network-ids/project.yml b/projects/archive/published/2016/bachelor-network-ids/project.yml
+--- a/projects/archive/published/2016/bachelor-network-ids/project.yml	2026-10-30 01:43:50
++++ b/projects/archive/published/2016/bachelor-network-ids/project.yml	2026-10-30 02:01:25
+@@ -7,7 +7,7 @@
+ tier: research
+ domain: cs
+ pillars: [student-research]
+-title: "Machine Learning Techniques for Flow-Based Network Intrusion Detection Systems"
++title: "Machine learning techniques for flow-based network intrusion detection systems"
+ eli5: "Bachelor's thesis on flow-based network intrusion detection with machine learning: it uses aggregated IP-flow features (no payload) to flag intrusions, comparing supervised and unsupervised algorithms across labelled and real-world traffic."
+ year: 2016
+ results:
+@@ -15,3 +15,14 @@
+ outcome: "Bachelor's thesis, KU Leuven 2016 (Faes)."
+ lead: [axel-faes]
+ venue: uhasselt-thesis
++publication:
++  authors: Axel Faes
++  book: Bachelor's thesis
++  program: [student-research]
++  url: "https://github.com/TheAxeC/machine-learning-techniques-for-flow-based-network-intrusion-detection-systems"
++  abstract: >-
++    Large data centers are storing and sending more and more data. In order to check whether the network traffic does not contain intrusions, an intrusion detection system is used. Such a system analyzes data from the network and gives an alert if it finds an intrusion. Since data centers have so much data traffic, it is difficult to process everything. That's where IP flows come into the picture. They are aggregated from packet data but do not contain any information about the payload data.
++    This thesis explains which attacks can be detected and how IP flows can be used for intrusion detection. It would also be cost-efficient if an intrusion detection system could operate automatically and detect attacks with a high probability. For this, machine learning can be used. Machine learning is a type of Artificial Intelligence which allows programs to learn and find patterns within data. However, there are many different types of machine learning.
++    This thesis gives an introduction to machine learning concepts and provides an overview of different machine learning algorithms such as Support Vector Machines and K-Nearest Neighbors. An explanation is given on how these algorithms can be used in an intrusion detection system. The algorithms are evaluated on different datasets which consist of both labeled training data and unlabeled real-world data. The evaluation is done using learning curves and F-scores.
++    In the evaluation, it is found that supervised learning gives better and more detailed predictions compared to unsupervised learning. K-Nearest Neighbors gives the best results among the tested supervised learning algorithms. The results show that machine learning is a viable option to detect intrusions using IP flows. It can also be noted that using extra information such as the TCP flags is a useful addition and increases the performance significantly.
++  rank: 4
+diff -ruN a/projects/archive/published/2017/icfp-src-abstract/project.yml b/projects/archive/published/2017/icfp-src-abstract/project.yml
+--- a/projects/archive/published/2017/icfp-src-abstract/project.yml	2026-10-30 01:43:50
++++ b/projects/archive/published/2017/icfp-src-abstract/project.yml	2026-10-30 02:01:49
+@@ -13,3 +13,9 @@
+ outcome: "Extended abstract, ICFP 2017 Student Research Competition (Faes, Schrijvers)."
+ lead: [axel-faes]
+ venue: icfp-src
++publication:
++  authors: Axel Faes, Tom Schrijvers
++  book: International Conference on Functional Programming 2017 Student Research Competition
++  program: [student-research]
++  url: "/publications/abstracts/icfp-2017-src.pdf"
++  rank: 6
+diff -ruN a/projects/archive/published/2017/icfp-src-poster/project.yml b/projects/archive/published/2017/icfp-src-poster/project.yml
+--- a/projects/archive/published/2017/icfp-src-poster/project.yml	2026-10-30 01:43:50
++++ b/projects/archive/published/2017/icfp-src-poster/project.yml	2026-10-30 02:02:04
+@@ -14,3 +14,9 @@
+ outcome: "Poster, ICFP 2017 Student Research Competition (Faes, Schrijvers). Companion to the SRC abstract (icfp-src-abstract)."
+ lead: [axel-faes]
+ venue: icfp-src
++publication:
++  authors: Axel Faes, Tom Schrijvers
++  book: International Conference on Functional Programming 2017 Student Research Competition
++  program: [student-research]
++  url: "/publications/posters/icfp-2017-src.pdf"
++  rank: 2
+diff -ruN a/projects/archive/published/2018/masters-algebraic-subtyping/project.yml b/projects/archive/published/2018/masters-algebraic-subtyping/project.yml
+--- a/projects/archive/published/2018/masters-algebraic-subtyping/project.yml	2026-10-30 01:43:50
++++ b/projects/archive/published/2018/masters-algebraic-subtyping/project.yml	2026-10-30 02:01:16
+@@ -14,3 +14,12 @@
+ outcome: "Master's thesis, KU Leuven 2018 (Faes). Distinct from the dropped journal-paper attempt (archive/stopped/algebraic-subtyping) and the later compiler report (algebraic-effects-compilation)."
+ lead: [axel-faes]
+ venue: kuleuven-thesis
++publication:
++  authors: Axel Faes
++  book: Master's Thesis
++  program: [student-research]
++  url: "https://github.com/TheAxeC/algebraic-subtyping-for-algebraic-effects-and-handlers"
++  abstract: >-
++    Algebraic effects and handlers benefit from a custom type-&-effect system, a type system that also tracks which effects can happen in a program. Several such type-&-effect systems have been proposed in the literature, but all are unsatisfactory. Recently, Stephen Dolan (University of Cambridge, UK) presented a novel type system that combines subtyping and parametric polymorphism in a particularly attractive and elegant fashion. A cornerstone of his design is the algebraic properties that the subtyping relation should respect.
++    In this work, a type-&-effect system is derived that extends Dolan's elegant type system with effect information. This type-&-effect system inherits Dolan's harmonious combination of subtyping (in our case induced by a lattice structure on the effect information) with parametric polymorphism and preserves all of its desirable properties (both low-level algebraic properties and high-level meta-theoretical properties like type soundness and the existence of principal types). This type-&-effect system has been implemented in the Eff programming language in order to provide a proof-of-concept.
++  rank: 3
+diff -ruN a/projects/archive/published/2018/masters-eeg-infotheory/project.yml b/projects/archive/published/2018/masters-eeg-infotheory/project.yml
+--- a/projects/archive/published/2018/masters-eeg-infotheory/project.yml	2026-10-30 01:43:50
++++ b/projects/archive/published/2018/masters-eeg-infotheory/project.yml	2026-10-30 02:01:11
+@@ -8,9 +8,19 @@
+ domain: brain
+ pillars: [neurotech]
+ related: [connectivity-iris]
+-title: "An Information-Theoretical Approach to EEG Source-Reconstructed Connectivity"
++title: "An Information Theoretical Approach to EEG Source-Reconstructed Connectivity"
+ eli5: "Master's thesis building an information-theoretic framework (mutual information, conditional MI, interaction information) to estimate functional connectivity between source-reconstructed EEG signals, sidestepping the spurious links scalp volume conduction introduces. Applied to a high-density EEG dataset from a semantic word-processing experiment."
+ year: 2018
+ outcome: "Advanced Master's thesis, KU Leuven 2018 (Faes). A model-free, probability-based connectivity framework in Python for source-reconstructed activity; a precursor to the later neural-network directed-connectivity work (connectivity-iris)."
+ lead: [axel-faes]
+ venue: kuleuven-thesis
++publication:
++  authors: Axel Faes
++  book: Advanced Master's Thesis
++  program: [eeg]
++  url: "https://github.com/TheAxeC/an-information-theoretical-approach-to-eeg-source-reconstructed-connectivity"
++  abstract: >-
++    Determining how distinct brain regions are connected and communicate with each other will shed light on how behavior emerges. In EEG studies, interpreting connectivity measures can be problematic due to the high correlation between signals recorded from the scalp surface, a result of the volume conductance of the scalp and skin. Therefore, meaningful connectivity patterns can be measured only from the spatiotemporal distribution of localized cortical sources, generally referred to as source reconstruction.
++    Still, spurious connectivity issues may persist in source-reconstructed EEG data, making it vital to choose an appropriate measure of connectivity. In this work, an information theoretical approach, which concerns model-free, probability-based methods such as mutual information, conditional mutual information, and interaction information, is taken.
++    An information theoretical framework for Python is developed to operate on source-reconstructed activity. This framework is used to perform a connectivity analysis of a high-density source-reconstructed EEG dataset, which was constructed in an experiment regarding the semantic processing of abstract and concrete words.
++  rank: 2
+diff -ruN a/projects/archive/published/2021/abstract-bci-meeting-2021/project.yml b/projects/archive/published/2021/abstract-bci-meeting-2021/project.yml
+--- a/projects/archive/published/2021/abstract-bci-meeting-2021/project.yml	2026-10-30 01:43:50
++++ b/projects/archive/published/2021/abstract-bci-meeting-2021/project.yml	2026-10-30 02:01:46
+@@ -18,3 +18,9 @@
+ lead: [axel-faes]
+ venue: intl-bci-meeting
+ collaborators: [van-hulle]
++publication:
++  authors: Axel Faes, Mansoureh Fahimi Hnazaee, Marc M. Van Hulle
++  book: 8th International BCI Meeting (2021)
++  program: [eeg]
++  url: /publications/abstracts/causal-graphical-modelling-of-functional-connectivity-from-reconstructed-eeg-sources.pdf
++  rank: 5
+diff -ruN a/projects/archive/published/2021/source-localization/project.yml b/projects/archive/published/2021/source-localization/project.yml
+--- a/projects/archive/published/2021/source-localization/project.yml	2026-10-30 01:43:50
++++ b/projects/archive/published/2021/source-localization/project.yml	2026-10-30 01:58:54
+@@ -18,3 +18,14 @@
+ venue: jne
+ doi: "10.1088/1741-2552/ac2bb6"
+ collaborators: [van-hulle]
++publication:
++  authors: Axel Faes, Aurelie de Borman, Marc M. Van Hulle
++  book: Journal of Neural Engineering
++  program: [eeg]
++  url: "/publications/journal/source-space-reduction-for-eloreta.pdf"
++  abstract: >-
++    Objective We introduce Sparse eLORETA, a novel method for estimating a nonparametric solution to the source localization problem. Its goal is to generate a sparser solution compared to other source localization methods including eLORETA while benefitting from the latter's superior source localization accuracy.
++    Approach Sparse eLORETA starts by reducing the source space of the Lead Field Matrix using Structured Sparse Bayesian Learning (SSBL) from which a Reduced Lead Field Matrix is constructed, which is used as input to eLORETA.
++    Main results With Sparse eLORETA, source sparsity can be traded against signal fidelity; the proposed optimum is shown to yield a much sparser solution than eLORETA's with only a slight loss in signal fidelity.
++    Significance When pursuing a data-driven approach, for cases where it is difficult to choose specific regions of interest (ROIs), or when subsequently a connectivity analysis is performed, source space reduction could prove beneficial.
++  rank: 8
+diff -ruN a/projects/archive/published/2021/volga-finger-trajectories/project.yml b/projects/archive/published/2021/volga-finger-trajectories/project.yml
+--- a/projects/archive/published/2021/volga-finger-trajectories/project.yml	2026-10-30 01:43:50
++++ b/projects/archive/published/2021/volga-finger-trajectories/project.yml	2026-10-30 02:01:43
+@@ -8,10 +8,16 @@
+ domain: brainbci
+ pillars: [tensor]
+ related: [block-term-tensor-regression]
+-title: "Reconstructing Single Finger Trajectories from Intracranial Brain Activity"
++title: "Reconstructing single finger trajectories from intracranial brain activity"
+ eli5: "Extended abstract reconstructing single-finger movement trajectories from intracranial (ECoG) recordings with multiway tensor regression, an early presentation of the block-term decoding line."
+ year: 2021
+ outcome: "Extended abstract, III International Conference Volga Neuroscience Meeting 2021 (Faes, Wittevrongel, Van Hulle)."
+ lead: [axel-faes]
+ venue: volga-neuroscience
+ collaborators: [van-hulle]
++publication:
++  authors: Axel Faes, Benjamin Wittevrongel, Marc M. Van Hulle
++  book: III International Conference "Volga Neuroscience Meeting 2021"
++  program: [tensor]
++  url: /publications/abstracts/reconstructing-single-finger-trajectories-from-intracranial-brain-activity.pdf
++  rank: 4
+diff -ruN a/projects/archive/published/2022/block-term-tensor-regression/project.yml b/projects/archive/published/2022/block-term-tensor-regression/project.yml
+--- a/projects/archive/published/2022/block-term-tensor-regression/project.yml	2026-10-30 01:43:50
++++ b/projects/archive/published/2022/block-term-tensor-regression/project.yml	2026-10-30 02:11:32
+@@ -19,3 +19,10 @@
+ venue: tnnls
+ doi: "10.1109/TNNLS.2022.3216589"
+ collaborators: [van-hulle]
++publication:
++  authors: Axel Faes, Flavio Camarrone, Marc M. Van Hulle
++  book: IEEE Transactions on Neural Networks and Learning Systems
++  program: [tensor]
++  url: "/publications/journal/single-finger-trajectory-prediction-from-intracranial-paper.pdf"
++  abstract: "Multiway- or tensor-based decoding techniques for Brain-Computer Interfaces (BCI) are believed to better account for the multilinear structure of brain signals than conventional vector- or matrix-based ones. However, despite their outlook on significant performance gains, the used parameter optimization approach is often too computationally demanding, so conventional techniques are still preferred.  We propose two novel tensor factorizations which we integrate into our Block-Term Tensor Regression (BTTR) algorithm and further introduce a marginalization procedure that guarantees robust predictions while reducing the risk of overfitting (generalized regression). BTTR accounts for the underlying (hidden) data structure in a fully automatic and computationally-efficient manner, leading to a significant performance gain over conventional vector- or matrix-based techniques in a challenging real-world application. As a challenging real-world application, we apply BTTR to accurately predict single finger movement trajectories from intracranial recordings in human subjects. We compare the obtained performance with that of the state-of-the-art."
++  rank: 7
+diff -ruN a/projects/archive/published/2022/connectivity-iris/project.yml b/projects/archive/published/2022/connectivity-iris/project.yml
+--- a/projects/archive/published/2022/connectivity-iris/project.yml	2026-10-30 01:43:50
++++ b/projects/archive/published/2022/connectivity-iris/project.yml	2026-10-30 01:59:00
+@@ -18,3 +18,11 @@
+ venue: appliedsci
+ doi: "10.3390/app12062889"
+ collaborators: [van-hulle]
++publication:
++  authors: Axel Faes, Iris Vantieghem, Marc M. Van Hulle
++  book: Applied Sciences
++  program: [eeg]
++  url: "/publications/journal/neural-networks-for-directed-connectivity-estimation-in-source-reconstructed-eeg-data.pdf"
++  abstract: >-
++    Directed connectivity between brain sources identified from scalp electroencephalography (EEG) can shed light on the brain's information flows and provide a biomarker of neurological disorders. However, as volume conductance results in scalp activity being a mix of activities originating from multiple sources, the correct interpretation of their connectivity is a formidable challenge despite source localization being applied with some success. Traditional connectivity approaches rely on statistical assumptions that usually do not hold for EEG, calling for a model-free approach. We investigated several types of Artificial Neural Networks in estimating Directed Connectivity between Reconstructed EEG Sources and assessed their accuracy with respect to several ground truths. We show that a Long Short-Term Memory neural network with Non-Uniform Embedding yields the most promising results due to its relative robustness to differing dipole locations. We conclude that certain network architectures can compete with the already established methods for brain connectivity analysis.
++  rank: 9
+diff -ruN a/projects/archive/published/2022/extended-bttr-note/project.yml b/projects/archive/published/2022/extended-bttr-note/project.yml
+--- a/projects/archive/published/2022/extended-bttr-note/project.yml	2026-10-30 01:43:50
++++ b/projects/archive/published/2022/extended-bttr-note/project.yml	2026-10-30 01:58:44
+@@ -19,3 +19,19 @@
+ venue: jne
+ doi: "10.1088/1741-2552/ac9a75"
+ collaborators: [van-hulle]
++publication:
++  authors: Axel Faes, Marc M. Van Hulle
++  book: Journal of Neural Engineering
++  program: [tensor]
++  url: "/publications/journal/finger-movement-and-coactivation-predicted-from-intracranial-brain-activity.pdf"
++  abstract: >-
++    Objective
++    We introduce extended Block-Term Tensor Regression (eBTTR), a novel regression method designed to account for the multilinear nature of human intracranial finger movement recordings.
++    Approach
++    The proposed method relies on recursive Tucker decomposition combined with automatic component extraction.
++    Main results
++    eBTTR outperforms state-of-the-art regression approaches, including multilinear and deep learning ones, in accurately predicting finger trajectories as well as unintentional finger coactivations.
++    Significance
++    eBTTR rivals state-of-the-art approaches while being less computationally expensive which is an advantage when intracranial electrodes are implanted acutely, as part of the patient's presurgical workup, limiting time for decoder development and testing.
++  pub_last: Spotlight
++  rank: 6
+diff -ruN a/projects/archive/published/2025/fbttr-strategies/project.yml b/projects/archive/published/2025/fbttr-strategies/project.yml
+--- a/projects/archive/published/2025/fbttr-strategies/project.yml	2026-10-30 01:43:50
++++ b/projects/archive/published/2025/fbttr-strategies/project.yml	2026-10-30 01:59:46
+@@ -17,3 +17,13 @@
+ lead: [axel-faes]
+ venue: fllm
+ collaborators: [peeters]
++publication:
++  authors: Axel Faes, Liesbet Peeters
++  book: "The 3rd International Conference on Foundation and Large Language Models (FLLM2025), Symposium on Federated Learning and Intelligent Computing Systems (FLICS 2025)"
++  program: [federated, tensor]
++  url: "/publications/conference/fllm2025-optimizing-federated-bttr.pdf"
++  abstract: >-
++    Block-Term Tensor Regression (BTTR) is a multilinear modeling framework suited for high-dimensional biomedical data, but its centralized implementation conflicts with privacy and regulatory constraints. To overcome this, we propose Federated Block-Term Tensor Regression (FBTTR), which integrates BTTR into a federated learning setting. We systematically evaluate multiple federated aggregation strategies, including FedAvg, FedYogi, and FedAdam, to assess their effect on model performance and stability. Experiments on the BCI Competition IV dataset demonstrate that the choice of strategy strongly influences predictive accuracy: FedAvg yields the most stable and accurate results across subjects, while adaptive methods such as FedYogi and FedAdam show less consistent performance. These findings highlight the importance of strategy selection in federated learning and establish FBTTR as a practical approach for privacy-preserving analysis of multi-institutional biomedical data.
++  pub_last: Spotlight
++  hide: false
++  rank: 4
+diff -ruN a/projects/archive/published/2025/fermat/project.yml b/projects/archive/published/2025/fermat/project.yml
+--- a/projects/archive/published/2025/fermat/project.yml	2026-10-30 01:43:50
++++ b/projects/archive/published/2025/fermat/project.yml	2026-10-30 01:59:53
+@@ -18,3 +18,17 @@
+ venue: flta
+ doi: "10.1109/FLTA67013.2025.11336663"
+ collaborators: [moreau, peeters, pirmani]
++publication:
++  authors: Axel Faes, Ashkan Pirmani, Yves Moreau, Liesbet Peeters
++  book: "IEEE Conference on Federated Learning Technologies and Applications (IEEE FLTA 2025)"
++  program: [federated, tensor]
++  url: "/publications/conference/2412.06815v1.pdf"
++  abstract: >-
++    Block-Term Tensor Regression (BTTR) has proven to be a powerful tool for modeling complex, high-dimensional data by leveraging multilinear relationships, making it particularly well-suited for applications in healthcare and neuroscience. However, traditional implementations of BTTR rely on centralized datasets, which pose significant privacy risks and hinder collaboration across institutions. To address these challenges, we introduce Federated Block-Term Tensor Regression (FBTTR), an extension of BTTR designed for federated learning scenarios. FBTTR enables decentralized data analysis, allowing institutions to collaboratively build predictive models while preserving data privacy and complying with regulations.
++
++    FBTTR represents a major step forward in applying tensor regression to federated learning environments. Its performance is evaluated in a case study: heart disease prediction. In this case study, FBTTR is applied to predict heart disease using real-world clinical datasets, outperforming both standard federated learning approaches and centralized BTTR models. In the Fed-Heart-Disease Dataset, an AUC-ROC was obtained of 0.872 ± 0.02 and an accuracy of 0.772 ± 0.02 compared to 0.812 ± 0.003 and 0.753 ± 0.007 for the centralized model.
++
++    Empirical evaluations highlight the robustness and scalability of FBTTR, achieving predictive performance comparable to centralized models while significantly reducing privacy concerns. Additionally, the algorithm is computationally efficient, making it viable for real-world deployment where timely predictions are critical. By offering a scalable and privacy-preserving solution, FBTTR has the potential to advance predictive analytics across multiple domains, including healthcare and brain-computer interface applications. Notably, FBTTR is developed as open-source software, promoting transparency and fostering collaboration within the research community.
++  pub_last: Spotlight
++  hide: false
++  rank: 5
+diff -ruN a/projects/archive/published/2025/go-bttr/project.yml b/projects/archive/published/2025/go-bttr/project.yml
+--- a/projects/archive/published/2025/go-bttr/project.yml	2026-10-30 01:43:50
++++ b/projects/archive/published/2025/go-bttr/project.yml	2026-10-30 01:58:34
+@@ -18,3 +18,11 @@
+ venue: jne
+ doi: "10.1088/1741-2552/adcd9e"
+ collaborators: [van-hulle]
++publication:
++  authors: Axel Faes, Mariana P. Branco, Anais Van Hoylandt, Elina Keirse, Tom Theys, Nick F. Ramsey, Marc M. Van Hulle
++  book: "Journal of Neural Engineering"
++  program: [tensor]
++  url: "/publications/journal/Faes_2025_J._Neural_Eng._22_026065.pdf"
++  abstract: >-
++    Objective A novel method is introduced to regress over the Sign Language finger movements from human electrocorticography (ECoG) recordings. Approach The proposed Graph-Optimized Block-Term Tensor Regression (Go-BTTR) method consists of two components: a deflation-based regression model that sequentially Tucker-decomposes multiway ECoG data into a series of blocks, and a Causal Graph Process (CGP) that accounts for the complex relationship between finger movements when expressing sign language gestures. Prior to each regression block, CGP is applied to decide which fingers should be kept separate or grouped and should therefore be referred to BTTR or its extended version eBTTR, respectively. Main results Two ECoG datasets were used, one recorded in 5 patients expressing 4 hand gestures of the American Sign Language Alphabet, and another in 2 patients expressing all gestures of the Flemish Sign Language Alphabet. As Go-BTTR combines fingers in a flexible way, it can better account for the nonlinear relationship ECoG exhibits when expressing hand gestures, including unintentional finger co-activations. This is reflected by the superior joint finger trajectory predictions compared to eBTTR, and predictions that are on par with BTTR in single finger scenarios. Subject 5, Dataset 1, during the movement of hand gestures reached 0.82 Pearson correlation for the pinky for Go-BTTR compared to 0.8 and 0.72 for eBTTR and BTTR respectively. Significance Our findings show that Go-BTTR is capable of decoding complex hand gestures taken from the Sign Language Alphabet. Go-BTTR also demonstrates computational efficiency, providing a notable benefit when intracranial electrodes are inserted during a patient's pre-surgical evaluation. This efficiency helps reduce the time required for developing and testing a Brain-Computer Interface (BCI) solution.
++  rank: 4
+diff -ruN a/projects/archive/published/2026/abduction/project.yml b/projects/archive/published/2026/abduction/project.yml
+--- a/projects/archive/published/2026/abduction/project.yml	2026-10-30 01:43:50
++++ b/projects/archive/published/2026/abduction/project.yml	2026-10-30 01:59:41
+@@ -17,3 +17,11 @@
+ lead: [axel-faes]
+ venue: graz-bci
+ collaborators: [eva-calvo-merino, van-hulle]
++publication:
++  authors: Axel Faes, Eva Calvo Merino, Anais Van Hoylandt, Elina Keirse, Tom Theys, Marc M. Van Hulle
++  book: "10th Graz Brain-Computer Interface Conference 2026"
++  program: [tensor]
++  url: "/publications/preprint/abduction.pdf"
++  abstract: >-
++    Objective: A case study is conducted to show that not only finger flexion- but also finger abduction trajectories can be decoded from high-density electrocorticography (ECoG) recordings. Approach: Two patients, temporarily implanted with high-density ECoG grids as part of their clinical workup, performed a cued single finger flexion task, a cued sign language alphabet task and a cued finger abduction task. The extended Block-Term Tensor Regression (eBTTR) model was adopted to predict finger trajectories after being developed on simultaneous data glove/ECoG recordings. The model performance on the single finger flexion task provides a reference for comparing that on the finger abduction task. Finally, the sign language alphabet task involves realistic, complex finger movements, calling upon both finger flexions and abductions. Main results: We show that finger abduction trajectories can be decoded from ECoG recordings, with comparable precision as single finger flexion trajectories, and even when expressing sign language gestures that involve joint finger flexions and abductions. Significance: Our findings show for the first time that finger abduction trajectories can be decoded from ECoG even when part of Sign Language Alphabet gestures.
++  rank: 3
+diff -ruN a/projects/archive/published/2026/dongho-ecg-clustering/project.yml b/projects/archive/published/2026/dongho-ecg-clustering/project.yml
+--- a/projects/archive/published/2026/dongho-ecg-clustering/project.yml	2026-10-30 01:43:50
++++ b/projects/archive/published/2026/dongho-ecg-clustering/project.yml	2026-10-30 01:58:08
+@@ -1,5 +1,6 @@
+ id: dongho-ecg-clustering
+-stage: published
++stage: accepted
++form: journal
+ tier: research
+ domain: heart
+ title: "Which representation clusters? A chance-corrected benchmark of ECG representations for unsupervised arrhythmia structure on PTB-XL"
+@@ -37,3 +38,12 @@
+   description: "Chance-corrected benchmark of ECG representations (raw, autoencoder, hand-crafted, foundation models) for unsupervised arrhythmia clustering on PTB-XL and MIT-BIH, with a supervised ceiling and deployment-robustness (imbalance, federation) analysis."
+   homepage: "https://theaxec.github.io"
+   topics: [ecg, electrocardiography, clustering, unsupervised-learning, representation-learning, foundation-models, ptb-xl, mit-bih, adjusted-rand-index, arrhythmia, benchmark, machine-learning]
++year: 2026
++publication:
++  authors: Dongho Chun, Axel Faes
++  book: "Biomedical Signal Processing and Control"
++  program: [ecg]
++  url: ""
++  links:
++    - { name: Preprint, url: "/publications/preprint/dongho-ecg-clustering.pdf" }
++  rank: 1
+diff -ruN a/projects/archive/published/2026/glassbox-decision-pipelines/project.yml b/projects/archive/published/2026/glassbox-decision-pipelines/project.yml
+--- a/projects/archive/published/2026/glassbox-decision-pipelines/project.yml	2026-10-30 01:43:50
++++ b/projects/archive/published/2026/glassbox-decision-pipelines/project.yml	2026-10-30 01:59:35
+@@ -37,3 +37,11 @@
+ ideas:
+   - "Full pipeline (code/): in-memory corruption (no disk copies), test-only degraded eval (lossless), 6-corruption suite x 6 FMs x 2 cohorts, HCCNet-style cap-safe SLURM DAG (arrays + deferred-helper waves), reproducible one-command. GBM head for all models. Age from MIMIC patients.anchor_age + CODE-15 base cache. Camera-ready stats layer in code/eval/paired_stats.py (paired DeLong, TOST, AUPRC bootstrap, ECE/Brier/slope) over per-patient predictions dumped to results/age_control/, so no statistic needs a refit."
+   - "Dead-ends folded to private guidance (do NOT resurrect for this paper): certificate-robustness (vacuous under class imbalance); the self-flag/novelty monitor (detects corruption but chance at predicting errors, FM-embedding OOD matches it); named-WITHOUT-age (loses everywhere). Superseded by the age ablation: the submitted robustness and transport edges for the named model do not survive giving the encoders age, and two of them were never sign-stable (MIMIC severe-EMG +0.010, MIMIC->CODE-15 clean transport +0.017) - do not quote them."
++publication:
++  authors: Axel Faes
++  book: "XAI-EADM Workshop at CBI-EDOC 2026, Springer LNBIP"
++  program: [ecg, prognosis]
++  url: ""
++  abstract: >-
++    Enterprises deploying machine learning in high-stakes pipelines often default to opaque foundation models, assuming larger models are more robust. We test that assumption for one-year mortality prediction from a single 12-lead electrocardiogram. A gradient-boosted model over 165 named ECG features plus age, the named-feature model, is compared against six open ECG foundation models under a uniform classifier head, on MIMIC-IV-ECG and CODE-15, under six corruptions at three severities and across sites in both directions. The frozen encoders do not preserve patient age, one of the strongest single predictors of this endpoint. Concatenating a single age column to the frozen embedding before the head raises AUROC in all 48 encoder-condition-cohort cells, by as much as 0.160, with the largest gains under the corruptions that cost the encoders most, at a cost of one column and a refit of the head. On clean data the named-feature model and the best unaided encoder are equivalent within a 0.02 AUROC margin fixed before the analysis (p = 0.017 on MIMIC, p = 0.010 on CODE-15), and at equal input the encoders lead in 28 of 28 tabulated settings. For high-stakes pipelines of this class, a deployed encoder should be handed the tabular covariates the clinician already holds, and every arm an overseer scores should be scored on the same non-waveform inputs.
++  rank: 2
+diff -ruN a/projects/archive/published/2026/hcc-modality-poster/project.yml b/projects/archive/published/2026/hcc-modality-poster/project.yml
+--- a/projects/archive/published/2026/hcc-modality-poster/project.yml	2026-10-30 01:43:50
++++ b/projects/archive/published/2026/hcc-modality-poster/project.yml	2026-10-30 02:02:01
+@@ -15,3 +15,9 @@
+ lead: [axel-faes]
+ venue: xai-nl
+ collaborators: [guichelaar, amir-haeri, van-den-berg]
++publication:
++  authors: Axel Faes, Maureen M. J. Guichelaar, Donald E. Bouman, Stéphanie M. van den Berg, Maryam Amir Haeri
++  book: "XAI-NL Meet-up"
++  program: [hcc]
++  url: "/publications/posters/xai-2026.pdf"
++  rank: 1
+diff -ruN a/projects/archive/published/2026/hccnet-fl/project.yml b/projects/archive/published/2026/hccnet-fl/project.yml
+--- a/projects/archive/published/2026/hccnet-fl/project.yml	2026-10-30 01:43:50
++++ b/projects/archive/published/2026/hccnet-fl/project.yml	2026-10-30 01:59:28
+@@ -1,6 +1,6 @@
+ id: hccnet-fl
+ short: HCCNet-FL
+-stage: published
++stage: accepted
+ form: conference
+ tier: research
+ domain: liver
+@@ -34,3 +34,10 @@
+   topics: [federated-learning, self-supervised-learning, medical-imaging, mri, hepatocellular-carcinoma, longitudinal, 3d-cnn, transformer, personalization, deep-learning]
+ collaborators: [guichelaar, amir-haeri, van-den-berg]
+ year: 2026
++publication:
++  authors: Axel Faes, Maureen M. J. Guichelaar, Donald E. Bouman, Stéphanie M. van den Berg, Maryam Amir Haeri
++  book: "IEEE Conference on Federated Learning Technologies and Applications (IEEE FLTA 2026)"
++  program: [hcc, federated]
++  url: ""
++  abstract: ""
++  rank: 1
+diff -ruN a/projects/coauthor/active/clinical-hccnet/project.yml b/projects/coauthor/active/clinical-hccnet/project.yml
+--- a/projects/coauthor/active/clinical-hccnet/project.yml	2026-10-30 01:43:50
++++ b/projects/coauthor/active/clinical-hccnet/project.yml	2026-10-30 01:54:33
+@@ -20,3 +20,9 @@
+ collaborators: [guichelaar, amir-haeri, van-den-berg, axel-faes]
+ latest: "2026-10-06: Age- and sex-corrected analysis for the coauthors (code/results/material/ADJUSTED.md), no manuscript change."
+ year: 2026
++publication:
++  authors: Jasper van Leengoed, Axel Faes, Maryam Amir Haeri, Donald Bouman, Stephanie van den Berg, Maureen Guichelaar
++  book: ""
++  program: [hcc]
++  url: ""
++  rank: 1
+diff -ruN a/projects/coauthor/active/flkit/project.yml b/projects/coauthor/active/flkit/project.yml
+--- a/projects/coauthor/active/flkit/project.yml	2026-10-30 01:43:50
++++ b/projects/coauthor/active/flkit/project.yml	2026-10-30 01:53:37
+@@ -18,3 +18,10 @@
+ lead: [pirmani]
+ venue: jmir
+ collaborators: [peeters, moreau, pirmani, axel-faes]
++publication:
++  authors: Ashkan Pirmani*, Ilse Vermeulen*, Goran Vinterhalter, Lotte Geys, Axel Faes, Muhammad Quamber Ali, Nishkala Sattanathan, Geert Vandeweyer, Yves Moreau, Liesbet M. Peeters
++  book: "Journal of Medical Internet Research (JMIR)"
++  program: [federated]
++  url: ""
++  abstract: ""
++  rank: 1
+diff -ruN a/projects/coauthor/published/2016/chi-household-survival/project.yml b/projects/coauthor/published/2016/chi-household-survival/project.yml
+--- a/projects/coauthor/published/2016/chi-household-survival/project.yml	2026-10-30 01:43:50
++++ b/projects/coauthor/published/2016/chi-household-survival/project.yml	2026-10-30 02:11:14
+@@ -15,3 +15,16 @@
+ lead: [brent-berghmans]
+ collaborators: [kashyap-todi, axel-faes]
+ venue: chi-ea
++publication:
++  authors: Brent Berghmans*, Axel Faes*, Matthijs Kaminski*, Kashyap Todi
++  book: "CHI EA '16: Extended Abstracts of the SIGCHI Conference on Human Factors in Computing Systems. Student Game Competition, pp. 168-171"
++  program: [student-research]
++  url: "/publications/abstracts/purpose-centric-sgc.pdf"
++  rank: 8
++cv:
++  title: "Household Survival: Immersive Room-Sized Gaming Using Everyday Objects as Weapons (Unity, Optitrack Motion Capture)"
++  url: https://www.youtube.com/watch?v=Q4_rK2upGEY
++  duration: Sep. 2015 - Dec. 2015
++  role: Researcher
++  about: "Developed a room-scale AR game using everyday objects as controllers (broom, fan, vacuum, mousetrap). \nDemonstrated immersive physical-virtual interactions. \nStill used in university courses as a teaching example.\n"
++  rank: 13
+diff -ruN a/projects/coauthor/published/2016/chi-purpose-centric/project.yml b/projects/coauthor/published/2016/chi-purpose-centric/project.yml
+--- a/projects/coauthor/published/2016/chi-purpose-centric/project.yml	2026-10-30 01:43:50
++++ b/projects/coauthor/published/2016/chi-purpose-centric/project.yml	2026-10-30 02:01:55
+@@ -8,10 +8,16 @@
+ domain: cs
+ pillars: [student-research]
+ related: [chi-household-survival]
+-title: "Purpose-Centric Appropriation of Everyday Objects as Game Controllers"
++title: "Purpose-centric appropriation of everyday objects as game controllers."
+ eli5: "Student-competition extended abstract exploring purpose-centric appropriation of everyday objects as game controllers."
+ year: 2016
+ outcome: "Extended abstract, CHI EA 2016 Student Game Competition (Todi, Degraen, Berghmans, Faes, Kaminski, Luyten)."
+ lead: [kashyap-todi]
+ collaborators: [brent-berghmans, axel-faes]
+ venue: chi-ea
++publication:
++  authors: Kashyap Todi, Donald Degraen, Brent Berghmans, Axel Faes, Matthijs Kaminski, Kris Luyten
++  book: "CHI EA '16: Extended Abstracts of the SIGCHI Conference on Human Factors in Computing Systems. Student Game Competition, pp. 2744-2750"
++  program: [student-research]
++  url: "/publications/abstracts/purpose-centric-lbw.pdf"
++  rank: 7
+diff -ruN a/projects/coauthor/published/2017/algebraic-effects-compilation/project.yml b/projects/coauthor/published/2017/algebraic-effects-compilation/project.yml
+--- a/projects/coauthor/published/2017/algebraic-effects-compilation/project.yml	2026-10-30 01:43:50
++++ b/projects/coauthor/published/2017/algebraic-effects-compilation/project.yml	2026-10-30 02:00:24
+@@ -16,3 +16,15 @@
+ lead: [matija-pretnar]
+ collaborators: [axel-faes]
+ venue: kuleuven-cw-techreport
++code_availability:
++  status: deposited
++  url: /publications/other/effCompiler.zip
++publication:
++  authors: Matija Pretnar, Amr Hany Shehata Saleh, Axel Faes, Tom Schrijvers
++  book: "2017 - CW Reports, CW708, 32 pp. Leuven, Belgium: Department of Computer Science, KU Leuven."
++  program: [student-research]
++  url: "/publications/other/CW708.pdf"
++  abstract: >-
++    The popularity of algebraic effect handlers as a programming language feature for user-defined computational effects is steadily growing. Yet, even though efficient runtime representations have already been studied, most handler-based programs are still much slower than hand-written code.
++    In this paper, we show that the performance gap can be drastically narrowed (in some cases even closed) by means of type-and-effect directed optimizing compilation. Our approach consists of two stages. Firstly, we combine elementary source-to-source transformations with judicious function specialization in order to aggressively reduce handler applications. Secondly, we show how to elaborate the source language into a handler-less target language in a way that incurs no overhead for pure computations.
++    This work comes with a practical implementation: an optimizing compiler from Eff, an ML-style language with algebraic effect handlers, to OCaml. Experimental evaluation with this implementation demonstrates that in a number of benchmarks, our approach eliminates much of the overhead of handlers and yields competitive performance with hand-written OCaml code.
+diff -ruN a/projects/coauthor/published/2017/http2-best-practices/project.yml b/projects/coauthor/published/2017/http2-best-practices/project.yml
+--- a/projects/coauthor/published/2017/http2-best-practices/project.yml	2026-10-30 01:43:50
++++ b/projects/coauthor/published/2017/http2-best-practices/project.yml	2026-10-30 02:00:12
+@@ -16,3 +16,12 @@
+ lead: [robin-marx]
+ collaborators: [axel-faes]
+ venue: webist
++publication:
++  authors: Robin Marx, Peter Quax, Axel Faes, Wim Lamotte
++  book: "WEBIST 2017 - Proceedings of the 13th International Conference on Web Information Systems and Technologies"
++  program: [student-research]
++  url: "/publications/conference/h2bestpractices_RobinMarx_WEBIST2017.pdf"
++  abstract: >-
++    Web page performance is becoming increasingly important for end users but also more difficult to provide by web developers, in part because of the limitations of the legacy HTTP/1 protocol. The new HTTP/2 protocol was designed with performance in mind, but existing work comparing its improvements to HTTP/1 often shows contradictory results. It is unclear for developers how to profit from HTTP/2 and whether current HTTP/1 best practices such as resource concatenation, resource embedding, and hostname sharding should still be used.
++    In this work, we introduce the Speeder framework, which uses established tools and software to easily and reproducibly test various setup permutations. We compare and discuss results over many parameters (e.g., network conditions, browsers, metrics), both from synthetic and realistic test cases. We find that in most non-extreme cases, HTTP/2 is on a par with HTTP/1 and that most HTTP/1 best practices are applicable to HTTP/2. We show that situations in which HTTP/2 currently underperforms are mainly caused by inefficiencies in implementations, not due to shortcomings in the protocol itself.
++  rank: 8
+diff -ruN a/projects/coauthor/published/2018/http2-web-performance/project.yml b/projects/coauthor/published/2018/http2-web-performance/project.yml
+--- a/projects/coauthor/published/2018/http2-web-performance/project.yml	2026-10-30 01:43:50
++++ b/projects/coauthor/published/2018/http2-web-performance/project.yml	2026-10-30 02:00:06
+@@ -16,3 +16,12 @@
+ lead: [robin-marx]
+ collaborators: [axel-faes]
+ venue: webist
++publication:
++  authors: Robin Marx, Maarten Wijnants, Peter Quax, Axel Faes, Wim Lamotte
++  book: "International Conference on Web Information Systems and Technologies, pg 87-114"
++  program: [student-research]
++  url: "/publications/conference/WebPerfCharacteristicsOfH2_MarxRobin_13aug2017.pdf"
++  abstract: >-
++    The HTTP/1.1 protocol has long been a staple on the web, for both pages and apps. However, it has started to show its age, especially with regard to page load performance and the overhead it entails due to its use of multiple underlying connections. Its successor, the newly standardized HTTP/2, aims to improve the protocol's performance and reduce its overhead by (1) multiplexing multiple resources over a single TCP connection, (2) using advanced prioritization strategies, and by introducing new features such as (3) Server Push and (4) HPACK header compression.
++    This work provides an in-depth overview of these four HTTP/2 performance aspects, discussing both synthetic and realistic experiments, to determine the gains HTTP/2 can provide in comparison to HTTP/1.1 in various settings. We find that the single multiplexed connection can actually become a significant performance bottleneck in poor network conditions with high packet loss and that HTTP/2 rarely improves much on HTTP/1.1, except in terms of reduced overhead. Prioritization strategies, Server Push, and HPACK compression are found to have a relatively limited impact on web performance, but together with other observed HTTP/2 performance problems, this could also be due to faulty current implementations, of which we have discovered various examples.
++  rank: 7
+diff -ruN a/projects/coauthor/published/2023/coordinated-fingers-ecnr/project.yml b/projects/coauthor/published/2023/coordinated-fingers-ecnr/project.yml
+--- a/projects/coauthor/published/2023/coordinated-fingers-ecnr/project.yml	2026-10-30 01:43:50
++++ b/projects/coauthor/published/2023/coordinated-fingers-ecnr/project.yml	2026-10-30 02:01:33
+@@ -15,3 +15,9 @@
+ lead: [qiang-sun]
+ venue: ecnr
+ collaborators: [van-hulle, axel-faes]
++publication:
++  authors: Qiang Sun, Axel Faes, Marc M. Van Hulle
++  book: European Congress of NeuroRehabilitation 2023
++  program: [eeg]
++  url: "/publications/abstracts/abstract_ECNR_MVH_AF.pdf"
++  rank: 2
+diff -ruN a/projects/coauthor/published/2023/ecog-frequency-features/project.yml b/projects/coauthor/published/2023/ecog-frequency-features/project.yml
+--- a/projects/coauthor/published/2023/ecog-frequency-features/project.yml	2026-10-30 01:43:50
++++ b/projects/coauthor/published/2023/ecog-frequency-features/project.yml	2026-10-30 01:58:39
+@@ -17,3 +17,11 @@
+ venue: jne
+ doi: "10.1088/1741-2552/ad0c5e"
+ collaborators: [van-hulle, axel-faes]
++publication:
++  authors: Eva Calvo Merino, Axel Faes, Marc M. Van Hulle
++  book: Journal of Neural Engineering
++  program: [eeg]
++  url: "/publications/journal/role-of-distinct-ecog-frequency-features-in-decoding-finger-movement.pdf"
++  abstract: >-
++    Objective. To identify the electrocorticography (ECoG) frequency features that encode distinct finger movement states during repeated finger flexions. Approach. We used the publicly available Stanford ECoG dataset of cue-based, repeated single finger flexions. Using linear regression, we identified the spectral features that contributed most to the encoding of movement dynamics and discriminating movement events from rest, and combined them to predict finger movement trajectories. Furthermore, we also looked into the effect of the used frequency range and the spatial distribution of the identified features. Main results. Two frequency features generate superior performance, each one for a different movement aspect: high gamma band activity distinguishes movement events from rest, whereas the local motor potential (LMP) codes for movement dynamics. Combining these two features in a finger movement decoder outperformed comparable prior work where the entire spectrum was used as the average correlation coefficient with the true trajectories increased from 0.45 to 0.5, both applied to the Stanford dataset, and erroneous predictions during rest were demoted. In addition, for the first time, our results show the influence of the upper cut-off frequency used to extract LMP, yielding a higher performance when this range is adjusted to the finger movement rate. Significance. This study shows the benefit of a detailed feature analysis prior to designing the finger movement decoder.
++  rank: 5
+diff -ruN a/projects/coauthor/published/2023/modulation-lmp-bci/project.yml b/projects/coauthor/published/2023/modulation-lmp-bci/project.yml
+--- a/projects/coauthor/published/2023/modulation-lmp-bci/project.yml	2026-10-30 01:43:50
++++ b/projects/coauthor/published/2023/modulation-lmp-bci/project.yml	2026-10-30 02:01:38
+@@ -7,10 +7,16 @@
+ tier: research
+ domain: brainbci
+ pillars: [neurotech]
+-title: "Modulation of LMPs Using the Gamma Band Increases the Stability of Finger Trajectories Decoded from ECoG"
++title: "Modulation of LMPs using the gamma band increases the stability of finger trajectories decoded from ECoG"
+ eli5: "Extended abstract showing that modulating the local motor potential with gamma-band information increases the stability of ECoG-decoded finger trajectories."
+ year: 2023
+ outcome: "Extended abstract, BCI Society Meeting 2023 (Calvo Merino, Faes, Van Hulle)."
+ lead: [eva-calvo-merino]
+ venue: intl-bci-meeting
+ collaborators: [van-hulle, axel-faes]
++publication:
++  authors: Eva Calvo Merino, Axel Faes, Marc M. Van Hulle
++  book: BCI Society Meeting 2023
++  program: [eeg]
++  url: "/publications/abstracts/Abstract.Eva.CalvoMerino.pdf"
++  rank: 3
+diff -ruN a/projects/coauthor/published/2024/highgamma-event-detection/project.yml b/projects/coauthor/published/2024/highgamma-event-detection/project.yml
+--- a/projects/coauthor/published/2024/highgamma-event-detection/project.yml	2026-10-30 01:43:50
++++ b/projects/coauthor/published/2024/highgamma-event-detection/project.yml	2026-10-30 02:01:30
+@@ -7,10 +7,16 @@
+ tier: research
+ domain: brainbci
+ pillars: [neurotech]
+-title: "High-Gamma Band Event Detection Improves Stability of Finger Trajectories Decoded from ECoG-LMP Activity"
++title: "High-gamma band event detection improves stability of finger trajectories decoded from ECoG-LMP activity"
+ eli5: "Extended abstract showing that detecting movement events from the ECoG high-gamma band stabilises finger-trajectory predictions decoded from the local motor potential (LMP)."
+ year: 2024
+ outcome: "Extended abstract, International BCI Meeting 2024 (Calvo Merino, Faes, Van Hulle)."
+ lead: [eva-calvo-merino]
+ venue: intl-bci-meeting
+ collaborators: [van-hulle, axel-faes]
++publication:
++  authors: Eva Calvo Merino, Axel Faes, Marc M. Van Hulle
++  book: International BCI Meeting 2024
++  program: [eeg]
++  url: "/publications/abstracts/High-gamma_band_event_detection_improves_stability_of_finger_trajectories_decoded_from_ECoG-LMP_activity.pdf"
++  rank: 1
+diff -ruN a/projects/coauthor/published/2025/editorial-bigdata-ai-ms/project.yml b/projects/coauthor/published/2025/editorial-bigdata-ai-ms/project.yml
+--- a/projects/coauthor/published/2025/editorial-bigdata-ai-ms/project.yml	2026-10-30 01:43:50
++++ b/projects/coauthor/published/2025/editorial-bigdata-ai-ms/project.yml	2026-10-30 01:58:13
+@@ -16,3 +16,10 @@
+ venue: frontimmunol
+ doi: "10.3389/fimmu.2025.1679482"
+ collaborators: [peeters, axel-faes]
++publication:
++  authors: Liesbet Peeters, Axel Faes, et al.
++  book: "Frontiers in Immunology"
++  program: [clinical-collab]
++  url: "/publications/journal/fimmu-16-1679482.pdf"
++  abstract: "As health data volume and the sophistication of artificial intelligence (AI) tools grow, their potential to transform the management of complex neuroimmunological conditions like multiple sclerosis (MS) has become increasingly evident (1). MS, a chronic immune-mediated inflammatory disorder of the central nervous system, presents a unique challenge in the health sector due to its multifactorial nature and variable progression patterns. Each patient's journey is marked by distinct symptom trajectories and responses to treatment, demanding personalised approaches in diagnosis, prognosis, and therapeutic interventions. (2, 3). This Special Topic aims to address the clinical complexity of MS by leveraging data driven insights and innovative health initiatives. The overarching goal is to present the current challenges in MS research and explore recent advances and future trends that can significantly impact patient care. Through a Research Topic of reviews, perspectives, and original research articles, we explore how advanced data techniques and innovative health initiatives are shaping the future of MS research and care."
++  rank: 2
+diff -ruN a/projects/coauthor/published/2025/pfl-ms-npj/project.yml b/projects/coauthor/published/2025/pfl-ms-npj/project.yml
+--- a/projects/coauthor/published/2025/pfl-ms-npj/project.yml	2026-10-30 01:43:50
++++ b/projects/coauthor/published/2025/pfl-ms-npj/project.yml	2026-10-30 01:58:26
+@@ -19,3 +19,11 @@
+ venue: npjdm
+ doi: "10.1038/s41746-025-01788-8"
+ collaborators: [moreau, peeters, pirmani, axel-faes]
++publication:
++  authors: Ashkan Pirmani, Edward De Brouwer, Adam Arany, Martijn Oldenhof, Antoine Passemiers, Axel Faes, Tomas Kalincik, Serkan Ozakbas, Riadh Gouider, Barbara Willekens, Dana Horakova, Eva Kubala Havrdova, Francesco Patti, Alexandre Prat, Alessandra Lugaresi, Valentina Tomassini, Pierre Grammond, Elisabetta Cartechini, Izanne Roos, Cavit Boz, Raed Alroughani, Maria Pia Amato, Katherine Buzzard, Jeannette Lechner-Scott, Joana Guimaraes, Claudio Solaro, Oliver Gerlach, Aysun Soysal, Jens Kuhle, Jose Luis Sanchez-Menoyo, Daniele Spitaleri, Tunde Csepany, Bart Van Wijmeersch, Radek Ampapa, Julie Prevost, Samia J. Khoury, Vincent van Pesch, Nevin John, Davide Maimone, Bianca Weinstock-Guttman, Guy Laureys, Pamela McCombe, Yolanda Blanco, Ayse Altintas, Abdullah Al-Asmi, Justin Garber, Anneke van der Walt, Helmut Butzkueven, Koen de Gans, Csilla Rozsa, Bruce Taylor, Talal Al-Harbi, Attila Sas, Cecilia Rajda, Orla Gray, Danny Decoo, William M Carroll, Allan G Kermode, Marzena Fabis-Pedrini, Deborah Mason, Angel Perez Sempere, Mihaela Simu, Neil Shuey, Bhim Singhal, Marija Cauchi, Todd A. Hardy, Sudarshini Ramanathan, Patrice Lalive, Carmen-Adella Sirbu, Stella Hughes, Tamara Castillo Trivino, Liesbet M. Peeters, and Yves Moreau
++  book: "npj Digital Medicine"
++  program: [federated]
++  url: "/publications/journal/s41746-025-01788-8.pdf"
++  abstract: >-
++    The fragmented nature of Real-World Data (RWD) presents significant challenges for research, particularly in low-prevalence diseases like Multiple Sclerosis (MS). Data dispersed across institutions and countries, coupled with restrictive privacy regulations, limits access to comprehensive datasets, delaying the development of predictive models and understanding of critical outcomes. Federated Learning (FL) offers a collaborative solution by enabling model training without centralizing sensitive patient data, but it often fails to address variations across data providers. Personalized Federated Learning (PFL) adapts models to these differences, improving the precision and relevance of insights. Yet, its potential to enhance predictive performance and guide clinical decisions in MS using routine clinical RWD remains largely unexplored. In this study, we evaluate standard FL alongside two personalization strategies for predicting confirmed MS disability progression over two years, using RWD from over 26,000 patients in the MSBase registry. These strategies include (1) AdaptiveDualBranchNet, a novel architecture that selectively exchanges key model parameters, enabling more nuanced adaptation across diverse clinical centers and (2) fine-tuning the global FL model to better fit each local's data. We benchmark these methods against fully centralized (pooled data) and local (site-specific) models to assess their relative performance and practicality. Our results show that standard FL methods trail both centralized and local baselines, highlighting the limitations of a uniform global model. In contrast, personalization yields a notable performance boost, with both PFL strategies surpassing all comparators. Specifically, the adaptive and fine-tuned versions of FedProx and FedAVG achieved the highest ROC-AUC scores, with FedProx reaching 0.8398 ± 0.0019 and 0.8375 ± 0.0019, and FedAVG scoring 0.8384 ± 0.0014 and 0.8370 ± 0.0016, respectively. In contrast, among the standard FL methods, FedAdam and FedYogi showed the best performance with ROC-AUC scores of 0.7919 ± 0.0031 and 0.7910 ± 0.0028. These results underscore that personalization is not a luxury but a necessity, enabling FL to reach, and even exceed, the predictive power of traditional modeling approaches. By providing concrete guidelines for implementing PFL and introducing a new, flexible architecture, this study establishes a clear path toward unlocking FL's untapped potential. Ultimately, these advances establish a clear path for more impactful, privacy-aware predictive modeling that enhances clinical decision-making and patient care in MS and beyond.
++  rank: 3
+diff -ruN a/projects/coauthor/published/2025/proprioception-exoskeleton/project.yml b/projects/coauthor/published/2025/proprioception-exoskeleton/project.yml
+--- a/projects/coauthor/published/2025/proprioception-exoskeleton/project.yml	2026-10-30 01:43:50
++++ b/projects/coauthor/published/2025/proprioception-exoskeleton/project.yml	2026-10-30 02:00:01
+@@ -16,3 +16,17 @@
+ lead: [qiang-sun]
+ venue: icorr
+ collaborators: [eva-calvo-merino, van-hulle, axel-faes]
++publication:
++  authors: Qiang Sun, Eva Calvo Merino, Liuyin Yang, Axel Faes, Marc Van Hulle
++  book: "Proceedings of 2025 International Conference on Rehabilitation Robotics (ICORR) 2025"
++  program: [eeg]
++  url: "/publications/conference/On_the_Impact_of_Proprioception_in_EEG_Representations_and_Decoding_During_Human-Hand_Exoskeleton_Interaction.pdf"
++  abstract: >-
++    Controlling a hand exoskeleton based on electroencephalogram (EEG)-based brain-computer interfacing (BCI) holds promise for human motor augmentation and neurorehabilitation. To achieve natural control, a critical step is to understand the impact of proprioception provided by the exoskeleton during interaction.
++
++    In this study, we aim to approach this goal by quantifying EEG representations and BCI performance. We monitored full-scalp EEG in 25 healthy subjects while they performed different finger movement tasks with a cable-driven hand exoskeleton. Each task involved three movement modalities: imagined (IM), passive (PM), and congruent imagined and passive (IPM) finger flexion.
++
++    We found that alpha (8-13 Hz) and beta (13-30 Hz) band desynchronization in the sensorimotor area was significantly stronger for PM and IPM tasks compared to IM, with no significant difference between PM and IPM. Using machine learning models, we achieved high accuracy in classifying exoskeleton-assisted movements from the rest condition (IPM vs. REST: 0.80 ± 0.07; PM vs. REST: 0.72 ± 0.10), with the IPM modality returning the highest accuracy. However, distinguishing between IPM and PM yielded only 0.61 ± 0.09, significantly lower than the condition of intention detection without the exoskeleton (IM vs. REST: 0.73 ± 0.08).
++
++    Our findings suggest that sensorimotor EEG activity can track proprioceptive feedback induced by the hand exoskeleton. While this feedback is pronounced and distinguishable, detecting motor intention during exoskeleton movement remains highly challenging. This highlights the need for advanced decoders and control strategies for the future development of continuous BCI-actuated hand exoskeletons.
++  rank: 6
+diff -ruN a/projects/manuscripts/bt-operator-theory/project.yml b/projects/manuscripts/bt-operator-theory/project.yml
+--- a/projects/manuscripts/bt-operator-theory/project.yml	2026-10-30 01:43:50
++++ b/projects/manuscripts/bt-operator-theory/project.yml	2026-10-30 01:54:35
+@@ -41,3 +41,11 @@
+   description: "Verification code for block-term operator theory: why rank-(L,L,1) block-term neural operators generalise better than CP, Tucker and TT at matched capacity. Four scripts, no data or GPU needed."
+   homepage: "https://theaxec.github.io"
+   topics: [tensor-decomposition, block-term-decomposition, neural-operators, fourier-neural-operator, operator-learning, generalization-theory, inductive-bias, statistical-learning-theory, random-matrix-theory, double-descent, cp-decomposition, tucker-decomposition, theory, machine-learning]
++year: 2026
++publication:
++  authors: Axel Faes
++  book: "Journal of Machine Learning Research"
++  program: [tensor]
++  url: ""
++  abstract: ""
++  rank: 2
+diff -ruN a/projects/manuscripts/btfno/project.yml b/projects/manuscripts/btfno/project.yml
+--- a/projects/manuscripts/btfno/project.yml	2026-10-30 01:43:50
++++ b/projects/manuscripts/btfno/project.yml	2026-10-30 01:54:37
+@@ -40,3 +40,11 @@
+   topics: [neural-operators, fourier-neural-operator, operator-learning, tensor-decomposition, block-term-decomposition, mixture-of-experts, pdebench, scientific-machine-learning, partial-differential-equations, generalization, cp-decomposition, machine-learning]
+ paths:
+   results_doc: RESULTS.md
++year: 2026
++publication:
++  authors: Axel Faes, Maryam Amir Haeri
++  book: ""
++  program: [tensor]
++  url: ""
++  abstract: ""
++  rank: 3
+diff -ruN a/projects/manuscripts/bttd-source-eeg/project.yml b/projects/manuscripts/bttd-source-eeg/project.yml
+--- a/projects/manuscripts/bttd-source-eeg/project.yml	2026-10-30 01:43:50
++++ b/projects/manuscripts/bttd-source-eeg/project.yml	2026-10-30 01:53:58
+@@ -36,3 +36,13 @@
+   description: "Lead-field-constrained block-term decomposition of evoked EEG: solves the EEG inverse problem and decomposes the signal jointly, returning anatomically-grounded spatiotemporal components (a focal cortical source map, a time course, and a trial loading per block)."
+   homepage: "https://theaxec.github.io"
+   topics: [eeg, inverse-problem, source-localization, block-term-decomposition, tensor-decomposition, evoked-potentials, neuroimaging, mne-python, lead-field, spatiotemporal, reproducible-research]
++year: 2026
++publication:
++  authors: Axel Faes, Maryam Amir Haeri
++  book: "Journal of Neuroscience Methods"
++  program: [tensor]
++  url: ""
++  links:
++    - { name: Preprint, url: "/publications/preprint/bttd-source-eeg.pdf" }
++  abstract: ""
++  rank: 8
+diff -ruN a/projects/manuscripts/bttn-incident-af/project.yml b/projects/manuscripts/bttn-incident-af/project.yml
+--- a/projects/manuscripts/bttn-incident-af/project.yml	2026-10-30 01:43:50
++++ b/projects/manuscripts/bttn-incident-af/project.yml	2026-10-30 01:53:50
+@@ -39,3 +39,13 @@
+   homepage: "https://theaxec.github.io"
+   topics: [atrial-fibrillation, ecg, electrocardiography, tensor-decomposition, block-term-decomposition, interpretable-machine-learning, mimic-iv, risk-prediction, incident-prediction, time-series, biomedical-signal-processing, healthcare]
+ collaborators: [peeters]
++year: 2026
++publication:
++  authors: Axel Faes, Liesbet Peeters
++  book: "Artificial Intelligence in Medicine"
++  program: [tensor, ecg]
++  url: ""
++  links:
++    - { name: Preprint, url: "/publications/preprint/bttn-incident-af.pdf" }
++  abstract: ""
++  rank: 5
+diff -ruN a/projects/manuscripts/covert-applied/project.yml b/projects/manuscripts/covert-applied/project.yml
+--- a/projects/manuscripts/covert-applied/project.yml	2026-10-30 01:43:50
++++ b/projects/manuscripts/covert-applied/project.yml	2026-10-30 01:54:27
+@@ -37,3 +37,13 @@
+   homepage: "https://theaxec.github.io"
+   topics: [federated-learning, vertical-federated-learning, differential-privacy, tensor-decomposition, block-term, clinical-prediction, secure-aggregation, communication-efficient, machine-learning, reproducible-research]
+ collaborators: [guichelaar, amir-haeri]
++year: 2026
++publication:
++  authors: Axel Faes, Maureen M. J. Guichelaar, Donald E. Bouman, Maryam Amir Haeri
++  book: "Neurocomputing"
++  program: [federated, tensor]
++  url: ""
++  links:
++    - { name: Preprint, url: "/publications/preprint/covert-applied.pdf" }
++  abstract: ""
++  rank: 12
+diff -ruN a/projects/manuscripts/covert-theory/project.yml b/projects/manuscripts/covert-theory/project.yml
+--- a/projects/manuscripts/covert-theory/project.yml	2026-10-30 01:43:50
++++ b/projects/manuscripts/covert-theory/project.yml	2026-10-30 01:54:21
+@@ -36,3 +36,13 @@
+   description: "Private Coupled Descent: dimension-free differential privacy for vertical federated learning by privatizing the small shared coupling variable, with convergence guarantees, matching bounds, and synthetic validation."
+   homepage: "https://theaxec.github.io"
+   topics: [federated-learning, vertical-federated-learning, differential-privacy, convergence-analysis, tensor-decomposition, block-term, optimization, privacy, theory, reproducible-research]
++year: 2026
++publication:
++  authors: Axel Faes, Maryam Amir Haeri
++  book: "IEEE Transactions on Signal Processing"
++  program: [federated, tensor]
++  url: ""
++  links:
++    - { name: Preprint, url: "/publications/preprint/covert-theory.pdf" }
++  abstract: ""
++  rank: 10
+diff -ruN a/projects/manuscripts/dries-bttr-ecg/project.yml b/projects/manuscripts/dries-bttr-ecg/project.yml
+--- a/projects/manuscripts/dries-bttr-ecg/project.yml	2026-10-30 01:43:50
++++ b/projects/manuscripts/dries-bttr-ecg/project.yml	2026-10-30 01:53:56
+@@ -38,3 +38,12 @@
+   description: "Interpretable block-term tensor regression (BTTR) for identifying atrial fibrillation in sinus-rhythm ECG on PTB-XL, benchmarked against clinical, CNN, CP, and foundation-model baselines."
+   homepage: "https://theaxec.github.io"
+   topics: [atrial-fibrillation, ecg, electrocardiography, tensor-decomposition, block-term-decomposition, interpretable-machine-learning, ptb-xl, foundation-models, machine-learning, biomedical-signal-processing, time-series, healthcare]
++year: 2026
++publication:
++  authors: Dries Cornelissen, Axel Faes
++  book: "Medical & Biological Engineering & Computing"
++  program: [tensor]
++  url: ""
++  links:
++    - { name: Preprint, url: "/publications/preprint/dries-bttr-ecg.pdf" }
++  rank: 7
+diff -ruN a/projects/manuscripts/ecg-readable-substrate/project.yml b/projects/manuscripts/ecg-readable-substrate/project.yml
+--- a/projects/manuscripts/ecg-readable-substrate/project.yml	2026-10-30 01:43:50
++++ b/projects/manuscripts/ecg-readable-substrate/project.yml	2026-10-30 01:54:24
+@@ -33,4 +33,14 @@
+   - "The FMs' apparent edge is scoped by 3 contrasts: probe nonlinearity (named beats ECG-FM +0.025/+0.050 under equal boosting), age (waveform features exceed age alone, 0.781 vs 0.749), and pretraining overlap (strong encoders tie on clean cohorts). A clean FM adds only +0.013 external, ~0 internal."
+ ideas:
+   - "Contribution = the CONJUNCTION on one endpoint: a strong named baseline + a leaked-vs-clean provenance tag per comparison + a cross-cohort transfer arm + a per-patient provable certificate, showing 6 ECG-FMs rival-not-beat named features and transport worse. The 2025 ECG-FM benchmarks (2509.25095, 2509.10151) do none of these on a mortality endpoint. Specialized-tier (IEEE JBHI), not flagship - novelty-checked."
+-  - "Dead-end (pre-empted + unsupported, do not re-attempt): per-patient nameability certificate on the FM + residual-as-leakage-signature (ELUDE, EEG-FM 2605.11410, Canizales 2605.06640, Yeh pre-empt it; residual carries signal on clean cohorts too). Also dead: the feature-space orthogonal-residual complementarity probe (confounded, feature-orthogonal != outcome-independent; use the conditional increment)."
+\ No newline at end of file
++  - "Dead-end (pre-empted + unsupported, do not re-attempt): per-patient nameability certificate on the FM + residual-as-leakage-signature (ELUDE, EEG-FM 2605.11410, Canizales 2605.06640, Yeh pre-empt it; residual carries signal on clean cohorts too). Also dead: the feature-space orthogonal-residual complementarity probe (confounded, feature-orthogonal != outcome-independent; use the conditional increment)."
++year: 2026
++publication:
++  authors: Axel Faes
++  book: "Computers in Biology and Medicine"
++  program: [ecg, prognosis]
++  url: ""
++  links:
++    - { name: Preprint, url: "/publications/preprint/ecg-readable-substrate.pdf" }
++  abstract: ""
++  rank: 11
+diff -ruN a/projects/manuscripts/erp-signatures/project.yml b/projects/manuscripts/erp-signatures/project.yml
+--- a/projects/manuscripts/erp-signatures/project.yml	2026-10-30 01:43:50
++++ b/projects/manuscripts/erp-signatures/project.yml	2026-10-30 01:53:41
+@@ -19,3 +19,11 @@
+ lead: [valentina-pergher, axel-faes]
+ venue: frontpsychol
+ collaborators: [van-hulle]
++publication:
++  authors: Valentina Pergher*, Axel Faes*, Yide Li, Marc M. Van Hulle
++  book: "Frontiers in Psychology, section Cognition"
++  program: [eeg]
++  url: ""
++  abstract: >-
++    The N-Back working memory (WM) updating task is commonly used in cognitive neuroscience research. Many studies investigated behavioral responses, while only few studies have sought to identify its electrophysiological signatures. Nevertheless, it is still unclear what the role is of stimulus type and task structure in the outcomes. Here, we address this issue using nine different variations of an N-Back task. Results show differences in electrode clusters between words vs. pictures for both N2 and P3-ERP components, specifically in the fronto-central brain regions. In conclusion, our findings suggest that stimulus type contributes to differences in electrophysiological responses during N-Back task performance, which needs to be accounted for when interpreting findings across studies.
++  rank: 2
+diff -ruN a/projects/manuscripts/fed-multicellular-immune/project.yml b/projects/manuscripts/fed-multicellular-immune/project.yml
+--- a/projects/manuscripts/fed-multicellular-immune/project.yml	2026-10-30 01:43:50
++++ b/projects/manuscripts/fed-multicellular-immune/project.yml	2026-10-30 01:54:19
+@@ -38,3 +38,13 @@
+   description: "Privacy-preserving federated tensor decomposition of single-cell immune data: recovers multicellular programs (donor x cell-type x gene) across institutions by sharing only a program subspace, closely approximating a pooled analysis up to local rank truncation."
+   homepage: "https://theaxec.github.io"
+   topics: [federated-learning, tensor-decomposition, single-cell, immunology, differential-privacy, multicellular-programs, computational-biology, secure-aggregation, reproducible-research, cellxgene]
++year: 2026
++publication:
++  authors: Axel Faes, Maryam Amir Haeri
++  book: "Computer Methods and Programs in Biomedicine"
++  program: [federated, tensor]
++  url: ""
++  links:
++    - { name: Preprint, url: "/publications/preprint/fed-multicellular-immune.pdf" }
++  abstract: ""
++  rank: 9
+diff -ruN a/projects/manuscripts/hccnet-revision/project.yml b/projects/manuscripts/hccnet-revision/project.yml
+--- a/projects/manuscripts/hccnet-revision/project.yml	2026-10-30 01:43:50
++++ b/projects/manuscripts/hccnet-revision/project.yml	2026-10-30 01:54:30
+@@ -34,3 +34,13 @@
+   date: 2026-10-24
+ collaborators: [guichelaar, amir-haeri, van-den-berg]
+ latest: "2026-10-24: submitted to Intelligent Medicine; package (manuscript, LaTeX zip, cover letter, highlights, title page, AI declaration, form answers) in admin/submission/."
++year: 2026
++publication:
++  authors: Jakob Nolte*, Axel Faes*, Maureen M. J. Guichelaar, Donald E. Bouman, Stéphanie M. van den Berg, Maryam Amir Haeri
++  book: "Intelligent Medicine"
++  program: [hcc]
++  url: ""
++  links:
++    - { name: Preprint, url: "/publications/preprint/hccnet-revision.pdf" }
++  abstract: ""
++  rank: 13
+diff -ruN a/projects/manuscripts/meseret-cirrhosis/project.yml b/projects/manuscripts/meseret-cirrhosis/project.yml
+--- a/projects/manuscripts/meseret-cirrhosis/project.yml	2026-10-30 01:43:50
++++ b/projects/manuscripts/meseret-cirrhosis/project.yml	2026-10-30 01:53:53
+@@ -37,3 +37,13 @@
+   description: "Competing-risks survival re-examination of the Mayo PBC cirrhosis benchmark (UCI Cirrhosis dataset): a leakage-free, reproducible pipeline benchmarking seven models against the Mayo clinical score."
+   homepage: "https://theaxec.github.io"
+   topics: [survival-analysis, competing-risks, machine-learning, cirrhosis, biostatistics, clinical-prediction, time-to-event, reproducible-research, benchmark, scikit-survival, pbc, liver]
++year: 2026
++publication:
++  authors: Meseret Assefa Kerga, Axel Faes
++  book: "Statistics in Medicine"
++  program: [prognosis]
++  url: ""
++  links:
++    - { name: Preprint, url: "/publications/preprint/meseret-cirrhosis.pdf" }
++    - { name: Supplementary, url: "/publications/preprint/meseret-cirrhosis-supplementary.pdf" }
++  rank: 6
+diff -ruN a/projects/manuscripts/raw-pls/project.yml b/projects/manuscripts/raw-pls/project.yml
+--- a/projects/manuscripts/raw-pls/project.yml	2026-10-30 01:43:50
++++ b/projects/manuscripts/raw-pls/project.yml	2026-10-30 01:53:47
+@@ -40,3 +40,13 @@
+   description: "Registration-free supervised tensor-PLS (RAW-PLS) for unaligned multiparametric MRI: each scan is a point cloud transported onto a learnable cross-subject template via supervised fused Gromov-Wasserstein, then read out with a low-rank geometry head. No registration, interpretable, with identifiability and consistency guarantees. On BraTS."
+   homepage: "https://theaxec.github.io"
+   topics: [tensor-decomposition, partial-least-squares, optimal-transport, gromov-wasserstein, medical-imaging, mri, brats, registration-free, point-cloud, interpretable-machine-learning, glioma, brain-tumor]
++year: 2026
++publication:
++  authors: Axel Faes, Maryam Amir Haeri
++  book: "Medical Image Analysis"
++  program: [tensor]
++  url: ""
++  links:
++    - { name: Preprint, url: "/publications/preprint/raw-pls.pdf" }
++  abstract: ""
++  rank: 4
+diff -ruN a/projects/manuscripts/ward-bttr-crosssubject/project.yml b/projects/manuscripts/ward-bttr-crosssubject/project.yml
+--- a/projects/manuscripts/ward-bttr-crosssubject/project.yml	2026-10-30 01:43:50
++++ b/projects/manuscripts/ward-bttr-crosssubject/project.yml	2026-10-30 01:53:45
+@@ -36,3 +36,13 @@
+   description: "Behavior-supervised alignment for cross-subject neural decoding across non-corresponding ECoG electrode grids: align each patient's grid onto shared finger-motor axes defined by the decode target, then decode with a shared seq2seq TCN, interpretably and without a foundation model."
+   homepage: "https://theaxec.github.io"
+   topics: [brain-computer-interface, ecog, neural-decoding, cross-subject, finger-movement, tcn, transfer-learning, neuroscience, interpretable, reproducible-research]
++year: 2026
++publication:
++  authors: Ward Ceyssens, Axel Faes
++  book: "Neural Networks"
++  program: [tensor]
++  url: ""
++  links:
++    - { name: Preprint, url: "/publications/preprint/ward-bttr-crosssubject.pdf" }
++    - { name: Supplementary, url: "/publications/preprint/ward-bttr-crosssubject-supplementary.pdf" }
++  rank: 3
+diff -ruN a/projects/software/bttr-block-term-tensor-regression/project.yml b/projects/software/bttr-block-term-tensor-regression/project.yml
+--- a/projects/software/bttr-block-term-tensor-regression/project.yml	2026-10-30 01:43:50
++++ b/projects/software/bttr-block-term-tensor-regression/project.yml	2026-10-30 02:03:17
+@@ -7,3 +7,11 @@
+ tags: [tensor, block-term, library, python]
+ repository:
+   url: "https://github.com/TheAxeC/block-term-tensor-regression"
++cv:
++  title: "Open Source Python Package - Block-Term Tensor Regression (BTTR)"
++  url: https://github.com/TheAxeC/block-term-tensor-regression
++  duration: 2022 - Current
++  role: Lead Researcher & Developer
++  about: |
++    The open-source BTTR implementation provides researchers and practitioners with accessible, reproducible tools for tensor-based regression in neuroscience and related domains. It is actively developed and documented to support experimentation, education, and further research.
++  rank: 7
+diff -ruN a/projects/software/federated-learning-tutorial/project.yml b/projects/software/federated-learning-tutorial/project.yml
+--- a/projects/software/federated-learning-tutorial/project.yml	2026-10-30 01:43:50
++++ b/projects/software/federated-learning-tutorial/project.yml	2026-10-30 02:03:21
+@@ -8,3 +8,12 @@
+ related: [elixir-fl4e]
+ repository:
+   url: "https://github.com/TheAxeC/federated-learning-tutorial"
++cv:
++  title: "Wisconsin Breast Cancer Dataset Research Tutorial for Federated Learning"
++  url: https://github.com/TheAxeC/federated-learning-tutorial
++  duration: 2025 - Current
++  role: Research Tutorial Author
++  about: |
++    This repository serves as a step-by-step tutorial for running federated learning studies with the FL4E framework. Using the Wisconsin Breast Cancer dataset as an example, it guides researchers and students through the full workflow.
++    Clear documentation and markdown guides explain each step, making it easier for newcomers to understand and apply federated learning in practice.
++  rank: 8
+diff -ruN a/projects/software/fl-kit-elixir-federated-learning-kit/project.yml b/projects/software/fl-kit-elixir-federated-learning-kit/project.yml
+--- a/projects/software/fl-kit-elixir-federated-learning-kit/project.yml	2026-10-30 01:43:50
++++ b/projects/software/fl-kit-elixir-federated-learning-kit/project.yml	2026-10-30 02:03:10
+@@ -10,3 +10,12 @@
+   - "https://github.com/UHasselt-BiomedicalDataSciences/federated-learning-toolkit"
+ repository:
+   url: "https://github.com/TheAxeC/fl-kit"
++cv:
++  title: "Federated Learning Kit (FLkit)"
++  url: https://github.com/UHasselt-BiomedicalDataSciences/federated-learning-toolkit
++  duration: 2025 - Current
++  role: Contributor
++  about: |
++    FLkit is designed to help life scientists apply federated learning in their research. It offers guidance, techniques, and tools for working with decentralized and sensitive data, enabling privacy-preserving collaboration and deeper insights without sharing raw data.
++    The project is in its early stages and open to contributors. The long-term goal is to make FLkit community-driven, sustained, and governed by researchers and practitioners who want to advance federated learning for life sciences.
++  rank: 5
+diff -ruN a/side-projects/finished/axeski/project.yml b/side-projects/finished/axeski/project.yml
+--- a/side-projects/finished/axeski/project.yml	2026-10-30 01:43:50
++++ b/side-projects/finished/axeski/project.yml	2026-10-30 02:03:48
+@@ -11,3 +11,13 @@
+ tags: [personal, plt, html]
+ repository:
+   url: "https://github.com/TheAxeC/axeski"
++cv:
++  title: "Visual Programming IDE"
++  url: https://github.com/TheAxeC/AxeSki
++  duration: Feb. 2015 - Jul. 2015
++  role: Developer
++  min: true
++  hide: true
++  about: |
++    A Visual programming IDE (Java)
++  rank: 20
+diff -ruN a/side-projects/finished/cardinal/project.yml b/side-projects/finished/cardinal/project.yml
+--- a/side-projects/finished/cardinal/project.yml	2026-10-30 01:43:50
++++ b/side-projects/finished/cardinal/project.yml	2026-10-30 02:03:31
+@@ -11,3 +11,12 @@
+ tags: [personal, plt, scripting-language, c]
+ repository:
+   url: "https://github.com/TheAxeC/cardinal"
++cv:
++  title: "Cardinal: a small, fully dynamic scripting language"
++  url: https://github.com/TheAxeC/cardinal
++  duration: Sep. 2015 - Oct. 2016
++  role: Lead Developer
++  hide: true
++  about: |
++    A small, fully dynamic scripting language on the Wren VM, with a debugger, an embedding API and optional manual memory management. Superseded by Cardinal (revamped).
++  rank: 14
+diff -ruN a/side-projects/finished/cardinal-revamped/project.yml b/side-projects/finished/cardinal-revamped/project.yml
+--- a/side-projects/finished/cardinal-revamped/project.yml	2026-10-30 01:43:50
++++ b/side-projects/finished/cardinal-revamped/project.yml	2026-10-30 02:03:14
+@@ -11,3 +11,12 @@
+ tags: [personal, plt, scripting-language, c++]
+ repository:
+   url: "https://github.com/TheAxeC/cardinal-revamped"
++cv:
++  title: "Cardinal: Educational and Research platform for MSc theses in PL/compilers"
++  url: https://github.com/TheAxeC/cardinal-revamped
++  duration: Jan. 2015 - Current
++  role: Lead Developer
++  about: |
++    Cardinal is a C++20 reimplementation of the Wren VM, designed for clarity, research, and education. It provides a small, well-documented virtual machine and runtime for exploring compilers, concurrency (fibers), and language embedding.
++    The project serves as a platform for student theses and for prototyping new programming language ideas.
++  rank: 6
+diff -ruN a/side-projects/finished/cv-autogenerator/project.yml b/side-projects/finished/cv-autogenerator/project.yml
+--- a/side-projects/finished/cv-autogenerator/project.yml	2026-10-30 01:43:50
++++ b/side-projects/finished/cv-autogenerator/project.yml	2026-10-30 02:03:33
+@@ -11,3 +11,11 @@
+ tags: [personal, tool, tex]
+ repository:
+   url: "https://github.com/TheAxeC/cv-autogenerator"
++cv:
++  url: https://github.com/TheAxeC/cv-autogenerator
++  duration: Oct. 2017 - May 2024
++  role: Developer
++  hide: true
++  about: |
++    A Python script that generates a CV from YAML data files and LaTeX templates (Awesome-CV).
++  rank: 15
+diff -ruN a/side-projects/finished/ical-kuleuven/project.yml b/side-projects/finished/ical-kuleuven/project.yml
+--- a/side-projects/finished/ical-kuleuven/project.yml	2026-10-30 01:43:50
++++ b/side-projects/finished/ical-kuleuven/project.yml	2026-10-30 02:03:24
+@@ -11,3 +11,11 @@
+ tags: [personal, tool, javascript]
+ repository:
+   url: "https://github.com/TheAxeC/ical-kuleuven"
++cv:
++  title: ICAL parser for KU Leuven schedules
++  url: https://github.com/TheAxeC/ical-kuleuven
++  duration: Aug. 2016 - Current
++  role: Lead Developer
++  about: |
++    A Node.js application to create an iCalendar file for courses at KU Leuven. (>1000 active users)
++  rank: 11
+diff -ruN a/side-projects/finished/iot-sensor-platform/project.yml b/side-projects/finished/iot-sensor-platform/project.yml
+--- a/side-projects/finished/iot-sensor-platform/project.yml	1970-01-01 01:00:00
++++ b/side-projects/finished/iot-sensor-platform/project.yml	2026-10-30 02:04:07
+@@ -0,0 +1,21 @@
++title: "IoT platform with pluggable sensors"
++short: IoT platform
++tier: personal
++lead: [axel-faes]
++stage: released
++status:
++  chips: []
++eli5: "University project (2017): a platform for large-scale use of pluggable Internet of Things sensors"
++next: ""
++links: []
++tags: [personal, iot]
++cv:
++  title: IoT-platform with pluggable sensors
++  url: ""
++  duration: Feb. 2017 - Jul. 2017
++  role: Developer
++  min: true
++  hide: true
++  about: |
++    Large-scale use of Internet of Things sensors
++  rank: 10
+diff -ruN a/side-projects/finished/search-recommendation-vod/project.yml b/side-projects/finished/search-recommendation-vod/project.yml
+--- a/side-projects/finished/search-recommendation-vod/project.yml	1970-01-01 01:00:00
++++ b/side-projects/finished/search-recommendation-vod/project.yml	2026-10-30 02:04:10
+@@ -0,0 +1,21 @@
++title: "Search and Recommendation System"
++short: VoD search and recommendation
++tier: personal
++lead: [axel-faes]
++stage: released
++status:
++  chips: []
++eli5: "Team project (2016): a search and recommendation system for Androme's video on demand, used in production in the Nebula project"
++next: ""
++links: []
++tags: [personal, recommender-systems]
++cv:
++  url: ""
++  duration: Feb. 2016 - Jul. 2016
++  role: Team Member
++  min: true
++  hide: true
++  about: |
++    A search and recommendation system for VoD (Video on Demand) for Androme.
++    In production in the Nebula project.
++  rank: 12
+diff -ruN a/side-projects/finished/starcraft-rl-agent/project.yml b/side-projects/finished/starcraft-rl-agent/project.yml
+--- a/side-projects/finished/starcraft-rl-agent/project.yml	1970-01-01 01:00:00
++++ b/side-projects/finished/starcraft-rl-agent/project.yml	2026-10-30 02:04:04
+@@ -0,0 +1,21 @@
++title: "Reinforcement learning agent for StarCraft II"
++short: StarCraft RL agent
++tier: personal
++lead: [axel-faes]
++stage: released
++status:
++  chips: []
++eli5: "University project (KU Leuven, 2018): reinforcement learning algorithms in DeepMind's PySC2 framework, trained on the KU Leuven supercomputer"
++next: ""
++links: []
++tags: [personal, machine-learning, reinforcement-learning, python]
++cv:
++  title: Reinforcement Learning Agent in Google Deepmind's StarCraft II Framework
++  url: ""
++  duration: Feb. 2018 - Jul. 2018
++  role: Developer
++  min: true
++  hide: true
++  about: |
++    Implement reinforcement learning algorithms in PySC2 utilising the KU Leuven supercomputer.
++  rank: 9
+diff -ruN a/side-projects/finished/theaxec-profile-readme/project.yml b/side-projects/finished/theaxec-profile-readme/project.yml
+--- a/side-projects/finished/theaxec-profile-readme/project.yml	2026-10-30 01:43:50
++++ b/side-projects/finished/theaxec-profile-readme/project.yml	2026-10-30 02:03:36
+@@ -11,3 +11,12 @@
+ tags: [personal]
+ repository:
+   url: "https://github.com/TheAxeC/TheAxeC"
++cv:
++  title: "GitHub profile README"
++  url: https://github.com/TheAxeC/TheAxeC
++  duration: Mar. 2025 - Current
++  role: Developer
++  hide: true
++  about: |
++    Source of the GitHub profile README.
++  rank: 16
+diff -ruN a/side-projects/school/effect-handler-optimization-honours-project/project.yml b/side-projects/school/effect-handler-optimization-honours-project/project.yml
+--- a/side-projects/school/effect-handler-optimization-honours-project/project.yml	2026-10-30 01:43:50
++++ b/side-projects/school/effect-handler-optimization-honours-project/project.yml	2026-10-30 02:03:39
+@@ -12,3 +12,12 @@
+ related: [algebraic-effects-compilation]
+ repository:
+   url: "https://github.com/TheAxeC/honoursproject-effect-handler-optimization"
++cv:
++  title: "Honours project: an optimising compiler for Eff"
++  url: https://github.com/TheAxeC/honoursproject-effect-handler-optimization
++  duration: 2016 - 2017
++  role: Honours student
++  hide: true
++  about: |
++    Honours project (KU Leuven): an optimising compiler for the Eff language that uses its type-and-effect system to remove effect handlers.
++  rank: 17
+diff -ruN a/side-projects/school/quasi-monte-carlo-points-on-collections-of-triangles/project.yml b/side-projects/school/quasi-monte-carlo-points-on-collections-of-triangles/project.yml
+--- a/side-projects/school/quasi-monte-carlo-points-on-collections-of-triangles/project.yml	2026-10-30 01:43:50
++++ b/side-projects/school/quasi-monte-carlo-points-on-collections-of-triangles/project.yml	2026-10-30 02:03:46
+@@ -11,3 +11,12 @@
+ tags: [personal]
+ repository:
+   url: "https://github.com/TheAxeC/quasi-monte-carlo-points-on-collections-of-triangles"
++cv:
++  title: "Honours project proposal: quasi-Monte Carlo point sets on collections of triangles"
++  url: https://github.com/TheAxeC/quasi-monte-carlo-points-on-collections-of-triangles
++  duration: 2018
++  role: Honours student
++  hide: true
++  about: |
++    Honours project proposal (KU Leuven, in Dutch): quasi-Monte Carlo point sets on collections of triangles.
++  rank: 19
+diff -ruN a/side-projects/school/row-based-effects-honours-project/project.yml b/side-projects/school/row-based-effects-honours-project/project.yml
+--- a/side-projects/school/row-based-effects-honours-project/project.yml	2026-10-30 01:43:50
++++ b/side-projects/school/row-based-effects-honours-project/project.yml	2026-10-30 02:03:42
+@@ -12,3 +12,12 @@
+ related: [algebraic-effects-compilation]
+ repository:
+   url: "https://github.com/TheAxeC/honoursproject-row-based-effects"
++cv:
++  title: "Honours project: a core language with row-based effects"
++  url: https://github.com/TheAxeC/honoursproject-row-based-effects
++  duration: 2017 - 2018
++  role: Honours student
++  hide: true
++  about: |
++    Honours project (KU Leuven): a core language with row-based effects, designed for optimised compilation of effect handlers.
++  rank: 18

@@ -5863,3 +5863,59 @@ Both steps change the hub's `people.yml` entries `peeters`, `dongho` and `ward`.
 
 Where it applies: the Zenodo deposit. Booked in `plan.md` Rulings and the state file's closed log, open item 584.
 Builds on it: O101
+
+## Z1084 (2026-10-30, O102's review, the orchestrator, automode): the fields of a `website.kinds` row
+
+The review of O102 (`agents/reviews/O102-refuter.md`) raised it.
+
+- Chosen: (a) `order`, `pub_pre` and `pub_post` stay fields of the hub's `website.kinds` rows, as O102's builder built them, replacing the brief's stage rule, since the words are the website's and the hub holds them.
+- Not chosen: (b) the words fixed by stage in oculus's code, as item 2 of the brief said, not chosen, since oculus would then hold website words and a new section would need a code change.
+- The lazy option: (b).
+
+Where it applies: O102's repair round 1 (`agents/briefs/O102-round1.md`). Booked in `plan.md` Rulings and the state file's closed log, open item 586.
+Builds on it: O102
+
+## Z1085 (2026-10-30, O102's review, the orchestrator, automode): the CV's name and the people field `family`
+
+The review of O102 (`agents/reviews/O102-refuter.md`) raised it.
+
+- Chosen: (a) the CV's names read from the `self` entry of `people.yml` (ruling 542 (1)), `last-name` its new field `family` and `first-name` its `name` with the family name taken off, the field added in O102 as O101 also uses it, and a `self` entry with no `family` or a `name` not ending with it a finding.
+- Not chosen: (b) `given_name` and `family_name` kept in the website's `website.yml`, not chosen, since the name is then held twice and a change in `people.yml` leaves the CV as it was.
+- The lazy option: (b).
+
+Where it applies: O102's repair round 1 (`agents/briefs/O102-round1.md`). Booked in `plan.md` Rulings and the state file's closed log, open item 587.
+Builds on it: O102
+
+## Z1086 (2026-10-30, O102's review, the orchestrator, automode): the data keys O102 adds
+
+The review of O102 (`agents/reviews/O102-refuter.md`) raised it.
+
+- Chosen: (a) the keys stay as built: the manifest's `publication:` and `cv:` records, the collections' `cv_*` fields and `students`, the career rows' `key`, `cv_section`, `cv_rank`, `funding` and `records`, `profiles.shared`, the people `links` rows; each listed in the report with its file, shape and reader.
+- Not chosen: (b) each reworked to the brief's first wording (`role`, `min` and `hide` on the entry), not chosen, since the built shapes hold every field the website prints and case 1 gives no difference with them.
+- The lazy option: (b).
+
+Where it applies: O102's repair round 1 (`agents/briefs/O102-round1.md`). Booked in `plan.md` Rulings and the state file's closed log, open item 588.
+Builds on it: O102
+
+## Z1087 (2026-10-30, O102's review, the orchestrator, automode): where a research-line finding is listed
+
+The review of O102 (`agents/reviews/O102-refuter.md`) raised it.
+
+- Chosen: (a) in the audit's Missing data section, as built, since the research lines are the website's file and the Findings view's data check reads the hub's files.
+- Not chosen: (b) in the data check, as item 1 of the brief worded it, not chosen, since the data check would then read the website's file.
+- The lazy option: (b).
+
+Where it applies: O102's repair round 1 (`agents/briefs/O102-round1.md`). Booked in `plan.md` Rulings and the state file's closed log, open item 589.
+Builds on it: O102
+
+## Z1088 (2026-10-30, O102's review, the orchestrator, automode): the events `link` rule and the CV's media rows
+
+The review of O102 (`agents/reviews/O102-refuter.md`) raised it.
+
+- Chosen: (a) in the hub's `events.yml` schema, `link` required for `role: present` only while the status is `upcoming` or `planned`, and the role option `media` (an article or a video about my work) for the two articles and the CHI video.
+- Not chosen: (b) a deck folder made for each of the 19 past talks, not chosen, since no deck exists for them.
+- Not chosen: (c) the media rows left as `present`, not chosen, since the schema says `present` is a talk or a poster I give.
+- The lazy option: (b).
+
+Where it applies: O102's repair round 1 (`agents/briefs/O102-round1.md`). Booked in `plan.md` Rulings and the state file's closed log, open item 590.
+Builds on it: O102

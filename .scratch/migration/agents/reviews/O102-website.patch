@@ -1,0 +1,102 @@
+diff -ruN a/_data/website.yml b/_data/website.yml
+--- a/_data/website.yml	2026-10-30 02:04:55
++++ b/_data/website.yml	2026-10-30 02:05:11
+@@ -10,6 +10,55 @@
+     His research builds toward **the self-explaining hospital**: interpretable, self-explaining models and **privacy-preserving federated learning that travels between institutions**, grounded in **multiway (block-term tensor) methods**. That methodological core began in computational neuroscience and brain-computer interfaces, and now drives multi-modal precision oncology and trustworthy clinical decision support.
+   portrait_url: assets/images/photos/axel.jpg
+ 
++##########
++# Person #
++##########
++# The person the site is about. _includes/site/head.html gives search engines the names, the job, the affiliations, the keywords and the subjects; the research hub writes the given and family name at the head of the CV files (_data/data.yml, _data/industry.yml).
++given_name: Axel
++family_name: Faes
++job_title: Postdoctoral Researcher in AI for Healthcare
++affiliations:
++  - University of Twente
++  - Hasselt University
++keywords: Axel Faes, AI for healthcare, federated learning, self-explaining AI, block-term tensor, precision medicine
++knows_about:
++  - Self-explaining AI
++  - Federated learning
++  - Block-term tensor methods
++  - Precision medicine
++  - Brain-computer interfaces
++
++# The CV's own parts of its person block, which the research hub writes into _data/data.yml under `personal`, and from which the employer CVs (_data/industry.yml) take the parts the hub's career file names.
++cv:
++  titles:
++    # - Postdoctoral Researcher
++    # - Data Scientist
++    # - Computational Neuroscientist
++    # - Computer Engineer
++    - Postdoctoral Researcher in AI for Healthcare
++    - Federated Learning
++    - Precision Medicine
++    - Brain-Computer Interfaces
++  portrait_url: /assets/images/photos/axel.jpg
++  footer: Curriculum Vitae
++  secondary-title: Supervised students, talks and other media
++  author: Axel Faes
++  website: https://theaxec.github.io
++
++# The title of each section of the CV (_data/data.yml) and of the publications (_data/publications.yml), by the section's key, which the research hub writes each file with.
++sections:
++  references: References
++  experience: Work & Research Experience
++  academic: Teaching & Academic Activities
++  students: Students
++  news: Talks, presentations and other media
++  education: Educational background
++  grants: Grants & Funding
++  projects: Projects
++  awards: Honors & Awards
++  extracurricular: Professional Development Activities
++  publications: Publications
++
+ research:
+   title: Research Diary
+   content: |
+diff -ruN a/_includes/site/head.html b/_includes/site/head.html
+--- a/_includes/site/head.html	2026-10-30 02:04:55
++++ b/_includes/site/head.html	2026-10-30 02:05:21
+@@ -2,7 +2,7 @@
+ <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+ <meta name="description" content="{% if page.description %}{{ page.description }}{% else %}{{ site.data.website.description.biography | strip_html | truncate: 160 }}{% endif %}"/>
+ <meta name="author" content="{{ site.data.website.description.title }}"/>
+-<meta name="keywords" content="{% if page.keywords %}{{ page.keywords }}{% else %}Axel Faes, AI for healthcare, federated learning, self-explaining AI, block-term tensor, precision medicine{% endif %}"/>
++<meta name="keywords" content="{% if page.keywords %}{{ page.keywords }}{% else %}{{ site.data.website.keywords }}{% endif %}"/>
+ <title>{{ page.title }} - {{ site.data.website.header.intro }}</title>
+ <link rel="icon" type="image/svg+xml" href="{{ '/favicon.svg' | relative_url }}">
+ <link rel="icon" href="{{ site.data.website.footer.left.url }}" type="image/png">
+@@ -26,22 +26,20 @@
+   "@context": "https://schema.org",
+   "@type": "Person",
+   "name": "{{ site.data.website.description.title }}",
+-  "givenName": "Axel",
+-  "familyName": "Faes",
+-  "jobTitle": "Postdoctoral Researcher in AI for Healthcare",
++  "givenName": {{ site.data.website.given_name | jsonify }},
++  "familyName": {{ site.data.website.family_name | jsonify }},
++  "jobTitle": {{ site.data.website.job_title | jsonify }},
+   "affiliation": [
+-    {"@type": "Organization", "name": "University of Twente"},
+-    {"@type": "Organization", "name": "Hasselt University"}
++    {% for name in site.data.website.affiliations %}{"@type": "Organization", "name": {{ name | jsonify }}}{% unless forloop.last %},
++    {% endunless %}{% endfor %}
+   ],
+   "description": "{{ site.data.website.description.biography | strip_html | truncate: 200 }}",
+   "url": "{{ '/' | absolute_url }}",
+   "image": "{{ site.data.website.description.portrait_url | absolute_url }}",
+-  "knowsAbout": ["Self-explaining AI", "Federated learning", "Block-term tensor methods", "Precision medicine", "Brain-computer interfaces"],
++  "knowsAbout": {{ site.data.website.knows_about | jsonify }},
+   "sameAs": [
+-    "https://scholar.google.be/citations?hl=en&user=abRAHJEAAAAJ",
+-    "https://orcid.org/0000-0002-1637-255X",
+-    "https://github.com/TheAxeC",
+-    "https://www.linkedin.com/in/axelfaes"
++    {% assign profiles = site.data.website.home.social | where_exp: "item", "item.icon != 'email'" %}{% for item in profiles %}{{ item.url | jsonify }}{% unless forloop.last %},
++    {% endunless %}{% endfor %}
+   ]
+ }
+ </script>
