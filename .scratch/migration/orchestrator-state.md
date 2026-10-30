@@ -25,8 +25,16 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 ```yaml
 dispatch:            # steps in flight, up to six (Z632)
 - step: O105
-  landing: preparing
-  brief_check: "running: ae6e12bde917fae57"
+  base: eafa79e6e
+  worktree: .agents/worktrees/migration-O105
+  executor: agent
+  worker: claude:opus
+  session_id: a335cf314e42c8f6c
+  launched: 2026-10-30
+  report: .scratch/migration/agents/reviews/O105-report.md
+  brief_check: .scratch/migration/agents/reviews/O105-brief-check.md (ae6e12bde917fae57, claude-opus-5-5, 242743 tokens, 26 tool uses, 662 s)
+  round: 0
+  landing: not-started
 ```
 
 ## The standing demands (from Axel, in force)
@@ -746,6 +754,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-10-30 (O105 at work). Axel: "Lets book O105 and do it". The brief and its check are in the preparation commit eafa79e6e; builder a335cf314e42c8f6c launched in `.agents/worktrees/migration-O105`. In flight (1 of 6). Open items: none.
 - 2026-10-30 (rulings 599 to 602; O105 booked). Axel ruled all (a), booked in `plan.md` Rulings; step O105 added, unticked and not started. In flight (0 of 6). Next: /spec migration O105 on his word. Open items: none.
 - 2026-10-30 (O104 landed). O104 is on main with hub commit 2db7d35dd; `agents/reviews/O104-landing.md` holds the booking. In flight (0 of 6). No step is left unticked. Open items: none.
 - 2026-10-30 (O104 reviewed; round 1 sent). The review's findings are in `agents/reviews/O104-refuter.md`; the builder's scripts, unapproved, closed in automode under the ruling "Unapproved builder scripts": breach recorded, the commands taken in round 1. The three hub sentences go in the hub patch.

@@ -1,7 +1,7 @@
-In flight (0 of 6 slots in use): none.
+In flight (1 of 6 slots in use):
+- O105 (the website keeps its own words), at its builder.
 
-Queued, in order (1 step):
-- O105 (the website keeps its own words), waits for Axel's word.
+Queued, in order (0 steps): none.
 
 Owed looks: none.
 
