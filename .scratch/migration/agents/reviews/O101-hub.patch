@@ -1,0 +1,132 @@
+diff --color -ruN a/.oculus/data/academic/funding.yml b/.oculus/data/academic/funding.yml
+--- a/.oculus/data/academic/funding.yml	2026-10-30 12:08:11
++++ b/.oculus/data/academic/funding.yml	2026-10-30 12:08:34
+@@ -7,6 +7,7 @@
+   - { field: title,     type: text,     display: 1, required: true, help: "The name of the funding scheme or application." }
+   - { field: sub,       type: text,     label: "Subtitle", help: "Scheme | role | period" }
+   - { field: funder,    type: select,   foreign_key: organisations, help: "The organisation that funds the scheme, as a key of organisations.yml." }
++  - { field: award,     type: text,     help: "The funder's number of the award, which a Zenodo deposit names with the title." }
+   - { field: status,    type: select,   options: [in-prep, planned, submitted, contributing, awarded, rejected, withdrawn], required: true, help: "Where the scheme stands, from in-prep to awarded or rejected." }
+   - { field: date,      type: text,     help: "Year or range" }
+   - { field: deadline,  type: date,     help: "ISO date; shows on the Focus radar while live" }
+@@ -102,6 +103,7 @@
+   - title: "Flanders AI Research Program (FAIR)"
+     lead: [axel-faes]
+     key: FAIR                 # manifests reference this via `funding: FAIR` -> clickable chip
++    funder: flemish-government
+     sub: "Flemish-government Impulse Program - leading the health use cases"
+     cv_section: projects
+     cv_rank: 3
+@@ -153,6 +155,7 @@
+     lead: [guichelaar]
+     collaborators: [axel-faes]
+     key: ZonMw-AI-HCC         # manifests reference this via `funding: ZonMw-AI-HCC` -> clickable chip
++    funder: zonmw
+     sub: "Predicting the Development of Primary Liver Cancer Using the AI-HCC Model"
+     cv_section: projects
+     cv_rank: 2
+@@ -175,6 +178,8 @@
+   - title: "FWO Fundamental Research Grant"
+     lead: [axel-faes]
+     key: FWO-PhD              # manifests reference this via `funding: FWO-PhD` -> clickable chip
++    funder: fwo
++    award: "1157019N"
+     sub: "Finger movement decoding: from source-localisation to graph-based regression modelling"
+     status: awarded
+     date: "2018"
+diff --color -ruN a/.oculus/data/people/organisations.yml b/.oculus/data/people/organisations.yml
+--- a/.oculus/data/people/organisations.yml	2026-10-30 12:08:11
++++ b/.oculus/data/people/organisations.yml	2026-10-30 12:08:37
+@@ -50,3 +50,18 @@
+     name: "UZ Leuven"
+     kind: "hospital"
+     country: "BE"
++
++  - key: "zonmw"
++    name: "ZonMw"
++    kind: "funder"
++    country: "NL"
++
++  - key: "flemish-government"
++    name: "Flemish Government"
++    kind: "funder"
++    country: "BE"
++
++  - key: "fwo"
++    name: "Research Foundation Flanders"
++    kind: "funder"
++    country: "BE"
+diff --color -ruN a/.oculus/data/people/people.yml b/.oculus/data/people/people.yml
+--- a/.oculus/data/people/people.yml	2026-10-30 12:08:11
++++ b/.oculus/data/people/people.yml	2026-10-30 12:09:54
+@@ -27,6 +27,7 @@
+ entries:
+   - key: "amir-haeri"
+     name: "Maryam Amir Haeri"
++    family: "Amir Haeri"
+     affiliations: ["university-of-twente"]
+     role: "postdoc co-supervisor (ML / XAI methodology)"
+     email: "m.amirhaeri@utwente.nl"
+@@ -36,6 +37,7 @@
+ 
+   - key: "van-den-berg"
+     name: "Stéphanie M. van den Berg"
++    family: "van den Berg"
+     affiliations: ["university-of-twente"]
+     role: "postdoc co-supervisor (statistics / research methodology)"
+     work: "Twente co-supervisor - research methodology / statistics"
+@@ -44,6 +46,7 @@
+ 
+   - key: "guichelaar"
+     name: "Maureen Guichelaar"
++    family: "Guichelaar"
+     affiliations: ["university-of-twente", "mst"]
+     role: "current postdoc PI (AI-HCC)"
+     work: "PI of the ZonMw AI-HCC postdoc"
+@@ -69,6 +72,7 @@
+ 
+   - key: "peeters"
+     name: "Liesbet M. Peeters"
++    family: "Peeters"
+     affiliations: ["uhasselt"]
+     role: "co-author | former advisor (host fallback)"
+     email: "liesbet.peeters[at]uhasselt.be"
+@@ -125,6 +129,7 @@
+ 
+   - key: "dongho"
+     name: "Dongho Chun"
++    family: "Chun"
+     role: "student"
+     folder: "education/student-supervision/dongho-2024"
+ 
+@@ -147,6 +152,7 @@
+ 
+   - key: "ward"
+     name: "Ward Ceyssens"
++    family: "Ceyssens"
+     role: "student"
+     folder: "education/student-supervision/ward-2024"
+ 
+@@ -177,6 +183,7 @@
+ 
+   - key: "matija-pretnar"
+     name: "Matija Pretnar"
++    family: "Pretnar"
+ 
+   - key: "robin-marx"
+     name: "Robin Marx"
+@@ -189,12 +196,14 @@
+ 
+   - key: "dries-cornelissen"
+     name: "Dries Cornelissen"
++    family: "Cornelissen"
+ 
+   - key: "valentina-pergher"
+     name: "Valentina Pergher"
+ 
+   - key: "jakob-nolte"
+     name: "Jakob Nolte"
++    family: "Nolte"
+ 
+   - key: "brecht-heeren"
+     name: "Brecht Heeren"
