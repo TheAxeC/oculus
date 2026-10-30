@@ -1,5 +1,5 @@
 In flight (1 of 6 slots in use):
-- O102 (the website's data files generated from oculus): repair round 1 (22 items); open item 585.
+- O102 (the website data files from oculus): round 1 refuted; landing waits on 585 and 591.
 
 Queued, in order (1 step):
 - O101 (the Zenodo deposit): stopped on open items 573, 575, 576, 577 and 583.

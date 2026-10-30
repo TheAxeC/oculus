@@ -1,6 +1,6 @@
 # O102 report: the website's data files generated from what oculus holds
 
-Everything in the brief is built. Two choices the hub patch raises are open items at the end of this report (the events `link` rule and the ELIXIR-BE statement): until they are ruled, the hub with the patch applied gives 20 data-check findings it does not give today (case 1 run, "data check findings: 21" against "1" before). The ruling this build carries is `.scratch/migration/agents/briefs/O102-cases.md` (open item 571, Z1075).
+Everything in the brief and in repair round 1 is built, with one exception named first under "Repair round 1": item 11 builds no code, since `spec.md:43` forbids the code it asks for. The current state of every item is the section "Repair round 1" at the end; the sections before it are the round-0 record, its Doc text corrected in place. The one open item of this step is the ELIXIR-BE statement (open item 585): the hub with both patches applied gives the data-check finding `funding entry ELIXIR-BE is contributing and has no statement`, and no other the hub does not give today. The ruling this build carries is `.scratch/migration/agents/briefs/O102-cases.md` (open item 571, Z1075).
 
 ## Open items of the state file
 
@@ -35,23 +35,23 @@ The first run was handed back in round 1 with cases A to H; the ruling file abov
 The base tree is the base commit's files copied to `<scratch>/o102/basetree` (2759 files, equal by hash to `git ls-tree -r` of the base); `<scratch>/o102/basetest` is that copy with every new and changed file under `tests/` put in (the 18 files `git status --short -uall -- tests` lists). Run there: `vitest run <the 14 test files> --testTimeout 0`:
 
 ```
- <heavy right-pointing angle quotation mark> |unit| tests/routes/sessions/website.test.ts (0 test)
- <heavy right-pointing angle quotation mark> |unit| tests/server/root/watch/website-watch.test.ts (0 test)
- <heavy right-pointing angle quotation mark> |unit| tests/checks/tree/boundaries.test.ts (11 tests | 2 failed) 4263ms
+ <heavy right-pointing angle quotation mark ornament> |unit| tests/routes/sessions/website.test.ts (0 test)
+ <heavy right-pointing angle quotation mark ornament> |unit| tests/server/root/watch/website-watch.test.ts (0 test)
+ <heavy right-pointing angle quotation mark ornament> |unit| tests/checks/tree/boundaries.test.ts (11 tests | 2 failed) 4263ms
      <multiplication sign> holds across src/lib 3162ms
      <multiplication sign> holds no process-wide state under src 437ms
- <heavy right-pointing angle quotation mark> |unit| tests/data/hubs/website-files.test.ts (0 test)
- <heavy right-pointing angle quotation mark> |unit| tests/routes/docs/audit.test.ts (0 test)
- <heavy right-pointing angle quotation mark> |unit| tests/data/sources/career.test.ts (16 tests | 1 failed) 74ms
+ <heavy right-pointing angle quotation mark ornament> |unit| tests/data/hubs/website-files.test.ts (0 test)
+ <heavy right-pointing angle quotation mark ornament> |unit| tests/routes/docs/audit.test.ts (0 test)
+ <heavy right-pointing angle quotation mark ornament> |unit| tests/data/sources/career.test.ts (16 tests | 1 failed) 74ms
      <multiplication sign> types the strategy alone, every other section staying in the sections 8ms
- <heavy right-pointing angle quotation mark> |unit| tests/data/snapshot/normalise.test.ts (5 tests | 1 failed) 6ms
+ <heavy right-pointing angle quotation mark ornament> |unit| tests/data/snapshot/normalise.test.ts (5 tests | 1 failed) 6ms
      <multiplication sign> reads a person's `links:` as rows of a name, an address and an account name 4ms
- <heavy right-pointing angle quotation mark> |unit| tests/checks/config/config-folder.test.ts (30 tests | 4 failed | 2 skipped) 6987ms
+ <heavy right-pointing angle quotation mark ornament> |unit| tests/checks/config/config-folder.test.ts (30 tests | 4 failed | 2 skipped) 6987ms
      <multiplication sign> holds exactly the expected top-level keys, and no more 184ms
      <multiplication sign> reads one catalog file per owner and no legacy catalog file 3ms
      <multiplication sign> describes every flag of stages, forms, chips, statuses, lead_statuses and tiers and every key of a roles and categories row in the schema of vocab.yml 368ms
      <multiplication sign> reads each file on its own and finds its own keys there and nowhere else 15ms
- <heavy right-pointing angle quotation mark> |unit| tests/checks/source/keys.test.ts (10 tests | 2 failed) 2524ms
+ <heavy right-pointing angle quotation mark ornament> |unit| tests/checks/source/keys.test.ts (10 tests | 2 failed) 2524ms
      <multiplication sign> finds the place each documented prefix names in its file 3ms
      <multiplication sign> has a reader for every catalog key 2306ms
  FAIL  |unit| tests/data/hubs/website-files.test.ts [ tests/data/hubs/website-files.test.ts ]
@@ -65,13 +65,13 @@ The base tree is the base commit's files copied to `<scratch>/o102/basetree` (27
 The reasons it printed, one line each (`grep -E "^(Error|AssertionError)"`):
 
 ```
-AssertionError: expected [ 'agents', 'app_theme', <ellipsis>(111) ] to deeply equal [ 'agents', 'app_theme', <ellipsis>(112) ]
-AssertionError: expected [ 'app.yml', 'desktop.yml', <ellipsis>(66) ] to deeply equal [ 'app.yml', 'desktop.yml', <ellipsis>(67) ]
-AssertionError: expected [ 'apps', 'audit', <ellipsis>(31) ] to deeply equal [ 'apps', 'audit', <ellipsis>(32) ]
-AssertionError: expected [ 'goal', 'milestone', <ellipsis>(6) ] to deeply equal [ 'goal', 'milestone', <ellipsis>(5) ]
-AssertionError: expected [ <ellipsis>(2) ] to deeply equal []
-AssertionError: expected [ { key: 'stages.idea', <ellipsis>(1) }, <ellipsis>(35) ] to have a length of 34 but got 36
-AssertionError: expected [ Array(1) ] to deeply equal [ { name: 'homepage', <ellipsis>(1) }, <ellipsis>(1) ]
+AssertionError: expected [ 'agents', 'app_theme', <horizontal ellipsis>(111) ] to deeply equal [ 'agents', 'app_theme', <horizontal ellipsis>(112) ]
+AssertionError: expected [ 'app.yml', 'desktop.yml', <horizontal ellipsis>(66) ] to deeply equal [ 'app.yml', 'desktop.yml', <horizontal ellipsis>(67) ]
+AssertionError: expected [ 'apps', 'audit', <horizontal ellipsis>(31) ] to deeply equal [ 'apps', 'audit', <horizontal ellipsis>(32) ]
+AssertionError: expected [ 'goal', 'milestone', <horizontal ellipsis>(6) ] to deeply equal [ 'goal', 'milestone', <horizontal ellipsis>(5) ]
+AssertionError: expected [ <horizontal ellipsis>(2) ] to deeply equal []
+AssertionError: expected [ { key: 'stages.idea', <horizontal ellipsis>(1) }, <horizontal ellipsis>(35) ] to have a length of 34 but got 36
+AssertionError: expected [ Array(1) ] to deeply equal [ { name: 'homepage', <horizontal ellipsis>(1) }, <horizontal ellipsis>(1) ]
 AssertionError: expected [ Array(1) ] to deeply equal []
 Error: Cannot find module '../../../../src/lib/server/content/audit/website/site.ts' imported from .../basetest/tests/server/root/watch/website-watch.test.ts
 Error: Cannot find module '../../../src/lib/server/content/audit/website/files.ts' imported from .../basetest/tests/data/hubs/website-files.test.ts
@@ -144,7 +144,7 @@ Each file `git status --short -uall` lists, the 4 deleted files, the two patches
    4 <e with acute>
 ```
 
-Each is text moved from the website's `_data/` files into the hub's files byte for byte (the plus-minus sign of the abstracts, the euro sign of a grant amount, the accented e of a coauthor's given name), which case 1 needs equal. This report's quoted vitest output keeps vitest's own marks; its prose is ASCII.
+Each is text moved from the website's `_data/` files into the hub's files byte for byte (the plus-minus sign of the abstracts, the euro sign of a grant amount, the accented e of a coauthor's given name), which case 1 needs equal. This report writes every character outside the rules file's set by its name in angle brackets, vitest's marks and the ellipsis among them.
 
 ### Verify 3
 
@@ -470,6 +470,7 @@ Each line as `grep -n` prints it on the base (the base tree at `<scratch>/o102/b
   - ``oculus's list is the Career banner (`career`), the command center (`command_center`)`` becomes ``oculus's list is the command center (`command_center`)``.
   - ``A calendar line, a lead, a refresh nudge and the Career banner are never hidden`` becomes ``A calendar line, a lead and a refresh nudge are never hidden``.
   - The passage from ``The Career banner, headed Career, is open on a new Focus tab`` through ``A hub with no career file has no banner.`` (the end of the line) is deleted whole.
+  - ``A released, published, failed or stopped project sits on no lane`` becomes ``An accepted, published, released, failed or stopped project sits on no lane`` (the done stages in the order of `stages:` in `config/catalogs/vocab.yml:73-77`; no row of `focus_lanes`, `vocab.yml:180-190`, lists `accepted`), the rest of the sentence kept.
 - Line 342, current: ``- **Audit.** The conventions a hub sets under `audit:` in its `.oculus/config.yml` are each off until set, and Settings lists them under Audit checks. Mute writes a finding's signature to `audit_ignore:` in the open workspace file's `settings:`.``
   Replacement: ``- **Audit.** The conventions a hub sets under `audit:` in its `.oculus/config.yml` are each off until set, and Settings lists them under Audit checks. Mute writes a finding's signature to `audit_ignore:` in the open workspace file's `settings:`. A finding of the Website section that a generated file differs offers Write the website, as the Career view's button does.``
 - A new note after line 343 (the Memories note): ``- **Career.** The career file of the primary hub (`career_file`, `.oculus/data/academic/career.yml` by default), drawn as the form its own `schema:` gives: the goal, the milestone and its day, the order of work with its note, and the career record the website's CV is written from, the positions, the degrees, the awards, the references and the employer CVs' profiles, each list drawn as record cards whose rows are added, edited and removed in the form, and Save writes the file. A hub with no career file, or a career file with no `schema:`, draws the line saying so. Write the website, in the header, builds `_data/data.yml`, `_data/publications.yml` and `_data/industry.yml` of the folder `website.folder` names from the hub's files and writes them through the Files view's writer, one History record each that Undo takes back, then runs the command `website.cv` names in that folder as a task terminal of the Processes view; the first run of a command text asks for its approval, and nothing is written or run until it is given. The line under the header says the files written and the command's run, running or ended with its status, or why a press was refused: the user not known, `website.folder` empty or naming a folder that is not there, the last run of the command still running, or a file the writer could not take, which it names, none of the three then being written. While the user is not known or `website.folder` is empty the button is off, its tip saying which.``
@@ -513,9 +514,9 @@ Each line as `grep -n` prints it on the base (the base tree at `<scratch>/o102/b
   Replacement: ``  Code: `src/lib/server/content/audit/rules.ts`, `projects.ts`, `publications.ts`, `website/`, the reader of `audit:` in that folder, and `src/lib/server/root/watch/portfolio/audited.ts` (the three files watched).``
 - Line 191, G125's Test: the line gains ``; `tests/server/root/watch/website-watch.test.ts`, 'publishes the audit again for a change on disk to each of the three generated files'`` before its final full stop.
 - Line 264, G32: ``(manifests, registries, collections, career, feeds, docs, present, the snapshot built from them).`` becomes ``(manifests, registries, collections, career, feeds, docs, present, the snapshot built from them), the career file's `positions`, `degrees`, `awards`, `references` and `profiles` read as the file holds them and drawn by the Career view's forms as record cards.``
-- Line 266, G32's Test: ``career: `tests/data/sources/career.test.ts`, 'parses it as the map it is, with no key renamed', 'reads the title, the milestone and the situation strip', describe 'normalising it', the rows 'reads $name' and 'reads none of the sections the banner does not draw into the model';`` becomes ``career: `tests/data/sources/career.test.ts`, 'parses it as the map it is, with no key renamed', 'reads the title, the goal, the milestone and the order of work', describe 'normalising it', the rows 'reads $name' and 'types the strategy alone, every other section staying in the sections'; describe "the Career view's lists", every row;``
+- Line 266, G32's Test: ``career: `tests/data/sources/career.test.ts`, 'parses it as the map it is, with no key renamed', 'reads the title, the milestone and the situation strip', describe 'normalising it', the rows 'reads $name' and 'reads none of the sections the banner does not draw into the model';`` becomes ``career: `tests/data/sources/career.test.ts`, 'parses it as the map it is, with no key renamed', 'reads the title, the goal, the milestone and the order of work', describe 'normalising it', the rows 'reads $name' and 'types the strategy alone, every other section staying in the sections'; the Career view (`src/lib/state/forms/career-view.ts` `careerShown`): describe 'what the Career view draws', 'draws the line saying the hub holds no career file when it holds none', 'draws the line saying the file has no schema when its schema is absent' and "draws every section of the file's schema in the schema's order, each in the form its field gives"; a person's links and names: `tests/data/snapshot/normalise.test.ts`, "reads a person's `links:` as rows of a name, an address and an account name"; `tests/data/hubs/website-files.test.ts`, describe 'the website files the hub gives', the rows "both person blocks carry the user's people entry's names: its name with the family name taken off, and the family name", "a user's people entry with no family name gives no names and a finding naming the entry" and "a user's people entry whose name does not end with a space and the family name gives no names and a finding naming the entry";`` In G32's Code line, `src/lib/state/forms/career-view.ts` joins the entry pages' reads.
 - New entries after line 224 (G138's Test line):
-  ``- G139. The website's three data files are what the hub's files give: a manifest that carries `publication:` is an entry of the section of the first `website.kinds` row whose stages and forms hold its own, the sections in the rows' order under the first row's title and the entries by the record's `rank`; `order` is `first`, `senior` or `coauthor` from your place in `lead`, `supervisors` or `collaborators`; `pub_pre` and `pub_post` are the row's; the `Code` link, last in `links`, is `https://doi.org/<doi>` for a deposited manifest with a DOI, else its `code_availability.url`; `hide` is written through, true and false alike; a manifest at a stage that gives no section, or with `negative` or `dead_end`, a paper that names you in none of the three fields under a row with `order`, a research line `website.yml`'s `programs:` lacks and a CV row naming no person or record are each a finding and give no entry; an award's day is written unquoted; the CV's sections and the employer CVs are written from the people, career, collection and manifest records that name them.``
+  ``- G139. The website's three data files are what the hub's files give: a manifest that carries `publication:` is an entry of the section of the first `website.kinds` row whose stages and forms hold its own, the sections in the rows' order under the first row's title and the entries by the record's `rank`; `order` is `first`, `senior` or `coauthor` from your place in `lead`, `supervisors` or `collaborators`; `pub_pre` and `pub_post` are the row's; the `Code` link, last in `links`, is `https://doi.org/<doi>` for a deposited manifest with a DOI, else its `code_availability.url`; `hide` is written through, true and false alike; a manifest at a stage that gives no section, or with `negative` or `dead_end`, and a paper that names you in none of the three fields under a row with `order` are each a finding and give no entry; a research line `website.yml`'s `programs:` lacks is a finding and the entry is still written; an award's day is written unquoted; the CV's sections and the employer CVs are written from the people, career, collection and manifest records that name them, the rows of a section by their rank and rows of one rank in the order they are read (the collections' entries, then the manifests, then the career file's references, positions, degrees and awards); the person blocks take `first-name` from the user's people entry's `name` with the space and its `family` taken off and `last-name` from `family`, and a user's entry with no `family`, or whose `name` does not end with a space and its `family`, is a finding and the blocks carry no names; a CV row naming no person gives no row and a finding; a profile or award row naming no record keeps the row and is a finding; a key two records hold (a collection entry's key, a manifest's folder name, a career row's `key`) is a finding naming the key and both places, and a row naming it takes nothing from either; a career row whose `key` is the empty text is a finding naming the row.``
   ``  Code: `src/lib/server/content/audit/website/` (`files.ts`, `papers.ts`, `cv.ts`, `site.ts`); `src/lib/data/snapshot/normalise-parts/publication.ts`.``
   ``  Test: `tests/data/hubs/website-files.test.ts`, describe 'the website files the hub gives', every row.``
   ``- G140. Write the website writes the three files through the Files view's writer, one History record each that its Undo takes back, then runs `website.cv` in the website's folder as a task terminal of the Processes view after the approval a project command takes, the command named in the button's tip; a press is refused with nothing written while the user is not known, while `website.folder` is empty or names a folder that is not there, while the command's last run still runs, and when the writer cannot take one of the three files, which the refusal names, the files already written being put back.``
@@ -541,3 +542,516 @@ Each line as `grep -n` prints it on the base (the base tree at `<scratch>/o102/b
    - (a) Axel supplies ELIXIR Belgium's acknowledgement wording, written as the entry's `statement`. Pro: the entry is complete, and a manuscript of the programme can carry it. Con: needs the wording from him.
    - (b) Add a status such as `completed` to the funding file's status options and use it. Pro: no wording needed. Con: the programme was contributed to, and a manuscript of it would then not be asked for its acknowledgement.
    Recommendation: (a), since the statement is what the flag is for. (b) is the lazy option.
+
+The two items above are where round 0 left them. Item 1 is ruled (open item 590) and built in repair round 1, item 9; item 2 is open item 585 and stays open.
+
+## Repair round 1
+
+The brief is `.scratch/migration/agents/briefs/O102-round1.md`, answering `.scratch/migration/agents/reviews/O102-refuter.md`. The scratch folder `<scratch>` is `/private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad`. Every character outside the rules file's set in this section is written by its name in angle brackets.
+
+### Not done
+
+- Item 11 builds no code. `.scratch/migration/agents/spec.md:43` says: "No migration code: no code reads, carries, converts or tolerates an older form of stored data (a saved layout, ...). A change of shape is made once on the data itself by the orchestrator, or the old data is left to show as unknown or as a finding. A brief, a ruling or a review that asks for such code is overruled by this rule." Closing a saved tab of the retired view `track_record` needs code that names that retired id in a saved layout, which is that code; the saved layout is left to show the tab as unknown. The before and after are under item 11.
+
+### Open items
+
+- 585, the ELIXIR-BE `statement` (round 0's open item 2): open, not changed by this round. With both patches applied the data check gives `funding entry ELIXIR-BE is contributing and has no statement` (case run below).
+- The five of main's state file that round 0 lists (573, 575, 576, 577, 583) are O101's; this round does not touch them, and main's state file was not read again in this round, so their current state there is not verified.
+
+### DONE / NOT DONE
+
+| Item | State | Proof |
+|---|---|---|
+| 1 The CV's name | DONE | `family` in `people.yml` and `Person`; `cv.ts` `namesOf`; 3 test rows; case run: `_data/industry.yml: 0 differences`, `_data/data.yml` differs only in item 10's three `about` texts |
+| 2 The kinds row fields | DONE (decision) | under "Decisions" |
+| 3 The data keys | DONE | under "The data keys the step adds" |
+| 4 Titles and hand-written text | DONE | under "Ruling B's titles" and "Hub and website text reworded by hand" |
+| 5 The missing `rank` | DONE | hub patch `algebraic-effects-compilation` `rank: 1`; case run: 48 records, `without rank: 0`, no rank held twice in any section |
+| 6 Keys that collide | DONE | `cv.ts` `hold`, `record`; 2 test rows; the hub's two clashes renamed in the hub patch |
+| 7 The research-line finding | DONE (decision) | under "Decisions" |
+| 8 G139's Doc text | DONE | corrected in place under "Doc text" |
+| 9 The events `link` rule | DONE | hub patch; case run: no `link` finding |
+| 10 The `situation` facts | DONE | under item 10 |
+| 11 The track record tab | NOT DONE (overruled by `spec.md:43`) | under "Not done" and item 11 |
+| 12 The person form | DONE (stated) | under item 12 |
+| 13 The Career view's tests | DONE | `src/lib/state/forms/career-view.ts`; 3 rows in `tests/data/sources/career.test.ts`; G32 in the Doc text |
+| 14 G32's Test line | DONE | corrected in place under "Doc text" |
+| 15 The case-run program | DONE | quoted whole under item 15 |
+| 16 The `files.ts` comment | DONE | `src/lib/server/content/audit/website/files.ts:5-7` |
+| 17 The slow tests | DONE | each run alone, quoted under item 17 |
+| 18 The `sed -i` commands | DONE | under item 18 |
+| 19 The comment paragraphs | DONE | the scan under item 19 prints nothing |
+| 20 HELP's lane line | DONE | added in place under "Doc text", `docs/HELP.md` line 295 |
+| 21 The report's characters | DONE | `LC_ALL=C perl -ne 'print "$.\n" if /[^\x09\x20-\x7E\n]/' O102-report.md` prints nothing |
+| 22 The `templates.md` example | DONE | `docs/templates.md:314` |
+| The verify list | done, green | `npm run diagrams && npm run docs:palette && npm run test:quick -- --base bd8ad0a08`: every line `ok`, `rc=0` (`verify5.txt`) |
+
+### Item 1: the CV's name
+
+- `src/lib/data/model/model-entities.ts`: `Person` gains `family?: string` ("The family name, the end of `name`."); `src/lib/data/snapshot/normalise.ts` `person()` reads it (`family: str(entry.family)`).
+- `src/lib/server/content/audit/website/cv.ts` `namesOf(person, problems)`:
+
+  ```ts
+  const end = family === undefined ? undefined : ` ${family}`;
+  if (end === undefined || !name.endsWith(end) || name.length === end.length) {
+      problems.push({ about: null, key: 'audit.msg_cv_self_names', args: [bareId(person)] });
+      return {};
+  }
+  return { 'first-name': name.slice(0, -end.length), 'last-name': family };
+  ```
+
+  `built()` sets `cv.names` from the `self` entry before the sections are read; `personal()` (the CV's person block of `_data/data.yml`) and `industryFile()` (the `shared.personal` block of `_data/industry.yml`) start from `cv.names`.
+- `src/lib/server/content/audit/website/site.ts` no longer reads `given_name` or `family_name`, and its `ProblemKey` gains the three new keys; `config/text/views/system/audit.yml` gains `msg_cv_self_names`: "the people entry {0}, the user's, has no family, or a name that does not end with a space and its family, so the CV's person blocks carry no names: set family to the end of name".
+- Hub patch: `people.yml` gains `- { field: family, type: text, help: "The family name, the end of name." }` after `name` and `family: "Faes"` on `axel-faes`. Website patch: `_data/website.yml` holds no `given_name` or `family_name`; `_includes/site/head.html` writes `"givenName": {{ site.data.data.personal["first-name"] | jsonify }}` and `"familyName": {{ site.data.data.personal["last-name"] | jsonify }}`.
+- `docs/templates.md`: the people template's sentence (line 1254), the schema row (line 1261) and the commented `#    family: "Name"` line (line 1280).
+- `tests/routes/docs/audit.test.ts`: the test's `me` entry gains `family: 'Me'`, since its audit now reads the names.
+- Test rows, `tests/data/hubs/website-files.test.ts`: "both person blocks carry the user's people entry's names: its name with the family name taken off, and the family name", "a user's people entry with no family name gives no names and a finding naming the entry", "a user's people entry whose name does not end with a space and the family name gives no names and a finding naming the entry" (the last with `family` set to `Smith` and to the whole name). Run with the rows in and `cv.ts` and `site.ts` not yet changed, `vitest run tests/data/hubs/website-files.test.ts` printed, among the five rows of items 1 and 6:
+
+  ```
+  AssertionError: expected [ undefined, undefined ] to deeply equal [ 'Ana', 'Rivera' ]
+  AssertionError: expected [] to deeply equal [ [ '', <horizontal ellipsis>(2) ] ]
+  AssertionError: expected [] to deeply equal [ [ '', <horizontal ellipsis>(2) ] ]
+  AssertionError: expected [] to deeply equal [ [ '', <horizontal ellipsis>(2) ] ]
+  AssertionError: expected [] to deeply equal [ [ '', <horizontal ellipsis>(2) ] ]
+        Tests  5 failed | 16 passed (21)
+  ```
+
+- Case run (below): `== problems of the build: 0`, `== _data/industry.yml: 0 differences`, and `_data/data.yml` gives 3 differences, `experience.content.0.about`, `.1.about` and `.5.about`. They are the facts item 10 places in `about` (the CoDE group, Prof. Liesbet Peeters, the supervisor line); the person block, whose names are now the hub's, gives none. Item 1's "0 differences" holds for every part of `_data/data.yml` but those three texts, and the first Write the website writes them.
+
+### Decisions
+
+- Item 2 (open item 586): a `website.kinds` row carries `order`, a flag (`z.boolean().optional()`), and `pub_pre` and `pub_post`, texts (`z.string().optional()`), in `websiteKindShape`, `src/lib/data/sources/config/settings/files.ts:207-215`, described in `config/options/behavior.yml:105-116`, and set on the rows of the hub's `.oculus/config.yml` `website.kinds` (hub patch). `papers.ts` `entryOf` writes `pub_pre` and `pub_post` from the row, and `order` makes `orderOf` give the entry's `order`.
+- Item 7 (open item 589): a research line `website.yml`'s `programs:` lacks is a finding of kind `data` (`papers.ts` `programProblems`), listed in the audit's Missing data section, and the entry is still written.
+
+### The data keys the step adds
+
+| Key | File | Shape | Read by |
+|---|---|---|---|
+| `publication:` | a manifest | a map: `authors`, `book`, `url`, `abstract`, `pub_last` texts; `program` a list of texts; `links` a list of `{ name, url }`; `hide` a flag; `rank` a whole number | `normalise-parts/publication.ts`, then `website/papers.ts` |
+| `cv:` | a manifest | a map: `title`, `url`, `duration`, `about`, `role` texts; `min`, `hide` flags; `rank` a whole number | `normalise.ts`, then `website/cv.ts` `manifests()` |
+| `cv_section` | `education.yml`, `events.yml`, `funding.yml` entries | a text, a CV section key | `cv.ts` `collections()` |
+| `cv_rank` | the same | a whole number, as text or number | `cv.ts` `rankOf` |
+| `cv_title`, `cv_url` | the same | texts | `cv.ts` `entryFields` (printed as `title`, `url`) |
+| `cv_status` | `funding.yml` | a text | `cv.ts` `entryFields` (printed as `status`) |
+| `role` | `funding.yml` | a text | `cv.ts`, the projects section |
+| `location`, `duration`, `about` | the three collections | texts | `cv.ts` `printed` |
+| `min` | `funding.yml` | a flag | `cv.ts`, the projects section |
+| `hide` | the three collections | a flag | `cv.ts` `printed` |
+| `students` | `education.yml` supervision entries | a list of `{ person, topic, degree }`, `person` a `people.yml` key | `cv.ts` `students()` |
+| `key` | `career.yml` `positions`, `degrees`, `awards` rows | a text | `cv.ts` `career()`, `hold()` |
+| `cv_section`, `cv_rank` | the same rows | a text; a whole number | `cv.ts` `career()` |
+| `funding` | `career.yml` `awards` rows | a text, a `funding.yml` key | `cv.ts` `careerFields` |
+| `records` | `career.yml` `profiles.<name>.<section>.content` rows | a list of keys | `cv.ts` `profileRow` |
+| `profiles.shared` | `career.yml` | a map: `location`, `email` texts, `parts` and `links` lists of texts | `cv.ts` `industryFile` |
+| `links` rows | `people.yml` entries | a list of `{ name, url, handle }` | `normalise.ts` `person()`, then `cv.ts` `personal()` |
+| `family` | `people.yml` entries | a text | `normalise.ts` `person()`, then `cv.ts` `namesOf` |
+| `sections:` | the website's `_data/website.yml` | a map of section key to title | `website/site.ts` `readSite`, `titleOf` |
+| `cv:` | the website's `_data/website.yml` | a map, the website's parts of the person block | `website/site.ts` `readSite`, then `cv.ts` `personal()` |
+
+### Ruling B's titles
+
+From `grep -m1 '^title:'` of each manifest in `<scratch>/o102/hub/a` and `b`:
+
+| Manifest | Before | After |
+|---|---|---|
+| `projects/archive/phd/phd-thesis` | Finger movement decoding: From source-localisation to tensor regression modelling | Finger Movement Decoding: From Source-Localisation to Tensor Regression Modelling |
+| `projects/archive/published/2016/bachelor-network-ids` | Machine Learning Techniques for Flow-Based Network Intrusion Detection Systems | Machine learning techniques for flow-based network intrusion detection systems |
+| `projects/archive/published/2018/masters-eeg-infotheory` | An Information-Theoretical Approach to EEG Source-Reconstructed Connectivity | An Information Theoretical Approach to EEG Source-Reconstructed Connectivity |
+| `projects/archive/published/2021/volga-finger-trajectories` | Reconstructing Single Finger Trajectories from Intracranial Brain Activity | Reconstructing single finger trajectories from intracranial brain activity |
+| `projects/coauthor/published/2016/chi-purpose-centric` | Purpose-Centric Appropriation of Everyday Objects as Game Controllers | Purpose-centric appropriation of everyday objects as game controllers. |
+| `projects/coauthor/published/2023/modulation-lmp-bci` | Modulation of LMPs Using the Gamma Band Increases the Stability of Finger Trajectories Decoded from ECoG | Modulation of LMPs using the gamma band increases the stability of finger trajectories decoded from ECoG |
+| `projects/coauthor/published/2024/highgamma-event-detection` | High-Gamma Band Event Detection Improves Stability of Finger Trajectories Decoded from ECoG-LMP Activity | High-gamma band event detection improves stability of finger trajectories decoded from ECoG-LMP activity |
+
+### Hub and website text reworded by hand
+
+Each before and after is a line of `command diff a b` in `<scratch>/o102/hub` or `<scratch>/o102/web`.
+
+- `education.yml` header. Before: "Source of record: side-projects/theaxec.github.io/_data/data.yml (`academic:` + `students:`). Keep in sync with the CV." After: "The source of record for the website's CV: an entry with `cv_section` is a row of that section of the website's _data/data.yml, and a supervision entry's `students` are its `students:` rows, written by the Career view's Write the website." The rest of the line is kept.
+- `career.yml` header. Before, three lines: "# Career strategy: drawn by oculus as the Focus page's career banner, the Career strategy panel." / "# This file holds the goal, the next milestone with its day, the situation and the order of work. Funding and career deadlines ..." / "# Form schema: the sections of this file, one field each. A records field lists the fields of each row, and open: true lets a row carry keys the schema does not name (the situation's labels)." After, four lines: "# Career: the strategy and the career record, edited in oculus's Career view on the Academic page." / "# The strategy is the goal, the next milestone with its day and the order of work. Funding and career deadlines ..." (the rest kept) / "# The career record is what the website's CV is written from by the Career view's Write the website: the positions (the CV's experience), the degrees (its education), the awards and the references, and the employer CVs under `profiles`. A row goes to its list's section unless it names another in `cv_section`, `cv_rank` orders the rows of a section, and `key` names the row for a profile row's `records`. A reference names a person of .oculus/data/people/people.yml, whose name and email the CV prints; an award that names a funding entry (`funding`) takes its title, place and text from it. A profile row names the records it stands for and takes from the first one the place, period, day or address its section prints where it prints none of its own." / "# Form schema: the sections of this file, one field each; a records field lists the fields of each row."
+- `career.yml` schema helps. `title`: "The name the Career strategy panel is listed under." becomes "The title of the career file's editor page."; `milestone`: "The next milestone, shown at the head of the panel." becomes "The next milestone."; `milestone_date`: "The day of the next milestone, YYYY-MM-DD; the panel counts the days left to it." becomes "The day of the next milestone, YYYY-MM-DD."; `order_note`: "A note drawn over the order of work." becomes "A note over the order of work.". The `situation` row and the comment "# Situation: a key-value fact strip" are removed with the block (item 10). New: the help of every row of `positions`, `degrees`, `awards`, `references` and `profiles`, and the comments "# The employer CVs, written to the website's _data/industry.yml and rendered by its _industry/cv_pdf_generator.py (select one with --profile). Keep every profile true to the career record: these go to real employers." and the three profile headings "# Senior Data Analyst, Guerrilla Games (Amsterdam)", "# Biomedical / health and life-sciences data science", "# Engine Programmer, Larian Studios".
+- `career.yml` `about` texts (item 10): `postdoc-twente` gains ", in the CoDE group (Cognition, Data and Education)" before its final full stop; `postdoc-uhasselt` gains " (Prof. Liesbet Peeters)" after "Biomedical Data Sciences Group"; `phd-kuleuven` gains the line "Supervisor: Prof. Marc Van Hulle".
+- `education.yml` `bioinformatics` (now `bioinformatics-2025-2026`) `sub`: "UHasselt | Sept 2025 - Sept 2026 (also 2024-2025)" becomes "UHasselt | Sept 2025 - Sept 2026"; the new entry for the earlier run has "UHasselt | Sept 2024 - Sept 2025". The six new extracurricular entries have the `sub` and `tags` lines the diff lists ("Freelance | Sept. 2015 - 2024", `[teaching]`; "DjangoGirls | Mar. 2018 - 2024", `[teaching, outreach]`; "CoderDojo (UHasselt, PXL) | Sep. 2014 - 2025", `[teaching, outreach]`; "KU Leuven | Sep. 2017 - Sep. 2018", `[service]`; "StuRa UHasselt | Mar. 2015 - Aug. 2016", `[service]`; "UHasselt | Sep. 2013 - Jul. 2016", `[service]`), under the new comment "# Tutoring, coaching and student representation", and the new schema rows' helps.
+- `events.yml` header: "`role: attend` = I attend but do not present." becomes "`role: attend` = I attend but do not present; `role: media` = an article or a video about my work.". The `role` help gains "; media = an article or a video about my work"; the `link` help "slides / deck (network/<event>/), for a talk I give" becomes "slides / deck (network/<event>/), asked of a talk I am still to give". New: the comment "# The talks, demonstrations and media the CV lists from before this calendar." and the new schema rows' helps.
+- `funding.yml`: the new schema rows' helps, and the ELIXIR-BE entry's `sub` "Consortium partner (UHasselt): health data re-use and federated analyses" and `tags: [federated, health]`.
+- `people.yml`: the `links` help "Web addresses of the person." becomes "Web addresses of the person, in the order a CV prints them.", with the helps of its three row fields and of `family`.
+- `.oculus/config.yml`: the `audit:` comment ends "..., the Data section of the README of a project that names datasets, and the folders a published or accepted project is kept under." in place of "..., the folders a published project is kept under, and the website's publications feed the projects are checked against, with the sections a project is expected in by its stage and form. The feed is a separate repository folder, and its check is skipped when it is not checked out."; the new `website:` comment is "# The website the hub's files are written into by the Career view's Write the website: its folder, the command that builds the CV's PDF there once the files are written, and the sections of its publications. A paper that carries a `publication:` record goes to the section of the first row whose stages and forms hold its own (a side left out holds every one); the sections come in the rows' order, each titled by its first row, and a row's `order`, `pub_pre` and `pub_post` say whether an entry gives your place among the authors and which words stand before and after the venue. The Audit compares the three files the hub gives with the website's files and is skipped while the folder is not checked out."
+- The three new manifests, `side-projects/finished/<id>/project.yml`: `starcraft-rl-agent`, title "Reinforcement learning agent for StarCraft II", eli5 "University project (KU Leuven, 2018): reinforcement learning algorithms in DeepMind's PySC2 framework, trained on the KU Leuven supercomputer", tags `[personal, machine-learning, reinforcement-learning, python]`; `iot-sensor-platform`, title "IoT platform with pluggable sensors", eli5 "University project (2017): a platform for large-scale use of pluggable Internet of Things sensors", tags `[personal, iot]`; `search-recommendation-vod`, title "Search and Recommendation System", eli5 "Team project (2016): a search and recommendation system for Androme's video on demand, used in production in the Nebula project", tags `[personal, recommender-systems]`. Their `short` lines are "StarCraft RL agent", "IoT platform" and "VoD search and recommendation"; their `cv:` texts are the CV's own, byte for byte.
+- The website's `_data/website.yml`: the new "Person" heading comment, "# The person the site is about. _includes/site/head.html gives search engines the job, the affiliations, the keywords and the subjects from here, and the given and family name from the CV's person block (_data/data.yml), which the research hub writes from its people file."; "# The CV's own parts of its person block, which the research hub writes into _data/data.yml under `personal`, and from which the employer CVs (_data/industry.yml) take the parts the hub's career file names."; "# The title of each section of the CV (_data/data.yml) and of the publications (_data/publications.yml), by the section's key, which the research hub writes each file with."; and the four commented title lines moved from the CV.
+
+### Item 5: the missing rank
+
+The hub patch gives `projects/coauthor/published/2017/algebraic-effects-compilation/project.yml` `rank: 1` in its `publication:` record, its place in `other-publications` on the website (`publications.yml`'s one entry of that section). The case run's rank listing (the program builds `papersFile` over each record alone to find its section):
+
+```
+== publication records: 48
+  without rank: 0
+- conference: 8 records, ranks [3,4,5,2,1,8,7,6], a rank held twice: []
+- abstracts: 8 records, ranks [5,8,7,2,1,6,3,4], a rank held twice: []
+- other-publications: 1 records, ranks [1], a rank held twice: []
+- thesis: 4 records, ranks [4,3,2,1], a rank held twice: []
+- journal: 9 records, ranks [7,9,1,5,2,6,4,3,8], a rank held twice: []
+- papers-in-preparation: 3 records, ranks [2,3,1], a rank held twice: []
+- papers-in-review: 13 records, ranks [8,5,12,10,7,11,2,9,1,13,6,4,3], a rank held twice: []
+- posters: 2 records, ranks [1,2], a rank held twice: []
+```
+
+### Item 6: keys that collide
+
+- `cv.ts`: `Cv.hold(key, where, fields)` keeps the first holder's place; on a second holder it pushes `msg_cv_key_twice` with the key and both places, once per key, and drops the key's record. `Cv.record(key, where)` gives nothing, and no finding, for such a key, and `msg_cv_unknown_record` for a key no record holds. A place is `<collection>.<entry>` for a collection entry, `projects.<folder>` for a manifest and `<list>.<index>` for a career row. A career row whose `key` is the empty text pushes `msg_cv_empty_key` with the row and holds nothing. The head comment of `cv.ts` says: "A record is named by its key: a collection entry's key, a manifest's folder name, a career row's `key`. A key two records hold names neither, and a row that names it takes nothing from it."
+- `config/text/views/system/audit.yml`: `msg_cv_key_twice`: "the key {0} is held by both {1} and {2}, so a row of the career file that names it takes nothing from either: give one of them another key"; `msg_cv_empty_key`: "the row {0} of the career file has an empty key: give it a key or take the key out".
+- Test rows, `tests/data/hubs/website-files.test.ts`: "a key two records hold is a finding naming the key and both places, and a profile row naming it takes nothing from either" (an event and a position both `neurips-attending`, a profile row naming it; it expects `['graphs', 'domains.graphs', 'pillars.graphs']` from the demo hub's own two `graphs` entries and `['neurips-attending', 'events.neurips-attending', 'positions.1']`, the row drawn as `{ title: 'Visiting' }` and no unknown-record finding); "a career row whose key is the empty text is a finding naming the row" (`['positions.2']`). Their failure before the change is the last four lines of the run quoted under item 1.
+- The real hub had two clashes, both renamed in the hub patch: the education entry `bioinformatics` against the venue `bioinformatics` (now `bioinformatics-2025-2026`), and the award `icfp-src` against the venue `icfp-src` (now `icfp-src-2017`, with the two profile `records:` naming it). The case run gives `== problems of the build: 0`.
+- Two rows of one section with the same rank keep the order they are read in: `Cv.section()` sorts by rank and then by `at`, the read position, and `papersFile` sorts by rank with JavaScript's stable sort. The read order of the CV is the collections in the snapshot's order with each file's entries in file order, then the manifests in the snapshot's order, then the career file's `references`, `positions`, `degrees` and `awards`, each in file order (`built()`, `cv.ts:356-362`; `CAREER_LISTS`, `cv.ts:50-55`); a career row with no `cv_rank` takes its index. Of the publications, the manifests in the snapshot's order.
+- A `website.kinds` row repeating a `kind` is ruling C's shape: one section takes several rows, its title the first row's (`papersFile`, `known.title ??= row.title`). The hub's rows do so for `journal` and `conference` (one row for `accepted`, one for `published`).
+
+### Item 9: the events link rule
+
+Hub patch, `events.yml`: `link` is `required: { when: { role: present, status: [upcoming, planned] } }` with the help "slides / deck (network/<event>/), asked of a talk I am still to give"; `role`'s options are `[present, co-present, attend, media]`, the help and the header as listed above; `kuleuven-news-bronze-medal-2017`, `dtai-news-bronze-medal-2017` and `chi-2016-video` take `role: media`. The case run's data check, the patched copy against the unpatched one:
+
+```
+patched:   == data check findings: 2
+           - <copy>/.oculus/data/academic/funding.yml |  | funding entry ELIXIR-BE is contributing and has no statement
+           - <copy>/deck/present.yml |  | deck folder deck is not in <copy>
+unpatched: == data check findings: 1
+           - <copy>/deck/present.yml |  | deck folder deck is not in <copy>
+```
+
+Round 0's patched run gave 21, the 19 `entries[8..26].link is required while role is present` among them. The deck line is a finding of the scratch copy, which holds no deck folder.
+
+### Item 10: the situation facts
+
+Each fact of the block as the hub holds it (`career.yml:29-34` of the hub), and where it is after the hub patch:
+
+| Fact | Place |
+|---|---|
+| PhD: "May 2023, KU Leuven (Marc Van Hulle)" | `positions` `phd-kuleuven`: `location: KU Leuven`, `duration: Sep. 2018 - May 2023`, and the `about` line "Supervisor: Prof. Marc Van Hulle" (added) |
+| Postdoc (KU Leuven): "May 2023 - Jan 2024 (ECoG sign-language decoding, Marc Van Hulle)" | `positions` `postdoc-kuleuven`: `duration: May 2023 - January 2024`, the title's "Sign Language Alphabet Decoding", the `about`'s "(ECoG)" and "under supervision of Prof. Marc Van Hulle", all held before |
+| Postdoc (UHasselt): "Jan 2024 - Jan 2026 (Biomedical Data Sciences, Liesbet Peeters)" | `positions` `postdoc-uhasselt`: `duration: January 2024 - January 2026 (Research Affiliate from 2026)`, the `about`'s "Biomedical Data Sciences Group" and " (Prof. Liesbet Peeters)" (added) |
+| Now: "Postdoc, U Twente, CoDE group (Cognition, Data and Education) - AI for HCC (ZonMw AI-HCC), since Jan 2026" | `positions` `postdoc-twente`: the title, `location: University of Twente / Medisch Spectrum Twente`, `duration: January 2026 - Current`, the `about`'s "AI-HCC ZonMw project" and ", in the CoDE group (Cognition, Data and Education)" (added) |
+| Also: "Research Affiliate, UHasselt" | `positions` `postdoc-uhasselt` `duration`, "(Research Affiliate from 2026)", held before |
+| Also: "BKO completed" | `education.yml` `bko`, `status: completed`, `cv_section: academic`, printed in the CV's academic section; not repeated in a career row, which would print it twice |
+
+The block and its schema row are removed (`grep -n "^situation" <scratch>/o102/hub/b/.oculus/data/academic/career.yml` prints nothing). The three added texts are the three `_data/data.yml` differences of the case run.
+
+### Item 11: a saved tab of the track record's board
+
+`git grep -n "track_record" -- src config tests ':!config/local.yml'` prints nothing: no code registers or names the view. Before the step, a saved tab of `track_record` drew the track record board. After it, the tab stays in the layout; its strip label is `t('ui.unknown_view', instance.view)` ("Unknown view: track_record", `src/lib/shell/panes/strip/strip-tab.ts:45`), and its body draws nothing, since `src/lib/shell/panes/PaneBody.svelte:327-332` draws a `TabView` only for a view `viewFor` finds; `src/lib/state/workbench/layout/tabs/left-out.ts:5-6` says the same of any key no list holds. No code is built, by `spec.md:43` (under "Not done"). `grep -c track_record` over `~/.oculus/layouts.json`, `~/.oculus/views.json` and `~/.oculus/window.json` prints `0` for each: none of Axel's saved layouts holds such a tab.
+
+### Item 12: the person form
+
+Before: the people schema's `links` was `{ field: links, type: tags, ... }`, and the person entry form drew it as a tag list (`FieldControl.svelte:197`, the `chips`/`tags` branch, `free` for `tags`). After: `links` is `type: records` with the fields `name`, `url` and `handle`, and the form draws it as rows of those three fields (`FieldControl.svelte:111`, `records`, the `list` shape at `:250`), one row per link, added and removed by the row controls.
+
+### Item 13: the Career view's tests
+
+- `src/lib/state/forms/career-view.ts` (new, 33 lines): `careerShown(career, page)` gives `{ state: 'none' }` for no career file, `{ state: 'no_schema' }` for a file with no page (no `schema:`), and `{ state: 'editor', page, sections }`, each section `{ field, form }`, `form` the field's type, or for a `records` field the shape `toEdit` gives it (`list`, `one`, `labels`, `named`).
+- `Career.svelte` calls it (`const shown = $derived(careerShown(career, page))`) and branches on `shown.state`, drawing `EntryEditor` with `shown.page`. The editor draws `pageFields(page)` in order, each records field in the shape `toEdit` gives it (`EntryEditor.svelte:64` and `:85`); `careerShown` computes `sections` with the same `pageFields`, `toEdit` and `sampleOf`, and the view does not read `sections` itself.
+- `tests/data/sources/career.test.ts`: describe "the Career view's lists" is replaced by describe 'what the Career view draws', rows 'draws the line saying the hub holds no career file when it holds none', 'draws the line saying the file has no schema when its schema is absent', and "draws every section of the file's schema in the schema's order, each in the form its field gives" (the demo career file: `title` text, `goal` text, `milestone` text, `milestone_date` date, `order_note` textarea, `order` list, `positions` list, `degrees` list, `awards` list, `references` list, `profiles` named). On `<scratch>/o102/basetest` (the base tree with the step's tests) the file fails before any row: "Error: Cannot find module '../../../src/lib/state/forms/career-view.ts' imported from .../basetest/tests/data/sources/career.test.ts", "Tests  no tests". In the worktree: "Tests  14 passed (14)".
+
+### Item 15: the case-run program
+
+`<scratch>/o102/case1/run.mts`, run as `./node_modules/.bin/jiti <scratch>/o102/case1/run.mts <scratch>/o102/fresh` from the worktree. Its key-order walk (`walk`) is the listing ruling A asks for: for each generated file it compares the order of the keys of every map with the file on disk, path by path, and prints each map whose order the first write changes. Its source, whole:
+
+```ts
+// Case 1 of O102: the generator over a scratch hub, its files compared with the website's files on
+// disk. Prints every difference of each generated file, every problem of the build, the rank of
+// every publication record by its website section, every finding of the audit and every finding of
+// the data check. Usage: jiti run.mts <scratch hub>
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+
+const WT = '/Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O102';
+const hub = process.argv[2];
+
+const { parse } = await import(`${WT}/node_modules/yaml/dist/index.js`);
+const { buildHubs } = await import(`${WT}/src/lib/server/root/watch/build.ts`);
+const { engineDir, loadConfig, textCatalog } = await import(`${WT}/src/lib/data/sources/config.ts`);
+const { createChecker } = await import(`${WT}/src/lib/data/snapshot/schema/check.ts`);
+const { portfolioConfigFrom } = await import(`${WT}/src/lib/data/index.ts`);
+const { websiteSettings } = await import(`${WT}/src/lib/data/sources/config/settings/files.ts`);
+const scan = await import(`${WT}/src/lib/server/content/audit/scan.ts`);
+const site = await import(`${WT}/src/lib/server/content/audit/website/site.ts`);
+const files = await import(`${WT}/src/lib/server/content/audit/website/files.ts`);
+const papers = await import(`${WT}/src/lib/server/content/audit/website/papers.ts`);
+const { holdersOf } = await import(`${WT}/src/lib/data/helpers/hub-names.ts`);
+const { selfOf } = await import(`${WT}/src/lib/data/shapes/boards/roles.ts`);
+
+const KEY = 'research-hub';
+const { config, from, findings: configFindings } = loadConfig(engineDir(), { hub });
+console.log(`== config check findings: ${configFindings.length}`);
+for (const one of configFindings) console.log(`- ${one.file} | ${one.key} | ${one.message}`);
+const portfolio = { ...portfolioConfigFrom(config, from), repositories: [] };
+const built = buildHubs(
+    {
+        primary: { key: KEY, dir: hub, portfolio, workspace: null },
+        others: [],
+        config: portfolio,
+        order: [KEY],
+        self: 'axel-faes'
+    },
+    0,
+    createChecker(),
+    null
+);
+const { entities } = built.snapshot;
+const projects = Object.values(entities.projects);
+const collections = Object.values(entities.collections);
+const people = Object.values(entities.people);
+const self = selfOf(people);
+const rules = scan.auditRules(config, Object.values(entities.domains));
+const website = websiteSettings(config);
+const dir = site.websiteDir(hub, website.folder);
+
+const show = (value: unknown): string => JSON.stringify(value);
+
+console.log(`self: ${[...self].join(', ')}`);
+console.log(`website folder: ${website.folder} | kinds: ${website.kinds.length}`);
+
+if (dir !== '') {
+    const read = site.readSite(parse(readFileSync(join(dir, site.SITE_FILE), 'utf8')));
+    const out = files.websiteFiles({
+        projects,
+        collections,
+        people,
+        career: entities.career,
+        self,
+        kinds: website.kinds,
+        rules,
+        site: read
+    });
+    console.log(`\n== problems of the build: ${out.problems.length}`);
+    for (const one of out.problems) {
+        console.log(`- ${one.about?.id ?? '(website)'} ${one.key} ${show(one.args)}`);
+    }
+    for (const file of out.files) {
+        const found = files.differences(file.text, readFileSync(join(dir, file.name), 'utf8'));
+        console.log(`\n== ${file.name}: ${found.length} differences`);
+        for (const one of found) {
+            console.log(`- at ${one.place === '' ? '(whole file)' : one.place}`);
+            console.log(`  generated: ${show(one.generated)}`);
+            console.log(`  on disk:   ${show(one.onDisk)}`);
+        }
+        const firstLine = file.text.split('\n')[0];
+        console.log(`  first line written: ${firstLine}`);
+        const moved: string[] = [];
+        const walk = (want: unknown, held: unknown, path: string): void => {
+            if (Array.isArray(want) && Array.isArray(held)) {
+                want.forEach((one, at) => walk(one, held[at], `${path}.${at}`));
+                return;
+            }
+            if (want === null || held === null || typeof want !== 'object' || typeof held !== 'object') return;
+            const wanted = Object.keys(want).filter((key) => key in held);
+            const holds = Object.keys(held).filter((key) => key in want);
+            if (wanted.join('|') !== holds.join('|')) {
+                moved.push(`${path.slice(1)}: written [${wanted.join(', ')}], on disk [${holds.join(', ')}]`);
+            }
+            for (const key of wanted) walk((want as Record<string, unknown>)[key], (held as Record<string, unknown>)[key], `${path}.${key}`);
+        };
+        walk(parse(file.text), parse(readFileSync(join(dir, file.name), 'utf8')), '');
+        console.log(`  key order inside an entry that the first write changes: ${moved.length}`);
+        for (const one of moved) console.log(`  - ${one}`);
+    }
+}
+
+if (dir !== '') {
+    const read = site.readSite(parse(readFileSync(join(dir, site.SITE_FILE), 'utf8')));
+    const records = projects.filter((project) => project.publication !== undefined);
+    const bySection = new Map<string, { id: string; rank: unknown }[]>();
+    for (const project of records) {
+        const one = papers.papersFile({ projects: [project], self, kinds: website.kinds, rules, site: read });
+        const keys = Object.keys(one.value).filter((key) => {
+            const section = one.value[key] as { papers?: unknown[] } | string;
+            return typeof section === 'object' && (section.papers?.length ?? 0) > 0;
+        });
+        const key = keys.length === 1 ? keys[0] : `(no section: ${keys.join(', ')})`;
+        bySection.set(key, [...(bySection.get(key) ?? []), { id: project.id, rank: project.publication?.rank }]);
+    }
+    console.log(`\n== publication records: ${records.length}`);
+    console.log(`  without rank: ${records.filter((project) => typeof project.publication?.rank !== 'number').length}`);
+    for (const [key, held] of bySection) {
+        const ranks = held.map((one) => one.rank);
+        const twice = ranks.filter((rank, at) => ranks.indexOf(rank) !== at);
+        console.log(`- ${key}: ${held.length} records, ranks ${show(ranks)}, a rank held twice: ${show(twice)}`);
+    }
+}
+
+const findings = scan.auditFindings({
+    hub,
+    root: KEY,
+    primary: true,
+    projects,
+    collections,
+    held: holdersOf(projects),
+    self,
+    rules,
+    setting: scan.hubAuditSetting(hub),
+    website: { setting: website, dir, people, career: entities.career },
+    catalog: textCatalog(config)
+});
+console.log(`\n== audit findings: ${findings.length}`);
+for (const one of findings) {
+    console.log(`- [${one.kind}] ${one.scope} | ${one.where} | ${one.message ?? one.text ?? show(one)}`);
+}
+console.log(`\n== data check findings: ${built.snapshot.findings.length}`);
+for (const one of built.snapshot.findings) {
+    console.log(`- ${one.file} | ${one.path ?? ''} | ${one.message ?? show(one)}`);
+}
+```
+
+Its whole output on the fresh patched copy is `<scratch>/o102/case1/fresh-after.txt` (286 lines), and on the unpatched copy `<scratch>/o102/case1/fresh-base.txt` (130 lines).
+
+### Item 16: the comment of files.ts
+
+`src/lib/server/content/audit/website/files.ts:5-7` now reads: "an award's day is written plain, as the website writes it, so a YAML 1.1 reader takes it for a date and a YAML 1.2 reader for a text, each the type it takes from the day of the website's own file."
+
+### Item 17: the slow tests
+
+`tests/routes/sessions/website.test.ts` and `tests/server/root/watch/website-watch.test.ts` carry `// @module-tag slow`. Each run alone:
+
+`./node_modules/.bin/vitest run <file> --tagsFilter slow --testTimeout 20000 --configLoader runner`, the flags the verify list's slow run uses, one file at a time with nothing else running:
+
+```
+=== tests/routes/sessions/website.test.ts
+ Test Files  1 passed (1)
+      Tests  8 passed (8)
+   Duration  15.88s (transform 1.96s, setup 0ms, import 6.10s, tests 9.68s, environment 0ms)
+exit=0
+=== tests/server/root/watch/website-watch.test.ts
+ Test Files  1 passed (1)
+      Tests  1 passed (1)
+   Duration  5.41s (transform 1.00s, setup 0ms, import 3.05s, tests 2.26s, environment 0ms)
+exit=0
+```
+
+Both also pass inside the verify list's slow run.
+
+### Item 18: the sed -i commands
+
+Two `sed -i ''` commands are in the build's transcript (a search of its tool calls for `sed -i` finds these two, the second listed twice). One, in round 0, ran in `src/lib/server/content/audit/website/` on `papers.ts`: it replaced the line `const scope = project.folder;` with the two lines `const scope = scopeOf(project);` and `const file = project.file;` at `papers.ts:104-105` of that time. `grep -n "scopeOf\|const scope\|project.folder\|const file = project" src/lib/server/content/audit/website/papers.ts` prints nothing now: no line of that hunk is in the delivered file. The other aimed at `/dev/null` and changed no file. Both are under the standing ruling "Unapproved builder scripts".
+
+### Item 19: the comment paragraphs
+
+The listed comments and every other comment the step's diff adds were rewrapped as whole paragraphs, each line filled to the 100-column width. Besides the eight the review lists, `takes.ts`, `filter.ts`, `CommandCenterView.svelte`, `routes/views.ts`, `audited.ts`, `Audit.svelte`, `model-entities.ts`, `publications.ts`, `scan.ts`, `normalise-parts/career.ts`, `model-machine.ts`, `Projects.svelte`, `audit.test.ts` and `settings/files.ts`. The check, over each `.ts` and `.svelte` file of `git diff --name-only bd8ad0a08 -- src tests`, prints a comment line the diff adds (`git diff -U0 bd8ad0a08` `+` line) when the next line's first word would fit on it within 100 columns and the line does not end a sentence or a list item:
+
+```
+awk '{ if (match($0,/^[ \t]*(\/\/|\*) /)) { t=substr($0,RSTART+RLENGTH); cur=$0 } else { t=""; cur="" } if (prev!="" && t!="" && t !~ /^[-0-9]/ && pt !~ /[:.]$/ ) { split(t,w," "); if (length(prev)+1+length(w[1])<=100) print FILENAME":"NR-1 } prev=cur; pt=t }'
+```
+
+It prints nothing. The same check over every comment line of the eight files the review lists prints seven lines (`GroupHead.svelte:51`, `entry-file.ts:73` and `:111`, `draft-entry.ts:110`, `settings/files.ts:84` and `:124`, `board-new-project.test.ts:11`), each in a paragraph no hunk of `git diff -U0 bd8ad0a08` touches. A line shorter than that inside a sentence remains only where the next word is a path longer than the room left (`Audit.svelte:48`, `board-new-project.test.ts:5`, `FoldHead.svelte:6`). No comment line of a changed `.ts` or `.svelte` file is over 100 columns.
+
+The history words, over the comment lines, test titles and `rule:` rows the step adds (`git diff -U0 bd8ad0a08` `+` lines of `src`, `tests`, `config` and `docs/templates.md`, and every new file under `src` and `tests`), grepped for `no longer|used to|previously|formerly|replaced|renamed|old |legacy|now |anymore|before|still|as before|always had|the step adds`, give 26 hits (`grep -ciE`). Each was read: `old ` matches inside `hold `, `before` is an order in a list or on a page ("the words printed before and after an entry's venue", "the readers the page calls before the config channel's first message"), `still` is a state now ("the command's last run still running"), "a renamed label" is the write a test row makes, and "Every audit the hub publishes from now on" says what a test helper collects after it is called. None says what the code was before.
+
+### Item 22: the templates example
+
+`docs/templates.md:314`: `#       - { kind: papers-in-review, title: Papers in review, stages: [submitted, revision], pub_pre: "Submitted to ", pub_post: "(Under review)" }`, with the trailing space inside the quotes.
+
+### Patches
+
+`cd <scratch>/o102/hub && command diff -ruN a b > .../O102-hub.patch` and `cd <scratch>/o102/web && command diff -ruN a b > .../O102-website.patch` (each exit 1, files differ): `O102-hub.patch` 2994 lines, 69 files; `O102-website.patch` 100 lines, 2 files. Dry runs: from `~/workspace/research-hub`, `patch --dry-run -p1 < .../O102-hub.patch` prints 69 lines `patching file '<path>'` and no other line (`grep -vc "^patching file"` gives 0), exit 0; from the website, `patch --dry-run -p1 < .../O102-website.patch` prints `patching file '_data/website.yml'` and `patching file '_includes/site/head.html'`, exit 0.
+
+The website after the patch, built with `bundle exec jekyll build` in `<scratch>/o102/webbuild/b/src` (its `website.yml` and `head.html` `cmp`-equal to the fresh patched copy's), exits 0; each of its 14 pages carries `"givenName": "Axel",` and `"familyName": "Faes",` (`grep -rl` counts 14 for each), read from the CV's person block of `_data/data.yml`, as the build before the patch (`webbuild/a/out/index.html`) gives `"givenName": "Axel",`.
+
+### The case run on a fresh patched copy
+
+`<scratch>/o102/fresh` was made from the hub as it is now (the `.oculus` folder without `local.yml`, `memories`, `wallpaper` and `notes`, the 115 manifests, and the website without `.git`, `_site`, `vendor`, `node_modules`, `.jekyll-cache` and `.bundle`; `find <scratch>/o102/fresh -name local.yml` prints nothing), and both patches applied with `patch -p1` (exit 0 each, no `.rej` or `.orig` file). `<scratch>/o102/freshbase` is the same copy unpatched. Output on `fresh`, the audit's lines of the scratch copy (121 `link path missing`, `no heading` and `a file the hub requires` lines, the copy holding no project folder), the 108 key-order lines and the `generated` and `on disk` lines of the three `data.yml` differences (described after the block) left out:
+
+```
+== config check findings: 0
+self: research-hub:axel-faes
+website folder: side-projects/theaxec.github.io | kinds: 10
+
+== problems of the build: 0
+
+== _data/data.yml: 3 differences
+- at experience.content.0.about
+- at experience.content.1.about
+- at experience.content.5.about
+  first line written: # Generated by oculus from the research hub. Change the hub's files and write the website again.
+  key order inside an entry that the first write changes: 24
+
+== _data/publications.yml: 4 differences
+- at papers-in-review.papers.0.pub_post
+  generated: "(Under review)"
+  on disk:   "(Under Review)"
+- at conference.papers.3.book
+  generated: "The 3rd International Conference on Foundation and Large Language Models (FLLM2025), Symposium on Federated Learning and Intelligent Computing Systems (FLICS 2025)"
+  on disk:   "The 3rd International Conference on Foundation and Large Language Models (FLLM2025)"
+- at conference.papers.3.pub_post
+  generated: undefined
+  on disk:   "[Symposium on Federated Learning and Intelligent Computing Systems (FLICS 2025)]"
+- at other-publications.papers.0.pub_date
+  generated: 2017
+  on disk:   undefined
+  first line written: # Generated by oculus from the research hub. Change the hub's files and write the website again.
+  key order inside an entry that the first write changes: 48
+
+== _data/industry.yml: 0 differences
+  first line written: # Generated by oculus from the research hub. Change the hub's files and write the website again.
+  key order inside an entry that the first write changes: 36
+
+== publication records: 48
+  without rank: 0
+  (the eight section lines, quoted under item 5)
+
+== audit findings: 123
+- [publink] website | _data/data.yml | _data/data.yml differs from what the hub's files give, first at experience.content.0.about: write the website
+- [publink] website | _data/publications.yml | _data/publications.yml differs from what the hub's files give, first at papers-in-review.papers.0.pub_post: write the website
+
+== data check findings: 2
+(quoted under item 9)
+```
+
+The three `data.yml` differences are item 10's added texts, each generated text the text on disk with the added words (`generated` ends "... within the AI-HCC ZonMw project, in the CoDE group (Cognition, Data and Education).", "... Biomedical Data Sciences Group (Prof. Liesbet Peeters), developed ...", "... Tensor Regression Modelling\nSupervisor: Prof. Marc Van Hulle\n"). The four `publications.yml` differences are case 2's. `problems of the build: 0` means no `msg_cv_key_twice`, `msg_cv_self_names`, `msg_cv_empty_key` or unknown record over the real hub. The audit, unpatched against patched, by `diff` of the two runs' output from `== audit` to `== data check`, the copy's folder written `<copy>`:
+
+```
+1c1
+< == audit findings: 121
+---
+> == audit findings: 123
+29a30
+> - [data] education | Bioinformatics (3740) - Coordinating lecturer (2024-2025) | link path missing: education/courses/bioinformatics
+69d69
+< - [conform] .oculus/config.yml | audit.website | audit.website in .oculus/config.yml is not of the shape the audit setting takes, so that part is off
+122a123,124
+> - [publink] website | _data/data.yml | _data/data.yml differs from what the hub's files give, first at experience.content.0.about: write the website
+> - [publink] website | _data/publications.yml | _data/publications.yml differs from what the hub's files give, first at papers-in-review.papers.0.pub_post: write the website
+124c126
+< == data check findings: 1
+---
+> == data check findings: 2
+```
+
+The Bioinformatics line is the scratch copy's (the hub holds `education/courses/bioinformatics`); the two `publink` lines are the differences above, which the first Write the website clears. On `freshbase` the config check gives the one finding `audit.website | key audit.website is not one the hub's settings file takes; it is not applied` and the website section does not run (`website folder:  | kinds: 0`).
+
+### The verify list
+
+`npm run diagrams && npm run docs:palette && npm run test:quick -- --base bd8ad0a08`, run after the last change, output in `<scratch>/o102/verify5.txt`:
+
+```
+ok      ASCII gate (1.0 s)
+ok      prettier (1.6 s): All matched files use Prettier code style!
+ok      svelte-kit sync (2.0 s)
+ok      eslint (1.8 s)
+ok      svelte-check (13.1 s): 1793330210421 COMPLETED 570 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest checks (185.3 s): Duration  176.77s (transform 46.95s, setup 0ms, import 192.55s, tests 386.44s, environment 5ms)
+ok      vitest (197.2 s): Duration  189.02s (transform 116.38s, setup 0ms, import 277.50s, tests 433.93s, environment 21.73s)
+ok      vitest slow (287.3 s): Duration  279.33s (transform 17.19s, setup 0ms, import 153.87s, tests 950.33s, environment 18ms)
+rc=0
+```
+
+After it, `sh utils/unused-exports.sh` compared with `.agents/worktrees/O102-base/unused-exports.txt` by `diff` prints the same lines as under Verify 3 (`Unused exports (227)` against 228, the three helpers of `publications.ts` and `scan.ts` gone); `sh utils/folder-check.sh` exits 0; no changed or new `.ts` file passes 880 lines and no `.svelte` file passes 520.
+
+A defect outside the step, unfixed: an earlier run of the list in this round (`verify3.txt`) was red on its slow line alone (`FAILED  vitest slow (280.7 s)`) with one unhandled error and every test passing:
+
+```
+Error: write EPIPE
+ <heavy right-pointing angle quotation mark ornament> src/lib/server/git/git-write.ts:195:26
+Serialized Error: { errno: -32, code: 'EPIPE', syscall: 'write' }
+This error originated in "tests/server/git/git-ops.test.ts" test file.
+```
+
+`git-write.ts:195` is `child.stdin?.end(extra.input ?? '');`, which writes to the stdin of a git child with no `error` handler on that stream, so a git that exits before reading its stdin raises the broken pipe as an unhandled error; the branch below it, for a streamed input, says in its comment that such a broken pipe is answered through the callback, and the string branch has no such handling. The step changes neither file (`git diff --stat bd8ad0a08 -- src/lib/server/git tests/server/git` prints nothing). The test file run alone passes: `vitest run tests/server/git/git-ops.test.ts`: `Tests 17 passed (17)`. It is a timing defect of the git layer, a different concern from this step, and is not fixed here.
+
+### Process
+
+- The verify list ran four times in this round, the third stopped, the fourth green, each output in `<scratch>/o102/`: `verify2.txt` was red on one eslint line of `tests/data/sources/career.test.ts` (`214:46 error Use a ! assertion to more succinctly remove null and undefined from the type`), fixed by a null check that throws, the file then linted, format-checked and run alone (`Tests 14 passed (14)`); `verify3.txt` was green but for an unhandled `write EPIPE` in the slow run, from `tests/server/git/git-ops.test.ts`, a file the step does not change (under "The verify list"); `verify4.txt` ran after `CareerSection` in `career-view.ts` lost its `export`, which `sh utils/unused-exports.sh` had listed as a new unused exported type, and was stopped once its prettier line was red on that file (the edit had not been formatted); the file was formatted, format-checked and linted alone, and `verify5.txt`, green on every line, is the run quoted under "The verify list". No whole-suite command was run.
+- Edits were made with the Edit tool and `npm run format` (which reformatted `cv.ts` and `website-files.test.ts`); the website patch was moved to its name with `mv`. The case-run program gained the rank listing.

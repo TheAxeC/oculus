@@ -1,16 +1,14 @@
 diff -ruN a/_data/website.yml b/_data/website.yml
 --- a/_data/website.yml	2026-10-30 02:04:55
-+++ b/_data/website.yml	2026-10-30 02:05:11
-@@ -10,6 +10,55 @@
++++ b/_data/website.yml	2026-10-30 03:44:22
+@@ -10,6 +10,53 @@
      His research builds toward **the self-explaining hospital**: interpretable, self-explaining models and **privacy-preserving federated learning that travels between institutions**, grounded in **multiway (block-term tensor) methods**. That methodological core began in computational neuroscience and brain-computer interfaces, and now drives multi-modal precision oncology and trustworthy clinical decision support.
    portrait_url: assets/images/photos/axel.jpg
  
 +##########
 +# Person #
 +##########
-+# The person the site is about. _includes/site/head.html gives search engines the names, the job, the affiliations, the keywords and the subjects; the research hub writes the given and family name at the head of the CV files (_data/data.yml, _data/industry.yml).
-+given_name: Axel
-+family_name: Faes
++# The person the site is about. _includes/site/head.html gives search engines the job, the affiliations, the keywords and the subjects from here, and the given and family name from the CV's person block (_data/data.yml), which the research hub writes from its people file.
 +job_title: Postdoctoral Researcher in AI for Healthcare
 +affiliations:
 +  - University of Twente
@@ -59,7 +57,7 @@ diff -ruN a/_data/website.yml b/_data/website.yml
    content: |
 diff -ruN a/_includes/site/head.html b/_includes/site/head.html
 --- a/_includes/site/head.html	2026-10-30 02:04:55
-+++ b/_includes/site/head.html	2026-10-30 02:05:21
++++ b/_includes/site/head.html	2026-10-30 03:44:24
 @@ -2,7 +2,7 @@
  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
  <meta name="description" content="{% if page.description %}{{ page.description }}{% else %}{{ site.data.website.description.biography | strip_html | truncate: 160 }}{% endif %}"/>
@@ -76,8 +74,8 @@ diff -ruN a/_includes/site/head.html b/_includes/site/head.html
 -  "givenName": "Axel",
 -  "familyName": "Faes",
 -  "jobTitle": "Postdoctoral Researcher in AI for Healthcare",
-+  "givenName": {{ site.data.website.given_name | jsonify }},
-+  "familyName": {{ site.data.website.family_name | jsonify }},
++  "givenName": {{ site.data.data.personal["first-name"] | jsonify }},
++  "familyName": {{ site.data.data.personal["last-name"] | jsonify }},
 +  "jobTitle": {{ site.data.website.job_title | jsonify }},
    "affiliation": [
 -    {"@type": "Organization", "name": "University of Twente"},

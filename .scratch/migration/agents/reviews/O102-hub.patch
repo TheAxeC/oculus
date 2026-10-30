@@ -51,7 +51,7 @@ diff -ruN a/.oculus/config.yml b/.oculus/config.yml
  linkedin_dir: side-projects/theaxec.github.io/_linkedin
 diff -ruN a/.oculus/data/academic/career.yml b/.oculus/data/academic/career.yml
 --- a/.oculus/data/academic/career.yml	2026-10-30 01:43:50
-+++ b/.oculus/data/academic/career.yml	2026-10-30 02:10:51
++++ b/.oculus/data/academic/career.yml	2026-10-30 03:43:49
 @@ -1,17 +1,13 @@
 -# Career strategy: drawn by oculus as the Focus page's career banner, the Career strategy panel.
 -# This file holds the goal, the next milestone with its day, the situation and the order of work. Funding and career deadlines live as `deadline:` on the entries of .oculus/data/academic/funding.yml, where they drive the "This week" ticker. The FWO Senior hosts, the host criteria and the eligibility are in funding/2026-fwo-senior-transplant/hosts.md.
@@ -78,7 +78,7 @@ diff -ruN a/.oculus/data/academic/career.yml b/.oculus/data/academic/career.yml
    - field: order
      type: records
      help: "The order of work, in priority order."
-@@ -19,22 +15,913 @@
+@@ -19,22 +15,914 @@
        - { field: task, type: text, required: true, help: "What to do." }
        - { field: when, type: text, help: "When it is due, as text." }
        - { field: note, type: text, help: "An optional remark on the task." }
@@ -230,13 +230,13 @@ diff -ruN a/.oculus/data/academic/career.yml b/.oculus/data/academic/career.yml
 +    duration: January 2026 - Current
 +    about: |
 +      Developing advanced deep learning and foundation models integrating longitudinal MRI data, multi-omics profiles, and clinical variables for early detection and risk prediction of hepatocellular carcinoma (HCC).
-+      Building explainable AI (XAI) frameworks that link imaging features and molecular markers to clinically meaningful outcomes in precision oncology within the AI-HCC ZonMw project.
++      Building explainable AI (XAI) frameworks that link imaging features and molecular markers to clinically meaningful outcomes in precision oncology within the AI-HCC ZonMw project, in the CoDE group (Cognition, Data and Education).
 +  - key: postdoc-uhasselt
 +    title: "Postdoctoral Researcher: Federated Learning in Healthcare & Real-World Evidence"
 +    location: UHasselt
 +    duration: January 2024 - January 2026 (Research Affiliate from 2026)
 +    about: |
-+      Scientific Coordinator of the Flanders AI Research Program Use Case Real World Evidence, leading multi-institutional research on privacy-preserving healthcare analytics. As Technical Machine Learning Lead of the Biomedical Data Sciences Group, developed federated learning frameworks enabling collaborative clinical research across Belgian healthcare institutions without sharing sensitive patient data.
++      Scientific Coordinator of the Flanders AI Research Program Use Case Real World Evidence, leading multi-institutional research on privacy-preserving healthcare analytics. As Technical Machine Learning Lead of the Biomedical Data Sciences Group (Prof. Liesbet Peeters), developed federated learning frameworks enabling collaborative clinical research across Belgian healthcare institutions without sharing sensitive patient data.
 +
 +      Research encompasses federated tensor regression for longitudinal health data, distributed learning architectures for heterogeneous clinical datasets, and translation of federated AI methods into practical healthcare applications.
 +  - key: postdoc-kuleuven
@@ -264,6 +264,7 @@ diff -ruN a/.oculus/data/academic/career.yml b/.oculus/data/academic/career.yml
 +    about: |
 +      Cognitive and Molecular Neuroscience
 +      PhD Thesis: Finger Movement Decoding: From Source-Localisation to Tensor Regression Modelling
++      Supervisor: Prof. Marc Van Hulle
 +  - key: internship-web-performance
 +    title: "Web Performance Research Internship"
 +    location: UHasselt
@@ -350,7 +351,7 @@ diff -ruN a/.oculus/data/academic/career.yml b/.oculus/data/academic/career.yml
 +    date: 2018-03-24 15:59:00-0400
 +    location: Brussels, Belgium
 +    content: "A Capture The Flag (CTF) challenge-based game covering a wide range of security issues. \n"
-+  - key: icfp-src
++  - key: icfp-src-2017
 +    award: 3rd place
 +    event: ICFP 2017 Student Research Competition
 +    date: 2017-09-01 15:59:00-0400
@@ -539,7 +540,7 @@ diff -ruN a/.oculus/data/academic/career.yml b/.oculus/data/academic/career.yml
 +          event: Statistical & epidemiological analysis
 +          date: "2025"
 +        - award: "3rd place - ACM SIGPLAN Student Research Competition (ICFP)"
-+          records: [icfp-src]
++          records: [icfp-src-2017]
 +          event: Programming languages & compilers
 +          date: "2017"
 +        - award: "IELTS Academic - 8.0 / 9.0"
@@ -935,7 +936,7 @@ diff -ruN a/.oculus/data/academic/career.yml b/.oculus/data/academic/career.yml
 +          location: Brussels
 +          date: "2016"
 +        - award: "3rd place - ACM SIGPLAN Student Research Competition (ICFP)"
-+          records: [icfp-src]
++          records: [icfp-src-2017]
 +          event: Programming languages & compilers
 +          date: "2017"
 +        - award: "3rd place - ACM CHI Student Design Competition"
@@ -1002,7 +1003,7 @@ diff -ruN a/.oculus/data/academic/career.yml b/.oculus/data/academic/career.yml
 +        the chance to talk about how I could contribute to Larian's engine team.
 diff -ruN a/.oculus/data/academic/education.yml b/.oculus/data/academic/education.yml
 --- a/.oculus/data/academic/education.yml	2026-10-30 01:43:50
-+++ b/.oculus/data/academic/education.yml	2026-10-30 02:41:23
++++ b/.oculus/data/academic/education.yml	2026-10-30 03:41:29
 @@ -1,4 +1,4 @@
 -# Education: teaching, supervision, academic service. Schema: the `schema:` block below (editable by hand). Source of record: side-projects/theaxec.github.io/_data/data.yml (`academic:` + `students:`). Keep in sync with the CV. An entry with a `deadline:` (ISO) surfaces in the Focus deadline radar (90-day look-ahead). To clear one, set its `status:` to a done/not-pursuing state (completed | done | skipped | declined | passed | cancelled | withdrawn) and rebuild; the entry stays here as a record but stops nagging (no in-browser dismiss).
 +# Education: teaching, supervision, academic service. Schema: the `schema:` block below (editable by hand). The source of record for the website's CV: an entry with `cv_section` is a row of that section of the website's _data/data.yml, and a supervision entry's `students` are its `students:` rows, written by the Career view's Write the website. An entry with a `deadline:` (ISO) surfaces in the Focus deadline radar (90-day look-ahead). To clear one, set its `status:` to a done/not-pursuing state (completed | done | skipped | declined | passed | cancelled | withdrawn) and rebuild; the entry stays here as a record but stops nagging (no in-browser dismiss).
@@ -1031,8 +1032,12 @@ diff -ruN a/.oculus/data/academic/education.yml b/.oculus/data/academic/educatio
  
  entries:
    - key: student-supervision-2026-2027
-@@ -40,14 +55,35 @@
-   - key: bioinformatics
+@@ -37,17 +52,38 @@
+       - { do: Submit proposals, deadline: 2026-10-30, done: true }
+ 
+   # -- Teaching (courses) ------------------------------------------------------
+-  - key: bioinformatics
++  - key: bioinformatics-2025-2026
      title: "Bioinformatics (3740) - Coordinating lecturer"
      lead: [axel-faes]
 -    sub: "UHasselt | Sept 2025 - Sept 2026 (also 2024-2025)"
@@ -1306,8 +1311,28 @@ diff -ruN a/.oculus/data/academic/education.yml b/.oculus/data/academic/educatio
    # Calls to submit MSc/BSc thesis topics, by programme. `deadline:` is the submission month (approximate,
 diff -ruN a/.oculus/data/academic/events.yml b/.oculus/data/academic/events.yml
 --- a/.oculus/data/academic/events.yml	2026-10-30 01:43:50
-+++ b/.oculus/data/academic/events.yml	2026-10-30 01:47:07
-@@ -18,6 +18,14 @@
++++ b/.oculus/data/academic/events.yml	2026-10-30 03:42:47
+@@ -1,4 +1,4 @@
+-# Talks & Events: one calendar of conference appearances, symposia, visits, and pitches. `role: present` = a talk/poster I give (feeds "Disseminated in" on the linked project cards; slide decks live in network/<event>/); `role: co-present` = a co-author gives it and I do not; `role: attend` = I attend but do not present. Forward-looking dated entries surface on the Focus "This week" ticker. Mark past ones status: completed. Schema: the `schema:` block below (every entry has a page with an editor built from the schema, Add asks the key and opens that page, and Edit in File opens the file at the entry).
++# Talks & Events: one calendar of conference appearances, symposia, visits, and pitches. `role: present` = a talk/poster I give (feeds "Disseminated in" on the linked project cards; slide decks live in network/<event>/); `role: co-present` = a co-author gives it and I do not; `role: attend` = I attend but do not present; `role: media` = an article or a video about my work. Forward-looking dated entries surface on the Focus "This week" ticker. Mark past ones status: completed. Schema: the `schema:` block below (every entry has a page with an editor built from the schema, Add asks the key and opens that page, and Edit in File opens the file at the entry).
+ # Each entry has a `key`, its short name, unique in this file; a write and Edit in File address the entry by it.
+ title: Talks & Events
+ # Schema: field -> type / options / required / help. Drives the fields a new entry is built with, the in-place controls, the editor's completion and marks, the type check of a write and selftest.
+@@ -6,18 +6,26 @@
+   - { field: key, type: text, primary_key: true, required: true, help: "The event's short name, unique in this file; a write and Edit in File address the entry by it." }
+   - { field: title,    type: text,     display: 1, required: true, help: "The name of the event." }
+   - { field: sub,      type: text,     label: "Subtitle", help: "A second line under the title, such as the place." }
+-  - { field: role,     type: select,   options: [present, co-present, attend], required: true, help: "present = a talk/poster I give (feeds 'Disseminated in'); co-present = a co-author gives it and I do not; attend = attending only" }
++  - { field: role,     type: select,   options: [present, co-present, attend, media], required: true, help: "present = a talk/poster I give (feeds 'Disseminated in'); co-present = a co-author gives it and I do not; attend = attending only; media = an article or a video about my work" }
+   - { field: status,   type: select,   options: [upcoming, planned, completed, cancelled, not-attending], required: true, help: "Whether the event is upcoming, planned, completed, cancelled or not attended." }
+   - { field: date,     type: text, help: "When the event takes place, as text." }
+   - { field: deadline, type: date,     help: "ISO date; shows on the Focus radar while live" }
+   - { field: meta,     type: metalist, help: "Label and value rows shown on the card." }
+   - { field: tags,     type: tags, help: "Words the card is filtered by." }
+   - { field: note,     type: textarea, help: "Free notes on the event." }
+-  - { field: link,     type: text,     required: { when: { role: present } }, help: "slides / deck (network/<event>/), for a talk I give" }
++  - { field: link,     type: text,     required: { when: { role: present, status: [upcoming, planned] } }, help: "slides / deck (network/<event>/), asked of a talk I am still to give" }
+   - { field: related,  type: tags,     foreign_key: projects, help: "Project ids" }
    - { field: lead,          type: tags,     foreign_key: people, required: true, help: "Who leads it." }
    - { field: collaborators, type: tags,     foreign_key: people, help: "Who works on it with the lead." }
    - { field: supervisors,   type: tags,     foreign_key: people, help: "Who supervises it." }
@@ -1553,7 +1578,7 @@ diff -ruN a/.oculus/data/academic/events.yml b/.oculus/data/academic/events.yml
 +  - key: kuleuven-news-bronze-medal-2017
 +    title: Honours student Axel Faes wins bronze medal in ACM SIGPLAN
 +    lead: [axel-faes]
-+    role: present
++    role: media
 +    status: completed
 +    date: "2017"
 +    related: [icfp-src-abstract]
@@ -1566,7 +1591,7 @@ diff -ruN a/.oculus/data/academic/events.yml b/.oculus/data/academic/events.yml
 +  - key: dtai-news-bronze-medal-2017
 +    title: Student Axel Faes wins bronze medal in the ACM SIGPLAN Student Research Competition in ICFP conference
 +    lead: [axel-faes]
-+    role: present
++    role: media
 +    status: completed
 +    date: "2017"
 +    related: [icfp-src-abstract]
@@ -1579,7 +1604,7 @@ diff -ruN a/.oculus/data/academic/events.yml b/.oculus/data/academic/events.yml
 +  - key: chi-2016-video
 +    title: Purpose-Centric Appropriation of Everyday Objects as Game Controllers
 +    lead: [axel-faes]
-+    role: present
++    role: media
 +    status: completed
 +    date: "2016"
 +    related: [chi-purpose-centric]
@@ -1725,8 +1750,13 @@ diff -ruN a/.oculus/data/academic/funding.yml b/.oculus/data/academic/funding.ym
 +    about: "Role: Consortium partner (UHasselt), focusing on health data re-use and federated analyses  \nCollaborations: KU Leuven (Yves Moreau), University of Antwerp (Geert Vandeweyer), VIB (Frederik Coppens)  \nContext: ELIXIR Belgium is part of ELIXIR Europe, an ESFRI initiative funded by the European Commission and national agencies\n"
 diff -ruN a/.oculus/data/people/people.yml b/.oculus/data/people/people.yml
 --- a/.oculus/data/people/people.yml	2026-10-30 01:43:50
-+++ b/.oculus/data/people/people.yml	2026-10-30 01:45:03
-@@ -11,7 +11,13 @@
++++ b/.oculus/data/people/people.yml	2026-10-30 03:41:18
+@@ -7,11 +7,18 @@
+ schema:
+   - { field: key,          type: text,     primary_key: true, required: true, label: "Person key", help: "The person's key, which the lead, supervisors, collaborators and waiting-on of a project or an entry name." }
+   - { field: name,         type: text,     display: 1, required: true, help: "The person's full name." }
++  - { field: family,       type: text,     help: "The family name, the end of name." }
+   - { field: affiliations, type: tags,     foreign_key: organisations, help: "The organisations the person belongs to, as keys of organisations.yml, the primary first." }
    - { field: role,         type: text,     help: "What this person is to the hub." }
    - { field: orcid,        type: text, help: "The person's ORCID identifier." }
    - { field: email,        type: text, help: "The person's email address." }
@@ -1741,7 +1771,7 @@ diff -ruN a/.oculus/data/people/people.yml b/.oculus/data/people/people.yml
    - { field: work,         type: text, help: "What the work with the person is about." }
    - { field: tags,         type: tags, help: "Words that describe the person and the work with them." }
    - { field: note,         type: textarea, help: "Free notes on the person and the work with them." }
-@@ -22,6 +28,7 @@
+@@ -22,6 +29,7 @@
      name: "Maryam Amir Haeri"
      affiliations: ["university-of-twente"]
      role: "postdoc co-supervisor (ML / XAI methodology)"
@@ -1749,7 +1779,7 @@ diff -ruN a/.oculus/data/people/people.yml b/.oculus/data/people/people.yml
      work: "Twente co-supervisor - ML / explainable-AI methodology"
      tags: [methodology, ml, xai]
      note: "Twente co-supervisor on the machine-learning / explainable-AI methodology side; co-author across the Twente-based lines (HCC imaging, tensor, federated)."
-@@ -54,14 +61,16 @@
+@@ -54,14 +62,16 @@
      name: "Yves Moreau"
      affiliations: ["ku-leuven"]
      role: "co-author | FWO Senior host candidate"
@@ -1767,7 +1797,7 @@ diff -ruN a/.oculus/data/people/people.yml b/.oculus/data/people/people.yml
      work: "MS data / federated health; editorial"
      tags: [ms, federated, editorial]
      note: "Co-author (federated MS data, the big-data/AI-in-MS editorial). Former advisor, so an FWO host fallback only (independence signal)."
-@@ -85,6 +94,7 @@
+@@ -85,6 +95,7 @@
      name: "Marc Van Hulle"
      affiliations: ["ku-leuven"]
      role: "PhD advisor | ongoing co-author"
@@ -1775,7 +1805,7 @@ diff -ruN a/.oculus/data/people/people.yml b/.oculus/data/people/people.yml
      work: "Neuro & psychophysiology (ECoG / BCI)"
      tags: [ecog, bci, tensor]
      note: "PhD advisor; ongoing co-author on the ECoG finger-decoding / ERP line. Former advisor, so host fallback only."
-@@ -113,7 +123,7 @@
+@@ -113,7 +124,7 @@
      role: "FWO Senior host candidate (clinician-scientist)"
  
    - key: "dongho"
@@ -1784,7 +1814,7 @@ diff -ruN a/.oculus/data/people/people.yml b/.oculus/data/people/people.yml
      role: "student"
      folder: "education/student-supervision/dongho-2024"
  
-@@ -125,17 +135,17 @@
+@@ -125,27 +136,35 @@
      folder: "education/student-supervision/kerga-2024"
  
    - key: "matteo"
@@ -1805,8 +1835,9 @@ diff -ruN a/.oculus/data/people/people.yml b/.oculus/data/people/people.yml
      role: "student"
      folder: "education/student-supervision/ward-2024"
  
-@@ -143,9 +153,16 @@
+   - key: "axel-faes"
      name: "Axel Faes"
++    family: "Faes"
      affiliations: ["university-of-twente"]
      role: "postdoc"
 +    email: "axel.faes[at]utwente.nl"
@@ -1823,7 +1854,7 @@ diff -ruN a/.oculus/data/people/people.yml b/.oculus/data/people/people.yml
  
    - key: "jasper-van-leengoed"
      name: "Jasper van Leengoed"
-@@ -176,3 +193,35 @@
+@@ -176,3 +195,35 @@
  
    - key: "jakob-nolte"
      name: "Jakob Nolte"
@@ -2292,8 +2323,8 @@ diff -ruN a/projects/coauthor/published/2016/chi-purpose-centric/project.yml b/p
 +  rank: 7
 diff -ruN a/projects/coauthor/published/2017/algebraic-effects-compilation/project.yml b/projects/coauthor/published/2017/algebraic-effects-compilation/project.yml
 --- a/projects/coauthor/published/2017/algebraic-effects-compilation/project.yml	2026-10-30 01:43:50
-+++ b/projects/coauthor/published/2017/algebraic-effects-compilation/project.yml	2026-10-30 02:00:24
-@@ -16,3 +16,15 @@
++++ b/projects/coauthor/published/2017/algebraic-effects-compilation/project.yml	2026-10-30 03:41:52
+@@ -16,3 +16,16 @@
  lead: [matija-pretnar]
  collaborators: [axel-faes]
  venue: kuleuven-cw-techreport
@@ -2305,6 +2336,7 @@ diff -ruN a/projects/coauthor/published/2017/algebraic-effects-compilation/proje
 +  book: "2017 - CW Reports, CW708, 32 pp. Leuven, Belgium: Department of Computer Science, KU Leuven."
 +  program: [student-research]
 +  url: "/publications/other/CW708.pdf"
++  rank: 1
 +  abstract: >-
 +    The popularity of algebraic effect handlers as a programming language feature for user-defined computational effects is steadily growing. Yet, even though efficient runtime representations have already been studied, most handler-based programs are still much slower than hand-written code.
 +    In this paper, we show that the performance gap can be drastically narrowed (in some cases even closed) by means of type-and-effect directed optimizing compilation. Our approach consists of two stages. Firstly, we combine elementary source-to-source transformations with judicious function specialization in order to aggressively reduce handler applications. Secondly, we show how to elaborate the source language into a handler-less target language in a way that incurs no overhead for pure computations.
