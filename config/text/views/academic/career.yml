@@ -7,8 +7,21 @@ text:
         title: Career
         toolbar: Career controls
         none: "The hub holds no career file. Set career_file in the hub's settings to the file, or add .oculus/data/academic/career.yml."
-        no_schema: 'The career file has no schema: list, so it has no form. Add a schema: to the file to edit it here.'
+        no_schema: 'The career file has no schema: list, so it has no editor. Add a schema: to the file to edit it.'
         none_glyph: circle_empty
+        awards: Awards
+        degrees: Degrees
+        goal: Goal
+        group_empty: The file lists none.
+        hidden: off the CV
+        milestone: Next milestone
+        milestone_day: '{0} ({1})'
+        order: Next
+        order_line: '{0}: {1}'
+        order_note: Note
+        positions: Positions
+        profiles: Profiles
+        references: References
         website: Write the website
         website_glyph: publish
         website_tip: "Write _data/data.yml, _data/publications.yml and _data/industry.yml in the website's folder from the hub's files. website.cv names no command, so nothing runs after them."

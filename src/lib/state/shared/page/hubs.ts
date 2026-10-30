@@ -18,6 +18,7 @@ export {
     addressOfId,
     bareId,
     holdersOf,
+    hubId,
     keyOf,
     REGISTRY_VIEWS,
     resolvedId,

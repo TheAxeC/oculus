@@ -1,7 +1,7 @@
 // Layer 1, data. The career file out of the map sources/documents/career.ts parsed: the strategy
 // (the title, the goal, the next milestone and its day, the order of work and its note) typed, and
-// every section as the file holds it in `sections`, which the Career view's editor edits and the
-// website's CV is written from (server/content/audit/website/cv.ts). Pure, like normalise: every
+// every section as the file holds it in `sections`, which the editor view edits and the website's
+// CV is written from (server/content/audit/website/cv.ts). Pure, like normalise: every
 // section is optional, the order of work tolerates the plain-string form the file may write, and a
 // row without its words is left out.
 

@@ -39,7 +39,7 @@
     import Reveal from '$lib/views/shared/card/Reveal.svelte';
     import ThemeFacets from '$lib/views/shared/forms/ThemeFacets.svelte';
     import Ribbon from '$lib/views/sources/venues/Ribbon.svelte';
-    import VenueCard from '$lib/views/sources/venues/VenueCard.svelte';
+    import VenueCard from '$lib/views/shared/card/record/registry/VenueCard.svelte';
     import {
         parseVenuesState,
         realProjects,

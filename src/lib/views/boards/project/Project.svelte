@@ -34,9 +34,9 @@
     // it. Everything else the card shows, the pin, the stale badge, the file finder and the
     // subtasks among it, is the board's card unchanged.
     //
-    // A board opens this view as the preview tab of the pane beside it, which the next project
-    // opened from the board takes over. Typing anywhere in the tab (a subtask, a follow-up or any
-    // form of the card) keeps the tab, so a half-typed form is never replaced.
+    // The frame is views/shared/card/record/RecordPage.svelte, the frame of every record's page: a
+    // board opens this view as a preview tab, and typing anywhere in it (a subtask, a follow-up or
+    // any form of the card) keeps the tab.
     //
     // A document is fetched, not selected: the wire model keeps documents out of the snapshot, so
     // state/system/docs.svelte.ts asks api/docs for the chosen one and the shared Markdown partial
@@ -56,12 +56,12 @@
     import Tag from '$lib/ui/controls/Tag.svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
     import GroupHead from '$lib/ui/controls/heads/GroupHead.svelte';
-    import Pane from '$lib/ui/frame/Pane.svelte';
     import Surface from '$lib/ui/frame/Surface.svelte';
     import Segment from '$lib/ui/controls/segment/Segment.svelte';
     import type { SegmentItem } from '$lib/ui/controls/segment/segment-items';
     import Latex from './Latex.svelte';
     import ProjectCard from '../../shared/card/project/ProjectCard.svelte';
+    import RecordPage from '../../shared/card/record/RecordPage.svelte';
     import Markdown from '../../shared/prose/Markdown.svelte';
     import SessionRow from '../../shared/sessions/SessionRow.svelte';
     import { absentDocs, markdownDocNames } from '$lib/state/boards/board';
@@ -79,7 +79,6 @@
 
     const {
         docs: { document: docFor },
-        layout: { keepPreview },
         selectors: { boardItemOf, sessionsForProject, staleLag },
         ui: { instanceState, setInstanceState }
     } = useState();
@@ -126,25 +125,15 @@
     function title(): string {
         return item === null ? t('views.project') : item.project.title;
     }
-
-    /** Keep the tab when the reader types in it, while it is a preview tab. */
-    function typed(): void {
-        if (instance.preview === true) keepPreview(instance.id);
-    }
 </script>
 
-<Pane title={title()}>
-    <div class="project" data-instance={instance.id} data-project={id} oninput={typed}>
+<RecordPage title={title()} {instance} said={item === null ? '' : said} data-project={id}>
+    {#snippet card()}
         {#if id === ''}
             <Empty message={t('project.none')} glyph={t('project.none_glyph')} />
         {:else if item === null}
             <Empty message={t('project.unknown', id)} glyph={t('project.none_glyph')} />
         {:else}
-            {#if said !== ''}
-                <Surface>
-                    <p class="said">{said}</p>
-                </Surface>
-            {/if}
             <ProjectCard
                 {item}
                 {now}
@@ -157,86 +146,68 @@
                 staleLag={lag}
                 onsaid={(answer: string) => (said = answer)}
             />
-
-            <Latex {id} />
-
-            <GroupHead
-                data-block="documents"
-                label={t('project.documents')}
-                open={fold.open('documents')}
-                ontoggle={() => fold.toggle('documents')}
-            >
-                <Surface>
-                    {#if absent.length > 0}
-                        <div class="absent" data-absent-docs>
-                            {#each absent as doc (doc.name)}
-                                <Tag label={doc.label} />
-                            {/each}
-                        </div>
-                    {/if}
-                    {#if shown === null}
-                        <Empty
-                            message={t('project.no_documents')}
-                            glyph={t('project.none_glyph')}
-                        />
-                    {:else}
-                        <Segment
-                            label={t('project.documents')}
-                            items={documents}
-                            value={chosen}
-                            onchange={(name: string) => choose(name)}
-                        />
-                        <Markdown
-                            doc={shown}
-                            loading={t('project.doc_loading')}
-                            failed={t('project.doc_failed', shown.error)}
-                        />
-                    {/if}
-                </Surface>
-            </GroupHead>
-
-            <GroupHead
-                data-block="sessions"
-                label={t('project.sessions')}
-                open={fold.open('sessions')}
-                ontoggle={() => fold.toggle('sessions')}
-            >
-                <Surface>
-                    {#if rows.length === 0}
-                        <Empty message={t('project.no_sessions')} glyph={t('project.none_glyph')} />
-                    {:else}
-                        {#each rows as entry (entry.id)}
-                            <SessionRow {entry} {now} />
-                        {/each}
-                    {/if}
-                </Surface>
-            </GroupHead>
         {/if}
-    </div>
-</Pane>
+    {/snippet}
+
+    {#if item !== null}
+        <Latex {id} />
+
+        <GroupHead
+            data-block="documents"
+            label={t('project.documents')}
+            open={fold.open('documents')}
+            ontoggle={() => fold.toggle('documents')}
+        >
+            <Surface>
+                {#if absent.length > 0}
+                    <div class="absent" data-absent-docs>
+                        {#each absent as doc (doc.name)}
+                            <Tag label={doc.label} />
+                        {/each}
+                    </div>
+                {/if}
+                {#if shown === null}
+                    <Empty message={t('project.no_documents')} glyph={t('project.none_glyph')} />
+                {:else}
+                    <Segment
+                        label={t('project.documents')}
+                        items={documents}
+                        value={chosen}
+                        onchange={(name: string) => choose(name)}
+                    />
+                    <Markdown
+                        doc={shown}
+                        loading={t('project.doc_loading')}
+                        failed={t('project.doc_failed', shown.error)}
+                    />
+                {/if}
+            </Surface>
+        </GroupHead>
+
+        <GroupHead
+            data-block="sessions"
+            label={t('project.sessions')}
+            open={fold.open('sessions')}
+            ontoggle={() => fold.toggle('sessions')}
+        >
+            <Surface>
+                {#if rows.length === 0}
+                    <Empty message={t('project.no_sessions')} glyph={t('project.none_glyph')} />
+                {:else}
+                    {#each rows as entry (entry.id)}
+                        <SessionRow {entry} {now} />
+                    {/each}
+                {/if}
+            </Surface>
+        </GroupHead>
+    {/if}
+</RecordPage>
 
 <style>
-    .project {
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-    }
-
     .absent {
         display: flex;
         flex-wrap: wrap;
         gap: 4px;
         margin-bottom: 6px;
-    }
-
-    .said {
-        margin: 0;
-        font-size: var(--fs-md);
-        color: var(--muted-txt, var(--muted));
-    }
-
-    /* The terminal shape: the whole tab follows the card's folder name, as the board does. */
-    :global(body.rice:where(:not(.rice-sans))) .project {
-        font-family: var(--font-mono);
     }
 </style>

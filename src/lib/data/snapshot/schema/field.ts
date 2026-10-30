@@ -2,22 +2,23 @@
 // and the apps API carry: the name and the type, and beside them the keys a field may hold (its
 // label, options, the collection its values name (`foreign_key:`), whether it is its file's primary
 // key (`primary_key: true`) and its rank among the fields an entry is shown by (`display:`), the
-// condition under which it is allowed, the condition under which it is required, whether it takes
-// keys it does not declare, and the fields of a list of records, or of a map from a name to a
-// record). The same reader reads the fields nested in a `records` field, so a schema is one
-// vocabulary at every depth.
+// group of the editor it is drawn in (`section:`), the condition under which it is allowed, the
+// condition under which it is required, whether it takes keys it does not declare, and the fields
+// of a list of records, or of a map from a name to a record). The same reader reads the fields
+// nested in a `records` field, so a schema is one vocabulary at every depth.
 //
 // A key of the wrong kind reads as absent: a `primary_key:` that is not `true` and a `display:`
-// that is no whole number from 1 among them, each a finding of the schema run. A field that names
-// no `field` and `type`, or a nested `fields:` that is no list of such fields, costs the whole
-// schema, because half a schema would draw half a record in a field order the file did not write.
-// An option is a word or a `{ key, label }` row; a row that does not read is left out of the field,
-// and a row holding a key besides `key` and `label` is read with its key and label; each is a
-// finding of the schema run with its line.
+// that is no whole number from 1 among them, each a finding of the schema run. A `section:` that
+// is no text or is the empty text reads as no section. A field that names no `field` and `type`, or
+// a nested `fields:` that is no list of such fields, costs the whole schema, because half a schema
+// would draw half a record in a field order the file did not write. An option is a word or a
+// `{ key, label }` row; a row that does not read is left out of the field, and a row holding a key
+// besides `key` and `label` is read with its key and label; each is a finding of the schema run
+// with its line.
 
 import { z } from 'zod';
 import type { SchemaField, SchemaOption } from '../../model/index.ts';
-import { optionalTextShape } from '../../shapes/shapes.ts';
+import { filledTextShape, optionalTextShape } from '../../shapes/shapes.ts';
 import { compact } from '../compact.ts';
 
 /** One field of a `schema:` as the check reads it: a map naming a field and a type. */
@@ -147,6 +148,7 @@ function fieldOf(item: unknown): SchemaField | null {
         display: displayShape.parse(held.display),
         required: requiredShape.parse(held.required),
         help: optionalTextShape.parse(held.help),
+        section: filledTextShape.parse(held.section),
         when: whenShape.parse(held.when),
         open: flagShape.parse(held.open),
         map: flagShape.parse(held.map),

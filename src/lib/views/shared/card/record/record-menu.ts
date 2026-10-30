@@ -7,12 +7,13 @@
 // The menu holds a run headed Open (Page, Folder, Show in Files, Workbench, Presentation, then the
 // kind's own openers), a run headed Add (Follow-up, Subtask, Deadline), a run headed Status (one
 // row whose submenu lists the statuses the card may write), then a run with no heading (Ask, Edit
-// Manifest or Edit in File, Pin to Top or Unpin, Copy Context, Deposit, Clone or the Cloned-in
-// entry, the kind's own actions, then Archive and Delete last). An action is placed by its id, the
-// part before a colon for an id that names a path (`files:<path>`, `workbench:<path>`), or by its
-// `run` when its id is none of those. A row the card does not offer is left out of its run, and a
-// run left with no row is left out. The strip holds the actions whose ids the kind names, in that
-// order, at most three, a row of a submenu among them.
+// Manifest or Edit, which opens the record's editor beside the page, Edit in File, Pin to Top or
+// Unpin, Copy Context, Deposit, Clone or the Cloned-in entry, the kind's own actions, then Archive
+// and Delete last). An action is placed by its id, the part before a colon for an id that names a
+// path (`files:<path>`, `workbench:<path>`), or by its `run` when its id is none of those. A row
+// the card does not offer is left out of its run, and a run left with no row is left out. The
+// strip holds the actions whose ids the kind names, in that order, at most three, a row of a
+// submenu among them.
 
 import type { MenuGroup, MenuItem } from '$lib/ui/menu/menu-items';
 import type { Followup, Project, Subtask } from '$lib/state/boards/collection';
@@ -81,7 +82,7 @@ const RUNS: { id: string; heading: () => string; actions: string[]; own?: Record
     {
         id: 'rest',
         heading: () => '',
-        actions: ['ask', 'edit', 'pin', 'copy', 'deposit', 'clone', 'cloned'],
+        actions: ['ask', 'editor', 'edit', 'pin', 'copy', 'deposit', 'clone', 'cloned'],
         own: 'rest'
     }
 ];
@@ -163,6 +164,21 @@ export function pageAction(onpage: () => void): RecordAction {
         title: t('project.card.open_record_page_tip'),
         glyph: t('project.card.page_glyph'),
         onclick: onpage
+    };
+}
+
+/**
+ * Edit, which opens the record's editor beside the page, its own id since `edit` is Edit in File.
+ * `blocked` holds the words saying why the record has no editor to open, which disable the row.
+ */
+export function editorAction(onedit: () => void, blocked = ''): RecordAction {
+    return {
+        id: 'editor',
+        label: t('project.card.edit_record'),
+        title: blocked === '' ? undefined : blocked,
+        glyph: t('project.card.edit_glyph'),
+        disabled: blocked !== '',
+        onclick: onedit
     };
 }
 

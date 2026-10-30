@@ -2,8 +2,8 @@
     // Layer 3, shared view partial. A run of form fields: each one a row with its label, its
     // control (FieldControl.svelte), its help, and under them the notes that concern it: the view's
     // own remark, the reason the server refused the field, and a reminder when a required field is
-    // empty. The project editor draws one run per section of its schema; the editor of an entry, a
-    // person and the career file draws one run for the whole schema.
+    // empty. The editor view (views/boards/editor/Editor.svelte) draws one run per section of the
+    // record's schema.
     //
     // The form knows nothing of what it edits: the values, the edits over them, which fields are
     // written and which are changed are functions the caller hands in. So is `addPerson`, the write

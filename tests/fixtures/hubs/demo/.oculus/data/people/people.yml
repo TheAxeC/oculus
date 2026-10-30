@@ -2,23 +2,24 @@
 # `affiliations:` are keys of .oculus/data/people/organisations.yml, never free strings, the primary first.
 
 schema:
-  - { field: key,          type: text,     primary_key: true, required: true, label: "Person key" }
-  - { field: name,         type: text,     display: 1, required: true }
-  - { field: affiliations, type: tags,     help: "organisations.yml keys, the primary first" }
-  - { field: role,         type: text,     help: "what this person is to the hub" }
-  - { field: orcid,        type: text }
-  - { field: email,        type: text }
+  - { field: key,          type: text,     primary_key: true, required: true, label: "Person key", section: Core }
+  - { field: name,         type: text,     display: 1, required: true, section: Core }
+  - { field: affiliations, type: tags,     section: Connections, help: "organisations.yml keys, the primary first" }
+  - { field: role,         type: text,     section: Core, help: "what this person is to the hub" }
+  - { field: orcid,        type: text, section: Core }
+  - { field: email,        type: text, section: Core }
   - field: links
     type: records
+    section: Core
     help: "The person's addresses on the web, one row each."
     fields:
       - { field: name,   type: text, required: true, help: "The name of the address, such as github or homepage." }
       - { field: url,    type: text, required: true, help: "The full address." }
       - { field: handle, type: text, help: "The account name a CV prints in place of the address, where it prints one." }
-  - { field: work,         type: text,     help: "What the work with the person is about." }
-  - { field: tags,         type: tags,     help: "Words that describe the person and the work with them." }
-  - { field: note,         type: textarea, help: "Free notes on the person and the work with them." }
-  - { field: folder,       type: text,     help: "hub-relative folder of a student's supervision files" }
+  - { field: work,         type: text,     section: Content, help: "What the work with the person is about." }
+  - { field: tags,         type: tags,     section: Core, help: "Words that describe the person and the work with them." }
+  - { field: note,         type: textarea, section: Content, help: "Free notes on the person and the work with them." }
+  - { field: folder,       type: text,     section: Connections, help: "hub-relative folder of a student's supervision files" }
 
 entries:
   - key: "rivera-lab"

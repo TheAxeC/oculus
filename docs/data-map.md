@@ -54,7 +54,7 @@ Each data file is named by its entry in `collections:` of `.oculus/config.yml`, 
 
 Two files are named by keys of their own rather than by `collections:`: the career file, one map of the strategy and the career record the website's CV is written from, drawn by the Career view, at `career_file` (`.oculus/data/academic/career.yml` by default), and a project's `project.yml`, whose primary key is its folder name and which the Projects, Coauthor, Archive, Personal and Project views draw.
 
-A duplicate or empty primary key is a finding, and so is a file whose schema flags no primary key or two or flags a field whose value is a list or a map, whose schema does not read, whose `collections:` entry names one beside its schema's flag, or that has neither a schema nor a named key; such a file is drawn, and every edit, Add and remove of its entries is refused with a sentence naming the cause. A venue is shown by its `short`, else its `name`, and linked to by its `id`, its primary key. A venue's `issn`, a list, is what Read from the browser asks the hub's journal browser by, and `fee` and `open_access` are the fields it writes. The entries whose `registry:` is `leads` and `radar` name the two feed files. The domains registry gives each domain the colour of its project cards (`color`, written `#rrggbb`) and their label (`title`), and `expects_datasets: true` makes the Audit report an active project of the domain that names no dataset. Focus also draws the dates of every file whose entry sets `ticker:`, under the deadline group its `ticker:` names, the follow-ups and subtasks of every file of `collections:`, and the open leads, and every entry has a page with an editor built from its schema.
+A duplicate or empty primary key is a finding, and so is a file whose schema flags no primary key or two or flags a field whose value is a list or a map, whose schema does not read, whose `collections:` entry names one beside its schema's flag, or that has neither a schema nor a named key; such a file is drawn, and every edit, Add and remove of its entries is refused with a sentence naming the cause. A venue is shown by its `short`, else its `name`, and linked to by its `id`, its primary key. A venue's `issn`, a list, is what Read from the browser asks the hub's journal browser by, and `fee` and `open_access` are the fields it writes. The entries whose `registry:` is `leads` and `radar` name the two feed files. The domains registry gives each domain the colour of its project cards (`color`, written `#rrggbb`) and their label (`title`), and `expects_datasets: true` makes the Audit report an active project of the domain that names no dataset. Focus also draws the dates of every file whose entry sets `ticker:`, under the deadline group its `ticker:` names, the follow-ups and subtasks of every file of `collections:`, and the open leads, and every entry has a page and an editor built from its schema.
 
 ## Views that draw these files
 
@@ -63,15 +63,17 @@ A duplicate or empty primary key is a finding, and so is a file whose schema fla
 | Focus | Focus | projects by `stage` and the chips `parked` and `blocked`, the dated lines, follow-ups and subtasks of every file, the live leads |
 | Live HPC | the float at the right edge | the clusters `slurm.resource` names, one section each |
 | Projects, Supervision, Coauthor, Archive, Personal, Software | Projects | the projects whose `tier`, `stage` and your role (the field of `roles` that names you: `lead`, `supervisors`, `collaborators`) the board's keys in `boards` take |
-| Project, Editor | opened from a card | one project, and its form |
+| Project, Editor | opened from a card | one project, and the form of any record |
 | Position Leads | Incoming | the `leads` feed |
 | Literature search, Lit Watch, Literature | Literature | the search over the sources of `literature.sources`, the `radar` feed, and the `literature` file |
 | LinkedIn | Incoming | the folder `linkedin_dir` names |
 | Funding, Talks & Events, Education & Service, Applications, Tasks, Memories, Career | Academic Life | their files, the photo wall's pictures, and the career file |
 | Pillars, Domains, Map | Pillars | the pillars and domains, and the projects that name them |
 | Venues, Journal Browser, Data, Statements, People, Organisations, Resources | Registries | their files, and the journal browser of `venues.browser` |
-| Person | opened from a person's name | one person, with their organisations and projects |
-| Entry | opened from a card's title | one entry, its editor and what refers to it |
+| Person | opened from a person's name | one person, with their projects |
+| Entry | opened from a card's title | one entry and what refers to it |
+| Listing | opened from the title of the Archival, Orphans or No funding card | one set of projects |
+| Post | opened from the title of a LinkedIn card | one post, with its body |
 | Present | Present | a deck folder |
 | Audit | System | the rules over projects and files, the conventions the hub's `audit:` sets (the files and headings a project must hold, the folders a stage is kept under), and the website's three generated files against what the hub's files give |
 | Findings | System | every finding, with its file and line |
@@ -87,7 +89,7 @@ collections:              # the data files and the two feeds, each a key, a file
 chat_context:             # the collections whose files a chat's index holds for the hub
 new_project_dir:          # the folder a new project is made in, per tier
 linkedin_dir:             # a website's LinkedIn folder
-career_file:              # the career file the Career view edits and the website's CV is written from
+career_file:              # the career file the Career view draws and the website's CV is written from
 memories_dir:             # the photo wall's pictures
 wallpaper_dir:            # the backdrop's pictures
 bookmarks:                # where the reader's own bookmarks are kept
@@ -262,6 +264,7 @@ A schema is a list of fields. Each is a map with `field` and `type`, and may car
 | `required` | `true`, or `{ when: ... }` |
 | `when` | the field is allowed only while these fields hold these values |
 | `help` | the hover text in the editor |
+| `section` | the group of the editor the field is drawn in, on a top-level row: a name of `manifest_schema.sections` in the order of that list, any other name after them, and a row with no section under Other, last |
 | `open` | `true` allows undeclared keys in a `records` or `raw` field |
 | `fields` | the fields of each record of a `records` field |
 | `map` | `true` on a `records` field that is a map from a name to a record |

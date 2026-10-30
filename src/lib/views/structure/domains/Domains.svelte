@@ -16,7 +16,7 @@
     // with Add and Edit in File, which open the registry file.
 
     import Pane from '$lib/ui/frame/Pane.svelte';
-    import DomainCard from '$lib/views/structure/domains/DomainCard.svelte';
+    import DomainCard from '$lib/views/shared/card/record/registry/DomainCard.svelte';
     import RegistryHead from '$lib/views/shared/forms/registry/RegistryHead.svelte';
     import RegistryTools from '$lib/views/shared/forms/registry/RegistryTools.svelte';
     import { registryFile } from '$lib/views/shared/forms/registry/registry-file.svelte';

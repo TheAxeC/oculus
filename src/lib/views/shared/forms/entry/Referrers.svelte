@@ -3,7 +3,7 @@
     // projects whose manifest names a pillar, a domain, a venue, a dataset, a funding scheme or a
     // resource, the people and funding schemes that name an organisation, the projects that name a
     // person, and the setting that names a resource. The page of such a record draws it below the
-    // editor, and the question that asks before the record is deleted names the same things
+    // card, and the question that asks before the record is deleted names the same things
     // (state/forms/referrers.ts is the one answer to what they are). The list is the group every
     // grouping of a view is drawn as (ui/controls/heads/GroupHead.svelte), folded under the key
     // `referrers` in the tab's state (views/shared/card/pane-fold.ts), its body read off a

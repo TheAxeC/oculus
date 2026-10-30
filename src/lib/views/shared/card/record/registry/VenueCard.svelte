@@ -1,12 +1,13 @@
 <script lang="ts">
-    // Layer 3, Venues view partial. One catalogue venue as the record card
+    // Layer 3, shared view partial, drawn by the Venues view and, with `page`, by the venue's page
+    // (views/boards/entry/Entry.svelte). One catalogue venue as the record card
     // (views/shared/card/record/RecordCard.svelte): its metadata, its deadline as a tag with the
     // deadline glyph and the countdown and tone of a project's due, and the strip of its project
     // users at the foot. The venue's name and the strip's Page open its page; the menu holds Page
     // and Show in Files in its Open run, the Add run, whose Deadline changes the venue's deadline,
-    // Edit in File and Delete (views/shared/forms/registry/registry-card.svelte.ts). The project
-    // list is already restricted to real users, and concentration arrives as a flag, drawn as the
-    // card's ring.
+    // Edit, Edit in File and Delete (views/shared/forms/registry/registry-card.svelte.ts). On the
+    // page the name is words and the strip holds Edit. The project list is already restricted to
+    // real users, and concentration arrives as a flag, drawn as the card's ring.
     //
     // A `link` is told a path of the hub from an address by the rule the collection cards use
     // (hubPathsOf of state/boards/collection/): a path is offered only as the action that selects
@@ -75,6 +76,8 @@
         file: ViewSource | null;
         fault: IdentityFault | undefined;
         onsaid: (said: string) => void;
+        /** Drawn on the venue's own page: the name as words, no Page. */
+        page?: boolean;
     };
 
     let {
@@ -87,7 +90,8 @@
         schema,
         file,
         fault,
-        onsaid
+        onsaid,
+        page = false
     }: Props = $props();
 
     /** How this component's Markdown fields draw their formulas, once KaTeX is in. */
@@ -107,7 +111,8 @@
         fault,
         onsaid,
         collection,
-        title: venue.name
+        title: venue.name,
+        page
     }));
 
     /** Whether a Read from the browser press is under way. */
@@ -312,7 +317,7 @@
         ring={concentrated ? 'violet' : undefined}
         record={venue}
         {actions}
-        strip={['page']}
+        strip={card.strip}
         dated={card.dated}
         {onsaid}
         {meta}

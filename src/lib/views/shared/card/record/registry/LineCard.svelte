@@ -1,11 +1,12 @@
 <script lang="ts">
-    // Layer 3, Pillars partial. One registry line as the record card
+    // Layer 3, shared view partial, drawn by the Pillars view and, with `page`, by the line's page
+    // (views/boards/entry/Entry.svelte). One registry line as the record card
     // (views/shared/card/record/RecordCard.svelte): the tag counting its projects, its portfolio
     // metrics, its registry prose, and the strip of its projects at the foot. Its heading and the
-    // strip's Page open the line's page; the menu holds Page, the Add run, Edit in File and Delete
-    // (views/shared/forms/registry/registry-card.svelte.ts). The metrics row is one Tooltip that
-    // says what its counts count, in the tab order so the keyboard reaches the words as the pointer
-    // does.
+    // strip's Page open the line's page; the menu holds Page, the Add run, Edit, Edit in File and
+    // Delete (views/shared/forms/registry/registry-card.svelte.ts). On the page the heading is
+    // words and the strip holds Edit. The metrics row is one Tooltip that says what its counts
+    // count, in the tab order so the keyboard reaches the words as the pointer does.
 
     import Tag from '$lib/ui/controls/Tag.svelte';
     import Tooltip from '$lib/ui/menu/Tooltip.svelte';
@@ -50,7 +51,8 @@
         muted = false,
         file,
         fault,
-        onsaid
+        onsaid,
+        page = false
     }: Props = $props();
 
     /** How this component's Markdown fields draw their formulas, once KaTeX is in. */
@@ -76,7 +78,8 @@
         fault,
         onsaid,
         collection,
-        title: line.title
+        title: line.title,
+        page
     }));
 </script>
 
@@ -134,7 +137,7 @@
         {tone}
         record={line}
         actions={card.actions}
-        strip={['page']}
+        strip={card.strip}
         dated={card.dated}
         {onsaid}
         {meta}

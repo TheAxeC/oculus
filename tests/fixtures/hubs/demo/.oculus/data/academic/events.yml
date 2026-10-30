@@ -3,18 +3,18 @@
 # Each entry has a `key`, its short name, unique in this file; a write and Edit in File address the entry by it.
 title: Talks & Events
 schema:
-  - { field: key, type: text, primary_key: true, required: true, help: "The event's short name, unique in this file; a write and Edit in File address the entry by it." }
-  - { field: title,    type: text,     display: 1, required: true }
-  - { field: sub,      type: text,     label: "Subtitle" }
-  - { field: role,     type: select,   options: [present, attend], required: true, help: "present = a talk/poster I give; attend = attending only" }
-  - { field: status,   type: select,   options: [upcoming, planned, completed, cancelled, not-attending], required: true }
-  - { field: date,     type: text }
-  - { field: deadline, type: date,     help: "ISO date; shows on the Focus radar while live" }
-  - { field: meta,     type: metalist }
-  - { field: tags,     type: tags }
-  - { field: note,     type: textarea }
-  - { field: link,     type: text }
-  - { field: related,  type: tags,     help: "Project ids" }
+  - { field: key, type: text, primary_key: true, required: true, section: Core, help: "The event's short name, unique in this file; a write and Edit in File address the entry by it." }
+  - { field: title,    type: text,     display: 1, required: true, section: Core }
+  - { field: sub,      type: text,     label: "Subtitle", section: Core }
+  - { field: role,     type: select,   options: [present, attend], required: true, section: Core, help: "present = a talk/poster I give; attend = attending only" }
+  - { field: status,   type: select,   options: [upcoming, planned, completed, cancelled, not-attending], required: true, section: Core }
+  - { field: date,     type: text, section: Dates }
+  - { field: deadline, type: date,     section: Dates, help: "ISO date; shows on the Focus radar while live" }
+  - { field: meta,     type: metalist, section: Core }
+  - { field: tags,     type: tags, section: Core }
+  - { field: note,     type: textarea, section: Content }
+  - { field: link,     type: text, section: Core }
+  - { field: related,  type: tags,     section: Connections, help: "Project ids" }
 
 entries:
   - key: streaming-anomaly-detection-at-scale

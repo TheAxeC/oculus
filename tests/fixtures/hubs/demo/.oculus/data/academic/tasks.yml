@@ -3,13 +3,13 @@
 # Each entry has a `key`, its short name, unique in this file; a write and Edit in File address the entry by it.
 title: Tasks
 schema:
-  - { field: key, type: text, primary_key: true, required: true, help: "The task's short name, unique in this file; a write and Edit in File address the entry by it." }
-  - { field: title,    type: text,     display: 1, required: true }
-  - { field: status,   type: select,   options: [todo, doing, done, dropped], required: true }
-  - { field: deadline, type: date }
-  - { field: kind,     type: text,     help: "e.g. review / admin / service / teaching" }
-  - { field: note,     type: textarea }
-  - { field: tags,     type: tags }
+  - { field: key, type: text, primary_key: true, required: true, section: Core, help: "The task's short name, unique in this file; a write and Edit in File address the entry by it." }
+  - { field: title,    type: text,     display: 1, required: true, section: Core }
+  - { field: status,   type: select,   options: [todo, doing, done, dropped], required: true, section: Core }
+  - { field: deadline, type: date, section: Dates }
+  - { field: kind,     type: text,     section: Core, help: "e.g. review / admin / service / teaching" }
+  - { field: note,     type: textarea, section: Content }
+  - { field: tags,     type: tags, section: Core }
 
 entries:
   - key: review-2-papers-for-mlshift-workshop

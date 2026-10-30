@@ -23,6 +23,8 @@ text:
         nudge: 'Run LinkedIn from the Update tray to draft one; a ready idea:'
         ontrack: last post {0}d ago, on track
         overdue: '{0} days since last post (target: every {1}d)'
+        post_gone: The LinkedIn feed holds no post in the file {0}.
+        post_none: No post chosen. Open a post from the title of its card.
         postdue: Post-due.
         posted_hdr: Posted
         search: Search posts & ideas ...
@@ -32,3 +34,5 @@ text:
         linkedin: LinkedIn
         linkedin_badge_mark: post overdue
         linkedin_glyph: linkedin
+        post: Post
+        post_glyph: linkedin

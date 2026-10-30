@@ -543,11 +543,6 @@ export function withPicked(field: Pick<FormField, 'type'>, value: unknown, key: 
 /** The helpers of a value as the widget's own kind, which the controls read through this module. */
 export { asList, asText };
 
-/** The fields of one section of the manifest form, in file order. */
-export function fieldsOfSection(fields: FormField[], section: string): FormField[] {
-    return fields.filter((one) => one.section === section);
-}
-
 /**
  * What a save posts, and what the draft drops once the server took it: the fields of `dirty` the
  * form writes, the primary key of the form's fields `fields` left out. A `records` field posts the

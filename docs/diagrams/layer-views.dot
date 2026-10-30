@@ -14,16 +14,16 @@ digraph layer_views {
         "folder views/structure" [label="views/structure"];
         "folder views/system" [label="views/system"];
         "folder views/shared" [label="views/shared"];
-        "folder views/academic to folder views/shared" [label="14", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
-        "folder views/academic to layer state" [label="70", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
-        "folder views/academic to layer ui" [label="62", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+        "folder views/academic to folder views/shared" [label="17", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+        "folder views/academic to layer state" [label="73", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+        "folder views/academic to layer ui" [label="65", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder views/apps to folder views/shared" [label="3", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder views/apps to layer state" [label="18", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder views/apps to layer ui" [label="29", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
-        "folder views/boards to folder views/shared" [label="67", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
-        "folder views/boards to layer state" [label="133", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
-        "folder views/boards to layer ui" [label="95", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
-        "folder views/feeds to folder views/shared" [label="43", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+        "folder views/boards to folder views/shared" [label="79", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+        "folder views/boards to layer state" [label="146", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+        "folder views/boards to layer ui" [label="93", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+        "folder views/feeds to folder views/shared" [label="46", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder views/feeds to layer data" [label="1", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder views/feeds to layer state" [label="67", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder views/feeds to layer ui" [label="59", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
@@ -34,21 +34,20 @@ digraph layer_views {
         "folder views/sessions to layer data" [label="4", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder views/sessions to layer state" [label="122", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder views/sessions to layer ui" [label="90", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
-        "folder views/sources to folder views/shared" [label="90", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+        "folder views/sources to folder views/shared" [label="84", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder views/sources to layer data" [label="8", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
-        "folder views/sources to layer state" [label="382", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
-        "folder views/sources to layer ui" [label="298", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
-        "folder views/structure to folder views/shared" [label="25", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
-        "folder views/structure to layer data" [label="1", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
-        "folder views/structure to layer state" [label="37", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
-        "folder views/structure to layer ui" [label="22", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+        "folder views/sources to layer state" [label="370", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+        "folder views/sources to layer ui" [label="287", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+        "folder views/structure to folder views/shared" [label="19", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+        "folder views/structure to layer state" [label="23", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+        "folder views/structure to layer ui" [label="10", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder views/system to folder views/shared" [label="24", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder views/system to layer data" [label="3", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder views/system to layer state" [label="236", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder views/system to layer ui" [label="201", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
-        "folder views/shared to layer data" [label="5", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
-        "folder views/shared to layer state" [label="401", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
-        "folder views/shared to layer ui" [label="205", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+        "folder views/shared to layer data" [label="7", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+        "folder views/shared to layer state" [label="440", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+        "folder views/shared to layer ui" [label="231", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
     }
     "layer state from folder views/academic" [label="state", style=dashed];
     "layer ui from folder views/academic" [label="ui", style=dashed];
@@ -67,7 +66,6 @@ digraph layer_views {
     "layer data from folder views/sources" [label="data", style=dashed];
     "layer state from folder views/sources" [label="state", style=dashed];
     "layer ui from folder views/sources" [label="ui", style=dashed];
-    "layer data from folder views/structure" [label="data", style=dashed];
     "layer state from folder views/structure" [label="state", style=dashed];
     "layer ui from folder views/structure" [label="ui", style=dashed];
     "layer data from folder views/system" [label="data", style=dashed];
@@ -83,7 +81,7 @@ digraph layer_views {
     "folder views/personal" -> "folder views/sessions" [style=invis, weight=10, minlen=3];
     "folder views/sessions" -> "folder views/sources" [style=invis, weight=10, minlen=4];
     "folder views/sources" -> "folder views/structure" [style=invis, weight=10, minlen=4];
-    "folder views/structure" -> "folder views/system" [style=invis, weight=10, minlen=4];
+    "folder views/structure" -> "folder views/system" [style=invis, weight=10, minlen=3];
     "folder views/system" -> "folder views/shared" [style=invis, weight=10, minlen=4];
     "folder views/academic" -> "folder views/academic to folder views/shared" [arrowhead=none, minlen=15, weight=10];
     "folder views/academic to folder views/shared" -> "folder views/shared" [];
@@ -139,7 +137,7 @@ digraph layer_views {
     "folder views/sessions" -> "folder views/sessions to layer ui" [arrowhead=none, style=dashed, minlen=2, weight=10];
     "folder views/sessions to layer ui" -> "layer ui from folder views/sessions" [style=dashed];
     { rank=same; "folder views/sessions to layer ui"; "layer ui from folder views/sessions"; }
-    "folder views/sources" -> "folder views/sources to folder views/shared" [arrowhead=none, minlen=7, weight=10];
+    "folder views/sources" -> "folder views/sources to folder views/shared" [arrowhead=none, minlen=6, weight=10];
     "folder views/sources to folder views/shared" -> "folder views/shared" [];
     "folder views/sources" -> "folder views/sources to layer data" [arrowhead=none, style=dashed];
     "folder views/sources to layer data" -> "layer data from folder views/sources" [style=dashed];
@@ -150,15 +148,12 @@ digraph layer_views {
     "folder views/sources" -> "folder views/sources to layer ui" [arrowhead=none, style=dashed, minlen=2, weight=10];
     "folder views/sources to layer ui" -> "layer ui from folder views/sources" [style=dashed];
     { rank=same; "folder views/sources to layer ui"; "layer ui from folder views/sources"; }
-    "folder views/structure" -> "folder views/structure to folder views/shared" [arrowhead=none, minlen=3, weight=10];
+    "folder views/structure" -> "folder views/structure to folder views/shared" [arrowhead=none, minlen=2, weight=10];
     "folder views/structure to folder views/shared" -> "folder views/shared" [];
-    "folder views/structure" -> "folder views/structure to layer data" [arrowhead=none, style=dashed];
-    "folder views/structure to layer data" -> "layer data from folder views/structure" [style=dashed];
-    { rank=same; "folder views/structure"; "folder views/structure to layer data"; "layer data from folder views/structure"; }
-    "folder views/structure" -> "folder views/structure to layer state" [arrowhead=none, style=dashed, minlen=1, weight=10];
+    "folder views/structure" -> "folder views/structure to layer state" [arrowhead=none, style=dashed];
     "folder views/structure to layer state" -> "layer state from folder views/structure" [style=dashed];
-    { rank=same; "folder views/structure to layer state"; "layer state from folder views/structure"; }
-    "folder views/structure" -> "folder views/structure to layer ui" [arrowhead=none, style=dashed, minlen=2, weight=10];
+    { rank=same; "folder views/structure"; "folder views/structure to layer state"; "layer state from folder views/structure"; }
+    "folder views/structure" -> "folder views/structure to layer ui" [arrowhead=none, style=dashed, minlen=1, weight=10];
     "folder views/structure to layer ui" -> "layer ui from folder views/structure" [style=dashed];
     { rank=same; "folder views/structure to layer ui"; "layer ui from folder views/structure"; }
     "folder views/system" -> "folder views/system to folder views/shared" [arrowhead=none, minlen=3, weight=10];

@@ -1,4 +1,4 @@
-# Oculus text owned by the person view, the tab one human opens as. The view is opened from a person of a project card's team, a field of an entry that names a person, the Map's node and a card of the People view, so its words name what the reader came from: the organisation, the projects, the projects waiting on the person, a student's supervision folder and the editor of the registry entry.
+# Oculus text owned by the person view, the tab one human opens as. The view is opened from a person of a project card's team, a field of an entry that names a person, the Map's node and a card of the People view, so its words name what the reader came from: the projects, the projects waiting on the person and a student's supervision folder.
 text:
     views:
         person: Person
@@ -15,18 +15,10 @@ text:
         self_no_primary_tip: 'This workspace has no primary hub, so there is no .oculus/local.yml for self to be written to'
         named_key: '{0} ({1})'
         of_hub: '{0} ({1})'
-        organisation: Organisation
-        organisation_line: '{0} ({1})'
         sep: ', '
-        role: Role
-        orcid: ORCID
-        email: Email
-        link: Link
-        editor: Edit
         delete_tip: 'Delete {0}'
         projects: Projects
         no_projects: No project names this person in its team, its `lead:` or its `collaborators:`.
         waiting_on: Waiting on
         no_waiting_on: No project names this person in its `waiting-on:`.
-        open_project: 'Open {0} as its own tab'
         folder: 'Supervision folder ({0})'

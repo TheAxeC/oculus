@@ -203,6 +203,7 @@
                         >
                             <LeadCard
                                 {entry}
+                                id={identOf(entry)}
                                 cursor={cursor === leadOf(entry)}
                                 onsaid={(words: string) => (said = words)}
                                 beside={instance.id}
@@ -233,6 +234,7 @@
                             >
                                 <LeadCard
                                     {entry}
+                                    id={identOf(entry)}
                                     cursor={cursor === leadOf(entry)}
                                     expired
                                     onsaid={(words: string) => (said = words)}

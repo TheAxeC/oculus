@@ -14,52 +14,63 @@
 </script>
 
 <script lang="ts">
-    // Layer 3, view. One human as their own tab, drawn from the four joins state/boards/person.ts
-    // makes: the registry entry, the organisations they are affiliated to, the projects of whose
-    // team they are (whose `lead:`, `collaborators:` or `supervisors:` name them), the projects
-    // whose `waiting-on:` names them, and a student's supervision folder.
-    // Below the joins is the editor of the person's registry entry, built from the people file's
-    // own `schema:`, and Delete, which asks first and names every project that refers to the
-    // person.
+    // Layer 3, view. One human as their own tab, in the frame of every record's page
+    // (views/shared/card/record/RecordPage.svelte), drawn from the joins state/boards/person.ts
+    // makes: the person's card, the projects of whose team they are (whose `lead:`,
+    // `collaborators:` or `supervisors:` name them), the projects whose `waiting-on:` names them,
+    // and a student's supervision folder.
+    //
+    // The card is views/shared/forms/entry/card/EntryCard.svelte, opened out, the card the People
+    // view draws, with no strip of role rows since the sections below list those projects. The page
+    // holds no form: Edit opens the editor beside it (views/boards/editor/Editor.svelte), and a
+    // person of a people file with no schema has no Edit. Delete, in the toolbar, asks first and
+    // names every project that refers to the person.
     //
     // One instance per person, and the person it is for is the `key` in its instance state, the way
     // the project tab reads its own `id`.
     //
-    // The fact strip's values (the organisations, the role, the ORCID, the email and the links) are
-    // drawn through ui/display/text/LinkedText.svelte, so a web address among them is a link.
+    // The sections are closed project cards (views/shared/card/record/sets/ProjectCards.svelte), a
+    // press on a title opening the project's page. The folder block is
+    // views/shared/links/FolderFiles.svelte, which lists the folder through the file store rather
+    // than carrying it in the snapshot and opens a file in the source tab exactly as a file browser
+    // row does; the entry page draws it for the folder an entry's link names.
     //
-    // The folder block is views/shared/links/FolderFiles.svelte, which lists the folder through the
-    // file store rather than carrying it in the snapshot and opens a file in the source tab exactly
-    // as a file browser row does; the entry page draws it for the folder an entry's link names.
+    // Projects, Waiting on and the folder are each the group every grouping of a view is drawn as
+    // (ui/controls/heads/GroupHead.svelte), the folder's controls as its `actions`, and each folds
+    // by its block key (`projects`, `waiting-on`, `folder`) under `folded` of the tab's state
+    // (views/shared/card/pane-fold.ts).
     //
-    // Projects, Waiting on, the folder and the editor are each the group every grouping of a view
-    // is drawn as (ui/controls/heads/GroupHead.svelte), the folder's controls as its `actions`, and
-    // each folds by its block key (`projects`, `waiting-on`, `folder`, `editor`) under `folded` of
-    // the tab's state (views/shared/card/pane-fold.ts).
-    //
-    // A person of any hub has a "this is me" button, pressed on the person the key `self` of the
-    // primary hub's `.oculus/local.yml` names; pressing it on another person writes that person's
-    // key there (state/workbench/ui.svelte.ts, `setSelf`). The key is read from the primary hub, so
-    // the button is drawn disabled, with a tip that says why, on a person whose key names another
-    // person first or names nobody, and in a workspace with no primary hub (state/boards/person.ts,
-    // `selfStanding`). A person of another hub has the chip of their hub beside it.
+    // A person of any hub has a "this is me" button in the toolbar, pressed on the person the key
+    // `self` of the primary hub's `.oculus/local.yml` names; pressing it on another person writes
+    // that person's key there (state/workbench/ui.svelte.ts, `setSelf`). The key is read from the
+    // primary hub, so the button is drawn disabled, with a tip that says why, on a person whose key
+    // names another person first or names nobody, and in a workspace with no primary hub
+    // (state/boards/person.ts, `selfStanding`). A person of another hub has the chip of their hub
+    // beside it.
 
     import type { Snippet } from 'svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
+    import Surface from '$lib/ui/frame/Surface.svelte';
     import GroupHead from '$lib/ui/controls/heads/GroupHead.svelte';
-    import Pane from '$lib/ui/frame/Pane.svelte';
-    import LinkedText from '$lib/ui/display/text/LinkedText.svelte';
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import DeleteAsk from '../../shared/forms/entry/DeleteAsk.svelte';
-    import EntryEditor from '../../shared/forms/entry/edit/EntryEditor.svelte';
+    import EntryCard from '../../shared/forms/entry/card/EntryCard.svelte';
     import { pageFault, pageFile } from '../../shared/forms/entry/edit/page-file';
     import { blockedBy } from '../../shared/forms/entry-file';
     import FolderFiles from '../../shared/links/FolderFiles.svelte';
     import SourceButton from '../../shared/links/SourceButton.svelte';
-    import { hubPathsOf } from '$lib/state/boards/collection';
-    import { personJoin, selfStanding, type PersonJoin } from '$lib/state/boards/person';
-    import { recordState, stateRecord } from '$lib/state/shared/page/records';
+    import ProjectCards from '../../shared/card/record/sets/ProjectCards.svelte';
+    import RecordPage from '../../shared/card/record/RecordPage.svelte';
+    import {
+        entryById,
+        hubPathsOf,
+        identityFaults,
+        offeredStatuses,
+        statusFacets
+    } from '$lib/state/boards/collection';
+    import { personJoin, selfStanding } from '$lib/state/boards/person';
+    import { stateRecord } from '$lib/state/shared/page/records';
     import { t } from '$lib/state/shared/words/text';
     import { viewSourceFile } from '$lib/state/sessions/view-source';
     import { addressOfId, fileUnder, keyOf, rootOf } from '$lib/state/shared/page/hubs';
@@ -72,9 +83,8 @@
     const {
         entities: { portfolio },
         fs: { primary, roots },
-        layout: { openView },
         pages: { pageOf },
-        selectors: { configMap, registryKey },
+        selectors: { collectionsOfKey, configMap, projects, registryKey },
         source: { unsavedFile },
         ui: { setSelf }
     } = client;
@@ -89,7 +99,7 @@
     const join = $derived(personJoin(portfolio(), key));
     /** The key the person's hub gives the people registry, which the page and Delete name. */
     const people = $derived(registryKey('people', addressOfId(key).hub));
-    /** The person's registry entry as the editor sees it. */
+    /** The person's registry entry as the editor sees it, null for a file with no schema. */
     const page = $derived(key === '' ? null : pageOf(people, key));
     const editFile = $derived(page === null ? null : pageFile(client, page));
     const fault = $derived(page === null ? undefined : pageFault(client, page));
@@ -99,7 +109,7 @@
     );
     /** True while the question before a delete is open. */
     let deleting = $state(false);
-    /** What the delete answered, when the write was refused. */
+    /** What the card's last write answered, the one outcome line this tab holds. */
     let said = $state('');
     const folder = $derived(join.folder);
     /** The folder as a path of the hub, or nothing for one outside it. */
@@ -116,34 +126,26 @@
             : viewSourceFile('people', configMap(), primary())
     );
 
-    /** The rows of the fact strip: what the registry holds about this person beyond their name. */
-    const facts = $derived.by(() => {
-        const person = join.person;
-        if (person === null) return [];
-        const rows: { label: string; value: string }[] = [];
-        // One row per organisation, in the entry's own order, so a clinician's university and
-        // hospital are both drawn and the primary one is the row above the other.
-        for (const held of join.organisations) {
-            rows.push({ label: t('person.organisation'), value: organisationLine(held) });
-        }
-        if (person.role !== undefined) rows.push({ label: t('person.role'), value: person.role });
-        if (person.orcid !== undefined)
-            rows.push({ label: t('person.orcid'), value: person.orcid });
-        if (person.email !== undefined)
-            rows.push({ label: t('person.email'), value: person.email });
-        for (const link of person.links) rows.push({ label: t('person.link'), value: link.url });
-        return rows;
+    /** The file of the people registry that holds the person. */
+    const collection = $derived(
+        collectionsOfKey(people).find((one) => entryById(one, key) !== null) ?? null
+    );
+    /** The person's entry, with the values the page took over the snapshot's. */
+    const entry = $derived.by(() => {
+        const stored = entryById(collection, key);
+        if (stored === null || page === null) return stored;
+        return { ...stored, title: page.title, fields: page.values };
     });
-
-    /** One organisation as one line: its name, then its kind and country when it names them. */
-    function organisationLine(held: PersonJoin['organisations'][number]): string {
-        const parts = [held.kind, held.country].filter(
-            (one): one is string => one !== undefined && one !== ''
-        );
-        return parts.length === 0
-            ? held.name
-            : t('person.organisation_line', held.name, parts.join(t('person.sep')));
-    }
+    const faults = $derived(
+        identityFaults(
+            collection?.entries ?? [],
+            collection?.primary_key ?? null,
+            collection?.key_fault
+        )
+    );
+    const lifecycle = $derived(
+        offeredStatuses(collection?.schema, statusFacets(collection?.entries ?? []))
+    );
 
     /**
      * The words on the tab and in the header: the person's name as the page holds it, a saved name
@@ -189,230 +191,127 @@
         setSelf(keyOf(person.id));
     }
 
-    /** Open one project of this person as its own tab, the tab a board card opens. */
-    function openProject(id: string, label: string): void {
-        openView('project', recordState(id, label));
+    function say(words: string): void {
+        said = words;
     }
 </script>
 
-<Pane title={title === '' ? t('person.nobody') : title} tinted>
-    {#snippet toolbar()}
-        <Toolbar label={t('person.toolbar')} overflow>
-            {#if page !== null}
-                <ToolButton
-                    bare
-                    label={t('entry_form.delete')}
-                    glyph={t('entry_form.delete_glyph')}
-                    title={blocked === '' ? t('person.delete_tip', page.title) : blocked}
-                    disabled={blocked !== ''}
-                    onclick={() => (deleting = true)}
+{#snippet tools()}
+    <Toolbar label={t('person.toolbar')} overflow>
+        {#if join.person !== null}
+            {#if hub !== primary()}
+                <RootChip record={join.person} />
+            {/if}
+            <ToolButton
+                label={t('person.self')}
+                glyph="star"
+                pressed={isSelf}
+                active={isSelf}
+                disabled={standing?.kind !== 'mark'}
+                title={selfTip}
+                onclick={markSelf}
+            />
+        {/if}
+        {#if page !== null}
+            <ToolButton
+                bare
+                label={t('entry_form.delete')}
+                glyph={t('entry_form.delete_glyph')}
+                title={blocked === '' ? t('person.delete_tip', page.title) : blocked}
+                disabled={blocked !== ''}
+                onclick={() => (deleting = true)}
+            />
+        {/if}
+        {#if source !== null}
+            <SourceButton file={source} />
+        {/if}
+    </Toolbar>
+{/snippet}
+
+<RecordPage
+    title={title === '' ? t('person.nobody') : title}
+    {instance}
+    toolbar={tools}
+    {said}
+    data-person={join.person?.id}
+>
+    {#snippet card()}
+        {#if join.person === null}
+            <Surface>
+                <Empty
+                    message={key === '' ? t('person.nobody') : t('person.unknown', keyOf(key))}
+                    glyph="warn"
                 />
-            {/if}
-            {#if source !== null}
-                <SourceButton file={source} />
-            {/if}
-        </Toolbar>
+            </Surface>
+        {:else if entry !== null}
+            <EntryCard
+                {entry}
+                cursor={false}
+                collection={people}
+                schema={collection?.schema}
+                projects={projects()}
+                statuses={lifecycle}
+                file={source}
+                fault={faults.get(entry.index)}
+                onsaid={say}
+                more
+                page
+                roles={false}
+            />
+        {/if}
     {/snippet}
 
-    {#if join.person === null}
-        <Empty
-            message={key === '' ? t('person.nobody') : t('person.unknown', keyOf(key))}
-            glyph="warn"
-        />
-    {:else}
-        <div class="person" data-person={join.person.id}>
-            <p class="self">
-                {#if hub !== primary()}
-                    <RootChip record={join.person} />
-                {/if}
-                <ToolButton
-                    label={t('person.self')}
-                    glyph="star"
-                    pressed={isSelf}
-                    active={isSelf}
-                    disabled={standing?.kind !== 'mark'}
-                    title={selfTip}
-                    onclick={markSelf}
-                />
-            </p>
-
-            {#if facts.length > 0}
-                <dl class="facts">
-                    {#each facts as fact (fact.label + fact.value)}
-                        <dt>{fact.label}</dt>
-                        <dd><LinkedText text={fact.value} /></dd>
-                    {/each}
-                </dl>
-            {/if}
-
-            <GroupHead
-                data-block="projects"
-                label={t('person.projects')}
-                open={fold.open('projects')}
-                ontoggle={() => fold.toggle('projects')}
-            >
-                {#if join.projects.length === 0}
+    {#if join.person !== null}
+        <GroupHead
+            data-block="projects"
+            label={t('person.projects')}
+            open={fold.open('projects')}
+            ontoggle={() => fold.toggle('projects')}
+        >
+            {#if join.projects.length === 0}
+                <Surface>
                     <Empty message={t('person.no_projects')} />
-                {:else}
-                    <ul class="rows">
-                        {#each join.projects as project (project.id)}
-                            <li>
-                                <span class="link">
-                                    <ToolButton
-                                        plain
-                                        cut
-                                        label={project.short === undefined || project.short === ''
-                                            ? project.title
-                                            : project.short}
-                                        title={t('person.open_project', project.title)}
-                                        onclick={() => openProject(project.id, project.title)}
-                                    />
-                                </span>
-                            </li>
-                        {/each}
-                    </ul>
-                {/if}
-            </GroupHead>
+                </Surface>
+            {:else}
+                <ProjectCards projects={join.projects} onsaid={say} />
+            {/if}
+        </GroupHead>
 
-            <GroupHead
-                data-block="waiting-on"
-                label={t('person.waiting_on')}
-                open={fold.open('waiting-on')}
-                ontoggle={() => fold.toggle('waiting-on')}
-            >
-                {#if join.waitingOn.length === 0}
+        <GroupHead
+            data-block="waiting-on"
+            label={t('person.waiting_on')}
+            open={fold.open('waiting-on')}
+            ontoggle={() => fold.toggle('waiting-on')}
+        >
+            {#if join.waitingOn.length === 0}
+                <Surface>
                     <Empty message={t('person.no_waiting_on')} />
-                {:else}
-                    <ul class="rows">
-                        {#each join.waitingOn as project (project.id)}
-                            <li>
-                                <span class="link">
-                                    <ToolButton
-                                        plain
-                                        cut
-                                        label={project.short === undefined || project.short === ''
-                                            ? project.title
-                                            : project.short}
-                                        title={t('person.open_project', project.title)}
-                                        onclick={() => openProject(project.id, project.title)}
-                                    />
-                                </span>
-                            </li>
-                        {/each}
-                    </ul>
-                {/if}
-            </GroupHead>
+                </Surface>
+            {:else}
+                <ProjectCards projects={join.waitingOn} onsaid={say} />
+            {/if}
+        </GroupHead>
 
-            {#if folder !== ''}
-                <FolderFiles folder={folderPath} root={hub}>
-                    {#snippet heading(controls: Snippet, body: Snippet)}
-                        <GroupHead
-                            data-block="folder"
-                            label={t('person.folder', folder)}
-                            open={fold.open('folder')}
-                            ontoggle={() => fold.toggle('folder')}
-                            actions={controls}
-                        >
+        {#if folder !== ''}
+            <FolderFiles folder={folderPath} root={hub}>
+                {#snippet heading(controls: Snippet, body: Snippet)}
+                    <GroupHead
+                        data-block="folder"
+                        label={t('person.folder', folder)}
+                        open={fold.open('folder')}
+                        ontoggle={() => fold.toggle('folder')}
+                        actions={controls}
+                    >
+                        <Surface>
                             {@render body()}
-                        </GroupHead>
-                    {/snippet}
-                </FolderFiles>
-            {/if}
-
-            {#if said !== ''}
-                <p class="self">{said}</p>
-            {/if}
-            {#if page !== null}
-                <GroupHead
-                    data-block="editor"
-                    label={t('person.editor')}
-                    open={fold.open('editor')}
-                    ontoggle={() => fold.toggle('editor')}
-                >
-                    <EntryEditor {page} instance={instance.id} file={editFile} {fault} />
-                </GroupHead>
-            {/if}
-        </div>
+                        </Surface>
+                    </GroupHead>
+                {/snippet}
+            </FolderFiles>
+        {/if}
     {/if}
-</Pane>
+</RecordPage>
 
 {#if deleting && page !== null}
-    <DeleteAsk
-        collection={people}
-        id={key}
-        onsaid={(answer: string) => (said = answer)}
-        onclose={() => (deleting = false)}
-    />
+    <DeleteAsk collection={people} id={key} onsaid={say} onclose={() => (deleting = false)} />
 {/if}
-
-<style>
-    .person {
-        display: flex;
-        flex-direction: column;
-        gap: 14px;
-    }
-
-    /* The hub chip of a person of another hub stands on the button's line, before it. */
-    .self {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        gap: 8px;
-        margin: 0;
-    }
-
-    /* Every line of the fact strip is the tree's row height, and a longer value grows by whole
-       lines. */
-    .facts {
-        display: grid;
-        grid-template-columns: max-content 1fr;
-        column-gap: 12px;
-        margin: 0;
-        font-size: var(--fs-md);
-        line-height: calc(var(--tree-row) * var(--text-scale, 1));
-    }
-
-    .facts dt {
-        font-size: var(--fs-xs);
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
-        color: var(--muted-txt, var(--muted));
-    }
-
-    .facts dd {
-        margin: 0;
-        min-width: 0;
-        overflow-wrap: anywhere;
-    }
-
-    .rows {
-        display: flex;
-        flex-direction: column;
-        margin: 0;
-        padding: 0;
-        list-style: none;
-    }
-
-    .rows li {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        min-width: 0;
-        min-height: calc(var(--tree-row) * var(--text-scale, 1));
-        font-size: var(--fs-md);
-    }
-
-    /* A project and a file open from their name, drawn as a link: the accent colour, an underline
-       under the pointer and with the focus. */
-    .link {
-        display: inline-flex;
-        min-width: 0;
-        color: var(--accent-txt, var(--accent));
-    }
-
-    .link:hover,
-    .link:focus-within {
-        text-decoration: underline;
-    }
-</style>

@@ -1,12 +1,13 @@
-# The career file (FAKE example data), edited in the Career view: the goal, the next milestone with its day, the order of work, and the positions, degrees, awards, references and employer CV profiles the website's CV is written from.
+# The career file (FAKE example data), shown in the Career view and edited in its editor: the goal, the next milestone with its day, the order of work, and the positions, degrees, awards, references and employer CV profiles the website's CV is written from.
 schema:
-  - { field: title, type: text, help: "The title of the career file's editor page." }
-  - { field: goal, type: text, help: "The position the plan works toward." }
-  - { field: milestone, type: text, help: "The next milestone." }
-  - { field: milestone_date, type: date, help: "The day of the next milestone." }
-  - { field: order_note, type: textarea, help: "A note over the order of work." }
+  - { field: title, type: text, section: Strategy, help: "The title of the strategy card and of the editor's tab." }
+  - { field: goal, type: text, section: Strategy, help: "The position the plan works toward." }
+  - { field: milestone, type: text, section: Strategy, help: "The next milestone." }
+  - { field: milestone_date, type: date, section: Strategy, help: "The day of the next milestone." }
+  - { field: order_note, type: textarea, section: Strategy, help: "A note over the order of work." }
   - field: order
     type: records
+    section: Strategy
     help: "The order of work."
     fields:
       - { field: task, type: text, required: true, help: "What to do." }
@@ -14,6 +15,7 @@ schema:
       - { field: note, type: text, help: "A remark." }
   - field: positions
     type: records
+    section: Positions
     help: "The positions held, the CV's experience."
     fields:
       - { field: key, type: text, help: "The key a profile row names this position by." }
@@ -27,6 +29,7 @@ schema:
       - { field: cv_rank, type: text, help: "The row's place in its section, a whole number." }
   - field: degrees
     type: records
+    section: Degrees
     help: "The degrees and the courses taken, the CV's education."
     fields:
       - { field: key, type: text, help: "The key a profile row names this degree by." }
@@ -40,6 +43,7 @@ schema:
       - { field: cv_rank, type: text, help: "The row's place in its section, a whole number." }
   - field: awards
     type: records
+    section: Awards
     help: "The awards, the CV's awards."
     fields:
       - { field: key, type: text, help: "The key a profile row names this award by." }
@@ -53,12 +57,14 @@ schema:
       - { field: cv_rank, type: text, help: "The row's place in its section, a whole number." }
   - field: references
     type: records
+    section: References
     help: "The references the CV names."
     fields:
       - { field: person, type: text, required: true, foreign_key: people, help: "The person, by key." }
       - { field: reason, type: text, help: "What the reference can speak to." }
   - field: profiles
     type: records
+    section: Profiles
     map: true
     help: "The employer CVs by name, and `shared`, the block they all print."
     fields:

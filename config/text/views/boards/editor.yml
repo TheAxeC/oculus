@@ -12,9 +12,13 @@ text:
         followup_note_dated: '{0} (not until {1})'
         more_choices: '{0} more; show all'
         no_choices: no choices
-        none: No project chosen. Open the editor from a project card.
+        none: No record chosen. Open the editor from a card.
         none_glyph: edit
         not_in_model: the snapshot does not carry this field, so it opens empty; saving it writes what is typed
+        other: Other
+        record_status: Record status
+        record_title: Edit
+        record_toolbar: Record editor
         refused: '{0}: {1}'
         remove: click to remove
         remove_glyph: dismiss
@@ -29,7 +33,7 @@ text:
         status: Manifest status
         title: Manifest
         toolbar: Manifest editor
-        unknown: The snapshot holds no project with the id {0}.
+        unknown: The snapshot holds no record with the key {0}.
     views:
         editor: Editor
         editor_glyph: editor

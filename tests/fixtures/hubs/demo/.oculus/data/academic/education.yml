@@ -2,11 +2,11 @@
 # Each entry has a `key`, its short name, unique in this file; a write and Edit in File address the entry by it.
 title: Education & Service
 schema:
-  - { field: key, type: text, primary_key: true, required: true, help: "The entry's short name, unique in this file; a write and Edit in File address the entry by it." }
-  - { field: title,  type: text,   display: 1, required: true }
-  - { field: sub,    type: text }
-  - { field: status, type: select, options: [ongoing, done] }
-  - { field: date,   type: text }
+  - { field: key, type: text, primary_key: true, required: true, section: Core, help: "The entry's short name, unique in this file; a write and Edit in File address the entry by it." }
+  - { field: title,  type: text,   display: 1, required: true, section: Core }
+  - { field: sub,    type: text, section: Core }
+  - { field: status, type: select, options: [ongoing, done], section: Core }
+  - { field: date,   type: text, section: Dates }
 entries:
   - key: machine-learning-msc
     title: Machine Learning (MSc)

@@ -4,11 +4,11 @@
 # `kind:` is one of university | hospital | funder | company | other.
 
 schema:
-  - { field: key,     type: text,   primary_key: true, required: true, label: "Organisation key" }
-  - { field: name,    type: text,   display: 1, required: true }
-  - { field: kind,    type: select, options: [university, hospital, funder, company, other], required: true }
-  - { field: country, type: text,   help: "two-letter country code" }
-  - { field: links,   type: tags }
+  - { field: key,     type: text,   primary_key: true, required: true, label: "Organisation key", section: Core }
+  - { field: name,    type: text,   display: 1, required: true, section: Core }
+  - { field: kind,    type: select, options: [university, hospital, funder, company, other], required: true, section: Core }
+  - { field: country, type: text,   section: Core, help: "two-letter country code" }
+  - { field: links,   type: tags, section: Core }
 
 entries:
   - key: "northwood-university"

@@ -1,15 +1,16 @@
 // Layer 2, client state. The unsaved edits of a form, kept in the ui store's record of the view
 // instance that draws the form, so a tab switch and a reload keep them the way the source tab keeps
-// its draft. The project editor, the page of a collection entry or a feed entry, the person page
-// and the Career view are forms over a different thing each, and they share this store.
+// its draft. The editor view (views/boards/editor/Editor.svelte) is a form over a different thing
+// each tab, a project, an entry of a collection or a feed, or the career file, and its tabs share
+// this store.
 //
 // The draft sits under the `draft` key of the instance's record, beside whatever else the view
-// keeps there (the document an entry page shows, the folds a Focus board holds). It names the kind
-// of form and the thing the edits were typed for, so a draft is never read by the form of another
-// project or another entry. The record is written to the state folder's files, so the thing is
-// held there as two fields, the name of its hub (`hub`) and its name inside that hub (`name`: a
-// project's key, an entry page's collection and key); the form names it by the two joined, the
-// internal id the portfolio gives it (`addressOfId`, `hubId`).
+// keeps there (the folds of the editor's sections). It names the kind of form and the thing the
+// edits were typed for, so a draft is never read by the form of another project or another entry.
+// The record is written to the state folder's files, so the thing is held there as two fields, the
+// name of its hub (`hub`) and its name inside that hub (`name`: a project's key, an entry page's
+// collection and key); the form names it by the two joined, the internal id the portfolio gives it
+// (`addressOfId`, `hubId`).
 //
 // What an edit is compared against is the thing's value in the snapshot now, through the rule of
 // its kind (a `DraftTarget`), the same rule the form marks a changed field by: whether the tab

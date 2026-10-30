@@ -1,8 +1,8 @@
 # Research pillars (lines of work) -> the Pillars tab. Membership is computed from each manifest's `pillars:`.
 schema:
-  - { field: key,   type: text, primary_key: true, required: true }
-  - { field: title, type: text, display: 1, required: true }
-  - { field: goal,  type: text }
+  - { field: key,   type: text, primary_key: true, required: true, section: Core }
+  - { field: title, type: text, display: 1, required: true, section: Core }
+  - { field: goal,  type: text, section: Content }
 entries:
   - key: tensors
     title: Structured tensor methods

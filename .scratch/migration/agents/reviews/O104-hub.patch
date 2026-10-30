@@ -134,6 +134,9 @@
 +  - { field: hide,       type: checkbox, section: Website, help: "Kept off the CV while it stays listed." }
 --- a/.oculus/data/academic/funding.yml
 +++ b/.oculus/data/academic/funding.yml
+@@ -1,1 +1,1 @@
+-# Funding: the applications pipeline + the funded programs I contribute to. Collection schema: the `schema:` block below. Every entry has a page with an editor built from the schema, Add asks the key and opens that page, Edit in File opens the file at the entry, and an entry's status, deadline and date are also changed on its card. NOTE: my one granted personal grant is the 2018 FWO PhD Fellowship (finger-decoding); the recent FWO postdoc/project applications were rejected. The "contributing" entries are funded programs I work within (FAIR, ZonMw AI-HCC), not my own grants.
++# Funding: the applications pipeline + the funded programs I contribute to. Collection schema: the `schema:` block below. Every entry has a page, and an editor built from the schema, Add asks the key and opens that page, Edit in File opens the file at the entry, and an entry's status, deadline and date are also changed on its card. NOTE: my one granted personal grant is the 2018 FWO PhD Fellowship (finger-decoding); the recent FWO postdoc/project applications were rejected. The "contributing" entries are funded programs I work within (FAIR, ZonMw AI-HCC), not my own grants.
 @@ -6,28 +6,28 @@
 -  - { field: key,       type: text, primary_key: true, required: true, help: "Cross-link anchor (the funding: tag on manifests)" }
 -  - { field: title,     type: text,     display: 1, required: true, help: "The name of the funding scheme or application." }
@@ -239,6 +242,9 @@
 +  - { field: url, label: "URL", type: text, section: Core, help: "The link to the posting." }
 --- a/.oculus/data/academic/career.yml
 +++ b/.oculus/data/academic/career.yml
+@@ -1,1 +1,1 @@
+-# Career: the strategy and the career record, edited in oculus's Career view on the Academic page.
++# Career: the strategy and the career record, shown in oculus's Career view on the Academic page and edited in its editor.
 @@ -5,9 +5,10 @@
  schema:
 -  - { field: title, type: text, help: "The title of the career file's editor page." }
@@ -302,7 +308,7 @@
 -  - { field: added,    type: date,     help: "The day the paper was saved." }
 -  - { field: note,     type: textarea, help: "The reader's own notes on the paper." }
 +  - { field: key,      type: text,     primary_key: true, required: true, label: "Citation key", section: Core, help: "The paper's citation key: the first author's surname, the year and the first word of the title, with b, c and on added when the file holds it already." }
-+  - { field: title,    type: text,     display: 1, section: Core, help: "The paper's title. A paper saved from an address alone has none, and its title is filled in on the entry's page." }
++  - { field: title,    type: text,     display: 1, section: Core, help: "The paper's title. A paper saved from an address alone has none, and its title is written in the entry's editor." }
 +  - { field: authors,  type: tags,     filter: true, section: Core, help: "The paper's authors, each name as the source wrote it." }
 +  - { field: venue,    type: text,     filter: true, section: Core, help: "The journal or conference; a name that matches a venue of the Venues view links to its page." }
 +  - { field: year,     type: text,     filter: true, section: Core, help: "The year the paper appeared, a whole number." }

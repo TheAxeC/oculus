@@ -4,8 +4,7 @@
 # ===========================================================================
 
 
-# The form. `sections:` names the eight groups, in the order they are drawn; a field's `section:` is
-# one of those names. `type:` is the widget:
+# The form. `sections:` is the one ordered list of the editor's groups for every record, in the order they are drawn; a group that holds no field is not drawn. A field's `section:` here is one of those names, and a `schema:` row of a data file takes any name. `type:` is the widget:
 #   readonly  shown, never written by the form (`id` is the folder's name, and the write refuses it;
 #             `code_availability.review_link` is written by the Zenodo deposit alone)
 #   text      one line | textarea several lines | lines one list item per line
@@ -30,13 +29,21 @@
 manifest_schema:
   sections:
     Core: Core
+    Indexing: Indexing
     Content: Content
     Connections: Connections
     Dates: Dates
+    Recovery: Recovery
     "Deposit & compute": "Deposit & compute"
     Outcome: Outcome
     "Overrides (rare)": "Overrides (rare)"
     Website: Website
+    Strategy: Strategy
+    Positions: Positions
+    Degrees: Degrees
+    Awards: Awards
+    References: References
+    Profiles: Profiles
   fields:
     id:            { label: "id", type: readonly, primary_key: true, section: Core, help: "The project's folder name, or for a repository the name of its workspace folder. Never set by a write: rename the folder or the folder's entry in the workspace file to change it." }
     tier:          { label: "Tier", type: select, foreign_key: vocab.tiers, required: true, section: Core, help: "The kind of project, one word of the tiers list: research, personal or software. A board takes projects by their tier and, on the research boards, by your role and the stage. The project is shown with a finding when the key is missing or is not a word of the list." }

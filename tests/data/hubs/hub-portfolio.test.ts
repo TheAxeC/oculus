@@ -68,7 +68,7 @@ function builds(from: ReturnType<typeof copies>): {
 function plantLead(dir: string, person: string): string {
     const file = join(dir, '.oculus', 'data', 'academic', 'funding.yml');
     const text = readFileSync(file, 'utf8');
-    const note = '  - { field: note,      type: textarea }\n';
+    const note = '  - { field: note,      type: textarea, section: Content }\n';
     const declared = text.replace(
         note,
         `${note}  - { field: lead, type: tags, foreign_key: people }\n`
@@ -212,8 +212,8 @@ describe('the portfolio of several hubs', () => {
             const events = join(from.lab, '.oculus', 'data', 'academic', 'events.yml');
             const schema = readFileSync(events, 'utf8');
             const declared = schema.replace(
-                'type: tags,     help: "Project ids"',
-                'type: tags,     foreign_key: projects, help: "Project ids"'
+                'type: tags,     section: Connections, help: "Project ids"',
+                'type: tags,     foreign_key: projects, section: Connections, help: "Project ids"'
             );
             expect(declared).not.toBe(schema);
             writeFileSync(events, declared);

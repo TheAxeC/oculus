@@ -1,7 +1,7 @@
-// Layer 3, view helper of the entry page, the person page and the Career view. The file a page
-// entry is written in, which the editor watches for unsaved text in a source tab and the toolbar
-// opens as a source tab, and the fault of its primary key that makes a write unable to address the
-// entry.
+// Layer 3, view helper of the entry page, the person page, the feed cards and the editor view. The
+// file a page entry is written in, which the editor watches for unsaved text in a source tab and
+// the toolbar opens as a source tab, and the fault of its primary key that makes a write unable to
+// address the entry.
 
 import type { ClientState } from '$lib/state/client/context';
 import { entryById, identityFaults, type IdentityFault } from '$lib/state/boards/collection';

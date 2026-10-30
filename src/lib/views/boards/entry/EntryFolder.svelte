@@ -6,8 +6,8 @@
     // shared Markdown partial draws what comes back, as the project view draws its own. The files
     // are views/shared/links/FolderFiles.svelte, the block the person view draws for a student's
     // folder, and each session is views/shared/sessions/SessionRow.svelte, the row the project view
-    // draws. The chosen document is kept in the view instance's state beside the entry's unsaved
-    // edits, which choosing leaves where they are.
+    // draws. The chosen document is kept in the view instance's state beside the folds of the
+    // groups, which choosing leaves where they are.
     //
     // Documents, Files and Sessions are each the group every grouping of a view is drawn as
     // (ui/controls/heads/GroupHead.svelte), the folder's controls as the Files group's `actions`,
@@ -73,16 +73,20 @@
     /** Read once, so the stamps of one rendering all agree on what day it is. */
     const now = Date.now();
 
-    /** Choose a document, keeping the rest of the instance's state (the entry's unsaved edits). */
+    /** Choose a document, keeping the rest of the instance's state (the folds of the groups). */
     function choose(name: string): void {
         setInstanceState(instance, withInstanceKey(instanceState(instance), 'doc', name));
     }
 </script>
 
 {#if reading}
-    <Empty message={t('entry.reading')} glyph={t('entry.none_glyph')} />
+    <Surface>
+        <Empty message={t('entry.reading')} glyph={t('entry.none_glyph')} />
+    </Surface>
 {:else if folder === undefined}
-    <Empty message={t('entry.no_folder')} glyph={t('entry.none_glyph')} />
+    <Surface>
+        <Empty message={t('entry.no_folder')} glyph={t('entry.none_glyph')} />
+    </Surface>
 {:else}
     <GroupHead
         data-block="documents"

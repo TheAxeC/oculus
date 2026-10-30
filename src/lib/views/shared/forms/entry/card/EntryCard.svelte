@@ -14,19 +14,20 @@
     // except the `extra` ones the collection passes in (Start Agent on a task's card).
     //
     // Every entry has a page, and the card's title and the strip's Page open it through `onpage`; a
-    // card handed none draws its title as words and has no Page. The page holds the entry's editor,
-    // its referrers and, where its `link` names a folder of the hub, the folder's documents, files
-    // and sessions.
+    // card handed none draws its title as words and has no Page. The page holds the entry's
+    // referrers and, where its `link` names a folder of the hub, the folder's documents, files and
+    // sessions. On that page the card is handed `page`, and its strip holds Edit in Page's place.
     //
-    // The entry's fields are changed on its page, in the file, which Edit in File opens at the
-    // entry, or through the card's menu (entry-actions.ts): its Status submenu lists the statuses
-    // the card may write, the schema's status options of a file with a schema and the lifecycle
-    // statuses of a file with none, the one in force checked; its Add run adds a follow-up or a
-    // subtask and changes the deadline where the schema has a `deadline` field. A status the
-    // schema's options do not hold carries the words `settings.not_in_list` beside its chip. Delete
-    // asks first, naming what refers to the entry. The actions that write are disabled, the words
-    // saying why as their title, while the file has unsaved text in a source tab or the entry's
-    // identity cannot address a write.
+    // The entry's fields are changed in its editor, which Edit opens beside the page
+    // (views/boards/editor/Editor.svelte), in the file, which Edit in File opens at the entry, or
+    // through the card's menu (entry-actions.ts): its Status submenu lists the statuses the card
+    // may write, the schema's status options of a file with a schema and the lifecycle statuses of
+    // a file with none, the one in force checked; its Add run adds a follow-up or a subtask and
+    // changes the deadline where the schema has a `deadline` field. A status the schema's options
+    // do not hold carries the words `settings.not_in_list` beside its chip. Delete asks first,
+    // naming what refers to the entry. The actions that write are disabled, the words saying why as
+    // their title, while the file has unsaved text in a source tab or the entry's identity cannot
+    // address a write. An entry with no key has Edit disabled with the words of its fault.
     //
     // A hub path the entry's `link`, `url` or `folder` names is a row of the menu's Open run: a
     // path that is a file is selected in the Files view of this page, and a path that is a folder
@@ -40,7 +41,13 @@
     import Tag from '$lib/ui/controls/Tag.svelte';
     import RecordCard from '../../../card/record/RecordCard.svelte';
     import type { CardAction } from '../../../card/card';
-    import { entryActions, entryDated, ownWorkbench, showActions } from '../entry-actions';
+    import {
+        editorRows,
+        entryActions,
+        entryDated,
+        ownWorkbench,
+        showActions
+    } from '../entry-actions';
     import { blockedBy, fileNameOf, openEntry } from '../../entry-file';
     import Grip from './Grip.svelte';
     import EntryFields from './EntryFields.svelte';
@@ -113,6 +120,10 @@
         lead?: boolean;
         /** The projects the strip at the foot draws; a card handed none draws every one. */
         keeps?: Keeps;
+        /** Drawn on the entry's own page: Edit in the strip in Page's place. */
+        page?: boolean;
+        /** Whether a person's card draws its strips; the person's page lists them as sections. */
+        roles?: boolean;
     };
 
     let {
@@ -132,7 +143,9 @@
         onpage,
         extra = [],
         lead = false,
-        keeps
+        keeps,
+        page = false,
+        roles = true
     }: Props = $props();
 
     const status = $derived(entryStatus(entry));
@@ -231,6 +244,14 @@
             shows,
             extra,
             onpage,
+            editor: editorRows(
+                client,
+                collection,
+                entry.id,
+                entry.title === '' ? entry.id : entry.title,
+                file,
+                fault
+            ),
             onstatus: setStatus,
             onpin: pin,
             onedit: () => openEntry(client, file, entry, schema, fault, onsaid),
@@ -238,8 +259,8 @@
         })
     );
 
-    /** The strip: the Workbench of the folder the entry's page is for, then Page. */
-    const strip = $derived([ownWorkbench({ entry, listed }), 'page']);
+    /** The strip: the Workbench of the folder the entry's page is for, then Page, or Edit there. */
+    const strip = $derived([ownWorkbench({ entry, listed }), page ? 'editor' : 'page']);
 
     /** The entry's subtasks, notes and deadline, which the card lists and its Add run writes. */
     const dated = $derived(entryDated(client, collection, entry, schema, blocked, true));
@@ -320,7 +341,7 @@
         {meta}
         {lines}
         {groups}
-        rows={rows ?? undefined}
+        rows={roles ? (rows ?? undefined) : []}
         deleting={deleting
             ? { collection, id: entry.id, onclose: () => (deleting = false) }
             : undefined}

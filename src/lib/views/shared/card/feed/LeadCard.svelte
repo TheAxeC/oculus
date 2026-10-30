@@ -6,10 +6,11 @@
     // page opener, its title is words, and its subtasks and follow-ups are listed. Feed rules stay
     // in state and server modules.
     //
-    // The strip holds Applied and Page. The menu holds Page and the posting in its Open run, the
-    // Add run (entry-actions.ts `feedDated`), the Status submenu with Applied, Decline and Reopen,
-    // and Delete, which asks first. Applied opens the Applications file of a hub beside the view
-    // the card is drawn in, with an entry filled from the lead, and the lead is set to the one
+    // The strip holds Applied and Page, or Edit on the page. The menu holds Page, Edit, which opens
+    // the editor beside the card (entry-actions.ts `editorRows`), and the posting in its Open run,
+    // the Add run (entry-actions.ts `feedDated`), the Status submenu with Applied, Decline and
+    // Reopen, and Delete, which asks first. Applied opens the Applications file of a hub beside the
+    // view the card is drawn in, with an entry filled from the lead, and the lead is set to the one
     // status carrying `lead_applied` once that entry is placed (lead-apply.ts beside this file).
     // With more than one hub holding Applications, Applied is a menu of those hubs, in the strip
     // and in the Status submenu, the primary first, and the hub picked takes the entry; with one, a
@@ -53,7 +54,8 @@
         type RecordAction
     } from '$lib/views/shared/card/record/record-menu';
     import type { CardAction } from '$lib/views/shared/card/card';
-    import { feedDated } from '$lib/views/shared/forms/entry/entry-actions';
+    import { pageFault, pageFile } from '$lib/views/shared/forms/entry/edit/page-file';
+    import { editorRows, feedDated } from '$lib/views/shared/forms/entry/entry-actions';
     import { t } from '$lib/state/shared/words/text';
     import type { WriteAnswer } from '$lib/state/client/writes.svelte';
     import { answerWords } from '$lib/views/shared/forms/answer-words';
@@ -68,6 +70,8 @@
 
     type Props = {
         entry: LeadEntry;
+        /** The lead's internal id, which its page and its editor name it by. */
+        id: string;
         cursor: boolean;
         expired?: boolean;
         onsaid: (words: string) => void;
@@ -83,6 +87,7 @@
 
     let {
         entry,
+        id,
         cursor,
         expired = false,
         onsaid,
@@ -207,12 +212,18 @@
         return rows;
     });
 
+    /** The lead as a page, whose file and fault the Edit row is decided by. */
+    const held = $derived(client.pages.pageOf('leads', id));
+
     /**
-     * The card's actions: Page and the posting, then, for a lead with an identity, the Status
+     * The card's actions: Page, Edit and the posting, then, for a lead with an identity, the Status
      * submenu and Delete.
      */
     const actions = $derived.by((): RecordAction[] => {
         const rows: RecordAction[] = onpage === undefined ? [] : [pageAction(onpage)];
+        const file = held === null ? null : pageFile(client, held);
+        const fault = held === null ? undefined : pageFault(client, held);
+        rows.push(...editorRows(client, 'leads', id, title, file, fault));
         const link = posting(url);
         if (link !== undefined) {
             rows.push({
@@ -328,7 +339,7 @@
         tone={expired ? 'grey' : tone}
         record={{ root: feedRoot(entry) }}
         {actions}
-        strip={['applied', 'page']}
+        strip={['applied', page ? 'editor' : 'page']}
         {dated}
         {onsaid}
         {meta}

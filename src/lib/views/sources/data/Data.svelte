@@ -26,7 +26,7 @@
     import CardGrid from '$lib/views/shared/card/record/CardGrid.svelte';
     import Reveal from '$lib/views/shared/card/Reveal.svelte';
     import ThemeFacets from '$lib/views/shared/forms/ThemeFacets.svelte';
-    import DatasetCard from '$lib/views/sources/data/DatasetCard.svelte';
+    import DatasetCard from '$lib/views/shared/card/record/registry/DatasetCard.svelte';
     import {
         accessSummary,
         datasetSearch,

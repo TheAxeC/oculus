@@ -24,19 +24,6 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 
 ```yaml
 dispatch:            # steps in flight, up to six (Z632)
-- step: O104
-  base: 3b366cd98
-  session_id: a64b1775be113ff93 (claude-opus-5-5)
-  worktree: .agents/worktrees/migration-O104
-  executor: agent
-  worker: claude:opus
-  launched: 2026-10-30
-  report: .scratch/migration/agents/reviews/O104-report.md
-  builder_usage: 274086 tokens, 395 tool uses, 52.7 minutes
-  reviewer_report: .scratch/migration/agents/reviews/O104-refuter.md (acbb52be2a1105eff, claude-opus-5-5, 130606 tokens, 74 tool uses, 16.4 minutes)
-  round: 1
-  brief_check: .scratch/migration/agents/reviews/O104-brief-check.md (a566ce9e7d193844e, claude-opus-5-5, 296680 tokens, 40 tool uses, 13.2 minutes)
-  landing: not-started
 ```
 
 ## The standing demands (from Axel, in force)
@@ -755,6 +742,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-10-30 (O104 landed). O104 is on main with hub commit 2db7d35dd; `agents/reviews/O104-landing.md` holds the booking. In flight (0 of 6). No step is left unticked. Open items: none.
 - 2026-10-30 (O104 reviewed; round 1 sent). The review's findings are in `agents/reviews/O104-refuter.md`; the builder's scripts, unapproved, closed in automode under the ruling "Unapproved builder scripts": breach recorded, the commands taken in round 1. The three hub sentences go in the hub patch.
 - 2026-10-30 (O104 at work). O104's builder a64b1775be113ff93 stopped on one case; open item 598 (a) closed in automode, ruled in `agents/briefs/O104-cases.md`, builder resumed.
 - 2026-10-30 (O101 landed). O101 is on main with hub commit 6abb17c8b; `agents/reviews/O101-landing.md` holds the booking. In flight (0 of 6). Next: /spec migration O104, the section names of ruling 594 (a). Open items: none.

@@ -1,7 +1,7 @@
 # Oculus text owned by the entry view, the tab one entry of a collection or of the leads or Lit Watch
 # feed opens as. The view is opened from the title of that entry's card, so its words name what the
-# reader came from: the card, the editor, what refers to the entry, and, for an entry whose link
-# names a folder, the folder's documents and files and the sessions working in the folder.
+# reader came from: the card, what refers to the entry, and, for an entry whose link names a
+# folder, the folder's documents and files and the sessions working in the folder.
 text:
     views:
         entry: Entry
@@ -18,7 +18,6 @@ text:
         open_workbench_tip: 'Open a workbench for {0}'
         delete_tip: 'Delete {0}'
         documents: Documents
-        editor: Edit
         no_documents: The folder holds no Markdown file.
         doc_loading: loading the document ...
         doc_failed: 'the document was not read: {0}'

@@ -1,11 +1,11 @@
 # Dataset registry -> the Data tab. Projects point at these by `datasets:`; `used_by` cross-links back.
 schema:
-  - { field: key,    type: text, primary_key: true, required: true }
-  - { field: name,   type: text, display: 1, required: true }
-  - { field: modality, type: text }
-  - { field: used_by, type: tags }
-  - { field: access, type: select, options: [open, registration, credentialed, private] }
-  - { field: themes, type: tags, options: [{ key: graphs, label: "Graphs" }, { key: timeseries, label: "Time series" }] }
+  - { field: key,    type: text, primary_key: true, required: true, section: Core }
+  - { field: name,   type: text, display: 1, required: true, section: Core }
+  - { field: modality, type: text, section: Core }
+  - { field: used_by, type: tags, section: Connections }
+  - { field: access, type: select, options: [open, registration, credentialed, private], section: Core }
+  - { field: themes, type: tags, options: [{ key: graphs, label: "Graphs" }, { key: timeseries, label: "Time series" }], section: Core }
 datasets:
   - key: synthgraph
     name: Synthetic evolving-graph benchmark

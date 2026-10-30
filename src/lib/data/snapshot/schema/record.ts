@@ -421,6 +421,7 @@ const SCHEMA_FIELD: JsonSchema = {
             description: 'Whether the field must be present, always or while its condition holds.'
         },
         help: { type: 'string', description: 'The field in one plain sentence.' },
+        section: { type: 'string', description: 'The group of the editor the field is drawn in.' },
         when: {
             type: 'object',
             description: 'The condition under which the field is allowed in a record.'

@@ -19,24 +19,26 @@
     // instance state (state/forms/page-entry.ts's entryPageState), the three together making one
     // entry one tab, and the same key in two collections or two hubs two.
     //
-    // An entry of a collection shows its card, opened out, then the editor built from the file's
-    // own `schema:` (views/shared/forms/entry/edit/EntryEditor.svelte), then what refers to the
-    // entry when other records do, and, when its `link` names a folder of the hub, the folder's
-    // documents, files and sessions (EntryFolder.svelte). A lead or a Lit Watch paper shows its
-    // card, opened out, above the editor: the card its feed's view draws
-    // (views/shared/card/feed/), with every control it has there, its title as words. Delete asks
-    // first, naming the records that refer to the entry, and an entry that is gone says so; it is
-    // shown again when Undo brings it back.
+    // The frame is views/shared/card/record/RecordPage.svelte, the frame of every record's page. An
+    // entry of a collection shows its card, opened out, then what refers to the entry when other
+    // records do, and, when its `link` names a folder of the hub, the folder's documents, files and
+    // sessions (EntryFolder.svelte). A lead or a Lit Watch paper shows its card, opened out: the
+    // card its feed's view draws (views/shared/card/feed/), with every control it has there, its
+    // title as words. The page holds no form: the card's Edit opens the editor beside it
+    // (views/boards/editor/Editor.svelte). Delete asks first, naming the records that refer to the
+    // entry, and an entry that is gone says so; it is shown again when Undo brings it back.
     //
-    // The card is views/shared/forms/entry/card/EntryCard.svelte, the one the collection view
-    // draws, with every control it has there (Start Agent on a task, Copy BibTeX on a Literature
-    // entry) and, since it is handed neither a grip nor a title opener, with the long fields whole
-    // and the title as words.
+    // The card of a venue, a dataset, a domain or a pillar line is the one its view draws
+    // (views/shared/card/record/registry/RegistryPageCard.svelte). Every other card is
+    // views/shared/forms/entry/card/EntryCard.svelte, the one the collection view draws, with every
+    // control it has there (Start Agent on a task, Copy BibTeX on a Literature entry) and, since it
+    // is handed neither a grip nor a title opener, with the long fields whole and the title as
+    // words.
     //
-    // The editor, the referrers and the folder's blocks are each the group every grouping of a view
-    // is drawn as (ui/controls/heads/GroupHead.svelte), folded by its block key (`editor`,
-    // `referrers`, `documents`, `files`, `sessions`) under `folded` of the tab's state
-    // (views/shared/card/pane-fold.ts); a save that moves the tab to a new key keeps the folds.
+    // The referrers and the folder's blocks are each the group every grouping of a view is drawn as
+    // (ui/controls/heads/GroupHead.svelte), folded by its block key (`referrers`, `documents`,
+    // `files`, `sessions`) under `folded` of the tab's state (views/shared/card/pane-fold.ts); a
+    // save that moves the tab to a new key keeps the folds.
     //
     // A toolbar action opens the workbench of the entry's folder with this page in its documents
     // pane (state/workbench/layout/open/float/folder-opener.ts). Whether the entry has a folder is
@@ -44,8 +46,6 @@
     // blocks come and go with the folder.
 
     import Empty from '$lib/ui/frame/Empty.svelte';
-    import GroupHead from '$lib/ui/controls/heads/GroupHead.svelte';
-    import Pane from '$lib/ui/frame/Pane.svelte';
     import Surface from '$lib/ui/frame/Surface.svelte';
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
@@ -54,10 +54,10 @@
     import RadarCard from '../../shared/card/feed/RadarCard.svelte';
     import DeleteAsk from '../../shared/forms/entry/DeleteAsk.svelte';
     import EntryCard from '../../shared/forms/entry/card/EntryCard.svelte';
-    import EntryEditor from '../../shared/forms/entry/edit/EntryEditor.svelte';
     import { pageFault, pageFile } from '../../shared/forms/entry/edit/page-file';
     import Referrers from '../../shared/forms/entry/Referrers.svelte';
-    import { usePaneFold } from '../../shared/card/pane-fold';
+    import RecordPage from '../../shared/card/record/RecordPage.svelte';
+    import RegistryPageCard from '../../shared/card/record/registry/RegistryPageCard.svelte';
     import { taskCardActions } from '$lib/views/shared/forms/entry/task-card';
     import { literatureCardActions } from '$lib/views/shared/card/feed/literature-card';
     import { blockedBy } from '../../shared/forms/entry-file';
@@ -102,9 +102,6 @@
     } = client;
 
     let { instance }: ViewProps = $props();
-
-    /** Which of the page's blocks are open, kept in the tab's state. */
-    const fold = usePaneFold();
 
     /**
      * The collection (or feed) and the internal id of the entry this instance was opened for, the
@@ -291,22 +288,28 @@
     </Toolbar>
 {/snippet}
 
-<Pane title={title()} toolbar={tools}>
-    <div class="entry" data-instance={instance.id} data-entry={key} data-collection={collectionKey}>
+<RecordPage
+    title={title()}
+    {instance}
+    toolbar={tools}
+    said={page === null ? '' : said}
+    data-entry={key}
+    data-collection={collectionKey}
+>
+    {#snippet card()}
         {#if collectionKey === '' || key === ''}
-            <Empty message={t('entry.none')} glyph={t('entry.none_glyph')} />
+            <Surface>
+                <Empty message={t('entry.none')} glyph={t('entry.none_glyph')} />
+            </Surface>
         {:else if page === null}
-            <Empty
-                message={t('entry.unknown', collectionKey, keyOf(key))}
-                glyph={t('entry.none_glyph')}
-            />
-        {:else}
-            {#if said !== ''}
-                <Surface>
-                    <p class="said">{said}</p>
-                </Surface>
-            {/if}
-            {#if entry !== null && collection !== null}
+            <Surface>
+                <Empty
+                    message={t('entry.unknown', collectionKey, keyOf(key))}
+                    glyph={t('entry.none_glyph')}
+                />
+            </Surface>
+        {:else if entry !== null && collection !== null}
+            <RegistryPageCard {collection} {entry} {schema} {file} {fault} onsaid={say}>
                 <EntryCard
                     {entry}
                     cursor={false}
@@ -318,54 +321,47 @@
                     fault={faults.get(entry.index)}
                     onsaid={say}
                     more
+                    page
                     extra={taskCardActions(collection, entry, configMap(), startAgent).concat(
                         literatureCardActions(collection, entry, writeToken, say)
                     )}
                 />
-            {:else if feedEntry !== null && collectionKey === 'leads'}
-                <LeadCard
-                    entry={feedEntry}
-                    cursor={false}
-                    expired={isExpired(configMap(), feedEntry, localDate(Date.now()), vocabOf)}
-                    onsaid={say}
-                    beside={instance.id}
-                    page
-                    {blocked}
-                />
-            {:else if feedEntry !== null && collectionKey === 'radar'}
-                <RadarCard
-                    entry={feedEntry}
-                    id={key}
-                    cursor={false}
-                    lastRun={asText(feed('radar')?.meta.last_run)}
-                    projects={snapshot?.entities.projects ?? {}}
-                    dismissed={isDismissed(feedEntry)}
-                    page
-                    onsaid={say}
-                />
-            {/if}
-
-            <GroupHead
-                data-block="editor"
-                label={t('entry.editor')}
-                open={fold.open('editor')}
-                ontoggle={() => fold.toggle('editor')}
-            >
-                <Surface>
-                    <EntryEditor {page} instance={instance.id} {file} {fault} />
-                </Surface>
-            </GroupHead>
-
-            {#if referred}
-                <Referrers {referrers} />
-            {/if}
-
-            {#if entry !== null && hub !== null && link !== undefined}
-                <EntryFolder instance={instance.id} {hub} {folder} {reading} />
-            {/if}
+            </RegistryPageCard>
+        {:else if feedEntry !== null && collectionKey === 'leads'}
+            <LeadCard
+                entry={feedEntry}
+                id={key}
+                cursor={false}
+                expired={isExpired(configMap(), feedEntry, localDate(Date.now()), vocabOf)}
+                onsaid={say}
+                beside={instance.id}
+                page
+                {blocked}
+            />
+        {:else if feedEntry !== null && collectionKey === 'radar'}
+            <RadarCard
+                entry={feedEntry}
+                id={key}
+                cursor={false}
+                lastRun={asText(feed('radar')?.meta.last_run)}
+                projects={snapshot?.entities.projects ?? {}}
+                dismissed={isDismissed(feedEntry)}
+                page
+                onsaid={say}
+            />
         {/if}
-    </div>
-</Pane>
+    {/snippet}
+
+    {#if page !== null}
+        {#if referred}
+            <Referrers {referrers} />
+        {/if}
+
+        {#if entry !== null && hub !== null && link !== undefined}
+            <EntryFolder instance={instance.id} {hub} {folder} {reading} />
+        {/if}
+    {/if}
+</RecordPage>
 
 {#if deleting && page !== null}
     <DeleteAsk
@@ -375,22 +371,3 @@
         onclose={() => (deleting = false)}
     />
 {/if}
-
-<style>
-    .entry {
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-    }
-
-    .said {
-        margin: 0;
-        font-size: var(--fs-md);
-        color: var(--muted-txt, var(--muted));
-    }
-
-    /* The terminal shape: the whole tab follows the card's folder name, as the board does. */
-    :global(body.rice:where(:not(.rice-sans))) .entry {
-        font-family: var(--font-mono);
-    }
-</style>

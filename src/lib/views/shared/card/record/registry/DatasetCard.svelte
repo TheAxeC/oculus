@@ -1,9 +1,12 @@
 <script lang="ts">
-    // Layer 3, Data view partial. One dataset as the record card
+    // Layer 3, shared view partial, drawn by the Data view and, with `page`, by the dataset's page
+    // (views/boards/entry/Entry.svelte). One dataset as the record card
     // (views/shared/card/record/RecordCard.svelte): its registry metadata, its folder, its notes,
     // how it comes back, and the strip of its project users at the foot. The dataset's name and
     // the strip's Page open its page; the menu holds Page and Source in its Open run, the Add run,
-    // Edit in File, Recover and Delete (views/shared/forms/registry/registry-card.svelte.ts).
+    // Edit, Edit in File, Recover and Delete (views/shared/forms/registry/registry-card.svelte.ts).
+    // On the page the name is words, the strip holds Edit and the tags wrap, so a long path is
+    // drawn whole.
     //
     // A set whose sources are all of kinds a row of its hub's `recover.sources` reads has the
     // Recover action, which opens the dataset's Recover view beside this one for its own hub and
@@ -46,7 +49,17 @@
 
     type Props = RegistryCardProps & { dataset: Dataset };
 
-    let { dataset, cursor, projects, entry, schema, file, fault, onsaid }: Props = $props();
+    let {
+        dataset,
+        cursor,
+        projects,
+        entry,
+        schema,
+        file,
+        fault,
+        onsaid,
+        page = false
+    }: Props = $props();
 
     /** The key the dataset's hub gives the datasets registry, which its page and writes name. */
     const collection = $derived(registryKey('datasets', rootOf(dataset)));
@@ -64,7 +77,8 @@
         fault,
         onsaid,
         collection,
-        title: dataset.name === '' ? keyOf(dataset.id) : dataset.name
+        title: dataset.name === '' ? keyOf(dataset.id) : dataset.name,
+        page
     }));
 
     /** The kinds of the dataset's download sources, each once, in the file's order. */
@@ -133,19 +147,19 @@
             {#if dataset.size}
                 {@const words = `${t('data.size')} ${dataset.size}`}
                 <Tooltip text={words}>
-                    <Tag label={words} />
+                    <Tag label={words} wrap={page} />
                 </Tooltip>
             {/if}
             {#if dataset.path}
                 {@const words = `${t('data.path')} ${dataset.path}`}
                 <Tooltip text={words}>
-                    <Tag label={words} />
+                    <Tag label={words} wrap={page} />
                 </Tooltip>
             {/if}
             {#if kinds.length > 0}
                 {@const words = `${t('data.fetch')} ${kinds.join(', ')}`}
                 <Tooltip text={words}>
-                    <Tag label={words} />
+                    <Tag label={words} wrap={page} />
                 </Tooltip>
             {/if}
         </div>
@@ -199,7 +213,7 @@
         ontitle={card.onpage}
         record={dataset}
         {actions}
-        strip={['page']}
+        strip={card.strip}
         dated={card.dated}
         {onsaid}
         {meta}

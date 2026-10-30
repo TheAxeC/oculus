@@ -3,7 +3,8 @@
 // what the card knows: whether a write can address the entry, why the actions that write are
 // disabled, and the handlers the card gives each; and what the card's Add run writes
 // (`entryDated`). The cards of a registry (Venues, Data and the others) take Edit in File and
-// Delete from `recordActions`.
+// Delete from `recordActions`, and every card of an entry takes Edit, which opens the entry's
+// editor beside the page, from `editorRows`.
 
 import {
     entryFollowups,
@@ -17,16 +18,19 @@ import {
 } from '$lib/state/boards/collection';
 import type { ClientState } from '$lib/state/client/context';
 import type { ViewSource } from '$lib/state/sessions/view-source';
+import { entryPageState } from '$lib/state/forms/page-entry';
+import { keyOf } from '$lib/state/shared/page/hubs';
 import { feedEntryId, feedRoot } from '$lib/state/shared/page/idents';
 import { t } from '$lib/state/shared/words/text';
 import { editAction, type CardAction } from '../../card/card';
 import {
+    editorAction,
     pageAction,
     statusAction,
     type RecordAction,
     type RecordDated
 } from '../../card/record/record-menu';
-import { fileNameOf, openEntry } from '../entry-file';
+import { blockedBy, fileNameOf, openEntry } from '../entry-file';
 
 /** One status a card may write: its word and its label. */
 type StatusChoice = { id: string; label: string };
@@ -51,6 +55,8 @@ export type EntryActionInput = {
     extra: CardAction[];
     /** Open the entry's page; a card handed none has no Page action. */
     onpage?: () => void;
+    /** The Edit row (`editorRows`). */
+    editor: RecordAction[];
     onstatus: (next: string) => void;
     onpin: () => void;
     onedit: () => void;
@@ -67,6 +73,27 @@ function deleteAction(blocked: string, ondelete: () => void): CardAction {
         disabled: blocked !== '',
         onclick: ondelete
     };
+}
+
+/**
+ * The Edit row of the entry `id` of `collection`, or of a feed by its kind and identity: none for a
+ * record with no page, which is an entry of a file with no schema. An entry with no key has no
+ * state an editor tab could name it by, so its row is disabled with the words of its `fault`, and
+ * Edit in File is where the key is written.
+ */
+export function editorRows(
+    client: ClientState,
+    collection: string,
+    id: string,
+    label: string,
+    file: ViewSource | null,
+    fault: IdentityFault | undefined
+): RecordAction[] {
+    if (client.pages.pageOf(collection, id) === null) return [];
+    const open = (): void => {
+        client.layout.openBeside('editor', entryPageState(collection, id, label));
+    };
+    return [editorAction(open, keyOf(id) === '' ? blockedBy(file, false, fault) : '')];
 }
 
 /** What the Edit in File action of a registry card is made from. */
@@ -123,9 +150,10 @@ function statusRows(input: EntryActionInput): RecordAction[] {
 }
 
 /**
- * The card's actions: Page, the pin, Edit in File, Delete, the Status submenu, and the Show in
- * Files actions, then the actions the collection passes in. A file with no schema has no identity
- * to write by, so its cards carry the file's lifecycle statuses and no pin, Edit in File or Delete.
+ * The card's actions: Page, Edit, the pin, Edit in File, Delete, the Status submenu, and the Show
+ * in Files actions, then the actions the collection passes in. A file with no schema has no
+ * identity to write by, so its cards carry the file's lifecycle statuses and no Edit, pin, Edit in
+ * File or Delete.
  */
 export function entryActions(input: EntryActionInput): RecordAction[] {
     const page: RecordAction[] = input.onpage === undefined ? [] : [pageAction(input.onpage)];
@@ -134,6 +162,7 @@ export function entryActions(input: EntryActionInput): RecordAction[] {
     }
     const rows: RecordAction[] = [
         ...page,
+        ...input.editor,
         {
             id: 'pin',
             label: input.pinned ? t('collection.unpin') : t('collection.pin_to_top'),

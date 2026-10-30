@@ -1,7 +1,8 @@
-// Layer 2, client state. A file's own `schema:` as the fields of the entry form: the collection
-// files, the two generated feeds and the career file all declare one, and the form is drawn from it
-// with the same field type the project editor's form is drawn from (state/forms/schema.ts), so one
-// set of controls draws both. Pure.
+// Layer 2, client state. A file's own `schema:` as the fields of the editor: the collection files,
+// the two generated feeds and the career file all declare one, and the form is drawn from it with
+// the same field type a project's form is drawn from (state/forms/schema.ts), so one set of
+// controls draws both; and the groups of the editor over those fields, for every kind of record.
+// Pure.
 //
 // The field of a schema flagged `primary_key: true` is the entry's primary key: it addresses the
 // entry in the file and every reference to the entry stores it, so the form shows it and never
@@ -50,10 +51,40 @@ function formFieldOf(one: SchemaField, record: Record<string, unknown>): FormFie
     return field;
 }
 
-/** The form fields of a schema, in its order, for the entry whose values are `record`. */
+/**
+ * The form fields of a schema, in its order, for the entry whose values are `record`, each
+ * top-level row with its `section:`, which a nested row has no use for.
+ */
 export function formFieldsOf(
     schema: SchemaField[] | undefined,
     record: Record<string, unknown>
 ): FormField[] {
-    return (schema ?? []).map((one) => formFieldOf(one, record));
+    return (schema ?? []).map((one) => ({
+        ...formFieldOf(one, record),
+        section: one.section ?? ''
+    }));
+}
+
+/** One group of the editor: its name, which is its fold key too, and its fields in file order. */
+export type FormGroup = { name: string; fields: FormField[] };
+
+/**
+ * The groups of the editor over `fields`: the sections `listed` names, in that order, those holding
+ * no field left out; then a section the list does not hold, in the order of its first row; then
+ * the rows with no section, joined by a section named `other`, under that one name. So no field is
+ * left undrawn, and a hub's own schema with no `section:` still draws whole.
+ */
+export function formGroups(
+    fields: readonly FormField[],
+    listed: readonly string[],
+    other: string
+): FormGroup[] {
+    const named = fields.map((one) => one.section).filter((one) => one !== '' && one !== other);
+    const names = [...new Set([...listed.filter((one) => one !== other), ...named])];
+    const groups = names.map((name) => ({
+        name,
+        fields: fields.filter((one) => one.section === name)
+    }));
+    const rest = fields.filter((one) => one.section === '' || one.section === other);
+    return [...groups, { name: other, fields: rest }].filter((one) => one.fields.length > 0);
 }

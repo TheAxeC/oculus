@@ -135,3 +135,199 @@ Scripts: none is in the diff. The added files the brief does not name: `Registry
 - How the patch and the fixture rows were produced: the report does not say; my check of the result is above.
 
 Reviewer usage: acbb52be2a1105eff, claude-opus-5-5, 130606 tokens, 74 tool uses, 16.4 minutes.
+
+## Repair round 1, refuted (on .agents/worktrees/migration-O104, base 3b366cd98)
+
+Result: 8 of the 9 round items close as claimed and item 6 does not. Two sentences of oculus's own docs that the step made false stand (finding 1), so item 14 stays violated and the report's first line is short of them. The hub patch's non-`section:` lines are exactly the three of item 8. Five findings, every one small enough for landing or a ruling; none is a red check.
+
+```
+npm run test:quick -- --base 3b366cd98   (from the worktree)
+  ok ASCII gate (1.1 s)
+  ok prettier (1.1 s): All matched files use Prettier code style!
+  ok svelte-kit sync (2.8 s)
+  ok eslint (23.2 s)
+  ok svelte-check (40.5 s): 1793384807663 COMPLETED 576 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+  ok vitest slow (116.4 s): Duration 108.03s
+  ok vitest (117.6 s): Duration 109.18s
+  ok vitest checks (119.7 s): Duration 111.35s
+  test:quick: 122.7 s; every command passed
+  not covered: tests that reach no changed file within the import depth, other than the checks under tests/checks/source and tests/checks/tree; the build; the lint of unchanged files
+
+npm run diagrams, npm run docs:palette
+  not rerun: both write into the tree. The delta of the .dot files read against the diff: boards to ui +3 (Person, Entry, Listing import Surface), feeds to ui +1 (Post), views to ui +4, state to data +1 (lines.ts imports guards). Each matches.
+
+git grep -n "EntryEditor" -- src docs tests
+  not run: outside the git commands of this review. In its place:
+grep -rn 'EntryEditor' src docs tests
+  printed nothing, exit 1
+
+patch --dry-run -p1 -d ~/workspace/research-hub < .scratch/migration/agents/reviews/O104-hub.patch
+  17 "patching file" lines, exit 0, no failed hunk
+
+npx vitest run tests/data/sources/career.test.ts
+  Test Files 1 passed (1), Tests 28 passed (28)
+npx vitest run tests/data/hubs/hub-portfolio.test.ts --tagsFilter slow
+  Test Files 1 passed (1), Tests 16 passed (16)
+npx vitest run tests/checks/source/comment-width.test.ts
+  Test Files 1 passed (1), Tests 2 passed (2)
+
+grep -rn 'data-website-said' src tests docs config (--exclude=local.yml), guarded.md
+  no hit in code, tests, docs, config or guarded.md; only the two lines of the report
+
+grep -c '<Surface' Person, Career, Listing, Post, Entry, EntryFolder
+  4, 3, 2, 3, 2, 5, as the report says
+
+sh utils/unused-exports.sh
+  exit 0, 337 lines. Of the step's files only "src/lib/state/boards/structure/lines.ts: inEntryOrder", a base export, as the report says. OFFPILLAR and registryRecord are not listed.
+
+hub patch, line by line (each - line paired with its + line, `section:` taken off the + line):
+  213 pairs. Three differ beyond section:
+    funding.yml:1  "Every entry has a page, and an editor built from the schema", rest of the line byte-equal
+    career.yml:1   "...shown in oculus's Career view on the Academic page and edited in its editor."
+    literature.yml:8  "...and its title is written in the entry's editor." with section: Core
+  Nine added lines with no - line, each a bare `    section: <name>` on a block row.
+  Lines beginning + : 239, of which 17 are +++ headers: 222 added, 220 rows and 2 header lines. The report's per-file counts sum to 222.
+
+patch applied to scratchpad copies, yaml.safe_load, against the brief's table:
+  17 files, 220 rows, every row the table's section, no name of the table missing, no nested row with a section. With `section` taken off, the one value differing from the hub is literature's `title` help.
+
+grep over the hub's 17 files (no local.yml read) for the sentences of the step:
+  literature.yml:8, career.yml:1, career.yml:6, funding.yml:1, events.yml:1: five, as the report says.
+
+The report's Doc text quotes matched against guarded.md, line by line: lines 83, 220, 276 equal; the clauses of lines 85 and 278 each found once.
+
+LC_ALL=C grep -n '[^ -~]' docs/templates.md docs/data-map.md docs/HELP.md, the report, the hub patch
+  printed nothing
+
+git status --short, before and after this review's runs: unchanged.
+```
+
+### Verdicts
+
+The round's nine items, each claimed closure:
+
+- 1 (outcome line): closed. `RecordPage.svelte:61-64` draws `class:error={saidError}`, `.said.error` is `--danger`, and `Career.svelte:156-163` hands `said` and `saidError`. Its `<p>`, `.said`, `.said.error` and whole `<style>` block are gone. `data-website-said` goes with the `<p>`: nothing read it, the base had no test of it, and the report states it twice. Its removal costs nothing. Finding 3 is on the prop's doc.
+- 2 (text outside a card): closed except `Post.svelte:96`, finding 2. Person, Career, Listing, Entry, EntryFolder read; the folder body matches `EntryFolder.svelte:128`.
+- 3 (off-pillar): closed, `RegistryPageCard.svelte:99`.
+- 4 (a post's images): closed, `Post.svelte:98`, the same call as `Linkedin.svelte:162` and `PostCard.svelte:44`.
+- 5 (`byKey`): closed. The builder's reason reproduces: the `views` row of `tests/checks/tree/layer-rows.ts:277-285` does not list `data/helpers/guards`, and the `state` row does.
+- 6 (false sentences): partial, finding 1. Every named line is corrected, the `no_schema` sentence is word for word, and `config/options/sources.yml:149`, `config/defaults/sources.yml:57` and `EntryFields.svelte:14` are good corrections.
+- 7: closed. `literature.yml:8` of the fixture ends as ruled; `hub-portfolio.test.ts` holds no such text and takes no change.
+- 8: closed, exactly the three lines, see above. Two hub sentences stay outside the ruling, finding 5.
+- 9: closed. "Scratch programs" gives how the patch, fixture rows and template rows were made, and the first line and the count of five are corrected. The first line's "everything else ... is done" does not stand against finding 1.
+
+Reach beyond a finding:
+
+- `OFFPILLAR` to `lines.ts`: necessary. `RegistryPageCard` lives under `views/shared` and may not import `Pillars.svelte`, so the word had to sit where both read it, and `lines.ts` already holds `lineKinds`. No behaviour change in `Pillars.svelte`. The path is outside the brief's list and the report marks it.
+- `registryRecord` in `lines.ts:254`: one caller site, two calls, the smallest form that reads through `byKey` from a view. Within the finding.
+- The `title` help of the fixture's `career.yml` and of `docs/templates.md`: inside item 6's "every other sentence".
+
+Items of the brief's "What to build", over the whole diff:
+
+- 1: holds, `field.ts:151`, `record.ts:424`, `formFieldsOf` (top level only), `data-map.md`, `templates.md:1097`; the table test reads and passes.
+- 2: holds, `manifest-schema.yml` sections as asked; `hub-layer.ts` reads the same list.
+- 3: holds, `formGroups` in `record-fields.ts` read: listed, then unlisted, then the rest under one Other.
+- 4: holds, `RecordPage.svelte` and `Project.svelte` read.
+- 5: holds, `Editor.svelte`, `editor-target.ts` read against base `EntryEditor.svelte`: block on Save, refusal under the field, reminder, feed partial save, Add person's hub, the project's refusal line and no reminder, tab label move, `editor.unknown`, draft kinds.
+- 6: holds, `editorAction`, `editorRows`, `RUNS`, `EntryCard`, `LeadCard`, `RadarCard`, `CareerCard` read.
+- 7: holds, `muted` now handed and `byKey` read; the page draws the view's card.
+- 8: holds, `Person.svelte` read. Finding 4 is a comment.
+- 9: holds, `Career.svelte`, `CareerCard.svelte`, `career-view.ts` read; the outcome line is the frame's.
+- 10: holds, `Listing.svelte`, `listing.ts`, `ProjectCards.svelte`, `OrphansCard.svelte` read.
+- 11: holds, `Post.svelte`, `post-card.ts` read; the body's path is right. Finding 2 is the Surface's kind.
+- 12: holds, no Inbox or search file changed.
+- 13: holds, by the table run above; the hub patch now carries the three ruled lines.
+- 14: violated, finding 1.
+
+Cases of the brief's "Cases":
+
+- The project page and the project editor, before and after: met, reading; only a tab naming no record differs, as item 5 asks.
+- A venue's page: met, reading.
+- A venue's editor: met, 20 rows, Core, Indexing, Content, Dates by the table run.
+- An application's editor: met, 15 rows, Core, Content, Connections, Dates.
+- A person's page: met, reading.
+- A lead's and a Lit Watch paper's page: met, reading, feed path of `pageTarget`.
+- Career: met, reading.
+- A career file with no schema: met, reading; no Edit in the toolbar or on a card.
+- Archival, Orphans and No funding: met, reading; `listing:<set>` gives one tab.
+- A LinkedIn idea: met, reading; path corrected; `promotedFile` moves the tab.
+- A post whose file was removed: met, `Post.svelte:78-80`.
+- A schema row with no `section:`: met, `formGroups`.
+- A schema row naming a section the list does not hold: met, `formGroups`.
+- An edit in an entry's editor tab, then a close: met, `form-draft.ts`.
+- An entry's editor while a source tab holds unsaved text: met, `blockedBy` in `pageTarget`.
+- A save refused for one field: met, reading.
+- A save that changes a venue's `name`: met, the editor's effect and `Entry.svelte`'s.
+- An entry deleted while its editor tab is open: met, reading.
+- An entry whose identity has a fault, as ruled by open item 598 (a): met, reading.
+- A person of a people file with no schema: met, reading.
+- The Orphans card with no orphans: met, `Listing.svelte` with its `Surface`.
+- `section: ""`, and a section named `Other`: met, table test and `formGroups`.
+- A hub collection keyed `listing` or `post`: met, by reading `viewIdProblems`; the quoted run's program is gone, which the report states.
+- Edit pressed from the page and from the card: met, `stateId`.
+- A required field emptied: met, reading.
+- An entry of a file with no schema: met, reading.
+- Two hubs holding one key in one collection: met, `stateId` holds `hub`.
+- An Add person from a field of an entry of a second hub: met, reading.
+
+### Findings
+
+1. Spec. `docs/data-map.md:57` and `config/defaults/sources.yml:34`.
+   - Quoted hunks: "and the open leads, and every entry has a page with an editor built from its schema." and "Every entry has a page with an editor built from the schema, where it is edited and deleted, Add asks the new entry's primary key".
+   - What is wrong: item 6 closes with "the hits left are other editors ... or a sentence true of the code", but both sentences are the one Axel ruled false in hub `funding.yml:1`, and the page holds no editor after this step. The item's listed grep patterns do not match the words "with an editor", so its grep missed them; the item's closing clause still covers them. The builder's grep also ran over three pages of `docs` where the item says `docs`; `docs/apps.md` and `docs/palette.md` hold no hit, so that narrowing changes nothing.
+   - Failure scenario: a hub author reading the data map or the defaults comment looks for the form on the entry's page.
+   - Verdict: item 14 violated, round item 6 partial, and the report's first line short by these two.
+   - Fix at landing:
+     - data-map: "every entry has a page and an editor built from its schema."
+     - sources.yml: "Every entry has a page, where it is deleted, and an editor built from the schema, where it is edited, Add asks the new entry's primary key".
+     - The report's first line takes them.
+
+2. Standards. `src/lib/views/feeds/post/Post.svelte:96`.
+   - Quoted hunk: "<Surface>" around "<RenderedMarkdown ... framed />".
+   - What is wrong: `.framed` draws a border and pads its content, and `Surface.svelte`'s head comment says "A `fitted` one paints exactly under its content, for content that draws a border and a padding of its own". The plain Surface pads 8 px on each side and paints 4 px above and below.
+   - Failure scenario: a post over a wallpaper: the body's frame stands 8 px narrower than the card above it, inside a band of panel.
+   - No item's text is broken; ruling 593's look, round item 2.
+   - Fix at landing: `<Surface fitted>`. No effect without a wallpaper.
+
+3. Standards. `src/lib/views/shared/card/record/RecordPage.svelte:28`.
+   - Quoted hunk: "/** What the card's last write answered, drawn over the card; the empty text for none. */".
+   - What is wrong: round item 1 hands this prop Career's `said`, which is the answer of Write the website, a toolbar press, or the words of why the button is off (`Career.svelte:~131`). The head comment was changed to fit; the prop's doc was not.
+   - Failure scenario: a reader of the frame takes the line for a card's answer and looks for the card that wrote it on Career.
+   - Fix at landing: `/** The page's outcome line, drawn over the card; the empty text for none. */`.
+
+4. Standards. `src/lib/views/boards/person/Person.svelte:25`.
+   - Quoted hunk: "// holds no form: Edit opens the editor beside it (views/boards/editor/Editor.svelte)," followed by "// and a person of a people file with no schema has no Edit."
+   - What is wrong: `spec.md`, "What every package obeys": a comment the step edits is rewrapped at 100 columns so no line inside a sentence ends short. This line is 90 columns and "and a" fits. `comment-width.test.ts` checks only the upper bound.
+   - Failure scenario: none for behaviour; the paragraph reads as hand-broken.
+   - Fix at landing: rewrap the paragraph at lines 23 to 28.
+
+5. Spec, for Axel, not for landing. `~/workspace/research-hub/.oculus/data/academic/events.yml:1` and `career.yml:6`.
+   - Quoted hunks: "(every entry has a page with an editor built from the schema, Add asks the key and opens that page, ...)" and `  - { field: title, type: text, help: "The title of the career file's editor page." }`.
+   - What is wrong: the report states both correctly. Both stay false after landing, because the ruling of item 8 says "and nothing else" and a landing fix would widen that ruling.
+   - Failure scenario: events.yml says what funding.yml no longer says, and the hub's `title` help differs from the fixture's and `docs/templates.md`'s.
+   - Fix, on his yes:
+     - events.yml:1: "every entry has a page, and an editor built from the schema".
+     - career.yml:6, patched row: `  - { field: title, type: text, section: Strategy, help: "The title of the strategy card and of the editor's tab." }`.
+
+Under Proof and Behaviour there is no other finding of this run. The first review's Proof 2 raised no defect and stays so.
+
+### Declined to judge
+
+- The look of every changed page and of the Post frame over a wallpaper: no page can be opened in this review; finding 2 is by reading. It goes to the landing's look.
+- `Project.svelte:133` and `:135` stand on no `Surface`, as at the base, while `RecordPage.svelte:8-9` now says what a view draws outside a card sits on one. Wrapping them changes the project page over a wallpaper, and ruling 593 says that page does not change, so whether to wrap them or reword the sentence is the orchestrator's or Axel's.
+- `muted={line.kind === OFFPILLAR}` against `kind.key === OFFPILLAR` at `Pillars.svelte:145`: the two differ only for a hub whose merged `pillar_kinds` holds no `offpillar` row, where the view draws the line unmuted under Other and the page draws it muted. No such hub is on the tree and the cost is a tone, so I raise no finding.
+- `npm run diagrams`, `npm run docs:palette`: they write. Their output is judged by the `.dot` delta above.
+- Whether the report's count of 5 runs of the list is right: no record outside the report. A red run followed by a fix and one more run is what `spec.md` allows.
+
+Reviewer usage: a794fd0690f9f9703, claude-opus-5-5, 288659 tokens, 41 tool uses, 11.9 minutes.
+
+## Closed
+
+The first review's findings were closed in repair round 1 (`agents/briefs/O104-round1.md`), and this run gives their closures above. The run's findings are not sent to the builder.
+
+- Finding 1: fixed at landing, `docs/data-map.md:57` and `config/defaults/sources.yml:34`, with the two sentences the finding gives.
+- Finding 2: fixed at landing, `<Surface fitted>` at `Post.svelte:96`.
+- Finding 3: fixed at landing, the doc of `said` in `RecordPage.svelte`.
+- Finding 4: fixed at landing, the paragraph of `Person.svelte` rewrapped.
+- Finding 5: fixed at landing in the hub. The words "and nothing else" of round item 8 are the orchestrator's, the two sentences are false because of this step, and item 14 of the brief is the same reason.
+- Declined point on `RecordPage.svelte:8-9`: the sentence now says a section a view draws outside a card sits on a `Surface`, so it holds for `Project.svelte`, whose page is unchanged under ruling 593.

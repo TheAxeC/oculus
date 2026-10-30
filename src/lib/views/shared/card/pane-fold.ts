@@ -1,8 +1,8 @@
 // Layer 3, view partial. The folds of the groups (ui/controls/heads/GroupHead.svelte) of every view
 // and partial that keeps them in the pane's saved state and parses no state of its own for them:
 // the Gallery's sections, Account setup's providers, the Views catalogue's groups, Usage's groups,
-// Keys' sections, the Audit's sections, the project page's blocks and its LaTeX panel, the Person
-// page's and a record page's blocks, the editor view's, Settings' groups, the session list's
+// Keys' sections, the Audit's sections, the project page's blocks and its LaTeX panel, the blocks
+// of every other record's page, the editor view's, Settings' groups, the session list's
 // groups, the Status and Processes views' sections and the HPC view's disk quota. It reaches the
 // saved state of the pane it is drawn in through the instance context
 // (state/client/instance-context.ts), so a partial with no instance id of its own folds as its view

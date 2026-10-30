@@ -3,12 +3,12 @@
 # Each entry has a `key`, its short name, unique in this file; a write and Edit in File address the entry by it.
 title: Statements
 schema:
-  - { field: key, type: text, primary_key: true, required: true, help: "The text block's short name, unique in this file; a write and Edit in File address the entry by it." }
-  - { field: title,     type: text,     display: 1, required: true }
-  - { field: status,    type: select,   options: [draft, ready], required: true }
-  - { field: tags,      type: tags }
-  - { field: note,      type: textarea }
-  - { field: statement, type: textarea, help: "The verbatim boilerplate text" }
+  - { field: key, type: text, primary_key: true, required: true, section: Core, help: "The text block's short name, unique in this file; a write and Edit in File address the entry by it." }
+  - { field: title,     type: text,     display: 1, required: true, section: Core }
+  - { field: status,    type: select,   options: [draft, ready], required: true, section: Core }
+  - { field: tags,      type: tags, section: Core }
+  - { field: note,      type: textarea, section: Content }
+  - { field: statement, type: textarea, section: Content, help: "The verbatim boilerplate text" }
 
 entries:
   - key: short-bio-100-words

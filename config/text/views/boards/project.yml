@@ -75,6 +75,7 @@ text:
             due_days: '{0}d'
             edit_glyph: edit
             edit_manifest: Edit Manifest
+            edit_record: Edit
             eli5: ELI5
             expand_glyph: expand
             files_capped: showing the {0} most recent
@@ -178,12 +179,16 @@ text:
             status_glyph: flag
             subtask: Subtask
             workbench: Workbench
+        listing_none: No set of projects chosen. Open a set from the title of its card.
         no_documents: This project has no Markdown document.
+        no_projects: This set holds no project.
         no_sessions: No session has worked in this folder.
         none: No project chosen. Open a project from the title of its card.
         none_glyph: folder
         sessions: Sessions
         unknown: The snapshot holds no project with the id {0}.
     views:
+        listing: Projects
+        listing_glyph: folder
         project: Project
         project_glyph: folder

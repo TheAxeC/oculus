@@ -6,6 +6,7 @@
 // over several hubs (the tiers, the Archival band's stages) is drawn from every hub's words.
 
 import { z } from 'zod';
+import { byKey } from '../../../data/helpers/guards.ts';
 import type { Domain, Pillar, Project, Snapshot, Venue } from '../../../data/model/index.ts';
 import { categoriesBy, isArchival } from '../../../data/shapes/boards/categories.ts';
 import {
@@ -245,6 +246,14 @@ const kindRowShape = z
         label: typeof row.label === 'string' && row.label !== '' ? row.label : row.key,
         color: typeof row.color === 'string' ? row.color : ''
     }));
+
+/** The kind of the off-pillar lines: a card muted, and the section that holds the Archival card. */
+export const OFFPILLAR = 'offpillar';
+
+/** The record of a registry's map under `id`, null for none, a name off the prototype included. */
+export function registryRecord<T>(records: Record<string, T> | undefined, id: string): T | null {
+    return byKey(records ?? {}, id) ?? null;
+}
 
 /**
  * The sections of the Pillars view over the lines given: one per row of `pillar_kinds` of the words

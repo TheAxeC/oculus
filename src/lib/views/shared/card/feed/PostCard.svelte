@@ -1,11 +1,14 @@
 <script lang="ts">
-    // Layer 3, view partial of views/feeds/linkedin/Linkedin.svelte. One idea or numbered post as
-    // the record card (views/shared/card/record/RecordCard.svelte): its metadata and snippet. The
-    // strip holds Mark posted, on an idea, and Edit, which opens the post's source file; the menu
-    // holds Mark posted in its Status submenu and Edit. Folder and cadence rules stay outside this
-    // card. A web address written in the snippet is a link (ui/display/text/LinkedText.svelte).
+    // Layer 3, shared view partial, drawn by views/feeds/linkedin/Linkedin.svelte and at the top of
+    // the post's page (views/feeds/post/Post.svelte). One idea or numbered post as the record card
+    // (views/shared/card/record/RecordCard.svelte): its metadata and snippet, and a title opening
+    // the post's page. The strip holds Mark posted, on an idea, and Edit, which opens the post's
+    // source file; the menu holds Mark posted in its Status submenu and Edit. With `page` set the
+    // title opens nothing and the snippet is left out, since the page draws the post's whole body.
+    // Folder and cadence rules stay outside this card. A web address written in the snippet is a
+    // link (ui/display/text/LinkedText.svelte).
 
-    import { linkedinSourcePath, openLinkedinSource } from './post-card';
+    import { linkedinSourcePath, openLinkedinSource, postState } from './post-card';
     import LinkedText from '$lib/ui/display/text/LinkedText.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
     import RecordCard from '$lib/views/shared/card/record/RecordCard.svelte';
@@ -29,10 +32,12 @@
         cursor: boolean;
         folder: string;
         posted?: boolean;
+        /** Whether the card is the top of the post's own page. */
+        page?: boolean;
         onsaid: (words: string) => void;
     };
 
-    let { entry, id, cursor, folder, posted = false, onsaid }: Props = $props();
+    let { entry, id, cursor, folder, posted = false, page = false, onsaid }: Props = $props();
 
     const hub = $derived(rootOf(entry));
     const number = $derived(/^\d+/.exec(entry.file)?.[0] ?? '');
@@ -74,6 +79,12 @@
     function edit(): void {
         openLinkedinSource(client.layout, folder, entry.file, hub);
     }
+
+    /** Open the post's page as the preview tab of the pane beside this one. */
+    function open(): void {
+        const state = postState(hub, entry.file, entry.title);
+        client.layout.openBeside('post', state, undefined, undefined, { preview: true });
+    }
 </script>
 
 {#snippet meta()}
@@ -101,12 +112,13 @@
         {id}
         {cursor}
         title={entry.title}
+        ontitle={page ? undefined : open}
         record={entry}
         {actions}
         strip={['posted', 'edit']}
         {onsaid}
         {meta}
-        {text}
+        text={page ? undefined : text}
     />
 </div>
 

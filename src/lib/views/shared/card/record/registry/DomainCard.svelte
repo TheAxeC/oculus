@@ -1,9 +1,11 @@
 <script lang="ts">
-    // Layer 3, Domains partial. One populated domain as the record card
+    // Layer 3, shared view partial, drawn by the Domains view and, with `page`, by the domain's
+    // page (views/boards/entry/Entry.svelte). One domain as the record card
     // (views/shared/card/record/RecordCard.svelte): its configured accent, the tag counting its
     // projects, its registry prose, and the strip of its projects at the foot. Its heading and the
-    // strip's Page open the domain's page; the menu holds Page, the Add run, Edit in File and
-    // Delete (views/shared/forms/registry/registry-card.svelte.ts).
+    // strip's Page open the domain's page; the menu holds Page, the Add run, Edit, Edit in File and
+    // Delete (views/shared/forms/registry/registry-card.svelte.ts). On the page the heading is
+    // words and the strip holds Edit.
 
     import Tag from '$lib/ui/controls/Tag.svelte';
     import RecordCard from '$lib/views/shared/card/record/RecordCard.svelte';
@@ -20,7 +22,17 @@
     import { rootOf } from '$lib/state/shared/page/hubs';
 
     type Props = RegistryCardProps & { domain: Domain };
-    let { domain, cursor, projects, entry, schema, file, fault, onsaid }: Props = $props();
+    let {
+        domain,
+        cursor,
+        projects,
+        entry,
+        schema,
+        file,
+        fault,
+        onsaid,
+        page = false
+    }: Props = $props();
 
     const client = useState();
     const {
@@ -40,7 +52,8 @@
         fault,
         onsaid,
         collection,
-        title: domain.title
+        title: domain.title,
+        page
     }));
 </script>
 
@@ -65,7 +78,7 @@
         tone={domainTone(domain.id)}
         record={domain}
         actions={card.actions}
-        strip={['page']}
+        strip={card.strip}
         dated={card.dated}
         {onsaid}
         {meta}

@@ -96,7 +96,7 @@ The hub's own settings. A key of oculus's `config/catalogs/vocab.yml` set here i
 # A website's LinkedIn posts folder, read by the LinkedIn view. None by default.
 # linkedin_dir: path/to/_linkedin
 
-# The career file, edited in the Career view, which the website's CV is written from.
+# The career file, shown in the Career view and edited in its editor, which the website's CV is written from.
 # career_file: .oculus/data/academic/career.yml
 
 # The photo wall's folder, inside the hub.
@@ -1094,6 +1094,7 @@ A schema line takes these keys:
   filter: true         # select, tags or text: a filter of the field beside the view's search
   when: { category: conference }   # the field is allowed only while this holds
   help: "One line."    # shown in the editor and on hover
+  section: Core        # the editor's group; a name of the form's list keeps its place, another comes after them, and a row with none goes under Other, last
   # records only: fields (the inner schema), open (more keys allowed), map (a map, not a list)
 ```
 
@@ -1102,26 +1103,26 @@ A schema line takes these keys:
 ```yaml
 title: Venues
 schema:
-  - { field: name,           type: text,     display: 2, required: true, help: "The venue's full name." }
-  - { field: id,             type: text,     primary_key: true, help: "The id a project's venue names." }
-  - { field: short,          type: text,     display: 1, help: "Short name or acronym." }
-  - { field: category,       type: select,   foreign_key: vocab.venue_categories, help: "journal, conference, thesis or meeting." }
-  - { field: jif,            type: text,     help: "Impact factor." }
-  - { field: quartile,       type: text,     help: "Quartile in its category." }
-  - { field: tier,           type: select,   foreign_key: vocab.venue_tiers, help: "flagship, strong or specialist." }
-  - { field: wos,            type: text,     help: "Web of Science indexing." }
-  - { field: scopus,         type: text,     help: "Scopus indexing." }
-  - { field: format,         type: text,     help: "LaTeX class or template." }
-  - { field: free,           type: text,     help: "Open-access and charge note." }
-  - { field: wants,          type: textarea, help: "What it publishes." }
-  - { field: themes,         type: tags,     options: [{ key: core-ml, label: "Core ML" }, { key: clinical, label: "Clinical" }], help: "Theme words: core-ml or clinical." }
-  - { field: link,           type: text,     help: "Web address." }
-  - { field: timing,         type: text,     help: "When submissions are open." }
-  - { field: deadline,       type: date,     help: "Next submission deadline." }
-  - { field: deadline_month, type: text,     when: { category: conference }, help: "Usual deadline month, such as Aug." }
-  - { field: held_month,     type: text,     when: { category: conference }, help: "Usual month it is held." }
-  - { field: call,           type: text,     help: "Call-for-papers address." }
-  - { field: email,          type: text,     help: "Editorial office address." }
+  - { field: name,           type: text,     display: 2, required: true, section: Core, help: "The venue's full name." }
+  - { field: id,             type: text,     primary_key: true, section: Core, help: "The id a project's venue names." }
+  - { field: short,          type: text,     display: 1, section: Core, help: "Short name or acronym." }
+  - { field: category,       type: select,   foreign_key: vocab.venue_categories, section: Core, help: "journal, conference, thesis or meeting." }
+  - { field: jif,            type: text,     section: Indexing, help: "Impact factor." }
+  - { field: quartile,       type: text,     section: Indexing, help: "Quartile in its category." }
+  - { field: tier,           type: select,   foreign_key: vocab.venue_tiers, section: Core, help: "flagship, strong or specialist." }
+  - { field: wos,            type: text,     section: Indexing, help: "Web of Science indexing." }
+  - { field: scopus,         type: text,     section: Indexing, help: "Scopus indexing." }
+  - { field: format,         type: text,     section: Core, help: "LaTeX class or template." }
+  - { field: free,           type: text,     section: Core, help: "Open-access and charge note." }
+  - { field: wants,          type: textarea, section: Content, help: "What it publishes." }
+  - { field: themes,         type: tags,     options: [{ key: core-ml, label: "Core ML" }, { key: clinical, label: "Clinical" }], section: Content, help: "Theme words: core-ml or clinical." }
+  - { field: link,           type: text,     section: Core, help: "Web address." }
+  - { field: timing,         type: text,     section: Dates, help: "When submissions are open." }
+  - { field: deadline,       type: date,     section: Dates, help: "Next submission deadline." }
+  - { field: deadline_month, type: text,     when: { category: conference }, section: Dates, help: "Usual deadline month, such as Aug." }
+  - { field: held_month,     type: text,     when: { category: conference }, section: Dates, help: "Usual month it is held." }
+  - { field: call,           type: text,     section: Dates, help: "Call-for-papers address." }
+  - { field: email,          type: text,     section: Core, help: "Editorial office address." }
 entries:
 #  - name: Neurocomputing         # required; renaming it keeps every project's venue
 #    id: neucom                   # required; what a project's venue names
@@ -1152,18 +1153,19 @@ The datasets are listed under `datasets:`, not `entries:`.
 ```yaml
 title: Data
 schema:
-  - { field: key,         type: text,     primary_key: true, required: true, help: "The dataset's key, used by a project's datasets." }
-  - { field: name,        type: text,     display: 1, required: true, help: "Full name." }
-  - { field: modality,    type: text,     help: "Kind of data." }
-  - { field: themes,      type: tags,     options: [{ key: eeg, label: "EEG" }, { key: ecg, label: "ECG" }], help: "Theme words: eeg or ecg." }
-  - { field: description, type: textarea, help: "What it holds and why it is used." }
-  - { field: size,        type: text,     help: "How large it is." }
-  - { field: path,        type: text,     label: "Folder", help: "The dataset's folder under ~/data, the same on this Mac and on the cluster; Recover fetches into it." }
-  - { field: access,      type: select,   foreign_key: vocab.data_access, help: "open, registration, credentialed or private." }
-  - { field: source,      type: text,     help: "Source address." }
-  - { field: notes,       type: textarea, help: "What a reader of the set should know, and the steps a person follows that no source states." }
+  - { field: key,         type: text,     primary_key: true, required: true, section: Core, help: "The dataset's key, used by a project's datasets." }
+  - { field: name,        type: text,     display: 1, required: true, section: Core, help: "Full name." }
+  - { field: modality,    type: text,     section: Core, help: "Kind of data." }
+  - { field: themes,      type: tags,     options: [{ key: eeg, label: "EEG" }, { key: ecg, label: "ECG" }], section: Core, help: "Theme words: eeg or ecg." }
+  - { field: description, type: textarea, section: Content, help: "What it holds and why it is used." }
+  - { field: size,        type: text,     section: Core, help: "How large it is." }
+  - { field: path,        type: text,     label: "Folder", section: Recovery, help: "The dataset's folder under ~/data, the same on this Mac and on the cluster; Recover fetches into it." }
+  - { field: access,      type: select,   foreign_key: vocab.data_access, section: Core, help: "open, registration, credentialed or private." }
+  - { field: source,      type: text,     section: Core, help: "Source address." }
+  - { field: notes,       type: textarea, section: Content, help: "What a reader of the set should know, and the steps a person follows that no source states." }
   - field: retrieval
     type: records
+    section: Recovery
     help: "How the set comes back: its sources, each with a kind and the fields that kind takes, fetched in the order written."
     fields:
       - { field: kind,       type: select, options: [physionet, zenodo, figshare, dandi, huggingface, stanford, geo, kaggle, tcia, synapse, url, library, request, derived], required: true, help: "Where the files come from. physionet to url are downloads Recover runs; library, request and derived are stated on the card." }
@@ -1231,13 +1233,13 @@ datasets:
 ```yaml
 title: Pillars
 schema:
-  - { field: key,     type: text,     primary_key: true, required: true, help: "The pillar's key, used by a project's pillars." }
-  - { field: title,   type: text,     display: 1, required: true, help: "Name." }
-  - { field: kind,    type: select,   foreign_key: vocab.pillar_kinds, help: "The line's kind, a key of pillar_kinds." }
-  - { field: goal,    type: textarea, help: "One-line aim." }
-  - { field: color,   type: text,     help: "A hex colour of the palette." }
-  - { field: funding, type: text,     help: "Granted support only." }
-  - { field: blurb,   type: textarea, help: "What it covers." }
+  - { field: key,     type: text,     primary_key: true, required: true, section: Core, help: "The pillar's key, used by a project's pillars." }
+  - { field: title,   type: text,     display: 1, required: true, section: Core, help: "Name." }
+  - { field: kind,    type: select,   foreign_key: vocab.pillar_kinds, section: Core, help: "The line's kind, a key of pillar_kinds." }
+  - { field: goal,    type: textarea, section: Content, help: "One-line aim." }
+  - { field: color,   type: text,     section: Core, help: "A hex colour of the palette." }
+  - { field: funding, type: text,     section: Connections, help: "Granted support only." }
+  - { field: blurb,   type: textarea, section: Content, help: "What it covers." }
 entries:
 #  - key: tensor                  # required; what a project's pillars name
 #    title: "Tensor methods"      # required
@@ -1253,11 +1255,11 @@ entries:
 ```yaml
 title: Domains
 schema:
-  - { field: key,              type: text,     primary_key: true, required: true, help: "The domain's key, used by a project's domain." }
-  - { field: title,            type: text,     display: 1, required: true, help: "Name, the label of a project card of the domain." }
-  - { field: blurb,            type: textarea, help: "What it covers." }
-  - { field: color,            type: text,     help: "The colour of a project card of the domain, as #rrggbb." }
-  - { field: expects_datasets, type: checkbox, help: "Whether an active project of the domain must list a dataset." }
+  - { field: key,              type: text,     primary_key: true, required: true, section: Core, help: "The domain's key, used by a project's domain." }
+  - { field: title,            type: text,     display: 1, required: true, section: Core, help: "Name, the label of a project card of the domain." }
+  - { field: blurb,            type: textarea, section: Content, help: "What it covers." }
+  - { field: color,            type: text,     section: Core, help: "The colour of a project card of the domain, as #rrggbb." }
+  - { field: expects_datasets, type: checkbox, section: Connections, help: "Whether an active project of the domain must list a dataset." }
 entries:
 #  - key: heart                   # required; what a project's domain names
 #    title: "Heart"               # required
@@ -1273,24 +1275,25 @@ Your own entry is the one whose key `self` names in the primary hub's `.oculus/l
 ```yaml
 title: People
 schema:
-  - { field: key,          type: text,     primary_key: true, required: true, help: "The person's key." }
-  - { field: name,         type: text,     display: 1, required: true, help: "Full name." }
-  - { field: family,       type: text,     help: "The family name, the end of name." }
-  - { field: affiliations, type: tags,     foreign_key: organisations, help: "Organisation keys, the primary first." }
-  - { field: role,         type: text,     help: "Who they are to you." }
-  - { field: orcid,        type: text,     help: "ORCID." }
-  - { field: email,        type: text,     help: "Email address." }
+  - { field: key,          type: text,     primary_key: true, required: true, section: Core, help: "The person's key." }
+  - { field: name,         type: text,     display: 1, required: true, section: Core, help: "Full name." }
+  - { field: family,       type: text,     section: Core, help: "The family name, the end of name." }
+  - { field: affiliations, type: tags,     foreign_key: organisations, section: Connections, help: "Organisation keys, the primary first." }
+  - { field: role,         type: text,     section: Core, help: "Who they are to you." }
+  - { field: orcid,        type: text,     section: Core, help: "ORCID." }
+  - { field: email,        type: text,     section: Core, help: "Email address." }
   - field: links
     type: records
+    section: Core
     help: "Web addresses, in the order a CV prints them."
     fields:
       - { field: name,   type: text, required: true, help: "What the address is, such as LinkedIn." }
       - { field: url,    type: text, required: true, help: "The full address." }
       - { field: handle, type: text, help: "The account name a CV prints in place of the address." }
-  - { field: work,         type: text,     help: "What the work with the person is about." }
-  - { field: tags,         type: tags,     help: "Words that describe the person and the work with them." }
-  - { field: note,         type: textarea, help: "Free notes on the person and the work with them." }
-  - { field: folder,       type: text,     help: "A student's supervision folder." }
+  - { field: work,         type: text,     section: Content, help: "What the work with the person is about." }
+  - { field: tags,         type: tags,     section: Core, help: "Words that describe the person and the work with them." }
+  - { field: note,         type: textarea, section: Content, help: "Free notes on the person and the work with them." }
+  - { field: folder,       type: text,     section: Connections, help: "A student's supervision folder." }
 entries:
 #  - key: me                      # required
 #    name: "Your Name"            # required
@@ -1311,11 +1314,11 @@ entries:
 ```yaml
 title: Organisations
 schema:
-  - { field: key,     type: text,   primary_key: true, required: true, help: "The organisation's key." }
-  - { field: name,    type: text,   display: 1, required: true, help: "Full name." }
-  - { field: kind,    type: select, options: [university, hospital, funder, company, other], required: true, help: "Kind." }
-  - { field: country, type: text,   help: "Two-letter country code." }
-  - { field: links,   type: tags,   help: "Web addresses." }
+  - { field: key,     type: text,   primary_key: true, required: true, section: Core, help: "The organisation's key." }
+  - { field: name,    type: text,   display: 1, required: true, section: Core, help: "Full name." }
+  - { field: kind,    type: select, options: [university, hospital, funder, company, other], required: true, section: Core, help: "Kind." }
+  - { field: country, type: text,   section: Core, help: "Two-letter country code." }
+  - { field: links,   type: tags,   section: Core, help: "Web addresses." }
 entries:
 #  - key: my-uni                  # required
 #    name: "My University"        # required
@@ -1329,12 +1332,12 @@ entries:
 ```yaml
 title: Resources
 schema:
-  - { field: key,    type: text,     primary_key: true, required: true, help: "The resource's key, used by compute and slurm.resource." }
-  - { field: name,   type: text,     display: 1, required: true, help: "Name." }
-  - { field: kind,   type: select,   options: [cluster, machine, storage], required: true, help: "Kind." }
-  - { field: host,   type: text,     help: "The host ssh connects to for a cluster or remote machine: an ssh alias, a DNS name or an address, with no user name." }
-  - { field: access, type: textarea, help: "How it is reached." }
-  - { field: links,  type: tags,     help: "Web addresses." }
+  - { field: key,    type: text,     primary_key: true, required: true, section: Core, help: "The resource's key, used by compute and slurm.resource." }
+  - { field: name,   type: text,     display: 1, required: true, section: Core, help: "Name." }
+  - { field: kind,   type: select,   options: [cluster, machine, storage], required: true, section: Core, help: "Kind." }
+  - { field: host,   type: text,     section: Core, help: "The host ssh connects to for a cluster or remote machine: an ssh alias, a DNS name or an address, with no user name." }
+  - { field: access, type: textarea, section: Core, help: "How it is reached." }
+  - { field: links,  type: tags,     section: Core, help: "Web addresses." }
 entries:
 #  - key: my-cluster              # required; what compute and slurm.resource name
 #    name: "My cluster"           # required
@@ -1349,12 +1352,12 @@ entries:
 ```yaml
 title: Statements
 schema:
-  - { field: key,       type: text,     primary_key: true, required: true, help: "Short name." }
-  - { field: title,     type: text,     display: 1, required: true, help: "Name." }
-  - { field: status,    type: select,   options: [draft, ready], required: true, help: "Draft or ready." }
-  - { field: tags,      type: tags,     help: "Filter words." }
-  - { field: note,      type: textarea, help: "Where it is used." }
-  - { field: statement, type: textarea, help: "The verbatim text." }
+  - { field: key,       type: text,     primary_key: true, required: true, section: Core, help: "Short name." }
+  - { field: title,     type: text,     display: 1, required: true, section: Core, help: "Name." }
+  - { field: status,    type: select,   options: [draft, ready], required: true, section: Core, help: "Draft or ready." }
+  - { field: tags,      type: tags,     section: Core, help: "Filter words." }
+  - { field: note,      type: textarea, section: Content, help: "Where it is used." }
+  - { field: statement, type: textarea, section: Content, help: "The verbatim text." }
 entries:
 #  - key: data-availability       # required
 #    title: "Data availability"   # required
@@ -1369,35 +1372,35 @@ entries:
 ```yaml
 title: Funding
 schema:
-  - { field: key,       type: text,     primary_key: true, required: true, help: "The key a project's funding names." }
-  - { field: title,     type: text,     display: 1, required: true, help: "Scheme or application." }
-  - { field: sub,       type: text,     help: "Scheme, role, period." }
-  - { field: funder,    type: select,   foreign_key: organisations, help: "The funder's organisation key." }
-  - { field: award,     type: text,     help: "The funder's number of the award, which a Zenodo deposit names with the title." }
-  - { field: status,    type: select,   options: [in-prep, planned, submitted, contributing, awarded, rejected, withdrawn], required: true, help: "Where it stands." }
-  - { field: date,      type: text,     help: "Year or range." }
-  - { field: deadline,  type: date,     help: "Shows on Focus while live." }
-  - { field: meta,      type: metalist, help: "Label and value rows." }
-  - { field: tags,      type: tags,     help: "Filter words." }
-  - { field: note,      type: textarea, help: "Notes." }
-  - { field: statement, type: textarea, help: "The funder's acknowledgment, verbatim." }
-  - { field: link,      type: text,     help: "A path in the hub." }
-  - { field: url,       type: text,     help: "The call's address." }
-  - { field: followup,  type: text,     help: "A standing reminder." }
-  - { field: lead,          type: tags,     foreign_key: people, required: true, help: "Who leads it." }
-  - { field: collaborators, type: tags,     foreign_key: people, help: "Who works on it with the lead." }
-  - { field: supervisors,   type: tags,     foreign_key: people, help: "Who supervises it." }
-  - { field: cv_section, type: text,     help: "The CV section the grant is listed in, such as grants; none keeps it off the CV." }
-  - { field: cv_rank,    type: text,     help: "The grant's place in its CV section, a whole number." }
-  - { field: cv_title,   type: text,     help: "The title the CV prints, when it is not the title." }
-  - { field: cv_url,     type: text,     help: "The address the CV links, when it is not the url." }
-  - { field: cv_status,  type: text,     help: "The status the CV prints for the grant." }
-  - { field: role,       type: text,     help: "Your role as the CV prints it." }
-  - { field: location,   type: text,     help: "Where, as the CV prints it." }
-  - { field: duration,   type: text,     help: "The period as the CV prints it." }
-  - { field: about,      type: textarea, help: "What the CV prints under it." }
-  - { field: min,        type: checkbox, help: "Left out of the short CV." }
-  - { field: hide,       type: checkbox, help: "Kept off the CV while it stays listed." }
+  - { field: key,       type: text,     primary_key: true, required: true, section: Core, help: "The key a project's funding names." }
+  - { field: title,     type: text,     display: 1, required: true, section: Core, help: "Scheme or application." }
+  - { field: sub,       type: text,     section: Core, help: "Scheme, role, period." }
+  - { field: funder,    type: select,   foreign_key: organisations, section: Core, help: "The funder's organisation key." }
+  - { field: award,     type: text,     section: Core, help: "The funder's number of the award, which a Zenodo deposit names with the title." }
+  - { field: status,    type: select,   options: [in-prep, planned, submitted, contributing, awarded, rejected, withdrawn], required: true, section: Core, help: "Where it stands." }
+  - { field: date,      type: text,     section: Dates, help: "Year or range." }
+  - { field: deadline,  type: date,     section: Dates, help: "Shows on Focus while live." }
+  - { field: meta,      type: metalist, section: Core, help: "Label and value rows." }
+  - { field: tags,      type: tags,     section: Core, help: "Filter words." }
+  - { field: note,      type: textarea, section: Content, help: "Notes." }
+  - { field: statement, type: textarea, section: Content, help: "The funder's acknowledgment, verbatim." }
+  - { field: link,      type: text,     section: Core, help: "A path in the hub." }
+  - { field: url,       type: text,     section: Core, help: "The call's address." }
+  - { field: followup,  type: text,     section: Dates, help: "A standing reminder." }
+  - { field: lead,          type: tags,     foreign_key: people, required: true, section: Connections, help: "Who leads it." }
+  - { field: collaborators, type: tags,     foreign_key: people, section: Connections, help: "Who works on it with the lead." }
+  - { field: supervisors,   type: tags,     foreign_key: people, section: Connections, help: "Who supervises it." }
+  - { field: cv_section, type: text,     section: Website, help: "The CV section the grant is listed in, such as grants; none keeps it off the CV." }
+  - { field: cv_rank,    type: text,     section: Website, help: "The grant's place in its CV section, a whole number." }
+  - { field: cv_title,   type: text,     section: Website, help: "The title the CV prints, when it is not the title." }
+  - { field: cv_url,     type: text,     section: Website, help: "The address the CV links, when it is not the url." }
+  - { field: cv_status,  type: text,     section: Website, help: "The status the CV prints for the grant." }
+  - { field: role,       type: text,     section: Website, help: "Your role as the CV prints it." }
+  - { field: location,   type: text,     section: Website, help: "Where, as the CV prints it." }
+  - { field: duration,   type: text,     section: Website, help: "The period as the CV prints it." }
+  - { field: about,      type: textarea, section: Website, help: "What the CV prints under it." }
+  - { field: min,        type: checkbox, section: Website, help: "Left out of the short CV." }
+  - { field: hide,       type: checkbox, section: Website, help: "Kept off the CV while it stays listed." }
 entries:
 #  - key: my-grant                # required; what a project's funding names
 #    title: "My grant"            # required
@@ -1426,30 +1429,30 @@ entries:
 ```yaml
 title: Talks & Events
 schema:
-  - { field: key,      type: text,     primary_key: true, required: true, help: "Short name." }
-  - { field: title,    type: text,     display: 1, required: true, help: "Event." }
-  - { field: sub,      type: text,     help: "Place." }
-  - { field: role,     type: select,   options: [present, co-present, attend, media], required: true, help: "Your role; media is an article or a video about your work." }
-  - { field: status,   type: select,   options: [upcoming, planned, completed, cancelled, not-attending], required: true, help: "Where it stands." }
-  - { field: date,     type: text,     help: "When." }
-  - { field: deadline, type: date,     help: "Shows on Focus while live." }
-  - { field: meta,     type: metalist, help: "Label and value rows." }
-  - { field: tags,     type: tags,     help: "Filter words." }
-  - { field: note,     type: textarea, help: "Notes." }
-  - { field: link,     type: text,     required: { when: { role: present, status: [upcoming, planned] } }, help: "Slides of a talk you are still to give." }
-  - { field: related,  type: tags,     foreign_key: projects, help: "Project ids." }
-  - { field: followup, type: text,     help: "A standing reminder." }
-  - { field: lead,          type: tags,     foreign_key: people, required: true, help: "Who leads it." }
-  - { field: collaborators, type: tags,     foreign_key: people, help: "Who works on it with the lead." }
-  - { field: supervisors,   type: tags,     foreign_key: people, help: "Who supervises it." }
-  - { field: cv_section, type: text,     help: "The CV section the event is listed in, such as news; none keeps it off the CV." }
-  - { field: cv_rank,    type: text,     help: "The event's place in its CV section, a whole number." }
-  - { field: cv_title,   type: text,     help: "The title the CV prints, when it is not the title." }
-  - { field: cv_url,     type: text,     help: "The address the CV links." }
-  - { field: location,   type: text,     help: "Where, as the CV prints it." }
-  - { field: duration,   type: text,     help: "When, as the CV prints it." }
-  - { field: about,      type: textarea, help: "What the CV prints under it." }
-  - { field: hide,       type: checkbox, help: "Kept off the CV while it stays listed." }
+  - { field: key,      type: text,     primary_key: true, required: true, section: Core, help: "Short name." }
+  - { field: title,    type: text,     display: 1, required: true, section: Core, help: "Event." }
+  - { field: sub,      type: text,     section: Core, help: "Place." }
+  - { field: role,     type: select,   options: [present, co-present, attend, media], required: true, section: Core, help: "Your role; media is an article or a video about your work." }
+  - { field: status,   type: select,   options: [upcoming, planned, completed, cancelled, not-attending], required: true, section: Core, help: "Where it stands." }
+  - { field: date,     type: text,     section: Dates, help: "When." }
+  - { field: deadline, type: date,     section: Dates, help: "Shows on Focus while live." }
+  - { field: meta,     type: metalist, section: Core, help: "Label and value rows." }
+  - { field: tags,     type: tags,     section: Core, help: "Filter words." }
+  - { field: note,     type: textarea, section: Content, help: "Notes." }
+  - { field: link,     type: text,     required: { when: { role: present, status: [upcoming, planned] } }, section: Core, help: "Slides of a talk you are still to give." }
+  - { field: related,  type: tags,     foreign_key: projects, section: Connections, help: "Project ids." }
+  - { field: followup, type: text,     section: Dates, help: "A standing reminder." }
+  - { field: lead,          type: tags,     foreign_key: people, required: true, section: Connections, help: "Who leads it." }
+  - { field: collaborators, type: tags,     foreign_key: people, section: Connections, help: "Who works on it with the lead." }
+  - { field: supervisors,   type: tags,     foreign_key: people, section: Connections, help: "Who supervises it." }
+  - { field: cv_section, type: text,     section: Website, help: "The CV section the event is listed in, such as news; none keeps it off the CV." }
+  - { field: cv_rank,    type: text,     section: Website, help: "The event's place in its CV section, a whole number." }
+  - { field: cv_title,   type: text,     section: Website, help: "The title the CV prints, when it is not the title." }
+  - { field: cv_url,     type: text,     section: Website, help: "The address the CV links." }
+  - { field: location,   type: text,     section: Website, help: "Where, as the CV prints it." }
+  - { field: duration,   type: text,     section: Website, help: "When, as the CV prints it." }
+  - { field: about,      type: textarea, section: Website, help: "What the CV prints under it." }
+  - { field: hide,       type: checkbox, section: Website, help: "Kept off the CV while it stays listed." }
 entries:
 #  - key: my-talk                 # required
 #    title: "My talk"             # required
@@ -1475,31 +1478,32 @@ entries:
 ```yaml
 title: Education & Service
 schema:
-  - { field: key,      type: text,     primary_key: true, required: true, help: "Short name." }
-  - { field: title,    type: text,     display: 1, required: true, help: "Course or role." }
-  - { field: sub,      type: text,     help: "Institution, period." }
-  - { field: status,   type: select,   options: [planned, ongoing, completed], required: true, help: "Where it stands." }
-  - { field: date,     type: text,     help: "Year or range." }
-  - { field: deadline, type: date,     help: "Shows on Focus while live." }
-  - { field: meta,     type: metalist, help: "Label and value rows." }
-  - { field: tags,     type: tags,     help: "Filter words." }
-  - { field: note,     type: textarea, help: "Notes." }
-  - { field: link,     type: text,     help: "A path in the hub." }
-  - { field: related,  type: tags,     foreign_key: projects, help: "Project ids." }
-  - { field: followup, type: text,     help: "A standing reminder." }
-  - { field: lead,          type: tags,     foreign_key: people, required: true, help: "Who leads it." }
-  - { field: collaborators, type: tags,     foreign_key: people, help: "Who works on it with the lead." }
-  - { field: supervisors,   type: tags,     foreign_key: people, help: "Who supervises it." }
-  - { field: cv_section, type: text,     help: "The CV section the entry is listed in, such as academic; none keeps it off the CV." }
-  - { field: cv_rank,    type: text,     help: "The entry's place in its CV section, a whole number." }
-  - { field: cv_title,   type: text,     help: "The title the CV prints, when it is not the title." }
-  - { field: cv_url,     type: text,     help: "The address the CV links." }
-  - { field: location,   type: text,     help: "Where, as the CV prints it." }
-  - { field: duration,   type: text,     help: "The period as the CV prints it." }
-  - { field: about,      type: textarea, help: "What the CV prints under it." }
-  - { field: hide,       type: checkbox, help: "Kept off the CV while it stays listed." }
+  - { field: key,      type: text,     primary_key: true, required: true, section: Core, help: "Short name." }
+  - { field: title,    type: text,     display: 1, required: true, section: Core, help: "Course or role." }
+  - { field: sub,      type: text,     section: Core, help: "Institution, period." }
+  - { field: status,   type: select,   options: [planned, ongoing, completed], required: true, section: Core, help: "Where it stands." }
+  - { field: date,     type: text,     section: Dates, help: "Year or range." }
+  - { field: deadline, type: date,     section: Dates, help: "Shows on Focus while live." }
+  - { field: meta,     type: metalist, section: Core, help: "Label and value rows." }
+  - { field: tags,     type: tags,     section: Core, help: "Filter words." }
+  - { field: note,     type: textarea, section: Content, help: "Notes." }
+  - { field: link,     type: text,     section: Core, help: "A path in the hub." }
+  - { field: related,  type: tags,     foreign_key: projects, section: Connections, help: "Project ids." }
+  - { field: followup, type: text,     section: Dates, help: "A standing reminder." }
+  - { field: lead,          type: tags,     foreign_key: people, required: true, section: Connections, help: "Who leads it." }
+  - { field: collaborators, type: tags,     foreign_key: people, section: Connections, help: "Who works on it with the lead." }
+  - { field: supervisors,   type: tags,     foreign_key: people, section: Connections, help: "Who supervises it." }
+  - { field: cv_section, type: text,     section: Website, help: "The CV section the entry is listed in, such as academic; none keeps it off the CV." }
+  - { field: cv_rank,    type: text,     section: Website, help: "The entry's place in its CV section, a whole number." }
+  - { field: cv_title,   type: text,     section: Website, help: "The title the CV prints, when it is not the title." }
+  - { field: cv_url,     type: text,     section: Website, help: "The address the CV links." }
+  - { field: location,   type: text,     section: Website, help: "Where, as the CV prints it." }
+  - { field: duration,   type: text,     section: Website, help: "The period as the CV prints it." }
+  - { field: about,      type: textarea, section: Website, help: "What the CV prints under it." }
+  - { field: hide,       type: checkbox, section: Website, help: "Kept off the CV while it stays listed." }
   - field: students
     type: records
+    section: Connections
     help: "The students supervised, each a row of the CV's students in place of the entry."
     fields:
       - { field: person, type: text, required: true, foreign_key: people, help: "The student, by key." }
@@ -1528,22 +1532,22 @@ entries:
 ```yaml
 title: Applications
 schema:
-  - { field: key,      type: text,     primary_key: true, required: true, help: "Short name." }
-  - { field: title,    type: text,     display: 1, required: true, help: "Position." }
-  - { field: sub,      type: text,     help: "Institution." }
-  - { field: status,   type: select,   options: [not-applied, active, accepted, rejected, declined, withdrawn, applied], required: true, help: "Where it stands." }
-  - { field: date,     type: text,     help: "Year applied." }
-  - { field: meta,     type: metalist, help: "Label and value rows." }
-  - { field: tags,     type: tags,     help: "Filter words." }
-  - { field: note,     type: textarea, help: "Notes." }
-  - { field: link,     type: text,     help: "A path in the hub." }
-  - { field: url,      type: text,     help: "The posting." }
-  - { field: related,  type: tags,     foreign_key: projects, help: "Project ids." }
-  - { field: deadline, type: date,     help: "The deadline, if any." }
-  - { field: followup, type: text,     help: "A standing reminder." }
-  - { field: lead,          type: tags,     foreign_key: people, required: true, help: "Who leads it." }
-  - { field: collaborators, type: tags,     foreign_key: people, help: "Who works on it with the lead." }
-  - { field: supervisors,   type: tags,     foreign_key: people, help: "Who supervises it." }
+  - { field: key,      type: text,     primary_key: true, required: true, section: Core, help: "Short name." }
+  - { field: title,    type: text,     display: 1, required: true, section: Core, help: "Position." }
+  - { field: sub,      type: text,     section: Core, help: "Institution." }
+  - { field: status,   type: select,   options: [not-applied, active, accepted, rejected, declined, withdrawn, applied], required: true, section: Core, help: "Where it stands." }
+  - { field: date,     type: text,     section: Dates, help: "Year applied." }
+  - { field: meta,     type: metalist, section: Core, help: "Label and value rows." }
+  - { field: tags,     type: tags,     section: Core, help: "Filter words." }
+  - { field: note,     type: textarea, section: Content, help: "Notes." }
+  - { field: link,     type: text,     section: Core, help: "A path in the hub." }
+  - { field: url,      type: text,     section: Core, help: "The posting." }
+  - { field: related,  type: tags,     foreign_key: projects, section: Connections, help: "Project ids." }
+  - { field: deadline, type: date,     section: Dates, help: "The deadline, if any." }
+  - { field: followup, type: text,     section: Dates, help: "A standing reminder." }
+  - { field: lead,          type: tags,     foreign_key: people, required: true, section: Connections, help: "Who leads it." }
+  - { field: collaborators, type: tags,     foreign_key: people, section: Connections, help: "Who works on it with the lead." }
+  - { field: supervisors,   type: tags,     foreign_key: people, section: Connections, help: "Who supervises it." }
 entries:
 #  - key: my-postdoc              # required
 #    title: "Postdoc position"    # required
@@ -1569,17 +1573,17 @@ entries:
 ```yaml
 title: Tasks
 schema:
-  - { field: key,      type: text,     primary_key: true, required: true, help: "Short name." }
-  - { field: title,    type: text,     display: 1, required: true, help: "What to do." }
-  - { field: status,   type: select,   options: [todo, doing, done, dropped], required: true, help: "Where it stands." }
-  - { field: deadline, type: date,     help: "Shows on Focus while live." }
-  - { field: kind,     type: text,     help: "Review, admin, teaching." }
-  - { field: note,     type: textarea, help: "Notes." }
-  - { field: tags,     type: tags,     help: "Filter words." }
-  - { field: followup, type: text,     help: "A standing reminder." }
-  - { field: lead,          type: tags,     foreign_key: people, required: true, help: "Who leads it." }
-  - { field: collaborators, type: tags,     foreign_key: people, help: "Who works on it with the lead." }
-  - { field: supervisors,   type: tags,     foreign_key: people, help: "Who supervises it." }
+  - { field: key,      type: text,     primary_key: true, required: true, section: Core, help: "Short name." }
+  - { field: title,    type: text,     display: 1, required: true, section: Core, help: "What to do." }
+  - { field: status,   type: select,   options: [todo, doing, done, dropped], required: true, section: Core, help: "Where it stands." }
+  - { field: deadline, type: date,     section: Dates, help: "Shows on Focus while live." }
+  - { field: kind,     type: text,     section: Core, help: "Review, admin, teaching." }
+  - { field: note,     type: textarea, section: Content, help: "Notes." }
+  - { field: tags,     type: tags,     section: Core, help: "Filter words." }
+  - { field: followup, type: text,     section: Dates, help: "A standing reminder." }
+  - { field: lead,          type: tags,     foreign_key: people, required: true, section: Connections, help: "Who leads it." }
+  - { field: collaborators, type: tags,     foreign_key: people, section: Connections, help: "Who works on it with the lead." }
+  - { field: supervisors,   type: tags,     foreign_key: people, section: Connections, help: "Who supervises it." }
 entries:
 #  - key: review-paper            # required
 #    title: "Review a paper"      # required
@@ -1601,19 +1605,19 @@ The papers kept for reading and citing. Save to Literature on a card of the Lite
 ```yaml
 title: Literature
 schema:
-  - { field: key,      type: text,     primary_key: true, required: true, help: "The citation key: the first author's surname, the year and the first word of the title." }
-  - { field: title,    type: text,     display: 1, required: true, help: "The paper's title." }
-  - { field: authors,  type: tags,     filter: true, help: "The authors in order, one name per entry." }
-  - { field: venue,    type: text,     filter: true, help: "The journal or conference; a venue of the venues registry by this name opens from it." }
-  - { field: year,     type: text,     filter: true, help: "The year it appeared, as a whole number." }
-  - { field: doi,      type: text,     help: "The DOI, without the address in front of it." }
-  - { field: url,      type: text,     help: "The paper's address." }
-  - { field: abstract, type: textarea, help: "The abstract, as plain text." }
-  - { field: keywords, type: tags,     filter: true, help: "Words the paper is found by." }
-  - { field: projects, type: tags,     foreign_key: projects, filter: true, help: "The projects the paper is for." }
-  - { field: source,   type: select,   options: [search, lit-watch, hand], filter: true, help: "Where it came from: search, lit-watch or hand." }
-  - { field: added,    type: date,     help: "The day it was saved." }
-  - { field: note,     type: textarea, help: "Notes on the paper." }
+  - { field: key,      type: text,     primary_key: true, required: true, section: Core, help: "The citation key: the first author's surname, the year and the first word of the title." }
+  - { field: title,    type: text,     display: 1, required: true, section: Core, help: "The paper's title." }
+  - { field: authors,  type: tags,     filter: true, section: Core, help: "The authors in order, one name per entry." }
+  - { field: venue,    type: text,     filter: true, section: Core, help: "The journal or conference; a venue of the venues registry by this name opens from it." }
+  - { field: year,     type: text,     filter: true, section: Core, help: "The year it appeared, as a whole number." }
+  - { field: doi,      type: text,     section: Core, help: "The DOI, without the address in front of it." }
+  - { field: url,      type: text,     section: Core, help: "The paper's address." }
+  - { field: abstract, type: textarea, section: Content, help: "The abstract, as plain text." }
+  - { field: keywords, type: tags,     filter: true, section: Content, help: "Words the paper is found by." }
+  - { field: projects, type: tags,     foreign_key: projects, filter: true, section: Connections, help: "The projects the paper is for." }
+  - { field: source,   type: select,   options: [search, lit-watch, hand], filter: true, section: Core, help: "Where it came from: search, lit-watch or hand." }
+  - { field: added,    type: date,     section: Dates, help: "The day it was saved." }
+  - { field: note,     type: textarea, section: Content, help: "Notes on the paper." }
 entries:
 #  - key: smith2024blockterm      # required; the citation key
 #    title: "Block-term tensor regression for ECoG"   # required
@@ -1636,16 +1640,16 @@ Written by the scout. `meta.log` holds one dated line per pass.
 
 ```yaml
 schema:
-  - { field: title,    type: text,     primary_key: true, display: 1, help: "Position." }
-  - { field: inst,     type: text,     help: "Institution." }
-  - { field: country,  type: text,     help: "Country." }
-  - { field: typ,      type: text,     help: "Kind of position." }
-  - { field: focus,    type: textarea, help: "What it is about." }
-  - { field: fit,      type: textarea, help: "How it fits; strong, moderate or reach colours the card." }
-  - { field: status,   type: select,   foreign_key: vocab.lead_statuses, help: "Where it stands: open, applied, declined, closed or dismissed." }
-  - { field: date,     type: date,     help: "Day found." }
-  - { field: deadline, type: text,     help: "Deadline as posted." }
-  - { field: url,      type: text,     help: "The posting." }
+  - { field: title,    type: text,     primary_key: true, display: 1, section: Core, help: "Position." }
+  - { field: inst,     type: text,     section: Core, help: "Institution." }
+  - { field: country,  type: text,     section: Core, help: "Country." }
+  - { field: typ,      type: text,     section: Core, help: "Kind of position." }
+  - { field: focus,    type: textarea, section: Core, help: "What it is about." }
+  - { field: fit,      type: textarea, section: Core, help: "How it fits; strong, moderate or reach colours the card." }
+  - { field: status,   type: select,   foreign_key: vocab.lead_statuses, section: Core, help: "Where it stands: open, applied, declined, closed or dismissed." }
+  - { field: date,     type: date,     section: Dates, help: "Day found." }
+  - { field: deadline, type: text,     section: Dates, help: "Deadline as posted." }
+  - { field: url,      type: text,     section: Core, help: "The posting." }
 meta:
   log: []
 entries:
@@ -1667,21 +1671,21 @@ Written by the literature scout. `meta.last_run` is the day of its last pass.
 
 ```yaml
 schema:
-  - { field: title,      type: text,     primary_key: true, display: 1, required: true, help: "Title." }
-  - { field: authors,    type: text,     help: "Authors in order." }
-  - { field: venue,      type: text,     help: "Where it appeared." }
-  - { field: year,       type: text,     help: "Year." }
-  - { field: url,        type: text,     required: true, help: "Address; the sweep deduplicates by it." }
-  - { field: bucket,     type: select,   foreign_key: vocab.radar_buckets, required: true, help: "preemption, cite_baseline, adjacent or idea." }
-  - { field: project,    type: select,   foreign_key: projects, help: "The project it was found for." }
-  - { field: relevance,  type: select,   options: [high, med, low], help: "How close it is." }
-  - { field: why,        type: textarea, help: "Why it matters." }
-  - { field: found,      type: date,     help: "Day found." }
-  - { field: threatens,  type: textarea, help: "The claim a pre-emption puts at stake." }
-  - { field: motif,      type: text,     help: "Idea: the pattern taken from it." }
-  - { field: maps_to,    type: text,     foreign_key: projects, help: "Idea: the project, or new-idea-candidate." }
-  - { field: idea_spark, type: textarea, help: "Idea: the idea itself." }
-  - { field: dismissed,  type: checkbox, help: "Set by Lit Watch when you dismiss it." }
+  - { field: title,      type: text,     primary_key: true, display: 1, required: true, section: Core, help: "Title." }
+  - { field: authors,    type: text,     section: Core, help: "Authors in order." }
+  - { field: venue,      type: text,     section: Core, help: "Where it appeared." }
+  - { field: year,       type: text,     section: Core, help: "Year." }
+  - { field: url,        type: text,     required: true, section: Core, help: "Address; the sweep deduplicates by it." }
+  - { field: bucket,     type: select,   foreign_key: vocab.radar_buckets, required: true, section: Core, help: "preemption, cite_baseline, adjacent or idea." }
+  - { field: project,    type: select,   foreign_key: projects, section: Connections, help: "The project it was found for." }
+  - { field: relevance,  type: select,   options: [high, med, low], section: Core, help: "How close it is." }
+  - { field: why,        type: textarea, section: Content, help: "Why it matters." }
+  - { field: found,      type: date,     section: Dates, help: "Day found." }
+  - { field: threatens,  type: textarea, section: Content, help: "The claim a pre-emption puts at stake." }
+  - { field: motif,      type: text,     section: Content, help: "Idea: the pattern taken from it." }
+  - { field: maps_to,    type: text,     foreign_key: projects, section: Content, help: "Idea: the project, or new-idea-candidate." }
+  - { field: idea_spark, type: textarea, section: Content, help: "Idea: the idea itself." }
+  - { field: dismissed,  type: checkbox, section: Core, help: "Set by Lit Watch when you dismiss it." }
 meta:
   last_run: ""
 entries:
@@ -1704,17 +1708,18 @@ entries:
 
 ### .oculus/data/academic/career.yml
 
-One record of sections, edited in the Career view: the strategy (the goal, the next milestone with its day, the order of work and its note) and the career record the website's CV is written from. A row of `positions` goes to the CV's experience, of `degrees` to its education, of `awards` to its awards and of `references` to its references, unless it names another section in `cv_section`; `cv_rank` orders the rows of a section, and `key` names the row for a profile row's `records`. A reference names a person of `people.yml` by key, whose name and email the CV prints. An award that names a funding entry by key (`funding`) takes its title, place and text from the entry where it prints none of its own. `profiles` holds the employer CVs: `shared`, the place, email, website parts (`parts`) and links (`links`, by name) they all print, and one map per profile whose rows may name the records they stand for (`records`), taking from the first record what the row's section of the employer CV prints and the row does not: the place and the day in `awards`, the period and the address in `projects`, the place and the period in the others.
+One record of sections, shown in the Career view and edited in its editor: the strategy (the goal, the next milestone with its day, the order of work and its note) and the career record the website's CV is written from. A row of `positions` goes to the CV's experience, of `degrees` to its education, of `awards` to its awards and of `references` to its references, unless it names another section in `cv_section`; `cv_rank` orders the rows of a section, and `key` names the row for a profile row's `records`. A reference names a person of `people.yml` by key, whose name and email the CV prints. An award that names a funding entry by key (`funding`) takes its title, place and text from the entry where it prints none of its own. `profiles` holds the employer CVs: `shared`, the place, email, website parts (`parts`) and links (`links`, by name) they all print, and one map per profile whose rows may name the records they stand for (`records`), taking from the first record what the row's section of the employer CV prints and the row does not: the place and the day in `awards`, the period and the address in `projects`, the place and the period in the others.
 
 ```yaml
 schema:
-  - { field: title, type: text, help: "The title of the career file's editor page." }
-  - { field: goal, type: text, help: "The position the plan works toward." }
-  - { field: milestone, type: text, help: "The next milestone." }
-  - { field: milestone_date, type: date, help: "The day of the next milestone." }
-  - { field: order_note, type: textarea, help: "A note over the order of work." }
+  - { field: title, type: text, section: Strategy, help: "The title of the strategy card and of the editor's tab." }
+  - { field: goal, type: text, section: Strategy, help: "The position the plan works toward." }
+  - { field: milestone, type: text, section: Strategy, help: "The next milestone." }
+  - { field: milestone_date, type: date, section: Strategy, help: "The day of the next milestone." }
+  - { field: order_note, type: textarea, section: Strategy, help: "A note over the order of work." }
   - field: order
     type: records
+    section: Strategy
     help: "The order of work."
     fields:
       - { field: task, type: text, required: true, help: "What to do." }
@@ -1722,6 +1727,7 @@ schema:
       - { field: note, type: text, help: "A remark." }
   - field: positions
     type: records
+    section: Positions
     help: "The positions held, the CV's experience."
     fields:
       - { field: key, type: text, help: "The key a profile row names this position by." }
@@ -1735,6 +1741,7 @@ schema:
       - { field: cv_rank, type: text, help: "The row's place in its section, a whole number." }
   - field: degrees
     type: records
+    section: Degrees
     help: "The degrees and the courses taken, the CV's education."
     fields:
       - { field: key, type: text, help: "The key a profile row names this degree by." }
@@ -1748,6 +1755,7 @@ schema:
       - { field: cv_rank, type: text, help: "The row's place in its section, a whole number." }
   - field: awards
     type: records
+    section: Awards
     help: "The awards, the CV's awards."
     fields:
       - { field: key, type: text, help: "The key a profile row names this award by." }
@@ -1761,12 +1769,14 @@ schema:
       - { field: cv_rank, type: text, help: "The row's place in its section, a whole number." }
   - field: references
     type: records
+    section: References
     help: "The references the CV names."
     fields:
       - { field: person, type: text, required: true, foreign_key: people, help: "The person, by key." }
       - { field: reason, type: text, help: "What the reference can speak to." }
   - field: profiles
     type: records
+    section: Profiles
     map: true
     help: "The employer CVs by name, and `shared`, the block they all print."
     fields:

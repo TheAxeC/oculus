@@ -15,8 +15,8 @@
     // (views/shared/card/record/CardGrid.svelte) or, with List pressed in the toolbar (the Cards
     // and List buttons of views/shared/forms/bar/ModeButtons.svelte), as one table
     // (EntryList.svelte) whose columns the toolbar's Columns menu shows and hides. The title of a
-    // card or of a row opens the entry's page, the `entry` view's tab, where the entry is edited
-    // and deleted. The keyboard move of a card acts in cards mode only.
+    // card or of a row opens the entry's page, the `entry` view's tab, where the entry is deleted
+    // and whose Edit opens the editor. The keyboard move of a card acts in cards mode only.
     //
     // It is registered once per collection view the page is given and reads which collection it is
     // from the id of the instance it was mounted as, exactly as Projects.svelte reads which board
@@ -27,10 +27,11 @@
     // Each hub's file of the key is read by the registry that hub's own entry of the key names
     // (state/boards/collection/joined.ts `joinedRegistries`). The files whose entry names the
     // `funding` registry carry one thing of their own, joined to the projects rather than a second
-    // view: the card of the projects of those hubs none of their schemes covers. The files whose
-    // entry names the `literature` registry carry three: Add asks a DOI or an address, looks the
-    // paper up and saves it into one of those hubs, their cards copy their BibTeX, and the toolbar
-    // copies the BibTeX of their entries shown. An entry's page opens by its own hub's registry.
+    // view: the card of the projects of those hubs none of their schemes covers, whose title opens
+    // the set's page, the `listing` view's tab. The files whose entry names the `literature`
+    // registry carry three: Add asks a DOI or an address, looks the paper up and saves it into one
+    // of those hubs, their cards copy their BibTeX, and the toolbar copies the BibTeX of their
+    // entries shown. An entry's page opens by its own hub's registry.
     //
     // Line 1 of the bar is the search, Mine only and the group buttons, folding into More: the Role
     // group, the Hub group while the workspace has more than one hub, then one group per schema
@@ -63,7 +64,8 @@
     import SliceLine from '../../shared/forms/bar/SliceLine.svelte';
     import ModeButtons from '../../shared/forms/bar/ModeButtons.svelte';
     import EntryList from './EntryList.svelte';
-    import NoFundingCard from './NoFundingCard.svelte';
+    import NoFundingCard from '../../shared/card/record/sets/NoFundingCard.svelte';
+    import { openListing } from '../../shared/card/record/sets/listing';
     import { copyBibtex, literatureCardActions } from '$lib/views/shared/card/feed/literature-card';
     import AddButton from '../../shared/forms/AddButton.svelte';
     import { collectionAsk, literatureAsk, type Ask } from '../../shared/forms/entry/entry-add';
@@ -116,7 +118,7 @@
     const client = useState();
     const {
         entities: { portfolio },
-        layout: { openView },
+        layout: { openBeside, openView },
         terminals: { composeAt },
         fs: { primary, roots },
         selectors: { board, collectionOf, collectionsOfKey, configMap, projects, selfPeople },
@@ -246,6 +248,13 @@
         const page = pageView(key, entry.id, label, joined.registryOf(entry));
         openView(page.view, page.state);
     }
+
+    /** The props of the No funding card, which both modes draw. */
+    const noFunding = $derived({
+        unfunded: unfundedShown,
+        cursor: cursor === NO_FUNDING,
+        ontitle: () => openListing(openBeside, 'no_funding', t('collection.no_funding'))
+    });
 
     /** Add or remove one value of one group, which is what a pick in a group's list means. */
     function toggleFilter(group: string, value: string): void {
@@ -448,7 +457,7 @@
             {#if held.mode === 'list'}
                 {#if filtered.card}
                     <CardGrid role="list">
-                        <NoFundingCard unfunded={unfundedShown} cursor={cursor === NO_FUNDING} />
+                        <NoFundingCard {...noFunding} />
                     </CardGrid>
                 {/if}
                 <EntryList
@@ -502,7 +511,7 @@
                         </Reveal>
                     {/each}
                     {#if filtered.card}
-                        <NoFundingCard unfunded={unfundedShown} cursor={cursor === NO_FUNDING} />
+                        <NoFundingCard {...noFunding} />
                     {/if}
                 </CardGrid>
             {/if}

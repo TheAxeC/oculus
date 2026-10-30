@@ -7,8 +7,9 @@
     // paper's subtasks and follow-ups are listed. It receives the feed entry and project map and
     // keeps only the optional idea form locally.
     //
-    // The strip holds Dismiss, Restore once dismissed, and Page. The menu holds Page, the paper and
-    // the projects the strip groups under none in its Open run, the Add run (entry-actions.ts
+    // The strip holds Dismiss, Restore once dismissed, and Page, or Edit on the page. The menu has
+    // Page, Edit, which opens the editor beside the card (entry-actions.ts `editorRows`), the paper
+    // and the projects the strip groups under none in its Open run, the Add run (entry-actions.ts
     // `feedDated`), the Status submenu with Dismiss or Restore, which set the entry's `dismissed`,
     // then Idea, which opens the idea form, Save to Literature, which writes the paper to the
     // Literature collection (literature-save.svelte.ts), and Delete, which asks first and removes
@@ -27,7 +28,7 @@
     import NewIdeaForm from '$lib/views/shared/forms/NewIdeaForm.svelte';
     import { pageFault, pageFile } from '$lib/views/shared/forms/entry/edit/page-file';
     import { blockedBy } from '$lib/views/shared/forms/entry-file';
-    import { feedDated } from '$lib/views/shared/forms/entry/entry-actions';
+    import { editorRows, feedDated } from '$lib/views/shared/forms/entry/entry-actions';
     import RecordCard from '$lib/views/shared/card/record/RecordCard.svelte';
     import {
         pageAction,
@@ -97,13 +98,10 @@
 
     const held = $derived(pageOf('radar', id));
     const file = $derived(held === null ? null : pageFile(client, held));
+    const fault = $derived(held === null ? undefined : pageFault(client, held));
     /** Why writes are disabled: unsaved text of the radar file, or a title no write addresses. */
     const blocked = $derived(
-        blockedBy(
-            file,
-            file !== null && unsavedFile(file.root, file.path),
-            held === null ? undefined : pageFault(client, held)
-        )
+        blockedBy(file, file !== null && unsavedFile(file.root, file.path), fault)
     );
 
     /** One field of the paper as its words. */
@@ -151,9 +149,10 @@
             : () => openView('entry', entryPageState('radar', id, title))
     );
 
-    /** The paper's openers: Page, the paper, and each project the strip groups under none. */
+    /** The paper's openers: Page, Edit, the paper, and each project the strip groups under none. */
     const openers = $derived.by((): RecordAction[] => {
         const rows: RecordAction[] = onpage === undefined ? [] : [pageAction(onpage)];
+        rows.push(...editorRows(client, 'radar', id, title, file, fault));
         const paper = posting(word('url'));
         if (paper !== undefined) {
             rows.push({
@@ -326,7 +325,7 @@
     tone={relevanceTone(relevance)}
     record={{ root: feedRoot(entry) }}
     {actions}
-    strip={[dismissed ? 'restore' : 'dismiss', 'page']}
+    strip={[dismissed ? 'restore' : 'dismiss', onPage ? 'editor' : 'page']}
     {dated}
     {onsaid}
     {meta}

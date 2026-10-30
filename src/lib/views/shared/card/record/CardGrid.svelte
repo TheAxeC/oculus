@@ -11,7 +11,8 @@
     // The project boards (views/boards/projects/Projects.svelte), the collections
     // (views/boards/collection/Collection.svelte), Venues, Data, Pillars, Domains, Lit Watch's
     // buckets and Dismissed (views/feeds/radar/Bucket.svelte, Radar.svelte), Position Leads' live
-    // cards and Expired, and LinkedIn's Ideas and Posted draw their cards through it.
+    // cards and Expired, LinkedIn's Ideas and Posted, the Career page's groups and the project
+    // sections of a page (sets/ProjectCards.svelte) draw their cards through it.
 
     import type { Snippet } from 'svelte';
     import type { HTMLAttributes } from 'svelte/elements';

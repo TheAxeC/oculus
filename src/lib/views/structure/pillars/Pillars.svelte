@@ -20,8 +20,9 @@
     // (views/shared/card/record/CardGrid.svelte). The Orphans card is drawn in the first row's
     // section and the Archival card, while a project is archived, in the section of `offpillar`, or
     // under Other when the list holds no such row; a section with no line and neither card is not
-    // drawn. An off-pillar line's card is muted. A line asked to be revealed opens its folded
-    // section before it is scrolled to.
+    // drawn. The title of either card opens the set's page, the `listing` view's tab. An off-pillar
+    // line's card is muted. A line asked to be revealed opens its folded section before it is
+    // scrolled to.
     //
     // Over a wallpaper each card is its own surface.
 
@@ -32,12 +33,14 @@
     import { registryFile } from '$lib/views/shared/forms/registry/registry-file.svelte';
     import CardGrid from '$lib/views/shared/card/record/CardGrid.svelte';
     import Reveal from '$lib/views/shared/card/Reveal.svelte';
-    import ArchivalCard from '$lib/views/structure/pillars/ArchivalCard.svelte';
-    import LineCard from '$lib/views/structure/pillars/LineCard.svelte';
-    import OrphansCard from '$lib/views/structure/pillars/OrphansCard.svelte';
+    import ArchivalCard from '$lib/views/shared/card/record/sets/ArchivalCard.svelte';
+    import LineCard from '$lib/views/shared/card/record/registry/LineCard.svelte';
+    import OrphansCard from '$lib/views/shared/card/record/sets/OrphansCard.svelte';
+    import { openListing } from '$lib/views/shared/card/record/sets/listing';
     import { stateFolds } from '$lib/state/shared/page/folds';
     import { cardCursor, storedState } from '$lib/state/workbench/layout/instance';
     import {
+        OFFPILLAR,
         archival,
         registryLines,
         lineKinds,
@@ -55,6 +58,7 @@
     const client = useState();
     const {
         entities: { portfolio },
+        layout: { openBeside },
         selectors: { configMap, projects, venues },
         ui: { instanceState, setInstanceState }
     } = client;
@@ -62,8 +66,6 @@
     let { instance }: ViewProps = $props();
     const ORPHANS_CARD = 'pillars:orphans';
     const ARCHIVAL_CARD = 'pillars:archival';
-    /** The kind whose section holds the Archival card when the list holds it. */
-    const OFFPILLAR = 'offpillar';
     const held = $derived(parsePillarsState(instanceState(instance.id)));
     const cursor = $derived(cardCursor(instance.state));
     const file = registryFile(client, 'pillars');
@@ -152,6 +154,7 @@
                             id={ORPHANS_CARD}
                             cursor={cursor === ORPHANS_CARD}
                             projects={unmatched}
+                            ontitle={() => openListing(openBeside, 'orphans', t('pillars.orphans'))}
                         />
                     {/if}
                     {#if kind.key === archivalAt && archived.length > 0}
@@ -159,6 +162,8 @@
                             id={ARCHIVAL_CARD}
                             cursor={cursor === ARCHIVAL_CARD}
                             groups={archived}
+                            ontitle={() =>
+                                openListing(openBeside, 'archival', t('pillars.archival'))}
                         />
                     {/if}
                 </CardGrid>

@@ -25,8 +25,9 @@
     //
     // It carries no toolbar control over its own source, which the four views drawn from one file
     // do: `linkedin_dir` names a folder of one Markdown file per post and no index, so there is no
-    // one file for such a control to open. Each card's own control opens the post it draws, which
-    // is the way into the text from here.
+    // one file for such a control to open. Each card's title opens the post's page, the `post`
+    // view's tab, and each card's Edit opens the post's file, which is the way into the text from
+    // here.
     //
     // Over a wallpaper each card is its own surface and the amber nudge paints its own opaque box;
     // the cadence line and the said line are read off a `Surface`.
@@ -42,12 +43,12 @@
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import Intro from '../../shared/prose/Intro.svelte';
-    import PostCard from './PostCard.svelte';
+    import PostCard from '../../shared/card/feed/PostCard.svelte';
     import Prompt from '$lib/ui/forms/Prompt.svelte';
     import type { PromptRequest } from '$lib/ui/forms/prompt';
     import { answerWords } from '../../shared/forms/answer-words';
     import { openSourceFile } from '../../shared/links/source-file';
-    import { linkedinSourcePath } from './post-card';
+    import { linkedinSourcePath } from '../../shared/card/feed/post-card';
     import Reveal from '../../shared/card/Reveal.svelte';
     import {
         cadence,

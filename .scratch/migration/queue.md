@@ -1,10 +1,11 @@
-In flight (1 of 6 slots in use): O104 (one page frame and one editor), builder a64b1775be113ff93.
+In flight (0 of 6 slots in use): none.
 
 Queued, in order (0 steps): none.
 
 Owed looks: none.
 
 Landed, newest first:
+- O104 (one page frame and one editor), 2026-10-30; hub 2db7d35dd.
 - O101 (the Zenodo deposit), 2026-10-30; hub 6abb17c8b.
 - O102 (the website data files from oculus), 2026-10-30; hub 9e297c9c5; web 574da70.
 - O99 (every setting edited in Settings by scope), 2026-10-29, 626ae2a6; hub 60f0c606d.

@@ -11,7 +11,7 @@
     //
     // Every field is drawn as its words, the deadline as a tag with the deadline glyph and the
     // countdown and tone of a project's due (dueBadge of views/shared/card/card.ts); the card's
-    // menu and the entry's page change them.
+    // menu and the entry's editor change them.
     //
     // A link is one of three things: a local HTML file opens in the document view, a path inside
     // the hub whose extension `open.program_ext` of config/defaults/behavior.yml names an

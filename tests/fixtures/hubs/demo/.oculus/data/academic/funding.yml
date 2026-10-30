@@ -2,15 +2,15 @@
 # Each entry has a `key`, unique in this file, which a new entry needs; a manifest's `funding:` tag names it.
 title: Funding
 schema:
-  - { field: key,       type: text, primary_key: true, required: true, help: "funding: tag the projects use" }
-  - { field: title,     type: text,   display: 1, required: true }
-  - { field: sub,       type: text,   help: "Scheme | role | period" }
-  - { field: status,    type: select, options: [in-prep, planned, submitted, awarded, rejected], required: true }
-  - { field: date,      type: text,   help: "Year or range" }
-  - { field: deadline,  type: date }
-  - { field: meta,      type: metalist }
-  - { field: tags,      type: tags }
-  - { field: note,      type: textarea }
+  - { field: key,       type: text, primary_key: true, required: true, section: Core, help: "funding: tag the projects use" }
+  - { field: title,     type: text,   display: 1, required: true, section: Core }
+  - { field: sub,       type: text,   section: Core, help: "Scheme | role | period" }
+  - { field: status,    type: select, options: [in-prep, planned, submitted, awarded, rejected], required: true, section: Core }
+  - { field: date,      type: text,   section: Dates, help: "Year or range" }
+  - { field: deadline,  type: date, section: Dates }
+  - { field: meta,      type: metalist, section: Core }
+  - { field: tags,      type: tags, section: Core }
+  - { field: note,      type: textarea, section: Content }
 entries:
   - title: Early-Career Fellowship
     sub: "National science fund | personal grant | 3 years"

@@ -24,6 +24,7 @@ Every registered view is listed by its words.
 | Editor | editor |
 | Entry | entry |
 | Focus | focus |
+| Projects | listing |
 | Person | person |
 | Project | project |
 | Awaiting | awaiting_board |
@@ -31,6 +32,7 @@ Every registered view is listed by its words.
 | Position Leads | leads |
 | LinkedIn | linkedin |
 | Literature search | literature-search |
+| Post | post |
 | Lit Watch | radar |
 | Account setup | account-setup |
 | Calendar | calendar |
@@ -200,5 +202,5 @@ While a Present tab is on screen the palette lists these commands for the slide 
 | `Cmd+P` | lists files by name across the served roots |
 | `Cmd+T` | lists the symbols of the workspace through the language server of the source tab on screen |
 | `ArrowUp`, `ArrowDown`, `Home`, `End`, `Enter` | move through the results and open the selected one |
-| `Shift+Enter` | on :task-add, adds the task and opens its page in its editor |
+| `Shift+Enter` | on :task-add, adds the task and opens its page |
 | `Escape` | closes the palette |

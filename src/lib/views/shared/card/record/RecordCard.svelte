@@ -1,9 +1,10 @@
 <script lang="ts">
     // Layer 3, shared view. The one card every record of the portfolio is drawn by: a project, an
     // entry of a collection, a venue, a dataset, a domain, a pillar line, a lead, a Lit Watch
-    // paper, a LinkedIn post, an inbox thread, a Literature search hit, and the Archival, Orphans
-    // and No funding cards. Each kind's card file hands it its words, its actions and its slots;
-    // the head, the menu, the order of the body and the add forms are this card's.
+    // paper, a LinkedIn post, an inbox thread, a Literature search hit, a card of the career page,
+    // and the Archival, Orphans and No funding cards. Each kind's card file hands it its words, its
+    // actions and its slots; the head, the menu, the order of the body and the add forms are this
+    // card's.
     //
     // The head is the title (the page opener where the kind hands `ontitle`, words where it hands
     // none), then the meta row: the mark of the record's hub (RootChip.svelte), the kind's chips

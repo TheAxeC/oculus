@@ -235,6 +235,8 @@ export type SchemaField = {
     required?: boolean | { when: When };
     /** The field's meaning in one plain sentence. */
     help?: string;
+    /** The group of the editor the field is drawn in, read on a top-level row of a schema. */
+    section?: string;
     /** The condition under which the field is allowed in a record. */
     when?: When;
     /** The field takes keys it does not declare. */
@@ -476,7 +478,7 @@ export type FeedData = {
 /**
  * The career file (`career_file`): the strategy, its title, the goal it works toward, the next
  * milestone with its day, the order of work and its note; and every section as the file holds it,
- * which the Career view's editor edits and the website's CV is written from.
+ * which the editor view edits and the website's CV is written from.
  */
 export type Career = {
     title: string;
