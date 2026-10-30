@@ -1,7 +1,7 @@
-In flight (0 of 6 slots in use):
+In flight (1 of 6 slots in use):
+- O101 (the Zenodo deposit): being prepared.
 
-Queued, in order (1 step):
-- O101 (the Zenodo deposit): stopped on open item 592, the two status keys.
+Queued, in order (0 steps):
 
 Owed looks: none.
 

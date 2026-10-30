@@ -23,7 +23,9 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 ```
 
 ```yaml
-dispatch: []      # steps in flight, up to six (Z632)
+dispatch:         # steps in flight, up to six (Z632)
+- step: O101
+  landing: preparing
 ```
 
 ## The standing demands (from Axel, in force)
@@ -164,10 +166,11 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
-- 592 (2026-10-30, O101's /spec): which status key is GitHub's and which is Zenodo's, after ruling 575 (b). Today `push` writes `code_availability.status` (`review-anon` for a private repository, `deposited` for a public one) and `date`; 21 manifests hold the block: 15 `deposited` with a GitHub `url`, 1 `review-anon` with a `url`, 5 `none`, none a `doi`. `status` is read by the board's Code badge and filter (`items.ts:158`, `filter-menu.ts:109-110`, `presets.ts:337`), the audit's rule that a deposit predates its reproduction (`audit/projects.ts:230-235`) and the website's Code link (`audit/website/papers.ts:30,61`, a DOI link when `deposited` with a `doi`). (a) GitHub keeps `status` and `date` as today, and the Zenodo actions write keys of their own, `code_availability.zenodo_status` (`none`, `review-anon`, `deposited`) and `zenodo_date`, beside `doi` and `review_link`: no manifest's data moves, `push` and the badge stay as they are, the website's Code link reads `zenodo_status: deposited` with a `doi`, and the Deposit view's Zenodo section shows the Zenodo word; recommended, since every existing value keeps its meaning and no reader is rewritten but the two that ask about Zenodo. (b) Zenodo takes `status` and `date`, and `push` writes new keys `code_availability.github_status` (`none`, `private`, `public`) and `github_date`: the hub patch moves the 16 GitHub-written statuses and dates there and sets their `status: none`, and the board's badge and filter, the audit rule and the form read both keys; it makes `status` the deposit of record as ruling 534 frames it, at the cost of a data move over 16 manifests and four readers changed. Neither is the lazy option; the lazy option was 575 (c), push unchanged over Zenodo's status, which 575 (b) ruled out.
+None.
 
 ## Closed items
 
+- 592 (2026-10-30): (a), GitHub keeps `status` and `date`; the Zenodo actions write `zenodo_status` and `zenodo_date` beside `doi` and `review_link` (Axel: "592 (a)"); booked in `plan.md` Rulings and O101's Step 0.
 - 591 (2026-10-30): (a), the three `about` texts print on the website CV and its PDF as worded: `postdoc-twente` ends "... within the AI-HCC ZonMw project, in the CoDE group (Cognition, Data and Education).", `postdoc-uhasselt` names "the Biomedical Data Sciences Group (Prof. Liesbet Peeters)", `phd-kuleuven` gains "Supervisor: Prof. Marc Van Hulle"; (b), a field the CV does not print, not chosen; (c), the facts dropped, was the lazy option (Axel: "591 (a)"); booked in `plan.md` Rulings and O102's Step 0.
 - 585 (2026-10-30): (a), the hub patch's `ELIXIR-BE` entry in `funding.yml` gains `statement: "This work was supported by the Research Foundation - Flanders (FWO) for ELIXIR Belgium (I000323N)."`, written at landing; (b), another status, was the lazy option (Axel: "585 (a)  This work was supported by the Research Foundation - Flanders (FWO) for ELIXIR Belgium (I000323N)."); booked in `plan.md` Rulings and O102's Step 0.
 - 573 (2026-10-30): (a), both Zenodo actions refused on any finding of the deposit scan (`deposit-scan.ts`), naming each file, as `commit` refuses (G30); (b), secret-like files only, was the lazy option (Axel: "573 (a)"); booked in `plan.md` Rulings and O101's Step 0.
