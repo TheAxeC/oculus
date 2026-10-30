@@ -1,0 +1,526 @@
+--- a/.oculus/data/academic/applications.yml
++++ b/.oculus/data/academic/applications.yml
+@@ -6,15 +6,15 @@
+-  - { field: key, type: text, primary_key: true, required: true, help: "The application's short name, unique in this file; a write and Edit in File address the entry by it." }
+-  - { field: title,   type: text,     display: 1, required: true, help: "The name of the application." }
+-  - { field: sub,     type: text,     label: "Subtitle", help: "A second line under the title, such as the institution." }
+-  - { field: status,  type: select,   options: [not-applied, active, accepted, rejected, declined, withdrawn, applied], required: true, help: "Where the application stands." }
+-  - { field: date,    type: text, help: "The year the application was made." }
+-  - { field: meta,    type: metalist, help: "Label and value rows shown on the card." }
+-  - { field: tags,    type: tags, help: "Words the card is filtered by." }
+-  - { field: note,    type: textarea, help: "Free notes on the application." }
+-  - { field: link,    type: text, help: "A path in the hub to the application's documents." }
+-  - { field: url,     type: text,     help: "Posting (http)" }
+-  - { field: related, type: tags,     foreign_key: projects, help: "Project ids" }
+-  - { field: deadline, type: date, help: "an actual deadline if any (the `date` field above is the year applied)" }
+-  - { field: lead,          type: tags,     foreign_key: people, required: true, help: "Who leads it." }
+-  - { field: collaborators, type: tags,     foreign_key: people, help: "Who works on it with the lead." }
+-  - { field: supervisors,   type: tags,     foreign_key: people, help: "Who supervises it." }
++  - { field: key, type: text, primary_key: true, required: true, section: Core, help: "The application's short name, unique in this file; a write and Edit in File address the entry by it." }
++  - { field: title,   type: text,     display: 1, required: true, section: Core, help: "The name of the application." }
++  - { field: sub,     type: text,     label: "Subtitle", section: Core, help: "A second line under the title, such as the institution." }
++  - { field: status,  type: select,   options: [not-applied, active, accepted, rejected, declined, withdrawn, applied], required: true, section: Core, help: "Where the application stands." }
++  - { field: date,    type: text, section: Dates, help: "The year the application was made." }
++  - { field: meta,    type: metalist, section: Core, help: "Label and value rows shown on the card." }
++  - { field: tags,    type: tags, section: Core, help: "Words the card is filtered by." }
++  - { field: note,    type: textarea, section: Content, help: "Free notes on the application." }
++  - { field: link,    type: text, section: Core, help: "A path in the hub to the application's documents." }
++  - { field: url,     type: text,     section: Core, help: "Posting (http)" }
++  - { field: related, type: tags,     foreign_key: projects, section: Connections, help: "Project ids" }
++  - { field: deadline, type: date, section: Dates, help: "an actual deadline if any (the `date` field above is the year applied)" }
++  - { field: lead,          type: tags,     foreign_key: people, required: true, section: Connections, help: "Who leads it." }
++  - { field: collaborators, type: tags,     foreign_key: people, section: Connections, help: "Who works on it with the lead." }
++  - { field: supervisors,   type: tags,     foreign_key: people, section: Connections, help: "Who supervises it." }
+--- a/.oculus/data/academic/education.yml
++++ b/.oculus/data/academic/education.yml
+@@ -5,26 +5,27 @@
+ schema:
+-  - { field: key, type: text, primary_key: true, required: true, help: "The entry's short name, unique in this file; a write and Edit in File address the entry by it." }
+-  - { field: title,    type: text,     display: 1, required: true, help: "The name of the course or programme." }
+-  - { field: sub,      type: text,     label: "Subtitle", help: "Institution | period" }
+-  - { field: status,   type: select,   options: [planned, ongoing, completed], required: true, help: "Whether it is planned, ongoing or completed." }
+-  - { field: date,     type: text,     help: "Year or range, e.g. 2025-2026" }
+-  - { field: deadline, type: date,     help: "ISO date; surfaces in the Focus deadline radar" }
+-  - { field: meta,     type: metalist, help: "Label/value rows" }
+-  - { field: tags,     type: tags, help: "Words the card is filtered by." }
+-  - { field: note,     type: textarea, help: "Free notes on the entry." }
+-  - { field: link,     type: text,     help: "Internal doc path (optional)" }
+-  - { field: related,  type: tags,     foreign_key: projects, help: "Project ids this relates to" }
+-  - { field: lead,          type: tags,     foreign_key: people, required: true, help: "Who leads it." }
+-  - { field: collaborators, type: tags,     foreign_key: people, help: "Who works on it with the lead." }
+-  - { field: supervisors,   type: tags,     foreign_key: people, help: "Who supervises it." }
+-  - { field: cv_section, type: text,     help: "The CV section the entry is listed in: academic, students or extracurricular; none keeps it off the CV." }
+-  - { field: cv_rank,    type: text,     help: "The entry's place in its CV section, a whole number." }
+-  - { field: cv_title,   type: text,     help: "The title the CV prints, when it is not the title." }
+-  - { field: cv_url,     type: text,     help: "The address the CV links." }
+-  - { field: location,   type: text,     help: "Where, as the CV prints it." }
+-  - { field: duration,   type: text,     help: "The period as the CV prints it." }
+-  - { field: about,      type: textarea, help: "What the CV prints under it." }
+-  - { field: hide,       type: checkbox, help: "Kept off the CV while it stays listed." }
++  - { field: key, type: text, primary_key: true, required: true, section: Core, help: "The entry's short name, unique in this file; a write and Edit in File address the entry by it." }
++  - { field: title,    type: text,     display: 1, required: true, section: Core, help: "The name of the course or programme." }
++  - { field: sub,      type: text,     label: "Subtitle", section: Core, help: "Institution | period" }
++  - { field: status,   type: select,   options: [planned, ongoing, completed], required: true, section: Core, help: "Whether it is planned, ongoing or completed." }
++  - { field: date,     type: text,     section: Dates, help: "Year or range, e.g. 2025-2026" }
++  - { field: deadline, type: date,     section: Dates, help: "ISO date; surfaces in the Focus deadline radar" }
++  - { field: meta,     type: metalist, section: Core, help: "Label/value rows" }
++  - { field: tags,     type: tags, section: Core, help: "Words the card is filtered by." }
++  - { field: note,     type: textarea, section: Content, help: "Free notes on the entry." }
++  - { field: link,     type: text,     section: Core, help: "Internal doc path (optional)" }
++  - { field: related,  type: tags,     foreign_key: projects, section: Connections, help: "Project ids this relates to" }
++  - { field: lead,          type: tags,     foreign_key: people, required: true, section: Connections, help: "Who leads it." }
++  - { field: collaborators, type: tags,     foreign_key: people, section: Connections, help: "Who works on it with the lead." }
++  - { field: supervisors,   type: tags,     foreign_key: people, section: Connections, help: "Who supervises it." }
++  - { field: cv_section, type: text,     section: Website, help: "The CV section the entry is listed in: academic, students or extracurricular; none keeps it off the CV." }
++  - { field: cv_rank,    type: text,     section: Website, help: "The entry's place in its CV section, a whole number." }
++  - { field: cv_title,   type: text,     section: Website, help: "The title the CV prints, when it is not the title." }
++  - { field: cv_url,     type: text,     section: Website, help: "The address the CV links." }
++  - { field: location,   type: text,     section: Website, help: "Where, as the CV prints it." }
++  - { field: duration,   type: text,     section: Website, help: "The period as the CV prints it." }
++  - { field: about,      type: textarea, section: Website, help: "What the CV prints under it." }
++  - { field: hide,       type: checkbox, section: Website, help: "Kept off the CV while it stays listed." }
+   - field: students
+     type: records
++    section: Connections
+     help: "The students supervised, each a row of the CV's students in place of the entry."
+--- a/.oculus/data/academic/events.yml
++++ b/.oculus/data/academic/events.yml
+@@ -6,23 +6,23 @@
+-  - { field: key, type: text, primary_key: true, required: true, help: "The event's short name, unique in this file; a write and Edit in File address the entry by it." }
+-  - { field: title,    type: text,     display: 1, required: true, help: "The name of the event." }
+-  - { field: sub,      type: text,     label: "Subtitle", help: "A second line under the title, such as the place." }
+-  - { field: role,     type: select,   options: [present, co-present, attend, media], required: true, help: "present = a talk/poster I give (feeds 'Disseminated in'); co-present = a co-author gives it and I do not; attend = attending only; media = an article or a video about my work" }
+-  - { field: status,   type: select,   options: [upcoming, planned, completed, cancelled, not-attending], required: true, help: "Whether the event is upcoming, planned, completed, cancelled or not attended." }
+-  - { field: date,     type: text, help: "When the event takes place, as text." }
+-  - { field: deadline, type: date,     help: "ISO date; shows on the Focus radar while live" }
+-  - { field: meta,     type: metalist, help: "Label and value rows shown on the card." }
+-  - { field: tags,     type: tags, help: "Words the card is filtered by." }
+-  - { field: note,     type: textarea, help: "Free notes on the event." }
+-  - { field: link,     type: text,     required: { when: { role: present, status: [upcoming, planned] } }, help: "slides / deck (network/<event>/), asked of a talk I am still to give" }
+-  - { field: related,  type: tags,     foreign_key: projects, help: "Project ids" }
+-  - { field: lead,          type: tags,     foreign_key: people, required: true, help: "Who leads it." }
+-  - { field: collaborators, type: tags,     foreign_key: people, help: "Who works on it with the lead." }
+-  - { field: supervisors,   type: tags,     foreign_key: people, help: "Who supervises it." }
+-  - { field: cv_section, type: text,     help: "The CV section the event is listed in, news; none keeps it off the CV." }
+-  - { field: cv_rank,    type: text,     help: "The event's place in its CV section, a whole number." }
+-  - { field: cv_title,   type: text,     help: "The title the CV prints, when it is not the title." }
+-  - { field: cv_url,     type: text,     help: "The address the CV links." }
+-  - { field: location,   type: text,     help: "Where, as the CV prints it." }
+-  - { field: duration,   type: text,     help: "When, as the CV prints it." }
+-  - { field: about,      type: textarea, help: "What the CV prints under it." }
+-  - { field: hide,       type: checkbox, help: "Kept off the CV while it stays listed." }
++  - { field: key, type: text, primary_key: true, required: true, section: Core, help: "The event's short name, unique in this file; a write and Edit in File address the entry by it." }
++  - { field: title,    type: text,     display: 1, required: true, section: Core, help: "The name of the event." }
++  - { field: sub,      type: text,     label: "Subtitle", section: Core, help: "A second line under the title, such as the place." }
++  - { field: role,     type: select,   options: [present, co-present, attend, media], required: true, section: Core, help: "present = a talk/poster I give (feeds 'Disseminated in'); co-present = a co-author gives it and I do not; attend = attending only; media = an article or a video about my work" }
++  - { field: status,   type: select,   options: [upcoming, planned, completed, cancelled, not-attending], required: true, section: Core, help: "Whether the event is upcoming, planned, completed, cancelled or not attended." }
++  - { field: date,     type: text, section: Dates, help: "When the event takes place, as text." }
++  - { field: deadline, type: date,     section: Dates, help: "ISO date; shows on the Focus radar while live" }
++  - { field: meta,     type: metalist, section: Core, help: "Label and value rows shown on the card." }
++  - { field: tags,     type: tags, section: Core, help: "Words the card is filtered by." }
++  - { field: note,     type: textarea, section: Content, help: "Free notes on the event." }
++  - { field: link,     type: text,     required: { when: { role: present, status: [upcoming, planned] } }, section: Core, help: "slides / deck (network/<event>/), asked of a talk I am still to give" }
++  - { field: related,  type: tags,     foreign_key: projects, section: Connections, help: "Project ids" }
++  - { field: lead,          type: tags,     foreign_key: people, required: true, section: Connections, help: "Who leads it." }
++  - { field: collaborators, type: tags,     foreign_key: people, section: Connections, help: "Who works on it with the lead." }
++  - { field: supervisors,   type: tags,     foreign_key: people, section: Connections, help: "Who supervises it." }
++  - { field: cv_section, type: text,     section: Website, help: "The CV section the event is listed in, news; none keeps it off the CV." }
++  - { field: cv_rank,    type: text,     section: Website, help: "The event's place in its CV section, a whole number." }
++  - { field: cv_title,   type: text,     section: Website, help: "The title the CV prints, when it is not the title." }
++  - { field: cv_url,     type: text,     section: Website, help: "The address the CV links." }
++  - { field: location,   type: text,     section: Website, help: "Where, as the CV prints it." }
++  - { field: duration,   type: text,     section: Website, help: "When, as the CV prints it." }
++  - { field: about,      type: textarea, section: Website, help: "What the CV prints under it." }
++  - { field: hide,       type: checkbox, section: Website, help: "Kept off the CV while it stays listed." }
+--- a/.oculus/data/academic/funding.yml
++++ b/.oculus/data/academic/funding.yml
+@@ -6,28 +6,28 @@
+-  - { field: key,       type: text, primary_key: true, required: true, help: "Cross-link anchor (the funding: tag on manifests)" }
+-  - { field: title,     type: text,     display: 1, required: true, help: "The name of the funding scheme or application." }
+-  - { field: sub,       type: text,     label: "Subtitle", help: "Scheme | role | period" }
+-  - { field: funder,    type: select,   foreign_key: organisations, help: "The organisation that funds the scheme, as a key of organisations.yml." }
+-  - { field: award,     type: text,     help: "The funder's number of the award, which a Zenodo deposit names with the title." }
+-  - { field: status,    type: select,   options: [in-prep, planned, submitted, contributing, awarded, rejected, withdrawn], required: true, help: "Where the scheme stands, from in-prep to awarded or rejected." }
+-  - { field: date,      type: text,     help: "Year or range" }
+-  - { field: deadline,  type: date,     help: "ISO date; shows on the Focus radar while live" }
+-  - { field: meta,      type: metalist, help: "Label and value rows shown on the card." }
+-  - { field: tags,      type: tags, help: "Words the card is filtered by." }
+-  - { field: note,      type: textarea, help: "Free notes on the scheme." }
+-  - { field: statement, type: textarea, help: "Verbatim funder acknowledgment for a manuscript" }
+-  - { field: link,      type: text, help: "A path in the hub to the scheme's folder or to a file of it." }
+-  - { field: url,       type: text,     help: "External call / source (http)" }
+-  - { field: lead,          type: tags,     foreign_key: people, required: true, help: "Who leads it." }
+-  - { field: collaborators, type: tags,     foreign_key: people, help: "Who works on it with the lead." }
+-  - { field: supervisors,   type: tags,     foreign_key: people, help: "Who supervises it." }
+-  - { field: cv_section, type: text,     help: "The CV section the entry is listed in, grants or projects; none keeps it off the CV." }
+-  - { field: cv_rank,    type: text,     help: "The entry's place in its CV section, a whole number." }
+-  - { field: cv_title,   type: text,     help: "The title the CV prints, when it is not the title." }
+-  - { field: cv_url,     type: text,     help: "The address the CV links, when it is not the url." }
+-  - { field: cv_status,  type: text,     help: "The status the CV prints for the grant." }
+-  - { field: role,       type: text,     help: "Your role as the CV prints it." }
+-  - { field: location,   type: text,     help: "Where, as the CV prints it." }
+-  - { field: duration,   type: text,     help: "The period as the CV prints it." }
+-  - { field: about,      type: textarea, help: "What the CV prints under it." }
+-  - { field: min,        type: checkbox, help: "Left out of the short CV." }
+-  - { field: hide,       type: checkbox, help: "Kept off the CV while it stays listed." }
++  - { field: key,       type: text, primary_key: true, required: true, section: Core, help: "Cross-link anchor (the funding: tag on manifests)" }
++  - { field: title,     type: text,     display: 1, required: true, section: Core, help: "The name of the funding scheme or application." }
++  - { field: sub,       type: text,     label: "Subtitle", section: Core, help: "Scheme | role | period" }
++  - { field: funder,    type: select,   foreign_key: organisations, section: Core, help: "The organisation that funds the scheme, as a key of organisations.yml." }
++  - { field: award,     type: text,     section: Core, help: "The funder's number of the award, which a Zenodo deposit names with the title." }
++  - { field: status,    type: select,   options: [in-prep, planned, submitted, contributing, awarded, rejected, withdrawn], required: true, section: Core, help: "Where the scheme stands, from in-prep to awarded or rejected." }
++  - { field: date,      type: text,     section: Dates, help: "Year or range" }
++  - { field: deadline,  type: date,     section: Dates, help: "ISO date; shows on the Focus radar while live" }
++  - { field: meta,      type: metalist, section: Core, help: "Label and value rows shown on the card." }
++  - { field: tags,      type: tags, section: Core, help: "Words the card is filtered by." }
++  - { field: note,      type: textarea, section: Content, help: "Free notes on the scheme." }
++  - { field: statement, type: textarea, section: Content, help: "Verbatim funder acknowledgment for a manuscript" }
++  - { field: link,      type: text, section: Core, help: "A path in the hub to the scheme's folder or to a file of it." }
++  - { field: url,       type: text,     section: Core, help: "External call / source (http)" }
++  - { field: lead,          type: tags,     foreign_key: people, required: true, section: Connections, help: "Who leads it." }
++  - { field: collaborators, type: tags,     foreign_key: people, section: Connections, help: "Who works on it with the lead." }
++  - { field: supervisors,   type: tags,     foreign_key: people, section: Connections, help: "Who supervises it." }
++  - { field: cv_section, type: text,     section: Website, help: "The CV section the entry is listed in, grants or projects; none keeps it off the CV." }
++  - { field: cv_rank,    type: text,     section: Website, help: "The entry's place in its CV section, a whole number." }
++  - { field: cv_title,   type: text,     section: Website, help: "The title the CV prints, when it is not the title." }
++  - { field: cv_url,     type: text,     section: Website, help: "The address the CV links, when it is not the url." }
++  - { field: cv_status,  type: text,     section: Website, help: "The status the CV prints for the grant." }
++  - { field: role,       type: text,     section: Website, help: "Your role as the CV prints it." }
++  - { field: location,   type: text,     section: Website, help: "Where, as the CV prints it." }
++  - { field: duration,   type: text,     section: Website, help: "The period as the CV prints it." }
++  - { field: about,      type: textarea, section: Website, help: "What the CV prints under it." }
++  - { field: min,        type: checkbox, section: Website, help: "Left out of the short CV." }
++  - { field: hide,       type: checkbox, section: Website, help: "Kept off the CV while it stays listed." }
+--- a/.oculus/data/academic/tasks.yml
++++ b/.oculus/data/academic/tasks.yml
+@@ -8,10 +8,10 @@
+-  - { field: key, type: text, primary_key: true, required: true, help: "The task's short name, unique in this file; a write and Edit in File address the entry by it." }
+-  - { field: title,    type: text,     display: 1, required: true, help: "What the task is." }
+-  - { field: status,   type: select,   options: [todo, doing, done, dropped], required: true, help: "Whether the task is to do, in progress, done or dropped." }
+-  - { field: deadline, type: date, help: "The day the task is due; it shows on the Focus radar while live." }
+-  - { field: kind,     type: text,     help: "e.g. review / admin / service / teaching" }
+-  - { field: note,     type: textarea, help: "Free notes on the task." }
+-  - { field: tags,     type: tags, help: "Words the card is filtered by." }
+-  - { field: lead,          type: tags,     foreign_key: people, required: true, help: "Who leads it." }
+-  - { field: collaborators, type: tags,     foreign_key: people, help: "Who works on it with the lead." }
+-  - { field: supervisors,   type: tags,     foreign_key: people, help: "Who supervises it." }
++  - { field: key, type: text, primary_key: true, required: true, section: Core, help: "The task's short name, unique in this file; a write and Edit in File address the entry by it." }
++  - { field: title,    type: text,     display: 1, required: true, section: Core, help: "What the task is." }
++  - { field: status,   type: select,   options: [todo, doing, done, dropped], required: true, section: Core, help: "Whether the task is to do, in progress, done or dropped." }
++  - { field: deadline, type: date, section: Dates, help: "The day the task is due; it shows on the Focus radar while live." }
++  - { field: kind,     type: text,     section: Core, help: "e.g. review / admin / service / teaching" }
++  - { field: note,     type: textarea, section: Content, help: "Free notes on the task." }
++  - { field: tags,     type: tags, section: Core, help: "Words the card is filtered by." }
++  - { field: lead,          type: tags,     foreign_key: people, required: true, section: Connections, help: "Who leads it." }
++  - { field: collaborators, type: tags,     foreign_key: people, section: Connections, help: "Who works on it with the lead." }
++  - { field: supervisors,   type: tags,     foreign_key: people, section: Connections, help: "Who supervises it." }
+--- a/.oculus/data/academic/leads.yml
++++ b/.oculus/data/academic/leads.yml
+@@ -56,10 +56,10 @@
+-  - { field: title, label: "Title", type: text, primary_key: true, display: 1, help: "The name of the position." }
+-  - { field: inst, label: "Institution", type: text, help: "The institution that offers the position." }
+-  - { field: country, label: "Country", type: text, help: "The country of the institution." }
+-  - { field: typ, label: "Type", type: text, help: "The kind of position, such as postdoc or fellowship." }
+-  - { field: focus, label: "Focus", type: textarea, help: "What the position is about." }
+-  - { field: fit, label: "Fit", type: textarea, help: "How the position fits the hub owner's work." }
+-  - { field: status, label: "Status", type: select, options: [open, applied, declined], help: "Whether the lead is open, applied for or declined." }
+-  - { field: date, label: "Date", type: date, help: "The day the scout found the lead." }
+-  - { field: deadline, label: "Deadline", type: text, help: "The deadline as the posting words it." }
+-  - { field: url, label: "URL", type: text, help: "The link to the posting." }
++  - { field: title, label: "Title", type: text, primary_key: true, display: 1, section: Core, help: "The name of the position." }
++  - { field: inst, label: "Institution", type: text, section: Core, help: "The institution that offers the position." }
++  - { field: country, label: "Country", type: text, section: Core, help: "The country of the institution." }
++  - { field: typ, label: "Type", type: text, section: Core, help: "The kind of position, such as postdoc or fellowship." }
++  - { field: focus, label: "Focus", type: textarea, section: Core, help: "What the position is about." }
++  - { field: fit, label: "Fit", type: textarea, section: Core, help: "How the position fits the hub owner's work." }
++  - { field: status, label: "Status", type: select, options: [open, applied, declined], section: Core, help: "Whether the lead is open, applied for or declined." }
++  - { field: date, label: "Date", type: date, section: Dates, help: "The day the scout found the lead." }
++  - { field: deadline, label: "Deadline", type: text, section: Dates, help: "The deadline as the posting words it." }
++  - { field: url, label: "URL", type: text, section: Core, help: "The link to the posting." }
+--- a/.oculus/data/academic/career.yml
++++ b/.oculus/data/academic/career.yml
+@@ -5,9 +5,10 @@
+ schema:
+-  - { field: title, type: text, help: "The title of the career file's editor page." }
+-  - { field: goal, type: text, help: "The position the career plan works toward." }
+-  - { field: milestone, type: text, help: "The next milestone." }
+-  - { field: milestone_date, type: date, help: "The day of the next milestone, YYYY-MM-DD." }
+-  - { field: order_note, type: textarea, help: "A note over the order of work." }
++  - { field: title, type: text, section: Strategy, help: "The title of the career file's editor page." }
++  - { field: goal, type: text, section: Strategy, help: "The position the career plan works toward." }
++  - { field: milestone, type: text, section: Strategy, help: "The next milestone." }
++  - { field: milestone_date, type: date, section: Strategy, help: "The day of the next milestone, YYYY-MM-DD." }
++  - { field: order_note, type: textarea, section: Strategy, help: "A note over the order of work." }
+   - field: order
+     type: records
++    section: Strategy
+     help: "The order of work, in priority order."
+@@ -17,4 +18,5 @@
+       - { field: note, type: text, help: "An optional remark on the task." }
+   - field: positions
+     type: records
++    section: Positions
+     help: "The positions held, the CV's experience."
+@@ -30,4 +32,5 @@
+       - { field: cv_rank, type: text, help: "The row's place in its section, a whole number." }
+   - field: degrees
+     type: records
++    section: Degrees
+     help: "The degrees and the courses taken, the CV's education."
+@@ -43,4 +46,5 @@
+       - { field: cv_rank, type: text, help: "The row's place in its section, a whole number." }
+   - field: awards
+     type: records
++    section: Awards
+     help: "The awards, the CV's awards."
+@@ -56,4 +60,5 @@
+       - { field: cv_rank, type: text, help: "The row's place in its section, a whole number." }
+   - field: references
+     type: records
++    section: References
+     help: "The references the CV names."
+@@ -62,4 +67,5 @@
+       - { field: reason, type: text, help: "What the reference can speak to." }
+   - field: profiles
+     type: records
++    section: Profiles
+     map: true
+--- a/.oculus/data/literature/literature.yml
++++ b/.oculus/data/literature/literature.yml
+@@ -7,13 +7,13 @@
+-  - { field: key,      type: text,     primary_key: true, required: true, label: "Citation key", help: "The paper's citation key: the first author's surname, the year and the first word of the title, with b, c and on added when the file holds it already." }
+-  - { field: title,    type: text,     display: 1, help: "The paper's title. A paper saved from an address alone has none, and its title is filled in on the entry's page." }
+-  - { field: authors,  type: tags,     filter: true, help: "The paper's authors, each name as the source wrote it." }
+-  - { field: venue,    type: text,     filter: true, help: "The journal or conference; a name that matches a venue of the Venues view links to its page." }
+-  - { field: year,     type: text,     filter: true, help: "The year the paper appeared, a whole number." }
+-  - { field: doi,      type: text,     label: "DOI", help: "The paper's DOI, without the doi.org address." }
+-  - { field: url,      type: text,     label: "Address", help: "The web address of the paper." }
+-  - { field: abstract, type: textarea, help: "The paper's abstract, as plain text." }
+-  - { field: keywords, type: tags,     filter: true, help: "Words the reader files the paper under." }
+-  - { field: projects, type: tags,     foreign_key: projects, filter: true, help: "The projects the paper is read or cited for." }
+-  - { field: source,   type: select,   options: [search, lit-watch, hand], filter: true, help: "Where the entry came from: the Literature search, Lit Watch, or Add by hand." }
+-  - { field: added,    type: date,     help: "The day the paper was saved." }
+-  - { field: note,     type: textarea, help: "The reader's own notes on the paper." }
++  - { field: key,      type: text,     primary_key: true, required: true, label: "Citation key", section: Core, help: "The paper's citation key: the first author's surname, the year and the first word of the title, with b, c and on added when the file holds it already." }
++  - { field: title,    type: text,     display: 1, section: Core, help: "The paper's title. A paper saved from an address alone has none, and its title is filled in on the entry's page." }
++  - { field: authors,  type: tags,     filter: true, section: Core, help: "The paper's authors, each name as the source wrote it." }
++  - { field: venue,    type: text,     filter: true, section: Core, help: "The journal or conference; a name that matches a venue of the Venues view links to its page." }
++  - { field: year,     type: text,     filter: true, section: Core, help: "The year the paper appeared, a whole number." }
++  - { field: doi,      type: text,     label: "DOI", section: Core, help: "The paper's DOI, without the doi.org address." }
++  - { field: url,      type: text,     label: "Address", section: Core, help: "The web address of the paper." }
++  - { field: abstract, type: textarea, section: Content, help: "The paper's abstract, as plain text." }
++  - { field: keywords, type: tags,     filter: true, section: Content, help: "Words the reader files the paper under." }
++  - { field: projects, type: tags,     foreign_key: projects, filter: true, section: Connections, help: "The projects the paper is read or cited for." }
++  - { field: source,   type: select,   options: [search, lit-watch, hand], filter: true, section: Core, help: "Where the entry came from: the Literature search, Lit Watch, or Add by hand." }
++  - { field: added,    type: date,     section: Dates, help: "The day the paper was saved." }
++  - { field: note,     type: textarea, section: Content, help: "The reader's own notes on the paper." }
+--- a/.oculus/data/literature/radar.yml
++++ b/.oculus/data/literature/radar.yml
+@@ -15,15 +15,15 @@
+-  - { field: title, type: text, primary_key: true, display: 1, required: true, help: "The paper's title." }
+-  - { field: authors, type: text, help: "The authors, in the order the paper lists them." }
+-  - { field: venue, type: text, help: "Where the paper appeared, or the preprint server." }
+-  - { field: year, type: text, help: "The year of the paper, as a whole number." }
+-  - { field: url, type: text, required: true, help: "The paper's web address, which the sweep deduplicates by." }
+-  - { field: bucket, type: select, foreign_key: vocab.radar_buckets, required: true, help: "How the paper bears on the project: a pre-emption risk, a paper to cite or run as a baseline, an adjacent paper or an idea spark." }
+-  - { field: project, type: select, foreign_key: projects, help: "The project the sweep found the paper for." }
+-  - { field: relevance, type: select, options: [high, med, low], help: "How closely the paper bears on the project." }
+-  - { field: why, type: textarea, help: "Why the paper matters to the project." }
+-  - { field: found, type: date, help: "The day the sweep found the paper." }
+-  - { field: threatens, type: textarea, help: "The claim of the project that a pre-emption risk puts at stake." }
+-  - { field: motif, type: text, help: "For an idea spark, the pattern in the paper that the spark takes from it." }
+-  - { field: maps_to, type: text, foreign_key: projects, help: "For an idea spark, the project the spark applies to, or new-idea-candidate when it fits none." }
+-  - { field: idea_spark, type: textarea, help: "For an idea spark, the idea in a few sentences." }
+-  - { field: dismissed, type: checkbox, help: "Set by the Radar view when a paper is dismissed; a dismissed paper is kept in the file and left off the ticker." }
++  - { field: title, type: text, primary_key: true, display: 1, required: true, section: Core, help: "The paper's title." }
++  - { field: authors, type: text, section: Core, help: "The authors, in the order the paper lists them." }
++  - { field: venue, type: text, section: Core, help: "Where the paper appeared, or the preprint server." }
++  - { field: year, type: text, section: Core, help: "The year of the paper, as a whole number." }
++  - { field: url, type: text, required: true, section: Core, help: "The paper's web address, which the sweep deduplicates by." }
++  - { field: bucket, type: select, foreign_key: vocab.radar_buckets, required: true, section: Core, help: "How the paper bears on the project: a pre-emption risk, a paper to cite or run as a baseline, an adjacent paper or an idea spark." }
++  - { field: project, type: select, foreign_key: projects, section: Connections, help: "The project the sweep found the paper for." }
++  - { field: relevance, type: select, options: [high, med, low], section: Core, help: "How closely the paper bears on the project." }
++  - { field: why, type: textarea, section: Content, help: "Why the paper matters to the project." }
++  - { field: found, type: date, section: Dates, help: "The day the sweep found the paper." }
++  - { field: threatens, type: textarea, section: Content, help: "The claim of the project that a pre-emption risk puts at stake." }
++  - { field: motif, type: text, section: Content, help: "For an idea spark, the pattern in the paper that the spark takes from it." }
++  - { field: maps_to, type: text, foreign_key: projects, section: Content, help: "For an idea spark, the project the spark applies to, or new-idea-candidate when it fits none." }
++  - { field: idea_spark, type: textarea, section: Content, help: "For an idea spark, the idea in a few sentences." }
++  - { field: dismissed, type: checkbox, section: Core, help: "Set by the Radar view when a paper is dismissed; a dismissed paper is kept in the file and left off the ticker." }
+--- a/.oculus/data/people/people.yml
++++ b/.oculus/data/people/people.yml
+@@ -7,11 +7,12 @@
+ schema:
+-  - { field: key,          type: text,     primary_key: true, required: true, label: "Person key", help: "The person's key, which the lead, supervisors, collaborators and waiting-on of a project or an entry name." }
+-  - { field: name,         type: text,     display: 1, required: true, help: "The person's full name." }
+-  - { field: family,       type: text,     help: "The family name, the end of name." }
+-  - { field: affiliations, type: tags,     foreign_key: organisations, help: "The organisations the person belongs to, as keys of organisations.yml, the primary first." }
+-  - { field: role,         type: text,     help: "What this person is to the hub." }
+-  - { field: orcid,        type: text, help: "The person's ORCID identifier." }
+-  - { field: email,        type: text, help: "The person's email address." }
++  - { field: key,          type: text,     primary_key: true, required: true, label: "Person key", section: Core, help: "The person's key, which the lead, supervisors, collaborators and waiting-on of a project or an entry name." }
++  - { field: name,         type: text,     display: 1, required: true, section: Core, help: "The person's full name." }
++  - { field: family,       type: text,     section: Core, help: "The family name, the end of name." }
++  - { field: affiliations, type: tags,     foreign_key: organisations, section: Connections, help: "The organisations the person belongs to, as keys of organisations.yml, the primary first." }
++  - { field: role,         type: text,     section: Core, help: "What this person is to the hub." }
++  - { field: orcid,        type: text, section: Core, help: "The person's ORCID identifier." }
++  - { field: email,        type: text, section: Core, help: "The person's email address." }
+   - field: links
+     type: records
++    section: Core
+     help: "Web addresses of the person, in the order a CV prints them."
+@@ -21,6 +22,6 @@
+       - { field: handle, type: text, help: "The account name a CV prints in place of the address." }
+-  - { field: work,         type: text, help: "What the work with the person is about." }
+-  - { field: tags,         type: tags, help: "Words that describe the person and the work with them." }
+-  - { field: note,         type: textarea, help: "Free notes on the person and the work with them." }
+-  - { field: folder,       type: text,     help: "The hub-relative folder of a student's supervision files." }
++  - { field: work,         type: text, section: Content, help: "What the work with the person is about." }
++  - { field: tags,         type: tags, section: Core, help: "Words that describe the person and the work with them." }
++  - { field: note,         type: textarea, section: Content, help: "Free notes on the person and the work with them." }
++  - { field: folder,       type: text,     section: Connections, help: "The hub-relative folder of a student's supervision files." }
+
+--- a/.oculus/data/people/organisations.yml
++++ b/.oculus/data/people/organisations.yml
+@@ -7,5 +7,5 @@
+-  - { field: key,     type: text,   primary_key: true, required: true, label: "Organisation key", help: "The organisation's key, used by a person's affiliations and a funding scheme's funder." }
+-  - { field: name,    type: text,   display: 1, required: true, help: "The organisation's full name." }
+-  - { field: kind,    type: select, options: [university, hospital, funder, company, other], required: true, help: "What kind of organisation it is." }
+-  - { field: country, type: text,   help: "two-letter country code" }
+-  - { field: links,   type: tags, help: "Web addresses of the organisation." }
++  - { field: key,     type: text,   primary_key: true, required: true, label: "Organisation key", section: Core, help: "The organisation's key, used by a person's affiliations and a funding scheme's funder." }
++  - { field: name,    type: text,   display: 1, required: true, section: Core, help: "The organisation's full name." }
++  - { field: kind,    type: select, options: [university, hospital, funder, company, other], required: true, section: Core, help: "What kind of organisation it is." }
++  - { field: country, type: text,   section: Core, help: "two-letter country code" }
++  - { field: links,   type: tags, section: Core, help: "Web addresses of the organisation." }
+--- a/.oculus/data/research/resources.yml
++++ b/.oculus/data/research/resources.yml
+@@ -6,6 +6,6 @@
+-  - { field: key,    type: text,     primary_key: true, required: true, label: "Resource key", help: "The resource's key, used by a project's compute list." }
+-  - { field: name,   type: text,     display: 1, required: true, help: "The resource's name." }
+-  - { field: kind,   type: select,   options: [cluster, machine, storage], required: true, help: "Whether the resource is a cluster, a machine or storage." }
+-  - { field: host,   type: text,     help: "the ssh alias, for a cluster or a remote machine" }
+-  - { field: access, type: textarea, help: "how it is reached: the network, the VPN, the login rules" }
+-  - { field: links,  type: tags, help: "Web addresses of the resource." }
++  - { field: key,    type: text,     primary_key: true, required: true, label: "Resource key", section: Core, help: "The resource's key, used by a project's compute list." }
++  - { field: name,   type: text,     display: 1, required: true, section: Core, help: "The resource's name." }
++  - { field: kind,   type: select,   options: [cluster, machine, storage], required: true, section: Core, help: "Whether the resource is a cluster, a machine or storage." }
++  - { field: host,   type: text,     section: Core, help: "the ssh alias, for a cluster or a remote machine" }
++  - { field: access, type: textarea, section: Core, help: "how it is reached: the network, the VPN, the login rules" }
++  - { field: links,  type: tags, section: Core, help: "Web addresses of the resource." }
+--- a/.oculus/data/research/statements.yml
++++ b/.oculus/data/research/statements.yml
+@@ -11,6 +11,6 @@
+-  - { field: key, type: text, primary_key: true, required: true, help: "The text block's short name, unique in this file; a write and Edit in File address the entry by it." }
+-  - { field: title,     type: text,     display: 1, required: true, help: "The name of the text block." }
+-  - { field: status,    type: select,   options: [draft, ready], required: true, help: "Whether the text is a draft or ready to paste." }
+-  - { field: tags,      type: tags, help: "Words the card is filtered by." }
+-  - { field: note,      type: textarea, help: "Free notes on where the text is used." }
+-  - { field: statement, type: textarea, help: "The verbatim boilerplate text" }
++  - { field: key, type: text, primary_key: true, required: true, section: Core, help: "The text block's short name, unique in this file; a write and Edit in File address the entry by it." }
++  - { field: title,     type: text,     display: 1, required: true, section: Core, help: "The name of the text block." }
++  - { field: status,    type: select,   options: [draft, ready], required: true, section: Core, help: "Whether the text is a draft or ready to paste." }
++  - { field: tags,      type: tags, section: Core, help: "Words the card is filtered by." }
++  - { field: note,      type: textarea, section: Content, help: "Free notes on where the text is used." }
++  - { field: statement, type: textarea, section: Content, help: "The verbatim boilerplate text" }
+--- a/.oculus/data/pillars/pillars.yml
++++ b/.oculus/data/pillars/pillars.yml
+@@ -27,7 +27,7 @@
+-  - { field: key,     type: text,     primary_key: true, required: true, label: "Pillar key", help: "The pillar's key, used by a project's pillar list." }
+-  - { field: title,   type: text,     display: 1, required: true, help: "The pillar's name." }
+-  - { field: kind, type: select, foreign_key: vocab.pillar_kinds, help: "The line's kind, a key of pillar_kinds." }
+-  - { field: goal,    type: textarea, help: "One-line aim of the pillar" }
+-  - { field: color,   type: text,     label: "Colour", help: "the pillar's card colour: a hex from the palette in oculus's config/catalogs/vocab.yml; any other value leaves the card plain" }
+-  - { field: funding, type: text,     help: "Only real/granted support; leave blank otherwise" }
+-  - { field: blurb,   type: textarea, help: "A sentence on what the pillar covers." }
++  - { field: key,     type: text,     primary_key: true, required: true, label: "Pillar key", section: Core, help: "The pillar's key, used by a project's pillar list." }
++  - { field: title,   type: text,     display: 1, required: true, section: Core, help: "The pillar's name." }
++  - { field: kind, type: select, foreign_key: vocab.pillar_kinds, section: Core, help: "The line's kind, a key of pillar_kinds." }
++  - { field: goal,    type: textarea, section: Content, help: "One-line aim of the pillar" }
++  - { field: color,   type: text,     label: "Colour", section: Core, help: "the pillar's card colour: a hex from the palette in oculus's config/catalogs/vocab.yml; any other value leaves the card plain" }
++  - { field: funding, type: text,     section: Connections, help: "Only real/granted support; leave blank otherwise" }
++  - { field: blurb,   type: textarea, section: Content, help: "A sentence on what the pillar covers." }
+--- a/.oculus/data/pillars/domains.yml
++++ b/.oculus/data/pillars/domains.yml
+@@ -4,5 +4,5 @@
+-  - { field: key,   type: text,     primary_key: true, required: true, label: "Domain key", help: "The domain's key, used by a project's domain field." }
+-  - { field: title, type: text,     display: 1, required: true, help: "The domain's name." }
+-  - { field: blurb, type: textarea, help: "A sentence on what the domain covers." }
+-  - { field: color, type: text,     help: "The colour of the domain's project cards, written #rrggbb." }
+-  - { field: expects_datasets, type: checkbox, label: "Expects datasets", help: "Whether a project of this domain is expected to list a dataset; the Audit reports an active one that lists none." }
++  - { field: key,   type: text,     primary_key: true, required: true, label: "Domain key", section: Core, help: "The domain's key, used by a project's domain field." }
++  - { field: title, type: text,     display: 1, required: true, section: Core, help: "The domain's name." }
++  - { field: blurb, type: textarea, section: Content, help: "A sentence on what the domain covers." }
++  - { field: color, type: text,     section: Core, help: "The colour of the domain's project cards, written #rrggbb." }
++  - { field: expects_datasets, type: checkbox, label: "Expects datasets", section: Connections, help: "Whether a project of this domain is expected to list a dataset; the Audit reports an active one that lists none." }
+--- a/.oculus/data/research/data.yml
++++ b/.oculus/data/research/data.yml
+@@ -12,14 +12,15 @@
+ schema:
+-  - { field: key,         type: text,     primary_key: true, required: true, label: "Dataset key", help: "The dataset's key, used by a project's datasets list." }
+-  - { field: name,        type: text,     display: 1, required: true, help: "The dataset's full name." }
+-  - { field: modality,    type: text, help: "The kind of signal or data the set holds." }
+-  - { field: themes,      type: tags,     options: [{ key: single-cell, label: "Single-cell" }, { key: eeg, label: "EEG" }, { key: mri-imaging, label: "MRI imaging" }, { key: bci-ecog, label: "BCI / ECoG" }, { key: ecg, label: "ECG" }, { key: survival-tabular, label: "Survival (tabular)" }, { key: clinical-ehr, label: "Clinical EHR" }, { key: pde-operator, label: "PDE operator" }, { key: ct-imaging, label: "CT imaging" }, { key: mammography, label: "Mammography" }, { key: simulated-copula, label: "Simulated (copula)" }], help: "The dataset's modality theme words, each one of the options: single-cell, eeg, mri-imaging, bci-ecog, ecg, survival-tabular, clinical-ehr, pde-operator, ct-imaging, mammography, simulated-copula; the Data view filters by them." }
+-  - { field: description, type: textarea, help: "What the dataset contains and why the hub uses it." }
+-  - { field: size,        type: text, help: "How large the set is, as text." }
+-  - { field: path,        type: text,     label: "Folder", help: "The dataset's folder, the same on this Mac and on the cluster, under ~/data; Recover fetches into it." }
+-  - { field: access,      type: select,   foreign_key: vocab.data_access, help: "How the data is obtained: open, behind a registration, credentialed (a data use agreement) or private." }
+-  - { field: source,      type: text,     help: "The web address of the dataset's source." }
+-  - { field: notes,       type: textarea, help: "Where the set lives besides its folder, what a reader of it should know, and the steps a person follows that no source states." }
++  - { field: key,         type: text,     primary_key: true, required: true, label: "Dataset key", section: Core, help: "The dataset's key, used by a project's datasets list." }
++  - { field: name,        type: text,     display: 1, required: true, section: Core, help: "The dataset's full name." }
++  - { field: modality,    type: text, section: Core, help: "The kind of signal or data the set holds." }
++  - { field: themes,      type: tags,     options: [{ key: single-cell, label: "Single-cell" }, { key: eeg, label: "EEG" }, { key: mri-imaging, label: "MRI imaging" }, { key: bci-ecog, label: "BCI / ECoG" }, { key: ecg, label: "ECG" }, { key: survival-tabular, label: "Survival (tabular)" }, { key: clinical-ehr, label: "Clinical EHR" }, { key: pde-operator, label: "PDE operator" }, { key: ct-imaging, label: "CT imaging" }, { key: mammography, label: "Mammography" }, { key: simulated-copula, label: "Simulated (copula)" }], section: Core, help: "The dataset's modality theme words, each one of the options: single-cell, eeg, mri-imaging, bci-ecog, ecg, survival-tabular, clinical-ehr, pde-operator, ct-imaging, mammography, simulated-copula; the Data view filters by them." }
++  - { field: description, type: textarea, section: Content, help: "What the dataset contains and why the hub uses it." }
++  - { field: size,        type: text, section: Core, help: "How large the set is, as text." }
++  - { field: path,        type: text,     label: "Folder", section: Recovery, help: "The dataset's folder, the same on this Mac and on the cluster, under ~/data; Recover fetches into it." }
++  - { field: access,      type: select,   foreign_key: vocab.data_access, section: Core, help: "How the data is obtained: open, behind a registration, credentialed (a data use agreement) or private." }
++  - { field: source,      type: text,     section: Core, help: "The web address of the dataset's source." }
++  - { field: notes,       type: textarea, section: Content, help: "Where the set lives besides its folder, what a reader of it should know, and the steps a person follows that no source states." }
+   - field: retrieval
+     type: records
++    section: Recovery
+     help: "How the set comes back: its sources, each with a kind and the fields that kind takes, fetched in the order written."
+--- a/.oculus/data/research/venues.yml
++++ b/.oculus/data/research/venues.yml
+@@ -12,20 +12,20 @@
+-  - { field: name,           type: text,     display: 2, required: true, label: "Venue name", help: "The venue's full name." }
+-  - { field: id,             type: text,     primary_key: true, help: "The catalogue id that a project's venue names." }
+-  - { field: short,          type: text,     display: 1, label: "Short name", help: "The venue's short name or acronym." }
+-  - { field: category,       type: select,   foreign_key: vocab.venue_categories, help: "The kind of venue: a journal, a conference, a thesis or a meeting." }
+-  - { field: jif,            type: text,     label: "JIF", help: "The journal impact factor as text." }
+-  - { field: quartile,       type: text, help: "The quartile of the venue in its category." }
+-  - { field: tier,           type: select,   foreign_key: vocab.venue_tiers, help: "The prestige tier, curated by hand and not taken from the JIF." }
+-  - { field: wos,            type: text,     label: "WoS", help: "Web of Science indexing note." }
+-  - { field: scopus,         type: text, help: "Scopus indexing note." }
+-  - { field: format,         type: text,     help: "The LaTeX document class or template, such as elsarticle or ieee." }
+-  - { field: free,           type: text,     help: "Open-access and article processing charge note." }
+-  - { field: wants,          type: textarea, help: "The scope of the venue and what it wants to publish." }
+-  - { field: themes,         type: tags,     options: [{ key: core-ml, label: "Core ML" }, { key: clinical, label: "Clinical" }, { key: high-end, label: "High-end" }, { key: signal, label: "Signal" }, { key: theory, label: "Theory" }, { key: informatics, label: "Informatics" }, { key: federated, label: "Federated" }, { key: neuro, label: "Neuro" }, { key: imaging, label: "Imaging" }, { key: bio, label: "Bio" }, { key: cs, label: "CS" }, { key: systems, label: "Systems" }, { key: method, label: "Method" }], help: "The venue's theme words, each one of the options: core-ml, clinical, high-end, signal, theory, informatics, federated, neuro, imaging, bio, cs, systems, method." }
+-  - { field: link,           type: text, help: "The venue's web address." }
+-  - { field: timing,         type: text,     help: "When submissions are open, as text." }
+-  - { field: deadline,       type: date,     help: "The next submission deadline." }
+-  - { field: deadline_month, type: text,     when: { category: conference }, help: "The month the deadline usually falls in, as a three-letter name." }
+-  - { field: held_month,     type: text,     when: { category: conference }, help: "The month the conference is usually held in, as a three-letter name." }
+-  - { field: call,           type: text,     help: "The call-for-papers web address." }
+-  - { field: email,          type: text, help: "The editorial office's email address." }
++  - { field: name,           type: text,     display: 2, required: true, label: "Venue name", section: Core, help: "The venue's full name." }
++  - { field: id,             type: text,     primary_key: true, section: Core, help: "The catalogue id that a project's venue names." }
++  - { field: short,          type: text,     display: 1, label: "Short name", section: Core, help: "The venue's short name or acronym." }
++  - { field: category,       type: select,   foreign_key: vocab.venue_categories, section: Core, help: "The kind of venue: a journal, a conference, a thesis or a meeting." }
++  - { field: jif,            type: text,     label: "JIF", section: Indexing, help: "The journal impact factor as text." }
++  - { field: quartile,       type: text, section: Indexing, help: "The quartile of the venue in its category." }
++  - { field: tier,           type: select,   foreign_key: vocab.venue_tiers, section: Core, help: "The prestige tier, curated by hand and not taken from the JIF." }
++  - { field: wos,            type: text,     label: "WoS", section: Indexing, help: "Web of Science indexing note." }
++  - { field: scopus,         type: text, section: Indexing, help: "Scopus indexing note." }
++  - { field: format,         type: text,     section: Core, help: "The LaTeX document class or template, such as elsarticle or ieee." }
++  - { field: free,           type: text,     section: Core, help: "Open-access and article processing charge note." }
++  - { field: wants,          type: textarea, section: Content, help: "The scope of the venue and what it wants to publish." }
++  - { field: themes,         type: tags,     options: [{ key: core-ml, label: "Core ML" }, { key: clinical, label: "Clinical" }, { key: high-end, label: "High-end" }, { key: signal, label: "Signal" }, { key: theory, label: "Theory" }, { key: informatics, label: "Informatics" }, { key: federated, label: "Federated" }, { key: neuro, label: "Neuro" }, { key: imaging, label: "Imaging" }, { key: bio, label: "Bio" }, { key: cs, label: "CS" }, { key: systems, label: "Systems" }, { key: method, label: "Method" }], section: Content, help: "The venue's theme words, each one of the options: core-ml, clinical, high-end, signal, theory, informatics, federated, neuro, imaging, bio, cs, systems, method." }
++  - { field: link,           type: text, section: Core, help: "The venue's web address." }
++  - { field: timing,         type: text,     section: Dates, help: "When submissions are open, as text." }
++  - { field: deadline,       type: date,     section: Dates, help: "The next submission deadline." }
++  - { field: deadline_month, type: text,     when: { category: conference }, section: Dates, help: "The month the deadline usually falls in, as a three-letter name." }
++  - { field: held_month,     type: text,     when: { category: conference }, section: Dates, help: "The month the conference is usually held in, as a three-letter name." }
++  - { field: call,           type: text,     section: Dates, help: "The call-for-papers web address." }
++  - { field: email,          type: text, section: Core, help: "The editorial office's email address." }

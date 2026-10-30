@@ -32,7 +32,9 @@ dispatch:            # steps in flight, up to six (Z632)
   worker: claude:opus
   launched: 2026-10-30
   report: .scratch/migration/agents/reviews/O104-report.md
-  round: 0
+  builder_usage: 274086 tokens, 395 tool uses, 52.7 minutes
+  reviewer_report: .scratch/migration/agents/reviews/O104-refuter.md (acbb52be2a1105eff, claude-opus-5-5, 130606 tokens, 74 tool uses, 16.4 minutes)
+  round: 1
   brief_check: .scratch/migration/agents/reviews/O104-brief-check.md (a566ce9e7d193844e, claude-opus-5-5, 296680 tokens, 40 tool uses, 13.2 minutes)
   landing: not-started
 ```
@@ -753,6 +755,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-10-30 (O104 reviewed; round 1 sent). The review's findings are in `agents/reviews/O104-refuter.md`; the builder's scripts, unapproved, closed in automode under the ruling "Unapproved builder scripts": breach recorded, the commands taken in round 1. The three hub sentences go in the hub patch.
 - 2026-10-30 (O104 at work). O104's builder a64b1775be113ff93 stopped on one case; open item 598 (a) closed in automode, ruled in `agents/briefs/O104-cases.md`, builder resumed.
 - 2026-10-30 (O101 landed). O101 is on main with hub commit 6abb17c8b; `agents/reviews/O101-landing.md` holds the booking. In flight (0 of 6). Next: /spec migration O104, the section names of ruling 594 (a). Open items: none.
 - 2026-10-30 (ruling 595; O101's repair round 1 sent). Axel ruled 595 (d), booked in `plan.md` Rulings. O101's repair round 1 (`agents/briefs/O101-round1.md`, 13 items: every finding of `agents/reviews/O101-refuter.md`, Behaviour 5 of the orchestrator's read, G142's tests by ruling 596 (a), the read of ruling 595 (d)) sent to the builder aeaae4397fb040109; snapshot `.agents/worktrees/migration-O101-round-1` with `files.txt`. In flight (1 of 6): O101 (round 1). Queued: O104, once O101 has landed. Open items: none.
