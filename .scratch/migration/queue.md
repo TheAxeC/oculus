@@ -1,5 +1,6 @@
-In flight (1 of 6 slots in use):
+In flight (2 of 6 slots in use):
 - O105 (the website keeps its own words), at its builder.
+- O106 (cards and the entry page), at its builder.
 
 Queued, in order (0 steps): none.
 

@@ -36,8 +36,17 @@ dispatch:            # steps in flight, up to six (Z632)
   round: 0
   landing: not-started
 - step: O106
-  landing: preparing
-  brief_check: "running: aff22675846d114fb"
+  base: c18dc9126
+  worktree: .agents/worktrees/migration-O106
+  executor: agent
+  worker: claude:opus
+  session_id: adf8935850262b509
+  launched: 2026-10-31
+  report: .scratch/migration/agents/reviews/O106-report.md
+  brief_check: .scratch/migration/agents/reviews/O106-brief-check.md (aff22675846d114fb, claude-opus-5-5, 200429 tokens, 18 tool uses, 462 s)
+  shared_paths: docs/HELP.md, docs/templates.md and config/schemas/manifest-schema.yml with migration O105, simple to merge since the two steps change different lines
+  round: 0
+  landing: not-started
 ```
 
 ## The standing demands (from Axel, in force)
@@ -760,6 +769,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-10-31 (O106 at work). Axel: "Please do". Preparation commit c18dc9126; builder adf8935850262b509 launched in `.agents/worktrees/migration-O106`. In flight (2 of 6). Open item 604.
 - 2026-10-30 (O105 at work). Axel: "Lets book O105 and do it". The brief and its check are in the preparation commit eafa79e6e; builder a335cf314e42c8f6c launched in `.agents/worktrees/migration-O105`. In flight (1 of 6). Open items: none.
 - 2026-10-30 (rulings 599 to 602; O105 booked). Axel ruled all (a), booked in `plan.md` Rulings; step O105 added, unticked and not started. In flight (0 of 6). Next: /spec migration O105 on his word. Open items: none.
 - 2026-10-30 (O104 landed). O104 is on main with hub commit 2db7d35dd; `agents/reviews/O104-landing.md` holds the booking. In flight (0 of 6). No step is left unticked. Open items: none.
