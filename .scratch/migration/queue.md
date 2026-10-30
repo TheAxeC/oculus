@@ -1,7 +1,7 @@
 In flight (0 of 6 slots in use):
 
 Queued, in order (1 step):
-- O101 (the Zenodo deposit): ruled 573, 575, 576, 577 and 583; /spec runs again.
+- O101 (the Zenodo deposit): stopped on open item 592, the two status keys.
 
 Owed looks: none.
 
