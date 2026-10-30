@@ -1,5 +1,5 @@
 In flight (1 of 6 slots in use):
-- O101 (the Zenodo deposit): being prepared.
+- O101 (the Zenodo deposit): building.
 
 Queued, in order (0 steps):
 

@@ -25,7 +25,16 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 ```yaml
 dispatch:         # steps in flight, up to six (Z632)
 - step: O101
-  landing: preparing
+  executor: agent
+  worker: claude:opus
+  session_id: aeaae4397fb040109 (claude-opus-5-5)
+  worktree: .agents/worktrees/migration-O101
+  base: ce8d41683
+  launched: 2026-10-30
+  report: .scratch/migration/agents/reviews/O101-report.md
+  brief_check: agents/reviews/O101-brief-check.md (ac906874df316b771, claude-opus-5-5, 246818 tokens, 102 tool uses, 13 min 14 s)
+  landing: not-started
+  round: 0
 ```
 
 ## The standing demands (from Axel, in force)
@@ -742,6 +751,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-10-30 (O101 building). Axel ruled 592 (a). O101's brief rewritten for it (`zenodo_status` and `zenodo_date`, push unchanged, the website's Code link in `papers.ts` item 15, the EPIPE fix of `git-write.ts` item 16, cases 25 to 27) with the premises O102 changed corrected; the brief check `agents/reviews/O101-brief-check.md` (ac906874df316b771) was not run again, its findings closed by the rulings since. Preparation commit ce8d41683, the base; worktree `.agents/worktrees/migration-O101`, base copy `.agents/worktrees/O101-base/` with `unused-exports.txt` (227 unused exports at the base); O102's leftover base copy removed. Builder aeaae4397fb040109 launched on claude-opus-5-5 (read from its transcript). Next: its report, then `/refute migration O101`.
 - 2026-10-30 (O101 stopped at /spec on 592). The fourth /spec of O101 found that ruling 575 (b) needs the two status keys named: open item 592, booked under O101's Step 0 and under "Blocked, and by what". The brief keeps 573 (a), 576 (a), 577 (a) and 583 (a) as written; once 592 is ruled, item 11 is rewritten, the premises O102 changed are checked again (`family` on main), the EPIPE fix of `git-write.ts:195` is added, and `/spec migration O101` runs again. Nothing in flight.
 - 2026-10-30 (O102 landed). O102 (the website's three data files generated from the hub, Write the website, the Career view) is on main, booked under O102 in `plan.md` with its four agents in the Agents section, `agents/reviews/O102-landing.md`; the hub patch (with 585 (a) and 591 (a)) and the website patch committed in their own repositories. Nothing in flight. O101 is next: Axel ruled 573 (a), 575 (b), 576 (a), 577 (a) and 583 (a); `/spec migration O101` runs again with O101.md written from those rulings, the people field `family` already on main, and the EPIPE fix of `git-write.ts:195` folded in.
 - 2026-10-30 (O102 round 1 refuted; 591 raised). The reviewer over round 1 (a1799933a38474851, claude-opus-5-5) found S1, S2, P1 to P5, St1, St2 and B1, saved under "Repair round 1, refuted" in `agents/reviews/O102-refuter.md` with their dispositions under its Closed heading: S1 is open item 591; S2, P1, P2, St1, St2 and B1 are fixed at landing inside items 6, 13, 14, 16 and 19; P3 and P5 are corrected in the report at landing; P4 is named in the booking. The rounds are over. `/land migration O102` waits on Axel's rulings on 585 and 591, since both change the hub patch. O101 waits on 573, 575, 576, 577 and 583.
