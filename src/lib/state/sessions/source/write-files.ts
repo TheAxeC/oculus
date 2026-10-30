@@ -276,7 +276,7 @@ const FOLDERS_LOADING = 'folders_loading';
  */
 export function unsavedAnswer(
     file: { root: string; path: string } | null,
-    look: Readonly<FileLookups>,
+    look: Readonly<Pick<FileLookups, 'unsavedUnknown'>>,
     heldUnsaved: (file: { root: string; path: string }) => boolean
 ): WriteAnswer | null {
     if (file === null) return null;

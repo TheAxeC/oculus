@@ -474,6 +474,7 @@ describe("the audit's placement findings", () => {
             rules: auditRules(CONFIG),
             // `/hub` holds no settings file, so its setting names none of the checks.
             setting: hubAuditSetting('/hub'),
+            website: null,
             catalog: CATALOG
         };
         guardrails(input, add);

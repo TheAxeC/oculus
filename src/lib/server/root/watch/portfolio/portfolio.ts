@@ -38,8 +38,11 @@ import {
     auditRules,
     hubAuditSetting,
     mutedSignatures,
-    type AuditSetting
+    type AuditSetting,
+    type WebsiteCheck
 } from '../../../content/audit/scan.ts';
+import { siteFiles, websiteDir } from '../../../content/audit/website/site.ts';
+import { websiteSettings } from '../../../../data/sources/config/settings/files.ts';
 import { auditFiles, auditPaths, relevantTo } from './audited.ts';
 import { namedByConfig, namedByRoots, roleDirectories, watchedDirectories } from './reads.ts';
 import {
@@ -638,6 +641,10 @@ export function watchPortfolio(
                 })
                 .map((one) => ({ ...one, setting: hubAuditSetting(one.dir) }));
             const auditing = auditPaths(audits.map((one) => one.setting));
+            // The website the primary hub's files are written into, whose files the audit compares
+            // with what the hub's files give and so watches one by one.
+            const website = websiteSettings(config);
+            const siteDir = primaryDir === null ? '' : websiteDir(primaryDir, website.folder);
             relevant = relevantTo(auditing);
             const byHub =
                 primaryDir === null
@@ -646,7 +653,9 @@ export function watchPortfolio(
             byHub.push(...others.map((one) => namedByConfig(one.dir, one.portfolio, auditing)));
             named = (path) => byHub.some((one) => one(path));
             // A workspace repository's project is audited with the primary hub alone.
-            watchAuditFiles(auditFiles(audits, primaryDir === null ? [] : roots, auditing));
+            watchAuditFiles(
+                auditFiles(siteFiles(siteDir), primaryDir === null ? [] : roots, auditing)
+            );
             watchRootParents(roots);
             for (const root of roots) openFile(join(root.dir, MANIFEST));
             // The directories are opened before the snapshot is read, so a write that lands
@@ -694,6 +703,13 @@ export function watchPortfolio(
                 const { entities } = snapshot;
                 const domains = Object.values(entities.domains);
                 const holders = holdersOf(Object.values(entities.projects));
+                const people = Object.values(entities.people);
+                const check: WebsiteCheck = {
+                    setting: website,
+                    dir: siteDir,
+                    people,
+                    career: entities.career
+                };
                 const scan = ({ key, dir, merged, setting }: Audited): AuditFinding[] =>
                     auditFindings({
                         hub: dir,
@@ -706,9 +722,10 @@ export function watchPortfolio(
                             (one) => rootOf(one) === key
                         ),
                         held: holders,
-                        self: selfOf(Object.values(entities.people)),
+                        self: selfOf(people),
                         rules: auditRules(merged, domains),
                         setting,
+                        website: key === workspace.primary ? check : null,
                         catalog: textCatalog(merged)
                     });
                 const audit: AuditPayload = {

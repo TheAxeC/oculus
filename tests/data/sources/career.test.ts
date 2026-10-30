@@ -1,5 +1,7 @@
 // Layer 1, data tests. sources/documents/career.ts and the career half of normalise, over a
-// synthetic hub written under mkdtemp. Nothing here touches the real hub.
+// synthetic hub written under mkdtemp, and what the Career view draws (state/forms/career-view.ts)
+// for the demo hub's career file, whose schema is the one docs/templates.md gives, found as the
+// view finds its page. Nothing here touches the real hub.
 
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve, sep } from 'node:path';
@@ -8,6 +10,17 @@ import { readCareer } from '../../../src/lib/data/sources/documents/career.ts';
 import { engineDefaults } from '../../../src/lib/data/sources/collections.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
 import { career } from '../../../src/lib/data/snapshot/normalise-parts/career.ts';
+import type { Career, Snapshot } from '../../../src/lib/data/model/index.ts';
+import { careerShown } from '../../../src/lib/state/forms/career-view.ts';
+import {
+    CAREER as CAREER_PAGE,
+    createPages,
+    pageFields,
+    sampleOf,
+    type PageEntry
+} from '../../../src/lib/state/forms/page-entry.ts';
+import { toEdit, type RecordsEdit } from '../../../src/lib/state/forms/record-values.ts';
+import { createSettled } from '../../../src/lib/state/forms/settled.svelte.ts';
 import { it, scratchDir, test } from '../../fixtures/scratch.ts';
 
 /** The career file's default path, from oculus's own table of default paths. */
@@ -20,9 +33,8 @@ const CAREER = `title: Career strategy
 goal: "Assistant professor"
 milestone: "FWO Senior"
 milestone_date: "2026-11-17"
-situation:
-  PhD: "May 2023, KU Leuven"
-  Now: "Postdoc, U Twente"
+positions:
+  - { title: "Postdoc", location: "U Twente", duration: "2023 - now" }
 order:
   - { task: "Veni pre-proposal", when: "~1 Sep" }
   - { task: "ENW-XS", when: "15 Sep", note: "optional" }
@@ -30,7 +42,7 @@ order:
 order_note: "the order is a priority order"
 `;
 
-/** Sections the career banner draws none of, which a career file may hold. */
+/** Sections the model types none of, which a career file may hold. */
 const UNDRAWN = `hosts:
   - { name: "Naesens", inst: "KU Leuven", status: "warm" }
 host_criteria:
@@ -68,15 +80,11 @@ describe('normalising it', () => {
         held = career(readCareer(hub(CAREER), CAREER_FILE, CATALOG).career);
     });
 
-    it('reads the title, the milestone and the situation strip', () => {
+    it('reads the title, the goal, the milestone and the order of work', () => {
         expect(held?.title).toBe('Career strategy');
         expect(held?.goal).toBe('Assistant professor');
         expect(held?.milestone).toBe('FWO Senior');
         expect(held?.milestoneDate).toBe('2026-11-17');
-        expect(held?.situation).toEqual([
-            { label: 'PhD', value: 'May 2023, KU Leuven' },
-            { label: 'Now', value: 'Postdoc, U Twente' }
-        ]);
         expect(held?.order).toEqual([
             { task: 'Veni pre-proposal', when: '~1 Sep' },
             { task: 'ENW-XS', when: '15 Sep', note: 'optional' },
@@ -135,7 +143,7 @@ describe('normalising it', () => {
         expect(read?.milestoneDate).toBe(milestoneDate);
     });
 
-    it('reads none of the sections the banner does not draw into the model', () => {
+    it('types the strategy alone, every other section staying in the sections', () => {
         const read = career(readCareer(hub(CAREER + UNDRAWN), CAREER_FILE, CATALOG).career);
         expect(Object.keys(read ?? {}).sort()).toEqual([
             'goal',
@@ -144,9 +152,11 @@ describe('normalising it', () => {
             'order',
             'orderNote',
             'sections',
-            'situation',
             'title'
         ]);
+        expect(Object.keys(read?.sections ?? {})).toEqual(
+            expect.arrayContaining(['positions', 'hosts', 'dropped'])
+        );
     });
 });
 
@@ -163,14 +173,13 @@ describe('what the editor edits', () => {
             'goal',
             'milestone',
             'milestone_date',
-            'situation',
+            'positions',
             'order',
             'order_note'
         ]);
-        expect(read?.sections.situation).toEqual({
-            PhD: 'May 2023, KU Leuven',
-            Now: 'Postdoc, U Twente'
-        });
+        expect(read?.sections.positions).toEqual([
+            { title: 'Postdoc', location: 'U Twente', duration: '2023 - now' }
+        ]);
         expect(read?.schema).toBeUndefined();
     });
 
@@ -179,5 +188,65 @@ describe('what the editor edits', () => {
         const read = career(readCareer(hub(body), CAREER_FILE, CATALOG).career);
         expect(read?.schema).toMatchObject(SCHEMA);
         expect(read?.sections).not.toHaveProperty('schema');
+    });
+});
+
+describe('what the Career view draws', () => {
+    /** The demo hub's career file, whose schema is the one docs/templates.md gives. */
+    const DEMO = join(engineDir(), 'tests', 'fixtures', 'hubs', 'demo');
+    let held: ReturnType<typeof career> = null;
+    test.beforeAll(() => {
+        held = career(readCareer(DEMO, CAREER_FILE, CATALOG).career);
+    });
+
+    /** The page of a career file, found as the view finds it (page-entry.ts `pageNamed`). */
+    function pageFor(file: Career | null): PageEntry | null {
+        const snapshot = { entities: { career: file } } as unknown as Snapshot;
+        const pages = createPages(
+            { snapshot: () => snapshot, feeds: () => null },
+            createSettled(() => 0)
+        );
+        return pages.pageNamed(CAREER_PAGE);
+    }
+
+    it('draws the line saying the hub holds no career file when it holds none', () => {
+        expect(careerShown(null, pageFor(null))).toEqual({ state: 'none' });
+    });
+
+    it('draws the line saying the file has no schema when its schema is absent', () => {
+        if (held === null) throw new Error('the demo hub holds no career file');
+        const { schema: _schema, ...bare } = held;
+        expect(careerShown(bare, pageFor(bare))).toEqual({ state: 'no_schema' });
+    });
+
+    it("draws every section of the file's schema in the schema's order, each in the form its field gives", () => {
+        const shown = careerShown(held, pageFor(held));
+        const page = shown.state === 'editor' ? shown.page : null;
+        const forms = (page === null ? [] : pageFields(page)).map((field) => ({
+            field: field.field,
+            form:
+                field.type === 'records' && page !== null
+                    ? (
+                          toEdit(
+                              field,
+                              page.values[field.field],
+                              sampleOf(page, field.field)
+                          ) as RecordsEdit
+                      ).shape
+                    : field.type
+        }));
+        expect(forms).toEqual([
+            { field: 'title', form: 'text' },
+            { field: 'goal', form: 'text' },
+            { field: 'milestone', form: 'text' },
+            { field: 'milestone_date', form: 'date' },
+            { field: 'order_note', form: 'textarea' },
+            { field: 'order', form: 'list' },
+            { field: 'positions', form: 'list' },
+            { field: 'degrees', form: 'list' },
+            { field: 'awards', form: 'list' },
+            { field: 'references', form: 'list' },
+            { field: 'profiles', form: 'named' }
+        ]);
     });
 });

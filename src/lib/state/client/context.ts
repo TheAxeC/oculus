@@ -142,6 +142,7 @@ import { createDebug } from '../system/machine/debug/debug.svelte.ts';
 import { createUsageRefresh } from '../system/machine/usage/usage-refresh.svelte.ts';
 import { createQueryScope } from './queries/tab-scope.ts';
 import { createWrites } from './writes.svelte.ts';
+import { createWebsite } from '../sessions/source/website.svelte.ts';
 import { createGraphviz } from '../boards/structure/layout.ts';
 import { createLatexReader } from '../sources/explorer/sections/outline.ts';
 
@@ -573,6 +574,20 @@ export function createClientState(
             askLatex: latex.holdAgain
         })
     );
+    // Write the website refuses a press over a generated file a source tab holds unsaved text of,
+    // as the write path does, and approves its command as the command form approves one.
+    const website = createWebsite({
+        writes,
+        config: () => entities.config()?.config ?? null,
+        snapshot: entities.portfolio,
+        look: {
+            primary: () => fs.primary(),
+            unsavedUnknown: (file) => source.unsavedUnknown(file.root, file.path)
+        },
+        heldUnsaved: (file) => source.unsavedFile(file.root, file.path),
+        approve: commands.approve,
+        terminal: (id) => terminals.terminalById(id)
+    });
     // A root that leaves the served roots takes its command diagnostics, its LaTeX states and its
     // lint rows with it. The change is read from the fs store's workspaces, the one state the
     // served roots are made of, and only between two reads of them (`readRoots` is null while they
@@ -820,6 +835,7 @@ export function createClientState(
         inbox,
         accounts,
         audit,
+        website,
         memories,
         wallpapers,
         lines,

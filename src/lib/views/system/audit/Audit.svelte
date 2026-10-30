@@ -22,9 +22,10 @@
     // a file a `required_files` row asks for, or a part of `audit:` that is not of its shape; a
     // manifest naming no lead, a project no board takes, a done project carrying a Focus lane's
     // chip, or a project at a stage outside the folders a `stage_folders` row names; a field that
-    // has stopped being a glance; and the hub's own website feed, which `audit.website` names,
-    // against its projects. A stage word or a form written as a chip is a finding of the manifest
-    // check, drawn in the Findings view rather than here.
+    // has stopped being a glance; and the website of `website.folder`, whose three data files the
+    // hub's files give, each that differs from what they give a finding. A stage word or a form
+    // written as a chip is a finding of the manifest check, drawn in the Findings view rather than
+    // here.
     //
     // A finding is reported and never repaired here. What the reader can do is park one: the mute
     // control writes its signature into the `audit_ignore:` list of the open workspace file's
@@ -43,7 +44,10 @@
     // tree's row height, growing by whole lines when the words wrap, with the fill of a tree row
     // under the pointer. A row is the scope in the row's main words, the chip of the hub the
     // finding is of when that is a hub but the primary, the message, the place in the mono face and
-    // the mute control at the row's end. Every row carries `data-card`, its card id
+    // the mute control at the row's end. A Website finding of a file that differs carries Write the
+    // website after its place, the press of the Career view's button
+    // (state/sessions/source/website.svelte.ts), off while that button is off; the Career view's
+    // line under its button says what the press came to. Every row carries `data-card`, its card id
     // (state/system/audit.ts), which the shell's arrow keys step through; the row the instance's
     // card cursor names is marked `data-cursor` and drawn with the accent outline, and the view has
     // no selection of its own. A finding that names a file draws its place as a control that opens
@@ -81,6 +85,7 @@
         audit: { open, parked },
         layout: { openView },
         ui: { instanceState, setInstanceState },
+        website,
         writes: { muteFinding }
     } = client;
 
@@ -185,6 +190,18 @@
             </span>
         {:else if finding.where !== ''}
             <span class="where">{finding.where}</span>
+        {/if}
+        {#if finding.action === 'website'}
+            <span class="where">
+                <ToolButton
+                    compact
+                    label={t('audit.write_website')}
+                    glyph={t('audit.write_website_glyph')}
+                    title={website.off() ?? t('audit.write_website_tip')}
+                    disabled={website.off() !== null || website.busy()}
+                    onclick={() => void website.write()}
+                />
+            </span>
         {/if}
         <span class="act">
             <ToolButton

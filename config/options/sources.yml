@@ -146,7 +146,7 @@ options:
     career_file:
         heading: sources
         section: Registry and feed files
-        help: The career strategy file, whose goal, next milestone with its day, situation and order of work surface on the Focus board's Career banner. The per-scheme statements surface on the Funding tab.
+        help: "The career file: the goal, the next milestone with its day and the order of work, and the positions, degrees, awards, references and employer CV profiles the website's CV is written from, all edited in the Career view. The per-scheme statements surface on the Funding tab."
         control: file
     memories_dir:
         heading: sources

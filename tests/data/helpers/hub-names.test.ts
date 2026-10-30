@@ -27,7 +27,6 @@ import {
     hubId,
     registryCollection,
     registryCollections,
-    registryEntries,
     registryKeyOf,
     type CollectionFlag,
     type RegistryWord
@@ -308,10 +307,6 @@ describe('the collection a flag or a registry names', () => {
         expect(registryCollections(COLLECTIONS, 'funding').map((one) => one.id)).toEqual([
             'hub:grants',
             'lab:funding'
-        ]);
-        expect(registryEntries(COLLECTIONS, 'funding').map((one) => one.id)).toEqual([
-            'hub:grants-1',
-            'lab:funding-1'
         ]);
         expect(registryCollection(COLLECTIONS, 'funding', 'lab')?.id).toBe('lab:funding');
         expect(registryCollection(COLLECTIONS, 'venues', 'hub')?.id).toBe('hub:outlets');

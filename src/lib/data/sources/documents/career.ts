@@ -1,5 +1,6 @@
-// Layer 1, data. Reads the hub's career file, the one document the Focus board's career banner is
-// drawn from. Server side only: it reads the filesystem and no client module may import it.
+// Layer 1, data. Reads the hub's career file, the one document the Career view edits and the
+// website's CV is written from. Server side only: it reads the filesystem and no client module may
+// import it.
 //
 // It parses and nothing else. What the sections mean is normalise.ts's, and whether a section's
 // value is the type the file's own `schema:` gives it is the schema check's

@@ -62,6 +62,7 @@ import type { CloneStore } from '../../sources/clone/clone.svelte.ts';
 import type { SocketStore } from '../socket.svelte.ts';
 import type { AutosaveStore } from '../../sessions/source/autosave.svelte.ts';
 import type { SourceStore } from '../../sessions/source/source.svelte.ts';
+import type { WebsiteStore } from '../../sessions/source/website.svelte.ts';
 import type { TerminalsStore } from '../../sessions/terminals.svelte.ts';
 import type { CommandsStore } from '../../sessions/terminal/commands.svelte.ts';
 import type { TranscriptsStore } from '../../sessions/transcript.svelte.ts';
@@ -143,6 +144,8 @@ export type ClientState = {
     /** The Calendar's and the Inbox's accounts, and the account setup page. */
     accounts: AccountsStore;
     audit: AuditStore;
+    /** Write the website, the Career view's button and the press of a Website finding. */
+    website: WebsiteStore;
     memories: MemoriesStore;
     wallpapers: WallpapersStore;
     /** The Status view's line counts of oculus's own files. */

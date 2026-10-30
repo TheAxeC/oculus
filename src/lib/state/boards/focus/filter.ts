@@ -13,11 +13,10 @@
 // ticked pillar: a project and a funding scheme by their `pillarIds`, an entry by its `pillars`
 // field, read in its own hub, where its file's `schema:` declares that field; a record that names
 // no pillar is always kept. An unticked hub hides every record whose `root` names it, and only
-// while the workspace has more than one hub (`hubList` of state/shared/page/hubs.ts). The career
-// banner and the feed lines (a calendar, a lead, a refresh nudge) name no role and carry no hub of
-// their own, so the filter never hides them. Mine only is offered, and applied, only while it
-// would hide a row of the whole page, read before the rest of the choice, as a project board reads
-// it.
+// while the workspace has more than one hub (`hubList` of state/shared/page/hubs.ts). The feed
+// lines (a calendar, a lead, a refresh nudge) name no role and carry no hub of their own, so the
+// filter never hides them. Mine only is offered, and applied, only while it would hide a row of the
+// whole page, read before the rest of the choice, as a project board reads it.
 //
 // A subtask or follow-up line that names people of its own (`lead`, `supervisors`,
 // `collaborators`) is kept or hidden by Mine only and the Role list on those people, under the

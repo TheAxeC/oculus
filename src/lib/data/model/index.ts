@@ -359,8 +359,8 @@ export type AppsPayload = { rows: AppRow[]; findings: Finding[]; folders: string
  * asks for, or a part of `audit:` that is not of its shape (`conform`); a manifest naming no lead,
  * a project no board takes, a done project carrying a Focus lane's chip, or a project at a stage
  * outside the folders a `stage_folders` row names (`manifest`); a field that has stopped being a
- * glance (`readability`); and the hub's own website feed, which `audit.website` names, against its
- * projects (`publink`).
+ * glance (`readability`); and the website's generated files, which the primary hub's
+ * `website.folder` names, against what the hub's files give (`publink`).
  */
 export type AuditKind = 'todo' | 'data' | 'conform' | 'manifest' | 'readability' | 'publink';
 
@@ -384,6 +384,8 @@ export type AuditFinding = Rooted & {
     kind: AuditKind;
     message: string;
     signature: string;
+    /** What the Audit view offers to set the finding right: `website`, Write the website. */
+    action?: 'website';
 };
 
 /** The payload of the `audit` channel: what the scan found, and what the reader has parked. */
@@ -467,11 +469,15 @@ export type {
     Id,
     DocPart,
     LinePeople,
+    NamedLink,
     RenderedHeading,
     Organisation,
     Person,
+    PersonLink,
     Pillar,
     Project,
+    ProjectCv,
+    Publication,
     RawCollection,
     RawEntry,
     RawManifest,
@@ -724,7 +730,8 @@ export {
     TERMINAL_COLORS,
     TERMINAL_ID,
     TERMINAL_REFUSALS,
-    UPDATE_TASKS
+    UPDATE_TASKS,
+    WEBSITE_REFUSALS
 } from './machine/model-machine.ts';
 export { DEBUG_CONSOLE_KINDS, DEBUG_CONSOLE_MAX, DEBUG_STATUSES } from './machine/model-debug.ts';
 export { profileWords, TERMINAL_PROFILES, type TerminalProfile } from './machine/terminal-kinds.ts';
@@ -778,7 +785,8 @@ export type {
     TerminalResize,
     TerminalResume,
     UnchosenKey,
-    UpdateTask
+    UpdateTask,
+    WebsiteRefusal
 } from './machine/model-machine.ts';
 export type {
     DebugAdapterInfo,

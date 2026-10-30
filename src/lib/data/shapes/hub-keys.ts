@@ -45,10 +45,6 @@ export const OWN_HUB_KEYS: readonly string[] = [
     'audit.required_files',
     'audit.required_sections',
     'audit.stage_folders',
-    'audit.website.file',
-    'audit.website.list',
-    'audit.website.title',
-    'audit.website.kinds',
     'recover.sources',
     'venues.browser'
 ];

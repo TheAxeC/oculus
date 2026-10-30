@@ -15,6 +15,7 @@ import { boardsTaking, takeContext } from '../../../data/shapes/boards/takes.ts'
 import type { Holders } from '../../../data/helpers/hub-names.ts';
 import type { AuditFinding, Collection, Domain, Id, Project } from '../../../data/model/index.ts';
 import { below, realPath } from '../../core/paths.ts';
+import type { WebsiteCheck } from './publications.ts';
 import type { AuditSetting } from './setting.ts';
 
 /** The thresholds and vocabularies the rules read, out of the merged configuration. */
@@ -207,7 +208,8 @@ export function signatureOf(
  * hubs that hold each project key (`held`), which an entry's `related` key resolves against, the
  * ids of the user, the person the key `self` of the primary hub's `local.yml` names, which a
  * project's role and its boards are read with, the rules, the hub's own `audit:` setting
- * (setting.ts) and the words. Each hub is held to its own setting, its website feed included.
+ * (setting.ts), the website the primary hub's files are written into (publications.ts), null for
+ * every other hub, and the words. Each hub is held to its own setting.
  */
 export type AuditInput = {
     hub: string;
@@ -219,6 +221,7 @@ export type AuditInput = {
     self: ReadonlySet<Id>;
     rules: AuditRules;
     setting: AuditSetting;
+    website: WebsiteCheck | null;
     catalog: Record<string, string>;
 };
 

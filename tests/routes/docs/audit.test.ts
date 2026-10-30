@@ -1,18 +1,33 @@
 // Layer 2, route tests. The audit holds a hub to the conventions its own `audit:` setting names in
 // its `.oculus/config.yml`, and to none it does not name: the files a project must hold, the
-// headings a file must hold while a manifest key has a value, the website's feed and the sections a
-// project is expected in, and the folders a project at a stage is kept under. Each row is a hub in
-// a scratch folder holding the setting, the projects' files and the feed, scanned with the setting
-// read from that file. A project of the tier `personal`, which `research_audit.skip_tiers` names,
-// is held to none of them, and a part of the setting that is not of its shape is a finding of the
-// hub while the rest of the setting runs.
+// headings a file must hold while a manifest key has a value and the folders a project at a stage
+// is kept under. Each row is a hub in a scratch folder holding the setting and the projects' files,
+// scanned with the setting read from that file. A project of the tier `personal`, which
+// `research_audit.skip_tiers` names, is held to none of them, and a part of the setting that is not
+// of its shape is a finding of the hub while the rest of the setting runs.
+//
+// The website's three generated files are compared with what the hub's files give (G125): the files
+// the generator writes give no finding, and a file that differs is one finding naming the file and
+// the first place it differs at, the order of the sections, of the entries and of a links map
+// counted and the order of the keys inside an entry not.
 
+import { join } from 'node:path';
 import { describe, expect } from 'vitest';
+import { parse, stringify } from 'yaml';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
 import { findingText } from '../../../src/lib/data/helpers/finding-text.ts';
-import type { AuditFinding, Project } from '../../../src/lib/data/model/index.ts';
+import type { AuditFinding, Person, Project } from '../../../src/lib/data/model/index.ts';
+import type { WebsiteKind } from '../../../src/lib/data/sources/config/settings/files.ts';
 import { auditFindings, hubAuditSetting } from '../../../src/lib/server/content/audit/scan.ts';
 import { auditRules } from '../../../src/lib/server/content/audit/rules.ts';
+import type { WebsiteCheck } from '../../../src/lib/server/content/audit/publications.ts';
+import { websiteFiles } from '../../../src/lib/server/content/audit/website/files.ts';
+import {
+    CV_FILE,
+    PAPERS_FILE,
+    readSite,
+    SITE_FILE
+} from '../../../src/lib/server/content/audit/website/site.ts';
 import { holdersOf } from '../../../src/lib/data/helpers/hub-names.ts';
 import { fixtureProject } from '../../fixtures/entities-fixture.ts';
 import { it, plantScratch } from '../../fixtures/scratch.ts';
@@ -54,18 +69,28 @@ function repositoryProject(files: Record<string, string>, folders: string[] = []
     });
 }
 
-/** The audit of a hub over its projects, with the setting its own settings file holds. */
-function findingsOf(hub: string, projects: Project[], primary = true): AuditFinding[] {
+/**
+ * The audit of a hub over its projects, with the setting its own settings file holds, the website
+ * check given (none by default) and the user's keys.
+ */
+function findingsOf(
+    hub: string,
+    projects: Project[],
+    primary = true,
+    website: WebsiteCheck | null = null,
+    self: ReadonlySet<string> = new Set<string>()
+): AuditFinding[] {
     return auditFindings({
         hub,
         root: 'hub',
         primary,
         held: holdersOf(projects),
-        self: new Set<string>(),
+        self,
         projects,
         collections: [],
         rules: auditRules(config),
         setting: hubAuditSetting(hub),
+        website,
         catalog
     });
 }
@@ -88,34 +113,13 @@ function settingFindings(found: AuditFinding[], scope: string): AuditFinding[] {
     const ofSetting = [
         'audit.msg_required_file',
         'audit.msg_required_section',
-        'audit.msg_stage_folder',
-        'audit.msg_site_wrong_section',
-        'audit.msg_site_missing',
-        'audit.msg_site_title_differs'
+        'audit.msg_stage_folder'
     ];
     const prefixes = ofSetting.map((key) => catalog[key].split('{')[0]);
     return found.filter(
         (one) => one.scope === scope && prefixes.some((prefix) => one.message.startsWith(prefix))
     );
 }
-
-/**
- * The hub's `website.kinds`: a thesis, the papers in review, in preparation and abandoned by stage,
- * and the abstracts, posters, conference and journal papers by form, the last row catching the
- * rest.
- */
-const KINDS = `
-    kinds:
-      - { kind: [thesis], forms: [thesis] }
-      - { kind: [papers-in-review], stages: [submitted, revision] }
-      - { kind: [papers-in-preparation], stages: [in-prep, submit-ready] }
-      - { kind: [abandoned-papers], stages: [stopped] }
-      - { kind: [abstracts], forms: [abstract] }
-      - { kind: [posters], forms: [poster] }
-      - { kind: [conference], forms: [conference] }
-      - { kind: [journal, other-publications], forms: [journal] }
-      - { kind: [abstracts, conference, journal, other-publications, posters, thesis] }
-`;
 
 describe('the required files of the audit', () => {
     const readme =
@@ -333,93 +337,165 @@ describe('the required sections of the audit', () => {
 });
 
 describe('the website of the audit', () => {
-    const website = `audit:\n  website:\n    file: site/pubs.yml\n    list: papers\n    title: title\n${KINDS}`;
-    const project = projectAt('projects/paper', { stage: 'published', form: 'journal' });
-    const feedOf = (section: string, list = 'papers', title = 'title'): string =>
-        `${section}:\n  ${list}:\n    - ${title}: ${project.title}\n`;
-    const wrong = (sections: string, expected: string): string =>
-        said('audit.msg_site_wrong_section', sections, 'published', expected);
-    const journal = "['journal', 'other-publications']";
-
-    it('find a published journal paper under journal, and name the section a paper under thesis sits in and the sections its form expects', () => {
-        const right = findingsOf(hubOf(website, { 'site/pubs.yml': feedOf('journal') }), [project]);
-        expect(right.filter((one) => one.kind === 'publink')).toEqual([]);
-        const found = findingsOf(hubOf(website, { 'site/pubs.yml': feedOf('thesis') }), [project]);
-        expect(scopesSaying(found, wrong("['thesis']", journal))).toEqual(['projects/paper']);
-    });
-
-    it('read the entries and the titles under the keys list and title name', () => {
-        const named = website
-            .replace('list: papers', 'list: items')
-            .replace('title: title', 'title: name');
-        const right = findingsOf(
-            hubOf(named, { 'site/pubs.yml': feedOf('journal', 'items', 'name') }),
-            [project]
-        );
-        expect(right.filter((one) => one.kind === 'publink')).toEqual([]);
-        const found = findingsOf(
-            hubOf(named, { 'site/pubs.yml': feedOf('thesis', 'items', 'name') }),
-            [project]
-        );
-        expect(scopesSaying(found, wrong("['thesis']", journal))).toEqual(['projects/paper']);
-    });
-
-    it('expect a project in the sections of the first kinds row its form meets', () => {
-        const own = `audit:\n  website:\n    file: site/pubs.yml\n    list: papers\n    title: title\n    kinds:\n      - { kind: [articles], forms: [journal] }\n`;
-        const found = findingsOf(hubOf(own, { 'site/pubs.yml': feedOf('journal') }), [project]);
-        expect(scopesSaying(found, wrong("['journal']", "['articles']"))).toEqual([
-            'projects/paper'
-        ]);
-    });
-
-    it('say nothing of a feed that is not there, and name a feed that does not parse', () => {
-        const missing = findingsOf(hubOf(website), [project]);
-        expect(missing.filter((one) => one.kind === 'publink')).toEqual([]);
-        const broken = findingsOf(hubOf(website, { 'site/pubs.yml': 'journal: [a\n  : :\n' }), [
-            project
-        ]);
-        const unreadable = broken.filter((one) => one.kind === 'publink');
-        expect(unreadable.map((one) => one.where)).toEqual(['site/pubs.yml']);
-        expect(
-            unreadable[0].message.startsWith(said('audit.msg_site_unreadable', 'site/pubs.yml', ''))
-        ).toBe(true);
-    });
-
-    it('check the projects of each hub against its own feed, the primary or not', () => {
-        const first = projectAt('projects/first', { stage: 'published', form: 'journal' });
-        const second = projectAt('projects/second', { stage: 'published', form: 'journal' });
-        const feed = (one: Project): string => `thesis:\n  papers:\n    - title: ${one.title}\n`;
-        const primary = findingsOf(hubOf(website, { 'site/pubs.yml': feed(first) }), [first], true);
-        const other = findingsOf(
-            hubOf(website, { 'site/pubs.yml': feed(second) }),
-            [second],
-            false
-        );
-        expect(scopesSaying(primary, wrong("['thesis']", journal))).toEqual(['projects/first']);
-        expect(scopesSaying(other, wrong("['thesis']", journal))).toEqual(['projects/second']);
-    });
-
-    it('check no project of the tier personal against the feed', () => {
-        const personal = projectAt('projects/paper', {
+    /** The user, the person the website is written for. */
+    const me: Person = {
+        id: 'hub:me',
+        root: 'hub',
+        name: 'A. Me',
+        family: 'Me',
+        affiliations: [],
+        links: [],
+        self: true,
+        projectIds: []
+    };
+    const self = new Set([me.id]);
+    /** The website's sections: journal papers and conference papers, by form. */
+    const kinds: WebsiteKind[] = [
+        { kind: 'journal', title: 'Journal papers', forms: ['journal'] },
+        { kind: 'conference', title: 'Conference papers', forms: ['conference'] }
+    ];
+    /** A published paper the user leads, of the form given, ranked in its section by `rank`. */
+    const paper = (folder: string, form: string, rank: number): Project =>
+        projectAt(folder, {
             stage: 'published',
-            form: 'journal',
-            tier: 'personal'
+            form,
+            lead: [me.id],
+            publication: { authors: `A. Me and the authors of ${folder}`, book: 'A venue', rank }
         });
-        const found = findingsOf(hubOf(website, { 'site/pubs.yml': feedOf('thesis') }), [personal]);
-        expect(settingFindings(found, 'projects/paper')).toEqual([]);
+    const projects = [
+        paper('projects/first', 'journal', 1),
+        paper('projects/second', 'journal', 2),
+        paper('projects/third', 'conference', 1)
+    ];
+    /** The website's own file. */
+    const siteText = 'programs: {}\nsections:\n  publications: Publications\n';
+    const papersPath = PAPERS_FILE;
+
+    /** The three files the hub's files give, by their path in the website's folder. */
+    function generated(): Record<string, string> {
+        const built = websiteFiles({
+            projects,
+            collections: [],
+            people: [me],
+            career: null,
+            self,
+            kinds,
+            rules: auditRules(config),
+            site: readSite(parse(siteText))
+        });
+        return Object.fromEntries(built.files.map((file) => [file.name, file.text]));
+    }
+
+    /** A hub whose website folder `site` holds the website's own file and the files given. */
+    function siteHub(files: Record<string, string>): string {
+        const placed: Record<string, string> = { [`site/${SITE_FILE}`]: siteText };
+        for (const [name, text] of Object.entries(files)) placed[`site/${name}`] = text;
+        return hubOf('', placed, ['site']);
+    }
+
+    /** The check of the website in the folder `folder` of the hub. */
+    function checkOf(hub: string, folder = 'site'): WebsiteCheck {
+        return {
+            setting: { folder, cv: '', kinds },
+            dir: folder === '' ? '' : join(hub, folder),
+            people: [me],
+            career: null
+        };
+    }
+
+    /** The website's findings of the audit of a hub with the check given. */
+    function websiteFindings(hub: string, check: WebsiteCheck, user = self): AuditFinding[] {
+        return findingsOf(hub, projects, true, check, user).filter((one) => one.kind === 'publink');
+    }
+
+    /** The publications file with its value changed by `change`, as a YAML text. */
+    function papersWith(
+        change: (value: Record<string, unknown>) => Record<string, unknown>
+    ): string {
+        return stringify(change(parse(generated()[papersPath]) as Record<string, unknown>));
+    }
+
+    /** A section of the publications file's value, as the generator writes it. */
+    type Section = { title: string; papers: Record<string, unknown>[] };
+
+    it('find nothing when the three files on disk are the files the hub gives', () => {
+        const hub = siteHub(generated());
+        expect(websiteFindings(hub, checkOf(hub))).toEqual([]);
     });
 
-    it('count the paper only a project of the tier personal matches as matched, and give no finding of any scope', () => {
-        const personal = projectAt('projects/paper', {
-            stage: 'published',
-            form: 'journal',
-            tier: 'personal',
-            lead: ['hub:someone']
+    it('name a file whose authors differ at the first place they differ, offering Write the website', () => {
+        const files = generated();
+        const changed = papersWith((value) => {
+            const journal = value.journal as Section;
+            journal.papers[0].authors = 'Someone else';
+            return value;
         });
-        const found = findingsOf(hubOf(website, { 'site/pubs.yml': feedOf('journal') }), [
-            personal
+        const hub = siteHub({ ...files, [papersPath]: changed });
+        const found = websiteFindings(hub, checkOf(hub));
+        expect(found.map((one) => [one.where, one.message, one.action, one.file])).toEqual([
+            [
+                papersPath,
+                said('audit.msg_site_differs', papersPath, 'journal.papers.0.authors'),
+                'website',
+                `site/${papersPath}`
+            ]
         ]);
-        expect(found).toEqual([]);
+    });
+
+    it('count the order of the sections and of the entries, and not the order of the keys inside an entry', () => {
+        const files = generated();
+        const keysTurned = papersWith((value) => {
+            const journal = value.journal as Section;
+            journal.papers = journal.papers.map((entry) =>
+                Object.fromEntries(Object.entries(entry).reverse())
+            );
+            return value;
+        });
+        const turned = siteHub({ ...files, [papersPath]: keysTurned });
+        expect(websiteFindings(turned, checkOf(turned))).toEqual([]);
+
+        const entriesSwapped = papersWith((value) => {
+            const journal = value.journal as Section;
+            journal.papers.reverse();
+            return value;
+        });
+        const swapped = siteHub({ ...files, [papersPath]: entriesSwapped });
+        expect(websiteFindings(swapped, checkOf(swapped)).map((one) => one.message)).toEqual([
+            said('audit.msg_site_differs', papersPath, 'journal.papers.0.authors')
+        ]);
+
+        const sectionsSwapped = papersWith(({ journal, ...rest }) => ({ ...rest, journal }));
+        const moved = siteHub({ ...files, [papersPath]: sectionsSwapped });
+        expect(websiteFindings(moved, checkOf(moved)).map((one) => one.message)).toEqual([
+            said('audit.msg_site_differs', papersPath, 'journal')
+        ]);
+    });
+
+    it('name a file that is missing or does not parse as differing as a whole', () => {
+        const files = generated();
+        const hub = siteHub({ ...files, [papersPath]: 'journal: [a\n  : :\n', [CV_FILE]: '' });
+        const found = websiteFindings(hub, checkOf(hub));
+        expect(found.map((one) => one.message).sort()).toEqual(
+            [
+                said('audit.msg_site_differs_whole', CV_FILE),
+                said('audit.msg_site_differs_whole', papersPath)
+            ].sort()
+        );
+    });
+
+    it('check nothing while the setting names no folder, and name a folder that is not there', () => {
+        const hub = siteHub({});
+        expect(websiteFindings(hub, checkOf(hub, ''))).toEqual([]);
+        const missing = websiteFindings(hub, checkOf(hub, 'elsewhere'));
+        expect(missing.map((one) => [one.where, one.message])).toEqual([
+            ['elsewhere', said('audit.msg_site_no_folder', 'elsewhere')]
+        ]);
+    });
+
+    it('name a user who is not known and compare no file', () => {
+        const hub = siteHub({});
+        const found = websiteFindings(hub, checkOf(hub), new Set());
+        expect(found.map((one) => one.message)).toEqual([said('audit.msg_site_no_person')]);
     });
 });
 
@@ -473,7 +549,6 @@ describe('the shape of the audit setting', () => {
     - { stages: { flags: [live] } }
     - { file: README.md }
   required_sections: x
-  website: { file: f }
   stage_folders:
     - { stages: { words: [published] } }
   colour: 1
@@ -481,9 +556,6 @@ describe('the shape of the audit setting', () => {
     const keys = [
         'audit.required_files.0.file',
         'audit.required_sections',
-        'audit.website.list',
-        'audit.website.title',
-        'audit.website.kinds',
         'audit.stage_folders.0.folders',
         'audit.colour'
     ];
@@ -524,20 +596,6 @@ describe('the shape of the audit setting', () => {
         }
     });
 
-    it('name an empty kinds and check no feed', () => {
-        const hub = hubOf(
-            'audit:\n  website: { file: site/pubs.yml, list: papers, title: title, kinds: [] }\n',
-            {
-                'site/pubs.yml': 'thesis:\n  papers:\n    - title: Title of projects/a\n'
-            }
-        );
-        const found = findingsOf(hub, [
-            projectAt('projects/a', { stage: 'published', form: 'journal' })
-        ]);
-        expect(shapeKeys(found)).toEqual(['audit.website.kinds']);
-        expect(found.filter((one) => one.kind === 'publink')).toEqual([]);
-    });
-
     it('hold a project of the tier personal to no key of the setting set at once', () => {
         const all = `audit:
   required_files:
@@ -548,19 +606,10 @@ describe('the shape of the audit setting', () => {
     - { file: README.md, heading: "## Data", key: datasets }
   stage_folders:
     - { stages: { words: [published] }, folders: [projects/archive] }
-  website:
-    file: site/pubs.yml
-    list: papers
-    title: title
-${KINDS}`;
-        const hub = hubOf(
-            all,
-            {
-                'projects/active/x/project.yml': 'datasets: [d1]\n',
-                'site/pubs.yml': 'thesis:\n  papers:\n    - title: Title of projects/active/x\n'
-            },
-            ['projects/active/x/code']
-        );
+`;
+        const hub = hubOf(all, { 'projects/active/x/project.yml': 'datasets: [d1]\n' }, [
+            'projects/active/x/code'
+        ]);
         const personal = projectAt('projects/active/x', {
             stage: 'published',
             form: 'journal',

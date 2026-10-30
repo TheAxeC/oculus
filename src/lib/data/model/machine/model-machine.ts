@@ -1,8 +1,9 @@
 // Layer 1, data. What the machine views read: the Processes view's rows and the payload of one read
 // of the machine's process table, the update tray's schedules (the entries of `schedules.yml` in
 // the hub's `.oculus` folder with their problems, next runs and latest runs), the terminals tmux
-// holds and the words a terminal request is refused with, the messages the page and the language
-// server relay exchange besides JSON-RPC, and what a linter run answers.
+// holds and the words a terminal request and a press of Write the website are refused with, the
+// messages the page and the language server relay exchange besides JSON-RPC, and what a linter run
+// answers.
 
 import type { AppJob } from '../apps/model-apps-tools.ts';
 import type { CommandSource } from '../model-sessions.ts';
@@ -303,8 +304,11 @@ export const SCROLLBACK_LINES = 2000;
 // eslint-disable-next-line no-control-regex
 export const STEER_CONTROL = /[\u0000-\u0008\u000b-\u001f\u007f]/;
 
-/** Where a task terminal's job came from: a project command's source, or a LaTeX build. */
-type JobSource = CommandSource | 'latex';
+/**
+ * Where a task terminal's job came from: a project command's source, a LaTeX build, or the command
+ * Write the website runs in the website's folder.
+ */
+type JobSource = CommandSource | 'latex' | 'website';
 
 /**
  * The words a request to /api/terminal is refused with. The server answers a refusal as one of
@@ -352,6 +356,25 @@ export const TERMINAL_REFUSALS = [
     'latex-unserved'
 ] as const;
 export type TerminalRefusal = (typeof TERMINAL_REFUSALS)[number];
+
+/**
+ * The words a press of Write the website is refused with (POST /api/website): no primary hub or no
+ * portfolio yet, the user not known, `website.folder` empty or naming a folder that is not there,
+ * the website's own file not readable, the command's last run still running, and a file the writer
+ * cannot take. The page says the sentence the catalog holds for each.
+ */
+export const WEBSITE_REFUSALS = [
+    'website-no-hub',
+    'website-no-person',
+    'website-no-folder',
+    'website-folder-missing',
+    'website-site-unreadable',
+    'website-running',
+    'website-unwritable'
+] as const;
+
+/** One word of WEBSITE_REFUSALS. */
+export type WebsiteRefusal = (typeof WEBSITE_REFUSALS)[number];
 
 /**
  * The command a task terminal runs (a LaTeX build's job is the folder it builds in, the build's

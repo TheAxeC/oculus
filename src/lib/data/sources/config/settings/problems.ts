@@ -22,7 +22,8 @@ import {
     openSettings,
     paintLimit,
     repositoryScanDepth,
-    searchSettings
+    searchSettings,
+    websiteSettings
 } from './files.ts';
 import { latexBuild, latexFormatting } from './latex.ts';
 import { lintSettings } from './lint.ts';
@@ -59,7 +60,8 @@ const PROBLEM_READERS: ((
     processesSettings,
     latexFormatting,
     latexBuild,
-    lintSettings
+    lintSettings,
+    websiteSettings
 ];
 
 /**

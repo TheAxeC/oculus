@@ -212,13 +212,13 @@ const CAREER_SECTIONS = [
     '  - { field: title, type: text }',
     '  - { field: milestone, type: text }',
     '  - { field: milestone_date, type: date }',
-    '  - { field: situation, type: records, open: true, fields: [] }',
+    '  - { field: facts, type: records, open: true, fields: [] }',
     '  - field: order',
     '    type: records',
     '    fields:',
     '      - { field: task, type: text }',
     '      - { field: when, type: text }',
-    'situation:',
+    'facts:',
     '  PhD: "May 2023"   # the defence',
     '  Now: "Postdoc"',
     'order:',
@@ -250,15 +250,15 @@ describe('writing career sections', () => {
         );
     });
 
-    it('writes a renamed label and a changed sentence of the situation as one map', () => {
+    it('writes a renamed label and a changed sentence of a map section as one map', () => {
         const { root, file } = careerHub();
         const out = writeCareer(
             root,
-            { situation: { PhD: 'May 2023', 'Postdoc since': 'Sep 2024' } },
+            { facts: { PhD: 'May 2023', 'Postdoc since': 'Sep 2024' } },
             rules,
             catalog
         );
-        expect(out.changed).toEqual(['situation']);
+        expect(out.changed).toEqual(['facts']);
         const text = readFileSync(file, 'utf8');
         expect(text).toContain('# the strategy');
         expect(text).toContain('PhD: "May 2023"   # the defence');
@@ -286,11 +286,11 @@ describe('writing career sections', () => {
         );
     });
 
-    it('changes one fact of the situation and keeps the other with its comment', () => {
+    it('changes one value of a map section and keeps the other with its comment', () => {
         const { root, file } = careerHub();
         writeCareer(
             root,
-            { situation: { PhD: 'May 2023', Now: 'Assistant professor' } },
+            { facts: { PhD: 'May 2023', Now: 'Assistant professor' } },
             rules,
             catalog
         );

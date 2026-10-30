@@ -8,7 +8,13 @@ schema:
   - { field: role,         type: text,     help: "what this person is to the hub" }
   - { field: orcid,        type: text }
   - { field: email,        type: text }
-  - { field: links,        type: tags }
+  - field: links
+    type: records
+    help: "The person's addresses on the web, one row each."
+    fields:
+      - { field: name,   type: text, required: true, help: "The name of the address, such as github or homepage." }
+      - { field: url,    type: text, required: true, help: "The full address." }
+      - { field: handle, type: text, help: "The account name a CV prints in place of the address, where it prints one." }
   - { field: work,         type: text,     help: "What the work with the person is about." }
   - { field: tags,         type: tags,     help: "Words that describe the person and the work with them." }
   - { field: note,         type: textarea, help: "Free notes on the person and the work with them." }

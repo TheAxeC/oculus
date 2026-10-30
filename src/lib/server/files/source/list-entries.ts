@@ -19,7 +19,7 @@
 // for a file it replaced. The file is read and the new text made inside the writer's turn in the
 // write chain, so two writes never read the same file.
 
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, statSync } from 'node:fs';
 import { basename, dirname, join, relative } from 'node:path';
 import { isDeepStrictEqual } from 'node:util';
 import { isNode, isSeq, LineCounter, parse, parseDocument } from 'yaml';
@@ -202,7 +202,8 @@ export type TextWritten = { ok: true } | { ok: false; word: 'unwritable'; detail
  * new text made by `make` from the text it holds (the empty text for a file not there) inside the
  * writer's turn; `make` answers why not, which is answered as it is, and nothing is written. The
  * file's folder must be there; the file is found by its real path, so a root named through a link
- * holds it.
+ * holds it. A folder found at the path in the writer's turn is refused as `exists`, the name being
+ * taken.
  */
 export async function writeOwnText<Why>(
     into: OpsTarget,
@@ -224,6 +225,10 @@ export async function writeOwnText<Why>(
     const done = await runOpsFrom(
         into,
         () => {
+            if (existsSync(path) && !statSync(path).isFile()) {
+                outcome = { ok: false, word: 'unwritable', detail: 'exists' };
+                return { ok: false, error: 'exists' };
+            }
             const next = make(existsSync(path) ? readFileSync(path, 'utf8') : '');
             if (!isText(next)) {
                 outcome = next;

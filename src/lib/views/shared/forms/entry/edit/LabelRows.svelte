@@ -1,8 +1,8 @@
 <script lang="ts">
     // Layer 3, shared view partial. Rows of a label and a value, each a pair of boxes with a
     // control that removes it, and a control that adds one: the `meta` of a funding scheme or an
-    // event, the facts of the career situation, and the keys a record carries that its schema does
-    // not name.
+    // event, a section of the career file that is a map, and the keys a record carries that its
+    // schema does not name.
     //
     // The rows are the caller's: they come in as a prop and every change goes out whole. With
     // `unique`, the label is the key of a map, so a label is committed when the reader is done with

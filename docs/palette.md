@@ -14,6 +14,7 @@ Every registered view is listed by its words.
 
 | View | Id |
 | --- | --- |
+| Career | career |
 | LaTeX | latex |
 | Math Preview | math-preview |
 | Present | present |
@@ -25,7 +26,6 @@ Every registered view is listed by its words.
 | Focus | focus |
 | Person | person |
 | Project | project |
-| Track record | track_record |
 | Awaiting | awaiting_board |
 | Inbox | inbox |
 | Position Leads | leads |

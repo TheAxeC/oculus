@@ -23,10 +23,6 @@
     // hub, the primary's for an entry that names none (state/forms/new-entry.ts, `addPerson`); the
     // person's key is then an edit of the field like any pick. A Revert while the write is out
     // leaves the field as the Revert left it (`unlessReverted`).
-    //
-    // Opened on one field (`openOn`, which the career banner's Edit on a row names), the form
-    // scrolls that field into view and puts the focus in its first control; with none, as on the
-    // person and entry pages, nothing scrolls and nothing takes the focus.
 
     import Tag from '$lib/ui/controls/Tag.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
@@ -58,11 +54,9 @@
         file: ViewSource | null;
         /** Why a write cannot address the entry, when the file's identities say so. */
         fault?: IdentityFault;
-        /** The field the editor opens on, scrolled into view and focused; none for the whole. */
-        openOn?: string;
     };
 
-    let { page, instance, file, fault, openOn }: Props = $props();
+    let { page, instance, file, fault }: Props = $props();
 
     /** The kind of draft every page entry keeps (state/client/context.ts names its target). */
     const DRAFT_KIND = 'page';
@@ -210,7 +204,6 @@
         {empty}
         addPerson={newPerson}
         people={(target: string) => namesPeople(target, page.root === '' ? undefined : page.root)}
-        {openOn}
     />
     {#if result.length > 0}
         <p class="result">

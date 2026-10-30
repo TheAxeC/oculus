@@ -1,12 +1,12 @@
-In flight (1 of 6 slots in use):
-- O102 (the website data files from oculus): round 1 refuted; landing waits on 585 and 591.
+In flight (0 of 6 slots in use):
 
 Queued, in order (1 step):
-- O101 (the Zenodo deposit): stopped on open items 573, 575, 576, 577 and 583.
+- O101 (the Zenodo deposit): ruled 573, 575, 576, 577 and 583; /spec runs again.
 
 Owed looks: none.
 
 Landed, newest first:
+- O102 (the website data files from oculus), 2026-10-30; hub 9e297c9c5; web 574da70.
 - O99 (every setting edited in Settings by scope), 2026-10-29, 626ae2a6; hub 60f0c606d.
 - O103 (applications and leads split, a task's subtasks in Focus), 2026-10-29, bafb20bd.
 - O97 (the journal browser and one configurable reader), 2026-10-29, d909bafd; hub 3f4d5d883.

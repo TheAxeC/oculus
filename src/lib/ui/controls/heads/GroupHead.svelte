@@ -5,8 +5,8 @@
     // an element of its own around a heading or sets space between a heading and its body. The
     // section takes any other attribute it is given (a `data-*`, an `aria-label`, a drop target's
     // `ondragover` and `ondrop`). FoldHead.svelte beside it heads a box instead, with its count as
-    // a badge: the Career banner, the command center and the tasks section of Focus. A heading
-    // inside a group is SubHead.svelte beside it.
+    // a badge: the command center and the tasks section of Focus. A heading inside a group is
+    // SubHead.svelte beside it.
     //
     // The heading is a strip that stays at the top of the pane's scrolling body while its group
     // scrolls under it (`position: sticky`), above the cards. It sits inside its group's section,

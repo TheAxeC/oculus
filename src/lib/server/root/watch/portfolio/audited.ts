@@ -10,8 +10,9 @@
 // every `required_sections` row. A project's folder may lie at any depth under a scan folder, so a
 // path is matched by the last segments of the event's path. The rows' hub folders are not read: an
 // event on a required path of a project the row leaves alone costs one rebuild that finds nothing
-// new. The website feed and the files of a workspace repository's project lie outside the
-// recursive watches and are watched one by one (`auditFiles`).
+// new. The website's files the audit compares with what the hub's files give (the three generated
+// data files and `_data/website.yml`, server/content/audit/website/) and the files of a workspace
+// repository's project lie outside the recursive watches and are watched one by one (`auditFiles`).
 
 import { join } from 'node:path';
 import { folderOf } from '../../../../data/helpers/hub-names.ts';
@@ -80,19 +81,16 @@ export function relevantTo(paths: readonly string[][]): (filename: string | null
 
 /**
  * The files the audit reads that no recursive watch serves, each watched through its folder: the
- * website feed of every hub that names one, and for a project of a workspace repository each audit
- * path and each folder on the way to it, so a `code/` folder made and the README then written in it
- * are both heard. Absolute paths.
+ * website's files of the primary hub, as absolute paths, and for a project of a workspace
+ * repository each audit path and each folder on the way to it, so a `code/` folder made and the
+ * README then written in it are both heard. Absolute paths.
  */
 export function auditFiles(
-    feeds: readonly { dir: string; setting: AuditSetting }[],
+    website: readonly string[],
     roots: readonly RepositoryRoot[],
     paths: readonly string[][]
 ): string[] {
-    const files = new Set<string>();
-    for (const { dir, setting } of feeds) {
-        if (setting.website !== null) files.add(join(dir, setting.website.file));
-    }
+    const files = new Set<string>(website);
     for (const root of roots) {
         for (const path of paths) {
             for (let end = 1; end <= path.length; end += 1) {

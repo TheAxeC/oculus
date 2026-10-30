@@ -115,6 +115,7 @@ arrangements:
         - { view: applications, pinned: true }
         - { view: tasks, pinned: true }
         - { view: memories, pinned: true }
+        - { view: career, pinned: true }
   pillars:
     root:
       kind: pane

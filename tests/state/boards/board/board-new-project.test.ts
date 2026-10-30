@@ -1,12 +1,12 @@
 // Layer 2, client-state tests. A board's offer of New project, and the board a name of the Focus
 // board's Awaiting box opens: a board offers New project only when its rule takes the project the
 // write makes (state/boards/board/new-project.ts), with the tier it writes and the person it names;
-// the track record boards and the Awaiting box's board offer none. The Awaiting box's board takes
-// exactly the projects the pressed name counts on the Focus page under the filter the tab carries
+// the Awaiting box's board offers none. The Awaiting box's board takes exactly the projects the
+// pressed name counts on the Focus page under the filter the tab carries
 // (state/boards/focus/filter.ts `awaitingTake`, state/boards/board/presets.ts `awaitingPreset`),
 // each once. The projects are synthetic, made by board-fixture.ts with the shipped config; the hub
-// of the last row of New project is planted in a scratch folder. The rest of G124's tables are
-// board-rules.test.ts's.
+// of the last row of New project is planted in a scratch folder. board-rules.test.ts holds the rest
+// of G124's tables.
 //
 // It does not cover the box drawing its names as buttons, the tab a press opens or its title,
 // which the look does.
@@ -25,8 +25,7 @@ import {
     awaitingPreset,
     boardIds,
     boardItems,
-    presetFor,
-    recordPreset
+    presetFor
 } from '../../../../src/lib/state/boards/board/index.ts';
 import {
     newProjectPerson,
@@ -60,28 +59,9 @@ describe('New project on a board', () => {
     it.each([
         { name: 'with self named', self: MINE },
         { name: 'with no self', self: NOBODY }
-    ])("is offered on no role's track record board, $name", (row) => {
-        const offered = rolesOf(CONFIG).filter((role) =>
-            offersNewProject(recordPreset(role.key, CONFIG).rule, takeContext(CONFIG, row.self))
-        );
-        expect(offered).toEqual([]);
-    });
-
-    it.each([
-        { name: 'with self named', self: MINE },
-        { name: 'with no self', self: NOBODY }
     ])("is offered on no Awaiting box's board, $name", (row) => {
         const rule = awaitingPreset(['c1', 'c9'], CONFIG).rule;
         expect(offersNewProject(rule, takeContext(CONFIG, row.self))).toBe(false);
-    });
-
-    it("leaves a role's track record board without a project while no self is named", () => {
-        const projects = ['c1', 'c2', 'c3', 'c8'].map((id) => project(id));
-        const preset = recordPreset('lead', CONFIG);
-        const taken = (self: boolean) =>
-            boardItems(snapshotOf(projects, self), preset).map((one) => one.id);
-        expect(taken(true)).toEqual(['c1', 'c3']);
-        expect(taken(false)).toEqual([]);
     });
 
     /** The shipped config with the tiers of `tiers` carrying `default`, and coauthor's `tier`. */

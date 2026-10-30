@@ -117,7 +117,7 @@ export const VENUES = [
     ''
 ].join('\n');
 
-/** A career file in the shape the career banner reads. */
+/** A career file in the shape the Career view edits. */
 const CAREER = [
     'title: Career',
     'goal: "Assistant professor"',

@@ -48,7 +48,6 @@ function collection(root: string, keys: string[]): Collection {
 
 const CAREER: Career = {
     title: 'Career strategy',
-    situation: [],
     order: [],
     sections: { milestone: 'Veni' },
     schema: [{ field: 'milestone', type: 'text' }]

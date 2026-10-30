@@ -10,7 +10,7 @@ text:
         title: Audit
         toolbar: Audit controls
         search: 'Search findings ...'
-        empty: 'Nothing open: no markers, no data gaps or missing sections, no missing required files, no status chip or project folder out of place, no readability warnings and nothing to reconcile with the website.'
+        empty: "Nothing open: no markers, no data gaps or missing sections, no missing required files, no status chip or project folder out of place, no readability warnings and no website file that differs from what the hub's files give."
         empty_glyph: circle_empty
         none_match: No finding matches the search.
         sec_todo: Open items (TODO / VERIFY)
@@ -18,7 +18,7 @@ text:
         sec_conform: Hub conventions
         sec_manifest: Manifest guardrails
         sec_readability: Readability
-        sec_publink: Website publications sync
+        sec_publink: Website
         muted: Muted
         mute: mute
         mute_glyph: dismiss
@@ -64,10 +64,19 @@ text:
         msg_too_long: '{0} chars (>{1}): trim to a glance; detail belongs in the prose docs'
         msg_result_too_long: '{0} chars (>{1}): headline only'
         msg_site_unreadable: 'could not parse {0}: {1}'
-        msg_site_wrong_section: 'on the website under {0} but hub stage `{1}` expects {2}: wrong section?'
-        msg_site_title_differs: 'likely on the website as "{0}" (section {1}) but the titles differ: reconcile them'
-        msg_site_missing: 'public (`{0}`) but no website entry: add it (likely section {1})'
-        msg_site_negative: 'the stage {0} marks a negative result, but the website shows it under {1}'
-        msg_site_deadend: 'the stage {0} marks a dead end, but the website shows it under {1}: give it one of the stages {2} if it is a publication, else take it off the website (or mute if intentional)'
-        msg_site_untracked: '{0} website papers not matched to any project of the hub; verify none are stale or duplicated: {1}'
-        msg_site_untracked_one: 'one website paper not matched to any project of the hub; verify it is not stale or duplicated: {1}'
+        msg_site_differs: "{0} differs from what the hub's files give, first at {1}: write the website"
+        msg_site_differs_whole: "{0} differs as a whole from what the hub's files give, being missing, unreadable or of another kind: write the website"
+        msg_site_no_folder: 'the website folder {0} that website.folder names is not there'
+        msg_site_no_person: "the person the website is written for is not known: set self in the primary hub's .oculus/local.yml"
+        msg_cv_self_names: "the people entry {0}, the user's, has no family, or a name that does not end with a space and its family, so the CV's person blocks carry no names: set family to the end of name"
+        msg_site_stage: 'carries a publication record, but the stage {0} lists no paper on the website: give it a stage that does, or take the record out'
+        msg_site_no_kind: 'carries a publication record, but no row of website.kinds takes the stage `{0}` with the form `{1}`'
+        msg_site_no_self: 'carries a publication record, but names you in none of lead, supervisors and collaborators, so your place among the authors is not known'
+        msg_site_program: 'the publication record names the research line {0}, which programs: of {1} does not hold'
+        msg_cv_unknown_person: 'the row {0} of the career and collection files names {1}, who is no entry of the people file'
+        msg_cv_unknown_record: 'the row {0} of the career file names {1}, which no record of the hub is'
+        msg_cv_key_twice: 'the row {3} of the career file names {0}, which both {1} and {2} hold, so it takes nothing from either: give one of them another key'
+        msg_cv_empty_key: 'the row {0} of the career file has an empty key: give it a key or take the key out'
+        write_website: Write the website
+        write_website_glyph: publish
+        write_website_tip: Write the website's three files from the hub's files, as the Career view's Write the website does.

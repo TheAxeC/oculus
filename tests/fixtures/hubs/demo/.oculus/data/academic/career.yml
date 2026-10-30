@@ -1,14 +1,170 @@
-# The career file (FAKE example data), drawn by the Focus board's Career banner: the goal, the next milestone with its day, the situation and the order of work.
+# The career file (FAKE example data), edited in the Career view: the goal, the next milestone with its day, the order of work, and the positions, degrees, awards, references and employer CV profiles the website's CV is written from.
+schema:
+  - { field: title, type: text, help: "The title of the career file's editor page." }
+  - { field: goal, type: text, help: "The position the plan works toward." }
+  - { field: milestone, type: text, help: "The next milestone." }
+  - { field: milestone_date, type: date, help: "The day of the next milestone." }
+  - { field: order_note, type: textarea, help: "A note over the order of work." }
+  - field: order
+    type: records
+    help: "The order of work."
+    fields:
+      - { field: task, type: text, required: true, help: "What to do." }
+      - { field: when, type: text, help: "When." }
+      - { field: note, type: text, help: "A remark." }
+  - field: positions
+    type: records
+    help: "The positions held, the CV's experience."
+    fields:
+      - { field: key, type: text, help: "The key a profile row names this position by." }
+      - { field: title, type: text, required: true, help: "The position as the CV prints it." }
+      - { field: location, type: text, help: "Where." }
+      - { field: duration, type: text, help: "When, as the CV prints it." }
+      - { field: url, type: text, help: "An address the title links to." }
+      - { field: about, type: textarea, help: "What the CV prints under it." }
+      - { field: hide, type: checkbox, help: "Kept off the CV." }
+      - { field: cv_section, type: text, help: "Another CV section the row goes to." }
+      - { field: cv_rank, type: text, help: "The row's place in its section, a whole number." }
+  - field: degrees
+    type: records
+    help: "The degrees and the courses taken, the CV's education."
+    fields:
+      - { field: key, type: text, help: "The key a profile row names this degree by." }
+      - { field: title, type: text, required: true, help: "The degree as the CV prints it." }
+      - { field: location, type: text, help: "Where." }
+      - { field: duration, type: text, help: "When, as the CV prints it." }
+      - { field: url, type: text, help: "An address the title links to." }
+      - { field: about, type: textarea, help: "What the CV prints under it." }
+      - { field: hide, type: checkbox, help: "Kept off the CV." }
+      - { field: cv_section, type: text, help: "Another CV section the row goes to." }
+      - { field: cv_rank, type: text, help: "The row's place in its section, a whole number." }
+  - field: awards
+    type: records
+    help: "The awards, the CV's awards."
+    fields:
+      - { field: key, type: text, help: "The key a profile row names this award by." }
+      - { field: award, type: text, help: "The award as the CV prints it." }
+      - { field: event, type: text, help: "The event it was given at." }
+      - { field: date, type: text, help: "The day, written as the CV reads it." }
+      - { field: location, type: text, help: "Where." }
+      - { field: content, type: textarea, help: "What the CV prints under it." }
+      - { field: funding, type: text, help: "A funding entry, by key, whose title, place and text the award takes." }
+      - { field: hide, type: checkbox, help: "Kept off the CV." }
+      - { field: cv_rank, type: text, help: "The row's place in its section, a whole number." }
+  - field: references
+    type: records
+    help: "The references the CV names."
+    fields:
+      - { field: person, type: text, required: true, foreign_key: people, help: "The person, by key." }
+      - { field: reason, type: text, help: "What the reference can speak to." }
+  - field: profiles
+    type: records
+    map: true
+    help: "The employer CVs by name, and `shared`, the block they all print."
+    fields:
+      - { field: location, type: text, help: "In shared: the place every employer CV prints." }
+      - { field: email, type: text, help: "In shared: the email every employer CV prints." }
+      - { field: parts, type: tags, help: "In shared: the keys of the website's cv: block every employer CV prints." }
+      - { field: links, type: tags, help: "In shared: the names of the user's links every employer CV prints." }
+      - { field: titles, type: tags, help: "The lines printed under the name." }
+      - field: summary
+        type: records
+        help: "The profile paragraph."
+        fields:
+          - { field: title, type: text, help: "The heading." }
+          - { field: text, type: textarea, help: "The paragraph." }
+          - { field: text_compact, type: textarea, help: "The paragraph of the one-page CV." }
+      - field: skills
+        type: records
+        help: "The skills, by category."
+        fields:
+          - { field: title, type: text, help: "The heading." }
+          - field: content
+            type: records
+            help: "One row per category."
+            fields:
+              - { field: category, type: text, help: "The category." }
+              - { field: items, type: textarea, help: "The skills of the category." }
+              - { field: compact, type: checkbox, help: "Whether the one-page CV prints the row; a row without it is printed." }
+      - field: experience
+        type: records
+        help: "The positions this CV prints."
+        fields: &profile-rows
+          - { field: title, type: text, help: "The heading." }
+          - field: content
+            type: records
+            help: "One row per entry. A row names the records it stands for, and takes from the first one the place and period, in projects the period and address, where it prints none of its own."
+            fields:
+              - { field: records, type: tags, help: "The keys of the records the row stands for: career rows, collection entries or projects." }
+              - { field: title, type: text, help: "The entry as this CV prints it." }
+              - { field: role, type: text, help: "The role, for a project." }
+              - { field: location, type: text, help: "Where, when this CV prints it differently." }
+              - { field: duration, type: text, help: "When, when this CV prints it differently." }
+              - { field: url, type: text, help: "An address, when this CV prints another." }
+              - { field: about, type: textarea, help: "What this CV prints under it." }
+              - { field: about_compact, type: textarea, help: "What the one-page CV prints under it." }
+              - { field: compact, type: checkbox, help: "Whether the one-page CV prints the row; a row without it is printed." }
+      - { field: projects, type: records, help: "The projects this CV prints.", fields: *profile-rows }
+      - { field: education, type: records, help: "The degrees this CV prints.", fields: *profile-rows }
+      - { field: teaching, type: records, help: "The teaching this CV prints.", fields: *profile-rows }
+      - field: awards
+        type: records
+        help: "The awards this CV prints."
+        fields:
+          - { field: title, type: text, help: "The heading." }
+          - field: content
+            type: records
+            help: "One row per award. A row names the records it stands for, and takes the first one's place and day where it prints none of its own."
+            fields:
+              - { field: records, type: tags, help: "The keys of the records the row stands for." }
+              - { field: award, type: text, help: "The award as this CV prints it." }
+              - { field: event, type: text, help: "The event it was given at." }
+              - { field: location, type: text, help: "Where, when this CV prints it differently." }
+              - { field: date, type: text, help: "The day, when this CV prints it differently." }
+              - { field: compact, type: checkbox, help: "Whether the one-page CV prints the row; a row without it is printed." }
+      - field: letter
+        type: records
+        help: "The cover letter of the application."
+        fields:
+          - { field: recipient_name, type: text, help: "Who it is to." }
+          - { field: recipient_address, type: text, help: "Their address." }
+          - { field: date, type: text, help: "The date as the letter prints it." }
+          - { field: title, type: text, help: "The subject line." }
+          - { field: opening, type: text, help: "The greeting." }
+          - { field: closing, type: text, help: "The closing words." }
+          - { field: body, type: textarea, help: "The letter." }
+
 title: Career strategy
 goal: "An independent research line at a host university"
 milestone: "Fellowship application"
 milestone_date: "2027-10-15"
 
-situation:
-  Stage: "final-year postdoc, building toward an independent line"
-  Anchor: "reproducible ML for streaming + graph systems"
-
 order:
   - { task: "Ship the streaming-anomaly paper", when: "Q3 2026" }
   - { task: "Draft the fellowship concept note", when: "Aug 2026", note: "align with a host lab" }
   - { task: "Line up two reference letters", when: "Sep 2026" }
+
+positions:
+  - { key: postdoc, title: "Postdoc", location: "A host university", duration: "2024 - now", about: "Reproducible ML for streaming and graph systems." }
+
+degrees:
+  - { key: phd, title: "PhD, Computer Science", location: "A university", duration: "2019 - 2023" }
+
+awards:
+  - { award: "Best paper award", event: "A workshop", date: 2023-06-01 15:59:00-0400, location: "A city" }
+
+references:
+  - { person: c-senior, reason: "PhD supervisor" }
+
+profiles:
+  shared: { location: "A city", email: "me@example.org", parts: [], links: [github] }
+  industry:
+    titles: ["Machine learning engineer"]
+    experience:
+      title: Experience
+      content:
+        - { records: [postdoc], title: "Researcher", about: "Built streaming and graph pipelines." }
+    education:
+      title: Education
+      content:
+        - { records: [phd] }

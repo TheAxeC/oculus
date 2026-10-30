@@ -3,9 +3,8 @@
 // person marked `self: true` (data/snapshot/hubs/self.ts), else the first row without a field when
 // the record names people in any role's field, else none. Mine only keeps a record whose role
 // fields hold the user, and a record that names no one. The project boards, the collection views
-// (whose entries name people by key, read with `entryPeople` and `isSelfByKey`), the career
-// banner's track record, the audit and the New project write read the roles through this module, so
-// a role is decided by one rule.
+// (whose entries name people by key, read with `entryPeople` and `isSelfByKey`), the audit and the
+// New project write read the roles through this module, so a role is decided by one rule.
 
 import { z } from 'zod';
 import type { Id, Person } from '../../model/index.ts';

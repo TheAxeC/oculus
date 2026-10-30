@@ -54,7 +54,7 @@ collections:
 chat_context: [funding, events, education, applications, tasks]
 
 
-# The career file holds the goal, the next milestone and its day, the situation and the order of work, which the Focus board's Career banner draws. A funding entry's `statement:` shows on the Funding view.
+# The career file holds the goal, the next milestone and its day and the order of work, and the positions, degrees, awards, references and employer CV profiles the website's CV is written from; the Career view edits it. A funding entry's `statement:` shows on the Funding view.
 career_file: .oculus/data/academic/career.yml
 
 

@@ -166,13 +166,13 @@ const stageWord = z.strictObject({
     ),
     placed: flag('A stage that has a venue, so the audit asks for one.'),
     public: flag(
-        "A public outcome: the audit of the website's publications asks for its project on the site, in the sections the hub's `audit.website.kinds` gives."
+        "A public outcome: a manifest at the stage that carries `publication:` is written into the website's publications, in the section the hub's `website.kinds` gives it."
     ),
     negative: flag(
-        "A negative result, which stays in the hub: the audit of the website's publications reports its project when the site shows it."
+        'A negative result, which stays in the hub: a manifest at the stage that carries `publication:` gives no website entry and a finding of the audit.'
     ),
     dead_end: flag(
-        "A dead end: the audit of the website's publications reports its project when the site shows it, to be given another stage or taken off the site."
+        'A dead end: a manifest at the stage that carries `publication:` gives no website entry and a finding of the audit, to be given another stage or to lose its record.'
     ),
     pauses_countdown: flag(
         "A stage that stops a card's and a lane's countdown, and that the Focus board's awaiting box counts as submitted work held at its venue."
@@ -229,9 +229,6 @@ const statusWord = z.strictObject({
     ),
     default_task: flag(
         'The status of a task added from the palette, carried by one word at most: with two carrying it (a finding) the task is added with no status.'
-    ),
-    obtained: flag(
-        "The status is funding obtained, which the career banner's track record counts; compared trimmed and in lower case."
     )
 });
 
@@ -322,7 +319,6 @@ const categoryRow = z.strictObject({
         ),
     stages: wordBlock.optional().describe("The block a project's `stage` is held against."),
     forms: wordBlock.optional().describe("The block a project's `form` is held against."),
-    record: flag("The row is a record of the work's output."),
     rail: flag(
         'A board gives the rail the count of its projects in such rows, drawn in `rail_color`.'
     ),

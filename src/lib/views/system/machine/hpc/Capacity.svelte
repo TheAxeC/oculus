@@ -156,8 +156,12 @@
         outline: 1px solid var(--accent);
         outline-offset: 1px;
     }
-    /* A table wider than the pane scrolls inside its own box. */
+    /* A table wider than the pane scrolls inside its own box. A box that scrolls sideways is the
+       box the header row sticks in, and it never scrolls up or down, so the header row stands at
+       its top: offset by the group's heading strip, as Table.svelte offsets it in the view's own
+       scroller, it would sit over the first row. */
     .scroll {
+        --group-strip: 0px;
         min-width: 0;
         overflow-x: auto;
     }

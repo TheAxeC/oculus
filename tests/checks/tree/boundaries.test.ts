@@ -120,7 +120,7 @@ function findGlobalState(sourceRoot: string): string[] {
 /**
  * Module-level bindings that are not a store, listed by name.
  *
- * The server's three are lookup tables written once at load. The client's are the four catalogs:
+ * The server's two are lookup tables written once at load. The client's are the four catalogs:
  * state/shared/words/text.ts, state/shared/words/tones.ts and state/shared/words/appearance.ts hold
  * what the server last sent, are never written after a push installs them, and are read by t(),
  * toneOf() and themes() from every layer, `ui/` included, where there is no client object to read
@@ -149,7 +149,6 @@ const FROZEN = [
     'lib/ui/controls/editor/kit/languages/apps.svelte.ts:signature',
     'lib/ui/controls/editor/kit/languages/apps.svelte.ts:version',
     'lib/ui/display/icon-theme/held.svelte.ts:held',
-    'lib/server/content/audit/publications.ts:STOPWORDS',
     'lib/server/machine/pty/channel.ts:CHANGE_EVENTS',
     'lib/server/machine/pty/tmux.ts:SINGLES',
     'lib/state/shared/words/text.ts:catalog',

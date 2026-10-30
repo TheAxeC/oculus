@@ -6,25 +6,6 @@ text:
         add_subtask: + subtask
         awaiting_response: Awaiting a response
         cards_group: Funding | positions | teaching
-        career_day_ago: 1 day ago
-        career_days_ago: '{0} days ago'
-        career_funding_row: Funding obtained
-        career_glyph: focus
-        career_goal: Goal
-        career_goal_glyph: flag
-        career_heading: Career
-        career_in_day: in 1 day
-        career_in_days: 'in {0} days'
-        career_next_glyph: calendar
-        career_next_tail: '{0}, {1}'
-        career_open_link: 'Open {0}'
-        career_order_glyph: list
-        career_record: Track record
-        career_record_count: '{0} {1}'
-        career_record_glyph: book
-        career_situation: Situation
-        career_situation_glyph: info
-        career_task_note: '{0}, {1}'
         cluster_incubate: 'Incubation: idea to project'
         cluster_now: 'Now: do these'
         cluster_parked: Parked / on hold
@@ -129,10 +110,8 @@ text:
         jobs_sub: job applications
         mine_all: Everything here is yours
         move_to: Move to
-        next: Next
         none: '- none -'
         now_glyph: now
-        order_of_work: Order of work
         qa_kind: Kind
         qa_named: '{0} ({1})'
         qa_no_record: There is no record of this kind to write to.
@@ -151,7 +130,6 @@ text:
         teaching_glyph: teaching
         teaching_lane: Teaching & supervision
         teaching_sub: running and planned
-        today: today
         toolbar: Focus controls
         unfold: Unfold {0}
         venue_unset: (venue unset)

@@ -209,14 +209,6 @@ export function registryCollections(
     return inListOrder(Object.values(collections).filter((one) => one.registry === registry));
 }
 
-/** The entries of the registry's collection of every hub, joined in the portfolio's order. */
-export function registryEntries(
-    collections: Record<Id, Collection>,
-    registry: RegistryWord
-): Collection['entries'] {
-    return registryCollections(collections, registry).flatMap((one) => one.entries);
-}
-
 /** The registry's collection of the hub named `hub`, or undefined when that hub holds none. */
 export function registryCollection(
     collections: Record<Id, Collection>,
@@ -758,10 +750,9 @@ const HUB_LIST: readonly { key: string; file: string }[] = [
     { key: 'audit.required_files', file: 'behavior.yml' },
     { key: 'audit.required_sections', file: 'behavior.yml' },
     { key: 'audit.stage_folders', file: 'behavior.yml' },
-    { key: 'audit.website.file', file: 'behavior.yml' },
-    { key: 'audit.website.list', file: 'behavior.yml' },
-    { key: 'audit.website.title', file: 'behavior.yml' },
-    { key: 'audit.website.kinds', file: 'behavior.yml' },
+    { key: 'website.folder', file: 'behavior.yml' },
+    { key: 'website.cv', file: 'behavior.yml' },
+    { key: 'website.kinds', file: 'behavior.yml' },
     { key: 'app_settings', file: 'behavior.yml' },
     { key: 'literature.sources', file: 'behavior.yml' },
     { key: 'literature.prefer', file: 'behavior.yml' },

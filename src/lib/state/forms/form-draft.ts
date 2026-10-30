@@ -1,7 +1,7 @@
 // Layer 2, client state. The unsaved edits of a form, kept in the ui store's record of the view
 // instance that draws the form, so a tab switch and a reload keep them the way the source tab keeps
 // its draft. The project editor, the page of a collection entry or a feed entry, the person page
-// and the Career panel are forms over a different thing each, and they share this store.
+// and the Career view are forms over a different thing each, and they share this store.
 //
 // The draft sits under the `draft` key of the instance's record, beside whatever else the view
 // keeps there (the document an entry page shows, the folds a Focus board holds). It names the kind

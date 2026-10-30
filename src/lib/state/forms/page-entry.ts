@@ -1,6 +1,6 @@
 // Layer 2, client state. The thing an entry form edits, whichever kind it is: an entry of a
 // collection file, an entry of a generated feed (a lead, a Lit Watch paper) or the career file. The
-// page of an entry, the person page and the Career panel each hold one, and the form draft judges
+// page of an entry, the person page and the Career view each hold one, and the form draft judges
 // the unsaved edits of all three through it.
 //
 // A page entry names its schema, its saved values by field, the fields the form never writes and

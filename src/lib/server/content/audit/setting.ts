@@ -1,8 +1,7 @@
 // Layer 2, server. The reader of a hub's `audit:` setting, the conventions the audit holds the
 // hub's projects to: the files a project must hold (`required_files`), the headings a file must
-// hold while a manifest key has a value (`required_sections`), the folders a project at a stage is
-// kept under (`stage_folders`) and the website's publications feed (`website`). Each is off unless
-// the hub sets it.
+// hold while a manifest key has a value (`required_sections`) and the folders a project at a stage
+// is kept under (`stage_folders`). Each is off unless the hub sets it.
 //
 // The value is read from the hub's own `.oculus/config.yml`, where the setting lives: the merge of
 // the hub's file (data/sources/config/merge/hub-layer.ts) applies only the keys of the hub list, so
@@ -31,42 +30,25 @@ type RequiredSection = { file: string; heading: string; key: string; folders?: s
 /** A row of `stage_folders`: the stages, and the hub folders a project at them lies under. */
 type StageFolders = { stages: WordBlock; folders: string[] };
 
-/**
- * A row of `website.kinds`: the sections of the feed a project is expected in, and the stages and
- * forms the row holds to; a side the row leaves out holds to nothing.
- */
-export type PublicationKind = { kind: string[]; stages?: string[]; forms?: string[] };
-
-/** `website`: the feed, the key of each section's list, the key of a title and the kinds. */
-export type Website = { file: string; list: string; title: string; kinds: PublicationKind[] };
-
 /** A hub's `audit:` as read: the rows of each part that are of their shape, and the problems. */
 export type AuditSetting = {
     requiredFiles: RequiredFile[];
     requiredSections: RequiredSection[];
     stageFolders: StageFolders[];
-    /** The website check, null while the hub names no feed or names it not in its shape. */
-    website: Website | null;
     /** The dotted key of every part of `audit:` that is not of its shape, in the file's order. */
     problems: string[];
 };
 
 /** The setting of a hub that names none of the checks, made anew for each caller. */
 function noSetting(): AuditSetting {
-    return {
-        requiredFiles: [],
-        requiredSections: [],
-        stageFolders: [],
-        website: null,
-        problems: []
-    };
+    return { requiredFiles: [], requiredSections: [], stageFolders: [], problems: [] };
 }
 
 /** The key the setting is written under in the hub's settings file. */
 const AUDIT = 'audit';
 
 /** The parts `audit:` takes. */
-const PARTS = ['required_files', 'required_sections', 'stage_folders', 'website'];
+const PARTS = ['required_files', 'required_sections', 'stage_folders'];
 
 /** A text with a character in it. */
 const filledShape = z.string().min(1);
@@ -143,50 +125,6 @@ const SECTION_FIELDS: Fields = {
 /** The fields of a row of `stage_folders`. */
 const STAGE_FIELDS: Fields = { stages: wordBlock, folders: foldersShape };
 
-/** The fields of a row of `website.kinds`. */
-const KIND_FIELDS: Fields = { kind: textsShape.min(1), stages: textsShape, forms: textsShape };
-
-/** The keys `website` takes. */
-const WEBSITE_KEYS = ['file', 'list', 'title', 'kinds'];
-
-/**
- * `website`, or null while it names no feed. A feed named with a list key, a title key or kinds
- * missing or not of their shape is off, and each such key is a problem.
- */
-function websiteOf(value: unknown, problems: string[]): Website | null {
-    const at = `${AUDIT}.website`;
-    if (!isMap(value)) {
-        problems.push(at);
-        return null;
-    }
-    for (const key of Object.keys(value)) {
-        if (!WEBSITE_KEYS.includes(key)) problems.push(`${at}.${key}`);
-    }
-    const text = (key: string): string | null => {
-        const read = z.string().safeParse(value[key]);
-        return read.success ? read.data : null;
-    };
-    const file = Object.hasOwn(value, 'file') ? text('file') : '';
-    if (file === null) {
-        problems.push(`${at}.file`);
-        return null;
-    }
-    if (file === '') return null;
-    const before = problems.length;
-    const list = text('list');
-    const title = text('title');
-    if (list === null || list === '') problems.push(`${at}.list`);
-    if (title === null || title === '') problems.push(`${at}.title`);
-    const rows = Object.hasOwn(value, 'kinds')
-        ? rowsOf(value.kinds, `${at}.kinds`, KIND_FIELDS, ['kind'], problems)
-        : null;
-    if (rows === null || (Array.isArray(value.kinds) && value.kinds.length === 0)) {
-        problems.push(`${at}.kinds`);
-    }
-    if (problems.length > before || list === null || title === null || rows === null) return null;
-    return { file, list, title, kinds: rows as PublicationKind[] };
-}
-
 /** A hub's `audit:` value read into its checks, each part not of its shape named and left off. */
 function auditSetting(value: unknown): AuditSetting {
     if (value === undefined) return noSetting();
@@ -206,8 +144,7 @@ function auditSetting(value: unknown): AuditSetting {
         'key'
     ]);
     const stageFolders = part<StageFolders>('stage_folders', STAGE_FIELDS, ['stages', 'folders']);
-    const website = Object.hasOwn(value, 'website') ? websiteOf(value.website, problems) : null;
-    return { requiredFiles, requiredSections, stageFolders, website, problems };
+    return { requiredFiles, requiredSections, stageFolders, problems };
 }
 
 /**

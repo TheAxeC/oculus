@@ -1,15 +1,15 @@
-// Layer 1, data. The career strategy out of the map sources/documents/career.ts parsed: the title,
-// the goal, the next milestone and its day, the situation, the order of work and its note, of which
-// the Focus board's Career banner draws all but the title. Pure, like normalise: every section is
-// optional, the order of work tolerates the plain-string form the file may write, and a row
-// without its words is left out. A key the file holds beyond these is read by no part of the
-// banner, and stays in `sections` for the editor.
+// Layer 1, data. The career file out of the map sources/documents/career.ts parsed: the strategy
+// (the title, the goal, the next milestone and its day, the order of work and its note) typed, and
+// every section as the file holds it in `sections`, which the Career view's editor edits and the
+// website's CV is written from (server/content/audit/website/cv.ts). Pure, like normalise: every
+// section is optional, the order of work tolerates the plain-string form the file may write, and a
+// row without its words is left out.
 
 import { z } from 'zod';
 import { ISO_DATE } from '../../helpers/dates.ts';
 import { str } from '../../helpers/guards.ts';
 import type { Career } from '../../model/index.ts';
-import { itemsShape, mapShape, optionalTextShape, readAs, readOr } from '../../shapes/shapes.ts';
+import { itemsShape, optionalTextShape, readAs, readOr } from '../../shapes/shapes.ts';
 import { compact } from '../compact.ts';
 import { fieldsOf } from '../schema/field.ts';
 
@@ -60,14 +60,6 @@ function milestoneDate(raw: Record<string, unknown>): string | undefined {
  */
 export function career(raw: Record<string, unknown> | null): Career | null {
     if (raw === null) return null;
-    const situation: { label: string; value: string }[] = [];
-    const written = readAs(mapShape, raw.situation);
-    if (written !== null) {
-        for (const [label, held] of Object.entries(written)) {
-            const text = str(held);
-            if (text !== undefined) situation.push({ label, value: text });
-        }
-    }
     const order: { task: string; when?: string; note?: string }[] = [];
     for (const row of rowsOf(raw.order)) {
         const one = orderRow(row);
@@ -78,7 +70,6 @@ export function career(raw: Record<string, unknown> | null): Career | null {
         goal: filled(raw.goal),
         milestone: filled(raw.milestone),
         milestoneDate: milestoneDate(raw),
-        situation,
         order,
         orderNote: str(raw.order_note),
         sections: Object.fromEntries(Object.entries(raw).filter(([name]) => name !== 'schema')),

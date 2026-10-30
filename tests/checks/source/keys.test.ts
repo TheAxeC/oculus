@@ -261,6 +261,17 @@ function literalConstant(rel: string, name: string): string[] {
     return value === undefined ? [] : [value];
 }
 
+/**
+ * The catalog keys written as texts in the declaration `const <name>` or `type <name>` of a file
+ * under SRC, up to its first semicolon: each text with a dot in it, so a map's own keys are left
+ * out.
+ */
+function keysDeclared(rel: string, name: string): string[] {
+    const declared = new RegExp(`(?:const|type) ${name}\\b[^=]*=([\\s\\S]*?);`);
+    const body = declared.exec(codeOf(join(SRC, rel)))?.at(1) ?? '';
+    return [...body.matchAll(/'([a-z_]+(?:\.[a-z_]+)+)'/g)].map((one) => one[1]);
+}
+
 /** The computed prefixes, with the file that computes each and the catalog keys it covers. */
 const COMPUTED_PREFIXES = [
     {
@@ -388,6 +399,21 @@ const COMPUTED_PREFIXES = [
         file: 'lib/server/core/files/yaml/why.ts',
         start: 'words(text, found.key',
         keys: () => Object.values(REFUSALS)
+    },
+    {
+        // A sentence of the website's audit that the build of its three files gives is one of
+        // ProblemKey, the type a Problem's key is typed by, so a problem added there without its
+        // words fails here.
+        file: 'lib/server/content/audit/publications.ts',
+        start: '...sentence(problem.key',
+        keys: () => keysDeclared('lib/server/content/audit/website/site.ts', 'ProblemKey')
+    },
+    {
+        // A refused press of Write the website is said by the sentence REFUSAL_WORDS gives its
+        // word, the store's own table, so a refusal added there without its words fails here.
+        file: 'lib/state/sessions/source/website.svelte.ts',
+        start: 't(words, ...read.data.names)',
+        keys: () => keysDeclared('lib/state/sessions/source/website.svelte.ts', 'REFUSAL_WORDS')
     },
     {
         // A sentence of the Settings rows is a message of the rows module: its catalog key and the

@@ -116,9 +116,9 @@ type BoardModule = ViewModule & {
  * (views/boards/projects/Projects.svelte), which gives each its count hooks, and unregister the
  * board views it drew that they no longer hold, closing their tabs, so a board taken out of
  * `boards:` leaves the rail, the catalogue and the panes with the push that took it out. The views
- * the component registers as its own (the track record's board and the Awaiting board) are no board
- * of `boards:` and stay registered. The findings of the boards left out are the registry's
- * `refused` under `boards`, which the Findings view lists.
+ * the component registers as its own (the Awaiting board) are no board of `boards:` and stay
+ * registered. The findings of the boards left out are the registry's `refused` under `boards`,
+ * which the Findings view lists.
  */
 export function registerBoards(registry: RegistryStore, given: BoardViews): void {
     registry.refuse('boards', given.findings);

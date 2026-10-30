@@ -6,9 +6,8 @@
 // data/shapes/boards/. A board over the records of several hubs reads each project under the words
 // of its own hub, and draws its sections, slices, facets and stage order from the union of every
 // hub's words. This module holds no table of boards: the board views the page registers are read
-// from the same rows (`boardViews`), each named and drawn by the words its row names. Three presets
-// no row names: the track record's (`recordPreset`), which a role row of the Career banner opens
-// for its role, the Awaiting box's board (`awaitingPreset`), which a name of the Focus board's
+// from the same rows (`boardViews`), each named and drawn by the words its row names. Two presets
+// no row names: the Awaiting box's board (`awaitingPreset`), which a name of the Focus board's
 // Awaiting box opens for the projects it counts, and the Map's (`mapPreset`), which takes every
 // project of every hub for the Map's bar.
 
@@ -533,53 +532,6 @@ export function presetFor(
 }
 
 /**
- * The view id of the track record's board, the one tab a role row of the Career banner's Track
- * record opens for its role (views/boards/focus/career/career-rows.ts `recordRows`).
- */
-export const RECORD_VIEW = 'track_record';
-
-/**
- * The preset of the track record's board of one role: the projects whose category is a row of
- * `categories:` carrying `record: true` and on which the user's role is `role`, read with the
- * functions the track record counts with (state/boards/career.ts `trackRecord`), so each section
- * holds the count of its line. Its sections are the record rows of every hub's words, in their
- * order. It draws its projects as the first board of `boards:` other than one keyed with its own
- * id does, by that row's columns, label mode and search placeholder. A `role` of null, a tab opened
- * for no role, takes no project.
- */
-export function recordPreset(
-    role: string | null,
-    config: Record<string, unknown> = {},
-    vocab: WordsOf = () => config
-): BoardPreset {
-    const words = wordsReader(vocab);
-    const union = words();
-    const records = union.categories.filter((category) => category.record);
-    const [, row] = boardRows(config).find(([id]) => id !== RECORD_VIEW) ?? [RECORD_VIEW, {}];
-    return {
-        id: RECORD_VIEW,
-        rule: {
-            tiers: null,
-            roles: role === null ? [] : [role],
-            stages: null,
-            chips: null,
-            forms: null,
-            hub: null,
-            match: null,
-            record: records.map((category) => category.key),
-            ids: null
-        },
-        ...drawnBy(row),
-        categories: records,
-        roles: union.roles,
-        stageOrder: vocabKeys(union.config.stages),
-        cards: 'sections',
-        config,
-        words
-    };
-}
-
-/**
  * The view id of the Awaiting box's board, the one tab a name of the Focus board's Awaiting box
  * opens for that name (views/boards/focus/Focus.svelte).
  */
@@ -612,7 +564,6 @@ export function awaitingPreset(
             forms: null,
             hub: null,
             match: null,
-            record: null,
             ids: [...ids]
         },
         ...drawnBy(row),
@@ -650,7 +601,6 @@ export function mapPreset(
             forms: null,
             hub: null,
             match: null,
-            record: null,
             ids: null
         },
         ...drawnBy({}),

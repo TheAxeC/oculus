@@ -19,6 +19,7 @@ import { career } from './normalise-parts/career.ts';
 import { docFlags } from './normalise-parts/folder.ts';
 import { retrievalOf } from './normalise-parts/retrieval.ts';
 import { linked } from './normalise-parts/links.ts';
+import { personLinks, projectCv, publication } from './normalise-parts/publication.ts';
 import { indexing } from './indexing.ts';
 import type {
     CodeAvailability,
@@ -276,6 +277,8 @@ function project(
         outcome: str(manifest.outcome),
         resourceIds: strings(manifest.compute),
         codeAvailability: codeAvailability(manifest.code_availability),
+        publication: publication(manifest.publication),
+        cv: projectCv(manifest.cv),
         repository: repository(manifest.repository),
         reproduced: reproduced(manifest.reproduced),
         relatedIds: strings(manifest.related),
@@ -381,11 +384,12 @@ function person(entry: RawRegistryEntry): Person {
     return compact({
         id: entry.key,
         name: str(entry.name) ?? '',
+        family: str(entry.family),
         affiliations: affiliationsOf(entry),
         role: str(entry.role),
         orcid: str(entry.orcid),
         email: str(entry.email),
-        links: strings(entry.links),
+        links: personLinks(entry.links),
         folder: str(entry.folder),
         projectIds: []
     });

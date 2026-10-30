@@ -131,7 +131,7 @@
             rows.push({ label: t('person.orcid'), value: person.orcid });
         if (person.email !== undefined)
             rows.push({ label: t('person.email'), value: person.email });
-        for (const link of person.links) rows.push({ label: t('person.link'), value: link });
+        for (const link of person.links) rows.push({ label: t('person.link'), value: link.url });
         return rows;
     });
 

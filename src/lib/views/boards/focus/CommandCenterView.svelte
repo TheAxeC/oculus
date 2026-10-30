@@ -4,10 +4,10 @@
     // Needs attention, Deadlines & dates, Refresh live data and Snoozed: the dates the records hold
     // and the lines of the feeds, the follow-ups and the subtasks being the tasks section's. The
     // groups and the box they stand in, with its red left edge, are drawn by
-    // ui/display/ticker/TickerGroup.svelte, which the career banner draws with too, so their look
-    // is written there once; this file keeps the look of its own content, the Needs attention
-    // group's lines of projects behind their documents and of projects no lane shows. The heading
-    // row ends with how many rows the Focus filter hides, when it hides any, and the live HPC pill.
+    // ui/display/ticker/TickerGroup.svelte, so their look is written there once; this file keeps
+    // the look of its own content, the Needs attention group's lines of projects behind their
+    // documents and of projects no lane shows. The heading row ends with how many rows the Focus
+    // filter hides, when it hides any, and the live HPC pill.
 
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import TickerGroup, { box } from '$lib/ui/display/ticker/TickerGroup.svelte';

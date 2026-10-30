@@ -203,6 +203,59 @@ export type CodeAvailability = {
     repo?: string;
 };
 
+/** A named address: a link of a publication record, printed with its name as the link's words. */
+export type NamedLink = { name: string; url: string };
+
+/**
+ * One address of a person on the web, a row of `links:` of the people file: its name, the full
+ * address, and the account name a CV prints in place of the address where it prints one.
+ */
+export type PersonLink = NamedLink & { handle?: string };
+
+/**
+ * A manifest's `publication:` record, the entry the website's publications list the project's paper
+ * with. Each field is held when the manifest writes it, an empty text included, and is written
+ * through as held; the title, the date, the section, the place among the authors, the words around
+ * the venue and the code link are generated from the rest of the manifest
+ * (server/content/audit/website/papers.ts).
+ */
+export type Publication = {
+    /** The authors as the website prints them, one text. */
+    authors?: string;
+    /** The venue as the website prints it. */
+    book?: string;
+    /** The website's research lines the paper belongs to, keys of `programs:` in website.yml. */
+    program?: string[];
+    url?: string;
+    /** The paper's other links, in the order the website prints them, the code link left out. */
+    links?: NamedLink[];
+    abstract?: string;
+    /** A mark printed after the authors, such as an award of the paper. */
+    pub_last?: string;
+    hide?: boolean;
+    /** The place of the entry in its website section, lowest first. */
+    rank?: number;
+};
+
+/**
+ * A manifest's `cv:` record, the row the CV's projects list the project with. Each field is held
+ * when the manifest writes it and is written through as held; `title` stands for the manifest's own
+ * title where the CV prints another.
+ */
+export type ProjectCv = {
+    title?: string;
+    url?: string;
+    /** The period as the CV prints it, a year written as a number kept a number. */
+    duration?: string | number;
+    about?: string;
+    role?: string;
+    /** Whether the short CV leaves the row out. */
+    min?: boolean;
+    hide?: boolean;
+    /** The place of the row in the CV's projects, lowest first. */
+    rank?: number;
+};
+
 /**
  * The deposit mirror of a project's `code/` folder as GET and POST /api/deposit answer it, one
  * declaration for the server that sends it (server/git/deposit/) and the page that reads it
@@ -403,6 +456,10 @@ export type Project = Rooted & {
      */
     resourceIds: Id[];
     codeAvailability?: CodeAvailability;
+    /** The entry the website's publications list the paper with, absent when it lists none. */
+    publication?: Publication;
+    /** The row the CV's projects list the project with, absent when it lists none. */
+    cv?: ProjectCv;
     repository?: RepositoryBlock;
     reproduced?: Reproduced;
     /** Ids of other projects this one is related to. */
@@ -631,13 +688,16 @@ export type Domain = Rooted & {
 export type Person = Rooted & {
     id: Id;
     name: string;
+    /** The family name, the end of `name`. */
+    family?: string;
     /** Keys of organisations.yml entries, the primary first, and empty for a person with none. */
     affiliations: Id[];
     /** What the person is to this hub in its own words: co-supervisor, co-author, student. */
     role?: string;
     orcid?: string;
     email?: string;
-    links: string[];
+    /** The person's addresses on the web, in the file's order. */
+    links: PersonLink[];
     /** A student's supervision folder, hub-relative, whose files the Person view lists. */
     folder?: string;
     /**

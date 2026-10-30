@@ -1,16 +1,18 @@
 // Layer 1, data. The typed readers of the settings of files, the editor and repositories: the
 // search, the extensions handed to a program, the Trash confirmation, the Files view's icon place,
 // the repository scan depth and the chat's collection keys (`chatContext`) of sources.yml, the
-// editor's paint limit and the automatic fetch. Each reads its key through settingReader
-// (reader.ts), except `chatContext`, which reads its value by kind alone; the readers the page
-// calls before the config channel's first message answer a fixed value for a configuration that
-// holds no catalog yet.
+// editor's paint limit, the automatic fetch and the website the hub's files are written into
+// (`websiteSettings`). Each reads its key through settingReader (reader.ts), except `chatContext`,
+// which reads its value by kind alone; the readers the page calls before the config channel's first
+// message answer a fixed value for a configuration that holds no catalog yet.
 
+import { z } from 'zod';
 import type { ProgramApps } from '../../../helpers/files/opens-in-program.ts';
 import { byKey } from '../../../helpers/guards.ts';
 import { catalogOf, sourcedItems, type CatalogEntry } from '../catalog/options.ts';
 import { valueProblem, type ValueProblem } from '../catalog/value-rule.ts';
 import {
+    checkedRows,
     heldAt,
     noRule,
     settingReader,
@@ -194,4 +196,48 @@ export function paintLimit(
     } catch {
         return null;
     }
+}
+
+/**
+ * One row of `website.kinds`: the key of the section of the website's publications its papers go
+ * to, the section's title, the stages and forms the row takes (a side left out takes every one),
+ * whether an entry says the user's place among the authors, and the words printed before and after
+ * the venue.
+ */
+const websiteKindShape = z.object({
+    kind: z.string().min(1),
+    title: z.string().optional(),
+    stages: z.array(z.string()).optional(),
+    forms: z.array(z.string()).optional(),
+    order: z.boolean().optional(),
+    pub_pre: z.string().optional(),
+    pub_post: z.string().optional()
+});
+
+/** One row of `website.kinds`, as read. */
+export type WebsiteKind = z.infer<typeof websiteKindShape>;
+
+/**
+ * The website the primary hub's files are written into: its folder relative to the hub, empty when
+ * none is set, the command run in it once the files are written, empty for none, and the rows of
+ * its publications' sections in the file's order.
+ */
+export type WebsiteSettings = { folder: string; cv: string; kinds: WebsiteKind[] };
+
+/** Read `website:`'s three keys, each its default when it is missing or wrong. */
+export function websiteSettings(
+    config: Record<string, unknown>,
+    problems: SettingProblem[] = []
+): WebsiteSettings {
+    const read = settingReader(config, problems);
+    const kinds: WebsiteKind[] = [];
+    for (const { row } of checkedRows(config, 'website.kinds', problems)) {
+        const kind = websiteKindShape.safeParse(row);
+        if (kind.success) kinds.push(kind.data);
+    }
+    return {
+        folder: read.text('website.folder').trim(),
+        cv: read.text('website.cv').trim(),
+        kinds
+    };
 }

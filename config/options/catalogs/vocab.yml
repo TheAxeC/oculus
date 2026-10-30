@@ -116,9 +116,6 @@ options:
             default_task:
                 help: the status of a task added from the palette; one word carries it at most, and two carrying it are a finding under which the task gets no status
                 control: toggle
-            obtained:
-                help: funding obtained, which the career banner's track record counts
-                control: toggle
     lead_statuses:
         heading: boards
         section: Vocabulary
@@ -337,9 +334,6 @@ options:
                 help: "the block a project's form is held against"
                 control: words
                 from: project_forms
-            record:
-                help: the row is a record of the work's output
-                control: toggle
             rail:
                 help: a board gives the rail the count of its projects in such rows, drawn in rail_color
                 control: toggle

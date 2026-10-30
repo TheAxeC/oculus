@@ -14,33 +14,31 @@
 <script lang="ts">
     // Layer 3, view. The landing board, one page of sections drawn top to bottom in the order
     // `focus.sections` of config/defaults/behavior.yml lists them (`drawnSections`), each of the
-    // board's own words for the sections it knows how to draw: `career` the career banner,
-    // `command_center` the command center of the dates the records hold, the snoozed lines and the
-    // attention and refresh lines, `tasks` the tasks section of the work the reader set down (the
-    // follow-ups, the subtasks and the entries of the tasks file, dated or not), `quick_add` the
-    // quick add, `awaiting` the box of what is out for an answer, `band` the band of durable work
-    // that is not a project, and `lanes` the lanes each project's stage and chips put it on, with
-    // the message of a board with no project. A section the list leaves out is not drawn. The said
-    // line is drawn after the quick add, and at the top of the board when the list leaves the quick
-    // add out.
+    // board's own words for the sections it knows how to draw: `command_center` the command center
+    // of the dates the records hold, the snoozed lines and the attention and refresh lines, `tasks`
+    // the tasks section of the work the reader set down (the follow-ups, the subtasks and the
+    // entries of the tasks file, dated or not), `quick_add` the quick add, `awaiting` the box of
+    // what is out for an answer, `band` the band of durable work that is not a project, and `lanes`
+    // the lanes each project's stage and chips put it on, with the message of a board with no
+    // project. A section the list leaves out is not drawn. The said line is drawn after the quick
+    // add, and at the top of the board when the list leaves the quick add out.
     //
     // It counts nothing and draws little. The arithmetic is the pure functions of
-    // state/boards/focus.ts, state/boards/focus/filter.ts, state/feeds/feeds.ts and
-    // state/boards/career.ts; the markup is seven partials under views/boards/focus/ (Band,
-    // CareerPanel, CommandCenter, FocusFilter, Lanes, QuickAdd and Tasks), which are this view's
-    // own and which nothing else may import. What is left here is the composition, the
-    // awaiting-a-response box, and the one line that says what the last write answered, or what a
-    // press on a career row could not open. The career banner, the command center, the tasks
-    // section, each cluster or lane section of the lanes and the band fold the same way, each by a
-    // control on its heading, and which of them is closed is kept in the tab's instance state
-    // under its key (state/boards/focus.ts `FoldKey`), so a reload and a move of the tab keep it;
-    // all of them start open.
+    // state/boards/focus.ts, state/boards/focus/filter.ts and state/feeds/feeds.ts; the markup is
+    // six partials under views/boards/focus/ (Band, CommandCenter, FocusFilter, Lanes, QuickAdd and
+    // Tasks), which are this view's own and which nothing else may import. What is left here is the
+    // composition, the awaiting-a-response box, and the one line that says what the last write
+    // answered. The career file is the Career view's (views/academic/career/Career.svelte). The
+    // command center, the tasks section, each cluster or lane section of the lanes and the band
+    // fold the same way, each by a control on its heading, and which of them is closed is kept in
+    // the tab's instance state under its key (state/boards/focus.ts `FoldKey`), so a reload and a
+    // move of the tab keep it; all of them start open.
     //
     // The header holds the Filter action (FocusFilter.svelte): Mine only, the Role, Tier, Pillar
     // and Hub checklists, kept in the tab's instance state beside the folds. The page works the
     // filter out once (state/boards/focus/filter.ts) and hands the command center, the tasks, the
     // awaiting box, the band and the lanes the records it keeps and how many rows each hides; the
-    // career banner and the quick add read the whole portfolio.
+    // quick add reads the whole portfolio.
     //
     // Every name of the awaiting box is a button. A name of Applications or Grants opens its
     // entry's page, as a card title of its collection does, and is plain words when its hub holds
@@ -50,9 +48,8 @@
     // the projects the name counts under the filter in force at the press, which its tab state
     // carries.
     //
-    // Over a wallpaper the banner, the command center, the tasks, the band's lanes and the lanes
-    // are each a surface of their own; the awaiting box and the said line are read off a
-    // `Surface`.
+    // Over a wallpaper the command center, the tasks, the band's lanes and the lanes are each a
+    // surface of their own; the awaiting box and the said line are read off a `Surface`.
 
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
@@ -60,7 +57,6 @@
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import Band from './Band.svelte';
-    import CareerPanel from './career/CareerPanel.svelte';
     import CommandCenter from './CommandCenter.svelte';
     import FocusFilter from './FocusFilter.svelte';
     import Lanes from './lanes/Lanes.svelte';
@@ -267,10 +263,7 @@
               ].filter((row) => row.names.length > 0)
     );
 
-    /**
-     * What the last write on this board answered, whichever partial made it, or why a press on a
-     * career row opened the file at no line.
-     */
+    /** What the last write on this board answered, whichever partial made it. */
     let said = $state('');
 
     /** Open one project as its own tab, the same tab a click on a board card opens. */
@@ -319,15 +312,7 @@
             {@render saidLine()}
         {/if}
         {#each sections as section (section)}
-            {#if section === 'career'}
-                <CareerPanel
-                    instance={instance.id}
-                    {now}
-                    open={foldOpen(folds, 'career')}
-                    ontoggle={() => fold('career')}
-                    onsaid={(text: string) => (said = text)}
-                />
-            {:else if section === 'command_center'}
+            {#if section === 'command_center'}
                 <CommandCenter
                     {week}
                     snapshot={page?.snapshot ?? null}

@@ -732,17 +732,15 @@ export function portfolioProjects(snapshot: Snapshot | null): Project[] {
 }
 
 /**
- * What of the Focus board folds, by the key its closed state is kept under: the career banner, the
- * command center and the tasks by their names, and each group of cards by the key `groupFold`
- * makes for it.
+ * What of the Focus board folds, by the key its closed state is kept under: the command center and
+ * the tasks by their names, and each group of cards by the key `groupFold` makes for it.
  */
-export type FoldKey =
-    'career' | 'command' | 'tasks' | 'band' | `cluster:${string}` | `lane:${string}`;
+export type FoldKey = 'command' | 'tasks' | 'band' | `cluster:${string}` | `lane:${string}`;
 
 /**
  * The fold key of a group of cards on the Focus board: a `columns` cluster's is `cluster:<key>`, a
  * lane's section of a `full_width` cluster `lane:<lane key>`, and the band's `band`. The prefixes
- * keep a hub's cluster or lane key from naming the career banner, the command center or the tasks.
+ * keep a hub's cluster or lane key from naming the command center or the tasks.
  */
 export function groupFold(kind: 'cluster' | 'lane' | 'band', key = ''): FoldKey {
     return kind === 'band' ? 'band' : `${kind}:${key}`;

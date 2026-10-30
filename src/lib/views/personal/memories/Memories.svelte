@@ -1,6 +1,6 @@
 <script module lang="ts">
-    // Layer 3, view registration. The photo wall is the last tab of the Academic Life page, after
-    // its six collections, and the last view of its group, so it is `c` then `7`.
+    // Layer 3, view registration. The photo wall is the tab of the Academic Life page after its
+    // collections and before the Career view (views/academic/career/Career.svelte).
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
 
     export const registration: ViewRegistration = {

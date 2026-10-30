@@ -3,8 +3,7 @@
     // control (FoldControl.svelte beside it), a bare button named "Fold <name>" or "Unfold <name>"
     // with the fold glyph of the state, then the box's glyph, where it has one, and its title in
     // bold, drawn in the box's hue where it has one, then its count as a badge, where it has one,
-    // then whatever the box puts at the end of the row. The career banner
-    // (views/boards/focus/career/CareerPanel.svelte), the command center
+    // then whatever the box puts at the end of the row. The command center
     // (views/boards/focus/CommandCenterView.svelte, its HPC pill at the end) and the tasks section
     // (views/boards/focus/Tasks.svelte) draw their headings with it, so their fold controls, glyphs
     // and titles stand at the same places and the same height, and their markup and their spacing

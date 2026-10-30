@@ -4,7 +4,7 @@
 # ===========================================================================
 
 
-# The form. `sections:` names the seven groups, in the order they are drawn; a field's `section:` is
+# The form. `sections:` names the eight groups, in the order they are drawn; a field's `section:` is
 # one of those names. `type:` is the widget:
 #   readonly  shown, never written (`id` is the folder's name, and the write refuses it)
 #   text      one line | textarea several lines | lines one list item per line
@@ -34,10 +34,11 @@ manifest_schema:
     "Deposit & compute": "Deposit & compute"
     Outcome: Outcome
     "Overrides (rare)": "Overrides (rare)"
+    Website: Website
   fields:
     id:            { label: "id", type: readonly, primary_key: true, section: Core, help: "The project's folder name, or for a repository the name of its workspace folder. Never set by a write: rename the folder or the folder's entry in the workspace file to change it." }
     tier:          { label: "Tier", type: select, foreign_key: vocab.tiers, required: true, section: Core, help: "The kind of project, one word of the tiers list: research, personal or software. A board takes projects by their tier and, on the research boards, by your role and the stage. The project is shown with a finding when the key is missing or is not a word of the list." }
-    stage:         { label: "Stage", type: select, foreign_key: vocab.stages, required: true, section: Core, help: "Where the project stands, one word of the stages list: an idea (nascent, scoping), work in flight (de-risking, exploring, in-prep, building, submit-ready, submitted, revision), or done (published, which covers accepted and to appear, released, failed, stopped). The stage sets the category on the board, the Focus lane, the countdown and the in-flight counts; the folder the project is in decides neither the tier nor the stage." }
+    stage:         { label: "Stage", type: select, foreign_key: vocab.stages, required: true, section: Core, help: "Where the project stands, one word of the stages list: an idea (nascent, scoping), work in flight (de-risking, exploring, in-prep, building, submit-ready, submitted, revision), or done (accepted, for a paper accepted and to appear, published, released, failed, stopped). The stage sets the category on the board, the Focus lane, the countdown and the in-flight counts; the folder the project is in decides neither the tier nor the stage." }
     form:          { label: "Form", type: select, foreign_key: vocab.forms, section: Core, help: "The form of the output, one word of the forms list: journal, conference, thesis, abstract, poster or tech-report. Leave it empty for a project with no such output; a software project is its tier." }
     short:         { label: "Short handle", type: text, display: 1, section: Core, help: "A short name for the card and the lists, such as bttd or raw-pls." }
     title:         { label: "Title", type: text, display: 2, section: Core, help: "The full title of the project or paper." }
@@ -87,6 +88,23 @@ manifest_schema:
     doi:           { label: "DOI", type: text, section: Outcome, help: "The DOI of the published paper. Any project may carry it." }
     paths:         { label: "Path overrides", type: keymap, section: "Overrides (rare)", help: "Where a document is kept when it is not in its usual place. Change these only when a document has moved. It also holds cluster, the folder on the cluster that holds the project's code for Submit; its default is ~/projects/<id>." }
     subtasks:      { label: "Subtasks", type: keymap, section: Dates, help: "A checklist of lines, each with what to do, a deadline, whether it is done and a snooze date. Add and tick them on the project's card; this form does not change them." }
+    "publication.authors": { label: "Authors", type: text, section: Website, help: "The authors of the paper as the website prints them, one text with the names separated by commas. A manifest that carries a publication record is listed in the website's publications; its title, year, section, your place among the authors, the words around the venue and the Code link are taken from the rest of the manifest." }
+    "publication.book": { label: "Printed venue", type: text, section: Website, help: "The venue as the website prints it, such as the journal's or the conference's full name." }
+    "publication.program": { label: "Research lines", type: tags, section: Website, help: "The research lines the paper belongs to, keys of programs: of the website's _data/website.yml; a key the file lacks is a finding." }
+    "publication.url": { label: "Paper address", type: text, section: Website, help: "The address the paper's title links to on the website; empty for none." }
+    "publication.links": { label: "Paper links", type: keymap, section: Website, help: "The paper's other links, rows of a name and an address, in the order the website prints them, such as Preprint and Supplementary. The Code link is added after them from the code deposit: the DOI when it has one, else its address, once its status is deposited. This form does not change them." }
+    "publication.abstract": { label: "Abstract", type: textarea, section: Website, help: "The abstract the website shows under the paper; empty for none." }
+    "publication.pub_last": { label: "Mark", type: text, section: Website, help: "A mark printed after the authors, such as Spotlight." }
+    "publication.hide": { label: "Hidden", type: checkbox, section: Website, help: "Tick to keep the paper off the website while it stays in the file; the website writes the value as it is held." }
+    "publication.rank": { label: "Place", type: text, section: Website, help: "The place of the entry in its website section, lowest first, as a whole number." }
+    "cv.title": { label: "CV title", type: text, section: Website, help: "The title the CV's projects list the project with, when it is not the manifest's title. A manifest that carries a cv record is listed in the CV's projects." }
+    "cv.url": { label: "CV address", type: text, section: Website, help: "The address the CV links the project to; empty for none." }
+    "cv.duration": { label: "CV period", type: text, section: Website, help: "The period of the project as the CV prints it, such as Jan. 2015 - Current." }
+    "cv.about": { label: "CV text", type: textarea, section: Website, help: "The text the CV prints under the project." }
+    "cv.role": { label: "CV role", type: text, section: Website, help: "Your role in the project as the CV prints it." }
+    "cv.min": { label: "Left out of the short CV", type: checkbox, section: Website, help: "Tick to leave the project out of the short CV." }
+    "cv.hide": { label: "Hidden on the CV", type: checkbox, section: Website, help: "Tick to keep the project off the CV while it stays in the file." }
+    "cv.rank": { label: "CV place", type: text, section: Website, help: "The place of the row in the CV's projects, lowest first, as a whole number." }
 
 # The fields a hub adds to the project form of its own projects, set in the hub's .oculus/config.yml; oculus adds none. A row is a field of `manifest_schema` with `field:`, the key of project.yml it adds, beside its `label`, `type`, `section`, `help` and, where its widget takes them, `foreign_key`, `options` and `required`. The field is drawn after oculus's fields of its section, in the hub's order, and is a known key of that hub's manifests only. A row with no field, a row naming a field the form already has or an earlier row names, a section the form lacks or a widget the form does not draw, a row its shape refuses otherwise, and a row whose `foreign_key` names no collection of the hub, `projects` or vocab list are each a finding, and the row is left out. For example:
 #   manifest_fields:
@@ -99,3 +117,5 @@ groups:
   code_availability: "The deposit of the project's code: whether and where it is deposited, and the public repository it is deposited in."
   repository: "The project's repository on its remote: its address, visibility, description, homepage, topics and the date it was created."
   reproduced: "The last run of the whole pipeline again from the raw data: its date and what it needed."
+  publication: "The entry the website's publications list the paper with: the authors, the venue, the research lines, the links, the abstract and the entry's place in its section."
+  cv: "The row the CV's projects list the project with: its title, address, period, text, role and place, and whether the short CV or the whole CV leaves it out."

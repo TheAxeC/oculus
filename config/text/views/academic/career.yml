@@ -1,0 +1,28 @@
+# Oculus text owned by the career view.
+text:
+    views:
+        career: Career
+        career_glyph: focus
+    career:
+        title: Career
+        toolbar: Career controls
+        none: "The hub holds no career file. Set career_file in the hub's settings to the file, or add .oculus/data/academic/career.yml."
+        no_schema: 'The career file has no schema: list, so it has no form. Add a schema: to the file to edit it here.'
+        none_glyph: circle_empty
+        website: Write the website
+        website_glyph: publish
+        website_tip: "Write _data/data.yml, _data/publications.yml and _data/industry.yml in the website's folder from the hub's files. website.cv names no command, so nothing runs after them."
+        website_tip_run: "Write _data/data.yml, _data/publications.yml and _data/industry.yml in the website's folder from the hub's files, then run {0} there."
+        website_approve: 'The command {0} runs in the website folder only once you approve it; a changed text asks again.'
+        website_approve_yes: Approve and Write
+        website_no_hub: The workspace has no primary hub, so the website was not written.
+        website_no_person: 'The user is not known: no entry of people.yml is marked self, so the website is not written.'
+        website_no_folder: 'The setting website.folder is not set, so the website is not written.'
+        website_folder_missing: 'The website folder {0} that website.folder names is not there, so nothing was written.'
+        website_site_unreadable: "The website's {0} does not read as YAML, so nothing was written."
+        website_already_running: 'The command {0} still runs from the last press, so nothing was written.'
+        website_unwritable: '{0} could not be written, so none of the three files was written.'
+        website_failed: The website was not written; the server did not answer.
+        website_written: 'Wrote {0}.'
+        website_running: 'Wrote {0}; the command runs in the Processes view.'
+        website_exited: 'Wrote {0}; the command ended with status {1}.'

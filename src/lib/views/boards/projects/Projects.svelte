@@ -8,23 +8,14 @@
     // carrying `rail: true`, in the colour `rail_color` of vocab.yml gives, and 0 when none is in
     // such a row.
     //
-    // The track record's board and the Awaiting box's board are the component's own views,
-    // registered once like any module's: a role row of the Career banner's Track record opens the
-    // first for its role, and a name of the Focus board's Awaiting box the second for that name, so
-    // neither is listed in the view catalogue or has count hooks, and the page keeps both
-    // registered through every push of `boards:` (routes/views.ts `registerBoards`).
-    import { AWAITING_VIEW, RECORD_VIEW, type BoardView } from '$lib/state/boards/board';
+    // The Awaiting box's board is the component's own view, registered once like any module's: a
+    // name of the Focus board's Awaiting box opens it for that name, so it is not listed in the
+    // view catalogue and has no count hooks, and the page keeps it registered through every push of
+    // `boards:` (routes/views.ts `registerBoards`).
+    import { AWAITING_VIEW, type BoardView } from '$lib/state/boards/board';
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
 
     export const registration: ViewRegistration[] = [
-        {
-            id: RECORD_VIEW,
-            label: 'views.track_record',
-            glyph: 'views.track_record_glyph',
-            group: '',
-            order: 0,
-            listed: false
-        },
         {
             id: AWAITING_VIEW,
             label: 'views.awaiting_board',
@@ -53,11 +44,6 @@
     // mounted as, so every board tab is one component here, titled by the name its registration
     // carries. A board holds every project its keys in `boards:` meet, so one project may be on
     // several.
-    //
-    // The track record's board is the same component under its own view: one tab per role, the
-    // role's key the `id` of its state, titled "<role>: track record", holding the projects the
-    // role's row of the Track record counts (state/boards/board/presets.ts `recordPreset`). It
-    // holds none while no person is marked as the user, and a tab opened with no role says so.
     //
     // The Awaiting box's board is the same component under a view of its own: one tab per name of
     // the box, its state the row, the name, the title (`label`) and the Focus filter of the press
@@ -138,7 +124,6 @@
         offersMine,
         parseBoardState,
         pickCell,
-        recordPreset,
         shownWords,
         sliceGroups,
         venueWarning,
@@ -151,7 +136,7 @@
     } from '$lib/state/boards/board';
     import { awaitingTabOf, awaitingTake } from '$lib/state/boards/focus/filter';
     import { stateFolds } from '$lib/state/shared/page/folds';
-    import { cardCursor, instanceText, storedState } from '$lib/state/workbench/layout/instance';
+    import { cardCursor, storedState } from '$lib/state/workbench/layout/instance';
     import { hubList } from '$lib/state/shared/page/hubs';
     import { t } from '$lib/state/shared/words/text';
     import { toneOf, vocabOf } from '$lib/state/shared/words/tones';
@@ -179,9 +164,6 @@
 
     let { instance }: ViewProps = $props();
 
-    /** Whether this tab is the track record's board, and the key of the role it was opened for. */
-    const record = $derived(instance.view === RECORD_VIEW);
-    const role = $derived(instanceText(instance.state, 'id'));
     /** Whether this tab is the Awaiting box's board, and the name it was opened for, if any. */
     const transient = $derived(instance.view === AWAITING_VIEW);
     const awaiting = $derived(transient ? awaitingTabOf(instance.state) : null);
@@ -199,11 +181,7 @@
         return awaitingTake(snapshot, configMap(), minuteNow(), awaiting, scope);
     });
     const preset = $derived(
-        record
-            ? recordPreset(role === '' ? null : role, configMap(), vocabOf)
-            : transient
-              ? awaitingPreset(awaited, configMap(), vocabOf)
-              : boardPreset(instance.view)
+        transient ? awaitingPreset(awaited, configMap(), vocabOf) : boardPreset(instance.view)
     );
     const cursor = $derived(cardCursor(instance.state));
     const items = $derived(board(preset));
@@ -289,16 +267,11 @@
     }
 
     /**
-     * The board's own name, the one its registration carries, read from its `label:`; a track
-     * record tab's is its role's, by the role's words, or by its key when `roles:` holds it no
-     * more; an Awaiting box's board's is the title its state carries.
+     * The board's own name, the one its registration carries, read from its `label:`; an Awaiting
+     * box's board's is the title its state carries.
      */
     function title(): string {
         if (awaiting !== null) return awaiting.label;
-        if (record && role !== '') {
-            const words = preset.roles.find((one) => one.key === role)?.label ?? role;
-            return t('board.record_title', words);
-        }
         const registered = registry.viewFor(instance.view);
         return registered === undefined ? instance.view : registrationLabel(registered);
     }
@@ -469,11 +442,7 @@
         <SaidBody
             {said}
             empty={shown.length === 0}
-            message={record && role === ''
-                ? t('board.record_no_role')
-                : transient && awaiting === null
-                  ? t('board.awaiting_none')
-                  : t('board.empty')}
+            message={transient && awaiting === null ? t('board.awaiting_none') : t('board.empty')}
             glyph={t('board.empty_glyph')}
         >
             {#if grid}

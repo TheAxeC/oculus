@@ -1,11 +1,9 @@
 // Layer 2, client state. A collection entry placed in, or found in, the unsaved text of a source
-// tab, and a section of the career file found in it: a lead's `applied` control puts an application
-// entry into the Applications file's text, Edit in File finds the entry the card draws, and a press
-// on a row of the Focus board's career banner finds the section the row names. The text rules
-// (where the entry goes, which fields it starts with, where an existing entry stands) are
-// data/helpers/files/yaml/collection-text.ts, and the career file's (where a section stands)
-// data/helpers/files/yaml/career-text.ts; this module reads the draft, refuses a draft whose text
-// differs from the disk's, makes the edit through the source store and words what it cannot do.
+// tab: a lead's `applied` control puts an application entry into the Applications file's text, and
+// Edit in File finds the entry the card draws. The text rules (where the entry goes, which fields
+// it starts with, where an existing entry stands) are data/helpers/files/yaml/collection-text.ts;
+// this module reads the draft, refuses a draft whose text differs from the disk's, makes the edit
+// through the source store and words what it cannot do.
 //
 // They run synchronously from the draft they are given, so two presses whose reads were in flight
 // together place one entry and the second finds it untouched.
@@ -18,13 +16,8 @@ import {
     type EntryRefusal,
     type TextPlace
 } from '../../../data/helpers/files/yaml/collection-text.ts';
-import { careerAt, type CareerAt } from '../../../data/helpers/files/yaml/career-text.ts';
 import { t } from '../../shared/words/text.ts';
 import type { SourceStore } from './source.svelte.ts';
-
-// The boundary table lets `views/` import `state/` and nothing of `data/`, so the section a career
-// row names reaches it from here.
-export type { CareerAt } from '../../../data/helpers/files/yaml/career-text.ts';
 
 /**
  * What a placement or a search answers: the place to open the tab at, or why none could be and the
@@ -158,18 +151,4 @@ export function findEntry(source: DraftSource, id: string, at: EntryAt): EntryAn
             ? entryAtIndex(draft.text, at.index)
             : entryAt(draft.text, at.field, at.value, at.nth ?? 0);
     return answered(found, at.label, draft.file);
-}
-
-/**
- * Where a section of the career file stands in the tab's text, or why it is not found; `label` is
- * what the sentence names the section by.
- */
-export function findCareer(
-    source: DraftSource,
-    id: string,
-    at: CareerAt,
-    label: string
-): EntryAnswer {
-    const draft = source.sourceDraft(id);
-    return answered(careerAt(draft.text, at), label, draft.file);
 }

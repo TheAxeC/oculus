@@ -13,11 +13,6 @@ text:
         delete_ask: 'Delete {0}?'
         delete_glyph: trash
         delete_used: 'Referred to by {0}. The references stay in their files and show as findings.'
-        discard: Discard
-        discard_ask: Discard the unsaved edits of the career file?
-        edit: Edit
-        edit_done: Close editor
-        edit_glyph: edit
         feed_scalar: '{0} holds more than one value, and a feed entry is saved one value at a time; use Edit in File'
         label_empty: a label needs words
         label_taken: 'the label {0} is already in use'

@@ -49,14 +49,14 @@ palette:
   "#6b7280": c-grey-d
   "#475569": c-slate
 
-# The stages a project's work is at, keyed by the manifest's `stage`, in the order a board's slices, the Map and the project form list stages in: the idea group (nascent, scoping), the in-flight group (de-risking to revision) and the done group (published to stopped). `label` is the words the stage is drawn with on a card, the Present view's idea cards and the form, `icon` the glyph name a chip of the stage carries (a key of glyphs.yml), and `color` the colour of a project at the stage wherever it is drawn (its board card, the Map, the Present view's project chip). The flags say what a stage decides, each compared with the manifest's `stage` as written (`hasWord`), and a stage without a flag is not one of them:
+# The stages a project's work is at, keyed by the manifest's `stage`, in the order a board's slices, the Map and the project form list stages in: the idea group (nascent, scoping), the in-flight group (de-risking to revision) and the done group (accepted to stopped). `label` is the words the stage is drawn with on a card, the Present view's idea cards and the form, `icon` the glyph name a chip of the stage carries (a key of glyphs.yml), and `color` the colour of a project at the stage wherever it is drawn (its board card, the Map, the Present view's project chip). The flags say what a stage decides, each compared with the manifest's `stage` as written (`hasWord`), and a stage without a flag is not one of them:
 # - `idea`: the idea group: the Focus board's unplaced projects, which list a project of any tier at such a stage that no lane takes. The Idea lane holds only `nascent`.
 # - `live`: the in-flight group: the audit's rules over in-flight work (results, datasets, the ELI5), the Focus board's unplaced projects and manifests behind, a pillar card's in-flight count and tier strip, a venue's concentration marker and the Funding tab's card of unfunded work.
 # - `terminal`: the done group, a done or closed outcome: the boards that take or leave out done work by it (`stages: { flags: [terminal] }` in layout.yml), quick add, which offers no such project, and the Focus chip lanes, which hold none; the audit lists such a project that carries a chip of a chip lane.
 # - `dead`: a dead outcome, written as a whole number from 1 that is the stage's place in the Pillars view's Archival band, whose groups go in that order. The `dead-ends` row of `categories:` below takes these stages.
 # - `on_map`: a stage that keeps a Pillars or Domains card awake: a card none of whose members is at such a stage is dormant.
 # - `placed`: a stage that has a venue, so the audit asks for one.
-# - `public`, `negative`, `dead_end`: the publication kind a stage gives in the audit of the website's publications, whose sections are the rows of `audit.website.kinds` in the hub's .oculus/config.yml.
+# - `public`, `negative`, `dead_end`: whether the website lists the paper of a project at the stage. A manifest that carries `publication:` at a stage that carries `public` and neither of the other two is written into the website's publications in the section the rows of `website.kinds` in the hub's .oculus/config.yml give it; at any other stage it gives no entry and a finding of the audit.
 # - `pauses_countdown`: a stage that stops a card's and a lane's countdown, and that the Focus board's awaiting box counts as submitted work held at its venue.
 # - `deadline_met`: a stage that ends a project's own deadline, which then leaves the deadline radar.
 # - `new_idea`: the stage a new idea is made with, carried by one stage at most; with none the new manifest names no stage, and two stages carrying it are a finding naming both, under which the new manifest names no stage either.
@@ -70,13 +70,14 @@ stages:
   submit-ready: { label: "submit-ready", icon: green, color: "#ea580c", live: true, on_map: true, placed: true, public: true }
   submitted:    { label: "submitted / under review", icon: brown, color: "#0ea5e9", live: true, on_map: true, placed: true, public: true, pauses_countdown: true, deadline_met: true }
   revision:     { label: "major revision (back with the authors)", icon: orange_square, color: "#b45309", live: true, on_map: true, placed: true, public: true }
+  accepted:     { label: "accepted / to appear", icon: done, color: "#65a30d", terminal: true, placed: true, public: true }
   published:    { label: published, icon: done, color: "#16a34a", terminal: true, placed: true, public: true }
   released:     { label: released, icon: done, color: "#0d9488", terminal: true }
   failed:       { label: "failed (no-go or disproved)", icon: cross_box, color: "#dc2626", dead: 1, terminal: true, negative: true }
   stopped:      { label: "stopped (dropped or abandoned)", icon: trash, color: "#9ca3af", dead: 2, terminal: true, dead_end: true }
 
 
-# The form of a project's output, keyed by the manifest's single `form`, in the order the project form offers them. A form is drawn after the stage on a card, with its `label` and its `icon` (a key of glyphs.yml); a board's `forms:` in layout.yml and a row of `categories:` below may name it, and so may a row of `audit.website.kinds` in the hub's .oculus/config.yml. A software project has no form: its tier says what it is.
+# The form of a project's output, keyed by the manifest's single `form`, in the order the project form offers them. A form is drawn after the stage on a card, with its `label` and its `icon` (a key of glyphs.yml); a board's `forms:` in layout.yml and a row of `categories:` below may name it, and so may a row of `website.kinds` in the hub's .oculus/config.yml. A software project has no form: its tier says what it is.
 forms:
   journal:     { label: "journal article", icon: journals }
   conference:  { label: "conference paper", icon: conference }
@@ -105,7 +106,6 @@ chips:
 # - `acknowledged`: a funding entry a manuscript acknowledges, so it needs a `statement`; the entry's status is compared as written.
 # - `default_application`: the status of the Applications entry a Position Lead's apply control makes, carried by one word at most; that word is written, two words carrying it are a finding naming both and the entry is then made with no status, and nothing is compared with it.
 # - `default_task`: the status of a task added from the palette, carried by one word at most; that word is written, two words carrying it are a finding naming both and the task is then added with no status, and nothing is compared with it.
-# - `obtained`: the status is funding obtained, which the career banner's track record counts; compared trimmed and in lower case (`wordFlag`).
 statuses:
   submitted:     { color: "#b45309", deadline_met: true, waiting: true }
   revision:      { color: "#b45309" }
@@ -136,8 +136,8 @@ statuses:
   ongoing:       { color: "#16a34a", closes_deadline: true, live_subtasks: true }
   completed:     { color: "#0ea5e9", closes_deadline: true }
   done:          { color: "#0ea5e9", closes_deadline: true }
-  awarded:       { color: "#16a34a", closes_deadline: true, acknowledged: true, obtained: true }
-  granted:       { color: "#16a34a", closes_deadline: true, obtained: true }
+  awarded:       { color: "#16a34a", closes_deadline: true, acknowledged: true }
+  granted:       { color: "#16a34a", closes_deadline: true }
   contributing:  { color: "#0891b2", closes_deadline: true, acknowledged: true }
   rejected:      { color: "#dc2626", closes_deadline: true }
   "not funded":  { color: "#dc2626", closes_deadline: true }
@@ -260,15 +260,14 @@ roles:
 
 
 # The categories a project is filed under on every board, in order: a project's category is the first row whose `stages:` and `forms:` blocks it meets, each block with the lists `words` (one of the project's words is listed), `not_words` (none is), `flags` (its word carries one of the flags) and `not_flags` (it carries none), and a project no row holds has none. A board shows the rows that hold at least one of its projects, in this order: its sections, the slices of its bar and the counts of its tab. Every row names the `color` it is drawn in; a row without one is a finding naming the row, and is drawn in no colour. The flags:
-# - `record`: the row is a record of the work's output.
 # - `rail`: a board gives the rail the count of its projects in such rows, drawn in `rail_color` below.
 # - `archival`: the Pillars view's Archival band, which groups these projects by the `dead` number of their stage; such a project is no real work, so a venue's use counts, the Orphans card, a pillar's and a domain's members and the project strip at a card's foot, which groups its projects by these rows, leave it out.
 categories:
-  - { key: in-review,     label: "in review",     stages: { words: [submitted] }, color: "#0ea5e9", record: true }
-  - { key: in-flight,     label: "in flight",     stages: { flags: [live] }, color: "#16a34a", record: true, rail: true }
+  - { key: in-review,     label: "in review",     stages: { words: [submitted] }, color: "#0ea5e9" }
+  - { key: in-flight,     label: "in flight",     stages: { flags: [live] }, color: "#16a34a", rail: true }
   - { key: idea,          label: idea,            stages: { words: [nascent, scoping] }, color: "#7c5cff" }
-  - { key: publications,  label: publications,    stages: { words: [published] }, forms: { words: [journal, conference] }, color: "#db2777", record: true }
-  - { key: other-outputs, label: "other outputs", stages: { words: [published] }, forms: { words: [thesis, abstract, poster, tech-report] }, color: "#9333ea", record: true }
+  - { key: publications,  label: publications,    stages: { words: [accepted, published] }, forms: { words: [journal, conference] }, color: "#db2777" }
+  - { key: other-outputs, label: "other outputs", stages: { words: [accepted, published] }, forms: { words: [thesis, abstract, poster, tech-report] }, color: "#9333ea" }
   - { key: released,      label: released,        stages: { words: [released] }, color: "#0d9488" }
   - { key: dead-ends,     label: dead-ends,       stages: { flags: [dead] }, color: "#9ca3af", archival: true }
 

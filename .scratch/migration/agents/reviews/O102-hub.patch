@@ -908,7 +908,7 @@ diff -ruN a/.oculus/data/academic/career.yml b/.oculus/data/academic/career.yml
 +      title: Teaching & Mentoring
 +      content:
 +        - title: "Lecturer & Guest Lecturer"
-+          records: [bioinformatics, data-science-in-healthcare-4747-lecturer, advanced-topics-in-data-science, brain-computer-interfacing-b-kul-h08m0a-guest-lecturer]
++          records: [bioinformatics-2025-2026, data-science-in-healthcare-4747-lecturer, advanced-topics-in-data-science, brain-computer-interfacing-b-kul-h08m0a-guest-lecturer]
 +          location: UHasselt / KU Leuven
 +          duration: 2022 - Present
 +          about: |
@@ -1729,7 +1729,7 @@ diff -ruN a/.oculus/data/academic/funding.yml b/.oculus/data/academic/funding.ym
      meta:
        - { label: Scheme, value: "FWO research project" }
        - { label: Ref, value: "G067526N" }
-@@ -176,3 +241,18 @@
+@@ -176,3 +241,19 @@
      tags: [fellowship, block-term, federated]
      link: "funding/2024-fwo-postdoc-fbttr"
      note: "Not funded. Federated block-term tensor regression, the earlier (2024) iteration of the FERMAT theme."
@@ -1742,6 +1742,7 @@ diff -ruN a/.oculus/data/academic/funding.yml b/.oculus/data/academic/funding.ym
 +    date: "2023-2025"
 +    tags: [federated, health]
 +    note: "A funded programme contributed to as a consortium partner, not an own grant."
++    statement: 'This work was supported by the Research Foundation - Flanders (FWO) for ELIXIR Belgium (I000323N).'
 +    cv_section: projects
 +    cv_rank: 4
 +    cv_url: ""

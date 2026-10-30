@@ -1,7 +1,7 @@
 <script module lang="ts">
     // Layer 3, primitive. One group of dated rows in the Focus board's look, and the box the groups
-    // stand in: the command center and the career banner draw theirs with it, so the look of a
-    // group, its heading, its note lines and the box is written once.
+    // stand in: the command center draws its groups with it, so the look of a group, its heading,
+    // its note lines and the box is written once.
     //
     // A group is a block that does not break across the box's columns, 4px under the one before it:
     // a heading of the glyph and the label in extra-small bold capitals in the accent colour, then

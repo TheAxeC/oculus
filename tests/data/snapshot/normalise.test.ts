@@ -185,7 +185,11 @@ function portfolio(): RawPortfolio {
                     role: 'co-author',
                     orcid: '0000-0000-0000-0000',
                     email: 'someone@example.invalid',
-                    links: ['https://example.invalid/someone']
+                    links: [
+                        { name: 'homepage', url: 'https://example.invalid/someone' },
+                        { name: 'code', url: 'https://example.invalid/code', handle: 'someone' },
+                        'https://example.invalid/a-text-is-no-row'
+                    ]
                 },
                 { key: 'nobody-home', name: 'Nobody Home', affiliation: 'twente' }
             ]),
@@ -290,6 +294,14 @@ describe('normalise, the field mapping', () => {
     it("reads a person's organisations from `affiliations:` alone, and nothing from `affiliation:`", () => {
         expect(snapshot.entities.people['nobody-home'].affiliations).toEqual([]);
         expect(snapshot.entities.people.someone.affiliations).toEqual(['twente', 'fwo']);
+    });
+
+    it("reads a person's `links:` as rows of a name, an address and an account name", () => {
+        expect(snapshot.entities.people.someone.links).toEqual([
+            { name: 'homepage', url: 'https://example.invalid/someone' },
+            { name: 'code', url: 'https://example.invalid/code', handle: 'someone' }
+        ]);
+        expect(snapshot.entities.people['nobody-home'].links).toEqual([]);
     });
 
     it('fills a project from the manifest keys of the same meaning', () => {

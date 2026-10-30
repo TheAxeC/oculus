@@ -96,7 +96,7 @@ The hub's own settings. A key of oculus's `config/catalogs/vocab.yml` set here i
 # A website's LinkedIn posts folder, read by the LinkedIn view. None by default.
 # linkedin_dir: path/to/_linkedin
 
-# The career file, drawn by Focus's Career banner.
+# The career file, edited in the Career view, which the website's CV is written from.
 # career_file: .oculus/data/academic/career.yml
 
 # The photo wall's folder, inside the hub.
@@ -276,18 +276,10 @@ The hub's own settings. A key of oculus's `config/catalogs/vocab.yml` set here i
 # has a value; a line holds it when it is the heading or starts with it and a space.
 # `stage_folders`: the hub folders a project at the stages `stages` is kept under, matched by whole
 # path segments; a project of a workspace repository is held to none.
-# `website`: the website's publications feed, its entries under the key `list` of each section and
-# an entry's title under `title`, and the sections `kinds` a project is expected in, the first row
-# whose `stages` hold the project's stage and whose `forms` hold its form giving them.
 # audit:
 #   required_files: []
 #   required_sections: []
 #   stage_folders: []
-#   website:
-#     file: ''
-#     list: ''
-#     title: ''
-#     kinds: []
 #   example:
 #   audit:
 #     required_files:
@@ -296,16 +288,31 @@ The hub's own settings. A key of oculus's `config/catalogs/vocab.yml` set here i
 #     required_sections:
 #       - { file: README.md, heading: "## Data", key: datasets }
 #     stage_folders:
-#       - { stages: { words: [published] }, folders: [projects/archive/published] }
-#     website:
-#       file: site/_data/publications.yml
-#       list: papers
-#       title: title
-#       kinds:
-#         - { kind: [thesis], forms: [thesis] }
-#         - { kind: [papers-in-review], stages: [submitted, revision] }
-#         - { kind: [journal, other-publications], forms: [journal] }
-#         - { kind: [journal, conference, thesis, other-publications] }
+#       - { stages: { words: [accepted, published] }, folders: [projects/archive/published] }
+
+# The website the primary hub's files are written into, a setting of the primary hub only. `folder`
+# is the website's folder relative to the hub: the Career view's Write the website writes its
+# _data/data.yml, _data/publications.yml and _data/industry.yml from the hub's files, and the audit
+# compares the three with what the hub gives; empty writes and checks nothing. `cv` is the command
+# run in that folder once the files are written, approved on its first run; empty runs nothing.
+# `kinds` are the sections of the publications file in order: a manifest carrying `publication:`
+# goes to the section `kind` of the first row whose `stages` hold its stage and whose `forms` hold
+# its form, a row leaving one out placing no condition on it; `title` is the section's title,
+# `order` whether its entries say the user's place among the authors, and `pub_pre` and `pub_post`
+# the words printed before and after an entry's venue. A manifest no row takes gives no entry and
+# a finding.
+# website:
+#   folder: ''
+#   cv: ''
+#   kinds: []
+#   example:
+#   website:
+#     folder: site
+#     cv: python _scripts/cv_pdf_generator.py --save --quiet
+#     kinds:
+#       - { kind: thesis, title: Thesis, forms: [thesis] }
+#       - { kind: papers-in-review, title: Papers in review, stages: [submitted, revision], pub_pre: "Submitted to ", pub_post: "(Under review)" }
+#       - { kind: journal, title: Journal papers, stages: [accepted, published], forms: [journal], order: true }
 
 # The values of the settings apps declare, by the setting's whole key. The Settings view writes it.
 # app_settings: {}
@@ -857,8 +864,8 @@ One project. `tier` and `stage` are required, and a project naming no `lead` is 
 tier: research          # research, personal or software: the kind of project, which with your
                         # role and the stage puts it on its boards
 stage: nascent          # nascent, scoping, de-risking, exploring, in-prep, building, submit-ready,
-                        # submitted, revision, published, released, failed or stopped; the stage
-                        # puts the project on its Focus lane
+                        # submitted, revision, accepted, published, released, failed or stopped;
+                        # the stage puts the project on its Focus lane
 # form: journal         # journal, conference, thesis, abstract, poster or tech-report
 # short: my-project     # short name for cards and lists
 # title: ""
@@ -922,6 +929,29 @@ stage: nascent          # nascent, scoping, de-risking, exploring, in-prep, buil
 # --- Outcome
 # outcome: ""           # a citation, or why it stopped
 # doi: ""
+
+# --- Website
+# publication:          # the paper's entry in the website's publications; its title, year,
+                        # section, your place among the authors, the words around the venue and
+                        # the Code link come from the rest of the manifest
+#   authors: ""         # the authors as the website prints them
+#   book: ""            # the venue as the website prints it
+#   program: []         # research lines, keys of programs: of the website's _data/website.yml
+#   url: ""             # the address the title links to
+#   links: []           # { name, url } rows in the order the website prints them, Code left out
+#   abstract: ""
+#   pub_last: ""        # a mark printed after the authors, such as Spotlight
+#   hide: false         # kept off the website while it stays in the file
+#   rank: 1             # the place in its section, lowest first
+# cv:                   # the project's row in the CV's projects
+#   title: ""           # when it is not the manifest's title
+#   url: ""
+#   duration: ""        # the period as the CV prints it
+#   about: ""
+#   role: ""
+#   min: false          # left out of the short CV
+#   hide: false         # kept off the CV
+#   rank: 1             # the place in the CV's projects, lowest first
 
 # --- Rare
 # paths: {}             # where a document is when it is not in its usual place
@@ -1221,18 +1251,25 @@ entries:
 
 ### .oculus/data/people/people.yml
 
-Your own entry is the one whose key `self` names in the primary hub's `.oculus/local.yml`; it may be in any hub of the workspace.
+Your own entry is the one whose key `self` names in the primary hub's `.oculus/local.yml`; it may be in any hub of the workspace. The website's CV takes its given name from your `name` with the space and the `family` at its end taken off, and its family name from `family`.
 
 ```yaml
 title: People
 schema:
   - { field: key,          type: text,     primary_key: true, required: true, help: "The person's key." }
   - { field: name,         type: text,     display: 1, required: true, help: "Full name." }
+  - { field: family,       type: text,     help: "The family name, the end of name." }
   - { field: affiliations, type: tags,     foreign_key: organisations, help: "Organisation keys, the primary first." }
   - { field: role,         type: text,     help: "Who they are to you." }
   - { field: orcid,        type: text,     help: "ORCID." }
   - { field: email,        type: text,     help: "Email address." }
-  - { field: links,        type: tags,     help: "Web addresses." }
+  - field: links
+    type: records
+    help: "Web addresses, in the order a CV prints them."
+    fields:
+      - { field: name,   type: text, required: true, help: "What the address is, such as LinkedIn." }
+      - { field: url,    type: text, required: true, help: "The full address." }
+      - { field: handle, type: text, help: "The account name a CV prints in place of the address." }
   - { field: work,         type: text,     help: "What the work with the person is about." }
   - { field: tags,         type: tags,     help: "Words that describe the person and the work with them." }
   - { field: note,         type: textarea, help: "Free notes on the person and the work with them." }
@@ -1240,11 +1277,13 @@ schema:
 entries:
 #  - key: me                      # required
 #    name: "Your Name"            # required
+#    family: "Name"               # the family name, the end of name
 #    affiliations: [my-uni]       # organisation keys, the primary first
 #    role: ""
 #    orcid: 0000-0000-0000-0000
 #    email: you@example.org
-#    links: []
+#    links:
+#      - { name: LinkedIn, url: "https://www.linkedin.com/in/you", handle: you }
 #    tags: []
 #    note: ""
 #    folder: ""                   # a student's supervision folder
@@ -1330,6 +1369,17 @@ schema:
   - { field: lead,          type: tags,     foreign_key: people, required: true, help: "Who leads it." }
   - { field: collaborators, type: tags,     foreign_key: people, help: "Who works on it with the lead." }
   - { field: supervisors,   type: tags,     foreign_key: people, help: "Who supervises it." }
+  - { field: cv_section, type: text,     help: "The CV section the grant is listed in, such as grants; none keeps it off the CV." }
+  - { field: cv_rank,    type: text,     help: "The grant's place in its CV section, a whole number." }
+  - { field: cv_title,   type: text,     help: "The title the CV prints, when it is not the title." }
+  - { field: cv_url,     type: text,     help: "The address the CV links, when it is not the url." }
+  - { field: cv_status,  type: text,     help: "The status the CV prints for the grant." }
+  - { field: role,       type: text,     help: "Your role as the CV prints it." }
+  - { field: location,   type: text,     help: "Where, as the CV prints it." }
+  - { field: duration,   type: text,     help: "The period as the CV prints it." }
+  - { field: about,      type: textarea, help: "What the CV prints under it." }
+  - { field: min,        type: checkbox, help: "Left out of the short CV." }
+  - { field: hide,       type: checkbox, help: "Kept off the CV while it stays listed." }
 entries:
 #  - key: my-grant                # required; what a project's funding names
 #    title: "My grant"            # required
@@ -1360,24 +1410,32 @@ schema:
   - { field: key,      type: text,     primary_key: true, required: true, help: "Short name." }
   - { field: title,    type: text,     display: 1, required: true, help: "Event." }
   - { field: sub,      type: text,     help: "Place." }
-  - { field: role,     type: select,   options: [present, co-present, attend], required: true, help: "Your role." }
+  - { field: role,     type: select,   options: [present, co-present, attend, media], required: true, help: "Your role; media is an article or a video about your work." }
   - { field: status,   type: select,   options: [upcoming, planned, completed, cancelled, not-attending], required: true, help: "Where it stands." }
   - { field: date,     type: text,     help: "When." }
   - { field: deadline, type: date,     help: "Shows on Focus while live." }
   - { field: meta,     type: metalist, help: "Label and value rows." }
   - { field: tags,     type: tags,     help: "Filter words." }
   - { field: note,     type: textarea, help: "Notes." }
-  - { field: link,     type: text,     required: { when: { role: present } }, help: "Slides of a talk you give." }
+  - { field: link,     type: text,     required: { when: { role: present, status: [upcoming, planned] } }, help: "Slides of a talk you are still to give." }
   - { field: related,  type: tags,     foreign_key: projects, help: "Project ids." }
   - { field: followup, type: text,     help: "A standing reminder." }
   - { field: lead,          type: tags,     foreign_key: people, required: true, help: "Who leads it." }
   - { field: collaborators, type: tags,     foreign_key: people, help: "Who works on it with the lead." }
   - { field: supervisors,   type: tags,     foreign_key: people, help: "Who supervises it." }
+  - { field: cv_section, type: text,     help: "The CV section the event is listed in, such as news; none keeps it off the CV." }
+  - { field: cv_rank,    type: text,     help: "The event's place in its CV section, a whole number." }
+  - { field: cv_title,   type: text,     help: "The title the CV prints, when it is not the title." }
+  - { field: cv_url,     type: text,     help: "The address the CV links." }
+  - { field: location,   type: text,     help: "Where, as the CV prints it." }
+  - { field: duration,   type: text,     help: "When, as the CV prints it." }
+  - { field: about,      type: textarea, help: "What the CV prints under it." }
+  - { field: hide,       type: checkbox, help: "Kept off the CV while it stays listed." }
 entries:
 #  - key: my-talk                 # required
 #    title: "My talk"             # required
 #    sub: "Amsterdam"
-#    role: present                # required: present, co-present or attend
+#    role: present                # required: present, co-present, attend or media
 #    status: upcoming             # required: upcoming, planned, completed, cancelled
 #                                 # or not-attending
 #    date: YYYY-MM-DD
@@ -1413,6 +1471,21 @@ schema:
   - { field: lead,          type: tags,     foreign_key: people, required: true, help: "Who leads it." }
   - { field: collaborators, type: tags,     foreign_key: people, help: "Who works on it with the lead." }
   - { field: supervisors,   type: tags,     foreign_key: people, help: "Who supervises it." }
+  - { field: cv_section, type: text,     help: "The CV section the entry is listed in, such as academic; none keeps it off the CV." }
+  - { field: cv_rank,    type: text,     help: "The entry's place in its CV section, a whole number." }
+  - { field: cv_title,   type: text,     help: "The title the CV prints, when it is not the title." }
+  - { field: cv_url,     type: text,     help: "The address the CV links." }
+  - { field: location,   type: text,     help: "Where, as the CV prints it." }
+  - { field: duration,   type: text,     help: "The period as the CV prints it." }
+  - { field: about,      type: textarea, help: "What the CV prints under it." }
+  - { field: hide,       type: checkbox, help: "Kept off the CV while it stays listed." }
+  - field: students
+    type: records
+    help: "The students supervised, each a row of the CV's students in place of the entry."
+    fields:
+      - { field: person, type: text, required: true, foreign_key: people, help: "The student, by key." }
+      - { field: topic,  type: text, help: "The topic, as the CV prints it." }
+      - { field: degree, type: text, help: "The degree and year, as the CV prints them." }
 entries:
 #  - key: ml-course               # required
 #    title: "Machine learning"    # required
@@ -1612,7 +1685,7 @@ entries:
 
 ### .oculus/data/academic/career.yml
 
-One record of sections, drawn by Focus's Career banner: the goal, the next milestone with its day and the days left to it, the situation and the order of work.
+One record of sections, edited in the Career view: the strategy (the goal, the next milestone with its day, the order of work and its note) and the career record the website's CV is written from. A row of `positions` goes to the CV's experience, of `degrees` to its education, of `awards` to its awards and of `references` to its references, unless it names another section in `cv_section`; `cv_rank` orders the rows of a section, and `key` names the row for a profile row's `records`. A reference names a person of `people.yml` by key, whose name and email the CV prints. An award that names a funding entry by key (`funding`) takes its title, place and text from the entry where it prints none of its own. `profiles` holds the employer CVs: `shared`, the place, email, website parts (`parts`) and links (`links`, by name) they all print, and one map per profile whose rows may name the records they stand for (`records`), taking from the first record what the row's section of the employer CV prints and the row does not: the place and the day in `awards`, the period and the address in `projects`, the place and the period in the others.
 
 ```yaml
 schema:
@@ -1620,7 +1693,6 @@ schema:
   - { field: goal, type: text, help: "The position the plan works toward." }
   - { field: milestone, type: text, help: "The next milestone." }
   - { field: milestone_date, type: date, help: "The day of the next milestone." }
-  - { field: situation, type: records, open: true, help: "Facts, one label and sentence each.", fields: [] }
   - { field: order_note, type: textarea, help: "A note over the order of work." }
   - field: order
     type: records
@@ -1629,16 +1701,151 @@ schema:
       - { field: task, type: text, required: true, help: "What to do." }
       - { field: when, type: text, help: "When." }
       - { field: note, type: text, help: "A remark." }
+  - field: positions
+    type: records
+    help: "The positions held, the CV's experience."
+    fields:
+      - { field: key, type: text, help: "The key a profile row names this position by." }
+      - { field: title, type: text, required: true, help: "The position as the CV prints it." }
+      - { field: location, type: text, help: "Where." }
+      - { field: duration, type: text, help: "When, as the CV prints it." }
+      - { field: url, type: text, help: "An address the title links to." }
+      - { field: about, type: textarea, help: "What the CV prints under it." }
+      - { field: hide, type: checkbox, help: "Kept off the CV." }
+      - { field: cv_section, type: text, help: "Another CV section the row goes to." }
+      - { field: cv_rank, type: text, help: "The row's place in its section, a whole number." }
+  - field: degrees
+    type: records
+    help: "The degrees and the courses taken, the CV's education."
+    fields:
+      - { field: key, type: text, help: "The key a profile row names this degree by." }
+      - { field: title, type: text, required: true, help: "The degree as the CV prints it." }
+      - { field: location, type: text, help: "Where." }
+      - { field: duration, type: text, help: "When, as the CV prints it." }
+      - { field: url, type: text, help: "An address the title links to." }
+      - { field: about, type: textarea, help: "What the CV prints under it." }
+      - { field: hide, type: checkbox, help: "Kept off the CV." }
+      - { field: cv_section, type: text, help: "Another CV section the row goes to." }
+      - { field: cv_rank, type: text, help: "The row's place in its section, a whole number." }
+  - field: awards
+    type: records
+    help: "The awards, the CV's awards."
+    fields:
+      - { field: key, type: text, help: "The key a profile row names this award by." }
+      - { field: award, type: text, help: "The award as the CV prints it." }
+      - { field: event, type: text, help: "The event it was given at." }
+      - { field: date, type: text, help: "The day, written as the CV reads it." }
+      - { field: location, type: text, help: "Where." }
+      - { field: content, type: textarea, help: "What the CV prints under it." }
+      - { field: funding, type: text, help: "A funding entry, by key, whose title, place and text the award takes." }
+      - { field: hide, type: checkbox, help: "Kept off the CV." }
+      - { field: cv_rank, type: text, help: "The row's place in its section, a whole number." }
+  - field: references
+    type: records
+    help: "The references the CV names."
+    fields:
+      - { field: person, type: text, required: true, foreign_key: people, help: "The person, by key." }
+      - { field: reason, type: text, help: "What the reference can speak to." }
+  - field: profiles
+    type: records
+    map: true
+    help: "The employer CVs by name, and `shared`, the block they all print."
+    fields:
+      - { field: location, type: text, help: "In shared: the place every employer CV prints." }
+      - { field: email, type: text, help: "In shared: the email every employer CV prints." }
+      - { field: parts, type: tags, help: "In shared: the keys of the website's cv: block every employer CV prints." }
+      - { field: links, type: tags, help: "In shared: the names of the user's links every employer CV prints." }
+      - { field: titles, type: tags, help: "The lines printed under the name." }
+      - field: summary
+        type: records
+        help: "The profile paragraph."
+        fields:
+          - { field: title, type: text, help: "The heading." }
+          - { field: text, type: textarea, help: "The paragraph." }
+          - { field: text_compact, type: textarea, help: "The paragraph of the one-page CV." }
+      - field: skills
+        type: records
+        help: "The skills, by category."
+        fields:
+          - { field: title, type: text, help: "The heading." }
+          - field: content
+            type: records
+            help: "One row per category."
+            fields:
+              - { field: category, type: text, help: "The category." }
+              - { field: items, type: textarea, help: "The skills of the category." }
+              - { field: compact, type: checkbox, help: "Whether the one-page CV prints the row; a row without it is printed." }
+      - field: experience
+        type: records
+        help: "The positions this CV prints."
+        fields: &profile-rows
+          - { field: title, type: text, help: "The heading." }
+          - field: content
+            type: records
+            help: "One row per entry. A row names the records it stands for, and takes from the first one the place and period, in projects the period and address, where it prints none of its own."
+            fields:
+              - { field: records, type: tags, help: "The keys of the records the row stands for: career rows, collection entries or projects." }
+              - { field: title, type: text, help: "The entry as this CV prints it." }
+              - { field: role, type: text, help: "The role, for a project." }
+              - { field: location, type: text, help: "Where, when this CV prints it differently." }
+              - { field: duration, type: text, help: "When, when this CV prints it differently." }
+              - { field: url, type: text, help: "An address, when this CV prints another." }
+              - { field: about, type: textarea, help: "What this CV prints under it." }
+              - { field: about_compact, type: textarea, help: "What the one-page CV prints under it." }
+              - { field: compact, type: checkbox, help: "Whether the one-page CV prints the row; a row without it is printed." }
+      - { field: projects, type: records, help: "The projects this CV prints.", fields: *profile-rows }
+      - { field: education, type: records, help: "The degrees this CV prints.", fields: *profile-rows }
+      - { field: teaching, type: records, help: "The teaching this CV prints.", fields: *profile-rows }
+      - field: awards
+        type: records
+        help: "The awards this CV prints."
+        fields:
+          - { field: title, type: text, help: "The heading." }
+          - field: content
+            type: records
+            help: "One row per award. A row names the records it stands for, and takes the first one's place and day where it prints none of its own."
+            fields:
+              - { field: records, type: tags, help: "The keys of the records the row stands for." }
+              - { field: award, type: text, help: "The award as this CV prints it." }
+              - { field: event, type: text, help: "The event it was given at." }
+              - { field: location, type: text, help: "Where, when this CV prints it differently." }
+              - { field: date, type: text, help: "The day, when this CV prints it differently." }
+              - { field: compact, type: checkbox, help: "Whether the one-page CV prints the row; a row without it is printed." }
+      - field: letter
+        type: records
+        help: "The cover letter of the application."
+        fields:
+          - { field: recipient_name, type: text, help: "Who it is to." }
+          - { field: recipient_address, type: text, help: "Their address." }
+          - { field: date, type: text, help: "The date as the letter prints it." }
+          - { field: title, type: text, help: "The subject line." }
+          - { field: opening, type: text, help: "The greeting." }
+          - { field: closing, type: text, help: "The closing words." }
+          - { field: body, type: textarea, help: "The letter." }
 
 title: Career strategy
 # goal: ""
 # milestone: ""
 # milestone_date: YYYY-MM-DD
-# situation:
-#   Position: "Postdoc until 2027"
 # order_note: ""
 # order:
 #   - { task: "Apply for the fellowship", when: "2026-11", note: "" }
+# positions:
+#   - { key: postdoc, title: "Postdoc", location: "A university", duration: "2024 - now", about: "" }
+# degrees:
+#   - { key: phd, title: "PhD", location: "A university", duration: "2019 - 2023" }
+# awards:
+#   - { award: "Best paper", event: "A conference", date: YYYY-MM-DD }
+#   - { funding: a-fellowship }
+# references:
+#   - { person: a-person, reason: "PhD supervisor" }
+# profiles:
+#   shared: { location: "A city", email: "me@example.org", parts: [], links: [linkedin] }
+#   industry:
+#     experience:
+#       title: Experience
+#       content:
+#         - { title: "Researcher", records: [postdoc] }
 ```
 
 ## present.yml

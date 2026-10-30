@@ -22,8 +22,6 @@ export type Category = {
     color: string;
     stages: WordBlock | null;
     forms: WordBlock | null;
-    /** `record: true`: the row is a record of the work's output. */
-    record: boolean;
     /** `rail: true`: a board's rail count is the count of its projects in such rows. */
     rail: boolean;
     /** `archival: true`: the Pillars view's Archival band, and no real work. */
@@ -63,7 +61,6 @@ export function categoriesOf(config: Record<string, unknown>): Category[] {
             color: colourOf(row.color),
             stages,
             forms: blockOf(row.forms),
-            record: row.record === true,
             rail: row.rail === true,
             archival: row.archival === true
         });

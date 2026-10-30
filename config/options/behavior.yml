@@ -68,45 +68,58 @@ options:
             folders:
                 help: the folders of the hub, relative to it, one of which a project at those stages lies under
                 control: list
-    audit.website.file:
-        heading: boards
-        section: Audit checks
-        help: "The website's publications feed the audit checks the hub's projects against, matched by title: a public project missing from it or in a section its stage and form do not expect, a negative result or a dead end it shows, and the papers no project matches. Its top-level keys are its sections. Empty checks no feed, and a file that is not there is skipped without a word. Every hub that sets it is checked against its own feed. This is a setting of the hub, kept in its .oculus/config.yml."
-        control: file
+    website.folder:
+        heading: sources
+        section: Website
+        help: "The folder of the website, relative to the hub, whose _data/data.yml, _data/publications.yml and _data/industry.yml the Career view's Write the website writes from the hub's files and the audit compares with what the hub's files give. Empty writes nothing and checks nothing, and a folder that is not there is a finding of the audit. This is a setting of the primary hub, kept in its .oculus/config.yml."
+        control: folder
         empty: true
         allow_missing: true
-    audit.website.list:
-        heading: boards
-        section: Audit checks
-        help: "The key of each section of the website's feed that holds the section's entries, as papers in `journal: { papers: [...] }`. This is a setting of the hub, kept in its .oculus/config.yml."
+    website.cv:
+        heading: sources
+        section: Website
+        help: "The command Write the website runs in the website's folder once the three files are written, such as the program that builds the CV from them, as a task terminal of the Processes view. The first run of a command text asks to be approved, as a project command does. Empty runs nothing. This is a setting of the primary hub, kept in its .oculus/config.yml."
         control: text
-    audit.website.title:
-        heading: boards
-        section: Audit checks
-        help: The key of an entry of the website's feed that holds its title, which the audit matches against a project's title. This is a setting of the hub, kept in its .oculus/config.yml.
-        control: text
-    audit.website.kinds:
-        heading: boards
-        section: Audit checks
-        help: The sections of the website's feed a project is expected in. The first row whose stages hold the project's stage and whose forms hold its form gives its sections; a row without stages or without forms places no condition on that side, so a last row naming neither catches every project. This is a setting of the hub, kept in its .oculus/config.yml.
+    website.kinds:
+        heading: sources
+        section: Website
+        help: "The sections of the website's publications, in the order the file lists them, and the papers each takes. A manifest that carries a publication record goes to the section of the first row whose stages hold its stage and whose forms hold its form; a row without stages or without forms places no condition on that side. A manifest no row takes gives no entry and a finding of the audit. This is a setting of the primary hub, kept in its .oculus/config.yml."
         fields:
             kind:
-                help: the sections of the feed a project the row matches may sit in
-                control: list
+                help: the key of the section of the publications file the row's papers go to
+                control: text
+            title:
+                help: the title of the section, which the first row naming the section gives
+                control: text
+                empty: true
             stages:
                 help: the stages the row holds, compared with the project's stage as written
                 control: multi
                 from: project_stages
+                empty: true
             forms:
                 help: the forms the row holds, compared with the project's form as written
                 control: multi
                 from: project_forms
+                empty: true
+            order:
+                help: whether an entry of the row says the user's place among the authors, first, senior or coauthor, read from the manifest's lead, supervisors and collaborators
+                control: toggle
+                empty: true
+            pub_pre:
+                help: the words the website prints before the venue of an entry of the row; a row without it writes no pub_pre
+                control: text
+                empty: true
+            pub_post:
+                help: the words the website prints after the venue of an entry of the row; a row without it writes no pub_post
+                control: text
+                empty: true
     focus.sections:
         heading: boards
         section: Focus board
-        help: "The sections the Focus board draws, in drawing order: career (the career panel), command_center, tasks, quick_add, awaiting (the awaiting box), band (the Funding, Jobs and Teaching columns) and lanes (the Focus lanes, with the message of a board with no project). A section not listed is not drawn, and the line saying what a quick add did is drawn after quick_add, or at the top of the board without it. A word that is no section and a section listed twice are findings, and the rest is drawn once each; a value that is no list is a finding, and every section is drawn in this list's order."
+        help: "The sections the Focus board draws, in drawing order: command_center, tasks, quick_add, awaiting (the awaiting box), band (the Funding, Jobs and Teaching columns) and lanes (the Focus lanes, with the message of a board with no project). A section not listed is not drawn, and the line saying what a quick add did is drawn after quick_add, or at the top of the board without it. A word that is no section and a section listed twice are findings, and the rest is drawn once each; a value that is no list is a finding, and every section is drawn in this list's order."
         control: multi
-        options: [career, command_center, tasks, quick_add, awaiting, band, lanes]
+        options: [command_center, tasks, quick_add, awaiting, band, lanes]
     focus.stale_lag_days:
         heading: boards
         section: Audit checks
@@ -1521,8 +1534,8 @@ descriptions:
                 help: the requests that follow this one
                 described_by: reader_step
 groups:
-    audit: "The conventions the audit holds the hub's projects to, each off until the hub sets it in its .oculus/config.yml: the files a project must hold, the headings a file must hold while a manifest key has a value, the folders a project at a stage is kept under, and the website's publications feed."
-    audit.website: The website's publications feed the audit checks the hub's projects against, the keys it is read by and the sections a project is expected in.
+    audit: "The conventions the audit holds the hub's projects to, each off until the hub sets it in its .oculus/config.yml: the files a project must hold, the headings a file must hold while a manifest key has a value, and the folders a project at a stage is kept under."
+    website: "The website the hub's files are written into: its folder, the command run in it once the files are written, and the sections of its publications."
     focus: The Focus board and its command center, how far ahead each kind of date is listed, when a feed or a manifest counts as stale, and which statuses count as open or sent.
     focus.refresh_stale_days: The days after which the Focus refresh strip prompts to refresh a feed, one key for each feed it prompts for.
     file_index: The file finder of the project cards, whether it runs, how many files it lists for a project and which extensions it lists.

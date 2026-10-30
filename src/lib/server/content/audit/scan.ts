@@ -3,8 +3,9 @@
 // or on a chip lane it is done with, a field long enough to stop being a glance, and the
 // conventions the hub's own `audit:` setting names (setting.ts): the files a project must hold, the
 // headings a file must hold while a manifest key has a value, the folders a project at a stage is
-// kept under, the website's publications feed against the hub's projects, and every part of the
-// setting that is not of its shape. A hub that sets no `audit:` is held to none of those.
+// kept under, and every part of the setting that is not of its shape. A hub that sets no `audit:`
+// is held to none of those. For the primary hub it also compares the website's generated files with
+// what the hub's files give (publications.ts).
 //
 // It is not the Findings view's list and does not repeat it. Findings is what
 // data/snapshot/validate.ts found wrong in the files themselves, a bad id or an unknown chip; this
@@ -22,10 +23,10 @@
 // rebuild in the portfolio watcher and never per request. It is pure over its arguments: the hub
 // path, the hub's projects and collections of the merged snapshot, the user (the person marked
 // `self: true`, whom the key `self` of the primary hub's `local.yml` names), the rules read out of
-// the configuration, the hub's `audit:` setting, and the text catalog the messages are written in.
-// Each hub is scanned with its name as `root`, which marks its findings and, for a hub other than
-// the primary, prefixes the scope its signatures read, and with its own setting, so each hub's
-// website feed is checked against its own projects.
+// the configuration, the hub's `audit:` setting, the primary hub's website, and the text catalog
+// the messages are written in. Each hub is scanned with its name as `root`, which marks its
+// findings and, for a hub other than the primary, prefixes the scope its signatures read, and with
+// its own setting.
 
 import type { AuditFinding, AuditKind } from '../../../data/model/index.ts';
 import {
@@ -80,4 +81,4 @@ export {
 } from './rules.ts';
 export { AUDIT_PATHS, firstMarker } from './projects.ts';
 export { hubAuditSetting, type AuditSetting } from './setting.ts';
-export { jaccard, normalTitle, titleWords } from './publications.ts';
+export type { WebsiteCheck } from './publications.ts';

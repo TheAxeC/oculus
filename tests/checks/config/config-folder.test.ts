@@ -159,6 +159,7 @@ describe("oculus's own config directory", () => {
             'usage_refresh_model',
             'audit_ignore',
             'audit',
+            'website',
             'calendar',
             'mail',
             'processes',
@@ -294,6 +295,7 @@ describe("oculus's own config directory", () => {
         'server.yml',
         'statusbar.yml',
         'ui.yml',
+        'views/academic/career.yml',
         'views/academic/latex.yml',
         'views/academic/math-preview.yml',
         'views/academic/present.yml',
@@ -719,10 +721,10 @@ describe("oculus's own config directory", () => {
                 .filter(([field]) => !drawn.has(field))
                 .map(([field, one]) => ({ key: `${key}.${field}`, help: one.description ?? '' }))
         );
-        // 12 stage flags, no form flag, 1 chip flag, 8 status flags, 4 lead status flags, 2 tier
-        // flags (`unmarked`, `default`), the 3 keys of a roles row and the 6 keys of a categories
+        // 12 stage flags, no form flag, 1 chip flag, 7 status flags, 4 lead status flags, 2 tier
+        // flags (`unmarked`, `default`), the 3 keys of a roles row and the 5 keys of a categories
         // row.
-        expect(keys).toHaveLength(36);
+        expect(keys).toHaveLength(34);
         expect(keys.filter((one) => one.help.trim() === '').map((one) => one.key)).toEqual([]);
     });
 

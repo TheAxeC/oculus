@@ -473,9 +473,9 @@ export type FeedData = {
 };
 
 /**
- * The career strategy of the career file (`career_file`): its title, the goal it works toward, the
- * next milestone with its day, the situation, the order of work and its note. The Focus board's
- * Career banner draws all of them but the title.
+ * The career file (`career_file`): the strategy, its title, the goal it works toward, the next
+ * milestone with its day, the order of work and its note; and every section as the file holds it,
+ * which the Career view's editor edits and the website's CV is written from.
  */
 export type Career = {
     title: string;
@@ -488,7 +488,6 @@ export type Career = {
      * when it is not, and whenever the milestone is.
      */
     milestoneDate?: string;
-    situation: { label: string; value: string }[];
     order: { task: string; when?: string; note?: string }[];
     orderNote?: string;
     /** Every section of the file as it holds it, its `schema:` left out: what the editor edits. */

@@ -11,14 +11,9 @@
     // field's Add person runs; its refusal is said under the field, with the field's other notes,
     // until the next Add of that field or an edit of it.
     //
-    // Each field's row is marked with the field's name (`data-field`). Given `openOn`, the row of
-    // that field is scrolled into view as it is drawn and the first control Tab reaches in it takes
-    // the focus (ui/frame/quiet-focus.ts `focusFirstQuietly`, so its tooltip stays shut), so an
-    // editor opened on one section starts there; a name the form has no field for, and no `openOn`
-    // at all, scroll nothing and focus nothing.
+    // Each field's row is marked with the field's name (`data-field`).
 
     import Field from '$lib/ui/forms/Field.svelte';
-    import { focusFirstQuietly } from '$lib/ui/frame/quiet-focus';
     import FieldControl from './FieldControl.svelte';
     import type { PersonAdded } from '$lib/state/forms/new-entry';
     import type { Choice, FormField } from '$lib/state/forms/schema';
@@ -47,8 +42,6 @@
          * people registry, which decides the fields that offer Add person.
          */
         people?: (target: string) => boolean;
-        /** The field the form opens on: scrolled into view, its first control focused. */
-        openOn?: string;
     };
 
     let {
@@ -62,15 +55,8 @@
         refusals = {},
         empty,
         addPerson,
-        people,
-        openOn
+        people
     }: Props = $props();
-
-    /** Bring the row of the field the form opens on into view and focus its first control. */
-    function opened(row: HTMLElement): void {
-        row.scrollIntoView({ block: 'nearest' });
-        focusFirstQuietly(row);
-    }
 
     /** Why the last Add person of a field wrote no person, by field name. */
     let unadded = $state<Record<string, string>>({});
@@ -113,7 +99,7 @@
 </script>
 
 {#each fields as field (field.field)}
-    <div data-field={field.field} {@attach field.field === openOn ? opened : undefined}>
+    <div data-field={field.field}>
         <Field
             label={field.label}
             help={field.help}
