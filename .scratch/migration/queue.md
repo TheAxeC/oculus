@@ -1,5 +1,5 @@
 In flight (1 of 6 slots in use):
-- O101 (the Zenodo deposit): reviewed; repair round 1 waits for open item 595.
+- O101 (the Zenodo deposit): repair round 1 sent.
 
 Queued, in order (1 step):
 - O104 (one page frame and one editor): once O101 has landed.
