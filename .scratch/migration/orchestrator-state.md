@@ -35,6 +35,9 @@ dispatch:            # steps in flight, up to six (Z632)
   brief_check: .scratch/migration/agents/reviews/O105-brief-check.md (ae6e12bde917fae57, claude-opus-5-5, 242743 tokens, 26 tool uses, 662 s)
   round: 0
   landing: not-started
+- step: O106
+  landing: preparing
+  brief_check: "running: aff22675846d114fb"
 ```
 
 ## The standing demands (from Axel, in force)
@@ -176,8 +179,11 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
 
+- 604 (2026-10-31, Axel's question on a release): a release after O105 and O106: (a), `0.2.0`, with the look of what O104's landing did not see, then archives built for your review before they are published; (b), `0.2.0` with no such look (the lazy option); (c), no release yet, wait for a later step. Recommendation: (a).
+
 ## Closed items
 
+- 603 (2026-10-30): (a), cards and the entry page leave out `section: Website` fields, the entry page gives a Website group, students are drawn by name (Axel: "603 (a)"); booked in `plan.md` Rulings. Step O106 added at his word ("Please do").
 - 599 to 602 (2026-10-30): all (a): every copy from `website.yml` ends, the group headings move to it, `website.files` names the four files, the `programs:` check stays (Axel: "all (a)"); booked in `plan.md` Rulings and on O105's line.
 - 595 (2026-10-30): (d), For review reads the record an unmarked Zenodo DOI names and goes on only for the review copy (Axel: "(d)"); booked in `plan.md` Rulings; built in O101's repair round 1.
 - 594 (2026-10-30): (a), the editor section names as drafted (Axel: "594 (a)"); booked in `plan.md` Rulings; O104's brief takes them.
