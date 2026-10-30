@@ -23,20 +23,7 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 ```
 
 ```yaml
-dispatch:         # steps in flight, up to six (Z632)
-- step: O101
-  executor: agent
-  worker: claude:opus
-  session_id: aeaae4397fb040109 (claude-opus-5-5)
-  worktree: .agents/worktrees/migration-O101
-  base: ce8d41683
-  launched: 2026-10-30
-  report: .scratch/migration/agents/reviews/O101-report.md
-  builder_usage: 292695 tokens, 720 tool uses, 84 min 55 s
-  reviewer_report: .scratch/migration/agents/reviews/O101-refuter.md (ac5abbf263b3dd3e6, claude-opus-5-5, 330342 tokens, 77 tool uses, 14 min 19 s)
-  brief_check: agents/reviews/O101-brief-check.md (ac906874df316b771, claude-opus-5-5, 246818 tokens, 102 tool uses, 13 min 14 s)
-  landing: not-started
-  round: 1
+dispatch: []         # steps in flight, up to six (Z632)
 ```
 
 ## The standing demands (from Axel, in force)
@@ -755,6 +742,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-10-30 (O101 landed). O101 is on main with hub commit 6abb17c8b; `agents/reviews/O101-landing.md` holds the booking. In flight (0 of 6). Next: /spec migration O104, the section names of ruling 594 (a). Open items: none.
 - 2026-10-30 (ruling 595; O101's repair round 1 sent). Axel ruled 595 (d), booked in `plan.md` Rulings. O101's repair round 1 (`agents/briefs/O101-round1.md`, 13 items: every finding of `agents/reviews/O101-refuter.md`, Behaviour 5 of the orchestrator's read, G142's tests by ruling 596 (a), the read of ruling 595 (d)) sent to the builder aeaae4397fb040109; snapshot `.agents/worktrees/migration-O101-round-1` with `files.txt`. In flight (1 of 6): O101 (round 1). Queued: O104, once O101 has landed. Open items: none.
 - 2026-10-30 (rulings 594 and 596; 595 under discussion). Axel ruled 594 (a) and 596 (a), booked in `plan.md` Rulings; he asked to discuss 595 (b), not ruled, and 595 now carries option (d), reading the record from Zenodo. Axel asked what a user who does not use Zenodo gets: O101's `codeLink` (`papers.ts:63-69` in the worktree) drops from the website a DOI of a project with no Zenodo status, which main (`papers.ts:60-66`) links; ruling 592 (a) names the Code link of a Zenodo deposit only, so this is a finding of O101 (Behaviour 5), not an open item, and repair round 1 restores main's rule for a project with no Zenodo status, with its test. Repair round 1 waits for 595, since its ruling changes the round's code; the round then carries G142's tests and every finding of `agents/reviews/O101-refuter.md`. In flight (1 of 6): O101 (reviewed). Queued: O104, once O101 has landed. Open items: 595.
 - 2026-10-30 (O101 reviewed; 595 and 596 raised). O101's builder aeaae4397fb040109 reported (`agents/reviews/O101-report.md` and `O101-hub.patch`, saved in the main ledger, usage under builder_usage); the orchestrator read the whole diff (54 tracked files, the 8 new files whole, the diagrams by their stat). The review ac5abbf263b3dd3e6 (claude-opus-5-5) is saved in `agents/reviews/O101-refuter.md` and recorded under reviewer_report: its rerun of verify 1 passed every command (252.7 s); items 1, 12 and 14 violated, case 12 partial, case 27 left to the look; findings Spec 1 and 2, Proof 1 to 4, Standards 1 to 5, Behaviour 1 to 4. Repair round 1 waits for open item 596, so it carries every fix at once. In flight (1 of 6): O101 (reviewed). Queued: O104, once O101 has landed. Open items: 596, 595, 594.

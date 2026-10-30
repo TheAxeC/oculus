@@ -59,6 +59,41 @@ const MANIFESTS: Record<string, string> = {
         'rivera-lab',
         'publication:\n  authors: A. Rivera\n  book: A journal\n  url: https://example.org/paper\n  links:\n    - { name: Slides, url: https://example.org/slides }\n  rank: 1\ncode_availability:\n  status: deposited\n  doi: 10.5281/zenodo.123\n  url: https://example.org/code\n'
     ),
+    'zenodo-review': manifest(
+        'zenodo-review',
+        'published',
+        'conference',
+        'rivera-lab',
+        'publication:\n  authors: A. Rivera\ncode_availability:\n  status: deposited\n  url: https://example.org/zenodo-review\n  doi: 10.5281/zenodo.200\n  zenodo_status: review-anon\n'
+    ),
+    'zenodo-only': manifest(
+        'zenodo-only',
+        'published',
+        'conference',
+        'rivera-lab',
+        'publication:\n  authors: A. Rivera\ncode_availability:\n  status: none\n  doi: 10.5281/zenodo.300\n  zenodo_status: deposited\n'
+    ),
+    'doi-alone': manifest(
+        'doi-alone',
+        'published',
+        'conference',
+        'rivera-lab',
+        'publication:\n  authors: A. Rivera\ncode_availability:\n  status: deposited\n  url: https://example.org/doi-alone\n  doi: 10.6084/m9.figshare.400\n'
+    ),
+    'doi-none': manifest(
+        'doi-none',
+        'published',
+        'conference',
+        'rivera-lab',
+        'publication:\n  authors: A. Rivera\ncode_availability:\n  status: deposited\n  url: https://example.org/doi-none\n  doi: 10.17605/osf.io/abcde\n  zenodo_status: none\n'
+    ),
+    'doi-private': manifest(
+        'doi-private',
+        'published',
+        'conference',
+        'rivera-lab',
+        'publication:\n  authors: A. Rivera\ncode_availability:\n  status: review-anon\n  url: https://example.org/doi-private\n  doi: 10.6084/m9.figshare.500\n'
+    ),
     reviewed: manifest(
         'reviewed',
         'submitted',
@@ -327,6 +362,40 @@ const ROWS: { rule: string; check: () => void }[] = [
                 'Slides',
                 'Code'
             ]);
+        }
+    },
+    {
+        rule: "a Zenodo deposit with no GitHub deposit links its code at the DOI's address",
+        check: () => {
+            expect(entryOf('conference', 'zenodo-only')?.links).toEqual({
+                Code: 'https://doi.org/10.5281/zenodo.300'
+            });
+        }
+    },
+    {
+        rule: 'a DOI under anonymous review on Zenodo is not linked, and the GitHub address is',
+        check: () => {
+            expect(entryOf('conference', 'zenodo-review')?.links).toEqual({
+                Code: 'https://example.org/zenodo-review'
+            });
+        }
+    },
+    {
+        rule: "a deposit with a DOI of another service and no Zenodo status links its code at the DOI's address",
+        check: () => {
+            expect(entryOf('conference', 'doi-alone')?.links).toEqual({
+                Code: 'https://doi.org/10.6084/m9.figshare.400'
+            });
+            expect(entryOf('conference', 'doi-none')?.links).toEqual({
+                Code: 'https://doi.org/10.17605/osf.io/abcde'
+            });
+        }
+    },
+    {
+        rule: 'a DOI with no Zenodo status is not linked while the deposit is not public',
+        check: () => {
+            const entry = entryOf('conference', 'doi-private');
+            expect(entry !== undefined && 'links' in entry).toBe(false);
         }
     },
     {

@@ -253,13 +253,17 @@ export function writtenFile(
     }
 }
 
+/** The deposit actions that write the project's `code_availability` back into its manifest. */
+const MANIFEST_ACTIONS = ['push', 'zenodoReview', 'zenodoPublish'];
+
 /**
- * The file a deposit action changes: `push` writes the project's `code_availability` back into its
- * manifest, and no other action writes a file the page can name (the rest work in the mirror clone
+ * The file a deposit action changes: `push` writes the GitHub repository's keys of the project's
+ * `code_availability` back into its manifest, and `zenodoReview` and `zenodoPublish` the Zenodo
+ * deposit's; no other action writes a file the page can name (the rest work in the mirror clone
  * under the machine-local state folder).
  */
 export function depositedFile(action: string, id: string, look: FileLookups): ViewSource | null {
-    if (action !== 'push') return null;
+    if (!MANIFEST_ACTIONS.includes(action)) return null;
     return look.projectManifest(id);
 }
 

@@ -1,9 +1,12 @@
 // The deposit endpoint. A route module may export only its verbs, so everything it does lives in
 // lib/server/git/deposit/deposit-routes.ts and this is the two lines that join them. The GET
 // answers one mirror's state and is same-origin only; the POST writes and carries the token
-// ServerContext minted, as with /api/write, /api/git and /api/terminal.
+// ServerContext minted, as with /api/write, /api/git and /api/terminal. The machine's `downloads`
+// rows are handed over for the Zenodo actions, which read their token from the row
+// `deposit.zenodo.auth` names, and the write target carries the change log, so a press is in
+// History.
 
-import { carriedOf } from '$lib/server/edit/writes';
+import { carriedOf, target } from '$lib/server/edit/writes';
 import { handleDeposit, handleDepositState } from '$lib/server/git/deposit/deposit-routes';
 import { knownIds } from '$lib/server/git/deposit/deposit-routes';
 import { projectIds } from '$lib/server/sessions/stores/hooks';
@@ -18,10 +21,10 @@ const options = (locals: App.Locals) => {
         running: server.gitRunning,
         deposit: {
             plans: server.depositPlans,
-            engine: server.engine,
+            into: target(server.engine, config, carried, server),
             config,
-            carried,
-            credentials: server.credentials
+            credentials: server.credentials,
+            downloads: () => server.local.downloads
         }
     };
 };

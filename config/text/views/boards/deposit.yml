@@ -67,6 +67,28 @@ text:
         why_findings: The plan has findings; fix them first.
         why_no_mirror: There is no mirror yet.
         why_no_plan: Press Plan first.
+        zenodo: Zenodo
+        zenodo_copied: Copied.
+        zenodo_copy: Copy
+        zenodo_copy_blocked: This page cannot reach the clipboard.
+        zenodo_copy_doi: Copy the DOI
+        zenodo_copy_failed: The clipboard refused the text.
+        zenodo_copy_link: Copy the share link
+        zenodo_doi: DOI
+        zenodo_doi_none: no DOI yet
+        zenodo_link: Share link
+        zenodo_link_none: no share link yet
+        zenodo_off: "Off until the downloads row deposit.zenodo.auth names is set in the primary hub's .oculus/local.yml."
+        zenodo_publish: Publish
+        zenodo_publish_confirm: Publish {0} on Zenodo with its real files and authors?
+        zenodo_publish_detail: "The record and its files are public, its creators the project's lead, collaborators and supervisors, and its funding the project's funding. The manifest gets the DOI, the Zenodo status and today's date."
+        zenodo_publish_title: Sends the real files of code/ and the real authors to Zenodo, public.
+        zenodo_review: For review
+        zenodo_review_confirm: Send an anonymised copy of {0} to Zenodo for review?
+        zenodo_review_detail: "Every term of code_availability.anonymize is replaced in the paths, the text files, the title and the description, and the author is Anonymous. The record is public and its files open only through the share link. The manifest gets the DOI, the share link, the Zenodo status and today's date."
+        zenodo_review_title: Sends an anonymised copy of code/ to Zenodo, author Anonymous, its files open only through a share link.
+        zenodo_status: Status
+        zenodo_status_none: not deposited
     views:
         deposit: Deposit
         deposit_glyph: published

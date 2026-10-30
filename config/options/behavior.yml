@@ -738,6 +738,43 @@ options:
         min: 0
         max: 35791
         whole: true
+    deposit.zenodo.address:
+        heading: editor
+        section: Deposit
+        help: "The https address every call of the Deposit view's For review and Publish is built from, Zenodo's API; a share link is this address with its trailing /api taken off, then /records/<id>?token=<token>. Oculus ships the address of Zenodo's own API. Each hub's .oculus/config.yml may set its own for its own projects, such as the API address of Zenodo's sandbox, and keeps the shipped auth and timeout_s unless it sets them too."
+        control: text
+        form: https_address
+    deposit.zenodo.timeout_s:
+        heading: editor
+        section: Deposit
+        help: The seconds one upload of a project's zip to Zenodo is given before it is given up. Every other Zenodo call keeps the reader's own limit.
+        control: number
+        min: 1
+        max: 86400
+        whole: true
+    deposit.zenodo.auth:
+        heading: editor
+        section: Deposit
+        help: "The token every Zenodo call carries, read from the downloads row an entry names in the primary hub's .oculus/local.yml and sent in the entry's header after its prefix, to the address of deposit.zenodo.address and nowhere else. Oculus ships one entry, the Authorization header, the prefix Bearer and the row zenodo; with that row missing, For review and Publish are off and say where it is set. No reader row of literature.sources, recover.sources or venues.browser is handed the row it names."
+        fields:
+            header:
+                help: the header the token is sent in
+                control: text
+            prefix:
+                help: the text sent before the token
+                control: text
+                empty: true
+            row:
+                help: the service of the downloads row the token is read from
+                control: text
+            required:
+                help: For review and Publish are off without the downloads row
+                control: toggle
+                empty: true
+            help:
+                help: the sentence that says where the token is made, shown while the row is missing
+                control: text
+                empty: true
     search.max_hits:
         heading: editor
         section: Search
@@ -1555,6 +1592,8 @@ groups:
     changes: The change log of every write, and how many changes it keeps.
     files: The Files view, whether a move to the Trash asks first, and where a file's icon sits beside its sibling folders' arrows.
     git: Git in oculus, the model a suggested commit message is asked of, and how often every repository with a remote is fetched.
+    deposit: The deposit of a project's code beside its GitHub repository.
+    deposit.zenodo: The Zenodo deposit of the Deposit view, the address its calls go to, how long one upload is given and the token it signs in with.
     search: The Search view and the palette's file mode, how many hits and file names an answer carries, and how long one root is searched.
     literature: The Literature search, how long a source is given, how many hits a page asks of each source, how long an answer is kept, the reader rows of its sources and the order a merged paper takes its fields from them.
     literature.prefer: The order of the sources a paper found by several takes its fields, its abstract and its open PDF from.

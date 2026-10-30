@@ -130,10 +130,10 @@ export type LocalConfig = {
      */
     literature?: LiteratureKeys;
     /**
-     * The secrets the reader rows of the hubs' `.oculus/config.yml` sign in with, `downloads` in
-     * the file: one row per service, the key a row's `auth` entry names. Empty unless the machine
-     * names any; a row no reader row names is read and unused. No value of a row reaches a page, a
-     * log or a command line.
+     * The secrets the reader rows of the hubs' `.oculus/config.yml` and the deposit's
+     * `deposit.zenodo` row sign in with, `downloads` in the file: one row per service, the key an
+     * `auth` entry names. Empty unless the machine names any; a row no `auth` entry names is read
+     * and unused. No value of a row reaches a page, a log or a command line.
      */
     downloads: DownloadAccount[];
 };
@@ -152,8 +152,8 @@ export type ClusterAccount = { resource: string; user?: string; keyFile?: string
 export const USER_NAME = /^[A-Za-z0-9_][A-Za-z0-9._-]*$/;
 
 /**
- * One row of `downloads:`: the service, the key a reader row's `auth` entry names it by; the user
- * name an entry that signs in with `basic` sends; and the secret.
+ * One row of `downloads:`: the service, the key a reader row's or `deposit.zenodo`'s `auth` entry
+ * names it by; the user name an entry that signs in with `basic` sends; and the secret.
  */
 export type DownloadAccount = { service: string; user?: string; secret: string };
 

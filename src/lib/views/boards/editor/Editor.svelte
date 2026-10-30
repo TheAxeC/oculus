@@ -54,9 +54,10 @@
     import EntryForm from '../../shared/forms/entry/edit/EntryForm.svelte';
     import { usePaneFold } from '../../shared/card/pane-fold';
     import {
-        editDiffers,
         fieldsOfSection,
         fieldValues,
+        formDiffers,
+        formValue,
         manifestPayload,
         NOT_IN_MODEL,
         projectKey,
@@ -122,9 +123,19 @@
         return project !== null && writableField(field, fields);
     }
 
-    /** The value a control shows: the edit when there is one, the project's value otherwise. */
+    /** The form field of a name, which says how its value is shown and compared. */
+    function fieldOf(field: string): FormField | undefined {
+        return fields.find((one) => one.field === field);
+    }
+
+    /**
+     * The value a control shows: the edit when there is one, the project's value otherwise, a
+     * `records` field's value as the rows its control edits (`formValue`).
+     */
     function valueOf(field: string): unknown {
-        return field in edits && writable(field) ? edits[field] : values[field];
+        if (field in edits && writable(field)) return edits[field];
+        const form = fieldOf(field);
+        return form === undefined ? values[field] : formValue(form, values[field]);
     }
 
     /**
@@ -133,7 +144,11 @@
      * written says the wrong thing.
      */
     function changed(field: string): boolean {
-        return writable(field) && field in edits && editDiffers(edits[field], values[field]);
+        return (
+            writable(field) &&
+            field in edits &&
+            formDiffers(fieldOf(field), edits[field], values[field])
+        );
     }
 
     function edit(field: string, value: unknown): void {
@@ -183,7 +198,8 @@
                 : manifestPayload(
                       edits,
                       dirty.map((one) => one.field),
-                      fields
+                      fields,
+                      values
                   );
         if (Object.keys(body).length === 0) {
             result = [t('editor.saved_none')];
@@ -201,7 +217,7 @@
         const refused = answer.refused.map((one) => one.field);
         settled.record(
             projectKey(id),
-            Object.fromEntries(Object.entries(taken).filter(([name]) => !refused.includes(name))),
+            Object.fromEntries(Object.entries(body).filter(([name]) => !refused.includes(name))),
             stored,
             seq
         );

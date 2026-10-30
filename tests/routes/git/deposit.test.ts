@@ -4,7 +4,8 @@
 //
 // Nothing here runs git or `gh`: the handler takes the operations and the known ids as options, and
 // every case hands it a stub the test owns, so no repository is opened and no file is written
-// anywhere. What a well-formed request does to a mirror is tests/server/git/deposit.test.ts.
+// anywhere. What a well-formed request does to a mirror is tests/server/git/deposit.test.ts, and
+// what the two Zenodo actions send is tests/routes/git/zenodo.test.ts.
 //
 // What this does NOT cover: the token reaching the page and Kit putting it on the event.
 
@@ -78,6 +79,30 @@ describe('the deposit endpoint', () => {
         expect(await response.json()).toEqual({
             error: 'This action needs the page to confirm it'
         });
+        expect(ran).toEqual([]);
+    });
+
+    it.each(['zenodoReview', 'zenodoPublish'])(
+        'refuses %s that the page did not confirm',
+        async (action) => {
+            const into = options();
+            const response = await handleDeposit(request({ action, id: ID }), TOKEN, into);
+            expect(response.status).toBe(400);
+            expect(await response.json()).toEqual({
+                error: 'This action needs the page to confirm it'
+            });
+            expect(ran).toEqual([]);
+        }
+    );
+
+    it.each(['zenodoReview', 'zenodoPublish'])('refuses %s with no token', async (action) => {
+        const into = options();
+        const response = await handleDeposit(
+            request({ action, id: ID, confirm: true }, { 'x-oculus-token': '' }),
+            TOKEN,
+            into
+        );
+        expect(response.status).toBe(403);
         expect(ran).toEqual([]);
     });
 });

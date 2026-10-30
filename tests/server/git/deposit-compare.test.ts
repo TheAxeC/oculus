@@ -1,8 +1,12 @@
 // Layer 4, server test. What the Deposit view shows of a mirror beside the plan: the two texts of a
 // changed file of the sync plan, Fetch, how far the mirror's branch is ahead of and behind
 // `origin/main` with the files that differ and the two texts of each, the projects that have a
-// deposit (a hub project of either placement, a workspace folder project of either placement), and
-// the changes the plan lists, read from the mirror's status record by record.
+// deposit (a hub project of either placement, a workspace folder project of either placement), the
+// Zenodo review copy made from the code folder of the project folder, and the changes the plan
+// lists, read from the mirror's status record by record.
+//
+// The Zenodo case sends its calls to the fake of tests/fixtures/hubs/zenodo-answers.ts through the
+// deposit's `fetch` option, so no request leaves the process.
 //
 // Every repository is made under the system temporary directory with the real git: a hub, a mirrors
 // folder, a bare repository standing in for GitHub and a second clone that pushes to it. `gh` is
@@ -40,6 +44,7 @@ import {
     isolateDepositGit,
     writeInside
 } from '../../fixtures/hubs/deposit-world.ts';
+import { ZENODO_ADDRESS, fakeZenodo } from '../../fixtures/hubs/zenodo-answers.ts';
 import { TEXT } from '../text.ts';
 
 isolateDepositGit();
@@ -246,6 +251,32 @@ describe('the projects that have a deposit', () => {
         expect(readFileSync(join(mirrorOf('hub:nested', options()), 'nested.py'), 'utf8')).toBe(
             'print("nested")\n'
         );
+    });
+
+    it('makes the Zenodo review copy from the code folder of the project folder, never the one under .oculus', async () => {
+        const { zenodoReview } = await import('../../../src/lib/server/git/deposit/zenodo.ts');
+        // The fake Zenodo's address laid over oculus's row, as a hub's settings file lays it.
+        const shipped = into.config.merged.deposit as { zenodo: Record<string, unknown> };
+        const row = { ...shipped.zenodo, address: ZENODO_ADDRESS };
+        const merged = { ...into.config.merged, deposit: { zenodo: row } };
+        const sandbox = { ...into, config: { ...into.config, merged } };
+        for (const [id, file] of [
+            ['hub:top', 'top.py'],
+            ['hub:nested', 'nested.py']
+        ] as const) {
+            const zenodo = fakeZenodo();
+            const answer = await zenodoReview(id, TEXT, {
+                ...options(),
+                into: sandbox,
+                downloads: () => [{ service: 'zenodo', secret: 'fixture-token' }],
+                fetch: zenodo.fetch
+            });
+            expect(answer.error).toBe('');
+            const zips = Object.values(zenodo.uploads());
+            expect(zips.map((entries) => Object.keys(entries).sort())).toEqual([
+                ['.gitignore', 'README.md', file]
+            ]);
+        }
     });
 });
 

@@ -23,7 +23,8 @@ import {
     paintLimit,
     repositoryScanDepth,
     searchSettings,
-    websiteSettings
+    websiteSettings,
+    zenodoSettings
 } from './files.ts';
 import { latexBuild, latexFormatting } from './latex.ts';
 import { lintSettings } from './lint.ts';
@@ -61,7 +62,8 @@ const PROBLEM_READERS: ((
     latexFormatting,
     latexBuild,
     lintSettings,
-    websiteSettings
+    websiteSettings,
+    zenodoSettings
 ];
 
 /**

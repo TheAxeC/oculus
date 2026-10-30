@@ -58,7 +58,7 @@ diff --color -ruN a/.oculus/data/people/organisations.yml b/.oculus/data/people/
 +    country: "BE"
 diff --color -ruN a/.oculus/data/people/people.yml b/.oculus/data/people/people.yml
 --- a/.oculus/data/people/people.yml	2026-10-30 12:08:11
-+++ b/.oculus/data/people/people.yml	2026-10-30 12:09:54
++++ b/.oculus/data/people/people.yml	2026-10-30 15:55:08
 @@ -27,6 +27,7 @@
  entries:
    - key: "amir-haeri"
@@ -91,7 +91,7 @@ diff --color -ruN a/.oculus/data/people/people.yml b/.oculus/data/people/people.
      affiliations: ["uhasselt"]
      role: "co-author | former advisor (host fallback)"
      email: "liesbet.peeters[at]uhasselt.be"
-@@ -125,6 +129,7 @@
+@@ -125,11 +129,13 @@
  
    - key: "dongho"
      name: "Dongho Chun"
@@ -99,7 +99,13 @@ diff --color -ruN a/.oculus/data/people/people.yml b/.oculus/data/people/people.
      role: "student"
      folder: "education/student-supervision/dongho-2024"
  
-@@ -147,6 +152,7 @@
+   - key: "kerga"
+     name: "Meseret Assefa Kerga"
++    family: "Kerga"
+     affiliations: ["uhasselt"]
+     role: "student | lead author of meseret-cirrhosis"
+     email: "meseretassefa.kerga@student.uhasselt.be"
+@@ -147,6 +153,7 @@
  
    - key: "ward"
      name: "Ward Ceyssens"
@@ -107,7 +113,7 @@ diff --color -ruN a/.oculus/data/people/people.yml b/.oculus/data/people/people.
      role: "student"
      folder: "education/student-supervision/ward-2024"
  
-@@ -177,6 +183,7 @@
+@@ -177,6 +184,7 @@
  
    - key: "matija-pretnar"
      name: "Matija Pretnar"
@@ -115,7 +121,7 @@ diff --color -ruN a/.oculus/data/people/people.yml b/.oculus/data/people/people.
  
    - key: "robin-marx"
      name: "Robin Marx"
-@@ -189,12 +196,14 @@
+@@ -189,12 +197,14 @@
  
    - key: "dries-cornelissen"
      name: "Dries Cornelissen"

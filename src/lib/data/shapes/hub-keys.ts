@@ -46,7 +46,10 @@ export const OWN_HUB_KEYS: readonly string[] = [
     'audit.required_sections',
     'audit.stage_folders',
     'recover.sources',
-    'venues.browser'
+    'venues.browser',
+    'deposit.zenodo.address',
+    'deposit.zenodo.timeout_s',
+    'deposit.zenodo.auth'
 ];
 
 /**

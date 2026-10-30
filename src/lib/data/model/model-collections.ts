@@ -76,7 +76,8 @@ export const UNKEYED_TYPES: readonly string[] = [
     'records',
     'chips',
     'lines',
-    'keymap'
+    'keymap',
+    'rows'
 ];
 
 /** The part of a schema field a primary key is read from; a project form field has it too. */

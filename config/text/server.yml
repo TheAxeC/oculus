@@ -523,6 +523,7 @@ text:
             not_in_hub: the manifest is not inside the hub
             not_in_schema: the manifest schema does not name the field
             not_list: the value is not a list
+            rows_not_records: each row is a map of text fields
             not_folder_file: the manifest is neither the project.yml nor the .oculus/project.yml of the folder
             not_text: the value is not text
             read_only: the field is read-only
@@ -588,3 +589,47 @@ text:
             not_a_write: the body is not a write this route knows
             session_unsaved: 'the session write could not be saved: {0}'
             unknown_feed: 'unknown feed {0}'
+        zenodo:
+            busy: 'A run of the deposit of {0} is still going, so nothing was sent to Zenodo; wait for it or cancel it'
+            call_create: the new draft
+            call_file: 'the file entry {0}'
+            call_upload: 'the upload of {0}'
+            call_commit: 'the commit of {0}'
+            call_publish: the publish
+            call_read: 'the read of record {0}'
+            call_latest: 'the latest version of {0}'
+            call_version: 'the new version of record {0}'
+            call_metadata: "the new version's metadata"
+            call_link: the share link
+            cancelled_draft: 'Cancelled during {0}; the draft was deleted, so nothing was published'
+            cancelled_none: 'Cancelled during {0}, so nothing was published'
+            collision: '{0} and {1} become one path once the terms are replaced, so nothing was sent'
+            compressed_unread: '{0} is compressed in a form that cannot be read for the terms, so nothing was sent'
+            deposited: 'The code is published on Zenodo as {0}, so For review sends no anonymous copy of it'
+            doi_form: '{0} is no Zenodo DOI of the form 10.5281/zenodo.<number>, so nothing was sent'
+            doi_no_concept: 'Zenodo gave no concept DOI for {0}, so nothing was sent'
+            doi_not_concept: '{0} is a version DOI of the concept {1}; code_availability.doi holds the concept DOI, so nothing was sent'
+            doi_published: '{0} names a record published with its own authors, so nothing was sent'
+            draft_kept: '{0}. Zenodo did not delete the draft {1}; delete it on Zenodo'
+            failed_draft: 'Zenodo answered {1} to {0}; the draft was deleted, so nothing was published'
+            failed_none: 'Zenodo answered {1} to {0}, so nothing was published'
+            failed_published: 'Zenodo answered {2} to {1}; the record is published as {0} and its DOI is written'
+            failed_unread: 'Zenodo answered {2} to {1}; the record is published at {0} and its DOI is not written. Write the DOI from that page into code_availability.doi before pressing again'
+            funder_unknown: 'The funder of the funding entry {0} is no key of organisations.yml, so nothing was sent'
+            funding_no_funder: 'The funding entry {0} names no funder, so nothing was sent'
+            funding_unknown: '{0} is no key of funding.yml, so nothing was sent'
+            manifest_refused: 'Zenodo holds the record {0}, but the manifest refused {1}'
+            no_token: "Zenodo needs the downloads row {0} of the primary hub's .oculus/local.yml, the row deposit.zenodo.auth names, so nothing was sent"
+            person_name: 'The name of {0} in people.yml does not end with its family name, so nothing was sent'
+            person_no_family: '{0} has no family name in people.yml, so nothing was sent'
+            person_unknown: '{0} is no key of people.yml, so nothing was sent'
+            publish_unknown: 'The publish got no clear answer and Zenodo could not be read, so nothing was deleted and no DOI is written. If {0} opens, the record is published: write its DOI into code_availability.doi before pressing again'
+            published: 'Published on Zenodo as {0}'
+            reviewed: 'Sent to Zenodo for review as {0}'
+            scan_found: 'The deposit scan found {0}, so nothing was sent'
+            term_empty: 'Row {0} of code_availability.anonymize has no term, so nothing was sent'
+            term_in_bytes: '{0} holds a term of code_availability.anonymize in a form that cannot be rewritten, so nothing was sent'
+            unanswered_draft: 'Zenodo gave no answer to {0}; the draft was deleted, so nothing was published'
+            unanswered_none: 'Zenodo gave no answer to {0}, so nothing was published'
+            unanswered_published: 'Zenodo gave no answer to {1}; the record is published as {0} and its DOI is written'
+            unanswered_unread: 'Zenodo gave no answer to {1}; the record is published at {0} and its DOI is not written. Write the DOI from that page into code_availability.doi before pressing again'

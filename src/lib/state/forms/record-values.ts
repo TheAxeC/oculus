@@ -25,8 +25,36 @@
 // differs from the payload of the untouched edit, so a field the form cannot say differently from
 // the file is never a change.
 
+import { z } from 'zod';
 import { isMap, scalar } from '../../data/helpers/guards.ts';
-import { asList, asText, type FormField } from './schema.ts';
+import { readAs, rowsShape } from '../../data/shapes/shapes.ts';
+import type { FormField } from './schema.ts';
+
+/** A list for a list widget: the words of a list, or a word that is not empty as a list of one. */
+const listShape = z.union([
+    rowsShape(z.string()),
+    z
+        .string()
+        .min(1)
+        .transform((one) => [one])
+]);
+
+/** One value as the widget's own kind: a list for a list widget, text for the rest. */
+export function asList(value: unknown): string[] {
+    return readAs(listShape, value) ?? [];
+}
+
+/** A list as one item per line, which `lines` writes back. */
+const linesShape = z
+    .array(z.unknown())
+    .transform((items) => items.map((one) => scalar(one)).join('\n'));
+
+/**
+ * One value as the text a control shows. A list is one item per line, which `lines` writes back.
+ */
+export function asText(value: unknown): string {
+    return readAs(linesShape, value) ?? scalar(value);
+}
 
 /** One label-value row: a metalist item, an unnamed key of a record, or a fact of a strip. */
 export type Row = { label: string; value: string };

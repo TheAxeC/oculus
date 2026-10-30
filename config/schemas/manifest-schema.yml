@@ -6,10 +6,12 @@
 
 # The form. `sections:` names the eight groups, in the order they are drawn; a field's `section:` is
 # one of those names. `type:` is the widget:
-#   readonly  shown, never written (`id` is the folder's name, and the write refuses it)
+#   readonly  shown, never written by the form (`id` is the folder's name, and the write refuses it;
+#             `code_availability.review_link` is written by the Zenodo deposit alone)
 #   text      one line | textarea several lines | lines one list item per line
 #   select    one of a list | chips several of a list, with a filter | tags several free strings
 #   date      an ISO date | checkbox a flag | keymap a map the form does not write
+#   rows      a list of rows of the text fields its `fields:` names, each drawn as a card
 # `primary_key: true` marks the field a project is addressed by, its id: no write sets it, and a
 # reference to a project stores it. `display:` ranks the fields a reference to a project shows,
 # the filled field of the lowest rank first (`short`, else `title`), the id when neither is filled.
@@ -66,8 +68,8 @@ manifest_schema:
     deadline:      { label: "Deadline", type: date, section: Dates, help: "The day the next deadline falls on; it shows on the Focus radar until the project's stage meets it, such as submitted. Text that is not a date shows as open work." }
     followup:      { label: "Follow-ups", type: keymap, section: Dates, help: "Notes of things to do later, each with what to do, the date before which it stays hidden, whether it is done and the people it names as lead, supervisors and collaborators; an open note shows in the Follow-ups group on the Focus board. Add, change, mark done and delete them on the project's card; this form does not change them." }
     snooze:        { label: "Snooze until", type: date, section: Dates, help: "Pick a date to keep this project off the ticker until then; clear it to bring the project back." }
-    "code_availability.status": { label: "Code deposit", type: select, options: [none, review-anon, deposited], section: "Deposit & compute", help: "Whether the code is not deposited, deposited for anonymous review or deposited in the open." }
-    "code_availability.date": { label: "Deposit date", type: date, section: "Deposit & compute", help: "The date the code was deposited. The deposit step fills it in when it creates the deposit." }
+    "code_availability.status": { label: "Code deposit", type: select, options: [none, review-anon, deposited], section: "Deposit & compute", help: "Whether the code's GitHub repository is not made, private for anonymous review or public. The Deposit view's Push writes it; the Zenodo deposit has its own, Zenodo status." }
+    "code_availability.date": { label: "Deposit date", type: date, section: "Deposit & compute", help: "The date the code's GitHub repository was pushed. The Deposit view's Push fills it in; the Zenodo deposit has its own, Zenodo date." }
     "code_availability.url": { label: "Deposit URL", type: text, section: "Deposit & compute", help: "The web address of the deposit." }
     "code_availability.doi": { label: "Deposit DOI", type: text, section: "Deposit & compute", help: "The DOI the deposit was given." }
     "code_availability.repo": { label: "Repo name", type: text, section: "Deposit & compute", help: "The public repository name, in lowercase words joined by dashes, for example cirrhosis-competing-risks." }
@@ -75,6 +77,10 @@ manifest_schema:
     "code_availability.homepage": { label: "Repo homepage", type: text, section: "Deposit & compute", help: "The web address the repository points to as its homepage." }
     "code_availability.topics": { label: "Repo topics", type: tags, section: "Deposit & compute", help: "The GitHub topics of the repository, one per entry." }
     "code_availability.visibility": { label: "Repo visibility", type: select, options: [public, private], section: "Deposit & compute", help: "Whether the repository is public or private." }
+    "code_availability.anonymize": { label: "Anonymize", type: rows, fields: [term, as], section: "Deposit & compute", help: "The words For review takes out of the anonymous Zenodo copy of code/, one row each: a term, matched without regard to case and letter for letter, and what it becomes (as), Anonymous when as is empty. It is replaced in every path and text file, the title and the description, the longest term first; a binary or compressed file holding a term stops the upload." }
+    "code_availability.review_link": { label: "Review link", type: readonly, section: "Deposit & compute", help: "The Zenodo share link reviewers open the anonymous copy's files with. For review writes it." }
+    "code_availability.zenodo_status": { label: "Zenodo status", type: select, options: [none, review-anon, deposited], section: "Deposit & compute", help: "Whether the code is on Zenodo: not deposited, deposited for anonymous review with its files open by the review link, or published with its real files and authors. The Deposit view's For review and Publish write it; a deposit made outside oculus is recorded here, or left empty beside its DOI for For review to read." }
+    "code_availability.zenodo_date": { label: "Zenodo date", type: date, section: "Deposit & compute", help: "The date the Zenodo deposit was last sent. For review and Publish fill it in." }
     "repository.url": { label: "Remote URL", type: text, section: "Deposit & compute", help: "The address of the project's repository on its remote. Clone fetches it into a folder the reader picks." }
     "repository.visibility": { label: "Remote visibility", type: select, options: [public, private], section: "Deposit & compute", help: "Whether the repository on the remote is public or private." }
     "repository.description": { label: "Remote description", type: textarea, section: "Deposit & compute", help: "The description of the repository on the remote." }
@@ -92,7 +98,7 @@ manifest_schema:
     "publication.book": { label: "Printed venue", type: text, section: Website, help: "The venue as the website prints it, such as the journal's or the conference's full name." }
     "publication.program": { label: "Research lines", type: tags, section: Website, help: "The research lines the paper belongs to, keys of programs: of the website's _data/website.yml; a key the file lacks is a finding." }
     "publication.url": { label: "Paper address", type: text, section: Website, help: "The address the paper's title links to on the website; empty for none." }
-    "publication.links": { label: "Paper links", type: keymap, section: Website, help: "The paper's other links, rows of a name and an address, in the order the website prints them, such as Preprint and Supplementary. The Code link is added after them from the code deposit: the DOI when it has one, else its address, once its status is deposited. This form does not change them." }
+    "publication.links": { label: "Paper links", type: keymap, section: Website, help: "The paper's other links, rows of a name and an address, in the order the website prints them, such as Preprint and Supplementary. The Code link is added after them from the code deposit: the DOI's address once the Zenodo status is deposited; under a deposited Code deposit, the DOI's address when a DOI is set, else the Deposit URL; a DOI under anonymous review on Zenodo is never linked. This form does not change them." }
     "publication.abstract": { label: "Abstract", type: textarea, section: Website, help: "The abstract the website shows under the paper; empty for none." }
     "publication.pub_last": { label: "Mark", type: text, section: Website, help: "A mark printed after the authors, such as Spotlight." }
     "publication.hide": { label: "Hidden", type: checkbox, section: Website, help: "Tick to keep the paper off the website while it stays in the file; the website writes the value as it is held." }
@@ -114,7 +120,7 @@ manifest_fields: []
 # The help line of each map a dotted field lies in (`status` of `status.chips`), which the YAML editor shows for the map. A map without a line and a line for no such map are findings.
 groups:
   status: "Where the project stands: the chips shown on its card and the one line read at a glance."
-  code_availability: "The deposit of the project's code: whether and where it is deposited, and the public repository it is deposited in."
+  code_availability: "The deposit of the project's code: whether and where it is deposited, the public repository it is deposited in, and its Zenodo record with the words its anonymous copy leaves out."
   repository: "The project's repository on its remote: its address, visibility, description, homepage, topics and the date it was created."
   reproduced: "The last run of the whole pipeline again from the raw data: its date and what it needed."
   publication: "The entry the website's publications list the paper with: the authors, the venue, the research lines, the links, the abstract and the entry's place in its section."

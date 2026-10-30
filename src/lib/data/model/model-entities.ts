@@ -190,9 +190,18 @@ export type DocPresence = {
 export type Chip = string;
 
 /**
+ * A row of a manifest's `code_availability.anonymize`: a word the Zenodo review copy replaces, and
+ * what it is replaced by, `Anonymous` when `as` is absent. A row with no term keeps an empty one,
+ * which the review press refuses by its row.
+ */
+export type AnonymizeRow = { term: string; as?: string };
+
+/**
  * A project's code deposit, the `code_availability` map of a manifest. `status` is the word the
- * card's badge reads (`deposited`, `review-anon`, `none`); the rest is where the deposit lives.
- * The manifest's remaining keys under that map (the repo's description, homepage, topics and
+ * card's badge reads (`deposited`, `review-anon`, `none`) and, with `date`, `url` and `repo`, is
+ * the GitHub repository's; `doi`, `reviewLink` (the review copy's share link), `zenodoStatus` and
+ * `zenodoDate` are the Zenodo deposit's, and `anonymize` the words its review copy replaces. The
+ * manifest's remaining keys under that map (the repo's description, homepage, topics and
  * visibility) are the deposit tool's and no view reads them, so they are not carried.
  */
 export type CodeAvailability = {
@@ -201,6 +210,10 @@ export type CodeAvailability = {
     url?: string;
     doi?: string;
     repo?: string;
+    anonymize?: AnonymizeRow[];
+    reviewLink?: string;
+    zenodoStatus?: string;
+    zenodoDate?: string;
 };
 
 /** A named address: a link of a publication record, printed with its name as the link's words. */
@@ -770,6 +783,8 @@ export type Funding = Rooted & {
     statement?: string;
     /** Key of an organisations.yml entry: who funds the scheme. */
     funder?: Id;
+    /** The funder's number of the award, which a Zenodo deposit names with the scheme's title. */
+    award?: string;
     link?: string;
     url?: string;
     /** An ISO date the scheme's own deadline is hidden from the Focus ticker until. */

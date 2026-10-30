@@ -80,21 +80,26 @@ export function heldAt(
     key: string,
     problems: SettingProblem[]
 ): Held {
-    const dot = key.indexOf('.');
-    const name = dot < 0 ? key : key.slice(0, dot);
-    const raw = Object.hasOwn(config, name) ? config[name] : undefined;
-    if (dot < 0) return raw === undefined ? { present: false } : { present: true, value: raw };
-    if (raw === undefined || raw === null) return { present: false };
-    const block = readAs(mapShape, raw);
-    if (block === null) {
-        if (!problems.some((one) => one.key === name && one.where === 'block')) {
-            problems.push({ key: name, where: 'block' });
+    // A key is read down the blocks its dotted parts name, `deposit.zenodo.address` through two.
+    const parts = key.split('.');
+    let block: Record<string, unknown> = config;
+    for (const [at, part] of parts.entries()) {
+        const raw = Object.hasOwn(block, part) ? block[part] : undefined;
+        if (at === parts.length - 1) {
+            return raw === undefined ? { present: false } : { present: true, value: raw };
         }
-        return { present: false };
+        if (raw === undefined || raw === null) return { present: false };
+        const inner = readAs(mapShape, raw);
+        if (inner === null) {
+            const name = parts.slice(0, at + 1).join('.');
+            if (!problems.some((one) => one.key === name && one.where === 'block')) {
+                problems.push({ key: name, where: 'block' });
+            }
+            return { present: false };
+        }
+        block = inner;
     }
-    const rest = key.slice(dot + 1);
-    const value = Object.hasOwn(block, rest) ? block[rest] : undefined;
-    return value === undefined ? { present: false } : { present: true, value };
+    return { present: false };
 }
 
 /** A row of a list of records whose every field the entry's rule takes, with its dotted place. */

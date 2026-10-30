@@ -1,4 +1,4 @@
-NOT done: verify item 1 has no single run that is green from end to end. Two runs of `npm run diagrams && npm run docs:palette && npm run test:quick -- <the 62 changed paths>` on the same final tree each failed on one time limit, of a different test each time, and each of those tests passes alone (`hub-portfolio.test.ts` in 2559 ms, limit 20000 ms; `schedules/commands.test.ts` in 68 ms, limit 5000 ms) and passed in the other run; every other check of both runs is green. Everything else in the brief is built; case 27 (the project form's `anonymize` cards) and the Zenodo section are seen at the look, which this builder does not run.
+NOT done: case 27 (the project form's `anonymize` cards) and the Zenodo section are not seen, since the look is not this builder's; no call has reached a real Zenodo, so the read of a review copy (item 4 of repair round 1) rests on the recorded answer's shape; the one test 'names the draft when Zenodo refuses to delete it' has no run before its code. All 13 items of repair round 1 are built and `npm run diagrams && npm run docs:palette && npm run test:quick` is green end to end on the final tree: see "Repair round 1", the last section, which holds the checks of the final tree and stands over the older numbers above it.
 
 ## Open items of the state file, verbatim
 
@@ -676,8 +676,8 @@ The shapes the fake Zenodo answers in (`tests/fixtures/hubs/zenodo-answers.ts`):
 
 | Check | State | Output |
 | --- | --- | --- |
-| 1. `npm run diagrams && npm run docs:palette && npm run test:quick -- <the 62 changed paths>` | NOT DONE: no run green end to end; each failure a time limit of a test that passes alone | quoted below the table |
-| 2. ASCII gate over the changed files | DONE | prints nothing; `ascii exit 0` |
+| 1. `npm run diagrams && npm run docs:palette && npm run test:quick` | DONE on the final tree | every command passed; the lines are in "Repair round 1"; the two runs quoted below the table are of the first build |
+| 2. ASCII gate | DONE | over the 64 changed source, test, config and doc paths it prints nothing. Over the ledger's two files it prints nothing for this report and 7 lines for `O101-hub.patch`: the six `---`/`+++` lines of the patch, each holding a <tab> that `diff -ruN` writes, and the context line `name: "St<e-acute>phanie M. van den Berg"`, a name of the hub that the patch must match byte for byte |
 | 3. `sh utils/unused-exports.sh` vs `O101-base/unused-exports.txt` | DONE | `diff` prints nothing, `diff exit 0` |
 | 4. `patch -p1 --dry-run` of the hub patch inside the hub | DONE | `patching file '.oculus/data/academic/funding.yml'`, `patching file '.oculus/data/people/organisations.yml'`, `patching file '.oculus/data/people/people.yml'` (macOS `patch` prints `patching file` where GNU prints `checking file`); `cmp` of each `a/` copy with the hub file printed nothing |
 | 5. `git grep -n "zenodo.org" -- src` / `-- config ':!config/local.yml'` | DONE | src: nothing (and `grep -rln zenodo.org` over the untracked new files: nothing, exit 1); config: `config/defaults/behavior.yml:311:      address: 'https://zenodo.org/api/records/{record}'` and `config/defaults/behavior.yml:470:    address: https://zenodo.org/api` only |
@@ -751,13 +751,13 @@ The split: the staging of a code folder (`stageTree`, `pathsOf`, `prune`, `empty
 ## Judgment calls the brief left open
 
 - `lsFiles` (`deposit-git.ts`) runs `git ls-files -z` and the paths are split on NUL (`pathsOf`), so a path holding a newline or a quote is one path; the mirror's sync uses the same reading.
-- For review with a `doi` and no `zenodo_status` (neither `review-anon` nor `deposited`) is refused with `server.zenodo.doi_unmarked`, since it is not known whether that record is the anonymous one; the brief names only the `review-anon` and `deposited` states.
+- For review with a Zenodo `doi` and no `zenodo_status` reads the latest version of the record and goes on when it is the review copy, else it is refused with `server.zenodo.doi_published` (ruling 595 (d), repair round 1). A non-Zenodo DOI is refused with `server.zenodo.doi_form`.
 - A funding award is sent as `award: { title: { en: <the scheme's title> }, number: <award> }`, the multilingual title shape InvenioRDM's funding metadata takes.
 - A person's affiliation that names no key of `organisations.yml` is left out of the creator, and the press goes on; the brief refuses only a missing person, family name, funding entry or funder.
 - A redirect answered to a record read is followed once, by the record id of its `Location`, rebuilt from the `deposit.zenodo` address; no address an answer gives is requested.
 - A person key of the form `<hub>:<key>` is refused as no key of `people.yml`, since the press reads the people of the project's own hub.
-- Every Zenodo call other than an upload is given 30 s (`CALL_MS` in `zenodo-api.ts`), the time the Recover listing gives one request (`REQUEST_MS` in `recover/files.ts`).
-- When the read of a published record fails before its DOI is known, the sentence names the record's page `<site>/records/<id>` in place of the DOI.
+- Every Zenodo call other than an upload is given 30 s, the Recover request limit `REQUEST_MS`, exported from `recover/files.ts` and imported by `zenodo-api.ts`.
+- When the read of a published record fails, the sentence names the record's page `<site>/records/<id>`, says the DOI is not written, and tells the user to write it into `code_availability.doi` before pressing again.
 - A project with no `anonymize` rows may send For review: the copy is then the code as it is, with the author Anonymous.
 - A file of a compressed form the copy cannot read (`.bz2`, `.xz`, `.7z`, `.rar`, `.zst`) refuses For review even when the manifest holds no term, as item 3 reads.
 
@@ -766,13 +766,27 @@ The split: the staging of a code folder (`stageTree`, `pathsOf`, `prune`, `empty
 - The Deposit view, a project with a deposit: a section "Zenodo" after the mirror blocks, with the buttons "For review" and "Publish" (tips: "Sends an anonymised copy of code/ to Zenodo, author Anonymous, its files open only through a share link." and "Sends the real files of code/ and the real authors to Zenodo, public."), the Status, the DOI and the Share link, each with "no DOI yet", "no share link yet", "not deposited" when empty, and a Copy button for the DOI and the link. Before: no Zenodo section. To see the off state: no `downloads` row `zenodo` in the primary hub's `.oculus/local.yml`; both buttons are off with the tip "Off until the downloads row deposit.zenodo.auth names is set in the primary hub's .oculus/local.yml." Each press opens the confirm dialog (`zenodo_review_confirm` / `zenodo_publish_confirm` with their details) and its sentence shows under the section.
 - The project form (case 27), a manifest with `code_availability.anonymize`: under "Deposit & compute", the rows drawn as record cards with the fields `term` and `as`, a button that adds a row and one that removes it; Save writes the list. Before: no `anonymize` field. The form also shows `review_link` read-only, `zenodo_status` as a select of `none`, `review-anon`, `deposited`, and `zenodo_date` as a date.
 - Settings, scope Primary hub or Hub, section Deposit: the rows `deposit.zenodo.address` and `deposit.zenodo.timeout_s`.
-- The website's Code link: a manifest with `zenodo_status: deposited` and a `doi` links `https://doi.org/<doi>`; under `review-anon` or with no `zenodo_status` it links `code_availability.url` when `status` is `deposited`.
+- The website's Code link: a manifest with `zenodo_status: deposited` and a `doi` links `https://doi.org/<doi>`; under `zenodo_status: review-anon` it links `code_availability.url` when `status` is `deposited`; with no Zenodo status it links `https://doi.org/<doi>` when `status` is `deposited` and a `doi` is set, a DOI of any service, as on the base, else `code_availability.url` when `status` is `deposited`.
+- The History view: a press that writes the manifest adds a record of kind manifest, one for the DOI, the status and the date and one for the share link. Before: a press added none.
+- Settings, scope Primary hub or Hub, section Deposit: the rows editor of `deposit.zenodo.auth`, with the cells `header`, `prefix`, `row` and the toggle `required`.
+- The project form, the changed help lines: `code_availability.status` ("Whether the code's GitHub repository is not made, private for anonymous review or public. ..."), `code_availability.date` ("The date the code's GitHub repository was pushed. ..."), `code_availability.zenodo_status` (its last clause) and `publication.links` (the Code link's rule). Before: the help named the deposit with no word on GitHub or Zenodo.
+- The Zenodo section's sentences after a press, all shown under the section:
+  - Cancel during the upload: "Cancelled during the upload of alpha.zip; the draft was deleted, so nothing was published".
+  - Cancel after the publish was sent: the press runs to its end and shows "Sent to Zenodo for review as <doi>", or "Published on Zenodo as <doi>".
+  - A publish that fails after Zenodo published: the same success sentence, with the DOI written.
+  - A publish that fails with the draft unpublished: "Zenodo answered 400 to the publish; the draft was deleted, so nothing was published".
+  - A publish that fails and neither read answers: the `publish_unknown` sentence, naming `<site>/records/<id>`.
+  - A failed read after the publish: "Zenodo answered 500 to the read of record <id>; the record is published at <page> and its DOI is not written. Write the DOI from that page into code_availability.doi before pressing again".
+  - A failed share link: "Zenodo answered 403 to the share link; the record is published as <doi> and its DOI is written".
+  - A draft Zenodo does not delete: the `draft_kept` sentence, naming the call and the draft.
+  - For review of a DOI with no Zenodo status: of a review copy the press goes on and the Status, DOI and Share link fill in; of any other record "<doi> names a record published with its own authors, so nothing was sent".
+  - The buttons of the section are unchanged; a project of a second hub reads the token's readiness from that hub's `deposit.zenodo.auth`.
 
 ## What in the brief was wrong or impossible
 
 - The calls of Publish and of a new version of a review record include `PUT /api/records/{id}/draft`, which writes the metadata of a version draft; the brief's list of calls does not name it. The InvenioRDM documentation makes a new version's draft without the new metadata, so it is needed.
 - `src/lib/data/snapshot/schema/manifest.ts` (the schema reader, which reads the `rows` kind and its `fields:`), `src/lib/data/model/index.ts` (exports `AnonymizeRow`), `tests/fixtures/hubs/zenodo-answers.ts` (the fake Zenodo) and `tests/checks/config/config-folder.test.ts` (the new top-level key `deposit` in its list of `behavior.yml`'s keys) are outside the brief's path list; each is needed by the change.
-- The `review_link` line of the manifest template in `docs/templates.md` is not written: `tests/checks/config/templates.test.ts:73-82` holds the template to the schema's fields that are not `readonly`, both ways, so a line for `review_link`, which is `readonly` (563), is an extra key there and fails it.
+- Item 14 of the brief is corrected: the `review_link` line stays out of the manifest template in `docs/templates.md`, as ruled in item 12 of repair round 1. `tests/checks/config/templates.test.ts:73-82` holds the template to the schema's fields that are not `readonly`, both ways, and `review_link` is `readonly`, as `id` is.
 - `tests/server/git/deposit-compare.test.ts`'s Zenodo case lays the fake's address over the shipped `deposit.zenodo` row, as a hub's settings file lays it.
 - Verify item 4 expects `checking file` lines; macOS's `patch` prints `patching file` for a dry run.
 - Verify item 5: to keep the config grep to the two rows, the help of `deposit.zenodo.address` in `config/options/behavior.yml` names Zenodo's API and its sandbox in words, and the token help of the row says "made on Zenodo".
@@ -784,8 +798,8 @@ The lines are those of the worktree, whose `docs/HELP.md`, `docs/data-map.md`, `
 `docs/HELP.md`:
 
 - `314: - **Deposit.** Every project has one. It keeps a mirror clone under `~/.oculus/deposits`, synced from the project's `code/`, with sync, commit, push, snapshot, branches, Fetch, and the diffs against `origin/main`.`
-  Replacement: `- **Deposit.** Every project has one. It keeps a mirror clone under `~/.oculus/deposits`, synced from the project's `code/`, with sync, commit, push, snapshot, branches, Fetch, and the diffs against `origin/main`. Its Zenodo section sends `code/` to Zenodo: For review sends an anonymised copy, each term of `code_availability.anonymize` replaced in the paths, the text files, the title and the description and the author Anonymous, its files open only through a share link; Publish sends the real files and authors, public, as a new version of the concept the `doi` names or a new record. Both ask first, need the `downloads` row `zenodo` of the primary hub's `.oculus/local.yml` (the row `deposit.zenodo.auth` names), and write `doi`, `zenodo_status`, `zenodo_date` and, for review, `review_link` into the manifest; a binary or compressed file holding a term refuses For review by name.`
-- New line after 314: `  - `deposit.zenodo` in a hub's `.oculus/config.yml` sets the address every Zenodo call is built from (`address`, Zenodo's API by default, such as its sandbox for a trial), the seconds one upload is given (`timeout_s`, 600) and the token's header (`auth`); a hub that sets only `address` keeps the rest.`
+  Replacement: `- **Deposit.** Every project has one. It keeps a mirror clone under `~/.oculus/deposits`, synced from the project's `code/`, with sync, commit, push, snapshot, branches, Fetch, and the diffs against `origin/main`. Its Zenodo section sends `code/` to Zenodo: For review sends an anonymised copy, each term of `code_availability.anonymize` replaced in the paths, the text files, the title and the description and the author Anonymous, its files open only through a share link; Publish sends the real files and authors, public, as a new version of the concept the `doi` names or a new record. Both ask first, need the `downloads` row `zenodo` of the primary hub's `.oculus/local.yml` (the row `deposit.zenodo.auth` names), and write `doi`, `zenodo_status`, `zenodo_date` and, for review, `review_link` into the manifest; a binary or compressed file holding a term refuses For review by name. For review of a Zenodo `doi` with no `zenodo_status` goes on only when the latest version of that record is the anonymous review copy, and is refused otherwise. Cancel ends a press up to the publish and deletes its draft; once the publish is sent the press runs to its end. A failed publish reads the draft first: a record Zenodo has published keeps its DOI, written to the manifest, and only an unpublished draft is deleted.`
+- New line after 314: `  - `deposit.zenodo` in a hub's `.oculus/config.yml` sets, for that hub's projects, the address every Zenodo call is built from (`address`, Zenodo's API by default, such as its sandbox for a trial), the seconds one upload is given (`timeout_s`, 600) and the token's header (`auth`); a hub that sets only `address` keeps the rest.`
 - `515: - These are fixed: ... Nothing force-pushes except a deposit's snapshot.` No change needed.
 
 `docs/data-map.md`:
@@ -802,26 +816,137 @@ The lines are those of the worktree, whose `docs/HELP.md`, `docs/data-map.md`, `
 `.scratch/migration/agents/guarded.md`:
 
 - G141, new entry after G140: `- G141. A For review upload to Zenodo holds no term of the manifest's `code_availability.anonymize`: each file name, each text content, the title and the description are sent with every term replaced, a binary file whose bytes hold a term is refused by name before anything is uploaded, and the one creator is "Anonymous".` with `  Code: `src/lib/server/git/deposit/zenodo-copy.ts`, `zenodo.ts`.` and `  Test: `tests/routes/git/zenodo.test.ts`, describe 'the review copy For review sends', every row.`
+- G142, new entry after G141: `- G142. Publish and a new version send what they name and nothing else, and a press that is cancelled or fails leaves no record unrecorded.` with `  Code: `src/lib/server/git/deposit/zenodo.ts`, `zenodo-meta.ts`.` and `  Test: `tests/routes/git/zenodo.test.ts`, describe 'what Publish and a new version send, and what a press that stops leaves', every row.`
 - `22: - G6. A git action that can lose work or move a branch needs `confirm: true`. Each action of the `CONFIRMED` lists is a unit.` Replacement: `- G6. A git action that can lose work or move a branch, and a Zenodo deposit (For review, Publish), needs `confirm: true`. Each action of the `CONFIRMED` lists is a unit.`
 - `24` (G6's Test line), append: `; zenodoReview and zenodoPublish: `tests/routes/git/deposit.test.ts`, 'refuses zenodoReview that the page did not confirm', 'refuses zenodoPublish that the page did not confirm'.`
 - `9` (G1's Test line), append: `; deposit's Zenodo actions: `tests/routes/git/deposit.test.ts`, 'refuses zenodoReview with no token', 'refuses zenodoPublish with no token'`.
-- `52` (G76), append: ` The Zenodo token, read from the `downloads` row `deposit.zenodo.auth` names, is sent only in the `Authorization` header of requests to the `deposit.zenodo` address, no other reader row is given it, and no answer, log or History record holds it.` Code line 53, append: `; the Zenodo token: `src/lib/server/git/deposit/zenodo-api.ts`, `readerAccounts` in the Recover route.` Test line 54, append: `; `tests/routes/git/zenodo.test.ts`, describe 'the Zenodo token', every row.`
+- `52` (G76), append: ` The Zenodo token, read from the `downloads` row `deposit.zenodo.auth` names, is sent only in the `Authorization` header of requests to the `deposit.zenodo` address, no other reader row is given it, and no answer, log or History record holds it.` Code line 53, append: `; the Zenodo token: `src/lib/server/git/deposit/zenodo-api.ts`, `readerAccounts` in `src/routes/api/(machine)/recover/+server.ts`.` Test line 54, append: `; `tests/routes/git/zenodo.test.ts`, describe 'the Zenodo token', every row.`
 - `85` (G28's Test line), append: `; the deposit actions that write the manifest: `tests/state/client/held-unsaved.test.ts`, describe 'the file a deposit action writes', every row.`
 - `170` (G79's Test line), after 'syncs the code folder of the project folder, never the one under .oculus': `, 'makes the Zenodo review copy from the code folder of the project folder, never the one under .oculus'`.
-- `225` (G139), replace "the `Code` link, last in `links`, is `https://doi.org/<doi>` for a deposited manifest with a DOI, else its `code_availability.url`" with "the `Code` link, last in `links`, is `https://doi.org/<doi>` when `zenodo_status` is `deposited` and `doi` is not empty, else `code_availability.url` when `status` is `deposited`, else none; a DOI under `zenodo_status: review-anon` is never linked". Test line 227 already reads "every row", which takes the three new rows.
-- The git run's broken pipe (case 26) has its test in `tests/server/git/git-write.test.ts`, describe 'a git run handed more input than it reads', 'answers from the exit of a git that ends before reading its input, and leaves no broken pipe unhandled'; it belongs to no guarded entry the brief names.
+- `225` (G139), replace "the `Code` link, last in `links`, is `https://doi.org/<doi>` for a deposited manifest with a DOI, else its `code_availability.url`" with "the `Code` link, last in `links`, is `https://doi.org/<doi>` when `zenodo_status` is `deposited` and `doi` is not empty; under `status: deposited` it is `https://doi.org/<doi>` when `doi` is not empty and `zenodo_status` is not `review-anon`, else `code_availability.url`; else none; a DOI under `zenodo_status: review-anon` is never linked". Test line 227 already reads "every row", which takes the four new rows.
+- `88` (G33's Test line), append: `; a git run handed more input than it reads: `tests/server/git/git-write.test.ts`, describe 'a git run handed more input than it reads', 'answers from the exit of a git that ends before reading its input, and leaves no broken pipe unhandled'.`
 
 ## The hub patch
 
-`.scratch/migration/agents/reviews/O101-hub.patch`, 132 lines, made by `diff -ruN a b` from the scratch folder; touches three files of the hub:
+`.scratch/migration/agents/reviews/O101-hub.patch`, 138 lines, made by `diff -ruN a b` from the scratch folder; touches three files of the hub:
 
 - `.oculus/data/academic/funding.yml`, 5 lines added: the schema row `award` after `funder`; `funder: flemish-government` on `FAIR`, `funder: zonmw` on `ZonMw-AI-HCC`, `funder: fwo` and `award: "1157019N"` on `FWO-PhD`. The award number is the one the thesis chapters print, `projects/archive/phd/phd-thesis/manuscript/chapters/acknowledgement/acknowledgement.tex:4` ("Flanders (FWO 1157019N)").
 - `.oculus/data/people/organisations.yml`, 12 lines added (15 with the blank lines): `zonmw` "ZonMw" NL, `flemish-government` "Flemish Government" BE, `fwo` "Research Foundation Flanders" BE, each `kind: funder`.
-- `.oculus/data/people/people.yml`, 9 lines added, `family` filled for:
+- `.oculus/data/people/people.yml`, 10 lines added, `family` filled for:
   - `amir-haeri` "Amir Haeri", `guichelaar` "Guichelaar", `jakob-nolte` "Nolte", `van-den-berg` "van den Berg": from `projects/manuscripts/covert-theory/manuscript/refs.bib:57` (`Nolte, Jakob and Guichelaar, Maureen M. J. and Bouman, Donald E. and van den Berg, Stephanie M. and Amir Haeri, Maryam`), the same split in `projects/archive/published/2026/hccnet-fl/manuscript/references/hccnet_fl.bib:255`.
   - `peeters` "Peeters": from `projects/manuscripts/covert-theory/manuscript/refs.bib:48` (`Peeters, Liesbet M.`).
-  - `dongho` "Chun", `dries-cornelissen` "Cornelissen", `ward` "Ceyssens": no file splits the name; the last word of the name as every file prints it, the website's `_data/data.yml:162`, `:165`, `:168` ("Dongho Chun", "Dries Cornelissen", "Ward Ceyssens").
+  - `dries-cornelissen` "Cornelissen": from `funding/2026-nwo-veni-self-explaining-hospital/preproposal/veni2026.tex:105` ("Cornelissen, D.").
+  - `kerga` "Kerga": from `funding/2026-nwo-veni-self-explaining-hospital/preproposal/veni2026.tex:113` ("Kerga, M.A.").
+  - `dongho` "Chun", `ward` "Ceyssens": no file splits the name; the last word of the name as every file prints it, the website's `_data/data.yml:162`, `:168` ("Dongho Chun", "Ward Ceyssens").
   - `matija-pretnar` "Pretnar": no file splits the name; the last word of "Matija Pretnar" in `projects/coauthor/published/2017/algebraic-effects-compilation/project.yml:23` and the website's `_data/publications.yml:400`.
-- Left without `family`: `kerga`, "Meseret Assefa Kerga", a name with no family name in the Western sense; the one file of the hub that prints it, `projects/manuscripts/meseret-cirrhosis/project.yml:42` (`authors: Meseret Assefa Kerga, Axel Faes`), does not split it. A Publish of a project that names `kerga` is refused with the sentence naming the person until the hub fills `family`.
 
 The three patched files parse (the `yaml` package of the worktree read `b/`: funding.yml 12 entries, organisations.yml 11, people.yml 38, and the funded entries `[ 'FAIR', 'flemish-government', undefined ]`, `[ 'ZonMw-AI-HCC', 'zonmw', undefined ]`, `[ 'FWO-PhD', 'fwo', '1157019N' ]`).
+
+## Repair round 1
+
+NOT done: as the first line of this report says, the look and any call to a real Zenodo. Every item below is done.
+
+### Checks on the final tree
+
+`npm run diagrams && npm run docs:palette && npm run test:quick`, `exit=0`. `diagrams` printed the 18 files of `docs/diagrams/`, `docs:palette` printed `docs/palette.md`, and `test:quick`:
+
+```
+test:quick: 68 changed file(s), from git since HEAD
+test:quick: 339 test file(s)
+ok      ASCII gate (1.0 s)
+ok      prettier (1.4 s): All matched files use Prettier code style!
+ok      svelte-kit sync (2.1 s)
+ok      eslint (11.1 s)
+ok      svelte-check (14.7 s): 1793373106881 COMPLETED 571 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest checks (157.6 s): Duration  148.02s (transform 68.76s, setup 0ms, import 204.27s, tests 296.26s, environment 5ms)
+ok      vitest (168.0 s): Duration  159.16s (transform 97.70s, setup 0ms, import 222.47s, tests 377.78s, environment 16.97s)
+ok      vitest slow (258.2 s): Duration  249.69s (transform 15.55s, setup 0ms, import 138.72s, tests 847.46s, environment 20ms)
+test:quick: 260.6 s; every command passed
+test:quick: not covered: tests that reach no changed file within the import depth,
+            other than the checks under tests/checks/source and tests/checks/tree,
+            which run for any change under src, tests or utils; the build, the lint
+            of unchanged files
+```
+
+| Check | Output |
+| --- | --- |
+| 2. ASCII gate over the 64 changed paths | prints nothing (`wc -l`: 0); the hub patch's 7 lines are named in the DONE table's row 2 |
+| 3. `sh utils/unused-exports.sh` vs `O101-base/unused-exports.txt` | `diff` prints nothing, `unused diff exit 0` |
+| 4. `patch -p1 --dry-run` inside the hub | `patching file '.oculus/data/academic/funding.yml'`, `patching file '.oculus/data/people/organisations.yml'`, `patching file '.oculus/data/people/people.yml'`, `patch exit 0` |
+| 5. `git grep -n "zenodo.org"` | `-- src` prints nothing, `src exit 1`; a grep of `tests/fixtures/hubs/zenodo-*.ts` and `src/lib/server/git/deposit`, which holds the untracked files, finds nothing, exit 1; `-- config ':!config/local.yml'` prints `config/defaults/behavior.yml:311` (the Recover row) and `:470` (`deposit.zenodo`) |
+| 6. New and changed tests before and after | below |
+| 7. `wc -l`, `sh utils/folder-check.sh` | `zenodo.ts` 414, `zenodo-api.ts` 157, `deposit.ts` 798, `deposit-git.ts` 484, `deposit-routes.ts` 314, `papers.ts` 187, `tests/routes/git/zenodo.test.ts` 788, `zenodo-answers.ts` 308, `zenodo-world.ts` 308; largest source `src/lib/data/model/index.ts` 880; `folder exit 0`; `tests/fixtures/hubs` holds 7 items |
+| 8. History words | the grep over the comments and test titles of this round's files with the words `previously`, `used to`, `no longer`, `formerly`, `was changed`, `fixed`, `bug`, `regression`, `legacy`, `old`, `before this`, `repair`, `round`, `O101`, `reverted`, `anymore`, `earlier` prints nothing; the comments were read too |
+| 9. Prose | the new sentences of `config/text/server.yml` and the two help lines of `manifest-schema.yml` were read against the rules; one departure: `publish_unknown` and the two `_unread` sentences hold two sentences, since each says what happened and then what the user does |
+
+Hub patch: `people.yml` of `b/` parses, 38 entries, `[('kerga', 'Kerga')]`.
+
+### Before and after of the new and changed tests
+
+Before the code changed, `npx vitest run --reporter=verbose tests/routes/git/zenodo.test.ts tests/data/hubs/website-files.test.ts`: `Tests  21 failed | 53 passed (74)`. After: `Test Files  2 passed (2)`, `Tests  75 passed (75)`. The 75th is 'names the draft when Zenodo refuses to delete it', written after its code, so it has no run before it.
+
+The 21 that failed before, the behaviours this round adds or changes:
+
+- describe 'what Publish and a new version send, and what a press that stops leaves' (G142):
+  - 'writes the DOI and deletes nothing when the publish answers 502 after Zenodo published': `expected 'Zenodo answered 502 to the publish; t...' to be undefined`; the same with 'gets no answer'.
+  - 'deletes the draft and writes nothing when the publish answers 502 and the draft is not published', the same with 'gets no answer': the calls read `expected [ ...(2) ] to deeply equal [ 'GET /101/draft', ...(1) ]`, no draft read was made.
+  - 'deletes nothing and writes nothing when the publish answers 502 and neither the draft nor the record reads', the same with 'gets no answer': `Error: text key not in config: server.zenodo.publish_unknown`.
+  - 'writes nothing and names the page when the read after the publish answers 502': `Error: text key not in config: server.zenodo.failed_unread`; with 'gets no answer': `server.zenodo.unanswered_unread`.
+  - 'still writes the DOI and the share link when Cancel comes after the publish was sent': `expected 'Cancelled during the publish; the dra...' to be undefined`.
+  - 'makes a new version of a review copy whose DOI has zenodo_status empty', the same with 'none': `expected 'code_availability.doi holds 10.5281/z...' to be undefined`.
+  - 'refuses a DOI with no Zenodo status of a record with ...', its four rows: `Error: text key not in config: server.zenodo.doi_published`.
+- describe 'the hub a press reads': 'reaches the address of the project's own hub alone for a project of a second hub': `expected 'Zenodo gave no answer to the new draf...' to be undefined`; 'answers the token's readiness of the GET from the project's own hub': `expected { ok: true, state: {}, ...(1) } to match object { zenodo: { ready: true } }`.
+- describe 'the Zenodo token': 'is in no answer, log line or History record of a For review that wrote the manifest': `Error: ENOENT: no such file or directory, scandir '.../history'`; 'is not sent by the Recover route when another hub of the workspace reads it from the row': `expected 'fixture-zenodo-token-5e1f' to be undefined`.
+- `tests/data/hubs/website-files.test.ts`: 'a deposit with a DOI links its code at the DOI's address, after the record's links' and 'a deposit with a DOI of another service and no Zenodo status links its code at the DOI's address': `expected { Object (Code) } to deeply equal { Object (Code) }`.
+
+The rows of G142 that passed before and after, behaviour the first build holds: Publish's creators, funding, files and access; both new versions of a review record; Publish over `deposited`; the refusals of a published deposit and of a version DOI; Publish of a DOI with no Zenodo status; Cancel during the upload; both rows of a failed share link (`failed_published` and `unanswered_published`, whose text this round changes through the catalog); 'is not sent by the Recover route, whose Recover row names auth on its downloads row'.
+
+### The items
+
+1. `zenodo.ts` reads `zenodoSettings(deposit.home.into.config.merged)`; `Deposit.merged` is gone from `deposit.ts`; `mergedOf` in `deposit-routes.ts` takes the id and reads the same settings through `depositFor`. The token stays from `options.downloads`. Beyond the item's text and needed by it: a press now reads the `auth` of the project's own hub, so `readerAccounts` takes the settings of every hub of the workspace, and `recover/+server.ts` passes them; otherwise a row a second hub's `auth` names reached the Recover readers. Test: describe 'the hub a press reads' and the Recover row of a second hub.
+2. The publish, the record read and the share link pass `own = null`, so a Cancel does not reach them, and `timedFetcher` bounds each by `REQUEST_MS`. `own` is now `null` or absent, no longer any signal. `settled` is called when the publish does not answer ok: `GET /records/{draft}/draft`; `is_published` not true deletes the draft and gives `failed_draft` or `unanswered_draft`; true, or a failed draft read with `GET /records/{draft}` ok, goes on through `recorded`, which writes the DOI, status and date and gives the success sentence; neither read gives `publish_unknown` and deletes and writes nothing. `recorded` writes nothing when the read fails or names no `conceptdoi`, and gives `failed_unread` or `unanswered_unread`, naming the page. `cancelled_published` is removed, since nothing after the publish can be cancelled. `failed_published` and `unanswered_published` remain for the share link alone, after the DOI is written, and read "the record is published as {0} and its DOI is written". `failure()` now covers only the calls before the publish. Beyond the item's text: `dropped` no longer says "the draft was deleted" when the deletion failed; a refused DELETE gives the new `draft_kept`, and a 404 counts as deleted.
+3. G142's tests are in the describe named above, 26 rows, against the fake; the Doc text is in "Doc text".
+4. `press` no longer refuses an unmarked DOI. `plan.unmarked` is set for For review of a Zenodo DOI whose status is not `review-anon`, and `versionOf`, after `versions/latest` and before any draft, refuses with `doi_published` unless `isReviewCopy` holds: exactly one creator named `Anonymous` and `metadata.access_right` `restricted`. `doi_unmarked` is removed. Publish is unchanged, and has its own row. A review press with a DOI that is no Zenodo DOI is refused with `doi_form`.
+5. `codeLink` follows the item, with the comment corrected and a constant `REVIEW_ANON`. In `website-files.test.ts` the base's title and fixture of the journal row are restored: `diff` against the base now shows no removed line in that file. Three rows of case 25 stand as they were (the Zenodo deposit with no GitHub deposit, the DOI under review on Zenodo, and code under review). The row 'a DOI with no Zenodo status is not linked, and the GitHub address is' asserted the behaviour this item ends, so it is rewritten rather than kept: 'a deposit with a DOI of another service and no Zenodo status links its code at the DOI's address', over a Figshare DOI and, with `zenodo_status: none`, an OSF DOI. A row 'a DOI with no Zenodo status is not linked while the deposit is not public' is added. The help of `publication.links` in `config/schemas/manifest-schema.yml` states the same rule, and G139's Doc text is corrected.
+6. `people.yml` of the patch has `family: "Kerga"`; the patch is 138 lines; the provenance lines are corrected in "The hub patch".
+7. The test calls `GET` of `src/routes/api/(machine)/recover/+server.ts` with fake locals over a fixture hub whose Recover row `zenodo` names `auth`, stubs the global `fetch`, and checks that at least one request was made and none carries `authorization`. `readerAccounts` is no longer called by the test.
+8. `write` in `zenodo.ts` now calls `recordWrite(outcome, 'manifest', into)`, so a press records in History; the first build wrote no record, so the item's "records that exist" needed this code change. The test presses a successful For review, requires `changes.jsonl` in the history folder and `zenodo_status` in it, and checks every file there for the token; `filesUnder` throws on a missing folder. The refused-upload test keeps its answer, log and manifest checks.
+9. `deposit-git.ts:3-9` and `:28-33` are rewritten as the item says, naming the mirrors folder, the temporary folder of `stagedFiles` and `deposit-tree.ts`.
+10. `REQUEST_MS` is exported from `recover/files.ts` and imported by `zenodo-api.ts`; `CALL_MS` is gone.
+11. The fake: every option (`status`, `after`, `hold`, `held`, `seed`) and route is used by a test. `seed.conceptdoi` is removed, since a seeded record's concept gives it; `release`, the draft read, a concept's redirect and the record's `metadata` are added, the last two in the recorded answer's shape.
+12. Correction of item 14 of the brief: the `review_link` line stays out of `docs/templates.md`, as ruled; stated in "What in the brief was wrong or impossible".
+13. Below, and in the DONE table's row 2 (ASCII), "Visible changes for the look" and "Doc text".
+
+Outside the paths the items name: `tests/fixtures/hubs/zenodo-world.ts`, new. The test file passed the 880-line limit with G142's rows, so the fixture hub, the press and the credits moved there from `zenodo.test.ts`.
+
+### Every changed line of an existing test file against the base
+
+From `diff .agents/worktrees/O101-base/<file> <file>` of each changed test file; a removed line is listed, and a file with none is named once. No assertion, allow list or predicate of an existing test is loosened; the one allow list changed is widened by the new key.
+
+| File | Before | After |
+| --- | --- | --- |
+| `tests/checks/config/config-folder.test.ts` | the expected list of `defaults/behavior.yml`'s keys | the same with `'deposit',` after `'git'` |
+| `tests/routes/git/deposit.test.ts` | head comment `... is tests/server/git/deposit.test.ts.` | `... is tests/server/git/deposit.test.ts, and what the two Zenodo actions send is tests/routes/git/zenodo.test.ts.` |
+| `tests/server/git/deposit-compare.test.ts` | head comment `... either placement), and` | `... either placement), the` |
+| `tests/server/git/deposit-compare.test.ts` | head comment `the changes the plan lists, read from the mirror's status record by record.` | `Zenodo review copy made from the code folder of the project folder, and the changes the plan lists, read from the mirror's status record by record.` |
+| `tests/state/client/held-unsaved.test.ts` | `import { NO_LOOKUPS } from '.../write-files.ts';` | `import { NO_LOOKUPS, depositedFile } from '.../write-files.ts';` |
+| `tests/data/hubs/website-files.test.ts` | no line removed | 69 lines added: fixtures and rows |
+| `tests/server/git/git-write.test.ts` | no line removed | 22 lines added: the import of `applyPatch` and case 26's describe |
+
+### `ls-files -z` and the GitHub mirror
+
+| | Before | After |
+| --- | --- | --- |
+| The command | `git ls-files`, split on newlines | `git ls-files -z`, split on NUL by `pathsOf` |
+| A path holding a non-ASCII byte or a quote, as `code/caf<e-acute>.py` | git prints it quoted, so `prune` does not find it in the listing and deletes it from the mirror's checkout, and the sync plan lists the quoted form | kept in the mirror and listed as it is |
+
+A deposit of such a project now keeps a file it used to lose, and its plan differs from the one before. This follows from the code by reading; no such project was run.
+
+### Problems to know
+
+- `isReviewCopy` reads the answer of a record read in the shape of the recorded `picai.body`, which gives creators as `name` with no type, so "organizational" is not checked: a person named `Anonymous` with restricted files would pass. That the answer gives `metadata.access_right: restricted` for files sent as `access.files: restricted` comes from the shape of that recording, an open record, and is not verified against Zenodo. A wrong reading refuses the press, so nothing is sent. The first real For review of an unmarked DOI settles it.
+- A publish that takes longer than 30 s at Zenodo and whose draft still reads unpublished is treated as not published, and the draft is deleted. Zenodo's answer to that DELETE decides what happens; no fake covers it. Item 2 says to delete a draft that is not published, so this is built as ruled.
+- A new version under an unmarked DOI that fails after the publish's read leaves the manifest's `zenodo_status` empty; the next For review reads the latest version and goes on.
+- `publish_unknown` names `<site>/records/<id>`, which opens only if the record is published; an unpublished draft stays on Zenodo in that case, since nothing is deleted.
+
+Next: the refuter's read of this round, then the look at the states in "Visible changes for the look".

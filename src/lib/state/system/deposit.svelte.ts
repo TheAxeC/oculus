@@ -1,4 +1,5 @@
-// Layer 2, client state. What the deposit panel knows about one project's mirror.
+// Layer 2, client state. What the deposit panel knows about one project's mirror, and whether the
+// `downloads` row the Zenodo token is read from is held, which turns For review and Publish on.
 //
 // The mirror lives outside the hub tree, under ~/.oculus/deposits, so nothing about it is in the
 // snapshot: it is fetched from GET /api/deposit the first time a panel asks for a project, and read
@@ -12,6 +13,7 @@
 
 import { z } from 'zod';
 import type {
+    CodeAvailability,
     DepositChange,
     DepositFinding,
     DepositPlan,
@@ -27,7 +29,7 @@ import { inBrowser } from '../shared/stores/in-browser.ts';
 export type Finding = DepositFinding;
 export type Change = DepositChange;
 export type Plan = DepositPlan;
-export type { MainComparison, MirrorState };
+export type { CodeAvailability, MainComparison, MirrorState };
 
 /**
  * The branch the mirror is compared against, the one server/git/deposit/deposit-compare.ts reads.
@@ -73,9 +75,13 @@ const mirrorStateShape = z.object({
     plan: planShape.nullable()
 }) satisfies z.ZodType<MirrorState>;
 
-/** What GET /api/deposit answers: the state. */
+/**
+ * What GET /api/deposit answers: the state, and whether the `downloads` row the Zenodo token is
+ * read from is held (never the token), which an answer without it reads as not held.
+ */
 const bodyShape = z.object({
-    state: mirrorStateShape.nullable().catch(null)
+    state: mirrorStateShape.nullable().catch(null),
+    zenodo: z.object({ ready: z.boolean() }).catch({ ready: false })
 });
 
 /** What the panel reads for one project. */
@@ -85,13 +91,15 @@ export type Held = {
     error: string;
     /** True while the first answer for the project is still to come. */
     loading: boolean;
+    /** Whether the Zenodo token's `downloads` row is held, so For review and Publish can send. */
+    zenodo: boolean;
 };
 
 /** What a project reads as before its answer arrives. */
-const PENDING: Held = { state: null, error: '', loading: true };
+const PENDING: Held = { state: null, error: '', loading: true, zenodo: false };
 
 /** What no project at all reads as: an empty id asks nothing and waits for nothing. */
-const NOTHING: Held = { state: null, error: '', loading: false };
+const NOTHING: Held = { state: null, error: '', loading: false, zenodo: false };
 
 /** The two texts of one file, or the sentence that says why they were not given. */
 export type FileTexts =
@@ -113,7 +121,7 @@ export type DepositStore = {
 
 /** What a request that failed leaves held: no state, and the sentence saying why. */
 function failed(error: string): Held {
-    return { state: null, error, loading: false };
+    return { state: null, error, loading: false, zenodo: false };
 }
 
 export function createDeposit(queries: Queries): DepositStore {
@@ -124,7 +132,12 @@ export function createDeposit(queries: Queries): DepositStore {
             const raw = await readJson(response);
             if (raw === undefined || !response.ok) return failed(failedAnswer(response, raw));
             const body = bodyShape.safeParse(raw).data;
-            return { state: body?.state ?? null, error: '', loading: false };
+            return {
+                state: body?.state ?? null,
+                error: '',
+                loading: false,
+                zenodo: body?.zenodo.ready ?? false
+            };
         } catch (error) {
             return failed(error instanceof Error ? error.message : String(error));
         }
@@ -159,7 +172,7 @@ export function createDeposit(queries: Queries): DepositStore {
      * Put a state in by hand. The panel does not call it.
      */
     function hold(id: string, state: MirrorState | null, error = ''): void {
-        const held: Held = { state, error, loading: false };
+        const held: Held = { state, error, loading: false, zenodo: false };
         queries.hold(['deposit', id], held);
     }
 

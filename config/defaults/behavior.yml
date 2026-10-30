@@ -463,6 +463,19 @@ git:
   message_model: ""
   autofetch_minutes: 0
 
+# === The Zenodo deposit =====================================================
+# The Deposit view's For review and Publish send a project's code/ to Zenodo through this row: `address` is the base of every call, `timeout_s` the seconds one upload is given (every other call keeps the reader's limit), and `auth` reads the token from the downloads row it names in the primary hub's .oculus/local.yml. A hub's .oculus/config.yml lays its own fields over these one by one, so a hub that sets only `address` (Zenodo's sandbox) keeps this `auth` and `timeout_s`.
+deposit:
+  zenodo:
+    address: https://zenodo.org/api
+    timeout_s: 600
+    auth:
+      - header: Authorization
+        prefix: 'Bearer '
+        row: zenodo
+        required: true
+        help: The `secret` is a personal access token made on Zenodo under Applications, Personal access tokens, with the scopes deposit:write and deposit:actions.
+
 
 # === Search across files ====================================================
 # The Search view runs ripgrep over one served root or all of them. `max_hits` is how many hits one answer carries before it says it was cut; `timeout_s` is how long one root's search is given, and the same time is given to one root's list of file names; `max_names` is how many file names the palette's file mode lists in all before it says the list was cut.

@@ -1,16 +1,18 @@
 // Layer 1, data. The typed readers of the settings of files, the editor and repositories: the
 // search, the extensions handed to a program, the Trash confirmation, the Files view's icon place,
 // the repository scan depth and the chat's collection keys (`chatContext`) of sources.yml, the
-// editor's paint limit, the automatic fetch and the website the hub's files are written into
-// (`websiteSettings`). Each reads its key through settingReader (reader.ts), except `chatContext`,
-// which reads its value by kind alone; the readers the page calls before the config channel's first
-// message answer a fixed value for a configuration that holds no catalog yet.
+// editor's paint limit, the automatic fetch, the Zenodo deposit of a hub's projects
+// (`zenodoSettings`) and the website the hub's files are written into (`websiteSettings`). Each
+// reads its key through settingReader (reader.ts), except `chatContext`, which reads its value by
+// kind alone; the readers the page calls before the config channel's first message answer a fixed
+// value for a configuration that holds no catalog yet.
 
 import { z } from 'zod';
 import type { ProgramApps } from '../../../helpers/files/opens-in-program.ts';
 import { byKey } from '../../../helpers/guards.ts';
 import { catalogOf, sourcedItems, type CatalogEntry } from '../catalog/options.ts';
 import { valueProblem, type ValueProblem } from '../catalog/value-rule.ts';
+import { authShape, type Auth } from './rows/grammar.ts';
 import {
     checkedRows,
     heldAt,
@@ -223,6 +225,40 @@ export type WebsiteKind = z.infer<typeof websiteKindShape>;
  * its publications' sections in the file's order.
  */
 export type WebsiteSettings = { folder: string; cv: string; kinds: WebsiteKind[] };
+
+/**
+ * The Zenodo deposit of a hub's projects: the base of every call, the seconds one upload is given,
+ * and the entries the token is read and sent by. A field the hub's file does not set is oculus's
+ * own, since each is a key of the hub list of its own (data/helpers/hub-names.ts).
+ */
+export type ZenodoSettings = { address: string; timeoutS: number; auth: Auth[] };
+
+/**
+ * Read `deposit.zenodo`'s three keys, each its default when it is missing or wrong; an `auth` row
+ * the options' fields refuse, or the entry's own shape refuses, is left out with its problem. A
+ * `required` the row sets to false is read as not set, which is what the entry's shape says.
+ */
+export function zenodoSettings(
+    config: Record<string, unknown>,
+    problems: SettingProblem[] = []
+): ZenodoSettings {
+    const read = settingReader(config, problems);
+    const auth: Auth[] = [];
+    for (const { at, row } of checkedRows(config, 'deposit.zenodo.auth', problems)) {
+        const { required, ...rest } = row;
+        const entry = authShape.safeParse(required === true ? { ...rest, required } : rest);
+        if (entry.success) auth.push(entry.data);
+        else {
+            const issue = { kind: 'shape' as const, row: at, at: '' };
+            problems.push({ key: 'deposit.zenodo.auth', where: 'row', issue });
+        }
+    }
+    return {
+        address: read.text('deposit.zenodo.address').trim().replace(/\/+$/, ''),
+        timeoutS: read.number('deposit.zenodo.timeout_s'),
+        auth
+    };
+}
 
 /** Read `website:`'s three keys, each its default when it is missing or wrong. */
 export function websiteSettings(

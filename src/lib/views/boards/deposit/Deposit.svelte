@@ -19,10 +19,12 @@
     // switches branches. One instance per project, and the project it is for is the `id` in its
     // instance state, exactly as the editor and the project tab read their own.
     //
-    // Every write goes to POST /api/deposit with the write token, and the five that can lose work
-    // (commit, push, snapshot, the two branch actions) carry a confirm this view sets only from
-    // the yes of views/shared/writes/AskConfirm.svelte. Nothing here acts on a timer or on a
-    // payload arriving; a write happens when a button is pressed and never otherwise.
+    // Every write goes to POST /api/deposit with the write token, and the seven that write outside
+    // this machine or over `code/` (commit, push, snapshot, the two branch actions, and For review
+    // and Publish of the Zenodo section, DepositZenodo.svelte) carry a confirm this view sets only
+    // from the yes of views/shared/writes/AskConfirm.svelte. Nothing here acts on a timer or on a
+    // payload arriving; a write happens when a button is pressed and never otherwise. The Zenodo
+    // section needs no mirror and is drawn whether or not the mirror exists.
     //
     // The sync plan, its files, changes and findings, is DepositPlan.svelte. A changed file of the
     // plan and a file that differs from `origin/main` each open their diff in the diff editor
@@ -41,6 +43,7 @@
     import AskConfirm from '$lib/views/shared/writes/AskConfirm.svelte';
     import DepositCompare from './DepositCompare.svelte';
     import DepositPlan from './DepositPlan.svelte';
+    import DepositZenodo from './DepositZenodo.svelte';
     import type { Ask } from '$lib/views/shared/writes/ask';
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Menu from '$lib/ui/menu/Menu.svelte';
@@ -57,6 +60,7 @@
 
     const {
         deposit: { mirror, reload },
+        selectors: { projectOf },
         writes: { writeDeposit, writeGit }
     } = useState();
 
@@ -75,6 +79,8 @@
     // store prefix of `$state`, which svelte-check refuses.
     const now = $derived(held.state);
     const plan = $derived(now?.plan ?? null);
+    /** The project's `code_availability` as the snapshot holds it, read by the Zenodo section. */
+    const code = $derived(id === '' ? undefined : projectOf(id)?.codeAvailability);
 
     /** The message in the box. It survives a suggestion and is what a commit sends. */
     let message = $state('');
@@ -130,6 +136,20 @@
         // can have moved them, which is every write this panel makes.
         if (answer.ok) await listBranches();
         return { ok: answer.ok, output: answer.output ?? '' };
+    }
+
+    /**
+     * One Zenodo action, which the section calls from the yes of its own dialog, with `busy` set so
+     * no other write of this panel starts while it runs.
+     */
+    async function press(
+        action: 'zenodoReview' | 'zenodoPublish'
+    ): Promise<{ ok: boolean; output: string; error: string }> {
+        if (id === '' || busy) return { ok: false, output: '', error: t('deposit.why_busy') };
+        busy = true;
+        const answer = await writeDeposit(action, id, { confirm: true });
+        busy = false;
+        return { ok: answer.ok, output: answer.output ?? '', error: answer.error ?? '' };
     }
 
     function ask(question: string, detail: string, run: () => void): void {
@@ -316,21 +336,26 @@
         {#if why !== ''}
             <p class="none">{why}</p>
         {/if}
-        {#if busy}
-            <div class="busy">
-                <p class="none">{t('deposit.busy')}</p>
-                <ToolButton
-                    small
-                    label={t('deposit.cancel')}
-                    title={t('deposit.cancel_title')}
-                    onclick={() => void writeDeposit('cancel', id)}
-                />
-            </div>
-        {/if}
+        <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+        {@render busyLine()}
         {#if outcome !== ''}
             <p class="outcome">{outcome}</p>
         {/if}
     </div>
+{/snippet}
+
+{#snippet busyLine()}
+    {#if busy}
+        <div class="busy">
+            <p class="none">{t('deposit.busy')}</p>
+            <ToolButton
+                small
+                label={t('deposit.cancel')}
+                title={t('deposit.cancel_title')}
+                onclick={() => void writeDeposit('cancel', id)}
+            />
+        </div>
+    {/if}
 {/snippet}
 
 <Pane title={t('deposit.title')} tinted>
@@ -369,6 +394,11 @@
                 {@render branchBox(now)}
                 <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
                 {@render commitBox(now)}
+            {/if}
+            <DepositZenodo {id} {code} ready={held.zenodo} {busy} onpress={press} />
+            {#if !now.exists}
+                <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+                {@render busyLine()}
             {/if}
         {/if}
     </div>

@@ -185,10 +185,13 @@ project.yml:
   stage: vocab stages
   form: vocab forms
   status.chips: [vocab chips]
+  code_availability.anonymize: rows of { term, as }, the words For review replaces
+  code_availability.zenodo_status: none, review-anon or deposited; zenodo_date and review_link are the Zenodo deposit's, doi the deposit's on any service
 people:
   affiliations: [organisations key]
 funding:
   funder: organisations key
+  award: the funder's award number, sent with the title to Zenodo
 events, education, applications:
   related: [a project]
 funding, events, education, applications, tasks:

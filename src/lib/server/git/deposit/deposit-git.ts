@@ -3,8 +3,10 @@
 // The decision on git writes and the deposit: a project's `code/` is ordinary
 // tracked content of the hub and never carries a `.git` of its own, and the deposit lives outside
 // the hub tree as one mirror clone per deposit repo under the machine-local state folder. Every
-// command here therefore runs in a directory under that mirrors folder and nowhere else, which is
-// the first refusal of `run` and is checked again by every operation's caller.
+// command here therefore runs in the folder its `Where` names and nowhere else, which is the first
+// refusal of `run` and is checked again by every operation's caller: a directory under the mirrors
+// folder, or, for the Zenodo copy, under the temporary folder `stagedFiles` (zenodo-copy.ts) makes
+// and passes as that `Where`'s mirrors folder.
 //
 //     git -C <mirror> clone|init|symbolic-ref|remote|add|ls-files|status|commit|push|branch|switch
 //     git -C <mirror> rev-parse|log|check-ref-format|diff|show|fetch|rm
@@ -25,9 +27,11 @@
 //
 // Every operation answers `{ ok, output, error }` and never throws. Nothing here is reachable from
 // a watcher, a timer or the socket: its operations are called by deposit.ts, reached only from
-// POST /api/deposit with the write token and the page's confirm, and by deposit-compare.ts, which
-// runs `diffCmd`, `fetchCmd`, `logCmd`, `revParse` and `showCmd` for the files a sync would change,
-// Fetch and the comparison with `origin/main`, reached from /api/deposit too. The clone of
+// POST /api/deposit with the write token and the page's confirm, by deposit-tree.ts, which stages
+// a tree for deposit.ts and for the Zenodo copy (`addAll`, `lsFiles`), by zenodo-copy.ts, which
+// runs `initMirror` in the temporary folder, and by deposit-compare.ts, which runs `diffCmd`,
+// `fetchCmd`, `logCmd`, `revParse` and `showCmd` for the files a sync would change, Fetch and the
+// comparison with `origin/main`, reached from /api/deposit too. The clone of
 // server/git/clone/ takes this module's `Outcome`, `GitRunner` and `GhRun` types and runs its own
 // commands (clone-git.ts).
 //
@@ -262,9 +266,12 @@ export function addAll(at: Where): Promise<Outcome> {
     return run(at, ['add', '-A']);
 }
 
-/** What the mirror would ship: the staged tree, one path per line. */
+/**
+ * What the mirror would ship: the staged tree, each path ended by a NUL as git holds it, so a path
+ * with a character git would otherwise quote is read as it is (deposit-tree.ts's `pathsOf`).
+ */
 export function lsFiles(at: Where): Promise<Outcome> {
-    return run(at, ['ls-files']);
+    return run(at, ['ls-files', '-z']);
 }
 
 /**

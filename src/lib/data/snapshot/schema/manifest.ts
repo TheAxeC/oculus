@@ -2,10 +2,11 @@
 // a project.yml. The schema is the project.yml edit form as data, so each widget is read as the
 // type of value it writes: a `select` and a `chips` field are held to the primary keys of the
 // targets their `foreign_key:` names and their `options`, `readonly` and `keymap` fields hold
-// whatever the file has, and a dotted name (`status.chips`) is a key inside a map the file holds
-// under its first part. Each such map is described by its help line in the file's top-level
-// `groups:`. The field flagged `primary_key: true` is a project's id, and the `display:` ranks say
-// which field a reference to a project shows.
+// whatever the file has, a `rows` field holds a list of records of the text fields its `fields:`
+// names, and a dotted name (`status.chips`) is a key inside a map the file holds under its first
+// part. Each such map is described by its help line in the file's top-level `groups:`. The field
+// flagged `primary_key: true` is a project's id, and the `display:` ranks say which field a
+// reference to a project shows.
 
 import { z } from 'zod';
 import type { CollectionEntry, SchemaField } from '../../model/index.ts';
@@ -27,6 +28,7 @@ const rowShape = z.object({
     primary_key: primaryKeyShape,
     display: displayShape,
     options: optionalItemsShape,
+    fields: optionalItemsShape,
     required: z.literal(true).optional().catch(undefined)
 });
 
@@ -44,7 +46,8 @@ const WIDGET_TYPES: Record<string, string> = {
     date: 'date',
     checkbox: 'checkbox',
     readonly: 'raw',
-    keymap: 'raw'
+    keymap: 'raw',
+    rows: 'records'
 };
 
 /** A map the file holds, or a key it leaves empty. */
@@ -53,6 +56,11 @@ const CONTAINER_TYPES = ['object', 'null'];
 /** The record type a widget word is read as, and `text` for a word the form does not know. */
 function recordType(widget: string): string {
     return WIDGET_TYPES[widget] ?? 'text';
+}
+
+/** The text fields of each row of a `rows` widget, by the names its `fields:` lists. */
+function rowFields(names: readonly string[]): SchemaField[] {
+    return names.map((field) => ({ field, type: 'text' }));
 }
 
 /** The fields of the manifest schema as schema fields, with a dotted name left whole. */
@@ -70,7 +78,8 @@ export function manifestFields(schema: unknown): SchemaField[] {
             ...(row.required === undefined ? {} : { required: true }),
             ...(row.primary_key === undefined ? {} : { primary_key: true }),
             ...(row.display === undefined ? {} : { display: row.display }),
-            ...(keys === undefined ? {} : { foreign_key: keys })
+            ...(keys === undefined ? {} : { foreign_key: keys }),
+            ...(row.type === 'rows' ? { fields: rowFields(row.fields ?? []) } : {})
         };
     });
 }

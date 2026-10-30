@@ -456,6 +456,7 @@ export type FeedsPayload = Record<
 >;
 
 export type {
+    AnonymizeRow,
     Chip,
     CodeAvailability,
     Dataset,

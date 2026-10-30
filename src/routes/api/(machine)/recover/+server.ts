@@ -4,7 +4,9 @@
 // unpack or a stop behind the write token. This Mac's runs and the `recover` channel are the server
 // context's Recover watcher (`recover`), held for the server's life, which each press is told of.
 // A dataset's sources are read by the rows of `recover.sources` of its own hub: the primary's
-// merged settings, or the settings of another hub read under that hub's `.oculus/config.yml`.
+// merged settings, or the settings of another hub read under that hub's `.oculus/config.yml`. The
+// reader rows are handed the machine's `downloads` rows without the ones the `deposit.zenodo.auth`
+// of any hub of the workspace names, so the Zenodo token goes to the deposit's address alone.
 
 import { homedir } from 'node:os';
 import { nodeDownload } from '$lib/data/sources/config';
@@ -20,6 +22,7 @@ import { sevenZipFolder } from '$lib/server/machine/runs/recover/unpack';
 import { hubId } from '$lib/data/helpers/hub-names';
 import { recoverRows } from '$lib/data/sources/config';
 import { READER_AGENT } from '$lib/server/core/reader/agent';
+import { readerAccounts } from '$lib/server/git/deposit/zenodo-api';
 import { dataset } from '$lib/server/sessions/stores/hooks';
 import type { RequestHandler } from './$types';
 
@@ -35,7 +38,13 @@ const target = (locals: App.Locals): RecoverTarget => {
                 : [open.primary, ...names.filter((name) => name !== open.primary)];
         },
         dataset: (hub, key) => dataset(server.hub, hubId(hub, key)),
-        downloads: () => server.local.downloads,
+        downloads: () =>
+            readerAccounts(server.local.downloads, [
+                locals.config().config,
+                ...open.hubs
+                    .filter((one) => one.name !== open.primary)
+                    .map((one) => server.configCache.hub(one.dir).config)
+            ]),
         rows: (hub) => {
             const other = open.hubs.find((one) => one.name === hub && one.name !== open.primary);
             const config =

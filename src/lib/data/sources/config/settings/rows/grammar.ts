@@ -275,7 +275,8 @@ export type Auth = {
  */
 export type Credential = { basic: true } | { header: string; prefix?: string };
 
-const authShape: z.ZodType<Auth> = z.strictObject({
+/** One `auth` entry, of a reader row or of the deposit's `deposit.zenodo` row. */
+export const authShape: z.ZodType<Auth> = z.strictObject({
     header: z.string().optional(),
     param: z.string().optional(),
     basic: z.literal(true).optional(),

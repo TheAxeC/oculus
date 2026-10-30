@@ -19,7 +19,8 @@ export const MANIFEST_WIDGETS = [
     'tags',
     'date',
     'checkbox',
-    'keymap'
+    'keymap',
+    'rows'
 ] as const;
 
 /** One field of the project edit form: its label, widget, section, help line and choices. */
@@ -49,6 +50,12 @@ const manifestField = z.strictObject({
             'The rank of the field among those a reference to a project shows: the filled field of the lowest rank is shown, the id when none is filled.'
         ),
     options: z.array(text).optional().describe('A literal list of the choices.'),
+    fields: z
+        .array(text)
+        .optional()
+        .describe(
+            'On a rows field: the text fields of each row, in the order the card draws them.'
+        ),
     required: z
         .literal(true)
         .optional()

@@ -258,6 +258,18 @@ The hub's own settings. A key of oculus's `config/catalogs/vocab.yml` set here i
 #     - { key: doi, address: 'https://doi.org/{id|path}' }
 #     - { key: shellcheck, address: 'https://www.shellcheck.net/wiki/{id}' }
 
+# The Zenodo deposit of the Deposit view's For review and Publish: `address` the base of every
+# call, `timeout_s` the seconds one upload is given (every other call keeps the reader's limit),
+# and `auth` the entry the token is read by, from the `downloads` row it names in the primary
+# hub's local.yml, sent in its header after its prefix to `address` alone. Each field laid here
+# replaces oculus's own, so a hub that sets only `address` (Zenodo's sandbox) keeps oculus's
+# `timeout_s` and `auth`.
+# deposit:
+#   zenodo:
+#     address: https://zenodo.org/api
+#     timeout_s: 600
+#     auth: [{ header: Authorization, prefix: 'Bearer ', row: zenodo, required: true }]
+
 # The writing rules: the globs of the files they leave alone, and of the files that draw arrows
 # as icons, matched against the path from the file's root. Both empty by default.
 # lint:
@@ -583,13 +595,15 @@ This machine's own values. Keep the file out of git. Oculus reads the keys from 
 #   mailto: you@example.org
 
 # Accounts for the services the reader rows name, one row per service: a row's `auth` names the
-# `service` it reads, for the Literature search's keys and the Data view's Recover. A row no reader
-# row names is read and unused.
+# `service` it reads, for the Literature search's keys and the Data view's Recover, and the
+# Deposit view's For review and Publish read the Zenodo token from the row `deposit.zenodo.auth`
+# names (`zenodo`), which no reader row is handed. A row nothing names is read and unused.
 # downloads:
 #   - { service: physionet, user: <user name>, secret: <password> }
 #   - { service: kaggle, user: <user name>, secret: <key> }
 #   - { service: synapse, secret: <token> }
 #   - { service: wos, secret: <key> }
+#   - { service: zenodo, secret: <personal access token, scopes deposit:write and deposit:actions> }
 
 # Where oculus keeps this machine's files.
 # changes: ~/.oculus/changes.jsonl
@@ -905,15 +919,18 @@ stage: nascent          # nascent, scoping, de-risking, exploring, in-prep, buil
 
 # --- Deposit and compute
 # code_availability:
-#   status: none        # none, review-anon or deposited
-#   date: YYYY-MM-DD
+#   status: none        # the GitHub repository's: none, review-anon or deposited
+#   date: YYYY-MM-DD    # the GitHub repository's
 #   url: ""
-#   doi: ""
+#   doi: ""             # the deposit's DOI: For review and Publish write the Zenodo concept DOI, a DOI of another service is typed here
 #   repo: ""            # public repository name, lowercase words joined by dashes
 #   description: ""
 #   homepage: ""
 #   topics: []
 #   visibility: public  # public or private
+#   anonymize: []       # rows { term, as }: each term replaced by as (Anonymous) in the review copy
+#   zenodo_status: none # the Zenodo deposit's: none, review-anon or deposited
+#   zenodo_date: YYYY-MM-DD # the Zenodo deposit's
 # repository:
 #   url: ""             # the remote; Clone fetches it
 #   visibility: private # public or private
@@ -1356,6 +1373,7 @@ schema:
   - { field: title,     type: text,     display: 1, required: true, help: "Scheme or application." }
   - { field: sub,       type: text,     help: "Scheme, role, period." }
   - { field: funder,    type: select,   foreign_key: organisations, help: "The funder's organisation key." }
+  - { field: award,     type: text,     help: "The funder's number of the award, which a Zenodo deposit names with the title." }
   - { field: status,    type: select,   options: [in-prep, planned, submitted, contributing, awarded, rejected, withdrawn], required: true, help: "Where it stands." }
   - { field: date,      type: text,     help: "Year or range." }
   - { field: deadline,  type: date,     help: "Shows on Focus while live." }
@@ -1385,6 +1403,7 @@ entries:
 #    title: "My grant"            # required
 #    sub: ""                      # scheme, role, period
 #    funder: my-funder            # an organisation key
+#    award: ""                    # the funder's award number
 #    status: in-prep              # required: in-prep, planned, submitted, contributing,
 #                                 # awarded, rejected or withdrawn
 #    date: "2026-2030"

@@ -178,6 +178,7 @@ describe("oculus's own config directory", () => {
             'changes',
             'files',
             'git',
+            'deposit',
             'search',
             'lint',
             'literature',

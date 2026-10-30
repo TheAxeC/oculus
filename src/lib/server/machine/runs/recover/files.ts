@@ -41,8 +41,8 @@ export type ListDeps = {
     agent: string;
 };
 
-/** How long one request of a listing is given. */
-const REQUEST_MS = 30000;
+/** How long one request of a listing is given, and one Zenodo call other than an upload. */
+export const REQUEST_MS = 30000;
 
 /** The most bytes of one answer of a listing that are read. */
 const ANSWER_MAX = 64 * 1024 * 1024;

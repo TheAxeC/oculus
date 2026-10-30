@@ -692,8 +692,10 @@ export function offerAlong(
  * audit holds its projects to (`audit:`: the files and sections it requires, the folders a stage
  * keeps a project in and its website's feed), the values its apps' settings hold, the counts its
  * tabs draw, its vocabulary (every list of vocab.yml) and the fields it adds to the project form,
- * the reader rows of its literature sources, its Recover sources and its journal browser, and the
- * links every page link is built from. Its domains and theme words are its own registry files'.
+ * the reader rows of its literature sources, its Recover sources and its journal browser, the
+ * links every page link is built from, and the Zenodo deposit of its projects (`deposit.zenodo`,
+ * each of its three fields a key of its own, so a hub that sets one keeps oculus's other two). Its
+ * domains and theme words are its own registry files'.
  * Which of them each hub's own file is read for, and which the primary's alone, is
  * data/shapes/hub-keys.ts's.
  */
@@ -758,7 +760,10 @@ const HUB_LIST: readonly { key: string; file: string }[] = [
     { key: 'literature.prefer', file: 'behavior.yml' },
     { key: 'recover.sources', file: 'behavior.yml' },
     { key: 'venues.browser', file: 'behavior.yml' },
-    { key: 'links', file: 'behavior.yml' }
+    { key: 'links', file: 'behavior.yml' },
+    { key: 'deposit.zenodo.address', file: 'behavior.yml' },
+    { key: 'deposit.zenodo.timeout_s', file: 'behavior.yml' },
+    { key: 'deposit.zenodo.auth', file: 'behavior.yml' }
 ];
 
 /**

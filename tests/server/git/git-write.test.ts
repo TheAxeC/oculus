@@ -26,6 +26,7 @@ import { join, resolve, sep } from 'node:path';
 import { describe, expect, vi } from 'vitest';
 import {
     allowedRoots,
+    applyPatch,
     commit,
     createBranch,
     createWorktree,
@@ -418,5 +419,26 @@ describe('the status read', () => {
         expect(untracked.ok).toBe(true);
         expect(existsSync(join(root, 'loose.txt'))).toBe(false);
         expect(git(root, 'stash', 'list').split('\n').filter(Boolean)).toHaveLength(1);
+    });
+});
+
+describe('a git run handed more input than it reads', () => {
+    it('answers from the exit of a git that ends before reading its input, and leaves no broken pipe unhandled', async () => {
+        const unhandled: string[] = [];
+        const keep = (error: Error): void => {
+            unhandled.push(error.message);
+        };
+        process.on('uncaughtException', keep);
+        try {
+            const input = 'x'.repeat(4 * 1024 * 1024);
+            const answer = await applyPatch(gitAt(repo), ['--no-such-flag'], input);
+            // The broken pipe is raised on the turn of the event loop after the stream closes.
+            await new Promise((done) => setImmediate(done));
+            expect(answer.ok).toBe(false);
+            expect(answer.error).toContain('no-such-flag');
+            expect(unhandled).toEqual([]);
+        } finally {
+            process.off('uncaughtException', keep);
+        }
     });
 });

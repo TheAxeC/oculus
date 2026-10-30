@@ -18,6 +18,9 @@
 // with the sentence of `app.folders_loading`, since the tab cannot be told from the write's file;
 // the undo of a recorded change, which names its file by absolute path, is refused the same way.
 //
+// A deposit action that writes the project's manifest (Push, For review and Publish to Zenodo) is
+// checked against that manifest, and an action of the mirror alone against no file.
+//
 // In a workspace with no primary, a write that adds a record and names no hub is checked against
 // the file of the hub the server writes: the one hub's, and for Save to Literature the one hub that
 // holds the Literature collection; with two hubs it names no file, and the server answers it.
@@ -30,7 +33,7 @@ import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/source
 import { fileNamed } from '../../../src/lib/data/helpers/files/paths.ts';
 import type { FeedsPayload } from '../../../src/lib/data/model/index.ts';
 import { createWrites } from '../../../src/lib/state/client/writes.svelte.ts';
-import { NO_LOOKUPS } from '../../../src/lib/state/sessions/source/write-files.ts';
+import { NO_LOOKUPS, depositedFile } from '../../../src/lib/state/sessions/source/write-files.ts';
 import { setCatalog, t } from '../../../src/lib/state/shared/words/text.ts';
 import { server } from '../sessions/source/source-server.ts';
 
@@ -49,6 +52,29 @@ const CONFIG = {
 
 afterEach(() => {
     vi.unstubAllGlobals();
+});
+
+describe('the file a deposit action writes', () => {
+    /** The manifest of the one project the lookups know. */
+    const MANIFEST = { root: 'hub', path: 'projects/alpha/project.yml' };
+    const look = {
+        ...NO_LOOKUPS,
+        projectManifest: (id: string) => (id === 'hub:alpha' ? MANIFEST : null)
+    };
+
+    it.each([
+        ['push', MANIFEST],
+        ['zenodoReview', MANIFEST],
+        ['zenodoPublish', MANIFEST],
+        ['commit', null],
+        ['adopt', null],
+        ['snapshot', null]
+    ])(
+        "answers for %s the project's manifest, or no file for an action of the mirror",
+        (action, file) => {
+            expect(depositedFile(action, 'hub:alpha', look)).toEqual(file);
+        }
+    );
 });
 
 describe('a write over a file a source tab holds unsaved text of', () => {

@@ -18,7 +18,10 @@
 // more. Five of the schema's fields are not in the model (NOT_IN_MODEL below), so the form opens
 // them empty; the write itself handles them like any other, since it reads the manifest from disk.
 // The follow-up notes and the subtasks are lists the card writes line by line; the form shows them
-// read-only, each as one text.
+// read-only, each as one text. A `rows` field of the schema (`code_availability.anonymize`) is a
+// `records` field of the form, its rows drawn as the record cards the entry forms draw, each card
+// the text fields its `fields:` names, and its value is edited, compared and posted as the entry
+// forms do it (record-values.ts).
 
 import { z } from 'zod';
 import {
@@ -34,7 +37,8 @@ import {
     type Snapshot
 } from '../../data/model/index.ts';
 import type { DraftTarget } from './form-draft.ts';
-import { byKey, scalar } from '../../data/helpers/guards.ts';
+import { byKey } from '../../data/helpers/guards.ts';
+import { asList, asText, fieldDiffers, payloadOf, toEdit } from './record-values.ts';
 import {
     PROJECTS_TARGET,
     VOCAB_PREFIX,
@@ -159,8 +163,20 @@ const fieldRowShape = z.object({
     foreign_key: filledTextShape,
     primary_key: z.literal(true).optional().catch(undefined),
     display: z.number().int().min(1).optional().catch(undefined),
-    options: rowsShape(z.string()).optional().catch(undefined)
+    options: rowsShape(z.string()).optional().catch(undefined),
+    fields: rowsShape(z.string()).optional().catch(undefined)
 });
+
+/**
+ * The schema's widget of a list of rows of text fields. The form draws it with the record cards of
+ * the `records` field type, each row a card of the text fields the schema's `fields:` names.
+ */
+const ROWS_WIDGET = 'rows';
+
+/** The text fields of each card of a `rows` widget, by the names its `fields:` lists. */
+function rowFields(names: readonly string[]): FormField[] {
+    return names.map((name) => ({ field: name, label: name, type: 'text', section: '' }));
+}
 
 /**
  * Every field of the form of a project whose hub's words are `words`, in file order, the hub's
@@ -178,14 +194,16 @@ export function formFields(
     for (const name of Object.keys(fields)) {
         const row = readAs(fieldRowShape, fields[name]);
         if (row === null) continue;
+        const rows = row.type === ROWS_WIDGET;
         found.push({
             field: name,
             label: row.label ?? name,
             help: row.help,
-            type: row.type ?? '',
+            type: rows ? 'records' : (row.type ?? ''),
             section: row.section ?? '',
             foreign_key: row.foreign_key,
             options: row.options,
+            ...(rows ? { fields: rowFields(row.fields ?? []) } : {}),
             ...(row.primary_key === undefined ? {} : { primary_key: true }),
             ...(row.display === undefined ? {} : { display: row.display })
         });
@@ -463,6 +481,10 @@ export function fieldValues(
         'code_availability.url': code.url,
         'code_availability.doi': code.doi,
         'code_availability.repo': code.repo,
+        'code_availability.anonymize': code.anonymize,
+        'code_availability.review_link': code.reviewLink,
+        'code_availability.zenodo_status': code.zenodoStatus,
+        'code_availability.zenodo_date': code.zenodoDate,
         'repository.url': remote?.url,
         'repository.visibility': remote?.visibility,
         'repository.description': remote?.description,
@@ -476,15 +498,6 @@ export function fieldValues(
         doi: project.doi
     };
 }
-
-/** A list for a list widget: the words of a list, or a word that is not empty as a list of one. */
-const listShape = z.union([
-    rowsShape(z.string()),
-    z
-        .string()
-        .min(1)
-        .transform((one) => [one])
-]);
 
 /** The registry word of the people. */
 const PEOPLE: RegistryWord = 'people';
@@ -527,22 +540,8 @@ export function withPicked(field: Pick<FormField, 'type'>, value: unknown, key: 
     return [...asList(value).filter((one) => one !== key), key];
 }
 
-/** One value as the widget's own kind: a list for a list widget, text for the rest. */
-export function asList(value: unknown): string[] {
-    return readAs(listShape, value) ?? [];
-}
-
-/** A list as one item per line, which `lines` writes back. */
-const linesShape = z
-    .array(z.unknown())
-    .transform((items) => items.map((one) => scalar(one)).join('\n'));
-
-/**
- * One value as the text a control shows. A list is one item per line, which `lines` writes back.
- */
-export function asText(value: unknown): string {
-    return readAs(linesShape, value) ?? scalar(value);
-}
+/** The helpers of a value as the widget's own kind, which the controls read through this module. */
+export { asList, asText };
 
 /** The fields of one section of the manifest form, in file order. */
 export function fieldsOfSection(fields: FormField[], section: string): FormField[] {
@@ -551,18 +550,25 @@ export function fieldsOfSection(fields: FormField[], section: string): FormField
 
 /**
  * What a save posts, and what the draft drops once the server took it: the fields of `dirty` the
- * form writes, the primary key of the form's fields `fields` left out.
+ * form writes, the primary key of the form's fields `fields` left out. A `records` field posts the
+ * rows its cards hold (record-values.ts, `payloadOf`, over the project's value `values` holds);
+ * every other field posts its edit, which the server reads as the form's.
  */
 export function manifestPayload(
     edits: Record<string, unknown>,
     dirty: string[],
-    fields: readonly FormField[]
+    fields: readonly FormField[],
+    values: Record<string, unknown> = {}
 ): { body: Record<string, unknown>; taken: Record<string, unknown> } {
     const body: Record<string, unknown> = {};
-    for (const field of dirty.filter((one) => writableField(one, fields))) {
-        body[field] = edits[field];
+    const taken: Record<string, unknown> = {};
+    for (const name of dirty.filter((one) => writableField(one, fields))) {
+        const field = fields.find((one) => one.field === name);
+        const records = field?.type === 'records';
+        body[name] = records ? payloadOf(field, edits[name], values[name]) : edits[name];
+        taken[name] = edits[name];
     }
-    return { body, taken: { ...body } };
+    return { body, taken };
 }
 
 /**
@@ -570,8 +576,26 @@ export function manifestPayload(
  * because the write trims: an edit that differs from the file by a space at the end is an edit the
  * server would answer with nothing changed.
  */
-export function editDiffers(edit: unknown, value: unknown): boolean {
+function editDiffers(edit: unknown, value: unknown): boolean {
     return asText(edit).trim() !== asText(value).trim();
+}
+
+/**
+ * What a field's control shows of a value: a `records` field the cards its value makes
+ * (record-values.ts, `toEdit`), every other field the value itself.
+ */
+export function formValue(field: FormField, value: unknown): unknown {
+    return field.type === 'records' ? toEdit(field, value) : value;
+}
+
+/**
+ * Whether an edit of a field says something other than the project's value: for a `records` field
+ * whether the rows it posts differ from the rows the value holds (`fieldDiffers`), for every other
+ * field the trimmed comparison of `editDiffers`.
+ */
+export function formDiffers(field: FormField | undefined, edit: unknown, value: unknown): boolean {
+    if (field?.type === 'records') return fieldDiffers(field, edit, value);
+    return editDiffers(edit, value);
 }
 
 /** The key the settled writes hold a project's values under. */
@@ -581,8 +605,8 @@ export function projectKey(id: string): string {
 
 /**
  * What the project editor's draft is judged by: the project's values in the snapshot now, the
- * trimmed comparison above, and the fields the manifest form writes (`writableField` over the
- * form's fields of the project's hub, `fieldsOf`).
+ * comparison of `formDiffers` by the field's type, and the fields the manifest form writes
+ * (`writableField` over the form's fields of the project's hub, `fieldsOf`).
  */
 export function projectDraftTarget(
     projectOf: (id: string) => Project | null,
@@ -597,7 +621,12 @@ export function projectDraftTarget(
                 ? null
                 : settled(projectKey(name), fieldValues(project, waitedOn));
         },
-        differs: (_name, _field, edit, value) => editDiffers(edit, value),
+        differs: (name, field, edit, value) =>
+            formDiffers(
+                fieldsOf(projectOf(name)).find((one) => one.field === field),
+                edit,
+                value
+            ),
         writable: (name, field) => writableField(field, fieldsOf(projectOf(name)))
     };
 }

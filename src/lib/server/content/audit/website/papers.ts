@@ -26,8 +26,11 @@ const DOI_ORIGIN = 'https://doi.org/';
 /** The name the code link is printed with. */
 const CODE = 'Code';
 
-/** The code deposit's status under which the website links the code. */
+/** The code deposit's status, GitHub's or Zenodo's, under which the website links the code. */
 const DEPOSITED = 'deposited';
+
+/** The `zenodo_status` of the anonymous review copy, whose DOI the website never links. */
+const REVIEW_ANON = 'review-anon';
 
 /** The first kinds row whose stages and forms hold the manifest's; a side left out holds all. */
 function kindOf(project: Project, kinds: readonly WebsiteKind[]): WebsiteKind | undefined {
@@ -54,14 +57,18 @@ function orderOf(project: Project, self: ReadonlySet<Id>): string | undefined {
 }
 
 /**
- * The Code link of a deposited project: the DOI's address when the deposit has a DOI that is not
- * empty, else the deposit's address; none for a deposit of any other status.
+ * The Code link of a deposited project: the DOI's address when the Zenodo deposit is published
+ * (`zenodo_status: deposited`) with a DOI that is not empty, whatever `status` holds. Under
+ * `status: deposited` it is the DOI's address when a DOI is set, which holds for a DOI of any
+ * service, else the deposit's address; none otherwise. A DOI under `zenodo_status: review-anon` is
+ * never linked, since that record is the anonymous review copy.
  */
 function codeLink(project: Project): string | undefined {
     const deposit = project.codeAvailability;
+    const doi = deposit?.doi?.trim() ?? '';
+    if (deposit?.zenodoStatus === DEPOSITED && doi !== '') return `${DOI_ORIGIN}${doi}`;
     if (deposit?.status !== DEPOSITED) return undefined;
-    const doi = deposit.doi?.trim() ?? '';
-    if (doi !== '') return `${DOI_ORIGIN}${doi}`;
+    if (doi !== '' && deposit.zenodoStatus !== REVIEW_ANON) return `${DOI_ORIGIN}${doi}`;
     return deposit.url;
 }
 

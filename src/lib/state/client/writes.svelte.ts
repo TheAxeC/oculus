@@ -674,12 +674,13 @@ export function createWrites(
     }
 
     /**
-     * One deposit action on one project: adopt, plan, commit, push, snapshot, or a branch. The
-     * endpoint is /api/deposit, and what the action did to the mirror is read back by
-     * state/system/deposit.svelte.ts, whose query is asked again by the panel, rather than carried
-     * here. An action that can lose work carries `confirm: true`, which the panel sets only from
-     * its dialog. The answer is waited for with no limit of the page's, as `writeGit` does, and
-     * `cancel` keeps the configured wait.
+     * One deposit action on one project: adopt, plan, commit, push, snapshot, a branch, or the
+     * Zenodo actions For review and Publish. The endpoint is /api/deposit, and what the action did
+     * to the mirror is read back by state/system/deposit.svelte.ts, whose query is asked again by
+     * the panel, rather than carried here. An action that writes outside this machine or over
+     * `code/` carries `confirm: true`, which the panel sets only from its dialog. The answer is
+     * waited for with no limit of the page's, as `writeGit` does, and `cancel` keeps the
+     * configured wait.
      */
     async function writeDeposit(
         action: string,

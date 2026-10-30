@@ -191,12 +191,13 @@ function run(at: GitAt, args: string[], timeout: number, extra: Extra = {}): Pro
             }
         );
         const ended = endWith(child, extra.signal);
+        // A git that ends before it has read the whole input answers through the callback above;
+        // the broken pipe that leaves behind on its stdin says nothing more, and an error of a
+        // stream with no listener would be raised as an uncaught exception and end the server.
+        child.stdin?.on('error', () => undefined);
         if (extra.input === undefined || typeof extra.input === 'string') {
             child.stdin?.end(extra.input ?? '');
         } else if (child.stdin !== null) {
-            // A git that ends before it has read the whole stream answers through the callback
-            // above; the broken pipe that leaves behind says nothing more.
-            child.stdin.on('error', () => undefined);
             extra.input.pipe(child.stdin);
         }
     });

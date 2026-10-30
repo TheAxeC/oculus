@@ -2,16 +2,19 @@
 // everything the request does is here and src/routes/api/(git)/deposit/+server.ts is the few lines
 // that join them, the pattern lib/server/git/git-routes.ts already holds.
 //
-// A GET answers the mirror's state, or with `against` and `path` the two texts of one file for the
-// diff editor, reaching this module only past the origin guard in src/hooks.server.ts's `handle`,
-// as the POST does too. A POST writes, and carries two things: the write token and, for the
-// five actions that can lose work (commit, push, snapshot, createBranch, switchBranch), a
-// `confirm: true` the page sets only from the confirm dialog. The decision on git writes
-// and the deposit is that shape: every write behind the token and a confirm.
+// A GET answers the mirror's state and whether the Zenodo token's `downloads` row is held
+// (`zenodo: { ready }`, never the token), or with `against` and `path` the two texts of one file
+// for the diff editor, reaching this module only past the origin guard in src/hooks.server.ts's
+// `handle`, as the POST does too. A POST writes, and carries two things: the write token and, for
+// the seven actions that write outside this machine or over `code/` (commit, push, snapshot,
+// createBranch, switchBranch, and the Zenodo actions zenodoReview and zenodoPublish of
+// zenodo.ts), a `confirm: true` the page sets only from the confirm dialog. The decision on git
+// writes and the deposit is that shape: every write behind the token and a confirm.
 //
 // The action `cancel` (behind the token, with no confirm) aborts the write in flight on the
 // project it names, through the registry of server/core/git/running.ts, and the write answers in
-// the words of `failureLine` of server/core/git/failure.ts.
+// the words of `failureLine` of server/core/git/failure.ts. A Zenodo action is refused while a run
+// of its project is registered, so a second press never makes a second draft.
 //
 // The ids a deposit may name are the hub's own project manifests and the projects the last
 // published `portfolio` payload holds; anything else is a 404, before any command is run.
@@ -33,6 +36,7 @@ import {
     branches,
     commit,
     createBranch,
+    depositFor,
     fetchMirror,
     fileTexts,
     projectIds,
@@ -48,6 +52,8 @@ import {
 import type { Branch, Outcome } from './deposit-git.ts';
 import type { TextsOutcome } from './deposit-compare.ts';
 import type { Carried } from '../../edit/writes.ts';
+import { zenodoReady } from './zenodo-api.ts';
+import { zenodoPublish, zenodoReview } from './zenodo.ts';
 
 /** Every action POST /api/deposit knows. */
 export const ACTIONS = [
@@ -60,11 +66,24 @@ export const ACTIONS = [
     'branches',
     'createBranch',
     'switchBranch',
+    'zenodoReview',
+    'zenodoPublish',
     'cancel'
 ] as const;
 
 /** The actions that write outside this machine or over `code/`, and therefore need the confirm. */
-export const CONFIRMED = ['commit', 'push', 'snapshot', 'createBranch', 'switchBranch'];
+export const CONFIRMED = [
+    'commit',
+    'push',
+    'snapshot',
+    'createBranch',
+    'switchBranch',
+    'zenodoReview',
+    'zenodoPublish'
+];
+
+/** The actions that send to Zenodo, refused while a run of their project is registered. */
+const ZENODO = ['zenodoReview', 'zenodoPublish'];
 
 /**
  * What one action answers: the outcome, plus the plan or the branches on the two that read them.
@@ -154,7 +173,9 @@ const OPERATIONS: Record<
     snapshot: (id, fields, text, with_) => snapshot(id, fields.message, text, with_),
     branches: (id, _fields, text, with_) => branches(id, text, with_),
     createBranch: (id, fields, text, with_) => createBranch(id, fields.name, text, with_),
-    switchBranch: (id, fields, text, with_) => switchBranch(id, fields.name, text, with_)
+    switchBranch: (id, fields, text, with_) => switchBranch(id, fields.name, text, with_),
+    zenodoReview: (id, _fields, text, with_) => zenodoReview(id, text, with_),
+    zenodoPublish: (id, _fields, text, with_) => zenodoPublish(id, text, with_)
 };
 
 function operate(
@@ -220,7 +241,10 @@ export async function handleDepositState(
     }
     const answer = await (options.stateFor ?? ((held) => state(held, options.deposit)))(id);
     if (answer === null) return noProject(text);
-    return json({ ok: true, state: answer }, { headers: NO_STORE });
+    const held = options.deposit.downloads?.() ?? [];
+    const home = depositFor(id, options.deposit)?.home;
+    const zenodo = { ready: home !== undefined && zenodoReady(home.into.config.merged, held) };
+    return json({ ok: true, state: answer, zenodo }, { headers: NO_STORE });
 }
 
 /**
@@ -249,6 +273,12 @@ export async function handleDeposit(
     if (action === 'cancel') {
         running.cancel(key);
         return json({ ok: true, output: '', plan: null, branches: [] }, { headers: NO_STORE });
+    }
+    if (ZENODO.includes(action) && running.busy(key)) {
+        return json(
+            { error: words(text, 'server.zenodo.busy', id), plan: null },
+            { status: 409, headers: NO_STORE }
+        );
     }
     const signal = running.begin(key);
     let outcome: DepositAnswer;

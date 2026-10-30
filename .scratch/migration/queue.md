@@ -1,12 +1,12 @@
-In flight (1 of 6 slots in use):
-- O101 (the Zenodo deposit): repair round 1 sent.
+In flight (0 of 6 slots in use): none.
 
 Queued, in order (1 step):
-- O104 (one page frame and one editor): once O101 has landed.
+- O104 (one page frame and one editor).
 
 Owed looks: none.
 
 Landed, newest first:
+- O101 (the Zenodo deposit), 2026-10-30; hub 6abb17c8b.
 - O102 (the website data files from oculus), 2026-10-30; hub 9e297c9c5; web 574da70.
 - O99 (every setting edited in Settings by scope), 2026-10-29, 626ae2a6; hub 60f0c606d.
 - O103 (applications and leads split, a task's subtasks in Focus), 2026-10-29, bafb20bd.

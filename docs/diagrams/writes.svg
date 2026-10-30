@@ -2854,51 +2854,51 @@
 <polygon fill="none" stroke="currentColor" points="51.88,-8055.25 51.88,-8089.25 111.22,-8089.25 111.22,-8055.25 51.88,-8055.25"/>
 <text fill="currentColor" xml:space="preserve" text-anchor="start" x="56.88" y="-8068.25" font-family="Helvetica,Arial,sans-serif" font-size="10.00">manifest.ts</text>
 </g>
-<!-- ? src/lib/data/shapes/catalog&#45;files/manifest.ts:27 -->
+<!-- ? src/lib/data/shapes/catalog&#45;files/manifest.ts:28 -->
 <g id="node161" class="node">
-<title>? src/lib/data/shapes/catalog&#45;files/manifest.ts:27</title>
+<title>? src/lib/data/shapes/catalog&#45;files/manifest.ts:28</title>
 <polygon fill="none" stroke="currentColor" points="207.48,-8007.25 207.48,-8029.25 483.06,-8029.25 483.06,-8007.25 207.48,-8007.25"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="start" x="213.48" y="-8014.25" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/data/shapes/catalog&#45;files/manifest.ts:27 text.optional(</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="start" x="213.48" y="-8014.25" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/data/shapes/catalog&#45;files/manifest.ts:28 text.optional(</text>
 </g>
-<!-- lib/data/shapes/catalog&#45;files/manifest.ts&#45;&gt;? src/lib/data/shapes/catalog&#45;files/manifest.ts:27 -->
+<!-- lib/data/shapes/catalog&#45;files/manifest.ts&#45;&gt;? src/lib/data/shapes/catalog&#45;files/manifest.ts:28 -->
 <g id="edge146" class="edge">
-<title>lib/data/shapes/catalog&#45;files/manifest.ts&#45;&gt;? src/lib/data/shapes/catalog&#45;files/manifest.ts:27</title>
+<title>lib/data/shapes/catalog&#45;files/manifest.ts&#45;&gt;? src/lib/data/shapes/catalog&#45;files/manifest.ts:28</title>
 <path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M111.22,-8060.25C135.51,-8060.25 159.8,-8060.25 184.09,-8060.25 184.09,-8046.25 184.09,-8032.25 184.09,-8018.25 189.47,-8018.25 194.85,-8018.25 200.23,-8018.25"/>
 <polygon fill="currentColor" stroke="currentColor" points="199.97,-8020.35 205.97,-8018.25 199.97,-8016.15 199.97,-8020.35"/>
 </g>
-<!-- ? src/lib/data/shapes/catalog&#45;files/manifest.ts:29 -->
+<!-- ? src/lib/data/shapes/catalog&#45;files/manifest.ts:30 -->
 <g id="node162" class="node">
-<title>? src/lib/data/shapes/catalog&#45;files/manifest.ts:29</title>
+<title>? src/lib/data/shapes/catalog&#45;files/manifest.ts:30</title>
 <polygon fill="none" stroke="currentColor" points="207.48,-8043.25 207.48,-8065.25 483.06,-8065.25 483.06,-8043.25 207.48,-8043.25"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="start" x="213.48" y="-8050.25" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/data/shapes/catalog&#45;files/manifest.ts:29 text.optional(</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="start" x="213.48" y="-8050.25" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/data/shapes/catalog&#45;files/manifest.ts:30 text.optional(</text>
 </g>
-<!-- lib/data/shapes/catalog&#45;files/manifest.ts&#45;&gt;? src/lib/data/shapes/catalog&#45;files/manifest.ts:29 -->
+<!-- lib/data/shapes/catalog&#45;files/manifest.ts&#45;&gt;? src/lib/data/shapes/catalog&#45;files/manifest.ts:30 -->
 <g id="edge147" class="edge">
-<title>lib/data/shapes/catalog&#45;files/manifest.ts&#45;&gt;? src/lib/data/shapes/catalog&#45;files/manifest.ts:29</title>
+<title>lib/data/shapes/catalog&#45;files/manifest.ts&#45;&gt;? src/lib/data/shapes/catalog&#45;files/manifest.ts:30</title>
 <path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M111.22,-8068.25C137.51,-8068.25 163.8,-8068.25 190.09,-8068.25 190.09,-8063.58 190.09,-8058.92 190.09,-8054.25 193.41,-8054.25 196.74,-8054.25 200.06,-8054.25"/>
 <polygon fill="currentColor" stroke="currentColor" points="199.97,-8056.35 205.97,-8054.25 199.97,-8052.15 199.97,-8056.35"/>
 </g>
-<!-- ? src/lib/data/shapes/catalog&#45;files/manifest.ts:64 -->
+<!-- ? src/lib/data/shapes/catalog&#45;files/manifest.ts:71 -->
 <g id="node163" class="node">
-<title>? src/lib/data/shapes/catalog&#45;files/manifest.ts:64</title>
+<title>? src/lib/data/shapes/catalog&#45;files/manifest.ts:71</title>
 <polygon fill="none" stroke="currentColor" points="206.1,-8079.25 206.1,-8101.25 484.44,-8101.25 484.44,-8079.25 206.1,-8079.25"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="start" x="212.1" y="-8086.25" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/data/shapes/catalog&#45;files/manifest.ts:64 text.describe(</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="start" x="212.1" y="-8086.25" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/data/shapes/catalog&#45;files/manifest.ts:71 text.describe(</text>
 </g>
-<!-- lib/data/shapes/catalog&#45;files/manifest.ts&#45;&gt;? src/lib/data/shapes/catalog&#45;files/manifest.ts:64 -->
+<!-- lib/data/shapes/catalog&#45;files/manifest.ts&#45;&gt;? src/lib/data/shapes/catalog&#45;files/manifest.ts:71 -->
 <g id="edge148" class="edge">
-<title>lib/data/shapes/catalog&#45;files/manifest.ts&#45;&gt;? src/lib/data/shapes/catalog&#45;files/manifest.ts:64</title>
+<title>lib/data/shapes/catalog&#45;files/manifest.ts&#45;&gt;? src/lib/data/shapes/catalog&#45;files/manifest.ts:71</title>
 <path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M111.22,-8076.25C133.51,-8076.25 155.8,-8076.25 178.09,-8076.25 178.09,-8080.92 178.09,-8085.58 178.09,-8090.25 184.99,-8090.25 191.89,-8090.25 198.8,-8090.25"/>
 <polygon fill="currentColor" stroke="currentColor" points="198.58,-8092.35 204.58,-8090.25 198.58,-8088.15 198.58,-8092.35"/>
 </g>
-<!-- ? src/lib/data/shapes/catalog&#45;files/manifest.ts:65 -->
+<!-- ? src/lib/data/shapes/catalog&#45;files/manifest.ts:72 -->
 <g id="node164" class="node">
-<title>? src/lib/data/shapes/catalog&#45;files/manifest.ts:65</title>
+<title>? src/lib/data/shapes/catalog&#45;files/manifest.ts:72</title>
 <polygon fill="none" stroke="currentColor" points="206.1,-8115.25 206.1,-8137.25 484.44,-8137.25 484.44,-8115.25 206.1,-8115.25"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="start" x="212.1" y="-8122.25" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/data/shapes/catalog&#45;files/manifest.ts:65 text.describe(</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="start" x="212.1" y="-8122.25" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/data/shapes/catalog&#45;files/manifest.ts:72 text.describe(</text>
 </g>
-<!-- lib/data/shapes/catalog&#45;files/manifest.ts&#45;&gt;? src/lib/data/shapes/catalog&#45;files/manifest.ts:65 -->
+<!-- lib/data/shapes/catalog&#45;files/manifest.ts&#45;&gt;? src/lib/data/shapes/catalog&#45;files/manifest.ts:72 -->
 <g id="edge149" class="edge">
-<title>lib/data/shapes/catalog&#45;files/manifest.ts&#45;&gt;? src/lib/data/shapes/catalog&#45;files/manifest.ts:65</title>
+<title>lib/data/shapes/catalog&#45;files/manifest.ts&#45;&gt;? src/lib/data/shapes/catalog&#45;files/manifest.ts:72</title>
 <path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M111.22,-8084.25C131.51,-8084.25 151.8,-8084.25 172.09,-8084.25 172.09,-8098.25 172.09,-8112.25 172.09,-8126.25 181.04,-8126.25 189.99,-8126.25 198.93,-8126.25"/>
 <polygon fill="currentColor" stroke="currentColor" points="198.58,-8128.35 204.58,-8126.25 198.58,-8124.15 198.58,-8128.35"/>
 </g>

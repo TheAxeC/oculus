@@ -3,13 +3,15 @@
 // deposit routes; it holds no state of its own beyond the runs it lists, and none at module level.
 //
 // `begin` registers a run and answers the signal its commands hand to `endWith`; `end` takes the
-// run off when the write has answered; `cancel` aborts the run a key has. A run that begins while
-// another is registered for the same key is not registered: the page refuses a second write on a
-// busy root, and the registry keeps the first, so Cancel always reaches the run that was begun
-// first. Such a second run is answered a signal nothing can abort. A command ended by Cancel, by
-// its time limit or by its output limit ends the processes it started below git (a hook, the ssh
-// of a fetch) and leaves git to end on its own (`endWith`), so a hook does not outlive the command
-// and a merge cancelled during its hook is left in progress with its MERGE_HEAD.
+// run off when the write has answered; `cancel` aborts the run a key has; `busy` says whether a
+// key has a run registered. A run that begins while another is registered for the same key is not
+// registered: the page refuses a second write on a busy root, and the registry keeps the first, so
+// Cancel always reaches the run that was begun first. Such a second run is answered a signal
+// nothing can abort; a Zenodo action of the deposit is refused by `busy` instead, so a second
+// press never sends a second draft. A command ended by Cancel, by its time limit or by its output
+// limit ends the processes it started below git (a hook, the ssh of a fetch) and leaves git to end
+// on its own (`endWith`), so a hook does not outlive the command and a merge cancelled during its
+// hook is left in progress with its MERGE_HEAD.
 //
 // The process table is read at the kill and again every two seconds until nothing is left below
 // git, and a process that detached itself with `setsid` has left the parent chain the read follows,
@@ -27,6 +29,8 @@ export type RunningGit = {
     end: (key: string, signal: AbortSignal) => void;
     /** Abort the run of `key`. Answers whether a run was in flight to abort. */
     cancel: (key: string) => boolean;
+    /** Whether a run of `key` is registered. */
+    busy: (key: string) => boolean;
 };
 
 /** A registry with no run in flight. */
@@ -47,6 +51,9 @@ export function createRunningGit(): RunningGit {
             if (run === undefined) return false;
             run.abort();
             return true;
+        },
+        busy(key) {
+            return runs.has(key);
         }
     };
 }

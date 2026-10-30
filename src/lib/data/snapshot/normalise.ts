@@ -22,6 +22,7 @@ import { linked } from './normalise-parts/links.ts';
 import { personLinks, projectCv, publication } from './normalise-parts/publication.ts';
 import { indexing } from './indexing.ts';
 import type {
+    AnonymizeRow,
     CodeAvailability,
     Collection,
     Dataset,
@@ -53,7 +54,7 @@ import type {
 } from '../model/index.ts';
 import { domainColorOf, entryIdOf, entryTitleOf, primaryKeyOf } from '../model/index.ts';
 import { keyFaultOf } from '../model/model-collections.ts';
-import { isMap, str, strings } from '../helpers/guards.ts';
+import { isMap, scalar, str, strings } from '../helpers/guards.ts';
 import {
     collectionFiles,
     hasCardList,
@@ -179,6 +180,17 @@ function present<T extends object>(value: T): T | undefined {
     return Object.keys(held).length === 0 ? undefined : held;
 }
 
+/**
+ * The rows of `code_availability.anonymize`, each map of the list with its `term` (empty when it
+ * has none) and its `as`, or undefined when the key holds no list.
+ */
+function anonymizeRows(value: unknown): AnonymizeRow[] | undefined {
+    if (!Array.isArray(value)) return undefined;
+    return value
+        .filter(isMap)
+        .map((row) => compact<AnonymizeRow>({ term: str(row.term) ?? '', as: str(row.as) }));
+}
+
 /** The code deposit, from the manifest's `code_availability` map. */
 function codeAvailability(value: unknown): CodeAvailability | undefined {
     if (!isMap(value)) return undefined;
@@ -187,7 +199,11 @@ function codeAvailability(value: unknown): CodeAvailability | undefined {
         date: str(value.date),
         url: str(value.url),
         doi: str(value.doi),
-        repo: str(value.repo)
+        repo: str(value.repo),
+        anonymize: anonymizeRows(value.anonymize),
+        reviewLink: str(value.review_link),
+        zenodoStatus: str(value.zenodo_status),
+        zenodoDate: str(value.zenodo_date)
     });
 }
 
@@ -502,6 +518,7 @@ function funding(entry: RawRegistryEntry): Funding {
         note: str(entry.note),
         statement: str(entry.statement),
         funder: str(entry.funder),
+        award: scalar(entry.award) || undefined,
         link: str(entry.link),
         url: str(entry.url),
         snooze: str(entry.snooze),

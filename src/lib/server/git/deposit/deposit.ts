@@ -12,39 +12,35 @@
 //
 // What ships is `code/` minus `__pycache__`, `*.pyc` and `.git`, with the mirror's `.gitignore`
 // written from the patterns of `code/.gitignore` and `code/.depositignore`; `attic/` is added when
-// there is no `.depositignore`. The hub keeps tracking `results/`, `figures/` and `attic/` in full,
-// which is why the exclusion is a file of its own rather than the hub's `.gitignore`.
+// there is no `.depositignore` (deposit-tree.ts, which the Zenodo review copy is staged by too).
+// The hub keeps tracking `results/`, `figures/` and `attic/` in full, which is why the exclusion
+// is a file of its own rather than the hub's `.gitignore`.
 //
 // Every command runs through deposit-git.ts, which refuses any directory outside the
-// mirrors folder. Nothing here is reachable from a watcher, a timer or the socket: the one caller
-// is deposit-routes.ts, itself reached only from POST /api/deposit with the write token.
+// mirrors folder. Nothing here is reachable from a watcher, a timer or the socket: the callers
+// are deposit-routes.ts, itself reached only from POST /api/deposit with the write token, and the
+// Zenodo actions (zenodo.ts), which read a project's deposit through `depositFor`. `push` writes
+// the GitHub keys of `code_availability` (`status`, `url`, `date`) field by field and no other,
+// so the Zenodo keys stand as the Zenodo actions wrote them.
 //
 // Whether a path lies in a folder is read from server/core/paths.ts (`below`); the records of
 // `status --porcelain=v1 -z` are taken one by one as git writes them, through deposit-git.ts's
 // `statusIn`: the plan keeps every change, and the switch's check of a dirty mirror ends git at the
 // first record.
 
-import {
-    cpSync,
-    existsSync,
-    mkdirSync,
-    readFileSync,
-    readdirSync,
-    rmSync,
-    writeFileSync
-} from 'node:fs';
-import { basename, dirname, join, resolve, sep } from 'node:path';
+import { cpSync, existsSync, mkdirSync, readdirSync, rmSync } from 'node:fs';
+import { dirname, join, resolve, sep } from 'node:path';
 import { CODE_FOLDER, manifestDir } from '../../../data/sources/manifests.ts';
 import type {
     DepositChange as Change,
     DepositPlan as Plan,
-    MirrorState
+    MirrorState,
+    RawManifest
 } from '../../../data/model/index.ts';
 import { hubManifests } from '../../files/roots.ts';
 import { z } from 'zod';
 import {
     NETWORK_TIMEOUT_MS,
-    addAll,
     branchCmd,
     checkRefFormat,
     cloneInto,
@@ -78,6 +74,7 @@ import {
 import { REFS_FORMAT } from '../../core/git/parse.ts';
 import type { GitCredentials } from '../../core/git/credentials.ts';
 import { scan } from './deposit-scan.ts';
+import { pathsOf, stageTree } from './deposit-tree.ts';
 import {
     UNCOMPARED,
     upstreamOf,
@@ -87,7 +84,8 @@ import {
     type TextsOutcome
 } from './deposit-compare.ts';
 import { target, writeManifest, type Carried, type WriteTarget } from '../../edit/writes.ts';
-import { routed } from '../../edit/writes/hubs.ts';
+import { routed, type Routed } from '../../edit/writes/hubs.ts';
+import type { Account } from '../../core/reader/request.ts';
 import { hubId } from '../../../data/helpers/hub-names.ts';
 import { below } from '../../core/paths.ts';
 import { words } from '../../core/words.ts';
@@ -97,17 +95,11 @@ import { words } from '../../core/words.ts';
  */
 const DESCRIPTION_MAX = 350;
 
-/** What a deposit never copies out of `code/`, whatever the ignore files say. */
-const NEVER_COPY = ['.git', '__pycache__'];
-
 /** The branch the snapshot's orphan commit is made on, deleted again as soon as it is pushed. */
 const ORPHAN = 'oculus-snapshot';
 
 /** The branch a deposit publishes on, and what the repository's default branch is made to be. */
 const MAIN = 'main';
-
-/** The first line of the mirror's generated `.gitignore`. */
-const IGNORE_HEADER = '# Generated, cached, and dead-end files - not part of this deposit.';
 
 /** The answers' shapes, declared once for the server and the page (data/model). */
 export type { Change, Plan, MirrorState };
@@ -144,6 +136,13 @@ export type DepositOptions = {
     signal?: AbortSignal;
     /** The last plan per project, kept by the owning server context for the GET. */
     plans?: Map<string, Plan>;
+    /** How the Zenodo actions send their requests; the real fetch when absent. A test fakes it. */
+    fetch?: typeof fetch;
+    /**
+     * The machine's `downloads` rows, the primary hub's `.oculus/local.yml`, which the Zenodo
+     * actions read their token from; none when absent.
+     */
+    downloads?: () => readonly Account[];
 };
 
 /** What names the hubs a deposit reads, which is all the list of project ids needs. */
@@ -152,8 +151,11 @@ type DepositHubs = Pick<DepositOptions, 'into' | 'engine' | 'config' | 'carried'
 /** The repository's GitHub About, as the manifest configures it. */
 type About = { description?: string; homepage?: string; topics?: string[] };
 
-/** One project's deposit: where its code is, what its repo is called, and where its mirror is. */
-type Deposit = {
+/**
+ * One project's deposit: where its code is, what its repo is called, where its mirror is, the
+ * manifest as read, the hub it is written in, and how a command is pointed at another folder.
+ */
+export type Deposit = {
     id: string;
     repo: string;
     /** The manifest's `code_availability.url`, or the empty string: where a made deposit lives. */
@@ -162,13 +164,20 @@ type Deposit = {
     at: Where;
     about: About;
     visibility: string;
+    manifest: RawManifest;
+    /** The target of the project's own hub and its key inside that hub. */
+    home: Routed;
+    /** Where a command runs in `dir` under the folder `mirrors`, with this run's git and signal. */
+    where: (dir: string, mirrors: string) => Where;
 };
 
-function failed(error: string): Outcome {
+/** A refused or failed action, said by `error`; the Zenodo actions answer through it too. */
+export function failed(error: string): Outcome {
     return { ok: false, output: '', error };
 }
 
-function done(output: string): Outcome {
+/** An action that went through, said by `output`. */
+export function done(output: string): Outcome {
     return { ok: true, output, error: '' };
 }
 
@@ -239,7 +248,7 @@ const codeFieldsShape = z.object({
 });
 
 /** The deposit of one project, or null when the hub holds no project with that id. */
-function depositFor(
+export function depositFor(
     id: string,
     options: DepositOptions,
     text?: Record<string, string>
@@ -274,7 +283,10 @@ function depositFor(
             homepage: code.homepage,
             topics: code.topics
         },
-        visibility: code.visibility === 'private' ? 'private' : 'public'
+        visibility: code.visibility === 'private' ? 'private' : 'public',
+        manifest,
+        home,
+        where
     };
 }
 
@@ -362,7 +374,7 @@ export async function sync(
 
     const listed = await lsFiles(deposit.at);
     if (!listed.ok) return { ...listed, plan: null };
-    const files = listed.output.split('\n').filter((one) => one !== '');
+    const files = pathsOf(listed.output);
 
     const changes: Change[] = [];
     const state = await statusIn(deposit.at, (record) => {
@@ -602,7 +614,7 @@ export async function switchBranch(
     if (!switched.ok) return switched;
     const after = await lsFiles(deposit.at);
     if (!after.ok) return after;
-    dropGone(deposit, listOf(before.output), listOf(after.output));
+    dropGone(deposit, pathsOf(before.output), pathsOf(after.output));
     copyBack(deposit);
     return done(words(text, 'server.deposit.code_switched', name));
 }
@@ -680,83 +692,12 @@ export async function state(id: string, options: DepositOptions): Promise<Mirror
 // ---------------------------------------------------------------- what the mirror is made of
 
 /**
- * Empty the mirror's checkout of everything but `.git`, copy `code/` in, write the ignore, stage,
- * and then drop whatever the ignore excluded. The copy is wholesale because the exclusion is git's
- * to interpret, and the mirror is what `git add -A` made of it; the prune is what keeps a project's
- * `results/` and `figures/` from being kept a second time under `~/.oculus/deposits`.
+ * Put `code/` into the mirror's checkout as git stages it (deposit-tree.ts), so the mirror is what
+ * ships and a project's `results/` and `figures/` are not kept a second time under
+ * `~/.oculus/deposits`.
  */
 async function restage(deposit: Deposit): Promise<Outcome> {
-    emptyCheckout(deposit.at.dir);
-    cpSync(deposit.code, deposit.at.dir, { recursive: true, filter: copyable });
-    writeIgnore(deposit.code, deposit.at.dir);
-    const staged = await addAll(deposit.at);
-    if (!staged.ok) return staged;
-    const listed = await lsFiles(deposit.at);
-    if (listed.ok) {
-        prune(deposit.at.dir, new Set(listed.output.split('\n').filter((one) => one !== '')));
-    }
-    return staged;
-}
-
-/** Everything the mirror's checkout holds that git did not stage, so the mirror is what ships. */
-function prune(mirror: string, tracked: Set<string>, prefix = ''): void {
-    for (const entry of readdirSync(join(mirror, prefix), { withFileTypes: true })) {
-        const rel = prefix === '' ? entry.name : `${prefix}/${entry.name}`;
-        if (rel === '.git') continue;
-        if (entry.isDirectory()) {
-            prune(mirror, tracked, rel);
-            if (readdirSync(join(mirror, rel)).length === 0)
-                rmSync(join(mirror, rel), { force: true, recursive: true });
-            continue;
-        }
-        if (!tracked.has(rel)) rmSync(join(mirror, rel), { force: true });
-    }
-}
-
-/** Everything but `.git` goes, so a file deleted from `code/` is deleted from the deposit too. */
-function emptyCheckout(mirror: string): void {
-    for (const entry of readdirSync(mirror)) {
-        if (entry === '.git') continue;
-        rmSync(join(mirror, entry), { recursive: true, force: true });
-    }
-}
-
-/** What a copy out of `code/` never carries, whatever the ignore files say. */
-function copyable(source: string): boolean {
-    const name = basename(source);
-    if (NEVER_COPY.includes(name)) return false;
-    return !name.endsWith('.pyc');
-}
-
-/**
- * The mirror's `.gitignore`, from the patterns of `code/.gitignore` and `code/.depositignore`.
- * Comments are dropped on purpose: they explain the hub-and-deposit split and name a file the
- * deposit does not have. Without a `.depositignore`, `attic/` is added, since the dead-end record
- * is the hub's and never the deposit's.
- */
-function writeIgnore(code: string, mirror: string): void {
-    const patterns: string[] = [];
-    const seen = new Set<string>();
-    const has = existsSync(join(code, '.depositignore'));
-    for (const name of ['.gitignore', '.depositignore']) {
-        for (const line of linesOf(join(code, name))) {
-            const one = line.trim();
-            if (one === '' || one.startsWith('#') || seen.has(one)) continue;
-            seen.add(one);
-            patterns.push(one);
-        }
-    }
-    if (!has && !seen.has('attic/')) patterns.push('attic/');
-    rmSync(join(mirror, '.depositignore'), { force: true });
-    writeFileSync(join(mirror, '.gitignore'), `${IGNORE_HEADER}\n${patterns.join('\n')}\n`, 'utf8');
-}
-
-function linesOf(file: string): string[] {
-    try {
-        return readFileSync(file, 'utf8').split('\n');
-    } catch {
-        return [];
-    }
+    return (await stageTree(deposit.code, deposit.at)).staged;
 }
 
 /**
@@ -770,11 +711,6 @@ function copyBack(deposit: Deposit): void {
             force: true
         });
     }
-}
-
-/** The paths of one `ls-files` answer. */
-function listOf(output: string): string[] {
-    return output.split('\n').filter((one) => one !== '');
 }
 
 /**
@@ -856,6 +792,7 @@ async function pointDefaultAtMain(deposit: Deposit, run: GhRun): Promise<boolean
     return (await run(defaultBranchArgs(slugOf(url), MAIN), NETWORK_TIMEOUT_MS)).ok;
 }
 
-function today(): string {
+/** Today's date as the manifest's dates are written, `YYYY-MM-DD` in UTC. */
+export function today(): string {
     return new Date().toISOString().slice(0, 10);
 }

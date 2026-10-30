@@ -42,7 +42,7 @@ import { renderScalar } from '../../../data/helpers/files/yaml/collection-text.t
 import { insertRemoved } from './restore.ts';
 import type { ChangeRecord, RemovedText } from '../../core/changes.ts';
 import type { Refusal, SetFieldsResult } from '../../core/files/yaml/yaml-edit.ts';
-import type { FieldValue } from '../../core/files/yaml/yaml-values.ts';
+import type { FieldValue, ScalarMap } from '../../core/files/yaml/yaml-values.ts';
 import type { PortfolioConfig, RawManifest, SchemaField } from '../../../data/model/index.ts';
 import type { WriteOutcome } from '../writes.ts';
 import { below, inside, realPath } from '../../core/paths.ts';
@@ -144,8 +144,11 @@ const TEXTS = ['text', 'textarea', 'date', 'select'];
 /** Types whose value is a list of strings. */
 const LISTS = ['tags', 'chips', 'lines'];
 
+/** The type whose value is a list of rows of text fields (`code_availability.anonymize`). */
+const ROWS = 'rows';
+
 /** The types a form control of the manifest has, which `coerce` reads a value of. */
-const WRITABLE = ['checkbox', ...LISTS, ...TEXTS];
+const WRITABLE = ['checkbox', ROWS, ...LISTS, ...TEXTS];
 
 /** A refusal reason, or the value to write. The two are told apart by the shape. */
 type Coerced = { value: FieldValue } | { reason: string };
@@ -154,9 +157,11 @@ type Coerced = { value: FieldValue } | { reason: string };
  * How the values of one write are read. A `form` value is what a control posted, so an empty
  * control clears its field (`coerce`). A `record` value is what a change record holds, the value
  * the file had, and is written as it is, so an empty list, an empty text and `false` go back into
- * the file and `null` takes the field out.
+ * the file and `null` takes the field out. A `machine` value is one oculus computed itself (the
+ * Zenodo deposit's DOI, status, date and share link): it is read as a form value, and it may be
+ * written to a `readonly` field, which is read-only to the form alone.
  */
-export type ValueReading = 'form' | 'record';
+export type ValueReading = 'form' | 'record' | 'machine';
 
 /**
  * Why a field of this type is never written, whichever way its value is read, or null when it may
@@ -186,6 +191,7 @@ export function coerce(
     if (type === 'checkbox') {
         return { value: TRUE.includes(raw as string | number | boolean) ? true : null };
     }
+    if (type === ROWS) return rowsValue(raw, catalog);
     if (LISTS.includes(type)) {
         const items =
             typeof raw === 'string'
@@ -214,6 +220,33 @@ export function coerce(
     return { value: text };
 }
 
+/**
+ * A list of rows as the manifest holds it: each row a map of its text fields, trimmed, a field left
+ * empty dropped and a row left empty dropped; no row left clears the field. A number or a flag in a
+ * row is written as the text it prints as.
+ */
+function rowsValue(raw: unknown, catalog: Record<string, string>): Coerced {
+    if (raw === null || raw === undefined) return { value: null };
+    if (!Array.isArray(raw)) return { reason: words(catalog, 'server.manifest_write.not_list') };
+    const rows: ScalarMap[] = [];
+    for (const item of raw) {
+        if (!isMap(item)) {
+            return { reason: words(catalog, 'server.manifest_write.rows_not_records') };
+        }
+        const row: ScalarMap = {};
+        for (const [name, held] of Object.entries(item)) {
+            if (held === null || held === undefined) continue;
+            if (typeof held !== 'string' && typeof held !== 'number' && typeof held !== 'boolean') {
+                return { reason: words(catalog, 'server.manifest_write.rows_not_records') };
+            }
+            const text = String(held).trim();
+            if (text !== '') row[name] = text;
+        }
+        if (Object.keys(row).length > 0) rows.push(row);
+    }
+    return { value: rows.length === 0 ? null : rows };
+}
+
 /** One value read the way the write says, as `coerce` does for a form and as it is for a record. */
 function readValue(
     reading: ValueReading,
@@ -223,6 +256,9 @@ function readValue(
     catalog: Record<string, string>
 ): { value: unknown } | { reason: string } {
     if (reading === 'form') return coerce(type, raw, current, catalog);
+    if (reading === 'machine') {
+        return coerce(type === 'readonly' ? 'text' : type, raw, current, catalog);
+    }
     const reason = unwritable(type, catalog);
     return reason === null ? { value: raw } : { reason };
 }
