@@ -5919,3 +5919,4 @@ The review of O102 (`agents/reviews/O102-refuter.md`) raised it.
 
 Where it applies: O102's repair round 1 (`agents/briefs/O102-round1.md`). Booked in `plan.md` Rulings and the state file's closed log, open item 590.
 Builds on it: O102
+- 2026-10-30, O104's /spec (ruling 374 (a), internal widenings of the brief check): `record.ts`, `record-menu.ts`, `docs/diagrams/`, the six files of stale sentences and the test files added to the paths; the editor's helper placed at `views/boards/editor/editor-target.ts`; no catalog file added. Named in the next report.

@@ -1,7 +1,6 @@
-In flight (0 of 6 slots in use): none.
+In flight (1 of 6 slots in use): O104 (one page frame and one editor), builder a64b1775be113ff93.
 
-Queued, in order (1 step):
-- O104 (one page frame and one editor).
+Queued, in order (0 steps): none.
 
 Owed looks: none.
 
