@@ -1,22 +1,23 @@
 // Layer 2, server tests. Each platform branch names the program its platform has (G85): the shell
 // a plain terminal starts when `SHELL` names none (data/places/platform.ts), and the programs the
-// packager runs for the app (src/desktop/package.ts), read as data with the platform passed in, so
-// both branches are held on any machine and no step is run.
+// packager runs for the app (src/desktop/release-steps.ts), read as data with the platform passed
+// in, so both branches are held on any machine and no step is run.
 
 import { describe, expect, it } from 'vitest';
 import { fallbackShell } from '../../../src/lib/data/places/platform.ts';
 import {
     archiveStep,
-    finishSteps,
     iconSteps,
+    signSteps,
     type AppPlatform
-} from '../../../src/desktop/package.ts';
+} from '../../../src/desktop/release-steps.ts';
 
-/** Every program the packager runs for one platform, the icon's and the finish's, in order. */
+/** Every program the packager runs for one platform: the icon's, macOS's signing, the archive's. */
 function programs(platform: AppPlatform): string[] {
     const icon = iconSteps(platform, '/co/assets/app-icon.png', '/work');
-    const finish = finishSteps(platform, 'arm64', '/work/out/made', '/apps');
-    return [...icon.steps, ...finish.steps].map((step) => step.program);
+    const sign = signSteps(platform, '/work/out/oculus.app');
+    const archive = archiveStep(platform, '/work/out/made', '/r/archive');
+    return [...icon.steps, ...sign, archive].map((step) => step.program);
 }
 
 describe('each platform branch runs the program its platform has', () => {
@@ -37,24 +38,21 @@ describe('each platform branch runs the program its platform has', () => {
             '/work/oculus.icns'
         );
 
+        expect(signSteps('darwin', '/apps/oculus.app')).toEqual([
+            { program: 'codesign', args: ['--force', '--deep', '--sign', '-', '/apps/oculus.app'] },
+            { program: 'codesign', args: ['--verify', '--deep', '--strict', '/apps/oculus.app'] }
+        ]);
+
         expect(programs('linux')).toEqual(['tar']);
         expect(iconSteps('linux', '/co/assets/app-icon.png', '/work').icon).toBe(
             '/co/assets/app-icon.png'
         );
-        const linux = finishSteps('linux', 'arm64', '/work/out/made', '/apps');
-        expect(linux.target).toBe('/apps/oculus-linux-arm64');
-        expect(linux.steps).toEqual([
-            {
-                program: 'tar',
-                args: [
-                    '-czf',
-                    '/apps/oculus-linux-arm64.tar.gz',
-                    '-C',
-                    '/apps',
-                    'oculus-linux-arm64'
-                ]
-            }
-        ]);
+        expect(
+            archiveStep('linux', '/apps/oculus-linux-arm64', '/apps/oculus-linux-arm64.tar.gz')
+        ).toEqual({
+            program: 'tar',
+            args: ['-czf', '/apps/oculus-linux-arm64.tar.gz', '-C', '/apps', 'oculus-linux-arm64']
+        });
         expect(archiveStep('darwin', '/r/oculus-0.1.0-darwin-arm64', '/r/a.zip')).toEqual({
             program: 'ditto',
             args: ['-c', '-k', '--keepParent', '/r/oculus-0.1.0-darwin-arm64', '/r/a.zip']

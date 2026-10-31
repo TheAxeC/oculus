@@ -1,12 +1,12 @@
-// Layer 2, server (the desktop host). `npm run app:release`: builds the app that runs on its own,
-// for a platform and an architecture, and packs it as the archive a Release holds. Where
-// `npm run app:package` makes a stub that runs the checkout's code, this app holds everything it
-// runs and reads nothing of the checkout: the server built by `vite build --mode app`, the sources
-// Electron and the server run unbuilt (src/, with config/, docs/, assets/ and the one document),
-// and the production packages installed for the target into a staging folder by `npm ci` with
-// npm's `--os` and `--cpu` (and `--libc glibc` for Linux, so the packages built per C library get
-// the GNU one). The install runs no package's install script, since a script would build for this
-// machine and not the target. Electron itself is the packager's, at the version the checkout has.
+// Layer 2, server (the desktop host). `npm run app:release`: builds the app, which runs on its own,
+// for a platform and an architecture, and packs it as the archive a Release holds. The app holds
+// everything it runs and reads none of the checkout: the server built by `vite build --mode app`,
+// the sources Electron and the server run unbuilt (src/, with config/, docs/, assets/ and the one
+// document), and the production packages installed for the target into a staging folder by
+// `npm ci` with npm's `--os` and `--cpu` (and `--libc glibc` for Linux, so the packages built per C
+// library get the GNU one). The install runs no package's install script, since a script would
+// build for this machine and not the target. Electron itself is the packager's, at the version the
+// checkout has.
 //
 // The staging folder's package-lock.json is cut to the entries the production install holds (the
 // lock less the entries marked `dev`) and put into the app after the packager, which leaves every
@@ -25,13 +25,15 @@ import { packager } from '@electron/packager';
 import { execFileSync } from 'node:child_process';
 import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
+import { join } from 'node:path';
 import { SHIPPED_SOURCES } from '../lib/data/places/shipped.ts';
 import { APP_FOLDERS } from '../lib/server/root/process/build-folders.ts';
 import {
+    NAME,
     appArch,
     appPlatform,
     archiveStep,
+    checkout,
     electronVersion,
     iconSteps,
     runSteps,
@@ -39,14 +41,10 @@ import {
     signSteps,
     type AppArch,
     type AppPlatform
-} from './package.ts';
+} from './release-steps.ts';
 import { buildServer } from './server/build.ts';
 
-const NAME = 'oculus';
 const BUNDLE_ID = 'local.research.oculus';
-
-/** The checkout this script lives in: the folder holding package.json, two levels above. */
-const checkout = resolve(import.meta.dirname, '..', '..');
 
 /** What the app holds of the checkout, besides the packages the staging folder installs. */
 const SHIPPED = [...SHIPPED_SOURCES, APP_FOLDERS.adapter];
@@ -126,7 +124,7 @@ async function main(argv: readonly string[]): Promise<void> {
                 ? join(folder, 'Contents', 'Resources', 'app')
                 : join(folder, 'resources', 'app');
         cpSync(lockFile, join(shipped, 'package-lock.json'));
-        if (platform === 'darwin') runSteps(signSteps(folder));
+        runSteps(signSteps(platform, folder));
         const releases = join(checkout, 'release');
         mkdirSync(releases, { recursive: true });
         const kind = platform === 'darwin' ? 'zip' : 'tar.gz';

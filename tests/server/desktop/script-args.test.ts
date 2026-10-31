@@ -1,11 +1,11 @@
-// Layer 2, server tests. The arguments of the packaging scripts (src/desktop/package.ts
-// `scriptArgs`, which `npm run app:package` and `npm run app:release` read their options by): each
-// option the script takes is read by its name, and anything else stops the script before it builds,
-// so an argument a shell passed as one word, a misspelt name or a name with no value never builds
-// an archive for this machine's defaults.
+// Layer 2, server tests. The arguments of the packaging script (src/desktop/release-steps.ts
+// `scriptArgs`, which `npm run app:release` reads its options by): each option the script takes is
+// read by its name, and anything else stops the script before it builds, so an argument a shell
+// passed as one word, a misspelt name or a name with no value never builds an archive for this
+// machine's defaults.
 
 import { describe, expect, it } from 'vitest';
-import { scriptArgs } from '../../../src/desktop/package.ts';
+import { scriptArgs } from '../../../src/desktop/release-steps.ts';
 
 const RELEASE = ['--platform', '--arch'];
 

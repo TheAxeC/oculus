@@ -350,11 +350,6 @@ async function run(
             return;
         }
     }
-    if (!existsSync(appHandler(checkout))) {
-        await say(t('desktop.dialog.not_built'), [t('desktop.dialog.quit')]);
-        app.exit(1);
-        return;
-    }
     let env: NodeJS.ProcessEnv = process.env;
     let loginSlow = false;
     if (app.isPackaged) {

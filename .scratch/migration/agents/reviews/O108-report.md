@@ -193,3 +193,76 @@ No key or id is introduced. No helper is new: every function in `release-steps.t
 Nothing in the brief was wrong. Its premises reproduced, `app.ts` and the catalog line among them. Decision 1 says the server's own start error reports a missing handler, and the run in "User-visible changes" holds that for the server's line.
 
 The brief's "What is on the tree" does not mention that the server fails to start; that is the first section.
+
+## Repair round 1
+
+Everything in `.scratch/migration/agents/briefs/O108-round-1.md` is done. Where this section differs from the sections above, this section holds. S1 is ruled with no change: `NAME` and `checkout` stay exported.
+
+The defect in `cv.ts` at the top of this report is unchanged: it is outside this round too.
+
+Open items of the state file: as above, none.
+
+### What changed
+
+| Finding | Path | Before | After |
+| --- | --- | --- | --- |
+| P1 | `src/desktop/release-steps.ts:113` | `export function signSteps(bundle: string): Step[] {` | `export function signSteps(platform: AppPlatform, bundle: string): Step[] {`, first line `if (platform === 'linux') return [];` |
+| P1 | `src/desktop/release-steps.ts:109-112` doc comment | `The steps that sign a macOS bundle ad hoc and verify the signature, deep and strict.` | adds `and no step on Linux, which has no codesign` |
+| P1 | `src/desktop/release.ts:127` | `if (platform === 'darwin') runSteps(signSteps(folder));` | `runSteps(signSteps(platform, folder));` |
+| P1 | `tests/server/desktop/platform-steps.test.ts:18` | `const sign = platform === 'darwin' ? signSteps('/work/out/oculus.app') : [];` | `const sign = signSteps(platform, '/work/out/oculus.app');` |
+| P1 | `tests/server/desktop/platform-steps.test.ts:41-44` | no such assertion | `expect(signSteps('darwin', '/apps/oculus.app')).toEqual([...])`: `['--force', '--deep', '--sign', '-', '/apps/oculus.app']`, then `['--verify', '--deep', '--strict', '/apps/oculus.app']`, both `codesign`, in that order |
+| St1 | `tests/server/desktop/platform-steps.test.ts:3-4` | head comment | unchanged, and true now that the platform is passed to `signSteps` |
+| St2 | `src/desktop/release-steps.ts:1-4` | `... finding Electron's version, and the programs the script runs.` | `... finding Electron's version, and the icon, signing and archive steps and running them.`, rewrapped; the rest of the comment unchanged |
+
+Judgment 5 above is gone with the branch it described. No test title changed. Linux signing is held by the existing `expect(programs('linux')).toEqual(['tar'])`, which now reads the code's branch.
+
+Lines now: `src/desktop/release-steps.ts` 129, `src/desktop/release.ts` 146, `tests/server/desktop/platform-steps.test.ts` 61 (`wc -l`). The other rows of the Files table stand. All paths are on the write list.
+
+The archives in the worktree's `release/` were built before this round and were not rebuilt, as the round's brief says. `release.ts:127` and `signSteps` therefore have not run in a real build in their new form; the macOS and Linux steps they give are held by the test.
+
+### Report rows corrected (B1, B2)
+
+These two rows replace the rows of "User-visible changes".
+
+| Change | Before | After |
+| --- | --- | --- |
+| `npm run app:package` | built a launcher into `~/Applications/oculus.app` on macOS and into `~/.local/share/oculus/oculus-linux-<arch>` with its `.tar.gz` on Linux, or into the folder `--out` named | `npm error Missing script: "app:package"`; `--out` and both outputs go with it |
+| The app with no built handler | a dialog with one button, Quit, `The oculus server is not built. Run npm run app from the checkout once, then start the app again.`, shown before the login environment is read | the login environment and `machineLacks` run first, so a missing required program shows `desktop.dialog.lack_refused`; otherwise the `desktop.dialog.server_exited` dialog, `The oculus server ended (exit code 1): oculus: <path> is no file, so there is no handler to load`, with Restart and Quit; Restart forks the same missing handler and brings the same dialog back |
+
+Read from `src/desktop/app.ts:333-340` (`ended`) and `:353-370`, the base's `app.ts:353-357`, and the base's `package.ts:92-94`, `:170-171` and `:188`. Only a damaged bundle reaches the second row. That dialog with this text was not run, as above.
+
+### Checks on the final tree
+
+`npm run diagrams`, exit 0, then `npm run test:quick`, exit 0, run once in this round:
+
+```
+test:quick: 10 changed file(s), from git since HEAD
+test:quick: 10 test file(s)
+ok      prettier (0.8 s): All matched files use Prettier code style!
+ok      ASCII gate (0.9 s)
+ok      svelte-kit sync (2.5 s)
+ok      svelte-check (9.6 s): 1793482037911 COMPLETED 576 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      eslint (9.9 s)
+ok      vitest (11.8 s): Duration  326ms (transform 210ms, setup 0ms, import 387ms, tests 7ms, environment 1ms)
+ok      vitest checks (41.7 s): Duration  29.97s (transform 12.85s, setup 0ms, import 26.38s, tests 35.09s, environment 2ms)
+test:quick: 44.4 s; every command passed
+```
+
+The ten changed files are the eight of the Files table and two under `.scratch`, this report and the round's brief.
+
+`npx vitest run tests/server/desktop/platform-steps.test.ts tests/server/desktop/script-args.test.ts --reporter=dot`, a passing run after the change, as the round asks; no run on the unchanged tree:
+
+```
+ Test Files  2 passed (2)
+      Tests  11 passed (11)
+```
+
+| Check | Output |
+| --- | --- |
+| `sh utils/unused-exports.sh` | status 0; `diff` with the base's output: no difference |
+| `LC_ALL=C grep -n '[^ -~]'` over the seven changed files | no output, exit 1 |
+| `grep -n -iE 'moved\|formerly\|used to\|no longer\|previously\|launcher\|stub'` over the four files | no output, exit 1 |
+| history-word grep over the four files | the one hit above, `script-args.test.ts:3`, kept |
+| `grep -rn signSteps src tests docs README.md config --exclude=local.yml` | every call passes the platform: `release.ts:127`, `platform-steps.test.ts:18` and `:41`; the other hits are the definition, the imports and the head comment |
+
+No whole-suite command ran.

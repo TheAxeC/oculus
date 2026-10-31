@@ -1,10 +1,11 @@
-In flight (1 of 6 slots in use): O108 (one desktop app).
+In flight (0 of 6 slots in use): none.
 
 Queued, in order (0 steps): none.
 
 Owed looks: none.
 
 Landed, newest first:
+- O108 (one desktop app), 2026-10-31.
 - O109 (the app's server starts), 2026-10-31.
 - O107 (an entry of a file with no schema opens its page), 2026-10-31.
 - O106 (cards and the entry page), 2026-10-31; hub aa8f2d669; web a885f2d.

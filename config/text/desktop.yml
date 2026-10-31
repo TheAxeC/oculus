@@ -8,7 +8,6 @@ text:
             env_slow: The login shell did not answer within 10 seconds, so programs on its PATH (tmux, git, claude) may not be found.
             lack_refused: 'oculus did not start: {0}'
             lacks: "oculus started without these, so the parts that need them do not work:\n{0}"
-            not_built: The oculus server is not built. Run npm run app from the checkout once, then start the app again.
             open_window: Open a Window
             port_oculus: An oculus already answers on port {0}.
             port_other: Port {0} is held by another program, so oculus did not start.

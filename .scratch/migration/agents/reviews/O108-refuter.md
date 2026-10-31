@@ -193,3 +193,184 @@ The before column names macOS's default alone. The script took `--out`, and on L
 - The archives were not rebuilt. Their identity with the tree is the `cmp` above over five named files, of which four match, and not the whole tree.
 
 Usage: a1bbebe0eb696ea45, claude-opus-5-5, 174612 tokens, 27 tool uses, 21.6 minutes
+
+## Repair round 1, refuted
+
+Reviewed on .agents/worktrees/migration-O108, base 85d449c47, against the snapshot .agents/worktrees/migration-O108-round-1. The review found nothing.
+
+The delta is three files, all on the write list: `src/desktop/release-steps.ts`, `src/desktop/release.ts` and `tests/server/desktop/platform-steps.test.ts`. `diff -u` against the snapshot is empty for `config/text/desktop.yml`, `package.json`, `src/desktop/app.ts` and `tests/server/desktop/script-args.test.ts`. `src/desktop/package.ts` is absent from both the snapshot and the worktree. The only changed paths outside `files.txt` are `.scratch/migration/agents/briefs/O108-round-1.md` and `.scratch/migration/agents/reviews/O108-report.md`.
+
+```
+$ npm run diagrams
+exit 0; `git status --short` before and after compared with diff: no difference
+
+$ npm run test:quick -- --base 85d449c47     (run once, captured with tail -20, so the head lines with the changed-file count are not quoted)
+ok      prettier (0.6 s): All matched files use Prettier code style!
+ok      ASCII gate (0.7 s)
+ok      svelte-kit sync (2.6 s)
+ok      eslint (2.2 s)
+ok      svelte-check (8.4 s): 1793482283163 COMPLETED 576 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest (10.4 s): Duration  463ms (transform 467ms, setup 0ms, import 513ms, tests 7ms, environment 6ms)
+ok      vitest checks (35.9 s): Duration  25.78s (transform 12.32s, setup 0ms, import 25.36s, tests 33.36s, environment 2ms)
+test:quick: 38.7 s; every command passed
+test:quick: not covered: tests that reach no changed file within the import depth,
+            other than the checks under tests/checks/source and tests/checks/tree,
+            which run for any change under src, tests or utils; the build, the lint
+            of unchanged files
+
+$ sh utils/unused-exports.sh
+status 0, 337 lines; grep -n desktop over them: no output, exit 1
+
+$ npx vitest run tests/server/desktop/platform-steps.test.ts tests/server/desktop/script-args.test.ts tests/checks/tree/boundaries.test.ts --reporter=dot
+ Test Files  3 passed (3)
+      Tests  22 passed (22)
+
+$ npx vitest run tests/server/desktop/platform-steps.test.ts tests/server/desktop/script-args.test.ts --reporter=verbose
+ Test Files  2 passed (2)
+      Tests  11 passed (11)
+
+$ grep -n -iE 'moved|formerly|used to|no longer|previously|launcher|stub' src/desktop/release-steps.ts src/desktop/release.ts tests/server/desktop/platform-steps.test.ts tests/server/desktop/script-args.test.ts
+no output, exit 1
+
+$ LC_ALL=C grep -n '[^ -~]' over the seven changed files
+no output, exit 1
+
+$ the spec's ASCII gate (perl form) over src tests config    (the tree has no bin folder, so bin is left out of find)
+no output, exit 0
+
+$ history-word grep of the spec over the four files
+tests/server/desktop/script-args.test.ts:3:// read by its name, and anything else stops the script before it builds, so an argument a shell
+(an order of events in the script, unchanged wording, as the report says)
+
+$ grep -n '"app:package"' package.json
+no output, exit 1
+$ npm run app:package
+npm error Missing script: "app:package"
+$ grep -n '"app' package.json
+26:        "app": "electron .",
+27:        "app:release": "node src/desktop/release.ts"
+$ grep -rn -E 'app:package|desktop/package|package\.ts|writeStub|finishSteps|defaultOut|main\.cjs' . (the brief's exclusions, with .git and build-app)
+no output, exit 1
+$ grep -rn startedAsProgram src/desktop
+no output, exit 1
+$ npm run app:release -- --platform nosuch
+Error: there is no oculus app for the platform nosuch
+    at appPlatform (file:///Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O108/src/desktop/release-steps.ts:54:11)
+$ npm run app:release -- --platfrom linux
+Error: unknown argument --platfrom
+    at scriptArgs (file:///Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O108/src/desktop/release-steps.ts:40:42)
+$ grep -rn not_built src/desktop config/text/desktop.yml
+no output, exit 1
+
+$ grep -rn signSteps src tests docs README.md config --exclude=local.yml
+src/desktop/release-steps.ts:9:// folder. The steps of each platform are plain data (`iconSteps`, `signSteps`, `archiveStep`), so a
+src/desktop/release-steps.ts:113:export function signSteps(platform: AppPlatform, bundle: string): Step[] {
+src/desktop/release.ts:41:    signSteps,
+src/desktop/release.ts:127:        runSteps(signSteps(platform, folder));
+tests/server/desktop/platform-steps.test.ts:11:    signSteps,
+tests/server/desktop/platform-steps.test.ts:18:    const sign = signSteps(platform, '/work/out/oculus.app');
+tests/server/desktop/platform-steps.test.ts:41:        expect(signSteps('darwin', '/apps/oculus.app')).toEqual([
+
+$ wc -l src/desktop/release-steps.ts src/desktop/release.ts tests/server/desktop/platform-steps.test.ts
+129, 146, 61, as the report's round section says
+
+$ node src/server.ts --handler /nonexistent/handler.js    (refused at the argument parse, src/server.ts:41-43, before any port or hub read)
+oculus: /nonexistent/handler.js is no file, so there is no handler to load
+exit 1
+
+$ tar -tzf release/oculus-1.0.0-linux-x64.tar.gz    (archive listed, not rebuilt)
+41053 entries; oculus-linux-x64/resources/app/src/desktop/release-steps.ts listed; no package.ts
+$ unzip -l release/oculus-1.0.0-darwin-arm64.zip    (archive listed, not rebuilt)
+oculus.app/Contents/Resources/app/src/desktop/release-steps.ts listed, 5645 bytes, the snapshot's size; no package.ts
+```
+
+### Verdicts
+
+Items of the brief's "What to build":
+
+- `app:package` and `package.ts` gone, nothing makes an app that runs the checkout, `app:release` at the same paths with the same lines, `npm run app` unchanged: holds. The case greps and the missing-script error above show it. `release.ts:128-140` is outside the diff.
+- `package.json`, the script line removed: holds. See the diff and the `grep '"app'` above.
+- `src/desktop/release-steps.ts` (new): holds.
+  - `diff` against `git show 85d449c47:src/desktop/package.ts` leaves only the launcher code deleted, the head comment rewritten, the `NAME`, `checkout` and `Step` export changes, the defaults and comments of `appPlatform` and `appArch`, and the round's `signSteps`.
+  - The `NAME` and `checkout` exports are ruled (S1, round brief).
+  - `Step` is unexported at line 26.
+- `src/desktop/release.ts`: holds. Imports are at lines 31-44, the head comment at lines 1-9, and the wording grep prints nothing. Line 127 is as the round brief rules.
+- `tests/server/desktop/platform-steps.test.ts`: holds. The import, the head comment, no `finishSteps`, the programs through the three helpers at lines 16-21, and the Linux `tar` row with the old row's arguments at lines 50-55.
+- `tests/server/desktop/script-args.test.ts`: holds. Head comment and import at lines 1-8. Unchanged in the round.
+- `src/desktop/package.ts` deleted: holds. `git status --short` prints ` D src/desktop/package.ts`.
+- `src/desktop/app.ts`: holds. The `not_built` branch is gone, and `appHandler` stays at line 267. `existsSync` is still used, and eslint is green.
+- `config/text/desktop.yml`: holds. The key is gone, and `tests/checks` is green.
+- Installing the app: not applicable. It is outside the builder's work, and `~/Applications` is out of bounds.
+
+Items of the round's brief:
+
+- 1 (P1, St1): holds.
+  - `signSteps(platform, bundle)` is at `release-steps.ts:113` and returns `[]` on Linux at line 114.
+  - `release.ts:127` is `runSteps(signSteps(platform, folder));`.
+  - `programs` has no branch of its own (test line 18).
+  - The new assertion at test lines 41-44 holds both macOS steps whole and in order.
+  - The head comment at test lines 3-4 is unchanged and now true: the platform reaches `signSteps`. `expect(programs('linux')).toEqual(['tar'])` reads the code's branch, and the darwin `toEqual` reads the other, found by reading.
+- 2 (St2): holds. `release-steps.ts:1-4` says "and the icon, signing and archive steps and running them". The rest of the comment is unchanged and rewrapped. `comment-width.test.ts` passes in test:quick.
+- 3 (B1, B2): holds. Each statement in the two report rows agrees with the code:
+  - `src/desktop/app.ts:333-340` (`ended`), `:353` to `:370`, and base `app.ts:353-357`;
+  - base `package.ts:92-94`, `:170-171` and `:188`;
+  - `args.ts:105`, the catalog `server_exited` line, and `src/desktop/server/error-line.ts` (a stream with no line naming an error gives its last line as the reason).
+- S1: ruled, no change. `release-steps.ts:17` and `:29` are unchanged.
+
+Cases of the brief's "Cases":
+
+- `grep '"app:package"'` and the missing-script error: met, above.
+- `"app": "electron ."`: met, line 26.
+- The wide grep and the `startedAsProgram` grep: met, exit 1 on both.
+- `--platform nosuch`: met, same message, now at `release-steps.ts:54`.
+- `--platfrom linux`: met, same message, now at `release-steps.ts:40`.
+- Linux archive: met. The archive was listed, not rebuilt, and predates the round, as the round's brief allows: 41053 entries, `release-steps.ts` listed, no `package.ts`.
+- macOS archive: met. The archive was listed, not rebuilt, and predates the round, as above. The `codesign` pass inside the script is the first reviewer's and the builder's result on the pre-round form of `release.ts:127`; see "Declined to judge".
+- The two test files: met, 11 passed. Every row without `finishSteps` is kept, and the macOS and Linux programs are checked as the item says.
+- `grep -rn not_built src/desktop config/text/desktop.yml`: met, exit 1.
+
+Closures the builder claims, against the first report:
+
+- P1: closed by a fix, with no check removed. The branch moved from the test and from `release.ts:127` into `signSteps`, and the sub-point on `new Set(mac)` is closed by the new whole-step assertion. All earlier assertions stay.
+- St1: closed by the change of P1. No comment was edited.
+- St2: closed by the wording change.
+- B1, B2: closed in the report's "Report rows corrected".
+- No fix reaches beyond its finding. The delta is the seven hunks the round's brief names: the head comment, the `signSteps` doc comment and signature, `release.ts:127`, test line 18, and the new assertion.
+
+### Findings
+
+#### 1. Spec
+
+none
+
+#### 2. Proof
+
+none
+
+#### 3. Standards
+
+none
+
+#### 4. Behaviour
+
+none
+
+### Declined to judge
+
+- That `release.ts:127` is called in a real build in its round form. The round's archives predate it (the archived `release-steps.ts` is 5645 bytes, the snapshot's size), and rebuilding is excluded here. The report says so too. The orchestrator's release build after landing settles it. A removal of the call itself would leave the tests green, because `release.ts` runs its build when loaded (brief decision 2). The same holds for `runSteps(icon.steps)` and `runSteps([pack])`.
+- The report's "`diff` with the base's output: no difference" for `sh utils/unused-exports.sh`. There is no base tree here, so the base side was not rerun. The rerun gives 337 lines and no desktop line, the count the report's first run and the first review give.
+- `tests/server/desktop/start.test.ts`, and the report's "`Tests 5 passed (5)`" and "`Tests 5 failed (5)`": not run, under the standing demand, the test starting the app. This worktree still holds `cv.ts:141` `constructor(private readonly input: CvInput) {`, the reason the report and the prompt give. The `app.ts` branch removal is judged by reading only.
+- The missing-handler dialog in a real app: not run. The report's B1 row rests on reading, as the report says, and that read agrees. The server's refusal line itself was rerun above.
+- The builder's first runs on the unchanged tree and the "before" runs of verify 6: there is no base tree here. The round asks for no run on the unchanged tree.
+- The report's `node -e "import('./src/lib/server/root/context.ts')..."`: not rerun. It concerns the `cv.ts` defect outside this step, and no decision of this review rests on it.
+- `~/Applications/oculus.app`: out of bounds, not looked at.
+- G85's Code and Test lines at `.scratch/migration/agents/guarded.md:298-300`: the Code line still names `src/desktop/package.ts`. The brief leaves this to the orchestrator at landing.
+
+Usage: a85a27d09fd39ab43, claude-opus-5-5, 159344 tokens, 15 tool uses, 4.9 minutes
+
+## Closed
+
+- S1: ruled in the round's brief, `NAME` and `checkout` stay exported, no change.
+- P1 and St1: closed by round 1, the platform choice now in `signSteps`.
+- St2: closed by round 1.
+- B1 and B2: closed by round 1 in the report's rows.

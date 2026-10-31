@@ -24,18 +24,6 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 
 ```yaml
 dispatch:            # steps in flight, up to six (Z632)
-- step: O108
-  base: 85d449c47
-  worktree: .agents/worktrees/migration-O108
-  executor: agent
-  worker: claude:opus
-  report: .scratch/migration/agents/reviews/O108-report.md
-  round: 1
-  landing: not-started
-  session_id: a33cd40f409b38c5b
-  builder_usage: 183950 tokens, 56 tool uses, 26.2 minutes
-  brief_check: ".scratch/migration/agents/reviews/O108-brief-check.md (a0fc607785681fa26, claude-opus-5-5, 166795 tokens, 21 tool uses, 7.5 minutes)"
-  reviewer_report: .scratch/migration/agents/reviews/O108-refuter.md (a1bbebe0eb696ea45, claude-opus-5-5, 174612 tokens, 27 tool uses, 21.6 minutes)
 ```
 
 ## The standing demands (from Axel, in force)
@@ -762,6 +750,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-10-31 (O108 landed). O108 landed on main (booked under O108 in `plan.md`, `agents/reviews/O108-landing.md`). Next: O109's second half: the three archives rebuilt from main, the app started for real, Axel pushes, `v1.0.0` replaced and the app installed in `~/Applications`. In flight (0 of 6). Open items: none.
 - 2026-10-31 (O109 landed; O108 round 1 built). O109 landed on main (booked under O109 in `plan.md`, `agents/reviews/O109-landing.md`), `test:quick` passed in the gate worktree, G143 added. O108's round 1 is built and its review over the round is next. After O108 lands: the three archives rebuilt, the app started for real, Axel pushes, `v1.0.0` replaced and the app installed. In flight (1 of 6). Open items: none.
 - 2026-10-31 (O107 landed). O107 landed on main (booked under O107 in `plan.md`, `agents/reviews/O107-landing.md`), checked with `npm run diagrams && npm run docs:palette && npm run test:quick` in the gate worktree, every command passed, 275.2 s, and on main equal to the gate. No step is left unticked. Open items: none new. Next: the three 1.0.0 archives rebuilt; the commit of the release changes, the push, the tag, the release and the visibility switch wait on Axel's word.
 - 2026-10-31 (O106 at work). Axel: "Please do". Preparation commit c18dc9126; builder adf8935850262b509 launched in `.agents/worktrees/migration-O106`. In flight (2 of 6). Open item 604.
