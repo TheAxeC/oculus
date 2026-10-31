@@ -1,4 +1,4 @@
-In flight (0 of 6 slots in use): none.
+In flight (1 of 6 slots in use): O107 (an entry of a file with no schema opens its page).
 
 Queued, in order (0 steps): none.
 
