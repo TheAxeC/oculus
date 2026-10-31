@@ -45,8 +45,8 @@ dispatch:            # steps in flight, up to six (Z632)
   session_id: adf8935850262b509
   launched: 2026-10-31
   report: .scratch/migration/agents/reviews/O106-report.md
-  builder_usage: 253817 tokens, 130 tool uses, 2546 s
-  reviewer_report: .scratch/migration/agents/reviews/O106-refuter.md (a9ef6e624f674e5a8, claude-opus-5-5, 198813 tokens, 23 tool uses, 749 s)
+  builder_usage: 253817 tokens, 130 tool uses, 2546 s; round 1: 326828 tokens, 64 tool uses, 560 s
+  reviewer_report: .scratch/migration/agents/reviews/O106-refuter.md (a9ef6e624f674e5a8, claude-opus-5-5, 198813 tokens, 23 tool uses, 749 s), over round 1: abbb6b69650985cf8, claude-opus-5-5, 192099 tokens, 23 tool uses, 488 s
   brief_check: .scratch/migration/agents/reviews/O106-brief-check.md (aff22675846d114fb, claude-opus-5-5, 200429 tokens, 18 tool uses, 462 s)
   shared_paths: docs/HELP.md, docs/templates.md and config/schemas/manifest-schema.yml with migration O105, simple to merge since the two steps change different lines
   round: 1

@@ -1,0 +1,53 @@
+diff --color -ruN a/_scripts/cv_pdf_generator.py b/_scripts/cv_pdf_generator.py
+--- a/_scripts/cv_pdf_generator.py	2026-10-31 11:04:21
++++ b/_scripts/cv_pdf_generator.py	2026-10-31 11:04:59
+@@ -82,8 +82,6 @@
+             return " and ".join([", ".join(arg[:-1]),arg[-1]] if len(arg) > 2 else arg)
+         def check_minimal(arg):
+             if not minimal: result.extend(arg)
+-        def is_minimal():
+-            return minimal
+ 
+         global_context['emit'] = emit
+         global_context['fmt_emit'] = fmt_emit
+@@ -93,7 +91,6 @@
+         global_context['to_specific_date'] = to_specific_date
+         global_context['list_to_string'] = list_to_string
+         global_context['check_minimal'] = check_minimal
+-        global_context['is_minimal'] = is_minimal
+ 
+         # run the code
+         result = []
+diff --color -ruN a/_scripts/src/cv/education.tex.template b/_scripts/src/cv/education.tex.template
+--- a/_scripts/src/cv/education.tex.template	2026-10-31 11:04:21
++++ b/_scripts/src/cv/education.tex.template	2026-10-31 11:05:05
+@@ -3,7 +3,6 @@
+ \begin{cventries}
+ {%
+   for i in data['education']['content']:
+-    if ('min' in i) and (not i['min']) and is_minimal(): continue
+     if 'hide' in i and i['hide'] == True: continue
+     grade = ''
+     if ('grade' in i): grade = ' (' + i['grade'] + ')'
+diff --color -ruN a/_scripts/src/cv/experience.tex.template b/_scripts/src/cv/experience.tex.template
+--- a/_scripts/src/cv/experience.tex.template	2026-10-31 11:04:21
++++ b/_scripts/src/cv/experience.tex.template	2026-10-31 11:05:03
+@@ -3,7 +3,6 @@
+ \begin{cventries}
+ {%
+   for i in data['experience']['content']:
+-    if ('min' in i) and (not i['min']) and is_minimal(): continue
+     if 'hide' in i and i['hide'] == True: continue
+     emit_tex('\\cventry')
+     emit_braces(i['location'])
+diff --color -ruN a/_scripts/src/cv/projects.tex.template b/_scripts/src/cv/projects.tex.template
+--- a/_scripts/src/cv/projects.tex.template	2026-10-31 11:04:21
++++ b/_scripts/src/cv/projects.tex.template	2026-10-31 11:05:01
+@@ -3,7 +3,6 @@
+ \begin{cventries}
+ {%
+   for i in data['projects']['content']:
+-    if ('min' in i) and (not i['min']) and is_minimal(): continue
+     if 'hide' in i and i['hide'] == True: continue
+     emit_tex('\\cventry')
+     emit_braces(i['role'])

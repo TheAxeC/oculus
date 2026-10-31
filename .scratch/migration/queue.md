@@ -1,6 +1,6 @@
 In flight (2 of 6 slots in use):
 - O105 (the website keeps its own words), staged on main, waits for the look.
-- O106 (cards and the entry page), repair round 1 sent: `min` removed, and the review's other findings.
+- O106 (cards and the entry page), reviewed over round 1, lands after O105.
 
 Queued, in order (0 steps): none.
 

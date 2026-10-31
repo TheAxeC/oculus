@@ -1,6 +1,6 @@
 diff --color -ruN a/.oculus/data/academic/education.yml b/.oculus/data/academic/education.yml
---- a/.oculus/data/academic/education.yml	2026-10-31 00:21:28
-+++ b/.oculus/data/academic/education.yml	2026-10-31 00:22:05
+--- a/.oculus/data/academic/education.yml	2026-10-31 11:04:21
++++ b/.oculus/data/academic/education.yml	2026-10-31 11:04:43
 @@ -17,16 +17,17 @@
    - { field: lead,          type: tags,     foreign_key: people, required: true, section: Connections, help: "Who leads it." }
    - { field: collaborators, type: tags,     foreign_key: people, section: Connections, help: "Who works on it with the lead." }
@@ -28,8 +28,8 @@ diff --color -ruN a/.oculus/data/academic/education.yml b/.oculus/data/academic/
      help: "The students supervised, each a row of the CV's students in place of the entry."
      fields:
 diff --color -ruN a/.oculus/data/academic/events.yml b/.oculus/data/academic/events.yml
---- a/.oculus/data/academic/events.yml	2026-10-31 00:21:28
-+++ b/.oculus/data/academic/events.yml	2026-10-31 00:22:19
+--- a/.oculus/data/academic/events.yml	2026-10-31 11:04:21
++++ b/.oculus/data/academic/events.yml	2026-10-31 11:04:43
 @@ -18,14 +18,14 @@
    - { field: lead,          type: tags,     foreign_key: people, required: true, section: Connections, help: "Who leads it." }
    - { field: collaborators, type: tags,     foreign_key: people, section: Connections, help: "Who works on it with the lead." }
@@ -54,9 +54,9 @@ diff --color -ruN a/.oculus/data/academic/events.yml b/.oculus/data/academic/eve
  entries:
    - key: 3mi-labs-talk
 diff --color -ruN a/.oculus/data/academic/funding.yml b/.oculus/data/academic/funding.yml
---- a/.oculus/data/academic/funding.yml	2026-10-31 00:21:28
-+++ b/.oculus/data/academic/funding.yml	2026-10-31 00:22:40
-@@ -20,17 +20,17 @@
+--- a/.oculus/data/academic/funding.yml	2026-10-31 11:04:21
++++ b/.oculus/data/academic/funding.yml	2026-10-31 11:04:49
+@@ -20,17 +20,16 @@
    - { field: lead,          type: tags,     foreign_key: people, required: true, section: Connections, help: "Who leads it." }
    - { field: collaborators, type: tags,     foreign_key: people, section: Connections, help: "Who works on it with the lead." }
    - { field: supervisors,   type: tags,     foreign_key: people, section: Connections, help: "Who supervises it." }
@@ -80,8 +80,59 @@ diff --color -ruN a/.oculus/data/academic/funding.yml b/.oculus/data/academic/fu
 +  - { field: location,   type: text,     label: "Location", section: Website, help: "Where, as the CV prints it." }
 +  - { field: duration,   type: text,     label: "CV period", section: Website, help: "The period as the CV prints it." }
 +  - { field: about,      type: textarea, label: "CV text", section: Website, help: "What the CV prints under it." }
-+  - { field: min,        type: checkbox, label: "On the short CV", section: Website, help: "Ticked keeps the row on the short CV." }
 +  - { field: hide,       type: checkbox, label: "Hidden on the CV", section: Website, help: "Kept off the CV while it stays listed." }
  
  entries:
    - key: nwo-veni-the-self-explaining-hospital
+@@ -207,7 +206,6 @@
+     cv_url: ""
+     role: Co-supervisor
+     duration: 2025 - Current
+-    min: true
+     hide: true
+     about: |
+       FWO Senior Research Project (2025)
+diff --color -ruN a/side-projects/finished/axeski/project.yml b/side-projects/finished/axeski/project.yml
+--- a/side-projects/finished/axeski/project.yml	2026-10-31 11:04:21
++++ b/side-projects/finished/axeski/project.yml	2026-10-31 11:04:56
+@@ -16,7 +16,6 @@
+   url: https://github.com/TheAxeC/AxeSki
+   duration: Feb. 2015 - Jul. 2015
+   role: Developer
+-  min: true
+   hide: true
+   about: |
+     A Visual programming IDE (Java)
+diff --color -ruN a/side-projects/finished/iot-sensor-platform/project.yml b/side-projects/finished/iot-sensor-platform/project.yml
+--- a/side-projects/finished/iot-sensor-platform/project.yml	2026-10-31 11:04:21
++++ b/side-projects/finished/iot-sensor-platform/project.yml	2026-10-31 11:04:50
+@@ -14,7 +14,6 @@
+   url: ""
+   duration: Feb. 2017 - Jul. 2017
+   role: Developer
+-  min: true
+   hide: true
+   about: |
+     Large-scale use of Internet of Things sensors
+diff --color -ruN a/side-projects/finished/search-recommendation-vod/project.yml b/side-projects/finished/search-recommendation-vod/project.yml
+--- a/side-projects/finished/search-recommendation-vod/project.yml	2026-10-31 11:04:21
++++ b/side-projects/finished/search-recommendation-vod/project.yml	2026-10-31 11:04:54
+@@ -13,7 +13,6 @@
+   url: ""
+   duration: Feb. 2016 - Jul. 2016
+   role: Team Member
+-  min: true
+   hide: true
+   about: |
+     A search and recommendation system for VoD (Video on Demand) for Androme.
+diff --color -ruN a/side-projects/finished/starcraft-rl-agent/project.yml b/side-projects/finished/starcraft-rl-agent/project.yml
+--- a/side-projects/finished/starcraft-rl-agent/project.yml	2026-10-31 11:04:21
++++ b/side-projects/finished/starcraft-rl-agent/project.yml	2026-10-31 11:04:52
+@@ -14,7 +14,6 @@
+   url: ""
+   duration: Feb. 2018 - Jul. 2018
+   role: Developer
+-  min: true
+   hide: true
+   about: |
+     Implement reinforcement learning algorithms in PySC2 utilising the KU Leuven supercomputer.
