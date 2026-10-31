@@ -16,7 +16,8 @@
     // Every entry has a page, and the card's title and the strip's Page open it through `onpage`; a
     // card handed none draws its title as words and has no Page. The page holds the entry's
     // referrers and, where its `link` names a folder of the hub, the folder's documents, files and
-    // sessions. On that page the card is handed `page`, and its strip holds Edit in Page's place.
+    // sessions. On that page the card is handed `page`: its strip holds Edit in Page's place, and
+    // EntryFields.svelte adds the Website group and the words of a person's rows.
     //
     // The entry's fields are changed in its editor, which Edit opens beside the page
     // (views/boards/editor/Editor.svelte), in the file, which Edit in File opens at the entry, or
@@ -120,7 +121,10 @@
         lead?: boolean;
         /** The projects the strip at the foot draws; a card handed none draws every one. */
         keeps?: Keeps;
-        /** Drawn on the entry's own page: Edit in the strip in Page's place. */
+        /**
+         * Drawn on the entry's own page: Edit in the strip in Page's place, and the fields a page
+         * adds (EntryFields.svelte).
+         */
         page?: boolean;
         /** Whether a person's card draws its strips; the person's page lists them as sections. */
         roles?: boolean;
@@ -310,7 +314,7 @@
 {/snippet}
 
 {#snippet lines()}
-    <EntryFields {entry} {collection} {schema} {root} {onsaid} {more} {onmore} />
+    <EntryFields {entry} {collection} {schema} {root} {onsaid} {more} {onmore} {page} />
 {/snippet}
 
 <!-- The card is dragged by its grip and by nothing else: the grip arms it on mousedown and the

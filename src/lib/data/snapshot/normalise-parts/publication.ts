@@ -71,7 +71,6 @@ export function projectCv(value: unknown): ProjectCv | undefined {
         duration: field(z.union([z.string(), z.number()]), map.duration),
         about: field(textShape, map.about),
         role: field(textShape, map.role),
-        min: field(z.boolean(), map.min),
         hide: field(z.boolean(), map.hide),
         rank: field(rankShape, map.rank)
     }));

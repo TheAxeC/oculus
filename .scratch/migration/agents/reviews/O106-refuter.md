@@ -409,4 +409,4 @@ Failure scenario: a person list under `section: Website` shows its topics as lin
 - S2: closed in round 1 for a list of maps; the rest is B2.
 - St1 and P1: closed in round 1.
 - B1: moot under ruling 607 (a).
-- B2 and B3: to be fixed at landing, small and inside the brief.
+- B2 and B3: fixed at landing in `groupRow`; the remainder is named in `O106-landing.md`.

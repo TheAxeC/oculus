@@ -47,6 +47,8 @@ text:
         start_agent_tip: Open the composer in this task's folder, seeded with the task
         status_facet: Status
         stub_unparsed: '{0} would not parse with the new entry in it; add the entry in the file'
+        tick_no: 'No'
+        tick_yes: 'Yes'
         toolbar: Collection controls
         unpin: Unpin
         open_venue: Open this venue as its own tab

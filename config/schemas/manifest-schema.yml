@@ -115,7 +115,6 @@ manifest_schema:
     "cv.duration": { label: "CV period", type: text, section: Website, help: "The period of the project as the CV prints it, such as Jan. 2015 - Current." }
     "cv.about": { label: "CV text", type: textarea, section: Website, help: "The text the CV prints under the project." }
     "cv.role": { label: "CV role", type: text, section: Website, help: "Your role in the project as the CV prints it." }
-    "cv.min": { label: "Left out of the short CV", type: checkbox, section: Website, help: "Tick to leave the project out of the short CV." }
     "cv.hide": { label: "Hidden on the CV", type: checkbox, section: Website, help: "Tick to keep the project off the CV while it stays in the file." }
     "cv.rank": { label: "CV place", type: text, section: Website, help: "The place of the row in the CV's projects, lowest first, as a whole number." }
 
@@ -131,4 +130,4 @@ groups:
   repository: "The project's repository on its remote: its address, visibility, description, homepage, topics and the date it was created."
   reproduced: "The last run of the whole pipeline again from the raw data: its date and what it needed."
   publication: "The entry the website's publications list the paper with: the authors, the venue, the research lines, the links, the abstract and the entry's place in its section."
-  cv: "The row the CV's projects list the project with: its title, address, period, text, role and place, and whether the short CV or the whole CV leaves it out."
+  cv: "The row the CV's projects list the project with: its title, address, period, text, role and place, and whether the CV leaves it out."

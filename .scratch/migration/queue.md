@@ -1,11 +1,11 @@
-In flight (1 of 6 slots in use):
-- O106 (cards and the entry page), reviewed over round 1, landing.
+In flight (0 of 6 slots in use): none.
 
 Queued, in order (0 steps): none.
 
 Owed looks: none.
 
 Landed, newest first:
+- O106 (cards and the entry page), 2026-10-31; hub aa8f2d669; web a885f2d.
 - O105 (the website keeps its own words), 2026-10-31; hub f35ad1faf; web 33ff3b0.
 - O104 (one page frame and one editor), 2026-10-30; hub 2db7d35dd.
 - O101 (the Zenodo deposit), 2026-10-30; hub 6abb17c8b.

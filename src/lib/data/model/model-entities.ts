@@ -262,8 +262,6 @@ export type ProjectCv = {
     duration?: string | number;
     about?: string;
     role?: string;
-    /** Whether the short CV leaves the row out. */
-    min?: boolean;
     hide?: boolean;
     /** The place of the row in the CV's projects, lowest first. */
     rank?: number;

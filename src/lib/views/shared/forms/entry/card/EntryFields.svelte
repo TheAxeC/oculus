@@ -1,13 +1,16 @@
 <script lang="ts">
     // Layer 3, view partial of EntryCard.svelte. The fields of an entry card under its title: the
-    // fields the file's own schema names, in its order.
+    // fields the file's own schema names, in its order, less those of its Website section, which
+    // feed the website. The entry's page draws those after the others, as the group websiteGroup()
+    // gives, each with its label, and with its yes or no where it is a checkbox.
     //
     // Nothing here knows what a scheme or an event is. Which fields are drawn and in what order is
     // drawnFields() over the file's `schema:`. A field the schema draws its choices from the people
     // registry for is the one exception in kind rather than in name: it holds a person's key, which
     // names the person of the entry's own hub, else of the one other hub that holds the key, so the
-    // card draws the control that opens that person by their name. A Literature entry's `venue`
-    // that names a venue record is the other: it opens that venue.
+    // card draws the control that opens that person by their name. A list of records whose rows
+    // name a person is the same control once per row; the page adds each row's words beside it. A
+    // Literature entry's `venue` that names a venue record is the other: it opens that venue.
     //
     // Every field is drawn as its words, the deadline as a tag with the deadline glyph and the
     // countdown and tone of a project's due (dueBadge of views/shared/card/card.ts); the card's
@@ -32,7 +35,13 @@
     import EntryLink from './EntryLink.svelte';
     import { inlineMarkdown } from '$lib/ui/html';
     import { createCardMath } from '$lib/views/shared/latex/card-math.svelte';
-    import { drawnFields, type Entry, type SchemaField } from '$lib/state/boards/collection';
+    import {
+        drawnFields,
+        websiteGroup,
+        type Drawn,
+        type Entry,
+        type SchemaField
+    } from '$lib/state/boards/collection';
     import { personName } from '$lib/state/boards/person';
     import { venueNamed } from '$lib/state/feeds/literature/saved';
     import { pageView } from '$lib/state/forms/page-entry';
@@ -61,9 +70,11 @@
         more: boolean;
         /** Open or cut the long body fields; a card handed none draws them whole. */
         onmore?: () => void;
+        /** Drawn on the entry's own page: the Website group, and the words of a person's rows. */
+        page?: boolean;
     };
 
-    let { entry, collection, schema, root, onsaid, more, onmore }: Props = $props();
+    let { entry, collection, schema, root, onsaid, more, onmore, page = false }: Props = $props();
 
     const cardMath = createCardMath();
     /** The moment the deadline's countdown is measured from. */
@@ -98,7 +109,20 @@
         const id = personId(key);
         openView('person', recordState(id, personName(portfolio(), id)));
     }
+
+    /** What the page draws after the fields; a card in a collection draws none. */
+    const group = $derived(page ? websiteGroup(entry, schema, namesPerson) : null);
 </script>
+
+<!-- The control that opens one person, by their name. -->
+{#snippet personChip(key: string)}
+    <Chip
+        label={personName(portfolio(), personId(key))}
+        glyph={t('collection.person_glyph')}
+        title={t('collection.open_person')}
+        onclick={() => openPerson(key)}
+    />
+{/snippet}
 
 <!-- A long body field: cut to its clamp and opened by the control, or whole on a card without. -->
 {#snippet text(words: string)}
@@ -113,7 +137,15 @@
     {/if}
 {/snippet}
 
-{#each drawnFields(entry, schema, namesPerson) as drawn (drawn.field)}
+<!-- A field's label, on its own line over what the field draws. -->
+{#snippet over(label: string)}
+    <div class="row">
+        <span class="label">{label}</span>
+    </div>
+{/snippet}
+
+<!-- One field, by its kind. -->
+{#snippet field(drawn: Drawn)}
     {#if drawn.kind === 'sub'}
         <p class="sub"><LinkedText text={drawn.values[0]} /></p>
     {:else if drawn.kind === 'status'}
@@ -154,12 +186,26 @@
     {:else if drawn.kind === 'person'}
         <div class="row">
             <span class="label">{drawn.label}</span>
-            <Chip
-                label={personName(portfolio(), personId(drawn.values[0]))}
-                glyph={t('collection.person_glyph')}
-                title={t('collection.open_person')}
-                onclick={() => openPerson(drawn.values[0])}
-            />
+            <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+            {@render personChip(drawn.values[0])}
+        </div>
+    {:else if drawn.kind === 'people' && page}
+        <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+        {@render over(drawn.label)}
+        {#each drawn.values as key, at (`${at}:${key}`)}
+            <div class="row">
+                <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+                {@render personChip(key)}
+                <span class="value"><LinkedText text={drawn.details?.[at] ?? ''} /></span>
+            </div>
+        {/each}
+    {:else if drawn.kind === 'people'}
+        <div class="row">
+            <span class="label">{drawn.label}</span>
+            {#each drawn.values as key, at (`${at}:${key}`)}
+                <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+                {@render personChip(key)}
+            {/each}
         </div>
     {:else if drawn.field === 'venue' && venuePage !== undefined}
         <div class="row">
@@ -186,10 +232,33 @@
     {:else}
         <div class="field">
             <span class="label">{drawn.label}</span>
-            <span class="value"><LinkedText text={drawn.values[0]} /></span>
+            <span class="values">
+                {#each drawn.values as one, at (`${at}:${one}`)}
+                    <span class="value"><LinkedText text={one} /></span>
+                {/each}
+            </span>
         </div>
     {/if}
+{/snippet}
+
+{#each drawnFields(entry, schema, namesPerson) as drawn (drawn.field)}
+    <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+    {@render field(drawn)}
 {/each}
+
+{#if group !== null}
+    <div class="group">
+        <p class="heading">{group.heading}</p>
+        {#each group.fields as drawn (drawn.field)}
+            {#if drawn.kind === 'body'}
+                <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+                {@render over(drawn.label)}
+            {/if}
+            <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+            {@render field(drawn)}
+        {/each}
+    </div>
+{/if}
 
 <style>
     .sub {
@@ -256,5 +325,24 @@
     .value {
         font-size: var(--fs-md);
         overflow-wrap: anywhere;
+    }
+
+    .values {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+    }
+
+    .group {
+        margin-top: 10px;
+        padding-top: 8px;
+        border-top: 1px solid var(--line);
+    }
+
+    .heading {
+        margin: 0;
+        font-size: var(--fs-sm);
+        font-weight: 700;
+        color: var(--muted-txt, var(--muted));
     }
 </style>

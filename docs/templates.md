@@ -974,7 +974,6 @@ stage: nascent          # nascent, scoping, de-risking, exploring, in-prep, buil
 #   duration: ""        # the period as the CV prints it
 #   about: ""
 #   role: ""
-#   min: false          # left out of the short CV
 #   hide: false         # kept off the CV
 #   rank: 1             # the place in the CV's projects, lowest first
 
@@ -1093,7 +1092,7 @@ A schema line takes these keys:
 ```yaml
 - field: name          # the key in each entry
   type: text           # text, textarea, date, checkbox, select, tags, metalist, raw or records
-  label: "Name"        # the label in the editor; the field name when absent
+  label: "Name"        # the words for the field in the editor, a list's column and a card or page; the field name when absent
   primary_key: true    # the field an entry is found by; one field, never a list or map field
   display: 1           # what a reference to the entry shows, the lowest filled rank first
   required: true       # or required: { when: { role: present } }
@@ -1398,17 +1397,16 @@ schema:
   - { field: lead,          type: tags,     foreign_key: people, required: true, section: Connections, help: "Who leads it." }
   - { field: collaborators, type: tags,     foreign_key: people, section: Connections, help: "Who works on it with the lead." }
   - { field: supervisors,   type: tags,     foreign_key: people, section: Connections, help: "Who supervises it." }
-  - { field: cv_section, type: text,     section: Website, help: "The CV section the grant is listed in, such as grants; none keeps it off the CV." }
-  - { field: cv_rank,    type: text,     section: Website, help: "The grant's place in its CV section, a whole number." }
-  - { field: cv_title,   type: text,     section: Website, help: "The title the CV prints, when it is not the title." }
-  - { field: cv_url,     type: text,     section: Website, help: "The address the CV links, when it is not the url." }
-  - { field: cv_status,  type: text,     section: Website, help: "The status the CV prints for the grant." }
-  - { field: role,       type: text,     section: Website, help: "Your role as the CV prints it." }
-  - { field: location,   type: text,     section: Website, help: "Where, as the CV prints it." }
-  - { field: duration,   type: text,     section: Website, help: "The period as the CV prints it." }
-  - { field: about,      type: textarea, section: Website, help: "What the CV prints under it." }
-  - { field: min,        type: checkbox, section: Website, help: "Left out of the short CV." }
-  - { field: hide,       type: checkbox, section: Website, help: "Kept off the CV while it stays listed." }
+  - { field: cv_section, type: text,     label: "CV section", section: Website, help: "The CV section the grant is listed in, such as grants; none keeps it off the CV." }
+  - { field: cv_rank,    type: text,     label: "CV place", section: Website, help: "The grant's place in its CV section, a whole number." }
+  - { field: cv_title,   type: text,     label: "CV title", section: Website, help: "The title the CV prints, when it is not the title." }
+  - { field: cv_url,     type: text,     label: "CV address", section: Website, help: "The address the CV links, when it is not the url." }
+  - { field: cv_status,  type: text,     label: "CV status", section: Website, help: "The status the CV prints for the grant." }
+  - { field: role,       type: text,     label: "CV role", section: Website, help: "Your role as the CV prints it." }
+  - { field: location,   type: text,     label: "Location", section: Website, help: "Where, as the CV prints it." }
+  - { field: duration,   type: text,     label: "CV period", section: Website, help: "The period as the CV prints it." }
+  - { field: about,      type: textarea, label: "CV text", section: Website, help: "What the CV prints under it." }
+  - { field: hide,       type: checkbox, label: "Hidden on the CV", section: Website, help: "Kept off the CV while it stays listed." }
 entries:
 #  - key: my-grant                # required; what a project's funding names
 #    title: "My grant"            # required
@@ -1453,14 +1451,14 @@ schema:
   - { field: lead,          type: tags,     foreign_key: people, required: true, section: Connections, help: "Who leads it." }
   - { field: collaborators, type: tags,     foreign_key: people, section: Connections, help: "Who works on it with the lead." }
   - { field: supervisors,   type: tags,     foreign_key: people, section: Connections, help: "Who supervises it." }
-  - { field: cv_section, type: text,     section: Website, help: "The CV section the event is listed in, such as news; none keeps it off the CV." }
-  - { field: cv_rank,    type: text,     section: Website, help: "The event's place in its CV section, a whole number." }
-  - { field: cv_title,   type: text,     section: Website, help: "The title the CV prints, when it is not the title." }
-  - { field: cv_url,     type: text,     section: Website, help: "The address the CV links." }
-  - { field: location,   type: text,     section: Website, help: "Where, as the CV prints it." }
-  - { field: duration,   type: text,     section: Website, help: "When, as the CV prints it." }
-  - { field: about,      type: textarea, section: Website, help: "What the CV prints under it." }
-  - { field: hide,       type: checkbox, section: Website, help: "Kept off the CV while it stays listed." }
+  - { field: cv_section, type: text,     label: "CV section", section: Website, help: "The CV section the event is listed in, such as news; none keeps it off the CV." }
+  - { field: cv_rank,    type: text,     label: "CV place", section: Website, help: "The event's place in its CV section, a whole number." }
+  - { field: cv_title,   type: text,     label: "CV title", section: Website, help: "The title the CV prints, when it is not the title." }
+  - { field: cv_url,     type: text,     label: "CV address", section: Website, help: "The address the CV links." }
+  - { field: location,   type: text,     label: "Location", section: Website, help: "Where, as the CV prints it." }
+  - { field: duration,   type: text,     label: "CV period", section: Website, help: "When, as the CV prints it." }
+  - { field: about,      type: textarea, label: "CV text", section: Website, help: "What the CV prints under it." }
+  - { field: hide,       type: checkbox, label: "Hidden on the CV", section: Website, help: "Kept off the CV while it stays listed." }
 entries:
 #  - key: my-talk                 # required
 #    title: "My talk"             # required
@@ -1501,16 +1499,17 @@ schema:
   - { field: lead,          type: tags,     foreign_key: people, required: true, section: Connections, help: "Who leads it." }
   - { field: collaborators, type: tags,     foreign_key: people, section: Connections, help: "Who works on it with the lead." }
   - { field: supervisors,   type: tags,     foreign_key: people, section: Connections, help: "Who supervises it." }
-  - { field: cv_section, type: text,     section: Website, help: "The CV section the entry is listed in, such as academic; none keeps it off the CV." }
-  - { field: cv_rank,    type: text,     section: Website, help: "The entry's place in its CV section, a whole number." }
-  - { field: cv_title,   type: text,     section: Website, help: "The title the CV prints, when it is not the title." }
-  - { field: cv_url,     type: text,     section: Website, help: "The address the CV links." }
-  - { field: location,   type: text,     section: Website, help: "Where, as the CV prints it." }
-  - { field: duration,   type: text,     section: Website, help: "The period as the CV prints it." }
-  - { field: about,      type: textarea, section: Website, help: "What the CV prints under it." }
-  - { field: hide,       type: checkbox, section: Website, help: "Kept off the CV while it stays listed." }
+  - { field: cv_section, type: text,     label: "CV section", section: Website, help: "The CV section the entry is listed in, such as academic; none keeps it off the CV." }
+  - { field: cv_rank,    type: text,     label: "CV place", section: Website, help: "The entry's place in its CV section, a whole number." }
+  - { field: cv_title,   type: text,     label: "CV title", section: Website, help: "The title the CV prints, when it is not the title." }
+  - { field: cv_url,     type: text,     label: "CV address", section: Website, help: "The address the CV links." }
+  - { field: location,   type: text,     label: "Location", section: Website, help: "Where, as the CV prints it." }
+  - { field: duration,   type: text,     label: "CV period", section: Website, help: "The period as the CV prints it." }
+  - { field: about,      type: textarea, label: "CV text", section: Website, help: "What the CV prints under it." }
+  - { field: hide,       type: checkbox, label: "Hidden on the CV", section: Website, help: "Kept off the CV while it stays listed." }
   - field: students
     type: records
+    label: "Students"
     section: Connections
     help: "The students supervised, each a row of the CV's students in place of the entry."
     fields:

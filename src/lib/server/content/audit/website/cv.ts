@@ -43,7 +43,7 @@ const SECTIONS: { key: string; fields: readonly string[] }[] = [
     { key: 'news', fields: TITLED },
     { key: 'education', fields: TITLED },
     { key: 'grants', fields: ['title', 'url', 'duration', 'role', 'status', 'about', 'hide'] },
-    { key: 'projects', fields: ['title', 'url', 'duration', 'role', 'min', 'hide', 'about'] },
+    { key: 'projects', fields: ['title', 'url', 'duration', 'role', 'hide', 'about'] },
     { key: 'awards', fields: ['award', 'event', 'date', 'location', 'content', 'hide'] },
     { key: 'extracurricular', fields: TITLED }
 ];

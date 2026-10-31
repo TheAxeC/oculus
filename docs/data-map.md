@@ -268,7 +268,7 @@ A schema is a list of fields. Each is a map with `field` and `type`, and may car
 | `required` | `true`, or `{ when: ... }` |
 | `when` | the field is allowed only while these fields hold these values |
 | `help` | the hover text in the editor |
-| `section` | the group of the editor the field is drawn in, on a top-level row: a name of `manifest_schema.sections` in the order of that list, any other name after them, and a row with no section under Other, last |
+| `section` | the group of the editor the field is drawn in, on a top-level row: a name of `manifest_schema.sections` in the order of that list, any other name after them, and a row with no section under Other, last. It also decides what a card draws: a card leaves out the rows of the section `Website`, and the entry's page draws them as one group after its fields |
 | `open` | `true` allows undeclared keys in a `records` or `raw` field |
 | `fields` | the fields of each record of a `records` field |
 | `map` | `true` on a `records` field that is a map from a name to a record |
