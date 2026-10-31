@@ -1,0 +1,53 @@
+diff -ruN a/.oculus/config.yml b/.oculus/config.yml
+--- a/.oculus/config.yml	2026-10-31 00:14:48
++++ b/.oculus/config.yml	2026-10-31 00:16:56
+@@ -36,21 +36,21 @@
+   stage_folders:
+     - { stages: { words: [published, accepted] }, folders: [projects/archive/published, projects/coauthor, projects/archive/phd] }
+ 
+-# The website the hub's files are written into by the Career view's Write the website: its folder, the command that builds the CV's PDF there once the files are written, and the sections of its publications. A paper that carries a `publication:` record goes to the section of the first row whose stages and forms hold its own (a side left out holds every one); the sections come in the rows' order, each titled by its first row, and a row's `order`, `pub_pre` and `pub_post` say whether an entry gives your place among the authors and which words stand before and after the venue. The Audit compares the three files the hub gives with the website's files and is skipped while the folder is not checked out.
++# The website the hub's files are written into by the Career view's Write the website: its folder, the command that builds the CV's PDF there once the files are written, and the sections of its publications. A paper that carries a `publication:` record goes to the section of the first row whose stages and forms hold its own (a side left out holds every one); the sections come in the rows' order, and a row's `order`, `pub_pre` and `pub_post` say whether an entry gives your place among the authors and which words stand before and after the venue. The Audit compares the three files the hub gives with the website's files and is skipped while the folder is not checked out.
+ website:
+   folder: side-projects/theaxec.github.io
+   cv: python _scripts/cv_pdf_generator.py --save --quiet
+   kinds:
+-    - { kind: papers-in-review, title: Papers in Review, stages: [submitted], order: true, pub_pre: "Submitted to ", pub_post: "(Under review)" }
+-    - { kind: papers-in-preparation, title: Papers in Preparation, stages: [in-prep, submit-ready, revision], order: true, pub_pre: "", pub_post: "(In preparation)" }
+-    - { kind: journal, title: International Journal Papers, stages: [accepted], forms: [journal], order: true, pub_pre: "", pub_post: "(Accepted)" }
++    - { kind: papers-in-review, stages: [submitted], order: true, pub_pre: "Submitted to ", pub_post: "(Under review)" }
++    - { kind: papers-in-preparation, stages: [in-prep, submit-ready, revision], order: true, pub_pre: "", pub_post: "(In preparation)" }
++    - { kind: journal, stages: [accepted], forms: [journal], order: true, pub_pre: "", pub_post: "(Accepted)" }
+     - { kind: journal, stages: [published], forms: [journal], order: true }
+-    - { kind: conference, title: Conference Papers, stages: [accepted], forms: [conference], order: true, pub_pre: "", pub_post: "(Accepted)" }
++    - { kind: conference, stages: [accepted], forms: [conference], order: true, pub_pre: "", pub_post: "(Accepted)" }
+     - { kind: conference, stages: [published], forms: [conference], order: true }
+-    - { kind: other-publications, title: Other publication, stages: [published], forms: [tech-report] }
+-    - { kind: thesis, title: Thesis, stages: [published], forms: [thesis] }
+-    - { kind: abstracts, title: Extended Abstracts, stages: [published], forms: [abstract] }
+-    - { kind: posters, title: Posters, stages: [published], forms: [poster] }
++    - { kind: other-publications, stages: [published], forms: [tech-report] }
++    - { kind: thesis, stages: [published], forms: [thesis] }
++    - { kind: abstracts, stages: [published], forms: [abstract] }
++    - { kind: posters, stages: [published], forms: [poster] }
+ 
+ # LinkedIn view: the posts pipeline from the website (_linkedin/: numbered = posted, xx- = ideas).
+ linkedin_dir: side-projects/theaxec.github.io/_linkedin
+diff -ruN a/.oculus/data/academic/career.yml b/.oculus/data/academic/career.yml
+--- a/.oculus/data/academic/career.yml	2026-10-31 00:14:48
++++ b/.oculus/data/academic/career.yml	2026-10-31 00:16:56
+@@ -73,7 +73,6 @@
+     fields:
+       - { field: location, type: text, help: "In shared: the place every employer CV prints." }
+       - { field: email, type: text, help: "In shared: the email every employer CV prints." }
+-      - { field: parts, type: tags, help: "In shared: the keys of the website's cv: block every employer CV prints." }
+       - { field: links, type: tags, help: "In shared: the names of the user's links every employer CV prints." }
+       - { field: titles, type: tags, help: "The lines printed under the name." }
+       - field: summary
+@@ -321,7 +320,6 @@
+   shared:
+     location: "Netherlands | EU citizen (no visa required)"
+     email: axel.faes[at]gmail.com
+-    parts: [portrait_url, author, website]
+     links: [linkedin, github, homepage]
+ 
+   # Senior Data Analyst, Guerrilla Games (Amsterdam)

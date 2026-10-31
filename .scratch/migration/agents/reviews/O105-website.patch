@@ -1,0 +1,318 @@
+diff -ruN a/_data/website.yml b/_data/website.yml
+--- a/_data/website.yml	2026-10-31 00:14:48
++++ b/_data/website.yml	2026-10-31 00:16:56
+@@ -26,7 +26,7 @@
+   - Precision medicine
+   - Brain-computer interfaces
+ 
+-# The CV's own parts of its person block, which the research hub writes into _data/data.yml under `personal`, and from which the employer CVs (_data/industry.yml) take the parts the hub's career file names.
++# The CV's own parts of its person block: the CV templates of _scripts/src read them from here, and _industry/cv_pdf_generator.py takes the portrait for the employer CVs.
+ cv:
+   titles:
+     # - Postdoctoral Researcher
+@@ -43,7 +43,7 @@
+   author: Axel Faes
+   website: https://theaxec.github.io
+ 
+-# The title of each section of the CV (_data/data.yml) and of the publications (_data/publications.yml), by the section's key, which the research hub writes each file with.
++# The title of each section of the CV (_data/data.yml) and of the publications (_data/publications.yml), by the section's key, and `publications`, the title above the groups in the CV. _includes/site/about.html, _includes/site/publications.html and the CV templates of _scripts/src read them from here.
+ sections:
+   references: References
+   experience: Work & Research Experience
+@@ -56,6 +56,14 @@
+   awards: Honors & Awards
+   extracurricular: Professional Development Activities
+   publications: Publications
++  papers-in-review: Papers in Review
++  papers-in-preparation: Papers in Preparation
++  journal: International Journal Papers
++  conference: Conference Papers
++  other-publications: Other publication
++  thesis: Thesis
++  abstracts: Extended Abstracts
++  posters: Posters
+ 
+ research:
+   title: Research Diary
+diff -ruN a/_includes/site/about.html b/_includes/site/about.html
+--- a/_includes/site/about.html	2026-10-31 00:14:48
++++ b/_includes/site/about.html	2026-10-31 00:20:10
+@@ -14,15 +14,15 @@
+ 
+ <div class="listlayout">
+   <nav class="secnav">
+-    {% for coll in site.data.data %}{% if coll[0] != "personal" %}<a href="#{{ coll[0] }}">{{ coll[1].title }}</a>{% endif %}{% endfor %}
++    {% for coll in site.data.data %}{% if coll[0] != "personal" %}{% assign seckey = coll[0] %}<a href="#{{ coll[0] }}">{{ site.data.website.sections[seckey] }}</a>{% endif %}{% endfor %}
+   </nav>
+   <div class="listbody">
+-    {% for coll in site.data.data %}{% if coll[0] != "personal" %}
++    {% for coll in site.data.data %}{% if coll[0] != "personal" %}{% assign seckey = coll[0] %}
+     {% comment %} A section flows into two columns when none of its entries carry a long description. {% endcomment %}
+     {% assign hasLong = false %}
+     {% for item in coll[1].content %}{% unless item.hide %}{% if item.about and item.about != "" or item.content and item.content != "" %}{% assign hasLong = true %}{% endif %}{% endunless %}{% endfor %}
+     <section class="psec" id="{{ coll[0] }}">
+-      <h2 class="psec-h">{{ coll[1].title }}</h2>
++      <h2 class="psec-h">{{ site.data.website.sections[seckey] }}</h2>
+       {% if hasLong %}
+       {% for item in coll[1].content %}{% unless item.hide %}
+       <article class="cv-item">
+diff -ruN a/_includes/site/publications.html b/_includes/site/publications.html
+--- a/_includes/site/publications.html	2026-10-31 00:14:48
++++ b/_includes/site/publications.html	2026-10-31 00:15:35
+@@ -7,7 +7,7 @@
+ 
+ <div class="listlayout">
+   <nav class="secnav">
+-    {% for seckey in section_order %}{% assign coll = site.data.publications[seckey] %}{% if coll %}<a href="#{{ seckey }}">{{ coll.title }}</a>{% endif %}{% endfor %}
++    {% for seckey in section_order %}{% assign coll = site.data.publications[seckey] %}{% if coll %}<a href="#{{ seckey }}">{{ site.data.website.sections[seckey] }}</a>{% endif %}{% endfor %}
+   </nav>
+   <div class="listbody">
+     {% assign i = 0 %}
+@@ -15,7 +15,7 @@
+     {% assign coll = site.data.publications[seckey] %}
+     {% if coll %}
+     <section class="psec" id="{{ seckey }}">
+-      <h2 class="psec-h">{{ coll.title }}</h2>
++      <h2 class="psec-h">{{ site.data.website.sections[seckey] }}</h2>
+       {% for item in coll.papers %}{% unless item.hide %}
+       {% assign i = i | plus: 1 %}
+       <article class="pitem">
+diff -ruN a/_industry/README.md b/_industry/README.md
+--- a/_industry/README.md	2026-10-31 00:14:48
++++ b/_industry/README.md	2026-10-31 00:16:56
+@@ -35,9 +35,10 @@
+ 
+ ## Where the content lives
+ 
+-All text is in **`../_data/industry.yml`**:
++The text is in **`../_data/industry.yml`**, and the portrait comes from `cv.portrait_url`
++of **`../_data/website.yml`**:
+ 
+-- `shared.personal`, name, photo, contact links (common to every profile).
++- `shared.personal`, name and contact links (common to every profile).
+ - `profiles.<name>`, one block per target. Each supplies its own `titles`,
+   `summary`, `skills`, `experience`, `projects`, `education`, `awards`, and a
+   `letter` (recipient, date, title, opening, body, closing).
+diff -ruN a/_industry/cv_pdf_generator.py b/_industry/cv_pdf_generator.py
+--- a/_industry/cv_pdf_generator.py	2026-10-31 00:14:48
++++ b/_industry/cv_pdf_generator.py	2026-10-31 00:17:01
+@@ -5,8 +5,9 @@
+ (the `Template` class) and the same src/-templates -> _tmp/ -> xelatex pipeline,
+ but renders an INDUSTRY-tailored CV instead of the academic one.
+ 
+-A single data file (../_data/industry.yml) holds shared personal info plus one
+-block per *profile*. Switch profile with --profile:
++One data file (../_data/industry.yml) holds the shared names and links plus one
++block per *profile*, and the site's own file (../_data/website.yml) gives the
++portrait. Switch profile with --profile:
+ 
+     python cv_pdf_generator.py --profile analyst   # Senior Data Analyst (Guerrilla Games)
+     python cv_pdf_generator.py --profile pharma    # Biomedical / pharma data science
+@@ -31,10 +32,11 @@
+ 
+ 
+ class IndustryGenerate:
+-    def __init__(self, src, dst, data_file, profile, latex, quiet=False, compact=False):
++    def __init__(self, src, dst, data_file, site_file, profile, latex, quiet=False, compact=False):
+         self.src = src
+         self.dst = dst
+         self.data_file = data_file
++        self.site_file = site_file
+         self.profile = profile
+         self.latex = latex
+         self.quiet = quiet
+@@ -45,6 +47,8 @@
+     def computeContext(self):
+         with open(self.data_file, "r") as stream:
+             raw = yaml.safe_load(stream)
++        with open(self.site_file, "r") as stream:
++            site = yaml.safe_load(stream)
+ 
+         if self.profile not in raw["profiles"]:
+             available = ", ".join(raw["profiles"].keys())
+@@ -57,6 +61,7 @@
+ 
+         personal = dict(shared.get("personal", {}))
+         personal["titles"] = prof.get("titles", personal.get("titles", []))
++        personal["portrait_url"] = site["cv"]["portrait_url"]
+         personal["photo_loc"] = "../../"
+ 
+         data = {"personal": personal}
+@@ -192,6 +197,7 @@
+         src="./src/",
+         dst="./_tmp/",
+         data_file="../_data/industry.yml",
++        site_file="../_data/website.yml",
+         profile=args.profile,
+         latex="xelatex",
+         quiet=args.quiet,
+diff -ruN a/_industry/src/coverletter.tex.template b/_industry/src/coverletter.tex.template
+--- a/_industry/src/coverletter.tex.template	2026-10-31 00:14:48
++++ b/_industry/src/coverletter.tex.template	2026-10-31 00:16:56
+@@ -1,7 +1,7 @@
+ %!TEX TS-program = xelatex
+ %!TEX encoding = UTF-8 Unicode
+ % Industry cover letter -- Awesome CV header + manual letter body.
+-% Generated from ../_data/industry.yml by ../cv_pdf_generator.py
++% Generated from ../_data/industry.yml and ../_data/website.yml by ../cv_pdf_generator.py
+ 
+ \documentclass[11pt, a4paper]{awesome-cv}
+ 
+diff -ruN a/_industry/src/cv.tex.template b/_industry/src/cv.tex.template
+--- a/_industry/src/cv.tex.template	2026-10-31 00:14:48
++++ b/_industry/src/cv.tex.template	2026-10-31 00:16:56
+@@ -1,7 +1,7 @@
+ %!TEX TS-program = xelatex
+ %!TEX encoding = UTF-8 Unicode
+ % Industry-focused CV -- Awesome CV (https://github.com/posquit0/Awesome-CV)
+-% Generated from ../_data/industry.yml by ../cv_pdf_generator.py
++% Generated from ../_data/industry.yml and ../_data/website.yml by ../cv_pdf_generator.py
+ 
+ \documentclass[11pt, a4paper]{awesome-cv}
+ 
+diff -ruN a/_scripts/src/cv/education.tex.template b/_scripts/src/cv/education.tex.template
+--- a/_scripts/src/cv/education.tex.template	2026-10-31 00:14:48
++++ b/_scripts/src/cv/education.tex.template	2026-10-31 00:15:46
+@@ -1,4 +1,4 @@
+-\cvsection{{% emit(data['education']['title']) %}}
++\cvsection{{% emit(website['sections']['education']) %}}
+ 
+ \begin{cventries}
+ {%
+diff -ruN a/_scripts/src/cv/experience.tex.template b/_scripts/src/cv/experience.tex.template
+--- a/_scripts/src/cv/experience.tex.template	2026-10-31 00:14:48
++++ b/_scripts/src/cv/experience.tex.template	2026-10-31 00:15:48
+@@ -1,4 +1,4 @@
+-\cvsection{{% emit(data['experience']['title']) %}}
++\cvsection{{% emit(website['sections']['experience']) %}}
+ 
+ \begin{cventries}
+ {%
+diff -ruN a/_scripts/src/cv/extracurricular.tex.template b/_scripts/src/cv/extracurricular.tex.template
+--- a/_scripts/src/cv/extracurricular.tex.template	2026-10-31 00:14:48
++++ b/_scripts/src/cv/extracurricular.tex.template	2026-10-31 00:15:50
+@@ -1,4 +1,4 @@
+-\cvsection{{% emit(data['extracurricular']['title']) %}}
++\cvsection{{% emit(website['sections']['extracurricular']) %}}
+ \begin{cvoneliners}
+ {%
+   for i in (data['extracurricular']['content']):
+diff -ruN a/_scripts/src/cv/grants.tex.template b/_scripts/src/cv/grants.tex.template
+--- a/_scripts/src/cv/grants.tex.template	2026-10-31 00:14:48
++++ b/_scripts/src/cv/grants.tex.template	2026-10-31 00:15:52
+@@ -1,4 +1,4 @@
+-\cvsection{{% emit(data['grants']['title']) %}}
++\cvsection{{% emit(website['sections']['grants']) %}}
+ 
+ \begin{cventries}
+ {%
+diff -ruN a/_scripts/src/cv/honors.tex.template b/_scripts/src/cv/honors.tex.template
+--- a/_scripts/src/cv/honors.tex.template	2026-10-31 00:14:48
++++ b/_scripts/src/cv/honors.tex.template	2026-10-31 00:15:55
+@@ -1,4 +1,4 @@
+-\cvsection{ {% emit(data['awards']['title']) %} }
++\cvsection{ {% emit(website['sections']['awards']) %} }
+ \begin{cvhonors}
+ {%
+   for i in (data['awards']['content']):
+diff -ruN a/_scripts/src/cv/projects.tex.template b/_scripts/src/cv/projects.tex.template
+--- a/_scripts/src/cv/projects.tex.template	2026-10-31 00:14:48
++++ b/_scripts/src/cv/projects.tex.template	2026-10-31 00:15:57
+@@ -1,4 +1,4 @@
+-\cvsection{{% emit(data['projects']['title']) %}}
++\cvsection{{% emit(website['sections']['projects']) %}}
+ 
+ \begin{cventries}
+ {%
+diff -ruN a/_scripts/src/cv/publications.tex.template b/_scripts/src/cv/publications.tex.template
+--- a/_scripts/src/cv/publications.tex.template	2026-10-31 00:14:48
++++ b/_scripts/src/cv/publications.tex.template	2026-10-31 00:16:11
+@@ -1,4 +1,4 @@
+-\cvsection{ {% emit(publications['title']) %} }
++\cvsection{ {% emit(website['sections']['publications']) %} }
+ 
+ {%
+ types = [
+@@ -18,7 +18,7 @@
+   if len(publications[type]['papers']) <= 0: continue
+ 
+   emit_tex('\\cvsubsection')
+-  emit_braces(publications[type]['title'])
++  emit_braces(website['sections'][type])
+ 
+   emit_tex('\\begin{cvpapers}')
+   emit('\n')
+@@ -27,14 +27,14 @@
+     emit_tex('\\cvpaper ')
+     emit('\n')
+     if "*" in i['authors']:
+-        emit_tex('{'+i['authors'].replace(data['personal']['author'], '\\textbf{'+data['personal']['author']+'}')+' (* co-first author)}')
++        emit_tex('{'+i['authors'].replace(website['cv']['author'], '\\textbf{'+website['cv']['author']+'}')+' (* co-first author)}')
+     else:
+-        emit_tex('{'+i['authors'].replace(data['personal']['author'], '\\textbf{'+data['personal']['author']+'}')+'}')
++        emit_tex('{'+i['authors'].replace(website['cv']['author'], '\\textbf{'+website['cv']['author']+'}')+'}')
+     emit('\n')
+ 
+     if 'url' in i and i['url'] != None:
+       url = i['url']
+-      if url.startswith('/'): url = data['personal']['website'] + url
++      if url.startswith('/'): url = website['cv']['website'] + url
+       emit_braces(url)
+       emit('\n')
+     else:
+@@ -59,7 +59,7 @@
+   emit_tex('\\end{cvpapers}')
+ %}
+ 
+-\cvsection{ {% emit(data['personal']['secondary-title']) %} }
++\cvsection{ {% emit(website['cv']['secondary-title']) %} }
+ 
+ {%
+ 
+@@ -70,7 +70,7 @@
+ for type in types:
+     nb = 1
+     emit_tex('\\cvsubsection')
+-    emit_braces(data[type]['title'])
++    emit_braces(website['sections'][type])
+ 
+     emit_tex('\\begin{cvnews}')
+     emit('\n')
+diff -ruN a/_scripts/src/cv.tex.template b/_scripts/src/cv.tex.template
+--- a/_scripts/src/cv.tex.template	2026-10-31 00:14:48
++++ b/_scripts/src/cv.tex.template	2026-10-31 00:15:44
+@@ -52,13 +52,13 @@
+ %-------------------------------------------------------------------------------
+ 
+ % Available options: circle|rectangle,edge/noedge,left/right
+-\photo[circle,edge,left]{{% emit(data['personal']['photo_loc']+data['personal']['portrait_url']) %}}
++\photo[circle,edge,left]{{% emit(data['personal']['photo_loc']+website['cv']['portrait_url']) %}}
+ 
+ \name{{% emit(data['personal']['first-name']) %}}{{% emit(data['personal']['last-name']) %}}
+ \position{
+ {% 
+-nb = len(data['personal']['titles'])
+-for title in data['personal']['titles']:
++nb = len(website['cv']['titles'])
++for title in website['cv']['titles']:
+   emit(title)
+   nb = nb - 1
+   if nb > 0:
+@@ -88,7 +88,7 @@
+   {} % \thepage
+  
+ \input{cv/experience.tex}
+-\cvsection{{% emit(data['academic']['title']) %}}
++\cvsection{{% emit(website['sections']['academic']) %}}
+ \begin{cvoneliners}
+ {%
+   for i in (data['academic']['content']):
+@@ -107,7 +107,7 @@
+ \newpage
+ {% check_minimal("\\input{cv/publications.tex}") %}
+ 
+-\cvsection{{% emit(data['references']['title']) %}}
++\cvsection{{% emit(website['sections']['references']) %}}
+ \begin{cvoneliners}
+ {%
+   for i in (data['references']['content']):

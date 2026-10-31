@@ -32,8 +32,10 @@ dispatch:            # steps in flight, up to six (Z632)
   session_id: a335cf314e42c8f6c
   launched: 2026-10-30
   report: .scratch/migration/agents/reviews/O105-report.md
+  builder_usage: 243369 tokens, 280 tool uses, 4052 s
+  reviewer_report: .scratch/migration/agents/reviews/O105-refuter.md (abfcac510589136aa, claude-opus-5-5, usage awaited)
   brief_check: .scratch/migration/agents/reviews/O105-brief-check.md (ae6e12bde917fae57, claude-opus-5-5, 242743 tokens, 26 tool uses, 662 s)
-  round: 0
+  round: 1
   landing: not-started
 - step: O106
   base: c18dc9126
@@ -43,6 +45,8 @@ dispatch:            # steps in flight, up to six (Z632)
   session_id: adf8935850262b509
   launched: 2026-10-31
   report: .scratch/migration/agents/reviews/O106-report.md
+  builder_usage: 253817 tokens, 130 tool uses, 2546 s
+  reviewer_report: .scratch/migration/agents/reviews/O106-refuter.md (a9ef6e624f674e5a8, claude-opus-5-5, 198813 tokens, 23 tool uses, 749 s)
   brief_check: .scratch/migration/agents/reviews/O106-brief-check.md (aff22675846d114fb, claude-opus-5-5, 200429 tokens, 18 tool uses, 462 s)
   shared_paths: docs/HELP.md, docs/templates.md and config/schemas/manifest-schema.yml with migration O105, simple to merge since the two steps change different lines
   round: 0
@@ -188,10 +192,14 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
 
-- 604 (2026-10-31, Axel's question on a release): a release after O105 and O106: (a), `0.2.0`, with the look of what O104's landing did not see, then archives built for your review before they are published; (b), `0.2.0` with no such look (the lazy option); (c), no release yet, wait for a later step. Recommendation: (a).
+
+- 607 (2026-10-31): the checkbox "On the short CV" (O106 refuter S1): a row with no `min` is on the short CV, but its box shows empty, on 15 rows by the reviewer's line greps. (a), recommended: a checkbox row of a schema may say `default: true`, the box then shows ticked when the key is absent and unticking writes `false`; `min` stays as it is, files and website unchanged. (b): the key is replaced by an inverted one, "Left off the short CV", which changes 5 records and `cv.ts`. A box left as it is, with only help words, is the lazy option.
 
 ## Closed items
 
+- The repository goes public as it is, with no history change, at the `1.0.0` release: a LICENSE file with MIT, `"private": true` removed, then the visibility switch (Axel: "I would like to make the repo public", "This means that 605 doesnt exist, since there are NO options").
+- 604 (2026-10-31): (a), a release after O105 and O106, numbered `1.0.0` (Axel: "604 (a), but maybe 1.0.0 ?", then "604 (b)"); booked in `plan.md` Rulings.
+- 606 (2026-10-31): (a), MIT (Axel: "606 2oule obviously be (a)"); booked in `plan.md` Rulings.
 - 603 (2026-10-30): (a), cards and the entry page leave out `section: Website` fields, the entry page gives a Website group, students are drawn by name (Axel: "603 (a)"); booked in `plan.md` Rulings. Step O106 added at his word ("Please do").
 - 599 to 602 (2026-10-30): all (a): every copy from `website.yml` ends, the group headings move to it, `website.files` names the four files, the `programs:` check stays (Axel: "all (a)"); booked in `plan.md` Rulings and on O105's line.
 - 595 (2026-10-30): (d), For review reads the record an unmarked Zenodo DOI names and goes on only for the review copy (Axel: "(d)"); booked in `plan.md` Rulings; built in O101's repair round 1.

@@ -1,0 +1,87 @@
+diff --color -ruN a/.oculus/data/academic/education.yml b/.oculus/data/academic/education.yml
+--- a/.oculus/data/academic/education.yml	2026-10-31 00:21:28
++++ b/.oculus/data/academic/education.yml	2026-10-31 00:22:05
+@@ -17,16 +17,17 @@
+   - { field: lead,          type: tags,     foreign_key: people, required: true, section: Connections, help: "Who leads it." }
+   - { field: collaborators, type: tags,     foreign_key: people, section: Connections, help: "Who works on it with the lead." }
+   - { field: supervisors,   type: tags,     foreign_key: people, section: Connections, help: "Who supervises it." }
+-  - { field: cv_section, type: text,     section: Website, help: "The CV section the entry is listed in: academic, students or extracurricular; none keeps it off the CV." }
+-  - { field: cv_rank,    type: text,     section: Website, help: "The entry's place in its CV section, a whole number." }
+-  - { field: cv_title,   type: text,     section: Website, help: "The title the CV prints, when it is not the title." }
+-  - { field: cv_url,     type: text,     section: Website, help: "The address the CV links." }
+-  - { field: location,   type: text,     section: Website, help: "Where, as the CV prints it." }
+-  - { field: duration,   type: text,     section: Website, help: "The period as the CV prints it." }
+-  - { field: about,      type: textarea, section: Website, help: "What the CV prints under it." }
+-  - { field: hide,       type: checkbox, section: Website, help: "Kept off the CV while it stays listed." }
++  - { field: cv_section, type: text,     label: "CV section", section: Website, help: "The CV section the entry is listed in: academic, students or extracurricular; none keeps it off the CV." }
++  - { field: cv_rank,    type: text,     label: "CV place", section: Website, help: "The entry's place in its CV section, a whole number." }
++  - { field: cv_title,   type: text,     label: "CV title", section: Website, help: "The title the CV prints, when it is not the title." }
++  - { field: cv_url,     type: text,     label: "CV address", section: Website, help: "The address the CV links." }
++  - { field: location,   type: text,     label: "Location", section: Website, help: "Where, as the CV prints it." }
++  - { field: duration,   type: text,     label: "CV period", section: Website, help: "The period as the CV prints it." }
++  - { field: about,      type: textarea, label: "CV text", section: Website, help: "What the CV prints under it." }
++  - { field: hide,       type: checkbox, label: "Hidden on the CV", section: Website, help: "Kept off the CV while it stays listed." }
+   - field: students
+     type: records
++    label: "Students"
+     section: Connections
+     help: "The students supervised, each a row of the CV's students in place of the entry."
+     fields:
+diff --color -ruN a/.oculus/data/academic/events.yml b/.oculus/data/academic/events.yml
+--- a/.oculus/data/academic/events.yml	2026-10-31 00:21:28
++++ b/.oculus/data/academic/events.yml	2026-10-31 00:22:19
+@@ -18,14 +18,14 @@
+   - { field: lead,          type: tags,     foreign_key: people, required: true, section: Connections, help: "Who leads it." }
+   - { field: collaborators, type: tags,     foreign_key: people, section: Connections, help: "Who works on it with the lead." }
+   - { field: supervisors,   type: tags,     foreign_key: people, section: Connections, help: "Who supervises it." }
+-  - { field: cv_section, type: text,     section: Website, help: "The CV section the event is listed in, news; none keeps it off the CV." }
+-  - { field: cv_rank,    type: text,     section: Website, help: "The event's place in its CV section, a whole number." }
+-  - { field: cv_title,   type: text,     section: Website, help: "The title the CV prints, when it is not the title." }
+-  - { field: cv_url,     type: text,     section: Website, help: "The address the CV links." }
+-  - { field: location,   type: text,     section: Website, help: "Where, as the CV prints it." }
+-  - { field: duration,   type: text,     section: Website, help: "When, as the CV prints it." }
+-  - { field: about,      type: textarea, section: Website, help: "What the CV prints under it." }
+-  - { field: hide,       type: checkbox, section: Website, help: "Kept off the CV while it stays listed." }
++  - { field: cv_section, type: text,     label: "CV section", section: Website, help: "The CV section the event is listed in, news; none keeps it off the CV." }
++  - { field: cv_rank,    type: text,     label: "CV place", section: Website, help: "The event's place in its CV section, a whole number." }
++  - { field: cv_title,   type: text,     label: "CV title", section: Website, help: "The title the CV prints, when it is not the title." }
++  - { field: cv_url,     type: text,     label: "CV address", section: Website, help: "The address the CV links." }
++  - { field: location,   type: text,     label: "Location", section: Website, help: "Where, as the CV prints it." }
++  - { field: duration,   type: text,     label: "CV period", section: Website, help: "When, as the CV prints it." }
++  - { field: about,      type: textarea, label: "CV text", section: Website, help: "What the CV prints under it." }
++  - { field: hide,       type: checkbox, label: "Hidden on the CV", section: Website, help: "Kept off the CV while it stays listed." }
+ 
+ entries:
+   - key: 3mi-labs-talk
+diff --color -ruN a/.oculus/data/academic/funding.yml b/.oculus/data/academic/funding.yml
+--- a/.oculus/data/academic/funding.yml	2026-10-31 00:21:28
++++ b/.oculus/data/academic/funding.yml	2026-10-31 00:22:40
+@@ -20,17 +20,17 @@
+   - { field: lead,          type: tags,     foreign_key: people, required: true, section: Connections, help: "Who leads it." }
+   - { field: collaborators, type: tags,     foreign_key: people, section: Connections, help: "Who works on it with the lead." }
+   - { field: supervisors,   type: tags,     foreign_key: people, section: Connections, help: "Who supervises it." }
+-  - { field: cv_section, type: text,     section: Website, help: "The CV section the entry is listed in, grants or projects; none keeps it off the CV." }
+-  - { field: cv_rank,    type: text,     section: Website, help: "The entry's place in its CV section, a whole number." }
+-  - { field: cv_title,   type: text,     section: Website, help: "The title the CV prints, when it is not the title." }
+-  - { field: cv_url,     type: text,     section: Website, help: "The address the CV links, when it is not the url." }
+-  - { field: cv_status,  type: text,     section: Website, help: "The status the CV prints for the grant." }
+-  - { field: role,       type: text,     section: Website, help: "Your role as the CV prints it." }
+-  - { field: location,   type: text,     section: Website, help: "Where, as the CV prints it." }
+-  - { field: duration,   type: text,     section: Website, help: "The period as the CV prints it." }
+-  - { field: about,      type: textarea, section: Website, help: "What the CV prints under it." }
+-  - { field: min,        type: checkbox, section: Website, help: "Left out of the short CV." }
+-  - { field: hide,       type: checkbox, section: Website, help: "Kept off the CV while it stays listed." }
++  - { field: cv_section, type: text,     label: "CV section", section: Website, help: "The CV section the entry is listed in, grants or projects; none keeps it off the CV." }
++  - { field: cv_rank,    type: text,     label: "CV place", section: Website, help: "The entry's place in its CV section, a whole number." }
++  - { field: cv_title,   type: text,     label: "CV title", section: Website, help: "The title the CV prints, when it is not the title." }
++  - { field: cv_url,     type: text,     label: "CV address", section: Website, help: "The address the CV links, when it is not the url." }
++  - { field: cv_status,  type: text,     label: "CV status", section: Website, help: "The status the CV prints for the grant." }
++  - { field: role,       type: text,     label: "CV role", section: Website, help: "Your role as the CV prints it." }
++  - { field: location,   type: text,     label: "Location", section: Website, help: "Where, as the CV prints it." }
++  - { field: duration,   type: text,     label: "CV period", section: Website, help: "The period as the CV prints it." }
++  - { field: about,      type: textarea, label: "CV text", section: Website, help: "What the CV prints under it." }
++  - { field: min,        type: checkbox, label: "On the short CV", section: Website, help: "Ticked keeps the row on the short CV." }
++  - { field: hide,       type: checkbox, label: "Hidden on the CV", section: Website, help: "Kept off the CV while it stays listed." }
+ 
+ entries:
+   - key: nwo-veni-the-self-explaining-hospital
