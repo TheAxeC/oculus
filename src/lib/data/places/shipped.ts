@@ -10,6 +10,7 @@ export const SHIPPED_SOURCES = [
     'package-lock.json',
     '.npmrc',
     'README.md',
+    'LICENSE',
     'src',
     'config',
     'docs',
