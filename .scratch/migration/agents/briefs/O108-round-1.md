@@ -1,0 +1,11 @@
+# O108, repair round 1
+
+Worktree and rules as the brief says. Each item is ruled; change what it says and nothing else. The findings are in `.scratch/migration/agents/reviews/O108-refuter.md`, under the names below.
+
+1. P1 and St1. The choice of which platform signs moves into the code a test can read. `signSteps` in `src/desktop/release-steps.ts` takes the platform first, `signSteps(platform: AppPlatform, bundle: string): Step[]`, and returns no step on Linux, the two codesign steps on macOS. `src/desktop/release.ts:127` becomes `runSteps(signSteps(platform, folder));`. In `tests/server/desktop/platform-steps.test.ts`, `programs` calls `signSteps(platform, '/work/out/oculus.app')` with no branch of its own, and one assertion holds the two macOS steps whole: `--force --deep --sign -` on the bundle, then `--verify --deep --strict` on it, in that order. The head comment at lines 3-4 is then true and stays. This behaviour is kept, not new: quote a passing run after the change; no run on the unchanged tree is asked for, and no code is altered to make a test go red.
+2. St2. The head comment of `src/desktop/release-steps.ts`, lines 1-3: replace "and the programs the script runs" with words naming what the file holds, the icon, signing and archive steps and running them, so a reader does not look there for `npm ci`. The rest of the comment stays.
+3. Report only, appended under "Repair round 1". B1: the row for the app with no built handler gives the after as the `desktop.dialog.server_exited` dialog with Restart and Quit, Restart bringing the same dialog back, and the login environment and `machineLacks` running first; the before as a one-button dialog shown before the login environment is read. B2: the row for `npm run app:package` also names `--out` and the Linux output under `~/.local/share/oculus` with its `.tar.gz`.
+
+S1 is ruled: `NAME` and `checkout` stay exported from `release-steps.ts`, since each fact exists once. No change.
+
+Verify: `npm run test:quick` once on the final tree, `sh utils/unused-exports.sh`, `npx vitest run tests/server/desktop/platform-steps.test.ts tests/server/desktop/script-args.test.ts --reporter=dot`, and the ASCII grep over the changed files. The Linux and macOS archives need no rebuild. A shortcut is a finding. No git command that changes state; only your report in the ledger.
