@@ -1,10 +1,11 @@
-In flight (1 of 6 slots in use): O107 (an entry of a file with no schema opens its page).
+In flight (0 of 6 slots in use): none.
 
 Queued, in order (0 steps): none.
 
 Owed looks: none.
 
 Landed, newest first:
+- O107 (an entry of a file with no schema opens its page), 2026-10-31.
 - O106 (cards and the entry page), 2026-10-31; hub aa8f2d669; web a885f2d.
 - O105 (the website keeps its own words), 2026-10-31; hub f35ad1faf; web 33ff3b0.
 - O104 (one page frame and one editor), 2026-10-30; hub 2db7d35dd.

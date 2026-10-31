@@ -15,7 +15,10 @@
     // Literature collection (literature-save.svelte.ts), and Delete, which asks first and removes
     // the entry. The actions that write the paper are disabled, the words saying why as their
     // title, while the radar file has unsaved text in a source tab or the paper's title addresses
-    // no write.
+    // no write. A paper with no key has no page, so its title is words and it offers no Page. On
+    // the page of a paper of a file with no schema, which `held.schema` tells, the card writes
+    // nothing: the menu holds the paper and the projects alone, and in Lit Watch it keeps every
+    // action.
     //
     // The source line (authors, venue, year) is one line, cut with an ellipsis where the card ends,
     // and its whole text is the line's tooltip; on the paper's page it is drawn whole. A web
@@ -26,7 +29,11 @@
     import LinkedText from '$lib/ui/display/text/LinkedText.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import NewIdeaForm from '$lib/views/shared/forms/NewIdeaForm.svelte';
-    import { pageFault, pageFile } from '$lib/views/shared/forms/entry/edit/page-file';
+    import {
+        keylessFeedEntry,
+        pageFault,
+        pageFile
+    } from '$lib/views/shared/forms/entry/edit/page-file';
     import { blockedBy } from '$lib/views/shared/forms/entry-file';
     import { editorRows, feedDated } from '$lib/views/shared/forms/entry/entry-actions';
     import RecordCard from '$lib/views/shared/card/record/RecordCard.svelte';
@@ -97,8 +104,14 @@
     let deleting = $state(false);
 
     const held = $derived(pageOf('radar', id));
-    const file = $derived(held === null ? null : pageFile(client, held));
-    const fault = $derived(held === null ? undefined : pageFault(client, held));
+    /** The paper's internal id, which its writes name it by. */
+    const record = $derived(feedEntryId(entry));
+    /** The file and the fault of a paper with no key, which has no page to read them from. */
+    const keyless = $derived(
+        record === '' ? keylessFeedEntry(client, 'radar', feedRoot(entry)) : null
+    );
+    const file = $derived(held === null ? (keyless?.file ?? null) : pageFile(client, held));
+    const fault = $derived(held === null ? keyless?.fault : pageFault(client, held));
     /** Why writes are disabled: unsaved text of the radar file, or a title no write addresses. */
     const blocked = $derived(
         blockedBy(file, file !== null && unsavedFile(file.root, file.path), fault)
@@ -142,9 +155,9 @@
         return blocked === '' ? own : blocked;
     }
 
-    /** The paper's page, opened from its title and Page; none on that page itself. */
+    /** The paper's page, opened from its title and Page; none on that page, none with no key. */
     const onpage = $derived(
-        identity === '' || onPage
+        record === '' || onPage
             ? undefined
             : () => openView('entry', entryPageState('radar', id, title))
     );
@@ -152,7 +165,7 @@
     /** The paper's openers: Page, Edit, the paper, and each project the strip groups under none. */
     const openers = $derived.by((): RecordAction[] => {
         const rows: RecordAction[] = onpage === undefined ? [] : [pageAction(onpage)];
-        rows.push(...editorRows(client, 'radar', id, title, file, fault));
+        rows.push(...editorRows(client, 'radar', id, title, file, fault, keyless?.schema));
         const paper = posting(word('url'));
         if (paper !== undefined) {
             rows.push({
@@ -185,7 +198,7 @@
      * Save to Literature and Delete.
      */
     const actions = $derived.by((): RecordAction[] => {
-        if (identity === '') return openers;
+        if (identity === '' || (onPage && held?.schema === undefined)) return openers;
         const status: RecordAction = dismissed
             ? {
                   id: 'restore',
@@ -237,7 +250,6 @@
     });
 
     async function mark(value: boolean | null): Promise<void> {
-        const record = feedEntryId(entry);
         if (record === '') return;
         const answer = await writeFeedField('radar', record, 'dismissed', value);
         onsaid(

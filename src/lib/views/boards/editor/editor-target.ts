@@ -208,12 +208,15 @@ function pageTarget(client: ClientState, page: PageEntry): EditorTarget {
     };
 }
 
-/** The target of the record `record`, null for none and for a record no file holds now. */
+/**
+ * The target of the record `record`: null for none, for a record no file holds now and for an entry
+ * of a file with no schema, whose page holds no schema to build a form from.
+ */
 export function editorTarget(client: ClientState, record: EditorRecord): EditorTarget | null {
     const { pageNamed, pageOf } = client.pages;
     if (record.kind === 'none') return null;
     if (record.kind === 'project') return projectTarget(client, record.id);
     const page =
         record.kind === 'career' ? pageNamed(CAREER) : pageOf(record.collection, record.key);
-    return page === null ? null : pageTarget(client, page);
+    return page?.schema === undefined ? null : pageTarget(client, page);
 }

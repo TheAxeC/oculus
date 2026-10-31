@@ -2,9 +2,10 @@
     // Layer 3, view partial of views/boards/collection/Collection.svelte. A collection's list: one
     // table of the entries the bar keeps, one row each, its columns those the Columns menu draws
     // (state/boards/collection/ `entryColumns`): the title, always drawn, which opens the entry's
-    // page as a card's title does, then one column per field of the schemas. A cell holds the
-    // field's words: an option by its label, a list joined by ", ", a person by name where the
-    // people registry holds the key (state/boards/person.ts `personName`), and its key otherwise.
+    // page as a card's title does and is words for an entry with no key, then one column per field
+    // of the schemas. A cell holds the field's words: an option by its label, a list joined by
+    // commas, a person by name where the people registry holds the key (state/boards/person.ts
+    // `personName`), and its key otherwise.
     //
     // It is laid out as a project board's list is (views/boards/projects/BoardList.svelte): every
     // row is one line high, a cell's text cut at the cell's edge with its whole text in its tip,
@@ -38,8 +39,8 @@
         rows: { entry: Entry; schema: SchemaField[] | undefined }[];
         /** The columns the Columns menu lists, in its order. */
         columns: ListedColumn[];
-        /** Open one entry's page. */
-        onpage: (entry: Entry) => void;
+        /** What opens one entry's page; none for an entry with no page, whose title is words. */
+        onpage: (entry: Entry) => (() => void) | undefined;
         /** The palette destination, and its clearing once the row is revealed. */
         reveal?: string;
         onrevealed: () => void;
@@ -110,11 +111,16 @@
 {#snippet cell(row: Record<string, unknown>, column: Column)}
     {#if column.key === TITLE_COLUMN}
         {@const entry = byId.get(cellText(row.id))}
+        {@const open = entry === undefined ? undefined : onpage(entry)}
         <Reveal id={cellText(row.id)} wanted={reveal} {onrevealed}>
             <span class="cut" title={cellText(row[column.key])}>
-                <RowButton onclick={() => entry !== undefined && onpage(entry)}>
-                    <span class="title">{cellText(row[column.key])}</span>
-                </RowButton>
+                {#if open === undefined}
+                    {cellText(row[column.key])}
+                {:else}
+                    <RowButton onclick={open}>
+                        <span class="title">{cellText(row[column.key])}</span>
+                    </RowButton>
+                {/if}
             </span>
         </Reveal>
     {:else}

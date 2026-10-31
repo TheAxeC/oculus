@@ -3,8 +3,9 @@
     // (views/shared/card/record/RecordCard.svelte): its fit, deadline and posting, drawn by the
     // Leads view (views/feeds/leads/Leads.svelte), where its title and the strip's Page open its
     // page, and on that page (views/boards/entry/Entry.svelte), where it is handed `page` and no
-    // page opener, its title is words, and its subtasks and follow-ups are listed. Feed rules stay
-    // in state and server modules.
+    // page opener, its title is words, and its subtasks and follow-ups are listed. A lead with no
+    // key has no page, so its title is words and it offers no Page. Feed rules stay in state and
+    // server modules.
     //
     // The strip holds Applied and Page, or Edit on the page. The menu holds Page, Edit, which opens
     // the editor beside the card (entry-actions.ts `editorRows`), and the posting in its Open run,
@@ -18,13 +19,16 @@
     // press or pick does nothing.
     //
     // The actions that write the lead are disabled, `blocked` as their title, while the leads file
-    // has unsaved text in a source tab. Decline is a status write like Reopen: it sets the lead's
-    // status to the one word carrying `lead_declined` in the hub's file, so the change log records
-    // it and Reopen puts the one word carrying `default_lead` back. It is offered on an open lead
-    // alone, so a decline never writes over an outcome. An action whose flag no word of the hub's
-    // `lead_statuses` carries, or two or more do, is disabled with a title saying so, since it has
-    // no word to write. Each flag is a word's of `statuses`, and the fit's colour a word of
-    // `leads_fit` and `palette`, in the words of the lead's own hub.
+    // has unsaved text in a source tab or the lead has no key to name it by. Decline is a status
+    // write like Reopen: it sets the lead's status to the one word carrying `lead_declined` in the
+    // hub's file, so the change log records it and Reopen puts the one word carrying `default_lead`
+    // back. It is offered on an open lead alone, so a decline never writes over an outcome. An
+    // action whose flag no word of the hub's `lead_statuses` carries, or two or more do, is
+    // disabled with a title saying so, since it has no word to write. Each flag is a word's of
+    // `statuses`, and the fit's colour a word of `leads_fit` and `palette`, in the words of the
+    // lead's own hub. On the page of a lead of a file with no schema, which `held.schema` tells,
+    // the card writes nothing: the menu holds the posting alone, and in the Leads view it keeps
+    // every action.
 
     import Tag from '$lib/ui/controls/Tag.svelte';
     import Confirm from '$lib/ui/controls/confirm/Confirm.svelte';
@@ -54,7 +58,12 @@
         type RecordAction
     } from '$lib/views/shared/card/record/record-menu';
     import type { CardAction } from '$lib/views/shared/card/card';
-    import { pageFault, pageFile } from '$lib/views/shared/forms/entry/edit/page-file';
+    import {
+        keylessFeedEntry,
+        pageFault,
+        pageFile
+    } from '$lib/views/shared/forms/entry/edit/page-file';
+    import { blockedBy } from '$lib/views/shared/forms/entry-file';
     import { editorRows, feedDated } from '$lib/views/shared/forms/entry/entry-actions';
     import { t } from '$lib/state/shared/words/text';
     import type { WriteAnswer } from '$lib/state/client/writes.svelte';
@@ -94,7 +103,7 @@
         beside,
         onpage,
         page = false,
-        blocked
+        blocked: fileBlocked
     }: Props = $props();
 
     /** How this component's Markdown fields draw their formulas, once KaTeX is in. */
@@ -111,6 +120,18 @@
     const identity = $derived(leadId(entry));
     /** The lead's internal id, which its writes name it by. */
     const record = $derived(feedEntryId(entry));
+    /** The file and the fault of a lead with no key, which has no page to read them from. */
+    const keyless = $derived(
+        record === '' ? keylessFeedEntry(client, 'leads', feedRoot(entry)) : null
+    );
+    /** Why the lead's writes are off: the view's reason, else that the lead has no key. */
+    const blocked = $derived(
+        fileBlocked !== '' || keyless === null
+            ? fileBlocked
+            : blockedBy(keyless.file, false, keyless.fault)
+    );
+    /** What opens the lead's page; a lead with no key has none. */
+    const opener = $derived(record === '' ? undefined : onpage);
     const institution = $derived(word('inst'));
     const country = $derived(word('country'));
     const type = $derived(word('typ'));
@@ -220,10 +241,10 @@
      * submenu and Delete.
      */
     const actions = $derived.by((): RecordAction[] => {
-        const rows: RecordAction[] = onpage === undefined ? [] : [pageAction(onpage)];
-        const file = held === null ? null : pageFile(client, held);
-        const fault = held === null ? undefined : pageFault(client, held);
-        rows.push(...editorRows(client, 'leads', id, title, file, fault));
+        const rows: RecordAction[] = opener === undefined ? [] : [pageAction(opener)];
+        const file = held === null ? (keyless?.file ?? null) : pageFile(client, held);
+        const fault = held === null ? keyless?.fault : pageFault(client, held);
+        rows.push(...editorRows(client, 'leads', id, title, file, fault, keyless?.schema));
         const link = posting(url);
         if (link !== undefined) {
             rows.push({
@@ -237,7 +258,7 @@
                 }
             });
         }
-        if (identity === '') return rows;
+        if (identity === '' || (page && held?.schema === undefined)) return rows;
         return [
             ...rows,
             ...statusAction(states, blocked === '' ? undefined : blocked),
@@ -335,7 +356,7 @@
         {cursor}
         {title}
         titleHtml={inlineMarkdown(title, cardMath(title))}
-        ontitle={onpage}
+        ontitle={opener}
         tone={expired ? 'grey' : tone}
         record={{ root: feedRoot(entry) }}
         {actions}

@@ -23,19 +23,7 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 ```
 
 ```yaml
-dispatch:            # steps in flight, up to six (Z632)
-- step: O107
-  base: 195e5e52f
-  worktree: .agents/worktrees/migration-O107
-  executor: agent
-  worker: claude:opus
-  report: .scratch/migration/agents/reviews/O107-report.md
-  round: 1
-  landing: not-started
-  session_id: a54b4fd5ed1a27c93
-  builder_usage: 356386 tokens, 126 tool uses, 29.9 minutes
-  reviewer_report: .scratch/migration/agents/reviews/O107-refuter.md (a03ae4d4fe2c96233, claude-opus-5-5)
-  brief_check: ".scratch/migration/agents/reviews/O107-brief-check.md (a0a4cb0e10cbb5673, claude-opus-5-5, 229614 tokens, 26 tool uses, 7.1 minutes)"
+dispatch: []            # steps in flight, up to six (Z632)
 ```
 
 ## The standing demands (from Axel, in force)
@@ -762,6 +750,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-10-31 (O107 landed). O107 landed on main (booked under O107 in `plan.md`, `agents/reviews/O107-landing.md`), checked with `npm run diagrams && npm run docs:palette && npm run test:quick` in the gate worktree, every command passed, 275.2 s, and on main equal to the gate. No step is left unticked. Open items: none new. Next: the three 1.0.0 archives rebuilt; the commit of the release changes, the push, the tag, the release and the visibility switch wait on Axel's word.
 - 2026-10-31 (O106 at work). Axel: "Please do". Preparation commit c18dc9126; builder adf8935850262b509 launched in `.agents/worktrees/migration-O106`. In flight (2 of 6). Open item 604.
 - 2026-10-30 (O105 at work). Axel: "Lets book O105 and do it". The brief and its check are in the preparation commit eafa79e6e; builder a335cf314e42c8f6c launched in `.agents/worktrees/migration-O105`. In flight (1 of 6). Open items: none.
 - 2026-10-30 (rulings 599 to 602; O105 booked). Axel ruled all (a), booked in `plan.md` Rulings; step O105 added, unticked and not started. In flight (0 of 6). Next: /spec migration O105 on his word. Open items: none.

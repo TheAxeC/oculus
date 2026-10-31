@@ -53,8 +53,27 @@ const CAREER: Career = {
     schema: [{ field: 'milestone', type: 'text' }]
 };
 
+/** A file with no `schema:` list that reads, its key named by its `collections:` entry. */
+const NO_SCHEMA: Collection = {
+    id: 'hub:plain',
+    title: 'Plain',
+    file: '/hub/plain.yml',
+    primary_key: 'name',
+    entries: [
+        {
+            id: 'hub:one',
+            title: 'one',
+            fields: { name: 'one', status: 'open' },
+            file: '/hub/plain.yml',
+            index: 0,
+            root: 'hub'
+        }
+    ],
+    root: 'hub'
+};
+
 function snapshot(career: Career | null): Snapshot {
-    const held = [collection('hub', ['a', 'b']), collection('second', ['c'])];
+    const held = [collection('hub', ['a', 'b']), collection('second', ['c']), NO_SCHEMA];
     return {
         entities: { collections: Object.fromEntries(held.map((one) => [one.id, one])), career }
     } as unknown as Snapshot;
@@ -67,7 +86,11 @@ const FEEDS = {
         schema: [{ field: 'title', type: 'text', primary_key: true }],
         primary_key: 'title'
     },
-    radar: { meta: {}, entries: [{ title: 'A paper', root: 'hub', id: 'hub:A paper' }] }
+    radar: {
+        meta: {},
+        entries: [{ title: 'A paper', root: 'hub', id: 'hub:A paper' }],
+        primary_key: 'title'
+    }
 } as unknown as FeedsPayload;
 
 const pages = createPages(
@@ -138,9 +161,50 @@ describe('pageOf', () => {
             writeId: 'hub:a',
             root: 'hub',
             title: 'Title of a',
+            schema: SCHEMA,
             fixed: ['key']
         });
         expect(page?.peers).toEqual([{ key: 'b', title: 'Title of b', status: 'todo' }]);
+    });
+
+    it('finds an entry of a file with no schema, with its title and values and no schema', () => {
+        const page = pages.pageOf('plain', 'hub:one');
+        expect(page).toMatchObject({
+            kind: 'collection',
+            name: 'hub:plain:one',
+            writeId: 'hub:one',
+            title: 'one',
+            values: { name: 'one', status: 'open' },
+            fixed: ['name']
+        });
+        expect(page?.schema).toBeUndefined();
+    });
+
+    it('makes the page of an Add to a file with no schema from the fields the write took', () => {
+        const settled = createSettled(() => 0);
+        const added = createPages(
+            { snapshot: () => snapshot(CAREER), feeds: () => FEEDS },
+            settled
+        );
+        added.settle.added('plain', 'hub:new', { name: 'new' }, settled.begin());
+        expect(added.pageOf('plain', 'hub:new')).toMatchObject({
+            key: 'hub:new',
+            title: 'new',
+            values: { name: 'new' }
+        });
+    });
+
+    it('shows the values a write took over an entry of a file with no schema', () => {
+        const settled = createSettled(() => 0);
+        const written = createPages(
+            { snapshot: () => snapshot(CAREER), feeds: () => FEEDS },
+            settled
+        );
+        written.settle.entry('plain', 'hub:one', { status: 'closed' }, settled.begin());
+        expect(written.pageOf('plain', 'hub:one')?.values).toEqual({
+            name: 'one',
+            status: 'closed'
+        });
     });
 
     it('finds an entry of another hub by the id the merged portfolio gives it', () => {
@@ -160,13 +224,14 @@ describe('pageOf', () => {
     });
 
     it('finds a feed entry of a workspace with no primary with the schema of its own hub', () => {
-        const feed = (schema: SchemaField[] | undefined, title: string) => ({
+        const feed = (schema: SchemaField[] | undefined, title: string, key?: string) => ({
             ok: true,
             kind: 'leads',
             file: 'leads.yml',
             meta: {},
             entries: [{ title }],
-            ...(schema === undefined ? {} : { schema, primary_key: 'title' })
+            ...(schema === undefined ? {} : { schema }),
+            ...(key === undefined ? {} : { primary_key: key })
         });
         const empty = { ok: true, file: '', meta: {}, entries: [], missing: true };
         const none = {
@@ -174,15 +239,16 @@ describe('pageOf', () => {
             leads: { ...empty, kind: 'leads' },
             linkedin: { ...empty, kind: 'linkedin' }
         } as unknown as FeedsPayload;
-        const own = (schema: SchemaField[] | undefined, title: string) =>
-            ({ ...none, leads: feed(schema, title) }) as unknown as FeedsPayload;
+        const own = (schema: SchemaField[] | undefined, title: string, key?: string) =>
+            ({ ...none, leads: feed(schema, title, key) }) as unknown as FeedsPayload;
         const lab: SchemaField[] = [
             { field: 'title', type: 'text', primary_key: true },
             { field: 'fit', type: 'text' }
         ];
         const merged = mergedFeeds(none, [
-            { key: 'lab', feeds: own(lab, 'Postdoc L') },
-            { key: 'team', feeds: own(undefined, 'Postdoc T') }
+            { key: 'lab', feeds: own(lab, 'Postdoc L', 'title') },
+            { key: 'team', feeds: own(undefined, 'Postdoc T') },
+            { key: 'named', feeds: own(undefined, 'Postdoc N', 'title') }
         ]);
         const found = createPages(
             { snapshot: () => snapshot(CAREER), feeds: () => merged },
@@ -193,14 +259,73 @@ describe('pageOf', () => {
             writeId: 'lab:Postdoc L',
             schema: lab
         });
-        expect(found.pageOf('leads', 'team:Postdoc T')).toBeNull();
+        expect(found.pageOf('leads', 'Postdoc T')).toBeNull();
+        const named = found.pageOf('leads', 'named:Postdoc N');
+        expect(named).toMatchObject({
+            root: 'named',
+            writeId: 'named:Postdoc N',
+            fixed: ['title']
+        });
+        expect(named?.schema).toBeUndefined();
+    });
+
+    it('finds no page for a feed entry with no key, whatever identity the feed gives it', () => {
+        const feeds = {
+            ...FEEDS,
+            leads: {
+                ok: true,
+                kind: 'leads',
+                file: 'leads.yml',
+                meta: {},
+                entries: [{ title: 'Same' }, { title: 'Same' }]
+            }
+        } as unknown as FeedsPayload;
+        const found = createPages(
+            { snapshot: () => snapshot(CAREER), feeds: () => feeds },
+            createSettled(() => 0)
+        );
+        expect(found.pageOf('leads', 'Same#0')).toBeNull();
+        expect(found.pageOf('leads', 'Same#1')).toBeNull();
+    });
+
+    it("reads a hub's key of a feed with no schema from the hub's own row alone", () => {
+        const feeds = {
+            ...FEEDS,
+            radar: {
+                ok: true,
+                kind: 'radar',
+                file: 'radar.yml',
+                meta: {},
+                entries: [{ id: 'constructor:A paper', root: 'constructor', title: 'A paper' }],
+                hubSchemas: {},
+                hubPrimaryKeys: {}
+            }
+        } as unknown as FeedsPayload;
+        const found = createPages(
+            { snapshot: () => snapshot(CAREER), feeds: () => feeds },
+            createSettled(() => 0)
+        );
+        expect(found.pageOf('radar', 'constructor:A paper')?.fixed).toEqual([]);
+    });
+
+    it('finds a feed entry of a file with no schema, named by the key of the file', () => {
+        const page = pages.pageOf('radar', 'hub:A paper');
+        expect(page).toMatchObject({
+            kind: 'feed',
+            title: 'A paper',
+            writeId: 'hub:A paper',
+            values: { title: 'A paper' },
+            fixed: ['title']
+        });
+        expect(page?.schema).toBeUndefined();
     });
 
     it.each([
         ['an entry no file holds', 'tasks', 'missing'],
         ['a collection no hub holds', 'nothing', 'a'],
-        ['a feed that has no schema', 'radar', 'hub:A paper'],
-        ['a feed entry no file holds', 'leads', 'hub:Postdoc B']
+        ['a key no entry of a file with no schema holds', 'plain', 'hub:missing'],
+        ['a feed entry no file holds', 'leads', 'hub:Postdoc B'],
+        ['a key no entry of a feed with no schema holds', 'radar', 'hub:No paper']
     ])('finds none for %s', (_name, collectionKey, key) => {
         expect(pages.pageOf(collectionKey, key)).toBeNull();
     });

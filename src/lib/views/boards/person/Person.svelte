@@ -22,9 +22,10 @@
     //
     // The card is views/shared/forms/entry/card/EntryCard.svelte, opened out, the card the People
     // view draws, with no strip of role rows since the sections below list those projects. The page
-    // holds no form: Edit opens the editor beside it (views/boards/editor/Editor.svelte), and a
-    // person of a people file with no schema has no Edit. Delete, in the toolbar, asks first and
-    // names every project that refers to the person.
+    // holds no form: Edit opens the editor beside it (views/boards/editor/Editor.svelte). Delete,
+    // in the toolbar, asks first and names every project that refers to the person. A person of a
+    // people file with no schema, which the page tells by `page.schema`, has a line saying so over
+    // the card and no Edit, Delete or Status, as the page of any entry of such a file.
     //
     // One instance per person, and the person it is for is the `key` in its instance state, the way
     // the project tab reads its own `id`.
@@ -62,13 +63,7 @@
     import SourceButton from '../../shared/links/SourceButton.svelte';
     import ProjectCards from '../../shared/card/record/sets/ProjectCards.svelte';
     import RecordPage from '../../shared/card/record/RecordPage.svelte';
-    import {
-        entryById,
-        hubPathsOf,
-        identityFaults,
-        offeredStatuses,
-        statusFacets
-    } from '$lib/state/boards/collection';
+    import { entryById, hubPathsOf, identityFaults } from '$lib/state/boards/collection';
     import { personJoin, selfStanding } from '$lib/state/boards/person';
     import { stateRecord } from '$lib/state/shared/page/records';
     import { t } from '$lib/state/shared/words/text';
@@ -99,7 +94,7 @@
     const join = $derived(personJoin(portfolio(), key));
     /** The key the person's hub gives the people registry, which the page and Delete name. */
     const people = $derived(registryKey('people', addressOfId(key).hub));
-    /** The person's registry entry as the editor sees it, null for a file with no schema. */
+    /** The person's registry entry as the editor sees it, null while no file holds it. */
     const page = $derived(key === '' ? null : pageOf(people, key));
     const editFile = $derived(page === null ? null : pageFile(client, page));
     const fault = $derived(page === null ? undefined : pageFault(client, page));
@@ -142,9 +137,6 @@
             collection?.primary_key ?? null,
             collection?.key_fault
         )
-    );
-    const lifecycle = $derived(
-        offeredStatuses(collection?.schema, statusFacets(collection?.entries ?? []))
     );
 
     /**
@@ -212,7 +204,7 @@
                 onclick={markSelf}
             />
         {/if}
-        {#if page !== null}
+        {#if page?.schema !== undefined}
             <ToolButton
                 bare
                 label={t('entry_form.delete')}
@@ -236,6 +228,9 @@
     data-person={join.person?.id}
 >
     {#snippet card()}
+        {#if page !== null && page.schema === undefined}
+            <Empty message={t('entry.no_schema')} />
+        {/if}
         {#if join.person === null}
             <Surface>
                 <Empty
@@ -248,9 +243,9 @@
                 {entry}
                 cursor={false}
                 collection={people}
-                schema={collection?.schema}
+                schema={page?.schema}
                 projects={projects()}
-                statuses={lifecycle}
+                statuses={[]}
                 file={source}
                 fault={faults.get(entry.index)}
                 onsaid={say}

@@ -15,7 +15,7 @@
     // (views/shared/card/record/CardGrid.svelte) or, with List pressed in the toolbar (the Cards
     // and List buttons of views/shared/forms/bar/ModeButtons.svelte), as one table
     // (EntryList.svelte) whose columns the toolbar's Columns menu shows and hides. The title of a
-    // card or of a row opens the entry's page, the `entry` view's tab, where the entry is deleted
+    // card or row with a key opens its page, the `entry` view's tab, where the entry is deleted
     // and whose Edit opens the editor. The keyboard move of a card acts in cards mode only.
     //
     // It is registered once per collection view the page is given and reads which collection it is
@@ -242,11 +242,11 @@
     /** The Add box while it is open: it asks the new entry's name and opens the entry's page. */
     let asking = $state<Ask | null>(null);
 
-    /** The page of one entry, opened from its card's title. */
-    function openPage(entry: Entry): void {
+    /** What opens one entry's page from its title; none for an entry with no key to name it by. */
+    function pageOpener(entry: Entry): (() => void) | undefined {
         const label = entry.title === '' ? entry.id : entry.title;
         const page = pageView(key, entry.id, label, joined.registryOf(entry));
-        openView(page.view, page.state);
+        return identityValue(entry) === '' ? undefined : () => openView(page.view, page.state);
     }
 
     /** The props of the No funding card, which both modes draw. */
@@ -463,7 +463,7 @@
                 <EntryList
                     rows={shown.map((one) => ({ entry: one.entry, schema: one.part.schema }))}
                     {columns}
-                    onpage={openPage}
+                    onpage={pageOpener}
                     reveal={held.reveal}
                     onrevealed={() => write({ reveal: '' })}
                 />
@@ -491,7 +491,7 @@
                                 keeps={filtered.strip}
                                 more={held.more.includes(entry.id)}
                                 onmore={() => toggleMore(entry.id)}
-                                onpage={() => openPage(entry)}
+                                onpage={pageOpener(entry)}
                                 extra={taskCardActions(
                                     part.collection,
                                     entry,

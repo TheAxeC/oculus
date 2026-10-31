@@ -18,7 +18,7 @@ import {
 } from '$lib/state/boards/collection';
 import type { ClientState } from '$lib/state/client/context';
 import type { ViewSource } from '$lib/state/sessions/view-source';
-import { entryPageState } from '$lib/state/forms/page-entry';
+import { entryPageState, feedSchemaOf } from '$lib/state/forms/page-entry';
 import { keyOf } from '$lib/state/shared/page/hubs';
 import { feedEntryId, feedRoot } from '$lib/state/shared/page/idents';
 import { t } from '$lib/state/shared/words/text';
@@ -77,9 +77,11 @@ function deleteAction(blocked: string, ondelete: () => void): CardAction {
 
 /**
  * The Edit row of the entry `id` of `collection`, or of a feed by its kind and identity: none for a
- * record with no page, which is an entry of a file with no schema. An entry with no key has no
- * state an editor tab could name it by, so its row is disabled with the words of its `fault`, and
- * Edit in File is where the key is written.
+ * record with no page, and none for an entry of a file with no schema, whose page holds no schema
+ * to build a form from. An entry with no key has no state an editor tab could name it by, so its
+ * row is disabled with the words of its `fault`, and Edit in File is where the key is written;
+ * `keyless` says the same of a feed entry with no key, which has no page but whose file has a
+ * schema.
  */
 export function editorRows(
     client: ClientState,
@@ -87,13 +89,14 @@ export function editorRows(
     id: string,
     label: string,
     file: ViewSource | null,
-    fault: IdentityFault | undefined
+    fault: IdentityFault | undefined,
+    keyless = false
 ): RecordAction[] {
-    if (client.pages.pageOf(collection, id) === null) return [];
+    if (!keyless && client.pages.pageOf(collection, id)?.schema === undefined) return [];
     const open = (): void => {
         client.layout.openBeside('editor', entryPageState(collection, id, label));
     };
-    return [editorAction(open, keyOf(id) === '' ? blockedBy(file, false, fault) : '')];
+    return [editorAction(open, keyless || keyOf(id) === '' ? blockedBy(file, false, fault) : '')];
 }
 
 /** What the Edit in File action of a registry card is made from. */
@@ -242,7 +245,7 @@ export function feedDated(
     const record = feedEntryId(entry);
     const root = feedRoot(entry);
     const feed = client.feeds.feed(kind);
-    const schema = feed?.hubSchemas === undefined ? feed?.schema : feed.hubSchemas[root];
+    const schema = feed === null ? undefined : feedSchemaOf(feed, root);
     if (record === '' || schema === undefined) return undefined;
     const field = schema.find((one) => one.field === 'deadline');
     return {

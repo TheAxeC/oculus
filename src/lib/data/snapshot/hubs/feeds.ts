@@ -5,8 +5,9 @@
 // a LinkedIn post its file name (`FEED_IDENTITY`), by `hubId`, as every other record of the
 // portfolio is. A feed write names its entry by that id. The feed's file, meta and posting cadence
 // are the primary hub's, because a view shows one feed; the file of the feed in each hub is
-// `hubFiles`, which names the file a write to one of its entries changes, and the schema of that
-// file is `hubSchemas`, which the page of one of its entries edits.
+// `hubFiles`, which names the file a write to one of its entries changes, the schema of that file
+// is `hubSchemas`, which the page of one of its entries edits, and its primary key is
+// `hubPrimaryKeys`, the one place the merged feed carries the key of a file with no schema.
 
 import { scalar } from '../../helpers/guards.ts';
 import { hubId } from '../../helpers/hub-names.ts';
@@ -60,7 +61,13 @@ export function mergedFeeds(first: FeedsPayload, hubs: readonly HubFeeds[]): Fee
                 return schema === undefined ? [] : [[one.key, schema]];
             })
         );
-        const merged = { ...own, hubFiles, hubSchemas, entries };
+        const hubPrimaryKeys = Object.fromEntries(
+            hubs.flatMap((one) => {
+                const key = one.feeds[kind].primary_key;
+                return key === undefined ? [] : [[one.key, key]];
+            })
+        );
+        const merged = { ...own, hubFiles, hubSchemas, hubPrimaryKeys, entries };
         delete merged.missing;
         delete merged.error;
         if (every.every((one) => one.missing === true)) merged.missing = true;

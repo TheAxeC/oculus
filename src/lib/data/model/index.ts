@@ -28,17 +28,14 @@ import type {
     Career,
     Collection,
     CollectionEntry,
-    FeedData,
-    FeedKind,
     Feeds,
     HubVocabs,
     RawFeeds,
     ReadCollection,
-    SchemaField,
     Vocabulary
 } from './model-collections.ts';
 
-export type { FeedData, FeedEntry, FeedKind } from './model-collections.ts';
+export type { FeedData, FeedEntry, FeedKind, FeedsPayload } from './model-collections.ts';
 export type { HubVocab, HubVocabs, ListedCollection } from './model-collections.ts';
 export type { KeyFault, ValidationRules, Vocabulary } from './model-collections.ts';
 
@@ -431,29 +428,6 @@ export type FolderLines = LineTally & { folder: string; languages: LanguageLines
  * every folder, and the ISO time the count finished.
  */
 export type LineCount = { rows: FolderLines[]; total: LineTally; counted: string };
-
-/** The four complete feed states carried together on the `feeds` channel. */
-export type FeedsPayload = Record<
-    FeedKind,
-    FeedData & {
-        ok: true;
-        kind: FeedKind;
-        file: string;
-        /**
-         * The file of this feed in each hub of the workspace, relative to that hub, by the hub's
-         * name. Absent before the hubs are merged.
-         */
-        hubFiles?: Record<string, string>;
-        /**
-         * The schema of this feed's file in each hub of the workspace that carries one, by the
-         * hub's name: the fields a page of one of its entries edits. Absent before the hubs are
-         * merged.
-         */
-        hubSchemas?: Record<string, SchemaField[]>;
-        missing?: boolean;
-        error?: string;
-    }
->;
 
 export type {
     AnonymizeRow,

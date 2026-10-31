@@ -143,10 +143,12 @@
     /**
      * Read from the browser, for a venue the collection file holds whose hub names a journal
      * browser that asks by ISSN: off with the reason while the venue has no ISSN or the file
-     * cannot be written.
+     * cannot be written, and none on the page of a venue of a file with no schema, which writes
+     * nothing.
      */
     const readAction = $derived.by((): RecordAction | null => {
         if (venue.browsable !== true || entry === null) return null;
+        if (page && schema === undefined) return null;
         const target = entry;
         const blocked = readBlocked(venue) || (card.dated?.blocked ?? '');
         return {

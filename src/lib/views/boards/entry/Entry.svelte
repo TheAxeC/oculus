@@ -28,6 +28,12 @@
     // (views/boards/editor/Editor.svelte). Delete asks first, naming the records that refer to the
     // entry, and an entry that is gone says so; it is shown again when Undo brings it back.
     //
+    // An entry of a file with no `schema:` list that reads, which the page tells by `page.schema`,
+    // draws the same card under a line saying the file has no schema. With nothing to build a form
+    // from, that page offers no Status, Delete, Edit or other control that writes; what only reads
+    // stays (Copy BibTeX, the referrers, the folder's blocks). The page hands the card no statuses,
+    // so the Status submenu of such a file stays on the card of its collection view.
+    //
     // The card of a venue, a dataset, a domain or a pillar line is the one its view draws
     // (views/shared/card/record/registry/RegistryPageCard.svelte). Every other card is
     // views/shared/forms/entry/card/EntryCard.svelte, the one the collection view draws, with every
@@ -66,10 +72,8 @@
         entryById,
         hubPathsOf,
         identityFaults,
-        offeredStatuses,
         pageFolder,
-        pageState,
-        statusFacets
+        pageState
     } from '$lib/state/boards/collection';
     import { entryPageState, revealState } from '$lib/state/forms/page-entry';
     import { isExpired, localDate } from '$lib/state/feeds/leads';
@@ -124,7 +128,7 @@
             : (held.find(
                   (one) => entryById(one, key) !== null || entryById(one, current) !== null
               ) ??
-                  held.find((one) => page !== null && one.schema === page.schema) ??
+                  held.find((one) => page?.kind === 'collection' && rootOf(one) === page.root) ??
                   null)
     );
     /** The entry the snapshot holds under its old key or its new one, with the page's values. */
@@ -142,7 +146,7 @@
                   fields: page.values
               }
     );
-    const schema = $derived(collection?.schema);
+    const schema = $derived(page?.schema);
     /** The hub the entry is of, null while no collection entry is shown. */
     const hub = $derived(entry === null ? null : rootOf(entry));
     const file = $derived(page === null ? null : pageFile(client, page));
@@ -154,7 +158,6 @@
             collection?.key_fault
         )
     );
-    const lifecycle = $derived(offeredStatuses(schema, statusFacets(collection?.entries ?? [])));
     const blocked = $derived(
         blockedBy(file, file !== null && unsavedFile(file.root, file.path), fault)
     );
@@ -272,7 +275,7 @@
                 onclick={openWorkbench}
             />
         {/if}
-        {#if page !== null}
+        {#if page?.schema !== undefined}
             <ToolButton
                 bare
                 label={t('entry_form.delete')}
@@ -297,6 +300,9 @@
     data-collection={collectionKey}
 >
     {#snippet card()}
+        {#if page !== null && page.schema === undefined}
+            <Empty message={t('entry.no_schema')} />
+        {/if}
         {#if collectionKey === '' || key === ''}
             <Surface>
                 <Empty message={t('entry.none')} glyph={t('entry.none_glyph')} />
@@ -316,7 +322,7 @@
                     collection={collectionKey}
                     {schema}
                     projects={projects()}
-                    statuses={lifecycle}
+                    statuses={[]}
                     {file}
                     fault={faults.get(entry.index)}
                     onsaid={say}

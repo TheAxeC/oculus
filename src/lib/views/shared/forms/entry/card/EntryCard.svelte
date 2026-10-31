@@ -13,11 +13,12 @@
     // Nothing here knows what a scheme or an event is. Every action is one call of the write path,
     // except the `extra` ones the collection passes in (Start Agent on a task's card).
     //
-    // Every entry has a page, and the card's title and the strip's Page open it through `onpage`; a
-    // card handed none draws its title as words and has no Page. The page holds the entry's
-    // referrers and, where its `link` names a folder of the hub, the folder's documents, files and
-    // sessions. On that page the card is handed `page`: its strip holds Edit in Page's place, and
-    // EntryFields.svelte adds the Website group and the words of a person's rows.
+    // Every entry with a key has a page, and the card's title and the strip's Page open it through
+    // `onpage`; a card handed none, an entry with no key among them, draws its title as words and
+    // has no Page. The page holds the entry's referrers and, where its `link` names a folder of the
+    // hub, the folder's documents, files and sessions. On that page the card is handed `page`: its
+    // strip holds Edit in Page's place, and EntryFields.svelte adds the Website group and the words
+    // of a person's rows.
     //
     // The entry's fields are changed in its editor, which Edit opens beside the page
     // (views/boards/editor/Editor.svelte), in the file, which Edit in File opens at the entry, or
@@ -66,6 +67,7 @@
     } from '$lib/state/boards/collection';
     import { crossLinks, roleLinks, type Keeps } from '$lib/state/boards/structure/cross-links';
     import { rootOf } from '$lib/state/shared/page/hubs';
+    import { entryWords } from '$lib/state/shared/page/idents';
     import type { ViewSource } from '$lib/state/sessions/view-source';
     import { statusTone, vocabOf } from '$lib/state/shared/words/tones';
     import { t } from '$lib/state/shared/words/text';
@@ -227,10 +229,11 @@
                 folders.open(
                     { root, path },
                     {
-                        label: entry.title === '' ? entry.id : entry.title,
-                        item: own
-                            ? { view: 'entry', state: pageState(collection, entry) }
-                            : undefined
+                        label: entryWords(entry) || entry.id,
+                        item:
+                            own && value !== ''
+                                ? { view: 'entry', state: pageState(collection, entry) }
+                                : undefined
                     }
                 )
         })
@@ -252,7 +255,7 @@
                 client,
                 collection,
                 entry.id,
-                entry.title === '' ? entry.id : entry.title,
+                entryWords(entry) || entry.id,
                 file,
                 fault
             ),
@@ -333,7 +336,7 @@
     <RecordCard
         id={value}
         {cursor}
-        title={entry.title === '' ? entry.id : entry.title}
+        title={entryWords(entry) || entry.id}
         ontitle={onpage}
         tone={status === undefined ? undefined : statusTone(status, root)}
         {pinned}

@@ -7,6 +7,11 @@
 // the id a write names it by. The three kinds are written by different endpoints (`entry`,
 // `feed-field` one field at a time, `career`), which entry-save.ts picks by `kind`.
 //
+// An entry with a key, of a collection or a feed whose file has no `schema:` list that reads, has a
+// page all the same, with no schema: there is nothing to build a form from, so that page is
+// read-only, and a view tells it by `PageEntry.schema` being undefined. A feed entry with no key
+// has no page. The career file has no page without a schema.
+//
 // A page is found again from its name: `<hub>:<collection>:<key>` for an entry of a collection or
 // a feed, the hub and the key being the entry's (the key a feed entry has is the identity the feed
 // views give it, state/shared/page/idents.ts), and `career` for the career file. That is what lets
@@ -47,8 +52,21 @@ export const CAREER = 'career';
 /** The feeds whose entries have a page of their own. */
 export const PAGE_FEEDS: FeedKind[] = ['leads', 'radar'];
 
+/**
+ * The schema of the feed's file in the hub `root`, or, in a feed not merged across hubs, of its one
+ * file; undefined for a file with no schema.
+ */
+export function feedSchemaOf(
+    feed: Pick<FeedData, 'schema'> & { hubSchemas?: Record<string, SchemaField[]> },
+    root: string
+): SchemaField[] | undefined {
+    const held = feed.hubSchemas;
+    if (held === undefined) return feed.schema;
+    return Object.hasOwn(held, root) ? held[root] : undefined;
+}
+
 /** Whether a name is a feed whose entries have a page of their own. */
-export function isPageFeed(name: string): name is FeedKind {
+export function isPageFeed(name: string): name is 'leads' | 'radar' {
     return PAGE_FEEDS.some((kind) => kind === name);
 }
 
@@ -65,7 +83,8 @@ export type PageEntry = {
     /** The name of the hub the entry is of; the empty text for the career file. */
     root: string;
     title: string;
-    schema: SchemaField[];
+    /** The file's schema; undefined for a file with no `schema:` list that reads. */
+    schema: SchemaField[] | undefined;
     /** The saved values by field name. */
     values: Record<string, unknown>;
     /** The fields the form shows and never writes. */
@@ -152,7 +171,7 @@ function entryKey(collection: string, id: string): string {
  */
 function collectionPage(
     key: string,
-    schema: SchemaField[],
+    schema: SchemaField[] | undefined,
     primaryKey: string | null,
     entry: Entry,
     others: readonly Entry[],
@@ -179,23 +198,32 @@ function collectionPage(
 /**
  * The page of a feed entry, `ident` being the identity the feed views give it, over the schema of
  * the file of the entry's hub: the schema the merged feed holds for that hub, or, in a feed not
- * merged across hubs, the one file's. The page shows the field that schema flags as the primary
- * key and never writes it, and its title is the entry's display, else its value of that key.
+ * merged across hubs, the one file's, and undefined for a file with no schema. The page shows the
+ * field that schema flags as the primary key and never writes it, and its title is the entry's
+ * display, else its value of that key. A file with no schema has its primary key from its
+ * `collections:` entry, which the feed holds for that hub (`hubPrimaryKeys`) in the same way. An
+ * entry with no key has no page, the position `ident` carries being no name for a tab to hold.
  */
 function feedPage(
     kind: FeedKind,
-    feed: Pick<FeedData, 'entries' | 'schema'> & { hubSchemas?: Record<string, SchemaField[]> },
+    feed: Pick<FeedData, 'entries' | 'schema' | 'primary_key'> & {
+        hubSchemas?: Record<string, SchemaField[]>;
+        hubPrimaryKeys?: Record<string, string>;
+    },
     ident: string,
     settled: SettledStore
 ): PageEntry | null {
     const identOf = feedIdents(kind, feed.entries);
     const found = feed.entries.find((one) => identOf(one) === ident);
     const entry = found ?? (settled.pending(entryKey(kind, ident)) ? {} : undefined);
+    if (entry === undefined || (found !== undefined && feedEntryId(found) === '')) return null;
     const root = found === undefined ? addressOfId(ident).hub : feedRoot(found);
-    const schema = feed.hubSchemas === undefined ? feed.schema : feed.hubSchemas[root];
-    if (entry === undefined || schema === undefined) return null;
+    const schema = feedSchemaOf(feed, root);
+    const keys = feed.hubPrimaryKeys;
+    const named =
+        keys === undefined ? feed.primary_key : Object.hasOwn(keys, root) ? keys[root] : undefined;
     const values = settled.overlay(entryKey(kind, ident), entry);
-    const primaryKey = primaryKeyOf(schema);
+    const primaryKey = schema === undefined ? (named ?? null) : primaryKeyOf(schema);
     const title = entryTitleOf(values, schema, primaryKey);
     return {
         kind: 'feed',
@@ -300,20 +328,19 @@ export function createPages(sources: PageSources, settled: SettledStore): Pages 
         if (snapshot === null) return null;
         const prefix = entryKey(collection, '');
         const found = find(snapshot, collection, [key, settled.renamedFrom(prefix, key)]);
-        const schema = found?.held.schema;
-        if (found !== null && schema !== undefined) {
+        if (found !== null) {
             const { held, entry } = found;
             const values = settled.overlay(entryKey(collection, entry.id), entry.fields);
             const primaryKey = held.primary_key ?? null;
-            return collectionPage(collection, schema, primaryKey, entry, held.entries, values);
+            return collectionPage(collection, held.schema, primaryKey, entry, held.entries, values);
         }
         if (!settled.pending(entryKey(collection, key))) return null;
         // An entry a write added is of the hub its id names, whose file the write went to.
         const { hub } = addressOfId(key);
         const home = collectionsOf(snapshot.entities.collections, collection).find(
-            (one) => one.schema !== undefined && rootOf(one) === hub
+            (one) => rootOf(one) === hub
         );
-        if (home?.schema === undefined) return null;
+        if (home === undefined) return null;
         const values = settled.overlay(entryKey(collection, key), {});
         const primaryKey = home.primary_key ?? null;
         const added: Entry = {

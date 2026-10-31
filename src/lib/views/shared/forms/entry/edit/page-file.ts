@@ -5,10 +5,38 @@
 
 import type { ClientState } from '$lib/state/client/context';
 import { entryById, identityFaults, type IdentityFault } from '$lib/state/boards/collection';
-import { isPageFeed, type PageEntry } from '$lib/state/forms/page-entry';
+import { feedSchemaOf, isPageFeed, type PageEntry } from '$lib/state/forms/page-entry';
 import { fileUnder, keyOf } from '$lib/state/shared/page/hubs';
 import { feedEntryId } from '$lib/state/shared/page/idents';
 import { viewSourceFile, type ViewSource } from '$lib/state/sessions/view-source';
+
+/** The file of the feed `kind` in the hub `root`, the primary hub's named by the configuration. */
+function feedFile(client: ClientState, kind: 'leads' | 'radar', root: string): ViewSource | null {
+    const primary = client.fs.primary();
+    if (root === primary) return viewSourceFile(kind, client.selectors.configMap(), primary);
+    const hubFiles = client.feeds.feed(kind)?.hubFiles ?? {};
+    return Object.hasOwn(hubFiles, root) ? { root, path: hubFiles[root] } : null;
+}
+
+/**
+ * The file of a feed entry with no key, which has no page to read it from, and why a write cannot
+ * address the entry: its file has no primary key, or its value of that key is empty. `schema` says
+ * whether that file has a schema, which decides whether the entry has an Edit row at all.
+ */
+export function keylessFeedEntry(
+    client: ClientState,
+    kind: 'leads' | 'radar',
+    root: string
+): { file: ViewSource | null; fault: IdentityFault; schema: boolean } {
+    const feed = client.feeds.feed(kind);
+    const keys = feed?.hubPrimaryKeys ?? {};
+    const field = Object.hasOwn(keys, root) ? keys[root] : '';
+    return {
+        file: feedFile(client, kind, root),
+        fault: { kind: field === '' ? 'unkeyed' : 'empty', field, value: '', own: true },
+        schema: feed !== null && feedSchemaOf(feed, root) !== undefined
+    };
+}
 
 /**
  * The file the page's entry is in: the career file, the feed file of the entry's hub, or the file
@@ -20,13 +48,7 @@ export function pageFile(client: ClientState, page: PageEntry): ViewSource | nul
     const primary = client.fs.primary();
     if (page.kind === 'career') return viewSourceFile('career', configMap(), primary);
     if (page.kind === 'feed') {
-        if (!isPageFeed(page.collection)) return null;
-        const kind = page.collection;
-        if (page.root === primary) return viewSourceFile(kind, configMap(), primary);
-        const hubFiles = client.feeds.feed(kind)?.hubFiles ?? {};
-        return Object.hasOwn(hubFiles, page.root)
-            ? { root: page.root, path: hubFiles[page.root] }
-            : null;
+        return isPageFeed(page.collection) ? feedFile(client, page.collection, page.root) : null;
     }
     if (page.root === primary)
         return viewSourceFile('collection', configMap(), primary, page.collection);

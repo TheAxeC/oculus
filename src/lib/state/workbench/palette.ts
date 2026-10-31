@@ -31,7 +31,13 @@ import {
 import { filledTextShape, readAs, rowsShape } from '../../data/shapes/shapes.ts';
 import { PREFIX_ROWS } from '../../data/helpers/keys/oculus/palette-table.ts';
 import { PAGE_FEEDS, pageView, revealState } from '../forms/page-entry.ts';
-import { feedIdents, feedRoot, nestedStrings } from '../shared/page/idents.ts';
+import {
+    entryWords,
+    feedEntryId,
+    feedIdents,
+    feedRoot,
+    nestedStrings
+} from '../shared/page/idents.ts';
 import {
     addedLine,
     pickerLine,
@@ -202,8 +208,12 @@ export function buildIndex(
         }
         for (const collection of Object.values(snapshot.entities.collections)) {
             for (const entry of collection.entries) {
-                const label = entry.title || bareId(entry);
-                const page = pageView(bareId(collection), entry.id, label, collection.registry);
+                const label = entryWords(entry) || collection.title;
+                // An entry with no key has no page, so its row opens the view that lists it.
+                const page =
+                    bareId(entry) === ''
+                        ? { view: bareId(collection), state: {} }
+                        : pageView(bareId(collection), entry.id, label, collection.registry);
                 found.push({
                     id: `collection:${collection.id}:${entry.id}`,
                     kind: 'collection',
@@ -224,7 +234,12 @@ export function buildIndex(
             const id = identOf(entry);
             const named = readAs(feedNameShape, entry);
             const label = named?.title ?? named?.subject ?? keyOf(id);
-            const paged = PAGE_FEEDS.includes(kind) ? pageView(kind, id, label) : null;
+            // An entry with no key has no page, so its row opens the view that lists it, and only
+            // a key may go in the tab's state: an identity with no key is a row index.
+            const paged =
+                PAGE_FEEDS.includes(kind) && feedEntryId(entry) !== ''
+                    ? pageView(kind, id, label)
+                    : null;
             found.push({
                 id: `feed:${kind}:${id}`,
                 kind: 'feed',
@@ -232,7 +247,12 @@ export function buildIndex(
                 title: label,
                 text: nestedStrings(entry).join(' '),
                 view: paged === null ? kind : paged.view,
-                state: paged === null ? revealState(kind, id) : paged.state,
+                state:
+                    paged !== null
+                        ? paged.state
+                        : feedEntryId(entry) === ''
+                          ? {}
+                          : revealState(kind, id),
                 ...hubHint(feedRoot(entry), primary)
             });
         }

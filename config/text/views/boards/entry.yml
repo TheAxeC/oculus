@@ -10,6 +10,7 @@ text:
         toolbar: Entry controls
         none: This tab was opened for no entry. Press the title of a card to open its page.
         unknown: 'The file of {0} holds no entry with the key {1}. If it was deleted, Undo in History brings it back and this page shows it again.'
+        no_schema: 'This file has no schema: list that reads, so this entry has no editor. Add one to the file to edit it.'
         no_folder: This entry's link names no folder of the hub, so there are no documents, files or sessions to show.
         reading: Reading the folder ...
         open_collection: 'Show in {0}'

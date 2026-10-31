@@ -2,8 +2,9 @@
     // Layer 3, shared view partial. What refers to a record, each as a link that opens it: the
     // projects whose manifest names a pillar, a domain, a venue, a dataset, a funding scheme or a
     // resource, the people and funding schemes that name an organisation, the projects that name a
-    // person, and the setting that names a resource. The page of such a record draws it below the
-    // card, and the question that asks before the record is deleted names the same things
+    // person, and the setting that names a resource. A setting and a funding scheme with no key
+    // are words, since neither has a page. The page of such a record draws it below the card, and
+    // the question that asks before the record is deleted names the same things
     // (state/forms/referrers.ts is the one answer to what they are). The list is the group every
     // grouping of a view is drawn as (ui/controls/heads/GroupHead.svelte), folded under the key
     // `referrers` in the tab's state (views/shared/card/pane-fold.ts), its body read off a
@@ -23,6 +24,7 @@
 
     const {
         layout: { openView },
+        pages: { pageOf },
         selectors: { registryKey }
     } = useState();
 
@@ -30,6 +32,12 @@
 
     /** Whether the list is open, kept in the tab's state. */
     const fold = usePaneFold();
+
+    /** Whether a referrer is a funding scheme with no key: held under its title, with no page. */
+    function keyless(one: Referrer): boolean {
+        if (one.kind !== 'funding') return false;
+        return pageOf(registryKey('funding', addressOfId(one.id).hub), one.id) === null;
+    }
 
     /** Open a referrer as the tab its kind has; a setting is a name and opens nothing. */
     function open(one: Referrer): void {
@@ -61,6 +69,8 @@
                     <li>
                         {#if one.kind === 'setting'}
                             <span class="what">{t('entry_form.referrer_setting', one.label)}</span>
+                        {:else if keyless(one)}
+                            <span class="what">{one.label}</span>
                         {:else}
                             <span class="link">
                                 <ToolButton

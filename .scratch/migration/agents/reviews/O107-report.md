@@ -17,7 +17,7 @@ Run by the case-run program quoted at the end, `npx vitest run --config <scratch
 | A file with a schema | page with `"schema":[{"field":"name",...}]` | the same | test and case run |
 | No schema, no key | `{"collection":"plain","hub":"hub","key":"","label":"x"} stateRecord=""`: a press opened that tab | `pageView` prints the same state, `identityValue => ""`, so `pageOpener` hands no opener; focus `entryPage => null`; palette row `[{"view":"plain","state":{}}]` | case run and reading; the title as words is the look on landing. The `identityValue`, `entryPage` and palette lines ran after the change only; their before is read in the base copy |
 | A `schema:` that does not read | `collectionSchema => undefined`, page `null` | `undefined`, page as with none | case run |
-| Feed with no schema, entry held | `null` for the named key and for the unkeyed entry | `{"kind":"feed","key":"hub:Named",...,"fixed":["title"]}`; `{"kind":"feed","key":"Unkeyed","root":"lab","writeId":"","fixed":[]}` | test and case run |
+| Feed with no schema, entry held | `null` for the named key and for the unkeyed entry | `{"kind":"feed","key":"hub:Named",...,"fixed":["title"]}`; `null` for the unkeyed entry | test and case run |
 | Feed with no schema, entry not held | `null` | `null` | test and case run |
 | Add to a file with no schema, named key | `null` | `{"key":"hub:new","title":"new",...}` | test and case run |
 | Pending write on such an entry | `null` | `"values":{"name":"b","status":"closed"}` | test and case run |
@@ -100,29 +100,30 @@ From `diff -rq <base copy> <worktree>` over `src`, `tests`, `config`, `docs` and
 
 | File | Lines | On the write list |
 | --- | --- | --- |
-| `src/lib/state/forms/page-entry.ts` | 404 | yes |
+| `src/lib/state/forms/page-entry.ts` | 411 | yes |
 | `src/lib/views/boards/entry/Entry.svelte` | 379 | yes |
 | `src/lib/views/shared/forms/entry/entry-actions.ts` | 319 | yes |
 | `src/lib/views/boards/person/Person.svelte` | 312 | yes |
 | `src/lib/views/boards/editor/editor-target.ts` | 222 | yes |
 | `src/lib/views/boards/collection/Collection.svelte` | 520 | yes; at the limit, the line count unchanged |
-| `src/lib/views/shared/card/feed/LeadCard.svelte` | 432 | yes |
-| `src/lib/views/shared/card/feed/RadarCard.svelte` | 388 | yes |
+| `src/lib/views/shared/card/feed/LeadCard.svelte` | 435 | yes |
+| `src/lib/views/shared/card/feed/RadarCard.svelte` | 398 | yes |
 | `config/text/views/boards/entry.yml` | 28 | yes |
-| `tests/state/forms/page-entry.test.ts` | 351 | yes |
+| `tests/state/forms/page-entry.test.ts` | 384 | yes |
 | `docs/HELP.md` | 606 | yes |
 | `src/lib/data/snapshot/hubs/feeds.ts` | 79 | no: `feedPage` of a file with no schema needs the primary key of the entry's hub, judgment call 1 |
-| `src/lib/data/model/index.ts` | 885 | no: the type of that payload field |
+| `src/lib/data/model/index.ts` | 854 | no: the type of that payload field moved out, `FeedsPayload` now in `model-collections.ts` |
+| `src/lib/data/model/model-collections.ts` | 557 | no: that type's home, beside `FeedData` |
 | `docs/apps.md` | 847 | no: its `feeds` row lists the payload's fields |
-| `src/lib/views/boards/collection/EntryList.svelte` | 158 | no: list mode opens a page from the title too, the same case as the card |
-| `src/lib/views/shared/forms/registry/registry-card.svelte.ts` | 123 | no: the Venues, Data, Domains and Pillars cards open a page through it, the same case |
+| `src/lib/views/boards/collection/EntryList.svelte` | 159 | no: list mode opens a page from the title too, the same case as the card |
+| `src/lib/views/shared/forms/entry/Referrers.svelte` | 125 | no: ruling 610's sentence holds of a funding referrer with no key (repair round 1, item 2) |
+| `src/lib/views/shared/forms/entry/edit/page-file.ts` | 79 | no: a Lit Watch card with no key has no page to read its file and its fault from (repair round 1, item 1) |
 | `src/lib/views/shared/card/record/registry/VenueCard.svelte` | 374 | no: Read from the browser writes the entry, so a page with no schema must not offer it |
 | `src/lib/views/shared/forms/entry/card/EntryCard.svelte` | 365 | no: its head comment "Every entry has a page" became false, and Open Workbench handed a page with no key to the folder's pane |
 | `src/lib/views/boards/focus/rows.ts` | 505 | no: `entryPage` opened a no-key entry from Focus; its doc named `openPage` |
-| `src/lib/state/workbench/palette.ts` | 850 | no: a palette row opened a no-key entry's empty tab |
-| `docs/diagrams/layers.dot`, `layers.svg`, `layer-views.dot`, `layer-views.svg` | 101, 556, 179, 809 | no: written by `npm run diagrams`; the count of imports from views to state, 1514 to 1515 in `layers.dot` |
+| `src/lib/state/workbench/palette.ts` | 854 | no: a palette row opened a no-key entry's empty tab |
 
-`git diff --stat`: `24 files changed, 235 insertions(+), 92 deletions(-)`.
+`git diff --stat`: `22 files changed, 362 insertions(+), 141 deletions(-)`. `npm run diagrams` leaves `docs/diagrams` as on the base: `git status --short docs/diagrams | wc -l` prints 0.
 
 ## The changes to the two cards
 
@@ -133,14 +134,14 @@ Edit on both goes through `editorRows`, and the Add run through `feedDated`, whi
 
 ## Judgment calls the orchestrator may reverse
 
-1. A new payload field, a wire shape the brief does not name: `hubPrimaryKeys?: Record<string, string>` on each feed of the `feeds` channel, the primary key of the feed's file by hub, which apps can read and `docs/apps.md` lists. `mergedFeeds` keeps the primary hub's `primary_key` alone, and `pageFault` calls a feed page with no fixed field unkeyed. Without per-hub keys, every no-schema Lit Watch card of a second hub, or of a workspace with no primary, would have Dismiss and Delete disabled with a false reason. Empty: a file with no key has no row, the page has `fixed: []`. Duplicated: one row per hub by `Object.fromEntries`. Colliding: `feed.hubPrimaryKeys[root]` is read as `hubSchemas[root]` is, so a hub named like an `Object.prototype` member would read the inherited value, unfixed as on `hubSchemas`. Asynchronous paths: none, it is a value of one payload.
+1. A new payload field, a wire shape the brief does not name: `hubPrimaryKeys?: Record<string, string>` on each feed of the `feeds` channel, the primary key of the feed's file by hub, which apps can read and `docs/apps.md` lists. `mergedFeeds` keeps the primary hub's `primary_key` alone, and `pageFault` calls a feed page with no fixed field unkeyed. Without per-hub keys, every no-schema Lit Watch card of a second hub, or of a workspace with no primary, would have Dismiss and Delete disabled with a false reason. Empty: a file with no key has no row, and an entry of it has no key and no page. Duplicated: one row per hub by `Object.fromEntries`. Colliding: `page-entry.ts` reads the field through `Object.hasOwn`, so a hub named like an `Object.prototype` member reads no inherited value; `feed.hubSchemas[root]` on the line above is read without it, as on the base tree. Asynchronous paths: none, it is a value of one payload. Ruled as ruling 611.
 2. The fallback at `Entry.svelte:131` compares `rootOf(one) === page.root` under `page.kind === 'collection'`. The brief says it compares by the file. `collectionsOf` gives one file per hub for a key, since `entities.collections` is keyed by hub and key, so the hub names the file and `PageEntry` needs no new field. The kind guard keeps a feed page off a collection keyed `leads` with no `registry:`.
 3. `Entry.svelte` and `Person.svelte` take `schema` from `page?.schema`, so one fact decides the page. `lifecycle` is removed from both and the card is handed `statuses={[]}`: it held statuses only for a file with no schema, which those pages no longer offer.
 4. The Person page goes beyond the brief's line for it, "no Delete": it also loses Status and gains the line above the card. Plan line O107 and ruling 610 say the page of an entry of such a file has no Status and carries the line, and a person's page is one. `docs/HELP.md:339` stays true.
-5. The ruling's "an entry with no key opens no page" is applied past the collection card: list mode (the title is plain words), registry cards, Focus (`entryPage` null, so a ticker line is words and a Band card opens the collection) and Open Workbench (no page in the documents pane).
+5. The ruling's "an entry with no key opens no page" is applied past the collection card: list mode (the title is plain words), lead and Lit Watch cards, Focus (`entryPage` null, so a ticker line is words and a Band card opens the collection), Open Workbench (no page in the documents pane) and a funding referrer. A registry card needs no case: `normalise.ts:633-640` drops a venue, dataset, pillar, domain or person with no key.
 6. A palette row of an entry with no key opens its collection's view rather than an empty entry tab. Dropping the row was the other choice; it would hide the entry from search.
-7. The line is drawn with `ui/frame/Empty.svelte`, as the Career view draws its sentence, with no glyph. It is centred, as `Empty` is. On `said` lines it would be replaced by a write's answer.
-8. Start Agent stays on the read-only page of a task. It seeds a composer (`composeAt`, `host.seedTask`), and `grep -n "write\|Sync(" src/lib/server/machine/pty/routes.ts` shows it writes no hub file. Recover on a dataset's page stays too: it opens a view.
+7. The line is drawn with `ui/frame/Empty.svelte`, as the Career view draws its sentence, with no glyph. It is centred, as `Empty` is. A write's answer does not replace it: `RecordPage.svelte:61-63` draws `said` in a `Surface` of its own above the card, and the line stays.
+8. Start Agent stays on the read-only page of a task. It seeds a composer (`composeAt`, `host.seedTask`), and `grep -n "write\|Sync(" src/lib/server/machine/pty/routes.ts` shows it writes no hub file. Recover on a dataset's page stays too: it opens a view. "This is me" stays on a read-only Person page, by ruling 611: `markSelf` writes `.oculus/local.yml`, not the people file.
 9. `pageOpener` replaces `openPage` in `Collection.svelte`, which holds the file at 520 lines; `EntryList.svelte`'s `onpage` now answers the opener.
 
 ## Before and after, for the look
@@ -155,23 +156,25 @@ Internal choices need no look; these are what a reader sees. A demo-hub workspac
 | Entry page, collection file with no schema and a named key | the unknown-entry message | the sentence over the card, its fields as text; Show in Files and Open Workbench kept; no Status, Delete or Edit; referrers and folder blocks kept |
 | Venue's page, file with no schema | the unknown-entry message | the sentence over the venue card; no Edit, Edit in File, Delete or Read from the browser |
 | Person's page, people file with no schema | card with Status, no line | the sentence over the card; no Status, Edit or Delete |
-| Card of an entry with no key, in cards, in list mode and in a registry view | title pressable, opens "This tab was opened for no entry" | title is words, no Page; list mode cell is plain text in the cell's colour |
+| Lit Watch card in a file with no schema, two papers of one title | Dismiss and Delete on, and the server refuses a press | both off, with the shared-key words as their title |
+| Card of a collection entry with no key, in cards and in list mode | title pressable, opens "This tab was opened for no entry" | title is words, no Page; list mode cell is plain text in the cell's colour |
+| Lead card and Lit Watch card with no key | Lead: title pressable, opens the unknown-entry message. Lit Watch: the same, with a title; Dismiss and Delete on, a press does nothing | title is words, no Page. Lit Watch: Dismiss and Delete off, with the no-primary-key words, or the empty-key words in a file with a key |
+| Funding referrer with no key, on an organisation's page | a link, opens "The file of funding holds no entry with the key ..." | its label as words, as a setting row is |
 | Focus line or Band card of an entry with no key | opens that empty tab | a line is words; a Band card opens the collection |
-| Palette row of an entry with no key | opens that empty tab | opens the collection's view |
+| Palette row of an entry with no key | opens that empty tab | opens the collection's view; a feed entry's row opens the Leads or Lit Watch view at its card |
 | Open Workbench on a card of an entry with no key | the documents pane held that empty tab | the pane holds no page |
-| Editor tab over such an entry | the gone-record line | the same |
+| Editor tab over such an entry | the gone-record line, `editor.yml:36`, "The snapshot holds no record with the key {0}." | unchanged, by the brief's choice |
 | A key that names no entry | the unknown-entry message | the same |
 
 ## Anything in the brief that was wrong
 
-- "the rows at 196 and 202 change to the page": row 196's key `team:Postdoc T` names nothing, since that hub's file has no primary key and its entry's identity is its first text: `CASE 6 feed no schema, entry held, no key => {"kind":"feed","key":"Unkeyed",...}`. The row changed to the key `'Postdoc T'`, and the hub `named` keeps the `<hub>:<title>` form with a key.
+- "the rows at 196 and 202 change to the page": row 196 is a hub with no schema and no key, which ruling 610 gives no page, and the ruling outranks that line (repair round 1, item 1). The row answers null for the entry's identity `'Postdoc T'`, and a new hub `named` keeps the `<hub>:<title>` form with a key and its page. Row 202 changed as the brief says.
 - The brief names no base copy and no base for `sh utils/unused-exports.sh`, both of which the rules file says it names. The step took both before any change.
 - Case "An Add to a file with no schema": no client path reaches it now. `Collection.svelte` draws Add under `schema !== undefined`, and `new-entry.ts:118` and `:259` refuse such a file. The branch is written and tested at the state level as the brief asks.
 - "Delete of such an entry is live" holds of a card, and it was inert on a Lit Watch card; see the table above.
 
 ## Limitations and sharp edges
 
-- `Referrers.svelte:39` and `EntryFields.svelte`'s `venuePage` can still open a tab with an empty key, if a funding referrer or a venue named by a Literature entry has no key. Left unchanged: both are drawn as controls with no words form, which is a shape of its own, and neither is a card of the entry. Handed back with that reason.
 - An entry with no key and no title shows its id as its title, `hub:`, as before; `EntryCard.svelte` draws `entry.id`.
 - The list's rows of entries with no key share `id`, so `byId` holds the last of them. None of them opens a page, so nothing reads the wrong one.
 - `pageOf(collection, 'hub:')` answers a page of the first no-key entry of a no-schema file. Nothing draws it: `editorRows` answers no row and no tab holds that key.
@@ -202,7 +205,6 @@ Internal choices need no look; these are what a reader sees. A demo-hub workspac
 | `EntryCard.svelte` head | rewritten |
 | `LeadCard.svelte`, `RadarCard.svelte` heads | rewritten |
 | `feeds.ts` head | rewritten |
-| `registry-card.svelte.ts` `onpage` doc | rewritten |
 | `VenueCard.svelte` `readAction` doc | rewritten |
 | `focus/rows.ts` `entryPage` doc | rewritten |
 | `docs/HELP.md:273` | rewritten |
@@ -302,3 +304,79 @@ it('prints the palette row of an entry with no key', () => {
 ```
 
 The first run on the unchanged tree used the same program without the `identityValue`, `entryPage`, `pageFields` and palette lines, which were added afterwards.
+
+## Repair round 1
+
+Every item of `agents/briefs/O107-round-1.md` is done. The sections above were corrected in place where they said something this round changes; this section lists the changes. Open items of the state file: `grep -n "^## Open items" -A3 .scratch/migration/orchestrator-state.md` prints the heading and its paragraph, no item, so there are none to copy.
+
+| Item | State | Change and proof |
+| --- | --- | --- |
+| 1, S1, P1 | DONE | `feedPage` answers null for a found entry with `feedEntryId(found) === ''`; a pending Add, which is not found, keeps its page. `LeadCard.svelte` hands its title and Page `opener`, undefined with no key, which covers both calls in `Leads.svelte`, a file left unchanged. `RadarCard.svelte` tests `record` where it tested the title. `palette.ts` gives such a row no page. `CASE S1 pageOf(leads, Same#1) => null`, `CASE S1 pageOf(leads, team:Kept) => team:Kept`, `CASE S1 pageOf(radar, team:Named) => team:Named` |
+| 2, S2 | DONE | `Referrers.svelte`: `keyless(one)` is a funding referrer `pageOf` finds no page for, and it draws `<span class="what">{one.label}</span>`. An id cannot tell, since `normalise.ts:512` carries such a scheme under its title. `CASE S2 referrer no key => ...<span class="what svelte-1c0mtil">Foo</span>`, `CASE S2 referrer no key: tip to open => false`, `CASE S2 referrer with a key: tip to open => true`. The claim on `EntryFields.svelte` `venuePage` is gone from Limitations |
+| 3, S4 | DONE | judgment call 8 lists "This is me" with ruling 611 |
+| 4, St1 | DONE | `FeedsPayload` moved to `model-collections.ts`, beside `FeedData`, and is re-exported from `model/index.ts:38`. `wc -l src/lib/data/model/index.ts` prints 854; no new file |
+| 5, St2, St3 | DONE | `docs/HELP.md:273` "The title of an entry with a key opens its page: ..."; the heads of `EntryList.svelte` and `Collection.svelte` say a title with no key is words. `wc -l` of `Collection.svelte` prints 520 |
+| 6, St4 | DONE | `git diff --stat -- src/lib/views/shared/forms/registry` prints nothing: the file equals the base |
+| 7, St5 | DONE | `Object.hasOwn(keys, root)` in `feedPage`. `reads a hub's key of a feed with no schema from the hub's own row alone` below |
+| 8, report | DONE | P2: judgment call 7. P3, B3: the row in the before and after table now names cards and list mode. B1: its own row in that table. The editor tab's line: its row says unchanged and quotes the words |
+
+### Work outside the round's list, and why
+
+- `src/lib/views/shared/forms/entry/edit/page-file.ts` and `RadarCard.svelte`: a Lit Watch card read its file and its fault from its page, so item 1 alone would have turned Dismiss and Delete of a paper with no key on, doing nothing when pressed. `keylessFeedEntry(client, 'radar', root)` gives both with no page. `feedFile` is the part of `pageFile` it shares, and `PageFeed` in `page-entry.ts` its type. `CASE S1 radar card, file with no key: why => Writes are off: radar.yml has no primary key, ...`, `CASE S1 radar card, value of the key empty: why => Writes are off: doi `, cut by the program at the word's quote, `CASE S1 radar card with a key: why => none`.
+- `RadarCard.svelte`'s local `record` in `mark` became the derived one.
+- A paper with a key and an empty title now has a page opener, since the test moved from the title to the key; S1 and "a fed entry with a key keeps its page" both read that way.
+
+### Tests
+
+Run on the source as it stood before the round's code change, `npx vitest run tests/state/forms/page-entry.test.ts`: `Tests  3 failed | 27 passed (30)`.
+
+| Test in `describe('pageOf')`, entry G32 | Before the code change | After |
+| --- | --- | --- |
+| finds a feed entry of a workspace with no primary with the schema of its own hub (changed: `found.pageOf('leads', 'Postdoc T')` is `toBeNull()`) | `AssertionError: expected { kind: 'feed', ...(10) } to be null` | passes |
+| finds no page for a feed entry with no key, whatever identity the feed gives it (new) | `AssertionError: expected { kind: 'feed', ...(10) } to be null` | passes |
+| reads a hub's key of a feed with no schema from the hub's own row alone (new) | `AssertionError: expected [ [Function Object] ] to deeply equal []` | passes |
+| finds a feed entry of a file with no schema, named by the key of the file (row 202, unchanged) | passes | passes |
+
+After the last change: `Test Files  1 passed (1)`, `Tests  30 passed (30)`. The cards, the palette and the referrers have no test, no entry of `agents/guarded.md` naming them; the case-run program renders them.
+
+### The case-run program
+
+`npx vitest run --config /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/o107r1/vitest.config.mjs`, over `case-run.test.ts` beside it, both written whole with the Write tool. It renders `Referrers`, `LeadCard` and `RadarCard` by `svelte/server` over a client given a hand-built snapshot and feeds, and it printed `Tests  1 passed (1)`. It ran after the change only.
+
+```
+CASE S1 idents => ["Same#0","Same#1","Same#2","team:Kept"]
+CASE S1 palette row feed:leads:Same#1 => {"view":"leads","state":{"reveal":{"hub":"","key":"Same#1"},"expiredOpen":true}}
+CASE S1 palette row feed:leads:team:Kept => {"view":"entry","state":{"collection":"leads","hub":"team","key":"Kept","label":"Kept"}}
+CASE S1 palette row feed:radar:Loose => {"view":"radar","state":{"reveal":{"hub":"","key":"Loose"},"dismissedOpen":true}}
+CASE S1 lead card no key => ...<h3 class="title svelte-1ec7fl6">Same<!
+CASE S1 lead card with a key => ...<h3 class="title svelte-1ec7fl6"><button type="button" class="open svelte-1ec7fl6">Kept</
+CASE S1 radar card no key => ...<h3 class="title svelte-1ec7fl6">Loose<!
+CASE S1 radar card with a key => ...<h3 class="title svelte-1ec7fl6"><button type="button" class="open svelte-1ec7fl6">Named</
+```
+
+### Verify
+
+`npm run diagrams`, then `npm run test:quick`, one full-list run in this round:
+
+```
+ok      prettier (0.8 s): All matched files use Prettier code style!
+ok      ASCII gate (0.9 s)
+ok      svelte-kit sync (1.8 s)
+ok      eslint (14.5 s)
+ok      svelte-check (57.8 s): 1793471994653 COMPLETED 576 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest checks (196.9 s): Duration  186.05s (transform 94.25s, setup 0ms, import 213.08s, tests 438.49s, environment 5ms)
+ok      vitest (222.6 s): Duration  212.95s (transform 203.15s, setup 0ms, import 403.94s, tests 406.07s, environment 20.54s)
+ok      vitest slow (307.7 s): Duration  298.29s (transform 22.18s, setup 0ms, import 153.77s, tests 1028.89s, environment 18ms)
+test:quick: 309.6 s; every command passed
+test:quick: not covered: tests that reach no changed file within the import depth, other than the checks under tests/checks/source and tests/checks/tree, which run for any change under src, tests or utils; the build, the lint of unchanged files
+```
+
+`sh utils/folder-check.sh` prints nothing. `diff unused-base.txt unused-after.txt` shows only knip's `ERROR:` lines and status line of the base run gone; the round adds no line. The history-word grep over the added lines has one hit, "for a record no file holds now", which says what the record is. ASCII over this report, `LC_ALL=C grep -n '[^ -~]'`, prints nothing.
+
+### Limitations after this round
+
+- A palette row of a feed entry with no key carries the entry's identity, a row index where entries share their first text, in the `reveal` of the Leads or Lit Watch tab until the card is revealed: `Leads.svelte:202` writes `reveal: ''` then. It names no page. If the file changes first, the reveal can land on another card or none. The round asks only that the row have no page opener, and I did not change this.
+- A lead with no key keeps Status and Delete on: `Leads.svelte:122` works out `blocked` with no fault, and a press does nothing, `mark` and `remove` returning on `record === ''`. Unchanged by this step, and outside the round's items.
+- `feed.hubSchemas[root]` in `feedPage` and `feedDated` is read without `Object.hasOwn`, as on the base; the round names `hubPrimaryKeys` alone.
+- The referrer case ran on a hand-built snapshot, not a funding file through `normalise.ts`.
+- Everything a page shows needs the look on landing; no page or server was started.

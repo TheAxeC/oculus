@@ -475,6 +475,34 @@ export type FeedData = {
     key_fault?: KeyFault;
 };
 
+/** The four complete feed states carried together on the `feeds` channel. */
+export type FeedsPayload = Record<
+    FeedKind,
+    FeedData & {
+        ok: true;
+        kind: FeedKind;
+        file: string;
+        /**
+         * The file of this feed in each hub of the workspace, relative to that hub, by the hub's
+         * name. Absent before the hubs are merged.
+         */
+        hubFiles?: Record<string, string>;
+        /**
+         * The schema of this feed's file in each hub of the workspace that carries one, by the
+         * hub's name: the fields a page of one of its entries edits. Absent before the hubs are
+         * merged.
+         */
+        hubSchemas?: Record<string, SchemaField[]>;
+        /**
+         * The primary key of this feed's file in each hub of the workspace that has one, by the
+         * hub's name. Absent before the hubs are merged.
+         */
+        hubPrimaryKeys?: Record<string, string>;
+        missing?: boolean;
+        error?: string;
+    }
+>;
+
 /**
  * The career file (`career_file`): the strategy, its title, the goal it works toward, the next
  * milestone with its day, the order of work and its note; and every section as the file holds it,

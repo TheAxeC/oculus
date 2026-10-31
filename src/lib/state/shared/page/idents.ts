@@ -70,3 +70,11 @@ export function uniqueIdents<T extends object>(
 export function feedIdents(kind: FeedKind, entries: readonly object[]): FeedIdent {
     return uniqueIdents(entries, (entry) => feedIdentity(kind, entry), kind);
 }
+
+/**
+ * The words an entry is shown by: its display, else, for an entry with neither a display nor a key,
+ * its first filled text, the empty text when it holds none.
+ */
+export function entryWords(entry: { title: string; fields: Record<string, unknown> }): string {
+    return entry.title || (nestedStrings(entry.fields).find((text) => text.trim() !== '') ?? '');
+}

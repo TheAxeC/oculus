@@ -367,10 +367,11 @@ export function pageLookup(client: Pick<ClientState, 'selectors' | 'entities'>):
 
 /**
  * The page of the entry `id` of the collection of the key `key` in the hub `root`, as a card's
- * title opens it (views/boards/collection/Collection.svelte `openPage`): the person page for an
+ * title opens it (views/boards/collection/Collection.svelte `pageOpener`): the person page for an
  * entry of the `people` registry, the entry page otherwise, named by the entry's title or by its
  * id when it has none. Null when that hub holds no collection of the key or the collection no such
- * entry, the entry being found by its key in its hub.
+ * entry, the entry being found by its key in its hub, and for an entry with no key, which has no
+ * page.
  */
 export function entryPage(
     key: string,
@@ -381,7 +382,7 @@ export function entryPage(
     const home = collections(key).find((one) => rootOf(one) === root);
     const wanted = bareId({ id, root });
     const entry = home?.entries.find((one) => bareId(one) === wanted);
-    if (home === undefined || entry === undefined) return null;
+    if (home === undefined || entry === undefined || wanted === '') return null;
     return pageView(key, entry.id, entry.title === '' ? entry.id : entry.title, home.registry);
 }
 
