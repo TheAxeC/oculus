@@ -7,13 +7,16 @@
 // added under projects/manuscripts/, its `website.kinds` in its settings file, a career file of its
 // own, the user named by the copy's `local.yml` and given a family name in the copy's people file.
 // The website's own file is a text of this file. A row about the user's names builds the files
-// again from the same input with the user's people entry changed.
+// again from the same input with the user's people entry changed. The paths of `website.files` are
+// read from the merged configuration of the copy and of the shipped defaults, and the watch list
+// (`siteFiles`) is read over a website folder of its own.
 
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, symlinkSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { beforeAll, describe, expect } from 'vitest';
 import { parse } from 'yaml';
-import { rootOf } from '../../../src/lib/data/helpers/hub-names.ts';
+import { HUB_FILE, rootOf } from '../../../src/lib/data/helpers/hub-names.ts';
 import type { Person } from '../../../src/lib/data/model/index.ts';
 import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
 import { localFile } from '../../../src/lib/data/sources/config/local.ts';
@@ -24,13 +27,12 @@ import {
     type WebsiteInput
 } from '../../../src/lib/server/content/audit/website/files.ts';
 import {
-    CV_FILE,
-    INDUSTRY_FILE,
-    PAPERS_FILE,
     readSite,
+    siteFiles,
     type Problem
 } from '../../../src/lib/server/content/audit/website/site.ts';
-import { it, scratchDir } from '../../fixtures/scratch.ts';
+import { foldsCase } from '../../../src/lib/server/core/paths.ts';
+import { it, plantScratch, scratchDir } from '../../fixtures/scratch.ts';
 import { copyHub, published } from './hubs-fixture.ts';
 
 /** The website's sections of the hub's settings file, the row of an accepted paper first. */
@@ -38,12 +40,32 @@ const SETTINGS = `
 website:
   folder: site
   kinds:
-    - { kind: journal, title: Journal papers, stages: [accepted], forms: [journal], order: true, pub_pre: '', pub_post: '(Accepted)' }
+    - { kind: journal, stages: [accepted], forms: [journal], order: true, pub_pre: '', pub_post: '(Accepted)' }
     - { kind: journal, stages: [published], forms: [journal], order: true, pub_pre: 'In: ' }
-    - { kind: papers-in-review, title: Papers in review, stages: [submitted, revision], pub_post: '(Under review)' }
-    - { kind: conference, title: Conference papers, stages: [published], forms: [conference] }
-    - { kind: other-publications, title: Other publications, forms: [tech-report] }
+    - { kind: papers-in-review, stages: [submitted, revision], pub_post: '(Under review)' }
+    - { kind: conference, stages: [published], forms: [conference] }
+    - { kind: other-publications, forms: [tech-report] }
 `;
+
+/** The website's own file, as `website.files.site` ships it. */
+const SITE_PATH = '_data/website.yml';
+
+/** The CV's file, as `website.files.cv` ships it. */
+const CV_PATH = '_data/data.yml';
+
+/** The publications' file, as `website.files.papers` ships it. */
+const PAPERS_PATH = '_data/publications.yml';
+
+/** The employer CVs' file, as `website.files.industry` ships it. */
+const INDUSTRY_PATH = '_data/industry.yml';
+
+/** The four shipped paths, by their key of `website.files`. */
+const SHIPPED = {
+    site: SITE_PATH,
+    cv: CV_PATH,
+    papers: PAPERS_PATH,
+    industry: INDUSTRY_PATH
+};
 
 /** A manifest of a paper: its stage, form and year, then the YAML lines of its records. */
 function manifest(id: string, stage: string, form: string, lead: string, more: string): string {
@@ -200,9 +222,12 @@ awards:
 /** The website's own file. */
 const SITE = `programs:
   federated: { title: Federated learning }
-sections:
-  awards: Awards
 `;
+
+/** The website's own file with its own words, the title of a section and a part of the CV. */
+function siteWith(title: string, author: string): string {
+    return `${SITE}sections:\n  awards: ${title}\n  publications: ${title}\ncv:\n  author: ${author}\n  titles: [${title}]\n`;
+}
 
 /** What the rows read: each generated file's text and parse, and the problems, by manifest id. */
 type Built = {
@@ -213,6 +238,7 @@ type Built = {
 
 let input: WebsiteInput;
 let built: Built;
+let hubDir = '';
 
 /** The files and the problems the input gives. */
 function build(from: WebsiteInput): Built {
@@ -234,8 +260,8 @@ function withSelf(change: (person: Person) => Person): Built {
 
 /** The person block of the CV and the shared one of the employer CVs, in that order. */
 function personals(from: Built): Record<string, unknown>[] {
-    const cv = from.files[CV_FILE].personal as Record<string, unknown>;
-    const shared = from.files[INDUSTRY_FILE].shared as { personal: Record<string, unknown> };
+    const cv = from.files[CV_PATH].personal as Record<string, unknown>;
+    const shared = from.files[INDUSTRY_PATH].shared as { personal: Record<string, unknown> };
     return [cv, shared.personal];
 }
 
@@ -269,14 +295,16 @@ beforeAll(() => {
         self: new Set(people.filter((one) => one.self === true).map((one) => one.id)),
         kinds: websiteSettings(config).kinds,
         rules: auditRules(config),
-        site: readSite(parse(SITE))
+        site: readSite(parse(SITE), SITE_PATH),
+        paths: SHIPPED
     };
     built = build(input);
+    hubDir = hub;
 });
 
 /** The entries of a section of the publications file. */
 function papersOf(section: string): Record<string, unknown>[] {
-    const value = built.files[PAPERS_FILE][section] as { papers: Record<string, unknown>[] };
+    const value = built.files[PAPERS_PATH][section] as { papers: Record<string, unknown>[] };
     return value.papers;
 }
 
@@ -287,7 +315,7 @@ function entryOf(section: string, id: string): Record<string, unknown> | undefin
 
 /** The titles of the entries of every section. */
 function everyTitle(): unknown[] {
-    const value = built.files[PAPERS_FILE];
+    const value = built.files[PAPERS_PATH];
     return Object.values(value).flatMap((one) =>
         typeof one === 'object' && one !== null && 'papers' in one
             ? (one as { papers: { title: unknown }[] }).papers.map((entry) => entry.title)
@@ -300,7 +328,7 @@ const ROWS: { rule: string; check: () => void }[] = [
     {
         rule: 'each of the three files opens with the comment line saying it is generated',
         check: () => {
-            for (const name of [CV_FILE, PAPERS_FILE, INDUSTRY_FILE]) {
+            for (const name of [CV_PATH, PAPERS_PATH, INDUSTRY_PATH]) {
                 expect(built.texts[name].split('\n')[0]).toBe(
                     "# Generated by oculus from the research hub. Change the hub's files and write the website again."
                 );
@@ -308,16 +336,83 @@ const ROWS: { rule: string; check: () => void }[] = [
         }
     },
     {
-        rule: "the sections come in the rows' order, each with the title its first row gives",
+        rule: "the sections come in the rows' order",
         check: () => {
-            const value = built.files[PAPERS_FILE];
-            expect(Object.keys(value)).toEqual([
+            expect(Object.keys(built.files[PAPERS_PATH])).toEqual([
                 'journal',
                 'papers-in-review',
                 'conference',
                 'other-publications'
             ]);
-            expect((value.journal as { title: string }).title).toBe('Journal papers');
+        }
+    },
+    {
+        rule: 'no section of the CV or the publications holds a title, and the publications hold none at the top',
+        check: () => {
+            const site = readSite(parse(siteWith('A title', 'A. Rivera')), SITE_PATH);
+            const { files } = build({ ...input, site });
+            expect('title' in files[PAPERS_PATH]).toBe(false);
+            for (const [key, section] of Object.entries(files[PAPERS_PATH])) {
+                expect([key, Object.keys(section as object)]).toEqual([key, ['papers']]);
+            }
+            for (const [key, section] of Object.entries(files[CV_PATH])) {
+                if (key === 'personal') continue;
+                expect([key, Object.keys(section as object)]).toEqual([key, ['content']]);
+            }
+        }
+    },
+    {
+        rule: 'both person blocks hold the names and the links and nothing of the website file',
+        check: () => {
+            const site = readSite(parse(siteWith('A title', 'A. Rivera')), SITE_PATH);
+            for (const personal of personals(build({ ...input, site }))) {
+                expect(Object.keys(personal)).toEqual(['first-name', 'last-name', 'links']);
+            }
+        }
+    },
+    {
+        rule: "a title or a CV value of the website's own file changes none of the three files",
+        check: () => {
+            const of = (title: string, author: string): Record<string, string> =>
+                build({
+                    ...input,
+                    site: readSite(parse(siteWith(title, author)), SITE_PATH)
+                }).texts;
+            expect(of('Another title', 'Another author')).toEqual(of('A title', 'An author'));
+        }
+    },
+    {
+        rule: 'the files are named by the paths of website.files, in the order a write takes them',
+        check: () => {
+            const paths = { ...SHIPPED, papers: 'data/papers.yml' };
+            expect(websiteFiles({ ...input, paths }).files.map((one) => one.name)).toEqual([
+                CV_PATH,
+                'data/papers.yml',
+                INDUSTRY_PATH
+            ]);
+        }
+    },
+    {
+        rule: 'a hub that sets no website.files reads the four shipped paths, from the merged shipped defaults',
+        check: () => {
+            expect(websiteSettings(loadConfig(engineDir()).config).files).toEqual(SHIPPED);
+            expect(websiteSettings(loadConfig(engineDir(), { hub: hubDir }).config).files).toEqual(
+                SHIPPED
+            );
+        }
+    },
+    {
+        rule: 'a hub that sets one key of website.files reads it, and the shipped value of the others',
+        check: () => {
+            const hub = copyHub(scratchDir('oculus-website-files-one-'), 'hub');
+            writeFileSync(
+                join(hub, HUB_FILE),
+                `${readFileSync(join(hub, HUB_FILE), 'utf8')}\nwebsite:\n  files:\n    cv: data/cv.yml\n`
+            );
+            expect(websiteSettings(loadConfig(engineDir(), { hub }).config).files).toEqual({
+                ...SHIPPED,
+                cv: 'data/cv.yml'
+            });
         }
     },
     {
@@ -462,12 +557,11 @@ const ROWS: { rule: string; check: () => void }[] = [
     {
         rule: "an award's day and time are written unquoted, as the career file and the website write them",
         check: () => {
-            expect(built.texts[CV_FILE]).toContain('date: 2018-01-01 15:59:00-0400\n');
-            const old = parse(built.texts[CV_FILE], { schema: 'yaml-1.1' }) as {
+            expect(built.texts[CV_PATH]).toContain('date: 2018-01-01 15:59:00-0400\n');
+            const old = parse(built.texts[CV_PATH], { schema: 'yaml-1.1' }) as {
                 awards: { content: { date: unknown }[] };
             };
             expect(old.awards.content[0].date).toBe('2018-01-01 15:59:00-0400');
-            expect((built.files[CV_FILE].awards as { title: string }).title).toBe('Awards');
         }
     },
     {
@@ -476,7 +570,7 @@ const ROWS: { rule: string; check: () => void }[] = [
             expect(
                 built.problems.filter((one) => one[1] === 'audit.msg_cv_unknown_person')
             ).toEqual([['', 'audit.msg_cv_unknown_person', ['references.0', 'nobody-known']]]);
-            expect((built.files[CV_FILE].references as { content: unknown[] }).content).toEqual([]);
+            expect((built.files[CV_PATH].references as { content: unknown[] }).content).toEqual([]);
         }
     },
     {
@@ -531,7 +625,7 @@ const ROWS: { rule: string; check: () => void }[] = [
                     ]
                 ]
             ]);
-            const profiles = built.files[INDUSTRY_FILE].profiles as Record<
+            const profiles = built.files[INDUSTRY_PATH].profiles as Record<
                 string,
                 Record<string, { content: Record<string, unknown>[] }>
             >;
@@ -556,7 +650,7 @@ const ROWS: { rule: string; check: () => void }[] = [
     {
         rule: 'a profile row takes from its record the place and the period its section prints, and no other',
         check: () => {
-            const profiles = built.files[INDUSTRY_FILE].profiles as Record<
+            const profiles = built.files[INDUSTRY_PATH].profiles as Record<
                 string,
                 Record<string, { content: Record<string, unknown>[] }>
             >;
@@ -572,4 +666,38 @@ const ROWS: { rule: string; check: () => void }[] = [
 
 describe('the website files the hub gives', () => {
     for (const row of ROWS) it(row.rule, row.check);
+});
+
+/** The paths of `website.files` a row changes, and the keys it leaves out of the watch list. */
+const WATCHED: { row: string; files: Partial<typeof SHIPPED>; out: (keyof typeof SHIPPED)[] }[] = [
+    { row: 'the four shipped paths', files: {}, out: [] },
+    { row: 'a path of a folder of the website', files: { papers: 'data/papers.yml' }, out: [] },
+    { row: 'a path out of the folder', files: { cv: '../outside.yml' }, out: ['cv'] },
+    { row: 'an absolute path', files: { site: '/data/own.yml' }, out: ['site'] },
+    { row: 'an empty path', files: { industry: '' }, out: ['industry'] },
+    { row: 'a link out of the folder', files: { papers: 'linked/papers.yml' }, out: ['papers'] },
+    { row: 'two keys naming one file', files: { cv: PAPERS_PATH }, out: ['cv', 'papers'] },
+    { row: "a path naming the website's folder itself", files: { papers: '.' }, out: ['papers'] },
+    {
+        row: 'two keys differing by letter case, one file where the file system folds it',
+        files: { cv: 'data/Case.yml', papers: 'data/case.yml' },
+        out: foldsCase(tmpdir()) ? ['cv', 'papers'] : []
+    }
+];
+
+describe('the files the audit reads and the watcher hears', () => {
+    for (const { row, files, out } of WATCHED) {
+        it(`are the paths of website.files without the bad ones: ${row}`, () => {
+            const outside = scratchDir('oculus-website-outside-');
+            const dir = plantScratch('oculus-website-site-', {}, ['_data', 'data']);
+            symlinkSync(outside, join(dir, 'linked'));
+            const paths = { ...SHIPPED, ...files };
+            const kept = Object.entries(paths).filter(([key]) => !(out as string[]).includes(key));
+            expect(siteFiles(dir, paths)).toEqual(kept.map(([, path]) => join(dir, path)));
+        });
+    }
+
+    it('are none while the setting names no folder', () => {
+        expect(siteFiles('', SHIPPED)).toEqual([]);
+    });
 });

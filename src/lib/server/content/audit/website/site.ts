@@ -1,31 +1,18 @@
-// Layer 2, server. What the website's own `_data/website.yml` gives the generated files, and the
-// names they share: the research lines a paper may name (`programs:`), the titles of the sections
-// of the CV and of the publications (`sections:`) and the website's parts of the CV's person block
-// (`cv:`). The website keeps these, so the hub holds no word of the website's own and the generated
-// files hold no word that is not the hub's or the website's.
+// Layer 2, server. What the website's own file gives the generated files, the research lines a
+// paper may name (`programs:`), and the one check of the paths of `website.files`, which every
+// reader of the four files goes through. The website's own words (the titles of its sections and
+// the parts of the CV's person block) stay in its own file, read by its templates, so the hub holds
+// no word of the website's and the generated files hold only what the hub gives.
+//
+// A path of `website.files` is relative to the website's folder and is held to it by its real path,
+// so a link out of the folder is caught.
 
-import { join } from 'node:path';
-import { z } from 'zod';
+import { basename, dirname, isAbsolute, join } from 'node:path';
 import { isMap } from '../../../../data/helpers/guards.ts';
 import type { Project } from '../../../../data/model/index.ts';
-
-/** The website's own file, relative to its folder. */
-export const SITE_FILE = '_data/website.yml';
-
-/** The CV's file, relative to the website's folder. */
-export const CV_FILE = '_data/data.yml';
-
-/** The publications' file, relative to the website's folder. */
-export const PAPERS_FILE = '_data/publications.yml';
-
-/** The employer CVs' file, relative to the website's folder. */
-export const INDUSTRY_FILE = '_data/industry.yml';
-
-/** The files the hub's files are written into, in the order a write takes them. */
-const GENERATED = [CV_FILE, PAPERS_FILE, INDUSTRY_FILE] as const;
-
-/** One of the generated files. */
-export type GeneratedName = (typeof GENERATED)[number];
+import type { WebsiteFiles } from '../../../../data/sources/config/settings/files.ts';
+import { seen } from '../../../core/git/run.ts';
+import { below, foldsCase, realPath } from '../../../core/paths.ts';
 
 /** What the website's own file gives the generated files. */
 export type SiteFile = {
@@ -33,10 +20,6 @@ export type SiteFile = {
     path: string;
     /** The keys of `programs:`, the research lines a paper may name. */
     programs: string[];
-    /** The title of each section of the CV and of the publications, by the section's key. */
-    sections: Record<string, string>;
-    /** The website's parts of the CV's person block, as the file holds them. */
-    cv: Record<string, unknown>;
 };
 
 /** The catalog sentences a Problem is said with. */
@@ -64,26 +47,11 @@ export type Problem = {
     kind?: 'data';
 };
 
-/** A map's texts, by key, the other values left out. */
-const textsShape = z
-    .record(z.string(), z.unknown())
-    .transform((map) =>
-        Object.fromEntries(
-            Object.entries(map).flatMap(([key, value]) =>
-                typeof value === 'string' ? [[key, value]] : []
-            )
-        )
-    );
-
-/** The website's own file read for what the generated files take from it. */
-export function readSite(value: unknown): SiteFile {
-    const map = isMap(value) ? value : {};
-    const sections = textsShape.safeParse(map.sections);
+/** The website's own file at `path` read for what the generated files take from it. */
+export function readSite(value: unknown, path: string): SiteFile {
     return {
-        path: SITE_FILE,
-        programs: isMap(map.programs) ? Object.keys(map.programs) : [],
-        sections: sections.success ? sections.data : {},
-        cv: isMap(map.cv) ? map.cv : {}
+        path,
+        programs: isMap(value) && isMap(value.programs) ? Object.keys(value.programs) : []
     };
 }
 
@@ -95,12 +63,62 @@ export function websiteDir(hub: string, folder: string): string {
     return folder === '' ? '' : join(hub, folder);
 }
 
-/** The files the audit reads in the website's folder, absolute: its own and the three generated. */
-export function siteFiles(dir: string): string[] {
-    return dir === '' ? [] : [SITE_FILE, ...GENERATED].map((name) => join(dir, name));
+/**
+ * Where a path comes to on disk: its real path, or for a file that is not there the real path of
+ * the nearest folder that is, with the rest of the path after it. A link that leads nowhere comes
+ * to no place, since nothing tells where a write through it would land.
+ */
+function placeOf(path: string): string | null {
+    const real = realPath(path, true);
+    if (real !== null) return real;
+    if (seen(path)) return null;
+    const parent = dirname(path);
+    if (parent === path) return path;
+    const place = placeOf(parent);
+    return place === null ? null : join(place, basename(path));
 }
 
-/** The title the website's file gives a section, absent when it gives none. */
-export function titleOf(site: SiteFile, key: string): string | undefined {
-    return Object.hasOwn(site.sections, key) ? site.sections[key] : undefined;
+/** A path of `website.files` that cannot be used: its dotted key and the value the key holds. */
+type BadPath = { key: string; value: string };
+
+/** The keys of `website.files`, in the order a finding names them. */
+const FILE_KEYS = ['site', 'cv', 'papers', 'industry'] as const;
+
+/**
+ * The paths of `website.files` that cannot be used, checked together: a path that is empty, is
+ * absolute or comes to no place under the website's folder, and every path of two keys that name
+ * one file.
+ */
+export function badPaths(dir: string, files: WebsiteFiles): BadPath[] {
+    const real = placeOf(dir);
+    const folds = real !== null && foldsCase(real);
+    const spelled = (place: string | null): string | null =>
+        folds ? (place?.toLowerCase() ?? null) : place;
+    const root = spelled(real);
+    const places = FILE_KEYS.map((key) => {
+        const value = files[key];
+        const place = value === '' || isAbsolute(value) ? null : placeOf(join(dir, value));
+        return { key, value, place: spelled(place) };
+    });
+    return places
+        .filter(
+            ({ place }, at) =>
+                place === null ||
+                root === null ||
+                !below(place, root) ||
+                places.some((other, there) => there !== at && other.place === place)
+        )
+        .map(({ key, value }) => ({ key: `website.files.${key}`, value }));
+}
+
+/**
+ * The files the audit reads in the website's folder, absolute: its own and the three generated,
+ * without a path that cannot be used.
+ */
+export function siteFiles(dir: string, files: WebsiteFiles): string[] {
+    if (dir === '') return [];
+    const bad = badPaths(dir, files).map((one) => one.value);
+    return FILE_KEYS.map((key) => files[key])
+        .filter((path) => !bad.includes(path))
+        .map((path) => join(dir, path));
 }

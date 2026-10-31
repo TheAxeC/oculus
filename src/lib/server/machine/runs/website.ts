@@ -7,11 +7,12 @@
 // terminal's, and the page reads its exit from the terminals list.
 //
 // A press is refused, with nothing written, while the user is not known, while `website.folder`
-// names no folder or one that is not there, while the last run of the command still runs, and when
-// the writer could not take one of the three files: every file is checked as the writer's upload
-// checks it before the first is written, and a file the writer still refuses puts the files of the
-// press already written back as they were. Each refusal is a word of WEBSITE_REFUSALS with the
-// names its sentence is about.
+// names no folder or one that is not there, while a path of `website.files` cannot be used, which
+// is refused before the website's own file is read and before an approval is asked, while the last
+// run of the command still runs, and when the writer could not take one of the three files: every
+// file is checked as the writer's upload checks it before the first is written, and a file the
+// writer still refuses puts the files of the press already written back as they were. Each refusal
+// is a word of WEBSITE_REFUSALS with the names its sentence is about.
 
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import { basename, dirname, join, relative } from 'node:path';
@@ -35,7 +36,7 @@ import { runOps, type OpsTarget } from '../../files/fs/ops.ts';
 import { writeOwnText } from '../../files/source/list-entries.ts';
 import { auditRules, slurp } from '../../content/audit/rules.ts';
 import { websiteFiles, type GeneratedFile } from '../../content/audit/website/files.ts';
-import { readSite, SITE_FILE, websiteDir } from '../../content/audit/website/site.ts';
+import { badPaths, readSite, websiteDir } from '../../content/audit/website/site.ts';
 
 /** What a press needs from the server that holds the portfolio. */
 export type WebsiteWriteOptions = StartOptions & {
@@ -142,11 +143,13 @@ function builtFiles(
     if (!existsSync(dir) || !statSync(dir).isDirectory()) {
         return refused('website-folder-missing', [setting.folder]);
     }
+    const bad = badPaths(dir, setting.files).at(0);
+    if (bad !== undefined) return refused('website-bad-path', [bad.key, bad.value]);
     let site: unknown;
     try {
-        site = parse(slurp(join(dir, SITE_FILE)));
+        site = parse(slurp(join(dir, setting.files.site)));
     } catch {
-        return refused('website-site-unreadable', [SITE_FILE]);
+        return refused('website-site-unreadable', [setting.files.site]);
     }
     const ours = <T extends { root?: string }>(all: Record<string, T>): T[] =>
         Object.values(all).filter((one) => rootOf(one) === primary.key);
@@ -158,7 +161,8 @@ function builtFiles(
         self,
         kinds: setting.kinds,
         rules: auditRules(config),
-        site: readSite(site)
+        site: readSite(site, setting.files.site),
+        paths: setting.files
     });
     return { files: built.files, dir, cv: setting.cv };
 }

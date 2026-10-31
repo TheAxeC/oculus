@@ -303,28 +303,36 @@ The hub's own settings. A key of oculus's `config/catalogs/vocab.yml` set here i
 #       - { stages: { words: [accepted, published] }, folders: [projects/archive/published] }
 
 # The website the primary hub's files are written into, a setting of the primary hub only. `folder`
-# is the website's folder relative to the hub: the Career view's Write the website writes its
-# _data/data.yml, _data/publications.yml and _data/industry.yml from the hub's files, and the audit
-# compares the three with what the hub gives; empty writes and checks nothing. `cv` is the command
-# run in that folder once the files are written, approved on its first run; empty runs nothing.
-# `kinds` are the sections of the publications file in order: a manifest carrying `publication:`
-# goes to the section `kind` of the first row whose `stages` hold its stage and whose `forms` hold
-# its form, a row leaving one out placing no condition on it; `title` is the section's title,
-# `order` whether its entries say the user's place among the authors, and `pub_pre` and `pub_post`
-# the words printed before and after an entry's venue. A manifest no row takes gives no entry and
-# a finding.
+# is the website's folder relative to the hub: the Career view's Write the website writes the three
+# files of `files` named `cv`, `papers` and `industry` from the hub's files, and the audit compares
+# the three with what the hub gives; empty writes and checks nothing. `cv` is the command run in
+# that folder once the files are written, approved on its first run; empty runs nothing. `kinds`
+# are the sections of the publications file in order: a manifest carrying `publication:` goes to
+# the section `kind` of the first row whose `stages` hold its stage and whose `forms` hold its form,
+# a row leaving one out placing no condition on it; `order` is whether its entries say the user's
+# place among the authors, and `pub_pre` and `pub_post` the words printed before and after an
+# entry's venue. A manifest no row takes gives no entry and a finding. `files` gives the website's
+# four files, each a path relative to its folder, `site` its own file; a hub sets any of them alone
+# and the others stay as shipped. A path that is empty, is absolute, leaves the folder or names the
+# file of another key stops Write the website and is one finding of the audit. The headings of the
+# sections are the website's own, in `sections:` of its own file.
 # website:
 #   folder: ''
 #   cv: ''
 #   kinds: []
+#   files:
+#     site: _data/website.yml
+#     cv: _data/data.yml
+#     papers: _data/publications.yml
+#     industry: _data/industry.yml
 #   example:
 #   website:
 #     folder: site
 #     cv: python _scripts/cv_pdf_generator.py --save --quiet
 #     kinds:
-#       - { kind: thesis, title: Thesis, forms: [thesis] }
-#       - { kind: papers-in-review, title: Papers in review, stages: [submitted, revision], pub_pre: "Submitted to ", pub_post: "(Under review)" }
-#       - { kind: journal, title: Journal papers, stages: [accepted, published], forms: [journal], order: true }
+#       - { kind: thesis, forms: [thesis] }
+#       - { kind: papers-in-review, stages: [submitted, revision], pub_pre: "Submitted to ", pub_post: "(Under review)" }
+#       - { kind: journal, stages: [accepted, published], forms: [journal], order: true }
 
 # The values of the settings apps declare, by the setting's whole key. The Settings view writes it.
 # app_settings: {}
@@ -953,7 +961,7 @@ stage: nascent          # nascent, scoping, de-risking, exploring, in-prep, buil
                         # the Code link come from the rest of the manifest
 #   authors: ""         # the authors as the website prints them
 #   book: ""            # the venue as the website prints it
-#   program: []         # research lines, keys of programs: of the website's _data/website.yml
+#   program: []         # research lines, keys of programs: of the website's own file
 #   url: ""             # the address the title links to
 #   links: []           # { name, url } rows in the order the website prints them, Code left out
 #   abstract: ""
@@ -1782,7 +1790,6 @@ schema:
     fields:
       - { field: location, type: text, help: "In shared: the place every employer CV prints." }
       - { field: email, type: text, help: "In shared: the email every employer CV prints." }
-      - { field: parts, type: tags, help: "In shared: the keys of the website's cv: block every employer CV prints." }
       - { field: links, type: tags, help: "In shared: the names of the user's links every employer CV prints." }
       - { field: titles, type: tags, help: "The lines printed under the name." }
       - field: summary
@@ -1869,7 +1876,7 @@ title: Career strategy
 # references:
 #   - { person: a-person, reason: "PhD supervisor" }
 # profiles:
-#   shared: { location: "A city", email: "me@example.org", parts: [], links: [linkedin] }
+#   shared: { location: "A city", email: "me@example.org", links: [linkedin] }
 #   industry:
 #     experience:
 #       title: Experience

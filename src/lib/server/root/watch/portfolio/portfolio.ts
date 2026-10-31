@@ -654,7 +654,11 @@ export function watchPortfolio(
             named = (path) => byHub.some((one) => one(path));
             // A workspace repository's project is audited with the primary hub alone.
             watchAuditFiles(
-                auditFiles(siteFiles(siteDir), primaryDir === null ? [] : roots, auditing)
+                auditFiles(
+                    siteFiles(siteDir, website.files),
+                    primaryDir === null ? [] : roots,
+                    auditing
+                )
             );
             watchRootParents(roots);
             for (const root of roots) openFile(join(root.dir, MANIFEST));

@@ -31,8 +31,16 @@ audit:
   required_sections: []
   stage_folders: []
 
-# The website the primary hub's files are written into, a setting of that hub kept in its .oculus/config.yml and off here: its folder relative to the hub (folder), the command run in that folder once the files are written (cv), and the sections of its publications with the papers each takes (kinds).
-website: { folder: '', cv: '', kinds: [] }
+# The website the primary hub's files are written into, a setting of that hub kept in its .oculus/config.yml and off here: its folder relative to the hub (folder), the command run in that folder once the files are written (cv), the sections of its publications with the papers each takes (kinds), and its four files, each a path relative to its folder (files): the website's own file (site) and the three the hub's files are written into (cv, papers, industry).
+website:
+  folder: ''
+  cv: ''
+  kinds: []
+  files:
+    site: _data/website.yml
+    cv: _data/data.yml
+    papers: _data/publications.yml
+    industry: _data/industry.yml
 
 
 # === The Focus board =========================================================

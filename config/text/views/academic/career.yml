@@ -24,14 +24,15 @@ text:
         references: References
         website: Write the website
         website_glyph: publish
-        website_tip: "Write _data/data.yml, _data/publications.yml and _data/industry.yml in the website's folder from the hub's files. website.cv names no command, so nothing runs after them."
-        website_tip_run: "Write _data/data.yml, _data/publications.yml and _data/industry.yml in the website's folder from the hub's files, then run {0} there."
+        website_tip: "Write {0}, {1} and {2} in the website's folder from the hub's files. website.cv names no command, so nothing runs after them."
+        website_tip_run: "Write {0}, {1} and {2} in the website's folder from the hub's files, then run {3} there."
         website_approve: 'The command {0} runs in the website folder only once you approve it; a changed text asks again.'
         website_approve_yes: Approve and Write
         website_no_hub: The workspace has no primary hub, so the website was not written.
         website_no_person: 'The user is not known: no entry of people.yml is marked self, so the website is not written.'
         website_no_folder: 'The setting website.folder is not set, so the website is not written.'
         website_folder_missing: 'The website folder {0} that website.folder names is not there, so nothing was written.'
+        website_bad_path: "The setting {0} holds '{1}': it must name a file inside the website's folder that no other key of website.files names, so nothing was written."
         website_site_unreadable: "The website's {0} does not read as YAML, so nothing was written."
         website_already_running: 'The command {0} still runs from the last press, so nothing was written.'
         website_unwritable: '{0} could not be written, so none of the three files was written.'

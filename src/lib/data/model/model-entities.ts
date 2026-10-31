@@ -237,7 +237,7 @@ export type Publication = {
     authors?: string;
     /** The venue as the website prints it. */
     book?: string;
-    /** The website's research lines the paper belongs to, keys of `programs:` in website.yml. */
+    /** The website's research lines the paper belongs to, keys of `programs:` of its own file. */
     program?: string[];
     url?: string;
     /** The paper's other links, in the order the website prints them, the code link left out. */

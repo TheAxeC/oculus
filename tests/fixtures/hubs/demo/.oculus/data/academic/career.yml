@@ -70,7 +70,6 @@ schema:
     fields:
       - { field: location, type: text, help: "In shared: the place every employer CV prints." }
       - { field: email, type: text, help: "In shared: the email every employer CV prints." }
-      - { field: parts, type: tags, help: "In shared: the keys of the website's cv: block every employer CV prints." }
       - { field: links, type: tags, help: "In shared: the names of the user's links every employer CV prints." }
       - { field: titles, type: tags, help: "The lines printed under the name." }
       - field: summary
@@ -163,7 +162,7 @@ references:
   - { person: c-senior, reason: "PhD supervisor" }
 
 profiles:
-  shared: { location: "A city", email: "me@example.org", parts: [], links: [github] }
+  shared: { location: "A city", email: "me@example.org", links: [github] }
   industry:
     titles: ["Machine learning engineer"]
     experience:

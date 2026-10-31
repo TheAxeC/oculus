@@ -1,12 +1,12 @@
-In flight (2 of 6 slots in use):
-- O105 (the website keeps its own words), staged on main, waits for the look.
-- O106 (cards and the entry page), reviewed over round 1, lands after O105.
+In flight (1 of 6 slots in use):
+- O106 (cards and the entry page), reviewed over round 1, landing.
 
 Queued, in order (0 steps): none.
 
 Owed looks: none.
 
 Landed, newest first:
+- O105 (the website keeps its own words), 2026-10-31; hub f35ad1faf; web 33ff3b0.
 - O104 (one page frame and one editor), 2026-10-30; hub 2db7d35dd.
 - O101 (the Zenodo deposit), 2026-10-30; hub 6abb17c8b.
 - O102 (the website data files from oculus), 2026-10-30; hub 9e297c9c5; web 574da70.

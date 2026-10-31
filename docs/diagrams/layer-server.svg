@@ -361,7 +361,7 @@
 <g id="node39" class="node">
 <title>folder server/content to folder server/core</title>
 <polygon fill="none" stroke="none" points="142.33,-286.76 127.67,-286.76 127.67,-274.28 142.33,-274.28 142.33,-286.76"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="135" y="-278.12" font-family="Helvetica,Arial,sans-serif" font-size="8.00">33</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="135" y="-278.12" font-family="Helvetica,Arial,sans-serif" font-size="8.00">35</text>
 </g>
 <!-- folder server/content&#45;&gt;folder server/content to folder server/core -->
 <g id="edge66" class="edge">

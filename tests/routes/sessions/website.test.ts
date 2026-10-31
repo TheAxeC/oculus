@@ -2,9 +2,9 @@
 // three files through the Files writer, one History record each that its Undo takes back, then runs
 // `website.cv` in the website's folder as a task terminal after the approval a project command
 // takes. A press is refused, with nothing written, while the user is not known, while
-// `website.folder` names no folder or one that is not there, while the last run of the command
-// still runs, and when the writer cannot take one of the three files; a file the writer refuses
-// after the first was written puts the written ones back.
+// `website.folder` names no folder or one that is not there, while a path of `website.files` cannot
+// be used, while the last run of the command still runs, and when the writer cannot take one of the
+// three files; a file the writer refuses after the first was written puts the written ones back.
 // @module-tag slow: its cases write a hub copy of their own and time out under the load of a full
 // run.
 //
@@ -37,12 +37,6 @@ import {
 } from '../../../src/lib/server/machine/approvals/approvals.ts';
 import { listTerminals } from '../../../src/lib/server/machine/pty/sessions.ts';
 import {
-    CV_FILE,
-    INDUSTRY_FILE,
-    PAPERS_FILE,
-    SITE_FILE
-} from '../../../src/lib/server/content/audit/website/site.ts';
-import {
     handleWebsitePost,
     type WebsiteWriteOptions
 } from '../../../src/lib/server/machine/runs/website.ts';
@@ -59,8 +53,20 @@ const TOKEN = 'a-website-token';
 /** The website's folder inside the hub. */
 const FOLDER = 'site';
 
+/** The website's own file, as `website.files.site` ships it. */
+const SITE_PATH = '_data/website.yml';
+
+/** The CV's file, as `website.files.cv` ships it. */
+const CV_PATH = '_data/data.yml';
+
+/** The publications' file, as `website.files.papers` ships it. */
+const PAPERS_PATH = '_data/publications.yml';
+
+/** The employer CVs' file, as `website.files.industry` ships it. */
+const INDUSTRY_PATH = '_data/industry.yml';
+
 /** The three files a press writes, in the order it writes them. */
-const GENERATED = [CV_FILE, PAPERS_FILE, INDUSTRY_FILE];
+const GENERATED = [CV_PATH, PAPERS_PATH, INDUSTRY_PATH];
 
 /** The command the settings file names. */
 const CV = 'make cv';
@@ -83,17 +89,26 @@ let hub = '';
 const log = new WriteLog('hub', () => hub);
 
 /**
- * A hub whose settings file names the website folder `folder` (made unless `make` is false) and the
- * command, with the user set unless `self` is false.
+ * A hub whose settings file names the website folder `folder` (made unless `make` is false), the
+ * command and the paths `files` of `website.files`, with the user set unless `self` is false.
  */
-function worldOf(folder = FOLDER, make = true, self = true): World {
+function worldOf(
+    folder = FOLDER,
+    make = true,
+    self = true,
+    files: Record<string, string> = {}
+): World {
     hub = realpathSync(copyHub(scratchDir('oculus-website-'), 'hub'));
-    appendFileSync(join(hub, HUB_FILE), `\nwebsite:\n  folder: '${folder}'\n  cv: ${CV}\n`);
+    const paths = Object.entries(files).map(([key, path]) => `    ${key}: '${path}'\n`);
+    appendFileSync(
+        join(hub, HUB_FILE),
+        `\nwebsite:\n  folder: '${folder}'\n  cv: ${CV}\n  files:\n${paths.join('') || '    {}\n'}`
+    );
     if (self) writeFileSync(localFile(hub), `self: ${SELF}\n`);
     const site = join(hub, folder);
     if (make && folder !== '') {
         mkdirSync(join(site, '_data'), { recursive: true });
-        writeFileSync(join(site, SITE_FILE), 'programs: {}\n');
+        writeFileSync(join(site, SITE_PATH), 'programs: {}\n');
     }
     log.start('oculus-website-log-');
     const { snapshot } = published([{ name: 'hub', dir: hub }], 'hub');
@@ -150,6 +165,81 @@ beforeEach(() => {
     hub = '';
 });
 
+/** A folder outside the hub, for the links of the rows below. */
+function outsideFolder(): string {
+    return scratchDir('oculus-website-outside-');
+}
+
+/**
+ * The paths of `website.files` a press refuses: the paths set, what the row plants in the website's
+ * folder and in a folder outside the hub, the file of that folder a link of the row leads to, which
+ * the press leaves as it is, and the key and the value the refusal names.
+ */
+const BAD_PATHS: {
+    row: string;
+    files: Record<string, string>;
+    plant?: (site: string, outside: string) => void;
+    kept?: string;
+    key: string;
+    value: string;
+}[] = [
+    {
+        row: 'the CV out of the folder',
+        files: { cv: '../outside.yml' },
+        key: 'website.files.cv',
+        value: '../outside.yml'
+    },
+    {
+        row: "the website's own file out of the folder",
+        files: { site: '../outside.yml' },
+        key: 'website.files.site',
+        value: '../outside.yml'
+    },
+    {
+        row: 'an absolute path whose joined folder is in the website',
+        files: { cv: '/data/cv.yml' },
+        plant: (site) => mkdirSync(join(site, 'data')),
+        key: 'website.files.cv',
+        value: '/data/cv.yml'
+    },
+    {
+        row: 'a path through a link in the folder that points out of it',
+        files: { papers: 'linked/papers.yml' },
+        plant: (site, outside) => symlinkSync(outside, join(site, 'linked')),
+        key: 'website.files.papers',
+        value: 'linked/papers.yml'
+    },
+    {
+        row: 'a file that is a link to a file out of the folder',
+        files: {},
+        plant: (site, outside) => {
+            writeFileSync(join(outside, 'industry.yml'), 'kept: 1\n');
+            symlinkSync(join(outside, 'industry.yml'), join(site, INDUSTRY_PATH));
+        },
+        kept: 'industry.yml',
+        key: 'website.files.industry',
+        value: INDUSTRY_PATH
+    },
+    {
+        row: "the website's own file and the CV on one file",
+        files: { site: CV_PATH },
+        key: 'website.files.site',
+        value: CV_PATH
+    },
+    {
+        row: 'the CV and the publications on one file',
+        files: { cv: PAPERS_PATH },
+        key: 'website.files.cv',
+        value: PAPERS_PATH
+    },
+    {
+        row: 'an empty path',
+        files: { cv: '' },
+        key: 'website.files.cv',
+        value: ''
+    }
+];
+
 describe('a press of Write the website that is refused', () => {
     it('writes nothing and runs nothing while the user is not known', async () => {
         const world = worldOf(FOLDER, true, false);
@@ -203,20 +293,47 @@ describe('a press of Write the website that is refused', () => {
         expect(world.log.listed()).toEqual([]);
         expect(onDisk(world)).toEqual(['_data/publications.yml']);
         expect(world.tmux.starts()).toEqual([]);
+    });
 
-        // A file that is a link to a file outside every root the writer serves.
-        const linked = worldOf();
-        approve(linked);
-        const outside = join(scratchDir('oculus-website-outside-'), 'industry.yml');
-        writeFileSync(outside, 'kept: 1\n');
-        symlinkSync(outside, join(linked.site, '_data', 'industry.yml'));
-        expect((await press(linked)).body).toEqual({
+    it('stops before the first write when a path of website.files names a folder that is not there', async () => {
+        const world = worldOf(FOLDER, true, true, { papers: 'data/papers.yml' });
+        approve(world);
+        expect((await press(world)).body).toEqual({
             error: 'website-unwritable',
-            names: ['_data/industry.yml']
+            names: ['data/papers.yml']
         });
-        expect(linked.log.listed()).toEqual([]);
-        expect(readFileSync(outside, 'utf8')).toBe('kept: 1\n');
-        expect(linked.tmux.starts()).toEqual([]);
+        expect(world.log.listed()).toEqual([]);
+        expect(onDisk(world)).toEqual([]);
+        expect(world.tmux.starts()).toEqual([]);
+    });
+
+    for (const { row, files, plant, kept, key, value } of BAD_PATHS) {
+        it(`names the key of a path of website.files that cannot be used, asks no approval and writes nothing: ${row}`, async () => {
+            const world = worldOf(FOLDER, true, true, files);
+            const outside = outsideFolder();
+            plant?.(world.site, outside);
+            expect(await press(world)).toEqual({
+                status: 409,
+                body: { error: 'website-bad-path', names: [key, value] }
+            });
+            expect(onDisk(world)).toEqual(kept === undefined ? [] : [value]);
+            if (kept !== undefined) {
+                expect(readFileSync(join(outside, kept), 'utf8')).toBe('kept: 1\n');
+            }
+            expect(world.log.listed()).toEqual([]);
+            expect(world.tmux.starts()).toEqual([]);
+        });
+    }
+
+    it("names the configured path of a website's own file that is not YAML, before an approval is asked", async () => {
+        const world = worldOf(FOLDER, true, true, { site: 'data/own.yml' });
+        mkdirSync(join(world.site, 'data'));
+        writeFileSync(join(world.site, 'data', 'own.yml'), 'programs: [a\n  : :\n');
+        expect((await press(world)).body).toEqual({
+            error: 'website-site-unreadable',
+            names: ['data/own.yml']
+        });
+        expect(world.log.listed()).toEqual([]);
     });
 
     it('puts the files it wrote back when a later file is refused once the press has begun', async () => {
@@ -283,6 +400,25 @@ describe('a press of Write the website that is taken', () => {
             expect(onDisk(world)).toEqual(GENERATED.slice(0, GENERATED.length - at - 1));
             expect(existsSync(join(world.site, name))).toBe(false);
         }
+    });
+
+    it('writes the file website.files names and not the shipped one', async () => {
+        const world = worldOf(FOLDER, true, true, { papers: 'data/papers.yml' });
+        mkdirSync(join(world.site, 'data'));
+        approve(world);
+        expect((await press(world)).body.written).toEqual([
+            CV_PATH,
+            'data/papers.yml',
+            INDUSTRY_PATH
+        ]);
+        expect(existsSync(join(world.site, 'data', 'papers.yml'))).toBe(true);
+        expect(onDisk(world)).toEqual([CV_PATH, INDUSTRY_PATH]);
+    });
+
+    it("writes the three files while the website's own file at a configured path is missing", async () => {
+        const world = worldOf(FOLDER, true, true, { site: 'data/own.yml' });
+        approve(world);
+        expect((await press(world)).body.written).toEqual([...GENERATED]);
     });
 
     it('runs the command again in the same terminal once its last run has ended', async () => {

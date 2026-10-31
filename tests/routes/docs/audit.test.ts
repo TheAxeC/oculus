@@ -9,7 +9,9 @@
 // The website's three generated files are compared with what the hub's files give (G125): the files
 // the generator writes give no finding, and a file that differs is one finding naming the file and
 // the first place it differs at, the order of the sections, of the entries and of a links map
-// counted and the order of the keys inside an entry not.
+// counted and the order of the keys inside an entry not. The files are those the paths of
+// `website.files` name; a path that cannot be used is one finding naming its key, and no file is
+// read.
 
 import { join } from 'node:path';
 import { describe, expect } from 'vitest';
@@ -22,12 +24,7 @@ import { auditFindings, hubAuditSetting } from '../../../src/lib/server/content/
 import { auditRules } from '../../../src/lib/server/content/audit/rules.ts';
 import type { WebsiteCheck } from '../../../src/lib/server/content/audit/publications.ts';
 import { websiteFiles } from '../../../src/lib/server/content/audit/website/files.ts';
-import {
-    CV_FILE,
-    PAPERS_FILE,
-    readSite,
-    SITE_FILE
-} from '../../../src/lib/server/content/audit/website/site.ts';
+import { readSite } from '../../../src/lib/server/content/audit/website/site.ts';
 import { holdersOf } from '../../../src/lib/data/helpers/hub-names.ts';
 import { fixtureProject } from '../../fixtures/entities-fixture.ts';
 import { it, plantScratch } from '../../fixtures/scratch.ts';
@@ -351,9 +348,17 @@ describe('the website of the audit', () => {
     const self = new Set([me.id]);
     /** The website's sections: journal papers and conference papers, by form. */
     const kinds: WebsiteKind[] = [
-        { kind: 'journal', title: 'Journal papers', forms: ['journal'] },
-        { kind: 'conference', title: 'Conference papers', forms: ['conference'] }
+        { kind: 'journal', forms: ['journal'] },
+        { kind: 'conference', forms: ['conference'] }
     ];
+    /** The four paths of `website.files` as they ship. */
+    const SHIPPED = {
+        site: '_data/website.yml',
+        cv: '_data/data.yml',
+        papers: '_data/publications.yml',
+        industry: '_data/industry.yml'
+    };
+    const { site: SITE_PATH, cv: CV_PATH, papers: PAPERS_PATH } = SHIPPED;
     /** A published paper the user leads, of the form given, ranked in its section by `rank`. */
     const paper = (folder: string, form: string, rank: number): Project =>
         projectAt(folder, {
@@ -368,35 +373,43 @@ describe('the website of the audit', () => {
         paper('projects/third', 'conference', 1)
     ];
     /** The website's own file. */
-    const siteText = 'programs: {}\nsections:\n  publications: Publications\n';
-    const papersPath = PAPERS_FILE;
+    const siteText = 'programs: {}\n';
+    const papersPath = PAPERS_PATH;
 
     /** The three files the hub's files give, by their path in the website's folder. */
-    function generated(): Record<string, string> {
+    function generated(
+        paths = SHIPPED,
+        from: readonly Project[] = projects,
+        site = readSite(parse(siteText), paths.site)
+    ): Record<string, string> {
         const built = websiteFiles({
-            projects,
+            projects: from,
             collections: [],
             people: [me],
             career: null,
             self,
             kinds,
             rules: auditRules(config),
-            site: readSite(parse(siteText))
+            site,
+            paths
         });
         return Object.fromEntries(built.files.map((file) => [file.name, file.text]));
     }
 
-    /** A hub whose website folder `site` holds the website's own file and the files given. */
-    function siteHub(files: Record<string, string>): string {
-        const placed: Record<string, string> = { [`site/${SITE_FILE}`]: siteText };
+    /**
+     * A hub whose website folder `site` holds the website's own file, its text `own` at the path
+     * `at`, and the files given.
+     */
+    function siteHub(files: Record<string, string>, own = siteText, at = SITE_PATH): string {
+        const placed: Record<string, string> = { [`site/${at}`]: own };
         for (const [name, text] of Object.entries(files)) placed[`site/${name}`] = text;
         return hubOf('', placed, ['site']);
     }
 
-    /** The check of the website in the folder `folder` of the hub. */
-    function checkOf(hub: string, folder = 'site'): WebsiteCheck {
+    /** The check of the website in the folder `folder` of the hub, with the paths given. */
+    function checkOf(hub: string, folder = 'site', files = SHIPPED): WebsiteCheck {
         return {
-            setting: { folder, cv: '', kinds },
+            setting: { folder, cv: '', kinds, files },
             dir: folder === '' ? '' : join(hub, folder),
             people: [me],
             career: null
@@ -416,7 +429,7 @@ describe('the website of the audit', () => {
     }
 
     /** A section of the publications file's value, as the generator writes it. */
-    type Section = { title: string; papers: Record<string, unknown>[] };
+    type Section = { papers: Record<string, unknown>[] };
 
     it('find nothing when the three files on disk are the files the hub gives', () => {
         const hub = siteHub(generated());
@@ -473,11 +486,11 @@ describe('the website of the audit', () => {
 
     it('name a file that is missing or does not parse as differing as a whole', () => {
         const files = generated();
-        const hub = siteHub({ ...files, [papersPath]: 'journal: [a\n  : :\n', [CV_FILE]: '' });
+        const hub = siteHub({ ...files, [papersPath]: 'journal: [a\n  : :\n', [CV_PATH]: '' });
         const found = websiteFindings(hub, checkOf(hub));
         expect(found.map((one) => one.message).sort()).toEqual(
             [
-                said('audit.msg_site_differs_whole', CV_FILE),
+                said('audit.msg_site_differs_whole', CV_PATH),
                 said('audit.msg_site_differs_whole', papersPath)
             ].sort()
         );
@@ -497,6 +510,72 @@ describe('the website of the audit', () => {
         const found = websiteFindings(hub, checkOf(hub), new Set());
         expect(found.map((one) => one.message)).toEqual([said('audit.msg_site_no_person')]);
     });
+
+    it("raise nothing about a title or a CV value of the website's own file", () => {
+        const own = `${siteText}sections:\n  publications: A title\ncv:\n  author: An author\n`;
+        const hub = siteHub(generated(), own);
+        expect(websiteFindings(hub, checkOf(hub))).toEqual([]);
+    });
+
+    it('compare the file website.files names, and leave the shipped path alone', () => {
+        const paths = { ...SHIPPED, papers: 'data/papers.yml' };
+        const files = generated(paths);
+        const hub = siteHub({ ...files, 'data/papers.yml': 'journal: []\n' });
+        expect(websiteFindings(hub, checkOf(hub, 'site', paths)).map((one) => one.where)).toEqual([
+            'data/papers.yml'
+        ]);
+        const same = siteHub(files);
+        expect(websiteFindings(same, checkOf(same, 'site', paths))).toEqual([]);
+    });
+
+    it("name the configured path of the website's own file for a research line its programs: lacks", () => {
+        const paths = { ...SHIPPED, site: 'data/own.yml' };
+        const lined: Project = projectAt('projects/lined', {
+            stage: 'published',
+            form: 'journal',
+            lead: [me.id],
+            publication: { authors: 'A. Me', book: 'A venue', rank: 3, program: ['a-line'] }
+        });
+        const site = readSite(parse(siteText), paths.site);
+        const hub = siteHub(generated(paths, [lined], site), siteText, paths.site);
+        const found = findingsOf(hub, [lined], true, checkOf(hub, 'site', paths), self);
+        expect(
+            scopesSaying(found, said('audit.msg_site_program', 'a-line', 'data/own.yml'))
+        ).toEqual(['projects/lined']);
+    });
+
+    /** The paths of each case of a path that cannot be used, and the key its finding names. */
+    const BAD: { row: string; files: Partial<typeof SHIPPED>; key: string; value: string }[] = [
+        {
+            row: 'a path out of the folder',
+            files: { cv: '../outside.yml' },
+            key: 'website.files.cv',
+            value: '../outside.yml'
+        },
+        {
+            row: 'an empty path',
+            files: { papers: '' },
+            key: 'website.files.papers',
+            value: ''
+        },
+        {
+            row: 'two keys naming one file',
+            files: { site: CV_PATH },
+            key: 'website.files.site',
+            value: CV_PATH
+        }
+    ];
+
+    for (const { row, files, key, value } of BAD) {
+        it(`give one finding naming the key of a path that cannot be used and read no file: ${row}`, () => {
+            // A website's own file that does not parse is a finding of its own once it is read.
+            const hub = siteHub(generated(), 'programs: [a\n  : :\n');
+            const check = checkOf(hub, 'site', { ...SHIPPED, ...files });
+            expect(websiteFindings(hub, check).map((one) => [one.where, one.message])).toEqual([
+                [key, said('audit.msg_site_bad_path', key, value)]
+            ]);
+        });
+    }
 });
 
 describe('the stage folders of the audit', () => {

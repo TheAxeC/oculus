@@ -24,19 +24,6 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 
 ```yaml
 dispatch:            # steps in flight, up to six (Z632)
-- step: O105
-  base: eafa79e6e
-  worktree: .agents/worktrees/migration-O105
-  executor: agent
-  worker: claude:opus
-  session_id: a335cf314e42c8f6c
-  launched: 2026-10-30
-  report: .scratch/migration/agents/reviews/O105-report.md
-  builder_usage: 243369 tokens, 280 tool uses, 4052 s; round 1: 320510 tokens, 55 tool uses, 980 s
-  reviewer_report: .scratch/migration/agents/reviews/O105-refuter.md (abfcac510589136aa, claude-opus-5-5, 289085 tokens, 33 tool uses, 1032 s), over round 1: a920bd5bb2132e0e7, claude-opus-5-5, 207458 tokens, 35 tool uses, 683 s
-  brief_check: .scratch/migration/agents/reviews/O105-brief-check.md (ae6e12bde917fae57, claude-opus-5-5, 242743 tokens, 26 tool uses, 662 s)
-  round: 1
-  landing: cherry-picking
 - step: O106
   base: c18dc9126
   worktree: .agents/worktrees/migration-O106
@@ -192,10 +179,10 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
 
 
 
-- 608 (2026-10-31): the look cannot be taken: in Chrome, http://localhost:8790/ and http://127.0.0.1:8790/ both navigate, and every screenshot answers "Can't interact with browser-internal or unparseable URLs". O105 sits staged on main at `landing: cherry-picking`, both patches applied; it waits for the look and for one press of Write the website, which writes the three files.
 
 ## Closed items
 
+- 608 (2026-10-31): closed, 8790 shows in Chrome again (Axel: "8790 is showing"); O105 looked at and landed.
 - 607 (2026-10-31): (a), `min` is removed (Axel: "607 (a)"); booked in `plan.md` Rulings; O106 repair round 1 carries it.
 - The repository goes public as it is, with no history change, at the `1.0.0` release: a LICENSE file with MIT, `"private": true` removed, then the visibility switch (Axel: "I would like to make the repo public", "This means that 605 doesnt exist, since there are NO options").
 - 604 (2026-10-31): (a), a release after O105 and O106, numbered `1.0.0` (Axel: "604 (a), but maybe 1.0.0 ?", then "604 (b)"); booked in `plan.md` Rulings.

@@ -202,13 +202,11 @@ export function paintLimit(
 
 /**
  * One row of `website.kinds`: the key of the section of the website's publications its papers go
- * to, the section's title, the stages and forms the row takes (a side left out takes every one),
- * whether an entry says the user's place among the authors, and the words printed before and after
- * the venue.
+ * to, the stages and forms the row takes (a side left out takes every one), whether an entry says
+ * the user's place among the authors, and the words printed before and after the venue.
  */
 const websiteKindShape = z.object({
     kind: z.string().min(1),
-    title: z.string().optional(),
     stages: z.array(z.string()).optional(),
     forms: z.array(z.string()).optional(),
     order: z.boolean().optional(),
@@ -220,11 +218,22 @@ const websiteKindShape = z.object({
 export type WebsiteKind = z.infer<typeof websiteKindShape>;
 
 /**
- * The website the primary hub's files are written into: its folder relative to the hub, empty when
- * none is set, the command run in it once the files are written, empty for none, and the rows of
- * its publications' sections in the file's order.
+ * The website's four files, each a path relative to its folder: its own file and the three the
+ * hub's files are written into.
  */
-export type WebsiteSettings = { folder: string; cv: string; kinds: WebsiteKind[] };
+export type WebsiteFiles = { site: string; cv: string; papers: string; industry: string };
+
+/**
+ * The website the primary hub's files are written into: its folder relative to the hub, empty when
+ * none is set, the command run in it once the files are written, empty for none, the rows of its
+ * publications' sections in the file's order, and its four files.
+ */
+export type WebsiteSettings = {
+    folder: string;
+    cv: string;
+    kinds: WebsiteKind[];
+    files: WebsiteFiles;
+};
 
 /**
  * The Zenodo deposit of a hub's projects: the base of every call, the seconds one upload is given,
@@ -260,7 +269,11 @@ export function zenodoSettings(
     };
 }
 
-/** Read `website:`'s three keys, each its default when it is missing or wrong. */
+/**
+ * Read `website:`'s keys, each its default when it is missing or wrong. A key of `website.files` is
+ * a key of the hub list of its own (data/helpers/hub-names.ts), so a hub that sets one keeps
+ * oculus's other three.
+ */
 export function websiteSettings(
     config: Record<string, unknown>,
     problems: SettingProblem[] = []
@@ -274,6 +287,12 @@ export function websiteSettings(
     return {
         folder: read.text('website.folder').trim(),
         cv: read.text('website.cv').trim(),
-        kinds
+        kinds,
+        files: {
+            site: read.text('website.files.site').trim(),
+            cv: read.text('website.files.cv').trim(),
+            papers: read.text('website.files.papers').trim(),
+            industry: read.text('website.files.industry').trim()
+        }
     };
 }

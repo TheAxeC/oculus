@@ -1,11 +1,13 @@
 // Layer 2, server. The website's CV file and its employer CVs' file built from the hub. The CV's
-// person block is the user's people entry, its names its `name` and `family`, with the website's
-// own parts (site.ts); its sections are the rows of the career file's lists (`positions`,
-// `degrees`, `awards`, `references`), the entries of the hub's collections that name a CV section
-// (`cv_section`), each supervision entry's students, and the manifests that carry a `cv:` record,
-// each section's rows by their rank and then in the order they are read in. The employer CVs are
-// the career file's `profiles`, whose rows name the records they stand for and take from the first
-// one the place, period, day or address their section prints where they print none of their own.
+// person block is the user's people entry, its names its `name` and `family`, and its links; its
+// sections are the rows of the career file's lists (`positions`, `degrees`, `awards`,
+// `references`), the entries of the hub's collections that name a CV section (`cv_section`), each
+// supervision entry's students, and the manifests that carry a `cv:` record, each section's rows by
+// their rank and then in the order they are read in. The employer CVs are the career file's
+// `profiles`, whose rows name the records they stand for and take from the first one the place,
+// period, day or address their section prints where they print none of their own. A section's
+// title and the person's other details (portrait, titles, author, website) are the website's, which
+// its templates read from its own file.
 //
 // A record is named by its key: a collection entry's key, a manifest's folder name, a career row's
 // `key`. A key two records hold names neither: a row that names it takes nothing from either and is
@@ -15,7 +17,7 @@ import { z } from 'zod';
 import { bareId } from '../../../../data/helpers/hub-names.ts';
 import { isMap } from '../../../../data/helpers/guards.ts';
 import type { Career, Collection, Id, Person, Project } from '../../../../data/model/index.ts';
-import { type Problem, type SiteFile, titleOf } from './site.ts';
+import type { Problem } from './site.ts';
 
 /** What the CV and the employer CVs are built from. */
 export type CvInput = {
@@ -24,7 +26,6 @@ export type CvInput = {
     people: readonly Person[];
     career: Career | null;
     self: ReadonlySet<Id>;
-    site: SiteFile;
 };
 
 /** The fields of a row that carries a title, in the order a row is written. */
@@ -323,27 +324,21 @@ function namesOf(person: Person, problems: Problem[]): Record<string, unknown> {
     return { 'first-name': name.slice(0, -end.length), 'last-name': family };
 }
 
-/** The CV's person block: the names, the website's parts and the user's email, links and ORCID. */
-function personal(site: SiteFile, person: Person, cv: Cv): Record<string, unknown> {
+/** The CV's person block: the names and the user's email, links and ORCID. */
+function personal(person: Person, cv: Cv): Record<string, unknown> {
     const links: Record<string, unknown> = {};
     if (person.email !== undefined) links.email = person.email;
     for (const row of person.links) links[row.name] = row.handle ?? row.url;
     if (person.orcid !== undefined) links.orcid = person.orcid;
-    return { ...cv.names, ...site.cv, links };
+    return { ...cv.names, links };
 }
 
 /** The CV file the hub gives, from the rows read (`built`). */
 export function cvFile(input: CvInput, cv: Cv): Record<string, unknown> {
     const person = selfOf(input);
     const value: Record<string, unknown> = {};
-    if (person !== undefined) value.personal = personal(input.site, person, cv);
-    for (const { key, fields } of SECTIONS) {
-        const title = titleOf(input.site, key);
-        value[key] = {
-            ...(title === undefined ? {} : { title }),
-            content: cv.section(key, fields)
-        };
-    }
+    if (person !== undefined) value.personal = personal(person, cv);
+    for (const { key, fields } of SECTIONS) value[key] = { content: cv.section(key, fields) };
     return value;
 }
 
@@ -400,11 +395,10 @@ function profileOf(profile: Record<string, unknown>, cv: Cv, where: string) {
     return out;
 }
 
-/** The block the employer CVs share: who to print, the names and the links they print. */
+/** The block the employer CVs share: the place, the email and the names of the links they print. */
 const sharedShape = z.object({
     location: z.string().optional(),
     email: z.string().optional(),
-    parts: z.array(z.string()).optional(),
     links: z.array(z.string()).optional()
 });
 
@@ -418,10 +412,6 @@ export function industryFile(input: CvInput, cv: Cv): Record<string, unknown> {
     const shared = sharedShape.safeParse(profiles[SHARED]);
     const block = shared.success ? shared.data : {};
     const person = selfOf(input);
-    const parts: Record<string, unknown> = { ...cv.names };
-    for (const part of block.parts ?? []) {
-        if (input.site.cv[part] !== undefined) parts[part] = input.site.cv[part];
-    }
     const links: Record<string, unknown> = {};
     if (block.location !== undefined) links.location = block.location;
     if (block.email !== undefined) links.email = block.email;
@@ -435,7 +425,7 @@ export function industryFile(input: CvInput, cv: Cv): Record<string, unknown> {
             out[name] = profileOf(profile, cv, `profiles.${name}`);
         }
     }
-    return { shared: { personal: { ...parts, links } }, profiles: out };
+    return { shared: { personal: { ...cv.names, links } }, profiles: out };
 }
 
 export type { Cv };

@@ -56,7 +56,6 @@
         entities: { portfolio },
         fs: { primary },
         layout: { openBeside },
-        selectors: { configMap },
         website
     } = useState();
 
@@ -118,19 +117,10 @@
         return t('career.profiles');
     }
 
-    /** The command Write the website runs after the files, the empty text for none. */
-    const command = $derived.by(() => {
-        const held = configMap().website;
-        if (typeof held !== 'object' || held === null || !('cv' in held)) return '';
-        return typeof held.cv === 'string' ? held.cv.trim() : '';
-    });
-
     const off = $derived(website.off());
     const said = $derived(off === null ? website.said() : { text: off, error: false });
     const asking = $derived(website.asking());
-    const tip = $derived(
-        off ?? (command === '' ? t('career.website_tip') : t('career.website_tip_run', command))
-    );
+    const tip = $derived(website.tip());
 </script>
 
 {#snippet tools()}

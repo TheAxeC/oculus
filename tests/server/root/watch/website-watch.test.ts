@@ -18,11 +18,6 @@ import type { AuditFinding, AuditPayload } from '../../../../src/lib/data/model/
 import { engineDir, loadConfig, textCatalog } from '../../../../src/lib/data/sources/config.ts';
 import { Hub, type Sink } from '../../../../src/lib/server/core/channels.ts';
 import {
-    CV_FILE,
-    INDUSTRY_FILE,
-    PAPERS_FILE
-} from '../../../../src/lib/server/content/audit/website/site.ts';
-import {
     watchPortfolio,
     type PortfolioWatcher
 } from '../../../../src/lib/server/root/watch/portfolio/portfolio.ts';
@@ -36,7 +31,7 @@ const CATALOG = textCatalog(loadConfig(engineDir()).config);
 const FOLDER = 'site';
 
 /** The three files the hub's files are written into, in the order a write takes them. */
-const GENERATED = [CV_FILE, PAPERS_FILE, INDUSTRY_FILE];
+const GENERATED = ['_data/data.yml', '_data/publications.yml', '_data/industry.yml'];
 
 /** The key of the demo's person who is the user here. */
 const SELF = 'rivera-lab';

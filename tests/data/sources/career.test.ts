@@ -353,7 +353,7 @@ describe('what the Career view draws', () => {
         {
             name: 'a profile by its name in the map',
             section: 'profiles',
-            rows: { shared: { location: 'Enschede', parts: ['a'] } },
+            rows: { shared: { location: 'Enschede' } },
             card: {
                 id: 'profiles:shared',
                 title: 'shared',

@@ -71,7 +71,7 @@ options:
     website.folder:
         heading: sources
         section: Website
-        help: "The folder of the website, relative to the hub, whose _data/data.yml, _data/publications.yml and _data/industry.yml the Career view's Write the website writes from the hub's files and the audit compares with what the hub's files give. Empty writes nothing and checks nothing, and a folder that is not there is a finding of the audit. This is a setting of the primary hub, kept in its .oculus/config.yml."
+        help: "The folder of the website, relative to the hub, whose three generated files, the paths website.files.cv, website.files.papers and website.files.industry give, the Career view's Write the website writes from the hub's files and the audit compares with what the hub's files give. Empty writes nothing and checks nothing, and a folder that is not there is a finding of the audit. This is a setting of the primary hub, kept in its .oculus/config.yml."
         control: folder
         empty: true
         allow_missing: true
@@ -80,6 +80,30 @@ options:
         section: Website
         help: "The command Write the website runs in the website's folder once the three files are written, such as the program that builds the CV from them, as a task terminal of the Processes view. The first run of a command text asks to be approved, as a project command does. Empty runs nothing. This is a setting of the primary hub, kept in its .oculus/config.yml."
         control: text
+    website.files.site:
+        heading: sources
+        section: Website
+        help: "The website's own file, a path relative to the website's folder, whose programs: are the research lines a paper may name. A missing file holds none. A path that is empty, is absolute, leaves the folder or names the file of another key of website.files stops Write the website and is a finding of the audit. This is a setting of the primary hub, kept in its .oculus/config.yml."
+        control: text
+        empty: true
+    website.files.cv:
+        heading: sources
+        section: Website
+        help: "The CV's file, a path relative to the website's folder, which Write the website writes from the hub's files and the audit compares with what they give. A path that is empty, is absolute, leaves the folder or names the file of another key of website.files stops Write the website and is a finding of the audit. This is a setting of the primary hub, kept in its .oculus/config.yml."
+        control: text
+        empty: true
+    website.files.papers:
+        heading: sources
+        section: Website
+        help: "The publications' file, a path relative to the website's folder, which Write the website writes from the hub's files and the audit compares with what they give. A path that is empty, is absolute, leaves the folder or names the file of another key of website.files stops Write the website and is a finding of the audit. This is a setting of the primary hub, kept in its .oculus/config.yml."
+        control: text
+        empty: true
+    website.files.industry:
+        heading: sources
+        section: Website
+        help: "The employer CVs' file, a path relative to the website's folder, which Write the website writes from the hub's files and the audit compares with what they give. A path that is empty, is absolute, leaves the folder or names the file of another key of website.files stops Write the website and is a finding of the audit. This is a setting of the primary hub, kept in its .oculus/config.yml."
+        control: text
+        empty: true
     website.kinds:
         heading: sources
         section: Website
@@ -88,10 +112,6 @@ options:
             kind:
                 help: the key of the section of the publications file the row's papers go to
                 control: text
-            title:
-                help: the title of the section, which the first row naming the section gives
-                control: text
-                empty: true
             stages:
                 help: the stages the row holds, compared with the project's stage as written
                 control: multi
@@ -1572,7 +1592,8 @@ descriptions:
                 described_by: reader_step
 groups:
     audit: "The conventions the audit holds the hub's projects to, each off until the hub sets it in its .oculus/config.yml: the files a project must hold, the headings a file must hold while a manifest key has a value, and the folders a project at a stage is kept under."
-    website: "The website the hub's files are written into: its folder, the command run in it once the files are written, and the sections of its publications."
+    website: "The website the hub's files are written into: its folder, the command run in it once the files are written, the sections of its publications and the paths of its four files."
+    website.files: "The website's four files, each a path relative to its folder: its own file and the three the hub's files are written into."
     focus: The Focus board and its command center, how far ahead each kind of date is listed, when a feed or a manifest counts as stale, and which statuses count as open or sent.
     focus.refresh_stale_days: The days after which the Focus refresh strip prompts to refresh a feed, one key for each feed it prompts for.
     file_index: The file finder of the project cards, whether it runs, how many files it lists for a project and which extensions it lists.

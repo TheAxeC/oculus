@@ -1,10 +1,11 @@
 // Layer 2, server. The three files the website is written with, built from the hub (papers.ts,
-// cv.ts) and written as text, and the comparison of one with the file on disk. Each file opens with
-// a comment line saying it is generated and how to change it. A text that another YAML reader would
-// read as another type is quoted (the `compat` tags of YAML 1.1, which the website's CV programs
-// read with), but for a timestamp: an award's day is written plain, as the website writes it. Its
-// offset has no colon, so it matches no YAML 1.1 timestamp, and PyYAML and a YAML 1.2 reader both
-// read it as the text the website's own file gives.
+// cv.ts) under the paths `website.files` gives and written as text, and the comparison of one with
+// the file on disk. Each file opens with a comment line saying it is generated and how to change
+// it. A text that another YAML reader would read as another type is quoted (the `compat` tags of
+// YAML 1.1, which the website's CV programs read with), but for a timestamp: an award's day is
+// written plain, as the website writes it. Its offset has no colon, so it matches no YAML 1.1
+// timestamp, and PyYAML and a YAML 1.2 reader both read it as the text the website's own file
+// gives.
 //
 // Two files are the same when they parse to the same value. The order of the keys of a map counts
 // for the file's own sections and for a `links` map, whose names the website prints in order; the
@@ -12,9 +13,10 @@
 
 import { Document, parse, Schema } from 'yaml';
 import { isMap } from '../../../../data/helpers/guards.ts';
+import type { WebsiteFiles } from '../../../../data/sources/config/settings/files.ts';
 import { built, cvFile, industryFile, type CvInput } from './cv.ts';
 import { papersFile, type PapersInput } from './papers.ts';
-import { CV_FILE, INDUSTRY_FILE, PAPERS_FILE, type GeneratedName, type Problem } from './site.ts';
+import type { Problem } from './site.ts';
 
 /** The comment line each generated file opens with. */
 const HEADER =
@@ -29,14 +31,11 @@ const TIMESTAMP = 'tag:yaml.org,2002:timestamp';
  */
 const COMPAT = new Schema({ schema: 'yaml-1.1' }).tags.filter((tag) => tag.tag !== TIMESTAMP);
 
-/** What the three files are built from. */
-export type WebsiteInput = Omit<PapersInput, 'site'> &
-    Omit<CvInput, 'site'> & {
-        site: PapersInput['site'];
-    };
+/** What the three files are built from, and the paths `website.files` writes them at. */
+export type WebsiteInput = PapersInput & CvInput & { paths: WebsiteFiles };
 
 /** One generated file: its path in the website's folder and its text. */
-export type GeneratedFile = { name: GeneratedName; text: string };
+export type GeneratedFile = { name: string; text: string };
 
 /** A value as the text of a generated file, its comment line first. */
 function fileText(value: unknown): string {
@@ -59,9 +58,9 @@ export function websiteFiles(input: WebsiteInput): { files: GeneratedFile[]; pro
     const papers = papersFile(input);
     const cv = built(input);
     const files: GeneratedFile[] = [
-        { name: CV_FILE, text: fileText(cvFile(input, cv)) },
-        { name: PAPERS_FILE, text: fileText(papers.value) },
-        { name: INDUSTRY_FILE, text: fileText(industryFile(input, cv)) }
+        { name: input.paths.cv, text: fileText(cvFile(input, cv)) },
+        { name: input.paths.papers, text: fileText(papers.value) },
+        { name: input.paths.industry, text: fileText(industryFile(input, cv)) }
     ];
     return { files, problems: [...papers.problems, ...cv.problems] };
 }

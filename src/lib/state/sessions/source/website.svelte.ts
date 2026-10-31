@@ -4,15 +4,17 @@
 // folder as a task terminal (server/machine/runs/website.ts).
 //
 // The button is off, with the sentence saying why, while the user is not known or `website.folder`
-// is empty. A press over a generated file a source tab holds unsaved text of is refused before it
-// is sent, as every write over such a file is (state/sessions/source/write-files.ts,
-// `unsavedAnswer`). A command text not yet approved comes back as its line: the store holds it, the
-// view asks, and approving it posts the approval as a project command's is posted and presses
-// again. Under the button the store says what the last press came to: the files written, then the
-// command running and the status it ended with, read from the terminals list, or the refusal.
+// is empty; its tip names the three paths `website.files` gives and the command of `website.cv`. A
+// press over a generated file a source tab holds unsaved text of is refused before it is sent, as
+// every write over such a file is (state/sessions/source/write-files.ts, `unsavedAnswer`). A
+// command text not yet approved comes back as its line: the store holds it, the view asks, and
+// approving it posts the approval as a project command's is posted and presses again. Under the
+// button the store says what the last press came to: the files written, then the command running
+// and the status it ended with, read from the terminals list, or the refusal.
 
 import { z } from 'zod';
 import { readJson } from '../../../data/shapes/shapes.ts';
+import { foldedPath, joinPath } from '../../../data/helpers/files/paths.ts';
 import {
     WEBSITE_REFUSALS,
     type ChainLine,
@@ -20,13 +22,14 @@ import {
     type Terminal,
     type WebsiteRefusal
 } from '../../../data/model/index.ts';
+import {
+    websiteSettings,
+    type WebsiteSettings
+} from '../../../data/sources/config/settings/files.ts';
 import { postWithToken, type TokenSource } from '../../shared/stores/token-post.ts';
 import { t } from '../../shared/words/text.ts';
 import type { FileLookups } from './write-files.ts';
 import { unsavedAnswer } from './write-files.ts';
-
-/** The files a press writes, in the website's folder. */
-const FILES = ['_data/data.yml', '_data/publications.yml', '_data/industry.yml'];
 
 /** What the store needs from the page. */
 export type WebsiteDeps = {
@@ -49,6 +52,8 @@ type Said = { text: string; error: boolean } | null;
 export type WebsiteStore = {
     /** Why the button is off, or null while a press may be made. */
     off: () => string | null;
+    /** The button's tip: why it is off, or the files a press writes and the command it runs. */
+    tip: () => string;
     busy: () => boolean;
     /** The lines a press waits to have approved, and the folder they run in; null for none. */
     asking: () => { repo: string; lines: ChainLine[] } | null;
@@ -81,16 +86,18 @@ const REFUSAL_WORDS: Record<WebsiteRefusal, string> = {
     'website-no-person': 'career.website_no_person',
     'website-no-folder': 'career.website_no_folder',
     'website-folder-missing': 'career.website_folder_missing',
+    'website-bad-path': 'career.website_bad_path',
     'website-site-unreadable': 'career.website_site_unreadable',
     'website-running': 'career.website_already_running',
     'website-unwritable': 'career.website_unwritable'
 };
 
-/** The folder `website.folder` of the merged configuration names, the empty text for none. */
-function folderOf(config: Record<string, unknown> | null): string {
-    const website = config?.website;
-    if (typeof website !== 'object' || website === null || !('folder' in website)) return '';
-    return typeof website.folder === 'string' ? website.folder.trim() : '';
+/**
+ * The website's settings of the merged configuration, null for a configuration the page does not
+ * hold yet, which names no folder.
+ */
+function settingsOf(config: Record<string, unknown> | null): WebsiteSettings | null {
+    return config === null ? null : websiteSettings(config);
 }
 
 /** Whether the snapshot names the user. */
@@ -109,18 +116,29 @@ export function createWebsite(deps: WebsiteDeps): WebsiteStore {
 
     function off(): string | null {
         if (!selfKnown(deps.snapshot())) return t('career.website_no_person');
-        if (folderOf(deps.config()) === '') return t('career.website_no_folder');
+        if ((settingsOf(deps.config())?.folder ?? '') === '') return t('career.website_no_folder');
         return null;
+    }
+
+    function tip(): string {
+        const setting = settingsOf(deps.config());
+        const reason = off();
+        if (reason !== null || setting === null) return reason ?? '';
+        const { cv, papers, industry } = setting.files;
+        return setting.cv === ''
+            ? t('career.website_tip', cv, papers, industry)
+            : t('career.website_tip_run', cv, papers, industry, setting.cv);
     }
 
     /** The refusal of a press over a generated file a source tab holds unsaved text of. */
     function unsaved(): string | null {
         const root = deps.look.primary();
-        if (root === null) return null;
-        const folder = folderOf(deps.config());
-        for (const name of FILES) {
-            const file = { root, path: `${folder}/${name}` };
-            const answer = unsavedAnswer(file, deps.look, deps.heldUnsaved);
+        const setting = settingsOf(deps.config());
+        if (root === null || setting === null) return null;
+        const { cv, papers, industry } = setting.files;
+        for (const name of [cv, papers, industry]) {
+            const path = foldedPath(joinPath(setting.folder, name)).slice(1);
+            const answer = unsavedAnswer({ root, path }, deps.look, deps.heldUnsaved);
             if (answer !== null) return answer.error ?? '';
         }
         return null;
@@ -190,6 +208,7 @@ export function createWebsite(deps: WebsiteDeps): WebsiteStore {
 
     return {
         off,
+        tip,
         busy: () => state.busy,
         asking: () => state.asking,
         said,

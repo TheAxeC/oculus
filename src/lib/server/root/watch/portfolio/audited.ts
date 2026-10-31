@@ -10,8 +10,8 @@
 // every `required_sections` row. A project's folder may lie at any depth under a scan folder, so a
 // path is matched by the last segments of the event's path. The rows' hub folders are not read: an
 // event on a required path of a project the row leaves alone costs one rebuild that finds nothing
-// new. The website's files the audit compares with what the hub's files give (the three generated
-// data files and `_data/website.yml`, server/content/audit/website/) and the files of a workspace
+// new. The website's files the audit compares with what the hub's files give (the four paths of
+// `website.files` that can be used, server/content/audit/website/) and the files of a workspace
 // repository's project lie outside the recursive watches and are watched one by one (`auditFiles`).
 
 import { join } from 'node:path';

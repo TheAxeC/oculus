@@ -67,6 +67,7 @@ text:
         msg_site_differs: "{0} differs from what the hub's files give, first at {1}: write the website"
         msg_site_differs_whole: "{0} differs as a whole from what the hub's files give, being missing, unreadable or of another kind: write the website"
         msg_site_no_folder: 'the website folder {0} that website.folder names is not there'
+        msg_site_bad_path: "the setting {0} holds '{1}': it must name a file inside the website's folder that no other key of website.files names, so none of the website's files is checked"
         msg_site_no_person: "the person the website is written for is not known: set self in the primary hub's .oculus/local.yml"
         msg_cv_self_names: "the people entry {0}, the user's, has no family, or a name that does not end with a space and its family, so the CV's person blocks carry no names: set family to the end of name"
         msg_site_stage: 'carries a publication record, but the stage {0} lists no paper on the website: give it a stage that does, or take the record out'

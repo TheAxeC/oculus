@@ -4,12 +4,13 @@
 // by the record's `rank`. The record's own fields are written through as it holds them; the title,
 // the year, the user's place among the authors, the words around the venue and the Code link are
 // taken from the rest of the manifest. A manifest the website cannot list is no entry and a problem
-// naming it, which the audit words as a finding (../publications.ts).
+// naming it, which the audit words as a finding (../publications.ts). The headings of the sections
+// are the website's, which its templates read from its own file.
 
 import type { Id, Project } from '../../../../data/model/index.ts';
 import type { WebsiteKind } from '../../../../data/sources/config/settings/files.ts';
 import type { AuditRules } from '../rules.ts';
-import { type Problem, type SiteFile, titleOf } from './site.ts';
+import type { Problem, SiteFile } from './site.ts';
 
 /** What the publications are built from. */
 export type PapersInput = {
@@ -141,8 +142,8 @@ function programProblems(project: Project, site: SiteFile): Problem[] {
         }));
 }
 
-/** A section of the publications file as it is built: its title, its entries and their ranks. */
-type Section = { title?: string; papers: { rank: number; entry: unknown }[] };
+/** A section of the publications file as it is built: its entries and their ranks. */
+type Section = { rank: number; entry: unknown }[];
 
 /** The publications file the hub's manifests give, and the problems of the manifests left out. */
 export function papersFile(input: PapersInput): {
@@ -150,12 +151,7 @@ export function papersFile(input: PapersInput): {
     problems: Problem[];
 } {
     const problems: Problem[] = [];
-    const sections = new Map<string, Section>();
-    for (const row of input.kinds) {
-        const known = sections.get(row.kind);
-        if (known === undefined) sections.set(row.kind, { title: row.title, papers: [] });
-        else known.title ??= row.title;
-    }
+    const sections = new Map<string, Section>(input.kinds.map((row) => [row.kind, []]));
     for (const project of input.projects) {
         if (project.publication === undefined) continue;
         problems.push(...programProblems(project, input.site));
@@ -168,20 +164,15 @@ export function papersFile(input: PapersInput): {
         const section = kind === undefined ? undefined : sections.get(kind.kind);
         if (kind === undefined || section === undefined) continue;
         const order = kind.order === true ? orderOf(project, input.self) : undefined;
-        section.papers.push({
+        section.push({
             rank: project.publication.rank ?? Number.POSITIVE_INFINITY,
             entry: entryOf(project, kind, order)
         });
     }
     const value: Record<string, unknown> = {};
-    const title = titleOf(input.site, 'publications');
-    if (title !== undefined) value.title = title;
     for (const [key, section] of sections) {
-        const papers = [...section.papers].sort((left, right) => left.rank - right.rank);
-        value[key] = {
-            ...(section.title === undefined ? {} : { title: section.title }),
-            papers: papers.map((one) => one.entry)
-        };
+        const papers = [...section].sort((left, right) => left.rank - right.rank);
+        value[key] = { papers: papers.map((one) => one.entry) };
     }
     return { value, problems };
 }

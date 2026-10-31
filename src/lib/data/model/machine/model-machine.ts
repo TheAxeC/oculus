@@ -359,15 +359,17 @@ export type TerminalRefusal = (typeof TERMINAL_REFUSALS)[number];
 
 /**
  * The words a press of Write the website is refused with (POST /api/website): no primary hub or no
- * portfolio yet, the user not known, `website.folder` empty or naming a folder that is not there,
- * the website's own file not readable, the command's last run still running, and a file the writer
- * cannot take. The page says the sentence the catalog holds for each.
+ * portfolio yet, the user not known, `website.folder` empty or naming a folder that is not there, a
+ * path of `website.files` that cannot be used, the website's own file not readable, the command's
+ * last run still running, and a file the writer cannot take. The page says the sentence the catalog
+ * holds for each.
  */
 export const WEBSITE_REFUSALS = [
     'website-no-hub',
     'website-no-person',
     'website-no-folder',
     'website-folder-missing',
+    'website-bad-path',
     'website-site-unreadable',
     'website-running',
     'website-unwritable'
