@@ -7,4 +7,4 @@
 - F5: Decision 1 removed: feeds are inside the ruling; `feedPage` answers a page and the rows at `page-entry.test.ts:196,202` change under open item 610.
 - Line numbers corrected; the word quoted and made true of a schema that does not read; the Add branch and the feed-page line named; the case-run program allowed; look states named.
 
-Usage: a0a4cb0e10cbb5673, claude-opus-5-5; tokens, tool uses and time not in the hand-back.
+Usage: a0a4cb0e10cbb5673, claude-opus-5-5, 229614 tokens, 26 tool uses, 7.1 minutes.
