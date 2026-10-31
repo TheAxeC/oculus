@@ -421,5 +421,6 @@ Each entry is one tree check under `tests/checks/`, kept because a rule in `agen
 - G25. The committed diagrams and the palette page match the source they are drawn from, and in each drawing no label crosses an arrow and no two arrows run along each other. Test: `tests/checks/diagrams/diagrams.test.ts`; `tests/checks/diagrams/palette.test.ts`, 'is what the palette gives now'; `tests/shell/keys/palette-page.test.ts`, describe 'palettePage', every row.
 - G26. Every text-on-background pair the tokens declare is readable under every theme. Test: `tests/checks/look/contrast.test.ts`.
 - G27. The Claude status-line script keeps its input and prints the usage line. Test: `tests/checks/utils/claude-usage.test.ts`.
+- G143. A TypeScript file under src can have its types stripped, as Node does to run it unbuilt. Test: `tests/checks/source/strip-types.test.ts`.
 
 Held under the entries above: `tests/checks/config/integrity.test.ts` (G14), `tests/checks/config/config-folder.test.ts` and `tests/checks/config/config.test.ts` (G12, G13), `tests/checks/source/html-sites.test.ts` (G5).

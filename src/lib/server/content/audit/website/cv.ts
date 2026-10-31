@@ -136,9 +136,11 @@ class Cv {
     /** The places of the records each key was read at, in the order they were read in. */
     private readonly places = new Map<string, string[]>();
     private readonly people = new Map<string, Person>();
+    private readonly input: CvInput;
     private at = 0;
 
-    constructor(private readonly input: CvInput) {
+    constructor(input: CvInput) {
+        this.input = input;
         for (const person of input.people) this.people.set(bareId(person), person);
     }
 
