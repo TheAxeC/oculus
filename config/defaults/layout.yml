@@ -109,13 +109,13 @@ arrangements:
     root:
       kind: pane
       view:
+        - { view: career, pinned: true }
         - { view: funding, pinned: true }
         - { view: events, pinned: true }
         - { view: education, pinned: true }
         - { view: applications, pinned: true }
         - { view: tasks, pinned: true }
         - { view: memories, pinned: true }
-        - { view: career, pinned: true }
   pillars:
     root:
       kind: pane
