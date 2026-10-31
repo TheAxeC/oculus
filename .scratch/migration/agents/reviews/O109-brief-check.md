@@ -210,6 +210,8 @@ Character set: `LC_ALL=C grep -n '[^ -~]' .scratch/migration/agents/briefs/O109.
 - Whether a fresh worktree lacks build-app. It is gitignored, but the O108 worktree holds one, and I did not establish whether its builder made it. The brief's conditional covers both.
 - The second half's own steps, which belong to the orchestrator and are not in the brief.
 
+Usage: af0dc327065b27d02, claude-opus-5-5, 199916 tokens, 23 tool uses, 9.5 minutes
+
 ## Closed
 
 F1 the brief says the second half is the orchestrator's. F2 the build is `npx vite build --mode app`. F3 ruling 613 is named as the yes to the test and its entry, added with its spec.md line at landing. F4 the reason reworded. F5 `tests/server/desktop/start.test.ts` added to Verify. F6 the head comment says what the test does not cover. F7 the folder is the session scratchpad, `TMUX_TMPDIR` set. F8 unused-exports, the history grep and the character check added; the test stays untagged like comment-width. F9 the move of the tag is by `gh release`, after Axel's push of the commits.

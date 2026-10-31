@@ -1,6 +1,6 @@
-In flight (1 of 6 slots in use): O108 (one desktop app).
+In flight (2 of 6 slots in use): O108 (one desktop app), O109 (the app's server starts).
 
-Queued, in order (1 step): O109 (the app's server starts).
+Queued, in order (0 steps): none.
 
 Owed looks: none.
 
