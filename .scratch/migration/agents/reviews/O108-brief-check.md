@@ -119,3 +119,9 @@ The brief dictates no comment or user-facing line; head comments are described a
 - Whether the v1.0.0 archive should be rebuilt without the inert package.ts: the line names that zip, so it stays Axel's and the orchestrator's.
 - Whether G85's wording "the packager makes" should change, beyond its Code line.
 - Whether the installed app works with Axel's hub, which needs a start and a look.
+
+Usage: a0fc607785681fa26, claude-opus-5-5, 166795 tokens, 21 tool uses, 7.5 minutes
+
+## Closed
+
+F1 case 1's first run is a grep, and the brief forbids the script on the unchanged tree. F2 premise rewritten. F3 `app.ts` and `desktop.yml` added to the paths, the branch and key go. F4 `Step` and `checkout` named. F5 `npm run diagrams`, `npm run test:quick`, `utils/unused-exports.sh` and the history grep added. F6 case and Linux row rewritten. F7 first run through the `package.ts` import. F8 case checks `release-steps.ts` under `resources/app`. F9 darwin build case added. F10 and F11 `guarded.md` G85 is the orchestrator's at landing. F12 the two defaults go. F13 wording changed. F14 `npm run app` case added. F15 the brief says the app is already replaced.
