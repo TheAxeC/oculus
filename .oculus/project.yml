@@ -1,5 +1,5 @@
 title: 'Oculus'
-stage: building
+stage: released
 tier: personal
 lead: [axel-faes]
 status:
@@ -25,3 +25,9 @@ repository:
     description: 'A local research workbench: the projects, manuscripts, grants, data and code of a research hub in one VS Code-like app.'
     topics: [academic, electron, latex, research, research-management, sveltekit, vscode, workbench]
     date: 2026-10-21
+cv:
+    url: 'https://github.com/TheAxeC/oculus'
+    duration: '2026 - Current'
+    role: 'Lead Developer'
+    about: 'An open-source desktop workbench that brings the projects, manuscripts, grants, data and code of a research hub into one VS Code-like app.'
+    rank: 9
