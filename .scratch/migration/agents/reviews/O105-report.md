@@ -1,4 +1,4 @@
-NOT done: check 1 of "Verify before you report" did not print "every command passed". Both runs of the list ended `test:quick: ...; failed: vitest, vitest slow`. In the second run the 6 red tests are all timeouts in 5 files this step does not change, and each of the 5 passes when run alone; the rule of the spec's line 26 says the list is not run again for them. Everything else in the brief is done.
+NOT done: check 1 of "Verify before you report" did not print "every command passed" on the final tree. The list's run under "Repair round 1" ended `test:quick: 338.5 s; failed: vitest slow`, by one timeout in `tests/data/hubs/hub-portfolio.test.ts`, a file this step does not change, which passes when run alone; the rule of the spec's line 26 says the list is not run again for it. Everything else in the brief and in repair round 1 is done.
 
 # O105 report
 
@@ -101,8 +101,8 @@ Each case by its name, with the first run and the run after the change:
 | F | kept table 'names the key of a path of website.files that cannot be used, asks no approval and writes nothing', rows 'the CV out of the folder', 'the website's own file out of the folder', 'an absolute path whose joined folder is in the website', 'a path through a link in the folder that points out of it', 'a file that is a link to a file out of the folder' | all fail, lines above | pass |
 | G | kept tests 'names the configured path of a website's own file that is not YAML, before an approval is asked' and 'writes the three files while the website's own file at a configured path is missing' | the first fails, line above; the second passes, a behaviour the change preserves | pass |
 | H | case-run program, the changed generator over a hub that still has `title:` in its 8 rows and `parts:` in its career file | Output block A-first shows both reach the files on the unchanged tree | Output block H |
-| I | `python3 _scripts/cv_pdf_generator.py --quiet`, `python3 _industry/cv_pdf_generator.py --profile analyst --quiet` in each scratch copy, `pdftotext -layout`, `cmp`, `pdfimages -list` | the copy at 4e1437c built with exit 0 | Output block I |
-| J | `bundle exec jekyll build` in each scratch copy, `grep -E 'psec-h\|class="secnav"' -A1`, `cmp`, then every html page compared | the copy at 4e1437c built with exit 0 | Output block J |
+| I | `compare.sh`, quoted below | the copy at 4e1437c built with exit 0 | Output block I |
+| J | `compare.sh`, quoted below | the copy at 4e1437c built with exit 0 | Output block J |
 | K | kept store test 'names the paths the settings give: a path of website.files.cv and no command' | fails, line above | pass |
 | L | read, below | blank heading, stop of the CV | same behaviour, below |
 | M | kept rows 'the website's own file and the CV on one file', 'the CV and the publications on one file' | fail, lines above | pass |
@@ -144,7 +144,7 @@ parsed diff of _data/publications.yml against the disk: 0 {}
 parsed diff of _data/industry.yml against the disk: 0 {}
 ```
 
-Output block A-after (changed source, scratch hub with the hub patch, website with the patch). The program also printed one line per removed key; none is an `added` or `changed` line, as the counts show.
+Output block A-after, whole, run on the final tree with `make-copies.sh` and `compare.sh` below (changed source, scratch hub with the hub patch, website with the patch):
 
 ```
 files built: _data/data.yml, _data/publications.yml, _data/industry.yml
@@ -155,50 +155,84 @@ publications.yml top title: (none)
 publications.yml sections with title: (none)
 industry.yml shared.personal keys: first-name, last-name, links
 parsed diff of _data/data.yml against the disk: 16 { removed: 16 }
+   removed .personal.titles
+   removed .personal.portrait_url
+   removed .personal.footer
+   removed .personal.secondary-title
+   removed .personal.author
+   removed .personal.website
+   removed .references.title
+   removed .experience.title
+   removed .academic.title
+   removed .students.title
+   removed .news.title
+   removed .education.title
+   removed .grants.title
+   removed .projects.title
+   removed .awards.title
+   removed .extracurricular.title
 parsed diff of _data/publications.yml against the disk: 9 { removed: 9 }
+   removed .title
+   removed .papers-in-review.title
+   removed .papers-in-preparation.title
+   removed .journal.title
+   removed .conference.title
+   removed .other-publications.title
+   removed .thesis.title
+   removed .abstracts.title
+   removed .posters.title
 parsed diff of _data/industry.yml against the disk: 3 { removed: 3 }
+   removed .shared.personal.portrait_url
+   removed .shared.personal.author
+   removed .shared.personal.website
 ```
 
-Output block H (changed source, scratch hub without the hub patch, so its 8 rows keep `title:` and its career file keeps `parts:`). The problems line 0 also shows such a hub raises nothing.
+Output block H (changed source, scratch hub without the hub patch, so its 8 rows keep `title:` and its career file keeps `parts:`). Its output is the same, line for line, as block A-after (`diff caseA.txt caseH.txt` printed nothing), and the built files are equal:
 
 ```
-files built: _data/data.yml, _data/publications.yml, _data/industry.yml
-problems: 0
-data.yml sections with title: (none)
-data.yml personal keys: first-name, last-name, links
-publications.yml top title: (none)
-publications.yml sections with title: (none)
-industry.yml shared.personal keys: first-name, last-name, links
-parsed diff of _data/data.yml against the disk: 16 { removed: 16 }
-parsed diff of _data/publications.yml against the disk: 9 { removed: 9 }
-parsed diff of _data/industry.yml against the disk: 3 { removed: 3 }
+built data.yml of A and H equal
+built publications.yml of A and H equal
+built industry.yml of A and H equal
 ```
 
-Output block I. No `--save` was used.
+Output block I, from `compare.sh`. No `--save` was used. The third copy, `unpatched`, is the website without the patch and with the generated files of case A, which is the landing order under "Host- and user-visible changes".
 
 ```
-cv exit 0
-industry exit 0
-   38402 old-_scripts-_tmp-cv.pdf.txt    38402 new-_scripts-_tmp-cv.pdf.txt EQUAL _scripts-_tmp-cv.pdf
-    7409 old-_industry-_tmp-cv.pdf.txt     7409 new-_industry-_tmp-cv.pdf.txt EQUAL _industry-_tmp-cv.pdf
-    2852 old-_industry-_tmp-coverletter.pdf.txt     2852 new-_industry-_tmp-coverletter.pdf.txt EQUAL _industry-_tmp-coverletter.pdf
-old _scripts/_tmp/cv.pdf:        1 image(s)
-old _industry/_tmp/cv.pdf:        1 image(s)
-old _industry/_tmp/coverletter.pdf:        1 image(s)
-new _scripts/_tmp/cv.pdf:        1 image(s)
-new _industry/_tmp/cv.pdf:        1 image(s)
-new _industry/_tmp/coverletter.pdf:        1 image(s)
+old _scripts/cv_pdf_generator.py exit 0:
+old _industry/cv_pdf_generator.py exit 0:
+old jekyll exit 0
+new _scripts/cv_pdf_generator.py exit 0:
+new _industry/cv_pdf_generator.py exit 0:
+new jekyll exit 0
+unpatched _scripts/cv_pdf_generator.py exit 1: KeyError: 'portrait_url'
+unpatched _industry/cv_pdf_generator.py exit 1: KeyError: 'portrait_url'
+unpatched jekyll exit 0
+--- case I
+EQUAL _scripts/_tmp/cv.pdf:    38402 bytes old,    38402 new
+old _scripts/_tmp/cv.pdf: 1 image(s)
+new _scripts/_tmp/cv.pdf: 1 image(s)
+EQUAL _industry/_tmp/cv.pdf:     7409 bytes old,     7409 new
+old _industry/_tmp/cv.pdf: 1 image(s)
+new _industry/_tmp/cv.pdf: 1 image(s)
+EQUAL _industry/_tmp/coverletter.pdf:     2852 bytes old,     2852 new
+old _industry/_tmp/coverletter.pdf: 1 image(s)
+new _industry/_tmp/coverletter.pdf: 1 image(s)
 ```
 
-Output block J, on the final `about.html`. Past the `site.css?v=` build stamp every html page of the two sites is the same, and `feed.xml` differs only in its `<updated>` line.
+Output block J, from `compare.sh`, on the final `about.html`. The sites hold 14 html files each; the count is 14, and the 16 this report gave counted two stray empty files that a mistyped loop of mine had left in the old site's folder. Past the `site.css?v=` build stamp every html page of the two sites is the same, and `feed.xml` differs only in its `<updated>` line:
 
 ```
-jekyll exit 0
-html files compared: 16; differing past the css build stamp: 0
-      32 J-old-cv.txt       32 J-new-cv.txt EQUAL cv
-      26 J-old-publications.txt       26 J-new-publications.txt EQUAL publications
-cv: 10 headings old, 10 new; empty new: 0
-publications: 8 headings old, 8 new; empty new: 0
+--- case J
+EQUAL cv:       32 lines of grep old,       32 new
+EQUAL publications:       26 lines of grep old,       26 new
+html files compared: 14; differing past the css build stamp: 0
+html files in site-new: 14
+Files site-old/_site/feed.xml and site-new/_site/feed.xml differ
+--- the headings of the pages
+new cv: 10 headings, 0 blank
+unpatched cv: 10 headings, 10 blank
+new publications: 8 headings, 0 blank
+unpatched publications: 8 headings, 8 blank
 References
 Work &amp; Research Experience
 Teaching &amp; Academic Activities
@@ -228,7 +262,135 @@ Case L, read:
 - The CV: a template reading `website['sections'][<key>]` for a missing key raises `KeyError`, so the CV build stops, as `data[<key>]['title']` did today. A key no template reads stops nothing.
 - No finding is raised, as the brief's decision 5 says.
 
-The case-run program, which lived in the scratchpad and is gone (`rm -rf` of the scratch folder before this report). A reviewer runs it with the line in its head.
+The three case-run programs lived in the scratchpad and are gone (`rm -rf` of the scratch folder before this report), with the `o105-state-` folders of `$TMPDIR`. Each run sets `TMPDIR` to a folder of the scratch folder. A reviewer runs them in this order: `rsync -a --exclude .git --exclude _site --exclude .jekyll-cache --exclude '_tmp' <website>/ <scratch>/site-old/`, `make-copies.sh`, `case-gen.mts` for case A with `<scratch>/hub-new <scratch>/site-new <scratch>/new` and for case H with `<scratch>/hub <scratch>/site-new <scratch>/newH`, `cp` of the three built files into `_data/` of `site-new` and `site-unpatched`, then `compare.sh`.
+
+`make-copies.sh`, which also says how the scratch hub is made:
+
+```sh
+#!/bin/bash
+# Case-run program of O105, the scratch copies of cases A, H, I and J and of the landing order.
+# bash make-copies.sh <scratch> <hub> <website> <oculus worktree>
+set -u
+S=$1; H=$2; W=$3; WT=$4
+REVIEWS=$WT/.scratch/migration/agents/reviews
+
+# The scratch hub: its .oculus folder without any local.yml or secrets folder, and every project.yml.
+mkdir -p "$S/hub"
+rsync -a --exclude local.yml --exclude secrets "$H/.oculus/" "$S/hub/.oculus/"
+rsync -a --prune-empty-dirs --exclude local.yml --exclude .git --exclude .agents --exclude .claude \
+    --exclude .scratch --exclude node_modules --exclude secrets \
+    --include '*/' --include project.yml --exclude '*' "$H/" "$S/hub/"
+printf 'self: axel-faes\n' > "$S/hub/.oculus/local.yml"
+echo "hub project.yml files: $(find "$S/hub" -name project.yml | wc -l | tr -d ' ')"
+
+# The same hub with the hub patch.
+rsync -a "$S/hub/" "$S/hub-new/"
+patch -s -p1 -d "$S/hub-new" < "$REVIEWS/O105-hub.patch"; echo "hub patch exit $?"
+
+# The website copy at its commit, site-old, is made first by the caller with rsync without .git,
+# _site, .jekyll-cache and _tmp. site-new is it with the website patch; site-unpatched takes the
+# generated files of case A with no patch.
+rsync -a "$S/site-old/" "$S/site-new/"
+patch -s -p1 -d "$S/site-new" < "$REVIEWS/O105-website.patch"; echo "website patch exit $?"
+rsync -a "$S/site-old/" "$S/site-unpatched/"
+```
+
+Its output, with the run's own exit lines:
+
+```
+hub project.yml files: 119
+hub patch exit 0
+website patch exit 0
+copies exit 0
+A exit 0
+H exit 0
+built data.yml of A and H equal
+built publications.yml of A and H equal
+built industry.yml of A and H equal
+compare exit 0
+```
+
+`git show -s --format='website head %h' HEAD` in the website printed `website head 4e1437c`, and `git status --short` there 0 lines, so its working tree is that commit. The hub printed `hub head 8cae4a30b`.
+
+`compare.sh`:
+
+```sh
+#!/bin/bash
+# Case-run program of O105, cases I and J and the landing order. Builds the CVs and the site in each
+# scratch copy, with no --save, and compares the builds of site-old and site-new.
+# bash compare.sh <scratch>
+set -u
+S=$1
+PDFS=(_scripts/_tmp/cv.pdf _industry/_tmp/cv.pdf _industry/_tmp/coverletter.pdf)
+
+for side in old new unpatched; do
+    cd "$S/site-$side" || exit 1
+    python3 _scripts/cv_pdf_generator.py --quiet > "$S/$side-cv.log" 2>&1
+    echo "$side _scripts/cv_pdf_generator.py exit $?: $(grep -E '^[A-Za-z]*Error' "$S/$side-cv.log" | tail -1)"
+    python3 _industry/cv_pdf_generator.py --profile analyst --quiet > "$S/$side-ind.log" 2>&1
+    echo "$side _industry/cv_pdf_generator.py exit $?: $(grep -E '^[A-Za-z]*Error' "$S/$side-ind.log" | tail -1)"
+    bundle exec jekyll build > "$S/$side-jekyll.log" 2>&1
+    echo "$side jekyll exit $?"
+done
+
+echo "--- case I"
+for pdf in "${PDFS[@]}"; do
+    name=${pdf//\//-}
+    pdftotext -layout "$S/site-old/$pdf" "$S/old-$name.txt"
+    pdftotext -layout "$S/site-new/$pdf" "$S/new-$name.txt"
+    if cmp -s "$S/old-$name.txt" "$S/new-$name.txt"; then
+        echo "EQUAL $pdf: $(wc -c < "$S/old-$name.txt") bytes old, $(wc -c < "$S/new-$name.txt") new"
+    else
+        echo "DIFFER $pdf"
+    fi
+    for side in old new; do
+        echo "$side $pdf: $(pdfimages -list "$S/site-$side/$pdf" | tail -n +3 | wc -l | tr -d ' ') image(s)"
+    done
+done
+
+echo "--- case J"
+for page in cv publications; do
+    for side in old new; do
+        grep -E 'psec-h|class="secnav"' -A1 "$S/site-$side/_site/$page/index.html" > "$S/J-$side-$page.txt"
+    done
+    if cmp -s "$S/J-old-$page.txt" "$S/J-new-$page.txt"; then
+        echo "EQUAL $page: $(wc -l < "$S/J-old-$page.txt") lines of grep old, $(wc -l < "$S/J-new-$page.txt") new"
+    else
+        echo "DIFFER $page"
+    fi
+done
+compared=0; differing=0
+while IFS= read -r page; do
+    compared=$((compared + 1))
+    if ! diff -q <(sed 's/site.css?v=[0-9]*//' "$S/site-old/_site/$page") \
+        <(sed 's/site.css?v=[0-9]*//' "$S/site-new/_site/$page") > /dev/null; then
+        differing=$((differing + 1)); echo "differs: $page"
+    fi
+done < <(cd "$S/site-old/_site" && find . -type f -name '*.html' | sort)
+echo "html files compared: $compared; differing past the css build stamp: $differing"
+echo "html files in site-new: $(cd "$S/site-new/_site" && find . -type f -name '*.html' | wc -l | tr -d ' ')"
+diff -rq "$S/site-old/_site" "$S/site-new/_site" | grep -v '\.html differ' | sed "s#$S/##g"
+
+echo "--- the headings of the pages"
+for page in cv publications; do
+    for side in new unpatched; do
+        file=$S/site-$side/_site/$page/index.html
+        echo "$side $page: $(grep -c 'psec-h">' "$file") headings, $(grep -c 'psec-h"></h2>' "$file") blank"
+    done
+done
+grep -h -o 'psec-h">[^<]*' "$S/site-new/_site/cv/index.html" "$S/site-new/_site/publications/index.html" | cut -c9-
+```
+
+The `feed.xml` difference, by `diff`:
+
+```
+7c7
+<   <updated>2026-10-31T01:28:01+01:00</updated>
+---
+>   <updated>2026-10-31T01:28:13+01:00</updated>
+```
+
+`case-gen.mts`, whose head names its command:
 
 ```ts
 // Case-run program of O105, cases A and H. Builds the website's three files from a scratch hub with
@@ -363,7 +525,7 @@ for (const [name, now] of [
 process.exit(0);
 ```
 
-The scratch hub for the program held `.oculus` and the `project.yml` manifests of the hub, and my own `.oculus/local.yml` with the one line `self: axel-faes`; no `local.yml` of a hub or of oculus was read.
+No `local.yml` of a hub or of oculus was read.
 
 ## DONE / NOT DONE
 
@@ -537,7 +699,7 @@ Every edit to an existing assertion, before and after, from the diff against the
 | `tests/routes/docs/audit.test.ts` | `siteText = 'programs: {}\nsections:\n  publications: Publications\n'`, `readSite(parse(siteText))`, `kinds` rows with `title`, `type Section = { title: string; papers: ... }`, `setting: { folder, cv: '', kinds }` | `siteText = 'programs: {}\n'`, `readSite(parse(siteText), paths.site)`, rows without `title`, `Section` without `title`, `setting` with `files` |
 | `tests/routes/docs/audit.test.ts` | `said('audit.msg_site_differs_whole', CV_FILE)` | `said('audit.msg_site_differs_whole', CV_PATH)`, the same value |
 | `tests/data/sources/career.test.ts:356` | `rows: { shared: { location: 'Enschede', parts: ['a'] } },` | `rows: { shared: { location: 'Enschede' } },` |
-| `tests/server/root/watch/website-watch.test.ts` | the literal paths | the same paths, through `website.files` in the shipped shape |
+| `tests/server/root/watch/website-watch.test.ts` | `const GENERATED = [CV_FILE, PAPERS_FILE, INDUSTRY_FILE];`, the constants imported from `site.ts` | `const GENERATED = ['_data/data.yml', '_data/publications.yml', '_data/industry.yml'];`, literals. The file sets no `website.files`, so it runs the shipped paths alone; the configured watch list is held by the `siteFiles` rows of `website-files.test.ts` |
 
 Verify 6. New list items and sentences were read against the spec. Places that depart, with why:
 
@@ -592,11 +754,11 @@ From `wc -l` and `git status --short`. The list against the base copy (`diff -rq
 | `src/lib/server/content/audit/website/cv.ts` | 431 |
 | `src/lib/server/content/audit/website/files.ts` | 134 |
 | `src/lib/server/content/audit/website/papers.ts` | 178 |
-| `src/lib/server/content/audit/website/site.ts` | 134 |
+| `src/lib/server/content/audit/website/site.ts` | 124 |
 | `src/lib/server/machine/runs/website.ts` | 235 |
 | `src/lib/server/root/watch/portfolio/audited.ts` | 102 |
 | `src/lib/server/root/watch/portfolio/portfolio.ts` | 819 |
-| `src/lib/state/sessions/source/website.svelte.ts` | 226 |
+| `src/lib/state/sessions/source/website.svelte.ts` | 221 |
 | `src/lib/views/academic/career/Career.svelte` | 206 |
 | `config/defaults/behavior.yml` | 955 |
 | `config/options/behavior.yml` | 1624 |
@@ -607,15 +769,15 @@ From `wc -l` and `git status --short`. The list against the base copy (`diff -rq
 | `docs/data-map.md` | 307 |
 | `docs/templates.md` | 1906 |
 | `docs/diagrams/layers.dot`, `layers.svg`, `layer-server.dot`, `layer-server.svg`, `layer-state.dot`, `layer-state.svg` | written by `npm run diagrams`, 2 changed lines of each file by `git diff --stat`, a label count such as 534 to 536 |
-| `tests/data/hubs/website-files.test.ts` | 695 |
+| `tests/data/hubs/website-files.test.ts` | 703 |
 | `tests/data/sources/career.test.ts` | 412 |
 | `tests/fixtures/hubs/demo/.oculus/data/academic/career.yml` | 175 |
 | `tests/routes/docs/audit.test.ts` | 699 |
-| `tests/routes/sessions/website.test.ts` | 428 |
+| `tests/routes/sessions/website.test.ts` | 434 |
 | `tests/server/root/watch/website-watch.test.ts` | 139 |
 | `tests/state/sessions/source/website-store.test.ts` (new) | 109 |
 | `.scratch/migration/agents/reviews/O105-hub.patch` (new) | 53 |
-| `.scratch/migration/agents/reviews/O105-website.patch` (new) | 318 |
+| `.scratch/migration/agents/reviews/O105-website.patch` (new) | 317 |
 
 `tests/state/sessions/source/` holds 7 items and `src/lib/server/content/audit/website/` 4. `src/routes/api/(sessions)/website/+server.ts` and `src/lib/state/system/config/` did not need a change.
 
@@ -631,7 +793,7 @@ Each is a decision the orchestrator may reverse.
 6. The four rows carry `empty: true`, so an empty value reaches the check and gives case N in place of the option reader's default.
 7. The refusal word is `website-bad-path`, and the finding's key is `audit.msg_site_bad_path`.
 8. A group description for `website.files` is added to the options file, beside the rows.
-9. The store reads `websiteSettings` with a try and catch in place of `folderOf`, since the configuration may not be there yet.
+9. The store reads `websiteSettings` in place of `folderOf`, and a configuration the page does not hold yet is null, which names no folder.
 10. The unsaved guard folds the joined path with `foldedPath`, so a path with a dot segment finds its tab.
 11. The website's `_includes/site/about.html` assigns `seckey` from `coll[0]`, because Liquid 4.0.4, which the website's bundle holds, does not read a nested `sections[coll[0]]`.
 12. `README.md` lines 10-12 of the website are left, as nothing there becomes false; `_industry/README.md` and the template head comments are corrected.
@@ -646,12 +808,14 @@ Each is a decision the orchestrator may reverse.
 | --- | --- | --- | --- |
 | Settings, Website section | open it | rows folder, cv, kinds, whose field list holds `title` | also four text rows `website.files.site`, `.cv`, `.papers`, `.industry`, with help lines; the kinds editor has no `title`; the help of `website.folder` names the keys |
 | Career, button Write the website | hover it with a folder set | the tip names `_data/data.yml`, `_data/publications.yml`, `_data/industry.yml` | the tip names the three paths the settings give, and the command in `website.cv` |
-| Career, button Write the website | set `website.files.cv: ../outside.yml`, press | the press writes | the line under the button says the sentence `career.website_bad_path`, naming the key and its value; no approval is asked |
-| Audit, publications section | the same setting | no finding of this kind | one finding naming the key, with no file link, and no comparison of the website's files |
+| Career, button Write the website | set `website.files.cv: ../outside.yml`, press | the key did not exist | the line under the button says the sentence `career.website_bad_path`, naming the key and its value; no approval is asked |
+| Audit, publications section | the same setting | the key did not exist | one finding naming the key, with no file link, and no comparison of the website's files |
+| Career, button Write the website | a generated file that is a symbolic link out of the website's folder, press | an approved press gave `website-unwritable` naming the file, after the approval was asked; a link into another served root was written through | `website-bad-path` naming the key, with no approval asked and the outside file kept. The real website's four files are plain files, so the look needs this link made in a scratch hub |
+| Audit, publications section | the same link | the file was compared through the link | one bad-path finding naming the key, and no comparison of any of the four files |
 | Audit, publications section | after landing | the website's files compared with titles | compared without titles; a changed title in `website.yml` raises nothing |
 | Website pages and CV PDFs | after both patches and the press | headings from `data.yml` and `publications.yml` | the same words from `website.yml` (cases I and J) |
 
-Landing order matters: the website patch goes in with the press. If the press ran on a website without the patch, `about.html` and the CV would find no titles and the headings would be blank. The brief's decision 1 has the orchestrator do both.
+Landing order matters: the website patch goes in before the press. On a website without the patch, with the generated files of case A, both CV builds stop with `KeyError: 'portrait_url'` and all 18 page headings are blank (Output blocks I and J, the `unpatched` lines), so the press's own `website.cv` command ends red. The press must also come from a server running the landed code, by reading the old `cv.ts` and `papers.ts`, not run: an older process still writes the person details and titles from `website.yml`, so the files would not match what the audit builds after a restart.
 
 Sharp edges:
 
@@ -783,3 +947,184 @@ Replacement:
 ```
   Test: `tests/routes/sessions/website.test.ts`, every row of the describes 'a press of Write the website that is refused' and 'a press of Write the website that is taken', among them 'stops before the first write when a path of website.files names a folder that is not there', every row of 'names the key of a path of website.files that cannot be used, asks no approval and writes nothing', 'names the configured path of a website's own file that is not YAML, before an approval is asked', 'writes the file website.files names and not the shipped one' and 'writes the three files while the website's own file at a configured path is missing'; `tests/state/sessions/source/website-store.test.ts`, every row of the describes 'the tip of Write the website' and 'a press over a file a source tab holds unsaved text of'.
 ```
+
+## Repair round 1
+
+Open items of the state file: unchanged, none listed.
+
+The list ran 3 times in all, once in this round, on the final tree. The first line of this report states its result.
+
+### The items
+
+| Item | Finding | What changed |
+| --- | --- | --- |
+| 1 | P1 | `website.test.ts`: a row of `BAD_PATHS` gets the outside folder from the test through `plant(site, outside)` and names the file its link leads to in `kept`. The row 'a file that is a link to a file out of the folder' asserts `readFileSync(join(outside, kept), 'utf8')` is `kept: 1\n`. `onDisk` must equal `[value]` for that row alone and `[]` for every other row, those of case M among them |
+| 2 | P3 | `website-files.test.ts`, table `WATCHED`: new rows "a path naming the website's folder itself", `{ papers: '.' }`, out `['papers']`, and 'two keys differing by letter case, one file where the file system folds it', `{ cv: 'data/Case.yml', papers: 'data/case.yml' }`, out `['cv', 'papers']` where `foldsCase(tmpdir())` holds and `[]` where it does not. Both are new and judged by reading, since a run on the unchanged tree would need the source put back |
+| 3 | T1 | `isEntry` and the `lstatSync` import leave `site.ts`, which imports `seen` from `core/git/run.ts`. `tests/checks` allows the import, by the list's green `vitest checks` line, so `seen` stays where it is |
+| 4 | T2 | `BadPath` is a local type of `site.ts` |
+| 5 | T4 | `settingsOf` is `return config === null ? null : websiteSettings(config);` |
+| 6 | T5 | The edited paragraph of `_industry/README.md` is one line. `O105-website.patch` regenerated with `diff -ruN a b` from scratch `a` and `b` copies, 15 files, 317 lines |
+| 7 | T6 | `docs/HELP.md:561` says "and `programs:` of the website's own file are the research lines" |
+| 8 | S1, P2, T3, B1, B2 | Report only. S1: the sources of `make-copies.sh` and `compare.sh`, the whole output of case A and H, and 14 html files are above. P2, B1 and B2 are corrected above, in the assertion table and the look section. T3 is below |
+
+Helper grep for T1, `grep -rnE "function (seen|exists|isEntry|entryAt|isThere|present)\b" src/lib`, the server's lines:
+
+```
+src/lib/server/core/git/run.ts:300:export function seen(path: string): boolean {
+src/lib/server/core/git/run.ts:326:export function exists(path: string): boolean {
+src/lib/server/root/watch/apps.ts:175:function present(path: string): boolean {
+src/lib/server/machine/apps/manage/add.ts:26:function present(path: string): boolean {
+src/lib/server/files/project/make.ts:149:function present(path: string): boolean {
+```
+
+After the change, `grep -rn "isEntry" src tests` prints only `isEntryOf` of `src/lib/state/feeds/literature/radar.ts`, another function. `grep -n 'lstat\|core/git/run' src/lib/server/content/audit/website/site.ts` prints `14:import { seen } from '../../../core/git/run.ts';`.
+
+For T2, `grep -rn "BadPath\b" src tests`:
+
+```
+src/lib/server/content/audit/website/site.ts:82:type BadPath = { key: string; value: string };
+src/lib/server/content/audit/website/site.ts:92:export function badPaths(dir: string, files: WebsiteFiles): BadPath[] {
+```
+
+Runs of the changed test files on the final source:
+
+```
+npx vitest run tests/data/hubs/website-files.test.ts tests/state/sessions/source/website-store.test.ts tests/routes/docs/audit.test.ts --reporter=verbose
+ Test Files  3 passed (3)
+      Tests  79 passed (79)
+npx vitest run tests/routes/sessions/website.test.ts --tagsFilter slow --testTimeout 20000 --reporter=verbose
+ Test Files  1 passed (1)
+      Tests  20 passed (20)
+```
+
+`tests/data/hubs/website-files.test.ts` holds both new rows, shown as passed in that run's verbose lines. `tests/routes/sessions/website.test.ts` holds the changed row, shown as passed there too.
+
+### Checks on the final tree
+
+Check 1, the list, with `npm run diagrams && npm run docs:palette` before it:
+
+```
+test:quick: 40 changed file(s), from git since HEAD
+test:quick: 264 test file(s)
+ok      svelte-kit sync (2.4 s)
+ok      prettier (2.4 s): All matched files use Prettier code style!
+ok      ASCII gate (2.4 s)
+ok      eslint (102.3 s)
+ok      svelte-check (112.7 s): 1793406679023 COMPLETED 576 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest checks (239.9 s): Duration  230.10s (transform 146.35s, setup 0ms, import 340.32s, tests 472.43s, environment 6ms)
+ok      vitest (278.1 s): Duration  269.70s (transform 277.29s, setup 0ms, import 576.37s, tests 430.19s, environment 20.44s)
+FAILED  vitest slow (335.5 s)
+ FAIL  |unit| tests/data/hubs/hub-portfolio.test.ts > the portfolio of several hubs > resolves a reference of the second hub in the primary hub when the primary alone holds the key
+Error: Test timed out in 20000ms.
+      Tests  1 failed | 641 passed | 262 skipped (904)
+test:quick: 338.5 s; failed: vitest slow
+```
+
+`git status --short` counts 40 because the worktree also holds the two ledger files of this round, `briefs/O105-round-1.md` and `reviews/O105-refuter.md`, copied in for it.
+
+The red file rerun alone, a file the step does not change:
+
+```
+npx vitest run tests/data/hubs/hub-portfolio.test.ts --reporter=dot
+      Tests  16 passed (16)
+```
+
+Check 2, plain `grep`:
+
+```
+grep -rnE 'SITE_FILE|CV_FILE|PAPERS_FILE|INDUSTRY_FILE|titleOf\(input|[^b]site\.(cv|sections)' src tests; echo "exit $?"
+exit 1
+grep -n -w parts src/lib/server/content/audit/website/cv.ts; echo "exit $?"
+exit 1
+```
+
+Check 3:
+
+```
+patch --dry-run -p1 -d ~/workspace/research-hub < .scratch/migration/agents/reviews/O105-hub.patch
+patching file '.oculus/config.yml'
+patching file '.oculus/data/academic/career.yml'
+exit 0
+patch --dry-run -p1 -d ~/workspace/research-hub/side-projects/theaxec.github.io < .scratch/migration/agents/reviews/O105-website.patch
+patching file '_data/website.yml'
+patching file '_includes/site/about.html'
+patching file '_includes/site/publications.html'
+patching file '_industry/README.md'
+patching file '_industry/cv_pdf_generator.py'
+patching file '_industry/src/coverletter.tex.template'
+patching file '_industry/src/cv.tex.template'
+patching file '_scripts/src/cv/education.tex.template'
+patching file '_scripts/src/cv/experience.tex.template'
+patching file '_scripts/src/cv/extracurricular.tex.template'
+patching file '_scripts/src/cv/grants.tex.template'
+patching file '_scripts/src/cv/honors.tex.template'
+patching file '_scripts/src/cv/projects.tex.template'
+patching file '_scripts/src/cv/publications.tex.template'
+patching file '_scripts/src/cv.tex.template'
+exit 0
+```
+
+Check 4:
+
+```
+config/defaults/behavior.yml:40:    site: _data/website.yml
+config/defaults/behavior.yml:41:    cv: _data/data.yml
+config/defaults/behavior.yml:42:    papers: _data/publications.yml
+config/defaults/behavior.yml:43:    industry: _data/industry.yml
+exit 0
+```
+
+Character-set check, `LC_ALL=C grep -n '[^ -~]'` over the changed files without the `.svg` files and the two patches: no line, `exit 1`. The patches hold only the `<tab>` of the `diff` header lines.
+
+`sh utils/unused-exports.sh`: exit 0, 337 lines, and `grep -c -E 'website/site|BadPath|WebsiteFiles|settings/files|website.svelte'` over them gives 0.
+
+Check 6. The new sentences and rows of this round were read against the spec. The new row title 'two keys differing by letter case, one file where the file system folds it' and the doc comment of `BAD_PATHS` keep one thought each, and the comment is rewrapped at 100 columns. No departure.
+
+### Head comments, doc comments and docs, T3
+
+| Place | State |
+| --- | --- |
+| `site.ts` head comment and the doc comments of `SiteFile`, `readSite`, `placeOf`, `BadPath`, `FILE_KEYS`, `badPaths`, `siteFiles` | rewritten |
+| `site.ts` doc comments of `ProblemKey`, `Problem`, `websiteDir` | still true |
+| `cv.ts` head comment and the doc comments of the person block and the shared block | rewritten |
+| `papers.ts` head comment and the doc comment of `Section` | rewritten |
+| `files.ts` of the audit, head comment and the doc comment of the input | rewritten |
+| `publications.ts` head comment and the doc comment of `siteOf` | rewritten |
+| `runs/website.ts` head comment | rewritten |
+| `audited.ts` head comment | rewritten |
+| `portfolio.ts` head comment | still true |
+| `settings/files.ts` doc comments of the kinds row, `WebsiteFiles`, `WebsiteSettings`, `websiteSettings` | rewritten |
+| `settings/files.ts` head comment | still true |
+| `hub-names.ts` doc comment of the hub list | rewritten |
+| `model-machine.ts` doc comment of `WEBSITE_REFUSALS` | rewritten |
+| `model-entities.ts:240` doc comment | rewritten |
+| `website.svelte.ts` head comment and the doc comments of `tip`, `settingsOf` | rewritten |
+| `website.svelte.ts` doc comments of `off` and `unsaved` | still true |
+| `docs/HELP.md:347`, the Career line | rewritten |
+| `docs/HELP.md:561`, the primary-hub website bullet | rewritten |
+| `docs/HELP.md:258`, `:345` | still true |
+| `docs/data-map.md` the hub-list count, the key list, the three counts of primary-only keys, the list at `:285` | rewritten |
+| `docs/data-map.md:138` | still true |
+| `docs/templates.md` the `## config.yml` template, the two `parts` lines, the `program` line | rewritten |
+| `docs/apps.md` | still true: `grep -n website` prints nothing |
+| `README.md` of the worktree | still true: the grep of changed names has no hit |
+| `config/options/behavior.yml` help of `website.folder`, the four rows, the group line | rewritten |
+| `config/defaults/behavior.yml` comment of the website block | rewritten |
+| `config/schemas/manifest-schema.yml:106` | rewritten |
+
+### Keys: empty, duplicated, colliding, T3
+
+For each of `website.files.site`, `website.files.cv`, `website.files.papers`, `website.files.industry`:
+
+- Empty value: a bad path; the press is refused naming the key and the audit gives one finding.
+- Key duplicated: `awk '/const HUB_LIST/,/^\];/' src/lib/data/helpers/hub-names.ts | grep -o "key: '[^']*'" | sort | uniq -d | wc -l` prints 0, so no key of the hub list repeats. A key repeated inside one YAML map is the YAML reader's error, as for every setting, by reading.
+- Value duplicated: two keys on one file are both bad, by real path, with the case folded where the file system folds it.
+- Colliding with a configured key: `website.cv`, the command, and `website.files.cv`, the path, are separate keys of the hub list. `website.files` is a group of dotted keys and holds no value of its own.
+- Colliding with a reserved key: no reserved word applies to the four. `hub-keys.ts` names none of them (`grep -n website src/lib/data/shapes/hub-keys.ts` prints nothing), so each is primary-only by the rule of `OWN_HUB_KEYS`.
+- A path of `cv`, `papers` or `industry` that names another file of the website, such as `_config.yml`, is inside the folder and is not a bad path: by reading, not run, a press writes that file with one History record its Undo takes back. Item 3's rule does not cover it, and the brief does not ask for it.
+
+The new refusal word `website-bad-path` is one row of `WEBSITE_REFUSALS` with one row of `REFUSAL_WORDS`.
+
+### Slow-tagged cases, T3
+
+`tests/routes/sessions/website.test.ts` has `// @module-tag slow`, so `npm test` does not run it. Cases F, G, M, N and Q, and the press half of case D, sit in that file, which the brief's case D names. They run in `npm run test:quick` and by `npx vitest run <file>`, quoted above. The other half of D, and B, C, E, K, O and P, sit in files `npm test` runs.

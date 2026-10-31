@@ -1,6 +1,6 @@
 # Review of O105
 
-Usage: (filled by the session)
+Usage: abfcac510589136aa, claude-opus-5-5, 289085 tokens, 33 tool uses, 1032 s
 
 ## 1. Verification lines
 
@@ -240,3 +240,228 @@ The landing window the report does name holds by reading: the audit shows the th
 - **The look:** no page was opened; ports 8787 and 8790 were not touched. How the four rows, the tip and the bad-path line are drawn rests on the landing look.
 - **The real `patch` application and the real press:** dry-run only.
 - **The claim about an older server in B1:** read, not run.
+
+## Repair round 1, refuted
+
+# Review of O105, repair round 1
+
+Usage: a920bd5bb2132e0e7, claude-opus-5-5, 207458 tokens, 35 tool uses, 683 s
+
+## 1. Verification lines
+
+Run from `/Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O105`, base eafa79e6e. No ADR governs the diff; `docs/adr` was checked in the first review and the round adds none. `git status --short` counts 40 lines before and after my runs: `git diff eafa79e6e --stat` ends `34 files changed, 757 insertions(+), 323 deletions(-)`. The paths differing from the snapshot are the same seven before and after: `docs/HELP.md`, `docs/diagrams/layer-server.dot`, `docs/diagrams/layer-server.svg`, `site.ts`, `website.svelte.ts`, and the two test files.
+
+Check 1, `npm run diagrams && npm run docs:palette && npm run test:quick`, run once. The harness moved it to the background after 180 s; no second copy ran and I read it only after it ended, exit code 0.
+```
+ok      prettier (0.7 s): All matched files use Prettier code style!
+ok      ASCII gate (0.7 s)
+ok      svelte-kit sync (2.1 s)
+ok      eslint (20.9 s)
+ok      svelte-check (35.4 s): 1793407258375 COMPLETED 576 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest checks (166.4 s): Duration  157.19s (transform 78.37s, setup 0ms, import 213.38s, tests 316.08s, environment 5ms)
+ok      vitest (176.5 s): Duration  167.60s (transform 120.51s, setup 0ms, import 273.01s, tests 354.22s, environment 20.94s)
+ok      vitest slow (252.9 s): Duration  244.26s (transform 18.63s, setup 0ms, import 132.43s, tests 835.39s, environment 16ms)
+test:quick: 255.7 s; every command passed
+```
+- The report's first line says this check ended `failed: vitest slow` on a timeout in `tests/data/hubs/hub-portfolio.test.ts`, which the step does not change. In my run the same list passed whole, so that line is overtaken. The landing run settles it. I went no further on that timeout.
+
+Check 2, plain `grep` with `--exclude=local.yml`:
+```
+grep -rnE "SITE_FILE|CV_FILE|PAPERS_FILE|INDUSTRY_FILE|titleOf\(input|[^b]site\.(cv|sections)" src tests --exclude=local.yml
+exit 1
+grep -n -w parts src/lib/server/content/audit/website/cv.ts
+exit 1
+```
+
+Check 3, `patch --dry-run`: hub patch exit 0, 2 files; website patch exit 0, 15 files, no failed hunk.
+```
+patching file '.oculus/config.yml'
+patching file '.oculus/data/academic/career.yml'
+exit 0
+patching file '_data/website.yml'
+patching file '_includes/site/about.html'
+patching file '_includes/site/publications.html'
+patching file '_industry/README.md'
+patching file '_industry/cv_pdf_generator.py'
+patching file '_industry/src/coverletter.tex.template'
+patching file '_industry/src/cv.tex.template'
+patching file '_scripts/src/cv/education.tex.template'
+patching file '_scripts/src/cv/experience.tex.template'
+patching file '_scripts/src/cv/extracurricular.tex.template'
+patching file '_scripts/src/cv/grants.tex.template'
+patching file '_scripts/src/cv/honors.tex.template'
+patching file '_scripts/src/cv/projects.tex.template'
+patching file '_scripts/src/cv/publications.tex.template'
+patching file '_scripts/src/cv.tex.template'
+exit 0
+```
+
+Check 4:
+```
+grep -rnE "_data/(data|publications|industry|website)\.yml" src config --exclude=local.yml
+config/defaults/behavior.yml:40:    site: _data/website.yml
+config/defaults/behavior.yml:41:    cv: _data/data.yml
+config/defaults/behavior.yml:42:    papers: _data/publications.yml
+config/defaults/behavior.yml:43:    industry: _data/industry.yml
+exit 0
+```
+
+Check 6: read. `LC_ALL=C grep -n '[^ -~]'` over the five changed text files gives 0 lines, and `grep -c` over the report gives 0. The spec, the only standards page, has no rule on sentence length or list items. The new row title and the doc comment of `BAD_PATHS` break no rule it does state. `comment-width.test.ts` and `history.test.ts` ran in the list and passed.
+
+Other reruns:
+- **T1, helper grep:** `grep -rnE "function (seen|exists|isEntry|entryAt|isThere|present)\b" src/lib/server` gives the five lines the report quotes. `grep -rn "isEntry" src tests` gives only `isEntryOf` of `radar.ts`.
+- **T2:** `grep -rn "BadPath\b" src tests` gives `site.ts:82` and `:92` only.
+- **Line counts:** the report's table agrees with `wc -l` for `site.ts` 124, `website.svelte.ts` 221, `docs/HELP.md` 604, `website-files.test.ts` 703, `website.test.ts` 434.
+- **Keys:** `awk ... | wc -l` gives 68, `sort | uniq -d | wc -l` gives 0, and `grep -n website src/lib/data/shapes/hub-keys.ts` exits 1.
+- **Slow tag:** of the four test files, `grep -l "@module-tag slow"` prints only `tests/routes/sessions/website.test.ts`, as the report says.
+- **`$TMPDIR` leftovers:** no `o105-state-` folder is there now.
+- **Website state:** `git status --short` in the website prints 0 lines.
+
+The S1 programs, rerun on my own scratch copies, extracted from the report's fences byte for byte and run in the order the report gives; my scratch folder was removed afterwards:
+```
+hub project.yml files: 119
+hub patch exit 0
+website patch exit 0
+copies exit 0
+A exit 0
+H exit 0
+files built: _data/data.yml, _data/publications.yml, _data/industry.yml
+problems: 0
+data.yml personal keys: first-name, last-name, links
+industry.yml shared.personal keys: first-name, last-name, links
+parsed diff of _data/data.yml against the disk: 16 { removed: 16 }
+compare exit 0
+unpatched _scripts/cv_pdf_generator.py exit 1: KeyError: 'portrait_url'
+unpatched _industry/cv_pdf_generator.py exit 1: KeyError: 'portrait_url'
+unpatched jekyll exit 0
+EQUAL _scripts/_tmp/cv.pdf:    38402 bytes old,    38402 new
+EQUAL _industry/_tmp/cv.pdf:     7409 bytes old,     7409 new
+EQUAL _industry/_tmp/coverletter.pdf:     2852 bytes old,     2852 new
+EQUAL cv:       32 lines of grep old,       32 new
+EQUAL publications:       26 lines of grep old,       26 new
+html files compared: 14; differing past the css build stamp: 0
+html files in site-new: 14
+new cv: 10 headings, 0 blank
+unpatched cv: 10 headings, 10 blank
+new publications: 8 headings, 0 blank
+unpatched publications: 8 headings, 8 blank
+```
+The A and H logs have no `diff` line between them, every printed difference line is `removed` (28 of 28), and the built files compare equal under `cmp`. The whole `compare.sh` output agrees line for line with Output blocks I and J as far as I compared them, including the heading list.
+
+Probe of `badPaths` through a one-off print over a scratch folder, run from the worktree's source:
+```
+foldsCase(tmpdir()) true
+_config.yml as cv []
+.git/config as papers []
+nested new dir []
+dot [{"key":"website.files.papers","value":"."}]
+case [{"key":"website.files.cv","value":"data/Case.yml"},{"key":"website.files.papers","value":"data/case.yml"}]
+```
+
+## 2. Verdict per item of "What to build"
+
+1. **Website reads its own words: holds.** The regenerated patch was read whole; case I and J reproduced.
+2. **Generated files hold only what the hub gives: holds.** Check 2, the hub patch and case A agree.
+3. **`website.files`: holds.** The round's `seen` body equals the removed `isEntry` body, so `placeOf` is unchanged. The press and the audit are unchanged by the round. Probe rows `dot` and `case` are bad.
+4. **`programs:` check stays: holds.**
+5. **No code carries the old form: holds.** Case H reproduced.
+6. **Docs and tests: holds.** The Test lines of G139 and G140 say "every row of the describe", which holds the two new rows. T7 is a head-comment defect inside this item.
+
+## 3. Verdict per case
+
+- A: met (reproduced).
+- B: met.
+- C: met.
+- D: met.
+- E: met.
+- F: met. P1 is closed; see below.
+- G: met.
+- H: met (reproduced).
+- I: met (reproduced).
+- J: met (reproduced).
+- K: met.
+- L: met. The `unpatched` lines show the blank headings and the stop at scale.
+- M: met. The rows now assert `onDisk` is `[]` with no filter.
+- N: met.
+- O: met.
+- P: met.
+- Q: met.
+
+## 4. Verdict on each ruled item of the round's brief
+
+1. **P1: closed.** `plant(site, outside)` makes `outside` reachable. The link row reads `readFileSync(join(outside, kept), 'utf8')` and expects `kept: 1\n`, and `onDisk` must equal `[value]` for that row alone and `[]` for the rows of case M. A write through the link now fails the row even with `log.listed()` empty and the 409 in place, which is the failure scenario of P1. The check was restored, and no fix went beyond it.
+2. **P3: closed.**
+   - Both rows sit in table `WATCHED`, beside the other bad-path rows, and pass.
+   - `foldsCase(tmpdir())` is true here, so the letter-case row runs its `['cv', 'papers']` branch. Losing `spelled` would make it fail, which is the scenario of P3.
+   - The expected value uses `foldsCase` from the code's own file, the pattern of three other test files (`FOLDS = foldsCase(tmpdir())`). Scratch folders live under `tmpdir()`, so both sides read one file system.
+   - The report says both rows are new and judged by reading, as the item allows.
+3. **T1: closed.** `isEntry` and the `lstatSync` import are gone from `site.ts`, and the helper grep is quoted and reproduces.
+   - **Layers:** the import is allowed. `content` already depends on `core` (the diagram edge moved from 34 to 35), and `tests/checks` passed in my list. It is the first import from `server/content` into `core/git`, and the ruled fallback (move `seen` to `core/paths.ts`) applied only if the layers forbade it, so `seen` correctly stayed.
+   - **Weight:** the import pulls no third-party package. It adds `node:child_process` and `node:buffer`, plus `failure.ts`, `words.ts`, `parse.ts`, `records.ts` and `running.ts`. Their only module-level statements are constants (`MAX_OUTPUT`, `REASON_WIDTH`, `GRACE_MS`).
+   - **State layer:** nothing in the state layer reaches it. `grep` of an import path holding `/server/` over `src/lib/state`, `data`, `views`, `shell` and `ui` prints nothing. The importers of `site.ts` are `publications.ts`, `runs/website.ts`, `portfolio.ts` and tests. The store reads `websiteSettings` of the data layer and never `site.ts`.
+4. **T2: closed.** `type BadPath` is local.
+5. **T4: closed, and the removal is safe by reading.**
+   - `deps.config` is `entities.config()?.config ?? null` (`context.ts:581`), which stays null until a payload lands, and `settingsOf` answers null there.
+   - A payload's `config` is the merged map of `loadConfig`, from `configPayload` (`payload.ts:81`) or `configSeed`, so it holds `options`.
+   - By `reader.ts`, a missing or wrong hub value gives the default or a problem, and a non-map block gives `{ present: false }`. The reader throws only for a catalog with no entry or no readable default. `checkedRows` likewise pushes a problem for a value that is no list.
+   - The `{}` map with no catalog is `configMap()`'s of `selectors.svelte.ts`, which this store does not read.
+   - The removed catch guarded no case the page reaches at start-up, so a check that guarded something was not removed. The one catalog defect it hid now throws, which is what T4 ruled.
+6. **T5: closed.** The edited paragraph of `_industry/README.md` is one line. The patch has 15 files and 317 lines (`wc -l`).
+7. **T6: closed.** A word-level `diff` of line 561 shows `its` replaced by `of the website's own file`, and nothing else.
+8. **Report items: closed.**
+   - **S1:** the sources are quoted, the 16 against 14 is settled at 14, and the output reproduces.
+   - **P2:** the row at report line 702 now says literals and shipped paths alone.
+   - **T3:** the list, the key cases and the slow statement are present. I sampled the rows `docs/data-map.md:138`, `docs/apps.md` (`grep` 0 hits), `README.md` (`grep -n website` 0 hits) and `model-entities.ts:240`, and each reads as stated. T7 is the one row that is wrong.
+   - **B1:** corrected, and it agrees with my `unpatched` lines (10 + 8 = 18 blank).
+   - **B2:** two rows added.
+
+## 5. Findings
+
+### Spec
+
+None. The round touched only what its items name; the diagrams changed by `npm run diagrams` alone, and the report marks those paths as outside the write list.
+
+### Proof
+
+None. By reading:
+- `onDisk` lists only the shipped paths. That still catches a press going through, since such a press writes the shipped files of the other keys too, so the rows with a custom path are sound.
+- My grep of the round's added lines for the spec's history words printed nothing. The report quotes that grep for the first pass only, so nothing is lost.
+
+### Standards
+
+**T7. The head comment of `site.ts` claims more than the check does.**
+- Place: `src/lib/server/content/audit/website/site.ts:7-8`. The round did not touch these lines; the finding comes from the judgment below.
+- Hunk: `so a link out of the folder is caught and the press never writes a file it has no business with.`
+- What is wrong: `website.files.cv: _config.yml` passes `badPaths` (probe: `[]`), and a press replaces that file. The report's own key section says so, while its T3 table lists the head comment as rewritten with no qualification. Spec line 71 makes a false head-comment sentence a defect of the change. The brief's decision 4 words it as "could overwrite", naming two cases; the comment turns that into "never".
+- Failure scenario: a reader trusts "never", takes `badPaths` to guard the website's other files, and adds no check of their own. Meanwhile a mistyped key overwrites `_config.yml`.
+- Size: one clause, within what a landing fix covers, for example ending the sentence at "is caught".
+
+### Behaviour
+
+None.
+
+## 6. Judgment asked of this review: a path naming another file inside the website
+
+The brief does not ask for it to be caught, and the builder is right that it is no bad path.
+- Item 3 gives a closed rule: empty, absolute, real path outside the folder, two keys on one file. Decision 4 gives its reason for those same cases, and cases F, M, N and Q hold nothing else.
+- Ruling 601 (plan.md:3362) says only that `website.files` names all four files, with the shipped defaults.
+- Spec line 72 asks a new key to be checked against configured or reserved keys. A value naming a file is no key. The line also asks only that the report state what the code does, and it does.
+- A catch would need a definition of which files of the website the press may write, while the point of the keys is that a website places these files where it likes. That is a user-visible rule nothing names, so it would be Axel's to ask for, and it does not belong in this step.
+- By reading the press: `writable` checks the root, the size and that the target is a plain file, and the write goes through `writeOwnText`. So the report's "one History record its Undo takes back" holds for `_config.yml`. No such press was run. `.git/config` also passes `badPaths` (probe `[]`), and I did not verify whether the writer refuses it.
+
+Only the overclaim in the head comment follows from this (T7).
+
+## 7. Declined to judge
+
+- **The unchanged-tree run of the two new rows of P3 and of the changed P1 row:** they need the behaviour taken out of the code, which the no-breakage rule forbids. Judged by reading, as the round's item 2 allows.
+- **The timeout in `tests/data/hubs/hub-portfolio.test.ts`:** a file the step does not change, stated and left there.
+- **`git grep` forms:** run as plain `grep`, as instructed.
+- **The look:** no page was opened; ports 8787 and 8790 were not touched.
+- **The real `patch` application and the real press:** dry-run only.
+- **The report's sentence about a press from an older server:** read, not run, as the report itself says.
+- **The website's commit 4e1437c:** not checked. It takes a git command outside the three allowed.
+
+## Closed
+
+- T7: fixed at landing, the head comment of `site.ts` ends at "is caught".
+- S1, P1, P2, P3, T1 to T6, B1, B2 of the first run: closed in repair round 1.

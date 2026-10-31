@@ -1,6 +1,6 @@
 diff -ruN a/_data/website.yml b/_data/website.yml
---- a/_data/website.yml	2026-10-31 00:14:48
-+++ b/_data/website.yml	2026-10-31 00:16:56
+--- a/_data/website.yml	2026-10-31 01:24:51
++++ b/_data/website.yml	2026-10-31 01:24:51
 @@ -26,7 +26,7 @@
    - Precision medicine
    - Brain-computer interfaces
@@ -35,8 +35,8 @@ diff -ruN a/_data/website.yml b/_data/website.yml
  research:
    title: Research Diary
 diff -ruN a/_includes/site/about.html b/_includes/site/about.html
---- a/_includes/site/about.html	2026-10-31 00:14:48
-+++ b/_includes/site/about.html	2026-10-31 00:20:10
+--- a/_includes/site/about.html	2026-10-31 01:24:51
++++ b/_includes/site/about.html	2026-10-31 01:24:51
 @@ -14,15 +14,15 @@
  
  <div class="listlayout">
@@ -57,8 +57,8 @@ diff -ruN a/_includes/site/about.html b/_includes/site/about.html
        {% for item in coll[1].content %}{% unless item.hide %}
        <article class="cv-item">
 diff -ruN a/_includes/site/publications.html b/_includes/site/publications.html
---- a/_includes/site/publications.html	2026-10-31 00:14:48
-+++ b/_includes/site/publications.html	2026-10-31 00:15:35
+--- a/_includes/site/publications.html	2026-10-31 01:24:51
++++ b/_includes/site/publications.html	2026-10-31 01:24:51
 @@ -7,7 +7,7 @@
  
  <div class="listlayout">
@@ -78,15 +78,14 @@ diff -ruN a/_includes/site/publications.html b/_includes/site/publications.html
        {% assign i = i | plus: 1 %}
        <article class="pitem">
 diff -ruN a/_industry/README.md b/_industry/README.md
---- a/_industry/README.md	2026-10-31 00:14:48
-+++ b/_industry/README.md	2026-10-31 00:16:56
-@@ -35,9 +35,10 @@
+--- a/_industry/README.md	2026-10-31 01:24:51
++++ b/_industry/README.md	2026-10-31 01:25:04
+@@ -35,9 +35,9 @@
  
  ## Where the content lives
  
 -All text is in **`../_data/industry.yml`**:
-+The text is in **`../_data/industry.yml`**, and the portrait comes from `cv.portrait_url`
-+of **`../_data/website.yml`**:
++The text is in **`../_data/industry.yml`**, and the portrait comes from `cv.portrait_url` of **`../_data/website.yml`**:
  
 -- `shared.personal`, name, photo, contact links (common to every profile).
 +- `shared.personal`, name and contact links (common to every profile).
@@ -94,8 +93,8 @@ diff -ruN a/_industry/README.md b/_industry/README.md
    `summary`, `skills`, `experience`, `projects`, `education`, `awards`, and a
    `letter` (recipient, date, title, opening, body, closing).
 diff -ruN a/_industry/cv_pdf_generator.py b/_industry/cv_pdf_generator.py
---- a/_industry/cv_pdf_generator.py	2026-10-31 00:14:48
-+++ b/_industry/cv_pdf_generator.py	2026-10-31 00:17:01
+--- a/_industry/cv_pdf_generator.py	2026-10-31 01:24:51
++++ b/_industry/cv_pdf_generator.py	2026-10-31 01:24:51
 @@ -5,8 +5,9 @@
  (the `Template` class) and the same src/-templates -> _tmp/ -> xelatex pipeline,
  but renders an INDUSTRY-tailored CV instead of the academic one.
@@ -147,8 +146,8 @@ diff -ruN a/_industry/cv_pdf_generator.py b/_industry/cv_pdf_generator.py
          latex="xelatex",
          quiet=args.quiet,
 diff -ruN a/_industry/src/coverletter.tex.template b/_industry/src/coverletter.tex.template
---- a/_industry/src/coverletter.tex.template	2026-10-31 00:14:48
-+++ b/_industry/src/coverletter.tex.template	2026-10-31 00:16:56
+--- a/_industry/src/coverletter.tex.template	2026-10-31 01:24:51
++++ b/_industry/src/coverletter.tex.template	2026-10-31 01:24:51
 @@ -1,7 +1,7 @@
  %!TEX TS-program = xelatex
  %!TEX encoding = UTF-8 Unicode
@@ -159,8 +158,8 @@ diff -ruN a/_industry/src/coverletter.tex.template b/_industry/src/coverletter.t
  \documentclass[11pt, a4paper]{awesome-cv}
  
 diff -ruN a/_industry/src/cv.tex.template b/_industry/src/cv.tex.template
---- a/_industry/src/cv.tex.template	2026-10-31 00:14:48
-+++ b/_industry/src/cv.tex.template	2026-10-31 00:16:56
+--- a/_industry/src/cv.tex.template	2026-10-31 01:24:51
++++ b/_industry/src/cv.tex.template	2026-10-31 01:24:51
 @@ -1,7 +1,7 @@
  %!TEX TS-program = xelatex
  %!TEX encoding = UTF-8 Unicode
@@ -171,8 +170,8 @@ diff -ruN a/_industry/src/cv.tex.template b/_industry/src/cv.tex.template
  \documentclass[11pt, a4paper]{awesome-cv}
  
 diff -ruN a/_scripts/src/cv/education.tex.template b/_scripts/src/cv/education.tex.template
---- a/_scripts/src/cv/education.tex.template	2026-10-31 00:14:48
-+++ b/_scripts/src/cv/education.tex.template	2026-10-31 00:15:46
+--- a/_scripts/src/cv/education.tex.template	2026-10-31 01:24:51
++++ b/_scripts/src/cv/education.tex.template	2026-10-31 01:24:51
 @@ -1,4 +1,4 @@
 -\cvsection{{% emit(data['education']['title']) %}}
 +\cvsection{{% emit(website['sections']['education']) %}}
@@ -180,8 +179,8 @@ diff -ruN a/_scripts/src/cv/education.tex.template b/_scripts/src/cv/education.t
  \begin{cventries}
  {%
 diff -ruN a/_scripts/src/cv/experience.tex.template b/_scripts/src/cv/experience.tex.template
---- a/_scripts/src/cv/experience.tex.template	2026-10-31 00:14:48
-+++ b/_scripts/src/cv/experience.tex.template	2026-10-31 00:15:48
+--- a/_scripts/src/cv/experience.tex.template	2026-10-31 01:24:51
++++ b/_scripts/src/cv/experience.tex.template	2026-10-31 01:24:51
 @@ -1,4 +1,4 @@
 -\cvsection{{% emit(data['experience']['title']) %}}
 +\cvsection{{% emit(website['sections']['experience']) %}}
@@ -189,8 +188,8 @@ diff -ruN a/_scripts/src/cv/experience.tex.template b/_scripts/src/cv/experience
  \begin{cventries}
  {%
 diff -ruN a/_scripts/src/cv/extracurricular.tex.template b/_scripts/src/cv/extracurricular.tex.template
---- a/_scripts/src/cv/extracurricular.tex.template	2026-10-31 00:14:48
-+++ b/_scripts/src/cv/extracurricular.tex.template	2026-10-31 00:15:50
+--- a/_scripts/src/cv/extracurricular.tex.template	2026-10-31 01:24:51
++++ b/_scripts/src/cv/extracurricular.tex.template	2026-10-31 01:24:51
 @@ -1,4 +1,4 @@
 -\cvsection{{% emit(data['extracurricular']['title']) %}}
 +\cvsection{{% emit(website['sections']['extracurricular']) %}}
@@ -198,8 +197,8 @@ diff -ruN a/_scripts/src/cv/extracurricular.tex.template b/_scripts/src/cv/extra
  {%
    for i in (data['extracurricular']['content']):
 diff -ruN a/_scripts/src/cv/grants.tex.template b/_scripts/src/cv/grants.tex.template
---- a/_scripts/src/cv/grants.tex.template	2026-10-31 00:14:48
-+++ b/_scripts/src/cv/grants.tex.template	2026-10-31 00:15:52
+--- a/_scripts/src/cv/grants.tex.template	2026-10-31 01:24:51
++++ b/_scripts/src/cv/grants.tex.template	2026-10-31 01:24:51
 @@ -1,4 +1,4 @@
 -\cvsection{{% emit(data['grants']['title']) %}}
 +\cvsection{{% emit(website['sections']['grants']) %}}
@@ -207,8 +206,8 @@ diff -ruN a/_scripts/src/cv/grants.tex.template b/_scripts/src/cv/grants.tex.tem
  \begin{cventries}
  {%
 diff -ruN a/_scripts/src/cv/honors.tex.template b/_scripts/src/cv/honors.tex.template
---- a/_scripts/src/cv/honors.tex.template	2026-10-31 00:14:48
-+++ b/_scripts/src/cv/honors.tex.template	2026-10-31 00:15:55
+--- a/_scripts/src/cv/honors.tex.template	2026-10-31 01:24:51
++++ b/_scripts/src/cv/honors.tex.template	2026-10-31 01:24:51
 @@ -1,4 +1,4 @@
 -\cvsection{ {% emit(data['awards']['title']) %} }
 +\cvsection{ {% emit(website['sections']['awards']) %} }
@@ -216,8 +215,8 @@ diff -ruN a/_scripts/src/cv/honors.tex.template b/_scripts/src/cv/honors.tex.tem
  {%
    for i in (data['awards']['content']):
 diff -ruN a/_scripts/src/cv/projects.tex.template b/_scripts/src/cv/projects.tex.template
---- a/_scripts/src/cv/projects.tex.template	2026-10-31 00:14:48
-+++ b/_scripts/src/cv/projects.tex.template	2026-10-31 00:15:57
+--- a/_scripts/src/cv/projects.tex.template	2026-10-31 01:24:51
++++ b/_scripts/src/cv/projects.tex.template	2026-10-31 01:24:51
 @@ -1,4 +1,4 @@
 -\cvsection{{% emit(data['projects']['title']) %}}
 +\cvsection{{% emit(website['sections']['projects']) %}}
@@ -225,8 +224,8 @@ diff -ruN a/_scripts/src/cv/projects.tex.template b/_scripts/src/cv/projects.tex
  \begin{cventries}
  {%
 diff -ruN a/_scripts/src/cv/publications.tex.template b/_scripts/src/cv/publications.tex.template
---- a/_scripts/src/cv/publications.tex.template	2026-10-31 00:14:48
-+++ b/_scripts/src/cv/publications.tex.template	2026-10-31 00:16:11
+--- a/_scripts/src/cv/publications.tex.template	2026-10-31 01:24:51
++++ b/_scripts/src/cv/publications.tex.template	2026-10-31 01:24:51
 @@ -1,4 +1,4 @@
 -\cvsection{ {% emit(publications['title']) %} }
 +\cvsection{ {% emit(website['sections']['publications']) %} }
@@ -279,8 +278,8 @@ diff -ruN a/_scripts/src/cv/publications.tex.template b/_scripts/src/cv/publicat
      emit_tex('\\begin{cvnews}')
      emit('\n')
 diff -ruN a/_scripts/src/cv.tex.template b/_scripts/src/cv.tex.template
---- a/_scripts/src/cv.tex.template	2026-10-31 00:14:48
-+++ b/_scripts/src/cv.tex.template	2026-10-31 00:15:44
+--- a/_scripts/src/cv.tex.template	2026-10-31 01:24:51
++++ b/_scripts/src/cv.tex.template	2026-10-31 01:24:51
 @@ -52,13 +52,13 @@
  %-------------------------------------------------------------------------------
  
