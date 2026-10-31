@@ -4,7 +4,24 @@ tier: personal
 lead: [axel-faes]
 status:
     chips: [parked]
+    line: 'Electron and SvelteKit, version 1.0.0, public, MIT.'
 eli5: 'Oculus is the research workbench that reads a research hub (its projects, manuscripts, grants, data and code) and shows it in one VS Code-like app. It runs on your own machine and keeps the hub private.'
-next: 'Close the migration plan once oculus runs from its own repository, then take the next open item of .scratch/ROADMAP.md; before the repository is made public, take the ledger out of its history.'
+latest: 'Version 1.0.0 is released on GitHub for macOS on Apple silicon and Linux.'
+next: 'None open.'
+results:
+    - 'Version 1.0.0 is built for macOS on Apple silicon and for Linux on x64 and arm64.'
+    - 'One app holds the projects, manuscripts, grants, data, sessions and code of a hub.'
+    - 'Project boards, Focus and Career read the hub; every record opens on one page frame and editor.'
+    - 'Write the website generates the website data files from the hub.'
+    - 'The Deposit view archives a project''s code on Zenodo through its GitHub integration.'
+    - 'Several hubs and several clusters work side by side, each with its own connections.'
+related: [research-hub]
 links: []
 short: oculus
+tags: [infrastructure, electron]
+repository:
+    url: 'https://github.com/TheAxeC/oculus'
+    visibility: public
+    description: 'A local research workbench: the projects, manuscripts, grants, data and code of a research hub in one VS Code-like app.'
+    topics: [academic, electron, latex, research, research-management, sveltekit, vscode, workbench]
+    date: 2026-10-21
