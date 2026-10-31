@@ -194,7 +194,7 @@ focus_lanes:
 fund_stages:
   - { label: "In prep",   color: "#d4a017", statuses: [in-prep] }
   - { label: "Submitted", color: "#16a34a", statuses: [submitted, under-review] }
-  - { label: "Planned",   color: "#0891b2", statuses: [planned] }
+  - { label: "Planned",   color: "#7c5cff", statuses: [planned] }
 
 # Position stages stacked inside the Focus Job applications column (label / colour / the statuses each matches).
 position_stages:

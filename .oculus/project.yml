@@ -1,9 +1,9 @@
 title: 'Oculus'
 stage: released
-tier: personal
+tier: software
 lead: [axel-faes]
 status:
-    chips: [parked]
+    chips: []
     line: 'Electron and SvelteKit, version 1.0.0, public, MIT.'
 eli5: 'Oculus is the research workbench that reads a research hub (its projects, manuscripts, grants, data and code) and shows it in one VS Code-like app. It runs on your own machine and keeps the hub private.'
 latest: 'Version 1.0.0 is released on GitHub for macOS on Apple silicon and Linux.'
@@ -17,7 +17,7 @@ results:
     - 'Several hubs and several clusters work side by side, each with its own connections.'
 related: [research-hub]
 links: []
-short: oculus
+short: 'Oculus'
 tags: [infrastructure, electron]
 repository:
     url: 'https://github.com/TheAxeC/oculus'
