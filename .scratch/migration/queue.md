@@ -1,9 +1,9 @@
-In flight (0 of 6 slots in use): none.
+In flight (3 of 6 slots in use):
+- O110 (terminal text keeps its characters), brief check running.
+- O111 (Settings responds and folds under a search), brief check running; its builder runs alone, since it writes a configuration file.
+- O112 (the Session view's type sizes), builder running.
 
-Queued, in order (5 steps):
-- O110 (terminal text keeps its characters).
-- O111 (Settings responds and folds under a search).
-- O112 (the Session view's type sizes).
+Queued, in order (2 steps):
 - O113 (Timeline a section of the Session view).
 - O114 (one Terminal view for a session).
 
