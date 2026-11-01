@@ -21,7 +21,7 @@
         titled?: boolean;
         /**
          * Whether the title is drawn at `--fs-md`, a step above the sidebar's `--fs-sm`, for a view
-         * whose text is drawn at `--fs-sm` and whose headings a step above it (the Session view).
+         * whose text is drawn at `--fs-sm` (the Session view).
          */
         large?: boolean;
         /** The icon actions at the right of the header, a Toolbar that asks for `overflow`. */

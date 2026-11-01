@@ -4,6 +4,18 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z1092 (2026-11-01, O111's brief check, the orchestrator, automode): how a search draws
+
+- Chosen: 25 entries per row; a part not found keeps its kept fold; a press held under `searchFolds`; rows a query leaves out stay mounted and hidden.
+- Not chosen: 25 per list, which multiplies through nesting; rows unmounted with clearing stated as a limit (the lazy option).
+- Where it applies: `agents/briefs/O111.md`. Booked in `plan.md` Rulings, open item 618.
+
+## Z1091 (2026-11-01, O111's brief check, the orchestrator, automode): the guarded entry of a Settings fold
+
+- Chosen: a new entry G144 for `fold.ts` and `matches.ts`, written at landing.
+- Not chosen: case runs with no test (the lazy option).
+- Where it applies: `agents/briefs/O111.md`. Booked in `plan.md` Rulings, open item 617.
+
 ## Z1090 (2026-11-01, O110's first run, the orchestrator, automode): a control reply's final newline
 
 - Chosen: `control()` resolves a reply with the final newline `run` has; a slow test in `pane-screen.test.ts`; G90 names both.

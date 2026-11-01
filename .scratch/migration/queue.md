@@ -1,15 +1,16 @@
-In flight (3 of 6 slots in use):
-- O110 (terminal text keeps its characters), builder running.
-- O111 (Settings responds and folds under a search), brief check running; its builder runs alone, since it writes a configuration file.
-- O112 (the Session view's type sizes), builder running.
+In flight (2 of 6 slots in use):
+- O110 (terminal text keeps its characters), builder running under its cases ruling.
+- O111 (Settings responds and folds under a search), brief closed; its builder runs alone, since it writes a configuration file.
 
 Queued, in order (2 steps):
 - O113 (Timeline a section of the Session view).
 - O114 (one Terminal view for a session).
 
-Owed looks: none.
+Owed looks:
+- O112: the Session view with a picked session, its section heads, sub-heads and group heads, default and rice.
 
 Landed, newest first:
+- O112 (the Session view's type sizes), 2026-11-01.
 - O108 (one desktop app), 2026-10-31.
 - O109 (the app's server starts), 2026-10-31.
 - O107 (an entry of a file with no schema opens its page), 2026-10-31.

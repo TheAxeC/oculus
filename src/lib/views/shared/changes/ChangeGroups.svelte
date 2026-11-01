@@ -362,12 +362,13 @@
         }
     }
 
-    /* A group head is a heading of the Session view, one step above its text, `--fs-sm`. */
+    /* A group head is a heading of the Session view under its sub-heading, in capitals, at
+       `--fs-xs`, the step of an uppercase heading. */
     .group-h {
         color: var(--muted-txt, var(--muted));
         text-transform: uppercase;
         letter-spacing: 0.04em;
-        font-size: var(--fs-md);
+        font-size: var(--fs-xs);
         font-weight: 700;
     }
     .group {

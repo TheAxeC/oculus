@@ -113,8 +113,8 @@
 </section>
 
 <style>
-    /* A section heading: the group label, bold and in capitals, at the view's heading size, one
-       step above its text. */
+    /* A sub-heading of the section: the group label, bold and in capitals, at `--fs-xs`, the step
+       of an uppercase heading. */
     .sec-h {
         display: flex;
         align-items: center;
@@ -122,7 +122,7 @@
         color: var(--muted-txt, var(--muted));
         text-transform: uppercase;
         letter-spacing: 0.04em;
-        font-size: var(--fs-md);
+        font-size: var(--fs-xs);
         font-weight: 700;
         border-bottom: 1px solid var(--line);
         padding-bottom: 2px;

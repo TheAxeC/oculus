@@ -38,18 +38,6 @@ dispatch:            # steps in flight, up to six (Z632)
 - step: O111
   landing: preparing
   brief_check: .scratch/migration/agents/reviews/O111-brief-check.md (ae05ac84921af52fa, claude-opus-5-5, 228725 tokens, 32 tool uses, 566.1 s)
-- step: O112
-  base: 1b78b1c8f
-  session_id: af84f16758a1e2de3 (claude-opus-5-5)
-  worktree: .agents/worktrees/migration-O112
-  executor: agent
-  worker: claude:opus
-  report: .scratch/migration/agents/reviews/O112-report.md
-  builder_usage: 137619 tokens, 27 tool uses, 362.9 s
-  reviewer_report: "running: ac5b00253978932fc"
-  round: 0
-  brief_check: none, a small text step
-  landing: not-started
 ```
 
 ## The standing demands (from Axel, in force)
@@ -779,6 +767,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - 2026-10-31 (1.0.0 replaced on f6c42d1a6). At Axel's word the three archives were rebuilt from f6c42d1a6, the macOS bundle's server answered 200 on `/` and `/api/health`, `v1.0.0` was recreated on that commit, the downloaded zip equals the local one, and the app is installed in `~/Applications`. In flight (0 of 6). Open items: none.
 - 2026-10-31 (1.0.0 released again). The three archives were rebuilt from e584a8a02; the macOS bundle's server started under its own Electron and answered, and `tests/server/desktop/start.test.ts` passed on main, 5 of 5. `v1.0.0` was deleted and recreated on e584a8a02 with those archives, and the app is installed in `~/Applications`. In flight (0 of 6). No step is left unticked. Open items: none.
 - 2026-10-31 (O108 landed). O108 landed on main (booked under O108 in `plan.md`, `agents/reviews/O108-landing.md`). Next: O109's second half: the three archives rebuilt from main, the app started for real, Axel pushes, `v1.0.0` replaced and the app installed in `~/Applications`. In flight (0 of 6). Open items: none.
+- 2026-11-01 (O112 landed; O110 in round 0; O111's brief closed). O112 landed on main (booked under O112 in `plan.md`, `agents/reviews/O112-landing.md`). O110's builder is finishing under `agents/briefs/O110-cases.md` (Z1090). O111's brief is closed (Z1091, Z1092) and waits to run alone. In flight (2 of 6). Next: O110's report, /refute, /land; then O111; then O113, O114. Open items: none.
 - 2026-10-31 (O109 landed; O108 round 1 built). O109 landed on main (booked under O109 in `plan.md`, `agents/reviews/O109-landing.md`), `test:quick` passed in the gate worktree, G143 added. O108's round 1 is built and its review over the round is next. After O108 lands: the three archives rebuilt, the app started for real, Axel pushes, `v1.0.0` replaced and the app installed. In flight (1 of 6). Open items: none.
 - 2026-10-31 (O107 landed). O107 landed on main (booked under O107 in `plan.md`, `agents/reviews/O107-landing.md`), checked with `npm run diagrams && npm run docs:palette && npm run test:quick` in the gate worktree, every command passed, 275.2 s, and on main equal to the gate. No step is left unticked. Open items: none new. Next: the three 1.0.0 archives rebuilt; the commit of the release changes, the push, the tag, the release and the visibility switch wait on Axel's word.
 - 2026-10-31 (O106 at work). Axel: "Please do". Preparation commit c18dc9126; builder adf8935850262b509 launched in `.agents/worktrees/migration-O106`. In flight (2 of 6). Open item 604.
