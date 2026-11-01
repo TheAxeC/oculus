@@ -1,4 +1,4 @@
-In flight (0 of 6 slots in use): none.
+In flight (1 of 6 slots in use): O114 (one Terminal view for a session), building.
 
 Queued, in order (1 step):
 - O114 (one Terminal view for a session).
