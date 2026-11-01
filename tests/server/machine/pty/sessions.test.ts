@@ -86,6 +86,7 @@ describe('a private tmux server', { tags: ['slow'] }, () => {
         );
         const text = (): string => Buffer.concat(seen).toString('utf8');
         try {
+            expect(await client.ready()).toBe(true);
             // The line goes the way a page's typing goes: its bytes, in pieces, through send-keys
             // -H.
             for (const piece of inputChunks(Buffer.from(`${TYPED}\r`))) {

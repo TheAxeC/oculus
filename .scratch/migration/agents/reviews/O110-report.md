@@ -86,12 +86,12 @@ Tests  1 failed | 1 skipped (2)
 
 | Item | State | Command | Last line of the final run |
 | --- | --- | --- | --- |
-| `createParser` decodes a reply line as UTF-8, `%output` and the splitting in `feed` stay per byte | DONE | `npx vitest run tests/server/machine/pty/tmux.test.ts` | `Tests  6 passed (6)` |
+| `createParser` decodes a reply line as UTF-8, `%output` and the splitting in `feed` stay per byte | DONE | `npx vitest run tests/server/machine/pty/tmux.test.ts` | `Tests  9 passed (9)` |
 | `control()` resolves with the final newline, `''` for no lines, an `%error` as it stands | DONE | `npx vitest run tests/server/machine/pty/pane-screen.test.ts` | `Tests  2 passed (2)` |
-| The table test, five rows | DONE | the first command above | `Tests  6 passed (6)` |
+| The table test, five rows and the round's three | DONE | the first command above | `Tests  9 passed (9)` |
 | The slow test, by name, failing first | DONE | the run above, then the second command | `Tests  2 passed (2)` |
 | Head comments and doc comments (`tmux.ts`, `pane-screen.test.ts`) | DONE | `git diff src/lib/server/machine/pty/tmux.ts`, read | the comment-width check is in the next row |
-| Verify list | DONE | `npm run test:quick` | `test:quick: 85.2 s; every command passed` |
+| Verify list | DONE | `npm run test:quick` | `test:quick: 50.1 s; every command passed` |
 | The server's edge, as ruled | DONE | `edge-case.mts`, below | `client equals run true` and `row of 40 U+2500 in client text true` |
 | Six builders and `paneScreen` true | DONE | `edge-case.mts`, below | `paneScreen by client equals paneScreen by run true` |
 | Both shapes | DONE | `alt-shape.mts`, below | `equal true`, twice |
@@ -99,24 +99,27 @@ Tests  1 failed | 1 skipped (2)
 | No new non-ASCII | DONE | `LC_ALL=C grep -n '[^ -~]' tests/server/machine/pty/tmux.test.ts tests/server/machine/pty/pane-screen.test.ts src/lib/server/machine/pty/tmux.ts` | prints nothing |
 | List items and sentence length | DONE | read | no departure; the step's new sentences are the comments quoted in the diff |
 
-`npm run test:quick`, as printed:
+`npm run test:quick`, as printed by the last run:
 
 ```
-test:quick: 4 changed file(s), from git since HEAD
+test:quick: 7 changed file(s), from git since HEAD
 test:quick: 23 test file(s)
-ok      prettier (1.0 s): All matched files use Prettier code style!
-ok      ASCII gate (1.1 s)
-ok      svelte-kit sync (2.4 s)
-ok      svelte-check (13.5 s): 1793555211431 COMPLETED 576 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
-ok      eslint (13.7 s)
-ok      vitest (36.9 s): Duration  18.92s (transform 23.54s, setup 0ms, import 66.47s, tests 4.39s, environment 3ms)
-ok      vitest slow (80.5 s): Duration  62.44s (transform 36.43s, setup 0ms, import 83.98s, tests 105.34s, environment 2ms)
-ok      vitest checks (82.6 s): Duration  64.49s (transform 31.65s, setup 0ms, import 58.15s, tests 107.11s, environment 2ms)
-test:quick: 85.2 s; every command passed
+ok      prettier (0.6 s): All matched files use Prettier code style!
+ok      ASCII gate (0.7 s)
+ok      svelte-kit sync (2.0 s)
+ok      eslint (2.4 s)
+ok      svelte-check (9.0 s): 1793556354954 COMPLETED 576 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest (23.8 s): Duration  13.06s (transform 18.83s, setup 0ms, import 46.69s, tests 3.38s, environment 4ms)
+ok      vitest slow (46.8 s): Duration  36.07s (transform 15.67s, setup 0ms, import 39.18s, tests 64.76s, environment 2ms)
+ok      vitest checks (48.0 s): Duration  37.15s (transform 14.10s, setup 0ms, import 29.85s, tests 62.54s, environment 3ms)
+test:quick: 50.1 s; every command passed
 test:quick: not covered: tests that reach no changed file within the import depth, other than the checks under tests/checks/source and tests/checks/tree, which run for any change under src, tests or utils; the build, the lint of unchanged files
 ```
 
-The fourth file git counted is the untracked `.scratch/migration/agents/briefs/O110-cases.md`, the orchestrator's. The list ran twice: the first run was red on the ASCII gate alone, on `tests/server/machine/pty/tmux.test.ts:44` and `:91` in a file the step changed; that file was fixed and rerun alone (`Tests  6 passed (6)`), then the list ran once more. `npm run diagrams` ran right before each. No whole-suite command ran.
+The seven files git counted are the three of the step and four untracked files under `.scratch/`: this report and the orchestrator's `O110-cases.md`, `O110-round1.md` and `O110-refuter.md`. The list ran five times in all, `npm run diagrams` right before each, and no whole-suite command ran; "Repair round 1" below accounts for the last three.
+
+- Run 1, red on the ASCII gate alone, on `tests/server/machine/pty/tmux.test.ts:44` and `:91`, a file the step changed; that file was fixed and rerun alone (`Tests  6 passed (6)`).
+- Run 2, every command passed.
 
 The final case run, after the last change, `LC_ALL=en_US.UTF-8 node --experimental-strip-types --no-warnings <scratchpad>/edge-case.mts "$PWD"`:
 
@@ -180,7 +183,7 @@ No existing assertion, allow list or predicate changed: `diff <base>/tests/serve
 ### Greps
 
 - History words over added comment lines and test titles (`git diff -U0`, the words of the rules file): one hit, `so every chunk the command saw came before the call` in the `command` doc comment, an existing sentence rewrapped, which names the order of chunks and compares with no earlier state.
-- Reuse: `grep -rn "'latin1').toString('utf8')" src tests` prints the one new line, `tmux.ts:261`; `grep -rn "reply\.lines\|\.lines\.join" src` prints the join in `control` and an unrelated `keys.ts:206`. No helper was added.
+- Reuse: `grep -rn "'latin1').toString('utf8')" src tests` prints the one new line, `tmux.ts:265`; `grep -rn "reply\.lines\|\.lines\.join" src` prints the join in `control` and an unrelated `keys.ts:206`. No helper was added.
 - Changed shape, the answer of `control().command`: `grep -rn "\.command(args\|control(" src tests` over the pty code gives `channel.ts:232`, `channel.ts:295`, `sessions.test.ts:78` (reads `%output` alone) and the new test, so every reader of the text goes through `capture.ts`.
 - `sh utils/unused-exports.sh`, compared with the base's output in the scratchpad: the step added no line. The only differences are the base's three lines of knip failing to load `vite.config.ts` (`.svelte-kit/tsconfig.json` not found), absent from the later run.
 
@@ -192,7 +195,7 @@ No existing assertion, allow list or predicate changed: `diff <base>/tests/serve
 | `ControlReply` doc comment | rewritten |
 | `ControlEvent.rest` | a doc comment added |
 | `ControlClient.command` doc comment | rewritten |
-| `createParser` doc comment | still true |
+| `createParser` doc comment | rewritten |
 | `control` doc comment | still true |
 | `decodeOutput` doc comment | still true |
 | `TerminalDriver.read` doc comment, `channel.ts:175-180` | still true |
@@ -207,8 +210,8 @@ From `diff -rq` of the base copy against the worktree for the two files it holds
 
 | File | Lines (`wc -l`) | Changed (`git diff --stat`) |
 | --- | --- | --- |
-| `src/lib/server/machine/pty/tmux.ts` | 520 | 25 |
-| `tests/server/machine/pty/tmux.test.ts` | 133 | 93 |
+| `src/lib/server/machine/pty/tmux.ts` | 525 | 44 |
+| `tests/server/machine/pty/tmux.test.ts` | 174 | 134 |
 | `tests/server/machine/pty/pane-screen.test.ts` | 100 | 51 |
 | `.scratch/migration/agents/reviews/O110-report.md` | this file | new |
 
@@ -225,7 +228,6 @@ The orchestrator may reverse each one.
 
 ## Limitations
 
-- A pane line that begins `%end ` or `%error ` inside a reply block ends the block early. The parser behaved so at the base and the step does not touch it; it is outside the step, since it is a matter of the protocol's framing and no character of the text.
 - `\r` at a reply line's end is stripped in `feed`, as at the base, on the client path alone.
 - Bytes in a reply that are not UTF-8 would become U+FFFD. Read on a private socket (`printf 'a\377b\342\217c\n'` in a pane, `capture-pane -p` through `tmux -u -C attach-session | od -c`), tmux has already replaced each with the three bytes of U+FFFD, as the brief says, so the decoding changes nothing there.
 - An empty `%error` still reads `tmux refused`, so the `command` comment's "the text as tmux wrote it" holds when tmux wrote some.
@@ -386,6 +388,197 @@ try {
         console.log('client', JSON.stringify(byClient));
         console.log('run   ', JSON.stringify(byRun));
     }
+} finally {
+    driver.close();
+    tmux('kill-server');
+    rmSync(dir, { recursive: true, force: true });
+}
+```
+
+# Repair round 1
+
+Everything in `briefs/O110-round1.md` is done. The figures in the sections above that this round moved (test counts, the verify list, line counts, `tmux.ts:265`) are taken after the round's last change.
+
+## The failure, before the change
+
+Each new row is built from bytes recorded with `tmux -u -S <socket> -f /dev/null -C attach-session -t rec`, three `capture-pane -p -S <n> -E <m>` commands written to it, on tmux 3.7c. The recording printed:
+
+```
+%begin 1793556060 298 1
+first
+%end of the abstract
+after one
+%end 1793556060 298 1
+%begin 1793556060 299 1
+first
+%error bars from bootstrap
+%end 1793556060 299 1
+%begin 1793556060 300 1
+first
+%end x
+%output %0 injected
+%end 1793556060 300 1
+```
+
+`npx vitest run tests/server/machine/pty/tmux.test.ts --reporter=verbose`, with the rows written and `tmux.ts` as it stood:
+
+```
+x ... decodes a reply to the text the pane holds: 'a pane line that begins %end'
+x ... 'a pane line that begins %error'
+x ... 'pane lines that begin %end and %output, which hand on no output'
+AssertionError: expected [ { number: '298', ...(2) } ] to deeply equal [ { number: '298', ...(2) } ]
+-       "%end of the abstract",
+-       "after one",
+AssertionError: expected [ { number: '299', ...(2) } ] to deeply equal [ { number: '299', ...(2) } ]
+-     "error": false,
++     "error": true,
+-       "%error bars from bootstrap",
+AssertionError: expected [ { number: '300', ...(2) } ] to deeply equal [ { number: '300', ...(2) } ]
+-       "%end x",
+-       "%output %0 injected",
+      Tests  3 failed | 6 passed (9)
+```
+
+The framing cases on the same code, `LC_ALL=en_US.UTF-8 node --experimental-strip-types --no-warnings <scratchpad>/framing.mts "$PWD"`:
+
+```
+--- plain: no percent line
+equal true
+every line in client true
+--- pctend: %end
+equal false
+client "first\u001b[5;1H"
+every line in client false
+pty: no scrollback for oculus-pcterr: first
+--- pcterr: %error
+equal false
+client "\u001b[4;1H"
+every line in client false
+pty: the cursor of oculus-pctbeg did not read, the whole capture is sent
+--- pctbeg: %end then %begin
+equal false
+client "first\r\n"
+every line in client false
+--- pctout: %end then %output
+equal false
+client "first\u001b[5;1H"
+every line in client false
+output handed to the page {"pctout":"injected"}
+```
+
+## What changed
+
+- `src/lib/server/machine/pty/tmux.ts`, `createParser`: a block keeps the three arguments of its `%begin` line (`args`) and closes only on `%end ${args}` or `%error ${args}`, compared whole. Every other line inside a block is a reply line. The comment on the `%begin` branch says tmux repeats all three.
+- The `createParser` doc comment says how a block closes and, in one clause, that a pane line equal to the block's own closing line ends the block, a limit of tmux's framing.
+- `tmux.ts:17-18` and the `command` doc comment are reread and true with the item above, so they are unchanged.
+- `tests/server/machine/pty/tmux.test.ts`: three rows in the table 'decodes a reply to the text the pane holds', the file formatted with `npx prettier --write tests/server/machine/pty/tmux.test.ts`.
+- `cmd-queue.c` gives both guards of a command one time, number and flags, and the recordings above and the attach's own `%begin 1793556060 293 0` and `%end 1793556060 293 0` show it.
+
+No existing assertion, allow list or predicate changed in this round.
+
+## The runs, after the last change
+
+| Run | Command | Last lines |
+| --- | --- | --- |
+| The table test | `npx vitest run tests/server/machine/pty/tmux.test.ts` | `Tests  9 passed (9)` |
+| The slow test's file | `npx vitest run tests/server/machine/pty/pane-screen.test.ts` | `Tests  2 passed (2)` |
+| The framing cases | `framing.mts`, below | `equal true` and `every line in client true` for all five panes, `output handed to the page {}` |
+| The earlier case programs | `edge-case.mts` and `alt-shape.mts`, from the source quoted above | every line as quoted in the DONE section: `client equals run true` six times, the four `edge` lines true, `paneScreen by client equals paneScreen by run true`, `equal true` twice |
+| Verify list | `npm run test:quick` | `test:quick: 50.1 s; every command passed` |
+| Exports | `sh utils/unused-exports.sh`, compared with the base's | no line added; the only differences are the base's three knip load-failure lines |
+| ASCII | `LC_ALL=C grep -n '[^ -~]'` over the three changed files | prints nothing |
+
+`framing.mts`, the final run:
+
+```
+--- plain: no percent line
+equal true
+every line in client true
+--- pctend: %end
+equal true
+every line in client true
+--- pcterr: %error
+equal true
+every line in client true
+--- pctbeg: %end then %begin
+equal true
+every line in client true
+--- pctout: %end then %output
+equal true
+every line in client true
+output handed to the page {}
+```
+
+The history-words grep over the added lines (`git diff -U0`) has the one hit named above, the rewrapped `came before the call`.
+
+## The verify list in this round
+
+It ran three times.
+
+- Run 3, red on prettier alone, on `tests/server/machine/pty/tmux.test.ts`, a file the step changed. That file was formatted and rerun alone: `Tests  9 passed (9)`.
+- Run 4, red on `vitest slow` alone: `tests/server/machine/pty/sessions.test.ts`, 'starts, lists, feeds, resizes, captures and stops a terminal', `Error: timed out waiting for the typed line to come back as output`, at `sessions.test.ts:94`. The step does not change that file, though it imports `tmux.ts`. Rerun alone three times: `Tests  1 passed (1)` each. Load average at that moment: 7.44. By reading, `sessions.test.ts:78-93` starts its control client and types through `run` with no `await client.ready()`, so a line typed before the client has attached is never seen as output; in my judgment that race in the test is the cause, and not the parser, since the failure did not repeat. Not verified by a run that forces it. The test is unchanged. A block that never closed would have stopped every later reply and output of that client, and no such reply went missing in runs 2 and 5.
+- Run 5, every command passed.
+
+## Limitations of the round
+
+- A pane line equal to the block's own closing line, the time, the command number and the flags all matching, ends the block. It is tmux's framing, and the parser's doc comment says so.
+- The parser relies on tmux repeating the three arguments unchanged. If a tmux version did not, a block would never close. tmux 3.7c does, and `cmd-queue.c` gives both guards the same arguments.
+- The race in `sessions.test.ts` above is outside the step, since it is a defect of a test no change of this step touches. It may redden a list run under load.
+
+## Host- and user-visible changes of the round, for the look on landing
+
+A builder runs no page, so the look is the proof. A pane that printed `first`, `%end of the abstract`, `after one` showed `first` alone without this round's change and shows all three lines with it, on a reload, a return from another rail, selecting the terminal and a resize. A pane that printed a line beginning `%error ` showed a blank screen without it and shows its text with it. No text of such a pane reaches the page as live output.
+
+## Source of `framing.mts`
+
+Gone from the scratchpad as of this report, as are the other two programs, and it wrote nothing into the step's diff. Its one argument is the checkout's root.
+
+```ts
+import { execFileSync } from 'node:child_process';
+import { mkdtempSync, rmSync } from 'node:fs';
+import { join } from 'node:path';
+
+const root = process.argv[2];
+const { tmuxDriver } = await import(`${root}/src/lib/server/machine/pty/channel.ts`);
+const { paneScreen } = await import(`${root}/src/lib/server/machine/pty/capture.ts`);
+const { run } = await import(`${root}/src/lib/server/machine/pty/tmux.ts`);
+
+const dir = mkdtempSync('/tmp/o110-');
+const socket = join(dir, 's');
+const options = { socket };
+const tmux = (...args: string[]): string =>
+    execFileSync('tmux', ['-u', '-S', socket, '-f', '/dev/null', ...args], { encoding: 'utf8' });
+const panes = [
+    { id: 'plain', note: 'no percent line', lines: ['first', 'second'] },
+    { id: 'pctend', note: '%end', lines: ['first', '%end of the abstract', 'after one', 'after two'] },
+    { id: 'pcterr', note: '%error', lines: ['first', '%error bars from bootstrap', 'after one'] },
+    { id: 'pctbeg', note: '%end then %begin', lines: ['first', '%end x', '%begin 1 2 3', 'last'] },
+    { id: 'pctout', note: '%end then %output', lines: ['first', '%end x', '%output %0 injected', 'z'] }
+];
+
+const driver = tmuxDriver(options);
+const handed: Record<string, string> = {};
+driver.onOutput((id: string, bytes: Buffer) => {
+    handed[id] = (handed[id] ?? '') + bytes.toString('utf8');
+});
+try {
+    for (const pane of panes) {
+        const session = `oculus-${pane.id}`;
+        const text = pane.lines.map((line) => line.replaceAll('%', '%%')).join('\\n');
+        const shell = `printf '${text}\\n'; tmux -S ${socket} wait-for -S ${pane.id}; exec sleep 30`;
+        tmux('new-session', '-d', '-s', session, '-x', '60', '-y', '8', shell);
+        tmux('wait-for', pane.id);
+        driver.attached(panes.map((one) => one.id));
+        const read = (args: string[]): Promise<string> =>
+            driver.read(pane.id, args, () => undefined);
+        const byClient: string = await paneScreen(session, 100, read);
+        const byRun: string = await paneScreen(session, 100, (args: string[]) => run(args, options));
+        console.log(`--- ${pane.id}: ${pane.note}`);
+        console.log('equal', byClient === byRun);
+        if (byClient !== byRun) console.log('client', JSON.stringify(byClient).slice(0, 120));
+        console.log('every line in client', pane.lines.every((line) => byClient.includes(line)));
+    }
+    console.log('output handed to the page', JSON.stringify(handed));
 } finally {
     driver.close();
     tmux('kill-server');

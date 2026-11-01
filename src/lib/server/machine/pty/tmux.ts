@@ -12,7 +12,10 @@
 // The bytes of `%output` are escaped by tmux: a byte below 0x20 and a backslash become `\ooo` in
 // octal, and every other byte is written through as itself. A UTF-8 sequence therefore arrives as
 // its raw bytes, possibly split across two reads, which is why the stream is buffered as latin1
-// (one character per byte, and reversible) and decoded to a Buffer only once a whole line is in.
+// (one character per byte, and reversible) until a whole line is in. That holding serves both forms
+// of a line: `%output` becomes a Buffer, and a reply line, which tmux writes as raw UTF-8 with
+// nothing escaped, becomes UTF-8 text. `control` gives a command's reply as those lines with a
+// final newline, the text `run` gives for the same command, so a reader of a pane takes either.
 
 import { execFile, spawn } from 'node:child_process';
 import type { ChildProcessWithoutNullStreams } from 'node:child_process';
@@ -204,7 +207,10 @@ export function decodeOutput(escaped: string): Buffer {
     return Buffer.from(bytes);
 }
 
-/** A reply block: the lines between `%begin` and its `%end`, or an `%error` instead. */
+/**
+ * A reply block: the lines between `%begin` and its `%end`, or an `%error` instead. Its lines are
+ * text, decoded from the UTF-8 bytes tmux wrote.
+ */
 export type ControlReply = {
     /** tmux's command number, from the `%begin` line. */
     number: string;
@@ -216,6 +222,7 @@ export type ControlReply = {
 export type ControlEvent = {
     /** The notification's name without its `%`, such as `session-changed`. */
     name: string;
+    /** The rest of the line as the stream holds it, one character per byte. */
     rest: string;
 };
 
@@ -232,31 +239,36 @@ export type ControlParser = {
 
 /**
  * The control stream, as a parser with no process in it, which is what lets the whole protocol be
- * tested on recorded text. tmux writes a command's reply as one contiguous block, so a line inside
- * a block is a reply line and nothing else.
+ * tested on recorded text. tmux writes a command's reply as one contiguous block, and closes it
+ * with an `%end` or `%error` that repeats the three arguments of its `%begin`, so every other line
+ * inside a block is a reply line, one that begins with `%` included. A pane line equal to the
+ * block's own closing line ends the block, a limit of tmux's framing.
  */
 export function createParser(handlers: ParserHandlers): ControlParser {
     let held = '';
-    let block: { number: string; lines: string[] } | null = null;
+    let block: { args: string; number: string; lines: string[] } | null = null;
 
     const line = (text: string): void => {
         if (block !== null) {
-            if (text.startsWith('%end ') || text.startsWith('%error ')) {
+            const ended = text === `%end ${block.args}`;
+            const refused = text === `%error ${block.args}`;
+            if (ended || refused) {
                 const reply: ControlReply = {
                     number: block.number,
                     lines: block.lines,
-                    error: text.startsWith('%error ')
+                    error: refused
                 };
                 block = null;
                 handlers.reply(reply);
                 return;
             }
-            block.lines.push(text);
+            block.lines.push(Buffer.from(text, 'latin1').toString('utf8'));
             return;
         }
         if (text.startsWith('%begin ')) {
-            // `%begin <time> <number> <flags>`; the number is what tmux repeats on %end and %error.
-            block = { number: text.split(' ')[2] ?? '', lines: [] };
+            // `%begin <time> <number> <flags>`; tmux repeats all three on the %end or %error.
+            const args = text.slice('%begin '.length);
+            block = { args, number: args.split(' ')[1] ?? '', lines: [] };
             return;
         }
         if (text.startsWith('%output ')) {
@@ -297,10 +309,12 @@ export type ControlHandlers = {
 
 export type ControlClient = {
     /**
-     * Send one tmux command and resolve with its reply text, or reject on `%error`. `replied` is
-     * called as the reply is read, at its place among the pane's output: tmux writes a client's
-     * replies in order with the `%output` of its session, so every chunk the command saw came
-     * before the call and every chunk it did not see comes after it.
+     * Send one tmux command and resolve with its reply text, or reject on `%error` with the text
+     * as tmux wrote it. The reply text is the reply's lines, each ended by a newline, and empty for
+     * a reply with no lines, which is what `run` gives for the same command. `replied` is called as
+     * the reply is read, at its place among the pane's output: tmux writes a client's replies in
+     * order with the `%output` of its session, so every chunk the command saw came before the call
+     * and every chunk it did not see comes after it.
      */
     command(args: string[], replied?: () => void): Promise<string>;
     /**
@@ -377,7 +391,7 @@ export function control(
             waiting.replied?.();
             const text = reply.lines.join('\n');
             if (reply.error) waiting.reject(new Error(text === '' ? 'tmux refused' : text));
-            else waiting.resolve(text);
+            else waiting.resolve(reply.lines.length === 0 ? '' : `${text}\n`);
         }
     });
 

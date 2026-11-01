@@ -1,5 +1,4 @@
-In flight (2 of 6 slots in use):
-- O110 (terminal text keeps its characters), builder running under its cases ruling.
+In flight (1 of 6 slots in use):
 - O111 (Settings responds and folds under a search), brief closed; its builder runs alone, since it writes a configuration file.
 
 Queued, in order (2 steps):
@@ -7,9 +6,10 @@ Queued, in order (2 steps):
 - O114 (one Terminal view for a session).
 
 Owed looks:
-- O112: the Session view with a picked session, its section heads, sub-heads and group heads, default and rice.
+- O112: the Session view's heads under the rice theme.
 
 Landed, newest first:
+- O110 (terminal text keeps its characters), 2026-11-01.
 - O112 (the Session view's type sizes), 2026-11-01.
 - O108 (one desktop app), 2026-10-31.
 - O109 (the app's server starts), 2026-10-31.
