@@ -5946,3 +5946,5 @@ Where it applies: O102's repair round 1 (`agents/briefs/O102-round1.md`). Booked
 Builds on it: O102
 - 2026-10-30, O104's /spec (ruling 374 (a), internal widenings of the brief check): `record.ts`, `record-menu.ts`, `docs/diagrams/`, the six files of stale sentences and the test files added to the paths; the editor's helper placed at `views/boards/editor/editor-target.ts`; no catalog file added. Named in the next report.
 - 2026-10-30, O104's first run (ruling 374 (a)): `views/feeds/leads/Leads.svelte` added to the paths, to hand `LeadCard` its ident. Open item 598 (a) closed in automode.
+- 2026-11-01, O111's review (Z1093, open item 619): what a Settings search draws past its cap of 25 entries in a row. A list whose matches all fall past the cap draws no entry, and the line under the row counts them, so the count is exactly what is not on screen; the alternative showed the whole list with its count wrong, and was the lazy option. Applied in O111's repair round 1 (`agents/briefs/O111-round1.md`).
+Builds on it: O111

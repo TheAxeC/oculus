@@ -31,7 +31,9 @@ dispatch:            # steps in flight, up to six (Z632)
   executor: agent
   worker: claude:opus
   report: .scratch/migration/agents/reviews/O111-report.md
-  round: 0
+  builder_usage: 341147 tokens, 126 tool uses, 1326.4 s
+  round: 1
+  reviewer_report: .scratch/migration/agents/reviews/O111-refuter.md (a672538fd7539b84e, claude-opus-5-5, 333002 tokens, 41 tool uses, 885.5 s)
   brief_check: .scratch/migration/agents/reviews/O111-brief-check.md (ae05ac84921af52fa, claude-opus-5-5, 228725 tokens, 32 tool uses, 566.1 s)
   landing: not-started
 ```
