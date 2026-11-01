@@ -14,6 +14,6 @@ review: earned
 refute_after_repair: yes # yes: /refute runs again over each repair round; the last run's findings are fixed at landing or booked, never sent back
 repair_rounds: 1 # the most repair rounds a step gets; a refutation that finds nothing ends them early; the exception in plan-orchestration allows one beyond it
 review_minutes: 0 # the reviewer's time box in minutes; 0 is none
-look: 'the running oculus server at localhost:8790, the views opened there on the page it shows; a scratch server only when the look needs what the running server cannot show' # where a changed view is opened at landing; empty means no look step
+look: "a scratch server on a port other than 8787 and 8790, started from the step's checkout with a scratch HOME and a short TMUX_TMPDIR, the views opened there in Chrome" # where a changed view is opened at landing; empty means no look step
 workers_at_once: 6 # at most six steps in flight
 bench: []

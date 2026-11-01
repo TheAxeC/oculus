@@ -1,6 +1,11 @@
 In flight (0 of 6 slots in use): none.
 
-Queued, in order (0 steps): none.
+Queued, in order (5 steps):
+- O110 (terminal text keeps its characters).
+- O111 (Settings responds and folds under a search).
+- O112 (the Session view's type sizes).
+- O113 (Timeline a section of the Session view).
+- O114 (one Terminal view for a session).
 
 Owed looks: none.
 
