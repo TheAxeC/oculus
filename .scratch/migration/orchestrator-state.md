@@ -31,8 +31,9 @@ dispatch:            # steps in flight, up to six (Z632)
   executor: agent
   worker: claude:opus
   report: .scratch/migration/agents/reviews/O110-report.md
-  builder_usage: 138932 tokens, 24 tool uses, 281.3 s (first run, handed back)
-  round: 0
+  builder_usage: 189809 tokens, 40 tool uses, 550.1 s (whole run with its cases ruling, as the last notice gives it)
+  reviewer_report: .scratch/migration/agents/reviews/O110-refuter.md (a735650249833e2ac, claude-opus-5-5)
+  round: 1
   brief_check: .scratch/migration/agents/reviews/O110-brief-check.md (a75405609a06b36d0, claude-opus-5-5, 175851 tokens, 20 tool uses, 347.7 s)
   landing: not-started
 - step: O111

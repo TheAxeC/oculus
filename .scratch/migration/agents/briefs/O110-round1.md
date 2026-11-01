@@ -1,0 +1,8 @@
+# O110, repair round 1
+
+Findings of `agents/reviews/O110-refuter.md`, each with its ruling. Read `.scratch/migration/agents/reviews/O110-refuter.md` in the main ledger's copy given beside this file.
+
+1. Spec 1. In `createParser` in `src/lib/server/machine/pty/tmux.ts`, a block keeps the three arguments of its `%begin` line and closes only on `%end` or `%error` with those same three arguments, as `man tmux` says of a matching pair and the recorded `od -c` shows. Every other line inside a block is a reply line, one beginning `%end `, `%error `, `%begin ` or `%output ` included. Add rows to the table test 'decodes a reply to the text the pane holds', from bytes recorded as the others are: a reply holding a line `%end of the abstract`; a reply holding a line `%error bars from bootstrap`; a reply holding `%end x` then `%output %0 injected`, where the output is not handed on. Run the new rows on the code as it stands before the change and quote their failure.
+2. Standards 1. With item 1, the sentences at `tmux.ts:17-18`, `:241-243` and `:307-309` are true; reread them and correct any that is not. A pane line that equals the block's own closing line exactly stays a limit of tmux's framing, and the `createParser` doc comment says so in one clause.
+
+Rerun: the two test files, the reviewer's framing cases on a private socket (its source is yours to write from the report, in the scratchpad, gone before the report), and `npm run test:quick` once after the last change. Append "# Repair round 1" to your report at the report path in your worktree: the failure quoted, what changed, the runs. The first line of the report's Limitations about the framing goes.
