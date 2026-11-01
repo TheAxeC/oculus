@@ -1,5 +1,5 @@
 In flight (1 of 6 slots in use):
-- O111 (Settings responds and folds under a search), brief closed; its builder runs alone, since it writes a configuration file.
+- O111 (Settings responds and folds under a search), builder running alone, since it writes a configuration file.
 
 Queued, in order (2 steps):
 - O113 (Timeline a section of the Session view).
