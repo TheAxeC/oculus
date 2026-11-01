@@ -9,7 +9,7 @@
 import { instanceMap } from '$lib/state/workbench/layout/instance';
 
 /** The sections in the order a new tab draws them. */
-const SECTIONS = ['details', 'changes', 'agents'] as const;
+const SECTIONS = ['details', 'changes', 'timeline', 'agents'] as const;
 
 export type SectionId = (typeof SECTIONS)[number];
 

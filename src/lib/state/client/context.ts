@@ -700,7 +700,9 @@ export function createClientState(
     // server refused, and the offer to save the workspace an option without a file to go to makes.
     const sources = createNoticeSources(notices, {
         openSession: (id, title) =>
-            void layout.openView('session-detail', { session: id, label: title }),
+            void layout.openView('session-detail', { session: id, label: title }, undefined, {
+                keep: true
+            }),
         openView: (view) => void layout.openView(view),
         saveWorkspace: () => ui.requestPalette(':workspace-save ')
     });

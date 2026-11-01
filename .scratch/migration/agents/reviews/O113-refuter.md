@@ -135,3 +135,181 @@ Stated in the report and for the look: the Timeline box may become a tab stop of
 - Git commands other than the three allowed: none is quoted in the report.
 
 Usage: a1af2b7a974561620, claude-opus-5-5, 218381 tokens, 32 tool uses, 606.0 s
+
+## Repair round 1, refuted
+
+Result in short: every rerun is green, and rulings 1 to 4 hold. The closures of Behaviour 1, Behaviour 2 and Standards 1 reproduce, and Standards 2 is answered by the report's statement. There are three findings over the round, none of which makes an item violated or a case unmet:
+- Proof 1: the no-map test row cannot tell `instanceMap` from a bare spread.
+- Standards 1: G145 as booked lacks the Code line and the describe.
+- Behaviour 1: `CardSessions.svelte:48` wipes the arrangement, left there by the ruling.
+
+### Verification (rerun by the reviewer)
+
+```
+npm run test:quick -- src/lib/views/sessions/session-detail/TimelineTurns.svelte src/lib/views/sessions/session-detail/SessionDetail.svelte src/lib/views/sessions/session-detail/session-sections.ts src/lib/views/sessions/session-list/SessionList.svelte src/lib/state/workbench/layout/open/opening.ts src/lib/state/client/context.ts src/lib/state/client/selectors.svelte.ts tests/state/workbench/layout/open-keep.test.ts src/lib/views/shared/card/card.ts src/lib/state/workbench/selection.svelte.ts src/lib/views/sessions/timeline/Timeline.svelte config/text/views/sessions/timeline.yml config/defaults/layout.yml docs/HELP.md docs/palette.md
+ok      prettier (0.6 s): All matched files use Prettier code style!
+ok      ASCII gate (0.7 s)
+ok      svelte-kit sync (2.8 s)
+ok      eslint (2.6 s)
+ok      svelte-check (9.4 s): 1793566202175 COMPLETED 577 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest slow (39.2 s): Duration  27.56s (transform 12.72s, setup 0ms, import 16.86s, tests 10.54s, environment 0ms)
+ok      vitest (47.4 s): Duration  36.39s (transform 68.36s, setup 0ms, import 127.31s, tests 2.19s, environment 769ms)
+ok      vitest checks (59.2 s): Duration  47.97s (transform 24.06s, setup 0ms, import 48.14s, tests 127.62s, environment 4ms)
+test:quick: 62.0 s; every command passed
+test:quick: not covered: tests that reach no changed file within the import depth,
+            other than the checks under tests/checks/source and tests/checks/tree,
+            which run for any change under src, tests or utils; the build, the lint
+            of unchanged files
+
+npx vitest run tests/state/workbench/layout/open-keep.test.ts
+ Test Files  1 passed (1)
+      Tests  5 passed (5)
+   Duration  3.32s (transform 2.40s, setup 0ms, import 3.17s, tests 28ms, environment 0ms)
+
+perl gate of agents/spec.md's last section, over the 20 paths of git status --short the deleted file left out (the report and the round brief included):
+(prints nothing) perl exit 0
+
+grep -rnE "pin\('timeline'\)|openView\('timeline'|id: 'timeline'|view: timeline" src config/defaults --exclude=local.yml
+(prints nothing) grep exit 1
+
+git status --short: 21 lines before and after the rerun.
+
+Commands the report quotes:
+grep -n 'six' src/lib/state/client/selectors.svelte.ts: nothing, exit 1
+grep -n -E 'opening\.ts|layout/open|openView|OpenOptions' .scratch/migration/agents/guarded.md: :108 armed-keep, :169 deposit, :426 G145 (booked after the report)
+grep -rnE "view_timeline|timeline_bar|timeline_glyph|sessions/timeline/|Timeline\.svelte" src tests config docs README.md --exclude=local.yml | grep -v 'sources/files': nothing
+wc -l: TimelineTurns 208, SessionDetail 214, SessionList 455, opening.ts 547, context.ts 873, selectors.svelte.ts 871, open-keep.test.ts 80
+ls src/lib/views/sessions/session-detail | wc -l: 10
+sh utils/unused-exports.sh, lines for the changed files: card.ts: SESSION_VIEWS, SHOWN; folds.ts lines; selectors.svelte.ts: Area, Subtask; context.ts: TabScopeStore. The diff adds no export.
+history words over the added comment lines of opening.ts, context.ts, selectors.svelte.ts, SessionList.svelte and over open-keep.test.ts: nothing. Id and date grep over the test: nothing.
+
+Round checks of my own:
+diff -u of the snapshot and the worktree over files.txt: three paths differ, docs/HELP.md (one sentence), SessionList.svelte (:241, :338), TimelineTurns.svelte (:79, :82).
+grep -rn "restate(" src/lib/state/workbench/layout: opening.ts:285,378,484,523; the other sites are folder pages, `pages.ts` and `restateInstance`, none a reopen.
+git show 0c02442c5:.../opening.ts | grep -n "restate(": 268, 358, 459, 495, the ruling's four lines.
+grep -rnE "session-detail" src: five lines; the openers are context.ts:703, CardSessions.svelte:48, SessionList.svelte:241,338; card.ts:59 is a list.
+```
+
+### Verdicts
+
+Rulings of round 1:
+- Ruling 1: holds. `OpenOptions.keep` has its doc comment (`opening.ts:71-76`). `reopened` (`:118`) gives `{ ...instanceMap(tab.state), ...instanceMap(state) }`, used at all four restate lines (`:285`, `:378`, `:484`, `:523-527`). Callers `SessionList.svelte:241,338` and `context.ts:703` pass it, and all three open `session-detail`. The option reaches `opening.openView` through `layout.svelte.ts:834` and `show.ts:156-158`. `session-detail` has no place rule in its registration, so the bare path of `show.ts` applies. Test added and green. See Proof 1 for one of its rows and Behaviour 1 for the caller the ruling left.
+- Ruling 2: holds. `TimelineTurns.svelte:79-82` has the guard on `held === undefined` alone, the compare and `shown = id` for every session, and only the write held to `count > 0`. By reading: a session with no events sets `shown` and `stuck`, and a later pick of the first session goes to the foot. A first push into that empty session also follows.
+- Ruling 3: holds. `selectors.svelte.ts:100` reads "views name"; the grep for `six` exits 1; the report names the file.
+- Ruling 4: holds. The report states the width test was rerun alone between runs 1 and 2, went red, and the list ran regardless. That answers Standards 2.
+
+Items of the brief:
+- 1: holds, `session-sections.ts:12`.
+- 2: holds, unchanged by the round except the guard. Markup, `kindLabel`, `text`, `tip` and `TONES` read against the base file; no Pane, bar, picker, registration or record-less state. `place` is judgment call 1.
+- 3: holds, `TimelineTurns.svelte` `.turns` has `max-height: 40vh`, `.ts` has `--fs-xs`, no font size on rows, no rice rule.
+- 4: holds, `SessionDetail.svelte` branch at `:158`, explicit Agents branch, toolbar has Transcript alone, head comments state four sections.
+- 5: holds, `git status --short` shows the deletion; the name grep is empty.
+- 6: holds, the three keys are gone and the list's catalog checks passed.
+- 7: holds, `git diff 0c02442c5 --stat -- config/catalogs/glyphs.yml` is empty; `VenueCard.svelte:225` keeps the glyph. `Ribbon.svelte:53` was not rechecked here, since my path guess missed it; the file is outside the diff, and the first reviewer read it at that line.
+- 8: holds, one line gone.
+- 9: holds, `card.ts:59`.
+- 10: holds, `SessionList.svelte:241` and head comment `:32`; now with `keep`.
+- 11: holds, Standards 1 of the first run is closed. `grep -rnEi "six (session )?views|five views|timeline (view|tab)|Timeline of the session" src docs README.md config --exclude=local.yml` prints only one unrelated line in `sources.yml`.
+- "No code handles a saved `timeline` tab": holds, the diff adds none.
+
+Cases. "Met" means a reading or a grep settles the whole expected result; "not verifiable" means only a page settles it. The brief's look at landing takes every case in either state.
+- Sections read Details, Changes, Timeline, Agents; head counts turns: met, by `SECTIONS`, `{#each order}`, `count={turns.length}`.
+- Same turns, tags, tones, clocks, tooltips: met, by reading against the base file; clock size is the "Rows" case.
+- Past the 200-event cap: met, reading of `record.ts`, `folds.ts`, `tl_before`; unchanged by the round.
+- No events: met, head count 0 and `tl_empty`; the round leaves this path as it was.
+- Close and reopen: not verifiable for the box. Closed state in the tab is met by reading. Look at landing: close and reopen with the box scrolled up.
+- Another session picked: not verifiable. Reading gives the foot in every path, the exception of the first run now gone. Look at landing: pick with the Session tab on top and with Files on top; scroll up, pick a session with no events, pick the first again.
+- Drag, Alt+Up, Alt+Down, order survives a reload: not verifiable. Look at landing: Alt+Down twice with the box at the foot and scrolled up, then a push, then a reload.
+- Push scrolled up and at the foot: not verifiable. Look at landing: append several lines under the scratch HOME.
+- More events than the box: not verifiable. Look at landing: reach the Agents head.
+- Rows at `--fs-sm`, clocks at `--fs-xs`: not verifiable. Look at landing: `getComputedStyle`.
+- Pinned toolbar holds Transcript alone: met, by reading `SessionDetail.svelte`.
+- Folder-limited pick: met, first press and now repeat press. `document: true` routes to `openOpened`, whose restate at `:378` keeps the arrangement; no `timeline` tab.
+- No Timeline view on offer and the grep: met, the grep is empty and `docs/palette.md` lost the row.
+- Fresh layout: met, `layout.yml` pane holds Transcript alone.
+- Saved `timeline` tab: not verifiable for the drawing. Look at landing: a saved tab draws as unknown. That nothing converts it is met by the diff.
+
+Closures of the first run:
+- Behaviour 1: reproduced for the three callers, by reading and by the four test rows. No check was removed: `tests/` differs by one new file. The residue at a fourth caller is Behaviour 1 below.
+- Behaviour 2: reproduced by reading; the proof in a page is the look. No test is owed, since views have no guarded entry (`guarded.md:3`).
+- Standards 1: reproduced by the grep.
+- Standards 2: answered by the report.
+
+### 1. Spec
+
+none
+
+Read and cleared:
+- Reach of the round: every changed path is on the brief's list or round 1's added paths.
+- The `OpenOptions.document` doc edit stays inside the finding's reach. It carries item 10, whose Session tab now takes the option.
+- The HELP sentence at `docs/HELP.md:342` is what `agents/spec.md` asks of a user-visible change, and it is true as worded: list and notice, no card.
+
+### 2. Proof
+
+1. `tests/state/workbench/layout/open-keep.test.ts:76-79`
+   - Quoted hunk: "it('reads a held state that is no map as empty', () => { ... expect(repeated(onPage(null), asked, { keep: true })).toEqual(asked);"
+   - What is wrong: the row's input cannot tell the behaviour from its absence. `{ ...null, ...asked }` equals `asked`, so the row gives the same result with `instanceMap` taken out of `reopened`, judged by reading. The report also says this row passed on the unchanged code, so it has no failure quoted, and the rules ask one for a test of a behaviour the change adds. G145's text does not name this input either.
+   - Failure scenario: `reopened` written as a bare spread of the held state, against a tab holding text or a list, yields index keys (`{ 0: 't', ... }`) in the saved state. This row stays green.
+   - Disposition: landing-sized. The row needs a held value whose spread differs from empty, or it goes.
+   - Verdict: none. Ruling 1's named requirement is carried by the four path rows.
+
+Read and cleared:
+- The four path rows are real. Each reaches its own path:
+  - `openedRule` and `uniqueRule` default to false (`layout.svelte.ts:424,427`), and `session-detail` has a group and no `unique`, so row 1 takes `:285`.
+  - `document: true` takes `:378`.
+  - `held: true` takes `:484`.
+  - The float row takes `:523` through `:263`.
+- Each row asserts both directions, and with the keep taken out `kept` would equal `ASKED` and fail, as the report's red run shows.
+- The forward at `:471` (a held tab in a float) has no row, and no caller passes `held` with `keep`, so nothing rests on it.
+- The callers' `keep: true` is outside the test, and its head comment says so. It is read at the calls, and the look takes it.
+
+### 3. Standards
+
+1. `.scratch/migration/agents/guarded.md:426` (the ledger, written by the session under Z1097, not by the builder)
+   - Quoted hunk: "- G145. A tab opened again with `keep` takes the given fields over what it holds, so a Session tab keeps its closed sections and their order. Test: `tests/state/workbench/layout/open-keep.test.ts`."
+   - What is wrong: `guarded.md:3` says a test is "named under it by file and title, or by file and describe". The entry gives neither title nor describe, and no Code line, though the report's proposed wording had both.
+   - Failure scenario: the rule "a step whose change touches an entry's code runs that entry's test" gives a later step changing `opening.ts` no way to find G145 from the entry. Whether `test:quick` selects the test anyway by imports is not verified.
+   - Disposition: a ledger edit at landing, adding `Code: src/lib/state/workbench/layout/open/opening.ts` and the describe 'a repeat open of a tab already open'.
+   - Verdict: none.
+
+Read and cleared:
+- `selectors.svelte.ts:99-100` needs no rewrap, since its first line stays full and its second ends the sentence.
+- The new doc comments pass `comment-width`.
+- `context.ts` at 873 lines is under 880, `opening.ts` is 547, `SessionList.svelte` is 455.
+- `keep` before `asker` in `openOpened` is forced by the optional parameter, and the report names it.
+- `tests/state/workbench/layout` holds 5 items.
+
+### 4. Behaviour
+
+1. `src/lib/views/shared/card/project/CardSessions.svelte:48` and `opening.ts:208-216`
+   - Quoted hunk: "else openBeside('session-detail', { session: entry.id, label: entry.title });" and "return openInto(view, state, true, page, options?.preview === true, asker);"
+   - What is wrong: this is the fourth opener of a pinned Session tab, and the only one left replacing the tab's state. `openBeside` drops every option but `preview`, so `openInto` runs with `keep = false` and `:285` replaces the state. The same line stood on the base, so the step did not cause it. The report states it as a limitation, and ruling 1 says "No other caller changes", so the builder followed the ruling. It is still the same loss the round exists to end, and the ruling's own class ("where a pinned Session tab is opened on a session") holds this caller.
+   - Failure scenario: on a Projects page with no tab following the selection, `sessionTab` answers null. Press session X on a card, close Timeline and move Agents up in the Session tab that opens, press X on the card again. The tab comes forward with every section open and in default order.
+   - The HELP sentence stays true, since it names only the list and a notice.
+   - Disposition: two lines of code and the two doc sentences on `openBeside` that say it reads `preview` alone, plus a test row if the session wants the path guarded. `repair_rounds` is 1, so this does not go back to the builder: it is fixed at landing or raised, and widening a ruling that said "no other caller" is the session's to decide.
+   - Verdict: none. Ruling 1 holds on its letter.
+
+Read and cleared, the points the brief for this review named:
+- Stale `agent` in a Session tab: not reachable. A found tab's `stateId` equals the given one, and a held `agent` makes `stateId` the JSON pair of session and agent (`instance.ts:292-293`), which a `{ session, label }` open does not find. The only writer of `agent` opens `transcript` (`AgentRows.svelte:123`).
+- Stale `shown`: `keep` never writes it. A pinned tab holds one only because `pinInstance` keeps the rest of the state, and `unpinInstance` keeps it too. It is read only unpinned with no selection (`followedSession`), and `keepShown` skips a pinned tab. With `keep` a reopened tab holds what it held before the reopen, and the given `session` cannot differ from the held one, by the same identity match. No stale key arises from `keep`.
+- All four restate paths use `tab.state` read in the same synchronous call as the write. `showLeaf` in `showHeld` changes folds and the maximised pane, never a tab's state.
+- `reopened` with `state === undefined` is never reached, since each site keeps its guard.
+
+### Declined to judge
+
+- Whether automode covers `guarded.md:3` "A new entry needs Axel's yes". Z1097 (`plan.md:3399`) records G145 as "the orchestrator, automode", and `agents/spec.md` says a step needing a new entry stops and asks Axel. The report's "No yes from Axel is on record" stays true, while its "one rule clash left" predates Z1097. Whether the ruling suffices is Axel's or the session's call.
+- `npm run diagrams` and `npm run docs:palette`: not run, since both write into the worktree. The snapshot diff of the diagrams and the palette is empty, and `docs/diagrams/layers.dot` (21:43:43) is newer than the last source edit (21:43:00).
+- Everything a page shows, per the cases marked not verifiable. Whether Chromium keeps a moved scroller's offset, and whether a clamp fires a scroll event, are settled at the look.
+- The report's red run on the unchanged code: past, and rerunning it would need the code changed. Its quoted `open-keep.test.ts:65` is `:72` now. The test was edited after that run and is judged by reading, as the skill says.
+- The report's full-list count of 4 and the width rerun of ruling 4: past runs that cannot be rerun. The `ps` count at hand-back likewise.
+- The report's `diff -rq` against a base copy: no base copy is named, so `git diff 0c02442c5` and the snapshot stood in.
+- `sh utils/unused-exports.sh` against a base list: none exists. I read the lines for the changed files, and the diff adds no export.
+- `test:quick: 15 changed file(s)` and `43 test file(s)` of the report: the output I kept starts below those lines, and no decision rests on them.
+
+Usage: a493bbde9d565d176, claude-opus-5-5, 208492 tokens, 26 tool uses, 478.8 s
+
+## Closed
+
+- Proof 1: the row's held value is text, whose spread differs from empty; fixed at landing.
+- Standards 1: G145 gains its Code line and describe; fixed at landing.
+- Behaviour 1: `openBeside` reads `keep` and `CardSessions.svelte:48` passes it, with a test row; fixed at landing (Z1098).

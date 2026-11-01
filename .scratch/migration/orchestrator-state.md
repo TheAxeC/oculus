@@ -23,20 +23,7 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 ```
 
 ```yaml
-dispatch:            # steps in flight, up to six (Z632)
-- step: O113
-  base: 0c02442c5
-  worktree: .agents/worktrees/migration-O113
-  executor: agent
-  worker: claude:opus
-  launched: 2026-11-01
-  session_id: a2aa5018f994bbfb1
-  report: .scratch/migration/agents/reviews/O113-report.md
-  builder_usage: 221465 tokens, 59 tool uses, 975.8 s
-  reviewer_report: .scratch/migration/agents/reviews/O113-refuter.md (a1af2b7a974561620, claude-opus-5-5, 218381 tokens, 32 tool uses, 606.0 s)
-  round: 1
-  landing: not-started
-  brief_check: "a68ed6e397026f14a, claude-opus-5-5, 200781 tokens, 22 tool uses, 475.6 s"
+dispatch: none      # steps in flight, up to six (Z632)
 ```
 
 ## The standing demands (from Axel, in force)
@@ -766,6 +753,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - 2026-10-31 (1.0.0 replaced on f6c42d1a6). At Axel's word the three archives were rebuilt from f6c42d1a6, the macOS bundle's server answered 200 on `/` and `/api/health`, `v1.0.0` was recreated on that commit, the downloaded zip equals the local one, and the app is installed in `~/Applications`. In flight (0 of 6). Open items: none.
 - 2026-10-31 (1.0.0 released again). The three archives were rebuilt from e584a8a02; the macOS bundle's server started under its own Electron and answered, and `tests/server/desktop/start.test.ts` passed on main, 5 of 5. `v1.0.0` was deleted and recreated on e584a8a02 with those archives, and the app is installed in `~/Applications`. In flight (0 of 6). No step is left unticked. Open items: none.
 - 2026-10-31 (O108 landed). O108 landed on main (booked under O108 in `plan.md`, `agents/reviews/O108-landing.md`). Next: O109's second half: the three archives rebuilt from main, the app started for real, Axel pushes, `v1.0.0` replaced and the app installed in `~/Applications`. In flight (0 of 6). Open items: none.
+- 2026-11-01 (O113 landed). O113 landed on main (booked under O113 in `plan.md`, `agents/reviews/O113-landing.md`), G145 added. In flight (0 of 6). Next: O114, alone, whose landing changes the saved layout's `timeline` and `transcript` tabs once. Open items: none.
 - 2026-11-01 (O111 landed). O111 landed on main (booked under O111 in `plan.md`, `agents/reviews/O111-landing.md`), G144 added. In flight (0 of 6). Next: O113, then O114, each alone. Open items: none.
 - 2026-11-01 (O110 landed). O110 landed on main (booked under O110 in `plan.md`, `agents/reviews/O110-landing.md`), G90 widened. In flight (1 of 6): O111 at preparing. Next: O111's preparation commit, worktree and builder, alone; then O113, O114. Open items: none.
 - 2026-11-01 (O112 landed; O110 in round 0; O111's brief closed). O112 landed on main (booked under O112 in `plan.md`, `agents/reviews/O112-landing.md`). O110's builder is finishing under `agents/briefs/O110-cases.md` (Z1090). O111's brief is closed (Z1091, Z1092) and waits to run alone. In flight (2 of 6). Next: O110's report, /refute, /land; then O111; then O113, O114. Open items: none.

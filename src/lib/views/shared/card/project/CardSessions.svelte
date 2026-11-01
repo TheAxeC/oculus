@@ -45,7 +45,10 @@
         select(entry.id);
         const tab = sessionTab(layout(), usedInstances());
         if (tab !== null) activateInstance(tab.id);
-        else openBeside('session-detail', { session: entry.id, label: entry.title });
+        else {
+            const pinned = { session: entry.id, label: entry.title };
+            openBeside('session-detail', pinned, undefined, undefined, { keep: true });
+        }
     }
 </script>
 

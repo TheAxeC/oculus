@@ -236,7 +236,7 @@
 <g id="node27" class="node">
 <title>folder views/sessions to folder views/shared</title>
 <polygon fill="none" stroke="none" points="145.33,-581.68 130.67,-581.68 130.67,-569.2 145.33,-569.2 145.33,-581.68"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="138" y="-573.04" font-family="Helvetica,Arial,sans-serif" font-size="8.00">24</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="138" y="-573.04" font-family="Helvetica,Arial,sans-serif" font-size="8.00">22</text>
 </g>
 <!-- folder views/sessions&#45;&gt;folder views/sessions to folder views/shared -->
 <g id="edge42" class="edge">
@@ -269,7 +269,7 @@
 <g id="node30" class="node">
 <title>folder views/sessions to layer ui</title>
 <polygon fill="none" stroke="none" points="139.33,-856 124.67,-856 124.67,-843.52 139.33,-843.52 139.33,-856"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="132" y="-847.36" font-family="Helvetica,Arial,sans-serif" font-size="8.00">90</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="132" y="-847.36" font-family="Helvetica,Arial,sans-serif" font-size="8.00">88</text>
 </g>
 <!-- folder views/sessions&#45;&gt;folder views/sessions to layer ui -->
 <g id="edge48" class="edge">

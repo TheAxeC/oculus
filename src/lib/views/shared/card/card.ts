@@ -56,7 +56,7 @@ export type CardAction = {
  * when the page holds one. A Terminal tab draws only the terminals it owns and follows no
  * selection, so it is not among them.
  */
-export const SESSION_VIEWS = ['session-list', 'session-detail', 'transcript', 'timeline'] as const;
+export const SESSION_VIEWS = ['session-list', 'session-detail', 'transcript'] as const;
 
 /**
  * The tab a session pressed on a card opens in: of the tabs of a tree that follow the selected

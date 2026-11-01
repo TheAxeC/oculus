@@ -41,7 +41,6 @@ Every registered view is listed by its words.
 | Session | session-detail |
 | Sessions | session-list |
 | Terminal | terminal |
-| Timeline | timeline |
 | Transcript | transcript |
 | Data | data |
 | Recover | recover |

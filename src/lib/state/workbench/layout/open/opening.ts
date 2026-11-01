@@ -16,6 +16,7 @@ import {
     activePath,
     findInstance,
     findView,
+    instanceMap,
     isInstanceOf,
     newInstance,
     stateId
@@ -57,8 +58,8 @@ export type OpenOptions = {
     preview?: boolean;
     /**
      * Land as a view opened for something lands (landing.ts), whatever the view is: in the page's
-     * documents pane and never over its tool panes. A Terminal tab and a Transcript opened from a
-     * workbench's sessions list take it.
+     * documents pane and never over its tool panes. A Terminal tab, a Transcript and a Session tab
+     * opened from a workbench's sessions list take it.
      */
     document?: boolean;
     /**
@@ -67,6 +68,12 @@ export type OpenOptions = {
      * Views catalogue take it, so a document is one tab wherever it is held.
      */
     held?: boolean;
+    /**
+     * A tab already open takes the fields of the state over the state it holds, in place of being
+     * replaced by it, so a Session tab opened again on its session keeps its closed sections and
+     * their order. A held state that is no map reads as empty.
+     */
+    keep?: boolean;
 };
 
 export type Opening = {
@@ -74,7 +81,7 @@ export type Opening = {
     /**
      * `asker` is the instance of the tool view the view is opened for: a view opened for something
      * lands outside that instance's pane (landing.ts), so the asked view opens beside the one that
-     * asked and never over it. Of `options` it reads `preview` alone, as openView reads it.
+     * asked and never over it. Of `options` it reads `preview` and `keep`, as openView reads them.
      */
     openBeside: (
         view: ViewId,
@@ -106,6 +113,11 @@ export type Opening = {
 
 /** A unique view's instance with the page or float holding it, and whether the screen draws it. */
 type Holder = { host: Host; instance: Instance; drawn: boolean };
+
+/** The state a tab found open takes: the one given, or with `keep` its fields over the tab's. */
+function reopened(tab: Instance, state: unknown, keep: boolean): unknown {
+    return keep ? { ...instanceMap(tab.state), ...instanceMap(state) } : state;
+}
 
 /** Whether a path of a page lies inside the maximised pane, or nothing is maximised. */
 function shownAt(focus: Focus | null, path: number[]): boolean {
@@ -177,7 +189,8 @@ export function createOpening(
             options?.preview === true,
             undefined,
             options?.document === true,
-            options?.held === true
+            options?.held === true,
+            options?.keep === true
         );
     }
 
@@ -189,8 +202,8 @@ export function createOpening(
      * activates it, and a maximised pane takes the view itself, since a new pane beside it would be
      * one nobody can see. The pane being read never takes the view: a view opened for something
      * lands where landingFor puts a view the tab being read asked for, beside that tab's pane.
-     * `preview` is the one option of `options` it reads: with it, the view lands as the preview tab
-     * of the pane it lands in, as openView's preview does.
+     * Of `options` it reads `preview`, which lands the view as the preview tab of the pane it lands
+     * in, as openView's preview does, and `keep`.
      */
     function openBeside(
         view: ViewId,
@@ -199,7 +212,17 @@ export function createOpening(
         asker?: string,
         options?: OpenOptions
     ): string {
-        return openInto(view, state, true, page, options?.preview === true, asker);
+        return openInto(
+            view,
+            state,
+            true,
+            page,
+            options?.preview === true,
+            asker,
+            false,
+            false,
+            options?.keep === true
+        );
     }
 
     /**
@@ -228,7 +251,8 @@ export function createOpening(
         preview = false,
         asker?: string,
         document = false,
-        anywhere = false
+        anywhere = false,
+        keep = false
     ): string {
         const held = page === undefined ? attention.touched() : access.at(page);
         if (held === null) return '';
@@ -239,14 +263,14 @@ export function createOpening(
             : anywhere && wanted !== null
               ? holderOf(view, wanted)
               : null;
-        if (holder !== null) return showHeld(holder, state, preview);
+        if (holder !== null) return showHeld(holder, state, preview, keep);
         // A view open in a float is activated there when the host holds none of its own.
         const floated = findInFloats(view, stateId(state));
         if (
             floated !== null &&
             (floated.host === host || findView(access.layout(host), view, stateId(state)) === null)
         ) {
-            return activateFloated(floated, state, preview);
+            return activateFloated(floated, state, preview, keep);
         }
         // A float is one pane: a view opened for something lands in it as a tool view does, and a
         // view asked for beside another is a tab of it, since a float takes no split. A view opened
@@ -254,7 +278,7 @@ export function createOpening(
         // beside its pane and never in it (landingFor's `away`), as Open Preview to the Side does.
         if ((document || opened(view)) && isPage(held)) {
             const by = asker ?? (beside ? (attention.active(host) ?? undefined) : undefined);
-            return openOpened(view, state, host, preview, by);
+            return openOpened(view, state, host, preview, keep, by);
         }
         const focus = focusedPane(access.workbench(host));
         const tree = access.layout(host);
@@ -265,7 +289,10 @@ export function createOpening(
         if (existing !== null) {
             attention.remembered(existing.id, host);
             access.change((current) => {
-                const stated = state === undefined ? current : restate(current, existing.id, state);
+                const stated =
+                    state === undefined
+                        ? current
+                        : restate(current, existing.id, reopened(existing, state, keep));
                 return activate(expandTo(stated, activePath(stated, existing.id)), existing.id);
             }, host);
             // Asking for the file the preview tab already holds is asking for it a second time,
@@ -340,6 +367,7 @@ export function createOpening(
         state: unknown,
         host: string,
         preview: boolean,
+        keep: boolean,
         asker?: string
     ): string {
         const bench = access.workbench(host);
@@ -355,7 +383,9 @@ export function createOpening(
                     ...(shownAt(focus, at) ? bench : restore(bench)),
                     root: activate(
                         expandTo(
-                            state === undefined ? tree : restate(tree, existing.id, state),
+                            state === undefined
+                                ? tree
+                                : restate(tree, existing.id, reopened(existing, state, keep)),
                             at
                         ),
                         existing.id
@@ -445,9 +475,11 @@ export function createOpening(
      * the holder in a page leaf, for each page between the page on screen and the holder. A page
      * the screen does not draw is then put on screen.
      */
-    function showHeld(holder: Holder, state: unknown, preview: boolean): string {
+    function showHeld(holder: Holder, state: unknown, preview: boolean, keep: boolean): string {
         const { host, instance } = holder;
-        if (!isPage(host)) return activateFloated({ host: host.id, instance }, state, preview);
+        if (!isPage(host)) {
+            return activateFloated({ host: host.id, instance }, state, preview, keep);
+        }
         if (holder.drawn) {
             const screen = access.currentPage().id;
             for (const hop of leavesTo(access.held().pages, screen, host.id)) {
@@ -456,7 +488,10 @@ export function createOpening(
         }
         const bench = access.workbench(host.id);
         const at = activePath(bench.root, instance.id);
-        const stated = state === undefined ? bench.root : restate(bench.root, instance.id, state);
+        const stated =
+            state === undefined
+                ? bench.root
+                : restate(bench.root, instance.id, reopened(instance, state, keep));
         const base = shownAt(focusedPane(bench), at) ? bench : restore(bench);
         attention.remembered(instance.id, host.id);
         access.apply({ ...base, root: activate(expandTo(stated, at), instance.id) }, host.id);
@@ -486,13 +521,20 @@ export function createOpening(
     function activateFloated(
         found: { host: string; instance: Instance },
         state: unknown,
-        preview: boolean
+        preview: boolean,
+        keep: boolean
     ): string {
         attention.remembered(found.instance.id, found.host);
         access.change(
             (current) =>
                 activate(
-                    state === undefined ? current : restate(current, found.instance.id, state),
+                    state === undefined
+                        ? current
+                        : restate(
+                              current,
+                              found.instance.id,
+                              reopened(found.instance, state, keep)
+                          ),
                     found.instance.id
                 ),
             found.host

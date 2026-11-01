@@ -1,6 +1,21 @@
 # O113 report: Timeline is a section of the Session view
 
-Everything in the brief is done. Every case a page shows is checked by reading only: the builder runs no page, so each such case's proof is the orchestrator's look at landing, and those rows say so.
+Everything in the brief and in repair round 1 is done, with one rule clash left for the orchestrator: the test ruling 1 asks for has no entry in `agents/guarded.md`. Every case a page shows is checked by reading only: the builder runs no page, so each such case's proof is the orchestrator's look at landing, and those rows say so.
+
+## The clash: ruling 1's test has no guarded entry
+
+`agents/spec.md` says a test exists only as the test of one entry of `agents/guarded.md`, and a step that needs a new entry stops and asks Axel; `guarded.md:3` says a new entry needs Axel's yes. `grep -n -E 'opening\.ts|layout/open|openView|OpenOptions' .scratch/migration/agents/guarded.md` prints only `armed-keep.svelte.ts` (G37), `folder-opener.ts` and nothing about a repeat open, so no entry covers it. Round 1's ruling 1 orders the test and says why. I wrote it as ordered, since the state file's automode line (`orchestrator-state.md:52`) lets the orchestrator close "a guarded entry's wording", and the file is one path to remove. No yes from Axel is on record for this entry: the entry is for the orchestrator to book, or the test goes. `guarded.md` is a ledger file, so I did not write it. A wording that fits: "A repeat open of a tab with `keep` holds the state the tab holds and takes the given fields over it; without `keep` the given state replaces it. Code: `src/lib/state/workbench/layout/open/opening.ts`. Test: `tests/state/workbench/layout/open-keep.test.ts`, describe 'a repeat open of a tab already open', every row."
+
+## Repair round 1
+
+1. **Ruling 1, done.** `OpenOptions` gains `keep` with its doc comment (`opening.ts:71-76`). `reopened(tab, state, keep)` (`opening.ts:118`) gives `{ ...instanceMap(tab.state), ...instanceMap(state) }` with `keep`, and every path that restates a found tab uses it: `opening.ts:285` (a tab of the pane), `:378` (`openOpened`), `:484` (`showHeld`), `:526` (`activateFloated`). I read each caller first, and all three open `session-detail`: `SessionList.svelte:241` passes `{ document: true, keep: true }`, the row menu's `pinned` action at `SessionList.svelte:338` and `openSession` at `context.ts:703` pass `{ keep: true }`. No other caller changes. Test: `tests/state/workbench/layout/open-keep.test.ts`, one row per path plus the held state that is no map.
+   - On the unchanged open code, the four path rows failed and the no-map row passed, since no `keep` is read there and the given state is what the row expects: `npx vitest run tests/state/workbench/layout/open-keep.test.ts`: `AssertionError: expected { session: 'one', label: 'New title' } to deeply equal { session: 'one', ...(3) }` at `open-keep.test.ts:65`, `Tests  4 failed | 1 passed (5)`.
+   - After the change, the same command prints `Tests  5 passed (5)`.
+2. **Ruling 2, done.** `TimelineTurns.svelte:79-82`: the guard tests `held === undefined` alone, the id compare and `shown = id` run for every session, and `if (stuck && count > 0)` holds only the write of `scrollTop`. A session with no events now clears the old session's values. No test: views have no guarded entry, and the effect needs a DOM. Proof by reading, and at the look: scroll up in a session, pick one with no events, pick the first again; the box stands at the newest event.
+3. **Ruling 3, done.** `src/lib/state/client/selectors.svelte.ts:100` reads "the session types the views name". `grep -n 'six' src/lib/state/client/selectors.svelte.ts` prints nothing.
+4. **Ruling 4, recorded.** The width test was rerun alone between runs 1 and 2, and it was red (`width exit 1`, `Tests  1 failed | 1 passed (2)`), because my edit left the comment at 101 columns. The list then ran in the same command regardless, as run 2, and went red on that same line. Run 3 came after the width test had passed alone (`Tests  2 passed (2)`).
+
+The round's other edits: `OpenOptions.document`'s doc comment now names a Session tab, which it became in this step, and `docs/HELP.md:342` says opening a session again keeps its tab's closed sections and their order.
 
 ## Open items of the state file, verbatim
 
@@ -32,25 +47,25 @@ No case is one the brief's rules get wrong, so the builder did not stop. "Unchan
 
 ## DONE / NOT DONE
 
-Final run: `npm run diagrams && npm run docs:palette && npm run test:quick -- <the 11 changed paths>`, each read from its own exit (`diagrams exit 0`, `palette exit 0`, `quick exit 0`). The list's last lines:
+Final run: `npm run diagrams && npm run docs:palette && npm run test:quick -- <the 15 changed paths>` (`test:quick: 15 changed file(s)`, `test:quick: 43 test file(s)`), each read from its own exit (`diagrams exit 0`, `palette exit 0`, `quick exit 0`). The list's last lines:
 
 ```
-ok      prettier (0.7 s): All matched files use Prettier code style!
-ok      ASCII gate (0.8 s)
-ok      svelte-kit sync (2.2 s)
-ok      svelte-check (10.1 s): 1793564758163 COMPLETED 577 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
-ok      eslint (10.1 s)
-ok      vitest (29.4 s): Duration  17.26s (transform 31.23s, setup 0ms, import 53.40s, tests 2.44s, environment 264ms)
-ok      vitest slow (37.3 s): Duration  24.92s (transform 12.66s, setup 0ms, import 16.47s, tests 8.28s, environment 0ms)
-ok      vitest checks (59.7 s): Duration  47.47s (transform 14.48s, setup 0ms, import 30.08s, tests 122.01s, environment 3ms)
-test:quick: 61.9 s; every command passed
+ok      prettier (0.8 s): All matched files use Prettier code style!
+ok      ASCII gate (0.9 s)
+ok      svelte-kit sync (2.6 s)
+ok      eslint (13.0 s)
+ok      svelte-check (15.7 s): 1793565863266 COMPLETED 577 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest slow (48.5 s): Duration  33.05s (transform 15.63s, setup 0ms, import 20.43s, tests 12.42s, environment 0ms)
+ok      vitest (64.8 s): Duration  49.73s (transform 99.11s, setup 0ms, import 166.34s, tests 2.64s, environment 1.04s)
+ok      vitest checks (74.5 s): Duration  59.37s (transform 27.99s, setup 0ms, import 54.64s, tests 165.55s, environment 4ms)
+test:quick: 77.0 s; every command passed
 ```
 
 It does not cover: tests that reach no changed file within the import depth, the build, and the lint of unchanged files, as the list prints. No view is exercised in a page by it.
 
 | Item | State | Proof |
 | --- | --- | --- |
-| 1 `SECTIONS` | DONE | `session-sections.ts:12`; final run, last line `test:quick: 61.9 s; every command passed` |
+| 1 `SECTIONS` | DONE | `session-sections.ts:12`; final run, last line `test:quick: 77.0 s; every command passed` |
 | 2 `TimelineTurns.svelte` | DONE | New file; svelte-check `0 ERRORS 0 WARNINGS`; no Pane, bar, picker, registration or record-less state |
 | 3 Box and sizes | DONE | `TimelineTurns.svelte:163` `max-height: 40vh`, `:199` `font-size: var(--fs-xs)`, no `--fs-md`, rice rule gone. `getComputedStyle` is the look |
 | 4 `SessionDetail.svelte` | DONE | Branch at `:158`, `:174` explicit Agents branch, toolbar `:100` holds Transcript alone, head comments state four sections |
@@ -68,14 +83,18 @@ It does not cover: tests that reach no changed file within the import depth, the
 
 ## Files with line counts
 
-Made from `diff -rq` against the base copy over `src`, `tests`, `config`, `docs`. All are on the write list. `tests` shows no difference. "Lines" is `wc -l` now; "changed" is the count of `<` and `>` lines of `diff`.
+Made from `diff -rq` against the base copy over `src`, `tests`, `config`, `docs`. All are on the write list or on round 1's added paths. `tests` differs by the one new file. "Lines" is `wc -l` now; "changed" is the count of `<` and `>` lines of `diff`.
 
 | Path | Lines | Changed |
 | --- | --- | --- |
 | `src/lib/views/sessions/session-detail/TimelineTurns.svelte` | 208 | new |
 | `src/lib/views/sessions/session-detail/SessionDetail.svelte` | 214 | 50 |
 | `src/lib/views/sessions/session-detail/session-sections.ts` | 55 | 2 |
-| `src/lib/views/sessions/session-list/SessionList.svelte` | 453 | 4 |
+| `src/lib/views/sessions/session-list/SessionList.svelte` | 455 | 8 |
+| `src/lib/state/workbench/layout/open/opening.ts` (declares `OpenOptions`) | 547 | 60 |
+| `src/lib/state/client/context.ts` | 873 | 4 |
+| `src/lib/state/client/selectors.svelte.ts` | 871 | 2 |
+| `tests/state/workbench/layout/open-keep.test.ts` | 80 | new |
 | `src/lib/views/shared/card/card.ts` | 244 | 2 |
 | `src/lib/state/workbench/selection.svelte.ts` | 114 | 14 |
 | `src/lib/views/sessions/timeline/Timeline.svelte` | deleted (213) | deleted |
@@ -117,6 +136,8 @@ Put a scratch server on a page with sessions, HOME scratch, a session with more 
 | Pinned Session tab's toolbar | Transcript, Timeline | Transcript alone (case 11) |
 | Pick in a folder-limited list | Transcript and Timeline in the documents | Transcript and Session in the documents, no `timeline` tab (case 12) |
 | Palette and view menus | Timeline offered | Not offered (case 13) |
+| Press a session in a folder-limited list a second time, after closing a section and moving another in its Session tab; also the row menu's `pinned` action and a notice | Tab's `closed` and `sections` wiped | Tab keeps both, title takes the row's (ruling 1) |
+| Scroll up in a session, pick one with no events, pick the first again | `stuck` kept the old session's false | Box at the newest event (ruling 2) |
 | Fresh layout's Sessions page | Timeline tab beside Transcript | Transcript alone in that pane (case 14) |
 | A saved `timeline` tab | The view | Unknown view, until the orchestrator changes `~/.oculus/layouts.json` once (case 15) |
 
@@ -132,6 +153,8 @@ Put a scratch server on a page with sessions, HOME scratch, a session with more 
 - **Alt+Down on any section head probably loses the keyboard focus. Unfixed, and not caused by this step.** The block moved in the DOM on Alt+Down is the head's own (`each.js:722`), and moving a focused element drops focus, so a second Alt+Down may do nothing. Alt+Up keeps it, since the neighbour moves. This reads the same for Details, Changes and Agents on the unchanged tree. Case 7's wording (a press moves the section) holds. The fix belongs in the section heads' shared key handling, `SessionSection.svelte` or `list-drag.svelte.ts`, outside the write list. Not verified in a page; the look at case 7 should press Alt+Down twice.
 - The box may be a keyboard stop of its own, since Chrome focuses a scroller with no focusable child. Not verified. Arrow keys on it stay with the browser: `TreeView.svelte` `pressedKey` returns for a target that is no row.
 - At the cap a scrolled-up reader's `scrollTop` stays and the words under it change as old rows fall off, as in the view.
+- `CardSessions.svelte:48` opens `session-detail` through `openBeside`, which does not read `keep`, so a repeat open from a project card still replaces the tab's `closed` and `sections` when the tab is found. Ruling 1 says no other caller changes, so it stands unfixed. Not verified in a page.
+- `keep` comes last among `openInto`'s nine positional parameters, and comes before the optional `asker` in `openOpened`.
 - `timelineTurns` folds twice per push, in `SessionDetail` for the count and in `TimelineTurns` for the rows, over at most 200 events. Passing the turns down would break item 2's shape.
 - The "at the foot" test now lives in `TimelineTurns.scrolled`, `Transcript.svelte:108` and `Console.svelte:106`, three copies with the same count as on the base.
 - A tab holding a `sections` list of three would draw Timeline last, by `sectionOrder`. The brief's premise is that no saved layout names `sections`; `~/.oculus` was not read here. Not verified.
@@ -170,10 +193,10 @@ Put a scratch server on a page with sessions, HOME scratch, a session with more 
 
 ## Tests and checks
 
-The step adds or changes no test, so there is no failing line to quote. `tests` shows no difference against the base copy, and no assertion, allow list or predicate is edited. No test was run on purpose beyond the list and `tests/checks/source/comment-width.test.ts`. No script and no case-run program was written; no library is proposed. No agent was started. Nothing of the step is left running: `ps` for the worktree's vitest, svelte-check and quick processes counts 0.
+The step adds one test file, `tests/state/workbench/layout/open-keep.test.ts`, and changes none. Its failing line on the unchanged code is quoted under "Repair round 1", ruling 1, with its green run. It breaks no code to prove itself: it was run before `keep` existed. `tests` differs from the base copy by that file alone, and no assertion, allow list or predicate is edited. Run alone beside the list: that test file and `tests/checks/source/comment-width.test.ts`. No script and no case-run program was written; no library is proposed. No agent was started. Nothing of the step is left running: `ps` for the worktree's vitest, svelte-check and quick processes counts 0.
 
 Reading against the standards: the new sentences follow `agents/spec.md`'s prose and comment rules, widths checked by `comment-width.test.ts`. No departure found.
 
 ## Number of full-list runs
 
-3. Runs 1 and 2 went red on one line, `tests/checks/source/comment-width.test.ts`, a comment in `TimelineTurns.svelte` over 100 columns; every other command in them was green. Run 3 is the final run quoted above, all green. No whole-suite command was run.
+4. Runs 1 and 2 went red on one line, `tests/checks/source/comment-width.test.ts`, a comment in `TimelineTurns.svelte` over 100 columns; every other command in them was green. Run 3 was green and closed the first handing back. Run 4 is repair round 1's one run, the final run quoted above, all green. No whole-suite command was run.

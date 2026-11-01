@@ -48,7 +48,7 @@ Work agreed on 2026-09-09. Reasoning and design detail live in `design/SESSIONS.
 - [x] rail with status dots, model, elapsed, current activity (`render/sessions.py`, `11-sessions.js`, `10-sessions.css`)
 - [x] live vs ended from Claude Code's own registry (`~/.claude/sessions/<pid>.json`): real busy/idle status, ended sessions collapsed under a count, dismissal via `POST /__sessions-set` into `~/.cockpit/sessions.json`, a live session can never be hidden
 - [x] Changes view: per-session touched files above the repository's staged/changed/untracked, read-only git only (`src/cockpit/sessions_git.py`, four commands, once per workspace on a 10 s timer), a file another live session holds is marked
-- [x] Timeline view: prompts, tools, edits, turn durations and cache busts, newest at the foot, following only when you are already there
+- [x] Timeline section of the Session view: prompts, tools, edits, turn durations and cache busts, newest at the foot, following only when you are already there
 - [x] Agents view: `Agent` tool calls paired with their results, showing subagent type, model, status and duration
 - [x] right pane: metadata, context meter (last turn's occupancy against 1M), token totals, cache TTL and busts
 - [x] project cards cross-link to every session that touched them: a chip in the card head (visible collapsed) showing the session count and how many are live, click opens the Sessions tab on that session; primary and secondary areas both count, dismissed sessions do not; re-applied after the live-reload morph

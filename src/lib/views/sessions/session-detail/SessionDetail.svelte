@@ -1,6 +1,6 @@
 <script module lang="ts">
     // Layer 3, view registration. The Session view opens the right pane of the Sessions page and
-    // follows Timeline in its group.
+    // follows Transcript in its group.
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
     export const registration: ViewRegistration = {
         id: 'session-detail',
@@ -12,19 +12,19 @@
 </script>
 
 <script lang="ts">
-    // Layer 3, view. One session in a tab of its own, in three sections built as the sections under
+    // Layer 3, view. One session in a tab of its own, in four sections built as the sections under
     // the Files tree are (SessionSection.svelte): Details, what the session is and the controls
     // that pin, rename and resume it (DetailsBody.svelte); Changes, the files it touched and the
-    // repository it works in (ChangesTouched.svelte, ChangesRepository.svelte); and Agents, the
-    // subagents it dispatched (AgentRows.svelte). One picker in the bar picks the session all
-    // three show. With no session the view asks for one and draws no section.
+    // repository it works in (ChangesTouched.svelte, ChangesRepository.svelte); Timeline, the turns
+    // it took and what happened in each (TimelineTurns.svelte); and Agents, the subagents it
+    // dispatched (AgentRows.svelte). One picker in the bar picks the session all four show. With
+    // no session the view asks for one and draws no section.
     //
     // The tab keeps which sections are closed and the order they are drawn in with its own state
     // (session-sections.ts), so a reload, a switch of tab and a pick of another session keep them.
     // Each head is dragged among the others, and moved by Alt+Up and Alt+Down, with the drag the
     // Files view moves its section heads with (views/shared/explorer/sections/list-drag.svelte.ts).
-    // The pane's toolbar opens the Transcript and the Timeline of the session, which are views of
-    // their own.
+    // The pane's toolbar opens the Transcript of the session, which is a view of its own.
 
     import PickSession from '$lib/views/shared/sessions/PickSession.svelte';
     import SessionPicker from '$lib/views/shared/sessions/SessionPicker.svelte';
@@ -33,7 +33,7 @@
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import { pinnedSession } from '$lib/state/workbench/selection.svelte';
-    import { newestFirst } from '$lib/state/sessions/folds';
+    import { newestFirst, timelineTurns } from '$lib/state/sessions/folds';
     import { t } from '$lib/state/shared/words/text';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
@@ -42,6 +42,7 @@
     import ChangesTouched from './ChangesTouched.svelte';
     import DetailsBody from './DetailsBody.svelte';
     import SessionSection from './SessionSection.svelte';
+    import TimelineTurns from './TimelineTurns.svelte';
     import {
         rowKey,
         sectionIsOpen,
@@ -63,6 +64,7 @@
     const panePin = $derived(pinnedSession(saved));
     const order = $derived(sectionOrder(saved));
     const files = $derived(record?.files ?? []);
+    const turns = $derived(timelineTurns(record?.timeline ?? []));
     /** Newest first by the moment each started, an agent with no stamp last. */
     const agents = $derived(newestFirst(record?.agents ?? []));
 
@@ -82,10 +84,10 @@
         restateInstance(instance.id, sectionToggled(saved, id));
     }
 
-    /** Open one pinned area of the session on screen, for a session the pane still holds. */
-    function pin(area: string): void {
+    /** Open the session on screen in a Transcript tab, for a session the pane still holds. */
+    function openTranscript(): void {
         if (record === null) return;
-        openView(area, { session: record.id, label: record.title });
+        openView('transcript', { session: record.id, label: record.title });
     }
 </script>
 
@@ -95,13 +97,7 @@
             bare
             label={t('sessions.view_transcript')}
             glyph={t('sessions.transcript_glyph')}
-            onclick={() => pin('transcript')}
-        />
-        <ToolButton
-            bare
-            label={t('sessions.view_timeline')}
-            glyph={t('sessions.timeline_glyph')}
-            onclick={() => pin('timeline')}
+            onclick={openTranscript}
         />
     </Toolbar>
 {/snippet}
@@ -159,7 +155,23 @@
                             </li>
                         {/snippet}
                     </SessionSection>
-                {:else}
+                {:else if id === 'timeline'}
+                    <SessionSection
+                        {id}
+                        label={t('sessions.section_timeline')}
+                        count={turns.length}
+                        rows={[]}
+                        open={sectionIsOpen(saved, id)}
+                        ontoggle={() => toggle(id)}
+                        move={move(id)}
+                    >
+                        {#snippet body()}
+                            <li role="none">
+                                <TimelineTurns {record} place={order.indexOf(id)} />
+                            </li>
+                        {/snippet}
+                    </SessionSection>
+                {:else if id === 'agents'}
                     <SessionSection
                         {id}
                         label={t('sessions.section_agents')}

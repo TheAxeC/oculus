@@ -4,6 +4,24 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z1099 (2026-11-01, O113's look, the orchestrator, automode): the focus after a move by keys
+
+- Chosen: a row moved by Alt+Up or Alt+Down keeps the focus, in the Session view, the Files view's sections and Bookmarks.
+- Not chosen: a later step, or a fix for the Session view alone (the lazy options).
+- Where it applies: `src/lib/views/shared/explorer/sections/list-drag.svelte.ts`. Booked in `plan.md` Rulings, open item 625.
+
+## Z1098 (2026-11-01, O113's landing, the orchestrator, automode): a card keeps a Session tab's arrangement
+
+- Chosen: `openBeside` reads `keep`, and the project card's session row passes it.
+- Not chosen: a stated limit (the lazy option).
+- Where it applies: `opening.ts`, `CardSessions.svelte`. Booked in `plan.md` Rulings, open item 624.
+
+## Z1097 (2026-11-01, O113's repair round, the orchestrator, automode): a guarded entry for reopening a tab
+
+- Chosen: G145, for `tests/state/workbench/layout/open-keep.test.ts`, since a repeat open would otherwise lose a Session tab's closed sections and their order.
+- Not chosen: no test, the behaviour read only (the lazy option).
+- Where it applies: `agents/guarded.md`. Booked in `plan.md` Rulings, open item 623.
+
 ## Z1096 (2026-11-01, O113's brief, the orchestrator, automode): the Timeline section's shape
 
 - Chosen: the turns scroll in a box of at most 40vh, which starts at the newest event and follows it as the Timeline view did; words at `--fs-sm`, clocks at `--fs-xs`; the head counts the turns drawn; a folder-limited pick opens the Session view in the Timeline view's place.

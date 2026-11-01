@@ -61,7 +61,6 @@ arrangements:
                 - kind: pane
                   view:
                     - { view: transcript, pinned: true }
-                    - { view: timeline, pinned: true }
         - kind: pane
           view:
             - { view: session-detail, pinned: true }

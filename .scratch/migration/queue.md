@@ -1,12 +1,12 @@
-In flight (1 of 6 slots in use): O113 (Timeline a section of the Session view), building.
+In flight (0 of 6 slots in use): none.
 
 Queued, in order (1 step):
 - O114 (one Terminal view for a session).
 
-Owed looks:
-- O112: the Session view's heads under the rice theme.
+Owed looks: none.
 
 Landed, newest first:
+- O113 (Timeline a section of the Session view), 2026-11-01.
 - O111 (Settings responds and folds under a search), 2026-11-01.
 - O110 (terminal text keeps its characters), 2026-11-01.
 - O112 (the Session view's type sizes), 2026-11-01.

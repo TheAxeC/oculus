@@ -97,7 +97,7 @@ import type {
 } from '../../data/model/index.ts';
 
 // The boundary table lets `views/` import `state/` and nothing of `data/`, so the session types the
-// six views name reach them from here, beside the selectors that return them.
+// views name reach them from here, beside the selectors that return them.
 export type {
     Area,
     GitEntry,

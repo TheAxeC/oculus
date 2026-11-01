@@ -423,5 +423,6 @@ Each entry is one tree check under `tests/checks/`, kept because a rule in `agen
 - G27. The Claude status-line script keeps its input and prints the usage line. Test: `tests/checks/utils/claude-usage.test.ts`.
 - G143. A TypeScript file under src can have its types stripped, as Node does to run it unbuilt. Test: `tests/checks/source/strip-types.test.ts`.
 - G144. A Settings search draws the entries it finds and a fold press under it holds, so an edit lands on the entry the reader acted on. Test: `tests/state/system/settings/fold.test.ts`, 'folds a part of a Settings row' and 'picks the entries a search draws'.
+- G145. A tab opened again with `keep` takes the given fields over what it holds, so a Session tab keeps its closed sections and their order. Code: `src/lib/state/workbench/layout/open/opening.ts`. Test: `tests/state/workbench/layout/open-keep.test.ts`, 'a repeat open of a tab already open'.
 
 Held under the entries above: `tests/checks/config/integrity.test.ts` (G14), `tests/checks/config/config-folder.test.ts` and `tests/checks/config/config.test.ts` (G12, G13), `tests/checks/source/html-sites.test.ts` (G5).

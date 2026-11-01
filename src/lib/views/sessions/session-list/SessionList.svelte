@@ -29,7 +29,7 @@
     // sessions and terminals that work in the folder or are filed into it, with the line "In
     // root/folder" and the control that lists every session again. Its pages have no Terminal tab
     // of their own: New opens one in the page's documents pane, in the folder, and a picked session
-    // opens its Transcript and Timeline there.
+    // opens its Transcript and its Session view there.
     //
     // A group is named as the workspace picker names its folder (place-names.ts): a hub of the open
     // workspace by the name the workspace file gives it, any other folder by its last segment, and
@@ -238,7 +238,7 @@
         const page = currentPage().id;
         const pinned = { session: row.id, label: row.title };
         openView('transcript', pinned, page, { document: true });
-        openView('timeline', pinned, page, { document: true });
+        openView('session-detail', pinned, page, { document: true, keep: true });
     }
 
     /** Take the folder away from this list: it lists every session again. */
@@ -335,7 +335,9 @@
         else if (id === 'export') {
             if (!exportSession(row.id)) failure = t('sessions.export_failed');
         } else if (id === 'pinned')
-            openView('session-detail', { session: row.id, label: row.title });
+            openView('session-detail', { session: row.id, label: row.title }, undefined, {
+                keep: true
+            });
         else if (id === 'transcript') {
             select(row.id);
             openView('transcript', { session: row.id, label: row.title });

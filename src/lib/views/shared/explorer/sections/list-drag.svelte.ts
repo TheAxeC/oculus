@@ -10,6 +10,7 @@
 // computes the new order and hands it to `write` only when it differs from the order held; a drop
 // on the item itself, or one that leaves every item in place, writes nothing.
 
+import { tick } from 'svelte';
 import type { ItemDrag } from '$lib/ui/tree/item-props';
 import {
     dropPlace,
@@ -142,12 +143,26 @@ function directionOf(action: string): 'up' | 'down' | null {
     return null;
 }
 
+/**
+ * Give the row a key pressed on its focus back once the list is drawn again: the move can take the
+ * row out of the page and put it back, which drops the focus, and the next press would go nowhere.
+ */
+function focusKept(event: KeyboardEvent): void {
+    const row = event.target;
+    void tick().then(() => {
+        if (row instanceof HTMLElement) row.focus({ preventScroll: true });
+    });
+}
+
 /** The key handler of a section whose only movable row is its head: Alt+Up and Alt+Down move it. */
-export function headKeys(move: SectionMove | undefined): (action: string, id: string) => boolean {
-    return (action, id) => {
+export function headKeys(
+    move: SectionMove | undefined
+): (action: string, id: string, event: KeyboardEvent) => boolean {
+    return (action, id, event) => {
         const direction = directionOf(action);
         if (id !== 'head' || direction === null) return false;
         move?.step(direction);
+        focusKept(event);
         return true;
     };
 }
@@ -160,13 +175,14 @@ export function listKeys(
     move: SectionMove | undefined,
     list: ReturnType<typeof createListDrag>,
     prefix: string
-): (action: string, id: string) => boolean {
-    return (action, id) => {
+): (action: string, id: string, event: KeyboardEvent) => boolean {
+    return (action, id, event) => {
         const direction = directionOf(action);
         if (direction === null) return false;
         if (id === 'head') move?.step(direction);
         else if (id.startsWith(prefix)) list.step(id.slice(prefix.length), direction);
         else return false;
+        focusKept(event);
         return true;
     };
 }

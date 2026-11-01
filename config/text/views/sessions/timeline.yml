@@ -1,4 +1,4 @@
-# Oculus text owned by the timeline view.
+# Oculus text owned by the Timeline section of the Session view.
 text:
     sessions:
         ev_bust: prompt cache rewritten, {0} tokens
@@ -9,8 +9,6 @@ text:
         ev_k_tool: tool
         ev_k_turn: turn
         ev_turn: finished in {0} s
-        timeline_bar: Timeline controls
-        timeline_glyph: timing
+        section_timeline: Timeline
         tl_before: Before the first prompt
         tl_empty: Nothing on the timeline for this session yet.
-        view_timeline: Timeline
