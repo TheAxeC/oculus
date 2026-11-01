@@ -23,7 +23,10 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 ```
 
 ```yaml
-dispatch: none      # steps in flight, up to six (Z632)
+dispatch:      # steps in flight, up to six (Z632)
+- step: O114
+  landing: preparing
+  brief_check: "running: a59fef7713e8e61e7"
 ```
 
 ## The standing demands (from Axel, in force)

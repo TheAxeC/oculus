@@ -2659,3 +2659,4 @@ Per package, one row per run: the harness, model and effort; tokens in / cached 
 - 2026-11-01. O111 landed on main (booked under O111 in `plan.md`, `agents/reviews/O111-landing.md`), G144 added. Open items 619, 620 and 621 closed in automode (Z1093, Z1094, Z1095).
 - 2026-11-01. Open item 622 closed in automode (Z1096), the Timeline section's shape, in O113's brief.
 - 2026-11-01. O113 landed on main (booked under O113 in `plan.md`, `agents/reviews/O113-landing.md`), G145 added. Open items 623, 624 and 625 closed in automode (Z1097, Z1098, Z1099). O112's owed look taken.
+- 2026-11-01. O114 prepared: open items 626, 627 and 628 closed in automode (Z1100, Z1101, Z1102), G146 and G147 added.

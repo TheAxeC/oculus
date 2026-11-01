@@ -4,6 +4,24 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z1102 (2026-11-01, O114's brief check, the orchestrator, automode): older tab forms go
+
+- Chosen: `readTab`'s branches for `{ session, label }` and `{ shown, beside, share }` are removed, since no saved layout holds them and the no-migration rule forbids them.
+- Not chosen: left in place (the lazy option).
+- Where it applies: `terminal-tabs.ts`. Booked in `plan.md` Rulings, open item 628.
+
+## Z1101 (2026-11-01, O114's brief check, the orchestrator, automode): guarded entries G146 and G147
+
+- Chosen: two entries, since a steer into a shell runs text and a kill of a hand-made session loses work.
+- Not chosen: no tests for detection (the lazy option).
+- Where it applies: `agents/guarded.md`. Booked in `plan.md` Rulings, open item 627.
+
+## Z1100 (2026-11-01, O114's brief, the orchestrator, automode): a hand-made tmux session as a terminal
+
+- Chosen: each pane running an agent is a terminal bound to the pane, id `h<server pid>p<pane>-<tool>`; only keys are written to it, the grid takes the pane's size, and a steer checks the pane's foreground first.
+- Not chosen: bound to the tmux session's active pane, which paints every pane into one grid and sets `window-size manual` (the lazy option); left as a session running elsewhere, against the step's line.
+- Where it applies: `processes/agents.ts`, `pty/panes/`. Booked in `plan.md` Rulings, open item 626.
+
 ## Z1099 (2026-11-01, O113's look, the orchestrator, automode): the focus after a move by keys
 
 - Chosen: a row moved by Alt+Up or Alt+Down keeps the focus, in the Session view, the Files view's sections and Bookmarks.

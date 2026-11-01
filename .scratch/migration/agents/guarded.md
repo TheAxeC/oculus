@@ -426,3 +426,9 @@ Each entry is one tree check under `tests/checks/`, kept because a rule in `agen
 - G145. A tab opened again with `keep` takes the given fields over what it holds, so a Session tab keeps its closed sections and their order. Code: `src/lib/state/workbench/layout/open/opening.ts`. Test: `tests/state/workbench/layout/open-keep.test.ts`, 'a repeat open of a tab already open'.
 
 Held under the entries above: `tests/checks/config/integrity.test.ts` (G14), `tests/checks/config/config-folder.test.ts` and `tests/checks/config/config.test.ts` (G12, G13), `tests/checks/source/html-sites.test.ts` (G5).
+- G146. A pane's agent is read from the process table, and a terminal's kind, its box and a steer follow it: a steer into a pane whose foreground is the login shell types nothing, and a tmux session oculus did not start is never ended, renamed, resized or marked.
+  Code: `src/lib/server/machine/processes/agents.ts`, `src/lib/server/machine/pty/panes/`.
+  Test: `tests/server/machine/pty/`, describe 'an agent in a pane' (O114).
+- G147. A Terminal tab keeps its Live or Transcript choice, its lock and the session it reads through every rewrite, and a tab on Transcript outlives its last terminal.
+  Code: `src/lib/state/sessions/terminal/terminal-tabs.ts`, `terminal-lists.ts`.
+  Test: `tests/state/sessions/`, describe 'a tab that reads a session' (O114).
