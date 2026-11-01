@@ -25,8 +25,14 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 ```yaml
 dispatch:            # steps in flight, up to six (Z632)
 - step: O110
-  landing: preparing
-  brief_check: "running: a75405609a06b36d0"
+  base: PENDING
+  worktree: .agents/worktrees/migration-O110
+  executor: agent
+  worker: claude:opus
+  report: .scratch/migration/agents/reviews/O110-report.md
+  round: 0
+  brief_check: .scratch/migration/agents/reviews/O110-brief-check.md (a75405609a06b36d0, claude-opus-5-5, 175851 tokens, 20 tool uses, 347.7 s)
+  landing: not-started
 - step: O111
   landing: preparing
   brief_check: "running: ae05ac84921af52fa"

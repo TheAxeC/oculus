@@ -4,6 +4,13 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z1089 (2026-11-01, O110's brief check, the orchestrator, automode): the guarded entry of a reply's text
+
+- Chosen: G90, a pane is sent the screen as tmux holds it, widens to name `createParser` and one table test.
+- Not chosen: a new guarded entry for one parser; no test (the lazy option).
+
+Where it applies: O110's brief. Booked in `plan.md` Rulings.
+
 ## Z994 (2026-10-25, O69's /spec, the orchestrator, automode): the facet counts of a project board
 
 - Chosen: Each facet's counts are written by hand over `facetValues`, counted over the projects every other filter leaves, through the board's one `applyFilters`.
