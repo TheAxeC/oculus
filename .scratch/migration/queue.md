@@ -1,7 +1,6 @@
-In flight (0 of 6 slots in use): none.
+In flight (1 of 6 slots in use): O113 (Timeline a section of the Session view), building.
 
-Queued, in order (2 steps):
-- O113 (Timeline a section of the Session view).
+Queued, in order (1 step):
 - O114 (one Terminal view for a session).
 
 Owed looks:
