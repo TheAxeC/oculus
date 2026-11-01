@@ -4,6 +4,12 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z1096 (2026-11-01, O113's brief, the orchestrator, automode): the Timeline section's shape
+
+- Chosen: the turns scroll in a box of at most 40vh, which starts at the newest event and follows it as the Timeline view did; words at `--fs-sm`, clocks at `--fs-xs`; the head counts the turns drawn; a folder-limited pick opens the Session view in the Timeline view's place.
+- Not chosen: a section as tall as its turns, which loses the start at the newest event; no replacement in a folder-limited pick (the lazy option).
+- Where it applies: `agents/briefs/O113.md`. Booked in `plan.md` Rulings, open item 622.
+
 ## Z1092 (2026-11-01, O111's brief check, the orchestrator, automode): how a search draws
 
 - Chosen: 25 entries per row; a part not found keeps its kept fold; a press held under `searchFolds`; rows a query leaves out stay mounted and hidden.
