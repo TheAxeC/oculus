@@ -1,5 +1,5 @@
 In flight (3 of 6 slots in use):
-- O110 (terminal text keeps its characters), brief check running.
+- O110 (terminal text keeps its characters), builder running.
 - O111 (Settings responds and folds under a search), brief check running; its builder runs alone, since it writes a configuration file.
 - O112 (the Session view's type sizes), builder running.
 
