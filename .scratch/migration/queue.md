@@ -1,5 +1,4 @@
-In flight (1 of 6 slots in use):
-- O111 (Settings responds and folds under a search), builder running alone, since it writes a configuration file.
+In flight (0 of 6 slots in use): none.
 
 Queued, in order (2 steps):
 - O113 (Timeline a section of the Session view).
@@ -9,6 +8,7 @@ Owed looks:
 - O112: the Session view's heads under the rice theme.
 
 Landed, newest first:
+- O111 (Settings responds and folds under a search), 2026-11-01.
 - O110 (terminal text keeps its characters), 2026-11-01.
 - O112 (the Session view's type sizes), 2026-11-01.
 - O108 (one desktop app), 2026-10-31.

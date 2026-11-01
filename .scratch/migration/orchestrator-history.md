@@ -2656,3 +2656,4 @@ Per package, one row per run: the harness, model and effort; tokens in / cached 
 - 2026-10-13. Open item 80 ruled (c) by Axel: he copies the saved pages himself; the steps given in chat. D72's builder paused at his word and resumed at his word.
 - 2026-10-13. Axel took up Z380 and took Q81's owed look himself: the schedule dialog over the update tray takes the first Escape; passed. Open item 83 ruled (a) and done inline (1d2133f72).
 - 2026-10-13. D72 reviewed (aa2b5f3bc2f7eb249, opus): item 10 violated, item 11 partial; repair round 1 sent with 10 rulings.
+- 2026-11-01. O111 landed on main (booked under O111 in `plan.md`, `agents/reviews/O111-landing.md`), G144 added. Open items 619, 620 and 621 closed in automode (Z1093, Z1094, Z1095).

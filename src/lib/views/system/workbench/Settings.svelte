@@ -50,9 +50,9 @@
     // and the rail list being edited are the tab's instance state, so they are there again after a
     // tab switch or a reload, a text and a draft of a hub other than the primary kept under that
     // hub; a draft that reads back holds its change again after a reload. The rail's Settings
-    // choice opens the tab with `reveal: 'rail'`: while that ask stands the rail row is drawn
-    // whatever the query, and once it is drawn the view clears a query that would have hidden it,
-    // waits for the list to be redrawn, scrolls the row into view and takes the ask out.
+    // choice opens the tab with `reveal: 'rail'`: while that ask stands the rail row is in the rows
+    // the query keeps, and once it is shown the view clears a query that would have hidden it,
+    // waits for the mounted rows' `hidden` attributes, scrolls the row into view and ends the ask.
     //
     // The table of contents is beside the list from 700 px and over. Under that the header offers a
     // toggle that shows it over the list; a press on one of its entries or Escape hides it again
@@ -337,8 +337,8 @@
     const found = $derived(searchGroups(groups, query, revealing ? [RAIL_ROW] : []));
     const toc = $derived(tocOf(found.groups));
 
-    /** Whether the rail row is drawn, and whether the query alone would have hidden it. */
-    const railDrawn = $derived(holdsRail(found.groups));
+    /** Whether the rail row is kept and so shown, and whether the query alone would hide it. */
+    const railShown = $derived(holdsRail(found.groups));
     const railHidden = $derived(!holdsRail(searchGroups(groups, query).groups));
 
     // The rail's reveal shows the rail row, which the Workspace scope draws.
@@ -360,10 +360,10 @@
     /** The groups and sections, which open the folded group a scroll goes into. */
     let drawn: { unfold: (target: string) => Promise<void> } | undefined = $state();
 
-    /** The headings of the list in the order drawn, those inside a folded group left out. */
-    function headings(): HTMLElement[] {
-        const all = list?.querySelectorAll<HTMLElement>('[data-toc-target]') ?? [];
-        return [...all].filter((heading) => heading.checkVisibility());
+    /** What a selector names in the list in the order drawn, the hidden and the folded left out. */
+    function visible(selector: string): HTMLElement[] {
+        const all = list?.querySelectorAll<HTMLElement>(selector) ?? [];
+        return [...all].filter((one) => one.checkVisibility());
     }
 
     /** Make the heading at the top of the list the table's selected row. */
@@ -371,7 +371,7 @@
         if (list === undefined) return;
         const edge = list.getBoundingClientRect().top + 8;
         let at = '';
-        for (const heading of headings()) {
+        for (const heading of visible('[data-toc-target]')) {
             if (heading.getBoundingClientRect().top > edge) break;
             at = heading.dataset.tocTarget ?? '';
         }
@@ -380,7 +380,7 @@
 
     async function scrollTo(id: string): Promise<void> {
         await drawn?.unfold(id);
-        headings()
+        visible('[data-toc-target]')
             .find((heading) => heading.dataset.tocTarget === id)
             ?.scrollIntoView({ block: 'start' });
         contentsOpen = contentsAfter(contentsOpen, 'choose', width);
@@ -399,10 +399,10 @@
 
     /** The search's Down key moves the focus to the first setting listed. */
     function focusFirst(): void {
-        list?.querySelector<HTMLElement>('[data-setting]')?.focus();
+        visible('[data-setting]').at(0)?.focus();
     }
 
-    /** Clear a query that hides the rail row, wait for the redraw, scroll to it, end the ask. */
+    /** Clear a query that hides the rail row, wait for the rows, scroll to it, end the ask. */
     async function showRail(area: HTMLElement, hidden: boolean): Promise<void> {
         if (hidden) setQuery('');
         await tick();
@@ -413,9 +413,9 @@
         restateInstance(instance.id, withoutReveal(instanceLayoutState(instance.id)));
     }
 
-    // The reveal waits for the rail row to be drawn: its file may still be being read.
+    // The reveal waits for the rail row to be shown: its file may not have been read yet.
     $effect(() => {
-        if (!revealing || !railDrawn || list === undefined) return;
+        if (!revealing || !railShown || list === undefined) return;
         const area = list;
         // Untracked whole: `setQuery` reads the instance state it writes, which would run the
         // effect a second time.
@@ -453,12 +453,13 @@
                 <Contents entries={toc} current={top} onpick={(id: string) => void scrollTo(id)} />
             </nav>
             <div class="list" bind:this={list} onscroll={follow}>
-                {#if scope.kind === 'workspace' && query === ''}
-                    <WorkspaceRows {ground} {scopes} />
+                {#if scope.kind === 'workspace'}
+                    <WorkspaceRows {ground} {scopes} hidden={query !== ''} />
                 {/if}
                 <List
                     bind:this={drawn}
-                    groups={found.groups}
+                    {groups}
+                    found={found.groups}
                     id={instance.id}
                     {writer}
                     {editors}

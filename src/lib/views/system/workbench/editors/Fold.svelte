@@ -1,20 +1,22 @@
 <script lang="ts">
     // Layer 3, view partial. The disclosure line above a part of a Settings row that may be folded
-    // (state/system/config/view/fold.ts): the editor of the row's entries, or its Fields list. The
-    // line (ui/tree/row/FoldLine.svelte) holds a chevron, the title and the number of entries or
-    // fields; a press, or Enter or Space on it, folds or unfolds the part, and the line names the
-    // part it shows in `aria-controls` and says whether it is shown in `aria-expanded`. A folded
-    // part draws nothing of its body; the row's Modified bar, gear, message lines and default line
-    // are the row's own (settings/Item.svelte) and stay drawn.
+    // (state/system/config/view/fold.ts): the editor of the row's entries, its Fields list, or a
+    // nested list of a card (NestedCards.svelte). The line (ui/tree/row/FoldLine.svelte) holds a
+    // chevron, the title and the number of entries or fields; a press, or Enter or Space on it,
+    // folds or unfolds the part, and the line names the part it shows in `aria-controls` and says
+    // whether it is shown in `aria-expanded`. A folded part draws nothing of its body; the row's
+    // Modified bar, gear, message lines and default line are the row's own (settings/Item.svelte)
+    // and stay drawn.
     //
-    // The fold is kept in the tab's instance state under the row and part. A query found inside the
-    // part unfolds it while the query stands (`searched`), and a press then keeps the fold the
-    // reader asked for, which shows once the query is cleared.
+    // The fold is kept in the tab's instance state under the row and part. A search with something
+    // to show in the part unfolds it while the query stands (`searched`). A press under a query
+    // folds or unfolds the part at once and stands for that query; once the query is cleared the
+    // kept fold shows.
 
     import type { Snippet } from 'svelte';
     import FoldLine from '$lib/ui/tree/row/FoldLine.svelte';
     import { t } from '$lib/state/shared/words/text';
-    import { isFolded, withFold, type FoldPart } from '$lib/state/system/config/view/fold';
+    import { foldKey, isFolded, withFold, type FoldPart } from '$lib/state/system/config/view/fold';
     import { useState } from '$lib/state/client/use';
 
     const {
@@ -30,7 +32,7 @@
         title: string;
         /** How many entries or fields the part holds. */
         count: number;
-        /** Whether the query stands and is found inside the part. */
+        /** Whether the search has something to show in the part, on a row it keeps. */
         searched: boolean;
         children: Snippet;
     };
@@ -39,8 +41,8 @@
 
     const folded = $derived(isFolded(instanceState(id), row, part, count, searched));
 
-    /** The id of the part's body, which the line names. */
-    const body = $derived(`fold-${id}-${part}-${row}`);
+    /** The id of the part's body, which the line names; it holds a nested list's path. */
+    const body = $derived(`fold-${id}-${foldKey(row, part)}`);
 
     const counted = $derived(
         part === 'fields'
@@ -57,7 +59,11 @@
     }
 </script>
 
-<div class="fold" data-fold={part} data-folded={folded ? '' : undefined}>
+<div
+    class="fold"
+    data-fold={typeof part === 'string' ? part : 'nested'}
+    data-folded={folded ? '' : undefined}
+>
     <FoldLine {title} count={counted} expanded={!folded} controls={body} onclick={press} />
     <div id={body} class="body">
         {#if !folded}

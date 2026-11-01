@@ -27,8 +27,15 @@
         row,
         id,
         editors,
-        lists
-    }: { row: ConfigRow; id: string; editors: EditorWriter; lists: Lists } = $props();
+        lists,
+        kept
+    }: {
+        row: ConfigRow;
+        id: string;
+        editors: EditorWriter;
+        lists: Lists;
+        kept: boolean;
+    } = $props();
 
     let setup: ClusterSetup | null = $state(null);
     let failed = $state(false);
@@ -66,4 +73,4 @@
     );
 </script>
 
-<Editor {row} {id} {editors} lists={narrowed} />
+<Editor {row} {id} {editors} lists={narrowed} {kept} />

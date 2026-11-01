@@ -44,9 +44,11 @@
         writer: RowWriter;
         editors: EditorWriter;
         lists: Lists;
+        /** Whether the search keeps the row. */
+        kept: boolean;
     };
 
-    let { row, id, writer, editors, lists }: Props = $props();
+    let { row, id, writer, editors, lists, kept }: Props = $props();
 
     /** The value the control shows: the one sent while its write is out, else the one in force. */
     const held = $derived(writer.pending(row) ? writer.shown(row) : row.value);
@@ -128,7 +130,7 @@
         />
     </div>
 {:else if drawn}
-    <Editor {row} {id} {editors} {lists} />
+    <Editor {row} {id} {editors} {lists} {kept} />
 {/if}
 
 <style>

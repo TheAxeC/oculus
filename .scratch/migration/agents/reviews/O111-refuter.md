@@ -172,3 +172,207 @@ Cases of the brief's "Cases":
 - What git would track for `.scratch/migration/agents/reviews/O111-report.md` in the worktree: `git check-ignore` is outside the three commands. It shows as untracked in `git status --short`.
 
 Reviewer usage: a672538fd7539b84e, claude-opus-5-5, 333002 tokens, 41 tool uses, 885.5 s.
+
+## Repair round 1, refuted
+
+```
+$ npm run diagrams   (ran clean; shasum docs/diagrams/* before and after: same)
+$ npx vitest run tests/state/system/settings/fold.test.ts
+ Test Files  1 passed (1)
+      Tests  43 passed (43)
+
+$ npm run test:quick -- --base e9e8cdd7e
+ok      prettier (0.7 s): All matched files use Prettier code style!
+ok      ASCII gate (0.8 s)
+ok      svelte-kit sync (1.8 s)
+ok      eslint (2.5 s)
+ok      svelte-check (9.0 s): 1793561777510 COMPLETED 577 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest (27.3 s): Duration  16.79s (transform 30.88s, setup 0ms, import 59.48s, tests 1.60s, environment 2ms)
+ok      vitest slow (31.3 s): Duration  20.69s (transform 12.24s, setup 0ms, import 17.61s, tests 6.77s, environment 0ms)
+ok      vitest checks (43.8 s): Duration  33.08s (transform 12.98s, setup 0ms, import 27.95s, tests 52.78s, environment 2ms)
+test:quick: 45.9 s; every command passed
+test:quick: not covered: tests that reach no changed file within the import depth,
+            other than the checks under tests/checks/source and tests/checks/tree,
+            which run for any change under src, tests or utils; the build, the lint
+            of unchanged files
+
+$ LC_ALL=C grep -n '[^ -~]' <the 20 changed files, docs/diagrams and .scratch left out>
+(prints nothing, exit 1)
+
+$ grep over added lines (git diff e9e8cdd7e -- src config tests) and the 3 new files for the history words
+one hit: search.ts "the groups and sections that still hold one"
+
+$ awk 'length > 100' over the changed comment files
+(prints nothing)
+
+$ sh utils/unused-exports.sh | wc -l
+337; grep of it for heldPress|keptOpen|searchDrawn|moveBy|editedAfter|stepsKey|entryTexts|foundInside: nothing
+
+$ node --no-warnings <scratchpad>/case-run.mjs "$PWD"
+places by matches.ts [ 0, 2, 4, 6 ]
+third matching entry 4 alpha 4 by 2
+set    alpha 0 | x 1 | alpha 2 | x 3 | edited | x 5 | alpha 6 | x 7
+move   alpha 0 | x 1 | alpha 2 | x 3 | x 5 | alpha 6 | alpha 4 | x 7
+remove alpha 0 | x 1 | alpha 2 | x 3 | x 5 | alpha 6 | x 7
+
+$ node --no-warnings <scratchpad>/case-run-latex.mjs "$PWD"
+"alpha" lists [ '0.at:1', '0.symbols/0.items:2', '0.symbols:1', 'top:1' ] more 0
+"e" lists [ '0.at:24', '0.environments:0', '0.chords/0.text:0', '0.chords:0', '0.symbols/0.items:0' ... '0.symbols/9.items:0', '0.symbols:0', 'top:1' ] more 765
+"@8" lists [ '0.at:1', 'top:1' ] more 0
+"@modified" lists null more undefined
+"zzzz" lists null more undefined
+
+$ node --no-warnings <scratchpad>/probe-r1.mjs "$PWD"   (the reviewer's own, reading only)
+nested gap, outer holds no own match: {"lists":{"0.a":"25 places","0.b/0.items":[],"":[0]},"more":3}
+"\\" {"lists":{"0.at":"25 places","0.symbols/0.items":[], ... "0.symbols/9.items":[],"":[0]},"more":669}
+draft.fields (catalog order) [ 'notice','at','environments','chords','symbols' ] card.fields (file order) the same
+rows whose nested lists differ in order, file vs catalog: 16 (literature.sources 8, recover.sources 8)
+first edit  {"query":"alpha","searchFolds":{"words":"alpha","presses":{"entries:r":false,"nested:r|0.at":false}}}
+second edit (same text) same true
+
+$ node --no-warnings <scratchpad>/probe-r1b.mjs "$PWD"
+notice list | at list | environments list | chords record | symbols list
+
+$ git show e9e8cdd7e:docs/diagrams/layers.dot | grep '"views to state" \[label'   label="1515"; worktree label="1522"
+$ wc -l: every line count of the report's file table reproduces (fold.ts 168 ... ClusterRows 76, fixture 85)
+$ git status --short | wc -l   28, before and after the runs
+$ pgrep -fl "vite|vitest|svelte-check" | grep -c migration-O111   0
+$ grep -c data-card settings/scopes/WorkspaceRows.svelte   0
+
+$ jq over the Bash calls of agent-ab16128813ec8407f.jsonl from 19:15Z
+no redirect to a file, no python3, perl, sed -i, node -e or prettier --write in the round;
+npm run test:quick 3 times, npm run diagrams 3 times (19:23, 19:26, 19:28); one `cat > $SP/case-run.mjs` call
+```
+
+### Verdicts
+
+Items of the brief's "What to build":
+
+- 1: holds. Unchanged since the first review; `keptOpen` now also holds a list open under a query.
+- 2: violated, Behaviour 1. Everything else in the item holds by reading and by the table, Z1093 included, for a list holding its own matches.
+- 3: holds. Spec 3 of the first review is closed: `RailEditor.svelte:97-99` reads `rows`, `draft ?? saved`, and `Item.svelte:124-127` reads the Fields list alone. `edited` takes a pick for a matching entry, as Z1093 says. An edit under a query writes no `folds` (the `noKeptFold` rows).
+- 4: holds. `keptOpen`'s press goes through the same `withFold` and `searchFolds`, and `isFolded` reads it first.
+- 5: violated, Spec 1. The rest holds: Spec 1 and Spec 2 of the first review are closed for a row with no filtered open part, and for `WorkspaceRows`.
+- 6: holds.
+- 7: violated, Standards 1. Every other listed comment holds; `Settings.svelte`'s comments now say what is true.
+
+Cases of the brief's "Cases":
+
+- 'folds' a part the query is found in, no press: met.
+- 'folds' the same after a press that folds it, same query: met.
+- 'folds' that press, query changed: met.
+- 'folds' that press, query A, then B, then A: met.
+- 'folds' that press, the same words in another case and spacing: met.
+- 'folds' that press, query cleared: met.
+- 'folds' a press under no query, then a search comes and goes: met.
+- 'folds' a part the query is not found in, held open and held folded: met.
+- 'folds' a query of filters alone over a held fold: met.
+- 'folds' a nested list of 6, no held fold, and of 5: met.
+- 'folds' a nested path's key against `entries`, `fields` and a list of the same name in another entry: met.
+- 'picks' a flat list: met.
+- 'picks' nested lists: met.
+- 'picks' a query equal to `fields` or `kept`: met.
+- 'picks' `@8`; a filter query: met.
+- 'picks' two words, one found: met.
+- 'picks' an edited entry that no longer matches: met.
+- 'picks' a Move over a hidden neighbour: met.
+- Case-run on the third matching entry: met, rerun above.
+- Look, first letter `e`: not verifiable here; the look's long-task observer settles it.
+- Look, Backspace and clearing: not verifiable; the look's observer. A letter that leaves a filtered row out is added by Spec 1.
+- Look, opening Settings: not verifiable; the look.
+- Look, `latex_editing` folded with counts and `alpha`: not verifiable; the look. `case-run-latex.mjs` gives the picks.
+- Look, a press on each part under a search and after clearing: not verifiable; the look.
+- Look, an edit that stops the match, an Add, a Move and a Remove under a filter: not verifiable; the look.
+
+Items of round 1:
+
+- 1. A hidden row draws no picks: violated, Spec 1. It holds for picks and for a fold opening; it fails on "nor mounts cards on a keystroke".
+- 2. `WorkspaceRows` stays mounted: holds. See (b) and (c).
+- 3. The rail list's fold reads the list it draws: holds.
+- 4. An edit under a query keeps its list open: holds. Comments in `fold.ts`, `Editor.svelte` and `RailEditor.svelte` are updated; `grep "writes no fold"` over src, docs and tests finds none.
+- 5. What a search draws past the cap: violated, Behaviour 1. The code is the brief's shape, in a `for` loop; the shape leaves out a list whose matches stand only in lists under it.
+- 6. Tests: holds. All five named rows exist, plus four more that the report names. The failures are quoted for rows 18 and 21 and the three picks rows. Each test reads by its behaviour.
+- 7. `Settings.svelte`'s comments: holds. `await tick()` is needed, by reading: `List.unfold` returns at once for an open group, so without it `scrollIntoView` runs before the attributes flush.
+- Proof 1: violated, Proof 1.
+- Proof 2: holds. The table is consistent with the base run's 4 failed and 13 passed, and with the quoted 5 failed.
+- Spec 4: holds. The round's "no such command" reproduces by `jq`; the "one call" for `cat > $SP/case-run.mjs` reproduces. The added `sed`-to-a-pipe at 18:42:26 writes no file.
+
+Judged specifically:
+
+- (a) Real, by reading. `Editor.svelte:124-126` gives `search` null when `!kept`, then `Cards.svelte:152-153` takes `places === undefined` and draws `cards.slice(0, shown)`. It affects a list open by its kept fold: 5 or fewer entries, or one the reader opened, up to PAGE per list. A folded list closes and mounts nothing. Spec 1 has the size and the smallest fix.
+- (b) No. `.group` holds only `min-width` (GroupHead.svelte), `.section` holds `scroll-margin-top` and a margin, the wrapper div has no class, and the one global `*` rule in `scrollbar.css` sets scrollbar properties. `grep '\[hidden\]'` over src finds no other rule bearing on them.
+- (c) No. Settings has no `.toc`, and `WorkspaceRows` carries no `data-toc-target`. Down uses `visible('[data-setting]')`, which filters by `checkVisibility()`, and the two `.row` boxes have no box under `.rows[hidden] { display: none }`. Their inputs leave the Tab order for the same reason.
+- (d) Every caller passes `kept`. `Item`: `List.svelte:182` and `workbench-fixture.ts:80`. `Control`: `Item.svelte:231`. The settings `Editor`: `Control.svelte:133`, `ClusterRows.svelte:76`. `ClusterRows`: `Item.svelte:229`. `RailEditor`: `Item.svelte:225`. The other `<Editor` hits (`SourceBody`, `MergeSide`, `Merge`) are other components. `<Cards` is drawn only by `Editor` and `NestedCards`. `kept` is required, and svelte-check passes.
+- (e) `keptOpen` writes once per part per query: the second edit gives the same text (probe). The state is written on every keystroke by `withSavedDraft` (`Editor.svelte:141,146`), as at the base (lines 117, 122), and by `withRailDraft` in the rail. `keptOpen` adds no write after the first keystroke. No finding.
+- The limit of file order against catalog order: no reader sees a wrong result.
+  - `latex_editing` has the two orders equal; 16 cards of `literature.sources` and `recover.sources` differ.
+  - Only the division of the cap between sibling lists of the one card where the cap falls changes: a list drawn higher can draw nothing while a lower one draws picks.
+  - Every entry drawn matches, `more` is exact, and each list's places stay in index order, so a Move and an edit are unaffected.
+
+### Findings
+
+#### Spec
+
+1. `src/lib/views/system/workbench/editors/Editor.svelte:124-126`: "`draft === null || !kept ? null : searchDrawn(draft.cards, query, edited.entries)`", with `Cards.svelte:152-153`: "`places === undefined ? cards.slice(0, shown)...`".
+   - What is wrong: when a row goes from kept to left out, `search` goes from a filter to null, and a list open by its kept fold goes back to its first PAGE entries in a hidden row. Round item 1 says such a row "neither opens a fold nor mounts cards on a keystroke"; brief item 5 says "a keystroke changes attributes and mounts nothing". The round's "A part already open stays mounted" covers a part that stayed drawn, and this part was unmounted by the filter.
+   - Failure scenario: `agents` (2,147 elements) and `workbench` (1,264) by the brief's counts, whose lists are mostly 5 or fewer and so open. Type `a`: each draws its picks. Type the next letter that drops them: the elements come back in hidden rows on that keystroke, and go again on Backspace. Any list the reader held open adds up to 100 cards. Size not measured.
+   - Smallest fix, in `Editor.svelte`, a hidden row keeps what it last drew:
+     ```ts
+     let last: Drawn | null = null;
+     const search = $derived.by(() => {
+         if (kept) last = draft === null ? null : searchDrawn(draft.cards, query, edited.entries);
+         return last;
+     });
+     ```
+     and in `Cards.svelte:154`, `places.filter((at) => at < cards.length).map(...)`, since a push can shrink the list while the row is hidden. A row left out at the first letter keeps null, so it opens nothing; a hidden row walks nothing and mounts nothing.
+   - This changes the mechanism sentence of round item 1 ("`search` is null"), so it is the orchestrator's to apply. The clear still mounts what the filter removed, which item 2 makes unavoidable.
+   - Verdict: item 5 violated, round item 1 violated.
+
+#### Proof
+
+1. `.scratch/migration/agents/reviews/O111-round1-report.md` line 1 and row 1: "Every item of round 1 is done; nothing of the seven is left" and "| 1. A hidden row draws no picks | DONE by reading and types".
+   - What is wrong: the same report's Problem 1 says a hidden row "redraws its whole first page of cards", which is the effect item 1 exists to stop. The round's Proof 1 says a row is DONE only when nothing is left of it.
+   - Failure scenario: the orchestrator reads the first line and the DONE row and lands without Spec 1; the open question stays one paragraph further on.
+   - Verdict: Proof 1 of the round violated.
+
+2. Same report, "Cases for the look", row "past the cap": "`environments`, `chords` and `symbols` keep their kept folds".
+   - What is wrong: `chords` is a `record` (probe `familyForm`), so `NestedCards.svelte:99-101` draws it with no fold, and under `e` its place list is empty, so the reader sees the word `chords` with nothing under it, no line and no press.
+   - Failure scenario: the look searches for a `chords` fold line, finds none, and takes a correct draw for a defect.
+   - Verdict: none.
+
+#### Standards
+
+1. `src/lib/views/system/workbench/editors/Fold.svelte:11-12`: "A query found inside the part unfolds it while the query stands (`searched`)"; `:34` "Whether the query stands and is found inside the part."; `src/lib/state/system/config/view/fold.ts:10-11` and `:116-117`; `Editor.svelte:31-33`: "picks nothing, so it opens no line and mounts no card on a keystroke".
+   - What is wrong: the round makes these false. A list whose matches all fall past the cap holds the query and stays by its kept fold (`NestedCards.svelte:109`), and a row left out holds the query and answers false. `Editor.svelte`'s sentence is false in the case of Spec 1. Spec rule: a sentence the change makes false is a defect.
+   - Failure scenario: a reader of `fold.ts` takes `searched` for "the query is found here", and passes it for a past-cap list, which draws an open line with no entry.
+   - Verdict: item 7 violated.
+
+#### Behaviour
+
+1. `src/lib/state/system/config/view/matches.ts:82-84` and `:91`: "`if (walkList(nested, [...path, { index, field }], walk)) drawn = true;`" and "`if (places.length > 0 || capped) walk.lists.set(stepsKey(path), places);`".
+   - What is wrong: `capped` is set only for an entry whose own text matches, so a list whose matches stand only in the lists under it, all past the cap, gets no key and is unfiltered. That is what Z1093 (b) rejected. By item 3 an entry matches at any depth, and Z1093 (a) says such a list is filtered and draws no entry.
+   - Failure scenario, synthetic: lists `a` of 25 and `b` of 2 groups, `b/0.items` matching: `{"0.a":25 places,"0.b/0.items":[],"":[0]}`, `more` 3. `b` has no key and is open: the reader sees both groups, the second with its non-matching entries, under the search.
+   - Failure scenario, real row: `latex_editing`, query `\`: `0.symbols` has no key while all ten `items` are `[]`, `more` 669. A press on `symbols` draws every group with its `items` line, each of which then shows no entry.
+   - The report does not state this. The builder built the round's shape.
+   - Fix: in the nested loop, `else if (walk.lists.has(stepsKey(child))) capped = true;`, with one row in the picks table.
+   - Verdict: item 2 violated, round item 5 violated.
+
+### Declined to judge
+
+- What only a page shows goes to the look: `hidden` as drawn, `checkVisibility` on a hidden `WorkspaceRows`, the fold lines, a press on each part, the caret in an edited entry, the focus of an Add, and an Add in a list with no places.
+- Whether a keystroke freezes the page: no timing or element count can be taken here. The look's observer settles it, the case of Spec 1 included.
+- The runs on the unchanged tree: they need the base tree, which this review does not hold. The failures are read from the report and agree with the first review's reading of the transcript.
+- The 337 lines of `unused-exports.sh` at the base: same reason; no decision rests on it.
+- The prop shape `row, id, editors, lists, kept` written in both `Editor.svelte` and `ClusterRows.svelte`: `duplication.test.ts` passes because the two texts differ. `ComponentProps<typeof Editor>` was red on eslint in the builder's run. The base already held the shape twice and `ClusterRows` keeps the base's form, so no finding.
+- Outside the step, not changed by it: under an empty query in the Workspace scope, Down from the search goes to `workspace:primary`, a `div` with no `tabindex` (`WorkspaceRows.svelte:64`), so `focus()` does nothing. The base's `focusFirst` did the same (`git show e9e8cdd7e:.../Settings.svelte:402`). By reading.
+- Three test:quick runs and three diagrams runs where the round says once: spec.md's token paragraph allows a rerun after a red line in a changed file, and the report names them, so no finding.
+- This review wrote `probe-r1.mjs`, `probe-r1b.mjs`, `diag-before.txt`, `builder-tools.tsv` and `builder-tools.tsv.round` into the scratchpad. No worktree file changed: `git status --short | wc -l` is 28 before and after, and the diagram checksums are the same.
+
+Reviewer usage: a560ef043a7e43ee7, claude-opus-5-5, 254884 tokens, 35 tool uses, 562.1 s.
+
+### Closed
+
+- First run, Spec 1, Spec 2, Spec 3, Proof 1, Proof 2, Standards 1, Behaviour 1, 2, 3: closed in repair round 1.
+- First run, Spec 4: closed under the ruling "Unapproved builder scripts"; the breach is in O111's booking.
+- Over round 1, Spec 1, Behaviour 1, Standards 1: fixed at landing.
+- Over round 1, Proof 1, Proof 2: the round's report; no code; the look read the tree instead.

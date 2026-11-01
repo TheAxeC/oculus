@@ -5948,3 +5948,7 @@ Builds on it: O102
 - 2026-10-30, O104's first run (ruling 374 (a)): `views/feeds/leads/Leads.svelte` added to the paths, to hand `LeadCard` its ident. Open item 598 (a) closed in automode.
 - 2026-11-01, O111's review (Z1093, open item 619): what a Settings search draws past its cap of 25 entries in a row. A list whose matches all fall past the cap draws no entry, and the line under the row counts them, so the count is exactly what is not on screen; the alternative showed the whole list with its count wrong, and was the lazy option. Applied in O111's repair round 1 (`agents/briefs/O111-round1.md`).
 Builds on it: O111
+- 2026-11-01, O111's look (Z1094, open item 620): a row of Settings draws a search's matches only when it stands near what the list shows, and the rest draw as a scroll reaches them; without it the first letter took 1.2 s in a release build. Named in the next report.
+Builds on it: O111
+- 2026-11-01, O111's look (Z1095, open item 621): the Settings editor's false line "The file changed since this edit was started" ended, in O111's landing; a later step for it was the lazy option. Named in the next report.
+Builds on it: O111

@@ -17,6 +17,12 @@
     // (views/shared/card/pane-fold.ts). A section's title is a sub-heading
     // (ui/controls/heads/SubHead.svelte). `unfold` opens the folded group that holds a heading or a
     // row, so the view's scroll to it from the table of contents or the rail's reveal lands.
+    //
+    // Every row of the scope's groups is mounted, and the `hidden` attribute hides a row, section
+    // or group the search leaves out (`kept`), so a keystroke changes attributes and mounts nothing
+    // and clearing a search draws no row anew. Each row is told whether it is kept, so a row left
+    // out draws no entry the search picks. The view's walks of its headings and the card cursor
+    // read what is visible, so they pass over a hidden row.
 
     import { tick } from 'svelte';
     import GroupHead from '$lib/ui/controls/heads/GroupHead.svelte';
@@ -32,6 +38,7 @@
     import type { EditorWriter } from '$lib/state/system/config/editors/writer';
     import type { Lists } from '$lib/state/system/config/editors/sources';
     import type { RowWriter } from '$lib/state/system/config/scopes/write';
+    import { keptIn } from '$lib/state/system/config/search';
     import { useState } from '$lib/state/client/use';
     import { usePaneFold } from '$lib/views/shared/card/pane-fold';
     import Item from './Item.svelte';
@@ -43,7 +50,10 @@
     } = useState();
 
     type Props = {
+        /** Every group of the scope, each drawn. */
         groups: Group[];
+        /** The groups with the rows the search keeps, the rest being hidden. */
+        found: Group[];
         id: string;
         writer: RowWriter;
         editors: EditorWriter;
@@ -53,7 +63,9 @@
         onrepo: (root: string) => void;
     };
 
-    let { groups, id, writer, editors, listsFor, onrepo }: Props = $props();
+    let { groups, found, id, writer, editors, listsFor, onrepo }: Props = $props();
+
+    const kept = $derived(keptIn(found));
 
     const fold = usePaneFold();
 
@@ -97,8 +109,9 @@
         <GroupHead
             data-settings-group={group.id}
             data-toc-target={group.id}
+            hidden={!kept.groups.has(group.id)}
             label={group.title}
-            count={group.sections.reduce((rows, section) => rows + section.rows.length, 0)}
+            count={kept.groups.get(group.id) ?? 0}
             open={fold.open(group.id)}
             ontoggle={() => fold.toggle(group.id)}
         >
@@ -132,36 +145,51 @@
                 <p class="note">{said(group.said)}</p>
             {/if}
             {#each group.sections as section (section.id)}
-                <div class="section" data-toc-target={section.id}>
+                <div
+                    class="section"
+                    data-toc-target={section.id}
+                    hidden={!kept.sections.has(section.id)}
+                >
                     {#if section.title !== ''}
                         <SubHead label={section.title} />
                     {/if}
                     {#each section.rows as row (row.id)}
-                        {#if row.kind === 'file'}
-                            <div class="file" data-file={row.file}>
-                                <div class="file-head">
-                                    <span class="file-path">{row.file}</span>
-                                    {#if targetOf(OCULUS_CONFIG_ROOT, row.file) !== null}
-                                        <ToolButton
-                                            label={t('views.open_source')}
-                                            glyph="edit"
-                                            title={t('views.open_source_tip', row.file)}
-                                            compact
-                                            onclick={() => openFile(OCULUS_CONFIG_ROOT, row.file)}
-                                        />
-                                    {:else}
-                                        <span class="unavailable">
-                                            {t('workbench.settings_open_unavailable', row.file)}
-                                        </span>
+                        <div hidden={!kept.rows.has(row.id)}>
+                            {#if row.kind === 'file'}
+                                <div class="file" data-file={row.file}>
+                                    <div class="file-head">
+                                        <span class="file-path">{row.file}</span>
+                                        {#if targetOf(OCULUS_CONFIG_ROOT, row.file) !== null}
+                                            <ToolButton
+                                                label={t('views.open_source')}
+                                                glyph="edit"
+                                                title={t('views.open_source_tip', row.file)}
+                                                compact
+                                                onclick={() =>
+                                                    openFile(OCULUS_CONFIG_ROOT, row.file)}
+                                            />
+                                        {:else}
+                                            <span class="unavailable">
+                                                {t('workbench.settings_open_unavailable', row.file)}
+                                            </span>
+                                        {/if}
+                                    </div>
+                                    {#if row.help !== ''}
+                                        <p class="about"><CodeText text={row.help} /></p>
                                     {/if}
                                 </div>
-                                {#if row.help !== ''}
-                                    <p class="about"><CodeText text={row.help} /></p>
-                                {/if}
-                            </div>
-                        {:else}
-                            <Item {row} {id} {writer} {editors} lists={listsFor(row)} {onrepo} />
-                        {/if}
+                            {:else}
+                                <Item
+                                    {row}
+                                    {id}
+                                    {writer}
+                                    {editors}
+                                    lists={listsFor(row)}
+                                    kept={kept.rows.has(row.id)}
+                                    {onrepo}
+                                />
+                            {/if}
+                        </div>
                     {/each}
                 </div>
             {/each}
@@ -182,7 +210,7 @@
         scroll-margin-top: var(--group-strip, 0);
     }
 
-    .section + .section {
+    .section:not([hidden]) ~ .section {
         margin-top: 8px;
     }
 

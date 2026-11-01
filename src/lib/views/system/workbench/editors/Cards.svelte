@@ -17,7 +17,7 @@
     //
     // The partial holds nothing: every keystroke and press goes out as an edit (state/system/
     // config/editors/draft.ts), and the entries come in as they are. A nested list draws one of
-    // these with `path` naming the cards above it.
+    // these with `path` naming the cards above it, under a fold of its own (NestedCards.svelte).
     //
     // Every card has a card id that is its own within the pane, which holds many lists: the file
     // and key of the setting (`base`) and the steps down through the nested lists to the card's
@@ -26,11 +26,18 @@
     // card's field area, marked `data-card-focus`, without changing a value.
     //
     // Add puts the focus on the first control of the entry it adds once the entry is drawn, as VS
-    // Code's Add Item opens its box focused, so what is typed next goes into the new entry.
+    // Code's Add Item opens its box focused, so what is typed next goes into the new entry. The
+    // entry is found by its card id, which holds under a filter too.
     //
     // A list draws its first PAGE entries and a Show more line for the next PAGE, so a catalog of
     // thousands of entries (the interface words, the Unicode math symbols) unfolds without drawing
     // every card at once; Add draws through to the entry it adds.
+    //
+    // While a search filters this list (`search`, state/system/config/view/matches.ts) the list
+    // draws the entries it picked alone, with no Show more, and none at all when its matches all
+    // fall past the cap. Each entry keeps its real place in every use (its card id, its `{#each}`
+    // key, its edits, a slot's name, its labels, the Add field of a sparse card), so an edit lands
+    // on the entry the reader acted on, and a Move goes past the next entry drawn.
     //
     // A family marked `sparse` (`sparse`) draws each card with the fields its record holds and an
     // Add field menu of the others; a field picked there is held with an empty value
@@ -48,11 +55,8 @@
     import {
         addableFields,
         addedValue,
-        cardsOf,
         drawsCards,
-        familyForm,
         fromText,
-        pairValueSpec,
         shownFields,
         textOf,
         type Card,
@@ -61,8 +65,10 @@
     } from '$lib/state/system/config/editors/fields';
     import { flowText } from '$lib/state/system/config/editors/flow';
     import type { Lists } from '$lib/state/system/config/editors/sources';
+    import { stepsKey } from '$lib/state/system/config/view/fold';
+    import { moveBy, type Drawn } from '$lib/state/system/config/view/matches';
     import FieldControl from './FieldControl.svelte';
-    import Cards from './Cards.svelte';
+    import NestedCards from './NestedCards.svelte';
 
     type Props = {
         cards: Card[];
@@ -74,6 +80,10 @@
         instance: string;
         /** The file and key of the setting the cards belong to: the start of every card id. */
         base: string;
+        /** The row's id, which keeps the folds of the nested lists. */
+        row: string;
+        /** What the standing search draws of the row, or null while it filters nothing. */
+        search: Drawn | null;
         /** The cards above a nested list: each one's place in its list and the field holding it. */
         path?: Step[];
         /** The words that name the nested list in the label of a control. */
@@ -106,6 +116,8 @@
         lists,
         instance,
         base,
+        row,
+        search,
         path = [],
         scope = '',
         title = '',
@@ -133,19 +145,28 @@
     const PAGE = 100;
     /** How many entries are drawn now. */
     let shown = $state(PAGE);
-    const drawn = $derived(cards.length > shown ? cards.slice(0, shown) : cards);
+    /** The places a search draws of this list, or undefined for a list it does not filter. */
+    const places = $derived(search?.lists.get(stepsKey(path)));
+    /** The entries drawn, each with its real place in the list. */
+    const drawn = $derived<[Card, number][]>(
+        places === undefined
+            ? cards.slice(0, shown).map((card, at) => [card, at])
+            : places.filter((at) => at < cards.length).map((at) => [cards[at], at])
+    );
     /** How many entries a press of Show more draws. */
-    const next = $derived(Math.min(PAGE, cards.length - shown));
+    const next = $derived(places === undefined ? Math.min(PAGE, cards.length - shown) : 0);
 
     $effect(() => {
         const at = added;
         const root = box;
-        if (at === null || root === undefined || cards.length <= at) return;
+        if (at === null || root === undefined || !drawn.some(([, place]) => place === at)) return;
         added = null;
         void tick().then(() => {
-            const all = root.querySelectorAll<HTMLElement>(':scope > .card > [data-card-focus]');
-            const fields = Array.from(all).at(at);
-            if (fields !== undefined) focusFirstQuietly(fields);
+            const id = CSS.escape(idOf(at));
+            const fields = root.querySelector<HTMLElement>(
+                `:scope > [data-card="${id}"] > [data-card-focus]`
+            );
+            if (fields !== null) focusFirstQuietly(fields);
         });
     });
 
@@ -158,10 +179,13 @@
 
     /** The id of the card at a place of this list, unique in the pane. */
     function idOf(at: number): string {
-        const steps = [...path, { index: at, field: '' }]
-            .map((step) => `${step.index}.${step.field}`)
-            .join('/');
-        return `${base}|${steps}`;
+        return `${base}|${stepsKey([...path, { index: at, field: '' }])}`;
+    }
+
+    /** The `by` of a Move of an entry up or down the entries drawn, 0 when it cannot go there. */
+    function byOf(at: number, step: -1 | 1): number {
+        if (places !== undefined) return moveBy(places, at, step);
+        return at + step >= 0 && at + step < cards.length ? step : 0;
     }
 
     /** An edit addressed to this list's entries: with the cards above it. */
@@ -198,18 +222,6 @@
         return Object.hasOwn(specs, name) ? specs[name] : undefined;
     }
 
-    /** The specs of the cards of a family field: a map's key and value, else its fields. */
-    function innerSpecs(spec: FieldSpec): Record<string, FieldSpec> {
-        const fields = spec.fields ?? {};
-        if (familyForm(spec) !== 'pairs') return fields;
-        return { key: fields.key, value: pairValueSpec(spec) };
-    }
-
-    /** The form of the cards a family field draws, a map's or else a list's. */
-    function innerForm(spec: FieldSpec): 'pairs' | 'nested' {
-        return familyForm(spec) === 'pairs' ? 'pairs' : 'nested';
-    }
-
     /** The fields of a card its controls draw: not those it keeps as the file has them. */
     function drawnOf(card: Card): string[] {
         return shownFields(card, fields, sparse);
@@ -234,7 +246,7 @@
 </script>
 
 <div class="cards" data-cards={form} bind:this={box}>
-    {#each drawn as card, at (at)}
+    {#each drawn as [card, at] (at)}
         <div
             class="card"
             class:inline
@@ -245,25 +257,20 @@
                 {#each drawnOf(card) as name (name)}
                     {@const spec = specOf(name)}
                     {#if spec !== undefined && drawsCards(spec, card.fields[name])}
-                        {@const inner = innerSpecs(spec)}
-                        <div class="nested" data-field={name}>
-                            <span class="word">{name}</span>
-                            <Cards
-                                cards={cardsOf(card.fields[name])}
-                                fields={Object.keys(inner)}
-                                specs={inner}
-                                form={innerForm(spec)}
-                                single={familyForm(spec) === 'record'}
-                                sparse={spec.sparse === true}
-                                {lists}
-                                {instance}
-                                {base}
-                                path={[...path, { index: at, field: name }]}
-                                scope={`${scope}${name} ${at + 1}, `}
-                                {discards}
-                                {onedit}
-                            />
-                        </div>
+                        <NestedCards
+                            {name}
+                            {spec}
+                            held={card.fields[name]}
+                            path={[...path, { index: at, field: name }]}
+                            scope={`${scope}${name} ${at + 1}, `}
+                            {lists}
+                            {instance}
+                            {base}
+                            {row}
+                            {search}
+                            {discards}
+                            {onedit}
+                        />
                     {:else if spec !== undefined && removeOnly}
                         <code>{textOf(card.fields[name])}</code>
                     {:else if spec !== undefined}
@@ -317,15 +324,17 @@
                             label={t('settings.editor_up', at + 1)}
                             glyph="collapse"
                             compact
-                            disabled={at === 0}
-                            onclick={() => onedit(aimed({ do: 'move', index: at, by: -1 }))}
+                            disabled={byOf(at, -1) === 0}
+                            onclick={() =>
+                                onedit(aimed({ do: 'move', index: at, by: byOf(at, -1) }))}
                         />
                         <ToolButton
                             label={t('settings.editor_down', at + 1)}
                             glyph="expand"
                             compact
-                            disabled={at === cards.length - 1}
-                            onclick={() => onedit(aimed({ do: 'move', index: at, by: 1 }))}
+                            disabled={byOf(at, 1) === 0}
+                            onclick={() =>
+                                onedit(aimed({ do: 'move', index: at, by: byOf(at, 1) }))}
                         />
                     {/if}
                     <ToolButton
@@ -435,13 +444,6 @@
 
     .card:not(.inline) .field {
         flex: 0 0 auto;
-    }
-
-    .nested {
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-        min-width: 0;
     }
 
     .word {

@@ -5,7 +5,9 @@
     // and written by its Save, a renamed folder that is the primary carrying `primary` with it; a
     // name that is empty, not a folder name or the name of another folder is refused by the Save,
     // naming it, and the change is kept. A box holds its text until Enter or leaving it holds the
-    // change, and Escape drops the text. While a change is held the row shows it.
+    // change, and Escape drops the text. While a change is held the row shows it. A search hides
+    // the rows with the `hidden` attribute, so a keystroke mounts nothing and a text typed in a box
+    // is there when the search is cleared.
 
     import Select from '$lib/ui/forms/choice/Select.svelte';
     import TextInput from '$lib/ui/forms/TextInput.svelte';
@@ -14,7 +16,14 @@
     import { hubsOf, type ScopeGround } from '$lib/state/system/config/scopes/scope';
     import type { Scopes } from './scopes.svelte';
 
-    let { ground, scopes }: { ground: ScopeGround; scopes: Scopes } = $props();
+    type Props = {
+        ground: ScopeGround;
+        scopes: Scopes;
+        /** Whether a query stands, which leaves these rows out. */
+        hidden: boolean;
+    };
+
+    let { ground, scopes, hidden }: Props = $props();
 
     /** The primary the row shows: the one held, else the file's. */
     const primary = $derived.by(() => {
@@ -51,7 +60,7 @@
     }
 </script>
 
-<div class="rows" data-workspace-rows>
+<div class="rows" data-workspace-rows {hidden}>
     <div class="row" data-setting="workspace:primary">
         <span class="title">{t('settings.workspace_primary')}</span>
         <p class="description">{t('settings.workspace_primary_help')}</p>
@@ -89,6 +98,10 @@
         display: flex;
         flex-direction: column;
         padding: 8px 0 0;
+    }
+
+    .rows[hidden] {
+        display: none;
     }
 
     .row {

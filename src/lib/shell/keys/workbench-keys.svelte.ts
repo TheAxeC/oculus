@@ -473,10 +473,10 @@ export function createWorkbenchKeys(options: Options): WorkbenchKeys {
     }
 
     /**
-     * Clear a held cursor whose row the observed pane has drawn and a later render leaves out.
-     * A view draws its rows as its channels send them, so a pane shown from a restored layout first
-     * renders no row or only some of them; until the held row has been drawn once in this
-     * observation, its absence says only that it has not arrived, and the cursor is kept.
+     * Clear a held cursor whose row the observed pane has drawn and a later render leaves out or
+     * hides. A view draws its rows as its channels send them, so a pane shown from a restored
+     * layout first renders no row or only some of them; until the held row has been drawn once in
+     * this observation, its absence says only that it has not arrived, and the cursor is kept.
      */
     function reconcilePane(pane: HTMLElement): void {
         const id = instanceIn(pane);
@@ -490,7 +490,10 @@ export function createWorkbenchKeys(options: Options): WorkbenchKeys {
         if (reconciled !== state) writeCursor(pane, null);
     }
 
-    /** Observe only the pane whose instance currently holds a cursor. */
+    /**
+     * Observe only the pane whose instance currently holds a cursor: its rows being drawn, renamed
+     * or hidden, since a view may hide a row it keeps mounted (settings/List.svelte).
+     */
     function observePane(pane: HTMLElement): void {
         stopCards();
         if (!pane.isConnected) return;
@@ -508,7 +511,7 @@ export function createWorkbenchKeys(options: Options): WorkbenchKeys {
             childList: true,
             subtree: true,
             attributes: true,
-            attributeFilter: ['data-card']
+            attributeFilter: ['data-card', 'hidden']
         });
     }
 

@@ -12,7 +12,9 @@
     //
     // The rows are drawn under a disclosure line (editors/Fold.svelte) with the row's title and
     // their number, folded at first past five rows; the problems and the actions stay drawn under a
-    // folded line, and an edit keeps the line unfolded.
+    // folded line. An edit keeps the line unfolded, and one under a query keeps the fold kept for
+    // an empty search as it was. A query found in the rows drawn, the list being typed if one is,
+    // opens the line of a row the search keeps. A search does not filter the rows.
     //
     // A sentence under the heading says what a row is, and each field has its word before it on the
     // same line. The word is decoration beside a field whose accessible name already holds it, so
@@ -55,7 +57,8 @@
     import { t } from '$lib/state/shared/words/text';
     import { RAIL_ROW } from '$lib/state/system/config/groups';
     import type { ConfigRow } from '$lib/state/system/config/rows';
-    import { heldFold, withFold } from '$lib/state/system/config/view/fold';
+    import { settingsQuery } from '$lib/state/system/config/typed';
+    import { entryTexts, foundInside, keptOpen } from '$lib/state/system/config/view/fold';
     import { useState } from '$lib/state/client/use';
     import Fold from './editors/Fold.svelte';
     import { scopesHere } from './settings/scopes/context';
@@ -72,11 +75,11 @@
         id: string;
         /** The rail row, whose change the list being typed is held as. */
         row: ConfigRow;
-        /** Whether the query stands and is found inside the rail list. */
-        searched: boolean;
+        /** Whether the search keeps the row. */
+        kept: boolean;
     };
 
-    let { id, row, searched }: Props = $props();
+    let { id, row, kept }: Props = $props();
 
     const title = $derived(row.title);
 
@@ -89,6 +92,11 @@
     const pages = $derived(arrangementKeys(merged?.arrangements));
     const glyphs = $derived(glyphNames(merged) ?? []);
     const problems = $derived(readRail(rows, pages, glyphs).problems);
+
+    /** Whether a plain word of the query is found in the rows drawn, on a row the search keeps. */
+    const searched = $derived(
+        kept && foundInside(settingsQuery(instanceState(id)), entryTexts(rows))
+    );
 
     /** Hold the list as the scope's change, or drop the change for the list in force. */
     function hold(next: RailEntry[] | null): void {
@@ -105,11 +113,7 @@
      * unfolded. A list equal to the one in force is no draft.
      */
     function edit(next: RailEntry[]): void {
-        const kept = instanceState(id);
-        const held =
-            heldFold(kept, RAIL_ROW, 'entries') === undefined
-                ? withFold(kept, RAIL_ROW, 'entries', false)
-                : kept;
+        const held = keptOpen(instanceState(id), RAIL_ROW);
         const same = sameRail(next, saved);
         setInstanceState(id, withRailDraft(held, same ? null : next));
         hold(same ? null : next);

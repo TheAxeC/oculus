@@ -1,10 +1,11 @@
-// Layer 2, client state. The Settings view's search over its groups: the query split on white
-// space, where `@modified` (in any case) keeps only the Modified rows, `@id:<text>` keeps the rows
-// whose key path holds the text and `@id:` alone keeps every row, and every other word, an unknown
-// `@word` included, must occur in the row's title, key path, section or description, in the words
-// of the heading it is listed under, or inside the row's entries or Fields list (view/fold.ts,
-// which unfolds the part it is found in), whatever the case. An empty query keeps every row. The
-// result carries the count of the rows kept and the groups and sections that still hold one.
+// Layer 2, client state. The Settings view's search over its groups: the query is read by
+// `readQuery` of typed.ts, where `@modified` keeps only the Modified rows, `@id:<text>` keeps the
+// rows whose key path holds the text and `@id:` alone keeps every row, and every plain word must
+// occur in the row's title, key path, section or description, in the words of the heading it is
+// listed under, or inside the file's value of the row's entries or its Fields list (view/fold.ts),
+// whatever the case. An empty query keeps every row. The result carries the count of the rows kept
+// and the groups and sections that still hold one; the list draws every row and hides the others
+// (settings/List.svelte), and an editor draws the entries a word is found in (view/matches.ts).
 //
 // Under an empty query a group that says why it holds no row (its files are loading, unreadable,
 // cut or unparsed, or its folder is not listed) is kept, so the reader sees why. Under a typed
@@ -13,30 +14,8 @@
 // it.
 
 import { saysWhyEmpty, type Group, type Row, type Section } from './groups.ts';
+import { MODIFIED_FILTER, readQuery, type Query } from './typed.ts';
 import { partTexts } from './view/fold.ts';
-
-/** The prefix of the filter that looks at the key path alone. */
-const ID_FILTER = '@id:';
-
-/** The filter that keeps the Modified rows. */
-const MODIFIED_FILTER = '@modified';
-
-/** A query read into what it asks of a row. */
-type Query = { modified: boolean; ids: string[]; words: string[] };
-
-/** Read a query: its filters, and the lower-case words that must each occur. */
-function readQuery(query: string): Query {
-    const read: Query = { modified: false, ids: [], words: [] };
-    for (const word of query.split(/\s+/).filter((one) => one !== '')) {
-        const lower = word.toLowerCase();
-        if (lower === MODIFIED_FILTER) read.modified = true;
-        else if (lower.startsWith(ID_FILTER)) {
-            const text = lower.slice(ID_FILTER.length);
-            if (text !== '') read.ids.push(text);
-        } else read.words.push(lower);
-    }
-    return read;
-}
 
 /** Whether a row answers a query; `heading` is the title of the group the row is listed under. */
 function answers(row: Row, query: Query, heading: string): boolean {
@@ -68,6 +47,21 @@ export function withModifiedFilter(query: string, on: boolean): string {
 
 /** The groups and sections of a result still holding a row, with the count of the rows. */
 export type Found = { count: number; groups: Group[] };
+
+/** What a result keeps: the rows of each group by its id, and its sections and rows. */
+type Kept = { groups: Map<string, number>; sections: Set<string>; rows: Set<string> };
+
+/** What the groups of a result keep, which the list shows and the rest of its rows hides. */
+export function keptIn(groups: Group[]): Kept {
+    const kept: Kept = { groups: new Map(), sections: new Set(), rows: new Set() };
+    for (const group of groups) {
+        const rows = group.sections.flatMap((section) => section.rows);
+        kept.groups.set(group.id, rows.length);
+        for (const section of group.sections) kept.sections.add(section.id);
+        for (const row of rows) kept.rows.add(row.id);
+    }
+    return kept;
+}
 
 /** The groups with the rows that answer the query, and how many rows that is. */
 export function searchGroups(groups: Group[], query: string, keep: readonly string[] = []): Found {

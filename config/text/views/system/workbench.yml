@@ -54,6 +54,8 @@ text:
         fold_entry: 1 entry
         fold_field: 1 field
         fold_fields: '{0} fields'
+        fold_more: '{0} more entries match this search'
+        fold_more_one: 1 more entry matches this search
         list_failed: 'The list could not be read: {0}'
         list_loading: The list is still being read.
         block_words: 'one of these words'

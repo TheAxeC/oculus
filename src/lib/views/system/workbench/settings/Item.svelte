@@ -24,8 +24,9 @@
     // the typed text, and a setting an app declares through the scopes.
     //
     // The editor of a row's entries and its Fields list are each drawn under a disclosure line
-    // (editors/Fold.svelte), which the reader folds and unfolds; a folded row keeps its Modified
-    // bar, its gear, its message lines and its default line, and Reset works on it unfolded or not.
+    // (editors/Fold.svelte), which the reader folds and unfolds, under a search too; a folded row
+    // keeps its Modified bar, its gear, its message lines and its default line, and Reset works on
+    // it unfolded or not.
     //
     // A row that says why it writes nothing draws the sentence under its control. While the Hub
     // scope's hub's settings are being read or could not be read the row draws that sentence
@@ -48,7 +49,7 @@
     import { mismatchMessage, writtenWhole } from '$lib/state/system/config/rows';
     import type { RowWriter } from '$lib/state/system/config/scopes/write';
     import { settingsQuery, withTypedText } from '$lib/state/system/config/typed';
-    import { foundInside, partTexts, type FoldPart } from '$lib/state/system/config/view/fold';
+    import { foundInside, partTexts } from '$lib/state/system/config/view/fold';
     import { gearEntries } from '$lib/state/system/config/view/gear';
     import { useState } from '$lib/state/client/use';
     import Fold from '../editors/Fold.svelte';
@@ -73,11 +74,13 @@
         writer: RowWriter;
         editors: EditorWriter;
         lists: Lists;
+        /** Whether the search keeps the row. */
+        kept: boolean;
         /** Show the Repository scope of a folder. */
         onrepo: (root: string) => void;
     };
 
-    let { row, id, writer, editors, lists, onrepo }: Props = $props();
+    let { row, id, writer, editors, lists, kept, onrepo }: Props = $props();
 
     /** Whether the clipboard refused the last copy of this setting's id. */
     let copyRefused = $state(false);
@@ -112,10 +115,15 @@
             : []
     );
 
-    /** Whether the query stands and is found inside a part of the row, which unfolds it. */
-    function searched(part: FoldPart): boolean {
-        if (row.kind !== 'config') return false;
-        return foundInside(settingsQuery(ui.instanceState(id)), partTexts(row, part));
+    /**
+     * Whether a plain word of the query is found in the Fields list of a row the search keeps,
+     * which unfolds it until a press under that query says otherwise; the list is not filtered. The
+     * editor of a family reads its draft and the rail list the rows it draws
+     * (editors/Editor.svelte, ../RailEditor.svelte).
+     */
+    function searched(): boolean {
+        if (row.kind !== 'config' || !kept) return false;
+        return foundInside(settingsQuery(ui.instanceState(id)), partTexts(row, 'fields'));
     }
 
     /** The sentences under the control, in the order they are drawn. */
@@ -203,7 +211,7 @@
                     part="fields"
                     title={t('workbench.settings_fields')}
                     count={fields.length}
-                    searched={searched('fields')}
+                    searched={searched()}
                 >
                     <ul class="field-list">
                         {#each fields as [name, about] (name)}
@@ -214,13 +222,13 @@
             {/if}
         {/if}
         {#if control === 'rail'}
-            <RailEditor {id} {row} searched={searched('entries')} />
+            <RailEditor {id} {row} {kept} />
         {:else if row.key === WALLPAPER_KEY}
             <WallpaperPicker {row} {writer} />
         {:else if row.id === CLUSTERS_ROW && drawsEditor(row) && row.unread === undefined}
-            <ClusterRows {row} {id} {editors} {lists} />
+            <ClusterRows {row} {id} {editors} {lists} {kept} />
         {:else if control !== 'none' && row.unread === undefined}
-            <Control {row} {id} {writer} {editors} {lists} />
+            <Control {row} {id} {writer} {editors} {lists} {kept} />
         {/if}
         {#if row.id === PAGES_ROW}
             <PagesReset />

@@ -8,9 +8,46 @@
 // in, so a tab switch or a reload brings it back and the rail list is never replaced. A tab holding
 // a typed field text or an editor's draft holds unsaved work, since a half-typed value is not a
 // change yet; the query alone is not.
+//
+// The query is read here, once, for the search of search.ts and for what a part of a row finds
+// (view/fold.ts, view/matches.ts): `@modified` (in any case) and `@id:<text>` are its filters, and
+// every other word, an unknown `@word` included, is a plain word. A change of a query's words drops
+// the fold presses made under it (`searchFolds`, view/fold.ts).
 
 import { z } from 'zod';
 import { draftsHeld, inSlot, mapOf, type Slot } from './editors/slots.ts';
+
+/** The prefix of the filter that looks at the key path alone. */
+const ID_FILTER = '@id:';
+
+/** The filter that keeps the Modified rows. */
+export const MODIFIED_FILTER = '@modified';
+
+/** A query read into what it asks: its filters, and its plain words in lower case. */
+export type Query = { modified: boolean; ids: string[]; words: string[] };
+
+/** Read a query into its filters and its plain words. */
+export function readQuery(query: string): Query {
+    const read: Query = { modified: false, ids: [], words: [] };
+    for (const word of query.split(/\s+/).filter((one) => one !== '')) {
+        const lower = word.toLowerCase();
+        if (lower === MODIFIED_FILTER) read.modified = true;
+        else if (lower.startsWith(ID_FILTER)) {
+            const text = lower.slice(ID_FILTER.length);
+            if (text !== '') read.ids.push(text);
+        } else read.words.push(lower);
+    }
+    return read;
+}
+
+/**
+ * A query's words as one text, whatever their case, spacing or order, filters included: two queries
+ * with the same text ask the same thing, and an empty text means no query stands.
+ */
+export function queryWords(query: string): string {
+    const words = query.toLowerCase().split(/\s+/);
+    return [...new Set(words.filter((word) => word !== ''))].sort().join(' ');
+}
 
 /** One field's unsent text, under its slot. */
 type Typed = Slot & { text: string };
@@ -50,9 +87,13 @@ export function settingsQuery(state: unknown): string {
     return queryShape.parse(mapOf(state).query);
 }
 
-/** A tab's state with the query set, or taken away when it is empty. */
+/**
+ * A tab's state with the query set, or taken away when it is empty. New words drop the fold presses
+ * made under the query, so a query typed again starts from the kept folds.
+ */
 export function withSettingsQuery(state: unknown, query: string): Record<string, unknown> {
     const next = { ...mapOf(state) };
+    if (queryWords(query) !== queryWords(settingsQuery(state))) delete next.searchFolds;
     if (query === '') delete next.query;
     else next.query = query;
     return next;
