@@ -4,6 +4,12 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z1090 (2026-11-01, O110's first run, the orchestrator, automode): a control reply's final newline
+
+- Chosen: `control()` resolves a reply with the final newline `run` has; a slow test in `pane-screen.test.ts`; G90 names both.
+- Not chosen: `capture.ts`'s readers taking both forms; landing as briefed with the newline in another step (the lazy option).
+- Where it applies: `agents/briefs/O110-cases.md`. Booked in `plan.md` Rulings, open item 616.
+
 ## Z1089 (2026-11-01, O110's brief check, the orchestrator, automode): the guarded entry of a reply's text
 
 - Chosen: G90, a pane is sent the screen as tmux holds it, widens to name `createParser` and one table test.

@@ -31,12 +31,13 @@ dispatch:            # steps in flight, up to six (Z632)
   executor: agent
   worker: claude:opus
   report: .scratch/migration/agents/reviews/O110-report.md
+  builder_usage: 138932 tokens, 24 tool uses, 281.3 s (first run, handed back)
   round: 0
   brief_check: .scratch/migration/agents/reviews/O110-brief-check.md (a75405609a06b36d0, claude-opus-5-5, 175851 tokens, 20 tool uses, 347.7 s)
   landing: not-started
 - step: O111
   landing: preparing
-  brief_check: "running: ae05ac84921af52fa"
+  brief_check: .scratch/migration/agents/reviews/O111-brief-check.md (ae05ac84921af52fa, claude-opus-5-5, 228725 tokens, 32 tool uses, 566.1 s)
 - step: O112
   base: 1b78b1c8f
   session_id: af84f16758a1e2de3 (claude-opus-5-5)
@@ -44,6 +45,8 @@ dispatch:            # steps in flight, up to six (Z632)
   executor: agent
   worker: claude:opus
   report: .scratch/migration/agents/reviews/O112-report.md
+  builder_usage: 137619 tokens, 27 tool uses, 362.9 s
+  reviewer_report: "running: ac5b00253978932fc"
   round: 0
   brief_check: none, a small text step
   landing: not-started
