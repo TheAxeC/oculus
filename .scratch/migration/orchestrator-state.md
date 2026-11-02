@@ -24,6 +24,9 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 
 ```yaml
 dispatch:           # steps in flight, up to six (Z632)
+- step: O120
+  brief_check: agents/reviews/O120-brief-check.md (a8b209074e34cc262, claude-opus-5-5, 209948 tokens, 33 tool uses, 9 min 9 s)
+  landing: preparing
 ```
 
 ## The standing demands (from Axel, in force)

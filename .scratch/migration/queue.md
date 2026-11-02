@@ -1,7 +1,7 @@
-In flight (0 of 6 slots in use): none.
+In flight (1 of 6 slots in use):
+- O120 (a card takes no height for its controls, Career's colours), building.
 
-Queued, in order (1 steps):
-- O120 (a card takes no height for its controls, Career's colours).
+Queued, in order (0 steps): none.
 
 Owed looks: none.
 
