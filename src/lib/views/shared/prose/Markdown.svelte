@@ -4,7 +4,7 @@
     // rendered. The doc, help and project views draw a fetched document with it,
     // RenderedMarkdown.svelte draws the text it renders on the page, for the source tab's rendered
     // half and for the Markdown preview tab, and the Terminal view's transcript draws each answer
-    // of a session (views/sessions/terminal/transcript/TranscriptBody.svelte).
+    // of a session (views/sessions/terminal/transcript/TurnList.svelte).
     //
     // The HTML is somebody's Markdown turned into markup by marked, so it is sanitised by
     // ui/html.ts and holds only what its profiles allow. The words for the two states the document
@@ -28,8 +28,11 @@
     // answer's `path` is then the empty path), opens nothing and the page stays where it is.
     //
     // A right-click on the document opens the prose menu (prose-menu.ts), read as the right-click
-    // arrives: Copy over a selection, Copy Image over an image, and Open Image over an image the
-    // hub serves, which opens it in the file view. With neither, nothing opens.
+    // arrives: Copy over a selection that starts in the document, Copy Image over an image, and
+    // Open Image over an image the hub serves, which opens it in the file view. With neither,
+    // nothing opens. A view that says `plain` holds that menu itself around more than this
+    // document, as the Transcript's list of turns does, since a selection crosses its rows, and the
+    // document is drawn with no menu of its own, so one right-click opens one menu.
     //
     // Each code block carries a Copy control at its top right: a press puts the block's text on
     // the clipboard, as written and without the highlighter's markup, and the control says Copied,
@@ -46,7 +49,7 @@
     import { getAllContexts, getContext, mount, unmount } from 'svelte';
     import { STATE_KEY } from '$lib/state/client/use';
     import type { ClientState } from '$lib/state/client/context';
-    import { proseAt, proseMenu, prosePicked } from './prose-menu';
+    import { prosePicked, proseRead, type ProseRead } from './prose-menu';
     import type { DocState } from '$lib/state/system/docs.svelte';
     import { jump, type LinkFollower } from './jump';
     import { openingOf, type DocLink } from './doc-link';
@@ -71,9 +74,11 @@
         slots?: MathSlots;
         /** Answers a press on a link first: true when it handled the address, which is kept. */
         onlink?: (href: string) => boolean;
+        /** Whether the document is drawn with no menu of its own, under its view's menu. */
+        plain?: boolean;
     };
 
-    let { doc, loading, failed, follow = false, slots, onlink }: Props = $props();
+    let { doc, loading, failed, follow = false, slots, onlink, plain = false }: Props = $props();
 
     /**
      * The client's stores, which Open Image opens the file view through. A document drawn outside
@@ -82,18 +87,15 @@
     const client = getContext<ClientState | undefined>(STATE_KEY);
 
     /** What the last right-click read: the selected text and the image under the pointer. */
-    let heard: { text: string; image: string | null } = { text: '', image: null };
+    let heard: ProseRead = { text: '', image: null };
 
     /** The document's box, which a selection must start in for Copy to copy it. */
     let box = $state<HTMLDivElement | null>(null);
 
     function pointed(event: MouseEvent): MenuItem[] {
-        const selection = window.getSelection();
-        const anchor = selection?.anchorNode ?? null;
-        const inside = anchor !== null && box?.contains(anchor) === true;
-        heard = proseAt(event.target, inside ? selection : null);
-        const origin = window.location.origin;
-        return proseMenu({ selection: heard.text !== '', image: heard.image, origin }, t);
+        const read = proseRead(event, box, t);
+        heard = read.heard;
+        return read.items;
     }
 
     /** Open the document a link between documents names, as the view's tab. */
@@ -220,19 +222,27 @@
     }
 </script>
 
+{#snippet prose()}
+    <!-- The press is the links' own: each link is a keyboard stop whose Enter is a click, and the
+         box only hears it bubble up, so the box itself takes no key and no focus. -->
+    <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
+    <div class="doc" onclick={pressed} bind:this={box}>
+        <!-- eslint-disable-next-line svelte/no-at-html-tags -- the sanitiser writes this -->
+        {@html sanitise(doc.html, slots)}
+    </div>
+{/snippet}
+
 {#if doc.error !== ''}
     <Empty error message={failed} />
 {:else if doc.loading}
     <Empty message={loading} />
+{:else if plain}
+    <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+    {@render prose()}
 {:else}
-    <!-- The press is the links' own: each link is a keyboard stop whose Enter is a click, and the
-         box only hears it bubble up, so the box itself takes no key and no focus. -->
     <ContextMenu label={t('ui.prose_menu')} read={pointed} onpick={picked}>
-        <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
-        <div class="doc" onclick={pressed} bind:this={box}>
-            <!-- eslint-disable-next-line svelte/no-at-html-tags -- the sanitiser writes this -->
-            {@html sanitise(doc.html, slots)}
-        </div>
+        <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+        {@render prose()}
     </ContextMenu>
 {/if}
 

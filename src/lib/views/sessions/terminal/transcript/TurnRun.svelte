@@ -1,9 +1,9 @@
 <script lang="ts">
-    // Layer 3, view partial of TranscriptBody.svelte. One run of tool calls, muted and small. Two
-    // or more calls draw one press with the run's words, which says while closed whether the run
-    // holds a failed call or one that has not come back, and lists each call while open. A single
-    // call is its own row, with no press. The list's owner keeps what a press chose, since a choice
-    // must clear with the target (turn-rows.ts, `runKey`).
+    // Layer 3, view partial of TurnList.svelte. One run of tool calls, muted and small. Two or more
+    // calls draw one press with the run's words, which says while closed whether the run holds a
+    // failed call or one that has not come back, and lists each call while open. A single call is
+    // its own row, with no press. The tab keeps what a press chose (tab-session.svelte.ts), since a
+    // choice outlives a draw of this row and clears with the tab's target (turn-rows.ts, `runKey`).
     //
     // A call that came back draws no word; only `error` and `running` do, in one box that does not
     // shrink, so the summary alone is cut. A row draws the short name of a tool, and its title

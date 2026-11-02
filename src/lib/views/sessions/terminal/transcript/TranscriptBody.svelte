@@ -1,18 +1,13 @@
 <script lang="ts">
     // Layer 3, view partial of Terminal.svelte. The conversation of the session a Terminal tab
     // reads, oldest first, drawn in place of the tab's row of grids while the tab's switch stands
-    // on Transcript, so that who said what reads at a glance:
+    // on Transcript, so that who said what reads at a glance. What each row draws, and the one
+    // right-click menu over the rows, are TurnList.svelte's; this component holds the column they
+    // scroll in, what fetches the turns, and where the reader stands.
     //
-    // - A person's turn opens an exchange: a line above it, a wider gap, the accent bar and the
-    //   person's words at the size of a row's main words. Off a wallpaper it takes the chip
-    //   surface; over one nothing is painted behind a turn, since the box this view fills is that
-    //   surface.
-    // - An answer draws as a document at full ink. It draws its head only when the minute moved
-    //   since the last head (turn-rows.ts, `groupTurns`).
-    // - Tool calls are muted and small. Calls next to each other make one run, which is one line
-    //   while closed (TurnRun.svelte). A press chooses open or closed and the choice holds; a run
-    //   no press chose stands open while it holds a failed call, whenever that result arrives, so
-    //   a failure is never behind a press.
+    // A press on a run chooses open or closed, and the tab holds that choice (`chosen`,
+    // tab-session.svelte.ts), since this component goes with every switch to Live and a press
+    // outlives it.
     //
     // The turns are not in the snapshot. state/sessions/transcript.svelte.ts fetches them for the
     // session on screen, holds them in the client's query client and follows the file from an
@@ -30,10 +25,6 @@
     // The reader's words stay where they are through every draw (reader-place.ts), unless the
     // reader is at the foot, where the column follows.
     //
-    // An answer is what an agent wrote into a file on disk. shared/prose/Markdown.svelte draws it,
-    // which sanitises it once and brings the document rules, the Copy control of a code block and
-    // the prose menu. A person's turn keeps its own line breaks and is never rendered.
-    //
     // The turns draw at the size of the `terminal.transcript_font_px` option, or at `--fs-sm` where
     // the key is left out, and the font buttons of the tab's bar write that key while Transcript
     // shows. `--fs-*` resolve at the root, so a descendant cannot rescale them; an inner box inside
@@ -46,29 +37,17 @@
     // through the session that started it.
 
     import { tick, untrack } from 'svelte';
-    import { SvelteMap } from 'svelte/reactivity';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
-    import Markdown from '$lib/views/shared/prose/Markdown.svelte';
     import SteerBox from '$lib/views/shared/sessions/SteerBox.svelte';
-    import { clock } from '$lib/state/shared/words/format';
     import { t } from '$lib/state/shared/words/text';
-    import { followTab, type Turn } from '$lib/state/sessions/transcript.svelte';
+    import { followTab } from '$lib/state/sessions/transcript.svelte';
     import { useState } from '$lib/state/client/use';
     import { onShown } from '$lib/ui/shown';
     import { transcriptZoom } from '../terminal-list';
     import { readerPlace } from './reader-place';
-    import TurnRun from './TurnRun.svelte';
-    import {
-        groupTurns,
-        movedRun,
-        relativeLink,
-        runKey,
-        runOpen,
-        turnDocs,
-        type RunChoice,
-        type TurnRow
-    } from './turn-rows';
+    import TurnList from './TurnList.svelte';
+    import { carryChoices, groupTurns, turnDocs, type RunChoice, type TurnRow } from './turn-rows';
 
     type Props = {
         /** The session the tab reads. */
@@ -77,9 +56,11 @@
         agent: string;
         /** Whether the tab is locked, which leaves the prompt box read-only. */
         locked: boolean;
+        /** What a press chose for each run, by `runKey`, which the tab holds. */
+        chosen: Map<string, RunChoice>;
     };
 
-    let { session, agent, locked }: Props = $props();
+    let { session, agent, locked, chosen }: Props = $props();
 
     const {
         selectors: { sessionById },
@@ -107,24 +88,17 @@
 
     const docs = turnDocs();
 
-    /** What a press chose for each run, by `runKey`. */
-    const chosen = new SvelteMap<string, RunChoice>();
-
     /**
-     * What the choices belong to. The props are read through the tab's target, a new object at each
-     * sessions message, so an effect reading them re-runs at every message; a derived of the words
-     * changes only when the session or the agent does.
+     * What the documents belong to. The props are read through the tab's target, a new object at
+     * each sessions message, so an effect reading them re-runs at every message; a derived of the
+     * words changes only when the session or the agent does.
      */
     const target = $derived(JSON.stringify([session, agent]));
 
-    // One component outlives its target, and a run's key means nothing in another transcript, so
-    // a change of the session or the agent empties the choices before the new turns are drawn, and
-    // the documents of the turns that go with them.
+    // One component outlives its target, so a change of the session or the agent empties the
+    // documents of the turns that go with it before the new turns are drawn.
     $effect.pre(() => {
-        if (target !== '') {
-            chosen.clear();
-            docs.clear();
-        }
+        if (target !== '') docs.clear();
     });
 
     /** The zoom of the box of turns, as `transcriptZoom` gives it. */
@@ -194,17 +168,12 @@
     /** What a draw is made from, so a change to any of it can move what is under the reader. */
     const draw = $derived({ rows, older: held.older, failed: held.olderError, error: held.error });
 
-    // Before a draw the words are taken from the list as it still stands. A read of older turns
-    // that grew the run at the top gives it a new key, and a press on it goes with it.
+    // Before a draw the words are taken from the list as it still stands, and a press made on a run
+    // while it was cut goes with the run to its key.
     $effect.pre(() => {
         const next = draw.rows;
         untrack(() => {
-            const moved = movedRun(drawn, next);
-            const choice = moved === null ? undefined : chosen.get(moved.from);
-            if (moved !== null && choice !== undefined) {
-                chosen.delete(moved.from);
-                chosen.set(moved.to, choice);
-            }
+            carryChoices(next, chosen);
             if (column) place.take(column, list, drawn);
             drawn = next;
         });
@@ -284,11 +253,6 @@
         column.scrollTop = column.scrollHeight;
     }
 
-    /** The head's label: who said it. */
-    function roleLabel(turn: Turn): string {
-        return turn.role === 'user' ? t('sessions.turn_user') : t('sessions.turn_assistant');
-    }
-
     /**
      * A press on a run closes it or opens it. Once drawn the foot is read again, since the press
      * moved the foot and not the reader, so one who opened the last run stays where it was opened
@@ -327,48 +291,7 @@
                     />
                 </div>
             {/if}
-            <div class="turns" style:zoom bind:this={list}>
-                {#each rows as row (row.first)}
-                    {#if row.kind === 'said'}
-                        {@const turn = row.turn}
-                        <div class="turn" class:user={turn.role === 'user'}>
-                            <div class="body">
-                                {#if row.head}
-                                    <div class="head">
-                                        <span class="who">{roleLabel(turn)}</span>
-                                        <span class="ts">{clock(turn.at)}</span>
-                                    </div>
-                                {/if}
-                                {#if turn.role === 'user'}
-                                    <div class="said">{turn.text}</div>
-                                {:else}
-                                    <div class="answer">
-                                        <Markdown
-                                            doc={docs.of(turn)}
-                                            loading=""
-                                            failed=""
-                                            onlink={relativeLink}
-                                        />
-                                    </div>
-                                {/if}
-                                {#if turn.cut}
-                                    <p class="cut">{t('sessions.turn_cut')}</p>
-                                {/if}
-                            </div>
-                        </div>
-                    {:else if row.kind === 'run'}
-                        {@const key = runKey(row)}
-                        {@const open = runOpen(chosen.get(key), row.calls)}
-                        <TurnRun
-                            calls={row.calls}
-                            {open}
-                            onpress={() => {
-                                pressRun(key, open);
-                            }}
-                        />
-                    {/if}
-                {/each}
-            </div>
+            <TurnList {rows} docOf={docs.of} {chosen} {zoom} onpress={pressRun} bind:list />
         {/if}
     </div>
     {#if record !== null && agent === ''}
@@ -397,114 +320,6 @@
         min-height: 0;
         overflow: auto;
         padding-right: 8px;
-    }
-
-    .turns {
-        display: flex;
-        flex: none;
-        flex-direction: column;
-        gap: 10px;
-        min-width: 0;
-        line-height: 1.5;
-    }
-
-    .turn {
-        min-width: 0;
-    }
-
-    /* A person's turn opens an exchange: the line above it with a wider gap on either side. */
-    .user {
-        margin-top: 10px;
-        padding-top: 16px;
-        border-top: 1px solid var(--line);
-    }
-
-    .user:first-child {
-        margin-top: 0;
-        padding-top: 0;
-        border-top: 0;
-    }
-
-    .user .body {
-        padding: 4px 10px;
-        border-left: 3px solid var(--accent-txt, var(--accent));
-        border-radius: var(--radius-sm);
-        background: var(--chip);
-    }
-
-    /* The box this view fills carries the translucent surface over a picture, and a second one
-       inside it would read as a nearly solid layer, so a person's turn paints none of its own. */
-    :global(body.wall) .user .body {
-        background: transparent;
-    }
-
-    /* The head of a turn is one line of the tree's row height. */
-    .head {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        min-width: 0;
-        min-height: calc(var(--tree-row) * var(--text-scale, 1));
-    }
-
-    .who {
-        flex: 0 0 auto;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
-        font-size: var(--fs-xs);
-        color: var(--muted-txt, var(--muted));
-    }
-
-    .user .who {
-        color: var(--accent-txt, var(--accent));
-    }
-
-    .ts {
-        flex: 0 0 auto;
-        color: var(--muted-txt, var(--muted));
-        font-family: var(--font-num);
-        font-size: var(--fs-sm);
-    }
-
-    .said {
-        max-width: 80ch;
-        white-space: pre-wrap;
-        overflow-wrap: anywhere;
-        color: var(--ink-txt, var(--ink));
-        font-size: var(--fs-md);
-    }
-
-    /* A heading of an answer sits under the view's own title, so none draws larger than this step.
-       The selector names the answer and the document, which outranks Markdown.svelte's sizes. */
-    .answer :global(.doc h1),
-    .answer :global(.doc h2),
-    .answer :global(.doc h3),
-    .answer :global(.doc h4),
-    .answer :global(.doc h5),
-    .answer :global(.doc h6) {
-        font-size: var(--fs-lg);
-    }
-
-    /* A wide pane draws no very long line of prose. A table and a code block keep the pane's width
-       and scroll in their own box. */
-    .answer :global(.doc h1),
-    .answer :global(.doc h2),
-    .answer :global(.doc h3),
-    .answer :global(.doc h4),
-    .answer :global(.doc h5),
-    .answer :global(.doc h6),
-    .answer :global(.doc p),
-    .answer :global(.doc ul),
-    .answer :global(.doc ol),
-    .answer :global(.doc blockquote) {
-        max-width: 80ch;
-    }
-
-    .cut {
-        margin: 2px 0 0;
-        font-size: var(--fs-sm);
-        color: var(--muted-txt, var(--muted));
     }
 
     /* The muted line at the top of the list while a read of older turns is out or has failed. */

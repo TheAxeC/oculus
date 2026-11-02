@@ -1,13 +1,16 @@
 // Layer 3, shared view partial. The right-click menu of rendered text: the Markdown a view draws
-// (Markdown.svelte) and the document the Document view frames, as VS Code gives its Markdown
-// preview one. Copy while text is selected; Copy Image over an image; and Open Image over an image
-// the hub serves from api/file, which opens that file in the file view. Rendered text offers no Cut
-// and no Paste, since neither can change it, and with no selection and no image nothing opens, as
-// VS Code opens nothing over plain workbench text.
+// (Markdown.svelte), the list of a Transcript's turns (views/sessions/terminal/transcript/
+// TurnList.svelte) and the document the Document view frames, as VS Code gives its Markdown preview
+// one. Copy while text is selected; Copy Image over an image; and Open Image over an image the hub
+// serves from api/file, which opens that file in the file view. Rendered text offers no Cut and no
+// Paste, since neither can change it, and with no selection and no image nothing opens, as VS Code
+// opens nothing over plain workbench text.
 //
 // What the menu is built from is read as the right-click arrives: the selected text, and the image
-// under the pointer. The Document view's frame is a document of its own, so what is read there is
-// read by the shape of the frame's elements rather than by this page's element classes.
+// under the pointer. On this page a selection counts when it starts in the box the menu stands
+// around, whichever element of that box it starts in, so text selected elsewhere on the page is not
+// offered here (`proseRead`). The Document view's frame is a document of its own, so what is read
+// there is read by the shape of the frame's elements rather than by this page's element classes.
 //
 // The items are a pure function of what was read, so which items a place offers is asserted
 // without a DOM, and the words come in as `t` so every label is a catalog key.
@@ -90,6 +93,29 @@ export function proseAt(
     const current = img?.currentSrc ?? '';
     const image = current === '' ? (img?.src ?? '') : current;
     return { text, image: image === '' ? null : image };
+}
+
+/** What a right-click in rendered text read. */
+export type ProseRead = ReturnType<typeof proseAt>;
+
+/**
+ * What a right-click on this page reads, and the items that gives. A selection counts only when it
+ * starts in `box`.
+ */
+export function proseRead(
+    event: MouseEvent,
+    box: Element | null,
+    t: Words
+): { heard: ProseRead; items: MenuItem[] } {
+    const selection = window.getSelection();
+    const anchor = selection?.anchorNode ?? null;
+    const inside = anchor !== null && box?.contains(anchor) === true;
+    const heard = proseAt(event.target, inside ? selection : null);
+    const origin = window.location.origin;
+    return {
+        heard,
+        items: proseMenu({ selection: heard.text !== '', image: heard.image, origin }, t)
+    };
 }
 
 /** A picture's bytes as PNG, the one image type the clipboard takes, drawn through a canvas. */

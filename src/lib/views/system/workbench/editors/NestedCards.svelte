@@ -10,6 +10,9 @@
     // fold: a press on the line of a list with no match draws the whole list, and on the line of a
     // list whose matches all fall past the cap shows no entry, since that list is filtered, and the
     // line under the row counts those matches.
+    //
+    // Cards.svelte hands itself in as the prop `Cards`, and this component imports only its type,
+    // so the import between the two runs one way.
 
     import type { ComponentProps } from 'svelte';
     import type { Edit, Step } from '$lib/state/system/config/editors/draft';
@@ -23,10 +26,12 @@
     import type { Lists } from '$lib/state/system/config/editors/sources';
     import { stepsKey } from '$lib/state/system/config/view/fold';
     import type { Drawn } from '$lib/state/system/config/view/matches';
-    import Cards from './Cards.svelte';
+    import type CardsView from './Cards.svelte';
     import Fold from './Fold.svelte';
 
     type Props = {
+        /** The component that draws the cards. */
+        Cards: typeof CardsView;
         /** The field's name. */
         name: string;
         spec: FieldSpec;
@@ -51,6 +56,7 @@
     };
 
     let {
+        Cards,
         name,
         spec,
         held,
@@ -76,7 +82,7 @@
     });
 
     /** What the cards are drawn from, under a fold or not. */
-    const entries = $derived<ComponentProps<typeof Cards>>({
+    const entries = $derived<ComponentProps<typeof CardsView>>({
         cards,
         fields: Object.keys(specs),
         specs,

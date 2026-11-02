@@ -455,6 +455,7 @@ Views opened for one thing, and not in the catalogue: `project`, `person`, `entr
 - A press on a session shows its terminal, on the choice the tab has. Open the transcript shows it on Transcript. A session with no terminal opens in a Terminal tab on Transcript, read-only, with Live disabled until the session has a terminal; a press on another session reuses that tab, and in a list limited to a folder each session opens its own. New in that tab starts a terminal there and leaves the session.
 - A tab on Transcript stays when its last terminal ends and goes on reading that session. A tab on Live closes.
 - In Transcript a person's turn carries the accent bar and opens an exchange, an answer reads as a document, and tool calls are muted.
+- A right-click on selected text in Transcript offers Copy, wherever in the list of turns the selection started.
 - Transcript opens on the last turns of the session. Older turns load as you scroll up, and what you are reading stays where it is. When a read fails, the line at the top says why, and Try again on that line asks once more.
 - Tool calls next to each other are one line, such as `17 tools: WebSearch 15, Write, Bash`. Press it to list each call with its clock, name and summary. A press is kept; a line you have not pressed opens by itself when a call in it fails, and a closed line says `error` or `running` when it holds one.
 - The text size buttons on the bar size what the tab shows. The grid and the transcript each keep their own size, and the reset returns only the one showing.

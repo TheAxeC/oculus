@@ -21,10 +21,12 @@
     // heading after a rule, and a pick naming the run it came from.
     //
     // A menu whose items depend on the moment of the right-click (what is selected, what is under
-    // the pointer) reads them from the right-click itself, through `read`, as it arrives. A menu
-    // that is `own` keeps its right-click from every menu around it, so a text box inside a row
-    // opens the box's menu and not the row's as well; the menu key and Shift+F10 open only the
-    // innermost menu around the control either way.
+    // the pointer) reads them from the right-click itself, through `read`, as it arrives. Such a
+    // menu does not open on bits-ui's long press of a touch or a pen, which opens the list with no
+    // right-click, so it would show nothing or the last right-click's items; a menu with `items` or
+    // `groups` keeps its long press. A menu that is `own` keeps its right-click from every menu
+    // around it, so a text box inside a row opens the box's menu and not the row's as well; the
+    // menu key and Shift+F10 open only the innermost menu around the control either way.
 
     import { ContextMenu } from 'bits-ui';
     import type { Snippet } from 'svelte';
@@ -148,11 +150,14 @@
 
     /**
      * The trigger's attributes on the wrapper, less a focus stop a wrapper with no box cannot be.
+     * A menu with `read` also goes without bits-ui's press handler, the one that starts a long
+     * press. It takes the handler away and cancels nothing, since a cancelled press of a touch or a
+     * pen raises no mouse events on the control under it.
      */
     function wrapperOf(given: unknown): Record<string, unknown> {
         const props = given as Record<string, unknown>;
-        const { tabindex: _tabindex, ...rest } = props;
-        return rest;
+        const { tabindex: _tabindex, onpointerdown, ...rest } = props;
+        return read === undefined ? { ...rest, onpointerdown } : rest;
     }
 </script>
 

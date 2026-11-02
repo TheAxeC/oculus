@@ -7,13 +7,18 @@
 // count of turns reads of older turns added at the top (`above`), so it is negative for an older
 // row, and a read of either kind leaves the rows that were there under the same index. The index
 // keys the rows of the view, so such a read draws no row anew, except a run it extends at the top
-// of the list. A run's choice is held under that index of its first turn and that call's stamp
-// (`runKey`). A read from where the last one stopped grows the list at the foot and patches it in
-// place, so the key holds while a run grows and the choice holds with it. A read of older turns can
-// grow the run at the top of the list at its head, which gives that run a new key, so its choice
-// moves to that key (`movedRun`). A read from the start replaces the list, and the newest turns it
-// keeps may start at another turn; an index then names another run, and the stamp makes its key
-// miss the old choice, so that run reads as never pressed.
+// of the list.
+//
+// A run's choice is held by the tab (tab-session.svelte.ts) under the run's first call: its id, or,
+// for a call with an empty id, as every Codex call has, its stamp, name and summary (`callKey`,
+// `runKey`). The key holds no list index, so it names the same call in every read of the
+// transcript. A read from where the last one stopped grows the list at the foot and patches it in
+// place, and a read from the start, which the body makes each time it is drawn anew, replaces the
+// list, and a run wholly inside either finds its choice. A read from the start can cut a run, which
+// then starts at a later call under another key and reads as never pressed until older turns grow
+// it back to its first call. A choice made while the run was cut is held under one of the grown
+// run's later calls, whichever call the cut stood at then, so it moves to the run's key from any of
+// them at the next draw that holds the run (`carryChoices`).
 //
 // An answer's document is held by the turn's HTML, which a read never changes. The store keeps an
 // unchanged turn's object across a read that appends, and a read that adds turns above gives a held
@@ -122,28 +127,41 @@ export function runHolds(calls: readonly Turn[], ok: boolean | null): boolean {
     return calls.some((call) => call.tool?.ok === ok);
 }
 
-/** What a choice on a run is held under: the index of its first turn and that call's stamp. */
+/**
+ * What names a call in every read: its id, or, for an empty id, its stamp, name and summary,
+ * written as a list so no two of them read as one.
+ */
+function callKey(call: Turn): string {
+    const tool = call.tool;
+    if (tool?.id) return tool.id;
+    return JSON.stringify([call.at, tool?.name, tool?.summary]);
+}
+
+/** What a choice on a run is held under: the key of its first call. */
 export function runKey(row: RunRow): string {
-    return `${String(row.first)}:${row.calls[0]?.at ?? ''}`;
+    return callKey(row.calls[0]);
 }
 
 /**
- * The key the run at the top of `drawn` goes by in `rows` when a read of older turns grew it at its
- * head, with the key it had, or null when no run did.
+ * Moves a choice held under a later call of a run onto the run's key, and drops the others held
+ * there. The keys are tried last call first: the cut of a first read falls later as the file grows,
+ * so a later call holds the later press. A key that is another run's first key stays, since two
+ * calls with empty ids can share one.
  */
-export function movedRun(
-    drawn: readonly TurnRow[],
-    rows: readonly TurnRow[]
-): { from: string; to: string } | null {
-    const top = drawn.at(0);
-    if (top?.kind !== 'run') return null;
-    for (const row of rows) {
-        if (row.kind !== 'run') continue;
-        if (row.first < top.first && top.first < row.first + row.calls.length) {
-            return { from: runKey(top), to: runKey(row) };
-        }
+export function carryChoices(rows: readonly TurnRow[], chosen: Map<string, RunChoice>): void {
+    if (chosen.size === 0) return;
+    const runs = rows.filter((row) => row.kind === 'run');
+    const firsts = new Set(runs.map(runKey));
+    for (const run of runs) {
+        const later = run.calls
+            .slice(1)
+            .map(callKey)
+            .filter((key) => !firsts.has(key))
+            .reverse();
+        const choice = later.map((key) => chosen.get(key)).find((held) => held !== undefined);
+        later.forEach((key) => chosen.delete(key));
+        if (choice !== undefined) chosen.set(runKey(run), choice);
     }
-    return null;
 }
 
 /** Whether a run stands open: as chosen, else while it holds a failed call. */

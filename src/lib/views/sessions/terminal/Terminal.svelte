@@ -24,8 +24,9 @@
     // A tab reads a session as well: the session of the terminal it shows, or one it holds with no
     // terminal (`transcript`, state/sessions/terminal/session/open-session.ts). While it has one,
     // the bar's switch (bar/ShowSwitch.svelte) sets `showing`, and Transcript draws the turns
-    // (transcript/TranscriptBody.svelte) in place of the row of grids. What the tab reads, and what
-    // the switch and the lock draw from it, is transcript/tab-session.svelte.ts's.
+    // (transcript/TranscriptBody.svelte) in place of the row of grids. What the tab reads, what the
+    // switch and the lock draw from it, and what a press on a run of the turns chose are
+    // transcript/tab-session.svelte.ts's.
     //
     // Else the body draws start/TerminalStart.svelte alone while the tab shows no terminal (the
     // composer, or the line saying which kind New Terminal is starting there), and otherwise the
@@ -379,6 +380,7 @@
                     session={session.target.session}
                     agent={session.target.agent}
                     locked={session.locked}
+                    chosen={session.choices}
                 />
             {:else if tab.row.length === 0}
                 <TerminalStart owner={instance.id} onstarted={started} />

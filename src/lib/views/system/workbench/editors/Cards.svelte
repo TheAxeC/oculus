@@ -17,7 +17,8 @@
     //
     // The partial holds nothing: every keystroke and press goes out as an edit (state/system/
     // config/editors/draft.ts), and the entries come in as they are. A nested list draws one of
-    // these with `path` naming the cards above it, under a fold of its own (NestedCards.svelte).
+    // these with `path` naming the cards above it, under a fold of its own (NestedCards.svelte),
+    // which this component hands itself to as a prop, so the import between the two runs one way.
     //
     // Every card has a card id that is its own within the pane, which holds many lists: the file
     // and key of the setting (`base`) and the steps down through the nested lists to the card's
@@ -69,6 +70,7 @@
     import { moveBy, type Drawn } from '$lib/state/system/config/view/matches';
     import FieldControl from './FieldControl.svelte';
     import NestedCards from './NestedCards.svelte';
+    import Self from './Cards.svelte';
 
     type Props = {
         cards: Card[];
@@ -258,6 +260,7 @@
                     {@const spec = specOf(name)}
                     {#if spec !== undefined && drawsCards(spec, card.fields[name])}
                         <NestedCards
+                            Cards={Self}
                             {name}
                             {spec}
                             held={card.fields[name]}
