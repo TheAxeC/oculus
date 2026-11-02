@@ -283,3 +283,11 @@ Next: the orchestrator rewrites the brief with B1 to B6 and C1 to C14, and bring
 ## Usage
 
 afb7b4f6cc7cbec97, claude-opus-5-5, 332174 tokens, 59 tool uses, 12 min 34 s
+
+## Closed
+
+- U1: ruling 636 (a), item 7's second paragraph, a case, a test row and the paths. U2: ruling 636 (a), item 5, decision 5. U3: ruling 636 (a), item 8 and the case read "while on the Explorer".
+- B1: item 2 names `views/shared/sessions/sections/`, paths widened. B2: NotesGraph on the list. B3: the layout range is 1-99. B4: Verify 3 uses `grep -r`, reaches `README.md` and "m Sessions". B5: item 1 keeps Customizations. B6: the project card case removed, since this step does not change that place.
+- C1: the premise on O124 names its lines; shared_paths in the entry. C2, C7: item 1. C3: item 7, `terminals.svelte.ts` on the list. C4: item 3. C5: item 1, a case. C6: item 4, a case. C8: item 6, decision 7. C9: item 5. C10: the paragraph after item 9, a case. C11: item 6, decision 8, `context.ts` on the list. C12: item 6, decision 6. C13: item 4. C14: the report's terms part.
+- Premise false on `opening.svelte.ts:30,109`: corrected. HELP 85, 143, 455, `README.md`, `Repositories.svelte:66`, `opening.ts:62`, `RowButton.svelte:5`, `layout.yml:34`: item 9 and the paths.
+- Dictated lines added and held: the group order sentence of item 5, the three path names, Verify 3.
