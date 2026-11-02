@@ -24,6 +24,9 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 
 ```yaml
 dispatch:           # steps in flight, up to six (Z632)
+- step: O117
+  landing: preparing
+  brief_check: "running: a8796edb0856c6314"
 ```
 
 ## The standing demands (from Axel, in force)
@@ -163,13 +166,13 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
-- Open item 629 (2026-11-02, O115's look): the transcript and the terminal grid share one text size setting, and Axel's grid is 10.5 px, too small for proportional text, so the transcript now stops at 12 px and the smaller and larger buttons change nothing there until the size passes 12. (a) a key of its own, `terminal.transcript_font_px`, written by the buttons while the Transcript is showing, left out meaning 12 px: both sizes are then free, at the cost of one more setting. (b) keep the one setting and the 12 px floor, which adds no key and leaves the buttons without effect below 12 at his setting; this is the lazy option. Recommended: (a).
 
 
 
 
 ## Closed items
 
+- Open item 629 (2026-11-02), closed by Axel the same day: (a), step O117; (b) was the lazy option. the transcript and the terminal grid share one text size setting, and Axel's grid is 10.5 px, too small for proportional text, so the transcript now stops at 12 px and the smaller and larger buttons change nothing there until the size passes 12. (a) a key of its own, `terminal.transcript_font_px`, written by the buttons while the Transcript is showing, left out meaning 12 px: both sizes are then free, at the cost of one more setting. (b) keep the one setting and the 12 px floor, which adds no key and leaves the buttons without effect below 12 at his setting; this is the lazy option. Recommended: (a).
 - 608 (2026-10-31): closed, 8790 shows in Chrome again (Axel: "8790 is showing"); O105 looked at and landed.
 - 607 (2026-10-31): (a), `min` is removed (Axel: "607 (a)"); booked in `plan.md` Rulings; O106 repair round 1 carries it.
 - The repository goes public as it is, with no history change, at the `1.0.0` release: a LICENSE file with MIT, `"private": true` removed, then the visibility switch (Axel: "I would like to make the repo public", "This means that 605 doesnt exist, since there are NO options").
