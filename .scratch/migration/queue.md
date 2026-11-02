@@ -1,8 +1,8 @@
-In flight (2 of 6 slots in use):
+In flight (1 of 6 slots in use):
 - O121 (a chip row takes no height for its controls), building.
-- O122 (a Transcript draws only what is in view), brief in check.
 
-Queued, in order (0 steps): none.
+Queued, in order (1 step):
+- O122 (a Transcript draws only what is in view), waits on open item 634.
 
 Owed looks: none.
 
