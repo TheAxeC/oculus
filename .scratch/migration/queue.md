@@ -1,7 +1,8 @@
 In flight (1 of 6 slots in use):
 - O119 (Transcript right-click, tool-call runs, the import cycle), building.
 
-Queued, in order (0 steps): none.
+Queued, in order (1 steps):
+- O120 (a card takes no height for its controls, Career's colours), once O119 has landed.
 
 Owed looks: none.
 

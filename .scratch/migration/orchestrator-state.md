@@ -32,8 +32,10 @@ dispatch:           # steps in flight, up to six (Z632)
   session_id: a729733657c6c9574 (claude-opus-5-5)
   launched: 2026-11-02
   report: .scratch/migration/agents/reviews/O119-report.md
-  round: 0
+  builder_usage: 248329 tokens, 80 tool uses, 18 min 1 s
+  round: 1
   brief_check: agents/reviews/O119-brief-check.md (a6c9625db56cd6374, claude-opus-5-5, 219620 tokens, 35 tool uses, 10 min 36 s)
+  reviewer_report: agents/reviews/O119-refuter.md (aca311270f27e9a16, claude-opus-5-5, tokens to come)
   landing: not-started
 ```
 
@@ -177,6 +179,7 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
 
 
 ## Closed items
+- Open item 632 (2026-11-02), closed by Axel the same day: (a), step O120; (b), a `tone` key per list in the career file's schema, not chosen; (c), the jump alone, was the lazy option.
 
 - Open item 630 (2026-11-02), closed by Axel the same day: (a), step O118; (c) was the lazy option. A Transcript shows the last 200 turns, or fewer when the last 32 MiB hold fewer, with no sign of older turns and no way to reach them; older turns now load as the reader scrolls to the top; (b), a press at the top of the list, not chosen.
 - Open item 631 (2026-11-02), closed by Axel the same day: (a), step O119; (b), only the cycle, was the lazy option. A right-click in the Transcript cancels the browser's menu; a pressed run of tool calls closes when the session moves from a terminal to none; `tests/checks/imports/cycles.test.ts` fails on main on Cards.svelte and NestedCards.svelte; the look presses a code block's Copy, the Markdown export and a refused value in the `terminal.transcript_font_px` row.
@@ -763,6 +766,8 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-11-02 (O119 repair round 1 sent). Review saved; six findings, none blocking. Round brief `agents/briefs/O119-round-1.md`. Next: its report, /refute over the round, /land. Open items: none.
+- 2026-11-02 (ruling 632). Step O120 added to `plan.md`, to run after O119 lands. In flight (1 of 6): O119, building. Open items: none.
 - 2026-11-02 (O119 building). In flight (1 of 6): O119, building, base 7503f75c3. Next: its report, /refute, /land. Open items: none.
 - 2026-11-02 (O118 landed). O118 is on main (booked under O118 in `plan.md`, `agents/reviews/O118-landing.md`). In flight: none. Next: /spec O119. Open items: none.
 - 2026-11-02 (O118 building; rulings 630 and 631). Steps O118 and O119 added to `plan.md`. In flight (1 of 6): O118, building. Next: O118's report, /refute, /land; then /spec O119, whose brief narrows the right-click to person's turns and tool rows, since answers have the prose menu. Open items: none.
