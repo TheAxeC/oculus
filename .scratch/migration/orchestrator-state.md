@@ -60,8 +60,10 @@ dispatch:           # steps in flight, up to six (Z632)
   launched: 2026-11-02
   report: .scratch/migration/agents/reviews/O123-report.md
   round: 0
+  builder_usage: first run handed back
+  cases: agents/briefs/O123-cases.md
   brief_check: agents/reviews/O123-brief-check.md (afb7b4f6cc7cbec97, claude-opus-5-5, 332174 tokens, 59 tool uses, 12 min 34 s)
-  shared_paths: config/defaults/layout.yml and docs/HELP.md with migration O124, docs/HELP.md and docs/diagrams with migration O122; a few single lines touched by both (layout.yml 307, HELP 52, 143, 455), each merged by hand at landing in one edit, and generated files rebuilt
+  shared_paths: config/defaults/layout.yml, docs/HELP.md, GroupHead.svelte and registry.ts with migration O124, docs/HELP.md and docs/diagrams with migration O122; a few single lines touched by both (layout.yml 307, HELP 52, 143, 455), each merged by hand at landing in one edit, and generated files rebuilt
   landing: not-started
 ```
 
