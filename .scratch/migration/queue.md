@@ -1,5 +1,5 @@
 In flight (1 of 6 slots in use):
-- O121 (a chip row takes no height for its controls), building.
+- O121 (a chip row takes no height for its controls), built, in review.
 
 Queued, in order (1 step):
 - O122 (a Transcript draws only what is in view), waits on open item 634.
