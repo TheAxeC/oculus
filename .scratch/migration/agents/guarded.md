@@ -432,6 +432,6 @@ Held under the entries above: `tests/checks/config/integrity.test.ts` (G14), `te
 - G147. A Terminal tab keeps its Live or Transcript choice, its lock and the session it reads through every rewrite, and a tab on Transcript outlives its last terminal.
   Code: `src/lib/state/sessions/terminal/terminal-tabs.ts`, `terminal-lists.ts`.
   Test: `tests/state/sessions/`, describe 'a tab that reads a session'.
-- G148. Reading a transcript never holds the server's thread for the whole file: a first read takes the file's end, and every read gives the thread back between pieces.
+- G148. A read of a transcript through its route never holds the server's thread for the whole file: a first read takes the file's end, and every read gives the thread back between pieces.
   Code: `src/lib/server/sessions/transcript-routes.ts`, `src/lib/server/sessions/stores/transcripts.ts`.
-  Test: `tests/server/sessions/transcript-routes.test.ts`.
+  Test: `tests/server/sessions/transcript-routes.test.ts`, describes 'a first read of the transcript route' and 'a read of a file of several pieces'.
