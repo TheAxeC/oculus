@@ -5,6 +5,7 @@ Queued, in order (0 steps): none.
 Owed looks: none.
 
 Landed, newest first:
+- O117 (the transcript's own text size), 2026-11-02.
 - O116 (a transcript's first read takes only the end of the file), 2026-11-02.
 - O115 (the transcript reads as a conversation), 2026-11-02.
 - O114 (one Terminal view for a session), 2026-11-02.

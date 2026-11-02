@@ -163,7 +163,8 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
-
+- Open item 630: a Transcript shows the last 200 turns, or fewer when the last 32 MiB hold fewer, with no sign of older turns and no way to reach them (`transcript-routes.ts:30,38`; the client asks only forward from `offset`). (a) older turns load as the reader scrolls to the top, recommended; (b) a press at the top of the list loads the next older turns; (c) leave it, the lazy option.
+- Open item 631: one step for three defects and three presses never made. (1) A right-click in the Transcript cancels the browser's menu, so selected text has no Copy (`src/lib/shell/context-guard.ts:13`). (2) A pressed run of tool calls closes when the session moves from a terminal to none. (3) `tests/checks/imports/cycles.test.ts` fails on main on Cards.svelte and NestedCards.svelte, which the landing list does not run. The look presses a code block's Copy, the Markdown export and a refused value in the `terminal.transcript_font_px` row. (a) the step, recommended; (b) only the cycle, the lazy option.
 
 
 
