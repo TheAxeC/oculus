@@ -113,7 +113,7 @@ One entry per guarantee. An entry keeps one test per unit it covers: each API ro
 - G39. A start in a mode the agents catalog marks `confirm: true` is refused without the confirmation.
   Code: `src/lib/server/machine/pty/start/compose.ts`, `src/routes/api/(sessions)/terminal/+server.ts`.
   Test: `tests/routes/sessions/compose.test.ts`, every row of describe 'POST /api/terminal, a start in a mode the catalog marks confirm: true' and of describe "POST /api/terminal, a start in a value the workspace's agents changed".
-- G40. A transcript above Node's string limit is read whole in pieces, and the next read asks from where the last one stopped.
+- G40. A transcript above Node's string limit is read in pieces, whole for an export and from its end for a first read, and the next read asks from where the last one stopped.
   Code: `src/lib/server/sessions/stores/transcripts.ts`, `src/lib/server/sessions/stores/turns.ts`.
   Test: `tests/server/sessions/transcripts.test.ts`, 'foldFrom' (pieces far smaller than the file, a line longer than the limit skipped, and a sparse transcript longer than Node's longest string, tagged slow) and 'readTurns'.
 - G41. A git command that fails says why: timed out, ended by a signal, an exit status with no output, or too much output.
@@ -432,3 +432,6 @@ Held under the entries above: `tests/checks/config/integrity.test.ts` (G14), `te
 - G147. A Terminal tab keeps its Live or Transcript choice, its lock and the session it reads through every rewrite, and a tab on Transcript outlives its last terminal.
   Code: `src/lib/state/sessions/terminal/terminal-tabs.ts`, `terminal-lists.ts`.
   Test: `tests/state/sessions/`, describe 'a tab that reads a session'.
+- G148. Reading a transcript never holds the server's thread for the whole file: a first read takes the file's end, and every read gives the thread back between pieces.
+  Code: `src/lib/server/sessions/transcript-routes.ts`, `src/lib/server/sessions/stores/transcripts.ts`.
+  Test: `tests/server/sessions/transcript-routes.test.ts`.

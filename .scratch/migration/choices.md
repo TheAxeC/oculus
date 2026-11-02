@@ -4,6 +4,11 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z1105 (2026-11-02, O116's brief check, the orchestrator, automode): every transcript read yields
+
+- Chosen: a loop that yields between pieces carries every read of `/api/transcript`, with G148.
+- Not chosen: a sync doubling and a sync read from an offset; the lazy option.
+
 ## Z1104 (2026-11-02, O115's brief and look, the orchestrator, automode): how the transcript draws
 
 - Chosen: runs start closed; a call that came back draws no tag; the turns zoom to the grid's size and never below `--fs-sm`; no virtual list; no new test or guarded entry.

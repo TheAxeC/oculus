@@ -3410,6 +3410,7 @@ Independent of each other; two may run side by side under R9's rule when their b
 - Z1103 (2026-11-02, O114's look, where a session with no terminal opens, the orchestrator, automode): in the pane of the page's Terminal tab, so a press in the sessions list does not cover the list. Not chosen: the focused pane (the lazy option). (the orchestrator, automode)
 - O115 (2026-11-02): the Transcript's look on 8790 is a defect of delivered work and is fixed as a step: "The transcript, visually, still looks really bad. Its very difficult to read." The list of what is wrong is the orchestrator's, from the look on 8790; restyling only the broken table was the lazy option (the user).
 - Z1104 (2026-11-02, O115's brief and look, the orchestrator, automode): runs start closed, a call that came back draws no tag, the turns zoom to the grid's size and never below `--fs-sm`, no virtual list, no new test or guarded entry. Not chosen: the grid's size with no floor, which drew 10.5 px for Axel, and restyling only the table (the lazy options). (the orchestrator, automode)
+- Z1105 (2026-11-02, O116's brief check, the orchestrator, automode): every transcript read goes through a loop that yields between pieces, the doubling and a read from an offset included, and G148 guards it. Not chosen: a sync doubling and a sync read from an offset (the lazy option) (self-rule).
 - O116 (2026-11-02): a first read of a transcript blocks the server for as long as the whole file takes, minutes on a 4.4 GB session, and selecting a session has opened its Transcript since O114; a defect of delivered work, fixed as a step since it is a different concern from O115's look. Not chosen: a note in the report (the lazy option) (self-rule).
 - Looks on a scratch server (2026-11-01): a look runs on a scratch server on a port other than 8790, since 8790 runs the v1.0.0 app (the user).
 - Open item 556 (2026-10-29): (a), the Zenodo token kept as a `downloads` row of the primary hub's `.oculus/local.yml` with service `zenodo`, its `secret` the token, named by an `auth` entry `{ header: Authorization, prefix: 'Bearer ', row: zenodo }` on the shipped `deposit.zenodo` row (553), as the eight other service tokens are, the help of `downloads` saying it also holds the deposit's token; (b), a new key `zenodo.token`, and (c), a file in `~/.oculus/connect/`, not chosen; none was the lazy option (Axel: "556 (a)") (the user).
@@ -4143,6 +4144,7 @@ Agents in no role the cost script prices:
 - a1e4264a211c12492: brief check of step O115, claude-opus-5-5
 - af9f74e71204fd6e5: reviewer of step O115, claude-opus-5-5
 - ae1f26bb6a508b3fd: reviewer of step O115 over round 1, claude-opus-5-5
+- a688991a207f1775e: brief check of step O116, claude-opus-5-5
 
 ## Blocked, and by what
 
