@@ -32,8 +32,10 @@ dispatch:           # steps in flight, up to six (Z632)
   session_id: a28d04cc62701ac34 (claude-opus-5-5)
   launched: 2026-11-02
   report: .scratch/migration/agents/reviews/O117-report.md
-  round: 0
+  builder_usage: 217253 tokens, 87 tool uses, 11 min 43 s, the round 0 resume included
+  round: 1
   brief_check: agents/reviews/O117-brief-check.md (a8796edb0856c6314, claude-opus-5-5, 188468 tokens, 25 tool uses, 8 min 35 s)
+  reviewer_report: agents/reviews/O117-refuter.md (a4d3abba3ff0e32d3, claude-opus-5-5)
   landing: not-started
 ```
 
