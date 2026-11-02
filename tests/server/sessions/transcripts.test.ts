@@ -130,14 +130,14 @@ describe('foldFrom', () => {
 });
 
 describe('readTurns', () => {
-    it('answers every turn and the offset of the last complete line, and the next read starts there', () => {
+    it('answers every turn and the offset of the last complete line, and the next read starts there', async () => {
         const path = join(DIR, 'turns.jsonl');
         writeFileSync(path, WHOLE + UNFINISHED);
-        const first = readTurns(path, 'claude', 0);
+        const first = await readTurns(path, 'claude', 0);
         expect(first.turns.map((turn) => turn.text)).toEqual(TEXTS);
         expect(first.offset).toBe(Buffer.byteLength(WHOLE));
         appendFileSync(path, line(6, 'seven').slice(UNFINISHED.length) + '\n');
-        const second = readTurns(path, 'claude', first.offset);
+        const second = await readTurns(path, 'claude', first.offset);
         expect(second.turns.map((turn) => turn.text)).toEqual(['seven']);
         expect(second.offset).toBe(Buffer.byteLength(WHOLE + line(6, 'seven') + '\n'));
     });
@@ -229,7 +229,7 @@ function scanned(store: string, cachePath: string) {
 }
 
 describe('a headless session', () => {
-    it('is listed with its prompt and the title it opens with, and its prompt is a turn', () => {
+    it('is listed with its prompt and the title it opens with, and its prompt is a turn', async () => {
         const store = join(DIR, 'headless-store');
         const path = join(store, 'project', 'headless.jsonl');
         mkdirSync(join(store, 'project'), { recursive: true });
@@ -241,13 +241,16 @@ describe('a headless session', () => {
             1,
             ['Summarise the build log']
         ]);
-        const turns = readTurns(path, 'claude', 0).turns.map((turn) => turn.text);
-        expect(turns).toEqual(['Summarise the build log', 'The build passed.']);
+        const { turns } = await readTurns(path, 'claude', 0);
+        expect(turns.map((turn) => turn.text)).toEqual([
+            'Summarise the build log',
+            'The build passed.'
+        ]);
     });
 });
 
 describe('an interactive session', () => {
-    it('takes neither a compaction summary nor a command record for a prompt or a title', () => {
+    it('takes neither a compaction summary nor a command record for a prompt or a title', async () => {
         const store = join(DIR, 'interactive-store');
         const path = join(store, 'project', 'interactive.jsonl');
         mkdirSync(join(store, 'project'), { recursive: true });
@@ -259,8 +262,8 @@ describe('an interactive session', () => {
             1,
             ['Rename the helper']
         ]);
-        const turns = readTurns(path, 'claude', 0).turns.map((turn) => turn.text);
-        expect(turns).toEqual(['Rename the helper', 'Renamed.']);
+        const { turns } = await readTurns(path, 'claude', 0);
+        expect(turns.map((turn) => turn.text)).toEqual(['Rename the helper', 'Renamed.']);
     });
 });
 

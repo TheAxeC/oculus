@@ -11,20 +11,31 @@
 // one whose agent id is empty and one whose transcript is not there are refused as an unknown
 // session is. A read, so it is same-origin and carries no write token.
 
-import { existsSync } from 'node:fs';
+import { existsSync, statSync } from 'node:fs';
 import { json } from '@sveltejs/kit';
 import { agentFile } from './stores/background.ts';
-import { readTurns } from './stores/turns.ts';
+import { readTurns, renderTurns, type TurnsAnswer } from './stores/turns.ts';
 import { words } from '../core/words.ts';
 import type { SessionAgent, SessionRecord, SessionTool, Turn } from '../../data/model/index.ts';
 
 /**
  * How many turns a first read answers with. A session that has run all day holds thousands, and the
- * page draws the tail of the conversation; sending the whole file costs the wire and the client's
- * memory for turns nobody scrolls back to. A later read asks from a byte offset and is not capped,
- * since it carries only what was appended since.
+ * page draws the tail of the conversation, so a first read takes only the end of the file
+ * (`FIRST_READ_BYTES`) and keeps its last turns; sending more costs the wire and the client's
+ * memory for turns nobody scrolls back to, and an older turn the end of the file does not hold
+ * stays out of the view as a turn past this count does. The offset it answers is the end of the
+ * last whole line it read, so a line still being written reaches the next read whole. A later read
+ * asks from a byte offset and is not capped, since it carries only what was appended since.
  */
 export const FIRST_READ_TURNS = 200;
+
+/**
+ * How far before a file's end a first read starts, so what a first read takes is the tail of the
+ * file whatever its size, widened only while the tail holds no turn: the distance doubles then, and
+ * a file with no turn at all is read to its head. `MAX_FIRST_READ_BYTES` of cache.ts is a separate
+ * limit, the size above which the scan does not fold a file at all.
+ */
+const FIRST_READ_BYTES = 32 * 1024 * 1024;
 
 export type TranscriptOptions = {
     /**
@@ -65,11 +76,41 @@ function agentSource(
     return existsSync(path) ? { path, tool: record.tool } : null;
 }
 
+/** A file's size, or 0 for one that cannot be read, whose read answers nothing. */
+function sizeOf(path: string): number {
+    try {
+        return statSync(path).size;
+    } catch {
+        return 0;
+    }
+}
+
 /**
- * GET /api/transcript: the turns of one session from a byte offset, and the offset to ask next;
- * with `format=markdown`, the whole conversation as a Markdown file to save.
+ * The end of a transcript: a read that starts `FIRST_READ_BYTES` before the end of the file, or at
+ * its head for a smaller one, and again from twice as far while it holds no turn and the file holds
+ * more, so a tail of one long line still answers with a turn. The answer is the one pass that found
+ * a turn, or the pass from the head. A pass starts one byte early, on the end of the line before,
+ * and drops what it reads up to the first line feed: a start inside a line loses that line, and a
+ * start on a line's first byte loses nothing.
  */
-export function handleTranscript(request: Request, options: TranscriptOptions = {}): Response {
+async function firstRead(source: Source): Promise<TurnsAnswer> {
+    const size = sizeOf(source.path);
+    for (let distance = FIRST_READ_BYTES; ; distance *= 2) {
+        const start = Math.max(0, size - distance - 1);
+        const read = await readTurns(source.path, source.tool, start, { insideLine: start > 0 });
+        if (start === 0 || read.turns.length > 0) return read;
+    }
+}
+
+/**
+ * GET /api/transcript: the turns of one session from a byte offset, or the last turns of its file
+ * when no offset is asked, and the offset to ask next, the end of the last whole line read; with
+ * `format=markdown`, the whole conversation as a Markdown file to save.
+ */
+export async function handleTranscript(
+    request: Request,
+    options: TranscriptOptions = {}
+): Promise<Response> {
     const url = new URL(request.url);
     const asked = url.searchParams.get('from') ?? '';
     const from = asked === '' ? 0 : Number(asked);
@@ -97,12 +138,16 @@ export function handleTranscript(request: Request, options: TranscriptOptions = 
         if (options.catalogFor === undefined) throw new Error('an export needs the text catalog');
         return exported(record, agent, source, options.catalogFor());
     }
-    const read = readTurns(source.path, source.tool, from);
-    if (from > 0 || read.turns.length <= FIRST_READ_TURNS) return json(read, { headers: NO_STORE });
-    // The offset is the file's end either way, so the client's append path continues from the same
-    // place; what is dropped is the oldest turns, which is the end of the conversation nobody is
-    // looking at.
-    return json({ ...read, turns: read.turns.slice(-FIRST_READ_TURNS) }, { headers: NO_STORE });
+    if (from > 0) {
+        const read = await readTurns(source.path, source.tool, from);
+        return json({ ...read, turns: await renderTurns(read.turns) }, { headers: NO_STORE });
+    }
+    // The offset is the read's own, so the client's append path continues where the read stopped;
+    // what is dropped is the oldest turns, which is the end of the conversation nobody is looking
+    // at, and only the turns kept are rendered.
+    const read = await firstRead(source);
+    const turns = await renderTurns(read.turns.slice(-FIRST_READ_TURNS));
+    return json({ ...read, turns }, { headers: NO_STORE });
 }
 
 /**
@@ -125,13 +170,14 @@ export function exportName(record: SessionRecord, agent?: SessionAgent): string 
  * Every heading is worded by the server's one `words` of server/core/words.ts, which throws on a
  * key the catalog lacks. The pieces joined are the text `lines.join('\n')` of the whole file, and
  * the file is those pieces with every run of three or more line feeds cut to two and the end
- * trimmed: `markdownStream` applies both one piece at a time, so no string holds the file.
+ * trimmed: `markdownStream` applies both one piece at a time, so no string holds the file. The
+ * heading needs nothing of the file, so `read` is called only once it has been asked past.
  */
-function* transcriptPieces(
+async function* transcriptPieces(
     record: SessionRecord,
-    turns: Iterable<Turn>,
+    read: () => Promise<Turn[]>,
     catalog: Record<string, string>
-): Generator<string> {
+): AsyncGenerator<string> {
     yield [
         `# ${record.title === '' ? record.id : record.title}`,
         '',
@@ -141,7 +187,7 @@ function* transcriptPieces(
         `- ${words(catalog, 'server.export.started', record.started ?? '')}`,
         ''
     ].join('\n');
-    for (const turn of turns) {
+    for (const turn of await read()) {
         if (turn.role === 'tool' && turn.tool !== null) {
             const state =
                 turn.tool.ok === null
@@ -176,9 +222,9 @@ function* transcriptPieces(
  * held back and joined to the next, because a run of line feeds that a piece ends with goes on into
  * the next piece, and the end of the file is trimmed.
  */
-function* markdownStream(pieces: Iterable<string>): Generator<string> {
+async function* markdownStream(pieces: AsyncIterable<string>): AsyncGenerator<string> {
     let held = '';
-    for (const piece of pieces) {
+    for await (const piece of pieces) {
         const text = (held + piece).replace(/\n{3,}/g, '\n\n');
         const kept = text.trimEnd().length;
         held = text.slice(kept);
@@ -189,7 +235,13 @@ function* markdownStream(pieces: Iterable<string>): Generator<string> {
 
 /**
  * The export's answer: the Markdown of the transcript `source` as a file the browser saves,
- * streamed, headed with the session's facts.
+ * streamed, headed with the session's facts. The first chunk is that heading, so the download
+ * starts on the wire before the file is read: a server sends the response head with the first
+ * chunk. The next chunk asked for reads the file whole, since a tool call's turn takes the outcome
+ * of a result further on and so no turn is final until the read ends. A client that leaves cancels
+ * the stream, which ends the read at its next piece, and each export holds its own read, so two
+ * presses share nothing. No chunk is queued ahead of the reader (`highWaterMark: 0`), so a body
+ * nobody reads reads no file.
  */
 function exported(
     record: SessionRecord,
@@ -197,16 +249,26 @@ function exported(
     source: Source,
     catalog: Record<string, string>
 ): Response {
-    const read = readTurns(source.path, source.tool, 0, Number.POSITIVE_INFINITY);
-    const pieces = markdownStream(transcriptPieces(record, read.turns, catalog));
+    const left = new AbortController();
+    const whole = { cap: Number.POSITIVE_INFINITY, signal: left.signal };
+    const read = async (): Promise<Turn[]> =>
+        (await readTurns(source.path, source.tool, 0, whole)).turns;
+    const pieces = markdownStream(transcriptPieces(record, read, catalog));
     const encoder = new TextEncoder();
-    const body = new ReadableStream<Uint8Array>({
-        pull(controller) {
-            const next = pieces.next();
-            if (next.done === true) controller.close();
-            else controller.enqueue(encoder.encode(next.value));
-        }
-    });
+    const body = new ReadableStream<Uint8Array>(
+        {
+            async pull(controller) {
+                const next = await pieces.next();
+                if (left.signal.aborted) return;
+                if (next.done === true) controller.close();
+                else controller.enqueue(encoder.encode(next.value));
+            },
+            cancel() {
+                left.abort();
+            }
+        },
+        { highWaterMark: 0 }
+    );
     return new Response(body, {
         status: 200,
         headers: {

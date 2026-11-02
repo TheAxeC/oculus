@@ -1,10 +1,11 @@
 In flight (0 of 6 slots in use): none.
 
-Queued, in order (1 step): O116 (a transcript's first read takes only the end of the file).
+Queued, in order (0 steps): none.
 
 Owed looks: none.
 
 Landed, newest first:
+- O116 (a transcript's first read takes only the end of the file), 2026-11-02.
 - O115 (the transcript reads as a conversation), 2026-11-02.
 - O114 (one Terminal view for a session), 2026-11-02.
 - O113 (Timeline a section of the Session view), 2026-11-01.

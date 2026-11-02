@@ -24,18 +24,6 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 
 ```yaml
 dispatch:           # steps in flight, up to six (Z632)
-- step: O116
-  base: a80640542
-  worktree: .agents/worktrees/migration-O116
-  executor: agent
-  worker: claude:opus
-  session_id: af9e8f1eb872b88a4 (claude-opus-5-5)
-  launched: 2026-11-02
-  report: .scratch/migration/agents/reviews/O116-report.md
-  round: 1
-  builder_usage: 156943 tokens, 18 tool uses, 4 min 56 s; round 0 resumed: 231426 tokens, 66 tool uses, 16 min 5 s
-  brief_check: agents/reviews/O116-brief-check.md (a688991a207f1775e, claude-opus-5-5, 190927 tokens, 20 tool uses, 9 min 34 s)
-  landing: not-started
 ```
 
 ## The standing demands (from Axel, in force)
@@ -764,6 +752,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-11-02 (O116 landed). O116 is on main (booked under O116 in `plan.md`, `agents/reviews/O116-landing.md`). In flight: none. Next: Axel's word on open item 629.
 - 2026-11-02 (O115 landed). O115 is on main (booked under O115 in `plan.md`, `agents/reviews/O115-landing.md`). Choice Z1104. Next: O116, a transcript's first read bounded to the file's end. Open item 629.
 - 2026-11-02 (O114 landed; O110 to O114 done). O114 is on main. In flight: none. Next: Axel's next word. Open items: none. Choice Z1103 booked. The saved layout's Sessions page was changed with a backup at `~/.oculus/layouts.before-O114.json`; a running 1.0.0 page holds its own copy and can write the old tabs back, so it is read again after his next app update.
 - 2026-10-31 (1.0.0 replaced on f6c42d1a6). At Axel's word the three archives were rebuilt from f6c42d1a6, the macOS bundle's server answered 200 on `/` and `/api/health`, `v1.0.0` was recreated on that commit, the downloaded zip equals the local one, and the app is installed in `~/Applications`. In flight (0 of 6). Open items: none.

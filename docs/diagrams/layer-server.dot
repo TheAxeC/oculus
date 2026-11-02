@@ -49,7 +49,7 @@ digraph layer_server {
         "folder server/files to layer data" [label="68", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder server/sessions to folder server/core" [label="9", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder server/sessions to folder server/transcripts" [label="4", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
-        "folder server/sessions to layer data" [label="14", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+        "folder server/sessions to layer data" [label="15", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder server/accounts to folder server/core" [label="19", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder server/accounts to layer data" [label="25", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder server/core to layer data" [label="33", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];

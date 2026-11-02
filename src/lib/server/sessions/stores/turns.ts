@@ -2,27 +2,31 @@
 // demand rather than folded into the snapshot.
 //
 // The sessions channel folds a transcript into counts, a timeline, the agents and the touched
-// files, and the turn text never reaches the page through that path. It is read here instead, with
-// the same foldFrom() the incremental cache uses, so a session already read is followed by asking
-// for the bytes appended since the last read rather than parsing the file again.
+// files, and the turn text never reaches the page through that path. It is read here instead, by
+// the line reading the incremental cache uses, in foldYielding() so a read gives the server's
+// thread back between pieces, and a session already read is followed by asking for the bytes
+// appended since the last read rather than parsing the file again.
 //
 // A record becomes at most one said turn plus one turn per tool call. A thinking block is dropped:
 // it is the model talking to itself and is not part of the conversation. A tool call and its result
 // are one turn, paired by `tool_use_id`; a result whose call was read in an earlier batch cannot
 // reach that turn from here, so it travels in `results` and the client patches the turn it holds.
 //
-// The Markdown of an assistant turn is rendered here and filtered on the page, the way
-// server/content/docs.ts renders a README: views/shared/prose/Markdown.svelte runs ui/html.ts's
-// sanitise over the HTML as it draws an answer of the Terminal view's transcript, so the rendering
-// and the filtering stay one each and in one place. Its fenced code is painted by the highlighter's
-// extension (data/prose/languages.ts, `codeColour`), as a document's is.
+// The Markdown of an assistant turn is rendered here, by renderTurns() once a read has settled
+// which turns it answers, and filtered on the page, the way server/content/docs.ts renders a
+// README: views/shared/prose/Markdown.svelte runs ui/html.ts's sanitise over the HTML as it draws
+// an answer of the Terminal view's transcript, so the rendering and the filtering stay one each and
+// in one place. Its fenced code is painted by the highlighter's extension (data/prose/languages.ts,
+// `codeColour`), as a document's is.
 
+import { setImmediate as nextMacrotask } from 'node:timers/promises';
 import { Marked } from 'marked';
 import { z } from 'zod';
 import { codeColour } from '../../../data/prose/languages.ts';
+import { escapeAttribute } from '../../../data/prose/markdown/markdown.ts';
 import { mapShape, quickly } from '../../../data/shapes/shapes.ts';
 import { stampShape, textShape } from '../record.ts';
-import { foldFrom } from './transcripts.ts';
+import { foldYielding, type YieldingRead } from './transcripts.ts';
 import { promptFields, saidByHuman } from '../fold.ts';
 import type { SessionTool, Turn, TurnTool } from '../../../data/model/index.ts';
 
@@ -150,28 +154,29 @@ const claudeTurnMessageShape = quickly(
 );
 
 /**
- * The turns of one transcript from byte `from`, each said turn cut at `cap` characters. An
- * unreadable file, or one with nothing appended, answers with no turns and the offset it was asked
- * from. The export asks with no cap, since a file handed to the reader is the whole conversation. A
- * read holds every turn of the file while it reads, which cost about 460 MiB more for a 629 MB
- * transcript when measured, so the Markdown export is streamed a turn at a time (`markdownStream`
- * of server/sessions/transcript-routes.ts) and a transcript whose text passes the longest string is
- * one download as well.
+ * The turns of one transcript from byte `from`, each said turn cut at `cap` characters and none
+ * rendered yet (`renderTurns`), read by foldYielding, so `insideLine` and `signal` mean what they
+ * mean there. An unreadable file, or one with nothing appended, answers with no turns and the
+ * offset it was asked from. The export asks with no cap, since a file handed to the reader is the
+ * whole conversation. A read holds every turn of the bytes it reads while it reads, which cost
+ * about 460 MiB more for a 629 MB transcript when measured, so the Markdown export is streamed a
+ * turn at a time (`markdownStream` of server/sessions/transcript-routes.ts) and a transcript whose
+ * text passes the longest string is one download as well.
  */
-export function readTurns(
+export async function readTurns(
     path: string,
     tool: SessionTool,
     from = 0,
-    cap: number = TURN_CHARS
-): TurnsAnswer {
+    { cap = TURN_CHARS, ...how }: YieldingRead & { cap?: number } = {}
+): Promise<TurnsAnswer> {
     const answer: TurnsAnswer = { turns: [], offset: from, results: {} };
     /** The tool turns of this read, by call id, so a result in the same read fills its own turn. */
     const calls = new Map<string, Turn>();
-    const read = foldFrom(path, from, (record) => {
+    const apply = (record: Record<string, unknown>): void => {
         if (tool === 'codex') codexRecord(answer, record, cap);
         else claudeRecord(answer, calls, record, cap);
-    });
-    answer.offset = from + read;
+    };
+    answer.offset = from + (await foldYielding(path, from, apply, how));
     return answer;
 }
 
@@ -282,18 +287,32 @@ function codexRecord(answer: TurnsAnswer, record: Record<string, unknown>, cap: 
     answer.turns.push(toolTurn(at, '', type, codexSummary(item), codexOk(item)));
 }
 
-/** A said turn, cut at the cap. The assistant's Markdown is rendered, its code painted. */
+/** A said turn, cut at the cap, with no HTML until `renderTurns` gives it its own. */
 function saidTurn(at: string | null, role: 'user' | 'assistant', said: string, cap: number): Turn {
     const cut = said.length > cap;
-    const body = cut ? said.slice(0, cap) : said;
-    return {
-        at,
-        role,
-        text: body,
-        html: role === 'assistant' ? new Marked(codeColour).parse(body, { async: false }) : '',
-        cut,
-        tool: null
-    };
+    return { at, role, text: cut ? said.slice(0, cap) : said, html: '', cut, tool: null };
+}
+
+/**
+ * Fill in the HTML of each assistant turn of `turns`: its Markdown rendered, its code painted. A
+ * read leaves this to the caller because a render costs far more than the fold of its record, so a
+ * first read renders only the turns it keeps and an export, which writes the text, renders none.
+ * The thread is given back after every turn, so a tail dense in answers does not hold it. Text the
+ * renderer cannot take, nested past what its recursion survives, keeps its words as preformatted
+ * text, so one turn never fails the read that holds it.
+ */
+export async function renderTurns(turns: Turn[]): Promise<Turn[]> {
+    const marked = new Marked(codeColour);
+    for (const turn of turns) {
+        if (turn.role !== 'assistant') continue;
+        try {
+            turn.html = marked.parse(turn.text, { async: false });
+        } catch {
+            turn.html = `<pre>${escapeAttribute(turn.text)}</pre>`;
+        }
+        await nextMacrotask();
+    }
+    return turns;
 }
 
 function toolTurn(

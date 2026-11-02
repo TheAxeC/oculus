@@ -162,8 +162,9 @@ function merged(
 }
 
 /**
- * Ask for the session's bytes from the offset held, or from the start when nothing is held, and
- * answer the turns held with what came back. A failed read keeps the turns and says why.
+ * Ask for the session's bytes from the offset held, or for its first read when nothing is held,
+ * which the server answers from the end of the file, and answer the turns held with what came back.
+ * A failed read keeps the turns and says why.
  */
 async function tail(id: string, agent: string, held: TurnsState | undefined): Promise<TurnsState> {
     const from = held?.offset ?? 0;
@@ -195,8 +196,9 @@ export function createTranscripts(queries: Queries): TranscriptsStore {
     const marks: Record<string, unknown> = {};
 
     /**
-     * The turns of one session. The first call for a session asks the server for the whole file;
-     * every later call reads what is held, and follow() is what asks for the rest.
+     * The turns of one session. The first call for a session asks the server for a first read, the
+     * last turns of the end of the file; every later call reads what is held, and follow() is what
+     * asks for the rest.
      */
     function turnsFor(id: string, agent = ''): TurnsState {
         if (id === '') return NOTHING;
@@ -268,8 +270,8 @@ export function createTranscripts(queries: Queries): TranscriptsStore {
     }
 
     /**
-     * Drop everything held for one session, so the next call for it fetches from the start again.
-     * A request still out for it is cancelled, so its answer is not held.
+     * Drop everything held for one session, so the next call for it makes a first read again. A
+     * request still out for it is cancelled, so its answer is not held.
      */
     function forget(id: string, agent = ''): void {
         const slot = slotOf(id, agent);

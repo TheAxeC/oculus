@@ -70,8 +70,9 @@ export type TurnTool = {
 
 /**
  * One turn of a session's conversation, as a Terminal tab's transcript body draws it. `html` is the
- * rendered Markdown of an assistant turn and the empty string on every other role; `text` is capped
- * and `cut` says the cap applied. A `tool` turn carries `tool` and nothing in `text`.
+ * rendered Markdown of an assistant turn the route answers, and the empty string on every other
+ * role and in an export, which writes `text`; `text` is capped and `cut` says the cap applied. A
+ * `tool` turn carries `tool` and nothing in `text`.
  */
 export type Turn = {
     at: string | null;

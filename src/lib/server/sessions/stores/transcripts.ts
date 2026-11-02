@@ -15,6 +15,7 @@ import { constants } from 'node:buffer';
 import { closeSync, fstatSync, openSync, readSync, statSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { basename, join } from 'node:path';
+import { setImmediate as nextMacrotask } from 'node:timers/promises';
 import type { LiveEntry, SessionRecord, SessionTool } from '../../../data/model/index.ts';
 import {
     MAX_FIRST_READ_BYTES,
@@ -81,26 +82,30 @@ export type ScanOptions = {
     stamps?: Stamps;
 };
 
-/** The bytes `foldFrom` reads at a time. */
+/** The bytes a read takes from a file at a time. */
 const PIECE_BYTES = 8 * 1024 * 1024;
 
 /**
- * Fold every complete line from `offset` and return the bytes consumed, up to the last line feed
- * read. The offset is in bytes. The file is read in pieces of `piece` bytes (`PIECE_BYTES`; a
- * caller passes a smaller size to read a short file in several), and each complete line is decoded
- * alone, so a multi-byte character split across the end of a piece is never cut in half and no
- * decode is larger than one line. A line longer than `limit` bytes (Node's longest string,
- * `buffer.constants.MAX_STRING_LENGTH`; a caller passes a smaller one to test the skip) cannot be
- * decoded: it is skipped and its bytes count as consumed, so the read goes past it. A failure
- * after some lines answers the bytes consumed up to it.
+ * Fold every complete line from `offset`, one piece of the file per step, and return the bytes
+ * consumed, up to the last line feed read. The offset is in bytes. The file is read in pieces of
+ * `piece` bytes (`PIECE_BYTES`; a caller passes a smaller size to read a short file in several),
+ * and each complete line is decoded alone, so a multi-byte character split across the end of a
+ * piece is never cut in half and no decode is larger than one line. A line longer than `limit`
+ * bytes (Node's longest string, `buffer.constants.MAX_STRING_LENGTH`; a caller passes a smaller one
+ * to test the skip) cannot be decoded: it is skipped and its bytes count as consumed, so the read
+ * goes past it. With `insideLine` the first line is skipped the same way, since a read that starts
+ * inside a line holds only its end. A failure after some lines answers the bytes consumed up to it.
+ * The generator stops between pieces, so a caller decides what runs there and whether to go on;
+ * leaving it early closes the file.
  */
-export function foldFrom(
+function* foldPieces(
     path: string,
     offset: number,
     apply: (record: Record<string, unknown>) => void,
-    piece: number = PIECE_BYTES,
-    limit: number = constants.MAX_STRING_LENGTH
-): number {
+    piece: number,
+    limit: number,
+    insideLine: boolean
+): Generator<void, number> {
     let handle: number;
     try {
         handle = openSync(path, 'r');
@@ -115,8 +120,8 @@ export function foldFrom(
         /** The start of the line being read, copied out of the earlier pieces. */
         let carry: Buffer[] = [];
         let carried = 0;
-        /** Set once the line being read passes the longest decodable line; its bytes drop. */
-        let skipping = false;
+        /** Set while the line being read is one to drop: too long to decode, or cut at its head. */
+        let skipping = insideLine;
         let position = offset;
         while (position < size) {
             const got = readSync(
@@ -153,6 +158,7 @@ export function foldFrom(
                 start = end + 1;
             }
             position += got;
+            if (position < size) yield;
         }
         return consumed;
     } catch {
@@ -160,6 +166,58 @@ export function foldFrom(
     } finally {
         closeSync(handle);
     }
+}
+
+/**
+ * Fold every complete line from `offset` in one go and return the bytes consumed, as `foldPieces`
+ * says. It holds the thread for the whole read, so it is for the scan, whose files the cache and
+ * `maxFirstReadBytes` keep small.
+ */
+export function foldFrom(
+    path: string,
+    offset: number,
+    apply: (record: Record<string, unknown>) => void,
+    piece: number = PIECE_BYTES,
+    limit: number = constants.MAX_STRING_LENGTH
+): number {
+    const steps = foldPieces(path, offset, apply, piece, limit, false);
+    let step = steps.next();
+    while (step.done !== true) step = steps.next();
+    return step.value;
+}
+
+/** How a yielding read goes: from inside a line, and until what. */
+export type YieldingRead = {
+    /** The read starts inside a line, so its first line is dropped. */
+    insideLine?: boolean;
+    /** Ends the read at the next piece, for a reader that went away. */
+    signal?: AbortSignal;
+};
+
+/**
+ * Fold every complete line from `offset` and answer the bytes consumed, as `foldPieces` says, and
+ * give the thread back between pieces: the server has one thread, a file can hold gigabytes, and
+ * every other request waits while a piece is read. A macrotask lets the requests waiting on that
+ * thread run, which a promise alone would not. A read `signal` ended answers 0.
+ */
+export async function foldYielding(
+    path: string,
+    offset: number,
+    apply: (record: Record<string, unknown>) => void,
+    { insideLine = false, signal }: YieldingRead = {}
+): Promise<number> {
+    const limit = constants.MAX_STRING_LENGTH;
+    const steps = foldPieces(path, offset, apply, PIECE_BYTES, limit, insideLine);
+    let step = steps.next();
+    while (step.done !== true) {
+        await nextMacrotask();
+        if (signal?.aborted === true) {
+            steps.return(0);
+            return 0;
+        }
+        step = steps.next();
+    }
+    return step.value;
 }
 
 /** Parse one line as JSON and hand it on when it is a map; a blank or broken line is skipped. */
