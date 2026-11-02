@@ -38,8 +38,17 @@ dispatch:           # steps in flight, up to six (Z632)
   brief_check: agents/reviews/O122-brief-check.md (a8777c66a67dd93a3, claude-opus-5-5, 220297 tokens, 30 tool uses, 9 min 31 s)
   landing: not-started
 - step: O124
-  brief_check: "running: a245ccc2df2413f9c"
-  landing: preparing
+  base: d3a38520a
+  worktree: .agents/worktrees/migration-O124
+  executor: agent
+  worker: claude:opus
+  session_id: aa1e08bc105965980 (claude-opus-5-5)
+  launched: 2026-11-02
+  report: .scratch/migration/agents/reviews/O124-report.md
+  round: 0
+  brief_check: agents/reviews/O124-brief-check.md (a245ccc2df2413f9c, claude-opus-5-5, 236996 tokens, 28 tool uses, 9 min 55 s)
+  shared_paths: docs/HELP.md and docs/diagrams with migration O122, different lines and generated files, simple to merge
+  landing: not-started
 ```
 
 ## The standing demands (from Axel, in force)

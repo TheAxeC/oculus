@@ -1,6 +1,6 @@
 In flight (2 of 6 slots in use):
 - O122 (a Transcript draws only what is in view), building.
-- O124 (the System page's merges), brief check running.
+- O124 (the System page's merges), building.
 
 Waiting on a ruling (1 step):
 - O123 (sessions move into the Explorer), open item 636.
