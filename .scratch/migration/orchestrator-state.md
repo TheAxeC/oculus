@@ -46,6 +46,8 @@ dispatch:           # steps in flight, up to six (Z632)
   launched: 2026-11-02
   report: .scratch/migration/agents/reviews/O124-report.md
   round: 0
+  builder_usage: first run handed back
+  cases: agents/briefs/O124-cases.md
   brief_check: agents/reviews/O124-brief-check.md (a245ccc2df2413f9c, claude-opus-5-5, 236996 tokens, 28 tool uses, 9 min 55 s)
   shared_paths: docs/HELP.md and docs/diagrams with migration O122, different lines and generated files, simple to merge
   landing: not-started
