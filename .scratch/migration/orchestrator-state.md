@@ -25,8 +25,16 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 ```yaml
 dispatch:           # steps in flight, up to six (Z632)
 - step: O119
+  base: 7503f75c3
+  worktree: .agents/worktrees/migration-O119
+  executor: agent
+  worker: claude:opus
+  session_id: a729733657c6c9574 (claude-opus-5-5)
+  launched: 2026-11-02
+  report: .scratch/migration/agents/reviews/O119-report.md
+  round: 0
   brief_check: agents/reviews/O119-brief-check.md (a6c9625db56cd6374, claude-opus-5-5, 219620 tokens, 35 tool uses, 10 min 36 s)
-  landing: preparing
+  landing: not-started
 ```
 
 ## The standing demands (from Axel, in force)
@@ -755,6 +763,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-11-02 (O119 building). In flight (1 of 6): O119, building, base 7503f75c3. Next: its report, /refute, /land. Open items: none.
 - 2026-11-02 (O118 landed). O118 is on main (booked under O118 in `plan.md`, `agents/reviews/O118-landing.md`). In flight: none. Next: /spec O119. Open items: none.
 - 2026-11-02 (O118 building; rulings 630 and 631). Steps O118 and O119 added to `plan.md`. In flight (1 of 6): O118, building. Next: O118's report, /refute, /land; then /spec O119, whose brief narrows the right-click to person's turns and tool rows, since answers have the prose menu. Open items: none.
 - 2026-11-02 (O117 landed). O117 is on main (booked under O117 in `plan.md`, `agents/reviews/O117-landing.md`). In flight: none. Open items: none. Next: nothing queued.

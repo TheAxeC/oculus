@@ -1,7 +1,7 @@
-In flight (0 of 6 slots in use): none.
+In flight (1 of 6 slots in use):
+- O119 (Transcript right-click, tool-call runs, the import cycle), building.
 
-Queued, in order (1 steps):
-- O119 (Transcript right-click, tool-call runs, the import cycle), once O118 has landed.
+Queued, in order (0 steps): none.
 
 Owed looks: none.
 
