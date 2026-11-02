@@ -1,6 +1,8 @@
 In flight (0 of 6 slots in use): none.
 
-Queued, in order (0 steps): none.
+Queued, in order (2 steps):
+- O118 (a Transcript's older turns load on scrolling up), next.
+- O119 (Transcript right-click, tool-call runs, the import cycle), after O118.
 
 Owed looks: none.
 

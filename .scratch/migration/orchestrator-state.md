@@ -24,6 +24,9 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 
 ```yaml
 dispatch:           # steps in flight, up to six (Z632)
+- step: O118
+  brief_check: agents/reviews/O118-brief-check.md (a9b41423d719cfb85, claude-opus-5-5, 223649 tokens, 27 tool uses, 10 min 58 s)
+  landing: preparing
 ```
 
 ## The standing demands (from Axel, in force)
@@ -163,13 +166,12 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
-- Open item 630: a Transcript shows the last 200 turns, or fewer when the last 32 MiB hold fewer, with no sign of older turns and no way to reach them (`transcript-routes.ts:30,38`; the client asks only forward from `offset`). (a) older turns load as the reader scrolls to the top, recommended; (b) a press at the top of the list loads the next older turns; (c) leave it, the lazy option.
-- Open item 631: one step for three defects and three presses never made. (1) A right-click in the Transcript cancels the browser's menu, so selected text has no Copy (`src/lib/shell/context-guard.ts:13`). (2) A pressed run of tool calls closes when the session moves from a terminal to none. (3) `tests/checks/imports/cycles.test.ts` fails on main on Cards.svelte and NestedCards.svelte, which the landing list does not run. The look presses a code block's Copy, the Markdown export and a refused value in the `terminal.transcript_font_px` row. (a) the step, recommended; (b) only the cycle, the lazy option.
-
 
 
 ## Closed items
 
+- Open item 630 (2026-11-02), closed by Axel the same day: (a), step O118; (c) was the lazy option. A Transcript shows the last 200 turns, or fewer when the last 32 MiB hold fewer, with no sign of older turns and no way to reach them; older turns now load as the reader scrolls to the top; (b), a press at the top of the list, not chosen.
+- Open item 631 (2026-11-02), closed by Axel the same day: (a), step O119; (b), only the cycle, was the lazy option. A right-click in the Transcript cancels the browser's menu; a pressed run of tool calls closes when the session moves from a terminal to none; `tests/checks/imports/cycles.test.ts` fails on main on Cards.svelte and NestedCards.svelte; the look presses a code block's Copy, the Markdown export and a refused value in the `terminal.transcript_font_px` row.
 - Open item 629 (2026-11-02), closed by Axel the same day: (a), step O117; (b) was the lazy option. the transcript and the terminal grid share one text size setting, and Axel's grid is 10.5 px, too small for proportional text, so the transcript now stops at 12 px and the smaller and larger buttons change nothing there until the size passes 12. (a) a key of its own, `terminal.transcript_font_px`, written by the buttons while the Transcript is showing, left out meaning 12 px: both sizes are then free, at the cost of one more setting. (b) keep the one setting and the 12 px floor, which adds no key and leaves the buttons without effect below 12 at his setting; this is the lazy option. Recommended: (a).
 - 608 (2026-10-31): closed, 8790 shows in Chrome again (Axel: "8790 is showing"); O105 looked at and landed.
 - 607 (2026-10-31): (a), `min` is removed (Axel: "607 (a)"); booked in `plan.md` Rulings; O106 repair round 1 carries it.
@@ -753,6 +755,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-11-02 (rulings 630 and 631). Steps O118 and O119 added to `plan.md`. In flight: none yet. Next: /spec O118, then O119. Open items: none.
 - 2026-11-02 (O117 landed). O117 is on main (booked under O117 in `plan.md`, `agents/reviews/O117-landing.md`). In flight: none. Open items: none. Next: nothing queued.
 - 2026-11-02 (O116 landed). O116 is on main (booked under O116 in `plan.md`, `agents/reviews/O116-landing.md`). In flight: none. Next: Axel's word on open item 629.
 - 2026-11-02 (O115 landed). O115 is on main (booked under O115 in `plan.md`, `agents/reviews/O115-landing.md`). Choice Z1104. Next: O116, a transcript's first read bounded to the file's end. Open item 629.
