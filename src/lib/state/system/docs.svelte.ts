@@ -8,7 +8,7 @@
 // the engine folder's place in a hub as the manual's answer gives it. Each answer is held in the
 // client state's query client through state/client/queries/queries.svelte.ts, which schedules the
 // fetch on a microtask, so reading this from a $derived never writes state while a derived is
-// running.
+// running. docOfHtml(html) is the same state for HTML a view already holds and fetches nothing.
 //
 // A write is what makes a document stale. The git watcher publishes a `files` message naming the
 // watched root and the folders written in it each time a window of writes ends, and every answer of
@@ -103,6 +103,11 @@ const NOTHING: DocState = {
     engineHub: '',
     engineAt: ''
 };
+
+/** The document of an HTML text a view already holds: no error, not loading, read from nowhere. */
+export function docOfHtml(html: string): DocState {
+    return { ...NOTHING, html, headings: [], parts: [] };
+}
 
 /** One rendered document per project and name, held for one client. */
 export type DocsStore = {

@@ -12,9 +12,9 @@
 // reach that turn from here, so it travels in `results` and the client patches the turn it holds.
 //
 // The Markdown of an assistant turn is rendered here and filtered on the page, the way
-// server/content/docs.ts renders a README: ui/html.ts's sanitise runs over the HTML before
-// views/sessions/terminal/transcript/TranscriptBody.svelte draws it, so the rendering and the
-// filtering stay one each and in one place. Its fenced code is painted by the highlighter's
+// server/content/docs.ts renders a README: views/shared/prose/Markdown.svelte runs ui/html.ts's
+// sanitise over the HTML as it draws an answer of the Terminal view's transcript, so the rendering
+// and the filtering stay one each and in one place. Its fenced code is painted by the highlighter's
 // extension (data/prose/languages.ts, `codeColour`), as a document's is.
 
 import { Marked } from 'marked';
@@ -55,16 +55,39 @@ type Content = {
 
 const noContent = (): Content => ({ said: '', calls: [], results: [] });
 
-/** One line of a tool call's input: the first of the four fields it carries that holds a text. */
+/**
+ * One line of a tool call's input: the first of the fields it carries that holds a text, the ones
+ * nearest what a call acts on before the ones that only describe it.
+ */
 const summaryShape = z
     .object({
         file_path: textShape,
         command: textShape,
         pattern: textShape,
-        description: textShape
+        description: textShape,
+        query: textShape,
+        url: textShape,
+        skill: textShape,
+        summary: textShape,
+        reason: textShape,
+        task_id: textShape,
+        action: textShape
     })
     .transform((input) => {
-        for (const value of [input.file_path, input.command, input.pattern, input.description]) {
+        const fields = [
+            input.file_path,
+            input.command,
+            input.pattern,
+            input.description,
+            input.query,
+            input.url,
+            input.skill,
+            input.summary,
+            input.reason,
+            input.task_id,
+            input.action
+        ];
+        for (const value of fields) {
             if (value) return oneLine(value);
         }
         return '';
@@ -214,6 +237,10 @@ const codexItemShape = quickly(
         path: textShape,
         name: textShape,
         description: textShape,
+        query: textShape,
+        server: textShape,
+        tool: textShape,
+        status: textShape,
         exit_code: z.number().nullish().catch(null)
     })
 );
@@ -252,7 +279,7 @@ function codexRecord(answer: TurnsAnswer, record: Record<string, unknown>, cap: 
         return;
     }
     if (type === '' || CODEX_SILENT.includes(type)) return;
-    answer.turns.push(toolTurn(at, '', type, codexSummary(item), codexOk(item.exit_code)));
+    answer.turns.push(toolTurn(at, '', type, codexSummary(item), codexOk(item)));
 }
 
 /** A said turn, cut at the cap. The assistant's Markdown is rendered, its code painted. */
@@ -281,21 +308,26 @@ function toolTurn(
 }
 
 /**
- * What a Codex item is about: the command it ran, the paths it changed, or what it calls itself.
+ * What a Codex item is about: the command it ran, the paths it changed, its path, its query, the
+ * tool of a server it called, or what it calls itself.
  */
 function codexSummary(item: z.output<typeof codexItemShape>): string {
     if (item.command !== undefined) return oneLine(item.command);
     const paths = (item.changes ?? []).filter((path) => path !== '');
     if (paths.length > 0) return oneLine(paths.join(' '));
-    for (const value of [item.path, item.name, item.description]) {
+    const called = [item.server, item.tool].filter((part) => part).join('.');
+    for (const value of [item.path, item.query, called, item.name, item.description]) {
         if (value) return oneLine(value);
     }
     return '';
 }
 
-/** Whether a Codex item ended well. Only an exit code says so; anything else stays unknown. */
-function codexOk(code: number | null | undefined): boolean | null {
-    return code === null || code === undefined ? null : code === 0;
+/**
+ * Whether a Codex item ended well. It is read from `item_completed`, so the item has ended, and
+ * only a failed status or a non-zero exit code says it went wrong.
+ */
+function codexOk(item: z.output<typeof codexItemShape>): boolean {
+    return item.status !== 'failed' && (item.exit_code ?? 0) === 0;
 }
 
 function oneLine(value: string): string {

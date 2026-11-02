@@ -1,9 +1,10 @@
 <script lang="ts">
     // Layer 3, shared view partial. One Markdown document drawn as prose: the answer is still being
     // read, it failed, or it is the HTML the document rule of data/prose/markdown/markdown.ts
-    // rendered. The doc, help and project views draw a fetched document with it, and
+    // rendered. The doc, help and project views draw a fetched document with it,
     // RenderedMarkdown.svelte draws the text it renders on the page, for the source tab's rendered
-    // half and for the Markdown preview tab.
+    // half and for the Markdown preview tab, and the Terminal view's transcript draws each answer
+    // of a session (views/sessions/terminal/transcript/TranscriptBody.svelte).
     //
     // The HTML is somebody's Markdown turned into markup by marked, so it is sanitised by
     // ui/html.ts and holds only what its profiles allow. The words for the two states the document

@@ -1,12 +1,13 @@
 // Layer 3, view helper. The rules the Terminal view's list and grid go by: whether the list is
 // drawn, the rows of one tab in the tab's order, the key a row answers, a dragged row's new place,
-// the drag a row carries, the grid's font size, the line count a paste is asked about and the
-// listener that holds such a paste, the file drag the grid takes, a dropped path quoted for the
-// shell, a terminal's tooltip, the items of the view's right-click menus, the find bar's count,
-// options and keys, and the handler a link in the grid opens by. The pure ones are here rather than
-// in the components so each is asserted without a DOM, which the grid's paste, drop and drag need
-// to happen at all. How long an armed Kill stays armed, and what else ends it, is
-// list/kill-arm.svelte.ts's; the list's width is list/list-width.svelte.ts's.
+// the drag a row carries, the grid's font size and the zoom that draws a transcript at it, the line
+// count a paste is asked about and the listener that holds such a paste, the file drag the grid
+// takes, a dropped path quoted for the shell, a terminal's tooltip, the items of the view's
+// right-click menus, the find bar's count, options and keys, and the handler a link in the grid
+// opens by. The pure ones are here rather than in the components so each is asserted without a DOM,
+// which the grid's paste, drop and drag need to happen at all. How long an armed Kill stays armed,
+// and what else ends it, is list/kill-arm.svelte.ts's; the list's width is
+// list/list-width.svelte.ts's.
 //
 // The right-click menus are VS Code's terminal menus, with the items oculus runs: the grid's (Copy
 // and Copy as HTML while it holds a selection, Paste, Select All, Clear, then Split Terminal,
@@ -39,6 +40,7 @@ import type { ComposerAgent } from '$lib/state/sessions/terminal/composer/compos
 import { stamp } from '$lib/state/shared/words/format';
 import { t } from '$lib/state/shared/words/text';
 import { terminalFontPx } from '$lib/state/shared/words/appearance';
+import { inBrowser } from '$lib/state/shared/stores/in-browser';
 import type { Terminal } from '$lib/state/sessions/terminals.svelte';
 import type { TerminalChoice } from '$lib/state/sessions/folds';
 
@@ -129,6 +131,17 @@ export function bellMark(mark: (terminal: string | null) => void): {
  */
 export const ROW_DRAG = 'application/x-oculus-terminal-row';
 
+/** A type step before the reader's text scale, read off the body as a CSS token. */
+function stepFontPx(step: '--fs-sm' | '--fs-md'): number {
+    const root = getComputedStyle(document.body);
+    return Number.parseFloat(/[\d.]+px/.exec(root.getPropertyValue(step))?.[0] ?? '');
+}
+
+/** The `--fs-md` step before the reader's text scale. */
+function bodyFontPx(): number {
+    return stepFontPx('--fs-md');
+}
+
 /**
  * The grid's font size: the configured size, else the body type scale times the reader's text
  * scale, read off the body since the scale is a CSS token. Undefined when neither gives a size.
@@ -136,10 +149,20 @@ export const ROW_DRAG = 'application/x-oculus-terminal-row';
 export function gridFontSize(chosen: number | null, scale: number): number | undefined {
     const configured = chosen ?? terminalFontPx();
     if (configured !== null) return configured;
-    const root = getComputedStyle(document.body);
-    const base = Number.parseFloat(/[\d.]+px/.exec(root.getPropertyValue('--fs-md'))?.[0] ?? '');
-    const computed = base * scale;
+    const computed = bodyFontPx() * scale;
     return Number.isFinite(computed) && computed >= 1 ? computed : undefined;
+}
+
+/**
+ * The CSS `zoom` that draws text set in `--fs-md` at the grid's size, or at `--fs-sm` where the
+ * grid is set smaller, since a proportional face below a sidebar's size is hard to read. Where
+ * there is no page to read the tokens off, or no size comes of it, it is 1.
+ */
+export function transcriptZoom(chosen: number | null, scale: number): number {
+    if (!inBrowser()) return 1;
+    const size = Math.max(gridFontSize(chosen, scale) ?? Number.NaN, stepFontPx('--fs-sm') * scale);
+    const zoom = size / (bodyFontPx() * scale);
+    return Number.isFinite(zoom) && zoom > 0 ? zoom : 1;
 }
 
 /**

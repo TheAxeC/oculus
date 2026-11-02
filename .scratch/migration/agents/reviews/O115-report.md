@@ -99,8 +99,9 @@ The brief names no base copy, so the table is from `git status --short`, `git di
 
 | File | Lines now | In the write list |
 | --- | --- | --- |
-| `src/lib/views/sessions/terminal/transcript/TranscriptBody.svelte` | 513 | yes |
-| `src/lib/views/sessions/terminal/transcript/turn-rows.ts` (new) | 136 | yes |
+| `src/lib/views/sessions/terminal/transcript/TranscriptBody.svelte` | 396 | yes |
+| `src/lib/views/sessions/terminal/transcript/TurnRun.svelte` (new) | 158 | yes, the brief's "one component beside it for a run if the size limit asks" |
+| `src/lib/views/sessions/terminal/transcript/turn-rows.ts` (new) | 144 | yes |
 | `src/lib/views/sessions/terminal/terminal-list.ts` | 746 | yes |
 | `src/lib/views/sessions/terminal/bar/TerminalFontTools.svelte` | 40 | yes |
 | `src/lib/views/shared/prose/Markdown.svelte` | 411 | yes |
@@ -114,7 +115,7 @@ The brief names no base copy, so the table is from `git status --short`, `git di
 | `tests/checks/source/html-sites.test.ts` | 1 line changed | NO: the test counts `{@html}` sites and the step removes one, see below |
 | `docs/diagrams/layers.dot`, `layers.svg`, `layer-views.dot`, `layer-views.svg` | counts on edges | NO: output of `npm run diagrams`, see the first section |
 
-`TranscriptBody.svelte` is at 513 of 520. A later step that adds to it needs the split the size rule asks for.
+The line counts above are after repair round 1.
 
 ## Edits to an existing assertion, allow list or predicate
 
@@ -134,7 +135,7 @@ The step adds no test. The one changed line passes on the unchanged tree as well
 4. Codex summary order: command, changes, `path`, `query`, `server.tool`, `name`, `description`. `query` and `server.tool` stand before `name`, so an item carrying both draws what it was about (`{"name":"n","query":"q2"}` gives `q2`). What real items carry beside `query` was not read.
 5. An answer in the same minute as the person's turn above it draws no head, as item 2 words it: the person's head is the last head drawn. Case 7's run prints 1.
 6. Hover on a closed run turns its words to full ink and paints nothing, since item 2 forbids a surface behind a turn over a wallpaper and one rule reads simpler than two.
-7. The zoom is `$state`, taken in an effect and again one frame later, in place of a `$derived`. `drawTheme` (`appearance.svelte.ts`) runs from an effect and writes the body's class after this component's effect, so a read in the same flush sees the old theme's `--fs-md`. `gridFontZoom`'s second read is a frame later, which is how `grid-look.ts` reflows a grid.
+7. The zoom is `$state`, taken in an effect, in place of a `$derived`, since it is taken again from outside the reactive graph. `drawTheme` (`app-theme.ts`) runs from an effect and writes the body's class after this component's effect, so a read in the same flush sees the old theme's `--fs-md`. Repair round 1 says what takes it again.
 8. Headings: `h5` and `h6` take `--fs-lg` with `h1` to `h4`, since `Markdown.svelte` sets no size for them.
 9. The 80ch cap is on `h1` to `h6`, `p`, `ul`, `ol`, `blockquote`. A `pre` keeps the pane's width like a table, since the brief caps prose.
 10. An open run's own line draws no `error` or `running`, since the rows under it do.
@@ -146,7 +147,6 @@ The step adds no test. The one changed line passes on the unchanged tree as well
 
 - Size at the default: `terminal.font_px` is 12.5 and `--fs-md` 13px, so the zoom is 12.5/13 and prose draws at 12.5px and tool rows at about 11.5px (computed, not measured). A theme with another type scale differs: under `body.rice`, 12.5/12.
 - The text scale setting no longer changes the transcript's size while `font_px` is set, which it is by default: `gridFontSize` answers the configured size whatever the scale, and the zoom divides the scale away. It follows from item 6 and matches a grid.
-- A theme whose type scale arrives from an app's file later than one frame leaves the zoom on the old scale until the next change of theme, font or text scale. Not measured.
 - `gridFontZoom` reads `--fs-md` from the body; its fallback of 1 is not exercised by a run.
 - Two tools with one drawn name count apart, as "counted by whole name" says: `mcp__a__x` and `mcp__b__x` draw `x, x`.
 - A turn with `role: 'tool'` and `tool: null`, which the server never writes but `turnShape` allows, draws `Tool` with no outcome.
@@ -213,6 +213,86 @@ Comments and documents re-read:
 | `config/text/views/sessions/terminal.yml` font button labels | still true |
 | `docs/HELP.md` | three bullets added; lines 454-456 still true |
 | `docs/apps.md` | does not describe this |
+
+## Repair round 1
+
+Every item of `briefs/O115-round1.md` is done. Page behaviour in it is checked by reading and is the look's. The verify list ran once in this round, after the last change, so 3 full-list runs in all:
+
+```
+npx vitest run tests/server/sessions/transcripts.test.ts: Tests  15 passed (15)
+ok      prettier (1.0 s): All matched files use Prettier code style!
+ok      ASCII gate (1.1 s)
+ok      svelte-kit sync (2.4 s)
+ok      svelte-check (15.8 s): 1793615809965 COMPLETED 580 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      eslint (16.0 s)
+ok      vitest (41.6 s): Duration  22.91s
+ok      vitest slow (45.3 s): Duration  26.48s
+ok      vitest checks (59.5 s): Duration  40.73s
+test:quick: 62.1 s; every command passed
+```
+
+| Item | State | Where |
+| --- | --- | --- |
+| 1. B1, the observer | DONE | `TranscriptBody.svelte:119-121`; the one-frame retake and the read of `theme()` are gone |
+| 2. B2, the bar | DONE | `TranscriptBody.svelte:311` `border-left: 3px solid var(--accent-txt, var(--accent))` |
+| 3. B3, `runKey` | DONE | `turn-rows.ts`, `runKey`; `chosen` is a `SvelteMap<string, RunChoice>`; `{#each rows as row (row.first)}` is unchanged; the head comment is corrected |
+| 4. B4, the foot | DONE | press: `void tick().then(scrolled)` (line 194). Zoom: `retakeZoom`, line 110 |
+| 5. B5, outcome | DONE | one `.outcome` wrapper in `TurnRun.svelte` (rule at line 152), `.calls` `max-width: 80ch` (line 90) |
+| 6. T2 | DONE | `$effect.pre` reads both props and calls `chosen.clear()` (line 95); `chosenFor` is gone |
+| 7. T3, B6 | DONE | below |
+
+The size rule forced one thing the round did not list: these items took `TranscriptBody.svelte` to 529 lines, past 520, so the run's markup, its snippet and its styles moved to `TurnRun.svelte`. The choices stay in `TranscriptBody.svelte`, as item 3 of the brief says. `TurnRun.svelte` is a new view partial with no new behaviour. `.ts` in it inherits the muted colour and `--fs-sm` from `.calls`, so it sets only what `.ts` sets in the said rows beyond those.
+
+`void [session, agent].join();` in the clearing effect is the form `Graph.svelte:180` uses: eslint refuses `void` on a value that is not a call.
+
+**What `runKey` does on each path.** Run by a case-run program in the scratchpad, gone before this report, which called `groupTurns` and `runKey` on each list:
+
+```
+first read       1:2026-11-02T10:00:00Z
+append           1:2026-11-02T10:00:00Z
+patched result   1:2026-11-02T10:00:00Z
+moved window     1:2026-11-02T10:05:00Z
+no stamp, moved  1: 1:
+```
+
+| Path | Result |
+| --- | --- |
+| A turn appended to the last run | same key, the choice holds |
+| A result patches a call of the run | same key, the choice holds; a patch keeps `at` (`transcript.svelte.ts:159`) |
+| A read from offset 0 replaces the list with a window that starts elsewhere | the index may match and the stamp differs, so the key misses and the run reads as never pressed. The old entry stays in `chosen` until the target changes, unread |
+| A run that begins at a different index in the same list | another key, not chosen |
+| A change of session or agent | `chosen` empties in `$effect.pre`, ahead of the template's redraw |
+| An empty first stamp, or the same index and the same stamp in two windows | the keys are equal, so the choice carries over. This is a limit of the key the ruling names, and it needs a moved window whose first call at that index has no stamp or the same stamp |
+
+**What the observer does on each path.** By reading `ui/theme/theme.ts:138-152` and `ui/theme/app-theme.ts:151-196`; nothing here was run.
+
+| Path | Result |
+| --- | --- |
+| A theme of the configuration | `applyTheme` sets `body.className`; the observer's callback runs as a microtask after that, and `fontZoom` reads the new `--fs-md` |
+| An app's theme from a fetch | `drawTheme` awaits the load, then `paintAppTheme` puts the sheet in `head` and `applyTheme` sets the class in the same synchronous run, so the callback sees the sheet, however late the load |
+| One app theme to another | `document.body.className` is assigned the same class. By the DOM standard an attribute set to its own value still queues a record, so the callback runs; not verified by a run. `fontZoom` and the sheet are the new theme's |
+| A load that fails or is superseded | `current()` is false and nothing is written, or the start theme is drawn through `applyTheme`, as above |
+| A body write with no effect on `--fs-md` (a look class, wallpaper) | the callback computes the same zoom and `retakeZoom` returns with nothing written and no scroll |
+| A font button or a text scale change | the effect re-runs, since `fontZoom` reads both; `retakeZoom` runs and the observer is replaced. The `$state` write is not read by the effect (`untrack`), so it does not re-run itself |
+| Teardown, or a re-run | the cleanup disconnects the observer; a queued callback is dropped by `disconnect` |
+| A callback after a zoom change where `column` is gone | `toFoot` returns on `column === undefined` |
+| No DOM (server render) | effects do not run; `fontZoom` answers 1 through `inBrowser()` |
+
+**The foot, on reading.** A press writes `chosen`, and after `tick()` `scrolled` sets `stuck` from `atFoot`, so a reader at the foot who opens a last run taller than `SLACK` reads as away from the foot and the next append holds the view. A zoom change at `stuck` puts the reader at the foot after `tick()`; away from the foot it moves nothing of its own.
+
+**Visible changes, for the look.**
+
+| Change | Before | After | Cause |
+| --- | --- | --- | --- |
+| Steer box | 12px from the pane's edge | 16px, so narrower by 8px | `.frame` padding `6px 10px 4px` is around the box too |
+| Codex export, a tool line with no exit code | reads running (`server.export.running`) | reads ok (`server.export.ok`) | `codexOk` answers true for an ended item; `transcript-routes.ts:147-151` words it |
+| Right-click on an answer with no selection and no image | the browser's menu | no menu: `ContextMenu.svelte`, `pointed`, prevents the default when nothing is offered | a decision of the brief |
+| A `#fragment` link in an answer | the browser moved the address | `jump.ts`: the address stays, and the heading it names in the `data-instance` box scrolls into view. An answer rendered by `saidTurn` has plain `Marked` headings, so where no heading carries that id the press does nothing | `Markdown.svelte`, `pressed` |
+| The person's bar | `--accent` | `--accent-txt`, which reads differently from the accent in some themes | item 2 |
+| Tool rows on a wide pane | full width, outcome at the pane's right | held to 80ch, outcome near the name | item 5 |
+| A call both failed and running in one closed run | two separate boxes | `error` and `running` side by side | item 5 |
+
+Grep after the round: `grep -nE "used to|no longer|still|..."` over the added comment lines and the two new files has one hit, a line this round removes. `sh utils/unused-exports.sh | grep -c "turn-rows\|TurnRun\|gridFontZoom\|docOfHtml"` prints 0. `LC_ALL=C grep -n '[^ -~]'` over the three transcript files prints nothing. `npm run diagrams` leaves the same four diagram files changed.
 
 ## Case-run programs
 

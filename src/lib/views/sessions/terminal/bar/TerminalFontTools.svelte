@@ -1,7 +1,8 @@
 <script lang="ts">
-    // Layer 3, view partial. The three buttons on a Terminal tab's bar that set the grids' font
-    // size: smaller and larger by one CSS pixel from the size in force, and back to the configured
-    // size. The size is a setting of the ui store, shared by every grid.
+    // Layer 3, view partial. The three buttons on a Terminal tab's bar that set the font size of
+    // the grids and of the transcript: smaller and larger by one CSS pixel from the size in force,
+    // and back to the configured size. The size is a setting of the ui store, shared by every grid
+    // and every transcript body.
 
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { t } from '$lib/state/shared/words/text';

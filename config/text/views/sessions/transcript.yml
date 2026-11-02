@@ -9,7 +9,9 @@ text:
         turn_end: Jump to the last turn
         turn_end_glyph: disclosure
         turn_error: error
-        turn_ok: ok
+        turn_run: '{0} tools: {1}'
+        turn_run_count: '{0} {1}'
+        turn_run_separator: ', '
         turn_running: running
         turn_tool: Tool
         turn_user: You

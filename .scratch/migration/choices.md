@@ -4,6 +4,11 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z1104 (2026-11-02, O115's brief and look, the orchestrator, automode): how the transcript draws
+
+- Chosen: runs start closed; a call that came back draws no tag; the turns zoom to the grid's size and never below `--fs-sm`; no virtual list; no new test or guarded entry.
+- Not chosen: the grid's size with no floor, which drew 10.5 px at Axel's setting, and restyling only the table; both were the lazy options.
+
 ## Z1103 (2026-11-02, O114's look, the orchestrator, automode): where a session with no terminal opens
 
 - Chosen: a new tab reading a session with no terminal opens in the pane of the page's Terminal tab, else where a tab opens by default, since a press in the sessions list otherwise covers the list.

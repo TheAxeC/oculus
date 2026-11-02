@@ -1,7 +1,18 @@
 <script lang="ts">
     // Layer 3, view partial of Terminal.svelte. The conversation of the session a Terminal tab
-    // reads: what was asked, what the agent answered, and every tool it called on the way, oldest
-    // first, drawn in place of the tab's row of grids while the tab's switch stands on Transcript.
+    // reads, oldest first, drawn in place of the tab's row of grids while the tab's switch stands
+    // on Transcript, so that who said what reads at a glance:
+    //
+    // - A person's turn opens an exchange: a line above it, a wider gap, the accent bar and the
+    //   person's words at the size of a row's main words. Off a wallpaper it takes the chip
+    //   surface; over one nothing is painted behind a turn, since the box this view fills is that
+    //   surface.
+    // - An answer draws as a document at full ink. It draws its head only when the minute moved
+    //   since the last head (turn-rows.ts, `groupTurns`).
+    // - Tool calls are muted and small. Calls next to each other make one run, which is one line
+    //   while closed (TurnRun.svelte). A press chooses open or closed and the choice holds; a run
+    //   no press chose stands open while it holds a failed call, whenever that result arrives, so
+    //   a failure is never behind a press.
     //
     // The turns are not in the snapshot. state/sessions/transcript.svelte.ts fetches them for the
     // session on screen, holds them in the client's query client and follows the file from an
@@ -9,23 +20,40 @@
     // asks for the bytes appended since the last read. This component is mounted only while
     // Transcript shows, so a tab on Live fetches and follows nothing.
     //
-    // An assistant turn is rendered Markdown, drawn with {@html} through ui/html.ts's sanitise: the
-    // turn is what an agent wrote into a file on disk, so the markup is filtered to that profile
-    // before it reaches the page. A user turn keeps its own line breaks and is never rendered.
+    // An answer is what an agent wrote into a file on disk. shared/prose/Markdown.svelte draws it,
+    // which sanitises it once and brings the document rules, the Copy control of a code block and
+    // the prose menu. A person's turn keeps its own line breaks and is never rendered.
+    //
+    // The turns draw at the terminal grid's size, never below `--fs-sm`, so the font buttons of the
+    // tab's bar size them as they size a grid. `--fs-*` resolve at the root, so a descendant cannot
+    // rescale them; an inner box inside the scroller takes CSS `zoom` instead (terminal-list.ts,
+    // `transcriptZoom`). The scroller itself is not zoomed, so its measures stay the ones the foot
+    // rule reads.
     //
     // Under the conversation sits the prompt box that steers the session through its terminal, read
     // only for a session with no terminal. A tab opened from an agent row of the Session details
     // reads that subagent's own transcript and has no prompt box, since the agent is steered
     // through the session that started it.
 
-    import Tag from '$lib/ui/controls/Tag.svelte';
+    import { tick, untrack } from 'svelte';
+    import { SvelteMap } from 'svelte/reactivity';
     import Empty from '$lib/ui/frame/Empty.svelte';
+    import Markdown from '$lib/views/shared/prose/Markdown.svelte';
     import SteerBox from '$lib/views/shared/sessions/SteerBox.svelte';
-    import { sanitise } from '$lib/ui/html';
     import { clock } from '$lib/state/shared/words/format';
     import { t } from '$lib/state/shared/words/text';
     import { followTab, type Turn } from '$lib/state/sessions/transcript.svelte';
     import { useState } from '$lib/state/client/use';
+    import { transcriptZoom } from '../terminal-list';
+    import TurnRun from './TurnRun.svelte';
+    import {
+        groupTurns,
+        relativeLink,
+        runKey,
+        runOpen,
+        turnDocs,
+        type RunChoice
+    } from './turn-rows';
 
     type Props = {
         /** The session the tab reads. */
@@ -41,7 +69,8 @@
     const {
         selectors: { sessionById },
         terminals: { terminalOfSession },
-        transcripts: { follow, showing, turnsFor }
+        transcripts: { follow, showing, turnsFor },
+        ui: { terminalFont, textScale }
     } = useState();
 
     const record = $derived(sessionById(session));
@@ -53,8 +82,57 @@
     const sessionId = $derived(record?.id ?? '');
     const held = $derived(turnsFor(sessionId, agent));
     const turns = $derived(held.turns);
+    const rows = $derived(groupTurns(turns));
 
-    let column: HTMLDivElement | undefined = $state();
+    const docOf = turnDocs();
+
+    /** What a press chose for each run, by `runKey`. */
+    const chosen = new SvelteMap<string, RunChoice>();
+
+    /**
+     * What the choices belong to. The props are read through the tab's target, a new object at each
+     * sessions message, so an effect reading them re-runs at every message; a derived of the words
+     * changes only when the session or the agent does.
+     */
+    const target = $derived(JSON.stringify([session, agent]));
+
+    // One component outlives its target, and a run's key means nothing in another transcript, so
+    // a change of the session or the agent empties the choices before the new turns are drawn.
+    $effect.pre(() => {
+        if (target !== '') chosen.clear();
+    });
+
+    /** The zoom of the box of turns, as `transcriptZoom` gives it. */
+    function fontZoom(): number {
+        return transcriptZoom(terminalFont(), textScale() ?? 1);
+    }
+
+    let zoom = $state(fontZoom());
+
+    /** Take the zoom again; once a new one is drawn, a reader who was at the foot stays there. */
+    function retakeZoom(): void {
+        const next = fontZoom();
+        if (next === untrack(() => zoom)) return;
+        zoom = next;
+        void tick().then(() => {
+            if (stuck) toFoot();
+        });
+    }
+
+    // The zoom follows the font setting and the text scale, which this effect reads. A theme lands
+    // on the body's attributes whenever its file arrives, which `--fs-md` is read through, so the
+    // observer takes the zoom again however late that is.
+    $effect(() => {
+        retakeZoom();
+        const watch = new MutationObserver(retakeZoom);
+        watch.observe(document.body, { attributes: true, attributeFilter: ['class', 'style'] });
+        return () => {
+            watch.disconnect();
+        };
+    });
+
+    /** The scroller, null once the component is torn down. */
+    let column: HTMLDivElement | null | undefined = $state();
 
     /** The session whose turns are on screen. A change to it sends the column to the foot. */
     let shown = '';
@@ -81,11 +159,13 @@
 
     $effect(() => {
         const id = sessionId;
-        // The count is read here as well as the id, so an appended turn re-runs this too; then the
-        // column follows the newest turn only if the reader was at the foot before it was appended.
-        const count = turns.length;
+        // The list is read here as well as the id, and an append or a patched result makes a new
+        // list, so either re-runs this; then the column follows the newest turn only if the reader
+        // was at the foot before. A result that opens a run grows the column as an append does. A
+        // press on a run is not read here, so it moves nothing.
+        const list = turns;
         const box = column;
-        if (box === undefined || count === 0) return;
+        if (!box || list.length === 0) return;
         const fresh = id !== shown;
         if (!fresh && !stuck) return;
         shown = id;
@@ -98,36 +178,28 @@
     }
 
     function scrolled(): void {
-        if (column !== undefined) stuck = atFoot(column);
+        if (column) stuck = atFoot(column);
     }
 
     /** Scroll to the newest turn, which the tab's End tool asks for. */
     export function toFoot(): void {
-        if (column === undefined) return;
+        if (!column) return;
         column.scrollTop = column.scrollHeight;
     }
 
-    /** What the block is labelled: who said it, or that a tool was called. */
-    function roleLabel(role: string): string {
-        if (role === 'user') return t('sessions.turn_user');
-        if (role === 'assistant') return t('sessions.turn_assistant');
-        return t('sessions.turn_tool');
+    /** The head's label: who said it. */
+    function roleLabel(turn: Turn): string {
+        return turn.role === 'user' ? t('sessions.turn_user') : t('sessions.turn_assistant');
     }
 
-    /** The tag on a tool turn: how the call ended, or that it is still out. */
-    function okLabel(ok: boolean | null): string {
-        if (ok === null) return t('sessions.turn_running');
-        return ok ? t('sessions.turn_ok') : t('sessions.turn_error');
-    }
-
-    /** The hue of that outcome: green for a call that came back, red for one that failed. */
-    function okTone(ok: boolean | null): string | undefined {
-        if (ok === null) return undefined;
-        return ok ? 'green' : 'red';
-    }
-
-    function key(turn: Turn, at: number): string {
-        return `${at}:${turn.at ?? ''}`;
+    /**
+     * A press on a run closes it or opens it. Once drawn the foot is read again, since the press
+     * moved the foot and not the reader, so one who opened the last run stays where it was opened
+     * when the next turn is appended.
+     */
+    function pressRun(key: string, open: boolean): void {
+        chosen.set(key, open ? 'closed' : 'opened');
+        void tick().then(scrolled);
     }
 </script>
 
@@ -144,28 +216,48 @@
                 <Empty message={t('sessions.turns_empty')} glyph={t('sessions.empty_glyph')} />
             {/if}
         {:else}
-            {#each turns as turn, at (key(turn, at))}
-                <div class="turn {turn.role}">
-                    <div class="head">
-                        <span class="who">{roleLabel(turn.role)}</span>
-                        <span class="ts">{clock(turn.at)}</span>
-                        {#if turn.tool !== null}
-                            <span class="name">{turn.tool.name}</span>
-                            <span class="sum" title={turn.tool.summary}>{turn.tool.summary}</span>
-                            <Tag label={okLabel(turn.tool.ok)} tone={okTone(turn.tool.ok)} />
-                        {/if}
-                    </div>
-                    {#if turn.role === 'assistant'}
-                        <!-- eslint-disable-next-line svelte/no-at-html-tags -- the sanitiser writes this -->
-                        <div class="doc">{@html sanitise(turn.html)}</div>
-                    {:else if turn.role === 'user'}
-                        <div class="said">{turn.text}</div>
+            <div class="turns" style:zoom>
+                {#each rows as row (row.first)}
+                    {#if row.kind === 'said'}
+                        {@const turn = row.turn}
+                        <div class="turn" class:user={turn.role === 'user'}>
+                            <div class="body">
+                                {#if row.head}
+                                    <div class="head">
+                                        <span class="who">{roleLabel(turn)}</span>
+                                        <span class="ts">{clock(turn.at)}</span>
+                                    </div>
+                                {/if}
+                                {#if turn.role === 'user'}
+                                    <div class="said">{turn.text}</div>
+                                {:else}
+                                    <div class="answer">
+                                        <Markdown
+                                            doc={docOf(turn)}
+                                            loading=""
+                                            failed=""
+                                            onlink={relativeLink}
+                                        />
+                                    </div>
+                                {/if}
+                                {#if turn.cut}
+                                    <p class="cut">{t('sessions.turn_cut')}</p>
+                                {/if}
+                            </div>
+                        </div>
+                    {:else if row.kind === 'run'}
+                        {@const key = runKey(row)}
+                        {@const open = runOpen(chosen.get(key), row.calls)}
+                        <TurnRun
+                            calls={row.calls}
+                            {open}
+                            onpress={() => {
+                                pressRun(key, open);
+                            }}
+                        />
                     {/if}
-                    {#if turn.cut}
-                        <p class="cut">{t('sessions.turn_cut')}</p>
-                    {/if}
-                </div>
-            {/each}
+                {/each}
+            </div>
         {/if}
     </div>
     {#if record !== null && agent === ''}
@@ -174,32 +266,65 @@
 </div>
 
 <style>
-    /* The tab's flush box insets it less than a pane's body; this padding makes up the rest, so the
-       turns stand as far from the pane's edge as a pane's text does. */
+    /* The tab's body insets this frame 4px 6px 6px; this padding brings the turns to 16px from the
+       pane's edge, wider than a pane's text, since a long conversation is read here. */
     .frame {
         display: flex;
         flex: 1 1 auto;
         flex-direction: column;
         min-width: 0;
         min-height: 0;
-        padding: 6px 6px 4px;
+        padding: 6px 10px 4px;
         box-sizing: border-box;
     }
 
+    /* The right padding keeps the words off the scrollbar this box draws at its edge. */
     .chat {
         display: flex;
         flex-direction: column;
-        gap: 10px;
         flex: 1 1 auto;
         min-height: 0;
         overflow: auto;
+        padding-right: 8px;
     }
 
-    /* A turn's words are the size of a sidebar's, `--fs-sm`, and a heading of an answer one step
-       above, `--fs-md`. */
+    .turns {
+        display: flex;
+        flex: none;
+        flex-direction: column;
+        gap: 10px;
+        min-width: 0;
+        line-height: 1.5;
+    }
+
     .turn {
         min-width: 0;
-        font-size: var(--fs-sm);
+    }
+
+    /* A person's turn opens an exchange: the line above it with a wider gap on either side. */
+    .user {
+        margin-top: 10px;
+        padding-top: 16px;
+        border-top: 1px solid var(--line);
+    }
+
+    .user:first-child {
+        margin-top: 0;
+        padding-top: 0;
+        border-top: 0;
+    }
+
+    .user .body {
+        padding: 4px 10px;
+        border-left: 3px solid var(--accent-txt, var(--accent));
+        border-radius: var(--radius-sm);
+        background: var(--chip);
+    }
+
+    /* The box this view fills carries the translucent surface over a picture, and a second one
+       inside it would read as a nearly solid layer, so a person's turn paints none of its own. */
+    :global(body.wall) .user .body {
+        background: transparent;
     }
 
     /* The head of a turn is one line of the tree's row height. */
@@ -220,6 +345,10 @@
         color: var(--muted-txt, var(--muted));
     }
 
+    .user .who {
+        color: var(--accent-txt, var(--accent));
+    }
+
     .ts {
         flex: 0 0 auto;
         color: var(--muted-txt, var(--muted));
@@ -227,80 +356,44 @@
         font-size: var(--fs-sm);
     }
 
-    .name {
-        flex: 0 0 auto;
-        font-family: var(--font-mono);
-        color: var(--ink-txt, var(--ink));
-    }
-
-    .sum {
-        min-width: 0;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-sm);
-    }
-
     .said {
-        margin-top: 2px;
-        padding-left: 8px;
-        border-left: 2px solid var(--line);
+        max-width: 80ch;
         white-space: pre-wrap;
         overflow-wrap: anywhere;
         color: var(--ink-txt, var(--ink));
+        font-size: var(--fs-md);
+    }
+
+    /* A heading of an answer sits under the view's own title, so none draws larger than this step.
+       The selector names the answer and the document, which outranks Markdown.svelte's sizes. */
+    .answer :global(.doc h1),
+    .answer :global(.doc h2),
+    .answer :global(.doc h3),
+    .answer :global(.doc h4),
+    .answer :global(.doc h5),
+    .answer :global(.doc h6) {
+        font-size: var(--fs-lg);
+    }
+
+    /* A wide pane draws no very long line of prose. A table and a code block keep the pane's width
+       and scroll in their own box. */
+    .answer :global(.doc h1),
+    .answer :global(.doc h2),
+    .answer :global(.doc h3),
+    .answer :global(.doc h4),
+    .answer :global(.doc h5),
+    .answer :global(.doc h6),
+    .answer :global(.doc p),
+    .answer :global(.doc ul),
+    .answer :global(.doc ol),
+    .answer :global(.doc blockquote) {
+        max-width: 80ch;
     }
 
     .cut {
         margin: 2px 0 0;
         font-size: var(--fs-sm);
         color: var(--muted-txt, var(--muted));
-    }
-
-    /* The document block of a rendered answer, as the project view draws a README. */
-    .doc {
-        margin-top: 2px;
-        font-size: var(--fs-sm);
-        color: var(--ink-txt, var(--ink));
-        overflow-wrap: anywhere;
-    }
-
-    .doc :global(h1),
-    .doc :global(h2),
-    .doc :global(h3),
-    .doc :global(h4) {
-        margin: 10px 0 4px;
-        font-size: var(--fs-md);
-        color: var(--ink-txt, var(--ink));
-    }
-
-    .doc :global(p),
-    .doc :global(ul),
-    .doc :global(ol) {
-        margin: 4px 0;
-    }
-
-    .doc :global(a) {
-        color: var(--accent-txt, var(--accent));
-    }
-
-    .doc :global(code),
-    .doc :global(pre) {
-        font-family: var(--font-mono);
-        font-size: var(--fs-sm);
-    }
-
-    /* The box this view fills carries the translucent surface over a picture, and a second one
-       inside it would read as a single nearly solid layer, so the code block paints nothing. */
-    :global(body.wall) .doc :global(pre) {
-        background: transparent;
-    }
-
-    .doc :global(pre) {
-        padding: 6px 8px;
-        overflow-x: auto;
-        background: var(--chip);
-        border-radius: 4px;
     }
 
     /* The terminal shape: a log, in the face a log is read in. */

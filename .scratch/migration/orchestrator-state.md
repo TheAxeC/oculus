@@ -24,19 +24,6 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 
 ```yaml
 dispatch:           # steps in flight, up to six (Z632)
-- step: O115
-  base: a1517558b
-  worktree: .agents/worktrees/migration-O115
-  executor: agent
-  worker: claude:opus
-  session_id: af0f8337804ff4ab6 (claude-opus-5-5)
-  launched: 2026-11-02
-  report: .scratch/migration/agents/reviews/O115-report.md
-  round: 1
-  brief_check: agents/reviews/O115-brief-check.md (a1e4264a211c12492, claude-opus-5-5, 241923 tokens, 22 tool uses, 10 min 27 s)
-  builder_usage: 280197 tokens, 81 tool uses, 20 min 27 s
-  reviewer_report: .scratch/migration/agents/reviews/O115-refuter.md (af9f74e71204fd6e5, claude-opus-5-5, 244101 tokens, 32 tool uses, 13 min 5 s)
-  landing: not-started
 ```
 
 ## The standing demands (from Axel, in force)
@@ -175,6 +162,8 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 ## Open items (only what Axel must rule on; every report tells him these in plain words, decisions first, until he has ruled)
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
+
+- Open item 629 (2026-11-02, O115's look): the transcript and the terminal grid share one text size setting, and Axel's grid is 10.5 px, too small for proportional text, so the transcript now stops at 12 px and the smaller and larger buttons change nothing there until the size passes 12. (a) a key of its own, `terminal.transcript_font_px`, written by the buttons while the Transcript is showing, left out meaning 12 px: both sizes are then free, at the cost of one more setting. (b) keep the one setting and the 12 px floor, which adds no key and leaves the buttons without effect below 12 at his setting; this is the lazy option. Recommended: (a).
 
 
 
@@ -763,6 +752,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-11-02 (O115 landed). O115 is on main (booked under O115 in `plan.md`, `agents/reviews/O115-landing.md`). Choice Z1104. Next: O116, a transcript's first read bounded to the file's end. Open item 629.
 - 2026-11-02 (O114 landed; O110 to O114 done). O114 is on main. In flight: none. Next: Axel's next word. Open items: none. Choice Z1103 booked. The saved layout's Sessions page was changed with a backup at `~/.oculus/layouts.before-O114.json`; a running 1.0.0 page holds its own copy and can write the old tabs back, so it is read again after his next app update.
 - 2026-10-31 (1.0.0 replaced on f6c42d1a6). At Axel's word the three archives were rebuilt from f6c42d1a6, the macOS bundle's server answered 200 on `/` and `/api/health`, `v1.0.0` was recreated on that commit, the downloaded zip equals the local one, and the app is installed in `~/Applications`. In flight (0 of 6). Open items: none.
 - 2026-10-31 (1.0.0 released again). The three archives were rebuilt from e584a8a02; the macOS bundle's server started under its own Electron and answered, and `tests/server/desktop/start.test.ts` passed on main, 5 of 5. `v1.0.0` was deleted and recreated on e584a8a02 with those archives, and the app is installed in `~/Applications`. In flight (0 of 6). No step is left unticked. Open items: none.

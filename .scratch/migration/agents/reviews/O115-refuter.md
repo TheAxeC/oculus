@@ -227,3 +227,163 @@ DECLINED TO JUDGE
 - The status count covers local rollouts only.
 
 Usage: agent af9f74e71204fd6e5, claude-opus-5-5; 244101 tokens, 32 tool uses, 13 min 5 s.
+
+## Repair round 1, refuted
+
+O115 review over repair round 1, base a1517558b, worktree /Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O115. Nothing changed in the worktree; `git status --short` shows 21 lines before and after. Scratch programs lived in the session scratchpad and are deleted.
+
+Round result: 5 of 7 items closed. Item 6 (T2) is not closed and is a regression: a press on a run is lost at the next sessions message in a live tab. Item 7 is closed except one false row. Item 3 of the brief and cases 4 and 5 fall with it.
+
+VERIFICATION LINES
+
+`npx vitest run tests/server/sessions/transcripts.test.ts`:
+ Test Files  1 passed (1)
+      Tests  15 passed (15)
+
+`npm run test:quick`:
+ok      prettier (0.7 s): All matched files use Prettier code style!
+ok      ASCII gate (0.8 s)
+ok      svelte-kit sync (2.0 s)
+ok      eslint (2.4 s)
+ok      svelte-check (8.9 s): 1793616190002 COMPLETED 580 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest (31.8 s): Duration  21.07s (transform 38.34s, setup 0ms, import 64.20s, tests 2.63s, environment 354ms)
+ok      vitest slow (34.2 s): Duration  23.49s (transform 12.96s, setup 0ms, import 17.63s, tests 7.06s, environment 1ms)
+ok      vitest checks (50.7 s): Duration  40.06s (transform 14.11s, setup 0ms, import 30.02s, tests 83.25s, environment 2ms)
+test:quick: 52.9 s; every command passed
+test:quick: not covered: tests that reach no changed file within the import depth, other than the checks under tests/checks/source and tests/checks/tree, which run for any change under src, tests or utils; the build, the lint of unchanged files
+None of these lines exercises finding B1 below: no test mounts the component.
+
+Delta: `diff -u` of the snapshot against the worktree over files.txt shows changes in six paths only: the four diagram files (edge counts 1530 to 1532, 129 to 131), `TranscriptBody.svelte`, `turn-rows.ts`. `TurnRun.svelte` is new. No test file changed in the round.
+
+The report's case-run programs, extracted from its text and rerun on the worktree. Every row of its table reproduces, including:
+  case 1 {"file_path":"a","query":"b"} => "a"
+  case 8 {"type":"McpToolCall","status":"failed","server":"s","tool":"t"} => {"id":"","name":"McpToolCall","summary":"s.t","ok":false}
+  case 2 mixed  [ 'user@0', 'run@1x2', 'assistant@3', 'run@4x1' ]
+  case 3 ask    17 tools: WebSearch 15, Write, Bash
+  case 4 first  1 1 calls 2 3
+  case 5 closed by press, failed  false says failed true
+  case 6 "mcp__a__" => "mcp__a__" "mcp__a__"
+  case 7 same minute, two days    2
+  doc held per turn object true between components false
+My own `runKey` run, for first read, append, moved window, no stamp: `[ '1:a' ] [ '1:a' ] [ '1:e' ] [ '1:' ]`.
+
+ROUND ITEMS
+
+1. B1, observer: closed. Every path through `drawTheme` (`app-theme.ts:178-195`) ends in `applyTheme`, whose `body.className` write (`theme.ts:146`) follows the sheet write in the same synchronous run, so the microtask read sees the new `--fs-md`. `--text-scale` is on the root and is not watched, which is safe: the regex in `bodyFontPx` takes the px inside `calc(13px * ...)` and the scale comes from the store.
+2. B2, bar: closed. `TranscriptBody.svelte:311` matches the form of `Markdown.svelte:391`.
+3. B3, `runKey`: closed. The each key stays `row.first`; the head comment is true.
+4. B4, foot: closed by reading (`TranscriptBody.svelte:110-112`, `:194`), with B2 below on the path after teardown.
+5. B5, outcome: closed. One wrapper, `.calls` at 80ch. See B3 below on what the report says of it.
+6. T2: NOT closed, see B1 below. This finding was closed by removing a check that was needed.
+7. T3, B6: closed except one row. The four visible changes are all there. The row "`toFoot` returns on `column === undefined`" is false, see B2 below.
+
+VERDICTS, WHAT TO BUILD (whole diff since the base)
+
+1. One document rule set: holds.
+2. Who said what: holds.
+3. A run of tool calls is one line: violated, "A press chooses and the choice holds". See B1. Grouping, words, states and tags hold.
+4. Every call says what it was about: holds.
+5. Readable: holds.
+6. The font buttons work here: holds; the first review's violated state is fixed.
+7. Words and docs: holds.
+
+VERDICTS, CASES
+
+1. Summary: met.
+2. Grouping: met.
+3. Run words: met.
+4. Appended turn: partial. First index met (printed 1 and 1). "Keeps its chosen state" unmet in a live tab backed by a terminal, see B1.
+5. Failure: partial. Open with no press met. "Closed by a press, stays closed" unmet in that tab: the next sessions message reopens the failed run.
+6. Names: met.
+7. Heads: met.
+8. Codex: met.
+9. Change of target: met by reading; the states clear, and they also clear when the target has not changed (B1).
+10 to 18: not verifiable here. Case 12 and case 16 at the look should be read knowing B1: a live session shows it, an ended one does not.
+
+FINDINGS
+
+Spec
+
+S1, see B1: item 3's "the choice holds" fails.
+The move to `TurnRun.svelte` is within the brief: the report gives 529 lines past 520, and the write list names "one component beside it". The markup is otherwise unchanged apart from the outcome wrapper. No reach beyond the findings.
+
+Proof
+
+P1, low. Sentences of the report the round made stale, against `spec.md:14` (a `file:line` is taken after the last change).
+- The results row of case 9 still says `$effect.pre` "clears `chosen` when `JSON.stringify([session, agent])` changes"; that text is gone.
+- The DONE row of item 5 cites `TranscriptBody.svelte:343`, `406`, `436`, `323`, `334`; those rules are now at 289, 352 and 382, 269, 280.
+- The DONE row of item 6 cites `:220`; `style:zoom` is at 211.
+- "Run by the same programs after the last change" predates the round; my rerun agrees on every row except the stale text of case 9.
+Failure scenario: a look read against the first report section looks for code that is not there.
+
+Standards
+
+None new. `TurnRun.svelte:58` and `:78` are the two over-long `eslint-disable` lines, moved and disclosed as decision 13. `void [session, agent].join();` (`TranscriptBody.svelte:94`) goes with the fix of B1. The comment at `:91-92` ("a change of the session or the agent empties the choices") states what B1 shows is not the whole of it.
+
+Behaviour
+
+B1, high. Removing the guard makes every sessions message wipe the choices of a live tab.
+Place: `TranscriptBody.svelte:93-96`.
+  $effect.pre(() => {
+      void [session, agent].join();
+      chosen.clear();
+  });
+Wrong: the effect does not depend on the two strings. It depends on the parent's `target` signal, and T2's premise, in the first refuter report and in the ruling that took it, is false.
+- `Terminal.svelte:378` passes `session={session.target.session}`. A member expression gets no derived. Compiled from the real markup:
+    get session() {
+        return $$props.session.target.session;
+    },
+- `tab-session.svelte.ts:24-27`: `running = $derived(sessionOfTerminal(tab.shown))`, and `target = $derived(tab.transcript ?? (running === null ? null : { session: running.id, agent: '' }))`.
+- `sessionOfTerminal` returns a record out of `entities.sessions()`, and each frame goes through `JSON.parse` (`socket.svelte.ts:420`), so every sessions message gives a new record, a new literal and a new `target`. `TranscriptBody.svelte:76-80` says the same about the record.
+Run: a scratchpad model of exactly that chain, compiled by the worktree's Svelte 5.57.1 with `compileModule` and run under its client runtime with `node --conditions=browser`, holding the worktree's effect text:
+  after mount: effect runs 1 chosen 0
+  after a press: effect runs 1 chosen 1
+  same session, new record: effect runs 2 session s1 chosen 0
+  tab holding its own transcript, new record: effect runs 3 chosen 1
+The string is `s1` on both sides of the wipe. The last line's third run is the model's own layout write that moved the tab to a held transcript; a new record alone does not clear such a tab. By reading, not run, such a tab does clear on a layout write, since `readTab` parses a new object (`terminal-tabs.ts:152-154`).
+Failure scenario: in a tab on Transcript over a terminal running a session, the reader opens a closed run. The next sessions message, which arrives as the transcript is written, closes it. A reader who closes a failed run sees it reopen. The same applies to every run in the list. An ended session sends no such change, so a look on an ended transcript passes.
+Close: the compare comes back in some form. A derived string of the two props read by the effect would filter it (judgment, not run). The removed `chosenFor` compare did this job; the first refuter's T2 finding was wrong, so it is the ruling that needs reversing, not the builder's execution of it.
+
+B2, low. `column` is null after teardown, so the guards let it through.
+Place: `TranscriptBody.svelte:173`, `:178`, reached from `:110-112`, `:194`.
+  if (column !== undefined) stuck = atFoot(column);
+  if (column === undefined) return;
+Wrong: `node_modules/svelte/src/internal/client/dom/elements/bindings/this.js` calls `update(null, ...parts)` in the component's teardown, so `column` becomes null, and the type `HTMLDivElement | undefined` does not say so. The base had these guards, but only an `onscroll` handler and an exported call could reach them, neither after teardown. The round adds two `tick()` continuations. The report's row "`toFoot` returns on `column === undefined`" is false.
+Failure scenario: the component is torn down between the write and the end of the tick. `atFoot(null)` or `null.scrollTop` throws, as an unhandled rejection in the console. It needs an unmount inside the same microtask chain; I found no path that does it (a press or a theme landing unmounts nothing), so it costs nothing on screen.
+
+B3, low. What `.calls` at 80ch does, and how the report words it.
+Place: `TurnRun.svelte:90`.
+`ch` is taken at `--fs-sm`, since `.calls` sets its own size, so the box is narrower than the prose beside it by the ratio of the steps.
+Failure scenario 1: on a wide pane a single call's long Bash command, which drew in full across the pane, is now cut well before the pane's edge, after the clock and the name, with the rest in the title. A closed run's words cut at the same width. The run words still cut "at the row's edge" as item 3 says, since the row now ends there. It follows from the ruling. The report's row says "held to 80ch, outcome near the name" and does not state the earlier cut.
+Failure scenario 2: `.outcome` keeps `margin-left: auto`, so on a call with a short summary `error` stands at the right of the 80ch box, not near the name. It is nearer than the pane's edge. Pixel widths not measured.
+
+The points you listed:
+- MutationObserver firing for changes of its own: `grep` over `src` finds three writers of body class or style. `theme.ts:146`; `Sash.svelte:54-55`, `:69-70`, in `down` and `up` only, not `move`; `drag.svelte.ts:466`, `:474`, on start and end of a drag. There is no `svelte:body`. Nothing writes on a timer or on each message. The effect that calls `drawTheme` (`appearance.svelte.ts:118-163`) reads the theme, offers, wall and looks, not the sessions channel. Cost per batch of records: one `getComputedStyle(document.body)` and one custom property read per mounted transcript. By judgment that forces a style pass early and no layout; not measured. A sash press writes two attributes in one task, giving one callback.
+- A zoom set in its own observer loop: no. `style:zoom` writes on `.turns`; the observer watches body attributes with no `subtree`. `toFoot` writes `scrollTop`. The effect reads `zoom` only under `untrack`.
+- `tick()` after unmount: B2.
+- TurnRun props: `calls`, `open`, `onpress` are typed and read. `key` and `open` are the each block's `{@const}`, and each row builds its own closure, so a press reaches `pressRun` with that run's key and its open state at the time of the press. `RowButton`'s `onclick` passes the event, which `onpress` ignores. By reading; the press is the look's. The choice it writes is then lost per B1.
+- `.calls` 80ch cut of the closed row: B3.
+- `runKey` limit the builder names: not a finding. `at` is the line's stamp (`turns.ts:190`, `:273`). A shared key after a moved window needs an empty stamp at one index, or two tool calls with one stamp, each opening a run at the same index. With `first` above 0, each must follow a said turn, so a tool, a text and a tool on one stamp. With `first` 0, a window that opens inside one batch of calls, where the old and new run are parts of one run. The result is one choice carried to a neighbouring run. Old entries stay in `chosen` until the target changes, unread, bounded by presses.
+
+No finding was closed by loosening a test: `tests/` is unchanged in the round, and the floor at `html-sites.test.ts:242` stands at 32 as judged. Case-run programs in the round follow `spec.md:66`.
+
+DECLINED TO JUDGE
+
+- Cases 10 to 18: a page is needed.
+- How often a sessions message arrives in a live session: not measured. The model shows one message is enough.
+- Whether `className` set to its own value queues a record in the running browser: the report cites the DOM standard, and neither it nor I ran it. The look can settle it with one app theme to another.
+- Pixel width of 80ch at `--fs-sm` under zoom.
+- `npm run diagrams`: it writes files, so not run. The diagram deltas in the round are the counts above.
+- `npm run test:quick` was run in the form your prompt names, not with `-- --base <base>`.
+
+Usage: agent ae1f26bb6a508b3fd, claude-opus-5-5, 188456 tokens, 25 tool uses, 7 min 14 s.
+
+## Closed
+
+- First review S1 to S4, P1, P2, T1, T3, B6: stand as judged, reported in `O115-report.md`.
+- First review B1 to B5, T2: repair round 1.
+- Round B1 (high), a press lost at each sessions message: fixed at landing. The ruling on T2 was the orchestrator's error. A derived string of the session and agent is what the clearing effect reads. To verify on a live session on 8790.
+- Round B2: fixed at landing, `column` typed with null and the guards read its truth.
+- Round B3: stands as built, a long command cut at 80ch with the rest in the row's title, and a short call's `error` at the right of that box.
+- Round P1: stale `file:line` citations in the report stand in the report's first sections, the round's section being the current one.
+- `runKey` limit: no finding, stands.

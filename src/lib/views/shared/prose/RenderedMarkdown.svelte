@@ -33,7 +33,7 @@
     import { getContext } from 'svelte';
     import Markdown from './Markdown.svelte';
     import { blockMarkdownParts, type MathDrawing } from '$lib/ui/html';
-    import type { RenderedHeading } from '$lib/state/system/docs.svelte';
+    import { docOfHtml, type RenderedHeading } from '$lib/state/system/docs.svelte';
     import { STATE_KEY } from '$lib/state/client/use';
     import type { ClientState } from '$lib/state/client/context';
     import { noteDrawing } from '$lib/state/sources/explorer/notes/note-press';
@@ -132,20 +132,7 @@
             client.notices.post(sentence, { tone: 'warning' })
         );
     }
-    const doc = $derived({
-        html: drawn.html,
-        headings: drawn.headings,
-        frontmatter: null,
-        error,
-        loading,
-        parts: [],
-        path: '',
-        manual: '',
-        engine: false,
-        hub: '',
-        engineHub: '',
-        engineAt: ''
-    });
+    const doc = $derived({ ...docOfHtml(drawn.html), headings: drawn.headings, error, loading });
 
     $effect(() => {
         onheadings?.(drawn.headings);
