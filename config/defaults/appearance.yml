@@ -76,9 +76,10 @@ rice:
 
 
 # === Terminal ===============================================================
-# The terminal grid paints its own text and cannot inherit the page's size, and a terminal tab's transcript draws at the same size, never below the theme's `--fs-sm` token. `font_px` is CSS pixels; leave the key out to follow the theme's `--fs-md` token instead.
+# The terminal grid paints its own text and cannot inherit the page's size. `font_px` is CSS pixels; leave the key out to follow the theme's `--fs-md` token instead.
 terminal:
   font_px: 12.5
+  # transcript_font_px: 14    # text size of a terminal tab's transcript in CSS pixels; left out, it follows the theme's `--fs-sm` token
   mac_option_is_meta: false   # true makes Option send Meta on macOS, so Option+B and Option+F move by word; false types the characters Option makes
   copy_on_selection: false    # true copies a selection to the clipboard as soon as it is made
   cursor_style: block         # block | line | underline (line is a thin bar)

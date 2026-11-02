@@ -72,7 +72,14 @@ options:
     terminal.font_px:
         heading: terminal
         section: Display and keys
-        help: Text size of the terminal grid and of a terminal tab's transcript in CSS pixels; the transcript never draws below the theme's --fs-sm token. The grid paints its own text and cannot inherit the page's size; a value is clamped to 6 to 40. Leaving the key out makes the terminal follow the theme's --fs-md token. The text size buttons of a terminal tab write this key.
+        help: Text size of the terminal grid in CSS pixels. The grid paints its own text and cannot inherit the page's size. Leaving the key out makes the terminal follow the theme's --fs-md token. The text size buttons of a terminal tab write this key while a grid shows.
+        control: number
+        min: 6
+        max: 40
+    terminal.transcript_font_px:
+        heading: terminal
+        section: Display and keys
+        help: Text size of a terminal tab's transcript in CSS pixels. Leaving the key out follows the theme's --fs-sm token. The text size buttons of a terminal tab write this key while the Transcript shows.
         control: number
         min: 6
         max: 40

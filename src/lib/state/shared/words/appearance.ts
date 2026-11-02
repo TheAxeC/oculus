@@ -1,14 +1,15 @@
 // Layer 2, client state. The appearance options as the page reads them out of the merged config:
 // the theme list's order, the class string each theme puts on the body, the words it is offered
 // under, the glyph drawn before them and the group it is drawn in, the wallpaper's numbers, the
-// terminal grid's text size, cursor, Option key and copy-on-selection settings, the code theme of
-// the editors, what a pane's top row draws (`show_tabs`, `editor_actions`), and the look
-// (`configuredLook`): the theme, the theme a page in the desktop app's window starts on, the text
-// size, the terminal themes' three settings, the wallpaper's and the CRT overlay's switches and the
-// status bar's three values. It is installed the way the tone vocabulary is: the server ships these
-// keys as the page's data at first load, and every later edit of oculus's defaults, the hub's
-// settings file or the workspace file's `settings:` arrives on the `config` channel, so a theme is
-// added by editing YAML and nothing else.
+// text sizes of the terminal grid and the transcript, the grid's cursor, Option key and
+// copy-on-selection settings, the code theme of the editors, what a pane's top row draws
+// (`show_tabs`, `editor_actions`), and the look (`configuredLook`): the theme, the theme a page in
+// the desktop app's window starts on, the text size, the terminal themes' three settings, the
+// wallpaper's and the CRT overlay's switches and the status bar's three values. It is installed the
+// way the tone vocabulary is: the server ships these keys as the page's data at first load, and
+// every later edit of oculus's defaults, the hub's settings file or the workspace file's
+// `settings:` arrives on the `config` channel, so a theme is added by editing YAML and nothing
+// else.
 //
 // The colour themes the acting apps offer are not held here: the apps store holds the offers made
 // from the rows of the `apps` channel (null until the first payload arrives), and every reader that
@@ -172,8 +173,9 @@ let codeTheme = CODE_TOKENS;
 let tabBar: TabBar = 'multiple';
 let actionsAt: EditorActions = 'strip';
 let wrapping = false;
-/** The terminal settings as last installed: the text size, and the four other keys. */
-let terminal: { fontPx: number | null; options: TerminalOptions } = { fontPx: null, options: {} };
+/** The terminal settings as last installed: the two text sizes, and the four other keys. */
+let terminal: { fontPx: number | null; transcriptFontPx: number | null; options: TerminalOptions } =
+    { fontPx: null, transcriptFontPx: null, options: {} };
 
 /** A finite number cut to `low`..`high`; any other value reads as `fallback`. */
 function clamped(fallback: number, low: number, high: number): z.ZodType<number> {
@@ -193,17 +195,22 @@ const CURSOR_STYLES: Record<string, TerminalOptions['cursorStyle']> = {
 /** A flag that is left out when the file does not write it as a boolean. */
 const flagShape = z.boolean().optional().catch(undefined);
 
+/** A terminal text size held to the options' bounds of 6 to 40 CSS pixels. */
+export function boundedTerminalPx(value: number): number {
+    return Math.min(40, Math.max(6, value));
+}
+
+/** A terminal text size, bounded, and null when the key is absent or not a finite number. */
+const terminalPxShape = z.number().transform(boundedTerminalPx).nullable().catch(null);
+
 /**
- * The `terminal:` key: the size, bounded and null when the key is absent or not a finite number,
- * and the four other keys, each left out when it is absent or mistyped.
+ * The `terminal:` key: the grid's size and the transcript's, and the four other keys, each left out
+ * when it is absent or mistyped.
  */
 const terminalShape = z
     .object({
-        font_px: z
-            .number()
-            .transform((value) => Math.min(40, Math.max(6, value)))
-            .nullable()
-            .catch(null),
+        font_px: terminalPxShape,
+        transcript_font_px: terminalPxShape,
         mac_option_is_meta: flagShape,
         copy_on_selection: flagShape,
         cursor_style: z.string().catch(''),
@@ -217,12 +224,18 @@ const terminalShape = z
         const style = byKey(CURSOR_STYLES, node.cursor_style);
         if (style !== undefined) options.cursorStyle = style;
         if (node.cursor_blinking !== undefined) options.cursorBlink = node.cursor_blinking;
-        return { fontPx: node.font_px, options };
+        return { fontPx: node.font_px, transcriptFontPx: node.transcript_font_px, options };
     });
 
 /** The terminal settings the config holds, and none for a key that is no map. */
 function readTerminal(config: Record<string, unknown>): typeof terminal {
-    return readAs(terminalShape, config.terminal) ?? { fontPx: null, options: {} };
+    return (
+        readAs(terminalShape, config.terminal) ?? {
+            fontPx: null,
+            transcriptFontPx: null,
+            options: {}
+        }
+    );
 }
 
 /** A fraction as the percentage color-mix takes. */
@@ -607,6 +620,12 @@ export function wrapTabs(): boolean {
 export function terminalFontPx(): number | null {
     configGeneration();
     return terminal.fontPx;
+}
+
+/** The transcript's configured CSS pixel size, or null when it follows the `--fs-sm` token. */
+export function transcriptFontPx(): number | null {
+    configGeneration();
+    return terminal.transcriptFontPx;
 }
 
 /** The terminal grid's cursor, Option key and copy settings the config holds; a copy. */

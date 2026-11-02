@@ -53,6 +53,8 @@
         onrenamecancel: () => void;
         /** The switch of a tab with a session to read, drawn after the name. */
         session?: Snippet;
+        /** Whether the tab shows its transcript, whose size the font buttons then set. */
+        reading: boolean;
     };
 
     let {
@@ -68,7 +70,8 @@
         arming,
         onrenamed,
         onrenamecancel,
-        session
+        session,
+        reading
     }: Props = $props();
 
     const {
@@ -102,7 +105,7 @@
         />
     {/if}
     {@render session?.()}
-    <TerminalFontTools />
+    <TerminalFontTools {reading} />
     {#if arming}
         <span class="note" role="status">{t('sessions.terminal_kill_armed')}</span>
     {/if}

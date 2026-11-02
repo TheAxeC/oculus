@@ -1,13 +1,13 @@
 // Layer 3, view helper. The rules the Terminal view's list and grid go by: whether the list is
 // drawn, the rows of one tab in the tab's order, the key a row answers, a dragged row's new place,
-// the drag a row carries, the grid's font size and the zoom that draws a transcript at it, the line
-// count a paste is asked about and the listener that holds such a paste, the file drag the grid
-// takes, a dropped path quoted for the shell, a terminal's tooltip, the items of the view's
-// right-click menus, the find bar's count, options and keys, and the handler a link in the grid
-// opens by. The pure ones are here rather than in the components so each is asserted without a DOM,
-// which the grid's paste, drop and drag need to happen at all. How long an armed Kill stays armed,
-// and what else ends it, is list/kill-arm.svelte.ts's; the list's width is
-// list/list-width.svelte.ts's.
+// the drag a row carries, the grid's and the transcript's font sizes and the zoom that draws a
+// transcript at its size, the line count a paste is asked about and the listener that holds such a
+// paste, the file drag the grid takes, a dropped path quoted for the shell, a terminal's tooltip,
+// the items of the view's right-click menus, the find bar's count, options and keys, and the
+// handler a link in the grid opens by. The pure ones are here rather than in the components so each
+// is asserted without a DOM, which the grid's paste, drop and drag need to happen at all. How long
+// an armed Kill stays armed, and what else ends it, is list/kill-arm.svelte.ts's; the list's width
+// is list/list-width.svelte.ts's.
 //
 // The right-click menus are VS Code's terminal menus, with the items oculus runs: the grid's (Copy
 // and Copy as HTML while it holds a selection, Paste, Select All, Clear, then Split Terminal,
@@ -142,25 +142,35 @@ function bodyFontPx(): number {
     return stepFontPx('--fs-md');
 }
 
+/** A type step times the reader's text scale, or undefined when no size comes of it. */
+function scaledFontPx(step: '--fs-sm' | '--fs-md', scale: number): number | undefined {
+    const computed = stepFontPx(step) * scale;
+    return Number.isFinite(computed) && computed >= 1 ? computed : undefined;
+}
+
 /**
  * The grid's font size: the configured size, else the body type scale times the reader's text
  * scale, read off the body since the scale is a CSS token. Undefined when neither gives a size.
  */
 export function gridFontSize(chosen: number | null, scale: number): number | undefined {
-    const configured = chosen ?? terminalFontPx();
-    if (configured !== null) return configured;
-    const computed = bodyFontPx() * scale;
-    return Number.isFinite(computed) && computed >= 1 ? computed : undefined;
+    return chosen ?? terminalFontPx() ?? scaledFontPx('--fs-md', scale);
 }
 
 /**
- * The CSS `zoom` that draws text set in `--fs-md` at the grid's size, or at `--fs-sm` where the
- * grid is set smaller, since a proportional face below a sidebar's size is hard to read. Where
- * there is no page to read the tokens off, or no size comes of it, it is 1.
+ * The transcript's font size: the configured size as given, else `--fs-sm` times the reader's text
+ * scale, the size of a sidebar's words. Undefined when neither gives a size.
+ */
+export function transcriptFontSize(chosen: number | null, scale: number): number | undefined {
+    return chosen ?? scaledFontPx('--fs-sm', scale);
+}
+
+/**
+ * The CSS `zoom` that draws text set in `--fs-md` at the transcript's font size. Where there is no
+ * page to read the tokens off, or no size comes of it, it is 1.
  */
 export function transcriptZoom(chosen: number | null, scale: number): number {
     if (!inBrowser()) return 1;
-    const size = Math.max(gridFontSize(chosen, scale) ?? Number.NaN, stepFontPx('--fs-sm') * scale);
+    const size = transcriptFontSize(chosen, scale) ?? Number.NaN;
     const zoom = size / (bodyFontPx() * scale);
     return Number.isFinite(zoom) && zoom > 0 ? zoom : 1;
 }

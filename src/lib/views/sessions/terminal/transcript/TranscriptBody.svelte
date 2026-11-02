@@ -24,11 +24,11 @@
     // which sanitises it once and brings the document rules, the Copy control of a code block and
     // the prose menu. A person's turn keeps its own line breaks and is never rendered.
     //
-    // The turns draw at the terminal grid's size, never below `--fs-sm`, so the font buttons of the
-    // tab's bar size them as they size a grid. `--fs-*` resolve at the root, so a descendant cannot
-    // rescale them; an inner box inside the scroller takes CSS `zoom` instead (terminal-list.ts,
-    // `transcriptZoom`). The scroller itself is not zoomed, so its measures stay the ones the foot
-    // rule reads.
+    // The turns draw at the size of the `terminal.transcript_font_px` option, or at `--fs-sm` where
+    // the key is left out, and the font buttons of the tab's bar write that key while Transcript
+    // shows. `--fs-*` resolve at the root, so a descendant cannot rescale them; an inner box inside
+    // the scroller takes CSS `zoom` instead (terminal-list.ts, `transcriptZoom`). The scroller
+    // itself is not zoomed, so its measures stay the ones the foot rule reads.
     //
     // Under the conversation sits the prompt box that steers the session through its terminal, read
     // only for a session with no terminal. A tab opened from an agent row of the Session details
@@ -70,7 +70,7 @@
         selectors: { sessionById },
         terminals: { terminalOfSession },
         transcripts: { follow, showing, turnsFor },
-        ui: { terminalFont, textScale }
+        ui: { textScale, transcriptFont }
     } = useState();
 
     const record = $derived(sessionById(session));
@@ -104,7 +104,7 @@
 
     /** The zoom of the box of turns, as `transcriptZoom` gives it. */
     function fontZoom(): number {
-        return transcriptZoom(terminalFont(), textScale() ?? 1);
+        return transcriptZoom(transcriptFont(), textScale() ?? 1);
     }
 
     let zoom = $state(fontZoom());
@@ -120,8 +120,8 @@
     }
 
     // The zoom follows the font setting and the text scale, which this effect reads. A theme lands
-    // on the body's attributes whenever its file arrives, which `--fs-md` is read through, so the
-    // observer takes the zoom again however late that is.
+    // on the body's attributes whenever its file arrives, which `--fs-sm` and `--fs-md` are read
+    // through, so the observer takes the zoom again however late that is.
     $effect(() => {
         retakeZoom();
         const watch = new MutationObserver(retakeZoom);

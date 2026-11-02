@@ -7,14 +7,16 @@
 // (state/sources/explorer/pdf-place.ts).
 //
 // The look is the options' (state/shared/words/appearance.ts, `configuredLook`): the `theme`,
-// `text_size`, `rice`, `wallpaper.show`, `crt.on`, `code_theme` and `terminal.font_px` options of
-// the appearance defaults and the `status_bar` and `editor.suggest_details` options of the behavior
-// defaults, as the open workspace file sets them or oculus's defaults hold them. A control that
-// changes one writes the option through the Settings write path, so every page of the server shows
-// the new value from the config push that follows the write. Until that push arrives, the value
-// written is held over the configured one (`pending`), so the control answers at once; a write that
-// does not land drops it, and the writes store says why. With no workspace file open (the unsaved
-// workspace) a control writes nothing and the page offers Save Workspace instead (`noWorkspace`).
+// `text_size`, `rice`, `wallpaper.show`, `crt.on`, `code_theme`, `terminal.font_px` and
+// `terminal.transcript_font_px` options of the appearance defaults and the `status_bar` and
+// `editor.suggest_details` options of the behavior defaults, as the open workspace file sets them
+// or oculus's defaults hold them, with `terminal.transcript_font_px` in the workspace file alone,
+// since it has no default. A control that changes one writes the option through the Settings write
+// path, so every page of the server shows the new value from the config push that follows the
+// write. Until that push arrives, the value written is held over the configured one (`pending`), so
+// the control answers at once; a write that does not land drops it, and the writes store says why.
+// With no workspace file open (the unsaved workspace) a control writes nothing and the page offers
+// Save Workspace instead (`noWorkspace`).
 //
 // It also writes who the user is, the key `self` of the primary hub's `.oculus/local.yml`, which
 // the Person page sets (`setSelf`): through the config key write of that file, in a saved workspace
@@ -38,11 +40,13 @@ import type { WriteAnswer } from '../shared/stores/shapes.ts';
 import type { PageStateStore } from '../shared/stores/page-state.svelte.ts';
 import { configGeneration } from '../shared/words/generation.svelte.ts';
 import {
+    boundedTerminalPx,
     boundedTextSize,
     codeThemeDefault,
     configuredLook,
     terminalFontPx,
     themeFor,
+    transcriptFontPx,
     wallpaperOnTheme
 } from '../shared/words/appearance.ts';
 
@@ -155,6 +159,8 @@ export type UiStore = CloseHooks & {
     textScale: () => number | null;
     /** The terminal grid's size in CSS pixels, or null where it follows the page's text size. */
     terminalFont: () => number | null;
+    /** The transcript's size in CSS pixels, or null where it follows `--fs-sm`. */
+    transcriptFont: () => number | null;
     codeTheme: () => string;
     /** A value that changes with the editors' look: the theme, the text size and the code theme. */
     editorLook: () => string;
@@ -176,6 +182,7 @@ export type UiStore = CloseHooks & {
     setTheme: (name: string) => void;
     setCrt: (on: boolean) => void;
     setTerminalFont: (size: number | null) => void;
+    setTranscriptFont: (size: number | null) => void;
     setStatusHidden: (item: string, hidden: boolean) => void;
     setStatusQuiet: (on: boolean) => void;
     /** Keep the repository chosen in the status bar's repository item; null forgets it. */
@@ -229,6 +236,9 @@ export function createUi(given: Partial<UiDeps> = {}): UiStore {
     /** What the stores holding a tab's work registered, which a close asks about the tab. */
     const hooks = createCloseHooks();
 
+    /** Per option key, the latest write asked for and the end of the writes sent before it. */
+    const sends: Partial<Record<string, { turn: number; last: Promise<unknown> }>> = {};
+
     /** An option's value as shown: the one written and not yet pushed, else the config's. */
     function held<T>(key: string, configured: T): T {
         const one = pending[key];
@@ -236,6 +246,19 @@ export function createUi(given: Partial<UiDeps> = {}): UiStore {
             return one.value as T;
         }
         return configured;
+    }
+
+    /**
+     * Send one write of `key` after the writes of that key already sent, so a later press can never
+     * be overtaken by an earlier one. A write a later one replaced before its turn is not sent, and
+     * answers null.
+     */
+    function inTurn<T>(key: string, send: () => Promise<T>): Promise<T | null> {
+        const turn = (sends[key]?.turn ?? 0) + 1;
+        const before = sends[key]?.last ?? Promise.resolve();
+        const answer = before.then(() => (sends[key]?.turn === turn ? send() : null));
+        sends[key] = { turn, last: answer.catch(() => null) };
+        return answer;
     }
 
     /**
@@ -255,9 +278,12 @@ export function createUi(given: Partial<UiDeps> = {}): UiStore {
             return false;
         }
         pending[key] = { value, settled: null };
-        const answer = Array.isArray(value)
-            ? await deps.writes.writeConfigValue(file, key, value, base)
-            : await deps.writes.writeConfigKey(file, key, value);
+        const answer = await inTurn(key, () =>
+            Array.isArray(value)
+                ? deps.writes.writeConfigValue(file, key, value, base)
+                : deps.writes.writeConfigKey(file, key, value)
+        );
+        if (answer === null) return true;
         if (answer.ok && answer.refused.length === 0) {
             pending[key] = { value, settled: configGeneration() };
             return true;
@@ -266,14 +292,14 @@ export function createUi(given: Partial<UiDeps> = {}): UiStore {
         return false;
     }
 
-    /** Take an option out of the open workspace file, so oculus's value is in force again. */
+    /** Take an option out of the open workspace file, so the file no longer sets it. */
     function resetOption(file: string, key: string): void {
         if (deps.workspaceFile() === false) {
             deps.noWorkspace();
             return;
         }
         Reflect.deleteProperty(pending, key);
-        void deps.writes.resetConfig(file, key);
+        void inTurn(key, () => deps.writes.resetConfig(file, key));
     }
 
     /** A theme name the config lists, and the start for one it does not. */
@@ -337,6 +363,10 @@ export function createUi(given: Partial<UiDeps> = {}): UiStore {
 
     function terminalFont(): number | null {
         return held('terminal.font_px', terminalFontPx());
+    }
+
+    function transcriptFont(): number | null {
+        return held('terminal.transcript_font_px', transcriptFontPx());
     }
 
     function codeTheme(): string {
@@ -418,13 +448,27 @@ export function createUi(given: Partial<UiDeps> = {}): UiStore {
         void writeOption(APPEARANCE, 'crt.on', on);
     }
 
-    /** A terminal grid size between 6 and 40 CSS pixels; null puts oculus's size back. */
-    function setTerminalFont(size: number | null): void {
+    /**
+     * Write a terminal text size, between 6 and 40 CSS pixels and to a hundredth of a pixel, since
+     * a press adds to a token times the text scale, and 12 times 1.2 is 14.399999999999999 to a
+     * double. Null takes the key out.
+     */
+    function writeTerminalSize(key: string, size: number | null): void {
         if (size === null || !Number.isFinite(size)) {
-            resetOption(APPEARANCE, 'terminal.font_px');
+            resetOption(APPEARANCE, key);
             return;
         }
-        void writeOption(APPEARANCE, 'terminal.font_px', Math.min(40, Math.max(6, size)));
+        void writeOption(APPEARANCE, key, Math.round(boundedTerminalPx(size) * 100) / 100);
+    }
+
+    /** A terminal grid size; null puts oculus's size back. */
+    function setTerminalFont(size: number | null): void {
+        writeTerminalSize('terminal.font_px', size);
+    }
+
+    /** A transcript size; null leaves it to follow the `--fs-sm` token. */
+    function setTranscriptFont(size: number | null): void {
+        writeTerminalSize('terminal.transcript_font_px', size);
     }
 
     /** Hide one status bar item, or show it again. */
@@ -516,6 +560,7 @@ export function createUi(given: Partial<UiDeps> = {}): UiStore {
         monospace,
         textScale,
         terminalFont,
+        transcriptFont,
         codeTheme,
         editorLook,
         statusHidden,
@@ -533,6 +578,7 @@ export function createUi(given: Partial<UiDeps> = {}): UiStore {
         setTheme,
         setCrt,
         setTerminalFont,
+        setTranscriptFont,
         setStatusHidden,
         setStatusQuiet,
         setStatusRepository,

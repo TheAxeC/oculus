@@ -334,6 +334,7 @@
         onrenamed={actions.renamed}
         onrenamecancel={actions.cancelRename}
         session={session.target === null ? undefined : showSwitch}
+        reading={session.reading}
     />
 {/snippet}
 
