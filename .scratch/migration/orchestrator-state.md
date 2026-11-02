@@ -23,7 +23,13 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 ```
 
 ```yaml
-dispatch: []           # steps in flight, up to six (Z632)
+dispatch:           # steps in flight, up to six (Z632)
+- step: O121
+  brief_check: "running: abcec94ed2b1de5b4"
+  landing: preparing
+- step: O122
+  brief_check: "running: a8777c66a67dd93a3"
+  landing: preparing
 ```
 
 ## The standing demands (from Axel, in force)
@@ -166,6 +172,7 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
 
 
 ## Closed items
+- Open item 633 (2026-11-02), closed by Axel the same day: (a), steps O121 and O122; (b), the chip row only, and (c), neither, were the lazy options.
 - Open item 632 (2026-11-02), closed by Axel the same day: (a), step O120; (b), a `tone` key per list in the career file's schema, not chosen; (c), the jump alone, was the lazy option.
 
 - Open item 630 (2026-11-02), closed by Axel the same day: (a), step O118; (c) was the lazy option. A Transcript shows the last 200 turns, or fewer when the last 32 MiB hold fewer, with no sign of older turns and no way to reach them; older turns now load as the reader scrolls to the top; (b), a press at the top of the list, not chosen.
@@ -753,6 +760,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-11-02 (ruling 633). Steps O121 and O122 added to `plan.md`. In flight: none. Next: /spec O121. Open items: none.
 - 2026-11-02 (O120 landed). O120 is on main (booked under O120 in `plan.md`, `agents/reviews/O120-landing.md`). In flight: none. Queued: none. Open items: none.
 - 2026-11-02 (O120 building). O119 is on main at 9abe534c0 (booked under O119 in `plan.md`, `agents/reviews/O119-landing.md`). O120 is prepared at 1374be572 and its builder runs. Open items: none.
 - 2026-11-02 (O119 repair round 1 sent). Review saved; six findings, none blocking. Round brief `agents/briefs/O119-round-1.md`. Next: its report, /refute over the round, /land. Open items: none.
