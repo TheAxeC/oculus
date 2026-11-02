@@ -33,7 +33,7 @@ dispatch:           # steps in flight, up to six (Z632)
   launched: 2026-11-02
   report: .scratch/migration/agents/reviews/O122-report.md
   round: 0
-  builder_usage: first run handed back, 243522 tokens, 32 tool uses, 12 min 2 s
+  builder_usage: first run 243522 tokens, 32 tool uses, 12 min 2 s; build 153718 tokens, 104 tool uses, 27 min 53 s
   cases: agents/briefs/O122-cases.md
   brief_check: agents/reviews/O122-brief-check.md (a8777c66a67dd93a3, claude-opus-5-5, 220297 tokens, 30 tool uses, 9 min 31 s)
   landing: not-started
@@ -46,13 +46,23 @@ dispatch:           # steps in flight, up to six (Z632)
   launched: 2026-11-02
   report: .scratch/migration/agents/reviews/O124-report.md
   round: 0
-  builder_usage: first run handed back
+  builder_usage: first run 243408 tokens, 30 tool uses, 8 min 3 s
   cases: agents/briefs/O124-cases.md
   brief_check: agents/reviews/O124-brief-check.md (a245ccc2df2413f9c, claude-opus-5-5, 236996 tokens, 28 tool uses, 9 min 55 s)
   shared_paths: docs/HELP.md and docs/diagrams with migration O122, different lines and generated files, simple to merge
   landing: not-started
 - step: O123
-  landing: preparing
+  base: 3e2595261
+  worktree: .agents/worktrees/migration-O123
+  executor: agent
+  worker: claude:opus
+  session_id: acbcf929837bf5594 (claude-opus-5-5)
+  launched: 2026-11-02
+  report: .scratch/migration/agents/reviews/O123-report.md
+  round: 0
+  brief_check: agents/reviews/O123-brief-check.md (afb7b4f6cc7cbec97, claude-opus-5-5, 332174 tokens, 59 tool uses, 12 min 34 s)
+  shared_paths: config/defaults/layout.yml and docs/HELP.md with migration O124, docs/HELP.md and docs/diagrams with migration O122; a few single lines touched by both (layout.yml 307, HELP 52, 143, 455), each merged by hand at landing in one edit, and generated files rebuilt
+  landing: not-started
 ```
 
 ## The standing demands (from Axel, in force)
