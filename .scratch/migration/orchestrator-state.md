@@ -33,12 +33,12 @@ dispatch:           # steps in flight, up to six (Z632)
   launched: 2026-11-02
   report: .scratch/migration/agents/reviews/O124-report.md
   round: 1
-  reviewer_report: agents/reviews/O124-refuter.md (a430c5101b0e5d36b, claude-opus-5-5, 303279 tokens, 41 tool uses, 24 min 38 s)
-  builder_usage: first run 243408 tokens, 30 tool uses, 8 min 3 s; build 131563 tokens, 196 tool uses, 40 min 20 s (the notice closing the build; two interim notices read 336661 and 349063 tokens)
+  reviewer_report: agents/reviews/O124-refuter.md (a430c5101b0e5d36b, claude-opus-5-5, 303279 tokens, 41 tool uses, 24 min 38 s); over round 1: a33bae9f11781ca38, claude-opus-5-5, 260684 tokens, 34 tool uses, 13 min 14 s
+  builder_usage: first run 243408 tokens, 30 tool uses, 8 min 3 s; build 131563 tokens, 196 tool uses, 40 min 20 s (the notice closing the build; two interim notices read 336661 and 349063 tokens); round 1 196669 tokens, 45 tool uses, 23 min 32 s
   cases: agents/briefs/O124-cases.md
   brief_check: agents/reviews/O124-brief-check.md (a245ccc2df2413f9c, claude-opus-5-5, 236996 tokens, 28 tool uses, 9 min 55 s)
   shared_paths: docs/HELP.md and docs/diagrams with migration O122, different lines and generated files, simple to merge
-  landing: not-started
+  landing: cherry-picking
 - step: O123
   base: 3e2595261
   worktree: .agents/worktrees/migration-O123
@@ -47,7 +47,8 @@ dispatch:           # steps in flight, up to six (Z632)
   session_id: acbcf929837bf5594 (claude-opus-5-5)
   launched: 2026-11-02
   report: .scratch/migration/agents/reviews/O123-report.md
-  round: 0
+  round: 1
+  reviewer_report: agents/reviews/O123-refuter.md (a782a024916820caa, claude-opus-5-5, usage from its notice)
   builder_usage: first run 365848 tokens, 59 tool uses, 10 min 43 s; build 100660 tokens, 385 tool uses, 59 min 48 s
   cases: agents/briefs/O123-cases.md
   brief_check: agents/reviews/O123-brief-check.md (afb7b4f6cc7cbec97, claude-opus-5-5, 332174 tokens, 59 tool uses, 12 min 34 s)

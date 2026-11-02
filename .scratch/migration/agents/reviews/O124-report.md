@@ -6,12 +6,7 @@ The two cases and the path of `briefs/O124-cases.md` are built as ruled. What on
 
 ## Open items of the state file, verbatim
 
-From `.scratch/migration/orchestrator-state.md:182-185`. This step raises none of its own.
-
-- Open item 636 (2026-11-02), step O123, raised by its brief check (`agents/reviews/O123-brief-check.md`, U1 to U3). Three choices.
-  1. A Terminal tab that loses its last terminal. The tree: `closeEnded` (`src/lib/state/sessions/terminal/terminal-lists.ts:88-100`) closes a tab left owning no terminal unless it is composing or reading, and reads no pin, so the bottom pane would lose Terminal and the next press would land in the left pane, over the list. Options: (a) a pinned Terminal tab stands on every page and shows its composer; pro: the bottom pane always holds Terminal; con: every pinned Terminal tab changes. (b) the tab closes and a new one goes to the pane that held it; pro: no tab stays empty; con: a placement rule for one view. (c) accept the close; lazy option, the next press covers the list. Recommended: (a), the only one that keeps the ruled bottom pane true at all times.
-  2. Twelve entries in a chord that reaches nine (`keyOf`, `src/lib/state/workbench/navigation/catalogue.ts:251-257`). In the order of 635 the keys are s1 Files, s2 Repositories, s3 Sessions, s4 Search, s5 LaTeX, s6 Terminal, s7 Problems, s8 References, s9 Debug. Options: (a) that order, and Debug Console, Notes Graph and Session have no key; pro: the keys follow the tabs; con: seven keys move and three go. (b) another choice of which three lose a key; pro: keeps a key you use; con: the keys stop following the tabs. (c) digits past nine; con: a new key shape nobody asked for. Recommended: (a).
-  3. The status bar's Sessions and Problems items. `StatusBar.svelte:359` and `context.ts:303` open the view on the page in front, since neither view is `unique`. Options: (a) as now: on the Explorer the press shows the tab, and on another page it opens a tab there; pro: every status item acts on the page you are on; con: a second list can open on Focus. (b) a press goes to the Explorer; pro: one list; con: a page switch from a status item, and `context.ts` joins the step. Recommended: (a), though it costs less, because a status item that moves you off your page is the worse behaviour.
+None. Open item 636 is closed, under "## Closed items" of `orchestrator-state.md`. This step raises none of its own.
 
 ## The cases' first run
 
@@ -52,7 +47,7 @@ The first run was on the unchanged tree, by reading, with a case-run program for
 | 5. Nested groups | DONE | `GroupHead.svelte` as in the cases' table, proved by the look above; `git diff -U0 -- docs/HELP.md` holds its hunk at line 296 |
 | 6. The System page | DONE | `layout.yml` diff; `test:quick` line below |
 | 7. Words and pages | DONE | The name grep and the list below; `npm run docs:palette` and `npm run diagrams` wrote their files |
-| Check 1, `npm run test:quick` | DONE | Lines printed: `ok      prettier (1.0 s): All matched files use Prettier code style!` / `ok      ASCII gate (1.0 s)` / `ok      svelte-kit sync (2.4 s)` / `ok      eslint (12.4 s)` / `ok      svelte-check (14.5 s): 1793657448981 COMPLETED 581 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS` / `ok      vitest checks (136.4 s): Duration  119.72s (transform 57.39s, setup 0ms, import 126.08s, tests 302.50s, environment 5ms)` / `ok      vitest (159.8 s): Duration  144.51s (transform 59.74s, setup 0ms, import 181.56s, tests 370.84s, environment 8.88s)` / `ok      vitest slow (261.4 s): Duration  246.27s (transform 18.89s, setup 0ms, import 149.93s, tests 823.33s, environment 18ms)` / `test:quick: 264.0 s; every command passed`. It prints too: `test:quick: not covered: tests that reach no changed file within the import depth, other than the checks under tests/checks/source and tests/checks/tree, which run for any change under src, tests or utils; the build, the lint of unchanged files`. The output first reached this session at 23:15:08 local after 264.0 s, and the newest changed file is `docs/diagrams/layer-views.svg` at 23:10:31 (`stat`), so the run covers the last change |
+| Check 1, `npm run test:quick` | DONE | Lines printed by the final run: `test:quick: 51 changed file(s), from git since HEAD` / `test:quick: 316 test file(s)` / `ok      prettier (0.8 s): All matched files use Prettier code style!` / `ok      ASCII gate (0.9 s)` / `ok      svelte-kit sync (2.7 s)` / `ok      eslint (3.4 s)` / `ok      svelte-check (12.4 s): 1793660672440 COMPLETED 581 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS` / `ok      vitest checks (214.8 s): Duration  197.77s (transform 109.42s, setup 0ms, import 228.15s, tests 495.89s, environment 6ms)` / `ok      vitest (249.6 s): Duration  235.17s (transform 89.57s, setup 0ms, import 297.50s, tests 607.52s, environment 13.41s)` / `ok      vitest slow (391.2 s): Duration  376.87s (transform 27.57s, setup 0ms, import 225.32s, tests 1266.51s, environment 23ms)` / `test:quick: 394.0 s; every command passed`. It prints too: `test:quick: not covered: tests that reach no changed file within the import depth, other than the checks under tests/checks/source and tests/checks/tree, which run for any change under src, tests or utils; the build, the lint of unchanged files`. The last edit of a source file is 23:49:51 (`stat`), and the final run's output file was created at 00:04:17, after `npm run diagrams`, so the run covers the last change |
 | Check 2, ASCII over the changed source and config files | DONE | `LC_ALL=C grep -n "[^ -~]"` over the 36 source and config paths the step leaves on the tree: prints nothing, `grep exit 1`. The added lines of `docs/HELP.md`, `docs/templates.md` and `docs/data-map.md`: 0 hits (`grep -c`) |
 | Check 3 | DONE | The first grep printed nothing, `exit 1`; `grep -n "'audit'" .../counts.ts` printed nothing, `exit 1`; the `findingsCount` line above; the two `test ! -e`, `exit 0` |
 | Check 4, `git diff --stat -- package.json package-lock.json` | DONE | Prints nothing |
@@ -153,11 +148,11 @@ From `diff -rq` against `.agents/worktrees/O124-base` for `src` and `config`, an
 | `src/lib/views/system/status/Gallery.svelte` | new, 425 | |
 | `src/lib/views/system/findings/Findings.svelte` | 134 | now 219 lines |
 | `src/lib/views/system/status/Status.svelte` | 113 | now 186 lines |
-| `src/lib/ui/controls/heads/GroupHead.svelte` | 42 | now 213 lines |
-| `src/lib/state/workbench/rail-badges/rail-badges.svelte.ts` | 21 | |
+| `src/lib/ui/controls/heads/GroupHead.svelte` | 45 | now 216 lines |
+| `src/lib/state/workbench/rail-badges/rail-badges.svelte.ts` | 23 | |
 | `src/lib/state/system/audit.ts` | 24 | `fileSearch` |
 | `src/lib/state/system/audit.svelte.ts` | 10 | comments |
-| `src/lib/state/workbench/navigation/status.ts` | 14 | comments |
+| `src/lib/state/workbench/navigation/status.ts` | 16 | `fileFindingsCount`, comments |
 | `src/lib/state/workbench/navigation/registry.ts` | 2 | |
 | `src/lib/data/sources/config/sections/counts.ts` | 1 | |
 | `src/routes/+page.svelte` | 12 | |
@@ -204,7 +199,7 @@ Each may be reversed.
 
 1. The search function is `fileSearch(findings, search, named)`, answering a `Set` of places, since ruling 2 keeps every row mounted.
 2. New catalog keys: `views.findings_toolbar` ("Findings controls", replacing `audit.toolbar`) and `views.findings_files` ("Files"). `views.findings_none` takes the sentence that covers both, and `audit.empty` and `audit.empty_glyph` go. Deleted: `views.audit`, `views.audit_glyph`, `audit.toolbar`, `audit.findings_note`, `audit.open_findings`, `audit.open_findings_glyph`, `audit.open_findings_tip`, `views.gallery`, `views.gallery_glyph`, `gallery.toolbar`. The Search keeps `audit.search`, "Search findings ...", and the group label is `audit.title`.
-3. New attribute values: `data-section="files"` and `data-section="audit"`. `grep -rn 'data-section' src tests | grep -v 'data-section='` prints nothing, so no code or test reads one by name.
+3. New attribute values: `data-section="files"` and `data-section="audit"`. `grep -rnE "\[data-section|dataset\.section|data-section\\\\?=" src tests` prints eight lines, all attribute setters in markup and no reader: `Inbox.svelte:207`, `Status.svelte:135`, `AuditSection.svelte:190`, `:200`, `:217`, `Findings.svelte:124`, `SessionSection.svelte:48`, `Editor.svelte:282`. So no selector, `dataset` read or test names a value.
 4. Orders: History 6 and Processes 7, so the numbers keep the group's order with no gap.
 5. The terminal shape's mono rule stays on the Audit rows and kinds (`.audit`, inside the Audit group), so "Row looks stay as they are" holds in rice: the Files rows keep their face, and the heads Files and Audit match each other.
 6. The Gallery group has a wrapper `.samples` for its 16 px under the `Surface`; a flex gap on `.view` would reach each fact, as `Surface` is `display: contents` without a wallpaper.
@@ -227,15 +222,19 @@ Each may be reversed.
 | Sentences naming the Audit view | "the Audit view ..." | "the Audit section of Findings ..." in `server.yml`, `present.yml`, `collection.yml`, `behavior.yml` twice |
 | Findings Empty sentence | "No findings: every id resolves and every status is in the vocabulary." | That, and that the audit has nothing open, with the list `audit.empty` held |
 | Gallery | A view that opens in any number of tabs, its bar in the pane's bar | One section per Status tab; Search and Segment scroll with the body (no `sticky` in `Gallery.svelte`) and are lost on close (decision 5) |
+| System rail button's tooltip (hover the button with file findings 2, audit open 5) | Names each count above zero: `(Findings 2, Audit 5)` after the page's name, from `views.badge_title` `{0} {1}`, separator `, ` | Names Findings alone with the sum: `(Findings 7)` |
+| Palette and view catalogue | Entries Audit and Gallery (two rows of `docs/palette.md`, deleted by `npm run docs:palette`) | Neither entry; the Audit section is reached by Findings, the Gallery by Status |
+| The `/` key, which focuses the shown view's `input[data-search]` (`focusSearch`, `key-dom.ts:40`) | On Findings nothing to focus, so the key is unclaimed; on the Audit and Gallery tabs it focuses their Search; on Status nothing | On Findings it focuses the Search. On Status with the Gallery open it focuses the Gallery's Search; with the Gallery closed the input is not mounted, `focusSearch` answers false and the key is unclaimed. Press `/` in each of the three states |
+| Status facts over a wallpaper | The facts are direct items of the tinted `.view` | The facts stand in a block `Surface`, which pads its content `0 8px` over a wallpaper (`Surface.svelte`, `.surface:not(.inline, .fitted)`), so they stand 8 px further in on each side. `LineCounts` and `Hooks` stand in the same `Surface`, so their strips stand 8 px further in too, and the Gallery strip outside it does not, as ruling 1 of `O124-cases.md` lays it out: over a wallpaper the strips of one pane stand on two left edges. With no wallpaper `Surface` is `display: contents` and they stand where they did |
 | Audit's Empty | "Nothing open: ..." on its own view | Part of the one `findings_none` sentence |
 | Saved tabs | `audit` and `gallery` in `~/.oculus/layouts.json` | The orchestrator's change at landing (brief, "What is on the tree"); this step does not touch that file |
 
 ## What was read and reworded
 
 - The final name grep, `grep -rnE "\bAudit view\b|views/system/(audit|gallery)|gallery view|audit view|Gallery view" src config docs README.md tests --exclude=local.yml` less `docs/diagrams`, prints two lines, `tests/checks/config/config-folder.test.ts:349` and `:351`. Both name the text files, which keep their paths (decision 6).
-- Rewritten: the head comments of `GroupHead.svelte`, `Findings.svelte`, `AuditSection.svelte`, `status/Gallery.svelte`, `Status.svelte`, `Processes.svelte`, `History.svelte`, `SubHead.svelte`, `CodeText.svelte`, `pane-fold.ts`, `audit.ts`, `audit.svelte.ts`, `status-items.ts`; the doc comments of `findingsCount` (both), `allFindings`, `StatusWords.findings`, `AuditStore.openCount`; the `Table.svelte` comment on `th`; `docs/HELP.md`, `docs/data-map.md`, `docs/templates.md:281`, `layout.yml`'s `counts` sentence.
+- Rewritten: the head comments of `GroupHead.svelte`, `Findings.svelte`, `AuditSection.svelte`, `status/Gallery.svelte`, `Status.svelte`, `Processes.svelte`, `History.svelte`, `SubHead.svelte`, `CodeText.svelte`, `pane-fold.ts`, `audit.ts`, `audit.svelte.ts`, `status-items.ts`; the doc comments of `railBadges.findingsCount`, `fileFindingsCount`, `allFindings`, `StatusWords.findings`, `AuditStore.openCount`; the `Table.svelte` comment on `th`; `docs/HELP.md`, `docs/data-map.md`, `docs/templates.md:281`, `layout.yml`'s `counts` sentence.
 - Still true, re-read: `Table.svelte:25` and `src/lib/ui/display/ticker/Ticker.svelte:4` (name the gallery, which stands as a section), `src/lib/state/shared/words/tones.ts:360` (the same), `README.md:46` (the System page's list), `docs/apps.md:383` and `:422` (the channel `audit`, unchanged).
-- Comment words: the words of `spec.md` (`before|used to|no longer|still|always has been|always had|as before|previously|the step adds|after this package lands`) grepped over the added lines of `git diff -U0 -- src config` and the two new files, printing two hits. `+    // `beforematch`, which unfolds the group through `ontoggle`. The event bubbles, so a match in a`: an event's name. `src/lib/views/system/findings/AuditSection.svelte:17: ... A parked finding is still`: says what a parked finding is now and compares with no earlier state of the code. No test title was added.
+- Comment words: the words of `spec.md` (`before|used to|no longer|still|always has been|always had|as before|previously|the step adds|after this package lands`) plus the bare word `always`, grepped over the added lines of `git diff -U0 -- src config` and the two new files, printing three hits. `src/lib/views/system/findings/AuditSection.svelte:252` "always on a screen that does not hover": a line moved unchanged, a rule of the row and no comparison. `+    // `beforematch`, which unfolds the group through `ontoggle`. The event bubbles, so a match in a`: an event's name. `src/lib/views/system/findings/AuditSection.svelte:17: ... A parked finding is still`: says what a parked finding is now and compares with no earlier state of the code. No test title was added.
 - Helpers: the Search and the folds reuse `withInstanceKey`, `instanceFlag`, `instanceText` and `usePaneFold`. `grep -rn "fileSearch" src tests` hits `src/lib/state/system/audit.ts:45` and `Findings.svelte:50`, `:91`.
 - New keys, empty, duplicated and colliding: `files`, `audit` and `showGallery` are fixed words and hold no user value, none shared within a pane's fold keys. Each row's key `${finding.file}:${finding.key}:${index}` takes the index, so two findings with one file and key do not collide, and it is not derived from the filter.
 - Asynchronous paths: `busy` and `failed` live in `AuditSection`, mounted as long as Findings is, and `mute` returns at once while `busy`. Every `KeyChoice` stays mounted under a search, so a pick in flight lands on its own row. A closed Gallery has no Reset, so the bound `gallery` is not called; `bind:this` clearing it on unmount is read, not run.
@@ -262,4 +261,34 @@ Each may be reversed.
 
 ## The number of full-list runs
 
-Three runs of `npm run test:quick` were started. The first was stopped before it printed a result. The second was red on eslint and on `vitest checks`, in files this step changed, and those were fixed and rerun alone: `npx eslint src/routes/+page.svelte` printed nothing, and `npx vitest run tests/checks/config/config-folder.test.ts tests/checks/source/comment-width.test.ts` printed `Test Files  2 passed (2)`. The third printed `test:quick: 264.0 s; every command passed`, and it is the run quoted above. No whole-suite command (`npm test`, `npm run test:checks`, `npm run test:landing`, `npx vitest run` with no file) was run. `npm run diagrams` ran right before each run of the list.
+Five runs of `npm run test:quick` were started, three in the build and two in repair round 1. No whole-suite command (`npm test`, `npm run test:checks`, `npm run test:landing`, `npx vitest run` with no file) was run. `npm run diagrams` ran right before each run of the list.
+
+1. Stopped before it printed a result. It ran in one command after `npm run docs:palette`, and that generator failed on `src/lib/views/system/status/Status.svelte:157:12` with `css_global_invalid_placement`, so the list was testing a tree that did not compile. Changes came after it: the selector at that line, and a comment in `GroupHead.svelte`.
+2. Red on eslint and on `vitest checks`, in files this step changed. Those were fixed and rerun alone: `npx eslint src/routes/+page.svelte` printed nothing, and `npx vitest run tests/checks/config/config-folder.test.ts tests/checks/source/comment-width.test.ts` printed `Test Files  2 passed (2)`.
+3. Printed `test:quick: 264.0 s; every command passed`, the last run of the build.
+4. Repair round 1, after the round's edits. Printed `test:quick: 532.1 s; failed: vitest, vitest slow`, with load near 15 (`uptime`). The slow line's failures were six tests of `tests/data/hubs/hub-portfolio.test.ts`, each `Error: Test timed out in 20000ms.`, a file this step does not change. Alone at the list's limit, `npx vitest run tests/data/hubs/hub-portfolio.test.ts --tagsFilter slow --testTimeout=20000` printed `Test Files  1 passed (1)` and `Tests  16 passed (16)`. The names of the `vitest` line's failures are not known: the command kept only `tail -30`, which cut them.
+5. Repair round 1, with no change after run 4. This run goes beyond what `spec.md` allows, since a red line in an unchanged file is not a reason to run the list again; it was made because the `vitest` line's failures could not be named from run 4. It printed `test:quick: 394.0 s; every command passed`, the run quoted in the table above, picking 316 test files, with its `vitest` line green.
+
+## Repair round 1
+
+Each item of `briefs/O124-round1.md`, with what closed it.
+
+| Item | Closed by |
+| --- | --- |
+| 1. S1, `GroupHead.svelte` | The paragraph that says a folded group's body stays in the page now says the Gallery group of Status does not hold to this: it starts folded and draws nothing while closed, so its body is mounted when it opens, and neither a reveal nor find-in-page reaches a card in it while it is closed. The paragraph is rewrapped at 100 columns, and "It holds no state" became "The component holds no state" so the sentence keeps its subject |
+| 2. ST1, `src/lib/server/content/audit/scan.ts:10` | "Findings is what" is "That section is what" |
+| 3. ST2, `status.ts`, `rail-badges.svelte.ts` | The function is `fileFindingsCount`, imported at `rail-badges.svelte.ts:22` with no alias and called at `:220`. Its doc comment names `railBadges.findingsCount`, and the doc comment of `allFindings` names `fileFindingsCount`. `railBadges.findingsCount` keeps its name. `grep -rn "listedFindings" src tests` prints nothing, `listed exit 1`. `grep -rnE "\bfindingsCount\b" src tests` less the lines naming `railBadges` prints only the store's own member (`rail-badges.svelte.ts:90`, `:219`, `:388`), `status.ts:136` (a comment naming that member) and the `BadgeClient` row (`registry.ts:49`) |
+| 4. B1, report | Four rows in "Host- or user-visible changes": the rail tooltip, the palette and catalogue, the `/` key, the Status facts' inset |
+| 5. P1, report | "The number of full-list runs" gives the reason for the stop and the changes after it |
+| 6. P2, report | Judgment 3 quotes the brief's grep and what it prints, eight attribute setters and no reader; run in this round |
+
+Checks of the round, from the worktree's root:
+
+- `npm run test:quick`: the table's lines, `test:quick: 394.0 s; every command passed`.
+- `LC_ALL=C grep -n "[^ -~]"` over the 36 source and config paths: prints nothing, `grep exit 1`.
+- `sh utils/unused-exports.sh` against `../O124-base/unused-exports.txt`: `diff` prints nothing, `diff exit 0`, so the rename adds no line.
+- `grep -rn "listedFindings" src tests`: prints nothing, `listed exit 1`.
+- The brief's first grep of check 3: prints nothing, `exit 1`.
+- The case program, copied from this report's text and run on the final tree: its output compares equal to the lines quoted here (`same as the report`), and it is deleted again.
+- `git status --short -- tests utils package.json package-lock.json`: prints nothing, so the round changes no test.
+- `docs/diagrams`: `git status --short docs/diagrams` names the same six files, and `grep -n "fileFindingsCount\|findingsCount" -r docs/diagrams` printed nothing.

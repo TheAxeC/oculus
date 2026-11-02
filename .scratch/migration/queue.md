@@ -1,6 +1,6 @@
-In flight (3 of 6 slots in use):
-- O123 (sessions move into the Explorer), built, review next.
-- O124 (the System page's merges), in repair round 1.
+In flight (2 of 6 slots in use):
+- O123 (sessions move into the Explorer), in repair round 1.
+- O124 (the System page's merges), landing.
 
 Queued, in order (0 steps): none.
 

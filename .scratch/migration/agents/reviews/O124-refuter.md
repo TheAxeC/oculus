@@ -175,3 +175,172 @@ Greps of `Audit view`, `Gallery view`, `audit tab` and `auditCount` over `src`, 
 - The first full-list run's `vitest` failures: not verified, since I kept only the tail. A third run was not made.
 
 Usage: a430c5101b0e5d36b, claude-opus-5-5, 303279 tokens, 41 tool uses, 24 min 38 s
+
+## Repair round 1, refuted (step O124, on .agents/worktrees/migration-O124, base d3a38520a)
+
+All six findings of the first review are closed, and no closure removes a check. Every item of the brief holds. The 21 cases come out at 18 met and 3 not verifiable, those three left to the look. This run raises three new findings, all in the report and none in the code: R1 the fifth full-list run, R2 stale open items, R3 a row short of what the look will see. Nothing in the tree needs changing.
+
+All commands ran from `/Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O124`. `git status --short` printed 51 lines before and after my runs.
+
+```
+Round's delta: 4 paths differ from the snapshot of the 48 in files.txt
+  src/lib/server/content/audit/scan.ts
+  src/lib/state/workbench/navigation/status.ts
+  src/lib/state/workbench/rail-badges/rail-badges.svelte.ts
+  src/lib/ui/controls/heads/GroupHead.svelte
+Paths changed now that files.txt does not list: the three .scratch files (.scratch/migration/agents/briefs/O124-cases.md,
+.scratch/migration/agents/briefs/O124-round1.md, .scratch/migration/agents/reviews/O124-report.md). All three compare equal to
+the main checkout's copies under cmp (exit 0).
+
+Check 1, npm run test:quick -- --base d3a38520a, one run, passed first time:
+test:quick: 51 changed file(s), from git since d3a38520a
+test:quick: 316 test file(s)
+ok      prettier (1.2 s): All matched files use Prettier code style!
+ok      ASCII gate (1.2 s)
+ok      svelte-kit sync (3.3 s)
+ok      eslint (2.9 s)
+ok      svelte-check (9.8 s): 1793661218691 COMPLETED 581 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest checks (201.1 s): Duration  186.99s (transform 71.24s, setup 0ms, import 183.31s, tests 504.77s, environment 5ms)
+ok      vitest (235.3 s): Duration  223.23s (transform 76.98s, setup 0ms, import 260.97s, tests 603.59s, environment 9.00s)
+ok      vitest slow (335.0 s): Duration  322.90s (transform 20.84s, setup 0ms, import 171.31s, tests 1105.60s, environment 18ms)
+test:quick: 338.3 s; every command passed
+Not covered, as it printed: tests that reach no changed file within the import depth, other than the checks under
+tests/checks/source and tests/checks/tree; the build; the lint of unchanged files.
+The list picked tests/checks/diagrams/diagrams.test.ts and tests/checks/diagrams/palette.test.ts.
+
+Check 2, LC_ALL=C grep -n '[^ -~]' over the 36 source and config paths the step leaves: printed nothing, exit=1.
+Added lines of docs/HELP.md, docs/templates.md, docs/data-map.md: grep -c gives 0.
+
+Check 3:
+first grep: printed nothing, exit=1
+grep -n "'audit'" src/lib/data/sources/config/sections/counts.ts: printed nothing, exit=1
+grep -n "findingsCount" src/routes/+page.svelte: 231:            findings: client.railBadges.findingsCount(),
+test ! -e src/lib/views/system/audit && test ! -e src/lib/views/system/gallery: exit=0
+
+Check 4, git diff d3a38520a --stat -- package.json package-lock.json: printed nothing, exit=0.
+git status --short -- tests utils package.json package-lock.json: printed nothing, exit=0.
+
+Check 5: read; see the headings below. The only standards page is .scratch/migration/agents/spec.md.
+
+Commands the report quotes:
+sh utils/unused-exports.sh, diff ../O124-base/unused-exports.txt <output>: diff exit=0, prints nothing.
+grep -rn "listedFindings" src tests: prints nothing, exit=1.
+grep -n "fileFindingsCount\|findingsCount" -r docs/diagrams: prints nothing, exit=1.
+grep -rnE "\bfindingsCount\b" src tests less the lines naming railBadges: rail-badges.svelte.ts:90, :219, :388; status.ts:136; registry.ts:49.
+grep -rnE "\[data-section|dataset\.section|data-section\\\\?=" src tests: 8 lines, Inbox.svelte:207, Status.svelte:135,
+  AuditSection.svelte:190, :200, :217, Findings.svelte:124, SessionSection.svelte:48, Editor.svelte:282; all attribute setters.
+Name grep of the report: two lines, tests/checks/config/config-folder.test.ts:349 and :351.
+Case program, copied from the report's lines 69-107, node case-final.mjs <worktree> from my scratchpad: exit 0, 15 lines,
+  diff against the report's lines 113-127 exit 0.
+yaml.safe_load over the 12 files of git diff d3a38520a --name-only -- config: ok, twelve times.
+Word grep over added lines: three hits, as the report judges them (beforematch, AuditSection.svelte "still", "always").
+npx eslint src/routes/+page.svelte: exit=0.
+npx vitest run tests/checks/config/config-folder.test.ts tests/checks/source/comment-width.test.ts (with --testTimeout=120000, the
+  form the first review needed for the machine's load): Test Files  2 passed (2); Tests  30 passed | 2 skipped (32).
+npx vitest run tests/data/hubs/hub-portfolio.test.ts --tagsFilter slow --testTimeout=20000: Test Files  1 passed (1); Tests  16 passed (16).
+diff -rq against ../O124-base: tests 0 lines, utils 0 lines.
+wc -l: 318 AuditSection.svelte, 219 Findings.svelte, 425 status/Gallery.svelte, 186 Status.svelte, 216 GroupHead.svelte.
+git diff d3a38520a --stat: status.ts 16, rail-badges.svelte.ts 23, GroupHead.svelte 45, scan.ts 6, Findings.svelte 134,
+  Status.svelte 113, docs/HELP.md 17, channels.dot 469, channels.svg 1098, layer-views 6 and 6, layers 4 and 4: all as the report's table.
+stat: status.ts 23:49:51, docs/diagrams/channels.svg 00:04:17.
+find src config docs tests utils -newermt '2026-11-02 23:49:52', leaving out local.yml and docs/diagrams: prints nothing.
+No vitest or quick.mjs process of this worktree is left (ps).
+```
+
+### Closure of each finding
+
+- **S1, `GroupHead.svelte`: closed.** Lines 39 to 41 read "The Gallery group of Status does not hold to this: it starts folded and draws nothing while closed, so the Gallery's body is mounted when it opens, and neither a reveal nor find-in-page reaches a card in it while it is closed." It stands in the paragraph a reader of line 35 is reading, and `{#if showGallery}` at `Status.svelte:141` makes it true. The extra clause on reveal and find-in-page, and "The component holds no state", go no further than the finding, since the sentence needed its subject. Lines 35 to 43 are 76 to 100 columns, and `comment-width.test.ts` passes.
+- **ST1, `scan.ts:10`: closed.** The line reads "That section is what", and the sentence is now true of the Files section. 96 columns.
+- **ST2, `status.ts`, `rail-badges.svelte.ts`: closed.** The function is `fileFindingsCount`, imported at `rail-badges.svelte.ts:22` with no alias and called at `:220`. Both doc comments name the function they mean. `railBadges.findingsCount` keeps its name, as ruled. The greps above reproduce. No check was removed.
+- **B1, report: closed for the four rows the round names, with R3 below on the inset.**
+  - The tooltip row is true: `rail.ts:110-111`, `views.badge_title` `{0} {1}`, `ui.page_badge_separator` `, `, `ui.page_badge_tip` `{0} ({1})`.
+  - The palette row is true: `docs/palette.md` loses both rows.
+  - The `/` row is true: `key-dom.ts:40-45`. `Search` is the only carrier of `data-search` as an input, and in `status/` only `Gallery.svelte:220` draws one.
+- **P1, report: closed as text.** It gives the reason for the stop and the changes after it. The reason cannot be rerun without restoring a selector that does not compile, so it is judged by reading: judgment 8 and the selector at `Status.svelte:157` agree with it.
+- **P2, report: closed.** Judgment 3 quotes the ruled grep, and my run prints the same eight lines.
+
+The round reaches no further than its six items. Only the four paths above changed, plus the report.
+
+### Verdicts
+
+Items of the brief's "What to build":
+
+- 1, One Findings view: holds. No `views/system/audit/`; `Findings.svelte:147` draws `AuditSection`; one `data-instance` at `Findings.svelte:121`; note and `data-audit` gone; Muted's rule unchanged from the base (`hidden.length > 0`).
+- 2, One search: holds. `fileSearch` stands beside `auditSearch`, the each key at `Findings.svelte:131` is the base's and does not depend on the filter, and the Files wrapper is hidden as ruled. Tab, status bar and rail read no search.
+- 3, One count: holds. Readers are `Findings.svelte:14-15` and `+page.svelte:231`. `fileFindingsCount` is `allFindings(...).length`, the list `Findings.svelte` draws, and `findingsCount` adds `audit.openCount()`. `audit` is out of `COUNTED`, `counts`, `BadgeClient`.
+- 4, Gallery a section of Status: holds under ruling 1 of `O124-cases.md`. No registration, `{#if showGallery}`, Reset in `actions` through `bind:this`, Search and Segment first in the body, `instance` a prop.
+- 5, Nested groups: holds. The head comment now says both things the item asks for (`GroupHead.svelte:8-9`, `:39-41`). `docs/HELP.md:294` says "Muted and the Gallery start folded" and that a heading may be a group that folds. `--group-above` and the body's sum read correct. The only other reader of `--group-strip` beside `Table.svelte:110` is `settings/List.svelte:210`, `scroll-margin-top: var(--group-strip, 0)`, which takes a `calc()`.
+- 6, The System page: holds. `layout.yml` holds status, findings, history. Orders 0 to 7 with no collision and no gap, by grep. The neighbour comments in `Status`, `Findings`, `History` and `Processes` are true.
+- 7, Words and pages: holds. Every listed line is done, and `\bAudit\b` and `\bgallery\b` over `src`, `config`, `docs` and `README.md` leave no sentence calling either a view. No `y9` remains. `docs/templates.md:281` says "the audit" (judgment 9). The item's sentence list does not name that line, so it does not bind it.
+
+Cases of the brief's "Cases":
+
+- System page, no saved layout: met. `layout.yml` and `docs/palette.md` diffs; the registrations by grep; no quoted, listed or `view:` form of `audit` or `gallery` left in `config`, and `grep -rnE "['\"\`](audit|gallery)['\"\`]"` over `src` leaves only the channel and fold keys.
+- Tab = status bar = heads, 7: met. Case program, `files 2, open 5, muted 1: findingsCount 7 rail part {"count":7}`; reading of the readers.
+- Mute, unmute: met. Case program 6 and 7; `mute` moved unchanged.
+- Failed mute: met. `AuditSection.svelte:185-187`, the same `Empty error`, above the group.
+- Both empty; only muted: met. `clear` needs all three empty; `count={shown.length}` draws 0.
+- Search on one side, or nothing: met. Case program and reading.
+- Word only above the root: met. `search "Users": places []`.
+- Key choice under a search: met. Every `li` stays mounted.
+- Closing note gone: met. Diff.
+- Find-in-page, folded in folded: not verifiable. The reading agrees (the event bubbles, `found` is guarded). Settled by Cmd+F on a word in a folded kind inside folded Audit at the look.
+- Fold and reload: met. Keys `files`, `audit` and the six kinds, `showMuted` in the pane's state; in Status `lines`, `hooks` and the eight sections, no collision.
+- Arrow keys: met. `workbench-keys.svelte.ts:395` `checkVisibility`; Files rows carry no `data-card`.
+- Place press, Write the website: met. Moved unchanged.
+- Open Status, Gallery closed then open: met. The reading gives the expected result; the report's scoping to `SHOWN_VIEW` is right.
+- Nested scrolling: not verifiable. The CSS sum reads correct. Settled by a short pane at the look.
+- Unnested strip, `LineCounts` table: met. `--group-above` resolves to `0px`; `.scroller` still sets `0px`.
+- Sample cards take the cursor: met. `Status.svelte:109` carries `data-instance`, and `cursor` comes from the prop.
+- Wallpaper, rice, free float: not verifiable. The reading agrees with ruling 1. Settled at the look under a wallpaper and a rice theme.
+- y7, y8: met. Orders 6 and 7; `docs/HELP.md:143` reads `y1-y8`.
+- Narrow pane: met. `.actions` `flex: none`, `.name` cut with an ellipsis, `Toolbar` with no `overflow`.
+- Status socket and counts: met. Markup moved into `Surface`; `.view > :global([data-surface]) > :global(p)` reaches the same `p` in both modes.
+
+### 1. Spec
+
+**R2. Report, "Open items of the state file, verbatim".**
+- Quote: "From `.scratch/migration/orchestrator-state.md:182-185`." followed by "Open item 636 (2026-11-02), step O123, raised by its brief check".
+- What is wrong: the brief asks for the state file's open items. Under "## Open items" (`orchestrator-state.md:191-194`) the list now holds none, and item 636 stands under "## Closed items" at line 196. Neither the lines nor the status the report cites are true now. The round's brief said "Update the report in place", and the state file's demand "Briefs and repair briefs" asks for the open items copied at the moment the report is written, so the omission starts in the round's brief.
+- Failure scenario: a reader of the landing's report, or the orchestrator copying from it, takes three of Axel's ruled choices for undecided and raises them again.
+- Verdict: no item or case. Small, for the landing.
+
+### 2. Proof
+
+None. The report's counts, paths and quoted outputs reproduce. No test changed, so none asserts a defect or was widened. No check was removed by a closure.
+
+### 3. Standards
+
+**R1. Report, "The number of full-list runs", run 5.**
+- Quote: "This run goes beyond what `spec.md` allows, since a red line in an unchanged file is not a reason to run the list again; it was made because the `vitest` line's failures could not be named from run 4."
+- What is wrong: spec.md, "Token discipline": a red line in a file the step does not change "is rerun alone and named with that run in the report, and the list is not run again for it", and a run beyond that "is a finding of the review". The cause was `tail -30` on run 4, which cut the names, so run 4's `vitest` line stays unnamed, against the same sentence.
+- What rests on it: the DONE row of Check 1 and the report's first line quote only run 5. Neither now depends on it. My own `npm run test:quick -- --base d3a38520a` printed `every command passed` over the same 51 changed files and 316 test files. The `find` above shows no file under `src`, `config`, `tests` or `utils` written after 23:49:51, and of `docs` only `docs/diagrams`, which the `npm run diagrams` before each list rewrites. The diagrams test passes. So no decision rests on run 5, and run 4's unnamed failures left no standing red: the step changes no test file, and two later runs on that tree are green.
+- Failure scenario: 394 s of a loaded machine spent on a run the spec forbids, and a report that cannot say which tests went red in run 4.
+- Verdict: no item or case. Nothing to change in the tree; the breach stays on the record in the report's own words.
+
+### 4. Behaviour
+
+**R3. Report, "Host- or user-visible changes", row "Status facts over a wallpaper".**
+- Quote: "The facts stand in a block `Surface`, which pads its content `0 8px` over a wallpaper ... so they stand 8 px further in on each side."
+- What is wrong: `Status.svelte:128-131` puts `LineCounts` and `Hooks` inside that same `Surface`, so their strips stand 8 px further in too, and the Gallery strip outside it (`:133-145`) does not. The row names the facts alone, and the "Status pane" row gives no inset. Over a wallpaper the Line counts and Hooks strips stand 8 px to the right of the Gallery strip.
+- Failure scenario: the look on a wallpaper theme sees three strips of one pane on two left edges, and no line says that is the ruled layout.
+- Verdict: no item or case; the layout follows ruling 1 of `O124-cases.md`. The row is what falls short.
+
+### Declined to judge
+
+- Whether `npm run diagrams` and `npm run docs:palette` were the only writers of their files: both write into the worktree, so I did not run them. `diagrams.test.ts` and `palette.test.ts` passed in the list instead.
+- The first stopped run's reason, that `docs:palette` failed with `css_global_invalid_placement`: reproducing it needs the selector put back, which is breakage. Read only.
+- The names of run 4's `vitest` failures: they are gone from the builder's run, and no run of mine can recover them.
+- When item 636 closed relative to the builder's writing of the report: `git log` on the state file would settle it, and I run no such command. R2 is judged on the file as it stands now.
+- Whether `O124-cases.md` and `O124-round1.md`, untracked in the worktree, reach the landing's wip commit: `git add` semantics at landing, which the three allowed git commands do not settle. The report names only the first of them as the orchestrator's.
+- Browser behaviour, left to the look: the order of `beforematch` events, `checkVisibility` under a nested `content-visibility: hidden`, and strip heights from `bind:offsetHeight` when a nested group opens.
+- The orchestrator's one-time change of `~/.oculus/layouts.json`: that file is off limits to me.
+- The 1098 changed lines of `channels.svg`: not read line by line; the byte-for-byte diagrams test passes.
+
+Reviewer usage: a33bae9f11781ca38, claude-opus-5-5, 260684 tokens, 34 tool uses, 13 min 14 s.
+
+### Closed
+
+- R1: closed at landing. No decision rests on the fifth run, the reviewer's own `test:quick` passed on the same tree, and the breach stands in the report's own words.
+- R2: closed at landing. The report's open items part states the state file as it stands.
+- R3: closed at landing. The report's row names the two strips inside `Surface` and the Gallery strip outside it.
