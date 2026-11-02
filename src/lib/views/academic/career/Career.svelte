@@ -19,8 +19,10 @@
     // CV is written from, the groups Positions, Degrees, Awards, References and Profiles, each the
     // group every grouping of a view is drawn as (ui/controls/heads/GroupHead.svelte), folded by
     // the list's key (views/shared/card/pane-fold.ts), a card per row (CareerCard.svelte). What the
-    // groups hold is state/forms/career-view.ts `careerShown`. The page holds no form: Edit, on
-    // every card and in the toolbar, opens the editor on the career file beside the page
+    // groups hold, and the hue of each list and of the strategy card, is
+    // state/forms/career-view.ts: `careerShown` and `STRATEGY_TONE`. The keyboard cursor the
+    // instance holds is drawn on its card. The page holds no form: Edit, on every card and in the
+    // toolbar, opens the editor on the career file beside the page
     // (views/boards/editor/Editor.svelte), where a row is added, changed and removed and Save
     // writes the file. A hub with no career file, or a career file with no schema, draws the line
     // saying so, and has no Edit.
@@ -43,9 +45,10 @@
     import RecordPage from '../../shared/card/record/RecordPage.svelte';
     import { usePaneFold } from '../../shared/card/pane-fold';
     import { personNames } from '$lib/state/boards/person';
-    import { careerShown, type CareerLine } from '$lib/state/forms/career-view';
+    import { careerShown, STRATEGY_TONE, type CareerLine } from '$lib/state/forms/career-view';
     import { CAREER } from '$lib/state/forms/page-entry';
     import { hubId } from '$lib/state/shared/page/hubs';
+    import { cardCursor } from '$lib/state/workbench/layout/instance';
     import { useState } from '$lib/state/client/use';
     import { t } from '$lib/state/shared/words/text';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
@@ -62,6 +65,7 @@
     /** Which of the page's groups are open, kept in the tab's state. */
     const fold = usePaneFold();
 
+    const cursor = $derived(cardCursor(instance.state));
     const career = $derived(portfolio()?.entities.career ?? null);
     const names = $derived(personNames(portfolio()));
     /** The name of the person of the primary hub a reference names, the key when it names none. */
@@ -160,7 +164,14 @@
                 <Empty message={t('career.no_schema')} glyph={t('career.none_glyph')} />
             </Surface>
         {:else}
-            <CareerCard id={CAREER} {title} lines={strategy} onedit={edit} />
+            <CareerCard
+                id={CAREER}
+                cursor={cursor === CAREER}
+                {title}
+                tone={STRATEGY_TONE}
+                lines={strategy}
+                onedit={edit}
+            />
         {/if}
     {/snippet}
 
@@ -182,7 +193,9 @@
                         {#each group.cards as row (row.id)}
                             <CareerCard
                                 id={row.id}
+                                cursor={cursor === row.id}
                                 title={row.title}
+                                tone={group.tone}
                                 hidden={row.hidden}
                                 lines={row.lines}
                                 onedit={edit}

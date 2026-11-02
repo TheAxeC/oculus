@@ -3,7 +3,9 @@
     // of a list of the file, as the record card (views/shared/card/record/RecordCard.svelte): its
     // title, a Tag on a row the file keeps off the CV, its labelled lines, and Edit, in the menu
     // and the strip, which opens the editor on the career file. A web address in a line is a link
-    // (ui/display/text/LinkedText.svelte).
+    // (ui/display/text/LinkedText.svelte). The page hands it its bar's hue and whether it holds the
+    // keyboard cursor. The Tag is the only thing its meta row draws at rest, so a card with none
+    // has its controls over its top right corner (ui/frame/Card.svelte).
 
     import Tag from '$lib/ui/controls/Tag.svelte';
     import LinkedText from '$lib/ui/display/text/LinkedText.svelte';
@@ -14,7 +16,11 @@
 
     type Props = {
         id: string;
+        /** Whether this card is the instance's current keyboard cursor. */
+        cursor: boolean;
         title: string;
+        /** The hue name of the card's bar (state/forms/career-view.ts). */
+        tone: string;
         /** Whether the file keeps the row off the CV. */
         hidden?: boolean;
         lines: CareerLine[];
@@ -22,7 +28,7 @@
         onedit: () => void;
     };
 
-    let { id, title, hidden = false, lines, onedit }: Props = $props();
+    let { id, cursor, title, tone, hidden = false, lines, onedit }: Props = $props();
 </script>
 
 {#snippet meta()}
@@ -45,8 +51,9 @@
 <div class="slot" data-career-card={id}>
     <RecordCard
         {id}
-        cursor={false}
+        {cursor}
         {title}
+        {tone}
         actions={[editorAction(onedit)]}
         strip={['editor']}
         {meta}

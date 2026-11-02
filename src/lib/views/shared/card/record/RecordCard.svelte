@@ -10,7 +10,9 @@
     // none), then the meta row: the mark of the record's hub (RootChip.svelte), the kind's chips
     // and tags (`meta`), the strip of at most three icons the kind names (`strip`, drawn by
     // CardActions.svelte under the pointer), and the "..." opener of the menu, drawn after the
-    // strip and at rest as `--card-at-rest` says (ui/frame/Card.svelte). The opener, a right-click
+    // strip and at rest as `--card-at-rest` says (ui/frame/Card.svelte). The strip and the opener
+    // each carry `data-card-control`, so a row that holds nothing else lies over the card's top
+    // right corner and drawing them moves nothing (ui/frame/Card.svelte). The opener, a right-click
     // anywhere on the card, and the context menu key and Shift+F10 on a control of the card open
     // the same menu, which lists every action in runs (record-menu.ts). A card with no action has
     // no opener and no right-click menu of its own, so a right-click on it opens what a right-click
@@ -284,7 +286,7 @@
                 {@render kindMeta?.()}
                 {#if every.length > 0}
                     <CardActions actions={stripActions(every, strip)} />
-                    <span class="menu">
+                    <span class="menu" data-card-control>
                         <Menu
                             {label}
                             glyph={t('project.card.menu_glyph')}

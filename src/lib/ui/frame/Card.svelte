@@ -11,6 +11,12 @@
     // one height, and draws past its own edge, so a menu of its controls is not cut off at the
     // foot of a short card; its bar then carries the card's rounded corners itself and a long
     // unbroken title breaks inside the card's width.
+    //
+    // The meta row takes no height when nothing in it is drawn at rest: a row holding no element
+    // has no margin, and on a screen that hovers a row holding only `data-card-control` children,
+    // the controls a card draws under the pointer, lies over the card's top right corner, so
+    // drawing them moves nothing. Whether a row is such a row is read in the style block from what
+    // it holds, so a kind says nothing about it. Every other row stays in the flow.
 
     import type { Snippet } from 'svelte';
     import { sanitise } from '../html';
@@ -129,8 +135,10 @@
        of a tree row take none, and unset while the card is hovered, holds the focus or the keyboard
        cursor, or has a menu of its own open, or always on a screen whose pointer does not hover. A
        control reads it as `display: var(--card-at-rest, <its own display>)`, so unset gives each
-       control its own display back. Every card sets it, so a card drawn inside another answers for
-       itself and not for the card around it. */
+       control its own display back. Beside chips the controls share the chips' line when they fit
+       and take a line of their own when they do not; with no chip they lie over the card (`.meta`
+       below). Every card sets it, so a card drawn inside another answers for itself and not for the
+       card around it. */
     .card {
         --card-at-rest: none;
         position: relative;
@@ -209,7 +217,10 @@
         background: var(--tone);
     }
 
+    /* Positioned so a meta row laid over the card takes the face's box, whether or not the card has
+       a bar. */
     .face {
+        position: relative;
         flex: 1 1 auto;
         min-width: 0;
         padding: 8px 12px;
@@ -251,6 +262,39 @@
         align-items: center;
         gap: 6px;
         margin-top: 6px;
+    }
+
+    /* A row with no element takes no height, on every screen. Only elements count, so a row of bare
+       text would lose its margin; no `meta` snippet draws one. */
+    .meta:not(:has(> *)) {
+        margin-top: 0;
+    }
+
+    /* A row holding nothing but a card's controls has nothing drawn at rest, so it lies over the
+       face's content box: the controls draw at the end of its line (CardActions.svelte measures
+       this box) and the card's height is the same with them and without. `:has` sees a child
+       whatever its `display`, so the rule gives one answer at rest and under the pointer. A kind
+       whose `meta` draws an empty wrapper stays in the flow, and bare text beside the controls
+       would not count as a child; no snippet draws either. The row takes no pointer, so the title
+       stays pressable under its empty part, and a control paints solid as the small controls of
+       tokens.css do, so the words under it do not run through it. No gap, so no slit of the title
+       shows between two controls. A screen that does not hover draws the controls at rest, where
+       lying over the title would cover its words for good. */
+    @media (hover: hover) {
+        .meta:not(:has(> :not(:global([data-card-control])))) {
+            position: absolute;
+            top: 8px;
+            left: 12px;
+            right: 12px;
+            margin: 0;
+            gap: 0;
+            pointer-events: none;
+        }
+
+        .meta:not(:has(> :not(:global([data-card-control])))) > :global([data-card-control]) {
+            background: var(--card);
+            pointer-events: auto;
+        }
     }
 
     .meta :global(.chip),

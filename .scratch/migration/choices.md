@@ -6010,3 +6010,5 @@ Builds on it: O111
 Builds on it: O111
 - 2026-11-01, O111's look (Z1095, open item 621): the Settings editor's false line "The file changed since this edit was started" ended, in O111's landing; a later step for it was the lazy option. Named in the next report.
 Builds on it: O111
+- 2026-11-02, O120's handed-back cases: the Career page reads the keyboard cursor as the Inbox does, so its cards draw the outline and their controls; leaving `cursor={false}` was the lazy option. Named in the next report.
+Builds on it: O120

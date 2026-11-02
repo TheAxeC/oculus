@@ -16,15 +16,18 @@
     // none, so the chips have the card's width (ui/frame/Card.svelte, `--card-at-rest`); Tab
     // reaches the controls of the card the focus or the keyboard cursor is in. The controls that
     // do not fit go, from the end, into one More menu at the strip's end, drawn at the other
-    // controls' height.
+    // controls' height. The strip carries `data-card-control`, so a meta row holding nothing but
+    // such controls lies over the card's top right corner (ui/frame/Card.svelte) and drawing them
+    // moves nothing.
     //
     // The room is measured in fractional widths. The line is the part of the meta row that can be
-    // seen: a pane narrower than its card clips the card, and a control past the pane's edge could
-    // not be pointed at. The row stays beside the chips at the line's end when it fits there, and
-    // otherwise takes a line of its own from the line's start (or sits after the chips when the
-    // card is clipped). The room does not depend on how many controls the row draws, so moving a
-    // control into the menu never changes the room it was measured against. Each control's width is
-    // remembered by id, since a control inside the menu has no width on the page.
+    // seen, whether the row is in the flow or lies over the card: a pane narrower than its card
+    // clips the card, and a control past the pane's edge could not be pointed at. The row stays
+    // beside the chips at the line's end when it fits there, and otherwise takes a line of its own
+    // from the line's start (or sits after the chips when the card is clipped). The room does not
+    // depend on how many controls the row draws, so moving a control into the menu never changes
+    // the room it was measured against. Each control's width is remembered by id, since a control
+    // inside the menu has no width on the page.
     //
     // A measurement that lands after the component is gone, or after a newer one began, is dropped
     // (card-layout.ts's measureGate), and a row that is not drawn is not measured: it is measured
@@ -146,7 +149,7 @@
     }
 </script>
 
-<span class="actions" class:start bind:this={strip} data-card-actions>
+<span class="actions" class:start bind:this={strip} data-card-control>
     {#each inline as action (action.id)}
         <span class="act" data-action={action.id}>
             {#if action.items === undefined}

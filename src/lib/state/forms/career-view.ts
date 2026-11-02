@@ -4,7 +4,9 @@
 // and one card per row. Pure, so a row's title and lines are read without a rendering. The fields
 // a row's lines come from are the nested `fields:` of the group's row of the file's own `schema:`,
 // so a field the schema adds is drawn with no change here. The editor of the file is
-// views/boards/editor/Editor.svelte.
+// views/boards/editor/Editor.svelte. The hue of each list and of the strategy card is chosen here
+// as a hue name of the palette, so nothing reads a colour from the file and the file's schema
+// holds no key for one.
 
 import { isMap } from '../../data/helpers/guards.ts';
 import type { Career, SchemaField } from '../../data/model/index.ts';
@@ -16,20 +18,30 @@ export type CareerLine = { label: string; text: string };
 /** One row of a group as a card: `hidden` says the file keeps it off the CV. */
 type CareerCard = { id: string; title: string; hidden: boolean; lines: CareerLine[] };
 
-/** One list of the career file as a group of cards, named by the file's key of the list. */
-type CareerGroup = { field: string; cards: CareerCard[] };
+/**
+ * One list of the career file as a group of cards, named by the file's key of the list, its cards
+ * drawn with the bar of the hue `tone`.
+ */
+type CareerGroup = { field: string; tone: string; cards: CareerCard[] };
 
 /** What the Career view draws. */
 export type CareerShown =
     { state: 'none' } | { state: 'no_schema' } | { state: 'cards'; groups: CareerGroup[] };
 
-/** The lists the view groups, in its order, each with the field that titles a card of the list. */
-const GROUPS: { field: string; title: string }[] = [
-    { field: 'positions', title: 'title' },
-    { field: 'degrees', title: 'title' },
-    { field: 'awards', title: 'award' },
-    { field: 'references', title: 'person' },
-    { field: 'profiles', title: '' }
+/** The hue of the strategy card's bar. */
+export const STRATEGY_TONE = 'indigo';
+
+/**
+ * The lists the view groups, in its order, each with the field that titles a card of the list and
+ * the hue of its cards' bars, a hue every theme defines, leaving out red, amber and green, which
+ * oculus's lists read as a state.
+ */
+const GROUPS: { field: string; title: string; tone: string }[] = [
+    { field: 'positions', title: 'title', tone: 'blue' },
+    { field: 'degrees', title: 'title', tone: 'violet' },
+    { field: 'awards', title: 'award', tone: 'gold' },
+    { field: 'references', title: 'person', tone: 'teal' },
+    { field: 'profiles', title: '', tone: 'pink' }
 ];
 
 /** The field of a reference that names a person by key. */
@@ -81,7 +93,7 @@ function groupOf(
         const cards = Object.entries(held).map(([name, row]) =>
             cardOf(`${group.field}:${name}`, isMap(row) ? row : {}, fields, '', name)
         );
-        return { field: group.field, cards };
+        return { field: group.field, tone: group.tone, cards };
     }
     const rows = Array.isArray(held) ? held.filter(isMap) : [];
     const cards = rows.map((row, at) => {
@@ -89,7 +101,7 @@ function groupOf(
         const name = group.title === PERSON_FIELD && own !== '' ? personName(own) : own;
         return cardOf(`${group.field}:${at}`, row, fields, group.title, name);
     });
-    return { field: group.field, cards };
+    return { field: group.field, tone: group.tone, cards };
 }
 
 /**

@@ -1,11 +1,11 @@
-In flight (1 of 6 slots in use):
-- O120 (a card takes no height for its controls, Career's colours), building.
+In flight (0 of 6 slots in use): none.
 
 Queued, in order (0 steps): none.
 
 Owed looks: none.
 
 Landed, newest first:
+- O120 (a card takes no height for its controls, Career's colours), 2026-11-02.
 - O119 (Transcript right-click, tool-call runs, the import cycle), 2026-11-02.
 - O118 (a Transcript's older turns load on scrolling up), 2026-11-02.
 - O117 (the transcript's own text size), 2026-11-02.
