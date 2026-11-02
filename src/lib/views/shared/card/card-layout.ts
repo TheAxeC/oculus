@@ -33,19 +33,20 @@ export function clampControl(open: boolean, overflowing: boolean): ClampControl 
 
 /**
  * How much narrower than the measured room the actions are kept: widths are fractional, and a strip
- * that filled its room to the last fraction could still be pushed onto a line of its own.
+ * that filled its room to the last fraction could still wrap off the line it shares with the chips.
  */
 export const SLACK = 1;
 
-/** Where a card's actions sit: the width they have, and whether that is a line of their own. */
+/** Where a card's actions sit: the width they have, and whether the others leave them no room. */
 export type ActionPlace = { room: number; alone: boolean };
 
 /**
  * The room the actions have. `line` is the width of the line they sit in that can be seen, `others`
- * what the line's other contents (a card's chips) take of it with their gaps, and `least` the
- * narrowest strip of use: every action, or More alone. The actions stay beside the
- * others when that much fits there, less the slack; otherwise they take a line of their own, the
- * whole visible line. A line not measured yet (zero) has no room.
+ * what the line's other contents (a card's chips) take of it with their gaps, and `least` the width
+ * the actions must have to stay there, which CardActions.svelte takes as every action and the
+ * opener after them. The actions stay beside the others when that much fits there, less the slack;
+ * otherwise they have the whole visible line, lying over the card on a screen that hovers and on a
+ * line of their own on one that does not. A line not measured yet (zero) has no room.
  */
 export function actionPlace(line: number, others: number, least: number): ActionPlace {
     if (line <= 0) return { room: 0, alone: false };
@@ -54,12 +55,9 @@ export function actionPlace(line: number, others: number, least: number): Action
     return { room: Math.max(0, line - SLACK), alone: true };
 }
 
-/** The narrowest strip of use: every action when they take less than More, else More alone. */
-export function leastStrip(widths: number[], more: number, gap: number): number {
-    const all =
-        widths.reduce((sum, width) => sum + width, 0) + gap * Math.max(0, widths.length - 1);
-    if (widths.length === 0) return 0;
-    return Math.min(all, more);
+/** The width a run of actions takes: their widths and the gaps between them. */
+export function stripWidth(widths: number[], gap: number): number {
+    return widths.reduce((sum, width) => sum + width, 0) + gap * Math.max(0, widths.length - 1);
 }
 
 /**
@@ -97,9 +95,7 @@ export function measureGate(): MeasureGate {
  */
 export function fitActions(widths: number[], room: number, more: number, gap: number): number {
     if (room <= 0) return widths.length;
-    const span = (count: number): number =>
-        widths.slice(0, count).reduce((sum, width) => sum + width, 0) +
-        gap * Math.max(0, count - 1);
+    const span = (count: number): number => stripWidth(widths.slice(0, count), gap);
     if (span(widths.length) <= room) return widths.length;
     const left = room - more - gap;
     let count = 0;

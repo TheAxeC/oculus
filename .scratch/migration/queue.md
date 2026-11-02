@@ -1,5 +1,4 @@
-In flight (1 of 6 slots in use):
-- O121 (a chip row takes no height for its controls), built, in review.
+In flight (0 of 6 slots in use):
 
 Queued, in order (1 step):
 - O122 (a Transcript draws only what is in view), waits on open item 634.
@@ -7,6 +6,7 @@ Queued, in order (1 step):
 Owed looks: none.
 
 Landed, newest first:
+- O121 (a chip row takes no height for its controls), 2026-11-02.
 - O120 (a card takes no height for its controls, Career's colours), 2026-11-02.
 - O119 (Transcript right-click, tool-call runs, the import cycle), 2026-11-02.
 - O118 (a Transcript's older turns load on scrolling up), 2026-11-02.

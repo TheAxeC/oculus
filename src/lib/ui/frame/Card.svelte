@@ -16,7 +16,9 @@
     // has no margin, and on a screen that hovers a row holding only `data-card-control` children,
     // the controls a card draws under the pointer, lies over the card's top right corner, so
     // drawing them moves nothing. Whether a row is such a row is read in the style block from what
-    // it holds, so a kind says nothing about it. Every other row stays in the flow.
+    // it holds, so a kind says nothing about it. Every other row stays in the flow, and a control
+    // in it lies over the same corner itself, when it has no room beside the chips or always, so
+    // the row does not grow for it.
 
     import type { Snippet } from 'svelte';
     import { sanitise } from '../html';
@@ -136,9 +138,9 @@
        cursor, or has a menu of its own open, or always on a screen whose pointer does not hover. A
        control reads it as `display: var(--card-at-rest, <its own display>)`, so unset gives each
        control its own display back. Beside chips the controls share the chips' line when they fit
-       and take a line of their own when they do not; with no chip they lie over the card (`.meta`
-       below). Every card sets it, so a card drawn inside another answers for itself and not for the
-       card around it. */
+       and on a screen that hovers lie over the card when they do not, as they do with no chip
+       (`.meta` below), so drawing them moves nothing. Every card sets it, so a card drawn inside
+       another answers for itself and not for the card around it. */
     .card {
         --card-at-rest: none;
         position: relative;
@@ -217,8 +219,8 @@
         background: var(--tone);
     }
 
-    /* Positioned so a meta row laid over the card takes the face's box, whether or not the card has
-       a bar. */
+    /* Positioned so a meta row or a control laid over the card takes the face's box, whether or not
+       the card has a bar. */
     .face {
         position: relative;
         flex: 1 1 auto;
@@ -277,17 +279,18 @@
        whose `meta` draws an empty wrapper stays in the flow, and bare text beside the controls
        would not count as a child; no snippet draws either. The row takes no pointer, so the title
        stays pressable under its empty part, and a control paints solid as the small controls of
-       tokens.css do, so the words under it do not run through it. No gap, so no slit of the title
-       shows between two controls. A screen that does not hover draws the controls at rest, where
-       lying over the title would cover its words for good. */
+       tokens.css do, so the words under it do not run through it. `flex-end` sends a control wider
+       than the row past the card's left edge, so its right end stays in reach. A screen that does
+       not hover draws the controls at rest, where lying over the title would cover its words for
+       good. */
     @media (hover: hover) {
         .meta:not(:has(> :not(:global([data-card-control])))) {
             position: absolute;
             top: 8px;
             left: 12px;
             right: 12px;
+            justify-content: flex-end;
             margin: 0;
-            gap: 0;
             pointer-events: none;
         }
 

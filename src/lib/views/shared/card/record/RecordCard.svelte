@@ -8,15 +8,15 @@
     //
     // The head is the title (the page opener where the kind hands `ontitle`, words where it hands
     // none), then the meta row: the mark of the record's hub (RootChip.svelte), the kind's chips
-    // and tags (`meta`), the strip of at most three icons the kind names (`strip`, drawn by
-    // CardActions.svelte under the pointer), and the "..." opener of the menu, drawn after the
-    // strip and at rest as `--card-at-rest` says (ui/frame/Card.svelte). The strip and the opener
-    // each carry `data-card-control`, so a row that holds nothing else lies over the card's top
-    // right corner and drawing them moves nothing (ui/frame/Card.svelte). The opener, a right-click
-    // anywhere on the card, and the context menu key and Shift+F10 on a control of the card open
-    // the same menu, which lists every action in runs (record-menu.ts). A card with no action has
-    // no opener and no right-click menu of its own, so a right-click on it opens what a right-click
-    // there opens around it.
+    // and tags (`meta`), then one element CardActions.svelte draws under the pointer, as
+    // `--card-at-rest` says (ui/frame/Card.svelte): the strip of at most three icons the kind names
+    // (`strip`) and, last in it, the "..." opener of the menu this card hands in. The element stays
+    // beside the chips when every icon and the opener fit there, and otherwise lies over the card's
+    // top right corner, as it does on a row that holds nothing else, so drawing it moves nothing.
+    // The opener, a right-click anywhere on the card, and the context menu key and Shift+F10 on a
+    // control of the card open the same menu, which lists every action in runs (record-menu.ts). A
+    // card with no action has no opener and no right-click menu of its own, so a right-click on it
+    // opens what a right-click there opens around it.
     //
     // The body draws, each only when the kind fills it: the facts row (`facts`), the labelled lines
     // (`lines`), the text (`text`), the kind's own blocks (`blocks`), the dated lines (Subtasks,
@@ -285,19 +285,20 @@
                 <RootChip {record} />
                 {@render kindMeta?.()}
                 {#if every.length > 0}
-                    <CardActions actions={stripActions(every, strip)} />
-                    <span class="menu" data-card-control>
-                        <Menu
-                            {label}
-                            glyph={t('project.card.menu_glyph')}
-                            compact
-                            placement="down"
-                            align="right"
-                            items={[]}
-                            groups={runs}
-                            onpick={(pick: string) => pickAction(every, pick)}
-                        />
-                    </span>
+                    <CardActions actions={stripActions(every, strip)}>
+                        {#snippet opener()}
+                            <Menu
+                                {label}
+                                glyph={t('project.card.menu_glyph')}
+                                compact
+                                placement="down"
+                                align="right"
+                                items={[]}
+                                groups={runs}
+                                onpick={(pick: string) => pickAction(every, pick)}
+                            />
+                        {/snippet}
+                    </CardActions>
                 {/if}
             {/snippet}
 
@@ -351,14 +352,5 @@
         flex: 1 1 auto;
         flex-direction: column;
         min-width: 0;
-    }
-
-    /* The "..." opener is drawn when the card's icons are (ui/frame/Card.svelte, `--card-at-rest`),
-       right after them. */
-    .menu {
-        display: var(--card-at-rest, flex);
-        flex: 0 0 auto;
-        align-items: center;
-        margin-block: min(0px, calc((1lh - 22px) / 2));
     }
 </style>

@@ -27,7 +27,9 @@
     // A Claude account's card carries Refresh, whose glyph turns from the reader's press until that
     // press's answer (the usage-refresh store's `refreshing`); a refresh on the refresher's own
     // cadence turns nothing. The card draws its controls only under the pointer or the focus, so
-    // while a press waits the control is held drawn on its card, turning, until the answer.
+    // while a press waits the control is held drawn on its card, turning, until the answer. On a
+    // screen that hovers the control lies over the card's top right corner in every state, so its
+    // row of tags never grows for it.
     //
     // An account's live sessions and the history are each the group every grouping of a view is
     // drawn as (ui/controls/heads/GroupHead.svelte), folded under `folded` of the pane's state
@@ -378,13 +380,28 @@
         display: var(--card-at-rest, inline-flex);
         /* Drawn, the 20px controls take 2px less than a line of text, less than the chips and
            words beside them, so a line they share stays as tall as it was at rest; on a line of
-           their own they reach no further than the gap between the lines. */
+           their own, where nothing hovers, they reach no further than the gap between the lines.
+           Over the card the same margin places them as a row with no chip draws them. */
         margin-block: min(0px, calc((1lh - 22px) / 2));
         margin-left: auto;
     }
 
     .act.held {
         display: inline-flex;
+    }
+
+    /* Out of the flow against the card's face, at the place of ui/frame/Card.svelte's row of
+       controls and painted solid as they are, so the row of tags keeps its lines and the card its
+       height. The row always holds a tag, so that rule does not place it and it places itself. A
+       screen that does not hover draws it at rest, where lying over the title would cover its words
+       for good. */
+    @media (hover: hover) {
+        .act {
+            position: absolute;
+            top: 8px;
+            right: 12px;
+            background: var(--card);
+        }
     }
 
     /* The table scrolls inside this box, so a narrow pane scrolls the table and not itself. A box

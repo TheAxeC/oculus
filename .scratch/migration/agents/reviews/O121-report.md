@@ -18,6 +18,8 @@ The section holds no entry.
 
 The five decisions of the handback stand and are built: the class starts true and the first `measure` clears it; at rest with a width not known, `measure` sets the class from whether the row holds chips and goes no further; the row holds chips when `line.children.length > 1`; a line with `seen <= 0` leaves the class, `fit` and the clipped width as they stand; `margin-block` stays on the span.
 
+`O121-round-1.md` replaces two clauses of this ruling: "`leastStrip` itself does not change" in item 2 (`leastStrip` is gone) and "a clipped row with no chip still starts at the left" in item 3 (such a row keeps its span at the visible right edge). See "Repair round 1".
+
 ## The cases' first run
 
 Run before any change, by reading the code. "Unchanged tree" is what the base gives. "Built" is what the code in this diff gives, by reading and, where named, by the case-run program below. No page was run.
@@ -27,12 +29,12 @@ Run before any change, by reading the code. "Unchanged tree" is what the base gi
 | One chip and room | `measure`, `.actions` | `alone` false, controls at the line's end, `margin-block` keeps the height | Same place, one span; program: over false, fit 2. Look on landing: Career, wide pane, one chip |
 | Too narrow for chips and controls | `measure`, `.actions.over` | `alone`, `start`, strip wraps to its own line, card grows | `over`, corner, chips in the flow. Look on landing: heights in the five states |
 | Chips that wrap | `others` sums past the line | `alone`, grows | As above |
-| First hover after load and after narrowing | `measure` at rest, `over` starts true | Strip wraps until measured; `measure` returns at rest (base line 91) | At rest the class is right from remembered widths; before any draw it stands. A hover cannot wrap the span. Look on landing: frames sampled |
+| First hover after load and after narrowing | `measure` at rest, `over` starts true | Strip wraps until measured; `measure` returns at rest (base line 91) | At rest the class is right from remembered widths; before any draw it stands. A hover tries the flow only on real widths: with an action in More that has no width yet, the drawn branch draws every action and sets the class from chips, and the next measurement places the span (repair round 1). Look on landing: frames sampled |
 | Pane widened under the pointer | ResizeObserver on the line, `measure` | Strip returns beside the chips | `over` clears, span in the flow beside the chips. Look on landing: height equals rest at the new width |
 | Clipped card with chips, as ruled | `clipped`, `right: calc(12px + var(--clipped))`, `start` | `start`, strip at the line's start, can grow | Top, visible right edge; fits in the visible part: after the chips in the flow. Look on landing |
 | No chip | `Card.svelte` rule, one span | Over the corner, two spans, `gap: 0` | Over the corner, 6px gap solid between the last action and "..." |
 | No chip, narrower than its controls | `over = place.alone && chips` | Card's rule, wraps inside the row | Card's rule alone, no class, no second offset. `start` is false, so the span holds the row's right end |
-| "..." with no strip action | `taken`, `leastStrip` returns 0 | Opener at the end | Opener alone at the line's end, no gap counted; program: over false |
+| "..." with no strip action | `taken`, `stripWidth` returns 0 | Opener at the end | Opener alone at the line's end, no gap counted; program: over false |
 | Visible line under about 27 px | Guard `room > 0` | `fitActions` room 0 keeps every action | Every action in More, opener last; program: line 27 room 0 fit 0, line 28 room 1 fit 0 |
 | Narrower than More and "..." | `.actions.over`, `flex-end`, `margin-right: auto` | Two children wrap | Passes the left edge on both rows; right end stays reachable |
 | Focus across the class change | `class:over`, `fit` on both sides | `fit` jumps from 0 to 2 at the place, removing More or an action | Program: line 319 over false fit 2, line 318 over true fit 2. Nothing is redrawn at that place. Look on landing |
@@ -44,44 +46,86 @@ Run before any change, by reading the code. "Unchanged tree" is what the base gi
 | Wallpaper and rice | `background: var(--card)` under the class | Solid on a no-chip row | Solid box, only under `over`, and on Card's rule. Look on landing |
 | Usage at a narrow width | `.act` rule, `.act.held` | `.act` wraps, card grows | Absolute in `.face`, tags untouched, `.act.held` stays `inline-flex` and turns. Look on landing |
 
-Case-run program, inline in `node --input-type=module -e`, writing nothing, importing the real `card-layout.ts`, with opener 20, gap 6, line gap 6 and action widths 20:
+The whole case-run program follows. It was run as a file in the session's scratchpad with `node <file>`, wrote nothing, imports the real `card-layout.ts`, and the file is gone. To run it again, save it under any name with the import path pointing at this worktree.
 
 ```js
-function place(seen, chips, sizes, more) {
-  const has = chips > 0;
-  const others = has ? chips + lineGap : 0;
-  const taken = openerWidth + (sizes.length === 0 ? 0 : gap);
-  const p = actionPlace(seen, others, leastStrip(sizes, Number.POSITIVE_INFINITY, gap) + taken);
-  const room = p.room - taken;
-  return { over: p.alone && has, room, fit: room > 0 ? fitActions(sizes, room, more, gap) : 0 };
+import { actionPlace, fitActions, stripWidth } from '/Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O121/src/lib/views/shared/card/card-layout.ts';
+
+const openerWidth = 20;
+const gap = 6;
+const lineGap = 6;
+const more = 20;
+const two = [20, 20];
+const three = [20, 20, 20];
+
+// The arithmetic of CardActions.svelte's measure past its early returns; chips 0 is a row with none.
+function place(content, seen, chips, sizes) {
+    const has = chips > 0;
+    const others = has ? chips + lineGap : 0;
+    const taken = openerWidth + (sizes.length === 0 ? 0 : gap);
+    const p = actionPlace(seen, others, stripWidth(sizes, gap) + taken);
+    const room = p.room - taken;
+    return {
+        over: p.alone && has,
+        start: has && (p.alone || seen < content - 0.5),
+        room,
+        fit: room > 0 ? fitActions(sizes, room, more, gap) : 0,
+        clipped: Math.max(0, content - seen)
+    };
+}
+
+const cases = [
+    ['focus across, line 319, chips 240, two actions', 319, 319, 240, two],
+    ['focus across, line 318, chips 240, two actions', 318, 318, 240, two],
+    ['one chip and room, line 300, chips 80, two actions', 300, 300, 80, two],
+    ['three actions, line 60, chips 100', 60, 60, 100, three],
+    ['three actions, line 90, chips 100', 90, 90, 100, three],
+    ['no chip, three actions, line 90', 90, 90, 0, three],
+    ['no chip, narrower than More and opener, line 40, two actions', 40, 40, 0, two],
+    ['opener alone, line 300, chips 80', 300, 300, 80, []],
+    ['visible line 27, chips 80, two actions', 27, 27, 80, two],
+    ['visible line 28, chips 80, two actions', 28, 28, 80, two],
+    ['clipped with chips, fits, content 400, seen 200, chips 80', 400, 200, 80, two],
+    ['clipped with chips, no room, content 400, seen 100, chips 80', 400, 100, 80, two],
+    ['clipped, no chip, content 300, seen 150', 300, 150, 0, two],
+    ['clipped sliver, no chip, content 300, seen 25', 300, 25, 0, two]
+];
+
+for (const [name, content, seen, chips, sizes] of cases) {
+    console.log(name, JSON.stringify(place(content, seen, chips, sizes)));
 }
 ```
 
-Output, from runs after the last change. The second block's objects also held a `start` field equal to `over`, left out here.
+Output, run after the last code change:
 
 ```
-319 {"over":false,"room":46,"fit":2}
-318 {"over":true,"room":291,"fit":2}
-one chip, room, line 300, chips 80, 2 actions {"over":false,"room":187,"fit":2}
-three actions, line 60, chips 100 {"over":true,"room":33,"fit":0}
-three actions, line 90, chips 100 {"over":true,"room":63,"fit":1}
-no chip, three actions, line 90 {"over":false,"room":63,"fit":1}
-opener alone, line 300, chips 80 {"over":false,"room":193,"fit":0}
-visible line 27, chips 80, 2 actions {"over":true,"room":0,"fit":0}
-visible line 28, chips 80, 2 actions {"over":true,"room":1,"fit":0}
+focus across, line 319, chips 240, two actions {"over":false,"start":false,"room":46,"fit":2,"clipped":0}
+focus across, line 318, chips 240, two actions {"over":true,"start":true,"room":291,"fit":2,"clipped":0}
+one chip and room, line 300, chips 80, two actions {"over":false,"start":false,"room":187,"fit":2,"clipped":0}
+three actions, line 60, chips 100 {"over":true,"start":true,"room":33,"fit":0,"clipped":0}
+three actions, line 90, chips 100 {"over":true,"start":true,"room":63,"fit":1,"clipped":0}
+no chip, three actions, line 90 {"over":false,"start":false,"room":63,"fit":1,"clipped":0}
+no chip, narrower than More and opener, line 40, two actions {"over":false,"start":false,"room":13,"fit":0,"clipped":0}
+opener alone, line 300, chips 80 {"over":false,"start":false,"room":193,"fit":0,"clipped":0}
+visible line 27, chips 80, two actions {"over":true,"start":true,"room":0,"fit":0,"clipped":0}
+visible line 28, chips 80, two actions {"over":true,"start":true,"room":1,"fit":0,"clipped":0}
+clipped with chips, fits, content 400, seen 200, chips 80 {"over":false,"start":true,"room":87,"fit":2,"clipped":200}
+clipped with chips, no room, content 400, seen 100, chips 80 {"over":true,"start":true,"room":73,"fit":2,"clipped":300}
+clipped, no chip, content 300, seen 150 {"over":false,"start":false,"room":123,"fit":2,"clipped":150}
+clipped sliver, no chip, content 300, seen 25 {"over":false,"start":false,"room":-2,"fit":0,"clipped":275}
 ```
 
 ## DONE / NOT DONE
 
 | Deliverable or check | State | Command and output |
 |---|---|---|
-| 1. One element for a record card's controls | DONE | `grep -rn 'data-action-opener'` prints `CardActions.svelte:114` and `:250`; `class="menu"` is gone from `RecordCard.svelte` (only `SessionWorkspace.svelte:191`, its own class, remains) |
-| 2. Controls that do not fit lie over the card | DONE, look on landing for the heights | `grep -rn -- '--clipped'` prints `CardActions.svelte:203`, `:279`, `:287` |
+| 1. One element for a record card's controls | DONE | `grep -n 'data-action-opener'` prints `CardActions.svelte:115` and `:254`; `class="menu"` is gone from `RecordCard.svelte` (only `SessionWorkspace.svelte:191`, its own class, remains) |
+| 2. Controls that do not fit lie over the card | DONE, look on landing for the heights | `grep -n -- '--clipped'` prints `CardActions.svelte:207`, `:274`, `:278`, `:286`, `:294` |
 | 3. Controls that fit stay | DONE, look on landing | Program line 319: `"over":false` |
 | 4. Hovering moves nothing | DONE, look on landing for the frames | Read from `measure`; no page run |
 | 5. The Usage card | DONE, look on landing | `.act` under `@media (hover: hover)` in `Usage.svelte` |
 | 6. Comments and pages | DONE | Listed under "Comments and pages read" |
-| `npm run test:quick` | DONE | `test:quick: 44.6 s; every command passed` |
+| `npm run test:quick` | DONE | `test:quick: 37.5 s; every command passed` |
 | `LC_ALL=C grep -n '[^ -~]'` over the changed files | DONE | Prints nothing, `[exit 1]` |
 | `git diff --stat -- config tests` | DONE | Prints nothing |
 | No test added or changed | DONE | `diff -rq ../O121-base/tests tests` prints nothing |
@@ -92,11 +136,11 @@ visible line 28, chips 80, 2 actions {"over":true,"room":1,"fit":0}
 ```
 ok      prettier (0.6 s): All matched files use Prettier code style!
 ok      ASCII gate (0.7 s)
-ok      svelte-kit sync (2.5 s)
-ok      eslint (9.4 s)
-ok      svelte-check (26.7 s): 1793647740756 COMPLETED 581 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
-ok      vitest checks (42.0 s): Duration  31.03s (transform 13.41s, setup 0ms, import 27.32s, tests 42.85s, environment 2ms)
-test:quick: 44.6 s; every command passed
+ok      svelte-kit sync (2.1 s)
+ok      eslint (8.0 s)
+ok      svelte-check (8.1 s): 1793648609070 COMPLETED 581 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest checks (35.3 s): Duration  25.43s (transform 12.61s, setup 0ms, import 25.04s, tests 35.20s, environment 2ms)
+test:quick: 37.5 s; every command passed
 ```
 
 The list ran the nine checks under `tests/checks`. It covers no behaviour of these components, which no test reaches.
@@ -110,21 +154,22 @@ From `git diff --numstat` and `wc -l`. `git status --short` and `diff -rq` again
 | File | Lines now | Added | Removed | On the write list |
 |---|---|---|---|---|
 | `src/lib/ui/frame/Card.svelte` | 335 | 13 | 10 | yes |
-| `src/lib/views/shared/card/record/CardActions.svelte` | 295 | 108 | 34 | yes |
+| `src/lib/views/shared/card/record/CardActions.svelte` | 302 | 117 | 36 | yes |
 | `src/lib/views/shared/card/record/RecordCard.svelte` | 356 | 23 | 31 | yes |
 | `src/lib/views/system/machine/usage/Usage.svelte` | 416 | 19 | 2 | yes |
-| `src/lib/views/shared/card/card-layout.ts` | 109 | 7 | 6 | yes, comments only |
+| `src/lib/views/shared/card/card-layout.ts` | 104 | 11 | 15 | yes, code by repair round 1 item 2 |
 | `docs/HELP.md` | 615 | 1 | 1 | yes, line 301 |
 | `.scratch/migration/agents/reviews/O121-report.md` | new | | | yes |
 
-`docs/diagrams/*` did not change: `npm run diagrams` ran once and `git diff --stat -- docs/diagrams` prints nothing.
+`docs/diagrams/*` did not change: `npm run diagrams` ran right before each run of the list and `git diff --stat -- docs/diagrams` prints nothing.
 
 ## Judgment calls the brief left open
 
-- **`start` also needs chips.** It reads `(place.alone && chips) || seen < content.width - 0.5`. Under ruling 2 a row with no chip is `alone` at widths where More and "..." leave free room, and `start` would then move its controls to the row's left. The program's "no chip, three actions, line 90" is that width. Without chips, only a clipped card starts at the left.
+- **`--clipped` as a margin stands on the base `.actions` rule.** `.actions.start` overrides it, and `over` implies `start`, so in effect it reaches only a row with no chip, on any screen, and `over` keeps its `right` with no double offset. A row with chips in the flow that is not `start` has `clipped` under 0.5 px.
+- **`sizes` reads `widths[action.id]` with no fallback,** since `measure` has returned by then on any unknown width.
 - **`remember(node)` is a new local function.** It holds the width reads, so `measure` keeps one reason. `grep -rn "function remember"` prints only unrelated functions in `windows.ts` and `decorations.svelte.ts`, which measure nothing.
 - **The opener's wrapper is `<span class="act" data-action-opener>`,** the shape More already has.
-- **`--clipped` is a custom property set by `style:` on the span,** read only under the hover rule, so a screen that does not hover ignores it.
+- **`--clipped` is a custom property set by `style:` on the span.** `right` reads it under the hover rule and the base margin reads it on every screen.
 - **`.actions.over` sets no `width`.** The controls do not wrap (`white-space: nowrap`), so the span cannot shrink below their sum.
 
 ## Every host- or user-visible change, with before and after
@@ -138,6 +183,7 @@ Views: Registries Data tab, Career, and Usage. Put a pane at the width named, ho
 | Chips that wrap | As the first row | As the first row |
 | Clipped card with chips, no room | Line's start, can grow | Top, visible right edge; title's start pressable |
 | Clipped card with chips, room in the visible part | After the chips | Same |
+| Clipped card with no chip | Row's start; a sliver under the span leaves "..." out of reach | Visible right edge at any sliver; "..." stays in reach (repair round 1) |
 | Card with no chip | Controls flush, `gap: 0` | 6px solid gap between the last action and "..." |
 | Card with no chip and room for More and "..." but not every action | More and "..." at the right | Same place, with as many actions as fit |
 | Card narrower than More and "...", no chip | More and "..." wrap inside the row | One span passes the left edge, right end reachable (ruling 3) |
@@ -157,7 +203,8 @@ The three cases above, as handed back and ruled. Nothing else.
 - **No page was run.** The claim that no painted frame grows rests on ResizeObserver running before paint and Svelte flushing in a microtask, a judgment from the rendering order, not verified. The look is its proof.
 - **A menu open while a pane is resized across the class change** moves the opener under the open list. bits-ui's tracking of its anchor is not verified.
 - **Focus can drop on a pure width change.** A resize that sends a focused action into More by `fitActions`, with no class change, removes it, as item 1 requires.
-- **`leastStrip`'s `more` argument is now always infinite** at its one caller, so its `Math.min` branch is unreachable. The ruling keeps the function unchanged. Its comment is true of the function.
+- **An action in More with no width, whose width equals More's.** The drawn branch sets `fit` to infinity, but the span keeps its size, so no observer fires and the class stands from chips until the next draw measures. The controls lie over the corner for that hover, and the height does not change. Read from the code, not run.
+- **For the frame after that drawn branch, a chip row's span can pass the card's left edge** with every action drawn over the corner, before the next measurement sends actions back into More. The height does not change.
 - **The corner covers more titles under the pointer than a row with More beside chips did,** as ruling 2 accepts.
 - **On a no-hover screen a no-chip row narrower than its controls overflows right,** since `flex-end` stands under `@media (hover: hover)` with the row it serves. The hover case is the case ruled.
 - **`8px` and `12px` are written in three places** (`Card.svelte`, `CardActions.svelte`, `Usage.svelte`), mirroring `.face`'s padding, as the brief names them.
@@ -170,6 +217,7 @@ The three cases above, as handed back and ruled. Nothing else.
 - **History grep** over added lines, `git diff -U0 -- src docs/HELP.md | grep -i -E "\b(before|used to|no longer|still|always has been|always had|as before|previously|the step adds|after this package)\b"`, prints one line: `card-layout.ts`, "could still wrap off the line it shares with the chips". Judged: it says what a fractional width can do and compares with no earlier state.
 - **Name grep:** `grep -n "line of its own\|line of their own\|takes a line\|take a line"` over the changed source files, after the last change, prints `CardActions.svelte:35` and `card-layout.ts:49`, each saying what a screen that does not hover does. `Usage.svelte`'s margin comment says the same across a line break, so the grep does not print it. Over the whole tree the other hits are about other things. `docs/*.md` mention this card's head only at `HELP.md:301`.
 - **Reuse grep:** `grep -rn "function remember\|\bremember("` over `src tests`: no helper that reads widths.
+- **`leastStrip` grep:** `grep -rn 'leastStrip' src tests docs README.md .scratch/migration/agents/guarded.md` prints nothing outside `.svg` files. `stripWidth` has the callers `CardActions.svelte:157` and `card-layout.ts:98`.
 - **Unused exports:** `sh utils/unused-exports.sh` against the base's list adds no line.
 - **Identifiers:** `data-action-opener` and `--clipped` are new. `grep -rn` finds no other reader. `data-action-opener` is a presence attribute with no value; `--clipped` is at least `0px`.
 - **Asynchronous paths:** `measure` runs only through `gate.current(token)`, so a run after close or a superseded one is dropped, as it was.
@@ -186,15 +234,37 @@ The three cases above, as handed back and ruled. Nothing else.
 | `CardActions.svelte` head | rewritten |
 | `CardActions.svelte` `.actions` lead comment | still true |
 | `CardActions.svelte` margin comment | rewritten |
-| `measure` | doc comment written |
+| `measure` | doc comment written, and rewritten in repair round 1 |
+| `.actions.start` comment | rewritten in repair round 1 |
+| `start` doc comment | rewritten in repair round 1 |
 | `visibleRight`, `inner` | still true |
 | `RecordCard.svelte` head | rewritten |
 | `Usage.svelte` head | rewritten |
 | `Usage.svelte` `.act` comments | margin comment rewritten; first comment still true; a comment added on the hover rule |
 | `card-layout.ts:35-49` | rewritten |
-| `leastStrip`, `fitActions` doc comments | still true |
+| `stripWidth` doc comment | written in repair round 1 |
+| `fitActions` doc comment | still true |
 | `docs/HELP.md:301` | rewritten |
 
 ## The number of full-list runs
 
-One run of `npm run test:quick`. `npm run diagrams` ran once, right before it. No whole-suite command ran. One red-free run; no rerun.
+Two runs of `npm run test:quick`: one for the build and one for repair round 1, both all green. `npm run diagrams` ran right before each. No whole-suite command ran.
+
+## Repair round 1
+
+The review is `O121-refuter.md` and the ruling is `O121-round-1.md`. The four items are closed. The rest of this report reads as of this round.
+
+1. **B1, an action with no remembered width: closed.** After `remember`, `measure` computes `unknown`. Drawn with an unknown action, it sets `fit` to `Number.POSITIVE_INFINITY`. With an unknown action or no opener width, on either branch, it sets `over = chips` and returns, so at rest it goes no further, as the decision says, and drawn the flow is tried only on real widths. `CardActions.svelte`, `measure`. Proof by reading; the first-hover case row says what is true, and the frames are the look's.
+2. **T1, the unreachable branch: closed.** `leastStrip` is gone. `card-layout.ts` exports `stripWidth(widths, gap)`, the sum of the widths and the gaps between them. `fitActions`'s `span` calls it, and so does `measure`. `fitActions` keeps its behaviour: the empty slice gives 0 as `gap * Math.max(0, count - 1)` did. The grep is under "Checks the spec asks for".
+3. **B2, a clipped row with no chip: closed.** `start = chips && (place.alone || seen < content.width - 0.5)`, so `start` never stands on a row with no chip. `.actions` carries `margin-right: var(--clipped)`, and `Card.svelte`'s `flex-end` holds a span wider than what is left against that margin. Program: "clipped sliver, no chip, content 300, seen 25" gives `"start":false`, `"clipped":275`, so the span's right end lies at 300 - 275 = 25, the visible edge. The head comment and the `.actions.start` comment say this.
+4. **P1, the program: closed.** The whole program, with its constants, driver and every input, is quoted above. It was rerun after the changes above, its output is quoted, and five lines are new: the no-chip line 40 and the four clipped rows.
+
+Checks after the last code change:
+
+- `npm run test:quick`: `test:quick: 37.5 s; every command passed`.
+- `LC_ALL=C grep -n '[^ -~]'` over the six changed files: prints nothing, `[ascii exit 1]`.
+- `git diff --stat -- config tests`: prints nothing.
+- `diff -rq ../O121-base/tests tests`, the same over `utils`, and over `config` with `--exclude=local.yml`: each prints nothing.
+- `git diff --stat -- docs/diagrams`: prints nothing.
+- History grep over added lines: the one hit named above, judged the same.
+- `sh utils/unused-exports.sh` against the base's list: `diff` prints only the three `<` lines named above, so the step adds no line.

@@ -23,21 +23,7 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 ```
 
 ```yaml
-dispatch:           # steps in flight, up to six (Z632)
-- step: O121
-  base: 2526279ce
-  worktree: .agents/worktrees/migration-O121
-  executor: agent
-  worker: claude:opus
-  session_id: a3d57511c32c0db50 (claude-opus-5-5)
-  launched: 2026-11-02
-  report: .scratch/migration/agents/reviews/O121-report.md
-  builder_usage: first run 151456 tokens, 16 tool uses, 6 min 33 s; build 196620 tokens, 51 tool uses, 12 min 53 s
-  round: 1
-  cases: agents/briefs/O121-cases.md
-  brief_check: agents/reviews/O121-brief-check.md (abcec94ed2b1de5b4, claude-opus-5-5, 192629 tokens, 20 tool uses, 8 min 23 s)
-  reviewer_report: agents/reviews/O121-refuter.md (a271a9088ecbd9671, claude-opus-5-5, 198891 tokens, 25 tool uses, 9 min 24 s)
-  landing: not-started
+dispatch: []           # steps in flight, up to six (Z632)
 ```
 
 ## The standing demands (from Axel, in force)
@@ -770,6 +756,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-11-02 (O121 landed). O121 is on main (booked under O121 in `plan.md`, `agents/reviews/O121-landing.md`). In flight: none. Queued: O122, waiting on open item 634. Open items: 634.
 - 2026-11-02 (O122 stopped, O121 building). O122's brief check raised open item 634; no brief or worktree for it. O121 builds at 2526279ce. Open items: 634.
 - 2026-11-02 (ruling 633). Steps O121 and O122 added to `plan.md`. In flight: none. Next: /spec O121. Open items: none.
 - 2026-11-02 (O120 landed). O120 is on main (booked under O120 in `plan.md`, `agents/reviews/O120-landing.md`). In flight: none. Queued: none. Open items: none.
