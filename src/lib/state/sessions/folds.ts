@@ -17,6 +17,7 @@ import type {
     Terminal,
     Workspace
 } from '../../data/model/index.ts';
+import { terminalSession } from './terminal/session/session-link.ts';
 import { terminalTabTitle } from './terminal/terminal-lists.ts';
 
 export { ago } from '../../data/helpers/dates.ts';
@@ -248,6 +249,8 @@ export type TerminalChoice = {
     exit: number | null;
     /** Whether oculus knows the terminal's folder, which Split starts the new terminal in. */
     splittable: boolean;
+    /** Whether it is an agent in a pane oculus did not start, which oculus does not end or mark. */
+    byHand: boolean;
 };
 
 /** The last segment of a folder, or the folder itself when it has none (the root). */
@@ -262,10 +265,11 @@ function folderName(path: string): string {
 /**
  * The terminals a Terminal tab can show, in the order the payload lists them, each titled by
  * `terminalTabTitle` and its icon, colour and task result travelling with the row. An agent
- * terminal is described by the session running in it (its resume, else its process), else by its
- * own name; a shell is described by the last segment of its folder; a terminal an app made is
- * described by the title `appTitle` gives its app, else by the app's view id. A terminal oculus did
- * not start is left out, since the tab cannot attach to it.
+ * terminal is described by the session running in it (`terminalSession`), else by its own name; a
+ * shell is described by the last segment of its folder; a terminal an app made is
+ * described by the title `appTitle` gives its app, else by the app's view id. A `foreign` terminal,
+ * a tmux session named under oculus's prefix that oculus did not mint and that runs no agent, is
+ * left out, since the tab cannot attach to it; a by-hand terminal is one the tab attaches to.
  */
 export function terminalChoices(
     terminals: readonly Pick<
@@ -285,8 +289,10 @@ export function terminalChoices(
         | 'exit'
         | 'job'
         | 'app'
+        | 'agent'
+        | 'byHand'
     >[],
-    sessions: readonly Pick<GroupedSession, 'id' | 'title' | 'pid'>[],
+    sessions: readonly Pick<GroupedSession, 'id' | 'title' | 'pid' | 'tool' | 'cwd' | 'live'>[],
     appTitle: (app: string) => string
 ): TerminalChoice[] {
     return terminals
@@ -299,7 +305,8 @@ export function terminalChoices(
                 color: one.color,
                 task: one.task,
                 exit: one.exit,
-                splittable: one.cwd !== ''
+                splittable: one.cwd !== '',
+                byHand: one.byHand !== undefined
             };
             const title = terminalTabTitle(one);
             if (one.kind === 'shell') return { ...row, title, description: folderName(one.cwd) };
@@ -307,12 +314,8 @@ export function terminalChoices(
                 const owner = appTitle(one.app);
                 return { ...row, title, description: owner === '' ? one.app : owner };
             }
-            const running = sessions.find(
-                (session) =>
-                    one.resumes?.id === session.id ||
-                    (session.pid !== null && one.pid !== 0 && session.pid === one.pid)
-            );
-            if (running !== undefined) {
+            const running = terminalSession(one, terminals, sessions);
+            if (running !== null) {
                 const description = running.title === '' ? running.id : running.title;
                 return { ...row, title, description };
             }

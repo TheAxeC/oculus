@@ -1,8 +1,8 @@
-// Layer 2, server. The terminals as records: what `tmux list-sessions` says, the pane process of
-// every oculus session (`tmux list-panes`, which the Processes view walks down from), and the
-// commands that start, resize, stop, capture, steer and interrupt one. Oculus puts a session inside
-// tmux so it outlives the server; the `oculus-` prefix is all that tells a session oculus started
-// from one the user started in a terminal window, and the kind is the suffix of the same name.
+// Layer 2, server. The terminals as records: what `tmux list-sessions` says, and the commands that
+// start, resize, stop, capture, steer and interrupt one. Oculus puts a session inside tmux so it
+// outlives the server; the `oculus-` prefix is all that tells a session oculus started from one the
+// user started in a terminal window, and the kind is the suffix of the same name. The panes of the
+// server, with the agents in those a user started, are read by panes/listing.ts.
 //
 // Nothing the page sends is read by a shell on its way to tmux. A cwd is checked to be an absolute
 // existing directory, the geometry a small positive integer, and the id the shape start() gives it.
@@ -25,6 +25,7 @@ import { statSync } from 'node:fs';
 import { isAbsolute } from 'node:path';
 import { z } from 'zod';
 import {
+    isOwnTerminal,
     isTerminalId,
     SCROLLBACK_LINES,
     STEER_CONTROL,
@@ -39,7 +40,8 @@ import type {
 } from '../../../data/model/index.ts';
 import type { GitCredentials } from '../../core/git/credentials.ts';
 import { PREFIX, USAGE_PREFIX } from '../../transcripts/names.ts';
-import { captureArgs } from './capture.ts';
+import { captureArgs } from './panes/capture.ts';
+import { sessionName, targetOf } from './panes/target.ts';
 import { TerminalRefused } from './refusal.ts';
 import { inputChunks, run, type KeyChunk, type TmuxOptions } from './tmux.ts';
 
@@ -281,10 +283,7 @@ function parseJob(value: string): TerminalJob | null {
     }
 }
 
-/** The tmux session name of a terminal id. */
-export function sessionName(id: string): string {
-    return `${PREFIX}${id}`;
-}
+export { sessionName };
 
 /** The id of a tmux session name, or null when the session is not oculus's. */
 export function terminalId(session: string): string | null {
@@ -292,16 +291,14 @@ export function terminalId(session: string): string | null {
 }
 
 /**
- * Whether a string is an id start() could have produced (data/model `isTerminalId`). Everything
- * else is refused unread.
+ * Whether a string has the shape of a terminal id (data/model `isTerminalId`), and whether it is
+ * one start() could have produced (`isOwnTerminal`). Everything else is refused unread.
  */
-export { isTerminalId };
+export { isOwnTerminal, isTerminalId };
 
-/** The kind an id ends in, or the kind a pane's command names when the suffix says nothing. */
-export function kindOf(id: string, command: string): TerminalKind {
+/** The kind an id ends in. What runs in a `-shell` terminal is read by processes/agents.ts. */
+export function kindOf(id: string): TerminalKind {
     for (const kind of KINDS) if (id.endsWith(`-${kind}`)) return kind;
-    if (command === 'claude') return 'claude';
-    if (command === 'codex') return 'codex';
     return 'shell';
 }
 
@@ -384,7 +381,7 @@ function label(name: unknown, id: string): string {
     return name;
 }
 
-/** The arguments of the list; separate from listTerminals so a test can read them. */
+/** The arguments of the sessions' list; separate from listTerminals so a test can read them. */
 export function listArgs(): string[] {
     return ['list-sessions', '-F', LIST_FORMAT];
 }
@@ -420,13 +417,14 @@ export function parseTerminal(line: string): Terminal | null {
         job: parseJob(mark),
         // A session named by hand under the prefix is listed and flagged: the page can say why its
         // controls are refused instead of offering a stop that cannot be built.
-        foreign: !isTerminalId(id),
+        foreign: !isOwnTerminal(id),
+        agent: null,
         id,
         name: named === '' ? id : named,
         title: fields[8] ?? '',
         icon: fields[9] ?? '',
         color: fields[10] ?? '',
-        kind: kindOf(id, started),
+        kind: kindOf(id),
         app: fields[14] ?? '',
         cwd: fields[5] ?? '',
         command,
@@ -469,53 +467,6 @@ export function serverPid(text: string): number | null {
 export async function listTerminals(options: RunOptions = {}): Promise<Terminal[]> {
     try {
         return parseTerminals(await (options.run ?? run)(listArgs(), options));
-    } catch {
-        return [];
-    }
-}
-
-/** The pane process of one pane of an oculus session. */
-export type Pane = {
-    session: string;
-    /** The terminal id of a terminal session; null for a hidden usage session. */
-    terminal: string | null;
-    /** True for a hidden usage session. */
-    usage: boolean;
-    pid: number;
-};
-
-/** The arguments of the pane list: every pane of every session, with its session and pane pid. */
-function paneArgs(): string[] {
-    return ['list-panes', '-a', '-F', '#{session_name} #{pane_pid}'];
-}
-
-/**
- * The panes of the terminal sessions and of the hidden usage sessions, one per line of the list.
- * A session that is neither (not oculus's, or named `oculus-` by hand with no terminal id) and a
- * line with no whole positive pid are left out.
- */
-function parsePanes(text: string): Pane[] {
-    const panes: Pane[] = [];
-    for (const line of text.split('\n')) {
-        const cut = line.lastIndexOf(' ');
-        const field = line.slice(cut + 1);
-        if (cut < 0 || !/^\d+$/.test(field) || Number(field) === 0) continue;
-        const session = line.slice(0, cut);
-        const pid = Number(field);
-        if (session.startsWith(USAGE_PREFIX)) {
-            panes.push({ session, terminal: null, usage: true, pid });
-            continue;
-        }
-        const id = terminalId(session);
-        if (isTerminalId(id)) panes.push({ session, terminal: id, usage: false, pid });
-    }
-    return panes;
-}
-
-/** Every pane of every terminal and usage session; none when tmux is not running. */
-export async function listPanes(options: RunOptions = {}): Promise<Pane[]> {
-    try {
-        return parsePanes(await (options.run ?? run)(paneArgs(), options));
     } catch {
         return [];
     }
@@ -676,7 +627,7 @@ export async function startTerminal(
         throw new Error(`kind must be the tool being resumed: ${resume.tool}`);
     }
     const id = request.id ?? newId(kind);
-    if (!isTerminalId(id) || !id.endsWith(`-${kind}`)) {
+    if (!isOwnTerminal(id) || !id.endsWith(`-${kind}`)) {
         throw new Error(`id must be a terminal id for ${kind}`);
     }
     const name = label(request.name, id);
@@ -736,7 +687,7 @@ export async function respawnTerminal(
     command?: string,
     task?: TerminalJob
 ): Promise<void> {
-    if (!isTerminalId(id)) throw new TerminalRefused('not-ours');
+    if (!isOwnTerminal(id)) throw new TerminalRefused('not-ours');
     const exec = options.run ?? run;
     if (task !== undefined) {
         await exec(['set-option', '-t', sessionName(id), TASK_OPTION, jobOption(task)], options);
@@ -755,7 +706,7 @@ export async function resizeTerminal(
     rows: unknown,
     options: RunOptions = {}
 ): Promise<void> {
-    if (!isTerminalId(id)) throw new TerminalRefused('not-ours');
+    if (!isOwnTerminal(id)) throw new TerminalRefused('not-ours');
     await (options.run ?? run)(
         resizeArgs(id, geometry(cols, 'cols'), geometry(rows, 'rows')),
         options
@@ -768,7 +719,7 @@ export function stopArgs(id: string): string[] {
 }
 
 export async function stopTerminal(id: string, options: RunOptions = {}): Promise<void> {
-    if (!isTerminalId(id)) throw new TerminalRefused('not-ours');
+    if (!isOwnTerminal(id)) throw new TerminalRefused('not-ours');
     await (options.run ?? run)(stopArgs(id), options);
 }
 
@@ -782,7 +733,7 @@ function outputArgs(id: string): string[] {
 
 /** All the text a terminal's pane holds, for the output of a task no grid shows. */
 export async function paneOutput(id: string, options: RunOptions = {}): Promise<string> {
-    if (!isTerminalId(id)) throw new TerminalRefused('not-ours');
+    if (!isOwnTerminal(id)) throw new TerminalRefused('not-ours');
     return (options.run ?? run)(outputArgs(id), options);
 }
 
@@ -792,14 +743,14 @@ export async function scrollback(
     lines: number = SCROLLBACK_LINES,
     options: RunOptions = {}
 ): Promise<string> {
-    if (!isTerminalId(id)) throw new TerminalRefused('not-ours');
+    if (!isOwnTerminal(id)) throw new TerminalRefused('not-ours');
     return (options.run ?? run)(captureArgs(sessionName(id), lines), options);
 }
 
 /** The arguments that type bytes into a pane as they are: two lowercase hex digits per byte. */
 export function sendBytesArgs(id: string, bytes: Uint8Array): string[] {
     const hex = Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0'));
-    return ['send-keys', '-t', sessionName(id), '-H', ...hex];
+    return ['send-keys', '-t', targetOf(id), '-H', ...hex];
 }
 
 /**
@@ -817,7 +768,7 @@ export function inputArgs(id: string, bytes: Uint8Array): string[][] {
  * as flags.
  */
 export function sendKeysArgs(id: string, chunk: KeyChunk): string[] {
-    const target = sessionName(id);
+    const target = targetOf(id);
     if ('literal' in chunk) return ['send-keys', '-t', target, '-l', '--', chunk.literal];
     return ['send-keys', '-t', target, '--', chunk.key];
 }
@@ -832,7 +783,7 @@ export function steerArgs(id: string, text: string): string[][] {
     return [...inputArgs(id, Buffer.from(text, 'utf8')), sendKeysArgs(id, { key: 'Enter' })];
 }
 
-/** Type one message into a terminal oculus started, then Enter. */
+/** Type one message into a terminal, then Enter. */
 export async function steerTerminal(id: string, text: string, options: RunOptions = {}) {
     if (!isTerminalId(id)) throw new TerminalRefused('not-ours');
     if (typeof text !== 'string' || text.trim() === '') throw new Error('text must not be empty');
@@ -849,7 +800,7 @@ export async function steerTerminal(id: string, text: string, options: RunOption
  * in the foreground and its children end. The tmux session stays, with the line's exit status.
  */
 export async function stopForeground(id: string, options: RunOptions = {}): Promise<void> {
-    if (!isTerminalId(id)) throw new TerminalRefused('not-ours');
+    if (!isOwnTerminal(id)) throw new TerminalRefused('not-ours');
     await (options.run ?? run)(sendKeysArgs(id, { key: 'C-c' }), options);
 }
 

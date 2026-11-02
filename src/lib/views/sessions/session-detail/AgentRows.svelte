@@ -4,10 +4,10 @@
     // section's tree (level 2, ids from rowKey). Each says what kind it was, on what model, what it
     // was asked for, and how it went. Each is named by the session's own transcript.
     //
-    // A press on a row opens the agent's own transcript in a Transcript tab keyed on the session
-    // and the agent, or brings that tab forward. A row whose agent named no transcript (no agent
-    // id, its file not there, or for a Codex agent no session of its own in the payload) has no
-    // press and says so in its title.
+    // A press on a row opens the agent's own transcript in a Terminal tab keyed on the session and
+    // the agent, or brings that tab forward. A row whose agent named no transcript (no agent id,
+    // its file not there, or for a Codex agent no session of its own in the payload) has no press
+    // and says so in its title.
     //
     // A finished agent reports what it took, from its start to its end, and nothing when its end is
     // not known. A running one is counted from its start to now, which is the number that says
@@ -26,8 +26,8 @@
     import { rowKey } from './session-sections';
 
     const {
-        layout: { openView },
-        selectors: { sessionById }
+        selectors: { sessionById },
+        terminals: { openSession }
     } = useState();
 
     /** The agents newest first, the session that sent them, and the tree they are drawn in. */
@@ -120,7 +120,7 @@
     function open(agent: SessionAgent): void {
         if (session === null) return;
         const label = `${kind(agent)} ${agent.description}`.trim();
-        openView('transcript', { session: session.id, agent: agent.id, label });
+        openSession({ session: session.id, agent: agent.id, label });
     }
 </script>
 

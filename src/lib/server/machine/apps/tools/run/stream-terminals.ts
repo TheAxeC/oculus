@@ -156,7 +156,8 @@ export class StreamTerminalSet implements StreamTerminals {
             resumes: null,
             task: init.job !== undefined,
             exit: null,
-            job: init.job ?? null
+            job: init.job ?? null,
+            agent: null
         };
         const entry: Entry = {
             record,

@@ -1,19 +1,21 @@
 <script lang="ts">
     // Layer 3, view partial. The bar under the Terminal view's header: the name of the terminal the
-    // tab names there (TerminalTitle.svelte), the font buttons (TerminalFontTools.svelte) and, at
-    // its end, what the tab said of its last refused action, and, while no list, or a narrow one,
-    // is drawn to say them on its rows, that a Kill waits for its second press and a kill the
-    // server refused. The tab names a terminal on the bar while it draws no list (its only
-    // terminal, or a list with no room), and the one being renamed while its list is narrow. A
-    // right-click on the name opens the menu of a list row on that terminal, whose pick goes to the
-    // tab's handlers as a row's does (terminal-list.ts, `routePick`).
+    // tab names there (TerminalTitle.svelte), the Live and Transcript switch while the tab has a
+    // session to read (ShowSwitch.svelte, the `session` snippet), the font buttons
+    // (TerminalFontTools.svelte) and, at its end, what the tab said of its last refused action,
+    // and, while no list, or a narrow one, is drawn to say them on its rows, that a Kill waits for
+    // its second press and a kill the server refused. The tab names a terminal on the bar while it
+    // draws no list (its only terminal, or a list with no room), and the one being renamed while
+    // its list is narrow. A right-click on the name opens the menu of a list row on that terminal,
+    // whose pick goes to the tab's handlers as a row's does (terminal-list.ts, `routePick`).
 
+    import type { Snippet } from 'svelte';
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import type { TerminalChoice } from '$lib/state/sessions/folds';
     import type { TerminalTabState } from '$lib/state/sessions/terminal/terminal-tabs';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
-    import TerminalFontTools from '../TerminalFontTools.svelte';
+    import TerminalFontTools from './TerminalFontTools.svelte';
     import TerminalTitle from '../TerminalTitle.svelte';
     import {
         routePick,
@@ -49,6 +51,8 @@
         onrenamed: (terminal: string, value: string) => void;
         /** The rename field was cancelled. */
         onrenamecancel: () => void;
+        /** The switch of a tab with a session to read, drawn after the name. */
+        session?: Snippet;
     };
 
     let {
@@ -63,7 +67,8 @@
         failure,
         arming,
         onrenamed,
-        onrenamecancel
+        onrenamecancel,
+        session
     }: Props = $props();
 
     const {
@@ -88,13 +93,15 @@
                     armed === row.terminal,
                     t,
                     taskStateOf(row),
-                    row.splittable
+                    row.splittable,
+                    row.byHand
                 )}
             onpick={(pick: string) => routePick(pick, row.terminal, handlers)}
             onsave={(value: string) => onrenamed(row.terminal, value)}
             oncancel={onrenamecancel}
         />
     {/if}
+    {@render session?.()}
     <TerminalFontTools />
     {#if arming}
         <span class="note" role="status">{t('sessions.terminal_kill_armed')}</span>

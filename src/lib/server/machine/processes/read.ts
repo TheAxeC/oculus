@@ -7,7 +7,7 @@
 import type { ProcessRow } from '../../../data/model/index.ts';
 import { deepestHolding } from '../../../data/helpers/files/paths.ts';
 import { realPath } from '../../core/paths.ts';
-import type { Pane } from '../pty/sessions.ts';
+import type { Pane } from '../pty/panes/listing.ts';
 import { agentOf, matches } from './match.ts';
 import { ReadFailure } from './failure.ts';
 import type { Entry } from './table.ts';

@@ -1,9 +1,9 @@
 // Layer 2, client state. The order in which a grid attaches to a terminal: the window takes the
 // grid's size, and only then is the `pty:` channel asked for, since the server answers a subscribe
 // with the pane captured at the window's size and the cursor placed from the pane's top
-// (server/machine/pty/capture.ts, `screenAt`). A window taller than the grid, as the last grid to
-// show the terminal left it, would otherwise fill the grid with the blank rows under the cursor and
-// put every line above them out of view.
+// (server/machine/pty/panes/capture.ts, `screenAt`). A window taller than the grid, as the last
+// grid to show the terminal left it, would otherwise fill the grid with the blank rows under the
+// cursor and put every line above them out of view.
 //
 // On a socket that is open and admitted to write, the resize goes out on the socket right ahead of
 // the subscribe, and the server reads the pane after it has run, so a grid is drawn as soon as the

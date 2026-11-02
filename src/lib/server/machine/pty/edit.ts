@@ -14,12 +14,14 @@ import {
     COLOR_OPTION,
     ICON_OPTION,
     TITLE_OPTION,
+    isOwnTerminal,
     isTerminalId,
     listTerminals,
     sessionName,
     tmuxValue,
     type RunOptions
 } from './sessions.ts';
+import { targetOf } from './panes/target.ts';
 
 /** The longest title a terminal may carry, the same as the longest name. */
 export const TITLE_MAX = 80;
@@ -38,7 +40,7 @@ export type Busy = { id: string; busy: boolean; command: string };
 
 /** Refuse an id that is not oculus's, or a terminal that is not listed. Throws the refusal. */
 async function listedTerminal(id: unknown, options: RunOptions): Promise<string> {
-    if (!isTerminalId(id)) throw new TerminalRefused(NOT_OURS);
+    if (!isOwnTerminal(id)) throw new TerminalRefused(NOT_OURS);
     const terminals = await listTerminals(options);
     if (!terminals.some((terminal) => terminal.id === id)) throw new TerminalRefused(NOT_LISTED);
     return id;
@@ -145,7 +147,7 @@ export async function busyTerminals(
         ids.map(async (id): Promise<Busy> => {
             try {
                 const out = await exec(
-                    ['display-message', '-p', '-t', sessionName(id), '#{pane_current_command}'],
+                    ['display-message', '-p', '-t', targetOf(id), '#{pane_current_command}'],
                     options
                 );
                 const command = out.trim();

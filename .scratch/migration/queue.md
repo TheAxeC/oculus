@@ -1,11 +1,11 @@
-In flight (1 of 6 slots in use): O114 (one Terminal view for a session), building.
+In flight (0 of 6 slots in use): none.
 
-Queued, in order (1 step):
-- O114 (one Terminal view for a session).
+Queued, in order (0 steps): none.
 
 Owed looks: none.
 
 Landed, newest first:
+- O114 (one Terminal view for a session), 2026-11-02.
 - O113 (Timeline a section of the Session view), 2026-11-01.
 - O111 (Settings responds and folds under a search), 2026-11-01.
 - O110 (terminal text keeps its characters), 2026-11-01.

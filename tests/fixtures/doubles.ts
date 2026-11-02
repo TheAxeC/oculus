@@ -9,7 +9,7 @@
 import type { Clock } from '../../src/lib/server/core/files/file-poll.ts';
 import { gitCredentials, type GitCredentials } from '../../src/lib/server/core/git/credentials.ts';
 import type { FsEntry } from '../../src/lib/state/sources/fs.ts';
-import type { TerminalDriver } from '../../src/lib/server/machine/pty/channel.ts';
+import type { TerminalDriver } from '../../src/lib/server/machine/pty/panes/driver.ts';
 import type { LspPort } from '../../src/lib/ui/controls/editor/kit/lsp/services.ts';
 
 /** A callback whose call the case does not read. */

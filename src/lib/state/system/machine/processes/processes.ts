@@ -4,7 +4,7 @@
 
 import { z } from 'zod';
 import { isMap, text } from '../../../../data/helpers/guards.ts';
-import { isTerminalId, type ProcessRow, type Terminal } from '../../../../data/model/index.ts';
+import { isOwnTerminal, type ProcessRow, type Terminal } from '../../../../data/model/index.ts';
 import { readOr } from '../../../../data/shapes/shapes.ts';
 import { t } from '../../../shared/words/text.ts';
 
@@ -104,7 +104,7 @@ export function arrange(
             head: found ?? drawnHead(terminal, record),
             listed: found !== undefined,
             rows: others,
-            stoppable: isTerminalId(terminal) && record?.foreign !== true
+            stoppable: isOwnTerminal(terminal) && record?.foreign !== true
         });
     }
     return { groups, matched };

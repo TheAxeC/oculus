@@ -69,7 +69,9 @@ export const terminalShape = z.object({
                 .optional()
         })
         .nullable(),
-    foreign: z.boolean().optional()
+    foreign: z.boolean().optional(),
+    agent: z.object({ tool: z.enum(['claude', 'codex']), pid: z.number() }).nullable(),
+    byHand: z.object({ session: z.string(), cols: z.number(), rows: z.number() }).optional()
 }) satisfies z.ZodType<Terminal>;
 
 /**

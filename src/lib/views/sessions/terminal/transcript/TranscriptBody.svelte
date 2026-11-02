@@ -1,67 +1,56 @@
-<script module lang="ts">
-    // Layer 3, view registration. Transcript follows Terminal in the Sessions page's group.
-    import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
-    export const registration: ViewRegistration = {
-        id: 'transcript',
-        label: 'sessions.view_transcript',
-        glyph: 'sessions.transcript_glyph',
-        group: 'sessions',
-        order: 2
-    };
-</script>
-
 <script lang="ts">
-    // Layer 3, view. The conversation of the selected session: what was asked, what the agent
-    // answered, and every tool it called on the way, oldest first.
+    // Layer 3, view partial of Terminal.svelte. The conversation of the session a Terminal tab
+    // reads: what was asked, what the agent answered, and every tool it called on the way, oldest
+    // first, drawn in place of the tab's row of grids while the tab's switch stands on Transcript.
     //
     // The turns are not in the snapshot. state/sessions/transcript.svelte.ts fetches them for the
     // session on screen, holds them in the client's query client and follows the file from an
     // effect: the record's lastActivity moving is the transcript being written, and that is what
-    // asks for the bytes appended since the last read.
+    // asks for the bytes appended since the last read. This component is mounted only while
+    // Transcript shows, so a tab on Live fetches and follows nothing.
     //
     // An assistant turn is rendered Markdown, drawn with {@html} through ui/html.ts's sanitise: the
     // turn is what an agent wrote into a file on disk, so the markup is filtered to that profile
     // before it reaches the page. A user turn keeps its own line breaks and is never rendered.
     //
-    // Under the conversation sits the prompt box that steers the session, which works for a
-    // session running in a terminal oculus started and says so for any other.
-    //
-    // A tab opened from an agent row of the Session details shows that subagent's own transcript:
-    // its saved state names the session and the agent, and it has no session picker and no prompt
-    // box, since the agent is steered through the session that started it.
+    // Under the conversation sits the prompt box that steers the session through its terminal, read
+    // only for a session with no terminal. A tab opened from an agent row of the Session details
+    // reads that subagent's own transcript and has no prompt box, since the agent is steered
+    // through the session that started it.
 
     import Tag from '$lib/ui/controls/Tag.svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
-    import PickSession from '$lib/views/shared/sessions/PickSession.svelte';
-    import SessionPicker from '$lib/views/shared/sessions/SessionPicker.svelte';
     import SteerBox from '$lib/views/shared/sessions/SteerBox.svelte';
-    import Pane from '$lib/ui/frame/Pane.svelte';
-    import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { sanitise } from '$lib/ui/html';
     import { clock } from '$lib/state/shared/words/format';
     import { t } from '$lib/state/shared/words/text';
-    import { followTab, pinnedAgent, type Turn } from '$lib/state/sessions/transcript.svelte';
-    import type { ViewProps } from '$lib/state/workbench/navigation/registry';
+    import { followTab, type Turn } from '$lib/state/sessions/transcript.svelte';
     import { useState } from '$lib/state/client/use';
 
+    type Props = {
+        /** The session the tab reads. */
+        session: string;
+        /** The subagent the tab reads, or the empty text for the session's own transcript. */
+        agent: string;
+        /** Whether the tab is locked, which leaves the prompt box read-only. */
+        locked: boolean;
+    };
+
+    let { session, agent, locked }: Props = $props();
+
     const {
-        selectors: { sessionFor },
+        selectors: { sessionById },
         terminals: { terminalOfSession },
         transcripts: { follow, showing, turnsFor }
     } = useState();
 
-    let { instance }: ViewProps = $props();
-
-    const record = $derived(sessionFor(instance.id));
+    const record = $derived(sessionById(session));
     /**
      * The session's id, which the effects that fetch and hold its turns read. The sessions channel
      * hands every record anew with each message, so an effect reading the record re-runs at every
      * write of any session; a derived of the id changes only when the session does.
      */
     const sessionId = $derived(record?.id ?? '');
-    /** The subagent this tab shows, or the empty text for the session's own transcript. */
-    const agent = $derived(pinnedAgent(instance.state));
     const held = $derived(turnsFor(sessionId, agent));
     const turns = $derived(held.turns);
 
@@ -73,8 +62,7 @@
     /**
      * Whether the reader was at the foot the last time the column scrolled. It is kept by the
      * scroll listener rather than measured in the effect, because the effect runs after the
-     * appended turns are in the DOM, when the old position is no longer at the foot of the new
-     * height.
+     * appended turns are in the DOM, when the old position is above the foot of the new height.
      */
     let stuck = true;
 
@@ -113,7 +101,8 @@
         if (column !== undefined) stuck = atFoot(column);
     }
 
-    function toFoot(): void {
+    /** Scroll to the newest turn, which the tab's End tool asks for. */
+    export function toFoot(): void {
         if (column === undefined) return;
         column.scrollTop = column.scrollHeight;
     }
@@ -142,89 +131,59 @@
     }
 </script>
 
-{#snippet tools()}
-    <Toolbar label={t('sessions.turn_toolbar')} overflow>
-        <ToolButton
-            bare
-            label={t('sessions.turn_end')}
-            glyph={t('sessions.turn_end_glyph')}
-            onclick={() => toFoot()}
-        />
-    </Toolbar>
-{/snippet}
-
-{#snippet bar()}
-    <Toolbar label={t('sessions.turn_bar')}>
-        <SessionPicker instance={instance.id} />
-    </Toolbar>
-{/snippet}
-
-<Pane
-    title={t('sessions.view_transcript')}
-    toolbar={tools}
-    bar={agent === '' ? bar : undefined}
-    tinted
->
-    <div class="frame">
-        <div
-            class="chat"
-            bind:this={column}
-            onscroll={scrolled}
-            data-instance={instance.id}
-            data-scroll
-        >
-            {#if record === null}
-                <PickSession
-                    message={t('sessions.detail_empty')}
-                    glyph={t('sessions.empty_glyph')}
-                />
-            {:else if held.error !== ''}
-                <Empty error message={held.error} />
-            {:else if turns.length === 0}
-                <!-- The sentence is for a read that landed with no turns; a read still out draws
-                     nothing. -->
-                {#if !held.pending}
-                    <Empty message={t('sessions.turns_empty')} glyph={t('sessions.empty_glyph')} />
-                {/if}
-            {:else}
-                {#each turns as turn, at (key(turn, at))}
-                    <div class="turn {turn.role}">
-                        <div class="head">
-                            <span class="who">{roleLabel(turn.role)}</span>
-                            <span class="ts">{clock(turn.at)}</span>
-                            {#if turn.tool !== null}
-                                <span class="name">{turn.tool.name}</span>
-                                <span class="sum" title={turn.tool.summary}
-                                    >{turn.tool.summary}</span
-                                >
-                                <Tag label={okLabel(turn.tool.ok)} tone={okTone(turn.tool.ok)} />
-                            {/if}
-                        </div>
-                        {#if turn.role === 'assistant'}
-                            <!-- eslint-disable-next-line svelte/no-at-html-tags -- the sanitiser writes this -->
-                            <div class="doc">{@html sanitise(turn.html)}</div>
-                        {:else if turn.role === 'user'}
-                            <div class="said">{turn.text}</div>
-                        {/if}
-                        {#if turn.cut}
-                            <p class="cut">{t('sessions.turn_cut')}</p>
+<div class="frame">
+    <div class="chat" bind:this={column} onscroll={scrolled} data-scroll>
+        {#if record === null}
+            <Empty message={t('sessions.detail_empty')} glyph={t('sessions.empty_glyph')} />
+        {:else if held.error !== ''}
+            <Empty error message={held.error} />
+        {:else if turns.length === 0}
+            <!-- The sentence is for a read that landed with no turns; a read still out draws
+                 nothing. -->
+            {#if !held.pending}
+                <Empty message={t('sessions.turns_empty')} glyph={t('sessions.empty_glyph')} />
+            {/if}
+        {:else}
+            {#each turns as turn, at (key(turn, at))}
+                <div class="turn {turn.role}">
+                    <div class="head">
+                        <span class="who">{roleLabel(turn.role)}</span>
+                        <span class="ts">{clock(turn.at)}</span>
+                        {#if turn.tool !== null}
+                            <span class="name">{turn.tool.name}</span>
+                            <span class="sum" title={turn.tool.summary}>{turn.tool.summary}</span>
+                            <Tag label={okLabel(turn.tool.ok)} tone={okTone(turn.tool.ok)} />
                         {/if}
                     </div>
-                {/each}
-            {/if}
-        </div>
-        {#if record !== null && agent === ''}
-            <SteerBox terminal={terminalOfSession(record)} small />
+                    {#if turn.role === 'assistant'}
+                        <!-- eslint-disable-next-line svelte/no-at-html-tags -- the sanitiser writes this -->
+                        <div class="doc">{@html sanitise(turn.html)}</div>
+                    {:else if turn.role === 'user'}
+                        <div class="said">{turn.text}</div>
+                    {/if}
+                    {#if turn.cut}
+                        <p class="cut">{t('sessions.turn_cut')}</p>
+                    {/if}
+                </div>
+            {/each}
         {/if}
     </div>
-</Pane>
+    {#if record !== null && agent === ''}
+        <SteerBox terminal={terminalOfSession(record)} {locked} ended={!record.live} small />
+    {/if}
+</div>
 
 <style>
+    /* The tab's flush box insets it less than a pane's body; this padding makes up the rest, so the
+       turns stand as far from the pane's edge as a pane's text does. */
     .frame {
         display: flex;
+        flex: 1 1 auto;
         flex-direction: column;
-        height: 100%;
+        min-width: 0;
         min-height: 0;
+        padding: 6px 6px 4px;
+        box-sizing: border-box;
     }
 
     .chat {

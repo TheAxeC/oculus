@@ -170,4 +170,231 @@ DECLINED TO JUDGE
 - The failure behind the first run's `vitest` line: its text was cut by `tail`. The second run prints `ok` for that command.
 - Page cases 14 to 19 as seen on screen: reading only.
 
-Usage: a10980e905992663c, claude-opus-5-5, 333851 tokens, 57 tool uses, 1051.8 s
+Usage: a10980e905992663c, claude-opus-5-5, 333851 tokens, 45 tool uses, 1051.8 s
+
+## Repair round 1, refuted
+
+Reviewer report, step O114, repair round 1. Worktree /Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O114, base 9b96a1b78. Nothing in the worktree or the ledger changed: `git status --short` prints 82 lines, the same paths as at the start.
+
+VERIFICATION LINES, VERBATIM
+
+`npm run test:quick -- --base 9b96a1b78`, from the worktree root. I started it in the foreground; the harness moved it to the background after 180 s, and its log is whole:
+```
+test:quick: 90 changed file(s), from git since 9b96a1b78
+test:quick: 332 test file(s)
+ok      prettier (0.7 s): All matched files use Prettier code style!
+ok      ASCII gate (0.8 s)
+ok      svelte-kit sync (2.4 s)
+ok      eslint (2.4 s)
+ok      svelte-check (8.8 s): 1793576508023 COMPLETED 579 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest checks (140.1 s): Duration  128.31s (transform 52.12s, setup 0ms, import 131.53s, tests 360.60s, environment 6ms)
+ok      vitest (167.0 s): Duration  156.10s (transform 62.23s, setup 0ms, import 215.06s, tests 387.44s, environment 7.94s)
+ok      vitest slow (264.4 s): Duration  253.73s (transform 17.75s, setup 0ms, import 130.55s, tests 873.18s, environment 18ms)
+test:quick: 267.0 s; every command passed
+test:quick: not covered: tests that reach no changed file within the import depth,
+            other than the checks under tests/checks/source and tests/checks/tree,
+            which run for any change under src, tests or utils; the build, the lint
+            of unchanged files
+```
+Perl character gate of `agents/spec.md` over the 80 changed and new files, `.scratch` and `.svg` left out: printed nothing, exit 0. `.svg` by `LC_ALL=C grep -c '[^ -~]'`: 0 in each.
+
+Commands the report quotes, rerun in the same form from the worktree root:
+- `npx vitest run tests/server/machine/pty/agent-pane.test.ts tests/state/client/terminal/terminal-close.test.ts tests/state/sessions/terminal/reading-tab.test.ts`: `Test Files  3 passed (3)`, `Tests  85 passed (85)`. Matches.
+- `npx vitest run --tagsFilter slow --testTimeout 20000 tests/server/machine/pty/agent-pane.test.ts`: `Tests  3 passed | 48 skipped (51)`. Matches.
+- `sh utils/folder-check.sh`: exit 0. Matches.
+- `sh utils/unused-exports.sh`: no line names `openSessionIn`, `SessionAsk` or any export of the step's new modules. Matches.
+- `grep -rn "did not start\|oculus started" src docs config --exclude=local.yml`: read hit by hit; see ruling 7.
+- `ls src/lib/views/sessions/transcript`: `No such file or directory`.
+- `grep -rn "turn_bar\|turn_toolbar" config src tests --exclude=local.yml | wc -l`: 0.
+- `grep -n "view: transcript\|transcript" config/defaults/layout.yml`: no line.
+- `grep -n "pane_current_command" src/lib/server/machine/processes/agents.ts`: no line.
+- `grep -n "disableStdin" .../TerminalGrid.svelte`: `282:        grid.options.disableStdin = locked;`.
+- `grep -n "composer.locked\|composer.ended" .../SteerBox.svelte`: lines 48 and 49. The report says 47 and 48 in its first section, which SteerBox's round edit moved; that section predates the round and no decision rests on it.
+- `grep -rn "SessionPicker" src/lib/views/sessions/terminal | wc -l`: 0.
+- `grep -n "transcript" docs/palette.md`: no line.
+- `grep -rln "pty/capture.ts\|views/sessions/transcript\|terminal/workbench-shape" src tests docs config --exclude=local.yml`: `tests/checks/config/config-folder.test.ts` alone. Matches.
+- `wc -l`: Terminal.svelte 485, TerminalGrid.svelte 517, channel.ts 749, sessions.ts 814, terminals.svelte.ts 878, context.ts 873, ps.ts 172, table.ts 96, routes.ts 519, tmux.ts 527, folds.ts 324, SteerBox.svelte 195, SessionList.svelte 460, model-machine.ts 846, terminal-close.test.ts 194. Match the round's table.
+- `npx vitest run tests/checks/imports/cycles.test.ts`: `Tests  1 failed | 6 passed (7)`. The report names this failure and the first refuter placed it at the base; the step does not change those files.
+- Private socket, tmux 3.7c: `ps -ww -t <device> -o pgid=,tpgid=,command=` printed `33934 33934 zsh -c cat`, the same for the `ttysNNN` form; `/dev/ttys999` printed `ps: /dev/ttys999: No such file or directory`, exit 1. `attach-session -E` left `PROBE_MARK` out of `show-environment` (`after -E: []`); the plain attach printed `PROBE_MARK=one`. `list-panes -a` after `new-session -t work -s view2` printed `%0 view2 $1` and `%0 work $0`. All match.
+
+Runs of mine, real tmux on private `-S` sockets under /tmp, each removed after. The programs are read-only over the step's code and live in the scratchpad:
+- /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/steer-run.ts
+- /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/tick-run.ts
+- /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/fg-run.ts
+
+VERDICTS FOR THE WHOLE DIFF, ITEMS
+
+1 One view: holds.
+2 Tab state: holds.
+3 Detection: violated, finding B1 (the control client of a by-hand id keeps a tmux session the list no longer names). The rest of the item holds; the steer as ruling 4 replaced it holds.
+4 Session and terminal: holds.
+5 The switch: holds by reading.
+6 The box: holds by reading.
+7 The lock: holds by reading.
+8 Opening a session: holds.
+9 Follow state: holds.
+10 Ended terminals: holds.
+11 Placement: holds.
+12 Words: holds on what was read. `npm run diagrams` and `npm run docs:palette` not rerun (Declined).
+
+VERDICTS, CASES
+
+1 to 5: met.
+6: met, a new session and a new pane included (run below).
+7: met.
+7a: met. The ruling's wider form was also run: see ruling 4.
+7b: met.
+8: met. 9: met.
+10: met. 11: met.
+12: met. The by-hand half is by reading: `reading-tab.test.ts` has no by-hand row, and `closeEnded` treats every id alike and calls no tmux. The close of such a tab now has its test.
+13: met.
+14, 15, 16, 17, 19: not verifiable by reading; for the look. The code agrees.
+18: not verifiable by reading. On a private socket a by-hand client left `show-window-options` empty, and the pane's output and environment hold as ruled.
+
+VERDICTS, RULINGS OF THE ROUND
+
+Ruling 1: holds. Run at poll 300 ms with real tmux:
+- No client, nothing attached: `1500 ms: lists 5, told 0`, so one list per tick.
+- Live client: `1500 ms idle: lists 5, told 0`.
+- New session with an agent, no client: `told 1`.
+- Split with an agent, live client: `told 1, ids 2`.
+- Resize, live client: `told 1, sizes ["100x15","100x14"]`.
+Cost with no tmux server, while any page is subscribed: one `ps -axww` and one failed tmux exec per tick, so 12 of each per minute at 5000 ms, against none of the first and one list a minute at the base. Measured here: tmux 13 ms, `ps` 39 ms over 466 processes. Run: `no server: 3000 ms at poll 300: lists 11, failed 13, tables 10, logged 0, socket made: false`. The list call starts no server and logs nothing. With an attached page and no live client the list poll runs beside the tick, so two lists a period, for the short time a client is down.
+
+Ruling 2: holds. The test reads sound, and the run above shows `-E` keeps the environment. An oculus terminal's argv is unchanged.
+
+Ruling 3: holds for what it asks, one row per pane. Report judgment 5 leaves finding B1.
+
+Ruling 4: holds. Real panes, `steerAgent` on an id `a1b2c3-shell`, stand-in `claude`:
+```
+zsh at prompt | no-agent | marker in pane: false
+bash under zsh | no-agent | marker in pane: false
+claude foreground | typed | marker in pane: true
+sh -c "claude; true" | typed | marker in pane: true
+pipeline claude | cat | typed | marker in pane: true
+pipeline sleep 30 | claude | typed | marker in pane: true
+claude in background | no-agent | marker in pane: false
+cat, another foreground program | no-agent | marker in pane: false
+suspended claude | steer no-agent | interrupt sent | ps: 29418 29418 Ss+  zsh -f ; 29441 29418 T    claude
+```
+- The `ps` runs with an argument list and no shell (`startChild` in `ps.ts:55`, `ttyArgs` at `:22`).
+- A pane whose `ps` fails refuses with nothing typed (test row, and the `/dev/ttys999` run for the exit).
+- A pane gone and a later server each refuse `terminal-ended` (run).
+
+The refusal of a by-hand interrupt on a suspended agent is right for the user. Run with a stand-in that survives a resume: `foreground sent`, `suspended no-agent`, `after fg sent`. The Escape would reach the shell at that moment and never the agent, and in a by-hand pane a stray Escape at the prompt prefixes the user's next key. What is wrong around it is findings B2 and B3, plus one inconsistency without a finding: a `-shell` id's interrupt is unchecked and sends Escape to the shell (`interrupt sent` above), so the two kinds differ.
+
+The ruling's "foreground claude with tmux word `2.1.316`" has no row, since `checkPane` no longer reads that word. The report says so and the reading agrees.
+
+Ruling 5: holds. The test is `terminal-close.test.ts`, "asks nothing, stops nothing and says nothing when it closes", and it reads sound: `reads`, `stops` and the tab's `refusal` are all checked empty.
+
+Ruling 6: holds.
+
+Ruling 7: holds for the four named sentences and the extra ones in `model-sessions.ts:239-241` and `model-machine.ts:241-244,426-431`, each true of the code and each from the grep's scope. Every `did not start` / `oculus started` hit about terminals is true. Two sentences the round made false use other words: ST1 and ST2.
+
+Ruling 8: holds. Cases 1 to 13 agree with `git show 9b96a1b78:` where I checked them, namely `parseTerminal`'s usage line (`sessions.ts:406` at the base) and the `isTerminalId` refusals in the base lines the diff shows. The three asynchronous paths agree with `agent-watch.ts:98-118`, `channel.ts:588-592,641` and `steer.ts:28-54`. `TIMEOUT_MS` reaches `execFile` (`tmux.ts:101-112`) and `PS_TIMEOUT_MS` the timer in `readRows`.
+
+Failing lines of the new tests: each is consistent with the snapshot's code by reading. Changed expected counts in "publishes nothing for the same table and once for a new agent": `[0, reads + 1]` then `[1, reads + 3]` is one tick, then a tick and one refresh, which matches ruling 1 and my run. The test was not fitted to a defect.
+
+SPEC
+
+none
+
+PROOF
+
+P1. `tests/server/machine/pty/agent-pane.test.ts:266-276` and `:278-306`, with `panes/steer.ts:50-53`.
+```
+export async function interruptAgent(id: string, options: SteerOptions): Promise<void> {
+    if (!isTerminalId(id)) throw new TerminalRefused('not-ours');
+    if (byHandPane(id) !== null) await checkPane(id, options);
+```
+Wrong: the outcome report judgment 4 names, a by-hand interrupt refused `no-agent`, has no row. The interrupt rows are the sent one and `terminal-ended`. `-shell` with no tty (`steer.ts:35`, judgment 3) has no row either. `agents/spec.md:60` asks one row per input that gives a different outcome.
+Failure: `interruptAgent` loses the foreground half of the check, a by-hand Stop on a suspended agent then types Escape into the user's shell, and the unit suite stays green. My run above shows the behaviour holds today.
+
+STANDARDS
+
+ST1. `src/lib/server/machine/pty/channel.ts:65-71`, and `:14-18` of the head.
+```
+ * Milliseconds between two `list-sessions` calls while nothing is attached and no task terminal
+ * runs. Nobody is looking at a terminal then, and the only thing the list can report is a session
+ * started outside oculus, so a minute is soon enough and costs a twelfth of the calls the attached
+ * rate does.
+```
+Wrong: ruling 1's tick lists every 5000 ms while any page is subscribed, attached or not, so that state costs twelve tick lists a minute plus the idle one, and the "twelfth" holds only with no page at all. The head's "a machine with no terminal open runs no tmux child" and "once a minute while none is" have the same fault. `agents/spec.md:72` makes such a sentence a defect of the change. The report's "Sentences" lists channel.ts's head as rewritten, and the new paragraph at `:30-32` does not correct these.
+Failure: a reader weighing the cost of the terminal list reads one call a minute for an open page with no terminal, where `no client, idle: 1500 ms: lists 5` at poll 300 shows one per tick.
+
+ST2. `tests/server/machine/pty/agent-pane.test.ts:4-5`.
+```
+// tmux double of terminal-fixture.ts, the timer from a fake clock, and one case from a private tmux
+// server, since only tmux says which pane a control client's output came from.
+```
+Wrong: the describe at `:486` now holds three cases on a private server, and two of them are about something else, the environment and the foreground. Failure: a reader takes `leaves the environment...` and `reads what the foreground...` for cases the head does not name.
+
+ST3. `tests/server/machine/pty/agent-pane.test.ts:238`.
+```
+            shell: '/bin/zsh',
+```
+Wrong: `post` still hands the option the steer no longer reads. `checkPane` has no shell, and none of the bodies this helper sends is a busy read. Failure: a reader takes the steer to depend on the login shell, which is what ruling 4 ended.
+
+BEHAVIOUR
+
+B1. `src/lib/server/machine/pty/channel.ts:541-575` with `:658-661`, `panes/driver.ts:103-104` and `panes/listing.ts:85-92`.
+```
+    #follow(): void {
+        const ids = [...this.#attached.keys()].filter((id) => this.#streams?.has(id) !== true);
+        this.#driver.attached(ids, this.#byHand());
+    }
+```
+```
+            byHand.get(id) ?? sessionName(id),
+```
+Wrong: `#follow` runs only from `#attach` and `remove` (`:519`, `:602`), never when a list is taken, so the driver keeps the tmux session of the last attach. Ruling 3's fold makes `byHand.session` the first session tmux prints, and tmux prints `view2` before `work`. Report judgment 5 says "either session's client carries that pane's output", which stops being true once that session goes.
+Failure, run by `fg-run.ts`:
+- `work` and `new-session -t work -s view2`, claude in the shared pane, the grid open, then `kill-session -t view2`.
+- Output: `listed $1 view2 attaches so far 1`, then `after kill: listed $0 attaches in 5.8 s 5 TWO reached false`.
+- Argv of the last attaches: `-C attach-session -E -t $1`.
+The list says `$0`, the client retries the dead `$1` once a second for as long as the page stays attached, and the grid stops for good while the terminal stays listed with a box. By reading, `join-pane` or `move-pane` of a by-hand pane into another session has the same cause: the client stays on the old session and the pane's output stops. Not run.
+
+B2. `src/lib/server/machine/pty/panes/steer.ts:36-39` reached from `:52`.
+```
+    // A read that fails says nothing of the pane, and what is not known to be an agent is not typed
+    // into.
+    const processes = await (options.foreground ?? readTty)(tty).catch(() => []);
+    if (!foregroundAgent(processes)) throw new TerminalRefused('no-agent');
+```
+Wrong: the rule's reason is that text would run as a command, which is a steer's hazard. An interrupt shares it through judgment 4 and sends one Escape, so a failed `ps` refuses Stop for an agent that is running.
+Failure: `ps` is killed at its 10 s limit under load, the user presses Stop on a runaway agent in a by-hand pane, waits 10 s, and reads that no agent is running, while the agent goes on. The same press on a `-shell` id goes through unchecked. A judgment for the orchestrator: on a failed read an interrupt should go on, with the server-pid and foreground refusals kept.
+
+B3. `config/text/views/sessions/terminal.yml:58`.
+```
+        refused_no_agent: No agent is running in this terminal any more, so nothing was typed.
+```
+Wrong: ruling 4 makes this line answer a suspended agent, a background one and a failed read, and it is false for all three. `ps` shows `29441 29418 T    claude`, and `after fg sent` shows the agent is back. `paneAgent` reads the table with no process state, so the terminal stays listed as `claude` with its box while the box says no agent runs. The HELP sentence at `docs/HELP.md:453` is about a quit and stays true.
+Failure: the user suspends claude in a shell terminal, presses Send and reads "any more", then concludes the agent quit and starts a second one over a job that is still held.
+
+DECLINED TO JUDGE
+
+- `npm run diagrams` and `npm run docs:palette` (the brief's verify line 1): both write to the worktree and I change nothing. Not run. The test:quick above ran without them.
+- Whether the report's two full-list runs of this round were within `agents/spec.md:26`, and its printed lines: its transcript is not mine to read. The output format and the reds it names are consistent with the files.
+- `grep -rlw <name> <base>/src <base>/tests` (first section of the report): no base copy was named to me. `git show 9b96a1b78:<path>` covers single files only.
+- Page cases 14 to 19 as seen on screen: reading only, and spec forbids a page here.
+- `ps -t` with `pgid=,tpgid=` on Linux: run on macOS only. Settled by the same probe on a Linux host.
+- `agents/guarded.md`: G146's text still says "a steer into a pane whose foreground is the login shell types nothing" (line 429 on main). Ruling 4 widened that to any foreground that is no agent, and the new test in `terminal-close.test.ts` needs naming under its entry. That wording is the orchestrator's at landing, so it is noted here and not judged.
+- The move of a by-hand pane between sessions in B1: by reading, not run.
+
+Usage: a242434409dc8fcdf, claude-opus-5-5, 334737 tokens, 51 tool uses, 1019.3 s
+
+
+## Closed
+
+The first run's findings went to repair round 1 and each is closed there, as the run over the round gives per ruling; S4, P1, S5 and ST3 of the first run are report findings, stated in the round's report section (S5 as a breach of `agents/spec.md:26`).
+
+The run over round 1, each fixed at landing:
+- B1: `Terminals.#took` hands the driver the list's sessions, the tick compares a by-hand pane's session, and the driver reopens a client whose session moved (`panes/driver.ts`). Tests: 'hands the driver the session a by-hand pane moved to', 'forwards a pane through the session it moved to'.
+- B2: `checkPane` takes `typing`; an interrupt goes on when the foreground cannot be read, a steer refuses. Test: 'sends an interrupt to a by-hand pane whose read fails'.
+- B3: `sessions.refused_no_agent` says the foreground.
+- P1: rows for a by-hand interrupt on a suspended agent and a steer with no tty.
+- ST1: the head of `channel.ts` and `IDLE_POLL_MS`'s comment name the tick's list.
+- ST2: the head of `agent-pane.test.ts`.
+- ST3: the `shell` option left out of the test's route call.
+
+Found by the look and fixed at landing: `forget` dropped a fetch waiting for its microtask with nothing to wake its reader, so a session opened in a new tab could stay blank (`queries.svelte.ts`, test 'asks for a transcript whose last viewer left while the first read waited'); a session with no terminal opened in the focused pane, over the sessions list (Z1103).

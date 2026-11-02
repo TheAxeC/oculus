@@ -55,6 +55,7 @@ text:
         refused_dependency_self: The command {0} depends on itself.
         refused_dependency_unknown: The command {0} depends on {1}, which is not a command.
         refused_hub_unknown: The open workspace holds no hub named "{0}", so nothing was started.
+        refused_no_agent: No agent is running in the foreground of this terminal, so nothing was typed.
         refused_no_file: 'No value for {0}: open a file in a source tab first.'
         refused_no_primary: The open workspace has no primary hub, so nothing was started; set a primary in the workspace file.
         refused_no_selection: 'No value for {0}: select text in a source tab first.'
@@ -97,6 +98,13 @@ text:
         terminal_kill_tip: Kill this terminal, ending its tmux session and everything running in it (Delete or Backspace on the row, twice)
         terminal_kill_armed: Press again to kill this terminal
         terminal_bell: Bell
+        terminal_lock: Lock this tab
+        terminal_lock_tip: 'Lock this tab: its boxes and its grids take no typing until it is unlocked'
+        terminal_unlock: Unlock this tab
+        terminal_show_live: Live
+        terminal_show_live_tip: Show the terminal this session runs in
+        terminal_show_live_none: This session has no terminal to show
+        terminal_show_transcript_tip: Read the turns of this session
         paste_confirm: Paste {0} lines into the terminal?
         paste_confirm_one: Paste 1 line into the terminal?
         paste_ok: Paste

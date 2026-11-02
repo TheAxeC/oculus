@@ -1,8 +1,9 @@
-// Layer 4, test helper. The two reads a Transcript tab makes of the transcripts store, made the way
-// views/sessions/transcript/Transcript.svelte makes them: its turns read through `turnsFor` from an
-// effect, which is what asks for the file and asks again once a hidden tab is shown, and the follow
-// effect of state/sessions/transcript.svelte.ts (followTab) over the session's record. Called
-// inside an effect root (tests/ui/frame/rooted.svelte.ts), which tears both down.
+// Layer 4, test helper. The two reads a Terminal tab's transcript body makes of the transcripts
+// store, made the way views/sessions/terminal/transcript/TranscriptBody.svelte makes them: its
+// turns read through `turnsFor` from an effect, which is what asks for the file and asks again once
+// a hidden tab is shown, and the follow effect of state/sessions/transcript.svelte.ts (followTab)
+// over the session's record. Called inside an effect root (tests/ui/frame/rooted.svelte.ts), which
+// tears both down.
 
 import {
     followTab,

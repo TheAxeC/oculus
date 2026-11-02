@@ -91,19 +91,21 @@
                 }}
             />
             <!-- One button whose words follow the arming, so the element focused at the first press
-                 is the one the second press confirms. -->
-            <ToolButton
-                bare
-                compact={!armed}
-                label={armed ? t('ui.confirm_stop') : t('sessions.stop_terminal')}
-                glyph={armed ? undefined : t('sessions.dismiss_glyph')}
-                title={armed ? t('sessions.confirm_stop') : t('sessions.stop_terminal')}
-                onclick={() => void onstop(entry)}
-            >
-                {#if armed}
-                    <span class="confirm">{t('ui.confirm_stop')}</span>
-                {/if}
-            </ToolButton>
+                 is the one the second press confirms. A by-hand terminal has no Stop. -->
+            {#if entry.byHand === undefined}
+                <ToolButton
+                    bare
+                    compact={!armed}
+                    label={armed ? t('ui.confirm_stop') : t('sessions.stop_terminal')}
+                    glyph={armed ? undefined : t('sessions.dismiss_glyph')}
+                    title={armed ? t('sessions.confirm_stop') : t('sessions.stop_terminal')}
+                    onclick={() => void onstop(entry)}
+                >
+                    {#if armed}
+                        <span class="confirm">{t('ui.confirm_stop')}</span>
+                    {/if}
+                </ToolButton>
+            {/if}
         </div>
     </div>
 {/snippet}

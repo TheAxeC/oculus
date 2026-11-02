@@ -12,20 +12,25 @@
 // channel, made concrete for the terminals.
 //
 // A control client is opened per attached terminal and closed a minute after nothing is attached to
-// that terminal, so a machine with no terminal open runs no tmux child. While one is open, tmux's
-// own `%session-changed` and its relatives say when the terminal list moved; while none is, a
-// `list-sessions` does, every five seconds while a page is attached to a terminal and once a minute
-// while none is, since nothing but a hand-made session can move the list then. A task terminal
-// stays in the list after its line ended, and tmux sends no notice when that happens, so while a
-// task terminal runs the list is read every five seconds whether or not a page is attached and
-// whether or not a control client is open, which is how its result reaches the page within five
-// seconds of the line's end.
+// that terminal, so a machine with no terminal open runs no control client. While one is open,
+// tmux's own `%session-changed` and its relatives say when the terminal list moved; while none is,
+// a `list-sessions` does, every five seconds while a page is attached to a terminal and once a
+// minute while none is. Beside these, every tick of the process table lists the panes while a
+// page is subscribed (below), attached or not. A task terminal stays in the list after its line
+// ended, and tmux sends no notice when that happens, so while a task terminal runs the list is read
+// every five seconds whether or not a page is attached and whether or not a control client is
+// open, which is how its result reaches the page within five seconds of the line's end.
 //
 // Reads of the list run side by side and may answer in any order, so every read takes a turn when
 // it starts and its answer is taken only while no read that started later has been taken: an older
 // answer never puts back a list that a newer one has replaced. An answer of "no server" is read
 // again before it is taken as an empty list, because tmux refuses a connection for a moment and
 // that one answer would otherwise tell every page that all its terminals have ended.
+//
+// The agent in each pane comes from the process table (panes/agent-watch.ts), which a list read
+// takes as last answered. Its tick also lists the panes, and one that changes a terminal's id, its
+// agent or a by-hand pane's session or size starts one list read of its own, with or without a
+// control client.
 //
 // `Turns` (latex/turns.ts) serves the build requests of the terminal route one at a time per
 // build; the `Terminals` of a server holds the one every request of that server shares.
@@ -41,43 +46,28 @@ import type {
 } from '../../../data/model/index.ts';
 import type { Hub, Sink } from '../../core/channels.ts';
 import { anyNumberShape } from '../../../data/shapes/shapes.ts';
-import { paneScreen } from './capture.ts';
-import {
-    isTerminalId,
-    listArgs,
-    parseTerminals,
-    serverPid,
-    resizeArgs,
-    inputArgs,
-    sessionName
-} from './sessions.ts';
+import type { Entry } from '../processes/table.ts';
+import { AgentWatch } from './panes/agent-watch.ts';
+import { paneScreen } from './panes/capture.ts';
+import { tmuxDriver, type TerminalDriver } from './panes/driver.ts';
+import { paneListArgs, terminalsOf } from './panes/listing.ts';
+import { targetOf } from './panes/target.ts';
+import { isOwnTerminal, isTerminalId, serverPid, resizeArgs, inputArgs } from './sessions.ts';
 import { Turns } from './latex/turns.ts';
-import {
-    control,
-    noServer,
-    run,
-    tmuxRuns,
-    RESTART_MS,
-    silenceWords,
-    type ControlClient,
-    type TmuxOptions
-} from './tmux.ts';
+import { noServer, silenceWords, type TmuxOptions } from './tmux.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../data/sources/config.ts';
 
 /** The prefix of a terminal channel. */
 export const CHANNEL_PREFIX = 'pty:';
 
-/** Milliseconds with nothing attached before the control client is closed. */
-export const IDLE_MS = 60000;
-
 /** Milliseconds between two `list-sessions` calls while a page is attached to a terminal. */
 export const POLL_MS = 5000;
 
 /**
- * Milliseconds between two `list-sessions` calls while nothing is attached and no task terminal
- * runs. Nobody is looking at a terminal then, and the only thing the list can report is a session
- * started outside oculus, so a minute is soon enough and costs a twelfth of the calls the attached
- * rate does.
+ * Milliseconds between two `list-sessions` calls of the poll while nothing is attached and no task
+ * terminal runs. Nobody is looking at a terminal then, and the only thing the list can report is a
+ * session started outside oculus, so a minute is soon enough and costs a twelfth of the calls the
+ * attached rate does. A subscribed page's process table ticks list the panes as well.
  */
 export const IDLE_POLL_MS = 60000;
 
@@ -88,19 +78,6 @@ export const IDLE_POLL_MS = 60000;
  */
 export const NO_SERVER_CONFIRMS = 2;
 export const NO_SERVER_CONFIRM_MS = 300;
-
-/** The tmux notifications that mean the terminal list or the pane map moved. */
-const CHANGE_EVENTS = new Set([
-    'sessions-changed',
-    'session-changed',
-    'session-renamed',
-    'session-window-changed',
-    'window-add',
-    'window-close',
-    'unlinked-window-add',
-    'unlinked-window-close',
-    'exit'
-]);
 
 /** The channel a terminal's output goes out on. */
 export function ptyChannel(id: string): string {
@@ -166,173 +143,6 @@ export function terminalMessage(data: string): TerminalInput | TerminalResize | 
 }
 
 /**
- * What the channels need of tmux. The default is the control client below; a test passes a recorder
- * so that every tmux command the channels build is an assertion rather than a process.
- */
-export type TerminalDriver = {
-    /** One tmux command, the argument list sessions.ts built. */
-    run(args: string[]): Promise<string>;
-    /**
-     * One read of an attached terminal's pane, run by its control client once that client is
-     * attached, so `replied` is called at the reply's place in the terminal's output (tmux.ts,
-     * `command`). The reads of one terminal run in the order they were asked. A terminal with no
-     * attached control client is read by `run`, and `replied` is called as the answer comes.
-     */
-    read(id: string, args: string[], replied: () => void): Promise<string>;
-    /** Pane output, already routed to the terminal it belongs to. */
-    onOutput(listener: (id: string, bytes: Buffer) => void): void;
-    /** Something tmux said that moves the terminal list. */
-    onChange(listener: () => void): void;
-    /** The terminals the page is attached to; the control client follows them. */
-    attached(ids: string[]): void;
-    /** Whether a control client is open, which is what turns the poll off. */
-    live(): boolean;
-    /**
-     * Whether the process with this pid is a running tmux. It is asked of the operating system and
-     * not of tmux, so it answers while the socket of a running server cannot be reached.
-     */
-    serverRuns(pid: number): Promise<boolean>;
-    close(): void;
-};
-
-/**
- * One control client per attached terminal, each restarted on its own when it exits and closed a
- * minute after its terminal has no page on it. tmux sends `%output` for the panes of the session a
- * control client is attached to and for no other (measured with two sessions on a
- * private server: a client attached to one saw nothing typed into the other), so one client for
- * every attached terminal is what makes every attached terminal stream. A client's output belongs
- * to its own terminal, so nothing here maps pane ids to sessions.
- */
-export function tmuxDriver(options: TmuxOptions = {}): TerminalDriver {
-    const clients = new Map<string, ControlClient>();
-    const restarts = new Map<string, ReturnType<typeof setTimeout>>();
-    const idles = new Map<string, ReturnType<typeof setTimeout>>();
-    let ids = new Set<string>();
-    let closed = false;
-    let outputs: (id: string, bytes: Buffer) => void = () => {
-        // Bytes read before attach() wires a sink have nowhere to go.
-    };
-    let changed: () => void = () => {
-        // The same for a roster change: nobody is listening until attach().
-    };
-
-    const unref = (timer: ReturnType<typeof setTimeout>): void => {
-        if (typeof timer === 'object' && typeof timer.unref === 'function') timer.unref();
-    };
-
-    const forget = (timers: Map<string, ReturnType<typeof setTimeout>>, id: string): void => {
-        const timer = timers.get(id);
-        if (timer === undefined) return;
-        clearTimeout(timer);
-        timers.delete(id);
-    };
-
-    const open = (id: string): void => {
-        if (closed || clients.has(id) || !ids.has(id)) return;
-        const client = control(
-            sessionName(id),
-            {
-                output: (_pane, bytes) => outputs(id, bytes),
-                event: (event) => {
-                    if (CHANGE_EVENTS.has(event.name)) changed();
-                },
-                exit: () => {
-                    if (clients.get(id) === client) clients.delete(id);
-                    if (closed || !ids.has(id)) return;
-                    forget(restarts, id);
-                    const timer = setTimeout(() => {
-                        restarts.delete(id);
-                        open(id);
-                    }, RESTART_MS);
-                    unref(timer);
-                    restarts.set(id, timer);
-                }
-            },
-            options
-        );
-        clients.set(id, client);
-    };
-
-    /** The last read of each terminal that went to `run`, which the next one waits for. */
-    const reads = new Map<string, Promise<unknown>>();
-
-    const runRead = (id: string, args: string[], replied: () => void): Promise<string> => {
-        const after = (reads.get(id) ?? Promise.resolve()).then(
-            () => run(args, options),
-            () => run(args, options)
-        );
-        const done = after.then((text) => {
-            replied();
-            return text;
-        });
-        reads.set(id, done);
-        void done
-            .finally(() => {
-                if (reads.get(id) === done) reads.delete(id);
-            })
-            .catch(() => undefined);
-        return done;
-    };
-
-    const drop = (id: string): void => {
-        forget(restarts, id);
-        forget(idles, id);
-        clients.get(id)?.close();
-        clients.delete(id);
-    };
-
-    return {
-        run: (args: string[]) => run(args, options),
-        read(id, args, replied): Promise<string> {
-            const client = clients.get(id);
-            if (client === undefined) return runRead(id, args, replied);
-            // Reads asked in one turn are written in that order before any reply is read, so tmux
-            // takes them together.
-            return client
-                .ready()
-                .then((attached) =>
-                    attached && client.live()
-                        ? client.command(args, replied)
-                        : runRead(id, args, replied)
-                );
-        },
-        onOutput(listener): void {
-            outputs = listener;
-        },
-        onChange(listener): void {
-            changed = listener;
-        },
-        attached(next: string[]): void {
-            ids = new Set(next);
-            for (const id of ids) {
-                forget(idles, id);
-                if (!clients.has(id)) open(id);
-            }
-            for (const id of clients.keys()) {
-                if (ids.has(id) || idles.has(id)) continue;
-                const timer = setTimeout(() => {
-                    idles.delete(id);
-                    if (!ids.has(id)) drop(id);
-                }, IDLE_MS);
-                unref(timer);
-                idles.set(id, timer);
-            }
-        },
-        live(): boolean {
-            for (const client of clients.values()) if (client.live()) return true;
-            return false;
-        },
-        serverRuns: tmuxRuns,
-        close(): void {
-            closed = true;
-            for (const id of [...clients.keys()]) drop(id);
-            for (const id of [...restarts.keys()]) forget(restarts, id);
-            for (const id of [...idles.keys()]) forget(idles, id);
-        }
-    };
-}
-
-/**
  * The terminals the hosts of apps hold as streams, which the list and the channels carry beside
  * tmux's: their rows, their output (the promise a listener returns holds the host's credit until
  * every page has taken the bytes), what a page that attaches is sent first, and what the pages
@@ -358,10 +168,12 @@ export type TerminalsOptions = {
     /** How many lines of scrollback an attaching page is given. */
     scrollbackLines?: number;
     /**
-     * Milliseconds between two list polls while a page is attached or a task terminal runs; 0 turns
-     * the poll off.
+     * Milliseconds between two list polls while a page is attached or a task terminal runs, and
+     * between two reads of the process table while a page is subscribed; 0 turns both off.
      */
     poll?: number;
+    /** One read of the process table; `ps` when absent. */
+    table?: (signal: AbortSignal) => Promise<Entry[]>;
     /** Milliseconds between two list polls while nothing is attached; 0 turns the poll off. */
     idlePoll?: number;
     /** Passed to the default driver. A test points it at a private tmux server. */
@@ -427,6 +239,14 @@ export class Terminals {
     #serverPid: number | null = null;
     /** The waits between a no-server answer and the read that confirms it, each with its waker. */
     #pauses = new Set<() => void>();
+    /** The text of the last list taken, which a tick's list and table are compared with. */
+    #listing = '';
+    /** The process table the agents of the list are read from. */
+    #agents: AgentWatch;
+    /** The sockets subscribed to anything, while which the table is read. */
+    #pages = new Set<Sink>();
+    /** Settles when the first list is taken, which an attach to a by-hand id waits for. */
+    #listed = Promise.withResolvers<undefined>();
 
     constructor(hub: Hub, options: TerminalsOptions = {}) {
         this.#hub = hub;
@@ -442,6 +262,16 @@ export class Terminals {
         // `poll: 0` is how a caller asks for no list poll at all, so the idle rate follows it
         // unless the caller named one of its own.
         this.#idlePoll = options.idlePoll ?? (this.#poll === 0 ? 0 : IDLE_POLL_MS);
+        this.#agents = new AgentWatch({
+            table: options.table,
+            list: () => this.#driver.run(paneListArgs()),
+            poll: this.#poll,
+            answered: (before, after, list) => {
+                if (panesOf(this.#listing, before) !== panesOf(list ?? this.#listing, after)) {
+                    this.refresh();
+                }
+            }
+        });
         this.#arm();
         this.refresh();
     }
@@ -530,7 +360,7 @@ export class Terminals {
         for (let confirmed = 0; ; confirmed += 1) {
             let text: string;
             try {
-                text = await this.#driver.run(listArgs());
+                text = await this.#driver.run(paneListArgs());
             } catch (error) {
                 const said = reason(error);
                 if (!noServer(said)) {
@@ -546,8 +376,12 @@ export class Terminals {
                 if (this.#stale(turn)) return;
                 continue;
             }
-            if (!this.#stale(turn)) this.#serverPid = serverPid(text);
-            this.#take(turn, parseTerminals(text));
+            await this.#agents.settled();
+            if (!this.#stale(turn)) {
+                this.#serverPid = serverPid(text);
+                this.#listing = text;
+            }
+            this.#take(turn, terminalsOf(text, this.#agents.table()));
             return;
         }
     }
@@ -608,6 +442,8 @@ export class Terminals {
 
     /** A subscribe message: the pty channels in it are attached to the sink. */
     subscribed(sink: Sink, channels: string[]): void {
+        this.#pages.add(sink);
+        this.#agents.watched(true);
         for (const channel of channels) {
             const id = channelTerminal(channel);
             if (id !== null) void this.#attach(sink, id);
@@ -665,6 +501,8 @@ export class Terminals {
     /** The socket closed: nothing is delivered to this sink, and the tmux sessions live on. */
     remove(sink: Sink): void {
         this.#asked.delete(sink);
+        this.#pages.delete(sink);
+        this.#agents.watched(this.#pages.size > 0);
         const ids = this.#held.get(sink);
         if (ids === undefined) return;
         this.#held.delete(sink);
@@ -679,7 +517,7 @@ export class Terminals {
                 this.#hub.merge(ptyChannel(id), null);
             }
         }
-        this.#driver.attached(this.#tmuxAttached());
+        this.#follow();
         this.#arm();
     }
 
@@ -688,6 +526,9 @@ export class Terminals {
         if (this.#timer !== null) clearInterval(this.#timer);
         this.#timer = null;
         this.#period = 0;
+        this.#agents.close();
+        this.#pages.clear();
+        this.#listed.resolve(undefined);
         for (const wake of [...this.#pauses]) wake();
         for (const id of this.#attached.keys()) this.#hub.merge(ptyChannel(id), null);
         this.#listeners.clear();
@@ -701,11 +542,13 @@ export class Terminals {
     #took(read: Terminal[] | null): boolean {
         if (read === null) return false;
         this.#tmux = read;
+        this.#listed.resolve(undefined);
         const terminals = [...read, ...(this.#streams?.list() ?? [])];
         // Everything the reader sets on a terminal is in the signature, so a rename or a new icon
         // or colour is a change the pages are told of, and so is the end of a task terminal's line.
         // The pane's process is in it too: a task terminal run again that ends with the status it
-        // ended with before is another process, and the pages are told of it.
+        // ended with before is another process, and the pages are told of it. So is the agent the
+        // table shows and the size of a by-hand pane, which its grid is drawn at.
         const signature = JSON.stringify(
             terminals.map((one) => [
                 one.id,
@@ -716,7 +559,10 @@ export class Terminals {
                 one.task,
                 one.exit,
                 one.pid,
-                one.app
+                one.app,
+                one.kind,
+                one.agent,
+                one.byHand
             ])
         );
         // The first list is taken even when it is empty: it is what turns "not read yet" into a
@@ -724,6 +570,8 @@ export class Terminals {
         if (this.#terminals !== null && signature === this.#signature) return false;
         this.#signature = signature;
         this.#terminals = terminals;
+        // A by-hand pane's session may be another one now, which its control client follows.
+        this.#follow();
         this.#arm();
         this.#tell();
         return true;
@@ -737,9 +585,14 @@ export class Terminals {
      * output from before the attach, and the output that came after the last read's reply goes out
      * behind the screen in the same message. A second page attaching is sent its own screen and
      * does not repaint the first page's. A size the socket asked before it attached is applied
-     * first, so the pane is read at that size.
+     * first, so the pane is read at that size. A by-hand id attaches only while the list holds it:
+     * a session named like one, or an id saved from an earlier tmux server, reads nothing.
      */
     async #attach(sink: Sink, id: string): Promise<void> {
+        if (!isOwnTerminal(id)) {
+            await this.#listed.promise;
+            if (!this.#pages.has(sink) || !this.#byHand().has(id)) return;
+        }
         const channel = ptyChannel(id);
         const sinks = this.#attached.get(id) ?? new Set<Sink>();
         if (!sinks.has(sink)) {
@@ -749,7 +602,7 @@ export class Terminals {
             const held = this.#held.get(sink) ?? new Set<string>();
             held.add(id);
             this.#held.set(sink, held);
-            this.#driver.attached(this.#tmuxAttached());
+            this.#follow();
             this.#arm();
         }
         const size = this.#asked.get(sink)?.get(id);
@@ -772,7 +625,7 @@ export class Terminals {
             await this.#queue.get(id);
             const read = (args: string[]): Promise<string> =>
                 this.#driver.read(id, args, () => (after.length = 0));
-            screen = await paneScreen(sessionName(id), this.#lines, read);
+            screen = await paneScreen(targetOf(id), this.#lines, read);
         } finally {
             if (opening.get(sink) === after) opening.delete(sink);
             if (opening.size === 0 && this.#opening.get(id) === opening) this.#opening.delete(id);
@@ -795,9 +648,19 @@ export class Terminals {
         }
     }
 
-    /** The attached terminals tmux holds: the control clients follow these and no others. */
-    #tmuxAttached(): string[] {
-        return [...this.#attached.keys()].filter((id) => this.#streams?.has(id) !== true);
+    /** The tmux session of each by-hand terminal of the last list. */
+    #byHand(): Map<string, string> {
+        return new Map(
+            (this.#tmux ?? []).flatMap((one) =>
+                one.byHand === undefined ? [] : [[one.id, one.byHand.session]]
+            )
+        );
+    }
+
+    /** Hand the driver the attached terminals tmux holds: its clients follow only these. */
+    #follow(): void {
+        const ids = [...this.#attached.keys()].filter((id) => this.#streams?.has(id) !== true);
+        this.#driver.attached(ids, this.#byHand());
     }
 
     /** The last output of a stream terminal, sent to the one sink that attached. */
@@ -863,6 +726,7 @@ export class Terminals {
             this.#streams.size(id, sink, cols, rows);
             return;
         }
+        if (!isOwnTerminal(id)) return;
         try {
             await this.#driver.run(resizeArgs(id, cols, rows));
         } catch (error) {
@@ -873,4 +737,17 @@ export class Terminals {
 
 function reason(error: unknown): string {
     return error instanceof Error ? error.message : String(error);
+}
+
+/** What a list text and a process table say of the panes, compared between two ticks. */
+function panesOf(listing: string, table: readonly Entry[]): string {
+    return JSON.stringify(
+        terminalsOf(listing, table).map((one) => [
+            one.id,
+            one.agent,
+            one.byHand?.session,
+            one.byHand?.cols,
+            one.byHand?.rows
+        ])
+    );
 }

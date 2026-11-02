@@ -1,6 +1,7 @@
-// Layer 2, server. The process table of the machine from one run of `ps` that oculus starts itself.
+// Layer 2, server. The process table of the machine, and the processes of one terminal, from one
+// run of `ps` that oculus starts itself.
 //
-// This module has one subprocess call site for the table, as server/files/search/search.ts has for
+// This module has one subprocess call site for `ps`, as server/files/search/search.ts has for
 // ripgrep: one list argument vector and no shell, an environment whose `LC_ALL` is `C` so `lstart`
 // is in its fixed English form, a time limit, and a read that is bounded and folded as the output
 // arrives. At the limit, on abort and when the output passes the bound the child is killed, so no
@@ -9,13 +10,18 @@
 
 import { spawn } from 'node:child_process';
 import { ReadFailure } from './failure.ts';
-import { entryOf, type Entry } from './table.ts';
+import { entryOf, ttyProcessOf, type Entry, type TtyProcess } from './table.ts';
 
 /** How long `ps` is given before it is killed and the read fails. */
 const PS_TIMEOUT_MS = 10000;
 
 /** Every process (`-ax`), whole command lines (`-ww`), and no header (each column named `=`). */
 const PS_ARGS = ['-axww', '-o', 'pid=,ppid=,user=,pcpu=,rss=,lstart=,command='];
+
+/** The arguments of one terminal's processes, by its device path, read as PS_ARGS is. */
+function ttyArgs(tty: string): string[] {
+    return ['-ww', '-t', tty, '-o', 'pgid=,tpgid=,command='];
+}
 
 /**
  * How much output is read, counted in characters of the decoded stream. A table is a few hundred
@@ -64,8 +70,25 @@ type PsOptions = {
 
 /** The table of one `ps` run, or a ReadFailure saying why there is none. */
 export function readTable(options: PsOptions = {}): Promise<Entry[]> {
+    return readRows(PS_ARGS, entryOf, options);
+}
+
+/**
+ * The processes of one terminal by its device path, as `tmux` names it, or a ReadFailure: `ps` ends
+ * with a failure for a device that is not there.
+ */
+export function readTty(tty: string, options: PsOptions = {}): Promise<TtyProcess[]> {
+    return readRows(ttyArgs(tty), ttyProcessOf, options);
+}
+
+/** The rows `row` reads from one `ps` run over `args`, or a ReadFailure saying why not. */
+function readRows<Row>(
+    args: string[],
+    row: (line: string) => Row | null,
+    options: PsOptions
+): Promise<Row[]> {
     const { signal, timeoutMs = PS_TIMEOUT_MS, maxOutput = MAX_OUTPUT } = options;
-    return new Promise<Entry[]>((resolve, reject) => {
+    return new Promise<Row[]>((resolve, reject) => {
         if (signal?.aborted === true) {
             reject(new ReadFailure('cancelled'));
             return;
@@ -73,7 +96,7 @@ export function readTable(options: PsOptions = {}): Promise<Entry[]> {
         const env = { ...(options.env ?? process.env), LC_ALL: 'C' };
         let child: PsChild;
         try {
-            child = (options.start ?? startChild)('ps', PS_ARGS, env);
+            child = (options.start ?? startChild)('ps', args, env);
         } catch {
             reject(new ReadFailure('start'));
             return;
@@ -84,7 +107,7 @@ export function readTable(options: PsOptions = {}): Promise<Entry[]> {
         const ended = new Promise<void>((done) => {
             gone = done;
         });
-        const entries: Entry[] = [];
+        const entries: Row[] = [];
         let said = '';
         let rest = '';
         let read = 0;
@@ -109,7 +132,7 @@ export function readTable(options: PsOptions = {}): Promise<Entry[]> {
         );
         signal?.addEventListener('abort', cancel);
         const fold = (line: string): void => {
-            const entry = entryOf(line);
+            const entry = row(line);
             if (entry !== null) entries.push(entry);
         };
 

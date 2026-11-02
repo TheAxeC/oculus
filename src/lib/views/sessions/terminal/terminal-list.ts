@@ -21,7 +21,9 @@
 // control does, and a second pick or press kills it. The context menu key and Shift+F10 open the
 // grid's menu, which xterm would otherwise send to the shell (`holdMenuKeys`). Every label is
 // `t(...)` of a catalog key, except a terminal's own name in Join Terminals and Attach to Session,
-// which is passed through as the list hands it.
+// which is passed through as the list hands it. The grid's menu and a row's leave out Kill, Rename,
+// Change Icon, Change Color and Clear for a by-hand terminal, whose tmux session oculus does not
+// write to.
 
 import type { ISearchOptions } from '@xterm/addon-search';
 import { FILE_DRAG } from '$lib/state/sources/fs';
@@ -392,14 +394,16 @@ function styleItems(t: Words): MenuItem[] {
 /**
  * The grid's items: Copy and Copy as HTML while it holds a selection, Paste, Select All, Clear,
  * then Split (for a terminal whose folder oculus knows), Rename, Change Icon, Change Color and
- * Kill, Kill with its armed label while the grid's terminal is armed.
+ * Kill, Kill with its armed label while the grid's terminal is armed. A by-hand terminal has no
+ * Clear, no style items and no Kill.
  */
 export function gridMenu(
     selected: boolean,
     armed: boolean,
     t: Words,
     task: TaskState = null,
-    splittable = true
+    splittable = true,
+    byHand = false
 ): MenuItem[] {
     return grouped([
         [
@@ -412,9 +416,11 @@ export function gridMenu(
             { id: MENU_PASTE, label: t('sessions.menu_paste') },
             { id: MENU_SELECT_ALL, label: t('sessions.menu_select_all') }
         ],
-        [{ id: MENU_CLEAR, label: t('sessions.menu_clear') }],
+        byHand ? [] : [{ id: MENU_CLEAR, label: t('sessions.menu_clear') }],
         taskItems(task, t),
-        [...splitItems(t, splittable), ...styleItems(t), killItem(armed, t)]
+        byHand
+            ? splitItems(t, splittable)
+            : [...splitItems(t, splittable), ...styleItems(t), killItem(armed, t)]
     ]);
 }
 
@@ -437,7 +443,8 @@ function inShownRow(tab: TerminalTabState, terminal: string): boolean {
  * Terminal (for a terminal whose folder oculus knows) and Kill Terminal, Kill with its armed label
  * while the row's terminal is armed; Rename, Change Icon, Change Color and Clear; then Unsplit
  * Terminal on a terminal of the row the tab shows, and Join Terminals, a submenu of the terminals
- * other Terminal tabs own, each by the name it is handed.
+ * other Terminal tabs own, each by the name it is handed. A by-hand terminal has no Kill, no style
+ * items and no Clear.
  */
 export function terminalRowMenu(
     tab: TerminalTabState,
@@ -446,12 +453,16 @@ export function terminalRowMenu(
     armed: boolean,
     t: Words,
     task: TaskState = null,
-    splittable = true
+    splittable = true,
+    byHand = false
 ): MenuItem[] {
     const joins = others.map((one) => ({ id: `${JOIN}${one.terminal}`, label: one.title }));
     return grouped([
-        [...taskItems(task, t), ...rowActions(armed, t, splittable)],
-        [...styleItems(t), { id: MENU_CLEAR, label: t('sessions.menu_clear') }],
+        [
+            ...taskItems(task, t),
+            ...(byHand ? splitItems(t, splittable) : rowActions(armed, t, splittable))
+        ],
+        byHand ? [] : [...styleItems(t), { id: MENU_CLEAR, label: t('sessions.menu_clear') }],
         [
             ...(inShownRow(tab, terminal)
                 ? [{ id: MENU_UNSPLIT, label: t('sessions.menu_unsplit') }]

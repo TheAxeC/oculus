@@ -8,11 +8,13 @@ import type { ISearchOptions } from '@xterm/addon-search';
 import type { ITerminalOptions, ITheme } from '@xterm/xterm';
 import type { TerminalOptions } from '$lib/state/shared/words/appearance';
 import { COLOR_NAMES, colorToken } from '$lib/state/sessions/terminal/terminal-marks';
+import { FIND_LIMIT, linkHandler } from '../terminal-list';
 import { copySelection, type SelectionClipboard } from './grid-actions';
+import { scheduleReflow } from './reflow';
 import './grid.css';
 
 /** The grid's palette and its font family, as the theme in force gives them. */
-export type GridLook = { theme: ITheme; fontFamily: string };
+type GridLook = { theme: ITheme; fontFamily: string };
 
 /** The sixteen ANSI slots, in xterm's order: each name and its bright twin from one token. */
 const ANSI: [keyof ITheme, string][] = COLOR_NAMES.flatMap((name) => {
@@ -39,7 +41,7 @@ const ANSI: [keyof ITheme, string][] = COLOR_NAMES.flatMap((name) => {
  * a theme is applied the root carries no `--on-accent-bg`, and the selection is then drawn in
  * `--ink`, as every other use of that token falls back.
  */
-export function gridLook(): GridLook {
+function gridLook(): GridLook {
     const root = getComputedStyle(document.body);
     const of = (name: string) => root.getPropertyValue(name).trim();
     const theme: ITheme = {
@@ -63,7 +65,7 @@ export function gridLook(): GridLook {
  * the config holds (`terminal`). An option the config leaves out is left out, so xterm's own
  * default stands; the copy key is the grid's to follow (`followTerminalOptions`), not xterm's.
  */
-export function gridOptions(
+function gridOptions(
     look: GridLook,
     size: number | undefined,
     terminal: TerminalOptions = {}
@@ -74,6 +76,36 @@ export function gridOptions(
     if (terminal.cursorBlink !== undefined) options.cursorBlink = terminal.cursorBlink;
     if (terminal.macOptionIsMeta !== undefined) options.macOptionIsMeta = terminal.macOptionIsMeta;
     return options;
+}
+
+/**
+ * A new grid in the look in force, with its addons: fit, search, web links (opened in a new tab on
+ * the modifier `mac` names), the Unicode 11 width tables, in force, and serialize. xterm.js and its
+ * stylesheet are loaded here, on the grid's first use, since xterm needs a DOM and a static import
+ * of the stylesheet would be folded into the route's own.
+ */
+export async function buildGrid(size: number | undefined, terminal: TerminalOptions, mac: boolean) {
+    const [xterm, addon, finder, links, wide, serialize] = await Promise.all([
+        import('@xterm/xterm'),
+        import('@xterm/addon-fit'),
+        import('@xterm/addon-search'),
+        import('@xterm/addon-web-links'),
+        import('@xterm/addon-unicode11'),
+        import('@xterm/addon-serialize'),
+        import('@xterm/xterm/css/xterm.css')
+    ]);
+    const term = new xterm.Terminal(gridOptions(gridLook(), size, terminal));
+    const fit = new addon.FitAddon();
+    term.loadAddon(fit);
+    const searcher = new finder.SearchAddon({ highlightLimit: FIND_LIMIT });
+    term.loadAddon(searcher);
+    const opened = (url: string) => window.open(url, '_blank', 'noopener');
+    term.loadAddon(new links.WebLinksAddon(linkHandler(mac, opened)));
+    term.loadAddon(new wide.Unicode11Addon());
+    const serializer = new serialize.SerializeAddon();
+    term.loadAddon(serializer);
+    term.unicode.activeVersion = '11';
+    return { term, fit, searcher, serializer };
 }
 
 /** What `followTerminalOptions` needs of a grid: its options and its selection. */
@@ -110,9 +142,39 @@ export function followTerminalOptions(
  * Put a look on a grid that is already drawn: the palette always, since a theme change moves it,
  * and the font family only when it differs, since setting it makes xterm measure its cells again.
  */
-export function applyLook(options: ITerminalOptions, look: GridLook): void {
+function applyLook(options: ITerminalOptions, look: GridLook): void {
     options.theme = look.theme;
     if (options.fontFamily !== look.fontFamily) options.fontFamily = look.fontFamily;
+}
+
+/**
+ * Put the look in force and the font `size` on a drawn grid (`held`, null while none is), restyle
+ * its find marks and then call `done`, which refits it. The class that carries a theme's tokens is
+ * put on the body by the workbench's own effect, and the caller's may run before it in the same
+ * flush; reading the palette on the next frame reads it after the body has changed, where reading
+ * it at once would read the old palette. The call returned cancels a frame not yet run.
+ */
+export function reflowLook(
+    size: number | undefined,
+    held: () => { options: ITerminalOptions } | null,
+    restyle: () => void,
+    done: () => void
+): () => void {
+    return scheduleReflow(
+        requestAnimationFrame,
+        cancelAnimationFrame,
+        () => {
+            const grid = held();
+            if (grid === null) return false;
+            applyLook(grid.options, gridLook());
+            restyle();
+            if (size !== undefined && grid.options.fontSize !== size) {
+                grid.options.fontSize = size;
+            }
+            return true;
+        },
+        done
+    );
 }
 
 /** The colours the search addon marks matches in: its decoration options. */

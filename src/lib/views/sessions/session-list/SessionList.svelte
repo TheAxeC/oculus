@@ -20,16 +20,17 @@
 <script lang="ts">
     // Layer 3, sessions view. The sessions list of VS Code's Agents window: New, the filter menu
     // and the search box in its header, the sessions grouped by workspace, every terminal oculus
-    // started, and the Customizations section at its foot. A terminal row shows its terminal in the
-    // Terminal tab that owns it, or, for one no tab owns (its tab was closed, or a task, a hook or
-    // LaTeX started it), in the Terminal tab of the page on screen; `Open in its own pane` moves it
-    // into a new Terminal tab. New shows the composer in the page's Terminal tab.
+    // started with each by-hand terminal, and the Customizations section at its foot. A terminal
+    // row shows its terminal in the Terminal tab that owns it, or, for one no tab owns (its tab was
+    // closed, or a task, a hook or LaTeX started it, or it is by hand), in the Terminal tab of the
+    // page on screen; `Open in its own pane` moves it into a new Terminal tab. New shows the
+    // composer in the page's Terminal tab.
     //
     // A list a workbench limited to a folder (state/sources/explorer/view/limit.ts) holds the
     // sessions and terminals that work in the folder or are filed into it, with the line "In
     // root/folder" and the control that lists every session again. Its pages have no Terminal tab
     // of their own: New opens one in the page's documents pane, in the folder, and a picked session
-    // opens its Transcript and its Session view there.
+    // opens a Terminal tab that reads it and its Session view there.
     //
     // A group is named as the workspace picker names its folder (place-names.ts): a hub of the open
     // workspace by the name the workspace file gives it, any other folder by its last segment, and
@@ -88,6 +89,7 @@
             composeIn,
             forkTerminal,
             moveTerminal,
+            openSession,
             resumeTerminal,
             showTerminal,
             stopTerminal,
@@ -231,14 +233,17 @@
         else void composeAt({ cwd: dir, agent: 'claude', documents: true });
     }
 
-    /** A press on a session: it is the selection, and a workbench shows it in its documents. */
+    /**
+     * A press on a session: it is the selection and it opens, since no tab follows the selection to
+     * show its turns; a workbench shows it, with its details, in its documents.
+     */
     function pick(row: GroupedSession): void {
         select(row.id);
-        if (folder === null) return;
-        const page = currentPage().id;
+        const documents = folder !== null;
+        openSession({ session: row.id, label: row.title, press: true, documents });
+        if (!documents) return;
         const pinned = { session: row.id, label: row.title };
-        openView('transcript', pinned, page, { document: true });
-        openView('session-detail', pinned, page, { document: true, keep: true });
+        openView('session-detail', pinned, currentPage().id, { document: true, keep: true });
     }
 
     /** Take the folder away from this list: it lists every session again. */
@@ -340,7 +345,7 @@
             });
         else if (id === 'transcript') {
             select(row.id);
-            openView('transcript', { session: row.id, label: row.title });
+            openSession({ session: row.id, label: row.title });
         } else if (id === 'resume') void resume(row);
     }
 </script>

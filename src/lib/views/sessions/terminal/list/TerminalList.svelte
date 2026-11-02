@@ -174,9 +174,9 @@
         show(row);
     }
 
-    /** The first press arms Kill and the second stops the terminal, as the Sessions list's does. */
+    /** The first press arms Kill and the second stops the terminal; a by-hand one has no Kill. */
     function kill(row: TerminalChoice): void {
-        handlers.kill(row.terminal);
+        if (!row.byHand) handlers.kill(row.terminal);
     }
 
     /**
@@ -277,7 +277,8 @@
                         arming === row.terminal,
                         t,
                         taskStateOf(row),
-                        row.splittable
+                        row.splittable,
+                        row.byHand
                     ),
                     ...appMenus.items('terminal/title/context', row.terminal)
                 ]}
@@ -342,21 +343,23 @@
                                 onclick={() => split(row)}
                             />
                         {/if}
-                        <ToolButton
-                            compact
-                            bare
-                            label={arming === row.terminal
-                                ? t('sessions.terminal_kill_armed')
-                                : t('sessions.terminal_kill')}
-                            title={arming === row.terminal
-                                ? t('sessions.terminal_kill_armed')
-                                : t('sessions.terminal_kill_tip')}
-                            glyph="trash"
-                            pressed={arming === row.terminal}
-                            tabindex={-1}
-                            data={{ kill: row.terminal }}
-                            onclick={() => kill(row)}
-                        />
+                        {#if !row.byHand}
+                            <ToolButton
+                                compact
+                                bare
+                                label={arming === row.terminal
+                                    ? t('sessions.terminal_kill_armed')
+                                    : t('sessions.terminal_kill')}
+                                title={arming === row.terminal
+                                    ? t('sessions.terminal_kill_armed')
+                                    : t('sessions.terminal_kill_tip')}
+                                glyph="trash"
+                                pressed={arming === row.terminal}
+                                tabindex={-1}
+                                data={{ kill: row.terminal }}
+                                onclick={() => kill(row)}
+                            />
+                        {/if}
                     </span>
                 </div>
                 {#if arming === row.terminal && !narrow}

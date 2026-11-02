@@ -13,9 +13,9 @@
 //
 // The Markdown of an assistant turn is rendered here and filtered on the page, the way
 // server/content/docs.ts renders a README: ui/html.ts's sanitise runs over the HTML before
-// views/sessions/transcript/Transcript.svelte draws it, so the rendering and the filtering stay one
-// each and in one place. Its fenced code is painted by the highlighter's extension
-// (data/prose/languages.ts, `codeColour`), as a document's is.
+// views/sessions/terminal/transcript/TranscriptBody.svelte draws it, so the rendering and the
+// filtering stay one each and in one place. Its fenced code is painted by the highlighter's
+// extension (data/prose/languages.ts, `codeColour`), as a document's is.
 
 import { Marked } from 'marked';
 import { z } from 'zod';

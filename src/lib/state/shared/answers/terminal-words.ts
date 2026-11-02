@@ -27,6 +27,8 @@ export function terminalSentence(word: TerminalRefusal, names: readonly string[]
             return catalogText('sessions.refused_bad_terminal');
         case 'terminal-ended':
             return catalogText('sessions.refused_terminal_ended');
+        case 'no-agent':
+            return catalogText('sessions.refused_no_agent');
         case 'terminal-failed':
             return catalogText('sessions.refused_terminal_failed');
         case 'terminal-not-started':

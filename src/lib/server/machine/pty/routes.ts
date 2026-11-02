@@ -60,9 +60,10 @@ import {
     renameTerminal,
     restyleTerminal
 } from './edit.ts';
+import { interruptAgent, steerAgent, type SteerOptions } from './panes/steer.ts';
 import {
     RESUME_TOOLS,
-    interruptTerminal,
+    isOwnTerminal,
     isSessionId,
     NAME_MAX,
     isTerminalId,
@@ -99,7 +100,8 @@ const steerTextShape = z
 const resumeToolShape = z.literal(RESUME_TOOLS);
 
 export type TerminalOptions = StartOptions &
-    ChatOptions & {
+    ChatOptions &
+    SteerOptions & {
         /** The engine directory the configuration and the agents catalog are read from. */
         engine: string;
         /**
@@ -461,12 +463,12 @@ export async function handleTerminal(
         if (message.action === 'approve-seed') return approveSeedTask(message, options);
         if (message.action === 'steer') {
             if (!isTerminalId(message.id)) return refusal(NOT_OURS);
-            await steerTerminal(message.id, steerTextShape.parse(message.text), options);
+            await steerAgent(message.id, steerTextShape.parse(message.text), options);
             return json({ ok: true, id: message.id }, { headers: NO_STORE });
         }
         if (message.action === 'interrupt') {
             if (!isTerminalId(message.id)) return refusal(NOT_OURS);
-            await interruptTerminal(message.id, options);
+            await interruptAgent(message.id, options);
             return json({ ok: true, id: message.id }, { headers: NO_STORE });
         }
         if (message.action === 'fork') {
@@ -475,7 +477,7 @@ export async function handleTerminal(
             return await forkSession(session, message, options);
         }
         if (message.action === 'stop') {
-            if (!isTerminalId(message.id)) return refusal(NOT_OURS);
+            if (!isOwnTerminal(message.id)) return refusal(NOT_OURS);
             await stopTerminal(message.id, options);
             options.refresh?.();
             return json({ ok: true, id: message.id }, { headers: NO_STORE });
@@ -506,7 +508,7 @@ export async function handleTerminal(
             return await resumeSession(session, message.cols, message.rows, options);
         }
         if (message.action === 'resize') {
-            if (!isTerminalId(message.id)) return refusal(NOT_OURS);
+            if (!isOwnTerminal(message.id)) return refusal(NOT_OURS);
             await resizeTerminal(message.id, message.cols, message.rows, options);
             return json({ ok: true, id: message.id }, { headers: NO_STORE });
         }

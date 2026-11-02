@@ -1,7 +1,9 @@
 // Layer 2, client state. The rules over one Terminal tab's own layout state, the one shape every
 // reader of a Terminal tab goes through: the terminals the tab owns in its own order, the row of
 // them drawn side by side with a share of the width each, the one of the row that is shown (the
-// focused one), whether the composer shows, and the label the tab strip draws.
+// focused one), whether the composer shows, the label the tab strip draws, whether the tab shows
+// its grids or the transcript of its session, whether it is locked, and the session a tab with no
+// terminal reads.
 //
 // A Terminal tab is a terminal panel of its own: a terminal belongs to exactly one tab, and the
 // store (state/sessions/terminals.svelte.ts) applies these rules to the layout when a terminal is
@@ -10,12 +12,10 @@
 // wider than the pane scrolls sideways. The composer shows alone while nothing is shown, and right
 // of the row while `shown` is set.
 //
-// Every rule is pure over what it is handed, so a rule is asserted without a layout. A saved state
-// of any older shape is read into this one, so a reload keeps every Terminal tab: a tab that held
-// `{ shown, beside, share }` reads as a row of both with the share and its rest, a tab pinned to a
-// terminal keeps it, and a tab that followed the selection or held a fresh composer shows the
-// composer. The tab's `id` is its identity for the layout, which opens a new tab for a state whose
-// identity no tab carries (state/workbench/layout/instance.ts, `stateId`).
+// Every rule is pure over what it is handed, so a rule is asserted without a layout. A key a saved
+// state does not hold reads as its default, so the `{}` of the default layout shows the composer.
+// The tab's `id` is its identity for the layout, which opens a new tab for a state whose identity
+// no tab carries (state/workbench/layout/instance.ts, `stateId`).
 
 import { z } from 'zod';
 import { anyNumberShape, rowsShape } from '../../../data/shapes/shapes.ts';
@@ -27,9 +27,8 @@ export const TERMINAL_VIEW = 'terminal';
 /** The fewest pixels a terminal of a row keeps, VS Code's least size of a split pane. */
 export const ROW_MIN = 80;
 
-/** The bounds an older tab's two-terminal share is kept in when it is read into the row. */
-const SHARE_MIN = 0.1;
-const SHARE_MAX = 0.9;
+/** The session a tab reads, and the subagent of it: `agent` is empty for the session's own. */
+export type TabTranscript = { session: string; agent: string };
 
 /** One Terminal tab's own state. */
 export type TerminalTabState = {
@@ -47,9 +46,15 @@ export type TerminalTabState = {
     composing: boolean;
     /** The shown terminal's name, which the tab strip draws. */
     label: string;
+    /** What the tab draws while it has a session: its grids, or that session's turns. */
+    showing: 'live' | 'transcript';
+    /** Whether the tab's boxes and grids take no typing. */
+    locked: boolean;
+    /** The session a tab with no terminal reads, or null. */
+    transcript: TabTranscript | null;
 };
 
-/** The shape of a terminal id (data/model `TERMINAL_ID`), six hex digits and the kind. */
+/** The shape of a terminal id (data/model `TERMINAL_ID`): either of the two forms. */
 const terminalIdShape = z.string().regex(TERMINAL_ID);
 
 /** Whether an id names a terminal, the rule the server tests by too (data/model). */
@@ -57,7 +62,23 @@ export { isTerminalId };
 
 /** A tab that owns no terminal and shows the composer. */
 export function emptyTab(id: string): TerminalTabState {
-    return { id, terminals: [], row: [], shares: [], shown: null, composing: true, label: '' };
+    return {
+        id,
+        terminals: [],
+        row: [],
+        shares: [],
+        shown: null,
+        composing: true,
+        label: '',
+        showing: 'live',
+        locked: false,
+        transcript: null
+    };
+}
+
+/** The tab on Live and reading no session of its own: New there, or a terminal that joins it. */
+export function liveTab(state: TerminalTabState): TerminalTabState {
+    return { ...state, showing: 'live', transcript: null };
 }
 
 /** A fresh identity for a tab. */
@@ -101,11 +122,9 @@ function settled(state: TerminalTabState): TerminalTabState {
 }
 
 /**
- * The fields a saved state is read from, each as typed or unset. `terminals` and `row` are absent
- * unless the state holds a list, since the shape of the state is told by which of them it holds;
- * a list holds the terminal ids it names. `shares` are the numbers a row was saved with, and a
- * share that is no number is NaN, which `mendedShares` refuses. `share` is an older tab's left
- * half, half unless it is a number inside the bounds.
+ * The fields a saved state is read from, each as typed or at its default. A list holds the terminal
+ * ids it names. `shares` are the numbers a row was saved with, and a share that is no number is
+ * NaN, which `mendedShares` refuses.
  */
 const savedTabShape = z.object({
     id: z
@@ -113,58 +132,26 @@ const savedTabShape = z.object({
         .min(1)
         .catch(() => freshId()),
     label: z.string().catch(''),
-    terminals: rowsShape(terminalIdShape).optional().catch(undefined),
-    session: terminalIdShape.optional().catch(undefined),
+    terminals: rowsShape(terminalIdShape).catch([]),
     shown: terminalIdShape.nullable().catch(null),
     composing: z.boolean().catch(false),
-    row: rowsShape(terminalIdShape).optional().catch(undefined),
+    row: rowsShape(terminalIdShape).catch([]),
     shares: z.array(anyNumberShape.catch(Number.NaN)).catch([]),
-    beside: terminalIdShape.optional().catch(undefined),
-    share: z.number().min(SHARE_MIN).max(SHARE_MAX).catch(0.5)
+    showing: z.enum(['live', 'transcript']).catch('live'),
+    locked: z.boolean().catch(false),
+    transcript: z
+        .object({ session: z.string().min(1), agent: z.string() })
+        .nullable()
+        .catch(null)
 });
 
 /**
- * A saved state read into the tab's shape. An old `{ session, label }` reads as that one terminal
- * shown; an old `{}`, `{ id }` or `{ id, follow }` as a tab with no terminal, composing; an old
- * `{ shown, beside, share }` as a row of both, `share` the left one's. Ids that are not terminal
- * ids are dropped and a repeated one is kept once. The tab's own `id` is kept, and a state carrying
- * none is given a fresh one.
+ * A saved state read into the tab's shape. Ids that are not terminal ids are dropped and a repeated
+ * one is kept once. The tab's own `id` is kept, and a state carrying none is given a fresh one.
  */
 export function readTab(state: unknown): TerminalTabState {
     // A state that is no map is read as an empty one.
-    const held = savedTabShape.safeParse(state).data ?? savedTabShape.parse({});
-    const { id, label, composing, shown } = held;
-    if (held.terminals === undefined) {
-        const pinned = held.session ?? null;
-        const tab = emptyTab(id);
-        if (pinned === null) return { ...tab, label };
-        return settled({ ...tab, terminals: [pinned], shown: pinned, composing: false, label });
-    }
-    const { terminals } = held;
-    if (held.row !== undefined) {
-        return settled({
-            id,
-            terminals,
-            row: held.row,
-            shares: held.shares,
-            shown,
-            composing,
-            label
-        });
-    }
-    // The older two-terminal shape: `beside` is the second half and `share` the left half's.
-    const beside = held.beside !== undefined && held.beside !== shown ? held.beside : null;
-    const left = held.share;
-    const paired = shown !== null && beside !== null && terminals.includes(beside);
-    return settled({
-        id,
-        terminals,
-        row: paired ? [shown, beside] : [],
-        shares: paired ? [left, 1 - left] : [],
-        shown,
-        composing,
-        label
-    });
+    return settled(savedTabShape.safeParse(state).data ?? savedTabShape.parse({}));
 }
 
 /** The terminal ids a tab owns, out of any saved shape. */
@@ -433,13 +420,16 @@ export function resizedShares(
 /**
  * The Terminal tab of a page that takes a terminal no tab owns, and New's composer: the active tab
  * of the page's focused pane when it is a Terminal tab, else the first Terminal tab of the page in
- * tab order, else none, and a new tab is opened.
+ * tab order, else none, and a new tab is opened. A tab that reads a session of its own is left out,
+ * so a start from elsewhere does not land on it.
  */
 export function pageTarget(
-    tabs: readonly { id: string; view: string }[],
+    tabs: readonly { id: string; view: string; state?: unknown }[],
     active: string | null
 ): string | null {
-    const terminals = tabs.filter((tab) => tab.view === TERMINAL_VIEW);
+    const terminals = tabs.filter(
+        (tab) => tab.view === TERMINAL_VIEW && readTab(tab.state).transcript === null
+    );
     if (active !== null && terminals.some((tab) => tab.id === active)) return active;
     return terminals[0]?.id ?? null;
 }

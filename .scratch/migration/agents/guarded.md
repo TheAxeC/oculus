@@ -299,7 +299,7 @@ One entry per guarantee. An entry keeps one test per unit it covers: each API ro
   Code: `src/lib/server/machine/pty/sessions.ts`, `src/lib/server/machine/pty/routes.ts`, `src/desktop/release-steps.ts`, `src/desktop/release.ts`.
   Test: the shell fallback and the packager's steps, one row each with the platform passed in (O33, cases A5 and A18): `tests/server/desktop/platform-steps.test.ts`, with the script's arguments in `tests/server/desktop/script-args.test.ts`.
 
-- G86. A Transcript tab of a running agent asks for the agent's transcript once per sessions message when shown, nothing while hidden and once when shown again, in every tab of the agent, and never runs its effect into Svelte's update limit.
+- G86. A Terminal tab reading a running agent's transcript asks for the agent's transcript once per sessions message when shown, nothing while hidden and once when shown again, in every tab of the agent, and never runs its effect into Svelte's update limit.
   Code: `src/lib/state/sessions/transcript.svelte.ts` (`follow`), the follow mark's function in `src/lib/state/sessions/`.
   Test: `tests/state/sessions/transcript-follow.client.test.ts`, every row (O33, part 12).
 - G87. A background agent's status and end are read from the timestamps of its records (its own transcript's, else the session's), never from a file's modification time, so a copied, restored or synced transcript keeps the status its records give.
@@ -426,9 +426,9 @@ Each entry is one tree check under `tests/checks/`, kept because a rule in `agen
 - G145. A tab opened again with `keep` takes the given fields over what it holds, so a Session tab keeps its closed sections and their order. Code: `src/lib/state/workbench/layout/open/opening.ts`. Test: `tests/state/workbench/layout/open-keep.test.ts`, 'a repeat open of a tab already open'.
 
 Held under the entries above: `tests/checks/config/integrity.test.ts` (G14), `tests/checks/config/config-folder.test.ts` and `tests/checks/config/config.test.ts` (G12, G13), `tests/checks/source/html-sites.test.ts` (G5).
-- G146. A pane's agent is read from the process table, and a terminal's kind, its box and a steer follow it: a steer into a pane whose foreground is the login shell types nothing, and a tmux session oculus did not start is never ended, renamed, resized or marked.
+- G146. A pane's agent is read from the process table, and a terminal's kind, its box and a steer follow it: a steer into a pane whose foreground holds no agent types nothing, and a tmux session oculus did not start is never ended, renamed, resized or marked.
   Code: `src/lib/server/machine/processes/agents.ts`, `src/lib/server/machine/pty/panes/`.
-  Test: `tests/server/machine/pty/`, describe 'an agent in a pane' (O114).
+  Test: `tests/server/machine/pty/`, describe 'an agent in a pane'; `tests/state/client/terminal/terminal-close.test.ts`, 'a tab that owns a by-hand terminal'.
 - G147. A Terminal tab keeps its Live or Transcript choice, its lock and the session it reads through every rewrite, and a tab on Transcript outlives its last terminal.
   Code: `src/lib/state/sessions/terminal/terminal-tabs.ts`, `terminal-lists.ts`.
-  Test: `tests/state/sessions/`, describe 'a tab that reads a session' (O114).
+  Test: `tests/state/sessions/`, describe 'a tab that reads a session'.

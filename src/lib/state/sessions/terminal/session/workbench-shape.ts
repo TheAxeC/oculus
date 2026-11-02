@@ -2,7 +2,7 @@
 // state/client/context.ts: the tabs of every page as the layout holds them and the calls that
 // change them. The store in state/sessions/terminals.svelte.ts and terminal-lists.ts read it.
 
-import type { TerminalTabState } from './terminal-tabs.ts';
+import type { TerminalTabState } from '../terminal-tabs.ts';
 
 /** One tab of any page, as the layout holds it: its view is read to find the Terminal tabs. */
 export type TerminalTab = { id: string; page: string; view: string; state: unknown };
@@ -28,6 +28,8 @@ export type TerminalTabs = {
     activeTab: (page: string) => string | null;
     /** Open a Terminal tab on a page, in its documents pane when `documents` is set. */
     open: (page: string, state: TerminalTabState, documents?: boolean) => string;
+    /** Open a Terminal tab on a page in the pane that holds another tab. */
+    openBeside: (tab: string, page: string, state: TerminalTabState) => string;
     close: (id: string, page: string) => void;
     /** A tab's instance state, which holds its composer record. */
     instanceState: (id: string) => unknown;

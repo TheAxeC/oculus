@@ -1,10 +1,10 @@
 // Layer 3, client state tests. The tabs of a running subagent over the real transcripts store and
-// query client, each made the way the Transcript view makes it (transcript-tab.svelte.ts), while
-// the sessions channel hands a new record of the session. A tab of a running subagent asks for the
-// agent's file once per sessions message whether one tab or two show it, asks nothing while it is
-// hidden and once when it is shown, and never runs its follow effect into Svelte's update limit.
-// The server's answer is a stub of `fetch`, and `window` is stubbed so the store reads as in a
-// browser.
+// query client, each made the way a Terminal tab's transcript body makes it
+// (transcript-tab.svelte.ts), while the sessions channel hands a new record of the session. A tab
+// of a running subagent asks for the agent's file once per sessions message whether one tab or two
+// show it, asks nothing while it is hidden and once when it is shown, and never runs its follow
+// effect into Svelte's update limit. The server's answer is a stub of `fetch`, and `window` is
+// stubbed so the store reads as in a browser.
 
 import { flushSync } from 'svelte';
 import { afterEach, expect, it, vi } from 'vitest';
@@ -147,4 +147,24 @@ it.each(ROWS)('a running agent tab: $name', async ({ tabs, late, before, after }
     for (const tab of opened) tab.stop();
     expect(loops).toEqual([]);
     expect({ before: made, after: count() - made }).toEqual({ before, after });
+});
+
+it('asks for a transcript whose last viewer left while the first read waited', async () => {
+    vi.stubGlobal('window', {});
+    const fetched = vi.fn(() =>
+        Promise.resolve(
+            new Response(JSON.stringify({ turns: [TURN], offset: 10, results: {} }), {
+                status: 200
+            })
+        )
+    );
+    vi.stubGlobal('fetch', fetched);
+    const store = createTranscripts(createQueries());
+    const tab = rooted(() => transcriptTab(store, 'a1', message));
+    flushSync();
+    store.showing('s1', 'a1')();
+    flushSync();
+    await settle(() => fetched.mock.calls.length);
+    tab.stop();
+    expect(fetched).toHaveBeenCalledOnce();
 });

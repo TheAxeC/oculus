@@ -12,8 +12,14 @@
 import type { AgentId, StartKind, TaskRef } from '../../../../data/model/index.ts';
 import { t } from '../../../shared/words/text.ts';
 import type { TerminalAnswer } from '../pty/pty-io.ts';
-import { composingIn, emptyTab, readTab, type TerminalTabState } from '../terminal-tabs.ts';
-import type { TerminalTab, TerminalTabs } from '../workbench-shape.ts';
+import {
+    composingIn,
+    emptyTab,
+    liveTab,
+    readTab,
+    type TerminalTabState
+} from '../terminal-tabs.ts';
+import type { TerminalTab, TerminalTabs } from '../session/workbench-shape.ts';
 import { composerOf, freshComposer, splitState, startedAt, withComposer } from './composer.ts';
 
 /** The seed, folder and name the server answered for the task a tab's composer carries. */
@@ -88,7 +94,7 @@ export function createComposerOpening(host: OpeningHost) {
             target.id,
             folder === null ? freshComposerOf(now, agent) : splitState(folder, agent, now)
         );
-        workbench.restate(target.id, target.page, composingIn(tabState));
+        workbench.restate(target.id, target.page, liveTab(composingIn(tabState)));
     }
 
     /** A new composer's state in the kind given, with the accounts and picks the tab held. */
@@ -119,7 +125,7 @@ export function createComposerOpening(host: OpeningHost) {
     ): void {
         if (workbench === undefined) return;
         workbench.setInstanceState(target.id, startedAt(workbench.instanceState(target.id), at));
-        workbench.restate(target.id, target.page, composingIn(tabState));
+        workbench.restate(target.id, target.page, liveTab(composingIn(tabState)));
         workbench.activate(target.id, target.page);
     }
 

@@ -20,10 +20,9 @@
     import { useState } from '$lib/state/client/use';
 
     const {
-        layout: { openView },
         selection: { select },
         selectors: { contextWindow, pinnableAreas },
-        terminals: { resumeTerminal, showTerminal },
+        terminals: { openSession, resumeTerminal, showTerminal },
         writes: { writeSession }
     } = useState();
 
@@ -151,9 +150,9 @@
         await write({ title: text });
     }
 
-    /** Show the turns of the session in its own Transcript tab, opened or brought forward. */
+    /** Show the turns of the session in a Terminal tab, opened or brought forward. */
     function openTranscript(): void {
-        openView('transcript', { session: record.id, label: record.title });
+        openSession({ session: record.id, label: record.title });
     }
 
     /**

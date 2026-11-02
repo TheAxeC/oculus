@@ -51,16 +51,9 @@ arrangements:
             - kind: pane
               view:
                 - { view: session-list, pinned: true }
-            - kind: split
-              dir: col
-              sizes: [0.6, 0.4]
-              children:
-                - kind: pane
-                  view:
-                    - { view: terminal, pinned: true }
-                - kind: pane
-                  view:
-                    - { view: transcript, pinned: true }
+            - kind: pane
+              view:
+                - { view: terminal, pinned: true }
         - kind: pane
           view:
             - { view: session-detail, pinned: true }

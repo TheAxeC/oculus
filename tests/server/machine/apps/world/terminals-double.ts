@@ -51,7 +51,8 @@ export function terminalsDouble(): TerminalsEnv & {
                 resumes: null,
                 task: request.job !== undefined,
                 exit: null,
-                job: request.job ?? null
+                job: request.job ?? null,
+                agent: null
             };
             rows.push(row);
             tell();

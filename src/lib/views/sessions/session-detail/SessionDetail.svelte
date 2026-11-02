@@ -53,8 +53,9 @@
     } from './session-sections';
 
     const {
-        layout: { instanceLayoutState, openView, restateInstance },
-        selectors: { sessionFor }
+        layout: { instanceLayoutState, restateInstance },
+        selectors: { sessionFor },
+        terminals: { openSession }
     } = useState();
 
     let { instance }: ViewProps = $props();
@@ -84,10 +85,10 @@
         restateInstance(instance.id, sectionToggled(saved, id));
     }
 
-    /** Open the session on screen in a Transcript tab, for a session the pane still holds. */
+    /** Open the turns of the session on screen, for a session the pane still holds. */
     function openTranscript(): void {
         if (record === null) return;
-        openView('transcript', { session: record.id, label: record.title });
+        openSession({ session: record.id, label: record.title });
     }
 </script>
 

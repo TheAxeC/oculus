@@ -6,7 +6,7 @@
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
-    import { gridFontSize } from './terminal-list';
+    import { gridFontSize } from '../terminal-list';
 
     const {
         ui: { setTerminalFont, terminalFont, textScale }

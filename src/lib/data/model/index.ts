@@ -695,7 +695,6 @@ export {
 export {
     BUILD_OUTCOMES,
     CHKTEX_FIXABLE,
-    isTerminalId,
     LINT_IDS,
     lintersOf,
     SCHEDULE_WORDS,
@@ -703,11 +702,17 @@ export {
     SCROLLBACK_LINES,
     STEER_MAX,
     TERMINAL_COLORS,
-    TERMINAL_ID,
     TERMINAL_REFUSALS,
     UPDATE_TASKS,
     WEBSITE_REFUSALS
 } from './machine/model-machine.ts';
+export {
+    byHandPane,
+    isOwnTerminal,
+    isTerminalId,
+    TERMINAL_ID,
+    type TerminalAgent
+} from './machine/terminal-ids.ts';
 export { DEBUG_CONSOLE_KINDS, DEBUG_CONSOLE_MAX, DEBUG_STATUSES } from './machine/model-debug.ts';
 export { profileWords, TERMINAL_PROFILES, type TerminalProfile } from './machine/terminal-kinds.ts';
 export type {

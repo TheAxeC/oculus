@@ -26,7 +26,6 @@ import { byKey } from '../../data/helpers/guards.ts';
 import type { SessionAgent, Turn } from '../../data/model/index.ts';
 import {
     anyNumberShape,
-    filledTextShape,
     mapOfShape,
     readAs,
     readJson,
@@ -99,14 +98,6 @@ export type TranscriptsStore = {
     hold: (id: string, turns: Turn[], offset?: number) => void;
 };
 
-/** The agent a Transcript tab's saved state pins, or the empty text for the session's own. */
-const agentPinShape = z.object({ agent: filledTextShape });
-
-/** The agent a Transcript instance shows, from its saved state: empty for the session's own. */
-export function pinnedAgent(state: unknown): string {
-    return readAs(agentPinShape, state)?.agent ?? '';
-}
-
 /** What a tab's mark is read from: the session's record as one sessions message hands it. */
 type FollowRecord = {
     lastActivity: string | null;
@@ -114,11 +105,11 @@ type FollowRecord = {
 };
 
 /**
- * The mark a Transcript tab hands follow() for one sessions message: the record's lastActivity for
- * the session's own transcript; for a subagent, the record object itself while the agent runs,
- * since its file grows while the session's stamp stands still, and the end it reports once it
- * ended. Every value is one of the message, so the same message gives the same mark in every tab
- * and on every run of the effect.
+ * The mark a Terminal tab that draws its transcript hands follow() for one sessions message: the
+ * record's lastActivity for the session's own transcript; for a subagent, the record object itself
+ * while the agent runs, since its file grows while the session's stamp stands still, and the end it
+ * reports once it ended. Every value is one of the message, so the same message gives the same mark
+ * in every tab and on every run of the effect.
  */
 function followMark(record: FollowRecord | null | undefined, agent: string): unknown {
     if (agent === '') return record?.lastActivity ?? null;
@@ -130,8 +121,9 @@ function followMark(record: FollowRecord | null | undefined, agent: string): unk
 type FollowTarget = { id: string; agent: string; record: FollowRecord | null | undefined };
 
 /**
- * The effect a Transcript tab follows its file with, registered in the calling component: it reads
- * the record, so it runs again at each sessions message, and hands follow() the tab's mark.
+ * The effect a tab's transcript body follows its file with, registered in the calling component,
+ * which is mounted only while Transcript shows: it reads the record, so it runs again at each
+ * sessions message, and hands follow() the tab's mark.
  */
 export function followTab(follow: TranscriptsStore['follow'], target: () => FollowTarget): void {
     $effect(() => {

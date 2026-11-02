@@ -40,6 +40,7 @@ import { latexAgain } from '../../pty/latex/latex.ts';
 import { refusal } from '../../pty/refusal.ts';
 import type { TerminalOptions } from '../../pty/routes.ts';
 import {
+    isOwnTerminal,
     isTerminalId,
     listTerminals,
     paneOutput,
@@ -183,7 +184,7 @@ async function taskTerminal(
     id: unknown,
     options: CommandRunOptions & { streams?: StreamTerminalSet }
 ): Promise<Terminal | TerminalRefusal> {
-    if (!isTerminalId(id)) return NOT_OURS;
+    if (!isOwnTerminal(id)) return NOT_OURS;
     const streamed = options.streams?.record(id);
     const found = streamed ?? (await listTerminals(options)).find((terminal) => terminal.id === id);
     if (found === undefined) return NOT_LISTED;

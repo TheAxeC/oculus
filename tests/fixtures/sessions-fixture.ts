@@ -78,6 +78,7 @@ export function terminal(id: string, over: Partial<Terminal> = {}): Terminal {
         task: false,
         exit: null,
         job: null,
+        agent: null,
         ...over
     };
 }

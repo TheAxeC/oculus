@@ -24,11 +24,12 @@
 // The store keeps what each start answered until the payload lists it, so a terminal started a
 // moment ago can be split. A terminal that ends leaves the `sessions` payload's list, and the store
 // takes it out of every tab that owned it, closes a tab left owning none, on any page, unless the
-// reader is composing in it, and clears a selection that was that terminal. A closed Terminal tab,
-// pane or page, and a page reset that removes a tab, end the running terminals the tab lists (the
-// registration the ui store holds), and a start answered after its tab closed is ended; a tab that
-// is moved, split or reloaded ends none. The workbench is handed in by state/client/context.ts,
-// since a hidden page mounts no view that could notice.
+// reader is composing or reading its session in it, and clears a selection that was that terminal.
+// A closed Terminal tab, pane or page, and a page reset that removes a tab, end the running
+// terminals oculus started that the tab lists (the registration the ui store holds), and a start
+// answered after its tab closed is ended; a tab that is moved, split or reloaded ends none. The
+// workbench is handed in by state/client/context.ts, since a hidden page mounts no view that could
+// notice. Which session runs in which terminal is state/sessions/terminal/session/'s.
 //
 // Every action is a write in the auth sense, since it runs a process on the machine: the
 // POST carries the token state/client/writes.svelte.ts holds, and the socket carries it in its
@@ -40,19 +41,20 @@ import { t } from '../shared/words/text.ts';
 import type {
     ComposeStart,
     LatexApproval,
-    SessionRecord,
     TaskRef,
     Terminal,
     StartKind,
     TerminalKind,
     TerminalResume
 } from '../../data/model/index.ts';
+import { isOwnTerminal } from '../../data/model/index.ts';
 import { tabMarkOf } from './terminal/terminal-marks.ts';
 import { targetFields, type LatexTarget } from './terminal/latex-target.ts';
 import {
     TERMINAL_VIEW,
     emptyTab,
     isTerminalId,
+    liveTab,
     ownerOf,
     readTab,
     splitRight,
@@ -70,13 +72,13 @@ import {
     endedTerminals,
     moveInto,
     pageTabOf,
-    sessionTerminal,
     showIn,
     terminalLabel,
     terminalTabTitle,
     unownedTerminals
 } from './terminal/terminal-lists.ts';
-import type { TerminalTab, TerminalTabs } from './terminal/workbench-shape.ts';
+import { createSessionOpening, type SessionOpening } from './terminal/session/open-session.ts';
+import type { TerminalTab, TerminalTabs } from './terminal/session/workbench-shape.ts';
 import { createPtyOrder, type PtySize } from './terminal/pty/pty-subscribe.ts';
 import { createPtyWire, type PtyListener } from './terminal/pty/pty-wire.ts';
 import { terminalsReader } from './terminal/terminal-payloads.ts';
@@ -94,7 +96,7 @@ import {
 export type { BusyTerminal, SeedApproval };
 
 export { endedTerminals, terminalLabel, unownedTerminals } from './terminal/terminal-lists.ts';
-export type { TerminalTab, TerminalTabs } from './terminal/workbench-shape.ts';
+export type { TerminalTab, TerminalTabs } from './terminal/session/workbench-shape.ts';
 
 export { decodeBytes, encodeBytes, titleStripper } from './terminal/pty/pty-bytes.ts';
 export { ptyChannel, type PtyListener } from './terminal/pty/pty-wire.ts';
@@ -108,6 +110,7 @@ export type { TaskRef, Terminal, TerminalKind, TerminalResume } from '../../data
 // The kinds of terminal a reader starts by name and their words reach a view and the shell from
 // here too, for the Terminal tab's menus, the composer and the page's answer to the app menu.
 export { profileWords, TERMINAL_PROFILES, type TerminalProfile } from '../../data/model/index.ts';
+export { isOwnTerminal } from '../../data/model/index.ts';
 
 // The name of an update task the server's task action accepts. The boundary table lets a shell
 // file import this module and not `data/helpers/run/tasks`, so the type reaches the tray from here.
@@ -123,7 +126,7 @@ export type LatexStep = 'build' | 'clean' | 'stop' | 'checkcites';
 export type LatexBuildAsk = { recipe?: string; last?: string; force?: boolean };
 
 /** The terminals one client owns, and the actions it runs on them. */
-export type TerminalsStore = {
+export type TerminalsStore = SessionOpening & {
     terminals: () => Terminal[];
     terminalById: (id: string | null) => Terminal | null;
     /** The strip mark of a tab: its shown terminal's icon and colour token, for a Terminal tab. */
@@ -180,7 +183,6 @@ export type TerminalsStore = {
         cols?: number,
         rows?: number
     ) => Promise<TerminalAnswer>;
-    terminalOfSession: (record: Pick<SessionRecord, 'id' | 'pid'> | null) => Terminal | null;
     resizeTerminal: (id: string, cols: number, rows: number) => Promise<TerminalAnswer>;
     sendInput: (id: string, text: string) => boolean;
     sendResize: (id: string, cols: number, rows: number) => boolean;
@@ -352,8 +354,11 @@ export function createTerminals(
             if (isTerminalId(selected)) held.push(selected);
             const ended = endedTerminals(seen, now, first, held);
             for (const id of ended) viewports.drop(id);
-            if (workbench.upkeep !== false) closeEnded(workbench, terminalTabs(), ended);
+            if (workbench.upkeep !== false) {
+                closeEnded(workbench, terminalTabs(), ended, links.linkedSession);
+            }
         }
+        links.linkTerminals(list, entities.payloadOf(message, 'sessions')?.records ?? []);
         for (const id of now) {
             seen.add(id);
             started.delete(id);
@@ -386,7 +391,7 @@ export function createTerminals(
     }
 
     function hideTerminal(id: string): void {
-        if (workbench !== undefined) closeEnded(workbench, terminalTabs(), [id]);
+        if (workbench !== undefined) closeEnded(workbench, terminalTabs(), [id], () => null);
     }
 
     /** Move a terminal into a Terminal tab; the rule is moveInto's. */
@@ -409,7 +414,7 @@ export function createTerminals(
         if (workbench === undefined || !isTerminalId(id)) return;
         const target = terminalTabs().find((one) => one.id === tab);
         if (target === undefined || !attachable().some((one) => one.id === id)) return;
-        const held = readTab(target.state);
+        const held = liveTab(readTab(target.state));
         workbench.restate(target.id, target.page, withTerminal(held, id, held.terminals.length));
         workbench.activate(target.id, target.page);
     }
@@ -440,6 +445,14 @@ export function createTerminals(
         pageTab,
         folderOf: (tab) => tabFolder(readTab(tab.state), (one) => terminalRecord(one)?.cwd ?? null),
         seedTask: (task) => post({ action: 'seed', task })
+    });
+
+    const links = createSessionOpening({
+        workbench,
+        terminalTabs,
+        terminals,
+        records: () => entities.sessions()?.records ?? [],
+        show: (id) => showTerminal(id)
     });
 
     /** Approve the seed, folder and agent a composer start with a task asked about. */
@@ -590,11 +603,6 @@ export function createTerminals(
         return post({ action: 'fork', tool, id, cols, rows });
     }
 
-    /** The oculus terminal a session runs in, by `sessionTerminal`'s rule over the terminals. */
-    function terminalOfSession(record: Pick<SessionRecord, 'id' | 'pid'> | null): Terminal | null {
-        return sessionTerminal(terminals(), record);
-    }
-
     /**
      * Resize one terminal's tmux window, for a page whose socket is not open to carry the message,
      * and for the order in which a grid attaches. A refusal is said on the bar of the tab that owns
@@ -681,7 +689,7 @@ export function createTerminals(
                 return { ok: false, id: '', error: '' };
             }
             return await startFor(id, kind, folder, (held, made) =>
-                withTerminal(held, made, held.terminals.length)
+                withTerminal(liveTab(held), made, held.terminals.length)
             );
         } finally {
             // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- the record is keyed by tab id, and a Map would not be reactive through $state
@@ -781,7 +789,7 @@ export function createTerminals(
         const ids = instances
             .filter((one) => one.view === TERMINAL_VIEW)
             .flatMap((one) => readTab(one.state).terminals);
-        return [...new Set(ids)].filter(running);
+        return [...new Set(ids)].filter((id) => isOwnTerminal(id) && running(id));
     }
 
     /**
@@ -808,7 +816,7 @@ export function createTerminals(
 
     /** End terminals: their tmux sessions stop, and with them what runs inside. */
     function endTerminals(ids: string[]): void {
-        for (const id of ids) {
+        for (const id of ids.filter(isOwnTerminal)) {
             started.delete(id);
             viewports.drop(id);
             void stopTerminal(id);
@@ -832,7 +840,7 @@ export function createTerminals(
         steerTerminal,
         interruptTerminal,
         forkTerminal,
-        terminalOfSession,
+        ...links,
         resizeTerminal,
         sendInput,
         sendResize,

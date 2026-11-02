@@ -149,7 +149,7 @@ const FROZEN = [
     'lib/ui/controls/editor/kit/languages/apps.svelte.ts:signature',
     'lib/ui/controls/editor/kit/languages/apps.svelte.ts:version',
     'lib/ui/display/icon-theme/held.svelte.ts:held',
-    'lib/server/machine/pty/channel.ts:CHANGE_EVENTS',
+    'lib/server/machine/pty/panes/driver.ts:CHANGE_EVENTS',
     'lib/server/machine/pty/tmux.ts:SINGLES',
     'lib/state/shared/words/text.ts:catalog',
     'lib/state/shared/words/text.ts:glyphs',

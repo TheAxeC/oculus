@@ -8,7 +8,7 @@
 
 import { describe, expect } from 'vitest';
 import { createTerminals } from '../../../../src/lib/state/sessions/terminals.svelte.ts';
-import type { TerminalTabs } from '../../../../src/lib/state/sessions/terminal/workbench-shape.ts';
+import type { TerminalTabs } from '../../../../src/lib/state/sessions/terminal/session/workbench-shape.ts';
 import { it } from '../../../fixtures/scratch.ts';
 
 const ID = 'a1b2c3-shell';

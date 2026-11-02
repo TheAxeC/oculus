@@ -7,7 +7,7 @@
 // `%begin`/`%end` around each command's reply, `%output %<pane-id> <bytes>` for each chunk a pane
 // wrote, and `%session-changed` and its relatives as the server's state moves. A control client
 // sees the output of the session it is attached to, so the channels hold one per attached terminal
-// (server/machine/pty/channel.ts, `tmuxDriver`).
+// (server/machine/pty/panes/driver.ts, `tmuxDriver`).
 //
 // The bytes of `%output` are escaped by tmux: a byte below 0x20 and a backslash become `\ooo` in
 // octal, and every other byte is written through as itself. A UTF-8 sequence therefore arrives as
@@ -333,15 +333,17 @@ export type ControlClient = {
  * the reply block of the attach itself first, before the reply of any command the client sent
  * (measured on tmux 3.7c, a command written before the attach answered included), and an
  * `%error` block when the session is not there. Replies come back in the order the commands went
- * out, so the pending queue is a plain FIFO behind that first block.
+ * out, so the pending queue is a plain FIFO behind that first block. `attach` holds further flags
+ * of the attach.
  */
 export function control(
     session: string,
     handlers: ControlHandlers,
-    options: TmuxOptions = {}
+    options: TmuxOptions = {},
+    attach: string[] = []
 ): ControlClient {
     const binary = options.binary ?? TMUX;
-    const argv = [...socketArgs(options), '-C', 'attach-session', '-t', session];
+    const argv = [...socketArgs(options), '-C', 'attach-session', ...attach, '-t', session];
     const child: ChildProcessWithoutNullStreams = spawn(binary, argv, {
         stdio: ['pipe', 'pipe', 'pipe']
     });

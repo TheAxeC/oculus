@@ -6,13 +6,14 @@
     // mount, the subscription, the resize, the bell, the paste question and the file drop) is this
     // component's own. A paste of several lines is asked about before it is sent, since each line
     // would run; a file dropped from the Files view types its quoted path; a bell is reported to
-    // the tab, which marks the terminal's row.
+    // the tab, which marks the terminal's row. While the tab is locked the grid takes no typing,
+    // paste or drop, and its box is read-only. A by-hand terminal is drawn at the size of its pane
+    // from the terminals list and scrolls inside the grid, and the grid sends no resize, since the
+    // pane's size is the user's.
     //
-    // xterm.js is loaded inside the effect rather than at the top of the module: it needs a DOM,
-    // and this view renders on the server like every other. The effect runs in the browser alone,
-    // so the server render is the mount point and nothing else. Its stylesheet is loaded there too:
-    // a static import of it is folded into the route's own stylesheet, which every page then
-    // carries for a grid most readers never open.
+    // xterm.js is loaded inside the effect (grid-look.ts, `buildGrid`) rather than at the top of
+    // the module: it needs a DOM, and this view renders on the server like every other. The effect
+    // runs in the browser alone, so the server render is the mount point and nothing else.
     //
     // The grid's colours, its selection and its font are the theme's, read off the body with
     // getComputedStyle by grid-look.ts, and its size by gridFontSize (terminal-list.ts). They
@@ -50,7 +51,7 @@
 
     import SteerBox from '$lib/views/shared/sessions/SteerBox.svelte';
     import Confirm from '$lib/ui/controls/confirm/Confirm.svelte';
-    import { titleStripper } from '$lib/state/sessions/terminals.svelte';
+    import { isOwnTerminal, titleStripper } from '$lib/state/sessions/terminals.svelte';
     import { keptViewport } from './kept-viewport';
     import { FILE_DRAG } from '$lib/state/sources/fs';
     import {
@@ -78,8 +79,7 @@
     import ContextMenu from '$lib/ui/menu/ContextMenu.svelte';
     import { terminalAppMenus } from '../app-menus';
     import { t } from '$lib/state/shared/words/text';
-    import { scheduleReflow } from './reflow';
-    import { applyLook, followTerminalOptions, gridLook, gridOptions } from './grid-look';
+    import { buildGrid, followTerminalOptions, reflowLook } from './grid-look';
     import { GridFind } from './grid-find.svelte';
     import {
         clearGrid,
@@ -92,7 +92,7 @@
     import { errorLinks } from './grid-links';
     import { gridKeys } from './grid-keys';
     import FindBar from './FindBar.svelte';
-    import { FIND_LIMIT, linkHandler, type FindAction, type FindToggles } from '../terminal-list';
+    import type { FindAction, FindToggles } from '../terminal-list';
     import { untrack } from 'svelte';
     import type { Terminal as Grid } from '@xterm/xterm';
     import { terminalOptions } from '$lib/state/shared/words/appearance';
@@ -102,6 +102,8 @@
     type Props = {
         /** The terminal this grid shows. */
         id: string;
+        /** Whether the tab is locked, which leaves this grid and its box read-only. */
+        locked: boolean;
         /** The terminal a pointer press asked to focus, whose grid takes focus; null for none. */
         focusing: string | null;
         /** Called once this grid took the focus it was asked for. */
@@ -131,6 +133,7 @@
 
     let {
         id,
+        locked,
         focusing,
         onfocused,
         onbell,
@@ -195,18 +198,20 @@
     const splits = $derived(terminal !== null && terminal.cwd !== '');
     /** Whether an agent runs in the terminal, which is what the steer box is drawn under. */
     const agent = $derived(terminal !== null && terminal.kind !== 'shell');
+    /** Whether the grid fits its box and the terminal follows it; a by-hand pane keeps its size. */
+    const fits = $derived(isOwnTerminal(id));
 
     /** Tell the terminal its pane's size, over the socket, or by the endpoint when it is closed. */
     function resized(to: string): void {
         const size = measure?.() ?? null;
-        if (size === null || size.cols < 1 || size.rows < 1) return;
+        if (!fits || size === null || size.cols < 1 || size.rows < 1) return;
         if (!sendResize(to, size.cols, size.rows)) void resizeTerminal(to, size.cols, size.rows);
     }
 
     /** Paste the clipboard's text the way a browser paste goes; a refused read changes nothing. */
     async function pasteClipboard(): Promise<void> {
         const text = await clipboardText();
-        if (grid === null || text === '') return;
+        if (grid === null || text === '' || locked) return;
         const route = pasteRoute(text);
         if ('ask' in route) pasting = { text, lines: route.ask };
         else grid.paste(route.send);
@@ -250,14 +255,14 @@
         const held = pasting;
         pasting = null;
         if (held === null || grid === null) return;
-        if (send) grid.paste(held.text);
+        if (send && !locked) grid.paste(held.text);
         grid.focus();
     }
 
     /** A file dropped on the grid from the Files view: its path typed, quoted, and no Enter. */
     function droppedOnGrid(event: DragEvent): void {
         const path = event.dataTransfer?.getData(FILE_DRAG) ?? '';
-        if (path === '') return;
+        if (path === '' || locked) return;
         event.preventDefault();
         sendInput(id, `${shellQuote(path)} `);
         grid?.focus();
@@ -271,6 +276,13 @@
         focusTaken(id);
     });
 
+    // The lock and a by-hand pane's size from the list follow onto the mounted grid.
+    $effect(() => {
+        if (grid === null) return;
+        grid.options.disableStdin = locked;
+        if (terminal?.byHand !== undefined) grid.resize(terminal.byHand.cols, terminal.byHand.rows);
+    });
+
     // One effect for one mounted grid: it is torn down and built again when the terminal changes,
     // which is what leaves no listener behind.
     $effect(() => {
@@ -281,32 +293,18 @@
         let alive = true;
         let close: (() => void) | null = null;
         void (async () => {
-            const [xterm, addon, finder, links, wide, serialize] = await Promise.all([
-                import('@xterm/xterm'),
-                import('@xterm/addon-fit'),
-                import('@xterm/addon-search'),
-                import('@xterm/addon-web-links'),
-                import('@xterm/addon-unicode11'),
-                import('@xterm/addon-serialize'),
-                import('@xterm/xterm/css/xterm.css')
-            ]);
-            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- the teardown below sets the flag after this closure was written, which the checker does not see
-            if (!alive) return;
-            const fit = new addon.FitAddon();
             const size = gridFontSize(untrack(terminalFont), untrack(textScale) ?? 1);
-            const term = new xterm.Terminal(
-                gridOptions(gridLook(), size, untrack(terminalOptions))
-            );
-            term.loadAddon(fit);
-            const searcher = new finder.SearchAddon({ highlightLimit: FIND_LIMIT });
-            term.loadAddon(searcher);
-            const opened = (url: string) => window.open(url, '_blank', 'noopener');
-            term.loadAddon(new links.WebLinksAddon(linkHandler(mac, opened)));
-            term.loadAddon(new wide.Unicode11Addon());
-            const serializing = new serialize.SerializeAddon();
-            term.loadAddon(serializing);
-            serializer = serializing;
-            term.unicode.activeVersion = '11';
+            const built = await buildGrid(size, untrack(terminalOptions), mac);
+            const { term, fit, searcher } = built;
+            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- the teardown below sets the flag after this closure was written, which the checker does not see
+            if (!alive) {
+                term.dispose();
+                return;
+            }
+            serializer = built.serializer;
+            const sized = (): void => {
+                if (isOwnTerminal(wanted)) fit.fit();
+            };
             // A find key is the bar's, on its press and on its release, and never the shell's; a
             // debug key is the debugger's while a session runs (grid/grid-keys.ts).
             term.attachCustomKeyEventHandler(
@@ -319,17 +317,17 @@
             );
             const detachFind = find.attach(searcher);
             term.open(at);
-            fit.fit();
+            sized();
             grid = term;
             oncontrol(wanted, { clear });
             measure = () => ({ cols: term.cols, rows: term.rows });
-            refit = () => fit.fit();
+            refit = sized;
             const typed = term.onData((data: string) => sendInput(wanted, data));
             const rang = term.onBell(() => onbell(wanted));
             // The mount point typed as the element it is: the checker reads `body` as its
             // declaration's null, so `at` would otherwise carry no methods it can resolve.
             const host: HTMLElement = at;
-            const unhold = holdPastes(host, (held) => (pasting = held));
+            const unhold = holdPastes(host, (held) => (pasting = locked ? null : held));
             const unkey = holdMenuKeys(host);
             // A shell names its tmux window after the running command with `ESC k <name> ESC \`,
             // which xterm does not know and would print as the name itself; the title is dropped,
@@ -376,7 +374,7 @@
                 if (settle !== null) clearTimeout(settle);
                 settle = setTimeout(() => {
                     settle = null;
-                    fit.fit();
+                    sized();
                     viewport.settled();
                     resized(wanted);
                 }, SETTLE);
@@ -423,27 +421,13 @@
     // rather than reading CSS or the UI store again.
     $effect(() => {
         const name = theme();
-        const chosen = terminalFont();
-        const scale = textScale() ?? 1;
+        const size = gridFontSize(terminalFont(), textScale() ?? 1);
         const wanted = id;
         if (name === '') return;
-        // The class that carries the new tokens is put on the body by the workbench's own effect,
-        // and this one may run before it in the same flush; reading the palette on the next frame
-        // reads it after the body has changed, where reading it at once would read the old palette.
-        return scheduleReflow(
-            requestAnimationFrame,
-            cancelAnimationFrame,
-            () => {
-                const held = untrack(() => grid);
-                if (held === null) return false;
-                applyLook(held.options, gridLook());
-                find.restyle();
-                const size = gridFontSize(chosen, scale);
-                if (size !== undefined && held.options.fontSize !== size) {
-                    held.options.fontSize = size;
-                }
-                return true;
-            },
+        return reflowLook(
+            size,
+            () => untrack(() => grid),
+            () => find.restyle(),
             () => {
                 refit?.();
                 resized(wanted);
@@ -456,7 +440,14 @@
     <ContextMenu
         label={t('sessions.view_terminal')}
         read={() => [
-            ...gridMenu(grid?.hasSelection() === true, armed, t, taskStateOf(terminal), splits),
+            ...gridMenu(
+                grid?.hasSelection() === true,
+                armed,
+                t,
+                taskStateOf(terminal),
+                splits,
+                !fits
+            ),
             ...appMenus.items('terminal/context', id)
         ]}
         onpick={picked}
@@ -465,6 +456,7 @@
         <!-- svelte-ignore a11y_no_static_element_interactions -->
         <div
             class="grid"
+            class:pane={!fits}
             bind:this={body}
             data-terminal={id}
             ondragover={fileOver}
@@ -484,7 +476,7 @@
         />
     {/if}
     {#if agent}
-        <SteerBox {terminal} />
+        <SteerBox {terminal} {locked} />
     {/if}
 </div>
 
@@ -516,5 +508,10 @@
         min-height: 0;
         min-width: 0;
         overflow: hidden;
+    }
+
+    /* A by-hand pane has its own size, larger or smaller than the box. */
+    .grid.pane {
+        overflow: auto;
     }
 </style>

@@ -69,9 +69,9 @@ export type TurnTool = {
 };
 
 /**
- * One turn of a session's conversation, as the transcript view draws it. `html` is the rendered
- * Markdown of an assistant turn and the empty string on every other role; `text` is capped and
- * `cut` says the cap applied. A `tool` turn carries `tool` and nothing in `text`.
+ * One turn of a session's conversation, as a Terminal tab's transcript body draws it. `html` is the
+ * rendered Markdown of an assistant turn and the empty string on every other role; `text` is capped
+ * and `cut` says the cap applied. A `tool` turn carries `tool` and nothing in `text`.
  */
 export type Turn = {
     at: string | null;
@@ -236,9 +236,9 @@ export type SessionsPayload = {
     records: SessionRecord[];
     workspaces: Workspace[];
     /**
-     * Every tmux session oculus started, so a terminal appears on the page as soon as it exists.
-     * Absent while the server has not yet read tmux's list, which a page reads as saying nothing
-     * about any terminal rather than as every terminal having ended.
+     * Every tmux session oculus started and every agent in a pane of another, so a terminal appears
+     * on the page as soon as it exists. Absent while the server has not yet read tmux's list, which
+     * a page reads as saying nothing about any terminal rather than as every terminal having ended.
      */
     terminals?: Terminal[];
 };

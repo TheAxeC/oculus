@@ -4,7 +4,8 @@
 // machine's local wall-clock time in the fixed English form `Thu Oct  2 11:53:00 2026`, and the
 // command is the rest of the line, the program and its arguments as `ps` printed them. The start is
 // turned into an instant by a Date built from those local fields, so it carries the offset in force
-// on the start's own date and not today's. A line that does not read is left out. Nothing here runs
+// on the start's own date and not today's. A line that does not read is left out. The processes of
+// one terminal are read the same way, from the columns pgid, tpgid and command. Nothing here runs
 // `ps` or reads the machine.
 
 /** One process of the table, before its folder is known. */
@@ -17,6 +18,16 @@ export type Entry = {
     memory: number;
     command: string;
 };
+
+/** One process of a terminal: its process group, the group the terminal follows, and its line. */
+export type TtyProcess = {
+    pgid: number;
+    tpgid: number;
+    command: string;
+};
+
+/** pgid and tpgid, which is negative off a terminal on some systems, then the command. */
+const TTY_LINE = /^\s*(\d+)\s+(-?\d+)\s+(\S.*)$/;
 
 /** The longest command line a row carries, the ellipsis included. */
 const COMMAND_LIMIT = 1000;
@@ -47,6 +58,13 @@ function instantOf(fields: number[]): string {
 /** The command line cut at the limit. */
 function cut(line: string): string {
     return line.length > COMMAND_LIMIT ? `${line.slice(0, COMMAND_LIMIT - 3)}...` : line;
+}
+
+/** The row of one line of `ps -t` output, or null when the line does not read. */
+export function ttyProcessOf(line: string): TtyProcess | null {
+    const found = TTY_LINE.exec(line);
+    if (found === null) return null;
+    return { pgid: Number(found[1]), tpgid: Number(found[2]), command: cut(found[3]) };
 }
 
 /** The row of one line of `ps` output, or null when the line does not read. */

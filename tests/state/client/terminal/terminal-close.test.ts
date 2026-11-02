@@ -51,6 +51,7 @@ function terminal(id: string, over: Partial<Terminal> = {}): Terminal {
         task: false,
         exit: null,
         job: null,
+        agent: null,
         ...over
     };
 }
@@ -176,5 +177,18 @@ describe('the busy read a close asks first', () => {
         const found = await client.ui.busyTerminals(instances([id]));
         expect(found).toEqual([{ id: B, name: `name-${B}`, command: 'npm' }]);
         expect(reads).toEqual([[A, B]]);
+    });
+});
+
+describe('a tab that owns a by-hand terminal', () => {
+    it('asks nothing, stops nothing and says nothing when it closes', async () => {
+        const hand = 'h900p3-claude';
+        const id = owning([hand]);
+        listed([hand], { [hand]: { byHand: { session: '$3', cols: 120, rows: 40 } } });
+        const closing = instances([id]);
+        expect(client.terminals.runningOf(closing)).toEqual([]);
+        expect(await client.ui.busyTerminals(closing)).toEqual([]);
+        client.terminals.endTerminals([hand]);
+        expect([reads, stops, client.terminals.refusal(id)]).toEqual([[], [], '']);
     });
 });

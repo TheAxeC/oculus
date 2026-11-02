@@ -1,11 +1,13 @@
 <script lang="ts">
     // Layer 3, view partial. The prompt box under a running session: Send types the message into
     // the session's terminal and presses Enter, and Stop presses Escape, which interrupts the turn
-    // and keeps the session. Ending a session is the terminal's own stop, elsewhere. A session that
-    // runs in a terminal oculus did not start cannot be typed into from here, and the box says so
-    // and holds no controls that would pretend otherwise. Its text box and that line are at the
-    // body's `--fs-md`, or at `--fs-sm` with `small`, in a view whose text is `--fs-sm` (the
-    // Transcript view).
+    // and keeps the session. Ending a session is the terminal's own stop, elsewhere. A by-hand
+    // terminal is typed into like any other. A session that runs in no terminal the page lists, or
+    // in a `foreign` one, cannot be typed into from here, and the box says so and holds no controls
+    // that would pretend otherwise, as it does for a tab the reader locked and for a session that
+    // ended, each with a line of its own. Its text box and that line are at the body's `--fs-md`,
+    // or at `--fs-sm` with `small`, in a view whose text is `--fs-sm` (a Terminal tab's transcript
+    // body).
 
     import Empty from '$lib/ui/frame/Empty.svelte';
     import TextArea from '$lib/ui/forms/TextArea.svelte';
@@ -16,13 +18,17 @@
     import { useState } from '$lib/state/client/use';
 
     type Props = {
-        /** The oculus terminal the session runs in, or null for one that runs elsewhere. */
+        /** The terminal the session runs in, by-hand or not, or null for none on the page. */
         terminal: Terminal | null;
+        /** Whether the tab that draws the box is locked, which leaves it read-only. */
+        locked?: boolean;
+        /** Whether the session ended, which the line says for a box with no terminal. */
+        ended?: boolean;
         /** Whether the text box and the line under it are at `--fs-sm`. */
         small?: boolean;
     };
 
-    let { terminal, small = false }: Props = $props();
+    let { terminal, locked = false, ended = false, small = false }: Props = $props();
 
     const {
         terminals: { interruptTerminal, steerTerminal }
@@ -35,7 +41,13 @@
     /** The terminal the last answer was for, so an answer for one never lands on another. */
     let asked = '';
 
-    const usable = $derived(terminal !== null && terminal.foreign !== true);
+    const usable = $derived(terminal !== null && terminal.foreign !== true && !locked);
+
+    /** What the box says while it is read-only. */
+    const refusal = $derived.by(() => {
+        if (locked) return t('composer.locked');
+        return ended ? t('composer.ended') : t('composer.elsewhere');
+    });
 
     /** The terminal shown now, which an answer is checked against when it lands. */
     function shownId(): string | null {
@@ -106,7 +118,7 @@
         </div>
     </div>
     {#if !usable}
-        <p class="elsewhere" data-steer-elsewhere>{t('composer.elsewhere')}</p>
+        <p class="elsewhere" data-steer-elsewhere>{refusal}</p>
     {:else if failure !== ''}
         <div class="failure" data-steer-failure>
             <Empty error message={failure} />

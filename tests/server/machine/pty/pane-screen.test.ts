@@ -1,4 +1,4 @@
-// The screen an attaching page is given (src/lib/server/machine/pty/capture.ts, `paneScreen`),
+// The screen an attaching page is given (server/machine/pty/panes/capture.ts, `paneScreen`),
 // read from a real tmux on a private server, tagged slow. A line longer than the pane's width,
 // which tmux wraps onto two rows, is sent as one line, so the page's grid wraps it and reflows it
 // on a resize as tmux does; sent as two lines, a narrower grid wraps the first again and a shell's
@@ -14,7 +14,7 @@
 // case covers the page's grid drawing the text, which the look does.
 
 import { describe, expect, vi } from 'vitest';
-import { paneScreen } from '../../../../src/lib/server/machine/pty/capture.ts';
+import { paneScreen } from '../../../../src/lib/server/machine/pty/panes/capture.ts';
 import {
     listTerminals,
     sendBytesArgs,

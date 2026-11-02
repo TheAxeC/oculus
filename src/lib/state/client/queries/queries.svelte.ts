@@ -291,7 +291,10 @@ export function createQueries(): Queries {
 
     function forget(key: QueryKey): void {
         for (const [hash, asked] of scheduled) {
-            if (partialMatchKey(asked, key)) scheduled.delete(hash);
+            if (!partialMatchKey(asked, key)) continue;
+            scheduled.delete(hash);
+            // A reader that was waiting on this fetch has nothing else to wake it.
+            bump(hash);
         }
         for (const query of cache.findAll({ queryKey: key })) {
             waiting.delete(query.queryHash);

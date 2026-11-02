@@ -23,20 +23,7 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 ```
 
 ```yaml
-dispatch:      # steps in flight, up to six (Z632)
-- step: O114
-  base: 9b96a1b78
-  worktree: .agents/worktrees/migration-O114
-  executor: agent
-  worker: claude:opus
-  launched: 2026-11-01
-  session_id: a495f4931dd07a1c8
-  report: .scratch/migration/agents/reviews/O114-report.md
-  builder_usage: 203300 tokens, 501 tool uses, 5152.5 s
-  reviewer_report: .scratch/migration/agents/reviews/O114-refuter.md (a10980e905992663c, claude-opus-5-5, 333851 tokens, 57 tool uses, 1051.8 s)
-  round: 1
-  brief_check: .scratch/migration/agents/reviews/O114-brief-check.md (a59fef7713e8e61e7, claude-opus-5-5, 313105 tokens, 42 tool uses, 800.0 s)
-  landing: not-started
+dispatch: none      # steps in flight, up to six (Z632)
 ```
 
 ## The standing demands (from Axel, in force)
@@ -763,6 +750,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-11-02 (O114 landed; O110 to O114 done). O114 is on main. In flight: none. Next: Axel's next word. Open items: none. Choice Z1103 booked. The saved layout's Sessions page was changed with a backup at `~/.oculus/layouts.before-O114.json`; a running 1.0.0 page holds its own copy and can write the old tabs back, so it is read again after his next app update.
 - 2026-10-31 (1.0.0 replaced on f6c42d1a6). At Axel's word the three archives were rebuilt from f6c42d1a6, the macOS bundle's server answered 200 on `/` and `/api/health`, `v1.0.0` was recreated on that commit, the downloaded zip equals the local one, and the app is installed in `~/Applications`. In flight (0 of 6). Open items: none.
 - 2026-10-31 (1.0.0 released again). The three archives were rebuilt from e584a8a02; the macOS bundle's server started under its own Electron and answered, and `tests/server/desktop/start.test.ts` passed on main, 5 of 5. `v1.0.0` was deleted and recreated on e584a8a02 with those archives, and the app is installed in `~/Applications`. In flight (0 of 6). No step is left unticked. Open items: none.
 - 2026-10-31 (O108 landed). O108 landed on main (booked under O108 in `plan.md`, `agents/reviews/O108-landing.md`). Next: O109's second half: the three archives rebuilt from main, the app started for real, Axel pushes, `v1.0.0` replaced and the app installed in `~/Applications`. In flight (0 of 6). Open items: none.

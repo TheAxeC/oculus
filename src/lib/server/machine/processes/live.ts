@@ -1,7 +1,7 @@
 // Layer 2, server. The dependencies of a Processes read on the machine itself: the process table
 // from one `ps` run (ps.ts), the panes of oculus's tmux sessions, and `lsof` for the folders.
 
-import { listPanes } from '../pty/sessions.ts';
+import { listPanes } from '../pty/panes/listing.ts';
 import { lsofFolders } from './folders.ts';
 import { readTable } from './ps.ts';
 import type { ReadDeps } from './read.ts';

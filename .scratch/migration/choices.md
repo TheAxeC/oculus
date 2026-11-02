@@ -4,6 +4,12 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z1103 (2026-11-02, O114's look, the orchestrator, automode): where a session with no terminal opens
+
+- Chosen: a new tab reading a session with no terminal opens in the pane of the page's Terminal tab, else where a tab opens by default, since a press in the sessions list otherwise covers the list.
+- Not chosen: the focused pane, as the step built it (the lazy option).
+- Where it applies: `open-session.ts`, `terminal-host.ts`. Booked in `plan.md` Rulings.
+
 ## Z1102 (2026-11-01, O114's brief check, the orchestrator, automode): older tab forms go
 
 - Chosen: `readTab`'s branches for `{ session, label }` and `{ shown, beside, share }` are removed, since no saved layout holds them and the no-migration rule forbids them.

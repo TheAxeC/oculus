@@ -1,7 +1,7 @@
 // Layer 2, client state. The Terminal tabs of every page and float as the layout holds them, and
 // the layout's calls that change them, as the terminals store reads them (`TerminalTabs`,
-// state/sessions/terminal/workbench-shape.ts); state/client/context.ts hands them to the store with
-// the rest of what it reads.
+// state/sessions/terminal/session/workbench-shape.ts); state/client/context.ts hands them to the
+// store with the rest of what it reads.
 //
 // A terminal belongs to exactly one Terminal tab, on whichever page or float it is, and a hidden
 // page mounts no view, so the terminals store is handed the Terminal tabs of every page and float
@@ -10,12 +10,12 @@
 // carries an identity of its own, so the layout opens it rather than activating another Terminal
 // tab.
 
-import { TERMINAL_VIEW } from '../../../sessions/terminal/terminal-tabs.ts';
-import type { TerminalTabs } from '../../../sessions/terminal/workbench-shape.ts';
+import { readTab, TERMINAL_VIEW } from '../../../sessions/terminal/terminal-tabs.ts';
+import type { TerminalTabs } from '../../../sessions/terminal/session/workbench-shape.ts';
 import type { LayoutStore } from '../../layout.svelte.ts';
 import type { UiStore } from '../../ui.svelte.ts';
 import { paneAt } from '../index.ts';
-import { tabsOf } from '../instance.ts';
+import { panes, tabsOf } from '../instance.ts';
 
 /** What the layout and the ui store give of what the terminals store reads of the workbench. */
 export type TerminalHost = Omit<
@@ -52,6 +52,13 @@ export function terminalHost(
             return active?.view === TERMINAL_VIEW ? active.id : null;
         },
         open: (page, state, document) => layout.openView(TERMINAL_VIEW, state, page, { document }),
+        openBeside: (tab, page, state) => {
+            const root = layout.workbench(page).root;
+            const holder = panes(root).find(({ pane }) => pane.tabs.some((one) => one.id === tab));
+            return holder === undefined
+                ? layout.openView(TERMINAL_VIEW, state, page)
+                : layout.openInPane(TERMINAL_VIEW, state, page, holder.path);
+        },
         close: (id, page) => layout.closeInstance(id, page),
         instanceState: (id) => ui.instanceState(id),
         setInstanceState: (id, state) => ui.setInstanceState(id, state),
@@ -59,7 +66,8 @@ export function terminalHost(
             const pane = paneAt(layout.workbench(page).root, path);
             if (pane === null) return null;
             const active = pane.tabs.find((tab) => tab.id === pane.active);
-            return active?.view === TERMINAL_VIEW ? active.id : null;
+            if (active?.view !== TERMINAL_VIEW) return null;
+            return readTab(active.state).transcript === null ? active.id : null;
         },
         openIn: (page, path, state) => layout.openInPane(TERMINAL_VIEW, state, page, path)
     };

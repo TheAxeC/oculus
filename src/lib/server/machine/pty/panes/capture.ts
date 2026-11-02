@@ -1,10 +1,10 @@
 // Layer 2, server. What a page that attaches to a terminal pane is given as the pane stands: the
 // tmux calls that read the pane's text and the answer of one `display-message` that holds its
 // cursor, its height, its alternate screen and its modes, and the readers that turn those into the
-// bytes the page writes into its grid. The builders take the tmux session's name and read no state,
-// so `sessions.ts`, which names sessions and starts them, and `channel.ts`, which sends the screen,
-// both import this file and it imports neither. `paneScreen` makes the reads through the function
-// its caller passes, which is how the channels read a pane through its own control client.
+// bytes the page writes into its grid. The builders take the tmux target (`target.ts`) and read no
+// state, so `sessions.ts`, which names sessions and starts them, and `channel.ts`, which sends the
+// screen, both import this file and it imports neither. `paneScreen` makes the reads through the
+// function its caller passes, which is how the channels read a pane through its own control client.
 //
 // A pane is given in one of two shapes. In its normal screen it is the whole capture followed by a
 // move to tmux's cursor and the modes the program set (`screenAt`, `modesAt`). With a program in

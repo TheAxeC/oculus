@@ -16,10 +16,15 @@
 // the rewrapped lines to be, so a grid that only rewrapped can show other lines than tmux's pane
 // holds; the screen sent again is tmux's own. A size the window already has asks for nothing. The
 // terminals store (terminals.svelte.ts) builds one wire over its socket and the order in which
-// grids attach (pty-subscribe.ts).
+// grids attach (pty-subscribe.ts). A by-hand terminal keeps the size its user gave it: no resize
+// goes out for one, and its channel is asked for at once.
 
 import type { SocketStore } from '../../../shared/stores/shapes.ts';
-import type { TerminalInput, TerminalResize } from '../../../../data/model/index.ts';
+import {
+    isOwnTerminal,
+    type TerminalInput,
+    type TerminalResize
+} from '../../../../data/model/index.ts';
 import { ptyBytesOf } from '../terminal-payloads.ts';
 import { decodeBytes, encodeBytes } from './pty-bytes.ts';
 import type { PtyOrder, PtySize } from './pty-subscribe.ts';
@@ -78,6 +83,7 @@ export function createPtyWire(socket: SocketStore, order: PtyOrder) {
      * for its resize. False when the socket is not open.
      */
     function sendResize(id: string, cols: number, rows: number): boolean {
+        if (!isOwnTerminal(id)) return true;
         const before = sized.get(id);
         if (!resizeOnSocket(id, cols, rows)) return false;
         const read = (reading.get(id) ?? 0) > 0 && !order.waits(id);
@@ -104,7 +110,8 @@ export function createPtyWire(socket: SocketStore, order: PtyOrder) {
             size,
             () => socket.subscribe([channel], true),
             (message) => socket.send(message),
-            (now) => socket.admitted() && resizeOnSocket(id, now.cols, now.rows)
+            (now) =>
+                !isOwnTerminal(id) || (socket.admitted() && resizeOnSocket(id, now.cols, now.rows))
         );
         return () => {
             leave();

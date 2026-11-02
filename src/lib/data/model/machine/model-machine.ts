@@ -7,6 +7,7 @@
 
 import type { AppJob } from '../apps/model-apps-tools.ts';
 import type { CommandSource } from '../model-sessions.ts';
+import type { TerminalAgent, TerminalByHand } from './terminal-ids.ts';
 
 /** The four update tasks, in the order the tray lists them. */
 export const UPDATE_TASKS = ['litwatch', 'scout', 'linkedin', 'inbox'] as const;
@@ -237,9 +238,10 @@ export type SchedulePayload = {
 };
 
 // ------------------------------------------------------------------ terminals
-// The tmux side of the PTY: one record per tmux session oculus started, and the three
-// messages the `pty:<id>` channel carries. JSON-safe like everything above, so the bytes of a pane
-// travel as base64 rather than as a string that a lone surrogate could break.
+// The tmux side of the PTY: one record per tmux session oculus started and per agent in a pane of
+// another, and the three messages the `pty:<id>` channel carries. JSON-safe like everything above,
+// so the bytes of a pane travel as base64 rather than as a string that a lone surrogate could
+// break.
 
 /**
  * What a terminal pane runs: the two agents and a shell, or a program an app's host
@@ -249,18 +251,6 @@ export type TerminalKind = 'claude' | 'codex' | 'shell' | 'app';
 
 /** The kinds a page may ask to start: an `app` terminal is made by an app's host alone. */
 export type StartKind = Exclude<TerminalKind, 'app'>;
-
-/** The shape of a terminal id the server's start makes: six hex digits and the kind. */
-export const TERMINAL_ID = /^[0-9a-f]{6}-(claude|codex|shell|app)$/;
-
-/**
- * Whether an id names an oculus terminal, by TERMINAL_ID, which the server and the page both test
- * by. It cannot collide with a Claude session id (a UUID) or a Codex slug (a day path), which is
- * why a terminal selects through the one selection the session views share.
- */
-export function isTerminalId(id: unknown): id is string {
-    return typeof id === 'string' && TERMINAL_ID.test(id);
-}
 
 /**
  * Which agent session a terminal continues. A terminal started fresh carries none; one started by
@@ -325,6 +315,7 @@ export const TERMINAL_REFUSALS = [
     'terminal-ended',
     'terminal-failed',
     'terminal-not-started',
+    'no-agent',
     'not-a-task',
     'still-running',
     'bad-repo',
@@ -432,9 +423,12 @@ export type LatexApproval = {
 export const BUILD_OUTCOMES = ['running', 'ok', 'failed', 'none'] as const;
 export type BuildOutcome = (typeof BUILD_OUTCOMES)[number];
 
-/** One tmux session oculus started, as `tmux list-sessions` reports it. */
+/** One tmux session oculus started as `tmux list-sessions` reports it, or a by-hand pane. */
 export type Terminal = {
-    /** The session name without the `oculus-` prefix; the `pty:<id>` channel is named from it. */
+    /**
+     * The session name without the `oculus-` prefix, or a by-hand pane's own id (terminal-ids.ts);
+     * the `pty:<id>` channel is named from it.
+     */
     id: string;
     /** What to call it on the page. The id when the starter named nothing. */
     name: string;
@@ -481,6 +475,13 @@ export type Terminal = {
      * refuse it: the commands they build are keyed on an id of oculus's own shape.
      */
     foreign?: boolean;
+    /** The agent the process table shows under the pane, or null while none runs. */
+    agent: TerminalAgent | null;
+    /**
+     * Set on an agent in a pane oculus did not start. Such a terminal is that one pane, listed only
+     * while it runs an agent, and oculus writes nothing to it beyond the keys of the box and grid.
+     */
+    byHand?: TerminalByHand;
 };
 
 /** The payload of a `pty:<id>` message: a chunk of pane output, or the scrollback, as base64. */

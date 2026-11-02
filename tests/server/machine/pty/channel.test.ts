@@ -9,11 +9,8 @@ import { WebSocket } from 'ws';
 import { Hub } from '../../../../src/lib/server/core/channels.ts';
 import { attachSocket } from '../../../../src/lib/server/root/socket.ts';
 import type { Sink } from '../../../../src/lib/server/core/channels.ts';
-import {
-    Terminals,
-    ptyChannel,
-    type TerminalDriver
-} from '../../../../src/lib/server/machine/pty/channel.ts';
+import { Terminals, ptyChannel } from '../../../../src/lib/server/machine/pty/channel.ts';
+import type { TerminalDriver } from '../../../../src/lib/server/machine/pty/panes/driver.ts';
 import { StreamHub } from '../../../../src/lib/server/machine/apps/tools/streams.ts';
 import { StreamTerminalSet } from '../../../../src/lib/server/machine/apps/tools/run/stream-terminals.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../../src/lib/data/sources/config.ts';
