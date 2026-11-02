@@ -1,5 +1,5 @@
 In flight (1 of 6 slots in use):
-- O118 (a Transcript's older turns load on scrolling up), building.
+- O118 (a Transcript's older turns load on scrolling up), repair round 1 running.
 
 Queued, in order (1 steps):
 - O119 (Transcript right-click, tool-call runs, the import cycle), once O118 has landed.

@@ -1,0 +1,17 @@
+# O118, repair round 1
+
+The review is `agents/reviews/O118-refuter.md`. Each ruling below says what to change. The brief stands except where a ruling changes it. The same rules hold: no git that changes state, no page, scoped tests while you work, the verify list once after the last change. Everything here is done in this round; a limit stated in place of a fix is a shortcut.
+
+1. **The anchor (Spec 1, Standards 2).** `reader-place.ts`. A draw in which `above` did not change holds by the first row on screen, as item 6 says, with no skipping of rows. This ends the jump on an append to a list whose only said row is its last, and an open top run that grows when a call fails keeps its words. A draw in which `above` changed holds by the row after the first said turn when the first row on screen is at or above it, since that row can lose its head or `.user:first-child`, and otherwise by the first row on screen; with no row below in such a draw the distance to the foot holds. The foot path is reached only in a draw where `above` changed. The comments at lines 6-7 and 52 say this. Say in the report that the brief's rule got this one case wrong, and how this ruling corrects it.
+
+2. **No read while the list is not drawn (Behaviour 1).** `TranscriptBody.svelte`. Nothing asks for older turns while `held.error` is set, on a draw or on a scroll, since the error box stands where the list was and the scroller reads as being at the top.
+
+3. **After a failed read (Behaviour 2, Behaviour 4).** This changes item 6's "only a scroll asks again". While `olderError` is set nothing asks by itself, on a draw or on a scroll, whatever moved the column. The failure line carries a press with the new word `turns_older_retry` (Try again), which calls `readOlder`. No press stands anywhere else. This ends any cycle of the browser's anchoring against the line's height, and a list too short to scroll keeps a way on. The judgment call on telling this view's own writes apart goes if nothing then needs it: remove `moved` and what serves it when the after-draw and scroll tests no longer rest on it, and otherwise say why it stays.
+
+4. **A pane that grows (Behaviour 4).** `TranscriptBody.svelte`. The test for asking runs when the column's height changes as well as after a draw and on a scroll, under the same limits, so a list that filled a small pane goes on filling when the pane is enlarged.
+
+5. **Sentences (Standards 1, Standards 3).** `stores/turns.ts:12-13,43-44` say that `results` also carries outcomes for calls whose turn is not held yet, which the client keeps for a later read. `turn-rows.ts:9` says a read draws no row anew except a run it extends at the top.
+
+6. **The report (Proof 1, Behaviour 3).** Rewrite `.scratch/migration/agents/reviews/O118-report.md` in the brief's shape with this round in it. Rerun the `grep -rn` of its "Paragraphs" section on the final tree and quote what it prints. Add rows to "Before and after, for the look": a tab first drawn hidden opens at the foot when shown, where it opened at the top; a hidden tab at the foot with turns appended goes to the foot when shown, where it stayed; the failure line's press. State the number of full-list runs of this round.
+
+Add the store or route test only where a ruling changes tested behaviour; the rulings above change the view, which has no guarded entry, so each is read at `file:line` in the report and goes to the look.
