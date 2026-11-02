@@ -1,9 +1,9 @@
-In flight (1 of 6 slots in use):
+In flight (3 of 6 slots in use):
 - O122 (a Transcript draws only what is in view), building.
+- O123 (sessions move into the Explorer), brief check running.
+- O124 (the System page's merges), brief check running.
 
-Queued, in order (2 steps):
-- O123 (sessions move into the Explorer), after O122 has landed.
-- O124 (the System page's merges), after O123 has landed.
+Queued, in order (0 steps): none.
 
 Owed looks: none.
 

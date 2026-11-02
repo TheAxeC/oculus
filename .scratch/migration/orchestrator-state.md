@@ -33,8 +33,16 @@ dispatch:           # steps in flight, up to six (Z632)
   launched: 2026-11-02
   report: .scratch/migration/agents/reviews/O122-report.md
   round: 0
+  builder_usage: first run handed back, 243522 tokens, 32 tool uses, 12 min 2 s
+  cases: agents/briefs/O122-cases.md
   brief_check: agents/reviews/O122-brief-check.md (a8777c66a67dd93a3, claude-opus-5-5, 220297 tokens, 30 tool uses, 9 min 31 s)
   landing: not-started
+- step: O123
+  brief_check: "running: afb7b4f6cc7cbec97"
+  landing: preparing
+- step: O124
+  brief_check: "running: a245ccc2df2413f9c"
+  landing: preparing
 ```
 
 ## The standing demands (from Axel, in force)
