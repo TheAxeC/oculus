@@ -252,4 +252,4 @@ Before, Tab from outside reached the first stop of the list. Now it reaches the 
 - **Chrome's real selection ends after Cmd+A, and frame order:** a page settles these.
 - **Commit and branch facts:** none needed beyond the allowed commands.
 
-Usage:
+Usage: a76c4d45596f25340, claude-opus-5-5, 318699 tokens, 45 tool uses, 23 min 14 s

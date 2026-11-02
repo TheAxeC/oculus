@@ -34,12 +34,12 @@ The section "Open items" of `.scratch/migration/orchestrator-state.md` holds no 
 | A selection from the head to 300 rows on, by a drag and a shift-click | Drag holds; shift-click fails (S1) | Test `Transcript selection keeps its rows`; case file `kept rows`: `caret in row 2, scrolled away: drawn 21 last 573`, `row 2 kept: true` | Click in a turn at the head, scroll 300 rows, shift-click; and the same by a drag: Copy equals those turns' text and the selection stands while scrolling |
 | Cmd+A then Copy | Browser's today, whole text. Ends read through a `Range` (J7) | `Cmd+A: drawn 2000 last 1999`; `cleared: drawn 20 last 573` | Cmd+A, Copy, paste: every held turn's text. Click to clear: drawn count back to the window |
 | A right-click on selected text, on nothing, on a spacer | `prose-menu.ts:105-119`: a spacer acts as the gap does now | Reading: `.spacer` sits inside the `.turns` box the menu hears (`TurnList.svelte:83-86`), no change to `prose-menu.ts` | Right-click on each with a selection standing on the spacer: the same menu as now |
-| Focus on a Copy button, then scrolling away | Holds natively | `focus row 564 kept: true`, `focus gone, kept: false` | Tab to a Copy button, wheel away, wheel back: focus stayed, the row stayed drawn |
+| Focus on a Copy button, then scrolling away | Holds natively | `focus row 564 kept: true`, `focus gone, kept: false`; round 1 program `B3`: `window lost focus, kept: true`, `focus left inside a focused window, kept: false` | Tab to a Copy button, wheel away, switch to another app and back, wheel back: `document.activeElement` is that button and the row stayed drawn |
 | Tab through a stretch past the margin | Holds natively. Needs stops from data | `next stop from 0: 1 back from 1: -1`; `moveFocus` at `turn-window.svelte.ts:379` | Tab forward and back past the margin: focus reaches each row holding a focusable, in order; past the last, Tab leaves the list |
 | An open `details` and a sideways-scrolled code block | Holds. Scroll must be noted on scroll | `redrawn row: open true sideways 70` | Open one, scroll one sideways, scroll both out and back: as they were |
-| A fragment link to a heading in an undrawn row | See P1: nothing today for a Markdown heading | `raw id row: 0`; `linked` at `TranscriptBody.svelte:358-369` | An answer with `<h2 id="x">` far away and a link `[go](#x)`: it scrolls there; in the same answer as now |
+| A fragment link to a heading in an undrawn row | See P1: nothing today for a Markdown heading | Round 1 program `B1`, over the real `turnWindow` and `readerPlace`: `reader at 5000 target row drawn: false`, `scrollToFragment wrote 22377`, `after the flush that follows: scrollTop 22491 target row drawn: true target top 0`, `after the scroll event: scrollTop 22491 target top 0`, `after the rows above it measure: scrollTop 22533 target top 0 drawn 16` | An answer with `<h2 id="x">` far away and a link `[go](#x)`: it scrolls there; in the same answer as now |
 | The tab hidden with a turn arriving | Holds | `no height, scroll event: drawn 21 first 0 last 587`, `shorter list while hidden: drawn 6 first 494 last 499` | Hide the tab, let a turn arrive, show. At the foot: at the foot. In the middle: the same words |
-| A session switched away and back, read per S2 | Foot holds; a press does not stand across a target change (S2) | Reading: `chosen` stays the tab's; `windowed.drop` at `:146` with the target; `after drop 34985` against `measured key 100 before 34749` shows a measured height dropped | Live and back, and another tab of the pane: a run's press stands. A tab that takes another session opens at the foot, and that session's foot is right |
+| A session switched away and back, read per S2 | Foot holds; a press does not stand across a target change (S2) | Reading: `chosen` stays the tab's; `windowed.drop` at `:146` with the target; round 1 program `P2`, with no scroll event before the measure: `every estimate summed: 28563`, `rows measured at 321, no scroll event yet: drawn 7 list height 31331`, `dropped, drawn rows not measured again yet: drawn 13 list height 28563`, so the 2768 px the measures added are gone with `drop` | Live and back, and another tab of the pane: a run's press stands. A tab that takes another session opens at the foot, and that session's foot is right |
 | A pane resized narrower | The browser anchors it today | Reading: the observer remeasures drawn rows, `hold` runs on each height change; `row above measured +150: scrollTop 450` | Narrow the pane mid-read: the words at the view's top stay, and scrolling on past old-width heights moves none |
 | The text size changed | `retakeZoom` needs to ask for the measure | Reading: `retakeZoom` calls `measureDrawn` and `readMargin` (`:165-166`) | Change the size: `scrollHeight` matches the rows' sum within a pixel at a zoom other than 1 |
 | A wallpaper theme | Spacers paint nothing | Reading: `.spacer` has `flex: none` and no background (`TurnList.svelte:151-153`) | A wallpaper theme, scrolled to the middle: no surface where a spacer stands |
@@ -54,13 +54,13 @@ The section "Open items" of `.scratch/migration/orchestrator-state.md` holds no 
 | --- | --- | --- |
 | 1 The flat rows | DONE | `flatRows`, `TurnRun.svelte` takes one row; case file `flat rows` |
 | 2 A windowed list | DONE | `turn-window.svelte.ts`; case file `window` |
-| 3 Heights | DONE | `measureElement` at `turn-window.svelte.ts:208`; `style:zoom` at `TurnList.svelte:92`; `.turns` has no `gap` |
+| 3 Heights | DONE | `measureElement` at `turn-window.svelte.ts:208`; `style:zoom` at `TurnList.svelte:92`; `.turns` has no `gap`; round 1 program `B2`: `held at mount: drawn 8 rows watched by the observer ["0","1","2","3","4","5","6","7"]` |
 | 4 Dropping heights | DONE | `drop` at `TranscriptBody.svelte:146,231`; `measureDrawn` at `:165` |
 | 5 One owner of `scrollTop` | DONE | `shouldAdjust...` false at `turn-window.svelte.ts:219`; `overflow-anchor: none` at `TranscriptBody.svelte:439`; `reader-place.ts` rewritten |
 | 6 The foot, with S3 | DONE | `following` at `TranscriptBody.svelte:199,275,327-330,340,352`; `key-dom.ts:106` |
 | 7 Older turns and a hidden tab | DONE | `readMargin` at `TranscriptBody.svelte:251`; case file lines on no height and a shorter list |
 | 8 Selection, with S1 | DONE | the new test; case file `kept rows` |
-| 9 A row that leaves the page | DONE | case file `kept rows`, `linked`, `tabbed` |
+| 9 A row that leaves the page | DONE | case file `kept rows`, `tabbed`; the fragment link by round 1 program `B1`: `scrollToFragment wrote 22377`, then `after the flush that follows: scrollTop 22491 target row drawn: true target top 0`, then `after the scroll event: scrollTop 22491 target top 0` |
 | 10 Menu, runs and keyboard | DONE by reading, PageUp, PageDown and Home UNVERIFIED (R1) | look |
 | 11 Comments and pages | DONE | `docs/HELP.md:460`; head comments read as listed below |
 | Seeing any case on a page | NOT DONE, the look's | a builder runs no page |
@@ -70,26 +70,26 @@ The section "Open items" of `.scratch/migration/orchestrator-state.md` holds no 
 1. `npm run test:quick`:
 
 ```
-ok      prettier (3.0 s): All matched files use Prettier code style!
-ok      ASCII gate (3.2 s)
-ok      svelte-kit sync (5.8 s)
-ok      eslint (14.1 s)
-ok      svelte-check (14.1 s): 1793656927324 COMPLETED 581 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
-ok      vitest (28.7 s): Duration  12.93s (transform 10.33s, setup 0ms, import 14.67s, tests 72ms, environment 0ms)
-ok      vitest checks (48.1 s): Duration  31.99s (transform 13.48s, setup 0ms, import 27.14s, tests 45.59s, environment 2ms)
-test:quick: 54.4 s; every command passed
+ok      prettier (3.1 s): All matched files use Prettier code style!
+ok      ASCII gate (3.6 s)
+ok      svelte-kit sync (6.2 s)
+ok      eslint (23.8 s)
+ok      svelte-check (25.2 s): 1793659006809 COMPLETED 581 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest (45.2 s): Duration  17.36s (transform 13.33s, setup 0ms, import 19.94s, tests 63ms, environment 0ms)
+ok      vitest checks (72.0 s): Duration  43.97s (transform 20.42s, setup 0ms, import 39.29s, tests 63.24s, environment 4ms)
+test:quick: 78.5 s; every command passed
 test:quick: not covered: tests that reach no changed file within the import depth,
             other than the checks under tests/checks/source and tests/checks/tree,
             which run for any change under src, tests or utils; the build, the lint
             of unchanged files
 ```
 
-2. `LC_ALL=C grep -n '[^ -~]'` over every `.ts` and `.svelte` file of the transcript folder, `key-dom.ts`, `jump.ts`, `virtual.ts`, the new test, the four diagram files and `docs/HELP.md`: printed nothing, `non-ASCII grep exit 1`.
+2. `LC_ALL=C grep -n '[^ -~]'` over every `.ts` and `.svelte` file of the transcript folder, `key-dom.ts`, `jump.ts`, `virtual.ts`, the new test, the four diagram files and `docs/HELP.md`: printed nothing, `ascii exit 1`.
 
 3. The new test at the base. The test file was copied to the scratchpad beside a link to the base copy's `src`, and run there, so nothing in the base copy or the worktree changed:
 
 ```
-Error: Cannot find module '../../../../../src/lib/views/sessions/terminal/transcript/turn-window.svelte.ts' imported from /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/o122cases/base-run/tests/views/sessions/terminal/transcript/turn-window.test.ts
+Error: Cannot find module '../../../../../src/lib/views/sessions/terminal/transcript/turn-window.svelte.ts' imported from .../scratchpad/o122round1/base-run/tests/views/sessions/terminal/transcript/turn-window.test.ts
  Test Files  1 failed (1)
       Tests  no tests
 ```
@@ -97,14 +97,13 @@ Error: Cannot find module '../../../../../src/lib/views/sessions/terminal/transc
 After the change, `npx vitest run tests/views/sessions/terminal/transcript/turn-window.test.ts --reporter=verbose`:
 
 ```
-turn-window > Transcript selection keeps its rows 1ms
- Test Files  1 passed (1)
+Test Files  1 passed (1)
       Tests  1 passed (1)
 ```
 
 4. `git diff --stat -- package.json package-lock.json config` printed nothing (`| wc -l` gives 0).
 
-5. Standards read: the head comments of `reader-place.ts`, `TurnRun.svelte`, `TurnList.svelte`, `turn-window.svelte.ts`, `turn-rows.ts` and `TranscriptBody.svelte`, and the new bullet of `docs/HELP.md`, were read after the last change and say what is true of the code. `virtual.ts` line 1 no longer says explorer only. No departure from the standards pages is named.
+5. Standards read: the head comments of `reader-place.ts`, `TurnRun.svelte`, `TurnList.svelte`, `turn-window.svelte.ts`, `turn-rows.ts` and `TranscriptBody.svelte`, and the new bullet of `docs/HELP.md`, were read after the last change and say what is true of the code. No departure from the standards pages is named.
 
 ### Exports, `sh utils/unused-exports.sh` against `O122-base/unused-exports.txt`
 
@@ -135,15 +134,15 @@ That line stands, since each of the three is imported by the test G149 names, an
 
 | File | Lines | Note |
 | --- | --- | --- |
-| `src/lib/views/sessions/terminal/transcript/turn-window.svelte.ts` | 506 | new |
-| `src/lib/views/sessions/terminal/transcript/TranscriptBody.svelte` | 458 | |
+| `src/lib/views/sessions/terminal/transcript/turn-window.svelte.ts` | 513 | new |
+| `src/lib/views/sessions/terminal/transcript/TranscriptBody.svelte` | 463 | |
 | `src/lib/views/sessions/terminal/transcript/turn-rows.ts` | 353 | |
 | `src/lib/views/sessions/terminal/transcript/TurnList.svelte` | 260 | |
-| `src/lib/views/sessions/terminal/transcript/reader-place.ts` | 180 | |
+| `src/lib/views/sessions/terminal/transcript/reader-place.ts` | 200 | |
 | `src/lib/views/sessions/terminal/transcript/TurnRun.svelte` | 162 | |
 | `src/lib/shell/keys/key-dom.ts` | 109 | |
 | `src/lib/views/shared/prose/jump.ts` | 134 | |
-| `src/lib/ui/tree/list/virtual.ts` | 88 | comment only |
+| `src/lib/ui/tree/list/virtual.ts` | 90 | comments only |
 | `tests/views/sessions/terminal/transcript/turn-window.test.ts` | 56 | new |
 | `docs/HELP.md` | 616 | one line added at 460 |
 | `docs/diagrams/layer-views.dot` | 179 | by `npm run diagrams` |
@@ -152,7 +151,7 @@ That line stands, since each of the three is imported by the test G149 names, an
 | `docs/diagrams/layers.svg` | 556 | by `npm run diagrams` |
 | `.scratch/migration/agents/reviews/O122-report.md` | | this report |
 
-`diff -rq` of `src`, `tests`, `utils` and `config` (with `--exclude=local.yml`) against the base copy lists exactly the `src` and `tests` paths above. No path outside the write list changed. No existing test or assertion was edited; the one test file is new. Guarded entries: G149 is the new test, by title; `guarded.md:265` names `virtual.ts`, whose change is a comment, and `test:quick` ran the tests reaching it.
+`diff -rq` of `src`, `tests`, `utils` and `config` (with `--exclude=local.yml`) against the base copy lists exactly the `src` and `tests` paths above. No path outside the write list changed. No existing test or assertion was edited; the one test file is new. Guarded entries: G149 is the new test, by title; `guarded.md:265` (G65) names `virtual.ts`, whose change is comments only. `test:quick` did not reach G65's test, `tests/ui/tree/list/virtual-rows.client.test.ts`; run alone, `npx vitest run tests/ui/tree/list/virtual-rows.client.test.ts` prints `Test Files  1 passed (1)`, `Tests  1 passed (1)`.
 
 ## Judgment calls
 
@@ -187,7 +186,8 @@ Further calls the brief left open:
 | Cmd+A on a very long session | Instant | Draws every held turn, a slow moment |
 | A row far from the view | In the page | Out of the page; a Copy control's "Copied" label resets when it leaves |
 | A press on the last run at the foot | Stays where the run opened | Same, through `following` |
-| A fragment link to a raw HTML `id` in a far row | Scrolls | Draws the row, then scrolls |
+| A fragment link to a raw HTML `id` in a far row | Scrolls | Draws the row, then scrolls, and the column stays at the heading |
+| Transcript view, focus outside the list (the tab's bar, the prompt box), turns far past the view | Tab reaches the first stop of the whole list; Shift+Tab reaches the list's last stop | Tab reaches the first stop of the drawn rows; Shift+Tab reaches the last stop of the drawn rows. From inside the list, Tab walks on through rows not drawn |
 
 ## What was wrong in the brief
 
@@ -205,7 +205,345 @@ Further calls the brief left open:
 
 ## Full-list runs
 
-Four `npm run test:quick` runs. The first was red on `tests/checks/source/comment-width.test.ts` alone, whose rerun alone passed after the fix. The second, third and fourth passed: the third followed `runKey` and `runOpen` going local, and the fourth, quoted above, followed the last change, one comment line in `TranscriptBody.svelte`. The plan's whole verify list runs at landing. No script was written other than the case-run programs and the base run of the new test, which only print, and all of them were deleted before this report was handed in.
+Five `npm run test:quick` runs. The first was red on `tests/checks/source/comment-width.test.ts` alone, whose rerun alone passed after the fix. The second, third and fourth passed. The fifth, quoted above, passed and is repair round 1's one run after its last change. The plan's whole verify list runs at landing. No script was written other than the case-run programs and the base run of the new test, which only print, and all of them were deleted before this report was handed in.
+
+## Repair round 1
+
+`.scratch/migration/agents/briefs/O122-round1.md`. T2 takes no action, as that brief says.
+
+| Item | State | Change | Proof |
+| --- | --- | --- | --- |
+| 1 B1 | DONE | `reader-place.ts` gains `leave` and `land`: from the press until the column has moved, `take` and `hold` do nothing. `linked` calls `leave`, and after `scrollToFragment` calls `land` and then `sync` | Program `B1` |
+| 2 B2 | DONE | The attachment `measured` reads `scroller` and returns while it is null, so it runs again once the column is found. It reaches the same result as `VirtualRows.svelte:241` without a second attachment | Program `B2` |
+| 3 B3 | DONE | `focusout` with no `relatedTarget` while `document.hasFocus()` is false keeps `focused` (`turn-window.svelte.ts`, `heard`) | Program `B3`. Real event order is for the look |
+| 4 T1 | DONE | `firstWindow`'s comment in `virtual.ts` says what each user holds after the first rows | Read |
+| 5 The report | DONE | The sections below, the B4 row, the corrections of P2 and P3, and item 9's row | This file |
+
+### History words
+
+`git diff -U0 -- src docs tests`, with the two new files, cut to comment lines and test titles, through `grep -nE "\b(before|used to|no longer|still|always has been|always had|as before|previously|the step adds|after this package lands)\b"`: 19 hits.
+
+| Hit | Judged |
+| --- | --- |
+| `TranscriptBody`: "heights before the new turns are drawn" | run-time order |
+| `TurnList`: "spacer before a drawn row" | place on the page |
+| `reader-place`: "before a draw of new data", "the place taken before it is dropped", "before anything measured it", "just before a scroll event", "before the column is written" | run-time order |
+| `reader-place`: "with the column still where it was" | run-time state during a jump |
+| `jump.ts`: "the heading-id prefix before it" | place in a string |
+| `turn-window`: "stands before the list", "at or before it", "stand before and after it", "stands before or after it", "the height held before it" | place in the list |
+| `turn-window`: "finds the virtualizer still running" | run-time state |
+| `turn-window`: "A row drawn before the column is found" | run-time order |
+| `turn-window`: "whose keys no longer name these turns" | run-time state after a target change or a read from the start; it compares no code |
+| the test's table: "an end before the list", "wholly before the list" | place in the list |
+
+None records history.
+
+### Changed names
+
+`grep -rnE "\brunOpen\b" src tests config docs README.md --exclude=local.yml`: `turn-rows.ts:114` and `:327`, both inside that file.
+
+`grep -rnE "\brunKey\b" src/lib/views tests docs README.md config --exclude=local.yml`: `TranscriptBody.svelte:83`, `tab-session.svelte.ts:43`, `TurnRun.svelte:8`, `turn-rows.ts:20,64,113,300,313,322`. The comments name a function that stands, local to `turn-rows.ts`, and stay true. Other `runKey` hits under `src/lib/server` are unrelated functions of that name.
+
+`TurnRun`'s props went from `calls`, `open`, `onpress` to `row`, `onpress`. `grep -rn "TurnRun\b" src tests docs README.md` outside `docs/diagrams`: `TurnList.svelte:20,40,126`, and `:126` is the one use, which passes `row`. `TurnList`'s props went from `rows`, `docOf`, `chosen`, `zoom`, `onpress`, `list` to `windowed`, `docOf`, `zoom`, `onpress`, `list`; the one use is `TranscriptBody.svelte:415`, and the comments in `Markdown.svelte:7` and `prose-menu.ts:3` name the file only.
+
+`grep -rnE "place\.(leave|land|clear)" src tests docs`: `TranscriptBody.svelte:257,342,370,373`. No doc page or test names `runKey`, `runOpen`, `TurnRun` or `scrollRegion`; `grep -rln "Transcript" docs/*.md README.md` gives `docs/HELP.md` alone.
+
+### Touched comments and doc paragraphs
+
+| Place | State |
+| --- | --- |
+| `turn-rows.ts` head comment | rewritten |
+| `turn-rows.ts` doc comments of `runKey`, `runOpen` | still true |
+| `reader-place.ts` head comment and every doc comment | rewritten |
+| `turn-window.svelte.ts` head comment and doc comments | new |
+| `TranscriptBody.svelte` head comment | rewritten |
+| `TranscriptBody.svelte` doc comments of `toFoot`, `pressRun`, `askOlder`, `scrolled` | still true |
+| `TranscriptBody.svelte` doc comments of `linked`, `retakeZoom`, `holdWords` | rewritten or new |
+| `TurnList.svelte` head comment and its props | rewritten |
+| `TurnRun.svelte` head comment and its props | rewritten |
+| `virtual.ts` line 1 paragraph, `firstWindow` | rewritten |
+| `virtual.ts` doc comments of `rowWindow`, `keptRange`, `sameWindow`, `offsetIn` | still true |
+| `key-dom.ts` doc comment of `scrollRegion` | rewritten |
+| `jump.ts` doc comments of `fragmentIds`, `named` | rewritten |
+| `jump.ts` doc comment of `scrollToFragment` | still true |
+| `docs/HELP.md:458-459` | still true |
+| `docs/HELP.md:460` | new |
+| `docs/apps.md` | does not describe this behaviour (`grep -n "scrollRegion\|scrollToFragment\|firstWindow" docs/*.md README.md` printed nothing) |
+
+### New keys
+
+| Key | Empty | Duplicated | Colliding |
+| --- | --- | --- | --- |
+| A flat row's key, a turn's index as a string or `run:` with that index | Never: it comes from a number (`turn-rows.ts:115`) | Each index is one row, and a press has the prefix, so a press and its first call differ. A read from the start can reuse an index, and `drop` then empties everything held by key | Cannot equal `before` or `after`, which are neither a number nor prefixed. `places.get('')`, the read for no key, finds nothing |
+| `BEFORE_LIST`, `AFTER_LIST` | Constants | Both ends the same give none (`:88`) | As above |
+| `data-row-key` | A spacer has none, which `rowKey` reads as null | `rowBox` reads only the list's own children, so an inner element is never read | An answer's HTML cannot carry it: `ALLOW_DATA_ATTR: false` (`ui/html.ts:157`) |
+| `data-windowed` | A boolean mark | One element per Transcript | `scrollRegion` reads it on the box handed to it; no other box sets it |
+| A key of `looks`, `estimates`, `focused`, `asked` | `focused` is null for none; the others are row keys | One value per key | As a flat row's key; `drop` empties them |
+| A fragment id | The match `^#(.+)$` needs one character and `fragmentIds` filters `''` | The first row in list order wins, as `named` takes the first element | The match is on `id="x"` or `id='x'` in a row's HTML, so an attribute whose name ends in `id` is a false hit. It draws that row, `scrollToFragment` finds nothing or the true heading, and `land` takes the place where the column stands, so nothing moves wrongly |
+
+### Async paths
+
+`tick()` here is `await Promise.resolve()` and then `flushSync()` (`svelte/src/internal/client/runtime.js:515-531`), since `vite.config.ts` turns on no async mode (`grep -n experimental vite.config.ts` printed nothing). No user event falls inside one, so a second press cannot interleave.
+
+| Path | In flight | After close | Superseded |
+| --- | --- | --- | --- |
+| `showRow` with `linked` | `asked` keeps the row drawn. `leave` stops `take` and `hold` through the flush | `act` runs: `scrollToFragment` finds a box with no height or no row and writes nothing that shows, `land` takes nothing at no height, `sync` returns with `scroller` null | A draw in the same flush that sends the column to the foot is overtaken: `act` scrolls to the heading, and `land` takes there. Two presses: the later one's `act` runs last and wins |
+| `moveFocus` | `asked` draws each row in turn until one takes the focus | `list` is null, so `row` is undefined and the loop runs out of rows, one tick each, and touches nothing | Two Tabs: the later focus wins, and each ends with `asked = null` |
+| `tick().then(measureDrawn)` in `drop` | Reads the rows as drawn after the flush | `list` null returns | A second `drop` measures again, the same heights |
+| `tick().then` in `retakeZoom` | As above, then `readMargin` | `measureDrawn` and `readMargin` both return with no column or list | A second zoom measures again at the new zoom |
+| `tick().then(scrolled)` in `pressRun` | Reads the column after the press draws | `column` null returns | A second press reads the same column |
+
+### Round 1 case-run program
+
+Three files in one scratch folder, with a link `node_modules` to the worktree's, run from the worktree by `npx vitest run --config <folder>/vitest.config.mjs`. `Probe.svelte` copies `holdWords`, the drawn effect and the steps of `linked`, and mounts the real `turnWindow` and `readerPlace`. Each is gone from the scratchpad.
+
+`vitest.config.mjs`:
+
+```js
+import { createRequire } from 'node:module';
+import { pathToFileURL } from 'node:url';
+const tree = '/Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O122';
+const require = createRequire(`${tree}/package.json`);
+const { svelte } = await import(pathToFileURL(require.resolve('@sveltejs/vite-plugin-svelte')).href);
+const here = new URL('.', import.meta.url).pathname;
+export default {
+    root: tree,
+    cacheDir: `${here}cache`,
+    plugins: [svelte({ configFile: false, compilerOptions: { runes: true } })],
+    resolve: { alias: { $lib: `${tree}/src/lib`, vitest: `${tree}/node_modules/vitest/dist/index.js` }, conditions: ['browser'] },
+    server: { fs: { strict: false } },
+    test: { dir: here, include: ['round1.svelte.ts'], environment: 'jsdom', reporters: ['verbose'], testTimeout: 5000, server: { deps: { inline: [/svelte/] } } }
+};
+```
+
+`Probe.svelte`:
+
+```svelte
+<script lang="ts">
+    // The body's holdWords, its drawn effect and linked copied over the real window and place.
+    let { flat, api, turnWindow, readerPlace } = $props();
+    let column = $state();
+    let list = $state();
+    const place = readerPlace();
+    const windowed = turnWindow({ column: () => column, list: () => list, rows: () => flat, anchored: place.rows });
+    function holdWords(box) {
+        place.hold(box, list, flat);
+        windowed.sync();
+    }
+    $effect(() => {
+        windowed.drawn;
+        if (column) holdWords(column);
+    });
+    function scrolled() {
+        place.take(column, list, flat);
+    }
+    function jump(key, write) {
+        place.leave();
+        return windowed.showRow(key, () => {
+            write(column);
+            place.land(column, list, flat);
+            windowed.sync();
+        });
+    }
+    api.get = () => ({ column, list, windowed, place, holdWords, jump, scrolled });
+</script>
+
+<div bind:this={column} data-column onscroll={scrolled}>
+    <div bind:this={list} {@attach windowed.heard}>
+        {#each windowed.drawn.rows as { row, index, gap } (row.key)}
+            {#if gap > 0}<div data-spacer style:height="{gap}px"></div>{/if}
+            <div data-row-key={row.key} data-index={index} {@attach windowed.measured}><button>{row.key}</button></div>
+        {/each}
+        {#if windowed.drawn.after > 0}<div data-spacer style:height="{windowed.drawn.after}px"></div>{/if}
+    </div>
+</div>
+```
+
+`round1.svelte.ts`:
+
+```ts
+// Case-run file of O122 round 1: prints what each sequence gives and asserts nothing.
+import { flushSync, mount, tick, unmount } from 'svelte';
+import { it } from 'vitest';
+import Probe from './Probe.svelte';
+const tree = '/Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O122/src/lib/views/sessions/terminal/transcript/';
+const { turnWindow } = await import(`${tree}turn-window.svelte.ts`);
+const { readerPlace } = await import(`${tree}reader-place.ts`);
+const { flatRows, groupTurns, rowEstimate } = await import(`${tree}turn-rows.ts`);
+
+const said = (at: number) => ({ at: `2026-11-02T10:${String(at % 60).padStart(2, '0')}:00Z`, role: at % 2 ? 'assistant' : 'user', text: 'w', html: '<p>w</p>', cut: false, tool: null });
+const rowsOf = (count: number) => flatRows(groupTurns(Array.from({ length: count }, (_, at) => said(at)), 0), new Map());
+
+/** A layout in px: a row by its key's height, a spacer by its style, the column 600 high. */
+const HEIGHT = { row: 100 };
+function heightOf(node: HTMLElement): number {
+    if (node.hasAttribute('data-spacer')) return parseFloat(node.style.height);
+    if (node.hasAttribute('data-row-key')) return HEIGHT.row;
+    return 0;
+}
+function topOf(node: HTMLElement): number {
+    let top = 0;
+    for (let at = node.previousElementSibling as HTMLElement | null; at; at = at.previousElementSibling as HTMLElement | null) top += heightOf(at);
+    return top;
+}
+const observers: { heard: ResizeObserverCallback; nodes: Set<Element> }[] = [];
+class Watcher {
+    nodes = new Set<Element>();
+    heard: ResizeObserverCallback;
+    constructor(heard: ResizeObserverCallback) { this.heard = heard; observers.push(this); }
+    observe(node: Element) { this.nodes.add(node); }
+    unobserve(node: Element) { this.nodes.delete(node); }
+    disconnect() { this.nodes.clear(); }
+}
+function fire(): void {
+    for (const watcher of observers) {
+        const entries = [...watcher.nodes].filter((node) => node.hasAttribute('data-row-key')).map((target) => ({ target })) as unknown as ResizeObserverEntry[];
+        if (entries.length) watcher.heard(entries, watcher as unknown as ResizeObserver);
+    }
+}
+const watched = () => observers.flatMap((watcher) => [...watcher.nodes]).filter((node) => node.hasAttribute('data-row-key')).map((node) => node.getAttribute('data-row-key'));
+
+function install(): void {
+    (window as any).ResizeObserver = Watcher;
+    Object.defineProperty(HTMLElement.prototype, 'clientHeight', { configurable: true, get() { return this.hasAttribute('data-column') ? 600 : 0; } });
+    Object.defineProperty(HTMLElement.prototype, 'offsetHeight', { configurable: true, get() { return this.hasAttribute('data-column') ? 600 : 0; } });
+    Object.defineProperty(HTMLElement.prototype, 'offsetWidth', { configurable: true, get() { return 400; } });
+    Object.defineProperty(HTMLElement.prototype, 'scrollHeight', { configurable: true, get() { const list = this.firstElementChild; return [...(list?.children ?? [])].reduce((sum: number, one) => sum + heightOf(one as HTMLElement), 0); } });
+    HTMLElement.prototype.getBoundingClientRect = function (this: HTMLElement) {
+        if (this.hasAttribute('data-column')) return { top: 0, bottom: 600, height: 600 } as DOMRect;
+        const column = this.closest('[data-column]') as HTMLElement;
+        if (this.parentElement?.closest('[data-column]') === column && (this.hasAttribute('data-row-key') || this.hasAttribute('data-spacer'))) {
+            const top = topOf(this) - column.scrollTop;
+            return { top, bottom: top + heightOf(this), height: heightOf(this) } as DOMRect;
+        }
+        const row = this.closest('[data-row-key]') as HTMLElement | null;
+        return row === null ? ({ top: 0, bottom: 0, height: 0 } as DOMRect) : row.getBoundingClientRect();
+    };
+}
+
+function open(rows: readonly unknown[]) {
+    const host = document.createElement('div');
+    document.body.append(host);
+    const api: { get?: () => any } = {};
+    const made = mount(Probe, { target: host, props: { flat: rows, api, turnWindow, readerPlace } });
+    flushSync();
+    return { ...api.get!(), done: () => { unmount(made); host.remove(); } };
+}
+
+const hasRow = (list: Element, key: string) => list.querySelector(`[data-row-key="${key}"]`) !== null;
+
+it('B2', async () => {
+    install();
+    const { windowed, done } = open(rowsOf(8));
+    console.log('held at mount: drawn', windowed.drawn.rows.length, 'rows watched by the observer', JSON.stringify(watched().sort()));
+    fire(); flushSync();
+    console.log('measured: after', windowed.drawn.after, 'sum of drawn', windowed.drawn.rows.length * HEIGHT.row);
+    done();
+    observers.length = 0;
+});
+
+it('B1', async () => {
+    install();
+    const { column, list, windowed, jump, done } = open(rowsOf(400));
+    fire(); flushSync();
+    const settle = () => { for (let pass = 0; pass < 6; pass += 1) { fire(); flushSync(); } };
+    settle();
+    column.scrollTop = 5000; column.dispatchEvent(new Event('scroll')); flushSync();
+    await new Promise((done) => setTimeout(done, 200));
+    settle();
+    column.scrollTop = 5000; column.dispatchEvent(new Event('scroll')); flushSync();
+    await new Promise((done) => setTimeout(done, 200));
+    settle();
+    const key = rowsOf(400)[300].key;
+    column.scrollTop = 5000; column.dispatchEvent(new Event('scroll')); flushSync();
+    console.log('reader at', column.scrollTop, 'target row drawn:', hasRow(list, key));
+    const landed = jump(key, (box: HTMLElement) => {
+        const row = list.querySelector(`[data-row-key="${key}"]`) as HTMLElement;
+        console.log('in the jump: target row drawn:', row !== null);
+        const distance = row.getBoundingClientRect().top;
+        box.scrollTop += distance;
+        console.log('scrollToFragment wrote', box.scrollTop);
+    });
+    await landed;
+    flushSync();
+    console.log('after the flush that follows: scrollTop', column.scrollTop, 'target row drawn:', hasRow(list, key), 'target top', (list.querySelector(`[data-row-key="${key}"]`) as HTMLElement)?.getBoundingClientRect().top);
+    column.dispatchEvent(new Event('scroll')); flushSync();
+    console.log('after the scroll event: scrollTop', column.scrollTop, 'target top', (list.querySelector(`[data-row-key="${key}"]`) as HTMLElement)?.getBoundingClientRect().top);
+    await new Promise((done) => setTimeout(done, 200));
+    settle();
+    const row = list.querySelector(`[data-row-key="${key}"]`) as HTMLElement;
+    console.log('after the rows above it measure: scrollTop', column.scrollTop, 'target top', row?.getBoundingClientRect().top, 'drawn', windowed.drawn.rows.length);
+    done();
+    observers.length = 0;
+});
+
+it('B3', async () => {
+    install();
+    const { column, list, windowed, done } = open(rowsOf(400));
+    for (let pass = 0; pass < 4; pass += 1) { fire(); flushSync(); }
+    const button = list.querySelector('[data-row-key] button') as HTMLButtonElement;
+    const key = button.parentElement!.getAttribute('data-row-key');
+    button.dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
+    flushSync();
+    column.scrollTop = 20000; column.dispatchEvent(new Event('scroll')); flushSync();
+    const kept = () => windowed.drawn.rows.some((one: any) => one.row.key === key);
+    console.log('focus in row', key, 'scrolled away, kept:', kept());
+    const had = document.hasFocus;
+    document.hasFocus = () => false;
+    button.dispatchEvent(new FocusEvent('focusout', { bubbles: true, relatedTarget: null }));
+    flushSync();
+    column.scrollTop = 20500; column.dispatchEvent(new Event('scroll')); flushSync();
+    console.log('window lost focus, kept:', kept());
+    document.hasFocus = () => true;
+    button.dispatchEvent(new FocusEvent('focusout', { bubbles: true, relatedTarget: null }));
+    flushSync();
+    column.scrollTop = 20900; column.dispatchEvent(new Event('scroll')); flushSync();
+    console.log('focus left inside a focused window, kept:', kept());
+    document.hasFocus = had;
+    done();
+    observers.length = 0;
+});
+
+it('P2', async () => {
+    install();
+    const rows = rowsOf(400);
+    const { windowed, done } = open(rows);
+    const held = () => windowed.drawn.after + windowed.drawn.rows.reduce((sum: number, one: any, at: number) => sum + one.gap + heights(at, one), 0);
+    let heights = (_at: number, _one: any) => 321;
+    HEIGHT.row = 321;
+    for (let pass = 0; pass < 4; pass += 1) { fire(); flushSync(); }
+    console.log('every estimate summed:', rows.reduce((sum: number, row: any) => sum + rowEstimate(row), 0));
+    console.log('rows measured at 321, no scroll event yet: drawn', windowed.drawn.rows.length, 'list height', held());
+    heights = (_at, one) => rowEstimate(one.row);
+    windowed.drop(); flushSync();
+    console.log('dropped, drawn rows not measured again yet: drawn', windowed.drawn.rows.length, 'list height', held());
+    done();
+    observers.length = 0;
+});
+```
+
+Output, on the tree after the last change:
+
+```
+held at mount: drawn 8 rows watched by the observer ["0","1","2","3","4","5","6","7"]
+measured: after 0 sum of drawn 800
+reader at 5000 target row drawn: false
+in the jump: target row drawn: true
+scrollToFragment wrote 22377
+after the flush that follows: scrollTop 22491 target row drawn: true target top 0
+after the scroll event: scrollTop 22491 target top 0
+after the rows above it measure: scrollTop 22533 target top 0 drawn 16
+focus in row 0 scrolled away, kept: true
+window lost focus, kept: true
+focus left inside a focused window, kept: false
+every estimate summed: 28563
+rows measured at 321, no scroll event yet: drawn 7 list height 31331
+dropped, drawn rows not measured again yet: drawn 13 list height 28563
+ Test Files  1 passed (1)
+      Tests  4 passed (4)
+```
+
+In `B1` the `scrollTop` moves from 22377 to 22533 while `target top` stays 0: the rows above the heading measure taller than their estimates, and `hold` moves the column by that much so the heading stays at the top of the view.
 
 ## Case-run programs
 
@@ -515,7 +853,7 @@ it('kept rows', async () => {
 });
 ```
 
-Output, on the built tree after the last change:
+Output, taken before repair round 1 and not run again in it. The two lines `measured key 100 before` and `after drop` show no height dropped: the first measure was skipped while the core read the column as scrolling, and the larger number is the height arriving. Program `P2` of round 1 is the run for that.
 
 ```
 failed run opens itself: said:-2:none press:run:-1:gap call:-1:none call:0:none said:1:gap call:2:gap said:3:exchange

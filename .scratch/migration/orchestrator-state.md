@@ -33,8 +33,8 @@ dispatch:           # steps in flight, up to six (Z632)
   launched: 2026-11-02
   report: .scratch/migration/agents/reviews/O122-report.md
   round: 1
-  reviewer_report: agents/reviews/O122-refuter.md (a76c4d45596f25340, claude-opus-5-5)
-  builder_usage: first run 243522 tokens, 32 tool uses, 12 min 2 s; build 153718 tokens, 104 tool uses, 27 min 53 s
+  reviewer_report: agents/reviews/O122-refuter.md (a76c4d45596f25340, claude-opus-5-5, 318699 tokens, 45 tool uses, 23 min 14 s)
+  builder_usage: first run 243522 tokens, 32 tool uses, 12 min 2 s; build 153718 tokens, 104 tool uses, 27 min 53 s; round 1 239848 tokens, 30 tool uses, 9 min 4 s
   cases: agents/briefs/O122-cases.md
   brief_check: agents/reviews/O122-brief-check.md (a8777c66a67dd93a3, claude-opus-5-5, 220297 tokens, 30 tool uses, 9 min 31 s)
   landing: not-started
@@ -46,7 +46,8 @@ dispatch:           # steps in flight, up to six (Z632)
   session_id: aa1e08bc105965980 (claude-opus-5-5)
   launched: 2026-11-02
   report: .scratch/migration/agents/reviews/O124-report.md
-  round: 0
+  round: 1
+  reviewer_report: agents/reviews/O124-refuter.md (a430c5101b0e5d36b, claude-opus-5-5, 303279 tokens, 41 tool uses, 24 min 38 s)
   builder_usage: first run 243408 tokens, 30 tool uses, 8 min 3 s; build 131563 tokens, 196 tool uses, 40 min 20 s (the notice closing the build; two interim notices read 336661 and 349063 tokens)
   cases: agents/briefs/O124-cases.md
   brief_check: agents/reviews/O124-brief-check.md (a245ccc2df2413f9c, claude-opus-5-5, 236996 tokens, 28 tool uses, 9 min 55 s)
