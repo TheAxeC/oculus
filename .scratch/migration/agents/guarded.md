@@ -435,3 +435,6 @@ Held under the entries above: `tests/checks/config/integrity.test.ts` (G14), `te
 - G148. A read of a transcript through its route never holds the server's thread for the whole file: a first read takes the file's end, and every read gives the thread back between pieces; the turns it answers come rendered, and a turn the render cannot take keeps its words.
   Code: `src/lib/server/sessions/transcript-routes.ts`, `src/lib/server/sessions/stores/transcripts.ts`, `src/lib/server/sessions/stores/turns.ts`.
   Test: `tests/server/sessions/transcript-routes.test.ts`, describes 'a first read of the transcript route' and 'a read of a file of several pieces'.
+- G149. A selection in a Transcript loses no text: the rows it keeps drawn are every row between its two ends, whichever way round and with an end gone, none for a collapsed selection, and every held row for a selection covering the list.
+  Code: `src/lib/views/sessions/terminal/transcript/turn-window.svelte.ts`.
+  Test: `tests/views/sessions/terminal/transcript/turn-window.test.ts`, title 'Transcript selection keeps its rows'.

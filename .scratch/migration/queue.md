@@ -1,7 +1,9 @@
 In flight (0 of 6 slots in use):
 
-Queued, in order (1 step):
-- O122 (a Transcript draws only what is in view), waits on open item 634.
+Queued, in order (3 steps):
+- O122 (a Transcript draws only what is in view), next.
+- O123 (sessions move into the Explorer), after O122 has landed.
+- O124 (the System page's merges), after O123 has landed.
 
 Owed looks: none.
 

@@ -171,4 +171,11 @@ The brief dictates no line to write into the tree. L32 states what `docs/HELP.md
 
 Open at the stop: 4.2, 6.5, 6.12, 6.15, 6.16 and the run with a failed call (section 5) go to open item 634, with 4.5's fixture. Every other finding closes in the brief when `/spec` runs again after the ruling.
 
+Closed in the brief after ruling 634:
+- 1 (`virtual.ts`), `key-dom.ts`, `jump.ts`: added to the paths; items 2, 6, 9.
+- 3: premises rewritten, gaps and first row from data (item 3); Line 20's byte count dropped; decision 3's reason corrected; item 5 says why the place and foot stay hand-written.
+- 4.1: the first run is by reading and the look is the proof. 4.2: entry G149. 4.3: verify 3 reworded. 4.4: case 2 reworded. 4.5: fixtures named at the head of Cases. 4.6: estimates taken once per key (item 3). 4.7: gaps between kept rows (item 2). 4.8: item 7. 4.9: base copy line.
+- 5: cases sharpened with mixed heights, hard inputs and tolerances; an open run stays in the window (item 1).
+- 6.1 item 3 and decision 5. 6.2 item 7. 6.3 fifth case. 6.4 item 3 and the image case. 6.5 item 9. 6.6 item 5. 6.7 item 7. 6.8 item 4. 6.9 item 3. 6.10 item 3. 6.11 item 7. 6.12 item 8. 6.13 item 5. 6.14 item 6 and decision 6. 6.15 and 6.16 item 9. 6.17 item 2.
+
 Usage: a8777c66a67dd93a3, claude-opus-5-5, 220297 tokens, 30 tool uses, 9 min 31 s.

@@ -23,7 +23,9 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 ```
 
 ```yaml
-dispatch: []           # steps in flight, up to six (Z632)
+dispatch:           # steps in flight, up to six (Z632)
+- step: O122
+  landing: preparing
 ```
 
 ## The standing demands (from Axel, in force)
@@ -165,9 +167,10 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
 
 
 
-- Open item 634 (2026-11-02), step O122, from its brief check (`agents/reviews/O122-brief-check.md`). A windowed Transcript takes rows out of the page, which changes five things. (1) Cmd+A in the Transcript: (a) every held row is drawn while such a selection stands, so Copy is whole, as today, at the cost of a slow moment on a very long list (recommended); (b) Copy gives only the drawn rows, the lazy option, a silent partial Copy. (2) The test of which rows a selection keeps: (a) one guarded entry, `Transcript selection keeps its rows`, for one pure function in `turn-window.svelte.ts` with its test in `tests/views/sessions/terminal/transcript/turn-window.test.ts` covering a backward selection, a missing end, a key gone and a collapsed selection (recommended, since a wrong answer loses copied text); (b) no test, the function is read, the lazy option. (3) What a row loses when it leaves the page: (a) an open `details`, a code block's sideways scroll and a heading link to an undrawn row are held by the row's key and restored, and Tab moves on through rows as they draw (recommended, since the ruling says these work as they do now; it costs more code); (b) they draw as new, a Help sentence says so, the lazy option. The browser's Find reaches only drawn rows under either option, which follows from the ruling. (4) A long open run, which stands whole in the page, by a press or by itself when it holds a failed call: (a) an open run's calls become rows of the window, so no size escapes (recommended; it reworks `TurnRun.svelte`); (b) an open run stays one row and a run of 500 calls stays in the page, the lazy option. (5) The fixture for the look: (a) the session writes a throwaway generator in the scratch folder that writes a session file of 20000 turns of mixed lengths into the scratch HOME (recommended); (b) only the 960-turn fixture, the lazy option. Recommendation for all five: (a).
 
 ## Closed items
+- Open item 635 (2026-11-02), closed by Axel the same day: steps O123 and O124; sessions as sections of Files, Terminal alone in the bottom pane, the rail summing all three views, and Gallery in the catalogue only were the rejected options, the rail sum being the lazy one.
+- Open item 634 (2026-11-02), closed by Axel the same day: (a) on all five parts; each (b) was the lazy option.
 - Open item 633 (2026-11-02), closed by Axel the same day: (a), steps O121 and O122; (b), the chip row only, and (c), neither, were the lazy options.
 - Open item 632 (2026-11-02), closed by Axel the same day: (a), step O120; (b), a `tone` key per list in the career file's schema, not chosen; (c), the jump alone, was the lazy option.
 
@@ -756,6 +759,8 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-11-02 (ruling 635). Steps O123 and O124 added to `plan.md`. Next: /spec O122. Open items: none.
+- 2026-11-02 (ruling 634). O122 is ruled and held: Axel asked to settle whether the Sessions page and the Explorer merge before implementation continues. Nothing in flight. Open items: 635.
 - 2026-11-02 (O121 landed). O121 is on main (booked under O121 in `plan.md`, `agents/reviews/O121-landing.md`). In flight: none. Queued: O122, waiting on open item 634. Open items: 634.
 - 2026-11-02 (O122 stopped, O121 building). O122's brief check raised open item 634; no brief or worktree for it. O121 builds at 2526279ce. Open items: 634.
 - 2026-11-02 (ruling 633). Steps O121 and O122 added to `plan.md`. In flight: none. Next: /spec O121. Open items: none.
