@@ -25,8 +25,16 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 ```yaml
 dispatch:           # steps in flight, up to six (Z632)
 - step: O118
+  base: 03b393f5f
+  worktree: .agents/worktrees/migration-O118
+  executor: agent
+  worker: claude:opus
+  session_id: abfec8e1b7d749e93 (claude-opus-5-5)
+  launched: 2026-11-02
+  report: .scratch/migration/agents/reviews/O118-report.md
+  round: 0
   brief_check: agents/reviews/O118-brief-check.md (a9b41423d719cfb85, claude-opus-5-5, 223649 tokens, 27 tool uses, 10 min 58 s)
-  landing: preparing
+  landing: not-started
 ```
 
 ## The standing demands (from Axel, in force)
@@ -755,7 +763,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
-- 2026-11-02 (rulings 630 and 631). Steps O118 and O119 added to `plan.md`. In flight: none yet. Next: /spec O118, then O119. Open items: none.
+- 2026-11-02 (O118 building; rulings 630 and 631). Steps O118 and O119 added to `plan.md`. In flight (1 of 6): O118, building. Next: O118's report, /refute, /land; then /spec O119, whose brief narrows the right-click to person's turns and tool rows, since answers have the prose menu. Open items: none.
 - 2026-11-02 (O117 landed). O117 is on main (booked under O117 in `plan.md`, `agents/reviews/O117-landing.md`). In flight: none. Open items: none. Next: nothing queued.
 - 2026-11-02 (O116 landed). O116 is on main (booked under O116 in `plan.md`, `agents/reviews/O116-landing.md`). In flight: none. Next: Axel's word on open item 629.
 - 2026-11-02 (O115 landed). O115 is on main (booked under O115 in `plan.md`, `agents/reviews/O115-landing.md`). Choice Z1104. Next: O116, a transcript's first read bounded to the file's end. Open item 629.
