@@ -93,12 +93,17 @@ export function scrollContainer(
     );
 }
 
-/** Scroll an existing region smoothly; a pane with none leaves the key unclaimed. */
+/**
+ * Scroll an existing region smoothly; a pane with none leaves the key unclaimed. A box that draws
+ * only what is in view (`data-windowed`) scrolls at once, since it writes its own `scrollTop` as
+ * rows measure, which would cancel a smooth scroll short of its edge.
+ */
 export function scrollRegion(
-    scroller: Pick<HTMLElement, 'scrollHeight' | 'scrollTo'> | null,
+    scroller: Pick<HTMLElement, 'scrollHeight' | 'scrollTo' | 'dataset'> | null,
     edge: 'top' | 'bottom'
 ): boolean {
     if (scroller === null) return false;
-    scroller.scrollTo({ top: edge === 'top' ? 0 : scroller.scrollHeight, behavior: 'smooth' });
+    const behavior = scroller.dataset.windowed === undefined ? 'smooth' : 'instant';
+    scroller.scrollTo({ top: edge === 'top' ? 0 : scroller.scrollHeight, behavior });
     return true;
 }

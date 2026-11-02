@@ -89,15 +89,21 @@ function scaleOf(box: HTMLElement): number {
 }
 
 /**
- * The element of a view's box carrying the id a fragment names: the fragment as written, as its
- * percent-encoded form reads, and each with the heading-id prefix before it, the first that
+ * The ids a fragment can name, the likeliest first: the fragment as written, as its percent-encoded
+ * form reads, and each with the heading-id prefix before it.
+ */
+export function fragmentIds(fragment: string): string[] {
+    const plain = [fragment, decoded(fragment)].filter((one) => one !== '');
+    return [...plain, ...plain.map((one) => `${HEADING_ID_PREFIX}${one}`)];
+}
+
+/**
+ * The element of a view's box carrying the id a fragment names, the first of `fragmentIds` that
  * matches winning. Ids are compared as strings, so no id has to be a valid selector.
  */
-function named(box: Element, fragment: string): Element | null {
-    const plain = [fragment, decoded(fragment)].filter((one) => one !== '');
-    const wanted = [...plain, ...plain.map((one) => `${HEADING_ID_PREFIX}${one}`)];
+export function named(box: Element, fragment: string): Element | null {
     const ids = [...box.querySelectorAll('[id]')];
-    for (const one of wanted) {
+    for (const one of fragmentIds(fragment)) {
         const found = ids.find((element) => element.id === one);
         if (found !== undefined) return found;
     }

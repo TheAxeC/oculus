@@ -1,6 +1,6 @@
-// Layer 3, primitive. The window of a long explorer list, apart from
-// ui/tree/list/VirtualRows.svelte so it can be asserted without a DOM: which rows
-// @tanstack/virtual-core's virtualizer draws, the rows it keeps drawn wherever the list is
+// Layer 3, primitive. The window of a long list, an explorer's (ui/tree/list/VirtualRows.svelte) or
+// a Transcript's, apart from the code that draws one so it can be asserted without a DOM: which
+// rows @tanstack/virtual-core's virtualizer draws, the rows it keeps drawn wherever the list is
 // scrolled, and the height held before each drawn row and after the last one, so the list keeps its
 // full height and the scroll box's bar and whatever follows the list stay where they would be with
 // every row drawn.
@@ -70,8 +70,10 @@ export function sameWindow(one: RowWindow, two: RowWindow): boolean {
 
 /**
  * The window a list draws before it has found its scroll box, on the server and at the first
- * render in the page: the first rows, as many as two overscans. The rows after them are held by
- * the list at the row height its tokens give, since no row has been measured yet.
+ * render in the page: the first rows, as many as two overscans. No row has been measured yet, so
+ * the window holds no height after them. An explorer's list holds that height itself, at the row
+ * height its tokens give; a Transcript's rows have no such height, so it holds none until its
+ * column is found.
  */
 export function firstWindow(count: number): RowWindow {
     const shown = Math.min(count, OVERSCAN * 2);

@@ -22,14 +22,26 @@
     // while the error box stands where the list was. After a failed read of older turns nothing
     // asks by itself: the failure line carries the press that does.
     //
+    // Only the rows near the view are in the page (turn-window.svelte.ts). The window is made here
+    // rather than in the list, so its heights outlive the error box, which takes the list away.
+    //
     // The reader's words stay where they are through every draw (reader-place.ts), unless the
-    // reader is at the foot, where the column follows.
+    // reader is at the foot, where the column follows. Two flags say so. `stuck`, within SLACK of
+    // the foot, decides what an appended turn does. `following`, at the true foot, decides what a
+    // height change does: estimates can be far off, so `toFoot`, a first draw and following the
+    // newest turn go to the foot again as rows measure, and a slow scroll up, which draws rows not
+    // yet measured while inside SLACK, or a press on a run clears `following`.
     //
     // The turns draw at the size of the `terminal.transcript_font_px` option, or at `--fs-sm` where
     // the key is left out, and the font buttons of the tab's bar write that key while Transcript
-    // shows. `--fs-*` resolve at the root, so a descendant cannot rescale them; an inner box inside
-    // the scroller takes CSS `zoom` instead (terminal-list.ts, `transcriptZoom`). The scroller
-    // itself is not zoomed, so its measures stay the ones the foot rule reads.
+    // shows. `--fs-*` resolve at the root, so a descendant cannot rescale them; each row's box
+    // inside the scroller takes CSS `zoom` instead (terminal-list.ts, `transcriptZoom`). The
+    // scroller itself is not zoomed, so its measures stay the ones the foot rule reads.
+    //
+    // A press on a link to a fragment is the document's own (shared/prose/jump.ts). A heading in a
+    // row not drawn has no element to find, so this column hears the press too, draws the row whose
+    // answer carries the id and then scrolls to it. A Markdown heading of an answer carries no id,
+    // so the link reaches an id the answer wrote as raw HTML.
     //
     // Under the conversation sits the prompt box that steers the session through its terminal, read
     // only for a session with no terminal. A tab opened from an agent row of the Session details
@@ -42,12 +54,24 @@
     import SteerBox from '$lib/views/shared/sessions/SteerBox.svelte';
     import { t } from '$lib/state/shared/words/text';
     import { followTab } from '$lib/state/sessions/transcript.svelte';
+    import type { Turn } from '$lib/state/sessions/transcript.svelte';
     import { useState } from '$lib/state/client/use';
     import { onShown } from '$lib/ui/shown';
+    import { fragmentIds, named, scrollToFragment } from '$lib/views/shared/prose/jump';
     import { transcriptZoom } from '../terminal-list';
     import { readerPlace } from './reader-place';
     import TurnList from './TurnList.svelte';
-    import { carryChoices, groupTurns, turnDocs, type RunChoice, type TurnRow } from './turn-rows';
+    import {
+        carryChoices,
+        flatRows,
+        groupTurns,
+        listReplaced,
+        rowOfId,
+        turnDocs,
+        type FlatRow,
+        type RunChoice
+    } from './turn-rows';
+    import { turnWindow } from './turn-window.svelte';
 
     type Props = {
         /** The session the tab reads. */
@@ -85,8 +109,26 @@
     const held = $derived(turnsFor(sessionId, agentId));
     const turns = $derived(held.turns);
     const rows = $derived(groupTurns(turns, held.above));
+    /** The rows the window draws, which what the tab's presses chose opens up. */
+    const flat = $derived(flatRows(rows, chosen));
 
     const docs = turnDocs();
+
+    /** The scroller, null once the component is torn down. */
+    let column: HTMLDivElement | null | undefined = $state();
+
+    /** The box of the rows drawn. */
+    let list: HTMLDivElement | null | undefined = $state();
+
+    /** The reader's place in the column. */
+    const place = readerPlace();
+
+    const windowed = turnWindow({
+        column: () => column,
+        list: () => list,
+        rows: () => flat,
+        anchored: place.rows
+    });
 
     /**
      * What the documents belong to. The props are read through the tab's target, a new object at
@@ -96,9 +138,12 @@
     const target = $derived(JSON.stringify([session, agent]));
 
     // One component outlives its target, so a change of the session or the agent empties the
-    // documents of the turns that go with it before the new turns are drawn.
+    // documents of the turns that go with it and the window's heights before the new turns are
+    // drawn.
     $effect.pre(() => {
-        if (target !== '') docs.clear();
+        if (target === '') return;
+        docs.clear();
+        untrack(windowed.drop);
     });
 
     /** The zoom of the box of turns, as `transcriptZoom` gives it. */
@@ -108,13 +153,17 @@
 
     let zoom = $state(fontZoom());
 
-    /** Take the zoom again; once a new one is drawn, a reader who was at the foot stays there. */
+    /**
+     * Take the zoom again; once a new one is drawn the drawn rows measure again, since a change of
+     * zoom alone may fire no observer, and the height change does the rest.
+     */
     function retakeZoom(): void {
         const next = fontZoom();
         if (next === untrack(() => zoom)) return;
         zoom = next;
         void tick().then(() => {
-            if (stuck) toFoot();
+            windowed.measureDrawn();
+            windowed.readMargin();
         });
     }
 
@@ -130,20 +179,14 @@
         };
     });
 
-    /** The scroller, null once the component is torn down. */
-    let column: HTMLDivElement | null | undefined = $state();
-
-    /** The box whose children are the rows drawn, one for each of `drawn`. */
-    let list: HTMLDivElement | null | undefined = $state();
-
-    /** The rows the list holds at this moment: `rows` until a draw, and then the ones it drew. */
-    let drawn: readonly TurnRow[] = [];
+    /** The rows the list draws from at this moment: `flat` until a draw, and then that list. */
+    let drawn: readonly FlatRow[] = [];
 
     /** The session whose turns are on screen. A change to it sends the column to the foot. */
     let shown = '';
 
-    /** The reader's place in the column. */
-    const place = readerPlace();
+    /** The turns and the count above them at the last draw, to tell a list that was replaced. */
+    let lastList: { turns: readonly Turn[]; above: number } = { turns: [], above: 0 };
 
     /**
      * Whether the reader was at the foot the last time the column scrolled. It is kept by the
@@ -152,8 +195,17 @@
      */
     let stuck = true;
 
+    /** Whether the reader stands at the true foot, where a height change goes to the foot again. */
+    let following = true;
+
+    /** Where `toFoot` last put the column; a scroll above it is the reader leaving. */
+    let footTop = 0;
+
     /** Pixels from the foot that still count as reading the newest turn. */
     const SLACK = 40;
+
+    /** Pixels from the true foot that a scroll reaching it may stop short by. */
+    const TRUE_FOOT = 1;
 
     // The record is read by this effect, so it re-runs at each sessions message and hands follow()
     // the tab's mark of that message (state/sessions/transcript.svelte.ts, followTab).
@@ -169,13 +221,20 @@
     const draw = $derived({ rows, older: held.older, failed: held.olderError, error: held.error });
 
     // Before a draw the words are taken from the list as it still stands, and a press made on a run
-    // while it was cut goes with the run to its key.
+    // while it was cut goes with the run to its key. A read from the start leaves a key naming
+    // another turn, so the window's heights go with the list it replaced.
     $effect.pre(() => {
         const next = draw.rows;
+        const listed = { turns, above: held.above };
         untrack(() => {
             carryChoices(next, chosen);
+            if (listReplaced(lastList, listed)) windowed.drop();
+            lastList = listed;
+        });
+        const nextFlat = flat;
+        untrack(() => {
             if (column) place.take(column, list, drawn);
-            drawn = next;
+            drawn = nextFlat;
         });
     });
 
@@ -185,9 +244,11 @@
         // list, so either re-runs this; then the column follows the newest turn only if the reader
         // was at the foot before, and otherwise the reader's words are put back. A result that
         // opens a run grows the column as an append does. A press on a run is not read here, so it
-        // moves nothing.
+        // moves nothing. The line above the list comes and goes with a draw, which moves the list
+        // in the column.
         const { rows: next } = draw;
         const box = column;
+        windowed.readMargin();
         if (!box || next.length === 0) return;
         const fresh = id !== shown;
         if (fresh || stuck) {
@@ -196,10 +257,23 @@
             place.clear();
             toFoot();
         } else {
-            place.hold(box, list, next);
+            untrack(() => {
+                holdWords(box);
+            });
         }
         untrack(() => {
             askOlder(box);
+        });
+    });
+
+    // Every change of what the window draws is a height change or a draw: it goes to the foot only
+    // for a reader at the true foot, and otherwise the words are put back.
+    $effect(() => {
+        // eslint-disable-next-line @typescript-eslint/no-unused-expressions -- the read is the dependency
+        windowed.drawn;
+        untrack(() => {
+            if (following) toFoot();
+            else if (column) holdWords(column);
         });
     });
 
@@ -211,7 +285,7 @@
         if (!box) return;
         const stopShown = onShown(box, () => {
             if (stuck) toFoot();
-            else place.hold(box, list, rows);
+            else holdWords(box);
         });
         const sized = new ResizeObserver(() => {
             askOlder(box);
@@ -223,8 +297,14 @@
         };
     });
 
-    function atFoot(box: HTMLDivElement): boolean {
-        return box.scrollTop + box.clientHeight >= box.scrollHeight - SLACK;
+    /** Put the words back, and tell the window at once, so the rows under them draw this frame. */
+    function holdWords(box: HTMLDivElement): void {
+        place.hold(box, list, flat);
+        windowed.sync();
+    }
+
+    function atFoot(box: HTMLDivElement, slack: number): boolean {
+        return box.scrollTop + box.clientHeight >= box.scrollHeight - slack;
     }
 
     /**
@@ -242,30 +322,71 @@
     function scrolled(): void {
         const box = column;
         if (!box || box.clientHeight === 0) return;
-        stuck = atFoot(box);
+        stuck = atFoot(box, SLACK);
+        if (atFoot(box, TRUE_FOOT)) {
+            following = true;
+            footTop = box.scrollTop;
+        } else if (box.scrollTop < footTop - TRUE_FOOT) {
+            following = false;
+        }
         place.take(box, list, drawn);
         askOlder(box);
     }
 
     /** Scroll to the newest turn, which the tab's End tool asks for. */
     export function toFoot(): void {
-        if (!column) return;
+        if (!column || column.clientHeight === 0) return;
         column.scrollTop = column.scrollHeight;
+        following = true;
+        footTop = column.scrollTop;
+        place.clear();
+        windowed.sync();
     }
 
     /**
      * A press on a run closes it or opens it. Once drawn the foot is read again, since the press
      * moved the foot and not the reader, so one who opened the last run stays where it was opened
-     * when the next turn is appended.
+     * as its rows measure and when the next turn is appended.
      */
     function pressRun(key: string, open: boolean): void {
+        following = false;
         chosen.set(key, open ? 'closed' : 'opened');
         void tick().then(scrolled);
+    }
+
+    /**
+     * A press on a link to a heading of an undrawn answer draws that answer and scrolls to it. The
+     * reader's place lets go for the jump and is taken at the heading, ahead of the window moving.
+     */
+    function linked(event: MouseEvent): void {
+        const link = event.target instanceof Element ? event.target.closest('a') : null;
+        const fragment = link?.getAttribute('href')?.match(/^#(.+)$/)?.[1];
+        const box = column;
+        const view = box?.closest('[data-instance]');
+        if (fragment === undefined || !box || !view || named(view, fragment) !== null) return;
+        const key = rowOfId(flat, fragmentIds(fragment));
+        if (key === null) return;
+        following = false;
+        place.leave();
+        void windowed.showRow(key, () => {
+            scrollToFragment(view, fragment);
+            place.land(box, list, flat);
+            windowed.sync();
+        });
     }
 </script>
 
 <div class="frame">
-    <div class="chat" bind:this={column} onscroll={scrolled} data-scroll>
+    <!-- The press is the links' own: this box only hears it bubble up. -->
+    <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
+    <div
+        class="chat"
+        bind:this={column}
+        onscroll={scrolled}
+        onclick={linked}
+        data-scroll
+        data-windowed
+    >
         {#if record === null}
             <Empty message={t('sessions.detail_empty')} glyph={t('sessions.empty_glyph')} />
         {:else if held.error !== ''}
@@ -291,7 +412,7 @@
                     />
                 </div>
             {/if}
-            <TurnList {rows} docOf={docs.of} {chosen} {zoom} onpress={pressRun} bind:list />
+            <TurnList {windowed} docOf={docs.of} {zoom} onpress={pressRun} bind:list />
         {/if}
     </div>
     {#if record !== null && agent === ''}
@@ -312,13 +433,15 @@
         box-sizing: border-box;
     }
 
-    /* The right padding keeps the words off the scrollbar this box draws at its edge. */
+    /* The right padding keeps the words off the scrollbar this box draws at its edge. The browser's
+       scroll anchoring is off, since reader-place.ts owns every correction of this box. */
     .chat {
         display: flex;
         flex-direction: column;
         flex: 1 1 auto;
         min-height: 0;
         overflow: auto;
+        overflow-anchor: none;
         padding-right: 8px;
     }
 

@@ -1,8 +1,10 @@
 <script lang="ts">
-    // Layer 3, view partial of TurnList.svelte. One run of tool calls, muted and small. Two or more
-    // calls draw one press with the run's words, which says while closed whether the run holds a
-    // failed call or one that has not come back, and lists each call while open. A single call is
-    // its own row, with no press. The tab keeps what a press chose (tab-session.svelte.ts), since a
+    // Layer 3, view partial of TurnList.svelte. One row of a run of tool calls, muted and small:
+    // the press of two or more calls, with the run's words, which says while closed whether the
+    // run holds a failed call or one that has not come back, or one call. An open run's calls are
+    // rows of their own (turn-rows.ts, `flatRows`), so the window holds them as it holds any row;
+    // they take no space above them, so they stand together under the press. A single call is its
+    // own row, with no press. The tab keeps what a press chose (tab-session.svelte.ts), since a
     // choice outlives a draw of this row and clears with the tab's target (turn-rows.ts, `runKey`).
     //
     // A call that came back draws no word; only `error` and `running` do, in one box that does not
@@ -14,21 +16,25 @@
     import Tag from '$lib/ui/controls/Tag.svelte';
     import { clock } from '$lib/state/shared/words/format';
     import { t } from '$lib/state/shared/words/text';
-    import type { Turn } from '$lib/state/sessions/transcript.svelte';
-    import { displayName, runHolds, runWords, toolWord } from './turn-rows';
+    import {
+        displayName,
+        runHolds,
+        runWords,
+        toolWord,
+        type CallFlat,
+        type PressFlat
+    } from './turn-rows';
 
     type Props = {
-        /** The calls of the run, oldest first. */
-        calls: Turn[];
-        /** Whether the run stands open (turn-rows.ts, `runOpen`). */
-        open: boolean;
+        /** The row: a run's press or one call. */
+        row: PressFlat | CallFlat;
         /** A press on the run's line. */
         onpress: () => void;
     };
 
-    let { calls, open, onpress }: Props = $props();
+    let { row, onpress }: Props = $props();
 
-    const words = $derived(runWords(calls, t));
+    const words = $derived(row.kind === 'press' ? runWords(row.calls, t) : '');
 </script>
 
 {#snippet outcome(failed: boolean, running: boolean)}
@@ -45,40 +51,38 @@
 {/snippet}
 
 <div class="calls">
-    {#if calls.length > 1}
+    {#if row.kind === 'press'}
         <div class="run">
-            <RowButton expanded={open} title={words} onclick={onpress}>
+            <RowButton expanded={row.open} title={words} onclick={onpress}>
                 <span class="line">
-                    <span class="mark" class:open>
+                    <span class="mark" class:open={row.open}>
                         <Glyph name="disclosure" />
                     </span>
-                    <span class="ts">{clock(calls[0]?.at)}</span>
+                    <span class="ts">{clock(row.calls[0]?.at)}</span>
                     <span class="words">{words}</span>
-                    {#if !open}
+                    {#if !row.open}
                         <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-                        {@render outcome(runHolds(calls, false), runHolds(calls, null))}
+                        {@render outcome(runHolds(row.calls, false), runHolds(row.calls, null))}
                     {/if}
                 </span>
             </RowButton>
         </div>
-    {/if}
-    {#if open || calls.length === 1}
-        {#each calls as call, at (at)}
-            {@const name = call.tool?.name ?? ''}
-            {@const summary = call.tool?.summary ?? ''}
-            <div class="line call">
-                <span class="mark"></span>
-                <span class="ts">{clock(call.at)}</span>
-                <span class="name" title={displayName(name) === name ? undefined : name}>
-                    {toolWord(name, t)}
-                </span>
-                {#if summary !== ''}
-                    <span class="sum" title={summary}>{summary}</span>
-                {/if}
-                <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-                {@render outcome(call.tool?.ok === false, call.tool?.ok === null)}
-            </div>
-        {/each}
+    {:else if row.kind === 'call'}
+        {@const call = row.call}
+        {@const name = call.tool?.name ?? ''}
+        {@const summary = call.tool?.summary ?? ''}
+        <div class="line call">
+            <span class="mark"></span>
+            <span class="ts">{clock(call.at)}</span>
+            <span class="name" title={displayName(name) === name ? undefined : name}>
+                {toolWord(name, t)}
+            </span>
+            {#if summary !== ''}
+                <span class="sum" title={summary}>{summary}</span>
+            {/if}
+            <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+            {@render outcome(call.tool?.ok === false, call.tool?.ok === null)}
+        </div>
     {/if}
 </div>
 

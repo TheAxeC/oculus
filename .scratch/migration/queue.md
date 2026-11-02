@@ -1,13 +1,13 @@
 In flight (3 of 6 slots in use):
-- O122 (a Transcript draws only what is in view), in review.
-- O123 (sessions move into the Explorer), building.
-- O124 (the System page's merges), in review.
+- O123 (sessions move into the Explorer), built, review next.
+- O124 (the System page's merges), in repair round 1.
 
 Queued, in order (0 steps): none.
 
 Owed looks: none.
 
 Landed, newest first:
+- O122 (a Transcript draws only what is in view), one repair round, one fix at landing.
 - O121 (a chip row takes no height for its controls), 2026-11-02.
 - O120 (a card takes no height for its controls, Career's colours), 2026-11-02.
 - O119 (Transcript right-click, tool-call runs, the import cycle), 2026-11-02.

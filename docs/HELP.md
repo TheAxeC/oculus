@@ -457,6 +457,7 @@ Views opened for one thing, and not in the catalogue: `project`, `person`, `entr
 - In Transcript a person's turn carries the accent bar and opens an exchange, an answer reads as a document, and tool calls are muted.
 - A right-click on selected text in Transcript offers Copy, wherever in the list of turns the selection started.
 - Transcript opens on the last turns of the session. Older turns load as you scroll up, and what you are reading stays where it is. When a read fails, the line at the top says why, and Try again on that line asks once more.
+- Transcript draws only the turns near the view, so the browser's Find reaches only those turns. Cmd+A draws every turn held, which can take a moment on a very long session, and Copy gives their whole text.
 - Tool calls next to each other are one line, such as `17 tools: WebSearch 15, Write, Bash`. Press it to list each call with its clock, name and summary. A press is kept; a line you have not pressed opens by itself when a call in it fails, and a closed line says `error` or `running` when it holds one.
 - The text size buttons on the bar size what the tab shows. The grid and the transcript each keep their own size, and the reset returns only the one showing.
 - Lock in the header leaves every grid and steer box of the tab read-only: no typing, paste or file drop. It survives a reload. A comment sent from a diff to that session still goes.

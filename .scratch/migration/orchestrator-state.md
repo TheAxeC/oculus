@@ -24,20 +24,6 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 
 ```yaml
 dispatch:           # steps in flight, up to six (Z632)
-- step: O122
-  base: 4ffed7fbe
-  worktree: .agents/worktrees/migration-O122
-  executor: agent
-  worker: claude:opus
-  session_id: a8555bc19a9c7b86a (claude-opus-5-5)
-  launched: 2026-11-02
-  report: .scratch/migration/agents/reviews/O122-report.md
-  round: 1
-  reviewer_report: agents/reviews/O122-refuter.md (a76c4d45596f25340, claude-opus-5-5, 318699 tokens, 45 tool uses, 23 min 14 s)
-  builder_usage: first run 243522 tokens, 32 tool uses, 12 min 2 s; build 153718 tokens, 104 tool uses, 27 min 53 s; round 1 239848 tokens, 30 tool uses, 9 min 4 s
-  cases: agents/briefs/O122-cases.md
-  brief_check: agents/reviews/O122-brief-check.md (a8777c66a67dd93a3, claude-opus-5-5, 220297 tokens, 30 tool uses, 9 min 31 s)
-  landing: not-started
 - step: O124
   base: d3a38520a
   worktree: .agents/worktrees/migration-O124
@@ -62,7 +48,7 @@ dispatch:           # steps in flight, up to six (Z632)
   launched: 2026-11-02
   report: .scratch/migration/agents/reviews/O123-report.md
   round: 0
-  builder_usage: first run 365848 tokens, 59 tool uses, 10 min 43 s
+  builder_usage: first run 365848 tokens, 59 tool uses, 10 min 43 s; build 100660 tokens, 385 tool uses, 59 min 48 s
   cases: agents/briefs/O123-cases.md
   brief_check: agents/reviews/O123-brief-check.md (afb7b4f6cc7cbec97, claude-opus-5-5, 332174 tokens, 59 tool uses, 12 min 34 s)
   shared_paths: config/defaults/layout.yml, docs/HELP.md, GroupHead.svelte and registry.ts with migration O124, docs/HELP.md and docs/diagrams with migration O122; a few single lines touched by both (layout.yml 307, HELP 52, 143, 455), each merged by hand at landing in one edit, and generated files rebuilt
@@ -798,6 +784,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-11-03 (O122 landed). O122 is on main (booked under O122 in `plan.md`, `agents/reviews/O122-landing.md`), `test:quick` passed in the gate and main equals the gate. One fix at landing from the look: each row is measured as it is drawn. In flight: O123 built, its /refute next; O124 in repair round 1, its builder aa1e08bc105965980 running. Open items: none.
 - 2026-11-02 (O122 building). O122 builds at 4ffed7fbe. Queued: O123, O124. Open items: none.
 - 2026-11-02 (ruling 635). Steps O123 and O124 added to `plan.md`. Next: /spec O122. Open items: none.
 - 2026-11-02 (ruling 634). O122 is ruled and held: Axel asked to settle whether the Sessions page and the Explorer merge before implementation continues. Nothing in flight. Open items: 635.
