@@ -37,9 +37,6 @@ dispatch:           # steps in flight, up to six (Z632)
   cases: agents/briefs/O122-cases.md
   brief_check: agents/reviews/O122-brief-check.md (a8777c66a67dd93a3, claude-opus-5-5, 220297 tokens, 30 tool uses, 9 min 31 s)
   landing: not-started
-- step: O123
-  brief_check: "running: afb7b4f6cc7cbec97"
-  landing: preparing
 - step: O124
   brief_check: "running: a245ccc2df2413f9c"
   landing: preparing
@@ -182,8 +179,10 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
-
-
+- Open item 636 (2026-11-02), step O123, raised by its brief check (`agents/reviews/O123-brief-check.md`, U1 to U3). Three choices.
+  1. A Terminal tab that loses its last terminal. The tree: `closeEnded` (`src/lib/state/sessions/terminal/terminal-lists.ts:88-100`) closes a tab left owning no terminal unless it is composing or reading, and reads no pin, so the bottom pane would lose Terminal and the next press would land in the left pane, over the list. Options: (a) a pinned Terminal tab stands on every page and shows its composer; pro: the bottom pane always holds Terminal; con: every pinned Terminal tab changes. (b) the tab closes and a new one goes to the pane that held it; pro: no tab stays empty; con: a placement rule for one view. (c) accept the close; lazy option, the next press covers the list. Recommended: (a), the only one that keeps the ruled bottom pane true at all times.
+  2. Twelve entries in a chord that reaches nine (`keyOf`, `src/lib/state/workbench/navigation/catalogue.ts:251-257`). In the order of 635 the keys are s1 Files, s2 Repositories, s3 Sessions, s4 Search, s5 LaTeX, s6 Terminal, s7 Problems, s8 References, s9 Debug. Options: (a) that order, and Debug Console, Notes Graph and Session have no key; pro: the keys follow the tabs; con: seven keys move and three go. (b) another choice of which three lose a key; pro: keeps a key you use; con: the keys stop following the tabs. (c) digits past nine; con: a new key shape nobody asked for. Recommended: (a).
+  3. The status bar's Sessions and Problems items. `StatusBar.svelte:359` and `context.ts:303` open the view on the page in front, since neither view is `unique`. Options: (a) as now: on the Explorer the press shows the tab, and on another page it opens a tab there; pro: every status item acts on the page you are on; con: a second list can open on Focus. (b) a press goes to the Explorer; pro: one list; con: a page switch from a status item, and `context.ts` joins the step. Recommended: (a), though it costs less, because a status item that moves you off your page is the worse behaviour.
 
 ## Closed items
 - Open item 635 (2026-11-02), closed by Axel the same day: steps O123 and O124; sessions as sections of Files, Terminal alone in the bottom pane, the rail summing all three views, and Gallery in the catalogue only were the rejected options, the rail sum being the lazy one.
