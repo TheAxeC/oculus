@@ -25,7 +25,16 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 ```yaml
 dispatch:           # steps in flight, up to six (Z632)
 - step: O122
-  landing: preparing
+  base: 4ffed7fbe
+  worktree: .agents/worktrees/migration-O122
+  executor: agent
+  worker: claude:opus
+  session_id: a8555bc19a9c7b86a (claude-opus-5-5)
+  launched: 2026-11-02
+  report: .scratch/migration/agents/reviews/O122-report.md
+  round: 0
+  brief_check: agents/reviews/O122-brief-check.md (a8777c66a67dd93a3, claude-opus-5-5, 220297 tokens, 30 tool uses, 9 min 31 s)
+  landing: not-started
 ```
 
 ## The standing demands (from Axel, in force)
@@ -759,6 +768,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-11-02 (O122 building). O122 builds at 4ffed7fbe. Queued: O123, O124. Open items: none.
 - 2026-11-02 (ruling 635). Steps O123 and O124 added to `plan.md`. Next: /spec O122. Open items: none.
 - 2026-11-02 (ruling 634). O122 is ruled and held: Axel asked to settle whether the Sessions page and the Explorer merge before implementation continues. Nothing in flight. Open items: 635.
 - 2026-11-02 (O121 landed). O121 is on main (booked under O121 in `plan.md`, `agents/reviews/O121-landing.md`). In flight: none. Queued: O122, waiting on open item 634. Open items: 634.
