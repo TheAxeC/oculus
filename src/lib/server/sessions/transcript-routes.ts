@@ -14,25 +14,27 @@
 import { existsSync, statSync } from 'node:fs';
 import { json } from '@sveltejs/kit';
 import { agentFile } from './stores/background.ts';
-import { readTurns, renderTurns, type TurnsAnswer } from './stores/turns.ts';
+import { readTurns, renderTurns, type TurnsAnswer, type TurnsRead } from './stores/turns.ts';
 import { words } from '../core/words.ts';
 import type { SessionAgent, SessionRecord, SessionTool, Turn } from '../../data/model/index.ts';
 
 /**
- * How many turns a first read answers with. A session that has run all day holds thousands, and the
- * page draws the tail of the conversation, so a first read takes only the end of the file
- * (`FIRST_READ_BYTES`) and keeps its last turns; sending more costs the wire and the client's
- * memory for turns nobody scrolls back to, and an older turn the end of the file does not hold
- * stays out of the view as a turn past this count does. The offset it answers is the end of the
- * last whole line it read, so a line still being written reaches the next read whole. A later read
- * asks from a byte offset and is not capped, since it carries only what was appended since.
+ * How many turns a read of a file's end answers with. A session that has run all day holds
+ * thousands, and the page draws the tail of the conversation, so a first read takes only the end of
+ * the file (`FIRST_READ_BYTES`) and keeps its last turns; sending more costs the wire and the
+ * client's memory for turns the reader may never scroll back to, and a reader who does gets the
+ * turns before those by a read before the `head` byte it answered, kept to the same count. The
+ * turns of one line stay together, since a read can start only at a line, so an answer may hold a
+ * few more. The offset a first read answers is the end of the last whole line it read, so a line
+ * still being written reaches the next read whole. A later read asks from a byte offset and is not
+ * capped, since it carries only what was appended since.
  */
 export const FIRST_READ_TURNS = 200;
 
 /**
- * How far before a file's end a first read starts, so what a first read takes is the tail of the
- * file whatever its size, widened only while the tail holds no turn: the distance doubles then, and
- * a file with no turn at all is read to its head. `MAX_FIRST_READ_BYTES` of cache.ts is a separate
+ * How far before its end a read of a file's end starts, so what it takes is the tail of the file
+ * whatever its size, widened only while the tail holds no turn: the distance doubles then, and a
+ * file with no turn at all is read to its head. `MAX_FIRST_READ_BYTES` of cache.ts is a separate
  * limit, the size above which the scan does not fold a file at all.
  */
 const FIRST_READ_BYTES = 32 * 1024 * 1024;
@@ -85,36 +87,83 @@ function sizeOf(path: string): number {
     }
 }
 
+/** The pass of a read that found its turns, and the byte it started at. */
+type EndPass = { read: TurnsRead; start: number };
+
 /**
- * The end of a transcript: a read that starts `FIRST_READ_BYTES` before the end of the file, or at
- * its head for a smaller one, and again from twice as far while it holds no turn and the file holds
- * more, so a tail of one long line still answers with a turn. The answer is the one pass that found
- * a turn, or the pass from the head. A pass starts one byte early, on the end of the line before,
- * and drops what it reads up to the first line feed: a start inside a line loses that line, and a
- * start on a line's first byte loses nothing.
+ * The end of a transcript, or of the part of it ahead of the byte `before`: a read that starts
+ * `FIRST_READ_BYTES` ahead of that end, or at the file's head when that is nearer, and again from
+ * twice as far while it holds no turn and the file holds more, so a tail of one long line still
+ * answers with a turn. The answer is the one pass that found a turn, or the pass from the head. A
+ * pass starts one byte early, on the end of the line before, and drops what it reads up to the
+ * first line feed: a start inside a line loses that line, and a start on a line's first byte loses
+ * nothing. A `before` past the file's end ends at the file's end, and a `before` of 0 reads
+ * nothing.
  */
-async function firstRead(source: Source): Promise<TurnsAnswer> {
-    const size = sizeOf(source.path);
+async function endPass(source: Source, before?: number): Promise<EndPass> {
+    const end = Math.min(sizeOf(source.path), before ?? Number.POSITIVE_INFINITY);
     for (let distance = FIRST_READ_BYTES; ; distance *= 2) {
-        const start = Math.max(0, size - distance - 1);
-        const read = await readTurns(source.path, source.tool, start, { insideLine: start > 0 });
-        if (start === 0 || read.turns.length > 0) return read;
+        const start = Math.max(0, end - distance - 1);
+        const how = { insideLine: start > 0, until: before };
+        const read = await readTurns(source.path, source.tool, start, how);
+        if (start === 0 || read.turns.length > 0) return { read, start };
     }
 }
 
+/** What a pass answers: the turns it keeps, where a read of older turns goes on, the outcomes. */
+type EndKept = Omit<TurnsAnswer, 'offset'> & { head: number };
+
 /**
- * GET /api/transcript: the turns of one session from a byte offset, or the last turns of its file
- * when no offset is asked, and the offset to ask next, the end of the last whole line read; with
- * `format=markdown`, the whole conversation as a Markdown file to save.
+ * The last `FIRST_READ_TURNS` turns of a pass and every turn that shares a line with them, since
+ * the byte of a line is the only place a later read can start. `head` is the line of the oldest
+ * turn kept, or 0 when the pass began at the file's head and kept all it read, so nothing older
+ * can hold a turn. The outcome of a call among the turns dropped goes in `results` beside the
+ * outcomes the pass read for calls it does not hold, so a later read of that call can draw it; a
+ * Codex turn has no id and carries its own outcome, so nothing of Codex goes there.
+ */
+function kept({ read, start }: EndPass): EndKept {
+    const { turns, lines } = read;
+    let cut = Math.max(0, turns.length - FIRST_READ_TURNS);
+    while (cut > 0 && lines[cut - 1] === lines[cut]) cut -= 1;
+    const results = { ...read.results };
+    for (const { tool } of turns.slice(0, cut)) {
+        if (tool !== null && tool.id !== '' && tool.ok !== null) results[tool.id] = tool.ok;
+    }
+    const whole = start === 0 && cut === 0;
+    return { turns: turns.slice(cut), head: whole ? 0 : lines[cut], results };
+}
+
+/** The turns a pass keeps, rendered: only those, since a render costs far more than a fold. */
+async function renderedEnd(pass: EndPass): Promise<EndKept> {
+    const end = kept(pass);
+    return { ...end, turns: await renderTurns(end.turns) };
+}
+
+/** A query's byte: `undefined` when it is empty or left out, NaN when it names no byte. */
+function askedByte(asked: string | null): number | undefined {
+    if (asked === null || asked === '') return undefined;
+    const byte = Number(asked);
+    return Number.isInteger(byte) && byte >= 0 ? byte : Number.NaN;
+}
+
+/**
+ * GET /api/transcript: the turns of one session from the byte offset `from`, or the last turns of
+ * its file when no offset is asked, and the offset to ask next, the end of the last whole line
+ * read; with `before`, the last turns ahead of that byte, which a reader who scrolled up asks with
+ * the `head` the last such read answered. `head` is answered by a read of a file's end alone: a
+ * first read answers `turns`, `offset`, `results` and `head`, a read from `from` the first three,
+ * and a read before a byte all but `offset`. `before` wins over `from`, and `format=markdown` over
+ * both: the whole conversation as a Markdown file to save.
  */
 export async function handleTranscript(
     request: Request,
     options: TranscriptOptions = {}
 ): Promise<Response> {
     const url = new URL(request.url);
-    const asked = url.searchParams.get('from') ?? '';
-    const from = asked === '' ? 0 : Number(asked);
-    if (!Number.isInteger(from) || from < 0) {
+    const from = askedByte(url.searchParams.get('from')) ?? 0;
+    const before = askedByte(url.searchParams.get('before'));
+    if (Number.isNaN(from) || Number.isNaN(before)) {
+        const asked = url.searchParams.get(Number.isNaN(from) ? 'from' : 'before');
         return json({ error: `not a byte offset: ${asked}` }, { status: 400, headers: NO_STORE });
     }
     const id = url.searchParams.get('id') ?? '';
@@ -138,16 +187,20 @@ export async function handleTranscript(
         if (options.catalogFor === undefined) throw new Error('an export needs the text catalog');
         return exported(record, agent, source, options.catalogFor());
     }
+    if (before !== undefined) {
+        const answer = await renderedEnd(await endPass(source, before));
+        return json(answer, { headers: NO_STORE });
+    }
     if (from > 0) {
-        const read = await readTurns(source.path, source.tool, from);
-        return json({ ...read, turns: await renderTurns(read.turns) }, { headers: NO_STORE });
+        const { turns, offset, results } = await readTurns(source.path, source.tool, from);
+        const rendered = await renderTurns(turns);
+        return json({ turns: rendered, offset, results }, { headers: NO_STORE });
     }
     // The offset is the read's own, so the client's append path continues where the read stopped;
-    // what is dropped is the oldest turns, which is the end of the conversation nobody is looking
-    // at, and only the turns kept are rendered.
-    const read = await firstRead(source);
-    const turns = await renderTurns(read.turns.slice(-FIRST_READ_TURNS));
-    return json({ ...read, turns }, { headers: NO_STORE });
+    // what is dropped is the oldest turns, which the reader reaches through `head`.
+    const pass = await endPass(source);
+    const answer = await renderedEnd(pass);
+    return json({ ...answer, offset: pass.read.offset }, { headers: NO_STORE });
 }
 
 /**

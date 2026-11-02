@@ -13,6 +13,10 @@
 // are sparse, so a case writes only the bytes it asks about. `padded` breaks their zero bytes into
 // lines of a MiB; a row that calls `planted` itself places its own lines, and the zero bytes
 // between them are one line, which a read decodes and skips as a line that does not parse.
+//
+// A read of older turns goes on from the `head` the read after it answered, so reads chained to the
+// file's head hold every turn once, in the order of a read of the whole file, whichever line a read
+// starts on, and an outcome the kept turns cannot carry travels in `results`.
 
 import {
     appendFileSync,
@@ -29,7 +33,7 @@ import { it, scratchDir, test } from '../../fixtures/scratch.ts';
 import { handleTranscript } from '../../../src/lib/server/sessions/transcript-routes.ts';
 import { agentFile } from '../../../src/lib/server/sessions/stores/background.ts';
 import { readSession } from '../../../src/lib/server/sessions/stores/transcripts.ts';
-import type { TurnsAnswer } from '../../../src/lib/server/sessions/stores/turns.ts';
+import { readTurns, type TurnsAnswer } from '../../../src/lib/server/sessions/stores/turns.ts';
 import type { SessionRecord } from '../../../src/lib/data/model/index.ts';
 
 const SESSION = 'b2c4a7e0-0000-4000-8000-000000000001';
@@ -97,6 +101,16 @@ function assistant(text: string, second: number): string {
         type: 'assistant',
         timestamp: new Date(1760000000000 + second * 1000).toISOString(),
         message: { role: 'assistant', content: [{ type: 'text', text }] }
+    });
+}
+
+/** An assistant turn saying `text` and calling one tool for each id, all on one line. */
+function spoken(text: string, ids: string[], second: number): string {
+    const content = ids.map((id) => ({ type: 'tool_use', id, name: 'Bash', input: {} }));
+    return JSON.stringify({
+        type: 'assistant',
+        timestamp: new Date(1760000000000 + second * 1000).toISOString(),
+        message: { role: 'assistant', content: [{ type: 'text', text }, ...content] }
     });
 }
 
@@ -299,6 +313,39 @@ const AFTER = `${said('after the cut', 2)}\n`;
 /** A file 100 MiB long whose last 40 MiB hold one turn, at their head. */
 const FAR = 100 * MIB;
 
+/** Write that file, with `MARKED` at its head, so a first read has to double its distance. */
+function doubled(path: string): void {
+    const turn = `\n${said('forty from the end', 1)}\n`;
+    planted(path, FAR, [
+        [0, MARKED],
+        [FAR - 40 * MIB - 1, turn],
+        [FAR - 1, '\n']
+    ]);
+}
+
+/** Lines holding one turn each, with the text `turn <n>`, the file's whole text. */
+function numbered(count: number): string {
+    return `${Array.from({ length: count }, (_, at) => said(`turn ${at}`, at)).join('\n')}\n`;
+}
+
+/** The texts `turn <from>` up to but not including `turn <to>`. */
+function texts(from: number, to: number): string[] {
+    return Array.from({ length: to - from }, (_, at) => `turn ${from + at}`);
+}
+
+/** An answer of a read that ends at a byte. */
+type EndAnswer = TurnsAnswer & { head: number };
+
+/** The answer of one such read of the file `path` as the Claude session's transcript. */
+async function endOf(path: string, query = ''): Promise<EndAnswer> {
+    return (await turnsOf(path, query)) as EndAnswer;
+}
+
+/** The texts of an answer's turns. */
+function textsIn(answer: TurnsAnswer): string[] {
+    return answer.turns.map((turn) => turn.text);
+}
+
 /** The Codex rollout's turn `text`, one line. */
 function rollout(text: string, second: number): string {
     return `${item(CHILD, { type: 'UserMessage', text }, second)}\n`;
@@ -350,14 +397,7 @@ describe('a first read of the transcript route', () => {
         {
             name: 'a tail with no turn reads the doubled distance and no further',
             source: claude,
-            write: (path: string) => {
-                const turn = `\n${said('forty from the end', 1)}\n`;
-                planted(path, FAR, [
-                    [0, MARKED],
-                    [FAR - 40 * MIB - 1, turn],
-                    [FAR - 1, '\n']
-                ]);
-            },
+            write: doubled,
             texts: ['forty from the end'],
             offset: FAR
         },
@@ -497,13 +537,19 @@ describe('a first read of the transcript route', () => {
 });
 
 describe('a read of a file of several pieces', () => {
+    /** The lines at the end of the file `several` writes. */
+    const TAIL = `${answered('toolu_x', { status: 'completed' }, 3)}\n${said('the tail turn', 4)}\n`;
+
+    /** The byte those lines start at. */
+    const TAIL_LINES = ABOVE - Buffer.byteLength(TAIL);
+
     /** A file of five pieces: two turns at its head, two at its end, a call's result among them. */
     function several(): SessionRecord {
         const path = fresh();
         padded(
             path,
             `${said('the head turn\nits second line', 1)}\n${calls(['toolu_x'], 2)}\n`,
-            `${answered('toolu_x', { status: 'completed' }, 3)}\n${said('the tail turn', 4)}\n`
+            TAIL
         );
         return { ...held(SESSION), path, title: 'A title', cwd: '/w', started: 'the start' };
     }
@@ -554,9 +600,10 @@ describe('a read of a file of several pieces', () => {
     });
 
     it.each([
-        { name: 'an export', query: '&format=markdown' },
-        { name: 'a read from an offset', query: `&from=${MARKED.length}` }
-    ])('gives the thread back between the pieces of $name', async ({ query }) => {
+        { name: 'an export', query: '&format=markdown', turn: 'the head turn' },
+        { name: 'a read from an offset', query: `&from=${MARKED.length}`, turn: 'the tail turn' },
+        { name: 'a read before a byte', query: `&before=${TAIL_LINES}`, turn: 'the head turn' }
+    ])('gives the thread back between the pieces of $name', async ({ query, turn }) => {
         const record = several();
         let macrotasks = 0;
         let counting = true;
@@ -567,9 +614,171 @@ describe('a read of a file of several pieces', () => {
         };
         setImmediate(count);
         const response = await request(record, query);
-        await response.arrayBuffer();
+        const text = await response.text();
         counting = false;
         expect(macrotasks).toBeGreaterThanOrEqual(4);
+        expect(text).toContain(turn);
+    });
+});
+
+describe('the reads of older turns', () => {
+    it('joins three chained reads of 500 turns into the whole file, none lost or repeated', async () => {
+        const path = fresh();
+        writeFileSync(path, numbered(500));
+        const first = await endOf(path);
+        expect(textsIn(first)).toEqual(texts(300, 500));
+        expect(first.head).toBeGreaterThan(0);
+        const second = await endOf(path, `&before=${first.head}`);
+        expect(textsIn(second)).toEqual(texts(100, 300));
+        expect(second.head).toBeGreaterThan(0);
+        const third = await endOf(path, `&before=${second.head}`);
+        expect(textsIn(third)).toEqual(texts(0, 100));
+        expect(third.head).toBe(0);
+        const whole = await readTurns(path, 'claude', 0);
+        const shape = ({ role, text }: { role: string; text: string }) => ({ role, text });
+        expect([...third.turns, ...second.turns, ...first.turns].map(shape)).toEqual(
+            whole.turns.map(shape)
+        );
+    });
+
+    it('keeps the turns of one line in one answer when the seam falls inside that line', async () => {
+        const path = fresh();
+        const line = spoken('three turns on a line', ['toolu_a', 'toolu_b'], 1);
+        const rest = Array.from({ length: 199 }, (_, at) => said(`turn ${at}`, at + 2));
+        writeFileSync(path, `${[said('the older turn', 0), line, ...rest].join('\n')}\n`);
+        const first = await endOf(path);
+        expect(first.turns).toHaveLength(202);
+        expect(first.turns.slice(0, 3).map((turn) => turn.role)).toEqual([
+            'assistant',
+            'tool',
+            'tool'
+        ]);
+        const older = await endOf(path, `&before=${first.head}`);
+        expect(textsIn(older)).toEqual(['the older turn']);
+        expect(older.head).toBe(0);
+    });
+
+    it('answers the outcome of a call among the turns it drops', async () => {
+        const path = fresh();
+        const rest = Array.from({ length: 250 }, (_, at) => said(`turn ${at}`, at + 1));
+        const result = answered('toolu_far', { status: 'completed' }, 300);
+        writeFileSync(path, `${[calls(['toolu_far'], 0), ...rest, result].join('\n')}\n`);
+        expect((await endOf(path)).results).toEqual({ toolu_far: true });
+    });
+
+    it('answers no turn and head 0 at byte 0', async () => {
+        const path = fresh();
+        writeFileSync(path, numbered(3));
+        const answer = await endOf(path, '&before=0');
+        expect(answer.turns).toEqual([]);
+        expect(answer.head).toBe(0);
+    });
+
+    it.each(['abc', '-1'])('refuses the byte %s with 400', async (byte) => {
+        const path = fresh();
+        writeFileSync(path, numbered(3));
+        const response = await request({ ...held(SESSION), path }, `&before=${byte}`);
+        expect(response.status).toBe(400);
+    });
+
+    it('answers as a first read does for a byte past the size', async () => {
+        const path = fresh();
+        writeFileSync(path, numbered(250));
+        const first = await endOf(path);
+        const past = await endOf(path, `&before=${first.offset + 1000}`);
+        const end = ({ turns, head, results }: EndAnswer) => ({ turns, head, results });
+        expect(end(past)).toEqual(end(first));
+    });
+
+    it('answers a turn 40 MiB ahead of the byte when the 32 MiB there hold none', async () => {
+        const path = fresh();
+        const before = 96 * MIB;
+        planted(path, FAR, [
+            [0, MARKED],
+            [before - 40 * MIB - 1, `\n${said('forty ahead', 1)}\n`],
+            [before - 1, `\n${said('at the byte', 2)}\n`],
+            [FAR - 1, '\n']
+        ]);
+        expect(textsIn(await endOf(path, `&before=${before}`))).toEqual(['forty ahead']);
+    });
+
+    it.each([
+        {
+            name: "a subagent's transcript",
+            source: subagent,
+            lines: [`${said('the agent asks', 1)}\n`, `${said('the agent goes on', 2)}\n`],
+            turn: 'the agent asks'
+        },
+        {
+            name: 'a Codex rollout',
+            source: codex,
+            lines: [rollout('the rollout asks', 1), rollout('the rollout goes on', 2)],
+            turn: 'the rollout asks'
+        }
+    ])('reads $name up to the byte', async ({ source, lines, turn }) => {
+        const path = source.path();
+        writeFileSync(path, lines.join(''));
+        const before = Buffer.byteLength(lines[0]);
+        const response = await request(source.record(path), `${source.query}&before=${before}`);
+        const answer = (await response.json()) as EndAnswer;
+        expect(textsIn(answer)).toEqual([turn]);
+        expect(answer.head).toBe(0);
+    });
+
+    it('refuses an agent the record does not list', async () => {
+        const response = await request(held(SESSION), '&agent=toolu_other&before=10');
+        expect(response.status).toBe(404);
+    });
+
+    it('answers the first byte of a kept line that spans two pieces', async () => {
+        const path = fresh();
+        const older = `${said('the older turn', 0)}\n`;
+        const long = said('x'.repeat(9 * MIB), 1);
+        const rest = Array.from({ length: 199 }, (_, at) => said(`turn ${at}`, at + 2));
+        writeFileSync(path, `${older}${[long, ...rest].join('\n')}\n`);
+        const first = await endOf(path);
+        expect(first.head).toBe(Buffer.byteLength(older));
+        expect(textsIn(await endOf(path, `&before=${first.head}`))).toEqual(['the older turn']);
+    });
+
+    it('goes on from the line of a first read that doubled its distance', async () => {
+        const path = fresh();
+        doubled(path);
+        const first = await endOf(path);
+        expect(first.head).toBe(FAR - 40 * MIB);
+        const next = await endOf(path, `&before=${first.head}`);
+        expect(textsIn(next)).toEqual(['the marked turn']);
+        expect(next.head).toBe(0);
+    });
+
+    it('names exactly the fields of each kind of answer', async () => {
+        const path = fresh();
+        writeFileSync(path, numbered(250));
+        const first = await endOf(path);
+        const keys = (answer: TurnsAnswer) => Object.keys(answer).sort();
+        expect(keys(first)).toEqual(['head', 'offset', 'results', 'turns']);
+        expect(keys(await endOf(path, `&from=${first.offset}`))).toEqual([
+            'offset',
+            'results',
+            'turns'
+        ]);
+        expect(keys(await endOf(path, `&before=${first.head}`))).toEqual([
+            'head',
+            'results',
+            'turns'
+        ]);
+    });
+
+    it('takes the byte over an offset, and an empty byte as none', async () => {
+        const path = fresh();
+        writeFileSync(path, numbered(250));
+        const first = await endOf(path);
+        const both = await endOf(path, `&from=10&before=${first.head}`);
+        expect(textsIn(both)).toEqual(texts(0, 50));
+        const empty = await endOf(path, '&before=');
+        expect(textsIn(empty)).toEqual(texts(50, 250));
+        expect(empty.head).toBe(first.head);
+        expect(empty.head).toBeGreaterThan(0);
     });
 });
 

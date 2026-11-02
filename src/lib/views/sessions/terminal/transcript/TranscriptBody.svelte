@@ -20,6 +20,16 @@
     // asks for the bytes appended since the last read. This component is mounted only while
     // Transcript shows, so a tab on Live fetches and follows nothing.
     //
+    // A first read holds the last turns of the session. When the reader is within one column height
+    // of the top, on a scroll, after each draw and when the column changes size, the store is asked
+    // for the turns before them, so a list shorter than the pane fills itself and goes on filling
+    // when the pane grows. Nothing asks while the column has no height, which is a hidden tab, or
+    // while the error box stands where the list was. After a failed read of older turns nothing
+    // asks by itself: the failure line carries the press that does.
+    //
+    // The reader's words stay where they are through every draw (reader-place.ts), unless the
+    // reader is at the foot, where the column follows.
+    //
     // An answer is what an agent wrote into a file on disk. shared/prose/Markdown.svelte draws it,
     // which sanitises it once and brings the document rules, the Copy control of a code block and
     // the prose menu. A person's turn keeps its own line breaks and is never rendered.
@@ -37,6 +47,7 @@
 
     import { tick, untrack } from 'svelte';
     import { SvelteMap } from 'svelte/reactivity';
+    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Markdown from '$lib/views/shared/prose/Markdown.svelte';
     import SteerBox from '$lib/views/shared/sessions/SteerBox.svelte';
@@ -44,15 +55,19 @@
     import { t } from '$lib/state/shared/words/text';
     import { followTab, type Turn } from '$lib/state/sessions/transcript.svelte';
     import { useState } from '$lib/state/client/use';
+    import { onShown } from '$lib/ui/shown';
     import { transcriptZoom } from '../terminal-list';
+    import { readerPlace } from './reader-place';
     import TurnRun from './TurnRun.svelte';
     import {
         groupTurns,
+        movedRun,
         relativeLink,
         runKey,
         runOpen,
         turnDocs,
-        type RunChoice
+        type RunChoice,
+        type TurnRow
     } from './turn-rows';
 
     type Props = {
@@ -69,7 +84,7 @@
     const {
         selectors: { sessionById },
         terminals: { terminalOfSession },
-        transcripts: { follow, showing, turnsFor },
+        transcripts: { follow, readOlder, showing, turnsFor },
         ui: { textScale, transcriptFont }
     } = useState();
 
@@ -80,11 +95,17 @@
      * write of any session; a derived of the id changes only when the session does.
      */
     const sessionId = $derived(record?.id ?? '');
-    const held = $derived(turnsFor(sessionId, agent));
+    /**
+     * The agent's id, for the same reason: the prop reads through the tab's target, a new object
+     * whenever the tab's state or its session's record is handed anew, and the effect that holds
+     * the turns would release them each time.
+     */
+    const agentId = $derived(agent);
+    const held = $derived(turnsFor(sessionId, agentId));
     const turns = $derived(held.turns);
-    const rows = $derived(groupTurns(turns));
+    const rows = $derived(groupTurns(turns, held.above));
 
-    const docOf = turnDocs();
+    const docs = turnDocs();
 
     /** What a press chose for each run, by `runKey`. */
     const chosen = new SvelteMap<string, RunChoice>();
@@ -97,9 +118,13 @@
     const target = $derived(JSON.stringify([session, agent]));
 
     // One component outlives its target, and a run's key means nothing in another transcript, so
-    // a change of the session or the agent empties the choices before the new turns are drawn.
+    // a change of the session or the agent empties the choices before the new turns are drawn, and
+    // the documents of the turns that go with them.
     $effect.pre(() => {
-        if (target !== '') chosen.clear();
+        if (target !== '') {
+            chosen.clear();
+            docs.clear();
+        }
     });
 
     /** The zoom of the box of turns, as `transcriptZoom` gives it. */
@@ -134,8 +159,17 @@
     /** The scroller, null once the component is torn down. */
     let column: HTMLDivElement | null | undefined = $state();
 
+    /** The box whose children are the rows drawn, one for each of `drawn`. */
+    let list: HTMLDivElement | null | undefined = $state();
+
+    /** The rows the list holds at this moment: `rows` until a draw, and then the ones it drew. */
+    let drawn: readonly TurnRow[] = [];
+
     /** The session whose turns are on screen. A change to it sends the column to the foot. */
     let shown = '';
+
+    /** The reader's place in the column. */
+    const place = readerPlace();
 
     /**
      * Whether the reader was at the foot the last time the column scrolled. It is kept by the
@@ -149,36 +183,99 @@
 
     // The record is read by this effect, so it re-runs at each sessions message and hands follow()
     // the tab's mark of that message (state/sessions/transcript.svelte.ts, followTab).
-    followTab(follow, () => ({ id: sessionId, agent, record }));
+    followTab(follow, () => ({ id: sessionId, agent: agentId, record }));
 
     // The store keeps a transcript's turns while an instance is showing it and drops them when the
     // last one stops; the effect's cleanup is that release, so a change of session or a teardown
     // lets go. It reads the id and never the record, so a new record of the same session keeps the
     // turns held and the next read asks only from the offset held.
-    $effect(() => showing(sessionId, agent));
+    $effect(() => showing(sessionId, agentId));
+
+    /** What a draw is made from, so a change to any of it can move what is under the reader. */
+    const draw = $derived({ rows, older: held.older, failed: held.olderError, error: held.error });
+
+    // Before a draw the words are taken from the list as it still stands. A read of older turns
+    // that grew the run at the top gives it a new key, and a press on it goes with it.
+    $effect.pre(() => {
+        const next = draw.rows;
+        untrack(() => {
+            const moved = movedRun(drawn, next);
+            const choice = moved === null ? undefined : chosen.get(moved.from);
+            if (moved !== null && choice !== undefined) {
+                chosen.delete(moved.from);
+                chosen.set(moved.to, choice);
+            }
+            if (column) place.take(column, list, drawn);
+            drawn = next;
+        });
+    });
 
     $effect(() => {
         const id = sessionId;
-        // The list is read here as well as the id, and an append or a patched result makes a new
+        // The draw is read here as well as the id, and an append or a patched result makes a new
         // list, so either re-runs this; then the column follows the newest turn only if the reader
-        // was at the foot before. A result that opens a run grows the column as an append does. A
-        // press on a run is not read here, so it moves nothing.
-        const list = turns;
+        // was at the foot before, and otherwise the reader's words are put back. A result that
+        // opens a run grows the column as an append does. A press on a run is not read here, so it
+        // moves nothing.
+        const { rows: next } = draw;
         const box = column;
-        if (!box || list.length === 0) return;
+        if (!box || next.length === 0) return;
         const fresh = id !== shown;
-        if (!fresh && !stuck) return;
-        shown = id;
-        stuck = true;
-        toFoot();
+        if (fresh || stuck) {
+            shown = id;
+            stuck = true;
+            place.clear();
+            toFoot();
+        } else {
+            place.hold(box, list, next);
+        }
+        untrack(() => {
+            askOlder(box);
+        });
+    });
+
+    // A tab shown again goes back to the foot or to the words the anchor kept, and then the size
+    // watcher, made after it and so called after it, asks what a hidden tab or a smaller pane could
+    // not.
+    $effect(() => {
+        const box = column;
+        if (!box) return;
+        const stopShown = onShown(box, () => {
+            if (stuck) toFoot();
+            else place.hold(box, list, rows);
+        });
+        const sized = new ResizeObserver(() => {
+            askOlder(box);
+        });
+        sized.observe(box);
+        return () => {
+            stopShown();
+            sized.disconnect();
+        };
     });
 
     function atFoot(box: HTMLDivElement): boolean {
         return box.scrollTop + box.clientHeight >= box.scrollHeight - SLACK;
     }
 
+    /**
+     * Ask for older turns when the reader is within one column height of the top. An error box
+     * stands where the list was while `held.error` is set, so the column only reads as being at the
+     * top, and after a failed read of older turns the press on its line is what asks.
+     */
+    function askOlder(box: HTMLDivElement): void {
+        if (held.error !== '' || held.olderError !== '') return;
+        if (box.clientHeight > 0 && box.scrollTop <= box.clientHeight)
+            readOlder(sessionId, agentId);
+    }
+
+    /** Note where the reader stands and ask for what that nears. A hidden column notes nothing. */
     function scrolled(): void {
-        if (column) stuck = atFoot(column);
+        const box = column;
+        if (!box || box.clientHeight === 0) return;
+        stuck = atFoot(box);
+        place.take(box, list, drawn);
+        askOlder(box);
     }
 
     /** Scroll to the newest turn, which the tab's End tool asks for. */
@@ -216,7 +313,21 @@
                 <Empty message={t('sessions.turns_empty')} glyph={t('sessions.empty_glyph')} />
             {/if}
         {:else}
-            <div class="turns" style:zoom>
+            {#if held.older}
+                <div class="older" style:zoom>{t('sessions.turns_older')}</div>
+            {:else if held.olderError !== ''}
+                <div class="older" style:zoom>
+                    <span>{t('sessions.turns_older_failed', held.olderError)}</span>
+                    <ToolButton
+                        small
+                        label={t('sessions.turns_older_retry')}
+                        onclick={() => {
+                            readOlder(sessionId, agentId);
+                        }}
+                    />
+                </div>
+            {/if}
+            <div class="turns" style:zoom bind:this={list}>
                 {#each rows as row (row.first)}
                     {#if row.kind === 'said'}
                         {@const turn = row.turn}
@@ -233,7 +344,7 @@
                                 {:else}
                                     <div class="answer">
                                         <Markdown
-                                            doc={docOf(turn)}
+                                            doc={docs.of(turn)}
                                             loading=""
                                             failed=""
                                             onlink={relativeLink}
@@ -392,6 +503,17 @@
 
     .cut {
         margin: 2px 0 0;
+        font-size: var(--fs-sm);
+        color: var(--muted-txt, var(--muted));
+    }
+
+    /* The muted line at the top of the list while a read of older turns is out or has failed. */
+    .older {
+        display: flex;
+        flex: none;
+        align-items: center;
+        gap: 6px;
+        margin: 0 0 10px;
         font-size: var(--fs-sm);
         color: var(--muted-txt, var(--muted));
     }

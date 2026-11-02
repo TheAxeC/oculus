@@ -1,5 +1,4 @@
-In flight (1 of 6 slots in use):
-- O118 (a Transcript's older turns load on scrolling up), repair round 1 running.
+In flight (0 of 6 slots in use): none.
 
 Queued, in order (1 steps):
 - O119 (Transcript right-click, tool-call runs, the import cycle), once O118 has landed.
@@ -7,6 +6,7 @@ Queued, in order (1 steps):
 Owed looks: none.
 
 Landed, newest first:
+- O118 (a Transcript's older turns load on scrolling up), 2026-11-02.
 - O117 (the transcript's own text size), 2026-11-02.
 - O116 (a transcript's first read takes only the end of the file), 2026-11-02.
 - O115 (the transcript reads as a conversation), 2026-11-02.

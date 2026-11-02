@@ -9,8 +9,10 @@
 //
 // A record becomes at most one said turn plus one turn per tool call. A thinking block is dropped:
 // it is the model talking to itself and is not part of the conversation. A tool call and its result
-// are one turn, paired by `tool_use_id`; a result whose call was read in an earlier batch cannot
-// reach that turn from here, so it travels in `results` and the client patches the turn it holds.
+// are one turn, paired by `tool_use_id`; a result whose call is not among the turns of its read
+// cannot reach that turn from here, since the call was read in an earlier batch or lies in older
+// bytes not read yet, so it travels in `results`. The client patches the turn it holds, and keeps
+// the outcome for a turn it does not hold yet, which a later read of older turns brings.
 //
 // The Markdown of an assistant turn is rendered here, by renderTurns() once a read has settled
 // which turns it answers, and filtered on the page, the way server/content/docs.ts renders a
@@ -41,7 +43,8 @@ const CODEX_SILENT = ['Reasoning'];
 
 /**
  * What one read answers with: the turns of the bytes read, the byte offset to ask from next, and
- * the outcomes of calls whose turn was read earlier.
+ * the outcomes of calls not among those turns, which the client holds already or keeps for a later
+ * read of older turns.
  */
 export type TurnsAnswer = {
     turns: Turn[];
@@ -49,6 +52,12 @@ export type TurnsAnswer = {
     /** `tool_use_id` to whether the call ended well, for a call not in `turns`. */
     results: Record<string, boolean>;
 };
+
+/**
+ * One read as the route gets it: the answer and, for each of its turns, the byte of the line that
+ * turn came from, which only says where a later read can start and is never sent.
+ */
+export type TurnsRead = TurnsAnswer & { lines: number[] };
 
 /** The text of a block list, the calls it makes and the results it brings, in the order read. */
 type Content = {
@@ -155,10 +164,10 @@ const claudeTurnMessageShape = quickly(
 
 /**
  * The turns of one transcript from byte `from`, each said turn cut at `cap` characters and none
- * rendered yet (`renderTurns`), read by foldYielding, so `insideLine` and `signal` mean what they
- * mean there. An unreadable file, or one with nothing appended, answers with no turns and the
- * offset it was asked from. The export asks with no cap, since a file handed to the reader is the
- * whole conversation. A read holds every turn of the bytes it reads while it reads, which cost
+ * rendered yet (`renderTurns`), read by foldYielding, so `insideLine`, `until` and `signal` mean
+ * what they mean there. An unreadable file, or one with nothing appended, answers with no turns and
+ * the offset it was asked from. The export asks with no cap, since a file handed to the reader is
+ * the whole conversation. A read holds every turn of the bytes it reads while it reads, which cost
  * about 460 MiB more for a 629 MB transcript when measured, so the Markdown export is streamed a
  * turn at a time (`markdownStream` of server/sessions/transcript-routes.ts) and a transcript whose
  * text passes the longest string is one download as well.
@@ -168,13 +177,14 @@ export async function readTurns(
     tool: SessionTool,
     from = 0,
     { cap = TURN_CHARS, ...how }: YieldingRead & { cap?: number } = {}
-): Promise<TurnsAnswer> {
-    const answer: TurnsAnswer = { turns: [], offset: from, results: {} };
+): Promise<TurnsRead> {
+    const answer: TurnsRead = { turns: [], offset: from, results: {}, lines: [] };
     /** The tool turns of this read, by call id, so a result in the same read fills its own turn. */
     const calls = new Map<string, Turn>();
-    const apply = (record: Record<string, unknown>): void => {
+    const apply = (record: Record<string, unknown>, at: number): void => {
         if (tool === 'codex') codexRecord(answer, record, cap);
         else claudeRecord(answer, calls, record, cap);
+        while (answer.lines.length < answer.turns.length) answer.lines.push(at);
     };
     answer.offset = from + (await foldYielding(path, from, apply, how));
     return answer;
@@ -296,10 +306,10 @@ function saidTurn(at: string | null, role: 'user' | 'assistant', said: string, c
 /**
  * Fill in the HTML of each assistant turn of `turns`: its Markdown rendered, its code painted. A
  * read leaves this to the caller because a render costs far more than the fold of its record, so a
- * first read renders only the turns it keeps and an export, which writes the text, renders none.
- * The thread is given back after every turn, so a tail dense in answers does not hold it. Text the
- * renderer cannot take, nested past what its recursion survives, keeps its words as preformatted
- * text, so one turn never fails the read that holds it.
+ * read of a file's end renders only the turns it keeps and an export, which writes the text,
+ * renders none. The thread is given back after every turn, so a tail dense in answers does not hold
+ * it. Text the renderer cannot take, nested past what its recursion survives, keeps its words as
+ * preformatted text, so one turn never fails the read that holds it.
  */
 export async function renderTurns(turns: Turn[]): Promise<Turn[]> {
     const marked = new Marked(codeColour);

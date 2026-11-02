@@ -16,4 +16,7 @@ text:
         turn_tool: Tool
         turn_user: You
         turns_empty: This session has no turns yet.
+        turns_older: Reading older turns
+        turns_older_failed: 'Older turns could not be read: {0}'
+        turns_older_retry: Try again
         view_transcript: Transcript

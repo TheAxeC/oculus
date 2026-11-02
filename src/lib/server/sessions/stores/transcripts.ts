@@ -85,12 +85,16 @@ export type ScanOptions = {
 /** The bytes a read takes from a file at a time. */
 const PIECE_BYTES = 8 * 1024 * 1024;
 
+/** What a fold hands each record: the record and the byte its line starts at. */
+type Apply = (record: Record<string, unknown>, at: number) => void;
+
 /**
  * Fold every complete line from `offset`, one piece of the file per step, and return the bytes
- * consumed, up to the last line feed read. The offset is in bytes. The file is read in pieces of
- * `piece` bytes (`PIECE_BYTES`; a caller passes a smaller size to read a short file in several),
- * and each complete line is decoded alone, so a multi-byte character split across the end of a
- * piece is never cut in half and no decode is larger than one line. A line longer than `limit`
+ * consumed, up to the last line feed read. The offset is in bytes, and no byte at or past `until`
+ * is read, so a line that crosses it is left out as a line still being written is. The file is read
+ * in pieces of `piece` bytes (`PIECE_BYTES`; a caller passes a smaller size to read a short file in
+ * several), and each complete line is decoded alone, so a multi-byte character split across the end
+ * of a piece is never cut in half and no decode is larger than one line. A line longer than `limit`
  * bytes (Node's longest string, `buffer.constants.MAX_STRING_LENGTH`; a caller passes a smaller one
  * to test the skip) cannot be decoded: it is skipped and its bytes count as consumed, so the read
  * goes past it. With `insideLine` the first line is skipped the same way, since a read that starts
@@ -101,10 +105,11 @@ const PIECE_BYTES = 8 * 1024 * 1024;
 function* foldPieces(
     path: string,
     offset: number,
-    apply: (record: Record<string, unknown>) => void,
+    apply: Apply,
     piece: number,
     limit: number,
-    insideLine: boolean
+    insideLine: boolean,
+    until: number
 ): Generator<void, number> {
     let handle: number;
     try {
@@ -114,7 +119,7 @@ function* foldPieces(
     }
     let consumed = 0;
     try {
-        const size = fstatSync(handle).size;
+        const size = Math.min(fstatSync(handle).size, until);
         if (size <= offset) return 0;
         const buffer = Buffer.allocUnsafe(Math.min(piece, size - offset));
         /** The start of the line being read, copied out of the earlier pieces. */
@@ -149,7 +154,8 @@ function* foldPieces(
                 }
                 const tail = chunk.subarray(start, end);
                 if (!skipping && carried + tail.length <= limit) {
-                    foldLine(carry.length === 0 ? tail : Buffer.concat([...carry, tail]), apply);
+                    const bytes = carry.length === 0 ? tail : Buffer.concat([...carry, tail]);
+                    foldLine(bytes, position + start - carried, apply);
                 }
                 carry = [];
                 carried = 0;
@@ -180,7 +186,7 @@ export function foldFrom(
     piece: number = PIECE_BYTES,
     limit: number = constants.MAX_STRING_LENGTH
 ): number {
-    const steps = foldPieces(path, offset, apply, piece, limit, false);
+    const steps = foldPieces(path, offset, apply, piece, limit, false, Number.POSITIVE_INFINITY);
     let step = steps.next();
     while (step.done !== true) step = steps.next();
     return step.value;
@@ -190,6 +196,8 @@ export function foldFrom(
 export type YieldingRead = {
     /** The read starts inside a line, so its first line is dropped. */
     insideLine?: boolean;
+    /** The byte the read stops short of, the file's end when left out. */
+    until?: number;
     /** Ends the read at the next piece, for a reader that went away. */
     signal?: AbortSignal;
 };
@@ -203,11 +211,11 @@ export type YieldingRead = {
 export async function foldYielding(
     path: string,
     offset: number,
-    apply: (record: Record<string, unknown>) => void,
-    { insideLine = false, signal }: YieldingRead = {}
+    apply: Apply,
+    { insideLine = false, until = Number.POSITIVE_INFINITY, signal }: YieldingRead = {}
 ): Promise<number> {
     const limit = constants.MAX_STRING_LENGTH;
-    const steps = foldPieces(path, offset, apply, PIECE_BYTES, limit, insideLine);
+    const steps = foldPieces(path, offset, apply, PIECE_BYTES, limit, insideLine, until);
     let step = steps.next();
     while (step.done !== true) {
         await nextMacrotask();
@@ -220,8 +228,11 @@ export async function foldYielding(
     return step.value;
 }
 
-/** Parse one line as JSON and hand it on when it is a map; a blank or broken line is skipped. */
-function foldLine(bytes: Buffer, apply: (record: Record<string, unknown>) => void): void {
+/**
+ * Parse one line as JSON and hand it on with the byte it starts at when it is a map; a blank or
+ * broken line is skipped.
+ */
+function foldLine(bytes: Buffer, at: number, apply: Apply): void {
     const line = bytes.toString('utf8');
     if (line.trim() === '') return;
     let parsed: unknown;
@@ -230,7 +241,7 @@ function foldLine(bytes: Buffer, apply: (record: Record<string, unknown>) => voi
     } catch {
         return;
     }
-    if (isMap(parsed)) apply(parsed);
+    if (isMap(parsed)) apply(parsed, at);
 }
 
 /**
