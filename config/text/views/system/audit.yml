@@ -1,17 +1,11 @@
-# Oculus text owned by the audit view, the scan behind it included: a finding's message is the words
-# the reader sees, so it is a catalog entry like every other. A finding's signature is over its scope,
-# place, kind, catalog key and arguments, never the sentence, so rewording a message here keeps every
-# mute.
+# Oculus text owned by the Audit section of the Findings view, the scan behind it included: a
+# finding's message is the words the reader sees, so it is a catalog entry like every other. A
+# finding's signature is over its scope, place, kind, catalog key and arguments, never the sentence,
+# so rewording a message here keeps every mute.
 text:
-    views:
-        audit: Audit
-        audit_glyph: flag
     audit:
         title: Audit
-        toolbar: Audit controls
         search: 'Search findings ...'
-        empty: "Nothing open: no markers, no data gaps or missing sections, no missing required files, no status chip or project folder out of place, no readability warnings and no website file that differs from what the hub's files give."
-        empty_glyph: circle_empty
         none_match: No finding matches the search.
         sec_todo: Open items (TODO / VERIFY)
         sec_data: Missing data
@@ -30,11 +24,7 @@ text:
         failed_file: 'The open workspace file could not be read or written on this machine.'
         failed_network: The mute did not reach the server.
         failed_other: The mute was not saved.
-        open_findings: Findings
-        open_findings_glyph: warn
-        open_findings_tip: Open the Findings view, which lists the errors in the files themselves.
         open_place_tip: Open {0}
-        findings_note: "A bad id, an unknown chip and every other error in the files themselves are the Findings view's, and are not repeated here."
         msg_markers: '{0} open markers, the first "{1}"'
         msg_markers_one: 'one open marker, "{1}"'
         msg_entry_marker: 'open marker: "{0}"'

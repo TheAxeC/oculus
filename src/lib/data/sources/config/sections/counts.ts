@@ -29,7 +29,6 @@ const COUNTED: readonly string[] = [
     'repositories',
     'problems',
     'findings',
-    'audit',
     'processes',
     'hpc',
     'session-list'

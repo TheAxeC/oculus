@@ -31,7 +31,7 @@ text:
         empty_missing: 'The folder {0} is not there.'
         empty_no_file: 'The folder {0} holds no present.yml, so it is not a deck yet.'
         empty_unnamed: "No deck is set. Name the portfolio deck as `portfolio_deck` in .oculus/config.yml in the hub or in oculus's config/defaults/sources.yml, or open a deck from a project card or from a folder in the Files view."
-        empty_unreadable: 'The present.yml in {0} does not parse as a map, so nothing is drawn. The Audit view says where.'
+        empty_unreadable: 'The present.yml in {0} does not parse as a map, so nothing is drawn. The Audit section of Findings says where.'
         export: Export to PDF
         export_busy: Making the PDF...
         export_done: 'Wrote {0} beside the deck.'

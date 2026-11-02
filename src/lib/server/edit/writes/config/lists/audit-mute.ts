@@ -5,8 +5,8 @@
 // The list is a list with no `key:` field, so the workspace file holds it whole and it replaces
 // oculus's list (config-value.ts writes it, `own`, since the Settings view's rule for the list,
 // which only drops items, is not this write's). With no workspace file open the write is refused
-// with the sentence that says so. A park is not taken back from History: the Audit view brings a
-// finding back with the same write, so the outcome carries no record.
+// with the sentence that says so. A park is not taken back from History: the Audit section of
+// Findings brings a finding back with the same write, so the outcome carries no record.
 //
 // The watcher follows the workspace file, so the file this writes is pushed on the `config` channel
 // within a second and the audit is published again with the new muted list.

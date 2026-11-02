@@ -1,6 +1,6 @@
 <script module lang="ts">
     // Layer 3, view registration. The Processes view is the last view of the System page's group,
-    // after Gallery, past the nine a chord reaches. Its badge is how many programs it lists as
+    // after History, inside the nine a chord reaches. Its badge is how many programs it lists as
     // running, the rows its table draws and the app hosts above the table that are running or
     // starting; its row of `counts` says where the count is drawn.
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
@@ -10,7 +10,7 @@
         label: 'views.processes',
         glyph: 'views.processes_glyph',
         group: 'views',
-        order: 9,
+        order: 7,
         unique: true,
         badge: (client) => countText(client.processes.count()),
         countPart: (client) => ({ count: client.processes.count() })

@@ -108,7 +108,7 @@ text:
             not_numbers: This option takes a list of numbers
             wrong_slots: 'This option takes exactly {0} items: {1}'
             wrong_slots_one: 'This option takes exactly 1 item: {0}'
-            parked_added: This list only drops items; an item is added from the Audit view
+            parked_added: This list only drops items; an item is added from the Audit section of Findings
             number_range: 'This option takes a number from {0} to {1}'
             number_min: 'This option takes a number of at least {0}'
             number_max: 'This option takes a number of at most {0}'
@@ -343,7 +343,7 @@ text:
             no_primary_key_unkeyed: '{0} has no primary key, so no entry of it can be addressed: its schema flags {1}, a {2} field, whose value names no one entry; flag a field that holds one value'
             no_primary_key_beside: '{0} has no primary key, so no entry of it can be addressed: its collections entry names {1} beside the flag on {2} in its schema, and a file has only one; take the primary_key out of its collections entry'
             no_primary_key_missing: '{0} has no primary key, so no entry of it can be addressed: it has no schema and its collections entry names no primary_key; give it a schema that flags one field with primary_key: true'
-            no_primary_key_unread: '{0} has no primary key, so no entry of it can be addressed: its schema does not read, and the Audit view names the fault; correct the schema'
+            no_primary_key_unread: '{0} has no primary key, so no entry of it can be addressed: its schema does not read, and the Audit section of Findings names the fault; correct the schema'
             no_primary_key_named: '{0} has no primary key, so no entry of it can be addressed: its schema flags no field with primary_key: true and its collections entry names {1}, which a file with a schema does not read; flag {1} in the schema and take the primary_key out of its collections entry'
             nothing_to_write: nothing to write
             shared_identity: 'two entries share the {0} {1}, so a write cannot address one of them'

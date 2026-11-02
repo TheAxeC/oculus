@@ -64,8 +64,8 @@ text:
         problems_part_warnings: 'Warnings: {0}'
         debug_name: 'Debug: {0}'
         debug_tip: 'Debug with {0}, or pick another configuration to start.'
-        findings_tip: '{0} findings in the hub and the configuration. Open Findings.'
-        findings_tip_one: 1 finding in the hub and the configuration. Open Findings.
+        findings_tip: "{0} findings: the errors in the hub's files and the configuration, and what the audit has open. Open Findings."
+        findings_tip_one: "1 finding: an error in the hub's files or the configuration, or one the audit has open. Open Findings."
         hpc_cluster: '{0}: {1}'
         hpc_polling: polling
         hpc_live: '{0} running, {1} pending'

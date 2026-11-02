@@ -19,7 +19,7 @@ options:
     audit_ignore:
         heading: boards
         section: Audit checks
-        help: The finding signatures the reader has parked, each the twelve hex characters the Audit view's mute control writes here. A parked finding stays true and is drawn in the muted section.
+        help: The finding signatures the reader has parked, each the twelve hex characters the mute control of the Audit section of Findings writes here. A parked finding stays true and is drawn in the muted section.
         control: parked
     audit.required_files:
         heading: boards

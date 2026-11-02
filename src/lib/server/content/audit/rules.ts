@@ -319,8 +319,9 @@ export function fileOf(hub: string, path: string): string {
 /**
  * The file a finding about a project is about, as the finding carries it: for a project of the
  * hub, the hub-relative path and no `root`; for a project read from a repository, the path
- * relative to the repository and the key of the root that holds it, which the Audit view opens as
- * `{ root, path }`. A path outside the project's root is no file and carries no `root`.
+ * relative to the repository and the key of the root that holds it, which the Audit section of
+ * Findings opens as `{ root, path }`. A path outside the project's root is no file and carries no
+ * `root`.
  */
 export function fileIn(
     hub: string,

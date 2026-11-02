@@ -1,9 +1,11 @@
-# Oculus text owned by the findings view.
+# Oculus text owned by the Findings view, but for its Audit section's, which audit.yml beside this holds.
 text:
     views:
         findings: Findings
         findings_glyph: warn
-        findings_none: 'No findings: every id resolves and every status is in the vocabulary.'
+        findings_toolbar: Findings controls
+        findings_files: Files
+        findings_none: "No findings: every id resolves, every status is in the vocabulary, and the audit has nothing open: no markers, no data gaps or missing sections, no missing required files, no status chip or project folder out of place, no readability warnings and no website file that differs from what the hub's files give."
         findings_none_glyph: circle_empty
         findings_key_pick: Primary key
         findings_key_none: Pick a field

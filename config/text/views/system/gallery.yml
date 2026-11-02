@@ -1,4 +1,4 @@
-# Oculus text owned by the gallery view.
+# Oculus text owned by the Gallery section of the Status view.
 text:
     gallery:
         card_body: The body is a snippet, so a card carries whatever the view puts in it.
@@ -38,7 +38,3 @@ text:
         ticker: Ticker
         ticker_tail: in 6d
         title: Gallery
-        toolbar: Gallery controls
-    views:
-        gallery: Gallery
-        gallery_glyph: cards

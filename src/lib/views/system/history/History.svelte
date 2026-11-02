@@ -1,5 +1,5 @@
 <script module lang="ts">
-    // Layer 3, view registration. History follows the audit in the System page's group.
+    // Layer 3, view registration. History follows Findings in the System page's group.
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
 
@@ -8,7 +8,7 @@
         label: 'views.history',
         glyph: 'views.history_glyph',
         group: 'views',
-        order: 7,
+        order: 6,
         unique: true
     };
 </script>

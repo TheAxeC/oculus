@@ -75,8 +75,7 @@ A duplicate or empty primary key is a finding, and so is a file whose schema fla
 | Listing | opened from the title of the Archival, Orphans or No funding card | one set of projects |
 | Post | opened from the title of a LinkedIn card | one post, with its body |
 | Present | Present | a deck folder |
-| Audit | System | the rules over projects and files, the conventions the hub's `audit:` sets (the files and headings a project must hold, the folders a stage is kept under), and the website's three generated files against what the hub's files give |
-| Findings | System | every finding, with its file and line |
+| Findings | System | every finding, with its file and line, and in its Audit section the rules over projects and files, the conventions the hub's `audit:` sets (the files and headings a project must hold, the folders a stage is kept under), and the website's three generated files against what the hub's files give |
 
 ## The hub's settings
 

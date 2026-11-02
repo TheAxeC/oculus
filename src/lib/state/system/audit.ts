@@ -1,12 +1,12 @@
-// Layer 2, client state, pure. What a refused mute reads as, the findings a search keeps and a
-// section of the view holds, and the card id of each row.
+// Layer 2, client state, pure. What a refused mute reads as, the rows the Findings view's search
+// keeps, what a kind of the Audit section holds, and the card id of each row.
 //
 // The endpoint answers one word (`invalid`, `unwritable`) and the page never draws it: the view
 // shows a sentence of its own for each, and this is the map from word to sentence for the audit's
 // mute. A word this does not know gets the general sentence, so a refusal the endpoint grows later
 // reads as a refusal rather than as a word out of the wire.
 
-import type { AuditFinding } from '../../data/model/index.ts';
+import type { AuditFinding, Finding } from '../../data/model/index.ts';
 import { t } from '../shared/words/text.ts';
 
 /** What the write endpoint answered, as much of it as the sentence depends on. */
@@ -34,6 +34,24 @@ export function auditSearch(findings: AuditFinding[], search: string): AuditFind
     return findings.filter((finding) =>
         `${finding.scope} ${finding.where} ${finding.message}`.toLowerCase().includes(wanted)
     );
+}
+
+/**
+ * The places in the list of file findings a search keeps: each finding whose name, key or message
+ * holds it, case aside. `named` gives the name its row shows, so a word only in a folder above the
+ * root that holds the file matches nothing. The answer is places because a row stays mounted
+ * whatever the search, and each keeps its place in the whole list.
+ */
+export function fileSearch(
+    findings: readonly Finding[],
+    search: string,
+    named: (finding: Finding) => string
+): Set<number> {
+    const wanted = search.trim().toLowerCase();
+    const places = [...findings.entries()].filter(([, finding]) =>
+        `${named(finding)} ${finding.key} ${finding.message}`.toLowerCase().includes(wanted)
+    );
+    return new Set(places.map(([at]) => at));
 }
 
 /** The findings of one kind, in the order the scan reported them. */

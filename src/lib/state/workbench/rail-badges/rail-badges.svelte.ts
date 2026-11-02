@@ -19,7 +19,7 @@ import type { HpcStore } from '../../system/machine/hpc/hpc.svelte.ts';
 import type { InboxStore } from '../../feeds/inbox.svelte.ts';
 import { splitPosts } from '../../feeds/linkedin.ts';
 import { needsInput, sessionRows } from '../../sessions/folds.ts';
-import { findingsCount as listedFindings } from '../navigation/status.ts';
+import { fileFindingsCount } from '../navigation/status.ts';
 import type { RegistryStore } from '../navigation/registry.ts';
 import { t } from '../../shared/words/text.ts';
 import { statusTone, toneOf } from '../../shared/words/tones.ts';
@@ -84,10 +84,9 @@ export type RailBadgesStore = {
     inboxCount: () => number;
     /** The open entries of the collection `key`, one flagged `open_badge`. */
     openCount: (key: string) => number;
-    auditCount: () => number;
     problemsCount: () => number;
     repositoriesCount: () => number;
-    /** The findings the Findings view lists. */
+    /** The rows the Findings view holds open: its file findings and its unparked audit findings. */
     findingsCount: () => number;
     /** The sessions the Session list draws as needing input, an archived one left out. */
     sessionInputCount: () => number;
@@ -105,7 +104,6 @@ export type RailBadgesStore = {
     linkedinBadgeGlyph: () => string;
     /** The count of `openCount` as the badge draws it. */
     openBadge: (key: string) => string;
-    auditBadge: () => string;
     problemsBadge: () => string;
     problemsBadgeTitle: () => string;
     repositoriesBadge: () => string;
@@ -213,14 +211,16 @@ export function createRailBadges(
     }
 
     /**
-     * The findings the Findings view lists, the one count of those rows the status bar's item reads
-     * too: the snapshot's, the config channel's, the apps channel's and the page's own (the
-     * registry's `refused`).
+     * The one count of the Findings view, which its tab, the view catalogue, the rail and the
+     * status bar's item all read: the file findings (the snapshot's, the config channel's, the
+     * apps channel's and the page's own, the registry's `refused`) and the audit's open findings.
+     * A parked finding is left out, since the reader chose to leave it, and no search narrows it.
      */
     function findingsCount(): number {
-        return listedFindings(entities.portfolio(), entities.config(), entities.apps(), {
+        const files = fileFindingsCount(entities.portfolio(), entities.config(), entities.apps(), {
             findings: registry.refused()
         });
+        return files + audit.openCount();
     }
 
     /**
@@ -284,11 +284,6 @@ export function createRailBadges(
             selectors.vocabOf
         );
         return new Set(stages.flatMap((stage) => stage.held.map((one) => one.entry))).size;
-    }
-
-    /** Audit findings the reader has not parked, which is what the Audit view opens on. */
-    function auditBadge(): string {
-        return countText(audit.openCount());
     }
 
     /** Every problem of every source, as VS Code's Problems view counts them for its badge. */
@@ -388,7 +383,6 @@ export function createRailBadges(
         collectionCount,
         inboxCount: () => inbox.actionable(),
         openCount,
-        auditCount: () => audit.openCount(),
         problemsCount,
         repositoriesCount,
         findingsCount,
@@ -403,7 +397,6 @@ export function createRailBadges(
         leadsBadge: () => countText(leadsCount()),
         linkedinBadgeGlyph,
         openBadge: (key) => countText(openCount(key)),
-        auditBadge,
         problemsBadge,
         problemsBadgeTitle,
         repositoriesBadge: () => countText(repositoriesCount()),

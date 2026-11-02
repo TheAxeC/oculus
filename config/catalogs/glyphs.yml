@@ -99,7 +99,6 @@ glyphs:
   archived: "[/]"
   litwatch: "(>)"
   scout: "[^]"
-  audit: "(?)"
   teaching: "[T]"
   followup: "(b)"
   paper: "[d]"

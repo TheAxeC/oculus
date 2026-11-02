@@ -1,31 +1,15 @@
-<script module lang="ts">
-    // Layer 3, view registration. The audit follows Findings in the System page's group. Its badge
-    // is the open findings of the audit, its count; its row of `counts` says where it is drawn.
-    import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
-
-    export const registration: ViewRegistration = {
-        id: 'audit',
-        label: 'views.audit',
-        glyph: 'views.audit_glyph',
-        group: 'views',
-        order: 6,
-        unique: true,
-        badge: (client) => client.railBadges.auditBadge(),
-        countPart: (client) => ({ count: client.railBadges.auditCount() })
-    };
-</script>
-
 <script lang="ts">
-    // Layer 3, view. What the hub is missing, in the six sections the scan reports: an open marker
-    // left in a document; a manifest field a live project has not filled in, a gap in a
+    // Layer 3, view partial. The Audit section of the Findings view (Findings.svelte beside it,
+    // whose search it draws): what the hub is missing, in the six kinds the scan reports: an open
+    // marker left in a document; a manifest field a live project has not filled in, a gap in a
     // collection's entries, or a heading a `required_sections` row of the hub's `audit:` asks for;
     // a file a `required_files` row asks for, or a part of `audit:` that is not of its shape; a
     // manifest naming no lead, a project no board takes, a done project carrying a Focus lane's
     // chip, or a project at a stage outside the folders a `stage_folders` row names; a field that
     // has stopped being a glance; and the website of `website.folder`, whose three data files the
     // hub's files give, each that differs from what they give a finding. A stage word or a form
-    // written as a chip is a finding of the manifest check, drawn in the Findings view rather than
-    // here.
+    // written as a chip is a finding of the manifest check, drawn in the view's Files section
+    // rather than here.
     //
     // A finding is reported and never repaired here. What the reader can do is park one: the mute
     // control writes its signature into the `audit_ignore:` list of the open workspace file's
@@ -33,46 +17,41 @@
     // muted section at the end with the control that brings it back. A parked finding is still
     // true; muting only says the reader has chosen to leave it.
     //
-    // Each section and the muted one is the group every grouping of a view is drawn as
-    // (ui/controls/heads/GroupHead.svelte), headed with its count. A section folds by its kind
-    // under `folded` of the pane's state, through the pane's folds
-    // (views/shared/card/pane-fold.ts), the muted one by `showMuted`, which starts closed; every
-    // write of the pane's state keeps its other keys. A folded section's rows stay mounted but
-    // hidden, so the shell's arrow keys, which step over the rows shown, skip them.
+    // The section is the group every grouping of a view is drawn as
+    // (ui/controls/heads/GroupHead.svelte), folded under the key `audit`, headed with the open
+    // findings the search leaves, and left out with no row; the error of a failed mute stands above
+    // it, so a search that leaves no row does not hide the error. Inside it each kind and the muted
+    // section is a group that folds of its own, headed with its count: a kind folds under `folded`
+    // of the pane's state, through the pane's folds (views/shared/card/pane-fold.ts), the muted one
+    // by `showMuted`, which starts closed; every write of the pane's state keeps its other keys. A
+    // folded group's rows stay mounted but hidden, so the shell's arrow keys, which step over the
+    // rows shown, skip them.
     //
-    // Each section is a list of rows drawn as the Findings view draws its rows: one line of the
-    // tree's row height, growing by whole lines when the words wrap, with the fill of a tree row
-    // under the pointer. A row is the scope in the row's main words, the chip of the hub the
-    // finding is of when that is a hub but the primary, the message, the place in the mono face and
-    // the mute control at the row's end. A Website finding of a file that differs carries Write the
-    // website after its place, the press of the Career view's button
+    // Each kind is a list of rows drawn as the Files section draws its rows: one line of the tree's
+    // row height, growing by whole lines when the words wrap, with the fill of a tree row under the
+    // pointer. A row is the scope in the row's main words, the chip of the hub the finding is of
+    // when that is a hub but the primary, the message, the place in the mono face and the mute
+    // control at the row's end. A Website finding of a file that differs carries Write the website
+    // after its place, the press of the Career view's button
     // (state/sessions/source/website.svelte.ts), off while that button is off; the Career view's
     // line under its button says what the press came to. Every row carries `data-card`, its card id
     // (state/system/audit.ts), which the shell's arrow keys step through; the row the instance's
     // card cursor names is marked `data-cursor` and drawn with the accent outline, and the view has
     // no selection of its own. A finding that names a file draws its place as a control that opens
-    // the file in a source tab, and Enter on the row presses it. The list is drawn straight into
-    // the pane, so the pane asks for the tint.
-    //
-    // The errors in the files themselves, a bad id or an unknown chip, are the Findings view's and
-    // are not repeated here.
+    // the file in a source tab, and Enter on the row presses it.
 
     import CodeText from '$lib/ui/display/text/CodeText.svelte';
     import GroupHead from '$lib/ui/controls/heads/GroupHead.svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
-    import Pane from '$lib/ui/frame/Pane.svelte';
-    import Search from '$lib/ui/controls/text/Search.svelte';
-    import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import RootChip from '../../shared/card/RootChip.svelte';
     import { t } from '$lib/state/shared/words/text';
-    import { auditSearch, cardIds, findingsOfKind, muteMessage } from '$lib/state/system/audit';
+    import { cardIds, findingsOfKind, muteMessage } from '$lib/state/system/audit';
     import { rootOf } from '$lib/state/shared/page/hubs';
     import { useState } from '$lib/state/client/use';
     import {
         cardCursor,
         instanceFlag,
-        instanceText,
         withInstanceKey
     } from '$lib/state/workbench/layout/instance';
     import { openSourceFile } from '../../shared/links/source-file';
@@ -80,22 +59,25 @@
     import type { AuditFinding } from '$lib/state/system/audit.svelte';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
 
+    type Props = ViewProps & {
+        /** The open findings the search leaves. */
+        shown: AuditFinding[];
+        /** The muted findings the search leaves. */
+        hidden: AuditFinding[];
+    };
+
     const client = useState();
     const {
-        audit: { open, parked },
-        layout: { openView },
         ui: { instanceState, setInstanceState },
         website,
         writes: { muteFinding }
     } = client;
 
-    let { instance }: ViewProps = $props();
+    let { instance, shown, hidden }: Props = $props();
 
-    /** The pane's own state: the search the reader typed and whether the muted section is open. */
-    const raw = $derived(instanceState(instance.id));
-    const search = $derived(instanceText(raw, 'search'));
-    const showMuted = $derived(instanceFlag(raw, 'showMuted'));
-    /** The folds of the sections, by kind, kept in the pane's state. */
+    /** Whether the muted section is open, in the pane's own state. */
+    const showMuted = $derived(instanceFlag(instanceState(instance.id), 'showMuted'));
+    /** The folds of the section and of its kinds, kept in the pane's state. */
     const fold = usePaneFold();
 
     /** What the last mute failed with, and the empty string when the last one was written. */
@@ -103,9 +85,6 @@
 
     /** True while a mute is in flight, so a second press sends no second write. */
     let busy = $state(false);
-
-    const shown = $derived(auditSearch(open(), search));
-    const hidden = $derived(auditSearch(parked(), search));
 
     /** The card id of every row drawn, by finding. */
     const ids = $derived(
@@ -132,17 +111,10 @@
         }))
     );
 
-    /** Set one key of the pane's state, every other key kept. */
-    function keep(key: string, value: unknown): void {
-        setInstanceState(instance.id, withInstanceKey(instanceState(instance.id), key, value));
-    }
-
-    function typed(value: string): void {
-        keep('search', value);
-    }
-
+    /** Open or close the muted section, every other key of the pane's state kept. */
     function toggleMuted(): void {
-        keep('showMuted', !showMuted);
+        const state = instanceState(instance.id);
+        setInstanceState(instance.id, withInstanceKey(state, 'showMuted', !showMuted));
     }
 
     /** Park one finding, or bring it back. */
@@ -155,12 +127,6 @@
         failed = muteMessage(answer);
     }
 </script>
-
-{#snippet bar()}
-    <Toolbar label={t('audit.toolbar')}>
-        <Search fill value={search} placeholder={t('audit.search')} oninput={typed} />
-    </Toolbar>
-{/snippet}
 
 {#snippet row(finding: AuditFinding, muted: boolean)}
     {@const card = ids.get(finding) ?? finding.signature}
@@ -216,62 +182,55 @@
     </li>
 {/snippet}
 
-<Pane title={t('audit.title')} {bar} tinted>
-    <div class="audit" data-instance={instance.id} data-audit>
-        {#if failed !== ''}
-            <Empty error message={failed} />
-        {/if}
-        {#if shown.length === 0 && hidden.length === 0}
-            <Empty
-                message={search.trim() === '' ? t('audit.empty') : t('audit.none_match')}
-                glyph={t('audit.empty_glyph')}
-            />
-        {/if}
-        {#each sections as section (section.kind)}
-            {#if section.items.length > 0}
+{#if failed !== ''}
+    <Empty error message={failed} />
+{/if}
+{#if shown.length > 0 || hidden.length > 0}
+    <GroupHead
+        data-section="audit"
+        label={t('audit.title')}
+        count={shown.length}
+        open={fold.open('audit')}
+        ontoggle={() => fold.toggle('audit')}
+    >
+        <div class="audit">
+            {#each sections as section (section.kind)}
+                {#if section.items.length > 0}
+                    <GroupHead
+                        data-section={section.kind}
+                        label={section.label}
+                        count={section.items.length}
+                        open={fold.open(section.kind)}
+                        ontoggle={() => fold.toggle(section.kind)}
+                    >
+                        <ul>
+                            {#each section.items as finding (ids.get(finding))}
+                                <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+                                {@render row(finding, false)}
+                            {/each}
+                        </ul>
+                    </GroupHead>
+                {/if}
+            {/each}
+            {#if hidden.length > 0}
                 <GroupHead
-                    data-section={section.kind}
-                    label={section.label}
-                    count={section.items.length}
-                    open={fold.open(section.kind)}
-                    ontoggle={() => fold.toggle(section.kind)}
+                    data-section="muted"
+                    label={t('audit.muted')}
+                    count={hidden.length}
+                    open={showMuted}
+                    ontoggle={toggleMuted}
                 >
                     <ul>
-                        {#each section.items as finding (ids.get(finding))}
+                        {#each hidden as finding (ids.get(finding))}
                             <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-                            {@render row(finding, false)}
+                            {@render row(finding, true)}
                         {/each}
                     </ul>
                 </GroupHead>
             {/if}
-        {/each}
-        {#if hidden.length > 0}
-            <GroupHead
-                data-section="muted"
-                label={t('audit.muted')}
-                count={hidden.length}
-                open={showMuted}
-                ontoggle={toggleMuted}
-            >
-                <ul>
-                    {#each hidden as finding (ids.get(finding))}
-                        <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-                        {@render row(finding, true)}
-                    {/each}
-                </ul>
-            </GroupHead>
-        {/if}
-        <p class="note">
-            <span>{t('audit.findings_note')}</span>
-            <ToolButton
-                label={t('audit.open_findings')}
-                glyph={t('audit.open_findings_glyph')}
-                title={t('audit.open_findings_tip')}
-                onclick={() => void openView('findings')}
-            />
-        </p>
-    </div>
-</Pane>
+        </div>
+    </GroupHead>
+{/if}
 
 <style>
     .audit {
@@ -352,17 +311,7 @@
         transition: opacity 120ms ease-out;
     }
 
-    .note {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        gap: 6px;
-        margin: 0;
-        color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-sm);
-    }
-
-    /* The terminal shape: the sections follow the card's folder name, as every list does there. */
+    /* The terminal shape: the kinds follow the card's folder name, as every list does there. */
     :global(body.rice:where(:not(.rice-sans))) .audit {
         font-family: var(--font-mono);
     }

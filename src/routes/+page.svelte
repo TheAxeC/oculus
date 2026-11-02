@@ -22,7 +22,6 @@
     } from '$lib/state/workbench/navigation/rail';
     import {
         chosenState,
-        findingsCount,
         repoStatus,
         repositoryChoices,
         statusWords,
@@ -80,8 +79,8 @@
     provideTipIds(createTipIds());
     provideSpelling(desktop?.bridge.spelling);
     const {
-        apps: { findings: appFindings, rows: appRows },
-        entities: { config, git: gitPayload, hpc, portfolio, sessions, usage },
+        apps: { rows: appRows },
+        entities: { config, git: gitPayload, hpc, sessions, usage },
         fs: { primary, workspaces },
         layout: {
             activeInstance,
@@ -229,12 +228,7 @@
     const status = $derived(
         statusWords(socketStatus(), usage(), hpc(), sessions(), {
             host: config()?.host ?? null,
-            findings: findingsCount(
-                portfolio(),
-                config(),
-                { findings: appFindings() },
-                { findings: client.registry.refused() }
-            ),
+            findings: client.railBadges.findingsCount(),
             problems: problems.total(),
             repo: repoStatus(
                 {

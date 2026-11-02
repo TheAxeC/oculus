@@ -62,9 +62,7 @@ Every registered view is listed by its words.
 | Domains | domains |
 | Map | map |
 | Pillars | pillars |
-| Audit | audit |
 | Findings | findings |
-| Gallery | gallery |
 | Help | help |
 | Keyboard Shortcuts | keys |
 | History | history |

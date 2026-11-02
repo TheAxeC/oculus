@@ -171,4 +171,4 @@ All four are by reading and not run. B1 and B2 rest on browser behaviour that I 
 - The report's "Open items" line numbers: not compared, no decision rests on them.
 - The value of decisions 1 to 8 and whether the look matches VS Code: Axel's, and the look's.
 
-Reviewer usage: <the session fills this from the completion notice: agent id, served model, tokens, tool uses, minutes>.
+Reviewer usage: a782a024916820caa, claude-opus-5-5, 88630 tokens, 56 tool uses, 17 min 56 s.

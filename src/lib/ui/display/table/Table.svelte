@@ -102,9 +102,9 @@
     }
 
     /* The header stays put while the body scrolls: the scroller is the view's, and this is what
-       keeps the headings on screen inside it. Inside a group of a view it stands under the group's
-       heading strip, which stays at the top of the same scroller and says its height
-       (ui/controls/heads/GroupHead.svelte, `--group-strip`). */
+       keeps the headings on screen inside it. Inside a group of a view it stands under the heading
+       strips of the groups around it, which stay at the top of the same scroller and say their
+       height (ui/controls/heads/GroupHead.svelte, `--group-strip`). */
     th {
         position: sticky;
         top: var(--group-strip, 0);

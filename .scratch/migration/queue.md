@@ -1,12 +1,12 @@
-In flight (2 of 6 slots in use):
+In flight (1 of 6 slots in use):
 - O123 (sessions move into the Explorer), in repair round 1.
-- O124 (the System page's merges), landing.
 
 Queued, in order (0 steps): none.
 
 Owed looks: none.
 
 Landed, newest first:
+- O124 (the System page's merges), one repair round, no fix at landing in code.
 - O122 (a Transcript draws only what is in view), one repair round, one fix at landing.
 - O121 (a chip row takes no height for its controls), 2026-11-02.
 - O120 (a card takes no height for its controls, Career's colours), 2026-11-02.

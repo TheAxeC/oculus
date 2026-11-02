@@ -26,11 +26,11 @@
 // `${authorName} (${authorDateAgo})`, or Not Committed Yet, and a tab over a file at HEAD or in the
 // index shows its blame in the gutter alone. The problems item counts the errors, warnings and
 // infos the Problems view lists, with the infos only when there are some, and a press shows that
-// view or hides it. The findings item counts the Findings view's list, the snapshot's findings and
-// the config channel's, and opens that view. The debug item follows it once a debug session has run
-// since the server started: the last configuration's name, and a press opens the configuration
-// picker. The LaTeX item is the build state of the root of the active LaTeX file or PDF, and opens
-// the TeX view.
+// view or hides it. The findings item shows the one count of the Findings view, its file findings
+// and the audit's open findings, and opens that view. The debug item follows it once a debug
+// session has run since the server started: the last configuration's name, and a press opens the
+// configuration picker. The LaTeX item is the build state of the root of the active LaTeX file or
+// PDF, and opens the TeX view.
 
 import type { EditorStatus } from '$lib/state/workbench/navigation/editor-status.svelte';
 import { t } from '$lib/state/shared/words/text';

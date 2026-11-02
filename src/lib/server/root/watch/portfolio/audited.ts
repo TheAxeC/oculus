@@ -1,6 +1,6 @@
 // Layer 2, server. Which watch events rebuild the audit. The audit reads a project's documents and
 // folders off the disk, so a README edited or removed, a required file made inside a project's
-// `code/` folder or a required folder made by hand reaches the open Audit view only through an
+// `code/` folder or a required folder made by hand reaches the open Findings view only through an
 // event on that path; none of them is a `.yml` the portfolio watcher (portfolio.ts) would
 // otherwise take.
 //

@@ -362,15 +362,15 @@ export type AppsPayload = { rows: AppRow[]; findings: Finding[]; folders: string
 export type AuditKind = 'todo' | 'data' | 'conform' | 'manifest' | 'readability' | 'publink';
 
 /**
- * One thing a hub is missing. `hub` is the name of the hub it is of, which the Audit view draws as
- * the chip beside the scope. `scope` is the project folder (the key of its root for a project read
- * from a repository), the collection key or the website, with no hub in it, `where` the file, field
- * or entry it is about, `file` the path of the file it is about relative to the folder its `root`
- * names (the empty text when there is none, which the signature does not read), and `signature`
- * the twelve hex characters the mute list `audit_ignore:` holds, read with the hub's name in front
- * of the scope for a hub other than the primary, so the same place in two hubs has two signatures.
- * `root` is the Files root `file` is relative to: the hub's, and the repository's key for a finding
- * that names a file of a project read from a repository.
+ * One thing a hub is missing. `hub` is the name of the hub it is of, which the Audit section of
+ * Findings draws as the chip beside the scope. `scope` is the project folder (the key of its root
+ * for a project read from a repository), the collection key or the website, with no hub in it,
+ * `where` the file, field or entry it is about, `file` the path of the file it is about relative to
+ * the folder its `root` names (the empty text when there is none, which the signature does not
+ * read), and `signature` the twelve hex characters the mute list `audit_ignore:` holds, read with
+ * the hub's name in front of the scope for a hub other than the primary, so the same place in two
+ * hubs has two signatures. `root` is the Files root `file` is relative to: the hub's, and the
+ * repository's key for a finding that names a file of a project read from a repository.
  */
 export type AuditFinding = Rooted & {
     hub: string;
@@ -381,7 +381,7 @@ export type AuditFinding = Rooted & {
     kind: AuditKind;
     message: string;
     signature: string;
-    /** What the Audit view offers to set the finding right: `website`, Write the website. */
+    /** What the Audit section offers to set the finding right: `website`, Write the website. */
     action?: 'website';
 };
 

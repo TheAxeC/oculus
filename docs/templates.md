@@ -278,7 +278,7 @@ The hub's own settings. A key of oculus's `config/catalogs/vocab.yml` set here i
 #   example:
 #   writing_skip: ['**/vendor/**', '**/manuscript/**/*.tex']
 
-# The conventions the Audit view holds this hub's projects to, each off until it is set. A project
+# The conventions the audit holds this hub's projects to, each off until it is set. A project
 # of a tier `research_audit.skip_tiers` names is held to none of them.
 # `required_files`: a file a project must hold, a row requiring its file when each key it names
 # is met: the project's stage meets `stages` (a word block of the stages: `words`, `not_words`,

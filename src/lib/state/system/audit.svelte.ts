@@ -1,8 +1,8 @@
-// Layer 2, client state. What the audit scan last said, split the way the view draws it: the
-// findings the reader has not parked, in section order, and the ones they have.
+// Layer 2, client state. What the audit scan last said, split the way the Audit section of Findings
+// draws it: the findings the reader has not parked, in section order, and the ones they have.
 //
-// The split is here rather than in the view because the view's badge needs the open count too, and
-// a count computed in two places is a count the two can disagree about.
+// The split is here rather than in the view because the Findings count needs the open count too,
+// and a count computed in two places is a count the two can disagree about.
 
 import type { AuditFinding, AuditKind } from '../../data/model/index.ts';
 import type { EntitiesStore } from '../shared/stores/shapes.ts';
@@ -22,7 +22,7 @@ export type AuditStore = {
     parked: () => AuditFinding[];
     /** The open findings of one section. */
     section: (kind: AuditKind) => AuditFinding[];
-    /** How many findings are open, which is what the view's badge counts. */
+    /** How many findings are open, which is the audit's part of the Findings count. */
     openCount: () => number;
 };
 

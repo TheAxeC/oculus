@@ -7,7 +7,7 @@
 // is held to none of those. For the primary hub it also compares the website's generated files with
 // what the hub's files give (publications.ts).
 //
-// It is not the Findings view's list and does not repeat it. Findings is what
+// It is not the Files section of the Findings view and does not repeat it. That section is what
 // data/snapshot/validate.ts found wrong in the files themselves, a bad id or an unknown chip; this
 // is what is true of the files and still wants doing. The two kinds the data layer already reports,
 // the manifest schema errors and the references that resolve to nothing, are therefore not scanned
@@ -17,7 +17,7 @@
 // kind, the catalog key of its message and the arguments that fill it. It is what the mute list
 // `audit_ignore:` holds, so a muted finding is still muted after a rebuild, and rewording a
 // message in the catalog keeps every mute. A finding also names the file it is about, outside the
-// signature, which the Audit view opens.
+// signature, which the Audit section of the Findings view opens.
 //
 // The scan reads the disk (a document's text, whether a folder is there), so it runs once per
 // rebuild in the portfolio watcher and never per request. It is pure over its arguments: the hub
@@ -43,7 +43,7 @@ import {
 import { publications } from './publications.ts';
 import { type AuditInput, collector } from './rules.ts';
 
-/** The order the Audit view draws the sections in, and the order the findings come back in. */
+/** The order the Audit section draws the kinds in, and the order the findings come back in. */
 const KINDS: AuditKind[] = ['todo', 'data', 'conform', 'manifest', 'readability', 'publink'];
 
 /**

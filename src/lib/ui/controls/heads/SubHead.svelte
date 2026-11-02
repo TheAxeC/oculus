@@ -3,7 +3,7 @@
     // plain label in one style, with no fold, no pin and no strip, so every sub-heading of a view
     // reads alike and none of them is taken for a group of its own. It draws Settings' section
     // titles (views/system/workbench/settings/List.svelte), the Gallery's sub-headings
-    // (views/system/gallery/Gallery.svelte) and the Catalogue's (views/system/workbench/
+    // (views/system/status/Gallery.svelte) and the Catalogue's (views/system/workbench/
     // Catalogue.svelte). It takes any other attribute it is given, so Settings' section title keeps
     // the `data-toc-target` its table of contents scrolls to.
 

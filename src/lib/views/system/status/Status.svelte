@@ -14,14 +14,30 @@
 <script lang="ts">
     // Layer 3, view. What the page knows: whether the socket is up, which snapshot it is holding,
     // and how many of each entity that snapshot carries, then the line counts of oculus's own files
-    // (LineCounts.svelte) and the Claude Code hooks block (Hooks.svelte). It is the view that says
-    // whether the data layer underneath is alive.
+    // (LineCounts.svelte), the Claude Code hooks block (Hooks.svelte) and the Gallery of every
+    // primitive (Gallery.svelte). It is the view that says whether the data layer underneath is
+    // alive.
+    //
+    // The Gallery is a group that starts closed, by the pane-state key `showGallery`, and its body
+    // is mounted only while the group is open, so a closed Gallery draws none of its samples and
+    // closing it takes them off the page. Its Reset stands in the group's heading, drawn only while
+    // the group is open, and calls the mounted body.
+    //
+    // The view draws cards, so the pane asks for no tint, and over a wallpaper the sample cards
+    // paint their own fill. What it draws outside them is read off a `Surface`: the facts, the line
+    // counts and the hooks. The Gallery stands outside that `Surface`, since a card inside one
+    // paints nothing (ui/frame/Card.svelte), and its own sections carry their own surfaces.
 
+    import GroupHead from '$lib/ui/controls/heads/GroupHead.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
+    import Surface from '$lib/ui/frame/Surface.svelte';
+    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { liveCount } from '$lib/state/sessions/folds';
     import { workspaceCount } from '$lib/state/sources/repositories/repositories';
     import { entityCount, type CountedKind } from '$lib/state/workbench/navigation/status';
     import { t } from '$lib/state/shared/words/text';
+    import { instanceFlag, withInstanceKey } from '$lib/state/workbench/layout/instance';
+    import Gallery from './Gallery.svelte';
     import Hooks from './Hooks.svelte';
     import LineCounts from './LineCounts.svelte';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
@@ -29,16 +45,29 @@
 
     const {
         entities: { git, portfolio, sessions },
-        socket: { status }
+        socket: { status },
+        ui: { instanceState, setInstanceState }
     } = useState();
 
     let { instance }: ViewProps = $props();
+
+    /** Whether the Gallery is open, in the pane's own state. */
+    const showGallery = $derived(instanceFlag(instanceState(instance.id), 'showGallery'));
+
+    /** The mounted Gallery, null while its group is closed. */
+    let gallery: { reset: () => void } | null = $state(null);
 
     const snapshot = $derived(portfolio());
     // The two live channels are counted so the screen shows that both are arriving.
     const records = $derived(sessions()?.records ?? []);
     const live = $derived(liveCount(records));
     const workspaces = $derived(workspaceCount(git()));
+
+    /** Open or close the Gallery, every other key of the pane's state kept. */
+    function toggleGallery(): void {
+        const state = instanceState(instance.id);
+        setInstanceState(instance.id, withInstanceKey(state, 'showGallery', !showGallery));
+    }
 
     function socketLabel(): string {
         const state = status();
@@ -65,29 +94,54 @@
     }
 </script>
 
-<!-- The box every view has; this one draws its lines straight into it, so it asks for the tint. -->
-<Pane title={t('views.status')} tinted>
+{#snippet galleryTools()}
+    <ToolButton
+        bare
+        label={t('gallery.reset')}
+        glyph={t('gallery.reset_glyph')}
+        onclick={() => {
+            gallery?.reset();
+        }}
+    />
+{/snippet}
+
+<Pane title={t('views.status')}>
     <div class="view" data-instance={instance.id}>
-        <p class="socket">{t('app.socket', socketLabel())}</p>
-        {#if snapshot === null}
-            <p>{t('app.waiting')}</p>
-        {:else}
-            <p>{t('app.version', snapshot.version)}</p>
-            <ul>
-                <li>{t('app.projects', count('projects'))}</li>
-                <li>{t('app.venues', count('venues'))}</li>
-                <li>{t('app.datasets', count('datasets'))}</li>
-                <li>{t('app.pillars', count('pillars'))}</li>
-                <li>{t('app.domains', count('domains'))}</li>
-                <li>{t('app.funding', count('funding'))}</li>
-                <li>{t('app.collections', count('collections'))}</li>
-            </ul>
-        {/if}
-        <p>{t('app.sessions', records.length, live)}</p>
-        <p>{t('app.git', workspaces)}</p>
-        <div class="groups">
-            <LineCounts />
-            <Hooks origin={servedOrigin()} />
+        <Surface>
+            <p class="socket">{t('app.socket', socketLabel())}</p>
+            {#if snapshot === null}
+                <p>{t('app.waiting')}</p>
+            {:else}
+                <p>{t('app.version', snapshot.version)}</p>
+                <ul>
+                    <li>{t('app.projects', count('projects'))}</li>
+                    <li>{t('app.venues', count('venues'))}</li>
+                    <li>{t('app.datasets', count('datasets'))}</li>
+                    <li>{t('app.pillars', count('pillars'))}</li>
+                    <li>{t('app.domains', count('domains'))}</li>
+                    <li>{t('app.funding', count('funding'))}</li>
+                    <li>{t('app.collections', count('collections'))}</li>
+                </ul>
+            {/if}
+            <p>{t('app.sessions', records.length, live)}</p>
+            <p>{t('app.git', workspaces)}</p>
+            <div class="groups">
+                <LineCounts />
+                <Hooks origin={servedOrigin()} />
+            </div>
+        </Surface>
+        <div class="samples">
+            <GroupHead
+                data-section="gallery"
+                label={t('gallery.title')}
+                open={showGallery}
+                ontoggle={toggleGallery}
+                actions={showGallery ? galleryTools : undefined}
+            >
+                {#if showGallery}
+                    <Gallery bind:this={gallery} {instance} />
+                {/if}
+            </GroupHead>
         </div>
     </div>
 </Pane>
@@ -100,7 +154,7 @@
     }
 
     /* The facts are rows: one line of the tree's row height each. */
-    .view > p,
+    .view > :global([data-surface]) > :global(p),
     li {
         display: flex;
         align-items: center;
@@ -117,11 +171,16 @@
         padding-left: 18px;
     }
 
-    /* The line counts and the hooks, two groups 16 px below the facts and apart. */
+    /* The line counts and the hooks, two groups 16 px below the facts and apart, and the Gallery
+       16 px below them. */
     .groups {
         display: flex;
         flex-direction: column;
         gap: 16px;
+        margin-top: 16px;
+    }
+
+    .samples {
         margin-top: 16px;
     }
 </style>

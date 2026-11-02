@@ -6,7 +6,7 @@
     // section takes any other attribute it is given (a `data-*`, an `aria-label`, a drop target's
     // `ondragover` and `ondrop`). FoldHead.svelte beside it heads a box instead, with its count as
     // a badge: the command center and the tasks section of Focus. A heading inside a group is
-    // SubHead.svelte beside it.
+    // SubHead.svelte beside it where it does not fold, and this component where it does.
     //
     // The heading is a strip that stays at the top of the pane's scrolling body while its group
     // scrolls under it (`position: sticky`), above the cards. It sits inside its group's section,
@@ -17,9 +17,13 @@
     // wallpaper it is the one translucent layer ui/frame/Surface.svelte paints (`--panel-on-wall`
     // with the blur); inside a tinted pane, which carries `data-surface` and sets `--panel-on-wall`
     // to its own share, the same rule paints the pane's fill; inside a free float it paints the
-    // float's fill, the popover's firmer share of `--panel`. The body tells what it holds how tall
-    // the strip is (`--group-strip`), so a table's sticky header row stands under the strip
-    // (ui/display/table/Table.svelte).
+    // float's fill, the popover's firmer share of `--panel`.
+    //
+    // The body tells what it holds how tall the strips above it are together (`--group-strip`), so
+    // a group nested in the body stands its strip under this one, and a table's sticky header row
+    // stands under them all (ui/display/table/Table.svelte). A custom property cannot read itself
+    // on one element, so the section carries the height from above in a second one
+    // (`--group-above`), which the strip's `top` and the body's sum read.
     //
     // The line inside the strip is the fold control (FoldControl.svelte beside it), a bare button
     // named "Fold <name>" or "Unfold <name>" with the fold glyph of the state, then the group's
@@ -30,23 +34,29 @@
     //
     // A folded group's body stays in the page, hidden until found: its cards stay mounted, so a
     // reveal finds them, and the browser's find-in-page searches them; a match inside fires
-    // `beforematch`, which unfolds the group through `ontoggle`. It holds no state: each view keeps
-    // which of its groups are folded, a pane in its saved state under `folded`
-    // (state/shared/page/folds.ts `instanceFolded`, `foldedWith`).
+    // `beforematch`, which unfolds the group through `ontoggle`. The event bubbles, so a match in a
+    // folded group inside a folded group reaches both, and `found` presses only a folded group, so
+    // each opens once. The Gallery group of Status does not hold to this: it starts folded and
+    // draws nothing while closed, so the Gallery's body is mounted when it opens, and neither a
+    // reveal nor find-in-page reaches a card in it while it is closed. The component holds no
+    // state: each view keeps which of its groups are folded, a pane in its saved state under
+    // `folded` (state/shared/page/folds.ts `instanceFolded`, `foldedWith`).
     //
     // The views that draw it: the project boards (views/boards/projects/Projects.svelte); Focus's
     // `columns` clusters, the lanes of a `full_width` cluster and the band
     // (views/boards/focus/lanes/Lanes.svelte, views/boards/focus/Band.svelte); Venues; Lit Watch's
     // buckets and Dismissed (views/feeds/radar/Bucket.svelte, Radar.svelte); Position Leads'
     // Expired and run log; the Inbox's sections and Triaged; LinkedIn's Ideas and Posted; the
-    // Audit's sections and Muted; the Slides groups and their order (Slides.svelte, Order.svelte);
-    // the Pillars sections; the session list's workspace groups and Terminals
-    // (SessionWorkspace.svelte, TerminalRows.svelte); the Catalogue's groups; the Keys sections;
-    // the Settings groups (views/system/workbench/settings/List.svelte); the Gallery's sections;
-    // the Person page's blocks; the record page's blocks (Entry.svelte, EntryFolder.svelte,
+    // Findings view's Files and Audit, with the Audit's kinds and Muted nested in it
+    // (views/system/findings/AuditSection.svelte); the Slides groups and their order
+    // (Slides.svelte, Order.svelte); the Pillars sections; the session list's workspace groups and
+    // Terminals (SessionWorkspace.svelte, TerminalRows.svelte); the Catalogue's groups; the Keys
+    // sections; the Settings groups (views/system/workbench/settings/List.svelte); the Person
+    // page's blocks; the record page's blocks (Entry.svelte, EntryFolder.svelte,
     // views/shared/forms/entry/Referrers.svelte); the project page's blocks (Project.svelte,
-    // Latex.svelte); the editor view's form sections; the Status view's line counts and hooks
-    // (LineCounts.svelte, Hooks.svelte); the Processes view's app hosts (AppHosts.svelte); the
+    // Latex.svelte); the editor view's form sections; the Status view's line counts, hooks and
+    // Gallery, with the Gallery's sections nested in it (LineCounts.svelte, Hooks.svelte,
+    // views/system/status/Gallery.svelte); the Processes view's app hosts (AppHosts.svelte); the
     // Usage view's Live and History; the HPC view's capacity, disk quota, finished jobs and Login
     // node (Capacity.svelte, Quota.svelte, Recent.svelte, Login.svelte); each provider of
     // Account setup; and the Update tray's Schedules and Tasks (shell/rail/UpdateTray.svelte,
@@ -96,7 +106,7 @@
         ...attributes
     }: Props = $props();
 
-    /** The strip's height, which a sticky header row inside the body stands under. */
+    /** The strip's height, which a nested strip and a sticky header row in the body stand under. */
     let strip = $state(0);
 
     /** Unfold a folded group, as a find-in-page match inside it asks. */
@@ -129,7 +139,7 @@
     </h3>
     <div
         class="body"
-        style:--group-strip={`${strip}px`}
+        style:--group-strip={`calc(var(--group-above) + ${strip}px)`}
         hidden={open ? false : 'until-found'}
         onbeforematch={found}
     >
@@ -139,6 +149,7 @@
 
 <style>
     .group {
+        --group-above: var(--group-strip, 0px);
         min-width: 0;
     }
 
@@ -146,7 +157,7 @@
        after it, and the actions stand at the line's right end. */
     .strip {
         position: sticky;
-        top: 0;
+        top: var(--group-above);
         z-index: 2;
         display: flex;
         align-items: center;

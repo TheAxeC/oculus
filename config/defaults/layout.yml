@@ -177,9 +177,7 @@ arrangements:
               view:
                 - { view: status, pinned: true }
                 - { view: findings, pinned: true }
-                - { view: audit, pinned: true }
                 - { view: history, pinned: true }
-                - { view: gallery, pinned: true }
   apps:
     root:
       kind: split
@@ -304,7 +302,7 @@ boards:
     label_mode: short
 
 
-# The views that draw a count, by view id, and where each count is drawn: `tab: true` draws it on the view's tabs and in the view catalogue, and `rail: true` adds it to the badge of the rail button of the page the view's tab is on, whose tooltip names the view with its count. A view with no row draws no count and gives the rail nothing. A board counts its cards by the categories of `categories` in config/catalogs/vocab.yml, and gives the rail the count of its projects in the rows carrying `rail: true`, in the colour `rail_color` of config/catalogs/vocab.yml gives, and 0 when none of its projects is in such a row. A collection counts the entries whose status is one of `match`, compared trimmed and in lower case, says `label` on hover, and draws the colour of the first status of `match` in `statuses` of config/catalogs/vocab.yml, so `in-prep` on the Funding tab is the violet that `statuses` gives `in-prep`, unless `tone` (red, amber or green) sets an urgency class, used where a count means "act" rather than "here is how many"; a collection with no `match` counts nothing. Applications counts the applications open under `focus:` of config/defaults/behavior.yml or the open workspace file's `settings:`, in green. `days` is for Position Leads alone: it counts the open leads whose deadline falls from today through that many days ahead, in amber. The other views count what their tab shows: Inbox the threads awaiting an answer, Calendar today's events not ended, Repositories the changes, Problems, Findings and Audit their open rows, Processes the programs running, Live HPC its running and pending jobs, and the Session list the sessions needing input. A row whose id is no view that draws a count, a field other than these, a `days` on any row but `leads`, or a `tab` or `rail` that is not true or false is a finding of the config check. A hub's .oculus/config.yml may override `counts` whole.
+# The views that draw a count, by view id, and where each count is drawn: `tab: true` draws it on the view's tabs and in the view catalogue, and `rail: true` adds it to the badge of the rail button of the page the view's tab is on, whose tooltip names the view with its count. A view with no row draws no count and gives the rail nothing. A board counts its cards by the categories of `categories` in config/catalogs/vocab.yml, and gives the rail the count of its projects in the rows carrying `rail: true`, in the colour `rail_color` of config/catalogs/vocab.yml gives, and 0 when none of its projects is in such a row. A collection counts the entries whose status is one of `match`, compared trimmed and in lower case, says `label` on hover, and draws the colour of the first status of `match` in `statuses` of config/catalogs/vocab.yml, so `in-prep` on the Funding tab is the violet that `statuses` gives `in-prep`, unless `tone` (red, amber or green) sets an urgency class, used where a count means "act" rather than "here is how many"; a collection with no `match` counts nothing. Applications counts the applications open under `focus:` of config/defaults/behavior.yml or the open workspace file's `settings:`, in green. `days` is for Position Leads alone: it counts the open leads whose deadline falls from today through that many days ahead, in amber. The other views count what their tab shows: Inbox the threads awaiting an answer, Calendar today's events not ended, Repositories the changes, Problems its open rows, Findings its file findings and the open findings of its Audit section, Processes the programs running, Live HPC its running and pending jobs, and the Session list the sessions needing input. A row whose id is no view that draws a count, a field other than these, a `days` on any row but `leads`, or a `tab` or `rail` that is not true or false is a finding of the config check. A hub's .oculus/config.yml may override `counts` whole.
 counts:
   projects:     { tab: true, rail: true }
   supervision:  { tab: true, rail: true }
@@ -318,7 +316,6 @@ counts:
   repositories: { tab: true, rail: true }
   problems:     { tab: true, rail: true }
   findings:     { tab: true, rail: true }
-  audit:        { tab: true, rail: true }
   processes:    { tab: true, rail: false }
   hpc:          { tab: true, rail: false }
   session-list: { tab: true, rail: true }

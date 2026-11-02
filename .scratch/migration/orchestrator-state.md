@@ -24,21 +24,6 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 
 ```yaml
 dispatch:           # steps in flight, up to six (Z632)
-- step: O124
-  base: d3a38520a
-  worktree: .agents/worktrees/migration-O124
-  executor: agent
-  worker: claude:opus
-  session_id: aa1e08bc105965980 (claude-opus-5-5)
-  launched: 2026-11-02
-  report: .scratch/migration/agents/reviews/O124-report.md
-  round: 1
-  reviewer_report: agents/reviews/O124-refuter.md (a430c5101b0e5d36b, claude-opus-5-5, 303279 tokens, 41 tool uses, 24 min 38 s); over round 1: a33bae9f11781ca38, claude-opus-5-5, 260684 tokens, 34 tool uses, 13 min 14 s
-  builder_usage: first run 243408 tokens, 30 tool uses, 8 min 3 s; build 131563 tokens, 196 tool uses, 40 min 20 s (the notice closing the build; two interim notices read 336661 and 349063 tokens); round 1 196669 tokens, 45 tool uses, 23 min 32 s
-  cases: agents/briefs/O124-cases.md
-  brief_check: agents/reviews/O124-brief-check.md (a245ccc2df2413f9c, claude-opus-5-5, 236996 tokens, 28 tool uses, 9 min 55 s)
-  shared_paths: docs/HELP.md and docs/diagrams with migration O122, different lines and generated files, simple to merge
-  landing: cherry-picking
 - step: O123
   base: 3e2595261
   worktree: .agents/worktrees/migration-O123
@@ -48,7 +33,7 @@ dispatch:           # steps in flight, up to six (Z632)
   launched: 2026-11-02
   report: .scratch/migration/agents/reviews/O123-report.md
   round: 1
-  reviewer_report: agents/reviews/O123-refuter.md (a782a024916820caa, claude-opus-5-5, usage from its notice)
+  reviewer_report: agents/reviews/O123-refuter.md (a782a024916820caa, claude-opus-5-5, 88630 tokens, 56 tool uses, 17 min 56 s)
   builder_usage: first run 365848 tokens, 59 tool uses, 10 min 43 s; build 100660 tokens, 385 tool uses, 59 min 48 s
   cases: agents/briefs/O123-cases.md
   brief_check: agents/reviews/O123-brief-check.md (afb7b4f6cc7cbec97, claude-opus-5-5, 332174 tokens, 59 tool uses, 12 min 34 s)
@@ -190,6 +175,7 @@ Lifted 2026-09-30 by Axel's green light: the two round-1 refutations are saved, 
 Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with the three slots kept filled, open items booked and reported without ending the turn, and the order below. Before that, in force from 2026-09-29, Axel: the loop paused once D13b's reviewer and Q86c's builder were done; he then asked for Q83's landing and the slow-test work (Z64) done inline, with a report of how long each part of the verify list takes a builder. Nothing else is dispatched, no D13b landing, no Q86c review and no `/spec` Q102, until he says go. On his go the order is (Axel, 2026-09-30): `/refute` Q86c; `/spec` Q102 and its Sonnet 5.5 builder, the model check right after the launch; D13b's landing while those two run; Q88b into the slot D13b frees; Q103's look while the cluster answers.
 
 ## Open items (only what Axel must rule on; every report tells him these in plain words, decisions first, until he has ruled)
+- Open item 637 (2026-11-03), from O124's look. Over a wallpaper a group's sticky strip is painted at `wallpaper.panel_opacity` (0.8), so what scrolls under it shows at 20 %, sharp when `wallpaper.blur` is 0: in the Status pane's Gallery the bright chips can be read behind the Gallery and Chips strips. Without a wallpaper the strip is solid and nothing shows. This is the rule in `GroupHead.svelte` for every view, not O124's change; O124 only makes it easy to see. (a) Recommended, a judgment: inside a `Surface` or a tinted pane the strip paints solid `--panel`, for every view, so a heading never has text behind it; the cost is a slightly firmer band over the picture. (b) Keep the strip translucent as now; this is the lazy option, it leaves the headings hard to read over bright content.
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
@@ -785,6 +771,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-11-03 (O124 landed). O124 is on main (booked under O124 in `plan.md`, `agents/reviews/O124-landing.md`); `test:quick` passed in the gate and main equals the gate. In flight: O123 in repair round 1, its builder acbcf929837bf5594 running. Open items: 637.
 - 2026-11-03 (O122 landed). O122 is on main (booked under O122 in `plan.md`, `agents/reviews/O122-landing.md`), `test:quick` passed in the gate and main equals the gate. One fix at landing from the look: each row is measured as it is drawn. In flight: O123 built, its /refute next; O124 in repair round 1, its builder aa1e08bc105965980 running. Open items: none.
 - 2026-11-02 (O122 building). O122 builds at 4ffed7fbe. Queued: O123, O124. Open items: none.
 - 2026-11-02 (ruling 635). Steps O123 and O124 added to `plan.md`. Next: /spec O122. Open items: none.
