@@ -33,6 +33,7 @@ dispatch:           # steps in flight, up to six (Z632)
   launched: 2026-11-02
   report: .scratch/migration/agents/reviews/O121-report.md
   round: 0
+  cases: agents/briefs/O121-cases.md
   brief_check: agents/reviews/O121-brief-check.md (abcec94ed2b1de5b4, claude-opus-5-5, 192629 tokens, 20 tool uses, 8 min 23 s)
   landing: not-started
 ```
