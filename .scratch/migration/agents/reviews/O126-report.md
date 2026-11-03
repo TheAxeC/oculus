@@ -201,7 +201,7 @@ Every item of `briefs/O126-round1.md` is done. Open: one of the five runs of ver
 | 6. Paths split across lines | DONE | grep before and after below |
 | 7. The report | DONE | "How point 1 is built" and the Verify 1 paragraph rewritten; judgment calls, Visible changes, "What in the brief was wrong", the cases table's line numbers and the Files counts updated |
 
-Item 3, before and after. Before (the base): a title typed and not written, an armed Resume and the outcome row were held by the Details body and gone when the section closed, and the started row's time was read when the body was drawn. After round 0 they were held by `DetailsSection.svelte`, which stays mounted while closed, so they outlived a close. After round 1 they are held by `DetailsBody.svelte` again, which a closed section unmounts, so a close drops all four and closes the Details title field, and a reopen reads the time again. Rename, Pin and Resume on the head of a closed Details open the section first and then act.
+Item 3, before and after. Before (the base): a title typed and not written, an armed Resume and the outcome row were held by the Details body and gone when the section closed, and the started row's time was read when the body was drawn. After: they are held by `DetailsBody.svelte`, which a closed section unmounts, so a close drops all four and closes the Details title field, and a reopen reads the time again. Rename, Pin and Resume on the head of a closed Details open the section first and then act.
 
 Item 6. `grep -rn '/$'` over the step's changed files matches every comment that ends in `*/` or an empty `//`: 421 lines after the round. Filtered to lines that do not end in either, `xargs grep -n '/$' < files | grep -vE '\*/$|//$'`:
 

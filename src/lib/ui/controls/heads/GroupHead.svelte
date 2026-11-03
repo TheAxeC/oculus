@@ -54,8 +54,7 @@
     // Expired and run log; the Inbox's sections and Triaged; LinkedIn's Ideas and Posted; the
     // Findings view's Files and Audit, with the Audit's kinds and Muted nested in it
     // (views/system/findings/AuditSection.svelte); the Slides groups and their order
-    // (Slides.svelte, Order.svelte); the Pillars sections; the session list's workspace groups and
-    // Terminals (SessionWorkspace.svelte, TerminalRows.svelte); the Catalogue's groups; the Keys
+    // (Slides.svelte, Order.svelte); the Pillars sections; the Catalogue's groups; the Keys
     // sections; the Settings groups (views/system/workbench/settings/List.svelte); the Person
     // page's blocks; the record page's blocks (Entry.svelte, EntryFolder.svelte,
     // views/shared/forms/entry/Referrers.svelte); the project page's blocks (Project.svelte,

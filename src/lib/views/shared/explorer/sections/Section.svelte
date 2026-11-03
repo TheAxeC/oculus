@@ -6,7 +6,8 @@
     // Alt+Down step that move it among the sections when the caller hands them in, and the
     // section's own rows under it. The sections share the head and differ in their rows, so the
     // head is drawn here once. A section that counts nothing (the Session view's Details) gives no
-    // count and its head draws none.
+    // count and its head draws none. A section the caller sets right under a line of its own view
+    // draws no line across its head's top edge (`noTopLine`).
     //
     // `showActions` draws the head's control at full strength whether or not the pointer is over
     // the head, for a control a reader looks for before the pointer is there; without it the
@@ -36,6 +37,8 @@
         showActions?: boolean;
         /** What lets the head be dragged over the other sections' heads. */
         drag?: ItemDrag;
+        /** Leave out the line across the head's top edge, for a head right under a view's line. */
+        noTopLine?: boolean;
         /** The rows, each an `li` with role none around a row of level 2. */
         children: Snippet;
     };
@@ -52,11 +55,12 @@
         more,
         showActions = false,
         drag,
+        noTopLine = false,
         children
     }: Props = $props();
 </script>
 
-<TreeSection {label} id="head" {nav} {count} {open} {ontoggle} {showActions} {drag}>
+<TreeSection {label} id="head" {nav} {count} {open} {ontoggle} {showActions} {drag} {noTopLine}>
     {#snippet actions(reach: number)}
         {#if add !== undefined}
             <ToolButton

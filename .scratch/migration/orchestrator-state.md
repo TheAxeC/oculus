@@ -24,21 +24,6 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 
 ```yaml
 dispatch:           # steps in flight, up to six (Z632)
-- step: O126
-  base: 936a411b2
-  worktree: .agents/worktrees/migration-O126
-  executor: agent
-  worker: claude:opus
-  session_id: a60c985f78f84ef3c
-  model: claude-opus-5-5
-  launched: 2026-11-03
-  report: .scratch/migration/agents/reviews/O126-report.md
-  builder_usage: first run 285292 tokens, 66 tool uses, 8 min 29 s (handed back C1 and two points); after the cases ruling 299779 tokens, 179 tool uses, 33 min 21 s; round 1 156566 tokens, 132 tool uses, 17 min 59 s
-  round: 1
-  reviewer_report: .scratch/migration/agents/reviews/O126-refuter.md (a5a6eef1ec6ba505c, claude-opus-5-5, 304410 tokens, 92 tool uses, 13 min 50 s)
-  brief_check: .scratch/migration/agents/reviews/O126-brief-check.md (a6698c519c0fa9d0a, claude-opus-5-5, 239318 tokens, 72 tool uses, 9 min 27 s)
-  shared_paths: with O125, landed: `src/lib/ui/controls/heads/GroupHead.svelte` (O126 lines 57-58, O125 lines 11-20 and the removed rules) and `docs/HELP.md` (O126 lines 295 and 340-341, O125 line 571); separate lines, a simple merge at O126's landing.
-  landing: not-started
 - step: O127
   base: 0e374c303
   worktree: .agents/worktrees/migration-O127
@@ -48,7 +33,7 @@ dispatch:           # steps in flight, up to six (Z632)
   model: claude-opus-5-5
   launched: 2026-11-03
   report: .scratch/migration/agents/reviews/O127-report.md
-  builder_usage: first run 185001 tokens, 76 tool uses, 9 min 12 s
+  builder_usage: first run 185001 tokens, 76 tool uses, 9 min 12 s; round 1 255599 tokens, 53 tool uses, 9 min 47 s
   round: 1
   reviewer_report: .scratch/migration/agents/reviews/O127-refuter.md (a8e6e45d7bcf15b6b, claude-opus-5-5, 165569 tokens, 33 tool uses, 6 min 16 s)
   brief_check: .scratch/migration/agents/reviews/O127-brief-check.md (ad6df2830a9462837, claude-opus-5-5, 184411 tokens, 66 tool uses, 8 min 47 s)
@@ -791,6 +776,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-11-03 (O126 landed). O126 is on main (booked under O126 in `plan.md`, `agents/reviews/O126-landing.md`); `test:quick` passed in the gate and main equals the gate; one comment fixed at landing, Behaviour 1 kept; the look taken on a scratch server on 8797 from the gate, stopped after. In flight (1 of 6): O127, its round 1 under review (a86efa7addc7ea610). Queued: none. Open items: none.
 - 2026-11-03 (O127 round 1 sent). O127's review a8e6e45d7bcf15b6b (claude-opus-5-5) is saved in `agents/reviews/O127-refuter.md`: items 1-6 hold, C1-C9 and C11 met, C10 left to the look; findings Spec 1, Standards 1-2. Round 1 (`agents/briefs/O127-round1.md`, copied into the worktree with the review; snapshot `.agents/worktrees/migration-O127-round-1`) carries ruling 642 (a) and the three findings. O126's reviewer over round 1 ac782cca5d8c0891d runs. In flight (2 of 6): O126 (round 1 under review), O127 (repair round 1). Open items: none.
 - 2026-11-03 (O126 round 1 under review). O126's builder reported round 1 (appended to `agents/reviews/O126-report.md`, saved in the main ledger; usage under builder_usage); the orchestrator read the round's delta against `.agents/worktrees/migration-O126-round-1` (17 listed paths changed, 2 new: TreeSection.svelte and Section.svelte). Its reviewer over round 1, ac782cca5d8c0891d (claude-opus-5-5), runs. O127's reviewer a8e6e45d7bcf15b6b runs. In flight (2 of 6): O126, O127, both under review. Open items: none.
 - 2026-11-03 (O127 under review). O127's builder reported (`agents/reviews/O127-report.md`, saved in the main ledger, usage under builder_usage) and the orchestrator read the whole diff (8 tracked files, 67 lines added, 22 removed). Its reviewer a8e6e45d7bcf15b6b (claude-opus-5-5) runs. In flight (2 of 6): O126 (repair round 1), O127 (under review). Queued: none. Open items: none (642 ruled (a), carried by O127's repair round).

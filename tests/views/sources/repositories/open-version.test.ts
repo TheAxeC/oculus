@@ -6,7 +6,7 @@
 import { describe, expect, it } from 'vitest';
 import { engineDir, loadConfig, textCatalog } from '../../../../src/lib/data/sources/config.ts';
 import { setCatalog, t } from '../../../../src/lib/state/shared/words/text.ts';
-import { changeMenu } from '../../../../src/lib/views/sources/repositories/menus/change-menu.ts';
+import { changeMenu } from '../../../../src/lib/views/shared/changes/groups/change-menu.ts';
 import { headTabState } from '../../../../src/lib/state/sources/repositories/file-git.ts';
 import { headOf } from '../../../../src/lib/state/sessions/source/draft.ts';
 import { headUrl } from '../../../../src/lib/state/sources/repositories/repositories.ts';

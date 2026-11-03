@@ -4,10 +4,11 @@
 // (`sessionRowWords`).
 //
 // A row of the tree has an id of its own, its kind before its key, so a session, a terminal and a
-// group with the same key stay apart. A fold is kept in the pane's state under its key: `list` for
-// the fold headed Sessions, `terminals` for the Terminals group, and a workspace's path for its
-// group, the workspace with no folder under the empty key. A path is absolute, so it meets neither
-// of the two words.
+// group with the same key stay apart. A group's head is a group row of the tree, as a change group
+// of the Repositories view is, and its rows stand one step further in. A fold is kept in the
+// pane's state under its key: `list` for the fold headed Sessions, `terminals` for the Terminals
+// group, and a workspace's path for its group, the workspace with no folder under the empty key.
+// A path is absolute, so it meets neither of the two words.
 
 import type { MenuGroup, MenuItem } from '$lib/ui/menu/menu-items';
 import type { KeyRow } from '$lib/ui/tree/tree-keys';
@@ -56,8 +57,8 @@ type RowGroup = { key: string; rows: string[] };
 
 /**
  * The list's rows as the keyboard reads them, in the order they are drawn: the fold's head, each
- * group's head and the rows of a group that is open. A folded group keeps its rows in the page,
- * hidden, so they are left out here and the arrows pass them by.
+ * group's row and the rows of a group that is open. A folded group's rows are not drawn, so they
+ * are left out here.
  */
 export function listRows(groups: RowGroup[], open: (key: string) => boolean): KeyRow[] {
     const head: KeyRow = { id: LIST_FOLD, parent: null, open: open(LIST_FOLD) };

@@ -354,7 +354,7 @@ One entry per guarantee. An entry keeps one test per unit it covers: each API ro
   Code: `src/lib/state/sessions/terminal/viewport.ts` and `src/lib/views/sessions/terminal/grid/kept-viewport.ts`.
   Test: `tests/state/sessions/terminal/viewport.test.ts`, describe 'a terminal grid drawn again', every row.
 - G104. A Staged or Changes row's menu offers Open File (HEAD) and Open File (Index); each opens a read-only tab of that version, and the Index tab keeps the staged side across a reload.
-  Code: `changeMenu` in `src/lib/views/sources/repositories/menus/change-menu.ts`; `openHead` and `openIndex` in `src/lib/state/sources/repositories/repositories.svelte.ts`; `headTabState` in `src/lib/state/sources/repositories/file-git.ts`; `headOf` in `src/lib/state/sessions/source/draft.ts`.
+  Code: `changeMenu` in `src/lib/views/shared/changes/groups/change-menu.ts`; `openHead` and `openIndex` in `src/lib/state/sources/repositories/repositories.svelte.ts`; `headTabState` in `src/lib/state/sources/repositories/file-git.ts`; `headOf` in `src/lib/state/sessions/source/draft.ts`.
   Test: `tests/views/sources/repositories/open-version.test.ts`, describe 'the versions a row of the Changes section opens', every row and 'gives the HEAD tab and the Index tab of one file two ids'.
 - G105. A Terminal tab ends a terminal only at the second press of that terminal's own Kill: the first press arms it, a press of another row's Kill arms that row, and a press elsewhere or a terminal joining the tab takes the arm off.
   Code: `createKillArm` in `src/lib/views/sessions/terminal/list/kill-arm.svelte.ts`.

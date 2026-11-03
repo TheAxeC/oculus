@@ -7,15 +7,16 @@ text:
         cache_share: '{0}% cached'
         cache_ttl: '{0} ttl'
         cache_ttl_none: no ttl
-        clear_glyph: clear
-        clear_title: Clear Title
         context: context
         context_num: '{0} / {1}'
         detail_bar: Session controls
         detail_glyph: detail
         detail_title: Session
+        details_model: Model
+        details_session: Session
+        details_usage: Usage
         f_branch: branch
-        f_cwd: cwd
+        f_cwd: folder
         f_effort: effort
         f_hook: hook
         f_kind: kind
@@ -29,14 +30,9 @@ text:
         pin_label: Pin
         pin_scored: (scored)
         pin_tip: file this session under a project folder instead of the one its files scored
-        rename_glyph: check
-        rename_label: Title
-        rename_placeholder: the session's own title
-        rename_tip: show this session under a name of your own
         resume: Resume in a terminal
         resume_confirm: Press again to run the agent again in {0}
         resume_glyph: goto
-        resume_label: Resume
         resume_live: This session is still running. It can be resumed once it has ended.
         resume_unknown: The snapshot no longer holds this session.
         section_details: Details

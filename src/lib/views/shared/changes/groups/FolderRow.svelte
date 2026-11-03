@@ -1,12 +1,12 @@
 <script lang="ts">
-    // Layer 3, partial of views/sources/repositories/changes/Changes.svelte. One folder of a change
-    // group in the view's tree mode: a row with a chevron that opens and closes it, named by its
-    // whole path when a chain of folders with one child each was joined into it. Its controls, on
-    // hover and in its right-click menu (menus/change-menu.ts), act on every path under the folder
-    // in one write: Unstage in Staged, Discard (asking first, naming how many paths and the folder)
-    // and Stage in Changes, Stage in Untracked; the menu adds Add to .gitignore, and Discard in
-    // Untracked sends the paths to the Trash behind the Trash question. All are disabled while a
-    // write runs on the repository.
+    // Layer 3, shared view partial of GroupList.svelte beside it. One folder of a change group in
+    // the tree mode: a row with a chevron that opens and closes it, named by its whole path when a
+    // chain of folders with one child each was joined into it, at the level and indent the group
+    // list gives it. Its controls, on hover and in its right-click menu (change-menu.ts beside it),
+    // act on every path under the folder in one write: Unstage in Staged, Discard (asking first,
+    // naming how many paths and the folder) and Stage in Changes, Stage in Untracked; the menu adds
+    // Add to .gitignore, and Discard in Untracked sends the paths to the Trash behind the Trash
+    // question. All are disabled while a write runs on the repository.
 
     import TreeItem from '$lib/ui/tree/TreeItem.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
@@ -16,21 +16,20 @@
     import { folderId, type FolderRow } from '$lib/state/sources/repositories/change-tree';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
-    import {
-        askDiscardFolder,
-        folderMenu,
-        folderPicked,
-        type MenuGroupId
-    } from '../menus/change-menu';
+    import { askDiscardFolder, folderMenu, folderPicked, type MenuGroupId } from './change-menu';
 
     type Props = {
         root: string;
         group: MenuGroupId;
         row: FolderRow;
         nav: TreeNav;
+        /** The tree level of the row: one below its group, and one more for each folder above. */
+        level: number;
+        /** The indent guides the row draws. */
+        depth: number;
         open: boolean;
         busy: boolean;
-        /** Open or close the folder, by its id in the instance's closed list. */
+        /** Open or close the folder, handed its id in the tree. */
         ontoggle: (id: string) => void;
         /** Ask before a write that loses work, in the view's own dialog. */
         ask: (message: string, detail: string, act: () => void, confirm?: string) => void;
@@ -38,7 +37,8 @@
         measure: Attachment<HTMLElement>;
     };
 
-    let { root, group, row, nav, open, busy, ontoggle, ask, measure }: Props = $props();
+    let { root, group, row, nav, level, depth, open, busy, ontoggle, ask, measure }: Props =
+        $props();
 
     const { repositories } = useState();
 
@@ -73,8 +73,8 @@
             name={row.path}
             {id}
             {nav}
-            level={3 + row.depth}
-            depth={2 + row.depth}
+            {level}
+            {depth}
             expanded={open}
             onclick={() => ontoggle(id)}
         >

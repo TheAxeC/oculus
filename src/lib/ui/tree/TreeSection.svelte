@@ -5,7 +5,8 @@
     // Whether it is open is the caller's, so a view keeps it in its instance state and a section
     // closed before a tab switch is closed after it. The caller may draw the head's name itself,
     // through `words`, and give the head an accessible name that says more than the name drawn,
-    // through `name`, as a row of ui/tree/TreeItem.svelte takes both.
+    // through `name`, as a row of ui/tree/TreeItem.svelte takes both. A line runs across the
+    // head's top edge, which `noTopLine` leaves out under a line the view draws itself.
 
     import type { Snippet } from 'svelte';
     import TreeItem from './TreeItem.svelte';
@@ -44,6 +45,11 @@
         showActions?: boolean;
         /** What lets the head be dragged over the heads of the other sections of its view. */
         drag?: ItemDrag;
+        /**
+         * Leave out the line across the head's top edge, for a section that stands right under a
+         * line its view draws itself; the line is drawn when this is not given.
+         */
+        noTopLine?: boolean;
         /** The rows, each an `li` with role none around a row of level 2. */
         children?: Snippet;
     };
@@ -63,11 +69,12 @@
         actions,
         showActions = false,
         drag,
+        noTopLine = false,
         children
     }: Props = $props();
 </script>
 
-<div class="section">
+<div class="section" class:bare={noTopLine}>
     <TreeItem
         {label}
         {name}
@@ -99,6 +106,10 @@
         flex-direction: column;
         min-width: 0;
         border-top: 1px solid var(--line);
+    }
+
+    .section.bare {
+        border-top: none;
     }
 
     .list {

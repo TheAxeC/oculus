@@ -1,17 +1,21 @@
 <script lang="ts">
     // Layer 3, shared view. One session in four sections built as the sections under the Files tree
-    // are (SessionSection.svelte): Details, what the session is and the controls that pin, rename
-    // and resume it (DetailsBody.svelte); Changes, the files it touched and the repository it works
-    // in (ChangesTouched.svelte, ChangesRepository.svelte); Timeline, the turns it took and what
-    // happened in each (TimelineTurns.svelte); and Agents, the subagents it dispatched
-    // (AgentRows.svelte). The Sessions tab of the Explorer and a Session tab both draw it, each for
-    // the session it shows.
+    // are (SessionSection.svelte): Details, what the session is in three groups of one-line rows,
+    // with the controls that rename, pin and resume it on its head (details/DetailsSection.svelte);
+    // Changes, the files it touched and the repository it works in, each a group row of the tree
+    // (changes/ChangesSection.svelte); Timeline, the turns it took and what happened in each
+    // (TimelineTurns.svelte); and Agents, the subagents it dispatched (AgentRows.svelte). The
+    // Sessions tab of the Explorer and a Session tab both draw it, each for the session it shows.
     //
     // The tab that draws it keeps which sections are closed and the order they are drawn in with
     // its own state (session-sections.ts), so a reload, a switch of tab and a pick of another
-    // session keep them. Each head is dragged among the others, and moved by Alt+Up and Alt+Down,
-    // with the drag the Files view moves its section heads with
-    // (views/shared/explorer/sections/list-drag.svelte.ts).
+    // session keep them, and keeps the folds of the sections' group rows in its view state the same
+    // way. Each head is dragged among the others, and moved by Alt+Up and Alt+Down, with the drag
+    // the Files view moves its section heads with
+    // (views/shared/explorer/sections/list-drag.svelte.ts). The Sessions tab hands in `fields`, the
+    // title field it keeps open, so Details' field and the list's are one at a time, and `divided`,
+    // since its divider stands right above the sections, so the first section in the order draws
+    // no line across its head's top edge; a Session tab hands neither.
 
     import { createListDrag } from '$lib/views/shared/explorer/sections/list-drag.svelte';
     import type { GroupedSession } from '$lib/state/client/selectors.svelte';
@@ -19,11 +23,11 @@
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
     import AgentRows from './AgentRows.svelte';
-    import ChangesRepository from './ChangesRepository.svelte';
-    import ChangesTouched from './ChangesTouched.svelte';
-    import DetailsBody from './DetailsBody.svelte';
+    import ChangesSection from './changes/ChangesSection.svelte';
+    import DetailsSection from './details/DetailsSection.svelte';
     import SessionSection from './SessionSection.svelte';
     import TimelineTurns from './TimelineTurns.svelte';
+    import type { TitleFields } from './title-field';
     import {
         rowKey,
         sectionIsOpen,
@@ -37,12 +41,21 @@
         layout: { instanceLayoutState, restateInstance }
     } = useState();
 
-    /** `owner` is the tab that keeps the sections' state; `record` the session they show. */
-    let { owner, record }: { owner: string; record: GroupedSession } = $props();
+    type Props = {
+        /** The tab that keeps the sections' state. */
+        owner: string;
+        /** The session the sections show. */
+        record: GroupedSession;
+        /** The title field the tab keeps open, for a tab that also draws the list's. */
+        fields?: TitleFields;
+        /** Whether the tab draws a line right above the sections. */
+        divided?: boolean;
+    };
+
+    let { owner, record, fields, divided = false }: Props = $props();
 
     const saved = $derived(instanceLayoutState(owner));
     const order = $derived(sectionOrder(saved));
-    const files = $derived(record.files);
     const turns = $derived(timelineTurns(record.timeline));
     /** Newest first by the moment each started, an agent with no stamp last. */
     const agents = $derived(newestFirst(record.agents));
@@ -62,45 +75,33 @@
     function toggle(id: SectionId): void {
         restateInstance(owner, sectionToggled(saved, id));
     }
+
+    /** Whether a section stands right under the tab's line, and so draws none of its own. */
+    function underLine(id: SectionId): boolean {
+        return divided && order[0] === id;
+    }
 </script>
 
 <div class="sections">
     {#each order as id (id)}
         {#if id === 'details'}
-            <SessionSection
-                {id}
-                label={t('sessions.section_details')}
-                rows={[]}
+            <DetailsSection
+                {record}
+                {fields}
                 open={sectionIsOpen(saved, id)}
                 ontoggle={() => toggle(id)}
                 move={move(id)}
-            >
-                {#snippet body()}
-                    <DetailsBody {record} />
-                {/snippet}
-            </SessionSection>
+                noTopLine={underLine(id)}
+            />
         {:else if id === 'changes'}
-            <SessionSection
-                {id}
-                label={t('sessions.section_changes')}
-                count={files.length}
-                rows={files.map((file) => rowKey('file', file.path))}
+            <ChangesSection
+                {owner}
+                {record}
                 open={sectionIsOpen(saved, id)}
                 ontoggle={() => toggle(id)}
                 move={move(id)}
-            >
-                {#snippet body(nav)}
-                    <ChangesTouched
-                        recordId={record.id}
-                        {files}
-                        workspace={record.workspace}
-                        {nav}
-                    />
-                    <li role="none">
-                        <ChangesRepository {record} />
-                    </li>
-                {/snippet}
-            </SessionSection>
+                noTopLine={underLine(id)}
+            />
         {:else if id === 'timeline'}
             <SessionSection
                 {id}
@@ -110,6 +111,7 @@
                 open={sectionIsOpen(saved, id)}
                 ontoggle={() => toggle(id)}
                 move={move(id)}
+                noTopLine={underLine(id)}
             >
                 {#snippet body()}
                     <li role="none">
@@ -122,10 +124,11 @@
                 {id}
                 label={t('sessions.section_agents')}
                 count={agents.length}
-                rows={agents.map((agent) => rowKey('agent', agent.id))}
+                rows={agents.map((agent) => ({ id: rowKey('agent', agent.id), parent: 'head' }))}
                 open={sectionIsOpen(saved, id)}
                 ontoggle={() => toggle(id)}
                 move={move(id)}
+                noTopLine={underLine(id)}
             >
                 {#snippet body(nav)}
                     <AgentRows {agents} session={record} {nav} />
@@ -138,7 +141,8 @@
 <style>
     /* The sections' words are the size of a sidebar's, `--fs-sm`, the boxes to type in among them.
        Each section's head stands at the tree's own heading size, `--tree-heading-font`, and a
-       section's own sizes (a label, a sub-heading, a row) stand as each section sets them. */
+       section's own sizes (a group row, a row, a line of the commit box) stand as each section
+       sets them. */
     .sections {
         display: flex;
         flex-direction: column;

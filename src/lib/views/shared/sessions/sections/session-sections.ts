@@ -6,7 +6,15 @@
 // (state/workbench/layout/tabs/instances.ts). A section starts open, and a list the state holds
 // wrongly (a name no section has, a section twice, a value that is no list) is read as if the bad
 // part were absent.
+//
+// The Changes section's groups draw in the tab's `mode` (`list` or `tree`, the list when the state
+// holds neither) and select the change rows its `picked` names, the keys and values the
+// Repositories view keeps of its own (state/sources/repositories/repositories.ts
+// `RepositoriesView`), each tab its own. They live in the tab's view state, beside the folds of the
+// groups (`folded`, views/shared/card/pane-fold.ts).
 
+import { z } from 'zod';
+import { fieldItemsShape, readAs } from '$lib/data/shapes/shapes';
 import { instanceMap } from '$lib/state/workbench/layout/instance';
 
 /** The sections in the order a new tab draws them. */
@@ -48,6 +56,28 @@ export function sectionToggled(state: unknown, id: SectionId): Record<string, un
 /** The tab's state with its sections in this order. */
 export function sectionsOrdered(state: unknown, order: string[]): Record<string, unknown> {
     return { ...instanceMap(state), sections: order.filter(isSection) };
+}
+
+/** How a tab draws a session's change groups: as lists or folders, and the change rows selected. */
+export type ChangesView = { mode: 'list' | 'tree'; picked: string[] };
+
+const changesViewShape = z.object({
+    mode: z.enum(['list', 'tree']).catch('list'),
+    picked: fieldItemsShape
+});
+
+/** The tab's mode and selected change rows, each id once; the list and none for any other state. */
+export function changesViewOf(state: unknown): ChangesView {
+    const read = readAs(changesViewShape, state);
+    return { mode: read?.mode ?? 'list', picked: [...new Set(read?.picked ?? [])] };
+}
+
+/** The tab's view state with its mode or its selected change rows changed. */
+export function withChangesView(
+    state: unknown,
+    part: Partial<ChangesView>
+): Record<string, unknown> {
+    return { ...instanceMap(state), ...part };
 }
 
 /** The id of a row in a section's tree, from the kind of row and what it stands for. */

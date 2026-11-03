@@ -128,3 +128,181 @@ Cases of the brief's "Cases":
 - How the step's lines of `GroupHead.svelte` and `docs/HELP.md` merge with O125's at landing: settled by the cherry-pick in the gate.
 
 Reviewer usage: a5a6eef1ec6ba505c, claude-opus-5-5, 304410 tokens, 92 tool uses, 13 min 50 s.
+
+## Repair round 1, refuted
+
+```
+$ shasum docs/diagrams/* > scratch; PATH=/Users/axelfaes/.nvm/versions/node/v24.21.0/bin:$PATH npm run diagrams   (worktree root)
+(lists every docs/diagrams/*.dot and *.svg; shasum before and after compare equal: "diagrams unchanged")
+
+$ PATH=/Users/axelfaes/.nvm/versions/node/v24.21.0/bin:$PATH npm run test:quick   (worktree root, run once)
+ok      prettier (0.7 s): All matched files use Prettier code style!
+ok      ASCII gate (0.8 s)
+ok      svelte-kit sync (2.3 s)
+ok      eslint (2.5 s)
+ok      svelte-check (8.8 s): 1793704211049 COMPLETED 584 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest (16.1 s): Duration  5.83s (transform 6.71s, setup 0ms, import 15.79s, tests 151ms, environment 1ms)
+ok      vitest slow (24.5 s): Duration  14.19s (transform 3.48s, setup 0ms, import 5.41s, tests 8.63s, environment 0ms)
+ok      vitest checks (41.6 s): Duration  31.09s (transform 12.73s, setup 0ms, import 27.18s, tests 43.21s, environment 2ms)
+test:quick: 44.2 s; every command passed
+test:quick: not covered: tests that reach no changed file within the import depth,
+            other than the checks under tests/checks/source and tests/checks/tree,
+            which run for any change under src, tests or utils; the build, the lint
+            of unchanged files
+(the changed set is git's diff since HEAD plus the untracked files, tests/tiers/quick.mjs:99-103, so TreeSection.svelte and Section.svelte are in it)
+
+$ npx vitest run tests/views/sources/repositories/open-version.test.ts tests/checks/source/keys.test.ts tests/checks/tree/boundaries.test.ts tests/checks/tree/size.test.ts   (as the brief gives it, three runs, whole output kept)
+run 1, exit 0, the whole output:
+ RUN  v4.1.11 /Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O126
+
+ Test Files  4 passed (4)
+      Tests  37 passed (37)
+   Start at  12:11:07
+   Duration  21.82s (transform 11.47s, setup 0ms, import 21.97s, tests 10.80s, environment 1ms)
+run 2, exit 0:  Test Files  4 passed (4) /      Tests  37 passed (37)
+run 3, exit 0:  Test Files  4 passed (4) /      Tests  37 passed (37)
+(no run failed, so no failing test to quote)
+
+$ grep -rn --exclude=local.yml 'ChangeGroups\|sec-h\|ch_tree' src config
+(nothing; exit 1)
+
+$ sh utils/unused-exports.sh > scratch; diff ../O126-base/unused-exports.txt scratch
+219a220
+> src/lib/views/shared/changes/groups/change-menu.ts: CHANGE_OPEN_CHANGES, CHANGE_OPEN_HEAD, CHANGE_OPEN_FILE, CHANGE_STAGE, CHANGE_UNSTAGE, CHANGE_DISCARD, CHANGE_IGNORE, CHANGE_COMPARE_WORKSPACE, CHANGE_REVEAL
+224d224
+< src/lib/views/sources/repositories/menus/change-menu.ts: CHANGE_OPEN_CHANGES, CHANGE_OPEN_HEAD, CHANGE_OPEN_FILE, CHANGE_STAGE, CHANGE_UNSTAGE, CHANGE_DISCARD, CHANGE_IGNORE, CHANGE_COMPARE_WORKSPACE, CHANGE_REVEAL
+
+$ sh utils/folder-check.sh
+(no output; exit 0)
+
+$ LC_ALL=C perl -ne '<the spec.md ASCII gate>' $(find src tests bin config -type f ! -name local.yml)
+find: bin: No such file or directory
+(no line printed; exit 0)
+
+Round item 6's grep, over the 36 added or modified files of the step (src, tests, config, docs/HELP.md, diagrams left out):
+$ xargs grep -n '/$' < files | wc -l
+421
+$ xargs grep -n '/$' < files | grep -vE '\*/$|//$'
+(nothing; exit 1)
+
+Commands the report quotes, rerun:
+$ wc -l, now (base) -- every count of the round's file table reproduces:
+TreeSection.svelte 123 (112); Section.svelte 79 (75); SessionSection.svelte 92 (56); SessionSections.svelte 161 (157); ChangesSection.svelte 155 (new); ChangesRepository.svelte 195 (new); detail-facts.ts 271 (new); DetailsSection.svelte 196 (new); DetailsBody.svelte 271 (new); title-field.ts 47 (new); SessionList.svelte 500 (467); Customizations.svelte 321 (312); ChangeRow.svelte 335 (new); GroupList.svelte 366 (new); docs/HELP.md 617 (617)
+$ grep -n 'z-index' src/lib/views/sessions/session-list/SessionList.svelte
+(nothing; exit 1)
+$ git diff --stat 936a411b2 -- src/lib/ui/tree/TreeItem.svelte src/lib/views/sessions/session-detail/SessionDetail.svelte config/text/views/sessions/session-list.yml
+(nothing)
+$ ls <folder> | wc -l
+sections 8; sections/changes 6; sections/details 3; shared/changes 6; shared/changes/groups 6
+$ grep -rnE "sessions\.<key>\b" src tests | wc -l, per key
+clear_glyph 0, clear_title 0, rename_glyph 0, rename_label 0, rename_placeholder 0, rename_tip 0, resume_label 0, ch_tree 0; resume_unknown 1, resume_live 2, pin_tip 1, f_cwd 1, details_session 1, details_model 1, details_usage 1
+$ grep -rn 'change-actions\|ChangeActions' src tests docs README.md
+(nothing; exit 1)
+$ sed -n of each file:line the round's table cites
+DetailsBody.svelte:70 `let typed = $state('');`, :73 `let outcome`, :79 `let armed`, :82 `const now = Date.now();`, :124 `onMount(() => {`; SessionList.svelte:456 `<SessionSections ... divided />`, :458 `<Customizations owner={instance.id} divided={followed === null} />`, :481-486 `.divider { flex: none; height: 1px; margin: 0 -12px; background: var(--line); }`; Customizations.svelte:46, :49, :174 `noTopLine={divided}`; TreeSection.svelte:52, :72, :77 `<div class="section" class:bare={noTopLine}>`, :111-113 `.section.bare { border-top: none; }`; Section.svelte:41, :58, :63; SessionSection.svelte:50, :66, :87; ChangesSection.svelte:55, :58, :131; DetailsSection.svelte:183; ChangesRepository.svelte:62 `const count = $derived(readable === null ? undefined : changeCount(readable));`, :150 `{count}`; ChangesTouched.svelte:59 `count={files.length > 0 ? files.length : undefined}`; boundaries.test.ts:472-479 `it('lets no view or shell component style a primitive own class', ...)`. All as the report says.
+$ git diff 936a411b2 -- config/text/views/sessions/session-detail.yml config/text/views/sessions/changes.yml
+(the keys removed, added and `f_cwd: folder` exactly as the report's Catalog paragraph lists)
+
+The round's delta: diff -u of each files.txt path's snapshot copy against the worktree changes 13 files (docs/HELP.md:341, Customizations.svelte, SessionList.svelte, ChangeRow.svelte, GroupList.svelte, ChangesRepository.svelte, ChangesSection.svelte, detail-facts.ts, DetailsBody.svelte, DetailsSection.svelte, SessionSection.svelte, SessionSections.svelte, title-field.ts) plus the diagram counts; outside files.txt the round changes src/lib/ui/tree/TreeSection.svelte and src/lib/views/shared/explorer/sections/Section.svelte (each now differs from the base only by the `noTopLine` prop, the `bare` class and rule, and one head-comment sentence).
+```
+
+### Verdicts
+
+Items of the brief's "What to build", over the whole diff since the base:
+
+- 1: holds. `SessionList.svelte:454` draws `<div class="divider">` after the list's TreeView, :481-486 a plain in-flow 1 px `--line` line reaching through the body's 12 px side padding. The first head under it drops its own top border through `TreeSection.svelte` `noTopLine` (:52, :72, :77, :111-113), handed on by `Section.svelte:63` and `SessionSection.svelte:87`. Exactly one line in each order: `sectionOrder` always returns all four ids (`session-sections.ts:37-40`), `SessionSections.svelte:86-137` has a branch for each id and draws all four unconditionally, and `underLine` (:80-82) gives `noTopLine` to `order[0]` only. The other heads, Customizations after the sections included, keep their inset border. With Customizations alone, `divided={followed === null}` makes its TreeSection bare (`Customizations.svelte:174`). Nothing stands between the divider and the first `.section`; the only border on a head is `.section`'s (`TreeItem.svelte:293,297` are the drag indicators' inset shadows). A Session tab passes neither prop (`SessionDetail.svelte:79`).
+- 2: holds. `SessionWorkspace.svelte:204-215` and `TerminalRows.svelte:121-131` draw TreeItem rows at level 2, depth 1, with `expanded`, `count` and `badge`, the folder as `title`, and a press calling `fold.toggle`; their rows are drawn only while open. Head comments, `GroupHead.svelte:57` and `pane-fold.ts` are as the first report found.
+- 3: holds, as the first report found. The round changes only the head comments of `ChangeRow.svelte:11-17` and `GroupList.svelte:1-13`. G104's Code line is the orchestrator's at landing.
+- 4: holds. The repository row's `count` is `undefined` while the repository is not readable and `changeCount(readable)` otherwise, 0 included (`ChangesRepository.svelte:62,150`). TreeItem draws any count that is not undefined (`TreeItem.svelte:245-246`), so a clean repository shows "0", the same as Repositories' Changed group (`GroupList.svelte:304`). Touched keeps no badge with no file (`ChangesTouched.svelte:59`). The rest is as the first report found.
+- 5: holds. The groups, fact rows, outcome row and head controls are as before. `typed`, `outcome`, `armed` and `now` now live in `DetailsBody.svelte:70-82`, which a closed section unmounts.
+- 6: holds (`Customizations.svelte:234-246`: level 2, depth 1, `badge`).
+- 7: holds. `docs/HELP.md:295`, :340 and :341 are true of the code; `README.md` is unchanged. One head comment of the step is false, Standards 1.
+
+Cases of the brief's "Cases":
+
+- C1: met by reading (item 1 above; the cases ruling's shape: the first head drops its border, one full-width line). The drawing itself is settled at the look.
+- C2: met by reading (`SessionWorkspace.svelte:204-215`; the fold is kept in the tab's `folded`).
+- C3: met by reading (`TerminalRows.svelte:121-131`).
+- C4: met by reading (`.fold` keeps only `max-height` and `overflow`, `SessionList.svelte:472-475`). The scroll is settled at the look.
+- C5: met. The four test files pass in all three reruns; each test file changed only its path; `Changes.svelte:55-66` keeps its TreeSection around `GroupList` at level 2, depth 1.
+- C6: met by reading (`ChangesTouched.svelte:52-63`).
+- C7: met by reading (`ChangesTouched.svelte:59`; the empty row under it at depth 2).
+- C8: met by reading. The repository badge is `changeCount` (3 for 1 changed and 2 untracked). The groups are GroupList at level 3, depth 2, and the selection comes from `createChangePicks`.
+- C9: met by reading (the `mark` snippet; `SharedMark` unchanged).
+- C10: met by reading (no badge while `readable === null`; the shape's message under the row).
+- C11: met by reading (`ChangesSection.svelte:99-115`, `keep({ mode })` in the Session tab's own state).
+- C12: not verifiable for "no line wraps at the pane's width of 300 px", which only a page shows. Every other clause is met by reading: the groups, one row per fact with a value (`detail-facts.ts:199-206`), the ended pid left out (:137), the meter in the context row, `.value` set to `white-space: nowrap` with an ellipsis, `TreeItem.svelte` unchanged.
+- C13: met by reading, under the cases ruling's C13 sentence. `titleToWrite` clears on empty text; `escapeCloses` acts only on a target inside its box; `onleave` does nothing; one `titleField` in SessionList is handed to Details as `fields`. Closing Details now also closes Details' field (`DetailsBody.svelte` onMount cleanup).
+- C14: met by reading (`pinGroups`, `detail-facts.ts:255-271`; the pick goes through `act` to `body.pin`, then `write` and the outcome row).
+- C15: met by reading. `armed` is keyed by `record.id`, `resumeWords` takes the confirm words with `record.cwd` while armed, and `disabled={record.live}` with the `resume_live` tooltip. Whether a disabled ToolButton shows its tooltip is settled at the look.
+- C16: met by reading (`SessionDetail.svelte:79` passes no `fields` and no `divided`; folds, mode and picks are its own).
+- C17: met by reading (the `body.rice` rules on `.sections` and `.list` are unchanged).
+- C18: met by reading (the `changesViewOf` defaults; `usePaneFold.open`).
+- C19: met by reading (`ChangeRow.svelte` passes `session` to `openChange`).
+- C20: met by reading (fold ids under `changes:` and `details:`; `groupOfRow` and `foldOfRow` return null for any other id).
+- C21: met by reading (`.catch('list')`; `new Set` in `changesViewOf` and `change-picks.svelte.ts`; ids of rows no longer drawn are filtered out).
+- C22: met by reading (GroupList's merge branch).
+- C23: met by reading (`GroupList.svelte:241-243`, `depth={depth + 1}`).
+- C24: met by reading (`linked` is passed to every ChangeRow).
+- C25: met by reading (one TreeView per section; the branch menu, the new-branch field and the commit box are in an `li` that is no key row).
+- C26: met by reading (`SessionDetail.svelte` unchanged; the divider is only in SessionList).
+- C27: met by reading (`Customizations.svelte:234-246`, with the findings and items at depth 2).
+
+Round items:
+
+- 1: holds. The shape is the one the cases ruling item 1 names (item 1 above). There is no negative margin and no `z-index` (`grep -n 'z-index'` prints nothing; `margin: 0 -12px`). The TreeSection prop defaults to the border drawn. The comments at `SessionList.svelte:33-39` and :478-480 are true. boundaries.test.ts and size.test.ts pass (verify 2).
+- 2: holds. The badge shows "0" when the repository is clean and no badge when it is not readable (`ChangesRepository.svelte:62,150`). The judgment call is rewritten with `GroupList.svelte:304` and `TreeItem.svelte:245-246` (report, "Judgment calls", second bullet).
+- 3: holds. `typed`, `outcome`, `armed` and `now` are in `DetailsBody.svelte:70-82`. Its onMount hands `DetailsActions` to the section, and its cleanup hands `null` and calls `setField(null)` when the field is Details'. Both head comments say where each lives and that a close drops them (`DetailsSection.svelte:12-19`, `DetailsBody.svelte:18-23`). The `detailRows` read with `now: 0` is sound: `stamp` returns '' only when the date is null, whatever `now` is (`format.ts:58-72`).
+  - Rename, Pin and Resume on a closed Details. At the base, Details had no head controls (`git show 936a411b2:.../SessionSections.svelte`, its Details `SessionSection` takes no `more`). The Pin select, the title field and Resume were in the body (`git show 936a411b2:.../DetailsBody.svelte:14-16,236,246`), so they could be reached only with Details open.
+  - In the round-1 snapshot, Rename opened a closed Details (`if (!open) ontoggle();`), and Pin and Resume acted with it left closed.
+  - Now all three open it first, through `act` (`DetailsSection.svelte:96-103`).
+  - Neither round item 3 nor brief item 5 asks for this. It follows from item 3, because what the three act on now exists only while the body is drawn. The report lists it as a judgment call, in its Visible changes and in `HELP.md:341` (Behaviour 1).
+- 4: holds at `title-field.ts:9-11`. The function doc comment at :22-23 still states the claim the round removed from :9 (Standards 1).
+- 5: holds (`docs/HELP.md:341`: "In the Sessions tab, opening Details' field closes the list's and opening the list's closes Details'; a Session tab's Details field stands alone.").
+- 6: holds. `SessionSections.svelte:14-15`, `ChangeRow.svelte:11-13` and `GroupList.svelte:2-4` keep each path whole, and the filtered grep prints nothing.
+- 7: holds for the two places it names: "How point 1 is built" (report line 22) and the Verify 1 paragraph (line 94) state the end state and the run count. One narrated earlier state remains in the round section (Standards 2).
+
+### 1. Spec
+
+none
+
+### 2. Proof
+
+none. One of the builder's five verify 2 runs printed `1 failed`. In this review's three runs of the same command no test failed, so the red does not reproduce.
+
+### 3. Standards
+
+- 1. `src/lib/views/shared/sessions/sections/title-field.ts:22-23`: " * What the box around a title field carries: Escape pressed while the focus is inside the box / * closes the field through `close`, and nothing else on the page sees that key."
+  - What is wrong: this is a sentence the code makes false (rules file, "What every package obeys", the rule that a sentence a change makes false is a defect). The listener is a document capture listener that calls `stopPropagation` (:29-34). Window capture listeners run before it and see the key: `PaneBody.svelte:144` `window.addEventListener('keydown', typed, true)` ends an armed keep on any key. `stopPropagation` does not stop other capture listeners on the document either, such as `Tooltip.svelte:204` and `kill-arm.svelte.ts:97`. Round item 4 removed the same claim from :9 and asked that no order be named against window or other capture listeners; :23 still makes it.
+  - Failure scenario: a reader works out why an Escape in the title field also ends an armed keep in PaneBody. The doc comment says nothing else sees the key, so they look elsewhere.
+  - Verdict: none.
+- 2. `.scratch/migration/agents/reviews/O126-report.md:204`: "After round 0 they were held by `DetailsSection.svelte`, which stays mounted while closed, so they outlived a close. After round 1 they are held by `DetailsBody.svelte` again".
+  - What is wrong: the rules file, "The working rules", says a report states the end state with no narration of wrong turns taken and backed out. Round item 3 asks for the before (the base) and the after. The round-0 state in between is the builder's own backed-out turn.
+  - Failure scenario: the orchestrator reading the landing material takes the round-0 state for something that might still hold and spends a read confirming it is gone.
+  - Verdict: none.
+
+### 4. Behaviour
+
+- 1. `src/lib/views/shared/sessions/sections/details/DetailsSection.svelte:96-103`: "async function act(run: (body: DetailsActions) => void): Promise<void> { if (!open) { ontoggle(); await tick(); } if (actions !== null) run(actions); }", used by Pin (:111-113) and Resume (`onclick={() => void act((body) => void body.resume())}`).
+  - What is wrong: this is a new visible behaviour no round item asks for. A Pin pick or a Resume press on a closed Details head now opens the section, which is written to the tab's `closed` state through `ontoggle`. In the round-1 snapshot only Rename did this. The report surfaces it under "Judgment calls the brief left open" (fifth bullet), in "Visible changes" (last bullet) and in `HELP.md:341`, so the decision is not silent. It is listed here for the orchestrator to keep or reverse.
+  - Failure scenario: a reader keeps Details closed to keep Changes near the list and pins the session from the head. Details opens and stays open after a reload, and Changes moves down the pane.
+  - Verdict: none.
+
+### Declined to judge
+
+- Whether `actions` is set by the time `act`'s `await tick()` resolves after `ontoggle()` on a closed Details. If it is not, a Pin pick or a Resume press on a closed Details does nothing. This needs Svelte's client runtime with a DOM. It is settled at the look: close Details, pick an area from Pin, and see the outcome row say saved.
+- The drawn result of C1 (one line, edge to edge, in each section order and with Customizations alone), C4, C12 (no wrap at 300 px), C15 (the tooltip of a disabled ToolButton), C17 and the other visual cases. A reviewer runs no page (spec.md:65), so these are settled at the look on landing.
+- The cause of the builder's one red run of verify 2: its output was not kept, and three reruns here passed.
+- How many times the builder ran `npm run test:quick` in the round. That is settled by its transcript, which a reviewer does not read.
+- G104's Code line in `.scratch/migration/agents/guarded.md`: the brief gives that rewrite to the orchestrator at landing.
+- How the step's lines of `GroupHead.svelte` and `docs/HELP.md` merge with O125's: settled by the cherry-pick in the gate.
+
+Reviewer usage: ac782cca5d8c0891d, claude-opus-5-5, 209552 tokens, 45 tool uses, 9 min 28 s.
+
+## Closed
+
+- The first run's findings (Spec 1-2, Proof 1, Standards 1-4, Behaviour 1): closed in repair round 1, as the run over round 1 gives (round items 1-7 hold).
+- Round 1, Standards 1 (`title-field.ts:22-23`): fixed at landing; the doc comment says the key goes no further down to the field's own handlers or up to any bubbling listener, naming no order against window or other capture listeners.
+- Round 1, Standards 2 (`O126-report.md:204`): fixed at landing; the sentence gives the base and the end state only.
+- Round 1, Behaviour 1 (Rename, Pin and Resume on a closed Details open it first): kept. The three act on state that exists only while the body is drawn, and opening the section shows the outcome row their write answers in; the report, its Visible changes and `docs/HELP.md:341` state it. The point the reviewer declined (whether the body hands its actions in before `act` runs) is settled at the look: a Pin pick on a closed Details.
+- G104's Code line in `agents/guarded.md:357` names `src/lib/views/shared/changes/groups/change-menu.ts`, the file's path after the move.

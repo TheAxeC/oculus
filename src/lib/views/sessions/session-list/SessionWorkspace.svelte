@@ -1,9 +1,11 @@
 <script lang="ts">
-    // Layer 3, sessions view partial. One workspace's group of the sessions list: the group every
-    // grouping of a view is drawn as (ui/controls/heads/GroupHead.svelte), headed with the
-    // workspace's name and count and its folder under the pointer, then its rows. The heading is a
-    // row of the list's tree, and the group folds by its key in the list's pane state
-    // (views/shared/card/pane-fold.ts), the workspace without a folder under the empty key.
+    // Layer 3, sessions view partial. One workspace's group of the sessions list, drawn as the
+    // Repositories view draws a change group: a group row of the list's tree with the fold's
+    // chevron, the workspace's name, its folder under the pointer and the number of its sessions as
+    // a badge at the right edge, then, while it is open, its rows one step further in. A press on
+    // the group row folds it, and Left and Right do from the keyboard; the group folds by its key
+    // in the list's pane state (views/shared/card/pane-fold.ts), the workspace without a folder
+    // under the empty key. A folded group's rows are not drawn.
     //
     // A row is one line of the tree's row height, in the look of the Files tree: the session's
     // state as a dot, the pin mark of a session pinned to the top of its group, the title, and how
@@ -11,9 +13,11 @@
     // hover words (`sessionRowWords`). A session needing input keeps its amber left edge. A second
     // press on a row, or the row's menu, opens the title's field in place of the title. The field
     // holds what was typed in `typed`, so a title arriving on the channel leaves the words alone.
+    // It answers as the Details section's does (views/shared/sessions/sections/title-field.ts):
+    // Enter writes the title and an empty one clears it, Escape closes it with nothing written and
+    // the focus leaving keeps it open; Enter and Escape give the focus back to the row.
 
     import { tick } from 'svelte';
-    import GroupHead from '$lib/ui/controls/heads/GroupHead.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import Menu from '$lib/ui/menu/Menu.svelte';
     import TreeItem from '$lib/ui/tree/TreeItem.svelte';
@@ -30,6 +34,7 @@
         stateLabel
     } from './session-list';
     import { usePaneFold } from '$lib/views/shared/card/pane-fold';
+    import { escapeCloses } from '$lib/views/shared/sessions/sections/title-field';
     import { useState } from '$lib/state/client/use';
 
     const {
@@ -51,7 +56,10 @@
         onaction: (id: string, row: GroupedSession) => void;
         /** A press on a row picks its session. */
         onpick: (row: GroupedSession) => void;
-        onrename: (row: GroupedSession, title: string | null) => void;
+        /** Open the row's title field. */
+        onrename: (row: GroupedSession) => void;
+        /** The row's title field closed: with the text Enter took, or with null for Escape. */
+        onrenamed: (row: GroupedSession, text: string | null) => void;
     };
 
     let {
@@ -64,7 +72,8 @@
         topOf,
         onaction,
         onpick,
-        onrename
+        onrename,
+        onrenamed
     }: Props = $props();
 
     /** What the rename field holds while it is open. */
@@ -94,35 +103,17 @@
 
     function startRename(entry: GroupedSession): void {
         typed = entry.title;
-        onrename(entry, null);
+        onrename(entry);
     }
 
-    /** The title's field closed, with a title or with '': the focus goes back to the row. */
-    async function renamed(entry: GroupedSession, title: string): Promise<void> {
-        onrename(entry, title);
+    /** The title's field closed, with a text or with null: the focus goes back to the row. */
+    async function renamed(entry: GroupedSession, text: string | null): Promise<void> {
+        onrenamed(entry, text);
         await tick();
         nav.focus(sessionRowId(entry.id));
     }
 
-    // Escape closes the title's field without a title wherever the focus is, so the key is read on
-    // the document while a field is open. With the focus in the field the field's own Escape does
-    // it, which brings the focus back to the row.
-    $effect(() => {
-        const open = renaming;
-        if (open === '') return;
-        const entry = group.rows.find((one) => one.id === open);
-        if (entry === undefined) return;
-        const field = `[data-session-row="${CSS.escape(open)}"] input`;
-        const escape = (event: KeyboardEvent): void => {
-            if (event.key !== 'Escape') return;
-            if (event.target instanceof Element && event.target.closest(field) !== null) return;
-            event.preventDefault();
-            event.stopPropagation();
-            onrename(entry, '');
-        };
-        document.addEventListener('keydown', escape, true);
-        return () => document.removeEventListener('keydown', escape, true);
-    });
+    const open = $derived(fold.open(group.key));
 </script>
 
 {#snippet row(entry: GroupedSession)}
@@ -144,18 +135,20 @@
                 id={sessionRowId(entry.id)}
                 {nav}
                 level={3}
-                depth={1}
+                depth={2}
                 selected={on}
             >
                 {#snippet field()}
-                    <NameField
-                        value={typed}
-                        label={t('sessions.rename_field')}
-                        oninput={(value: string) => (typed = value)}
-                        onsubmit={(title: string) => void renamed(entry, title)}
-                        oncancel={() => void renamed(entry, '')}
-                        onleave={() => undefined}
-                    />
+                    <span class="box" {@attach escapeCloses(() => void renamed(entry, null))}>
+                        <NameField
+                            value={typed}
+                            label={t('sessions.rename_field')}
+                            oninput={(value: string) => (typed = value)}
+                            onsubmit={(title: string) => void renamed(entry, title)}
+                            oncancel={() => void renamed(entry, null)}
+                            onleave={() => undefined}
+                        />
+                    </span>
                 {/snippet}
             </TreeItem>
         {:else}
@@ -164,7 +157,7 @@
                 id={sessionRowId(entry.id)}
                 {nav}
                 level={3}
-                depth={1}
+                depth={2}
                 selected={on}
                 title={sessionRowWords(entry, state)}
                 onclick={() => onpick(entry)}
@@ -207,21 +200,25 @@
     </div>
 {/snippet}
 
-<GroupHead
-    data-session-group={group.key}
-    label={group.name === '' ? t('sessions.no_workspace') : group.name}
-    tip={group.key === '' ? undefined : group.key}
-    count={group.rows.length}
-    open={fold.open(group.key)}
-    ontoggle={() => fold.toggle(group.key)}
-    row={{ id: groupRow(group.key), nav }}
->
-    <div class="rows">
+<div class="rows" data-session-group={group.key}>
+    <TreeItem
+        label={group.name === '' ? t('sessions.no_workspace') : group.name}
+        id={groupRow(group.key)}
+        {nav}
+        level={2}
+        depth={1}
+        expanded={open}
+        count={group.rows.length}
+        badge
+        title={group.key === '' ? undefined : group.key}
+        onclick={() => fold.toggle(group.key)}
+    />
+    {#if open}
         {#each group.rows as entry (entry.id)}
             <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
             {@render row(entry)}{/each}
-    </div>
-</GroupHead>
+    {/if}
+</div>
 
 <style>
     .rows {
@@ -233,6 +230,12 @@
     .row {
         min-width: 0;
         border-left: 2px solid transparent;
+    }
+
+    .box {
+        display: flex;
+        flex: 1 1 auto;
+        min-width: 0;
     }
 
     .row.input {

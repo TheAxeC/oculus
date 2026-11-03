@@ -1,10 +1,11 @@
-// Layer 3, view partial. The right-click menus of the Changes section of the Repositories view, as
-// VS Code's git extension builds them: a changed file's by its group, and a group head's. Each item
-// is one the row's or the head's own controls already offer, and a pick runs the function that
-// control calls, a Discard behind the question the row's Discard control asks.
+// Layer 3, shared view partial. The right-click menus of the change groups (GroupList.svelte
+// beside it), which the Repositories view's Changes section and a session's Changes section both
+// draw, as VS Code's git extension builds them: a changed file's by its group, and a group head's.
+// Each item is one the row's or the head's own controls already offer, and a pick runs the function
+// that control calls, a Discard behind the question the row's Discard control asks.
 //
 // A write picked from a changed file's menu acts on the paths the row's controls act on
-// (`actedPaths` of changes/picking.ts): every selected row of the group when the pressed row is
+// (`actedPaths` of picking.ts beside it): every selected row of the group when the pressed row is
 // among them, the pressed row alone otherwise. Stage, Unstage and Add to .gitignore write them in
 // one call, and Discard asks one question naming their count. The items that open something open
 // the pressed row alone.
@@ -14,11 +15,11 @@
 //
 // The merge group keeps its own controls and gets no menu. Discard Changes on an untracked path is
 // not a restore, which git has no form for: the path goes to the Trash (`trashUntracked`) behind
-// the question VS Code asks, and a tracked path is restored as before. Open File (HEAD) offers the
-// version HEAD holds and Open File (Index) the version the index holds, for a Staged row and a
-// Changes row alike; an untracked path has neither. Compare with Workspace is offered on a linked
-// worktree's rows and is a read. While a write is in flight on the repository its controls are
-// disabled, so the menus offer no write either.
+// the question VS Code asks, and a tracked path is restored to what is staged or committed. Open
+// File (HEAD) offers the version HEAD holds and Open File (Index) the version the index holds, for
+// a Staged row and a Changes row alike; an untracked path has neither. Compare with Workspace is
+// offered on a linked worktree's rows and is a read. While a write is in flight on the repository
+// its controls are disabled, so the menus offer no write either.
 //
 // The items are pure functions of the group, so which items a row offers is asserted without a DOM,
 // and the words come in as `t` so every label is a catalog key.

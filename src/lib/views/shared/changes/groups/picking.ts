@@ -1,10 +1,11 @@
-// Layer 3, view partial of views/sources/repositories/changes/Changes.svelte. The selection of the
-// change rows: a press, Cmd+press, Shift+press, Shift+Up, Shift+Down and Cmd+A over the rows the
-// tree draws, which is the file browser's rule (state/sources/explorer/acts/selection.ts) with the
-// group a row is in as its `root` and the path as its `path`, so a staged and a changed row of one
-// path are two rows. The view keeps the ids of the selected rows (`change:<group>:<path>`, the
-// ids the tree knows the rows by); the cursor row and the row a range grows from are the rows the
-// last press or key was on.
+// Layer 3, shared view partial of GroupList.svelte beside it. The selection of the change rows: a
+// press, Cmd+press, Shift+press, Shift+Up, Shift+Down and Cmd+A over the rows the tree draws, which
+// is the file browser's rule (state/sources/explorer/acts/selection.ts) with the group a row is in
+// as its `root` and the path as its `path`, so a staged and a changed row of one path are two rows.
+// The view keeps the ids of the selected rows (`change:<group>:<path>`, the ids the tree knows the
+// rows by); the cursor row and the row a range grows from are the rows the last press or key was
+// on. change-picks.svelte.ts beside it holds these for a view, so the Repositories view and a
+// session's Changes section select by one piece.
 
 import {
     selectEvery,

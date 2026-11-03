@@ -3,7 +3,9 @@
 // rows stay after a folder is closed, and which closed folders of a repository still name a folder.
 //
 // It also holds the rows of a repository as the keyboard walks them (`repositoryKeyRows`,
-// `repoListRows`) and the change groups they are drawn in (`changeGroups`).
+// `repoListRows`), the change groups they are drawn in (`changeGroups`), and the rows of those
+// groups alone (`changeGroupRows`), which a session's Changes section walks too, each view keeping
+// the groups' folds under ids of its own (`GroupFolds`).
 //
 // The status read lists every untracked file on its own line (`--untracked-files=all`), so a new
 // folder's files fall into folder rows as any other path does. A path git lists as a whole
@@ -245,14 +247,35 @@ export function repoListRows(
     return rows;
 }
 
+/**
+ * How a view keeps the folds of its change groups: the id a group and a folder of a group fold
+ * under, and whether an id is folded. The Repositories view keeps them in its closed list, a group
+ * by its own id and a folder by `folderId`; a session's Changes section keeps them in its tab's
+ * folds under ids of its own.
+ */
+export type GroupFolds = {
+    group: (group: string) => string;
+    folder: (group: string, path: string) => string;
+    folded: (id: string) => boolean;
+};
+
+/** The folds of the change groups the Repositories view keeps in its closed list. */
+export function collapsedFolds(collapsed: readonly string[], root: string): GroupFolds {
+    return {
+        group: (group) => group,
+        folder: (group, path) => folderId(root, group, path),
+        folded: (id) => collapsed.includes(id)
+    };
+}
+
 /** The key rows of one group in tree mode: its folder rows and file rows that stay drawn. */
 function treeKeyRows(
     group: string,
     entries: readonly GitEntry[],
-    collapsed: readonly string[],
+    folds: GroupFolds,
     root: string
 ): KeyRow[] {
-    const closed = (path: string): boolean => collapsed.includes(folderId(root, group, path));
+    const closed = (path: string): boolean => folds.folded(folds.folder(group, path));
     const rows: KeyRow[] = [];
     const folders: string[] = [];
     for (const row of visibleRows(changeTree(entries), closed)) {
@@ -263,6 +286,35 @@ function treeKeyRows(
             rows.push({ id, parent, open: !closed(row.path) });
         } else {
             rows.push({ id: `change:${group}:${row.path}`, parent });
+        }
+    }
+    return rows;
+}
+
+/**
+ * The rows of a repository's change groups as the keyboard reads them, in the order they are
+ * drawn: each group's row under `parent`, and under an open group its rows, its folders and the
+ * files that stay drawn in tree mode (the merge group stays a list). The Repositories view's
+ * Changes section and a session's Changes section both walk their groups by these.
+ */
+export function changeGroupRows(
+    git: GitState,
+    parent: string,
+    folds: GroupFolds,
+    tree: { root: string; mode: 'list' | 'tree' }
+): KeyRow[] {
+    const rows: KeyRow[] = [];
+    for (const group of changeGroups(git)) {
+        const id = `group:${group.id}`;
+        const open = !folds.folded(folds.group(group.id));
+        rows.push({ id, parent, open });
+        if (!open) continue;
+        if (tree.mode === 'tree' && group.id !== 'merge') {
+            rows.push(...treeKeyRows(group.id, group.entries, folds, tree.root));
+        } else {
+            for (const entry of group.entries) {
+                rows.push({ id: `change:${group.id}:${entry.path}`, parent: id });
+            }
         }
     }
     return rows;
@@ -290,18 +342,13 @@ export function repositoryKeyRows(
         for (const id of ids) rows.push({ id, parent });
     };
     if (head('changes')) {
-        for (const group of changeGroups(git)) {
-            const open = !collapsed.includes(group.id);
-            rows.push({ id: `group:${group.id}`, parent: 'changes', open });
-            if (open && tree?.mode === 'tree' && group.id !== 'merge') {
-                rows.push(...treeKeyRows(group.id, group.entries, collapsed, tree.root));
-            } else if (open) {
-                under(
-                    `group:${group.id}`,
-                    group.entries.map((entry) => `change:${group.id}:${entry.path}`)
-                );
-            }
-        }
+        const root = tree?.root ?? '';
+        rows.push(
+            ...changeGroupRows(git, 'changes', collapsedFolds(collapsed, root), {
+                root,
+                mode: tree?.mode ?? 'list'
+            })
+        );
     }
     // The graph's rows are read on demand, so the view hands in the rows it has drawn, each under
     // the section or under the commit whose files it is.

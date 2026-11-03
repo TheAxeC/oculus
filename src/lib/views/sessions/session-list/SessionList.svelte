@@ -31,9 +31,17 @@
     // session to follow the sections are not drawn and Customizations stays.
     //
     // The list is one tree (ui/tree/TreeView.svelte), so it is one stop of the focus order: the
-    // fold's head, the heads of the groups and the rows are its rows (session-list.ts `listRows`)
+    // fold's head, the group rows and the rows under them are its rows (session-list.ts `listRows`)
     // and the arrows walk them, scrolling a row into the fold. It holds the sessions grouped by
-    // workspace, then every terminal oculus started with each by-hand terminal.
+    // workspace, then every terminal oculus started with each by-hand terminal. A line across the
+    // whole width of the pane stands under the fold, between the list and the sections after it:
+    // the first of the session's sections, or Customizations when no session is followed, is told
+    // it stands under the line (`divided`) and draws no line across its own head's top edge.
+    //
+    // A session's title is typed in one of two fields: in place of its row's title in the list, or
+    // in place of the title row's value in Details. The tab keeps one `TitleField` naming the one
+    // that is open (views/shared/sessions/sections/title-field.ts), so opening one closes the
+    // other.
     //
     // A press on a session picks it and shows its terminal or transcript in the page's Terminal
     // tab. A terminal row shows its terminal in the Terminal tab that owns it, on whichever page,
@@ -65,6 +73,11 @@
     import type { TreeNav } from '$lib/ui/tree/tree-keys';
     import FolderLine from '$lib/views/shared/links/FolderLine.svelte';
     import SessionSections from '$lib/views/shared/sessions/sections/SessionSections.svelte';
+    import {
+        titleToWrite,
+        type TitleField,
+        type TitleFields
+    } from '$lib/views/shared/sessions/sections/title-field';
     import { usePaneFold } from '$lib/views/shared/card/pane-fold';
     import { limitDir, limitOf, withLimit } from '$lib/state/sources/explorer/view/limit';
     import { servesRoot } from '$lib/state/sources/fs-transport';
@@ -152,7 +165,16 @@
     let failure = $state('');
     let arming = $state('');
     let armedResume = $state('');
-    let renaming = $state('');
+    /** The title field open in the tab, the list's or Details', and for which session. */
+    let titleField = $state<TitleField>(null);
+    /** The row whose title is typed in the list, and the empty string for none. */
+    const renaming = $derived(titleField?.where === 'list' ? titleField.session : '');
+    const fields: TitleFields = {
+        get open() {
+            return titleField;
+        },
+        set: (next: TitleField) => (titleField = next)
+    };
     // A row's age moves between publishes, so the minute the page is in is read as state.
     $effect(startMinuteClock);
     const now = $derived(minuteNow());
@@ -297,15 +319,14 @@
         failure = field === 'hidden' ? t('sessions.archive_failed') : t('sessions.top_failed');
     }
 
-    /** A title typed and taken (a string), the field opened (null), or closed without one (''). */
-    async function rename(row: GroupedSession, title: string | null): Promise<void> {
-        if (title === null) {
-            renaming = row.id;
-            return;
-        }
-        renaming = '';
-        const next = title.trim();
-        if (next === '' || next === row.title) return;
+    /**
+     * The list's title field closed: with the text Enter took, written as the title and an empty
+     * one clearing it, or with null for Escape, which writes nothing.
+     */
+    async function renamed(row: GroupedSession, text: string | null): Promise<void> {
+        titleField = null;
+        const next = text === null ? null : titleToWrite(text, row.title);
+        if (next === null) return;
         failure = '';
         const answer = await writeSession(row.id, { title: next });
         if (!answer.ok) failure = t('sessions.rename_failed');
@@ -411,8 +432,10 @@
                                     topOf={top}
                                     onaction={action}
                                     onpick={pick}
-                                    onrename={(row: GroupedSession, title: string | null) =>
-                                        void rename(row, title)}
+                                    onrename={(row: GroupedSession) =>
+                                        (titleField = { where: 'list', session: row.id })}
+                                    onrenamed={(row: GroupedSession, text: string | null) =>
+                                        void renamed(row, text)}
                                 />
                             {/each}
                             <TerminalRows
@@ -428,10 +451,11 @@
                 </TreeSection>
             {/snippet}
         </TreeView>
+        <div class="divider" aria-hidden="true"></div>
         {#if followed !== null}
-            <SessionSections owner={instance.id} record={followed} />
+            <SessionSections owner={instance.id} record={followed} {fields} divided />
         {/if}
-        <Customizations owner={instance.id} />
+        <Customizations owner={instance.id} divided={followed === null} />
     </div>
 </Pane>
 
@@ -445,11 +469,20 @@
     }
 
     /* At most ten rows tall, scrolling inside itself, and no Tab stop of its own: the tree is one.
-       A row an arrow moves to stops clear of the sticky head of its group. */
+       No row sticks to its top, so a row an arrow moves to is scrolled wholly into it. */
     .fold {
         max-height: calc(10 * var(--tree-row) * var(--text-scale, 1));
         overflow: auto;
-        scroll-padding-top: calc(var(--tree-row) * var(--text-scale, 1) + 8px);
+    }
+
+    /* The line between the list and the sections, across the whole width of the pane: through the
+       side padding of the pane's body (ui/frame/Pane.svelte). The section head right after it
+       draws no line of its own, so one line stands there; the heads after that keep theirs. */
+    .divider {
+        flex: none;
+        height: 1px;
+        margin: 0 -12px;
+        background: var(--line);
     }
 
     .failure {

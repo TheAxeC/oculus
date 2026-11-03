@@ -1,30 +1,32 @@
 <script lang="ts">
-    // Layer 3, partial of views/sources/repositories/changes/Changes.svelte. One changed path as an
-    // explorer row, drawn as VS Code draws a row of Source Control: the file's Seti icon, then its
-    // name in its status colour and struck through for a deleted file, its folder after it at 0.9
-    // of the row's size and muted (in the list; the tree has the folder as a row above), its line
-    // counts, the controls on hover (Open File, then Discard in Changes and Untracked, then Stage
-    // or Unstage), and the status letter last. In the merge group the controls are Open in Merge
-    // Editor, Open File and Mark Resolved.
+    // Layer 3, shared view partial of GroupList.svelte beside it. One changed path as an explorer
+    // row, drawn as VS Code draws a row of Source Control: the file's Seti icon, then its name in
+    // its status colour and struck through for a deleted file, the caller's mark of the file where
+    // it gives one, its folder after it at 0.9 of the row's size and muted (in the list; the tree
+    // has the folder as a row above), its line counts, the controls on hover (Open File, then
+    // Discard in Changes and Untracked, then Stage or Unstage), and the status letter last. In the
+    // merge group the controls are Open in Merge Editor, Open File and Mark Resolved.
     //
-    // The row's tooltip is the whole path, then what a press opens. Pressing the row opens what it
-    // stands for (state/sources/repositories/repositories.svelte.ts's openChange): the three-way
-    // merge editor for a conflict, the file for an untracked path, and the diff for the rest. A
-    // conflict's status is its unmerged pair, worded and coloured as a conflict. The colour of a
-    // status is state/sources/repositories/repositories.ts's statusStyle() and the line counts are
-    // shared/changes/ChangeCounts.svelte, which the session views' Changes panel draws them with,
-    // so the two lists agree.
+    // The row's tooltip is the whole path, then what a press opens. Pressing the row, or Enter on
+    // it, opens what it stands for (state/sources/repositories/repositories.svelte.ts's
+    // openChange): the three-way merge editor for a conflict, the file for an untracked path, and
+    // the diff for the rest, as the diff of `session` when the row is a session's, which is what
+    // lets that diff send a review comment to it. A conflict's status is its unmerged pair, worded
+    // and coloured as a conflict. The colour of a status is
+    // state/sources/repositories/repositories.ts's statusStyle() and the line counts are
+    // views/shared/changes/ChangeCounts.svelte.
     //
     // A row of Changes, Staged and Untracked opens a right-click menu of what its controls do
-    // (menus/change-menu.ts), with Reveal in Explorer View, Add to .gitignore, Open File (HEAD),
-    // Open File (Index) and, on a linked worktree, Compare with Workspace besides; the merge group
-    // has none. The controls and the menu's writes act on the same paths (`acted`): every selected
-    // row of the group when this row is among them, this row alone otherwise; the menu's items that
-    // open something open this row. A Discard picked there asks the question the row's Discard
-    // control asks: the restore question on a changed row, and on an untracked row the Trash
-    // question, whose yes moves the files to the Trash, each naming the count when it acts on
-    // several.
+    // (change-menu.ts beside it), with Reveal in Explorer View, Add to .gitignore, Open File
+    // (HEAD), Open File (Index) and, on a linked worktree, Compare with Workspace besides; the
+    // merge group has none. The controls and the menu's writes act on the same paths (`acted`):
+    // every selected row of the group when this row is among them, this row alone otherwise; the
+    // menu's items that open something open this row. A Discard picked there asks the question the
+    // row's Discard control asks: the restore question on a changed row, and on an untracked row
+    // the Trash question, whose yes moves the files to the Trash, each naming the count when it
+    // acts on several.
 
+    import type { Snippet } from 'svelte';
     import TreeItem from '$lib/ui/tree/TreeItem.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import ContextMenu from '$lib/ui/menu/ContextMenu.svelte';
@@ -36,13 +38,7 @@
     import type { GitEntry } from '$lib/state/client/selectors.svelte';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
-    import {
-        askDiscardPaths,
-        askTrash,
-        changeMenu,
-        changePicked,
-        hasMenu
-    } from '../menus/change-menu';
+    import { askDiscardPaths, askTrash, changeMenu, changePicked, hasMenu } from './change-menu';
     import { actedPaths } from './picking';
 
     type Props = {
@@ -70,6 +66,10 @@
          * selection (Cmd or Shift held), so the row does not open.
          */
         onpress: (id: string, event: MouseEvent) => boolean;
+        /** The session whose row this is, whose diff the row opens as its own. */
+        session?: string;
+        /** Drawn beside the path: the caller's mark of the file. */
+        mark?: Snippet<[GitEntry]>;
         /** The row's measuring hook, handed by the list that draws only the rows in view. */
         measure: Attachment<HTMLElement>;
     };
@@ -87,6 +87,8 @@
         linked = false,
         picked,
         onpress,
+        session,
+        mark,
         measure
     }: Props = $props();
 
@@ -118,7 +120,7 @@
             void repositories.trashUntracked(at, paths),
         ignore: (at: string, paths: readonly string[]) => void repositories.ignore(at, paths),
         openChange: (at: string, kind: string, path: string) =>
-            repositories.openChange(at, kind, path),
+            repositories.openChange(at, kind, path, session),
         openHead: (at: string, kind: string, path: string) => repositories.openHead(at, kind, path),
         openIndex: (at: string, kind: string, path: string) =>
             repositories.openIndex(at, kind, path),
@@ -166,11 +168,14 @@
         struck={entry.status === 'D'}
         nameStyle={statusStyle(entry.status)}
         onclick={(event: MouseEvent) => {
-            if (!onpress(id, event)) repositories.openChange(root, group, entry.path);
+            if (!onpress(id, event)) repositories.openChange(root, group, entry.path, session);
         }}
     >
         {#snippet detail()}
             <span class="fit">
+                {#if mark !== undefined}
+                    <span class="mark">{@render mark(entry)}</span>
+                {/if}
                 {#if showFolder && folder !== ''}
                     <span class="folder">{folder}</span>
                 {/if}
@@ -277,6 +282,17 @@
         flex: none;
         width: 0;
         height: 100%;
+    }
+
+    /* The caller's mark stands whole before the folder, and takes no room when it draws nothing. */
+    .mark {
+        display: inline-flex;
+        flex: none;
+        margin-left: 0.5em;
+    }
+
+    .mark:empty {
+        display: none;
     }
 
     .fit .folder {

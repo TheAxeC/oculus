@@ -179,7 +179,7 @@ C9 oculus lanes: stopped -> lane undefined, rule undefined
 - C7. First run: no function. After: a hub stage `appeared` carrying both flags gives 2023; a hub whose `published` lacks `public` gives nothing. The function reads the `words` it is handed; `CardFacts.svelte:72` hands it `words`, which is `vocabOf(hub)` (line 58), the words of the project's own hub (`hub` is `rootOf(item.project)`, line 52), and `Lanes.svelte:234` hands `laneFacts` `wordsAt(project)`.
 - C8. First run: no function. After: nothing (`hasWord` gives false for an undefined word, `vocab-keys.ts:128`).
 - C9. First run: the published project sits on the hub's `done` lane, `laneFacts` gives only the tier. After: `laneFacts` gives the year fact first, label "2025", then the tier; the program prints tip "Year: 2025" and glyph `calendar` from the catalog keys `LaneCard.svelte:114,122` read. With oculus's lanes no `accepted` or `published` project sits on any lane (the last block of both runs), so no lane card draws a year. The drawn tag on a lane card is the look on landing, under a hub whose `focus_lanes` lists `published`.
-- C10. By reading: `ProjectCard.svelte:366` draws `CardFacts` for every card; `ProjectCards.svelte:9` imports `ProjectCard`, used by `Person.svelte:64` and `Listing.svelte:30`; `Project.svelte:63` imports `ProjectCard` for the project page. The Archival listing groups by the stages with `dead` (`Listing.svelte:106-119`, `failed` and `stopped`, `vocab.yml:76-77`), whose rule gives nothing (C5). The drawn result is the look on landing.
+- C10. By reading: `ProjectCard.svelte:367` draws `CardFacts` for every card; `ProjectCards.svelte:9` imports `ProjectCard`, used by `Person.svelte:64` and `Listing.svelte:30`; `Project.svelte:63` imports `ProjectCard` for the project page. The Archival listing groups by the stages with `dead` (`Listing.svelte:106-119`, `failed` and `stopped`, `vocab.yml:76-77`), whose rule gives nothing (C5). The drawn result is the look on landing.
 - C11. By reading, after the change: `docs/HELP.md:296` names the year among a lane card's tags after the marks and before the role; `docs/HELP.md:298` names it in the top row after the chips and before the code status; `vocab.yml:55` and `:59` and `vocab.ts`'s `terminal` (line 154) and `public` (line 169) descriptions say a card draws the year at a stage that carries both flags; the head comments of `CardFacts.svelte` (lines 2-9), `ProjectCard.svelte` (lines 2-8), `LaneCard.svelte` (lines 9-17) and `focus.ts` (lines 1-4) name the year in the order drawn. First run, on the base: none of them names a year (`grep -rn -i "year"` over the base copy's `focus.ts`, `CardFacts.svelte`, `ProjectCard.svelte` and `LaneCard.svelte` printed nothing; `grep -c "year"` over the base copy's `vocab.ts` printed `0`; `git show HEAD:docs/HELP.md | awk 'NR==296 || NR==298' | grep -c "Year:"` printed `0`; `git show HEAD:config/catalogs/vocab.yml | awk 'NR==55 || NR==59' | grep -c "year"` printed `0`).
 
 No case was wrong under the brief's rules.
@@ -223,7 +223,7 @@ The 13 test files it ran: `tests/data/shapes/catalog-files/vocab.test.ts`, `test
 
 Runs: the verify list once; no whole-suite command; no single test file run on its own.
 
-The step adds and changes no test (spec.md:60: no entry of `agents/guarded.md` names these files, `grep -n "laneFacts\|focus.ts\|CardFacts\|LaneCard" .scratch/migration/agents/guarded.md` printed nothing). No existing assertion, allow list or predicate was edited (`diff -rq` against the base copy lists no file under `tests`).
+The first build adds and changes no test (spec.md:60: no entry of `agents/guarded.md` names these files, `grep -n "laneFacts\|focus.ts\|CardFacts\|LaneCard" .scratch/migration/agents/guarded.md` printed nothing). Repair round 1 adds the year rows to `tests/data/snapshot/normalise.test.ts` under ruling 642 (a); see "Repair round 1". No existing assertion, allow list or predicate was edited in either.
 
 ## The terms
 
@@ -284,8 +284,183 @@ Nothing. One premise to note: the brief lists the four diagrams as written by `n
 
 ## Limitations and sharp edges
 
-- A year written as text (`year: '2025'`) draws nothing, since `normalise.ts:278` reads it as nothing: open item 642, outside the step as the brief says.
-- `normalise.ts` reads any number as the year (`z.number()`), so a manifest with a fraction, a zero or a negative year at a published stage draws it as written ("2025.5"). No manifest of the hub holds one (the brief's premise, not run again here: the step reads no hub data). Whether `z.number()` takes `Infinity` is not verified.
+- The year a manifest gives is read by repair round 1's whole-number read (ruling 642 (a)); its edges are in "Repair round 1".
 - The lane card draws the year only under a hub's own lanes that list a done stage; with oculus's lanes the lane-card half of the step draws nothing (case run, last block).
 - The case-run program loads `focus.ts` under Node with a one-line `$state` shim for `generation.svelte.ts`; the drawn cards themselves are the look on landing.
 - The step left nothing running.
+
+## Repair round 1
+
+Everything in `agents/briefs/O127-round1.md` is done (items 1 to 4).
+
+The state file's open items in this worktree's ledger copy still list open item 642, quoted verbatim at the top of this report; the round brief carries the user's ruling on it, (a), which item 1 builds.
+
+### Item 1, ruling 642 (a): the year a manifest gives
+
+`src/lib/data/snapshot/normalise.ts` reads `year` through `wholeShape` (lines 160-171): an integer of 0 or more, or a text of the digits 0 to 9 alone read as the number it spells; anything else gives none. The comment above the read (lines 283-286) says what it takes and why, naming the schema's `year` "as a whole number" (`config/schemas/manifest-schema.yml`) and `coerce` in `server/edit/writes/manifest.ts`, which writes the year as text into a manifest that has none.
+
+A premise of the round brief that does not reproduce: "The other readers of `num` are unchanged." At the base `num` had one reader, the year: `grep -n "num(" .agents/worktrees/O127-base/src/lib/data/snapshot/normalise.ts` prints `164:function num(value: unknown): number | undefined {` and `278:        year: num(manifest.year),` and nothing else. With the year read by `wholeShape`, `num` and its `numberShape` had no reader, so the round removes both (YAGNI, spec.md:89), and the line saying NaN and Infinity are not JSON-safe moved into `wholeShape`'s doc comment. `grep -n "num(\|numberShape" src/lib/data/snapshot/normalise.ts` prints nothing after the change.
+
+The test is the table "reads a manifest's year given as %s" in `tests/data/snapshot/normalise.test.ts` (lines 382-395), in the describe 'normalise, the field mapping' that holds 'fills a project from the manifest keys of the same meaning'. It has one row per input of the round brief, each building one manifest through `normalise` and asserting `projects.gamma.year`.
+
+Run on the unchanged `normalise.ts`, `npx vitest run tests/data/snapshot/normalise.test.ts --reporter=verbose` (the check mark and cross of vitest written as `<check>` and `<cross>`):
+
+```
+ <check> |unit| tests/data/snapshot/normalise.test.ts > normalise, the field mapping > reads a manifest's year given as the number 2025 as 2025 0ms
+ <cross> |unit| tests/data/snapshot/normalise.test.ts > normalise, the field mapping > reads a manifest's year given as the text '2025' as 2025 3ms
+ <cross> |unit| tests/data/snapshot/normalise.test.ts > normalise, the field mapping > reads a manifest's year given as the fraction 2025.5 as none 1ms
+ <cross> |unit| tests/data/snapshot/normalise.test.ts > normalise, the field mapping > reads a manifest's year given as the negative number -3 as none 0ms
+ <check> |unit| tests/data/snapshot/normalise.test.ts > normalise, the field mapping > reads a manifest's year given as an empty text as none 0ms
+ <check> |unit| tests/data/snapshot/normalise.test.ts > normalise, the field mapping > reads a manifest's year given as the text 'circa 2020' as none 0ms
+ <check> |unit| tests/data/snapshot/normalise.test.ts > normalise, the field mapping > reads a manifest's year given as the text ' 2025' as none 0ms
+ FAIL  |unit| tests/data/snapshot/normalise.test.ts > normalise, the field mapping > reads a manifest's year given as the text '2025' as 2025
+AssertionError: expected undefined to be 2025 // Object.is equality
+ FAIL  |unit| tests/data/snapshot/normalise.test.ts > normalise, the field mapping > reads a manifest's year given as the fraction 2025.5 as none
+AssertionError: expected 2025.5 to be undefined // Object.is equality
+ FAIL  |unit| tests/data/snapshot/normalise.test.ts > normalise, the field mapping > reads a manifest's year given as the negative number -3 as none
+AssertionError: expected -3 to be undefined // Object.is equality
+ Test Files  1 failed (1)
+      Tests  3 failed | 9 passed (12)
+```
+
+The failing lines on the unchanged tree are the text `'2025'` (read as nothing), the fraction and the negative number (read as given). The empty text, `'circa 2020'` and `' 2025'` already read as nothing there, since `z.number()` takes no text.
+
+The same command after the change:
+
+```
+ <check> |unit| tests/data/snapshot/normalise.test.ts > normalise, the field mapping > fills a project from the manifest keys of the same meaning 0ms
+ <check> |unit| tests/data/snapshot/normalise.test.ts > normalise, the field mapping > reads a manifest's year given as the number 2025 as 2025 0ms
+ <check> |unit| tests/data/snapshot/normalise.test.ts > normalise, the field mapping > reads a manifest's year given as the text '2025' as 2025 0ms
+ <check> |unit| tests/data/snapshot/normalise.test.ts > normalise, the field mapping > reads a manifest's year given as the fraction 2025.5 as none 0ms
+ <check> |unit| tests/data/snapshot/normalise.test.ts > normalise, the field mapping > reads a manifest's year given as the negative number -3 as none 0ms
+ <check> |unit| tests/data/snapshot/normalise.test.ts > normalise, the field mapping > reads a manifest's year given as an empty text as none 0ms
+ <check> |unit| tests/data/snapshot/normalise.test.ts > normalise, the field mapping > reads a manifest's year given as the text 'circa 2020' as none 0ms
+ <check> |unit| tests/data/snapshot/normalise.test.ts > normalise, the field mapping > reads a manifest's year given as the text ' 2025' as none 0ms
+ Test Files  1 passed (1)
+      Tests  12 passed (12)
+```
+
+The case-run program gains two inputs, read through `normalise` and then handed to the rule as a card reads them. The block added to `o127-cases.mjs`, before the `C9 oculus lanes` loop:
+
+```js
+// Round 1: a manifest's year read through normalise, then handed to the rule as a card reads it.
+const { normalise } = await import(join(root, 'src/lib/data/snapshot/normalise.ts'));
+for (const [name, given] of [
+    ["R1 year '2025' at published", '2025'],
+    ['R1 year 2025.5 at published', 2025.5]
+]) {
+    const raw = {
+        manifests: [
+            {
+                file: '/hub/projects/p/project.yml',
+                folder: 'projects/p',
+                id: 'p',
+                tier: 'paper',
+                stage: 'published',
+                title: 'P',
+                year: given
+            }
+        ],
+        registries: Object.fromEntries(
+            ['venues', 'datasets', 'pillars', 'domains', 'funding', 'people', 'organisations', 'resources'].map(
+                (name) => [name, { entries: [], meta: {} }]
+            )
+        ),
+        collections: {},
+        feeds: { leads: null, radar: null, scout: null, linkedin: null, byHub: [] },
+        career: null,
+        docs: {},
+        decks: {},
+        findings: []
+    };
+    const read = normalise(raw, [], vocab).entities.projects.p;
+    show(`${name} (normalise gives year=${String(read.year)})`, { ...read, root: 'research-hub' }, vocab);
+}
+```
+
+Its two new lines after the change (the rest of the output is line for line the "Second run" above):
+
+```
+R1 year '2025' at published (normalise gives year=2025): stage=published year=2025 | rule -> 2025 | tag "2025" glyph=calendar tip "Year: 2025" | laneFacts -> [{"kind":"year","label":"2025","whole":"2025"}]
+R1 year 2025.5 at published (normalise gives year=undefined): stage=published year=undefined | rule -> undefined | no tag | laneFacts -> []
+```
+
+`docs/HELP.md:298` is left as it is.
+
+Reuse (spec.md:89): `grep -rn "wholeNumber" src` finds `wholeNumber(text: string)` in `src/lib/data/prose/literature.ts:148`, which reads `/^\d{1,9}$/` from a text only. It is not reused: its nine-digit cap departs from the ruling's "a text made of the digits 0 to 9 alone gives the number it spells", and it takes no number. A judgment the orchestrator may reverse.
+
+### Item 2, the Settings help of the two flags
+
+`config/options/catalogs/vocab.yml:35` now reads `help: the done group, a done or closed outcome; with public too, a card draws the project's year at the stage`, and `:49` reads `help: a public outcome, which the audit of the website's publications asks for on the site; with terminal too, a card draws the project's year at the stage`. The file parses (`node -e` with `yaml` printed both rows: `"terminal":{"help":"the done group, a done or closed outcome; with public too, a card draws the project's year at the stage","control":"toggle"}` and the `public` row).
+
+Grep for further sentences saying what either flag decides: `grep -rn --exclude=local.yml -E "\`terminal\`|\`public\`|'terminal'|'public'|\bterminal: (flag|true)|\bpublic: (flag|true)" config docs src`. The hits that are about the stage flags, each read:
+
+- `config/catalogs/vocab.yml:55,59`, `vocab.ts:154,169`: the descriptions item 5 rewrote; true.
+- `config/catalogs/vocab.yml:179` (a lane holds a project while its stage does not carry `terminal`), `vocab.ts:75` (the chips put a project on a lane unless its stage carries `terminal`), `docs/data-map.md:240` (a project at a stage carrying `terminal` sits on no chip lane): each names one use of `terminal`; true.
+- `docs/HELP.md:316`, `src/lib/state/boards/structure/map-bar.ts:10,101`, `graph.ts:105`, `src/lib/views/structure/map/Map.svelte:28`: the Map's default of stages without `terminal` and its done edges; true.
+- `docs/HELP.md:573`: a layout's `stages` word block `{ not_flags: [terminal] }`; true.
+- `docs/HELP.md:574`: a manifest with `publication:` at a stage without `public` gives no website entry; true.
+- `src/lib/server/content/audit/rules.ts:55,69,165,169`, `audit/projects.ts:397`: the audit's sets of stages carrying each flag; true.
+- `src/lib/state/boards/focus.ts:321,329,336,440,739,747`, `src/lib/views/boards/focus/Focus.svelte:162`, `lanes/Lanes.svelte:187`: the Focus lanes, quick add and the drop refusal by `terminal`; true.
+- `focus.ts:588,600,601`, `CardFacts.svelte:6`, `LaneCard.svelte:14-15`: the step's own year sentences; true.
+
+The other hits (`catalog-words.ts:52`, `catalogs.ts:36,58`, `groups.ts:121`, `appearance.ts`, the apps and terminal-session files, `HELP.md:248`) name the Terminal view or terminal sessions, not the stage flag. No sentence is false, so the round adds no further path.
+
+### Item 3, `LaneCard.svelte:14-17`
+
+The year's item of the facts list now reads "the year the paper appeared, at a stage that carries both `terminal` and `public`, with "Year: 2025" in its tip", as the venue's item says what its tip holds. The paragraph (lines 9-17) was rewrapped whole at 100 columns; `awk` over lines 9-17 prints widths 82, 91, 92, 99, 99, 100, 100, 96, 94, and `tests/checks/source/comment-width.test.ts` passed in the run below.
+
+### Item 4, the report's `file:line` references
+
+C10 now cites `ProjectCard.svelte:367`. Every other `file:line` of the report was read against the tree after the round's last change with `sed -n "<n>p"` on each: `focus.ts:584,586,594,602,605,612,620,624`, `CardFacts.svelte:52,58,72,104,110`, `LaneCard.svelte:58,61,114,120,122,154`, `Lanes.svelte:13,15,234`, `ProjectCards.svelte:9`, `Person.svelte:64`, `Listing.svelte:30,106,119`, `Project.svelte:63`, `vocab-keys.ts:128`, `text.ts:72`, `generation.svelte.ts:23`, `vocab.ts:154,169`, `project.yml:146`, `vocab.yml:71,76`; each holds what the report says. The report's sentences that the round made false (the step adds no test, the year as text draws nothing, the fraction drawn as written, Infinity not verified) were rewritten to the end state.
+
+### Checks
+
+`npm run diagrams`, then `npm run test:quick` once (PATH with `/Users/axelfaes/.nvm/versions/node/v24.21.0/bin`). It took the 14 changed files from git (the 11 changed files and the three untracked ledger files) and ran 164 test files: `normalise.ts` is imported widely, so the list reached tests at import depth 2, the slow ones among them, as spec.md:26 says it does.
+
+```
+test:quick: 14 changed file(s), from git since HEAD
+test:quick: 164 test file(s)
+ok      prettier (0.7 s): All matched files use Prettier code style!
+ok      ASCII gate (0.8 s)
+ok      svelte-kit sync (2.0 s)
+ok      eslint (10.9 s)
+ok      svelte-check (32.6 s): 1793704610812 COMPLETED 582 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest checks (105.5 s): Duration  90.66s (transform 51.82s, setup 0ms, import 135.74s, tests 171.45s, environment 4ms)
+ok      vitest (174.0 s): Duration  160.72s (transform 183.96s, setup 0ms, import 340.34s, tests 257.00s, environment 9.50s)
+ok      vitest slow (200.9 s): Duration  187.73s (transform 29.03s, setup 0ms, import 139.00s, tests 594.92s, environment 9ms)
+test:quick: 203.0 s; every command passed
+test:quick: not covered: tests that reach no changed file within the import depth,
+            other than the checks under tests/checks/source and tests/checks/tree,
+            which run for any change under src, tests or utils; the build, the lint
+            of unchanged files
+```
+
+`npm run diagrams` changed no file under `docs/diagrams` (`git status --short` after it lists none).
+
+- `sh utils/unused-exports.sh`, compared with `.agents/worktrees/O127-base/unused-exports.txt`: `diff` printed nothing, `diff exit 0` (338 lines each); the round added no line.
+- The ASCII gate of spec.md:103 over `src tests config` piped to `wc -l`: `0`. `LC_ALL=C grep -n '[^ -~]'` over the round's files and this report piped to `wc -l`: `0`.
+- History words over the lines the round added: `git diff -U0 <the round's four files> | grep '^+' | grep -v '^+++' | grep -n -i -E "before|used to|no longer|still|always has been|always had|as before|previously|the step adds|after this package|O1[0-9][0-9]|20[0-9][0-9]-[0-9][0-9]"` printed nothing, `grep exit 1`.
+- Runs this round: `npx vitest run tests/data/snapshot/normalise.test.ts` before and after the change (with one more run before the change, to read the row titles), and the verify list once. No whole-suite command.
+- Edits to existing assertions, allow lists or predicates: none. The test file's diff adds lines 381-395 and changes no existing line (`git diff --numstat`: `15 0 tests/data/snapshot/normalise.test.ts`).
+
+### The round's files
+
+From `diff -rq` against the base copy over `src tests utils config`, and `git diff --numstat` (counts against the base, the first build's lines included):
+
+| File | Added / removed | Lines now |
+| --- | --- | --- |
+| `src/lib/data/snapshot/normalise.ts` | 17 / 8 | 696 |
+| `tests/data/snapshot/normalise.test.ts` | 15 / 0 | 396 |
+| `config/options/catalogs/vocab.yml` | 2 / 2 | 413 |
+| `src/lib/views/boards/focus/lanes/LaneCard.svelte` | 9 / 6 | 319 |
+| `.scratch/migration/agents/reviews/O127-report.md` | this section and the four sentences of item 4 | this file |
+
+The other changed files are unchanged since the first build: `config/catalogs/vocab.yml` 2 / 2, `config/text/views/boards/project.yml` 2 / 0, `docs/HELP.md` 2 / 2, `src/lib/data/shapes/catalog-files/vocab.ts` 2 / 2, `src/lib/state/boards/focus.ts` 30 / 3, `CardFacts.svelte` 17 / 5, `ProjectCard.svelte` 5 / 4.
+
+### For the orchestrator
+
+- `agents/guarded.md` G32 names 'fills a project from the manifest keys of the same meaning' as the snapshot test; the new table "reads a manifest's year given as %s" sits in the same describe and is not named there. The ledger is the orchestrator's, so the entry is left as it is.
+- With the year read from a text of digits, the boards' year filter (`takes.ts:94`, which reads `project.year`) also takes a year written as text. The round brief names this outcome for both readers. No other reader of `year` changes.
+- A text of many digits (`'99999999999999999999'`) reads as the number it spells, beyond a safe integer; the ruling sets no cap, and no manifest holds one. Not run.
+- The round's write list was widened by the files items 1 and 2 name, as the round brief says; no other path was added.

@@ -1,12 +1,17 @@
 <script lang="ts">
     // Layer 3, view partial. The Customizations section at the foot of the Sessions tab, as VS
     // Code's Agents window draws it: for one agent, account and workspace, a row per kind of thing
-    // the agent reads before its first turn, each with its count, listing its items when pressed.
-    // An item opens in a source tab when a root the file server serves holds it, and otherwise in
-    // the read-only Customization viewer, since the account's own folder is served by no root.
+    // the agent reads before its first turn, listing its items when pressed. A kind's row is a
+    // group row of the section's tree, as the Repositories view draws a change group: the fold's
+    // chevron, the kind's name and its count as a badge at the right edge, its items one step
+    // further in. An item opens in a source tab when a root the file server serves holds it, and
+    // otherwise in the read-only Customization viewer, since the account's own folder is served by
+    // no root.
     //
     // It is one more section of the look the session's sections have (SessionSection.svelte): a
-    // tree of its own, one stop of the focus order, scrolled with the pane.
+    // tree of its own, one stop of the focus order, scrolled with the pane. When no session's
+    // sections stand above it, the list's line does (`divided`), and its head draws no line of its
+    // own across its top edge.
     //
     // The section keeps what it was scoped to and which rows are open in the list's instance state,
     // beside the list's own filter, under `custom`.
@@ -37,9 +42,11 @@
     type Props = {
         /** The list instance whose state keeps the section's scope. */
         owner: string;
+        /** Whether the list's line stands right above the section, which then draws none itself. */
+        divided?: boolean;
     };
 
-    let { owner }: Props = $props();
+    let { owner, divided = false }: Props = $props();
 
     const {
         agents: { agentChoices, customizations, refreshCustomizations },
@@ -164,6 +171,7 @@
                 open={held.open}
                 ontoggle={() => keep({ open: !held.open })}
                 title={t('customize.title_tip', workspace)}
+                noTopLine={divided}
             >
                 {#snippet actions(reach: number)}
                     <ToolButton
@@ -233,9 +241,10 @@
                             id={kindRow(row.kind)}
                             {nav}
                             level={2}
-                            depth={0}
+                            depth={1}
                             expanded={listing}
                             count={row.count ?? undefined}
+                            badge
                             tone={row.findings.length > 0 ? 'warn' : undefined}
                             title={row.count === null ? t('customize.uncounted') : undefined}
                             onclick={() => toggleRow(row.kind)}
@@ -249,7 +258,7 @@
                                     id={findingRow(row.kind, finding.path)}
                                     {nav}
                                     level={3}
-                                    depth={1}
+                                    depth={2}
                                     tone="error"
                                     title={finding.path}
                                 />
@@ -262,7 +271,7 @@
                                     id={itemRow(row.kind, at)}
                                     {nav}
                                     level={3}
-                                    depth={1}
+                                    depth={2}
                                     title={item.path}
                                     onclick={() => open(item)}
                                 />
@@ -277,7 +286,7 @@
                                     id={noneRow(row.kind)}
                                     {nav}
                                     level={3}
-                                    depth={1}
+                                    depth={2}
                                     tone="muted"
                                     title={row.looked.join('\n')}
                                 />

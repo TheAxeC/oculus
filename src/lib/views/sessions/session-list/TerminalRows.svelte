@@ -3,15 +3,16 @@
     // controls change independently of transcript-backed session rows. Every terminal oculus runs
     // is a row, those no Terminal tab owns among them; a press selects it and shows it in the tab
     // that owns it, or takes it into the Terminal tab of the page on screen (the terminals store's
-    // `showTerminal`). The rows are the group every grouping of a view is drawn as
-    // (ui/controls/heads/GroupHead.svelte), headed Terminals with their count, its heading a row of
-    // the list's tree, and fold under the key `terminals` in the list's pane state
-    // (views/shared/card/pane-fold.ts).
+    // `showTerminal`). The rows are one group of the list's tree, drawn as the Repositories view
+    // draws a change group: a group row headed Terminals with the fold's chevron and their number
+    // as a badge at the right edge, then, while it is open, the rows one step further in. A press
+    // on the group row folds it, and Left and Right do from the keyboard; the group folds under the
+    // key `terminals` in the list's pane state (views/shared/card/pane-fold.ts). A folded group's
+    // rows are not drawn.
     //
     // A row has the height of a session row: the kind's glyph, the title, its stamp at the right
     // and Stop, with the terminal's folder as its hover words.
 
-    import GroupHead from '$lib/ui/controls/heads/GroupHead.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import Menu from '$lib/ui/menu/Menu.svelte';
     import TreeItem from '$lib/ui/tree/TreeItem.svelte';
@@ -45,6 +46,8 @@
 
     let { entries, nav, now, arming, onstop, onpinned }: Props = $props();
 
+    const open = $derived(fold.open(TERMINALS_FOLD));
+
     /** The glyph for one terminal kind. */
     function kindGlyph(kind: TerminalKind): string {
         if (kind === 'claude') return t('sessions.kind_claude_glyph');
@@ -64,7 +67,7 @@
             id={terminalRowId(entry.id)}
             {nav}
             level={3}
-            depth={1}
+            depth={2}
             selected={on}
             title={entry.cwd}
             showActions={armed}
@@ -114,20 +117,24 @@
 {/snippet}
 
 {#if entries.length > 0}
-    <GroupHead
-        data-terminal-group
-        label={t('sessions.terminals')}
-        count={entries.length}
-        open={fold.open(TERMINALS_FOLD)}
-        ontoggle={() => fold.toggle(TERMINALS_FOLD)}
-        row={{ id: groupRow(TERMINALS_FOLD), nav }}
-    >
-        <div class="rows">
+    <div class="rows" data-terminal-group>
+        <TreeItem
+            label={t('sessions.terminals')}
+            id={groupRow(TERMINALS_FOLD)}
+            {nav}
+            level={2}
+            depth={1}
+            expanded={open}
+            count={entries.length}
+            badge
+            onclick={() => fold.toggle(TERMINALS_FOLD)}
+        />
+        {#if open}
             {#each entries as entry (entry.id)}
                 <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
                 {@render row(entry)}{/each}
-        </div>
-    </GroupHead>
+        {/if}
+    </div>
 {/if}
 
 <style>

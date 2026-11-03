@@ -48,17 +48,7 @@
     import CommandBar from '$lib/views/shared/sessions/CommandBar.svelte';
     import CommitBox from '$lib/views/shared/changes/CommitBox.svelte';
     import RepoMessage from './RepoMessage.svelte';
-    import {
-        drawnChanges,
-        everything,
-        extended,
-        idOfRef,
-        pressed,
-        refOf,
-        type Pick
-    } from '../changes/picking';
-    import { filesKeymap } from '$lib/state/sources/explorer/acts/keys';
-    import { onMac } from '$lib/ui/controls/editor/kit/load';
+    import { createChangePicks } from '$lib/views/shared/changes/groups/change-picks.svelte';
     import { repoShape, type RepoShape } from '$lib/state/sources/repositories/repositories';
     import { repositoryKeyRows } from '$lib/state/sources/repositories/change-tree';
     import type { WorktreeStart } from '$lib/state/sources/repositories/repositories.svelte';
@@ -131,58 +121,13 @@
     const shape = $derived(repoShape(root, git));
     const busy = $derived(repositories.busy(root));
 
-    /** The keys of the change rows: the selection's two Shift keys and Open to the Side. */
-    const keymap = filesKeymap(onMac()).filter(
-        (one) =>
-            one.action === 'extend-up' || one.action === 'extend-down' || one.action === 'open-side'
-    );
-    /** The change rows drawn now, in the order they are drawn. */
-    const drawnRows = $derived(drawnChanges(keyRows.map((row) => row.id)));
-    /** The selected rows that are still drawn: a row staged away or gone leaves the selection. */
-    const live = $derived.by(() => {
-        const ids = new Set(drawnRows.map(idOfRef));
-        return picked.filter((id) => ids.has(id));
+    /** The selection of the change rows, kept in the view's instance state. */
+    const picks = createChangePicks({
+        rows: () => keyRows,
+        picked: () => picked,
+        onpicked: (ids: string[]) => onpicked(ids),
+        openSide: (group: string, path: string) => repositories.openChangeBeside(root, group, path)
     });
-    /** The row the last press or key was on, and the row a range grows from. */
-    let cursor = $state('');
-    let anchor = $state('');
-    /** The tree's focus control, held to move the focus with a Shift key. */
-    let treeNav: TreeNav | undefined;
-
-    function take(next: Pick, at: string): void {
-        anchor = next.anchor;
-        cursor = at;
-        onpicked(next.picked);
-    }
-
-    /** A press on a change row; true when it only changed the selection, so the row stays shut. */
-    function pressedRow(id: string, event: MouseEvent): boolean {
-        const kind = event.shiftKey ? 'range' : event.metaKey || event.ctrlKey ? 'toggle' : 'plain';
-        take(pressed({ picked: live, anchor }, cursor, drawnRows, id, kind), id);
-        return kind !== 'plain';
-    }
-
-    /** A key of the change rows: Cmd+A, Shift+Up, Shift+Down and Cmd+Enter. */
-    function keyed(action: string, id: string): boolean {
-        const row = refOf(id);
-        if (row === null) return false;
-        const now = { picked: live, anchor };
-        if (action === 'select-all') take(everything(now, id, drawnRows), id);
-        else if (action === 'extend-up' || action === 'extend-down') {
-            const next = extended(now, id, drawnRows, action === 'extend-up' ? -1 : 1);
-            take(next.pick, next.cursor);
-            treeNav?.focus(next.cursor);
-        } else if (action === 'open-side') {
-            repositories.openChangeBeside(root, row.root, row.path);
-        } else return false;
-        return true;
-    }
-
-    /** Keep the tree's focus control, and hand it on to the rows drawn with it. */
-    function keep(nav: TreeNav): TreeNav {
-        treeNav = nav;
-        return nav;
-    }
 
     /** A key's toggle names a group by its row id; the view keeps it by the group's own id. */
     function toggled(id: string): void {
@@ -309,11 +254,11 @@
             label={t('views.repositories')}
             rows={keyRows}
             ontoggle={toggled}
-            {keymap}
-            onkey={keyed}
+            keymap={picks.keymap}
+            onkey={picks.keyed}
         >
             {#snippet children(tree: TreeNav)}
-                {@const nav = keep(tree)}
+                {@const nav = picks.keep(tree)}
                 <Changes
                     {root}
                     {git}
@@ -322,8 +267,8 @@
                     {ontoggle}
                     {ask}
                     {mode}
-                    picked={live}
-                    onpress={pressedRow}
+                    picked={picks.live}
+                    onpress={picks.pressed}
                 />
 
                 <Graph
