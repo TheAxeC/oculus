@@ -25,8 +25,17 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 ```yaml
 dispatch:           # steps in flight, up to six (Z632)
 - step: O135
+  base: c931e9418
+  worktree: .agents/worktrees/migration-O135
+  executor: agent
+  worker: claude:opus
+  session_id: a873dc4f1798414d2
+  model: claude-opus-5-5
+  launched: 2026-11-03
+  report: .scratch/migration/agents/reviews/O135-report.md
+  round: 0
   brief_check: .scratch/migration/agents/reviews/O135-brief-check.md (a283b3d0c29ce5214, claude-opus-5-5, 229441 tokens, 92 tool uses, 12 min 31 s)
-  landing: preparing
+  landing: not-started
 ```
 
 ## The standing demands (from Axel, in force)
@@ -780,6 +789,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-11-03 (O135 building). O135's brief check (`agents/reviews/O135-brief-check.md`, a283b3d0c29ce5214, claude-opus-5-5) closed in the brief under its Closed heading; prepared at c931e9418; worktree `.agents/worktrees/migration-O135` with `npm ci` and `svelte-kit sync`; base copy `.agents/worktrees/O135-base` with `unused-exports.txt` (335 lines); builder a873dc4f1798414d2 (claude-opus-5-5) runs. In flight (1 of 6): O135 (building). Queued: O137, O138, O139. Open items: none.
 - 2026-11-03 (O136 landed). O136, the editor holds a keyed family to the form its reader takes, landed (booking in plan.md under O136, `agents/reviews/O136-landing.md`): round 1's item 1, handed back unbuilt, was built at landing as the conditional schema `heldToForm` (ruling "O136 editor message"), so the editor says oculus's words for a map written as a list or a list written as a map and its own words for any other wrong type; the first gate run was red on two over-wide comment lines and an `any` assignment of that fix, fixed, and the second passed; the look on 8797 shows "collections must be a list, not a map". O135's brief check a283b3d0c29ce5214 reported during the landing and is saved after its commit. In flight (1 of 6): O135 (brief check reported). Queued: O137, O138, O139. Open items: none.
 - 2026-11-03 (O132 landed; open item 656). O132, the words of every hub held to the vocabulary check, landed (booking in plan.md under O132, `agents/reviews/O132-landing.md`): the review over round 1 found two report figures (R1, R2), fixed at landing, and a here-document redirect into the report (R3), recorded under "Unapproved builder scripts"; G13's Test line names the new describe; the gate's `vitest slow` was red on two timeouts in `hub-portfolio.test.ts`, which passes alone and takes no longer with the step; main equals the gate under `cmp`. The look found that a second hub's finding is drawn with no hub chip, which predates the step: open item 656. In flight (1 of 6): O136 (round 1). Queued: O135, O137, O138. Open items: 655, 656.
 - 2026-11-03 (O136 round 1 sent; O132 reviewed over round 1). O136's review aeaee453e5f924a28 (claude-opus-5-5), `agents/reviews/O136-refuter.md`: items 1, 3 and 4 hold, every case met; Spec 1 (the editor's message names the JSON type, not a map or a list), Standards 1 (`references.ts:11-13`), Standards 2 (the test head comment), Behaviour 1 (completion in the refused form lost, unstated) and the report's `file:line` figures. Repair round 1 (`agents/briefs/O136-round-1.md`) sends all five, the path list widened to `engine.ts`, `json.ts` and `references.ts`; snapshot `.agents/worktrees/migration-O136-round-1`. O132's review over round 1 acbc1234def53be42 (claude-opus-5-5), appended to `agents/reviews/O132-refuter.md`: every round item holds but R1 (the report's "twelve" for thirteen red tests), R2 (the report's line counts of `vocab.test.ts`) and R3 (a here-document redirect into the report, under the ruling "Unapproved builder scripts"), all for landing. In flight (2 of 6): O132 (landing next), O136 (round 1). Queued: O135, O137, O138. Open items: 655.
