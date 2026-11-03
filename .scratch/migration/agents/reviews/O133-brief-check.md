@@ -218,3 +218,24 @@ Usage: aa8f129fd1b7631ff, claude-opus-5-5, 223032 tokens, 61 tool uses, 12 min 1
 
 The findings that need a ruling are raised in one stop, open item 652: the test's guarded entry (Cases and checks 1, finding B), the paths the step must widen to (Premises 5, finding A; Names, `config/text/server.yml:385` and `deck/split.ts:7`), and the empty header the docs form swallows (Implied inputs 1, finding C). The brief is restored to main's copy (main has none, so it is removed) and kept aside; the other findings are closed in it when `/spec` runs again after the ruling, as the spec skill's Steps 5 says of a step whose brief check has run.
 
+Closed at the second `/spec`, on main at 849c4c580, after the ruling of open item 652 ((1) (a), (2) (a), (3) (a)). Each finding and the change to `agents/briefs/O133.md` that closes it:
+
+- (A) Premises 5, the views row: item 2 gains the `layer-rows.ts` bullet (the views row given `'data/prose/markdown/front-matter'` alone, its reason in the comment block at `layer-rows.ts:160-226`); "What is on the tree" states the row and the boundaries test; the paths list names `tests/checks/tree/layer-rows.ts` lines 160-226 and 279-287; verify 1 runs `tests/checks/tree/boundaries.test.ts`; decision 2 names ruling 652 (2) (a).
+- (B) Cases and checks 1, the guarded entry: item 4 is the test of a new entry G150, its text dictated from ruling 652 (1) (a) and held line by line against that ruling's words: every reader of a Markdown file reading the same leading header, the note scan's tags and headings, the Outline, the preview, an embed, the server's token and the docs split; the orchestrator adds it at landing.
+- (C) Implied inputs 1, the empty header: item 1's pattern tries the empty block first; item 2's docs bullet names the one input whose split changes; case C11 is that text; "What is on the tree" quotes the run over the hub's 583 Markdown files (`differ 0`).
+- (D) Cases and checks 3, the Outline column: C9 and C10 hold a `# draft` line in the block, so the Outline column differs before and after for C9 and guards the BOM sentence for C10.
+- (E) Cases and checks 2, C2's before: C2 states that the preview hides a `--- ` closing today, and the note scan's heading `tags: [alpha]`, the embed and the server's setext heading as the readers that change.
+- (F) Premises 9, the worktree and the base copy: "What is on the tree" names `.agents/worktrees/migration-O133/` and `.agents/worktrees/O133-base/` with `docs` among its folders and `unused-exports.txt` beside them.
+- Cases and checks 6, verify 5 on the unchanged tree: item 4 and verify 6 say the test imports no pattern and reaches the header only through the readers, so every row runs on the unchanged tree.
+- Cases and checks 8, no check that no copy stays: verify 2 is the two greps with their expected output.
+- The question, the preview, embed and server columns: item 4 renders `RenderedMarkdown.svelte` through `svelte/server` after `installRealText()`, draws an embed through `blockMarkdownParts` with a note drawing, and reads the token through `markdownRequests(() => ['.md'])['markdown/parse']`; each was run at /spec in a scratch file of the gate worktree, quoted under "What is on the tree".
+- Implied inputs 2, 3 and 5: C13 (a header at the end of the text with no line end), C12 (a `...` inside the YAML) and the second row of C8 (`----`).
+- Implied inputs 7: decision 5 names the Unicode white space after a closing line.
+- Implied inputs 8, the lone CR: decision 4 leaves it as it is, and the report names it under the judgment calls.
+- Implied inputs 12, scanNote's headings: a column of item 4.
+- Premises 2: `frontTags` is cited at 220-254.
+- Premises 3: the users of `splitFrontmatter` are listed without the quoted phrase.
+- Premises 7: the grep is quoted as printing nothing, exit 1; the entry is G32 at `guarded.md:276-278`.
+- Dictated text, the BOM: the brief writes it as `\uFEFF`, and the ASCII gate over the brief prints nothing.
+- Names, `config/text/server.yml:385` and `deck/split.ts:7`: item 3 and the paths list name both (ruling 652 (2) (a)).
+- Declined to judge, the libraries: `npm view` at /spec gives gray-matter 4.0.3 MIT, front-matter 4.0.2 MIT and markdown-it-front-matter 0.2.4 MIT, each with the date its npm metadata was last modified.
