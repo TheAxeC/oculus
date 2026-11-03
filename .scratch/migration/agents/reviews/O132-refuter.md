@@ -166,3 +166,189 @@ The builder's three decisions:
 - Whether the staged tree matches the worktree. That would need `git diff --cached`, a git command outside the three this review may run.
 
 Reviewer usage: a3d8deb001529c2b6, claude-opus-5-5, 180985 tokens, 52 tool uses, 14 min 58 s.
+
+## Repair round 1, refuted
+
+All commands were run from `/Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O132`. The load average from `uptime` is given beside each run.
+
+```
+$ uptime   (18:37)
+load averages: 4.56 7.15 9.85
+$ npx vitest run tests/data/shapes/catalog-files/vocab.test.ts tests/data/sources/config/boards.test.ts tests/data/hubs/workspace-projects.test.ts tests/data/hubs/connection-keys.test.ts tests/state/forms/choices.test.ts tests/data/sources/manifests/manifests.test.ts
+ Test Files  6 passed (6)
+      Tests  134 passed (134)
+   Duration  10.75s (transform 4.19s, setup 0ms, import 11.45s, tests 24.48s, environment 1ms)
+$ npx vitest run tests/checks/tree/boundaries.test.ts   (load 6.90 7.54 9.94)
+ Test Files  1 passed (1)
+      Tests  11 passed (11)
+$ npx vitest run tests/data/shapes/catalog-files/vocab.test.ts --reporter=verbose   (the new describe)
+ <check mark> ... the vocabulary words of a hub that is not the primary > gives the findings of two tiers carrying default, each naming its settings file 225ms
+ (the other ten rows <check mark>, 213 to 243 ms each)
+      Tests  24 passed (24)
+$ npm run diagrams   (shasum of docs/diagrams/* before and after, compared with cmp)
+diagrams exit 0
+diagrams-unchanged
+$ npm run test:quick -- --base 95025410b   (once; uptime before 5.71 7.03 9.53, after 12.30 11.61 11.04)
+test:quick: 11 changed file(s), from git since 95025410b
+test:quick: 100 test file(s)
+ok      prettier (1.2 s): All matched files use Prettier code style!
+ok      ASCII gate (1.4 s)
+ok      svelte-kit sync (3.4 s)
+ok      eslint (3.9 s)
+ok      svelte-check (15.1 s): 1793727538574 COMPLETED 582 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest checks (157.9 s): Duration  137.55s (transform 110.50s, setup 0ms, import 221.37s, tests 296.68s, environment 4ms)
+FAILED  vitest (165.1 s)
+ FAIL  |unit| tests/routes/git/zenodo.test.ts > the review copy For review sends > refuses a PDF whose deflated stream holds a term, naming it
+ FAIL  |unit| tests/data/sources/manifests/manifests.test.ts > a hub reports only the files its own configuration names > reads a registry from the collections entry that names it and leaves the others unnamed
+ FAIL  |unit| tests/data/sources/config/layers/hub-vocab.test.ts > the vocabulary a hub lays over oculus's > words a row of 'fund_stages' of the wrong kind and a second row naming one key, oculus's list standing
+   (each: Error: Test timed out in 5000ms.)
+      Tests  3 failed | 895 passed | 500 skipped (1398)
+FAILED  vitest slow (276.6 s)
+ FAIL  |unit| tests/routes/git/credentials.test.ts > the gits the clone route starts > carry the pairs for a clone of a repository with 'a signed-in host whose sign_in row na<ellipsis>' (G135)
+ FAIL  |unit| tests/routes/hubs/hub-writes.test.ts > a write to a record of the second hub > 'a Lit Watch deletion' changes the second hub only, is logged by path and is undone
+ FAIL  |unit| tests/data/hubs/self.test.ts > the user the key self names > marks nobody for a key no hub holds, with exactly one finding on the file at self (case 5)
+ FAIL  |unit| tests/server/edit/config-value.test.ts > a hub's word written into the hub's settings file > deletes the row of a word the hub added once the reader removes it
+   (each: Error: Test timed out in 20000ms.)
+      Tests  4 failed | 496 passed | 165 skipped (665)
+test:quick: 280.3 s; failed: vitest, vitest slow
+Each red file alone (npx vitest run <file>), none of them changed by the step:
+  tests/data/sources/manifests/manifests.test.ts       load 10.88 11.33 10.95   Tests  36 passed (36)
+  tests/data/sources/config/layers/hub-vocab.test.ts   load 9.98 11.12 10.88    Tests  31 passed (31)
+  tests/data/hubs/self.test.ts                         load 9.19 10.85 10.79    Tests  17 passed (17)
+  tests/server/edit/config-value.test.ts               load 7.57 10.27 10.58    Tests  23 passed (23)
+  tests/routes/git/zenodo.test.ts                      load 6.32 9.62 10.33     Tests  51 passed (51)   Duration  26.58s
+  tests/routes/git/credentials.test.ts                 load 5.39 9.03 10.08     Tests  8 passed (8)     Duration  15.99s
+  tests/routes/hubs/hub-writes.test.ts                 load 6.12 8.97 10.04     Tests  47 passed (47)   Duration  47.38s
+$ LC_ALL=C perl -ne 'print "$ARGV:$.:$_" if /[^\x20-\x7E\n]/; close ARGV if eof' src/lib/data/index.ts src/lib/data/sources/config/sections/vocab.ts tests/data/shapes/catalog-files/vocab.test.ts docs/HELP.md; echo "ascii exit $?"
+ascii exit 0
+$ sh utils/unused-exports.sh > <scratchpad>/o132-unused-r1.txt; echo "unused exit $?"; diff ../O132-base/unused-exports.txt <scratchpad>/o132-unused-r1.txt; echo "diff exit $?"
+unused exit 0
+diff exit 0
+
+The round report's quoted evidence, rerun:
+$ npx prettier --check src/lib/data/index.ts tests/data/shapes/catalog-files/vocab.test.ts src/lib/data/sources/config/sections/vocab.ts docs/HELP.md
+All matched files use Prettier code style!
+$ git diff 95025410b -U0 -- src tests docs/HELP.md | grep '^+' | grep -nE "before|used to|no longer|still|always has been|always had|as before|previously|the step adds|after this package|O1[0-9][0-9]|20[0-9][0-9]-"; echo "history grep exit $?"
+history grep exit 1
+   (I ran it as `git diff <base>`; the report's `git diff -U0` with no base is a git form outside the three this review may run.)
+$ awk 'NR<=11{print length}' tests/data/shapes/catalog-files/vocab.test.ts
+96 100 99 100 96 100 98 99 99 96 33
+$ awk 'NR==632{print length}' src/lib/data/index.ts
+96
+$ wc -l src/lib/data/index.ts src/lib/data/sources/config/sections/vocab.ts tests/data/shapes/catalog-files/vocab.test.ts docs/HELP.md   (base copy: 847 202 226 618)
+     861 src/lib/data/index.ts
+     205 src/lib/data/sources/config/sections/vocab.ts
+     363 tests/data/shapes/catalog-files/vocab.test.ts
+     619 docs/HELP.md
+The report's lone runs, each alone (npx vitest run <file>):
+  tests/state/sources/clone-after.test.ts   load 4.76 8.07 9.63   Tests  11 passed (11)   Duration  7.84s
+  tests/routes/docs/primary-key.test.ts     load 5.29 8.09 9.61   Tests  7 passed (7)     Duration  4.73s
+  tests/routes/git/zenodo.test.ts           (above)               Tests  51 passed (51)
+  tests/data/hubs/hub-portfolio.test.ts     load 5.50 8.03 9.58   Tests  16 passed (16)   Duration  42.56s
+  tests/server/edit/config-key.test.ts      load 5.28 7.62 9.34   Tests  36 passed (36)   Duration  22.27s
+$ npx tsx <scratchpad>/o132/combo.mts <worktree>   (the report's case-run program, rebuilt from its quoted body, removed after)
+<hub file> | tiers.personal | research, personal each carry default, <ellipsis>
+<hub file> | focus_clusters[0].label | the label of the Focus cluster now names nosuch.word, <ellipsis>
+<hub file> | focus_lanes[3] <ellipsis> through focus_lanes[9]
+count 9
+$ npx tsx <scratchpad>/o132/combo.mts ../O132-base
+count 0
+```
+
+The round's delta, from `diff -u` of each path in `files.txt` against the worktree:
+- Five of the eight listed paths (`docs/HELP.md`, `vocab.ts` and the four diagram files) are identical to the snapshot.
+- `src/lib/data/index.ts`: one hunk, the doc comment of `VOCAB_FILE` at line 632.
+- `tests/data/shapes/catalog-files/vocab.test.ts`: one hunk, head-comment lines 5-11.
+- `git status --short` shows no changed path outside `files.txt` besides the three `.scratch/` ledger files.
+
+My one run of `npm run test:quick` was red: seven timeouts in seven files the step does not change, at load 5.71 before and 12.30 after. Each of the seven files passes alone (above). Under the rules file's "Verify before you report", such a failure is not counted as a finding. `manifests.test.ts` imports `readOtherHub`, and it passes alone and inside the six-file run. The first refuter's run of the list passed. Verify 2 is therefore red on the builder's last run and on mine, and the report's first line and its verify 2 row say NOT DONE, which matches.
+
+### Verdicts
+
+Items of the brief's "What to build", over the whole diff since the base:
+
+- 1: holds.
+  - `index.ts:653-655` runs `vocabFindings(config, fileOf, catalog)` when `(hubKeysOf(VOCAB_FILE) ?? []).some((key) => named(from, key))`.
+  - `fileOf` is `() => sources` (`:650`).
+  - `...words` comes after `...categories` (`:672-673`).
+  - The eleven rows pass, and combo.mts gives count 0 on the base and 9 on the worktree, each finding naming the hub's file.
+- 2: holds.
+  - The doc comments of `OtherHub` (`index.ts:619-625`) and `readOtherHub` (`:635-645`) name the vocabulary check, when it runs and the file it names.
+  - `vocab.ts` has its head comment at `:1-15` and the `vocabFindings` doc comment at `:190`.
+  - The head comment of `vocab.test.ts:1-11` is now qualified per describe (round item 1).
+- 3: holds. `docs/HELP.md:593` is one line beside the `categories` bullet and is unchanged in the round.
+- 4: holds.
+  - One `it.each` table of eleven rows, `vocab.test.ts:349-363`, with its rows at `:266-347`.
+  - `it` and `plantScratch` come from `tests/fixtures/scratch.ts` (`:30`).
+  - Each row compares the whole list as `[file, key, message]` against `join(dir, HUB_FILE)`.
+  - C1 to C3 check `oneWordWith`, and no title carries a case id.
+
+Cases:
+
+- C1: met. The row passes (my verbose run). The report quotes its failure on the unchanged tree.
+- C2: met, as C1.
+- C3: met, as C1.
+- C4: met, as C1.
+- C5: met, as C1.
+- C6: met, as C1.
+- C7: met. The row passes with the label finding and `LEFT_OUT` `focus_lanes[3]` to `[9]` under the hub's file. combo.mts reproduces the same eight after the tiers finding.
+- C8: met, as an audit. The row expects `[]` and passes.
+- C9: met, as an audit. The row passes, and reading `index.ts:653` shows that `scan` is not a key of `hubKeysOf('catalogs/vocab.yml')`.
+- C10: met. The row expects `categories[7]` and then `tiers.personal`, and passes. The report quotes its failure on the unchanged tree.
+- C11: met, as an audit. The row expects the merge's `focus_lanes.0` finding alone and passes.
+- C12: met. The rows of "the vocabulary's words past its shape" and `boards.test.ts` pass inside my six-file run (134 of 134).
+
+Items of the round's brief:
+
+- Round 1 (Standards 1): holds.
+  - `vocab.test.ts:5-7` now opens "In the describe of the primary hub, each finding names the file the value was read from, ...". The sentence after it keeps the rule for the other describe: "every finding of such a hub names its settings file, one on a lane of oculus's ... included".
+  - The file has exactly two describes (`:64`, `:349`), so each describe gets one rule and the comment is true of every row.
+  - The paragraph is rewrapped at 100 columns or fewer (awk widths above, last line 33).
+  - The rewrap also changed "names its `.oculus/config.yml`" to "names its settings file". This is inside the same sentence and matches the describe's title ("each naming its settings file"). The tree uses the term for that file throughout: `grep -rn "hub's settings file\|its settings file" src tests docs` gives 118 lines outside the diagrams. So it is no fix beyond the finding.
+- Round 2 (the doc comment of `VOCAB_FILE`): holds.
+  - `index.ts:632` reads "The engine file whose keys, set in a hub's settings file, switch the vocabulary check on." It is one line of 96 columns.
+  - This is true of `hubKeysOf(VOCAB_FILE)` as used at `:653`. `hubKeysOf` returns the `HUB_LIST` keys whose `file` is that name (`hub-names.ts:789-792`), and `named` holds them when the hub's file sets them (`index.ts:250-254`).
+- Round 3 (Proof 1, the report): violated on one count, Finding R1. The rest holds.
+  - The first line and the verify 2 row are rewritten, and no row whose last run was red is marked DONE.
+  - The reviewer's runs are quoted.
+  - The builder's lone `Tests  16 passed (16)` run is now quoted with its output (verify 2 row: `18:02`, `load averages: 11.50 15.39 13.87`, `Duration  42.26s`), and my lone run reproduces it (`Tests  16 passed (16)` at load 5.50).
+  - The round's `test:quick` lines are quoted, with each red test, its run alone and the load average. Every lone result I reran reproduces: clone-after 11, primary-key 7, zenodo 51, hub-portfolio 16 and config-key 36, all passing.
+
+### Findings
+
+- R1, Proof. `.scratch/migration/agents/reviews/O132-report.md`, the DONE / NOT DONE row "Verify 2": "twelve timeouts in five files the step does not change".
+  - What is wrong: round item 3 asked for this row to say what the runs show. The round's own table lists thirteen red tests:
+    - clone-after: 1
+    - primary-key: 2
+    - zenodo: 4
+    - hub-portfolio: 5
+    - config-key: 1
+  - That matches the quoted summaries `Tests  7 failed` (vitest) and `Tests  6 failed` (vitest slow), 7 plus 6 being 13.
+  - Decision resting on it: whether verify 2's red is the step's. The count does not change that decision, since every red test is a timeout in an unchanged file that passes alone.
+  - Fix at landing: "twelve" becomes "thirteen".
+  - Failure scenario: an orchestrator reconciling the row with the table finds a red test unaccounted for and goes looking for a fourteenth file or a missing lone run.
+  - Verdict: round item 3, violated on this count.
+- R2, Standards. `.scratch/migration/agents/reviews/O132-report.md`, the sections before "Repair round 1": the Files table row "`tests/data/shapes/catalog-files/vocab.test.ts` | 226 -> 362", DONE row 4 "`vocab.test.ts:235-362`" and DONE row 2 "`vocab.test.ts:1-10` (read)".
+  - What is wrong: the rules file ("The working rules that bind every package") says every line count and `file:line` in the report is taken after the last change, and a figure from before it is taken again or removed.
+  - After the round, `wc -l` gives 363, the head comment runs to line 11, and the new code runs from line 236 to 363 (`grep -n "A hub file whose tier"` gives 236).
+  - The round section's own table gives 363, so the report states two line counts for one file.
+  - No decision rests on these figures.
+  - Fix at landing: 362 becomes 363, `235-362` becomes `236-363`, and `1-10` becomes `1-11`.
+  - Failure scenario: a reader follows `vocab.test.ts:1-10` and misses the last line of the head comment, which carries the in-order comparison clause.
+  - Verdict: none.
+- R3, Spec (an unapproved script, under the rules file's definition). `.scratch/migration/agents/reviews/O132-report.md`, the last paragraph: "This section "Repair round 1" was appended to this report with a shell here-document redirect (`cat >> .scratch/migration/agents/reviews/O132-report.md <<'EOF'`)".
+  - What is wrong: the rules file ("What every package obeys", the case-run paragraph) says a shell redirect that changes a file is a script that needs the approval the brief names. Neither the brief nor the round brief approves one.
+  - The builder names it and the one file it changed. That file is the report, not a path of the step's diff.
+  - Disposition: the ruling "Unapproved builder scripts" (`plan.md` Rulings, 2026-10-25) closes it in automode. The breach is recorded in the booking, and the orchestrator reads the appended hunk against the round brief before keeping it. I read the whole appended section, and nothing in it is kept beyond what the reruns above confirm, except R1.
+  - Failure scenario: a booking that omits the breach leaves the step's record silent on an edit made outside the Edit and Write tools.
+  - Verdict: none.
+
+### Declined to judge
+
+- What the staged tree holds, and whether the ledger copies under the worktree's `.scratch/` match the main ledger. That needs `git diff --cached` or a commit-level read, git commands outside the three this review may run.
+- The thirteen red tests of the builder's round run, as distinct from their files' lone runs. Those test results came from a load I cannot recreate. I reran each file alone, and each passes.
+- Whether `ticker_categories`, a key of `hubKeysOf('catalogs/vocab.yml')` whose words `focusFindings` (`sections/focus.ts`) checks for the primary, should also be checked for a hub other than the primary. The brief's item 1 limits this step to `vocabFindings` ("a key it does not read gives no finding"), so it lies outside the step.
+- The counts on the Findings tab, the rail and the status bar for a second hub holding C1 and C7. The look on landing settles them, since a reviewer runs no page.
+- G13's text, Code and Test lines. The orchestrator extends them at landing, outside this diff.
+
+Reviewer usage: acbc1234def53be42, claude-opus-5-5, 180694 tokens, 38 tool uses, 14 min 53 s.

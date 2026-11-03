@@ -1,6 +1,6 @@
 In flight (2 of 6 slots in use):
 - O132 (every hub's words held to the vocabulary check), repair round 1 reviewed; landing next.
-- O136 (the editor holds a keyed family to the form its reader takes), reviewed; repair round 1 next.
+- O136 (the editor holds a keyed family to the form its reader takes), repair round 1 sent; building.
 
 Queued, in order (3 steps):
 - O135 (an Add Front Matter command for a note), ruling 650; O133, whose pattern it reads, has landed.
