@@ -34,8 +34,12 @@ dispatch:           # steps in flight, up to six (Z632)
   launched: 2026-11-03
   report: .scratch/migration/agents/reviews/O128-report.md
   round: 0
+  builder_usage: first run (cases hand-back) 229973 tokens, 78 tool uses, 10 min 12 s
   brief_check: .scratch/migration/agents/reviews/O128-brief-check.md (aad602adef6203102, claude-opus-5-5, 229764 tokens, 91 tool uses, 11 min 50 s)
   landing: not-started
+- step: O129
+  brief_check: "running: ab2ec14cae7da1de4"
+  landing: preparing
 ```
 
 ## The standing demands (from Axel, in force)
@@ -174,6 +178,8 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 ## Open items (only what Axel must rule on; every report tells him these in plain words, decisions first, until he has ruled)
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
+
+- Open item 645 (2026-11-03): the rows of `categories:` of a hub other than the primary are held to the whole-file shape only, never to the config check `categoriesFindings` (`src/lib/server/root/watch/portfolio/payload.ts:91` runs it on the primary's config alone), so such a hub's `stages: { words: [nonsense] }` or a row with no `color` gives no finding and the word is not read (the run quoted in `agents/reviews/O128-report.md`, "What is handed back" 2). (a) recommended: a new step that runs `categoriesFindings` over each other hub's merged config in `readOtherHub` (`src/lib/data/index.ts:628-650`), its findings naming that hub's settings file, so every hub's category rows are checked alike; it makes findings appear for such a hub's wrong words, which today are silent. (b) no change, the lazy option: a second hub's wrong category word stays silent.
 
 ## Closed items
 - Open item 644 (2026-11-03), closed by Axel the same day: (a), step O129; (b) was the lazy option.
@@ -775,6 +781,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-11-03 (O128 cases ruled). O128's builder handed back the cases' first run (`agents/reviews/O128-report.md`): four rows passing on the unchanged tree and a second hub's rows reaching no `categoriesFindings`. The cases ruling `agents/briefs/O128-cases.md` takes (a) and (B); the builder is resumed with it. O129's brief check ab2ec14cae7da1de4 runs. In flight (2 of 6): O128 (building), O129 (brief check). Open items: 645.
 - 2026-11-03 (O128 building). Axel ruled 643 (d), step O128, and 644 (a), step O129. O128's brief (`agents/briefs/O128.md`) carries the brief check's findings closed (`agents/reviews/O128-brief-check.md`, "Closed"); prepared at 8ae9afb82; builder a1f38c408a7b19f9c (claude-opus-5-5) runs in `.agents/worktrees/migration-O128`. In flight (1 of 6): O128 (building). Queued: O129. Open items: none.
 - 2026-11-03 (O127 landed). O127 is on main (booked under O127 in `plan.md`, `agents/reviews/O127-landing.md`); `test:quick` passed in the gate and main equals the gate; the long-text edge of the year read fixed at landing with a test row; the look taken on a scratch server on 8797 from the gate, stopped after. In flight: none. Queued: none. Open items: none.
 - 2026-11-03 (O126 landed). O126 is on main (booked under O126 in `plan.md`, `agents/reviews/O126-landing.md`); `test:quick` passed in the gate and main equals the gate; one comment fixed at landing, Behaviour 1 kept; the look taken on a scratch server on 8797 from the gate, stopped after. In flight (1 of 6): O127, its round 1 under review (a86efa7addc7ea610). Queued: none. Open items: none.
