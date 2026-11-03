@@ -1,4 +1,5 @@
-In flight (0 of 6 slots in use): none.
+In flight (1 of 6 slots in use):
+- O125 (a group heading solid over a wallpaper), brief checked, builder next.
 
 Queued, in order (0 steps): none.
 
