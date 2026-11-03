@@ -33,8 +33,10 @@ dispatch:           # steps in flight, up to six (Z632)
   model: claude-opus-5-5
   launched: 2026-11-03
   report: .scratch/migration/agents/reviews/O140-report.md
-  round: 0
+  builder_usage: first run 208174 tokens, 148 tool uses, 27 min 27 s
+  round: 1
   brief_check: .scratch/migration/agents/reviews/O140-brief-check.md (ad6e98d66c1edb3ea, claude-opus-5-5, 180152 tokens, 47 tool uses, 9 min 14 s)
+  reviewer_report: .scratch/migration/agents/reviews/O140-refuter.md (ada1bd113ba2a7360, claude-opus-5-5, 216228 tokens, 57 tool uses, 12 min 14 s)
   landing: not-started
 ```
 
@@ -798,6 +800,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-11-03 (O140 round 1 sent). O140's builder reported (`agents/reviews/O140-report.md`, usage under builder_usage) and the orchestrator read the whole diff. Its review (`agents/reviews/O140-refuter.md`, ada1bd113ba2a7360, claude-opus-5-5): items 1, 3 and 4 hold, item 2 violated by S1 (Gruvbox Light's teal out of tone and not handed back), every case met; findings S2, P1, P2, a Standards wording point and B1, B2. Repair round 1 (`agents/briefs/O140-round-1.md`, 6 items: the darkest passing teal for Gruvbox Light with the bars kept, and report and head-comment corrections) copied into the worktree with the review; snapshot `.agents/worktrees/migration-O140-round-1`. In flight (1 of 6): O140 (round 1). Open items: none.
 - 2026-11-03 (O140 building). Axel ruled 666 1 (a) and 2 (a), booked in plan.md. O140's brief rewritten to rulings 665 and 666 (14 pink blocks and 17 teal blocks under a CIEDE2000 of 10 in a sweep on main, the case-run program approved), its brief check's findings closed under its Closed heading; prepared at 3680ded21; worktree `.agents/worktrees/migration-O140` with `npm ci` and `svelte-kit sync`; base copy `.agents/worktrees/O140-base` with `unused-exports.txt` (335 lines); builder a1af65dc72468561d (claude-opus-5-5) runs. In flight (1 of 6): O140 (building). Open items: none.
 - 2026-11-03 (O140 stopped on 666). O140's brief check (`agents/reviews/O140-brief-check.md`, ad6e98d66c1edb3ea, claude-opus-5-5) found ruling 665's premise wrong: pink equals planned's violet in three more themes, seven more sit under the bar, and Rose Pine draws offered like active. Raised as open item 666; O140 stopped, its brief taken out until the ruling. In flight: none. Open items: 666.
 - 2026-11-03 (O137 landed). O137, a collection always sorted, landed (booking in plan.md under O137, `agents/reviews/O137-landing.md`): three fixes at landing (the `stageRank` doc, `sortFieldFindings`, G56) and the report's Status-choices row corrected; the gate passed every command and main equals the gate under `cmp`; the look on 8797 showed the Applications cards by status and deadline with no drag or grip, and the Slides order still moving by step and by drag. O140's brief check ad6e98d66c1edb3ea has reported; it is saved after this commit. In flight (1 of 6): O140 (brief check reported). Open items: none.

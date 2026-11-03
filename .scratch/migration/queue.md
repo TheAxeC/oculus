@@ -1,5 +1,5 @@
 In flight (1 of 6 slots in use):
-- O140 (interview and offered drawn apart), building.
+- O140 (interview and offered drawn apart), repair round 1.
 
 Queued, in order (0 steps): none.
 
