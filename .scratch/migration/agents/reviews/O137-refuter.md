@@ -211,3 +211,189 @@ Cases:
 - Open items 660 and 661, which the report quotes: they are the user's to rule. 660's option (a) appears to be in the hub's data already (hub commit 1c0d40fdd).
 
 Reviewer usage: a7e642347c27ccca6, claude-opus-5-5, 302477 tokens, 86 tool uses, 26 min 49 s.
+
+## Repair round 1, refuted
+
+Every round item holds and every closure the builder claims reproduces. Three low findings are new; each is small enough to fix at landing: Standards R1-1 (the doc of `stageRank`), Standards R1-2 (the two functions named `sortFindings`) and Behaviour R1-1 (one before-and-after row stated too broadly). No finding asks for another round.
+
+## Verification (rerun by the reviewer)
+
+```
+Round delta: diff -u of each files.txt path, snapshot against worktree (.svg by cmp):
+  changed: config/defaults/sources.yml (the sort: bullet), docs/HELP.md:279, docs/templates.md:73-80,
+  src/lib/data/helpers/hub-names.ts:304-309, src/lib/data/snapshot/schema/run.ts:13-16,
+  src/lib/data/sources/collections.ts:12-13, src/lib/state/boards/collection/index.ts (import :56,
+  :742-744, :773-776, fieldCompare's place -> stageRank), EntryCard.svelte:7-8, schema-rules.test.ts:700.
+  Every other path is identical, the six diagrams included. No path changed outside files.txt
+  (git status --short lists the same 34 paths and the four .scratch files).
+Words unchanged by the rewraps (tokenised compare of snapshot against worktree): hub-names.ts, run.ts,
+  collections.ts, EntryCard.svelte: same-words. index.ts and templates.md differ only by items 5 and 6.
+Widths (awk length), equal to the report's quote: hub-names 304-309 100 99 98 100 100 26;
+  index 742-744 100 99 15; index 773-776 100 97 98 22; run.ts 7-16 94 95 92 97 100 95 100 97 98 98;
+  collections.ts 7-13 92 99 96 98 98 100 31; EntryCard 2-11 88 100 100 93 70 100 97 99 93 62;
+  templates.md 62-80 98 99 99 87 99 98 100 97 99 87 97 95 94 96 94 95 95 96 60.
+  No line ends short of a next word that fits (each short line checked against its next word).
+
+Item 1 rerun, from .../scratchpad/o137/base-run:
+  diff -rq O137-base/src base-run/src: SRC-SAME; config: CONFIG-SAME; tests except schema-rules: same.
+  The copy's schema-rules.test.ts differs from the worktree's only by the two sort rows moved into
+  it.skip('the two sort rows, held back on the base') and the describe title as before item 7.
+22:10  up 1 day,  6:13, 1 user, load averages: 23.16 16.48 13.60
+$ npx vitest run --reporter=verbose tests/data/snapshot/schema-rules.test.ts
+  the two sort rows, held back on the base   (skipped)
+  gives the findings of 'a schema that flags no primary key' ... 'a from: left on a schema field' (16 rows, all pass)
+ Test Files  1 passed (1)
+      Tests  54 passed | 1 skipped (55)
+  The KEY_ROWS rows that call tasks(): 14, of which 12 are not the sort rows; the count equals the report's twelve.
+
+Check 1, the builder's 50 files (test-files.txt; every test file importing a changed module is in it):
+22:10  load averages: 12.81 14.79 13.15
+ Test Files  2 failed | 48 passed (50)
+      Tests  5 failed | 1255 passed | 9 skipped (1269)
+  failures: tests/data/hubs/hub-portfolio.test.ts (4), tests/routes/edit/undo/config-save.test.ts (1),
+  each "Error: Test timed out in 5000ms."; neither file is changed by the step. Each rerun alone once:
+22:13  load averages: 15.05 15.34 13.63   hub-portfolio.test.ts   Test Files  1 passed (1)  Tests  16 passed (16)
+22:14  load averages: 8.91 13.66 13.11    config-save.test.ts     Test Files  1 passed (1)  Tests  13 passed (13)
+
+Check 2: npm run diagrams: rc=0; cmp of the 18 docs/diagrams/* files against a copy taken before: none changed.
+npm run test:quick, once:
+22:14  load averages: 6.59 12.46 12.69
+test:quick: 38 changed file(s), from git since HEAD
+test:quick: 228 test file(s)
+ok      prettier (0.8 s): All matched files use Prettier code style!
+ok      ASCII gate (0.9 s)
+ok      svelte-kit sync (2.2 s)
+ok      eslint (2.9 s)
+ok      svelte-check (10.2 s): 1793740505129 COMPLETED 581 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest checks (155.4 s): Duration  141.89s (transform 71.76s, setup 0ms, import 170.45s, tests 278.10s, environment 5ms)
+FAILED  vitest (172.5 s)
+FAILED  vitest slow (264.3 s)
+test:quick: 266.6 s; failed: vitest, vitest slow
+  vitest: Test Files 2 failed | 166 passed | 44 skipped (212); Tests 2 failed | 2593 passed | 590 skipped (3185)
+  vitest slow: Test Files 1 failed | 58 passed (59); Tests 1 failed | 589 passed | 309 skipped (899)
+  failures, all timeouts ("Test timed out in 5000ms" x2, "in 20000ms" x1), none in a changed file:
+  hub-portfolio.test.ts, tests/data/sources/config/layers/hub-vocab.test.ts, tests/routes/git/zenodo.test.ts.
+22:19  load averages: 12.82 14.01 13.43
+Each rerun alone once:
+22:19  load averages: 10.49 13.44 13.23   hub-portfolio.test.ts   Test Files  1 passed (1)  Tests  16 passed (16)
+22:20  load averages: 7.04 11.96 12.69    hub-vocab.test.ts       Test Files  1 passed (1)  Tests  31 passed (31)
+22:20  load averages: 6.11 11.43 12.48    zenodo.test.ts          Test Files  1 passed (1)  Tests  51 passed (51)
+(The builder's run of the list printed "every command passed" at load 12-14; mine went red only on these timeouts.)
+
+Check 3, the rules file's gate over the 30 changed non-svg files and O137-report.md: nothing printed, rc=0.
+
+Check 4: sh utils/unused-exports.sh rc=0; diff against ../O137-base/unused-exports.txt:
+326c326
+< src/lib/state/workbench/ui.svelte.ts: CardMove, OwnedInstance, TerminalOwner, PaneStripKey
+---
+> src/lib/state/workbench/ui.svelte.ts: OwnedInstance, TerminalOwner, PaneStripKey
+
+Check 5: sh utils/folder-check.sh: nothing printed, rc=0. wc -l: index.ts 872, hub-names.ts 857, run.ts 610,
+  collections.ts 218, EntryCard.svelte 328, Collection.svelte 447, Present.svelte 518,
+  schema-rules.test.ts 786, board-rules.test.ts 823.
+
+Check 6: the brief's grep: nothing printed, rc=1.
+
+Check 7:
+158:            cardOrder(part.collection.entries, part.collection.sort, part.schema)
+219:            cardOrder(part.collection.entries, part.collection.sort, part.schema)
+
+Check 8: the item 1 run above (preserved rows pass on the base's code) and check 1 after the change.
+
+The case-run, the round report's command with CASE_OUT changed to a new file, from the worktree root:
+22:21  load averages: 5.06 10.40 12.05
+CASE_OUT=rev-r1-after.txt npx vitest run --testTimeout 120000 --config .../scratchpad/o137/vitest.case.config.mjs
+ Test Files  1 passed (1)
+      Tests  1 passed (1)
+  diff r1-after.txt rev-r1-after.txt: SAME. The non-C7 lines are the same as after-run.txt (before stageRank).
+  C7 follows the hub's options as they now stand, [active, applied, interview, offered, accepted,
+  not-applied, declined, rejected, withdrawn] (applications.yml schema line 5): active x5 by deadline
+  2026-11-04 .. 2027-01-21, applied, interview, accepted x2, not-applied x9, declined x2, rejected x8, withdrawn x3.
+
+Item 2 greps rerun:
+  history-word grep (the report's command): "72:+ * so `2` sorts before `10`." only; an order, no history.
+  base: grep -rn "cardOrder\|sortText\|filledFirst\|CARD_COLLATOR\|sortShape\|sortFindings" src tests ->
+  convert.mjs:94 sortText (LSP field), validate.ts:6,481,533 and its four importers; Intl.Collator in base src: 0.
+  movedOrder: slides.ts:178,188; TerminalList.svelte:75,235; terminal-list.ts:196 (as the report quotes).
+C16: writes.svelte.ts:429,846 and Sections.svelte:47,111, as on the base.
+Lists: sources.yml's 16 "  - { key:" lines and templates.md's commented list: LISTS-EQUAL.
+The six changed YAML files parse with the yaml package.
+git diff 6779731e1 --stat: 34 files changed, 663 insertions(+), 690 deletions(-).
+```
+
+## Verdicts
+
+Items of "What to build":
+
+- 1: holds. `sortShape` (`hub-names.ts:267`), `entryOf`'s read (`:343-347`), `CollectionTraits.sort` and `traitsOf`. The entryOf doc is now rewrapped whole (Standards 1 of the first review is closed).
+- 2: holds. `sortFindings` (`run.ts:365-378`) is called at `:574`, and the run.ts head comment is rewrapped (`:7-16`). Standards R1-2 is a naming point about it.
+- 3: holds. The ten sorts and the six registry entries are unchanged. The sort bullet (`sources.yml:32`) now says "a card" for a record and "a `collections:` entry" for a list entry, and it ends as ruled. The templates comment says the same, and the lists are equal line for line.
+- 4: holds. `fieldCompare` ranks a status by `stageRank` (`index.ts:785`) and its own `place` is gone, so the rank rule exists once. The order is unchanged (the case-run's non-C7 lines are identical). Standards R1-1 is about the reused function's doc.
+- 5: holds. Check 6 prints nothing; `movedOrder` is local to `slides.ts`; `Grip.svelte` is absent from the card folder.
+- 6: holds. Proof 1 of the first review is closed by the base-copy run above.
+- 7: holds. `docs/HELP.md:279` now reads "When a write changes a card's pin or a field the collection's cards are sorted by, the card moves to its place." (Behaviour 2 closed.)
+
+Cases:
+
+- C1: met. The row passes; the case-run prints `C1 sort: [["status","date"]] problems: []`.
+- C2: met. The text and empty-list lines match.
+- C3: met. The map and number lines each give one `sort_unread` naming the value and `events`.
+- C4: met. One `sort_unknown` naming `due` at `schema`.
+- C5: met. `findings on tasks.yml: []`.
+- C6: met. The events lines are unchanged from the after run.
+- C7: met against the rule. The order follows the file's status options as they now stand (hub commit 1c0d40fdd), with the deadline oldest first inside a status and a missing deadline last.
+- C8: met. `["C planned pinned","B not-attending pinned","A upcoming","D planned"]`.
+- C9: met. `["x","y"]`.
+- C10: met. The people lines are unchanged from the after run.
+- C11: met. `["Alpha","beta","gamma"]`.
+- C12: met. `["planned","not-attending","paused"]`.
+- C13: met as ruled. Each part gets its own sort; the path runs through `Collection.svelte`'s `parts` to `shown` (:219).
+- C14: met by reading. The grip is deleted and check 6 is empty. The on-screen drag and Shift+J and Shift+K wait for the look.
+- C15: met by reading. `slides.ts:188` `withMove` calls the local `movedOrder`. The Slides drag and step buttons wait for the look.
+- C16: met. The grep prints the same lines as on the base.
+- C17: met by reading. `shown` and `entries` are derived through `cardOrder`, and the cursor compares identities (`Collection.svelte:138`, `:409`). The screen behaviour waits for the look.
+- C18: met by run. `["planned","completed","cancelled","not-attending"]`.
+
+## 1. Spec
+
+none. The round's delta changes only what items 1 to 9 name. `presets.ts` is read and not changed, as the round allows. The sentence on the six files in `sources.yml:32` moves within the bullet so that the bullet ends as item 6 rules.
+
+## 2. Proof
+
+none. Each closure reproduces: the base-copy run (54 passed, 1 skipped), the widths, the greps, the case-run (equal to `r1-after.txt`), and checks 4 to 7. Check 1 and test:quick went red in my runs only on timeouts in files the step does not change, and each of those files passes when run alone.
+
+## 3. Standards
+
+- Standards R1-1, `src/lib/state/boards/board/presets.ts:323-326`: "Where a stage sorts in `order`, the keys of `stages`: its place there, and after every stage the order names for a stage it does not name or no stage at all."
+  - What is wrong: after item 5, `stageRank` also ranks a collection's status value among its schema field's options (`index.ts:785`, `stageRank(left, options)`). For that caller the doc's "the keys of `stages`" and "stage" are false. The rules file ("What every package obeys": a sentence a change makes false is a defect of the change) applies. The round's path list kept `presets.ts` read-only, so the builder could not fix it; it is for landing.
+  - Failure scenario: a reader of `fieldCompare` follows `stageRank`, reads that `order` is the board's stage keys, and takes the collection's status order for a board stage order. A later edit made for stages alone (for example, ranking `undefined` differently) then changes the collection order without anyone noticing.
+  - Fix at landing: word the doc for any order, for example "Where a value sorts in `order`: its place there, and after every value the order names for a value it does not name or no value at all."
+- Standards R1-2, `src/lib/data/snapshot/schema/run.ts:365`, "function sortFindings(", beside `src/lib/data/snapshot/validate.ts:481`, "export function sortFindings(findings: Finding[]): Finding[]". The builder raised this point; my judgment follows.
+  - What is wrong: two functions in `data/snapshot/` share one name with opposite meanings. The run.ts one gives the findings of a `sort:`; the validate.ts one sorts a list of findings and is imported by `hubs/self.ts`, `hubs/merge.ts`, `sources/clones.ts` and `data/index.ts`. Nothing clashes in the build, since run.ts does not import validate.ts. But a grep for `sortFindings`, or `validate.ts:6`'s head-comment mention "by `sortFindings`", now lands on both. The brief's standard ("every line is written ... so that people can read, use and maintain it") is the rule broken, and the fix costs three words.
+  - Failure scenario: a later step that changes how findings are sorted greps `sortFindings`, meets run.ts's function, and edits or reasons about the wrong one. Or a later import of validate's `sortFindings` into run.ts shadows or collides with the local function.
+  - Fix at landing: rename the run.ts function and its one call (`:574`), for example to `sortFieldFindings`. My judgment is that this is the better option and leaving it is the lazy one.
+
+## 4. Behaviour
+
+- Behaviour R1-1, the report's "Before and after", the row on the Status choices of a file with no schema: "so with `status` in its sort the choices come alphabetically".
+  - What is wrong: `offeredStatuses` lists the statuses in the order `statusFacets` first meets them over `entries` (`index.ts:829-848`). They come out alphabetical only when `status` is the first word of the sort and no pinned entry carries a later status. Pinned entries go first whatever the sort (`index.ts:812`). With `sort: [date, status]`, the order is set by the dates.
+  - Failure scenario: at the look, a no-schema file whose pinned entry is `todo` shows Todo before Doing, and the orchestrator reads it as a defect the report did not predict.
+  - Fix at landing: correct the booking text. The code is right.
+
+## Declined to judge
+
+- What only a page shows: C14's press and drag, Shift+J and Shift+K with the cursor on a card, C15's Slides drag and step buttons, C17's card moving with the cursor kept on it, and C18's bar on screen. A reviewer runs no page; the look at landing settles these.
+- Whether the builder edited the scratch copy's `schema-rules.test.ts` with the Edit and Write tools or with a program. The copy's content is read and correct, but the round's transcript is not available to me, and the report does not name the tool used.
+- The six regenerated diagrams: judged by `npm run diagrams` leaving all 18 files equal under `cmp`, not by reading the SVG.
+- Open items 660 and 661: the user's to rule. The hub's data already carries 660's option (a) order (applications.yml schema line 5).
+
+Reviewer usage: a6335b37145919815, claude-opus-5-5, 196285 tokens, 51 tool uses, 15 min 32 s.
+
+## Closed
+
+- First run, Proof 1 to 3, Standards 1 to 3, Behaviour 1 and 2: closed by repair round 1, as the review over the round found.
+- First run, Standards 4: no change; the extra reruns cost time only.
+- First run, Standards 5: fixed at landing, G56 in `agents/guarded.md` names the sort rule.
+- Round 1, Standards R1-1: fixed at landing, the doc of `stageRank` (`src/lib/state/boards/board/presets.ts`) worded for any order.
+- Round 1, Standards R1-2: fixed at landing, the `sortFindings` of `src/lib/data/snapshot/schema/run.ts` renamed `sortFieldFindings` with its call.
+- Round 1, Behaviour R1-1: fixed at landing in the booking text and in `agents/reviews/O137-report.md`'s row on the Status choices of a file with no schema.

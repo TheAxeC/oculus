@@ -125,13 +125,15 @@ export function readOptionsFolder(
         if (Object.hasOwn(parsed, 'groups')) groups[described] = parsed.groups;
         if (isMap(parsed.descriptions)) descriptions[described] = parsed.descriptions;
     }
-    // The folder is named as a path relative to config/, as a catalog file is, for sourceFile.
+    // The folder is named as a path relative to config/, as a catalog file is, for sourceFile. The
+    // finding's file is the folder's whole path with a closing `/`, which says it is a folder, so
+    // the Findings view shows it in Files rather than opening it as a file.
     const folder = `${OPTIONS_DIR}/`;
     for (const key of [OPTIONS_KEY, GROUPS_KEY, DESCRIPTIONS_KEY]) {
         if (!(key in config)) continue;
         const earlier = from[key];
         pending.push({
-            file: join(dir, OPTIONS_DIR),
+            file: `${join(dir, OPTIONS_DIR)}/`,
             key,
             words: (catalog) =>
                 findingText(catalog, 'findings.config.defined_twice', key, earlier, folder)

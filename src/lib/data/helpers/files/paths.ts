@@ -173,7 +173,13 @@ export type RootFolder = { key: string; dir: string; real?: string };
 /**
  * The name of a file that lies under one of the roots: the root whose folder holds it most closely
  * and the path under that root, or null when no root holds it. A path that is not absolute is
- * already relative to the primary's folder, and names no file when the workspace has no primary.
+ * already relative to the primary's folder, and names no file when the workspace has no primary. An
+ * absolute path is read against both folders of a root, its resolved `real` folder and its `dir` as
+ * the workspace gives it, each without a closing `/` and an empty one skipped: a file read from
+ * disk is named by the resolved folder, and a finding is written by the folder as given, so a root
+ * whose folder passes a symbolic link holds both. A root whose `real` is empty, a folder that does
+ * not exist, holds no file by either folder. Of the folders that hold the path, the longest wins,
+ * and the path under the root is the part after it.
  */
 export function fileUnder(
     file: string,
@@ -184,10 +190,13 @@ export function fileUnder(
     let best: FileName | null = null;
     let depth = -1;
     for (const root of roots) {
-        const base = (root.real ?? root.dir).replace(/\/+$/, '');
-        if (base === '' || !file.startsWith(`${base}/`) || base.length <= depth) continue;
-        best = { root: root.key, path: file.slice(base.length + 1) };
-        depth = base.length;
+        if (root.real === '') continue;
+        for (const folder of [root.real, root.dir]) {
+            const base = (folder ?? '').replace(/\/+$/, '');
+            if (base === '' || !file.startsWith(`${base}/`) || base.length <= depth) continue;
+            best = { root: root.key, path: file.slice(base.length + 1) };
+            depth = base.length;
+        }
     }
     return best;
 }

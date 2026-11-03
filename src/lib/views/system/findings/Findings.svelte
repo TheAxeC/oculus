@@ -32,19 +32,28 @@
     // A row names its file relative to the folder of the root that holds it (its hub's, or a
     // repository's), as VS Code's Problems view names a file relative to the workspace, on one line
     // cut with an ellipsis at its end, the whole path in its tooltip; a file no root holds is named
-    // by its whole path. The search reads that name, the key and the message, never the whole path.
-    // A finding of a data file with no primary key whose cause a chosen field mends offers that
-    // choice under its row (KeyChoice.svelte), once for each file. A row the search leaves out is
-    // hidden and stays mounted, and the Files group with it, so a field picked in a key choice, a
-    // write in flight and its refusal all stand while the search changes; the list keeps its
-    // places, which key the rows and read the choices.
+    // by its whole path. The search reads that name, the key and the message, never the whole path
+    // and never the chip. When the root that holds the file is not the primary, the name is
+    // followed by that root's chip (views/shared/card/RootChip.svelte), whose tooltip reads "This
+    // file is under the folder served as" and the root's name, a hub's folder or a repository's
+    // alike; the name and its chip keep one line, the name giving way first. The name of a file a
+    // root holds is a control: its press opens the file in a source tab at the finding's line, or,
+    // for a file that ends in `/`, a folder, shows that folder as a Files tab of its own. A file no
+    // root holds, or an empty one, stays plain words with no chip. A finding of a data file with no
+    // primary key whose cause a chosen field mends offers that choice under its row
+    // (KeyChoice.svelte), once for each file. A row the search leaves out is hidden and stays
+    // mounted, and the Files group with it, so a field picked in a key choice, a write in flight
+    // and its refusal all stand while the search changes; the list keeps its places, which key the
+    // rows and read the choices.
 
     import AuditSection from './AuditSection.svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
     import GroupHead from '$lib/ui/controls/heads/GroupHead.svelte';
     import KeyChoice from './KeyChoice.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
+    import RootChip from '$lib/views/shared/card/RootChip.svelte';
     import Search from '$lib/ui/controls/text/Search.svelte';
+    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import { allFindings } from '$lib/state/workbench/navigation/status';
     import { auditSearch, fileSearch } from '$lib/state/system/audit';
@@ -54,8 +63,10 @@
     import { fileUnder } from '$lib/state/shared/page/hubs';
     import { instanceText, withInstanceKey } from '$lib/state/workbench/layout/instance';
     import { keyChoicesOf } from '$lib/state/boards/collection/key-choice';
+    import { openSourceFile } from '$lib/views/shared/links/source-file';
     import { usePaneFold } from '$lib/views/shared/card/pane-fold';
 
+    const client = useState();
     const {
         apps: { findings: appFindings },
         audit: { open, parked },
@@ -63,7 +74,7 @@
         fs: { primary, roots },
         registry,
         ui: { instanceState, setInstanceState }
-    } = useState();
+    } = client;
 
     let { instance }: ViewProps = $props();
 
@@ -104,6 +115,27 @@
         return line === undefined ? path : `${path}:${String(line)}`;
     }
 
+    /** A file named by the root that holds it and its path there. */
+    type Under = NonNullable<ReturnType<typeof fileUnder>>;
+
+    /** The root a finding's file is under and its path there; null for an empty file. */
+    function placed(file: string): Under | null {
+        return file === '' ? null : fileUnder(file, roots(), primary());
+    }
+
+    /**
+     * Open a finding's file at its line in a kept source tab, as the Audit place does, or show a
+     * folder, a file that ends in `/`, as a Files tab of its own, named by the folder's path, which
+     * `showFolderInFiles` takes without its closing `/`.
+     */
+    function opened(file: string, under: Under, line: number | undefined): void {
+        if (file.endsWith('/')) {
+            client.layout.showFolderInFiles(under.path, under.root);
+            return;
+        }
+        openSourceFile(client, { ...under, ...(line === undefined ? {} : { line }) });
+    }
+
     /** Hold the search, every other key of the pane's state kept. */
     function typed(value: string): void {
         const state = instanceState(instance.id);
@@ -130,10 +162,31 @@
                 <ul>
                     {#each found as finding, index (`${finding.file}:${finding.key}:${index}`)}
                         {@const choice = keyed.get(index)}
+                        {@const under = placed(finding.file)}
                         <li hidden={!kept.has(index)}>
-                            <span class="file" title={finding.file}
-                                >{named(finding.file, finding.line)}</span
-                            >
+                            <span class="named">
+                                {#if under === null}
+                                    <span class="file" title={finding.file}
+                                        >{named(finding.file, finding.line)}</span
+                                    >
+                                {:else}
+                                    <span class="place">
+                                        <ToolButton
+                                            plain
+                                            cut
+                                            label={named(finding.file, finding.line)}
+                                            title={t('audit.open_place_tip', finding.file)}
+                                            onclick={() =>
+                                                opened(finding.file, under, finding.line)}
+                                        />
+                                    </span>
+                                    <RootChip
+                                        record={{ root: under.root }}
+                                        tip={(root: string) =>
+                                            t('views.findings_file_root_tip', root)}
+                                    />
+                                {/if}
+                            </span>
                             <span class="key">{finding.key}</span>
                             <span class="message">{finding.message}</span>
                             {#if choice !== undefined}
@@ -185,11 +238,33 @@
         display: none;
     }
 
+    /* The file's name and its root's chip on one line of their own: the name gives way first and
+       the chip keeps its words, the key and the message wrapping after them. */
+    .named {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        min-width: 0;
+        max-width: 100%;
+    }
+
     .file,
+    .place,
     .key {
         font-family: var(--font-mono);
         font-size: var(--fs-sm);
         color: var(--muted-txt, var(--muted));
+    }
+
+    /* The box of the control that opens the file: a plain button takes its face from it, and the
+       box clips nothing, so the button's focus ring, drawn just outside its words, shows whole. */
+    .place {
+        display: inline-flex;
+        min-width: 0;
+    }
+
+    .place :global(button:hover) {
+        text-decoration: underline;
     }
 
     /* The file on one line, cut with an ellipsis where the row is narrower than it. */

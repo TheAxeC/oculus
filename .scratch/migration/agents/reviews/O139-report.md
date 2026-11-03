@@ -101,11 +101,11 @@ The other cases, read on the base copy (`O139-base/src/lib/views/system/findings
 | 9. The head comment of Findings.svelte | DONE | Findings.svelte:32-47 |
 | 10. The HELP sentence | DONE | `docs/HELP.md:345` |
 | 11. No change to `configPayload`, the server or the wire beyond item 8 | DONE | `diff -rq` lists no file under `src/lib/server` or `src/routes` |
-| Verify 1: the named checks and the importers of the changed modules | DONE | See below |
-| Verify 2: `npm run diagrams`, then `npm run test:quick` | DONE | See below; the list ran twice |
-| Verify 3: the character-set checks | DONE | See below |
-| Verify 4: `sh utils/unused-exports.sh` against the base | DONE | See below |
-| Verify 5: `sh utils/folder-check.sh`, and the sizes | DONE | See below |
+| Verify 1: the named checks and the importers of the changed modules | DONE | `Tests  194 passed \| 2 skipped (196)`, after round 1 |
+| Verify 2: `npm run diagrams`, then `npm run test:quick` | DONE | `test:quick: 172.0 s; every command passed`, after round 1 |
+| Verify 3: the character-set checks | DONE | perl printed nothing, exit 0; grep printed nothing, exit 1 |
+| Verify 4: `sh utils/unused-exports.sh` against the base | DONE | `diff` against the base list printed nothing, exit 0 |
+| Verify 5: `sh utils/folder-check.sh`, and the sizes | DONE | nothing printed, exit 0; `paths.ts` 263 lines |
 | Verify 6: no test added or changed | DONE | `diff -rq ../O139-base/tests tests` prints nothing (exit 0) |
 
 Verify 1 and Verify 2 were taken after the last change of repair round 1. Their runs are quoted in "Repair round 1" below.
@@ -193,7 +193,7 @@ The orchestrator's look is taken in the Findings view, its Files section, on a s
 - The options folder's `defined_twice` row. Before: `config/options`, plain words. After, with oculus's folder a root: `config/options/` as a control whose press shows `config/options` as a Files tab of its own, with the chip `oculus`. With oculus's folder no root: the whole path ending in `/`, plain words.
 - A row of a file no root holds, or of an empty file. Plain words with the whole path as the tooltip, before and after.
 - A long name in a narrow pane. Before: the name could take a line of its own, with the key and the message wrapping. After: the name and the chip stay on one line, the name cut with an ellipsis and the chip whole, and the key and the message wrap after them.
-- The other callers of `fileUnder` and `fileNamed` for a hub whose folder passes a symbolic link (`lab`, `dir` `/tmp/lab`, `real` `/private/tmp/lab`), for a file written by its `dir`. A second hub's collection files are written by the hub folder as given (`join(hub, asked.file)`, `src/lib/data/sources/collections.ts:201`, as the review read it).
+- The other callers of `fileUnder` and `fileNamed` for a hub whose folder passes a symbolic link (`lab`, `dir` `/tmp/lab`, `real` `/private/tmp/lab`), for a file written by its `dir`. A second hub's collection files are written by the hub folder as given (`join(hub, asked.file)`, `src/lib/data/sources/collections.ts:135`, as the review read it).
   - History's file column (`fileShown`, `src/lib/state/sessions/changes.svelte.ts:86`). Before: the whole path. After: `lab/<path>`. Whether a change record names a file by `dir` or by `real` is not verified.
   - The registry file (`registry-file.svelte.ts:68`). Before: null, so no file to write or open for `lab`'s part. After: `lab`'s file.
   - Collection's file (`Collection.svelte:153`). Before: null for `lab`'s part. After: `lab`'s file.

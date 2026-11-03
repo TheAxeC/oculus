@@ -1,6 +1,6 @@
 # O137 builder report
 
-NOT DONE: checks 1 and 2 did not print an all-green result. Every red line in either is "Test timed out" in a test file the step does not change (tests/data/hubs/hub-portfolio.test.ts, tests/routes/edit/undo/config-save.test.ts, tests/routes/sessions/website.test.ts), run while the machine's load average was 14 to 26 from the other steps' runs; each of those files is rerun alone below, and the files that the step changes and the tests it adds or edits all pass. Every item of "What to build", every case and every other check is done.
+Everything in the brief is done, and the nine items of repair round 1 are made. After the round's last change check 1 printed `Test Files  50 passed (50)` and `npm run test:quick` printed `test:quick: 351.1 s; every command passed` (section "Repair round 1"). The checks 1 and 2 quoted under "DONE / NOT DONE" are the runs before the round, whose red lines were timeouts in three unchanged files. Two findings for the orchestrator are in "Repair round 1", item 2: the new `sortFindings` in `run.ts` shares its name with `validate.ts`'s exported `sortFindings`, and `sortText` could take its text case from `filledText`. Neither was changed, because the round makes only its nine ruled changes.
 
 ## Open items of the state file (verbatim, `.scratch/migration/orchestrator-state.md` lines 185-186)
 
@@ -404,8 +404,8 @@ The edits to existing tests, before and after:
 | Row | State | Evidence |
 | --- | --- | --- |
 | Items 1 to 7, Decisions 1 to 9, the write list | DONE | the diff below; `git diff --stat` prints `34 files changed, 661 insertions(+), 685 deletions(-)` |
-| Check 1 | NOT DONE | 11 timeouts in three unchanged files, every changed file and new test passes; output below |
-| Check 2 | NOT DONE | ran once; every stage ok except `vitest slow`, two timeouts in the unchanged hub-portfolio.test.ts, which passes alone; output below |
+| Check 1 | DONE | after the round: `Test Files  50 passed (50)` (Repair round 1); the run below, before the round, had 11 timeouts in three unchanged files |
+| Check 2 | DONE | after the round: `every command passed` (Repair round 1); the run below, before the round, had two timeouts in the unchanged hub-portfolio.test.ts |
 | Check 3 | DONE | the gate prints nothing, exit 0 |
 | Check 4 | DONE | the one differing line is `CardMove` taken out of an existing line; no new name |
 | Check 5 | DONE | `sh utils/folder-check.sh` prints nothing, exit 0; the largest changed sources are under the size rule |
@@ -492,7 +492,7 @@ Check 4: `sh utils/unused-exports.sh` (exit 0), compared with `../O137-base/unus
 
 `CardMove` is gone with the move; the other three names are listed on the base. No new unused export.
 
-Check 5: `sh utils/folder-check.sh` printed nothing, exit 0. Sizes after (base in parentheses): `src/lib/state/boards/collection/index.ts` 874 (806), `src/lib/data/helpers/hub-names.ts` 857 (848), `src/lib/views/boards/collection/Collection.svelte` 447 (520), `src/lib/views/academic/present/Present.svelte` 518 (518), `src/lib/views/shared/forms/entry/card/EntryCard.svelte` 328 (366).
+Check 5: `sh utils/folder-check.sh` printed nothing, exit 0. Sizes after (base in parentheses): `src/lib/state/boards/collection/index.ts` 872 (806), `src/lib/data/helpers/hub-names.ts` 857 (848), `src/lib/views/boards/collection/Collection.svelte` 447 (520), `src/lib/views/academic/present/Present.svelte` 518 (518), `src/lib/views/shared/forms/entry/card/EntryCard.svelte` 328 (366).
 
 Check 6:
 
@@ -635,11 +635,11 @@ Each case after the change:
 - `src/lib/data/helpers/hub-names.ts` 857 (848)
 - `src/lib/data/helpers/keys/oculus/resolve.ts` 393 (402)
 - `src/lib/data/model/model-collections.ts` 559 (557)
-- `src/lib/data/snapshot/schema/run.ts` 611 (573)
+- `src/lib/data/snapshot/schema/run.ts` 610 (573)
 - `src/lib/data/sources/collections.ts` 218 (216)
 - `src/lib/server/files/project/make.ts` 396 (396), lines 18-22 of its head comment
 - `src/lib/shell/keys/workbench-keys.svelte.ts` 592 (610)
-- `src/lib/state/boards/collection/index.ts` 874 (806)
+- `src/lib/state/boards/collection/index.ts` 872 (806)
 - `src/lib/state/life/slides.ts` 401 (390)
 - `src/lib/state/workbench/ui.svelte.ts` 570 (595)
 - `src/lib/views/academic/present/Present.svelte` 518 (518), line 123
@@ -662,10 +662,10 @@ Docs and comments the change touches, each read against the code: rewritten are 
 - For the order, a boolean, a map and a text of only spaces count as a missing value, with the empty text, map and empty list the brief names (`sortText`, `index.ts:745`): a number becomes its text, a list its first item.
 - With no sort, an entry whose card words are empty goes after those that have words, under the same missing-last rule.
 - A `date` field compares by code units of its text (`fieldCompare`, `index.ts:777`), so `2026` sorts before `2026-10-27`; a field that is not `status` and not of type `date` goes through the collator.
-- `docs/HELP.md:279` says, beyond the order, "A card whose status or pin changes moves to its place.", so the Help page tells the reader why a card moves after a write.
+- `docs/HELP.md:279` says, beyond the order, "When a write changes a card's pin or a field the collection's cards are sorted by, the card moves to its place.", so the Help page tells the reader why a card moves after a write.
 - The demo hub fixture's applications entry sorts by `[status]`, since the demo applications schema has no `deadline` field; `[status, deadline]` there would give the demo a `sort_unknown` finding.
 - `sort:` sits after `ticker:` and before `group:` on each list line, so the fields that say what the file is stay together and the placement fields follow.
-- `cardOrder` is called twice in `Collection.svelte`, once in `entries` (for the bar and the cursor) and once in `shown` (for the drawn cards), as item 4 names both; the second call could take `entries` per part instead, which the brief did not ask for.
+- `cardOrder` is called twice in `Collection.svelte`, once in `entries` and once in `shown` (for the drawn cards), as item 4 names both. `entries` (`Collection.svelte:156`) is read by `lifecycle` (:164, the Status choices of a file with no schema) and `collectionBar` (:202, the bar's groups, slices and counts); the card cursor reads neither, it compares card identities (`cursor`, :138, against `identityValue(entry)` at :409). The second call could take `entries` per part instead, which the brief did not ask for.
 - The `make.ts` head comment is rewrapped over lines 18-22, beyond the ruled lines 17-18: adding "sort" to line 18 pushed it over the 100-column width, and the rest of the paragraph rewraps from there. Line 17 is unchanged.
 - The `tasks()` helper of `schema-rules.test.ts` gives every tasks schema `status` and `deadline`, so C4's file names key, title, status and deadline; `due` is still the one word the schema does not name.
 - `schema.sort_unknown` sits after `schema.key_missing` in `findings.yml`, beside the other key findings of the schema check.
@@ -679,6 +679,10 @@ Docs and comments the change touches, each read against the code: rewritten are 
 - The Settings field. Before: a collections entry had no `sort` field in Settings. After: `config/options/sources.yml:106-108` adds `sort` with `control: list` and the help "the fields of the file's schema the cards of the file's card list are sorted by, in their order, after the pinned cards come first: the status field in the order of its options, a date field oldest first, any other field alphabetically, a missing value last, then the file's order; a field the schema does not name is a finding; with none the cards go by their title".
 - A card after a status change, a pin or an Add with the cursor on it. Before: a status change left the card at its place; a pin moved it to the top; an Add drew the new card last among the unpinned, where the server appends it in the file. After: a status change moves the card to its status's place, a pin moves it to the pinned group and an unpin back to its sorted place, and an Add draws the new card at its sorted place; the cursor stays on the card it was on (C17).
 - The status slices. Before (events): planned, completed, not-attending, cancelled, by first occurrence in the file. After: planned, completed, cancelled, not-attending, the options' order (C18).
+- The status slices and the "other" values of a `filter: true` group in a workspace of several hubs. Both are taken by first occurrence over `entries` (`bar.ts:467` for the slices; `fieldOrder`, `bar.ts:339-354`, puts a group's values its options do not hold after the options, in the order `countsOf` meets them, and a field with no options by count, then by label). Before: `entries` was `pinnedFirst(parts.flatMap((part) => part.collection.entries))` (base `Collection.svelte:157`), so every hub's pinned entries came first across the hubs, then every hub's other entries in the file's order, hub after hub. After: `entries` is `parts.flatMap((part) => cardOrder(...))` (`Collection.svelte:156-160`), each hub's entries in its own collection's order, pinned first within that hub, then the next hub's. A value first met in a pinned entry of the second hub, which came before the first hub's unpinned entries, now comes after every value of the first hub. The cards drawn (`shown`) were already per hub on the base (`pinnedFirst(part.collection.entries)` per part, base :214-220), so their hub order does not change.
+- The Status choices of a file with no schema (`lifecycle = offeredStatuses(schema, statusFacets(entries))`, `Collection.svelte:164`; `offeredStatuses`, `index.ts:843-848`). Before: the statuses in the order first met over the pinned-first file order across hubs. After: the order first met over `cardOrder`'s order per hub. A file with no schema reads every word of its `sort:`, and `status` there compares by the collator (no options), so with `status` in its sort the choices come alphabetically; with no `sort:` they come in the order first met over the cards' titles.
+- List mode's rows (`EntryList`, given `shown` at `Collection.svelte:392-393`). Before: the rows started in the file's order, pinned first. After: they start in the collection's order, as the cards do; a click on a column header sorts by that column as before.
+- A hub's own `collections:` entry with no `sort:`. Before: its cards went in the file's order, pinned first. After: they go by the card's title (`entryWords`), pinned first, by `CARD_COLLATOR`; oculus's own entry of the same key does not lend its `sort:` to a hub's own entry.
 
 ## Anything in the brief that was wrong
 
@@ -688,3 +692,261 @@ Docs and comments the change touches, each read against the code: rewritten are 
 - `make.test.ts`'s expected entries and the `tasks()` helper of `schema-rules.test.ts` had to change for the new default sorts (above); both files are in the paths list.
 - The brief's check 3 form names `bin`, which the worktree does not have; `find` reports it and the gate runs over the rest.
 - The brief's 5000ms default test timeout is not met by three unchanged test files while other steps' test runs load the machine (check 1 and check 2 above); this is no defect of the step's code, and the files pass alone or with a longer timeout as quoted.
+
+## Repair round 1
+
+Every item of the round is made. After the last change, check 1 passes in full and `npm run test:quick` prints "every command passed".
+
+The round's brief is `.scratch/migration/agents/briefs/O137-round-1.md`, over the review `.scratch/migration/agents/reviews/O137-refuter.md`. The nine items, each as made:
+
+### Item 1 (Proof 1): the changed schema-rules test over the base's code
+
+The scratch copy is `/private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/o137/base-run`: `cp -R ../O137-base` (which holds `config docs src tests utils` only), with the worktree's unchanged `package.json`, `vite.config.ts`, `tsconfig.json`, `.npmrc`, `.svelte-kit` and `assets` copied in (none of them is changed by the step: `git status --short` lists none) and `node_modules` a symlink to the worktree's. The worktree's changed `tests/data/snapshot/schema-rules.test.ts` is copied in, and in the copy only the two sort rows are taken out of `KEY_ROWS` into an `it.skip('the two sort rows, held back on the base', ...)` whose body holds them, so `sentence('findings.schema.sort_unknown', 'due')`, which the catalog guard (`schema-rules.test.ts:40`) refuses on the base, is never called. Run from the copy's root:
+
+```
+$ npx vitest run --reporter=verbose tests/data/snapshot/schema-rules.test.ts
+ <down arrow> |unit| tests/data/snapshot/schema-rules.test.ts > the primary key, the foreign keys and the display ranks of a hub schema > the two sort rows, held back on the base
+ <check mark> ... > gives the findings of 'a schema that flags no primary key' 34ms
+ <check mark> ... > gives the findings of 'a schema that flags two' 32ms
+ <check mark> ... > gives the findings of 'an entry\'s primary_key beside the sc<horizontal ellipsis>' 31ms
+ <check mark> ... > gives the findings of 'a primary key on a tags field' 30ms
+ <check mark> ... > gives the findings of 'a primary_key that is not true' 33ms
+ <check mark> ... > gives the findings of 'a primary key on a field of a records<horizontal ellipsis>' 32ms
+ <check mark> ... > gives the findings of 'a file with no schema whose collectio<horizontal ellipsis>' 31ms
+ <check mark> ... > gives the findings of 'nothing for a file with no schema who<horizontal ellipsis>' 33ms
+ <check mark> ... > gives the findings of 'a foreign key naming nothing' 41ms
+ <check mark> ... > gives the findings of 'an empty foreign key' 36ms
+ <check mark> ... > gives the findings of 'a foreign key naming a collection who<horizontal ellipsis>' 35ms
+ <check mark> ... > gives the findings of 'a target of a foreign key whose schem<horizontal ellipsis>' 31ms
+ <check mark> ... > gives the findings of 'two fields of one display rank' 29ms
+ <check mark> ... > gives the findings of 'a display rank that is no whole numbe<horizontal ellipsis>' 35ms
+ <check mark> ... > gives the findings of 'a from: left on a schema field' 30ms
+ <check mark> ... > gives the findings of 'a reference naming a venue by its nam<horizontal ellipsis>' 30ms
+ Test Files  1 passed (1)
+      Tests  54 passed | 1 skipped (55)
+21:53  up 1 day,  5:56, 1 user, load averages: 4.57 7.74 10.14
+```
+
+(The `...` stands for the file and describe path printed in full on each line; the run's whole output is `/private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/o137/base-run-schema.txt`.) What it shows: the twelve `KEY_ROWS` rows whose fixture plants a tasks file through `tasks()` ('a schema that flags no primary key', 'a schema that flags two', "an entry's primary_key beside the schema's flag", 'a primary key on a tags field', 'a primary_key that is not true', 'a primary key on a field of a records field', 'a foreign key naming nothing', 'an empty foreign key', 'a foreign key naming a collection whose file has no primary key', 'two fields of one display rank', 'a display rank that is no whole number from 1', 'a from: left on a schema field') pass over the base's code with the schema's `status` and `deadline` added, so the two added fields change no expected finding there; the other 38 tests of the file, and the four `KEY_ROWS` rows that plant no tasks file, pass as well. The same rows pass after the change (check 1 below). This is the run on the unchanged tree that check 8 asks for, for the behaviour those rows preserve.
+
+### Item 2 (Proof 2): the greps and the duplicate key
+
+History words, over the added comment lines and test titles of the whole step:
+
+```
+$ git diff 6779731e1 -- src tests config docs/HELP.md docs/templates.md docs/data-map.md | grep '^+' | grep -v '^+++' | grep -E '^\+\s*(//|\*|/\*\*|#)|describe\(|it\(|it\.each|name:' | grep -n -i -E "before|used to|no longer|still|always has been|always had|as before|previously|the step adds|after this package lands|\bO[0-9]+\b|20[0-9][0-9]-[0-9][0-9]"
+72:+ * so `2` sorts before `10`.
+```
+
+The one hit, in the doc of `CARD_COLLATOR` (`index.ts:734-737`), states an order (the digits read as a number), and no earlier state: no history.
+
+Reuse, the base's `src` and `tests` for each new name and its key call (`grep -rn` from `../O137-base`):
+
+- The six names: `grep -rn "cardOrder\|sortText\|filledFirst\|CARD_COLLATOR\|sortShape\|sortFindings" src tests` prints `sortText: item.sortText` in `src/lib/server/machine/apps/host/runner/tools/languages/convert.mjs:94` (an LSP completion field, unrelated) and `export function sortFindings(findings: Finding[]): Finding[]` at `src/lib/data/snapshot/validate.ts:481`, imported by `hubs/self.ts:16`, `hubs/merge.ts:38`, `sources/clones.ts:19` and `data/index.ts:74`. That `sortFindings` sorts a list of findings; it is no rule the new one could reuse. The new `sortFindings` in `run.ts:366` is local to `run.ts` (which does not import validate's), so the build has no clash, but two functions of one name with two meanings sit in one folder tree (`data/snapshot/`). This is a finding for the orchestrator: renaming the new one (`sortFieldFindings`, for one) ends it; this round makes only the nine ruled changes, so it is not renamed here.
+- `cardOrder` and `filledFirst`: the board's `compareCards` (`src/lib/state/boards/board/presets.ts:364`, pinned first, then each word of a category's `sort:`) and `byWord` (`presets.ts:340-357`, with `year` missing last inline) are the nearest. They compare a `BoardItem` by the three fixed words `stage`, `year` and `title` and cannot take a schema field; the missing-last rule there is an inline branch of `byWord`, no helper. `stageRank` (`presets.ts:327-330`) is the one rule of the two that fits a collection, and item 5 reuses it.
+- `CARD_COLLATOR`: `grep -rn "Intl.Collator" src` prints nothing on the base; the existing sorts use `String.prototype.localeCompare` (47 files under the base's `src`, `grep -rln "localeCompare" src | wc -l`, among them `ui/display/table/table-rows.ts:52`, `state/boards/collection/bar.ts:352`, `state/boards/board/facets.ts:164,175,182`, `presets.ts:355`), whose order follows the reader's locale and which reads `10` before `2`. Item 4 of the brief asks for one collator with `numeric: true` that orders the same in every locale, so none of these is reused.
+- `sortShape`: `grep -rn "z.array(wordShape)" src` prints `const keysShape = unchanged(z.array(wordShape));` (`src/lib/server/edit/writes/bodies.ts:293`, a server write body, wrapped in `unchanged`) and `const wordsShape = z.array(wordShape);` (`src/lib/data/snapshot/normalise-parts/retrieval.ts:49`, not exported). Neither is exported, and the snapshot's normaliser is a layer `data/helpers/hub-names.ts` does not import, so the shape is written in `hub-names.ts` from the file's own `wordShape` (`hub-names.ts:261`).
+- `sortText`: the base's only `sortText` is the LSP completion field above. Its key call, the first item of a list value read as a text, has a near reader in `readAs(filledTextShape, ...)` (`entryStatus`, `index.ts:636`), which reads a filled text only and gives no text for a number or a list, and `filledText` (`src/lib/data/shapes/shapes.ts:59`), the same reader as a function. `sortText` could take its text case from `filledText`, but `filledText` keeps a text of only spaces, which `sortText` counts as missing (`text.trim() === ''`), so the number and list cases and the trim stay in `sortText`. No change is made here; the round makes only the ruled changes.
+
+`movedOrder` after its move:
+
+```
+$ grep -rn "movedOrder" src tests docs config --exclude=local.yml
+src/lib/state/life/slides.ts:178:function movedOrder(order: readonly string[], at: number, to: number): string[] | null {
+src/lib/state/life/slides.ts:188:    return movedOrder(list, list.indexOf(name), to);
+src/lib/views/sessions/terminal/list/TerminalList.svelte:75:        movedOrder,
+src/lib/views/sessions/terminal/list/TerminalList.svelte:235:            restateInstance(instance, reordered(tab, movedOrder(order, moved, at)));
+src/lib/views/sessions/terminal/terminal-list.ts:196:export function movedOrder(order: readonly string[], moved: string, index: number): string[] {
+```
+
+The slides one is local, its one caller `withMove`; the terminal list's `movedOrder` is a different function (it moves a name, not an index) and stands on the base the same (`TerminalList.svelte:75,235`, `terminal-list.ts:196`).
+
+The key the step introduces, `sort:` on a `collections:` entry, by reading the code:
+
+- Empty: `sort: []` is no sort and no problem (`hub-names.ts:346`, `else if (sort.length > 0)`); a list holding an empty text fails `wordShape` and is `sort_unread` (`hub-names.ts:345`); with no sort the cards go by title.
+- A field given twice, `sort: [date, date]`: `entryOf` keeps the list as written, so the config merge gives no finding; `cardOrder` builds one compare per word (`index.ts:811`) and the second `date` compare runs only on the ties the first leaves, which it leaves tied, so the order is the order of `sort: [date]`. If the field is one the schema does not name, `sortFindings` gives one `sort_unknown` per occurrence (`run.ts:377`, a `filter` then `map` over the list), so two findings for a doubled unknown field.
+- Colliding: the list entry's shape is a loose object (`entryShape`, `hub-names.ts:249`), and the base read no `sort` key of an entry (`grep -n sort` of the base's `hub-names.ts` prints only an `Array.prototype.sort` call at :186), so the key meets no earlier meaning on the list entry; a category's `sort:` (`config/catalogs/vocab.yml`) is a key of another file, read by `presets.ts`, and does not meet this one. A sort word naming the primary key or the title field is read like any other field.
+
+The edits to existing tests, one row per changed line, from `git diff -U0 6779731e1 -- tests` (lines that only add new tests are left out):
+
+| File:line (after) | Before | After |
+| --- | --- | --- |
+| schema-rules.test.ts:512 | `/** A tasks file whose schema is the lines given, holding one task. */` | `const STATUS = '{ field: status, type: text }';` |
+| schema-rules.test.ts:513 | (none) | `const DEADLINE = '{ field: deadline, type: date }';` |
+| schema-rules.test.ts:515-518 | (none) | the doc: the schema is the lines given and the `status` and `deadline` fields oculus's tasks entry sorts by |
+| schema-rules.test.ts:520 | (none) | `const sorted = [...schema, STATUS, DEADLINE];` |
+| schema-rules.test.ts:521 | `return ['schema:', ...schema.map(...)` | `return ['schema:', ...sorted.map(...)` |
+| schema-rules.test.ts:700 | `describe('the primary key, the foreign keys and the display ranks of a hub schema'` | `describe('the primary key, the foreign keys, the display ranks and the sort fields of a hub schema'` |
+| collections.test.ts:242 | (none) | `sort: ['status', 'deadline'],` in the jobs entry of 'reads every field' |
+| collections.test.ts:261 | `it('carries the registry, the flags, the skip and the ticker onto the collection read'` | `it('carries the registry, the flags, the skip, the ticker and the sort onto the collection read'` |
+| collections.test.ts:272 | `ticker: { category: 'task', undated: true }` | `ticker: { category: 'task', undated: true },` |
+| collections.test.ts:273 | (none) | `sort: ['status', 'title']` (input) |
+| collections.test.ts:284 | (none) | `sort: ['status', 'title'],` (expected) |
+| demo config.yml:7 | the comment lists registry, features, ticker category, place, words | the same with "the fields its cards are sorted by (each one the file's own schema names)" |
+| demo config.yml:13-22 | the ten card-list entries with no `sort:` | each with its `sort:` after `ticker:` (applications `[status]`) |
+| make.test.ts:241 | `// ... its registry, flags, ticker and words.` | `// ... its registry, flags, ticker, sort and words.` |
+| make.test.ts:248 | (none) | `sort: ['status', 'deadline'],` (first expected entry) |
+| make.test.ts:260 | (none) | `sort: ['status', 'deadline'],` (second expected entry) |
+| board-rules.test.ts:759 | (none) | `'  - { field: deadline, type: date }',` in the tasks fixture |
+
+### Item 3 (Proof 3)
+
+The judgment call on the two `cardOrder` calls is corrected in place above: `entries` (`Collection.svelte:156`) is read by `lifecycle` (:164) and `collectionBar` (:202), and the card cursor compares card identities (:138, :409).
+
+### Item 4 (Standards 1): the rewrapped comments
+
+Each paragraph is rewrapped whole at 100 columns, words unchanged (greedy: no line ends short of a next word that fits). Widths after, `awk '{print length}'` over each paragraph:
+
+```
+src/lib/data/helpers/hub-names.ts:304-309 (entryOf doc)         100 99 98 100 100 26
+src/lib/state/boards/collection/index.ts:742-744 (sortText)     100 99 15
+src/lib/state/boards/collection/index.ts:773-776 (fieldCompare) 100 97 98 22
+src/lib/data/snapshot/schema/run.ts:7-16 (head comment)         94 95 92 97 100 95 100 97 98 98
+src/lib/data/sources/collections.ts:7-13                        92 99 96 98 98 100 31
+src/lib/views/shared/forms/entry/card/EntryCard.svelte:2-11     88 100 100 93 70 100 97 99 93 62
+```
+
+The run.ts paragraph now ends at :16 (it was :17); its first six lines are as they were, since they were already full. In `EntryCard.svelte` the line of 70 is followed by `(state/boards/structure/cross-links.ts,`, which does not fit. The `docs/templates.md` comment (item 6) is rewrapped the same way: `docs/templates.md:62-80`, widths `98 99 99 87 99 98 100 97 99 87 97 95 94 96 94 95 95 96 60`.
+
+### Item 5 (Standards 2): `stageRank`
+
+`fieldCompare` (`src/lib/state/boards/collection/index.ts:778-789`) ranks a status value by `stageRank` and its own `place` is gone:
+
+```ts
+    const options = field === STATUS_FIELD ? optionKeys(declared) : [];
+    const texts =
+        declared?.type === 'date'
+            ? (left: string, right: string): number => (left < right ? -1 : left > right ? 1 : 0)
+            : (left: string, right: string): number =>
+                  stageRank(left, options) - stageRank(right, options) ||
+                  CARD_COLLATOR.compare(left, right);
+```
+
+with `import { stageRank } from '../board/presets.ts';` (`index.ts:56`; `index.ts` already imports `../board/state.ts`, and `presets.ts` imports nothing of `collection/`). `presets.ts` is read, not changed. With no options `stageRank` gives every value `0`, so the collator decides, as before. The case-run after this round (`CASE_OUT=r1-after.txt npx vitest run --testTimeout 120000 --config /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/o137/vitest.case.config.mjs`, the program unchanged, its timeout raised because test:quick was running beside it) prints `Test Files  1 passed (1)`, and `diff` of its output against the first after run differs only in the C7 lines: the research hub's `applications.yml` changed in between (`git log -1 -- .oculus/data/academic/applications.yml` in the hub: `1c0d40fdd 2026-11-03 21:31:35 +0100 Order the hub's status options by stage and mark the UGent application as interview`). Its C7 lines now, as printed:
+
+```
+C7 applications sort ["status","deadline"]
+  C7 active 2026-11-04 | Maastricht University, Universitair Docent Klinische Epidemiologie
+  C7 active 2026-11-15 | VIB.AI, Group Leader
+  C7 active 2026-11-22 | Maastricht University, Assistant Professor in Methodology and Statistics
+  C7 active 2026-11-27 | University of Luxembourg, Postdoctoral researcher in Biomedical AI & Federated MLOps
+  C7 active 2027-01-21 | Defensie, Reservist Officer
+  C7 applied 2026-11-01 | Maastricht University, Assistant Professor in Predictive Brain Processes
+  C7 interview 2026-10-27 | BioML UGent Doctor-assistent
+  C7 accepted - | Twente, Cancer AI
+  C7 accepted - | UHasselt, FL BDS
+  C7 not-applied - | Denmark, AI ZAP
+  C7 not-applied - | KTH, Sign Language
+  C7 not-applied - | Luxembourg, AI
+  C7 not-applied - | Luxembourg, ZAP
+  C7 not-applied - | Ume<U+00E5>, Precision ZAP
+  C7 not-applied - | Uppsala, Precision ZAP
+  C7 not-applied - | Lund, Paleogenomics
+  C7 not-applied - | Hasselt, Neuroscience ZAP
+  C7 not-applied - | UCD, RWE ZAP
+  C7 declined - | UCD, RWE postdoc
+  C7 declined - | Wageningen, FL
+  C7 rejected - | UHasselt, Immunology TT
+  C7 rejected - | Larian Studios, Engine Programmer
+  C7 rejected - | Guerrilla Games, Senior Data Analyst
+  C7 rejected - | Oslo, ML Integreat
+  C7 rejected - | Uppsala, ML Theory
+  C7 rejected - | Twente, Aneurysm
+  C7 rejected - | Maynooth, CS ZAP
+  C7 rejected - | Hasselt, Data Science ZAP
+  C7 withdrawn - | Oslo, Plague
+  C7 withdrawn - | Tilburg, EEG
+  C7 withdrawn - | Utrecht, NLP
+```
+
+Every other line (C1 to C6, C8 to C18, the C2 hub lines) is the same as the first after run, so the order under `stageRank` is the order under the old `place`. The C7 order follows the file's new status options, with the deadline oldest first inside a status. C7's literal list in the brief ("the nine not-applied entries first") described the hub's old option order; under the hub's current options the applications go active, applied, interview, accepted, not-applied, declined, rejected, withdrawn. Open item 660's option (a) appears to be in the hub's data already.
+
+### Item 6 (Standards 3): the `sort:` bullet
+
+`config/defaults/sources.yml:32` now reads, in its second half: "...; any other field alphabetically, case and accents ignored; and a card that holds no value of a field after those that hold one. The six files drawn by oculus's own views carry none. A field the schema does not name is a finding and is not read, and a `collections:` entry with no `sort:` draws its cards by their title." ("a card" for a file's record, "a `collections:` entry" for the list entry; the sentence on the six files is moved up so the bullet ends as ruled.) The copy in `docs/templates.md`'s config comment said "with no `sort:` the cards go by their title"; it now says "a `collections:` entry with no `sort:` draws its cards by their title", and the paragraph is rewrapped (item 4's widths). Its words for the record were already "cards".
+
+### Item 7 (Standards 5)
+
+`tests/data/snapshot/schema-rules.test.ts:700`: `describe('the primary key, the foreign keys, the display ranks and the sort fields of a hub schema', () => {`. `prettier --check` accepts the line. G56 in `agents/guarded.md` is the orchestrator's file and is not touched.
+
+### Item 8 (Behaviour 1)
+
+The "Before and after" section above gains four rows: the status slices and the "other" values of a `filter: true` group in a workspace of several hubs; the Status choices of a file with no schema; List mode's rows; and a hub's own `collections:` entry with no `sort:`. A hub's own list replaces oculus's list (the case-run's C13 second hub reads only `["events","literature"]`), so a hub's own entry carries only the `sort:` it writes.
+
+### Item 9 (Behaviour 2)
+
+`docs/HELP.md:279`'s sentence now reads: "When a write changes a card's pin or a field the collection's cards are sorted by, the card moves to its place." The judgment call above quotes it.
+
+### The round's verify list, after the last change
+
+Check 1, the same 50 files as the first run:
+
+```
+21:57  up 1 day, 6 hrs, 1 user, load averages: 4.59 7.90 9.79
+ Test Files  50 passed (50)
+      Tests  1260 passed | 9 skipped (1269)
+   Start at  21:57:53
+   Duration  110.64s (transform 22.91s, setup 0ms, import 104.04s, tests 327.27s, environment 11ms)
+21:59  up 1 day,  6:02, 1 user, load averages: 10.99 9.30 10.09
+```
+
+Check 2: `npm run diagrams` (exit 0), then `npm run test:quick` once. In the round the list ran once, and no whole-suite command was run. Result lines as printed:
+
+```
+test:quick: 38 changed file(s), from git since HEAD
+test:quick: 228 test file(s)
+ok      prettier (1.6 s): All matched files use Prettier code style!
+ok      ASCII gate (1.6 s)
+ok      svelte-kit sync (2.9 s)
+ok      eslint (16.5 s)
+ok      svelte-check (56.1 s): 1793739663270 COMPLETED 581 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest checks (234.5 s): Duration  214.18s (transform 133.05s, setup 0ms, import 266.14s, tests 456.51s, environment 6ms)
+ok      vitest (272.0 s): Duration  252.97s (transform 247.03s, setup 0ms, import 451.56s, tests 497.77s, environment 17.41s)
+ok      vitest slow (348.1 s): Duration  329.30s (transform 62.47s, setup 0ms, import 216.50s, tests 1086.33s, environment 15ms)
+test:quick: 351.1 s; every command passed
+22:05  up 1 day,  6:08, 1 user, load averages: 12.19 13.90 12.32
+```
+
+No red line, so no file was rerun alone.
+
+Check 3, the rules file's gate over the changed files and this report: printed nothing, exit 0.
+
+Check 4, `sh utils/unused-exports.sh` (exit 0) against `../O137-base/unused-exports.txt`:
+
+```
+326c326
+< src/lib/state/workbench/ui.svelte.ts: CardMove, OwnedInstance, TerminalOwner, PaneStripKey
+---
+> src/lib/state/workbench/ui.svelte.ts: OwnedInstance, TerminalOwner, PaneStripKey
+```
+
+The one difference is `CardMove`, removed with the move; no new name.
+
+Check 5: `sh utils/folder-check.sh` printed nothing, exit 0.
+
+Check 6: the grep printed nothing, exit 1.
+
+Check 7:
+
+```
+158:            cardOrder(part.collection.entries, part.collection.sort, part.schema)
+219:            cardOrder(part.collection.entries, part.collection.sort, part.schema)
+```
+
+Check 8: item 1's run above, and check 1 after the change.
+
+### The files this round changes, with line counts after (`wc -l`)
+
+- `src/lib/data/helpers/hub-names.ts` 857 (the entryOf doc)
+- `src/lib/state/boards/collection/index.ts` 872 (the `stageRank` import, `fieldCompare`, the sortText and fieldCompare docs)
+- `src/lib/data/snapshot/schema/run.ts` 610 (the head comment)
+- `src/lib/data/sources/collections.ts` 218 (the head comment)
+- `src/lib/views/shared/forms/entry/card/EntryCard.svelte` 328 (the head comment)
+- `config/defaults/sources.yml` 115 (the `sort:` bullet)
+- `docs/templates.md` 1925 (the config comment, lines 62-80)
+- `docs/HELP.md` 620 (line 279)
+- `tests/data/snapshot/schema-rules.test.ts` 786 (the describe title at :700)
+- `docs/diagrams/*`, regenerated by `npm run diagrams`; after it `git status --short docs/diagrams` lists the same six files the step changes (`layer-state`, `layer-views`, `layers`, each `.dot` and `.svg`), since the new import runs inside `state/boards` and adds no folder edge
+- `.scratch/migration/agents/reviews/O137-report.md`, this report
+
+The step as a whole: `git diff 6779731e1 --stat` prints `34 files changed, 663 insertions(+), 690 deletions(-)`.
