@@ -33,6 +33,8 @@ dispatch:           # steps in flight, up to six (Z632)
   model: claude-opus-5-5
   launched: 2026-11-03
   report: .scratch/migration/agents/reviews/O130-report.md
+  builder_usage: first run 179415 tokens, 77 tool uses, 21 min 16 s
+  reviewer_report: "running: a982d30fcbb0915af, claude-opus-5-5"
   round: 0
   brief_check: .scratch/migration/agents/reviews/O130-brief-check.md (a0194efcc505ed3c8, claude-opus-5-5, 190092 tokens, 54 tool uses, 7 min 42 s)
   shared_paths: docs/diagrams (O131 regenerates them too; each landing runs npm run diagrams, so the merge is the generator's output)
@@ -46,10 +48,17 @@ dispatch:           # steps in flight, up to six (Z632)
   model: claude-opus-5-5
   launched: 2026-11-03
   report: .scratch/migration/agents/reviews/O131-report.md
+  builder_usage: first run 258918 tokens, 123 tool uses, 19 min 46 s
+  reviewer_report: "running: a6d4eb65a0299f2eb, claude-opus-5-5"
   round: 0
   brief_check: .scratch/migration/agents/reviews/O131-brief-check.md (abd6789ecd2085c43, claude-opus-5-5, 232859 tokens, 68 tool uses, 10 min 42 s)
   shared_paths: docs/diagrams (O130 regenerates them too; each landing runs npm run diagrams, so the merge is the generator's output)
   landing: not-started
+- step: O133
+  brief_check: "running: aa8f129fd1b7631ff"
+  landing: preparing
+- step: O134
+  landing: preparing
 ```
 
 ## The standing demands (from Axel, in force)
@@ -192,6 +201,9 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
 - None.
 
 ## Closed items
+- Open item 650 (2026-11-03), closed by Axel the same day: (a), step O135; (c) was the lazy option.
+- Open item 649 (2026-11-03), closed by Axel the same day: (a), step O134; (b) was the lazy option.
+- Open item 648 (2026-11-03), closed by Axel the same day: (a), step O133; (c) was the lazy option.
 - Open item 647 (2026-11-03), closed by Axel the same day: (a), step O132; (b) was the lazy option.
 - Open item 646 (2026-11-03), closed by Axel the same day: (a), step O131; (b) was the lazy option.
 - Open item 645 (2026-11-03), closed by Axel the same day: (a), step O130; (b) was the lazy option.
