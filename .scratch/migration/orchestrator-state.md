@@ -40,8 +40,20 @@ dispatch:           # steps in flight, up to six (Z632)
   shared_paths: with O125, landed: `src/lib/ui/controls/heads/GroupHead.svelte` (O126 lines 57-58, O125 lines 11-20 and the removed rules) and `docs/HELP.md` (O126 lines 295 and 340-341, O125 line 571); separate lines, a simple merge at O126's landing.
   landing: not-started
 - step: O127
-  brief_check: "running: ad6df2830a9462837"
-  landing: preparing
+  base: 0e374c303
+  worktree: .agents/worktrees/migration-O127
+  executor: agent
+  worker: claude:opus
+  session_id: a09c9fb8b3606ecfe
+  model: claude-opus-5-5
+  launched: 2026-11-03
+  report: .scratch/migration/agents/reviews/O127-report.md
+  builder_usage: none yet
+  round: 0
+  reviewer_report: none yet
+  brief_check: .scratch/migration/agents/reviews/O127-brief-check.md (ad6df2830a9462837, claude-opus-5-5, 184411 tokens, 66 tool uses, 8 min 47 s)
+  shared_paths: with O126, in flight: `docs/HELP.md` (O127 lines 296 and 298, O126 lines 295 and 340-341; lines 295 and 296 touch, so the landing takes each step's paragraph whole) and the generated `docs/diagrams/layers.dot`, `layers.svg`, `layer-views.dot` and `layer-views.svg`, regenerated with `npm run diagrams` at landing
+  landing: not-started
 ```
 
 ## The standing demands (from Axel, in force)
@@ -780,6 +792,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-11-03 (O127 building). O127's brief (`agents/briefs/O127.md`) carries the brief check's findings closed (`agents/reviews/O127-brief-check.md`, "Closed"): the year tag on the project board card and the Focus lane card, the rule in `focus.ts`, the stage flags' descriptions and the Help page. The text year the manifest form writes is open item 642. Prepared at 0e374c303; builder a09c9fb8b3606ecfe (claude-opus-5-5) runs in `.agents/worktrees/migration-O127`. In flight (2 of 6): O126 (repair round 1), O127 (building). Queued: none. Open items: 642.
 - 2026-11-03 (O126 round 1 sent; O127 brief checked). O126's review a5a6eef1ec6ba505c (claude-opus-5-5) is saved in `agents/reviews/O126-refuter.md`: items 1-3 and 5-7 hold, item 4 violated in one clause, C12 partial (the wrap is left to the look); findings Spec 1-2, Proof 1, Standards 1-4, Behaviour 1. Round 1 (`agents/briefs/O126-round1.md`, copied into the worktree with the review; snapshot `.agents/worktrees/migration-O126-round-1` with `files.txt`, 49 paths) carries all of them. O127's brief check ad6df2830a9462837 (claude-opus-5-5) is saved in `agents/reviews/O127-brief-check.md`. In flight (2 of 6): O126 (round 1), O127 (preparing).
 - 2026-11-03 (O126 under review; 641 ruled). O126's builder reported (`agents/reviews/O126-report.md`, saved in the main ledger, usage under builder_usage) and the orchestrator read the whole diff (33 tracked files, the new files whole). Its reviewer a5a6eef1ec6ba505c (claude-opus-5-5) runs. Open item 641 ruled (a): step O127 added after O126. In flight (1 of 6): O126 (under review). Queued: O127. Open items: none.
 - 2026-11-03 (O125 landed). O125 is on main (booked under O125 in `plan.md`, `agents/reviews/O125-landing.md`); `test:quick` passed in the gate and main equals the gate; ruling 640 carried out at landing; the look taken on a scratch server on 8797 from the gate, stopped after. In flight (1 of 6): O126, building under its cases ruling (`agents/briefs/O126-cases.md`). Next: O126's report, /refute O126, its round and landing. Open items: 641.
