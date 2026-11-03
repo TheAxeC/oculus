@@ -157,3 +157,20 @@ None. `ls docs/adr` prints "No such file or directory".
 - In Rose Pine, `active` (green) and `offered` (teal) share `#9ccfd8`. That is a clash between application statuses that does not involve interview, so it is outside this step's goal, and I did not judge it.
 
 Usage: ad6e98d66c1edb3ea, claude-opus-5-5, 180152 tokens, 47 tool uses, 9 min 14 s.
+
+## Closed
+
+- The main finding (the goal cannot be reached in everforest, everforestlight and gruvbox) and The question, Item 2 and Item 3: raised as open item 666 and ruled 1 (a); the brief now covers every block under a CIEDE2000 of 10, and item 3's ban on other blocks is gone.
+- Implied input 2 and the near-threshold table: the brief's sweep on main (pink and teal against every status token, on the hue and on `-txt`) lists the 14 pink blocks and, by ruling 666 2 (a), the 17 teal blocks, each with its file and line.
+- Implied input 3 (the derived text colour): item 2 measures every pair on the hue and on `-txt`; decision 2 says why.
+- Implied inputs 5 and the lane colours: item 2 holds every `-lane` pair of teal or pink at 10 or above where it was on the base, so the `focus_lanes` comment stays true, and C3 checks it.
+- Names, other users of `--c-pink`, and implied input 6: "What is on the tree" names the users of pink and teal, and the report's before-and-after section names the Career view's bars, the Build lane and the Teaching column.
+- Names, the source head comments, and implied input 7: item 3 adds a clause to each touched file's head comment, and the paths and C4 include the head-comment lines.
+- Cases and checks, C4 enforcing the defect: C4 now allows only the listed `--c-pink` and `--c-teal` lines and the head comments.
+- Cases and checks, C2, C5 and C6 checking places the step does not change: removed.
+- The question, C3 and C6 testing inequality only: replaced by C2, the measured sweep over all 49 themes.
+- The question, C7: kept as C5, with the brief stating that distinctness is C2's measure, not the contrast test's.
+- Cases and checks, the base copy not located: the worktree and its base copy are given at dispatch, as for every step.
+- Cases and checks, Verify 3's form: it now runs over every `rice/*.css` file the step may change.
+- The step line's contrast floor against `--c-red`: dropped. The derived text's contrast is held by the contrast check, and the hue is held by item 2's bar.
+- Declined to judge, Rose Pine's active and offered sharing `#9ccfd8`: raised as open item 666 part 2 and ruled 2 (a).
