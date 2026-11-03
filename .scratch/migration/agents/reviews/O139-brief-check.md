@@ -156,3 +156,22 @@ Findings: the reuse of `hubs.root_tip` on non-hub rows (N1), and item 6's conten
 - Open item 661 (the rules file's ban on editing under `.scratch/` against the report path `.scratch/migration/agents/reviews/O139-report.md`). It is already booked in `orchestrator-state.md:186` for every step.
 
 Agent usage: ad33f715e7392d653, claude-opus-5-5, 193285 tokens, 80 tool uses, 9 min 13 s.
+
+## Closed
+
+Each finding closed in `agents/briefs/O139.md`, with Axel's ruling 662 for the three the stop raised:
+
+- N1: ruling 662 1 (a): item 2, decision 5, C2, C6, C11; RootChip.svelte and findings.yml added to the paths.
+- I1: ruling 662 2 (a): item 7, C9, C16, C19; `paths.ts` lines 170-195 added to the paths; the premise names `real ?? dir` (P3).
+- I4: ruling 662 3 (a): items 3 and 8, C12; `options-folder.ts` lines 125-140 added to the paths.
+- P1: the search's line is 91.
+- P2, C-2: the worktree and the base copy are named at the top.
+- C-1, Q4: C3 and C7 are in the look list.
+- C-3: verify 3 gives the perl form over src and config and the grep form over docs.
+- Q1: item 3 names `plain cut` and the wrapper that keeps the focus ring; item 4 says the name gives way first; C18.
+- Q2: item 10's sentence covers a root that is no hub, a folder, and a file no root serves.
+- Q3: C9 and the case-run program.
+- I2: item 1 and item 3 leave an empty file plain; C10.
+- I3: C11. I5: C13. I6: C14. I7: C11's apps state finding. I8: C15. I9: item 5 and C17. I10: C16.
+- Section 1's note on `AuditSection.svelte:30-31` (no fill under the pointer on a Files row) is a sentence the step does not change; left as it stands.
+- The case-run program replaces "No script is written to run the cases", as the rules file allows.

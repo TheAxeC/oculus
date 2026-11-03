@@ -65,6 +65,8 @@ dispatch:           # steps in flight, up to six (Z632)
   brief_check: .scratch/migration/agents/reviews/O138-brief-check.md (a3acca86b4a0aeeaa, claude-opus-5-5, 220970 tokens, 97 tool uses, 11 min 7 s)
   shared_paths: "docs/HELP.md with O135 (lines 394-411) and O137 (lines 148 and 279), this step line 296; docs/templates.md with O137 (lines 62-92), this step lines 1560 and 1577-1578; far apart"
   landing: not-started
+- step: O139
+  landing: preparing
 ```
 
 ## The standing demands (from Axel, in force)
