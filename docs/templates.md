@@ -1502,7 +1502,7 @@ schema:
   - { field: key,      type: text,     primary_key: true, required: true, section: Core, help: "Short name." }
   - { field: title,    type: text,     display: 1, required: true, section: Core, help: "Course or role." }
   - { field: sub,      type: text,     section: Core, help: "Institution, period." }
-  - { field: status,   type: select,   options: [planned, ongoing, completed], required: true, section: Core, help: "Where it stands." }
+  - { field: status,   type: select,   options: [ongoing, planned, completed], required: true, section: Core, help: "Where it stands." }
   - { field: date,     type: text,     section: Dates, help: "Year or range." }
   - { field: deadline, type: date,     section: Dates, help: "Shows on Focus while live." }
   - { field: meta,     type: metalist, section: Core, help: "Label and value rows." }
@@ -1535,7 +1535,7 @@ entries:
 #  - key: ml-course               # required
 #    title: "Machine learning"    # required
 #    sub: "University, 2026"
-#    status: ongoing              # required: planned, ongoing or completed
+#    status: ongoing              # required: ongoing, planned or completed
 #    date: "2026"
 #    deadline: YYYY-MM-DD
 #    meta: []
@@ -1557,7 +1557,7 @@ schema:
   - { field: key,      type: text,     primary_key: true, required: true, section: Core, help: "Short name." }
   - { field: title,    type: text,     display: 1, required: true, section: Core, help: "Position." }
   - { field: sub,      type: text,     section: Core, help: "Institution." }
-  - { field: status,   type: select,   options: [not-applied, active, accepted, rejected, declined, withdrawn, applied], required: true, section: Core, help: "Where it stands." }
+  - { field: status,   type: select,   options: [active, applied, interview, offered, accepted, not-applied, declined, rejected, withdrawn], required: true, section: Core, help: "Where it stands." }
   - { field: date,     type: text,     section: Dates, help: "Year applied." }
   - { field: meta,     type: metalist, section: Core, help: "Label and value rows." }
   - { field: tags,     type: tags,     section: Core, help: "Filter words." }
@@ -1574,8 +1574,8 @@ entries:
 #  - key: my-postdoc              # required
 #    title: "Postdoc position"    # required
 #    sub: "University"
-#    status: active               # required: not-applied, active, accepted, rejected,
-#                                 # declined, withdrawn or applied
+#    status: active               # required: active, applied, interview, offered, accepted,
+#                                 # not-applied, declined, rejected or withdrawn
 #    date: "2026"
 #    meta: []
 #    tags: []
@@ -1597,7 +1597,7 @@ title: Tasks
 schema:
   - { field: key,      type: text,     primary_key: true, required: true, section: Core, help: "Short name." }
   - { field: title,    type: text,     display: 1, required: true, section: Core, help: "What to do." }
-  - { field: status,   type: select,   options: [todo, doing, done, dropped], required: true, section: Core, help: "Where it stands." }
+  - { field: status,   type: select,   options: [doing, todo, done, dropped], required: true, section: Core, help: "Where it stands." }
   - { field: deadline, type: date,     section: Dates, help: "Shows on Focus while live." }
   - { field: kind,     type: text,     section: Core, help: "Review, admin, teaching." }
   - { field: note,     type: textarea, section: Content, help: "Notes." }
@@ -1609,7 +1609,7 @@ schema:
 entries:
 #  - key: review-paper            # required
 #    title: "Review a paper"      # required
-#    status: todo                 # required: todo, doing, done or dropped
+#    status: todo                 # required: doing, todo, done or dropped
 #    deadline: YYYY-MM-DD
 #    kind: review
 #    note: ""

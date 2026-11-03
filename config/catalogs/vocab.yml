@@ -152,6 +152,8 @@ statuses:
   ready:         { color: "#16a34a" }
   archived:      { color: "#9ca3af", closes_deadline: true }
   applied:       { color: "#0891b2", closes_deadline: true, deadline_met: true }
+  interview:     { color: "#7c3aed", closes_deadline: true, deadline_met: true, live_subtasks: true }
+  offered:       { color: "#0d9488", closes_deadline: true, deadline_met: true, live_subtasks: true }
 
 
 # The statuses a Position Lead's `status` takes, each with the `color` it is drawn in where it has one, and the flags that say what it decides; a status the list does not hold is a finding naming the closest word when that word is within half the written status's length in single-letter changes, rounded down. Every flag is compared trimmed and in lower case (`wordFlag`):
@@ -198,8 +200,10 @@ fund_stages:
 
 # Position stages stacked inside the Focus Job applications column (label / colour / the statuses each matches).
 position_stages:
-  - { label: "Active",  color: "#16a34a", statuses: [active] }
-  - { label: "Applied", color: "#0891b2", statuses: [applied] }
+  - { label: "Active",    color: "#16a34a", statuses: [active] }
+  - { label: "Applied",   color: "#0891b2", statuses: [applied] }
+  - { label: "Interview", color: "#7c3aed", statuses: [interview] }
+  - { label: "Offered",   color: "#0d9488", statuses: [offered] }
 
 # Teaching stages stacked inside the Focus Teaching & supervision column (label / colour / the statuses each matches).
 teaching_stages:
