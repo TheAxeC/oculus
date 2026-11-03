@@ -58,7 +58,17 @@ dispatch:           # steps in flight, up to six (Z632)
   brief_check: "running: aa8f129fd1b7631ff"
   landing: preparing
 - step: O134
-  landing: preparing
+  base: c41dc24ec
+  worktree: .agents/worktrees/migration-O134
+  executor: agent
+  worker: claude:opus
+  session_id: aadfda5f340a408b4
+  model: claude-opus-5-5
+  launched: 2026-11-03
+  report: .scratch/migration/agents/reviews/O134-report.md
+  round: 0
+  brief_check: none, a small text step
+  landing: not-started
 ```
 
 ## The standing demands (from Axel, in force)
