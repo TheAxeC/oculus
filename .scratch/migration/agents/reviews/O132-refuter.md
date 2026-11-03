@@ -352,3 +352,15 @@ Items of the round's brief:
 - G13's text, Code and Test lines. The orchestrator extends them at landing, outside this diff.
 
 Reviewer usage: acbc1234def53be42, claude-opus-5-5, 180694 tokens, 38 tool uses, 14 min 53 s.
+
+## Closed
+
+The first review's findings, closed in repair round 1 (`agents/briefs/O132-round-1.md`), each closure judged by the review over the round:
+- Proof 1 (the report's first line and verify 2 row, the lone run unquoted): round item 3; the review over the round gives it holds but for the count, its R1, below.
+- Standards 1 (`vocab.test.ts:5-6`, one rule stated of both describes): round item 1; holds.
+- Standards, the doc comment of `VOCAB_FILE` (`index.ts:632`): round item 2; holds.
+
+The review over round 1, its findings closed at landing:
+- R1 (the report's "twelve" for thirteen red tests): fixed at landing in `agents/reviews/O132-report.md`, the verify 2 row reads "thirteen".
+- R2 (the report's line counts of `vocab.test.ts`): fixed at landing in `agents/reviews/O132-report.md`, the Files table 226 -> 363, DONE row 4 `vocab.test.ts:236-363`, DONE row 2 `vocab.test.ts:1-11`.
+- R3 (a here-document redirect that appended the round section to the report): closed under the ruling "Unapproved builder scripts" (`plan.md` Rulings): the breach is recorded in the booking; the redirect changed the report alone, and the orchestrator read the appended section against the round brief and keeps it with R1 fixed.

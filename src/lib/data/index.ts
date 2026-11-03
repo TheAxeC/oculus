@@ -47,6 +47,7 @@ import {
     HUB_FILE,
     fromHubFile,
     hasCardList,
+    hubKeysOf,
     isFeedEntry,
     tierOf,
     type FeedRegistry,
@@ -59,6 +60,7 @@ import type { DeckProject } from './sources/deck/kinds.ts';
 import { textCatalog, type loadConfig } from './sources/config.ts';
 import { VOCAB_SHAPES } from './sources/config/merge/in-place.ts';
 import { categoriesFindings } from './sources/config/sections/boards.ts';
+import { vocabFindings } from './sources/config/sections/vocab.ts';
 import { readYamlMap } from './sources/yaml-file.ts';
 import {
     newProjectDirs,
@@ -618,7 +620,8 @@ export type HubSettings = (dir: string) => ReturnType<typeof loadConfig>;
  * A hub other than the primary, read with its own settings: the engine's defaults under the hub's
  * own `.oculus/config.yml`. Its career and its portfolio deck are the primary hub's alone, so they
  * are not read. Its findings ride along for the caller to report: those of its settings file, those
- * of the folders it names, and those of the category check over its own merged config.
+ * of the folders it names, and those of the category check and of the vocabulary check over its own
+ * merged config.
  */
 export type OtherHub = HubRoot & {
     portfolio: PortfolioConfig;
@@ -626,19 +629,29 @@ export type OtherHub = HubRoot & {
     vocab: HubVocab;
 };
 
+/** The engine file whose keys, set in a hub's settings file, switch the vocabulary check on. */
+const VOCAB_FILE = 'catalogs/vocab.yml';
+
 /**
  * The settings of a hub other than the primary, from the parse `loaded` of its settings. Its
- * findings are those of its settings file, those of the folders it names, and, when its settings
- * file sets `categories`, those of the category check over its own merged config, each naming that
- * file. A hub that sets no `categories` reads oculus's own rows, whose findings would be of
- * oculus's file and not of the hub's, so the check is not run for it.
+ * findings are those of its settings file, those of the folders it names, then, when its settings
+ * file sets `categories`, those of the category check over its own merged config, then, when its
+ * settings file sets any key of config/catalogs/vocab.yml, those of the vocabulary check
+ * (`vocabFindings`) over the same merged config. Each finding of the two checks names the hub's
+ * settings file, one on a value of oculus's that the hub's words make wrong included (a lane of
+ * oculus's whose cluster the hub's `focus_clusters` leaves out), since that file is where it is put
+ * right. A hub that sets none of a check's keys reads oculus's own values, whose findings would be
+ * of oculus's file and not of the hub's, so that check is not run for it.
  */
 export function readOtherHub(root: HubRoot, loaded: ReturnType<typeof loadConfig>): OtherHub {
     const { config, findings, from } = loaded;
     const portfolio = { ...portfolioConfigFrom(config, from), career: null, portfolioDeck: null };
     const sources = join(root.dir, HUB_FILE);
-    const categories = fromHubFile(from.categories)
-        ? categoriesFindings(config, () => sources, textCatalog(config))
+    const fileOf = (): string => sources;
+    const catalog = textCatalog(config);
+    const categories = named(from, 'categories') ? categoriesFindings(config, fileOf, catalog) : [];
+    const words = (hubKeysOf(VOCAB_FILE) ?? []).some((key) => named(from, key))
+        ? vocabFindings(config, fileOf, catalog)
         : [];
     return {
         ...root,
@@ -656,7 +669,8 @@ export function readOtherHub(root: HubRoot, loaded: ReturnType<typeof loadConfig
                 },
                 root.dir
             ),
-            ...categories
+            ...categories,
+            ...words
         ]
     };
 }

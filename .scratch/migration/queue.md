@@ -1,5 +1,4 @@
-In flight (2 of 6 slots in use):
-- O132 (every hub's words held to the vocabulary check), repair round 1 reviewed; landing next.
+In flight (1 of 6 slots in use):
 - O136 (the editor holds a keyed family to the form its reader takes), repair round 1 sent; building.
 
 Queued, in order (3 steps):
@@ -10,6 +9,7 @@ Queued, in order (3 steps):
 Owed looks: none.
 
 Landed, newest first:
+- O132 (every hub's words held to the vocabulary check), one repair round, two report fixes at landing.
 - O133 (one front-matter pattern for every Markdown reader), one repair round, five fixes at landing.
 - O131 (the editor holds a one-text `multi` value to its words), one repair round, five fixes at landing.
 - O134 (a Notes section in the templates page), a small text step, three fixes at landing.

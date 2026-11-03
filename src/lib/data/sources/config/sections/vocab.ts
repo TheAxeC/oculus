@@ -1,15 +1,18 @@
 // Layer 1, data. What is wrong with the words of config/catalogs/vocab.yml as the merged config
 // holds them, past the shape of each file (data/shapes/catalog-files/vocab.ts), as findings of the
-// file each value was read from: a flag that names the one word a write or a control takes
-// (`SINGLE_USE`) carried by two words or more, filed in the file of the second word, the hub's when
-// a hub's value gives it; a row of `focus_clusters` whose key an earlier row that reads holds, or
-// whose `label` or `glyph` names no word of the text catalog; a Focus lane naming no cluster or one
-// the board does not draw, which no row of `focus_clusters` that reads has; and a lane's
-// `move_writes` naming both a stage and a chip, the field of the other kind of lane, a word the
-// lane does not list or a word the vocabulary lacks. The page reads the same values itself
-// (state/boards/focus.ts, data/shapes/boards/focus-clusters.ts, data/shapes/vocab-keys.ts) and
-// passes over what each finding names, so each says what is not read. They are worded from the
-// merged catalog.
+// file the caller files each key in: a flag that names the one word a write or a control takes
+// (`SINGLE_USE`) carried by two words or more, filed under the key of the second word; a row of
+// `focus_clusters` whose key an earlier row that reads holds, or whose `label` or `glyph` names no
+// word of the text catalog; a Focus lane naming no cluster or one the board does not draw, which no
+// row of `focus_clusters` that reads has; and a lane's `move_writes` naming both a stage and a
+// chip, the field of the other kind of lane, a word the lane does not list or a word the vocabulary
+// lacks. The primary hub's config is checked by the readers of sections/findings.ts, which file a
+// key in the file its value was read from, the hub's when a hub's value gives it. A hub other than
+// the primary is checked over its own merged config by `readOtherHub` (data/index.ts) when its
+// settings file sets a key of vocab.yml, and each of its findings names that hub's settings file,
+// where it is put right. The page reads the same values itself (state/boards/focus.ts,
+// data/shapes/boards/focus-clusters.ts, data/shapes/vocab-keys.ts) and passes over what each
+// finding names, so each says what is not read. They are worded from the merged catalog.
 
 import { findingText, type TextCatalog } from '../../../helpers/finding-text.ts';
 import { isMap } from '../../../helpers/guards.ts';
@@ -51,7 +54,7 @@ type Note = (key: string, message: string) => void;
 
 /**
  * One finding for each single-use flag two or more words of its map carry, naming the flag and
- * every word carrying it, filed in the file of the second word.
+ * every word carrying it, filed under the key of the second word.
  */
 function flagFindings(config: Record<string, unknown>, note: Note, catalog: TextCatalog): void {
     for (const { key, flag } of SINGLE_USE) {
@@ -184,7 +187,7 @@ function laneFindings(
 /**
  * The findings of the vocabulary's words in the merged config: the single-use flags carried by more
  * than one word, the rows of `focus_clusters`, and each Focus lane's cluster and `move_writes`.
- * `fileOf` gives the file a key was read from.
+ * `fileOf` gives the file a finding on a key is filed in, handed the key cut at its first `[n]`.
  */
 export function vocabFindings(
     config: Record<string, unknown>,

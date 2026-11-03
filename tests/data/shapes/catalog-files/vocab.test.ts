@@ -2,13 +2,20 @@
 // hub's `.oculus/config.yml` lays them over oculus's: a single-use flag carried by two words, a row
 // of `focus_clusters` the shape refuses or whose words the text catalog lacks, a Focus lane naming
 // no cluster or one no readable row has, and a lane's `move_writes` naming a word the lane does not
-// list or the field of the other kind of lane. Each finding names the file the value was read from,
-// the hub's when the hub's value gives it, and the one-word readers give no word for a flag two
-// words carry. The hub's file is given as text, so no file is read for it.
+// list or the field of the other kind of lane. In the describe of the primary hub, each finding
+// names the file the value was read from, the hub's when the hub's value gives it, and the one-word
+// readers give no word for a flag two words carry. The hub's file is given as text, so no file is
+// read for it, save in the describe of a hub that is not the primary, which plants that hub's file
+// on disk and reads it as the build does: every finding of such a hub names its settings file, one
+// on a lane of oculus's that the hub's clusters leave out included, and the hub's whole list of
+// findings is compared in order.
 
-import { describe, expect, it } from 'vitest';
+import { join } from 'node:path';
+import { describe, expect } from 'vitest';
+import { readOtherHub } from '../../../../src/lib/data/index.ts';
 import { appliedWord } from '../../../../src/lib/data/accounts/leads.ts';
-import { engineDir, textCatalog } from '../../../../src/lib/data/sources/config.ts';
+import { HUB_FILE } from '../../../../src/lib/data/helpers/hub-names.ts';
+import { engineDir, loadConfig, textCatalog } from '../../../../src/lib/data/sources/config.ts';
 import { vocabFindings } from '../../../../src/lib/data/sources/config/sections/vocab.ts';
 import { oneWordWith } from '../../../../src/lib/data/shapes/vocab-keys.ts';
 import { clusters } from '../../../../src/lib/state/boards/focus.ts';
@@ -20,6 +27,7 @@ import {
     readerFindings,
     withHub
 } from '../../sources/config/layers/layers-fixture.ts';
+import { it, plantScratch } from '../../../fixtures/scratch.ts';
 
 /** Oculus's own vocabulary file, where a finding on a value of oculus's is filed. */
 const OCULUS_VOCAB = `${engineDir()}/config/catalogs/vocab.yml`;
@@ -223,4 +231,133 @@ describe("the vocabulary's words past its shape", () => {
         ]);
         expect(oneWordWith(read.config, 'stages', 'new_idea')).toBe(undefined);
     });
+});
+
+/** A hub file whose tier `personal` carries `default` beside oculus's `research`. */
+const TIERS = 'tiers: { personal: { label: Personal, default: true } }\n';
+
+/** The finding of the two tiers carrying `default`, as its key and sentence. */
+const TIERS_SAID: [string, string] = [
+    'tiers.personal',
+    'research, personal each carry default, which one word carries at most; none of them is read for it'
+];
+
+/** The lanes of oculus's whose cluster a hub's list holding only `now` leaves out, by index. */
+const LEFT_OUT = [
+    ['review', 'parked'],
+    ['blocked', 'parked'],
+    ['backburner', 'parked'],
+    ['scope', 'incubate'],
+    ['derisk', 'incubate'],
+    ['build', 'incubate'],
+    ['idea', 'idea']
+].map(([lane, cluster], at): [string, string] => [
+    `focus_lanes[${String(at + 3)}]`,
+    `the Focus lane ${lane} names the cluster ${cluster}, which no readable row of focus_clusters has; the lane is not drawn`
+]);
+
+/**
+ * A row of the table: what the hub file holds, its text, the findings of the hub as key and
+ * sentence in order, and the vocabulary map and flag the one-word reader gives no word for.
+ */
+type OtherHubRow = [string, string, [string, string][], [string, string]?];
+
+/** One row per text of the hub's settings file that gives a different list of findings. */
+const OTHER_HUB_ROWS: OtherHubRow[] = [
+    ['two tiers carrying default', TIERS, [TIERS_SAID], ['tiers', 'default']],
+    [
+        'two statuses carrying default_task',
+        'statuses: { doing: { color: "#16a34a", default_task: true } }\n',
+        [
+            [
+                'statuses.doing',
+                'todo, doing each carry default_task, which one word carries at most; none of them is read for it'
+            ]
+        ],
+        ['statuses', 'default_task']
+    ],
+    [
+        'two stages carrying new_idea',
+        'stages: { scoping: { label: Scoping, idea: true, new_idea: true } }\n',
+        [
+            [
+                'stages.scoping',
+                'nascent, scoping each carry new_idea, which one word carries at most; none of them is read for it'
+            ]
+        ],
+        ['stages', 'new_idea']
+    ],
+    [
+        'a lane naming a cluster no row has',
+        laneWith('cluster: nowhere, stages: [scoping]'),
+        [
+            [
+                'focus_lanes[0]',
+                'the Focus lane s names the cluster nowhere, which no readable row of focus_clusters has; the lane is not drawn'
+            ]
+        ]
+    ],
+    [
+        'a lane moving onto a stage it does not list',
+        laneWith('cluster: now, stages: [scoping], move_writes: { stage: building }'),
+        [
+            [
+                'focus_lanes[0].move_writes',
+                'the move_writes of the Focus lane s names building, which the lane does not list; the lane takes no move'
+            ]
+        ]
+    ],
+    [
+        'a lane moving onto a stage the vocabulary lacks',
+        laneWith('cluster: now, stages: [nosuch], move_writes: { stage: nosuch }'),
+        [
+            [
+                'focus_lanes[0].move_writes',
+                'the move_writes of the Focus lane s names nosuch, which is no word of stages; the lane takes no move'
+            ]
+        ]
+    ],
+    [
+        "a cluster whose label names no catalog word, the list leaving oculus's other clusters out",
+        `focus_clusters: [ ${cluster('now', 'label: nosuch.word, ')} ]\n`,
+        [
+            [
+                'focus_clusters[0].label',
+                'the label of the Focus cluster now names nosuch.word, which the text catalog lacks; it reads as absent'
+            ],
+            ...LEFT_OUT
+        ]
+    ],
+    [
+        'a stage word the hub adds',
+        'stages: { drafting: { label: Drafting, color: "#16a34a" } }\n',
+        []
+    ],
+    ['no key of the vocabulary', 'scan: []\n', []],
+    [
+        'a category row naming no color beside two tiers carrying default',
+        `categories:\n  - { key: x, label: X, stages: { words: [building] } }\n${TIERS}`,
+        [['categories[7]', 'categories[7] names no color, so it is drawn in no colour'], TIERS_SAID]
+    ],
+    [
+        'a lane naming no stages, which the merge refuses',
+        laneWith('cluster: now'),
+        [['focus_lanes.0', 'focus_lanes.0 is not a value this key takes']]
+    ]
+];
+
+describe('the vocabulary words of a hub that is not the primary', () => {
+    it.each(OTHER_HUB_ROWS)(
+        'gives the findings of %s, each naming its settings file',
+        (_, text, expected, flag) => {
+            const dir = plantScratch('oculus-hub-vocab-', { [HUB_FILE]: text });
+            const loaded = loadConfig(engineDir(), { hub: dir, other: 'lab' });
+            const read = readOtherHub({ key: 'lab', dir }, loaded);
+            const file = join(dir, HUB_FILE);
+            expect(read.findings.map((one) => [one.file, one.key, one.message])).toEqual(
+                expected.map(([key, message]) => [file, key, message])
+            );
+            if (flag !== undefined) expect(oneWordWith(loaded.config, ...flag)).toBe(undefined);
+        }
+    );
 });
