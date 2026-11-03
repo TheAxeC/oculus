@@ -2,7 +2,8 @@ In flight (2 of 6 slots in use):
 - O130 (every hub's category rows held to the config check), building.
 - O131 (the editor holds a one-text `multi` value to its words), building.
 
-Queued, in order: none.
+Queued, in order:
+- O132 (every hub's words held to the vocabulary check), ruling 647; after O130 lands, since both write `readOtherHub`.
 
 Owed looks: none.
 
