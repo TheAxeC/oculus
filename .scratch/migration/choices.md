@@ -6012,3 +6012,7 @@ Builds on it: O111
 Builds on it: O111
 - 2026-11-02, O120's handed-back cases: the Career page reads the keyboard cursor as the Inbox does, so its cards draw the outline and their controls; leaving `cursor={false}` was the lazy option. Named in the next report.
 Builds on it: O120
+- 2026-11-03, O138 widened by the Offered status ruling: `offered` closes the deadline and meets it, as `applied` and `interview` do, so an application with an offer stays in the Focus board's awaiting box, drawn in emerald `#059669`, which no status uses. Named in the next report.
+Builds on it: O138
+- 2026-11-03, O136's handed-back round item: the editor's message for a family in the wrong form is built at landing as a conditional schema, so oculus's words show only for a map written as a list or a list written as a map, and an empty value, a text or a number keep the editor's own words; the message on the plain form was the lazy option. Named in the next report.
+Builds on it: O136

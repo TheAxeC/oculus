@@ -1,10 +1,11 @@
-In flight (1 of 6 slots in use):
-- O136 (the editor holds a keyed family to the form its reader takes), repair round 1 sent; building.
+In flight (2 of 6 slots in use):
+- O136 (the editor holds a keyed family to the form its reader takes), repair round 1 reported; review over the round running.
+- O135 (an Add Front Matter command for a note), brief check running.
 
 Queued, in order (3 steps):
-- O135 (an Add Front Matter command for a note), ruling 650; O133, whose pattern it reads, has landed.
 - O137 (a collection is always sorted, the reorder by hand removed), ruling 654.
-- O138 (an `interview` status oculus offers), ruling Interview status.
+- O138 (an `interview` and an `offered` status oculus offers), rulings Interview status and Offered status.
+- O139 (a finding of another hub names its hub), ruling 656.
 
 Owed looks: none.
 

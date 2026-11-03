@@ -33,12 +33,15 @@ dispatch:           # steps in flight, up to six (Z632)
   model: claude-opus-5-5
   launched: 2026-11-03
   report: .scratch/migration/agents/reviews/O136-report.md
-  builder_usage: first run 222338 tokens, 92 tool uses, 20 min 37 s
-  reviewer_report: ".scratch/migration/agents/reviews/O136-refuter.md (aeaee453e5f924a28, claude-opus-5-5, 243963 tokens, 70 tool uses, 15 min 44 s)"
+  builder_usage: first run 222338 tokens, 92 tool uses, 20 min 37 s; round 1 331534 tokens, 92 tool uses, 15 min 14 s
+  reviewer_report: ".scratch/migration/agents/reviews/O136-refuter.md (aeaee453e5f924a28, claude-opus-5-5, 243963 tokens, 70 tool uses, 15 min 44 s); over round 1: a7092f0eec696b116, claude-opus-5-5, running"
   round: 1
   brief_check: .scratch/migration/agents/reviews/O136-brief-check.md (a9fae723e1ab7ad1b, claude-opus-5-5, 236992 tokens, 68 tool uses, 14 min 46 s)
   shared_paths: docs/HELP.md and docs/diagrams (this step writes HELP.md line 570, O133 lines 400-410 and O132 lines 588-596, far apart; each landing regenerates the diagrams)
   landing: not-started
+- step: O135
+  brief_check: "running: a283b3d0c29ce5214"
+  landing: preparing
 ```
 
 ## The standing demands (from Axel, in force)
@@ -178,10 +181,11 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
-- Open item 655 (2026-11-03): rename a collection's `status` field to `stage`, as a project's manifest names its lifecycle word `stage:`? The two are separate vocabularies today: `stages:` of `config/catalogs/vocab.yml` (line 63, the project words with label, icon and the flags `live`, `placed`, `pauses_countdown`, `deadline_met`) and `statuses:` (line 109, the record words with `closes_deadline`, `deadline_met`, `waiting`, `acknowledged`, `default_application`, `default_task`), and five words stand in both with different flags (`submitted`, `in-prep`, `exploring`, `nascent`, `scoping`; `submitted` pauses a project's countdown, and marks a record's deadline met and its entry waiting). A project's manifest also has a `status:` of its own, `{ chips, line }`. The hub's six collection files hold about 170 records with a `status:` (statements, applications, funding, education, leads, events), and their words are mostly outcomes: completed, cancelled, declined, rejected, awarded, ready. Options: (a) keep `status` for a record. Pros: the field names a record's outcome, which most of its words are; the two vocabularies keep two names, so a reader never takes `submitted` of a record for `submitted` of a project; no data file, template or website export changes. Cons: a project's lifecycle word and a record's are named differently, and `status` means a record's word in a collection and the chips and line in a manifest. (b) rename it `stage` in every collection: the hub's six files and their `schema:` blocks, `vocab.yml` `statuses:` to a name beside `stages:`, every reader that finds the field by the name `status` (`src/lib/server/content/audit/projects.ts:532`, `src/lib/server/edit/feeds/feeds.ts:66` and `:540`, `src/lib/server/content/audit/website/cv.ts:45` and `:111`, which the website's CV export reads, and the collection, Focus and deadline readers), `docs/templates.md`, `docs/HELP.md` and `docs/data-map.md`. Pros: one name for a lifecycle word in a project and a record. Cons: two vocabularies with different flags under one name, which reads as one list; a rename across oculus, the hub and the website export for no change in behaviour. Recommendation (a), a judgment on the meaning of the words, not on the size of (b). The lazy option would be choosing (a) because (b) is large; that is not the reason given.
-- Open item 656 (2026-11-03): a finding of a hub other than the primary is drawn in the Findings view with no hub chip and its place written relative to the hub (`.oculus/config.yml tiers.personal ...` for the second hub `lab`), so it reads as the primary hub's. `configPayload` (`src/lib/server/root/watch/portfolio/payload.ts:88-90`) joins `others.flatMap((one) => one.findings)` with no hub, while the row draws `RootChip` of `finding.hub` for a hub that is not the primary (`src/lib/views/system/findings/AuditSection.svelte:137`). It holds for every finding of another hub's settings file, its folders, its categories (since O130) and its vocabulary (since O132). Options: (a) a new step: each finding of another hub carries that hub, so the row shows its chip and the place opens that hub's file. Pros: the reader sees whose file a finding is of. Cons: a step in the server's payload and the audit's rows. (b) no change, the lazy option: a finding of `lab`'s settings file keeps reading as the primary's. Recommendation (a).
+None.
 
 ## Closed items
+- Open item 656 (2026-11-03), closed by Axel the same day: (a), step O139; (b) was the lazy option.
+- Open item 655 (2026-11-03), closed by Axel the same day: (a), a record keeps `status`; no step.
 - Open item 654 (2026-11-03), closed by Axel the same day: (a), step O137; (c) was the lazy option.
 - Open item 653 (2026-11-03), closed by Axel the same day: (a), O136's line rewritten to every keyed family; (b) was the lazy option.
 - Open item 652 (2026-11-03), closed by Axel the same day: (1) (a), (2) (a), (3) (a), O133's line rewritten; (1) (c), (2) (c) and (3) (b) were the lazy options.
