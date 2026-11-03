@@ -20,7 +20,7 @@ A hub's data files, the view that shows each, the keys that link them, and the f
 | `.oculus/tasks/<task>.md` | the steps of one update task (`litwatch`, `scout`, `inbox`, `linkedin`), which the tray hands to a Claude session |
 | `.oculus/data/<kind>/<file>.yml` | the data file of one collection, at oculus's default path, in the folder of its kind (`research`, `pillars`, `literature`, `people`, `academic`) |
 | `.oculus/apps/<name>/app.yml` | one app |
-| `.oculus/notes/` | the notes, one Markdown file each, and `order.json`, their order in the Notes list; written by oculus |
+| `.oculus/notes/` | the notes, one Markdown file each, and `order.json`, their order in the Notes list; the notes written by New Note and you, `order.json` by oculus |
 | `.oculus/memories/`, `.oculus/wallpaper/` | the photo wall's and the backdrop's pictures |
 
 A repository of the workspace may hold its own `.oculus/` with `project.yml`, `settings.yml`, `commands.yml`, `launch.yml`, `cpp.yml` and `app-data/<name>.json` (the store of an app, written by oculus). `~/.oculus/` is oculus's machine state and is never edited by hand.

@@ -40,20 +40,6 @@ dispatch:           # steps in flight, up to six (Z632)
   brief_check: .scratch/migration/agents/reviews/O131-brief-check.md (abd6789ecd2085c43, claude-opus-5-5, 232859 tokens, 68 tool uses, 10 min 42 s)
   shared_paths: docs/diagrams (O130 regenerates them too; each landing runs npm run diagrams, so the merge is the generator's output)
   landing: not-started
-- step: O134
-  base: c41dc24ec
-  worktree: .agents/worktrees/migration-O134
-  executor: agent
-  worker: claude:opus
-  session_id: aadfda5f340a408b4
-  model: claude-opus-5-5
-  launched: 2026-11-03
-  report: .scratch/migration/agents/reviews/O134-report.md
-  builder_usage: first run 132004 tokens, 45 tool uses, 6 min 14 s
-  reviewer_report: .scratch/migration/agents/reviews/O134-refuter.md (a05c46e52aec55295, claude-opus-5-5, 131236 tokens, 31 tool uses, 6 min 6 s)
-  round: 0
-  brief_check: none, a small text step
-  landing: not-started
 ```
 
 ## The standing demands (from Axel, in force)
@@ -803,6 +789,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-11-03 (O134 landed). O134, a Notes section in the templates page, landed (booking in plan.md under O134, `agents/reviews/O134-landing.md`): three fixes at landing, the review's two text findings (the tags sentence; `docs/data-map.md:23`) and the look's (the headings `notes/<name>.md` and `workspaces/<name>.yml` drawn without `<name>`, now written with `\<`); the gate passed every command and main equals the gate under `cmp`. O131's review over round 1, aca92485dd8b68b63 (claude-opus-5-5), has reported; it is saved after this landing's commit. In flight (1 of 6): O131 (reviewed over round 1; landing next). Queued: O133 (/spec again), O132, O135, O136. Open items: none.
 - 2026-11-03 (O130 landed; O131 round 1 under review; O134 reviewed). O130, every hub's category rows held to the config check, landed (booking in plan.md under O130, `agents/reviews/O130-landing.md`): the review found no defect in the code, so no repair round; three sentences of the builder's report fixed at landing; G124's text, Code and Test lines rewritten; the gate passed every command and main equals the gate under `cmp`; the look on 8797 showed lab's `categories[7]` finding with no hub chip. O131's builder reported round 1 (report section "Repair round 1", saved in the main ledger, usage under builder_usage); the orchestrator read the round's delta (`options.ts`, `options-schema.test.ts` against the snapshot, `docs/HELP.md:570`); its reviewer over round 1, aca92485dd8b68b63 (claude-opus-5-5), runs. O134's review a05c46e52aec55295 (claude-opus-5-5), `agents/reviews/O134-refuter.md`: every item holds, every case met; Standards 1 (`docs/templates.md:893`, the digit-only and code-span tag exceptions and a `#` inside the head) and Standards 2 (`docs/data-map.md:23`, notes "written by oculus") to fix at landing. In flight (2 of 6): O131 (review over round 1), O134 (reviewed; landing next). Queued: O133 (/spec again), O132 (now unblocked), O135, O136. Open items: none.
 - 2026-11-03 (ruling 647). Axel ruled 647 (a), step O132 (`vocabFindings` over each other hub), booked in plan.md; O132 waits for O130's landing, since both write `readOtherHub` in `src/lib/data/index.ts`. In flight (2 of 6): O130 (building), O131 (building). Open items: none.
 - 2026-11-03 (O130 and O131 building). O131's brief check (`agents/reviews/O131-brief-check.md`, abd6789ecd2085c43, claude-opus-5-5) closed in the brief under its Closed heading: the text branch first in `anyOf` with `enum` of the words, so the editor (yaml-language-server) names the words for a wrong word in either form; prepared at c0f69529b; worktree `.agents/worktrees/migration-O131` with `npm ci` and `svelte-kit sync`; base copy `.agents/worktrees/O131-base` with `unused-exports.txt` (335 lines); builder afbffb4d7fdb1701c (claude-opus-5-5) runs. At O131's landing: G13's Test line names the new describe. In flight (2 of 6): O130 (building), O131 (building). Open items: 647.

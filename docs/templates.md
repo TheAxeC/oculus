@@ -19,6 +19,7 @@ Every YAML file oculus reads, and the Markdown file of each update task, as a fi
 | `workspaces/<name>.yml` | `<hub>/.oculus/workspaces/` | Save Workspace As, or you |
 | `schedules.yml` | `<hub>/.oculus/schedules.yml` | Make Folder a Hub..., the update tray, or you |
 | `tasks/<task>.md` | `<hub>/.oculus/tasks/` | you |
+| `notes/<name>.md` | `<hub>/.oculus/notes/` | New Note, or you |
 | `project.yml` | `<project>/project.yml` or `<repository>/.oculus/project.yml` | Make Folder a Project, or you |
 | `settings.yml` | `<repository>/.oculus/settings.yml` | Add Repository Configuration..., or you |
 | `commands.yml` | `<repository>/.oculus/commands.yml` | Add Repository Configuration..., Add Command..., or you |
@@ -28,10 +29,10 @@ Every YAML file oculus reads, and the Markdown file of each update task, as a fi
 | the hub's data files | the paths `collections:` names | oculus's views, or you |
 | `present.yml` | a deck folder | the Slides view, or you |
 
-Oculus writes these itself, so they have no template:
+These have no template, since they hold pictures or oculus writes them:
 
 - `<hub>/.oculus/memories/` and `<hub>/.oculus/wallpaper/`: picture folders.
-- `<hub>/.oculus/notes/`: your notes as Markdown files, and `order.json`, the order the Notes list shows them in.
+- `<hub>/.oculus/notes/order.json`: the order the Notes list shows the notes in.
 - `<repository>/.oculus/app-data/<name>.json`: the store of a root app.
 
 ## config.yml
@@ -663,7 +664,7 @@ entries:
 #  - { label: My repo, root: my-repo }
 ```
 
-## workspaces/<name>.yml
+## workspaces/\<name>.yml
 
 One workspace: the folders oculus opens. The file name is the workspace's name.
 
@@ -878,6 +879,18 @@ This file is the whole instruction for one run of the LinkedIn update task. The 
 
 End with the path of any file written.
 ```
+
+## notes/\<name>.md
+
+A note is a Markdown file in `<hub>/.oculus/notes/`, and its file name without `.md` is its title. Copy this head to the top of a note to give it tags.
+
+```markdown
+---
+tags: []                # the note's tags, each a word: [paper, review]
+---
+```
+
+`tags:` is the one key oculus reads. It takes a list, each text item one tag, or one text whose words, split on spaces and commas, are the tags; a tag of digits only is not read. A `#` inside the head starts a YAML comment, so a tag is written there without it or quoted (`"#paper"`). A `#word` in the note's text is a tag too, of letters, digits, `_`, `-` and `/`, not only digits, and not in code. Any other key is kept in the file and not read. The preview hides the head.
 
 ## project.yml
 

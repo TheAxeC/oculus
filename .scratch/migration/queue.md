@@ -1,6 +1,5 @@
-In flight (2 of 6 slots in use):
-- O131 (the editor holds a one-text `multi` value to its words), repair round 1 built; review over the round running.
-- O134 (a Notes section in the templates page), ruling 649; a small text step, reviewed; landing next.
+In flight (1 of 6 slots in use):
+- O131 (the editor holds a one-text `multi` value to its words), repair round 1 reviewed; landing next.
 
 Queued, in order:
 - O133 (one front-matter pattern for every Markdown reader), ruling 648; ruling 652 booked; /spec again next.
@@ -11,6 +10,7 @@ Queued, in order:
 Owed looks: none.
 
 Landed, newest first:
+- O134 (a Notes section in the templates page), a small text step, three fixes at landing.
 - O130 (every hub's category rows held to the config check), no repair round, three report sentences fixed at landing.
 - O129 (the Status view's line count removed whole), one repair round, two fixes at landing.
 - O128 (a category sets the order of its cards), one repair round, no fix at landing in code.
