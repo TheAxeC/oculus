@@ -1,8 +1,8 @@
-In flight (0 of 6 slots in use):
-- none.
+In flight (1 of 6 slots in use):
+- O128 (a category sets the order of its cards), building.
 
-Queued, in order (0 steps):
-- none.
+Queued, in order (1 step):
+- O129 (the Status view's line count removed whole), beside O128.
 
 Owed looks: none.
 
