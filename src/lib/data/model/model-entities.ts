@@ -95,7 +95,7 @@ export type RawManifest = {
      */
     fileMtime?: number;
     /**
-     * Folder of the project relative to the hub, `projects/coauthor/active/clinical-hccnet`; for a
+     * Folder of the project relative to the hub, `projects/manuscripts/clinical-hccnet`; for a
      * project of a repository, the repository's absolute path.
      */
     folder: string;
