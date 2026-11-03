@@ -1538,9 +1538,9 @@ removeMade", pos="e,174.13,1825.50 98.69,1831.50 116.03,1831.50 133.36,1831.50 1
     subgraph "cluster_61. lost" {
         bb="193.43,208.00,548.37,268.00"; lp="229.12,256.80";
         label="not placed"; style=dashed;
-        "61. ? src/lib/data/sources/config/catalog/value-rule.ts:190" [shape=plain, label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD><TABLE BORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD PORT="i0" WIDTH="1" HEIGHT="8" FIXEDSIZE="TRUE"></TD></TR></TABLE></TD><TD CELLPADDING="4">src/lib/data/sources/config/catalog/value-rule.ts:190 BLOCK_LISTS.some(</TD></TR></TABLE>>, pos="370.90,227.00!"];
+        "61. ? src/lib/data/sources/config/catalog/value-rule.ts:194" [shape=plain, label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD><TABLE BORDER="0" CELLSPACING="0" CELLPADDING="0"><TR><TD PORT="i0" WIDTH="1" HEIGHT="8" FIXEDSIZE="TRUE"></TD></TR></TABLE></TD><TD CELLPADDING="4">src/lib/data/sources/config/catalog/value-rule.ts:194 BLOCK_LISTS.some(</TD></TR></TABLE>>, pos="370.90,227.00!"];
     }
-    "61. lib/data/sources/config/catalog/value-rule.ts" -> "61. ? src/lib/data/sources/config/catalog/value-rule.ts:190" [style=dashed, pos="e,201.43,227.00 120.95,227.00 142.44,227.00 163.94,227.00 185.43,227.00 188.39,227.00 191.35,227.00 194.31,227.00"];
+    "61. lib/data/sources/config/catalog/value-rule.ts" -> "61. ? src/lib/data/sources/config/catalog/value-rule.ts:194" [style=dashed, pos="e,201.43,227.00 120.95,227.00 142.44,227.00 163.94,227.00 185.43,227.00 188.39,227.00 191.35,227.00 194.31,227.00"];
     subgraph "cluster_62. lib/data/sources/config/merge" {
         bb="0.00,108.00,172.75,168.00"; lp="86.38,156.80";
         label="lib/data/sources/config/merge"; style=solid;

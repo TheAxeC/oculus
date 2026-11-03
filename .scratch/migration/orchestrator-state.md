@@ -23,23 +23,7 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 ```
 
 ```yaml
-dispatch:           # steps in flight, up to six (Z632)
-- step: O131
-  base: c0f69529b
-  worktree: .agents/worktrees/migration-O131
-  executor: agent
-  worker: claude:opus
-  session_id: afbffb4d7fdb1701c
-  model: claude-opus-5-5
-  launched: 2026-11-03
-  report: .scratch/migration/agents/reviews/O131-report.md
-  builder_usage: first run 258918 tokens, 123 tool uses, 19 min 46 s; round 1 319416 tokens, 49 tool uses, 11 min 28 s
-  reviewer_report: .scratch/migration/agents/reviews/O131-refuter.md (a6d4eb65a0299f2eb, claude-opus-5-5, 181562 tokens, 40 tool uses, 9 min 30 s); over round 1: "running: aca92485dd8b68b63, claude-opus-5-5"
-  round: 1
-  round_1: agents/briefs/O131-round-1.md, snapshot .agents/worktrees/migration-O131-round-1
-  brief_check: .scratch/migration/agents/reviews/O131-brief-check.md (abd6789ecd2085c43, claude-opus-5-5, 232859 tokens, 68 tool uses, 10 min 42 s)
-  shared_paths: docs/diagrams (O130 regenerates them too; each landing runs npm run diagrams, so the merge is the generator's output)
-  landing: not-started
+dispatch: []        # steps in flight, up to six (Z632)
 ```
 
 ## The standing demands (from Axel, in force)
@@ -789,6 +773,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-11-03 (O131 landed). O131, the editor holds a one-text `multi` value to its words, landed (booking in plan.md under O131, `agents/reviews/O131-landing.md`): the review over round 1 found no defect in a round item; its five findings fixed at landing, the joined form now one `JOINED_FORM` in `value-rule.ts` read by the rule and the schema, the others sentences of the builder's report; G13's Code and Test lines; the gate passed every command and main equals the gate under `cmp`; the look on 8797 showed the `sort: nonsense` mark and the joined class's mark. In flight: none. Queued: O133 (/spec again, ruling 652), O132 (unblocked), O136 (unblocked), O135 (after O133). Open items: none.
 - 2026-11-03 (O134 landed). O134, a Notes section in the templates page, landed (booking in plan.md under O134, `agents/reviews/O134-landing.md`): three fixes at landing, the review's two text findings (the tags sentence; `docs/data-map.md:23`) and the look's (the headings `notes/<name>.md` and `workspaces/<name>.yml` drawn without `<name>`, now written with `\<`); the gate passed every command and main equals the gate under `cmp`. O131's review over round 1, aca92485dd8b68b63 (claude-opus-5-5), has reported; it is saved after this landing's commit. In flight (1 of 6): O131 (reviewed over round 1; landing next). Queued: O133 (/spec again), O132, O135, O136. Open items: none.
 - 2026-11-03 (O130 landed; O131 round 1 under review; O134 reviewed). O130, every hub's category rows held to the config check, landed (booking in plan.md under O130, `agents/reviews/O130-landing.md`): the review found no defect in the code, so no repair round; three sentences of the builder's report fixed at landing; G124's text, Code and Test lines rewritten; the gate passed every command and main equals the gate under `cmp`; the look on 8797 showed lab's `categories[7]` finding with no hub chip. O131's builder reported round 1 (report section "Repair round 1", saved in the main ledger, usage under builder_usage); the orchestrator read the round's delta (`options.ts`, `options-schema.test.ts` against the snapshot, `docs/HELP.md:570`); its reviewer over round 1, aca92485dd8b68b63 (claude-opus-5-5), runs. O134's review a05c46e52aec55295 (claude-opus-5-5), `agents/reviews/O134-refuter.md`: every item holds, every case met; Standards 1 (`docs/templates.md:893`, the digit-only and code-span tag exceptions and a `#` inside the head) and Standards 2 (`docs/data-map.md:23`, notes "written by oculus") to fix at landing. In flight (2 of 6): O131 (review over round 1), O134 (reviewed; landing next). Queued: O133 (/spec again), O132 (now unblocked), O135, O136. Open items: none.
 - 2026-11-03 (ruling 647). Axel ruled 647 (a), step O132 (`vocabFindings` over each other hub), booked in plan.md; O132 waits for O130's landing, since both write `readOtherHub` in `src/lib/data/index.ts`. In flight (2 of 6): O130 (building), O131 (building). Open items: none.

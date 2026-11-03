@@ -11,9 +11,17 @@
 // The schema is the catalog's rule (catalog/value-rule.ts) in JSON Schema's words, so the editor
 // marks what the Settings view refuses: a toggle holds a flag, a number its range, a scalar a text
 // of its form, a number or a flag, a choice the words of its `options` and of the sources it names,
-// a list its items and its slots, a word block its four lists of the words and the flags of the
-// list it names. A source that only the page holds (the views, the theme classes, the usage tiers,
-// the file icon themes) offers its words nowhere else, so a choice drawn from one is any text.
+// a multi one of those words alone or a list of them, a list its items and its slots, a word block
+// its four lists of the words and the flags of the list it names. A source that only the page holds
+// (the views, the theme classes, the usage tiers, the file icon themes) offers its words nowhere
+// else, so a choice drawn from one is any text, a multi drawn from one is one text or a list of
+// texts, and a `joined` one is one text of words separated by single spaces. The schema and the
+// rule part on these kinds of value: a word outside a multi's words that the file already holds,
+// which the rule takes from the Settings write alone, is refused here; a multi with no words, whose
+// every word the rule refuses, is any text or a list of texts here; a list of lists in a map that
+// holds lists (`holds: lists`), refused by the rule, is taken here; and a keyed family in the wrong
+// one of its two forms, a map from a key to a value written as a list of rows or a list of rows
+// written as a map, refused by the rule, is taken here when its rows or values fit their fields.
 
 import type { CatalogEntry, FieldSpec, Source } from '../options.ts';
 import {
@@ -27,7 +35,7 @@ import {
 } from '../options.ts';
 import { BLOCK_LISTS } from '../../../../shapes/boards/words.ts';
 import { glyphNames } from '../../rail.ts';
-import { FORM_PATTERNS } from '../value-rule.ts';
+import { FORM_PATTERNS, JOINED_FORM } from '../value-rule.ts';
 import type { JsonSchema } from '../../../../snapshot/schema/json.ts';
 
 /** What a conversion reads besides the entries: the merged configuration and the source lists. */
@@ -103,13 +111,27 @@ function choiceSchema(spec: FieldSpec, lists: OptionLists): JsonSchema {
     return schema;
 }
 
-/** A list of words: a list of the words, or one text of words joined by spaces. */
+/**
+ * A multi: one of its words alone or a list of them, as the value rule reads a multi that is not
+ * `joined`, the text first so the editor's message for a wrong word lists the words. A word outside
+ * them is refused even where the file already holds it, which the rule takes only from the Settings
+ * write. While its words are not held (its picking field names the source, or the build does not
+ * hold a source it names) it is one text or a list of texts, and so is a multi with no words, whose
+ * every word the rule refuses. A `joined` multi is one text of words separated by single spaces,
+ * any words, since its one field draws from a source the schema never holds.
+ */
 function multiSchema(spec: FieldSpec, lists: OptionLists): JsonSchema {
+    if (spec.joined === true) return { type: 'string', pattern: JOINED_FORM.source };
     const words = pickedSources(spec) === undefined ? wordsOf(spec, lists) : null;
-    const item: JsonSchema =
-        words === null || words.length === 0 ? { type: 'string' } : { enum: words };
-    if (spec.joined === true) return { type: 'string' };
-    return { type: ['array', 'string'], items: item };
+    if (words === null || words.length === 0) {
+        return { type: ['array', 'string'], items: { type: 'string' } };
+    }
+    return {
+        anyOf: [
+            { type: 'string', enum: words },
+            { type: 'array', items: { enum: words } }
+        ]
+    };
 }
 
 /** A list of numbers or texts, with the fixed slots it must fill. */

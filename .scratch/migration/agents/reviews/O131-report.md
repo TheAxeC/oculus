@@ -407,7 +407,7 @@ After the change a wrong word in either form gives a message that opens `Value i
 
 | Item | State | Proof (command and its line) |
 | --- | --- | --- |
-| 1. `multiSchema` gives form B for a non-`joined` multi with held words; any text or texts while not held; `joined` any text | DONE | case-run after: `tier as the layout schema serves it {"anyOf":[{"type":"string","enum":["research","personal","software"]},{"type":"array","items":{"enum":["research","personal","software"]}}],"description":"the tier, or the list of tiers, whose projects the board takes"}`; `no words: schema {"x":{"type":["array","string"],"items":{"type":"string"}}}`; C11 `ours []` `editor []`; the map keyed by its picking field: `stages as a map { words: nonsense }` gives one problem after, none before; the `holds: lists` family: C7 rows |
+| 1. `multiSchema` gives form B for a non-`joined` multi with held words; any text or texts while not held; `joined` one text of words separated by single spaces (repair round 1) | DONE | case-run after: `tier as the layout schema serves it {"anyOf":[{"type":"string","enum":["research","personal","software"]},{"type":"array","items":{"enum":["research","personal","software"]}}],"description":"the tier, or the list of tiers, whose projects the board takes"}`; `no words: schema {"x":{"type":["array","string"],"items":{"type":"string"}}}`; C11 after round 1: `ours` and `editor` each one problem on line 7 for `'dark  contrast'`; the map keyed by its picking field: `stages as a map { words: nonsense }` gives one problem after, none before; the `holds: lists` family: C7 rows |
 | 2. Doc comment of `multiSchema`, head comment of `options.ts`, head comment of `options-schema.test.ts`; grep of `multiSchema`, "one text of words", "joined by spaces" | DONE | `grep -rn --exclude=local.yml -e "multiSchema" -e "one text of words" -e "joined by spaces" src docs config tests README.md` prints `src/lib/server/sessions/stores/turns.ts:228: * list is taken whenever it holds a string, joined by spaces, even when that joins to nothing, and` (a session store's text, unrelated, still true), `src/lib/data/sources/config/catalog/schemas/options.ts:122:function multiSchema(spec: FieldSpec, lists: OptionLists): JsonSchema {` and `src/lib/data/sources/config/catalog/schemas/options.ts:178:            return multiSchema(spec, lists);` |
 | 3. The describe 'the schema of a multi', one row per case C1 to C7 | DONE | first run above; after: `npx vitest run tests/data/sources/config/catalog/options-schema.test.ts tests/checks/config/config-folder.test.ts tests/data/sources/config/catalog/options.test.ts --reporter=verbose` shows all seven rows with `<check mark>`, last lines `Test Files  3 passed (3)` / `Tests  60 passed \| 2 skipped (62)` |
 | 4. The case-run program, before and after, C1 to C8, completion for C2 and C3 | DONE | source and both outputs above, each run exit 0 |
@@ -439,12 +439,13 @@ Its 13 test files include `options-schema.test.ts` (changed), `options.test.ts` 
 
 ## Files
 
-`diff -rq` of the worktree against the base copy over `src`, `tests`, `utils` and `config` lists two files, both in the write list:
+`git diff c0f69529b --numstat` after repair round 1 lists three files, `docs/HELP.md` added to the write list by the round:
 
 | File | Lines now | `git diff --numstat` |
 | --- | --- | --- |
-| `src/lib/data/sources/config/catalog/schemas/options.ts` | 448 | 29 added, 8 removed |
-| `tests/data/sources/config/catalog/options-schema.test.ts` | 200 | 62 added, 7 removed |
+| `src/lib/data/sources/config/catalog/schemas/options.ts` | 455 | 36 added, 8 removed |
+| `tests/data/sources/config/catalog/options-schema.test.ts` | 216 | 78 added, 7 removed |
+| `docs/HELP.md` | 617 | 1 added, 1 removed |
 | `.scratch/migration/agents/reviews/O131-report.md` | this report | new |
 
 The test file's removed lines are the head comment's lines 5 to 11, rewrapped as one paragraph with the new sentence; no existing assertion, allow list or predicate is changed (`diff` of the file against the base copy lists only those comment lines on its `<` side).
@@ -453,7 +454,7 @@ The test file's removed lines are the head comment's lines 5 to 11, rewrapped as
 
 ```ts
 function multiSchema(spec: FieldSpec, lists: OptionLists): JsonSchema {
-    if (spec.joined === true) return { type: 'string' };
+    if (spec.joined === true) return { type: 'string', pattern: JOINED_FORM };
     const words = pickedSources(spec) === undefined ? wordsOf(spec, lists) : null;
     if (words === null || words.length === 0) {
         return { type: ['array', 'string'], items: { type: 'string' } };
@@ -476,7 +477,7 @@ function multiSchema(spec: FieldSpec, lists: OptionLists): JsonSchema {
 - `check.ts` head comment and `surfaced` doc comment: still true.
 - `value-rule.ts` `multiProblem` doc comment: still true (file not changed).
 - `config/options/appearance.yml:10-11` (the multi and `joined: true` descriptions) and `src/lib/data/shapes/catalog-files/options.ts:57` ('true writes a multi as one text, its words separated by spaces.'): still true.
-- `docs/HELP.md:570` ("In a YAML file the editor checks, Ctrl+Space completes the keys, each with its description: the options of the defaults files, a workspace file's `settings:`, a hub's `config.yml` and `local.yml`, the catalogs, the schemas and the hub's data files."): still true; it speaks of keys only.
+- `docs/HELP.md:570` ("In a YAML file the editor checks, Ctrl+Space completes the keys, each with its description: the options of the defaults files, a workspace file's `settings:`, a hub's `config.yml` and `local.yml`, the catalogs, the schemas and the hub's data files."): repair round 1 adds the sentence "A value of a choice or a multi whose words oculus holds is completed from them, and a word outside them is marked."
 
 History-word grep over the added lines: `git diff -U0 | grep '^+' | grep -v '^+++' | grep -inE "before|used to|no longer|still|always has been|always had|as before|previously|the step adds|after this package|O1[0-9][0-9]|20[0-9][0-9]-"` printed nothing, exit 1.
 
@@ -490,9 +491,9 @@ The standards page is `spec.md`, whose prose rule is plain ASCII with no em dash
 
 1. The test's table has one row per case, each row a list of texts with the lines their problems are on, so C6 (two texts) and C7 (three texts) are one row each; the comparison is the problems' line prefixes (`'5:'`), which carries the count and the line.
 2. The test texts write the row in block form, so the multi's line (5, 4, 2) differs from the line of the row or the list that holds it.
-3. The head comment names a fourth kind of value beyond the three item 2 lists: a `joined` multi's text with a doubled, leading or trailing space, which the rule refuses (C11 run: `{"kind":"words"}`) and the schema takes. Without it the head comment's claim that the editor marks what the Settings view refuses would be false for that value.
+3. The head comment names each kind of value where the schema and the rule part, with no count; after repair round 1 the `joined` spacing is not one of them, since the schema holds it to the rule's form.
 4. The `joined` check moved to the top of `multiSchema`; internal.
-5. `docs/HELP.md` is not edited: it is outside the write list, and no HELP sentence describes the marks or completion of a value in a config file. A reader sees new behaviour (see below); the orchestrator may want a bullet beside `docs/HELP.md:570`, which O130's paths (585-592) do not touch.
+5. `docs/HELP.md:570` carries one sentence on the completion and the marks of a choice's or a multi's value (repair round 1).
 
 ## Host- or user-visible changes, before and after
 
@@ -501,14 +502,15 @@ For the look on landing: open a hub's `.oculus/config.yml` (or `config/defaults/
 - Marks of a one-text multi: before, `sort: nonsense`, `sort: 'stage year'`, a board's `tier: nonsense`, `research_audit.skip_tiers: nonsense` and `skip_tiers: [research, nonsense]`, and `connections.failures` `for: ''` had no mark. After, each has the mark `Value is not accepted. Valid values: "stage", "year", "title".` (with each field's own words) on its line. A list with a wrong word (`sort: [stage, nonsense]`) has the same mark before and after.
 - A word of a board's `stages: { words: nonsense }` (the map keyed by its picking field): before no mark, after the mark listing the 14 stages.
 - Completion at a multi's text position: before, Ctrl+Space at `sort: `, at the end of `sort: year` and at the end of `sort: nonsense` offered nothing; after it offers `stage`, `year`, `title`.
-- Hover on `sort` in oculus's editor: before, the help line alone; after, the help line, then `Allowed Values:` with `year`, `stage`, `title`. Oculus sends `hoverSchemaSource: false` (`src/lib/server/machine/lsp/adapters/yaml/settings.ts:14`), so no source line shows before or after; the `Source: [s33.json](file:///s33.json)` line in the case-run's hover output comes from the language service's default (`hoverSchemaSource ?? true`, `node_modules/yaml-language-server/lib/umd/languageservice/services/yamlHover.js:72`), which the program does not set.
+- Hover on `sort` in oculus's editor: before, the help line alone; after, the help line, then `Allowed Values:` with the three words; the language service puts the word written first, so `sort: year` lists `year`, `stage`, `title` and `sort: nonsense` lists `title`, `stage`, `year`. Oculus sends `hoverSchemaSource: false` (`src/lib/server/machine/lsp/adapters/yaml/settings.ts:14`), so no source line shows before or after; the `Source: [s33.json](file:///s33.json)` line in the case-run's hover output comes from the language service's default (`hoverSchemaSource ?? true`, `node_modules/yaml-language-server/lib/umd/languageservice/services/yamlHover.js:72`), which the program does not set.
+- A theme row's `class` in a workspace file's `settings:` (`.oculus/workspaces/<name>.yml`, `settings: { themes: [ { name: mine, class: 'dark  contrast' } ] }`): before, a doubled, leading or trailing space had no mark; after, the mark `String does not match the pattern of "^$|^[^ ]+( [^ ]+)*$".` on its line, and oculus's checker gives the same text a finding (repair round 1).
 - `check.ts`'s sentence for a wrong word of a list multi changes from `categories[0].sort[1] is nonsense, which is not one of stage, year, title` to `categories[0].sort does not fit the schema of this file`, and the same sentence is given for a one-text wrong word; the brief's premise (line 18) says that sentence reaches no reader of a config file outside the two tests, and test:quick passed with no test asserting the old sentence.
 
 ## Anything in the brief that was wrong or impossible
 
 Nothing in the brief turned out wrong. Two points beside it:
 
-- Decision 4 says a `joined` multi gets no rule over its text since its words come from a source the schema never holds. That reason covers the words; it does not cover the spacing, which the rule refuses without any source (C11 rule run: `"dark any text  at all" => {"kind":"words"}`). A pattern of the joined form (`^$|^[^ ]+( [^ ]+)*$`) would hold it without the source. It is not built, since decision 4 and C11 ("written as any text: no problem") say any text; the head comment names it as a place the two part. The orchestrator may reverse this.
+- Decision 4 said a `joined` multi gets no rule over its text since its words come from a source the schema never holds. That reason covers the words and not the spacing, which the rule refuses without any source (C11 rule run: `"dark any text  at all" => {"kind":"words"}`). Repair round 1 reversed the decision: the schema holds the text to the joined form `^$|^[^ ]+( [^ ]+)*$`.
 - The brief cites `familyProblem` for the list of lists. `valueProblem` reaches it only for an entry whose control is `records`; `readCatalog` leaves the `research_audit` entry's control unset, so the program runs it as `{ ...audit, control: 'records' }` (`family rule {"skip_tiers":[["research"]]} => {"kind":"pairs"}`). The Settings write's own path to it (`config-fit.ts` `familyProblem`) was not run.
 
 ## Limitations and sharp edges
@@ -522,7 +524,7 @@ Nothing in the brief turned out wrong. Two points beside it:
 
 ## Repair round 1
 
-Every item of `agents/briefs/O131-round-1.md` is done. This section states the end state after the round; where it differs from the sections above (decision 4, case C11, the head comment's four kinds), this section holds.
+Every item of `agents/briefs/O131-round-1.md` is done. The sections above state the end state after the round.
 
 ### Item 1: a `joined` multi is held to the rule's spacing
 
@@ -719,7 +721,7 @@ ok      vitest checks (49.1 s): Duration  36.28s (transform 15.00s, setup 0ms, i
 test:quick: 51.9 s; every command passed
 ```
 
-The list ran twice in this round, each after `npm run diagrams`: the first run passed, and the second followed a one-clause edit of the head comment ("when its rows or values fit their fields") made after the round's program showed the clause before it overstated what the schema takes, so the checks stand after the last change. Brief check 1 ran twice in the round for the same reason. No whole-suite command was run. `npm run diagrams` rewrote no tracked file (`git status --short` lists no path under `docs/diagrams`).
+The list ran twice in this round, each after `npm run diagrams`, the second after the last change; brief check 1 ran twice as well. No whole-suite command was run. `npm run diagrams` rewrote no tracked file (`git status --short` lists no path under `docs/diagrams`).
 
 ### Sentences read against the standards
 

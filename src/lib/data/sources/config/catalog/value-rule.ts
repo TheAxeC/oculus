@@ -92,6 +92,13 @@ export const FORM_PATTERNS: Record<Form, RegExp> = {
     row_key: /^[a-z0-9_-]+$/
 };
 
+/**
+ * The form of a `joined` multi's text: the empty text, or words separated by single spaces, with no
+ * space before the first or after the last. The rule reads a `joined` multi by it, and the editor's
+ * schema (schemas/options.ts) holds the text to the same form.
+ */
+export const JOINED_FORM = /^$|^[^ ]+( [^ ]+)*$/;
+
 /** Whether a text has a form: `program` (no slash or white space), `extension` or `bundle_id`. */
 export function hasForm(form: Form, text: string): boolean {
     return FORM_PATTERNS[form].test(text);
@@ -161,10 +168,7 @@ function choiceProblem(spec: CatalogEntry, word: string, lists: RuleLists): Valu
 function multiProblem(spec: CatalogEntry, value: unknown, lists: RuleLists): ValueProblem | null {
     let picked: string[] | null = null;
     if (spec.joined === true) {
-        if (
-            typeof value === 'string' &&
-            (value === '' || value.split(' ').every((w) => w !== ''))
-        ) {
+        if (typeof value === 'string' && JOINED_FORM.test(value)) {
             picked = value.split(' ').filter((word) => word !== '');
         }
     } else if (stringList(value)) {

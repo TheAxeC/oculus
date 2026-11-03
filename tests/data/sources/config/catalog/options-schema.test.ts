@@ -2,13 +2,18 @@
 // check reads a file against it: oculus's config/defaults/sources.yml and a hub's
 // .oculus/config.yml each a list of entries, and an entry's `ticker:` one record of a category word
 // of `ticker_categories` and an undated toggle (`holds: record` in config/options/sources.yml). A
-// ticker that is a text, names a word that is no category, or holds an undated that is no toggle
-// is a problem on the line that writes it, in the engine's file and in the hub's alike. Oculus's
-// own sources.yml passes, which config-folder.test.ts holds for every file of the folder, and so
-// does the .oculus/config.yml Make Folder a Hub writes from docs/templates.md (`hubConfigText`).
-// A reader row's constant `value`, a scalar (`control: scalar` in config/options/behavior.yml),
-// takes a text with holes, a number and a flag and refuses a record and a list, in oculus's
-// behavior.yml and in a hub's .oculus/config.yml alike.
+// ticker that is a text, names a word that is no category, or holds an undated that is no toggle is
+// a problem on the line that writes it, in the engine's file and in the hub's alike. Oculus's own
+// sources.yml passes, which config-folder.test.ts holds for every file of the folder, and so does
+// the .oculus/config.yml Make Folder a Hub writes from docs/templates.md (`hubConfigText`). A
+// reader row's constant `value`, a scalar (`control: scalar` in config/options/behavior.yml), takes
+// a text with holes, a number and a flag and refuses a record and a list, in oculus's behavior.yml
+// and in a hub's .oculus/config.yml alike. A multi whose words the schema holds (a category row's
+// `sort` and a `research_audit` value in a hub's .oculus/config.yml, a board's `tier` in oculus's
+// layout.yml) takes one of its words alone or a list of them, and a word outside them, alone or in
+// a list, is a problem on the line that writes it, as is a text of two words, which the value rule
+// reads as one word. A theme's `joined` class in a workspace file's `settings:` takes words
+// separated by single spaces, and a doubled space is a problem on its line.
 
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -142,4 +147,70 @@ describe("the schema of a reader row's constant value, a scalar", () => {
             expect(found).toEqual([['3:'], ['3:']]);
         }
     );
+});
+
+/** A hub's `categories:` list of one row whose `sort`, on line 5, is `sort`. */
+function categoryWith(sort: string): string {
+    return `categories:\n  - key: drafts\n    label: Drafts\n    color: '#888888'\n    sort: ${sort}\n`;
+}
+
+/** A `boards:` list of one board whose `tier`, on line 4, is `tier`. */
+function boardWith(tier: string): string {
+    return `boards:\n  - key: mine\n    label: Mine\n    tier: ${tier}\n`;
+}
+
+/** A hub's `research_audit:` map whose `skip_tiers`, on line 2, is `tiers`. */
+function auditWith(tiers: string): string {
+    return `research_audit:\n  skip_tiers: ${tiers}\n`;
+}
+
+/** A workspace file whose `settings:` holds one theme whose `class`, on line 7, is `classes`. */
+function themeWith(classes: string): string {
+    return `folders:\n  - { name: hub, path: . }\nprimary: hub\nsettings:\n  themes:\n    - name: mine\n      class: ${classes}\n`;
+}
+
+const inHub = (text: string) => problemsOf(hubSchemas, 'hub', HUB_FILE, text);
+const inLayout = (text: string) => problemsOf(schemas, 'config', 'defaults/layout.yml', text);
+const inWorkspace = (text: string) =>
+    problemsOf(schemas, 'hub', '.oculus/workspaces/mine.yml', text);
+
+/** Each value, the text it is written into and the lines its problems are on, in order. */
+const MULTIS: [string, (text: string) => string[], [string, string[]][]][] = [
+    ['a list with a word outside the words', inHub, [[categoryWith('[stage, nonsense]'), ['5:']]]],
+    ['one text of a word outside the words', inHub, [[categoryWith('nonsense'), ['5:']]]],
+    ['one text of one of the words', inHub, [[categoryWith('year'), []]]],
+    ['one text of two words', inHub, [[categoryWith("'stage year'"), ['5:']]]],
+    ['a list of the words', inHub, [[categoryWith('[year, title]'), []]]],
+    [
+        "a board's tier in layout.yml",
+        inLayout,
+        [
+            [boardWith('nonsense'), ['4:']],
+            [boardWith('research'), []]
+        ]
+    ],
+    [
+        'a research_audit value in a hub',
+        inHub,
+        [
+            [auditWith('nonsense'), ['2:']],
+            [auditWith('[research, nonsense]'), ['2:']],
+            [auditWith('research'), []]
+        ]
+    ],
+    [
+        "a theme's joined class in a workspace file",
+        inWorkspace,
+        [
+            [themeWith("'dark contrast'"), []],
+            [themeWith("'dark  contrast'"), ['7:']]
+        ]
+    ]
+];
+
+describe('the schema of a multi', () => {
+    it.each(MULTIS)('places the problems of %s on their lines', (_case, read, rows) => {
+        const found = rows.map(([text]) => read(text).map((line) => line.split(' ')[0]));
+        expect(found).toEqual(rows.map(([, lines]) => lines));
+    });
 });
