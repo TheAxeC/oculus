@@ -1,6 +1,6 @@
 In flight (3 of 6 slots in use):
 - O135 (an Add Front Matter command for a note), built, under review (base c931e9418).
-- O137 (a collection is always sorted, the reorder by hand removed), brief check running.
+- O137 (a collection is always sorted, the reorder by hand removed), building (base 6779731e1).
 - O139 (a finding of another hub names its hub, every file finding opens its file), rulings 656 and 658, brief check running.
 
 Queued, in order (1 step):
