@@ -1,5 +1,5 @@
 In flight (1 of 6 slots in use):
-- O133 (one front-matter pattern for every Markdown reader), preparing: brief written, worktree next.
+- O133 (one front-matter pattern for every Markdown reader), building.
 
 Queued, in order (3 steps):
 - O132 (every hub's words held to the vocabulary check), ruling 647; O130 has landed, so it is unblocked.
