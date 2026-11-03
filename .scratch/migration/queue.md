@@ -1,5 +1,5 @@
 In flight (1 of 6 slots in use):
-- O135 (an Add Front Matter command for a note), brief check reported; brief being closed.
+- O135 (an Add Front Matter command for a note), brief checked; worktree being made.
 
 Queued, in order (3 steps):
 - O137 (a collection is always sorted, the reorder by hand removed), ruling 654.

@@ -6016,3 +6016,5 @@ Builds on it: O120
 Builds on it: O138
 - 2026-11-03, O136's handed-back round item: the editor's message for a family in the wrong form is built at landing as a conditional schema, so oculus's words show only for a map written as a list or a list written as a map, and an empty value, a text or a number keep the editor's own words; the message on the plain form was the lazy option. Named in the next report.
 Builds on it: O136
+- 2026-11-03, O135's brief check: the note's header reading and the inserted text live in `front-matter.ts`, the one module of the note scan the views layer may import, and the action id beside `SAVE_ACTION` in `editor-status.svelte.ts`; a new allow-list line for `note-links` was the weaker option. Named in the next report.
+Builds on it: O135
