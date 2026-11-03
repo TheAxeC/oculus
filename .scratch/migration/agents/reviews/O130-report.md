@@ -2,9 +2,9 @@
 
 Everything in the brief is done.
 
-## Open items of the state file (verbatim, `.scratch/migration/orchestrator-state.md:172`)
+## Open items of the state file (verbatim, as it stands on main at landing)
 
-- Open item 647 (2026-11-03): the words of a hub other than the primary are held to the whole-file shape only, never to `vocabFindings` (`src/lib/data/sources/config/sections/vocab.ts`, run in `READER_FINDINGS` over the primary's merged config alone, as `categoriesFindings` was before O130), so in such a hub's `.oculus/config.yml` two stages carrying `new_idea`, a `focus_clusters` row whose `label` names no catalog word, or a Focus lane's `move_writes` naming a word the vocabulary lacks gives no finding, and the page passes over the value silently (O130's brief check, `agents/reviews/O130-brief-check.md`, check 6). (a) recommended: a new step that runs `vocabFindings` in `readOtherHub` over each other hub's merged config when its settings file sets a vocabulary key, its findings naming that file, as O130 does for `categories`; it makes findings appear for such a hub's wrong words. (b) no change, the lazy option: a second hub's wrong vocabulary flags and lanes stay silent.
+- None.
 
 ## The cases' first run (unchanged source, the new test table only)
 
@@ -31,7 +31,7 @@ The failing lines:
 
 Every case gave the result the brief expects on the unchanged tree: C1, C2, C3 and C5 fail (their proof), C4, C6 and C7 pass (audits of what the change preserves). No case was wrong by the brief's rules, so nothing was handed back.
 
-Case-run program (after the change), `node /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/o130-cases.mts`: for each case it plants a scratch hub under `os.tmpdir()`, prints the category findings of `readOtherHub` ("other") and of the same file read as the primary through `READER_FINDINGS` ("primary"), and for C6 the hub's rows checked over the shipped config; it removes each hub (`ls /private/tmp | grep -c '^o130-'` prints `0` after it). Its source is that file, outside the tree. Output as printed:
+Case-run program (after the change), `node /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/o130-cases.mts`: for each case it plants a scratch hub under `os.tmpdir()`, prints the category findings of `readOtherHub` ("other") and of the same file read as the primary through `READER_FINDINGS` ("primary"), and for C6 the hub's rows checked over the shipped config; it removes each hub (`ls "$TMPDIR" | grep -c '^o130-'`, the folder `os.tmpdir()` gives, prints `0` after it, the reviewer's count). Its source is that file, outside the tree. Output as printed:
 
 ```
 C1 other:   [["<hub>/.oculus/config.yml","categories[7].stages.words","categories[7].stages.words must be one of the items of the list project_stages; it is not read"]]
@@ -117,7 +117,7 @@ Grep: `grep -rn "readOtherHub\|categoriesFindings\|OtherHub" src docs config tes
 
 ## Host- or user-visible changes, before and after
 
-- The Findings view (the config channel's findings), in a workspace whose second hub's `.oculus/config.yml` writes a `categories` row with a wrong `stages` or `forms` word, a row with no `color`, or a row with no key. Before: no category finding for that hub (C1, C2, C3; C5 gives the shape's finding alone). After: one finding per such fault, naming that hub's `.oculus/config.yml` and the key `categories[<index in the merged list>]...`, worded as the primary's run words it. A second hub that writes no `categories`, or whose rows are clean, shows nothing new. This is a look on landing: put a second hub in the workspace with `categories: [ { key: x, label: X, stages: { words: [building] } } ]` and see one finding "categories[7] names no color, so it is drawn in no colour" with that hub's file and chip.
+- The Findings view (the config channel's findings), in a workspace whose second hub's `.oculus/config.yml` writes a `categories` row with a wrong `stages` or `forms` word, a row with no `color`, or a row with no key. Before: no category finding for that hub (C1, C2, C3; C5 gives the shape's finding alone). After: one finding per such fault, naming that hub's `.oculus/config.yml` and the key `categories[<index in the merged list>]...`, worded as the primary's run words it. A second hub that writes no `categories`, or whose rows are clean, shows nothing new. This is a look on landing: put a second hub in the workspace with `categories: [ { key: x, label: X, stages: { words: [building] } } ]` and see one finding "categories[7] names no color, so it is drawn in no colour" naming that hub's file: the Files section shows `.oculus/config.yml`, relative to the root that holds it, with the whole path in its tooltip, and draws no hub chip, as for every other settings-file finding of a second hub.
 - `docs/HELP.md` gains the bullet at line 592.
 
 ## Wrong or impossible in the brief

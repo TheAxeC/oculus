@@ -1,15 +1,21 @@
 // Layer 1, data tests. The `boards` map of config/defaults/layout.yml and the `categories` list of
 // config/catalogs/vocab.yml as the config check reads them: the shipped map and list give no
-// finding, and each malformed form gives one finding naming the board, the category, the field,
-// the block or the record. Findings are compared whole, in order.
+// finding, and each malformed form gives one finding naming the board, the category, the field, the
+// block or the record. The `categories` rows a hub other than the primary writes in its settings
+// file are checked against that hub's merged config, each finding naming that file, and a hub that
+// writes none gets no category finding. Findings are compared whole, in order.
 
-import { describe, expect, it } from 'vitest';
+import { join } from 'node:path';
+import { describe, expect } from 'vitest';
+import { readOtherHub } from '../../../../src/lib/data/index.ts';
+import { HUB_FILE } from '../../../../src/lib/data/helpers/hub-names.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../../src/lib/data/sources/config.ts';
 import {
     boardsFindings,
     categoriesFindings
 } from '../../../../src/lib/data/sources/config/sections/boards.ts';
 import { categoriesOf, categoryOf } from '../../../../src/lib/data/shapes/boards/categories.ts';
+import { it, plantScratch } from '../../../fixtures/scratch.ts';
 
 const SHIPPED = loadConfig(engineDir()).config;
 const CATALOG = textCatalog(SHIPPED);
@@ -243,5 +249,89 @@ describe('categoriesFindings', () => {
         expect(categoriesSaid({ ...SHIPPED, categories: 3 })).toEqual([
             'categories: categories must be a list of maps; no category is read'
         ]);
+    });
+});
+
+/** The settings file of a hub whose `categories:` holds the given rows, one flow map each. */
+function rowsFile(...rows: string[]): string {
+    return ['categories:', ...rows.map((row) => `  - ${row}`), ''].join('\n');
+}
+
+/** The stage word `drafting` a hub adds to oculus's stages. */
+const DRAFTING = ['stages:', "  drafting: { label: Drafting, color: '#16a34a' }"].join('\n');
+
+describe('the category rows of a hub that is not the primary', () => {
+    it.each([
+        [
+            'a stage word the hub does not hold',
+            rowsFile("{ key: x, label: X, color: '#16a34a', stages: { words: [nonsense] } }"),
+            [
+                [
+                    'categories[7].stages.words',
+                    'categories[7].stages.words must be one of the items of the list project_stages; it is not read'
+                ]
+            ]
+        ],
+        [
+            'a row naming no color',
+            rowsFile('{ key: x, label: X, stages: { words: [building] } }'),
+            [['categories[7]', 'categories[7] names no color, so it is drawn in no colour']]
+        ],
+        [
+            'a form word the hub does not hold',
+            rowsFile("{ key: x, label: X, color: '#16a34a', forms: { words: [nonsense] } }"),
+            [
+                [
+                    'categories[7].forms.words',
+                    'categories[7].forms.words must be one of the items of the list project_forms; it is not read'
+                ]
+            ]
+        ],
+        ['no categories', `${DRAFTING}\n`, []],
+        [
+            'a row with no key',
+            rowsFile("{ label: X, color: '#16a34a' }"),
+            [
+                ['categories.7.key', 'categories.7.key must be a text'],
+                [
+                    'categories[7]',
+                    'categories[7] must be a map with a key no earlier row holds; the row is not read'
+                ]
+            ]
+        ],
+        [
+            'a row naming a stage word the hub adds',
+            `${DRAFTING}\n${rowsFile("{ key: x, label: X, color: '#16a34a', stages: { words: [drafting] } }")}`,
+            []
+        ],
+        [
+            'a key in two rows',
+            rowsFile(
+                "{ key: x, label: X, color: '#16a34a' }",
+                "{ key: x, label: Y, color: '#16a34a' }"
+            ),
+            [
+                [
+                    'categories',
+                    "categories names x in more than one entry; none of them is applied and oculus's entry stands"
+                ]
+            ]
+        ],
+        [
+            'a categories that is no list',
+            'categories: 3\n',
+            [['categories', "categories must be a list; oculus's value stands"]]
+        ]
+    ])('gives the findings of %s, each naming its settings file', (_, text, expected) => {
+        const dir = plantScratch('oculus-category-rows-', { [HUB_FILE]: text });
+        const read = readOtherHub(
+            { key: 'lab', dir },
+            loadConfig(engineDir(), { hub: dir, other: 'lab' })
+        );
+        const rows = read.findings.filter((one) => one.key.startsWith('categories'));
+        const file = join(dir, HUB_FILE);
+        expect(rows.map((one) => [one.file, one.key, one.message])).toEqual(
+            expected.map(([key, message]) => [file, key, message])
+        );
     });
 });

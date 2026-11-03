@@ -58,6 +58,7 @@ import { createReader } from './sources/deck/read.ts';
 import type { DeckProject } from './sources/deck/kinds.ts';
 import { textCatalog, type loadConfig } from './sources/config.ts';
 import { VOCAB_SHAPES } from './sources/config/merge/in-place.ts';
+import { categoriesFindings } from './sources/config/sections/boards.ts';
 import { readYamlMap } from './sources/yaml-file.ts';
 import {
     newProjectDirs,
@@ -616,7 +617,8 @@ export type HubSettings = (dir: string) => ReturnType<typeof loadConfig>;
 /**
  * A hub other than the primary, read with its own settings: the engine's defaults under the hub's
  * own `.oculus/config.yml`. Its career and its portfolio deck are the primary hub's alone, so they
- * are not read, and the findings of its settings file ride along for the caller to report.
+ * are not read. Its findings ride along for the caller to report: those of its settings file, those
+ * of the folders it names, and those of the category check over its own merged config.
  */
 export type OtherHub = HubRoot & {
     portfolio: PortfolioConfig;
@@ -624,11 +626,20 @@ export type OtherHub = HubRoot & {
     vocab: HubVocab;
 };
 
-/** The settings of a hub other than the primary, from the parse `loaded` of its settings. */
+/**
+ * The settings of a hub other than the primary, from the parse `loaded` of its settings. Its
+ * findings are those of its settings file, those of the folders it names, and, when its settings
+ * file sets `categories`, those of the category check over its own merged config, each naming that
+ * file. A hub that sets no `categories` reads oculus's own rows, whose findings would be of
+ * oculus's file and not of the hub's, so the check is not run for it.
+ */
 export function readOtherHub(root: HubRoot, loaded: ReturnType<typeof loadConfig>): OtherHub {
     const { config, findings, from } = loaded;
     const portfolio = { ...portfolioConfigFrom(config, from), career: null, portfolioDeck: null };
     const sources = join(root.dir, HUB_FILE);
+    const categories = fromHubFile(from.categories)
+        ? categoriesFindings(config, () => sources, textCatalog(config))
+        : [];
     return {
         ...root,
         portfolio,
@@ -644,7 +655,8 @@ export function readOtherHub(root: HubRoot, loaded: ReturnType<typeof loadConfig
                     wallpaperDir: sources
                 },
                 root.dir
-            )
+            ),
+            ...categories
         ]
     };
 }

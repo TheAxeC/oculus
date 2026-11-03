@@ -24,21 +24,6 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 
 ```yaml
 dispatch:           # steps in flight, up to six (Z632)
-- step: O130
-  base: 1c312c834
-  worktree: .agents/worktrees/migration-O130
-  executor: agent
-  worker: claude:opus
-  session_id: abbd7df1d818a8d10
-  model: claude-opus-5-5
-  launched: 2026-11-03
-  report: .scratch/migration/agents/reviews/O130-report.md
-  builder_usage: first run 179415 tokens, 77 tool uses, 21 min 16 s
-  reviewer_report: .scratch/migration/agents/reviews/O130-refuter.md (a982d30fcbb0915af, claude-opus-5-5, 190139 tokens, 69 tool uses, 15 min 32 s)
-  round: 0
-  brief_check: .scratch/migration/agents/reviews/O130-brief-check.md (a0194efcc505ed3c8, claude-opus-5-5, 190092 tokens, 54 tool uses, 7 min 42 s)
-  shared_paths: docs/diagrams (O131 regenerates them too; each landing runs npm run diagrams, so the merge is the generator's output)
-  landing: cherry-picking
 - step: O131
   base: c0f69529b
   worktree: .agents/worktrees/migration-O131
@@ -48,8 +33,8 @@ dispatch:           # steps in flight, up to six (Z632)
   model: claude-opus-5-5
   launched: 2026-11-03
   report: .scratch/migration/agents/reviews/O131-report.md
-  builder_usage: first run 258918 tokens, 123 tool uses, 19 min 46 s
-  reviewer_report: .scratch/migration/agents/reviews/O131-refuter.md (a6d4eb65a0299f2eb, claude-opus-5-5, 181562 tokens, 40 tool uses, 9 min 30 s)
+  builder_usage: first run 258918 tokens, 123 tool uses, 19 min 46 s; round 1 319416 tokens, 49 tool uses, 11 min 28 s
+  reviewer_report: .scratch/migration/agents/reviews/O131-refuter.md (a6d4eb65a0299f2eb, claude-opus-5-5, 181562 tokens, 40 tool uses, 9 min 30 s); over round 1: "running: aca92485dd8b68b63, claude-opus-5-5"
   round: 1
   round_1: agents/briefs/O131-round-1.md, snapshot .agents/worktrees/migration-O131-round-1
   brief_check: .scratch/migration/agents/reviews/O131-brief-check.md (abd6789ecd2085c43, claude-opus-5-5, 232859 tokens, 68 tool uses, 10 min 42 s)
@@ -65,7 +50,7 @@ dispatch:           # steps in flight, up to six (Z632)
   launched: 2026-11-03
   report: .scratch/migration/agents/reviews/O134-report.md
   builder_usage: first run 132004 tokens, 45 tool uses, 6 min 14 s
-  reviewer_report: "running: a05c46e52aec55295, claude-opus-5-5"
+  reviewer_report: .scratch/migration/agents/reviews/O134-refuter.md (a05c46e52aec55295, claude-opus-5-5, 131236 tokens, 31 tool uses, 6 min 6 s)
   round: 0
   brief_check: none, a small text step
   landing: not-started
@@ -208,10 +193,11 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
-- Open item 651 (2026-11-03): the editor takes a keyed family written as a list of rows, which the Settings write refuses. `familySchema` (`src/lib/data/sources/config/catalog/schemas/options.ts:322`) gives every keyed family `type: ['array', 'object']` with `items: rows`, and `familyProblem` (`src/lib/data/sources/config/catalog/value-rule.ts:249-251`) refuses any value that is no map (`{ kind: 'pairs' }` or `{ kind: 'record' }`); O131's review probed `stages: [{ key: words, value: building }]` in `config/defaults/layout.yml`: no mark in the editor, refused by the rule. The same holds for a board's `chips` and `forms` and for `research_audit`. Found by O131's review, outside O131's part (the `multi` schema). Options: (a) a step: the schema of a keyed family takes the form the rule takes, a map, so the editor marks a list of rows where the Settings write refuses it, with a case per family the shipped files and a hub write; (b) no change, the lazy option. Recommendation (a).
-- Open item 652 (2026-11-03): step O133 (one front-matter pattern) stopped at its brief check (`agents/reviews/O133-brief-check.md`); three questions. (1) The test. The rules file lets a builder write a test only as the test of a guarded entry, and no entry covers the note scan, the Outline, the preview, an embed or the Markdown server's header token (G32 covers the docs reader alone). Options: (a) a new entry: every reader of a Markdown file reads the same leading header (the note's tags and headings, the Outline, the preview, an embed, the Markdown server's token and the docs split), its Test the new table; (b) G32 widened to those readers, two guarantees in one entry; (c) no test, quoted runs only, the lazy option. Recommendation (a). (2) The paths the step must widen to: `tests/checks/tree/layer-rows.ts`, since the views row does not let `RenderedMarkdown.svelte` import from `data/prose/markdown/` and the boundaries test would go red; `config/text/server.yml:385`, the LinkedIn sentence 'no front matter between two --- lines', which names one closing form; `src/lib/data/sources/deck/split.ts:7`, a comment naming the pattern's place in docs.ts. Options: (a) all three widened, the views row given `data/prose/markdown/front-matter` alone with its reason in the table's comment; (b) the layer row left and the preview given the pattern through `ui/html.ts`, the other two widened; (c) no widening, the lazy option, which leaves the step unbuildable. Recommendation (a). (3) A premise found wrong: the docs reader's pattern, the ruled wider form, swallows the text after an empty header (`---` then `---`) up to a later `---` or `...` line; the brief check's probe gives `splitFrontmatter` of `---\n---\n# Title\n\nText\n\n---\n\n## More\n` a block `---\n# Title\n\nText\n\n`, and the Outline today gives `Title` and `More`. No file of the hub has such a header (five Jekyll fixtures under `vendor/` have an empty header and no later closing line). Options: (a) the one pattern tries the empty block first, so the header is the two lines alone, which changes `splitFrontmatter` for this input only, with a case; (b) the docs form as it is, every reader then swallowing that text, the lazy option. Recommendation (a).
+- None.
 
 ## Closed items
+- Open item 652 (2026-11-03), closed by Axel the same day: (1) (a), (2) (a), (3) (a), O133's line rewritten; (1) (c), (2) (c) and (3) (b) were the lazy options.
+- Open item 651 (2026-11-03), closed by Axel the same day: (a), step O136; (b) was the lazy option.
 - Open item 650 (2026-11-03), closed by Axel the same day: (a), step O135; (c) was the lazy option.
 - Open item 649 (2026-11-03), closed by Axel the same day: (a), step O134; (b) was the lazy option.
 - Open item 648 (2026-11-03), closed by Axel the same day: (a), step O133; (c) was the lazy option.
@@ -817,6 +803,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-11-03 (O130 landed; O131 round 1 under review; O134 reviewed). O130, every hub's category rows held to the config check, landed (booking in plan.md under O130, `agents/reviews/O130-landing.md`): the review found no defect in the code, so no repair round; three sentences of the builder's report fixed at landing; G124's text, Code and Test lines rewritten; the gate passed every command and main equals the gate under `cmp`; the look on 8797 showed lab's `categories[7]` finding with no hub chip. O131's builder reported round 1 (report section "Repair round 1", saved in the main ledger, usage under builder_usage); the orchestrator read the round's delta (`options.ts`, `options-schema.test.ts` against the snapshot, `docs/HELP.md:570`); its reviewer over round 1, aca92485dd8b68b63 (claude-opus-5-5), runs. O134's review a05c46e52aec55295 (claude-opus-5-5), `agents/reviews/O134-refuter.md`: every item holds, every case met; Standards 1 (`docs/templates.md:893`, the digit-only and code-span tag exceptions and a `#` inside the head) and Standards 2 (`docs/data-map.md:23`, notes "written by oculus") to fix at landing. In flight (2 of 6): O131 (review over round 1), O134 (reviewed; landing next). Queued: O133 (/spec again), O132 (now unblocked), O135, O136. Open items: none.
 - 2026-11-03 (ruling 647). Axel ruled 647 (a), step O132 (`vocabFindings` over each other hub), booked in plan.md; O132 waits for O130's landing, since both write `readOtherHub` in `src/lib/data/index.ts`. In flight (2 of 6): O130 (building), O131 (building). Open items: none.
 - 2026-11-03 (O130 and O131 building). O131's brief check (`agents/reviews/O131-brief-check.md`, abd6789ecd2085c43, claude-opus-5-5) closed in the brief under its Closed heading: the text branch first in `anyOf` with `enum` of the words, so the editor (yaml-language-server) names the words for a wrong word in either form; prepared at c0f69529b; worktree `.agents/worktrees/migration-O131` with `npm ci` and `svelte-kit sync`; base copy `.agents/worktrees/O131-base` with `unused-exports.txt` (335 lines); builder afbffb4d7fdb1701c (claude-opus-5-5) runs. At O131's landing: G13's Test line names the new describe. In flight (2 of 6): O130 (building), O131 (building). Open items: 647.
 - 2026-11-03 (O130 building; O131 brief check). O130's brief check (`agents/reviews/O130-brief-check.md`, a0194efcc505ed3c8, claude-opus-5-5) closed in the brief under its Closed heading: the run is made only for a hub whose settings file sets `categories`, so `readOtherHub` keeps its signature; prepared at 1c312c834; worktree `.agents/worktrees/migration-O130` with `npm ci` and `svelte-kit sync`; base copy `.agents/worktrees/O130-base` with `unused-exports.txt` (335 lines); builder abbd7df1d818a8d10 (claude-opus-5-5) runs. O131's step line corrected (a one-text `multi` is one word); its brief check abd6789ecd2085c43 runs. Open item 647 raised. At O130's landing: G124's text, Code and Test lines. In flight (2 of 6): O130 (building), O131 (brief check). Open items: 647.

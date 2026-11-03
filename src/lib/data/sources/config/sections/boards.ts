@@ -1,14 +1,16 @@
 // Layer 1, data. What is wrong with the `boards` map family and the `categories` list, as findings
 // of the file each was read from (the open workspace file for a board its `settings:` sets, else
-// config/defaults/layout.yml; config/catalogs/vocab.yml for `categories`). For `boards`: a map that
-// is no map, a board row that is no map, a field a board does not take, a value its entry of the
-// options catalog refuses (a tier `tiers` does not hold, a role `roles` does not hold, a word or a
-// flag a block's vocabulary does not hold, a list of columns that is no list of records, a column
-// with no cell), and a `label:` or `glyph:` that is absent or names no word of the text catalog.
-// For `categories`: a row with no key or a key an earlier row holds, a row naming no `color`, and a
-// block's word or flag its vocabulary does not hold, read by the same entries of the catalog as a
-// board's blocks. The page reads both itself (data/shapes/boards/) and passes over what it cannot
-// read, so each finding says what is not read. They are worded from the merged catalog.
+// config/defaults/layout.yml; for `categories`, the settings file of the hub that sets them, each
+// hub's rows checked against that hub's own merged config, else config/catalogs/vocab.yml). For
+// `boards`: a map that is no map, a board row that is no map, a field a board does not take, a
+// value its entry of the options catalog refuses (a tier `tiers` does not hold, a role `roles` does
+// not hold, a word or a flag a block's vocabulary does not hold, a list of columns that is no list
+// of records, a column with no cell), and a `label:` or `glyph:` that is absent or names no word of
+// the text catalog. For `categories`: a row with no key or a key an earlier row holds, a row naming
+// no `color`, and a block's word or flag its vocabulary does not hold, read by the same entries of
+// the catalog as a board's blocks. The page reads both itself (data/shapes/boards/) and passes over
+// what it cannot read, so each finding says what is not read. They are worded from the merged
+// catalog.
 
 import { findingText, type TextCatalog } from '../../../helpers/finding-text.ts';
 import { isMap } from '../../../helpers/guards.ts';
