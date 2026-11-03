@@ -37,8 +37,18 @@ dispatch:           # steps in flight, up to six (Z632)
   brief_check: .scratch/migration/agents/reviews/O133-brief-check.md (aa8f129fd1b7631ff, claude-opus-5-5, 223032 tokens, 61 tool uses, 12 min 14 s)
   landing: not-started
 - step: O132
-  brief_check: "running: a3a364c925924ff9a"
-  landing: preparing
+  base: 95025410b
+  worktree: .agents/worktrees/migration-O132
+  executor: agent
+  worker: claude:opus
+  session_id: add07c2a46cc28593
+  model: claude-opus-5-5
+  launched: 2026-11-03
+  report: .scratch/migration/agents/reviews/O132-report.md
+  round: 0
+  brief_check: .scratch/migration/agents/reviews/O132-brief-check.md (a3a364c925924ff9a, claude-opus-5-5, 226477 tokens, 74 tool uses, 11 min 31 s)
+  shared_paths: docs/HELP.md and docs/diagrams (O133 writes HELP.md lines 400-410 and this step lines 588-596, far apart; each landing regenerates the diagrams)
+  landing: not-started
 ```
 
 ## The standing demands (from Axel, in force)
