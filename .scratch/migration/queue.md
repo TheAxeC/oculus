@@ -1,8 +1,8 @@
-In flight (0 of 6 slots in use): none.
+In flight (2 of 6 slots in use):
+- O130 (every hub's category rows held to the config check), building.
+- O131 (the editor holds a one-text `multi` value to its words), brief check.
 
-Queued, in order:
-- O130 (every hub's category rows held to the config check), ruling 645.
-- O131 (the editor holds a one-text `multi` value to its words), ruling 646.
+Queued, in order: none.
 
 Owed looks: none.
 
