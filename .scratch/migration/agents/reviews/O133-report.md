@@ -1,6 +1,6 @@
 # O133 report: one front-matter pattern for every Markdown reader
 
-NOT DONE: verify check 1's combined command is red on one line, a 5000 ms timeout of `tests/checks/tree/boundaries.test.ts > layer boundaries > holds across src/lib` (7326 ms under a load average of about 10); the same test passes alone (`Tests  11 passed (11)`) and in the verify list (`ok      vitest checks`). Everything else in the brief is done.
+Everything in the brief is done. Check 1's combined command depends on the machine's load: in round 1 it was red once on a 5000 ms timeout of `tests/checks/tree/boundaries.test.ts > layer boundaries > holds across src/lib` (5546 ms, load average 12.28) and green in its last run (`Tests  119 passed (119)`, that test 3694 ms, load average 12.76); the reviewer's runs of that file alone timed out twice, at load averages 18.24 and 16.84. The last `npm run test:quick` printed `test:quick: 102.7 s; every command passed`.
 
 ## Open items of the state file (verbatim)
 
@@ -74,9 +74,9 @@ Edits to the test after its first run, each checked by reading: the BOM row's tw
 | 4. Test of G150, one table, readers only | DONE | `npx vitest run tests/data/prose/markdown/front-matter.test.ts`: `Tests  14 passed (14)` |
 | C1 to C13 after | DONE | the same run, all 14 rows `<check>` |
 | C14 | DONE | check 1's run: docs, present and feeds among the 7 passing files |
-| Check 1, the combined command | NOT DONE (red on a timeout) | `Test Files  1 failed \| 7 passed (8)`, `Tests  1 failed \| 118 passed (119)`, the one failure `FAIL  \|unit\| tests/checks/tree/boundaries.test.ts > layer boundaries > holds across src/lib` `Error: Test timed out in 5000ms.` (7326 ms in one run); alone: `Test Files  1 passed (1)`, `Tests  11 passed (11)` |
+| Check 1, the combined command | DONE in its last run; red on a timeout in earlier runs | last run (round 1, after the last change, load average 12.76): `Test Files  8 passed (8)`, `Tests  119 passed (119)`, 'holds across src/lib' 3694 ms. Earlier runs, the first of round 1 among them (load average 12.28): `Test Files  1 failed \| 7 passed (8)`, `Tests  1 failed \| 118 passed (119)`, `FAIL  \|unit\| tests/checks/tree/boundaries.test.ts > layer boundaries > holds across src/lib` `Error: Test timed out in 5000ms.` (5546 ms). The reviewer's runs of that file alone timed out twice (load averages 18.24 and 16.84) and passed with `--testTimeout=60000`; `vitest checks` of `npm run test:quick` passes it in every run |
 | Check 2, the two greps | DONE | outputs quoted below |
-| Check 3, `npm run diagrams` then `npm run test:quick` | DONE, last run red on a slow test the step does not change | last run: every `ok` but `FAILED  vitest slow (215.7 s)`, `test:quick: 218.8 s; failed: vitest slow`; the failures `tests/data/hubs/hub-portfolio.test.ts` 'names a record of the second hub in a relation pair only by ids of the second hub' and 'reports the findings each hub gives, the second hub own naming its files', each `Error: Test timed out in 20000ms.`; rerun alone `npx vitest run tests/data/hubs/hub-portfolio.test.ts`: `Test Files  1 passed (1)`, `Tests  16 passed (16)` |
+| Check 3, `npm run diagrams` then `npm run test:quick` | DONE | last run (round 1): every line `ok`, `test:quick: 102.7 s; every command passed`. The run before it in round 1 was red on `FAILED  vitest (125.0 s)`, one test, `tests/data/hubs/workspace-projects.test.ts > a folder of the workspace that holds a project manifest > is the second hub's project alone when that hub's scan reads its manifest`, `Error: Test timed out in 5000ms.`; rerun alone `npx vitest run tests/data/hubs/workspace-projects.test.ts`: `Test Files  1 passed (1)`, `Tests  5 passed (5)` |
 | Check 4, the character-set check | DONE | `LC_ALL=C perl -ne 'print "$ARGV:$.:$_" if /[^\x20-\x7E\n]/; close ARGV if eof' <the twelve changed files>` printed nothing, `perl exit 0` |
 | Check 5, unused exports | DONE | `sh utils/unused-exports.sh` against `../O133-base/unused-exports.txt`: `diff` printed nothing, `unused diff exit 0` |
 | Check 6, before and after runs | DONE | first run quoted above; after: `Tests  14 passed (14)` |
@@ -182,9 +182,11 @@ Each is seen on landing on a scratch server; texts are note texts under a hub's 
 
 - The preview (a Markdown source tab's rendered half, or the Markdown preview tab). Open `---\ntags: [alpha]\n...\n# Title\n`: before, a rule and the paragraph `tags: [alpha] ...` above `Title`; after, `Title` alone. Open `---\n---\n# Title\n`: before, two rules above `Title`; after, `Title` alone. Open `---\ntags: [alpha]\n---x\n# Title\n`: before, `x` above `Title`; after, a rule, the paragraph `tags: [alpha] ---x`, `Title`. Open `---\ntags: [alpha]\n----\n# Title\n`: before, an empty bullet above `Title`; after, a rule, the heading `tags: [alpha]`, `Title`. Open `---\n---\n# Title\n\nText\n\n---\n\n## More\n`: before, `More` alone; after, `Title`, `Text`, a rule, `More`. Open `---\nabstract: |\n  one\n...\ntags: [alpha]\n---\n# Title\n`: before, `Title` alone; after, the heading `tags: [alpha]` and `Title`.
 - An embed: a note holding `![[other]]` where `other.md` holds the texts above draws the same blocks as the preview, after. Before, a header closed by `...` or by `--- ` (trailing space), or opened by `---<tab>`, or empty, showed as rules and its YAML inside the embed.
-- The Outline section: `  ---\n# draft\ntags: [alpha]\n---\n# Title\n` lists `draft` and `Title` (before, `Title` alone). A closing line followed by a no-break space is no closing (decision 5), so such a file lists no header skip.
+- The Outline section: `  ---\n# draft\ntags: [alpha]\n---\n# Title\n` lists `draft` and `Title` (before, `Title` alone). A closing line followed by a no-break space is no closing (decision 5), so such a file lists no header skip. A text whose opening line is `---` followed by a no-break space: before, a header (the base read the first line with `trim`); after, none, so the lines below it are read for headings.
 - The Markdown server's headings (the Outline the server answers, the breadcrumb, go to symbol): a header closed by `...` or `--- `, or opened by `---<tab>`, gives no heading `tags: [...]` after (before, a setext heading over lines 1-3); an empty header is hidden; in the C11 text, `# Title` is a heading after (before, hidden with the first seven lines).
 - The note scan (Tags section, Backlinks, tag search): the tags of a header closed by `...` or `--- `, or opened by `---<tab>`, are listed after, each on line 1 (before, none); in the C11 text the heading `Title` is listed after.
+- The note scan's headings, which the Markdown server offers after `[[note#` (`src/lib/server/machine/lsp/adapters/markdown/own/wiki.ts:137`) and which an embed `![[note#heading]]` reads a section by: in C2 (`---\ntags: [alpha]\n--- \n# Title\n`) and C3 (`---<tab>\ntags: [alpha, beta]\n---\n# Title\n`), before, a heading `tags: [alpha]` or `tags: [alpha, beta]` on line 1; after, none, `Title` alone. In C12 (`---\nabstract: |\n  one\n...\ntags: [alpha]\n---\n# Title\n`), before, `Title` alone; after, the heading `tags: [alpha]` on line 4 as well.
+- The preview of a header whose opening line ends in a tab (C3, `---<tab>\ntags: [alpha, beta]\n---\n# Title\n`): before, a rule and the heading `tags: [alpha, beta]` above `Title`; after, `Title` alone.
 - The LinkedIn sentence (a LinkedIn idea promoted to a post whose file has no front matter): before, "The LinkedIn idea has no front matter between two --- lines."; after, "The LinkedIn idea has no front matter, a first line --- and a closing line --- or ... below it."
 - The docs split (the document route, the deck, the LinkedIn view and its writes, the writing lint): differs only for an empty header followed by a later `---` or `...` line (C11), whose block is `""` after and whose body keeps the text up to that line.
 - The layer diagrams on the Help page: the views layer gains its import of `data/prose/markdown/front-matter`.
@@ -199,3 +201,94 @@ Each is seen on landing on a scratch server; texts are note texts under a hub's 
 
 - The lone CR and a BOM before a header are read differently by the readers, as decisions 3 and 4 keep; G150's test covers the BOM in one row and the lone CR in none.
 - An embed's preview and the source tab's preview are checked by the rendered markup on the server (`svelte/server`, no DOM, the sanitiser a pass-through there); how they look is for the look on landing.
+
+## Repair round 1
+
+Every item of `agents/briefs/O133-round-1.md` is done. This section states the state after the round; where it differs from the sections above (the judgment calls on the line count and the Outline's BOM constant, and the "Wrong or impossible" bullet on check 1), this section holds.
+
+### Item 1, the two exceptions named
+
+- `src/lib/data/prose/markdown/front-matter.ts:7-11`: "So a line is header to all of them or to none, and a note's tags come from the lines the preview leaves out, with two exceptions: one byte-order mark before the opening line is skipped by the note scan (its tags and headings) and the Outline alone, and a text with lone CR line ends has a header in the note scan and the Markdown server alone, since those two read a lone CR as a line end." The module's last paragraph (`:22-24`) says what it holds after item 2.
+- `tests/checks/tree/layer-rows.ts:228-234`: the preview leaves out the lines the others take as the header, "but for one byte-order mark before the opening line, which the note scan and the Outline alone skip, and lone CR line ends, which the note scan and the Markdown server alone read"; the module "holds that pattern, the byte-order mark and the count of a header's lines, no reader and no I/O".
+- `docs/HELP.md:406`, one line: "A note's front matter runs from a first line `---` to the next line that is `---` or `...`, either line allowed to end in spaces or tabs; a note without that closing line has none. The preview, an embed, the Outline and the tags all take the same lines as front matter, except that the tags and the Outline skip a byte-order mark before the first line and the preview and an embed do not." Two sentences.
+- Not changed: `note-links.ts:13-14` and `requests.ts:26-27` call the pattern "the header every reader of a Markdown file reads", naming the shared pattern; item 1 names three places and these two are not among them.
+
+### Item 2, the rule exists once
+
+`front-matter.ts` exports, beside `FRONT_MATTER`:
+
+```ts
+/** One byte-order mark at the start of a text. */
+export const BYTE_ORDER_MARK = /^\u{FEFF}/u;
+
+/** The number of lines a match of `FRONT_MATTER` spans, its closing line included. */
+export function headerLines(header: string): number {
+    return header.replace(/\r?\n$/, '').split(/\r?\n/).length;
+}
+```
+
+- `note-links.ts:275` is `source.replace(BYTE_ORDER_MARK, '')`, imported at `:35`.
+- `outline.ts` lost its own `BOM`; `:67` is `FRONT_MATTER.exec(text.replace(BYTE_ORDER_MARK, ''))` and `:68` `headerLines(header[0])`, imported at `:19-23`.
+- `requests.ts:36` is `headerLines(found[0])`, imported at `:19`.
+- `grep -rnE "BYTE_ORDER_MARK|headerLines|uFEFF|u\{FEFF\}|split\(/\\\\r\?\\\\n/\)\.length" src` prints the two exports, those imports and uses, and BOM handling in modules the step does not touch (`server/machine/runs/lint/routes.ts:216`, `lint/text.ts:13`, `lint/readers.ts:87`, `server/files/source/source.ts:241`, `data/prose/text-edits.ts:26`, which read a BOM of a linted or saved file, not a header); no other copy of the count.
+- The test's rows are unchanged; after this item `npx vitest run tests/data/prose/markdown/front-matter.test.ts`: `Test Files  1 passed (1)`, `Tests  14 passed (14)`.
+- `sh utils/unused-exports.sh` against `../O133-base/unused-exports.txt`: `diff` printed nothing, `unused diff exit 0`.
+
+### Item 3, the reason at docs.ts
+
+`src/lib/data/sources/documents/docs.ts:59-61`, over `const match = text.match(FRONT_MATTER);`:
+
+```ts
+    // A string's own method, where the other readers call `FRONT_MATTER.exec`: the write diagram
+    // (utils/diagrams/writes.mjs) draws a call of a method of an imported value in its group of
+    // what is not placed, and `text.match` keeps the write diagram as it is.
+```
+
+`npm run diagrams` leaves `docs/diagrams/writes.*` unchanged from the base (`git status --short docs/diagrams` lists only the layer diagrams).
+
+### Item 4, the visible changes added
+
+Added to "Host- and user-visible changes, before and after": the preview of C3 (before, a rule and the heading `tags: [alpha, beta]` above `Title`; after, `Title` alone); the note scan's headings offered after `[[note#` (`own/wiki.ts:137`, `scanNote(text).headings`, read in this round) and read by `![[note#heading]]` (C2 and C3 lose the heading `tags: [...]` on line 1; C12 gains `tags: [alpha]` on line 4); the Outline of a text opening with `---` and a no-break space (before, a header; after, none).
+
+### Item 5, the first line and the rows of checks 1 and 3
+
+Rewritten above to the runs of this round.
+
+### Runs of this round, after the last change
+
+- Check 1, `npx vitest run <the eight files of the brief>`: first run red, `FAIL  |unit| tests/checks/tree/boundaries.test.ts > layer boundaries > holds across src/lib`, `Error: Test timed out in 5000ms.` (5546 ms, load average 12.28), `Tests  1 failed | 118 passed (119)`; that file alone, `Test Files  1 passed (1)`, `Tests  11 passed (11)`; last run, after the last change (load average 12.76), `Test Files  8 passed (8)`, `Tests  119 passed (119)`.
+- Check 2: `grep -rnE "FRONT_MATTER|FRONTMATTER|frontMatterEnd" src` prints the export at `front-matter.ts:27` and the imports and uses in note-links.ts (`:35`, `:276`), docs.ts (`:16`, `:62`), html.ts (`:46`, `:629`), requests.ts (`:19`, `:33`), RenderedMarkdown.svelte (`:37`, `:121`) and outline.ts (`:21`, `:67`), and three comment lines in those files (`front-matter.ts:32`, `docs.ts:59`, `requests.ts:26`). `grep -rnF -- '^---' src` prints `src/lib/data/sources/deck/split.ts:51:const SEPARATOR = /^---[ \t]*$/;`, `src/lib/data/sources/deck/outline.ts:25:const CUT = /^---[ \t]*$/;` and `src/lib/data/prose/markdown/front-matter.ts:27:export const FRONT_MATTER = ...` (the pattern as at the top of this report), and nothing else.
+- Check 3, full verify list runs in this round: two. The first: `FAILED  vitest (125.0 s)`, one test, `tests/data/hubs/workspace-projects.test.ts > a folder of the workspace that holds a project manifest > is the second hub's project alone when that hub's scan reads its manifest`, `Error: Test timed out in 5000ms.`, a file the step does not change; rerun alone, `Test Files  1 passed (1)`, `Tests  5 passed (5)`. The second, after `npm run diagrams`:
+
+```
+ok      prettier (1.4 s): All matched files use Prettier code style!
+ok      ASCII gate (1.5 s)
+ok      svelte-kit sync (3.3 s)
+ok      eslint (3.7 s)
+ok      svelte-check (13.0 s): 1793726068858 COMPLETED 582 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest (68.9 s): Duration  53.03s (transform 38.53s, setup 0ms, import 90.72s, tests 110.19s, environment 2.48s)
+ok      vitest checks (93.4 s): Duration  77.49s (transform 72.47s, setup 0ms, import 122.57s, tests 141.45s, environment 4ms)
+ok      vitest slow (99.2 s): Duration  83.32s (transform 24.77s, setup 0ms, import 58.28s, tests 147.46s, environment 4ms)
+test:quick: 102.7 s; every command passed
+```
+
+- Check 4: `LC_ALL=C perl -ne 'print "$ARGV:$.:$_" if /[^\x20-\x7E\n]/; close ARGV if eof'` over the twelve changed source, test, config and docs files and `docs/diagrams/*.dot` printed nothing, `perl exit 0`.
+- Check 5: as under item 2, `unused diff exit 0`.
+- Check 6: the new test after the round, `Tests  14 passed (14)`; no test changed in this round.
+- `npx eslint` over the six TypeScript files this round changes: exit 0; `npx prettier --write` laid out the import of `requests.ts` on one line.
+- No whole-suite command was run.
+
+### Files changed in this round, with line counts after it
+
+| Path | Against the base (added, removed) | Lines now |
+| --- | --- | --- |
+| `src/lib/data/prose/markdown/front-matter.ts` | new | 35 |
+| `src/lib/data/prose/markdown/note-links.ts` | +11 -13 | 453 |
+| `src/lib/data/sources/documents/docs.ts` | +8 -12 | 154 |
+| `src/lib/server/machine/lsp/adapters/markdown/requests.ts` | +5 -4 | 133 |
+| `src/lib/state/sources/explorer/sections/outline.ts` | +13 -9 | 169 |
+| `tests/checks/tree/layer-rows.ts` | +9 -0 | 366 |
+| `docs/HELP.md` | +1 -0 (line 406 rewritten) | |
+| `.scratch/migration/agents/reviews/O133-report.md` | this report | |
+
+Every path is on the brief's write list. `diff -rq` of src, tests, utils, config and docs against `../O133-base` lists 22 paths: the twelve of the step and ten layer diagram files (`layer-data`, `layer-state`, `layer-ui`, `layer-views`, `layers`, each `.dot` and `.svg`).

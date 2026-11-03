@@ -33,8 +33,8 @@ dispatch:           # steps in flight, up to six (Z632)
   model: claude-opus-5-5
   launched: 2026-11-03
   report: .scratch/migration/agents/reviews/O133-report.md
-  builder_usage: first run 255722 tokens, 124 tool uses, 28 min 26 s
-  reviewer_report: .scratch/migration/agents/reviews/O133-refuter.md (a65e7d50717ad34a0, claude-opus-5-5, 208309 tokens, 45 tool uses, 13 min 46 s)
+  builder_usage: first run 255722 tokens, 124 tool uses, 28 min 26 s; round 1 309528 tokens, 51 tool uses, 10 min 13 s
+  reviewer_report: ".scratch/migration/agents/reviews/O133-refuter.md (a65e7d50717ad34a0, claude-opus-5-5, 208309 tokens, 45 tool uses, 13 min 46 s); over round 1: running: a7df403ff43b2bf2e, claude-opus-5-5"
   round: 1
   brief_check: .scratch/migration/agents/reviews/O133-brief-check.md (aa8f129fd1b7631ff, claude-opus-5-5, 223032 tokens, 61 tool uses, 12 min 14 s)
   landing: not-started
@@ -48,8 +48,8 @@ dispatch:           # steps in flight, up to six (Z632)
   launched: 2026-11-03
   report: .scratch/migration/agents/reviews/O132-report.md
   builder_usage: first run 194868 tokens, 101 tool uses, 21 min 11 s
-  reviewer_report: "running: a3d8deb001529c2b6, claude-opus-5-5"
-  round: 0
+  reviewer_report: .scratch/migration/agents/reviews/O132-refuter.md (a3d8deb001529c2b6, claude-opus-5-5, 180985 tokens, 52 tool uses, 14 min 58 s)
+  round: 1
   brief_check: .scratch/migration/agents/reviews/O132-brief-check.md (a3a364c925924ff9a, claude-opus-5-5, 226477 tokens, 74 tool uses, 11 min 31 s)
   shared_paths: docs/HELP.md and docs/diagrams (O133 writes HELP.md lines 400-410 and this step lines 588-596, far apart; each landing regenerates the diagrams)
   landing: not-started

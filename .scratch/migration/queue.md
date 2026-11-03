@@ -1,6 +1,6 @@
 In flight (3 of 6 slots in use):
-- O133 (one front-matter pattern for every Markdown reader), repair round 1 sent.
-- O132 (every hub's words held to the vocabulary check), built; under review.
+- O133 (one front-matter pattern for every Markdown reader), repair round 1 built; under review.
+- O132 (every hub's words held to the vocabulary check), repair round 1 sent.
 - O136 (the editor holds a keyed family to the form its reader takes), building.
 
 Queued, in order (1 step):
