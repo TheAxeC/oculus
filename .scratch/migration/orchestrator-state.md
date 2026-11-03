@@ -47,6 +47,7 @@ dispatch:           # steps in flight, up to six (Z632)
   model: claude-opus-5-5
   launched: 2026-11-03
   report: .scratch/migration/agents/reviews/O126-report.md
+  builder_usage: first run 285292 tokens, 66 tool uses, 8 min 29 s (handed back C1 and two points)
   round: 0
   brief_check: .scratch/migration/agents/reviews/O126-brief-check.md (a6698c519c0fa9d0a, claude-opus-5-5, 239318 tokens, 72 tool uses, 9 min 27 s)
   shared_paths: with O125, `src/lib/ui/controls/heads/GroupHead.svelte` (O126 lines 57-58, O125 lines 15-20 and 211-222) and `docs/HELP.md` (O126 lines 295 and 340-341, O125 line 571); separate lines, a simple merge.
