@@ -16,7 +16,7 @@
 // look does.
 
 import { describe, expect, it } from 'vitest';
-import type { AuditFinding, Pillar } from '../../../../src/lib/data/model/index.ts';
+import type { AuditFinding, Pillar, Project } from '../../../../src/lib/data/model/index.ts';
 import { portfolioConfigFrom } from '../../../../src/lib/data/index.ts';
 import { findingText } from '../../../../src/lib/data/helpers/finding-text.ts';
 import { boardsFindings } from '../../../../src/lib/data/sources/config/sections/boards.ts';
@@ -248,8 +248,154 @@ describe("a board's items, the Mine only filter and the Role facet", () => {
     });
 });
 
+/** A research project the user leads, with the stage, form, year, title and pin of `over`. */
+function filed(id: string, over: Partial<Project>): Project {
+    return project(id, { tier: 'research', lead: [SELF], ...over });
+}
+
+/**
+ * Five journal papers: zeta accepted in 2026, alpha published in 2016, beta and aardvark published
+ * in 2025 and gamma published with no year, those `pinned` names pinned.
+ */
+function papers(...pinned: string[]): Project[] {
+    const rows: [string, string, number | undefined][] = [
+        ['zeta', 'accepted', 2026],
+        ['alpha', 'published', 2016],
+        ['beta', 'published', 2025],
+        ['gamma', 'published', undefined],
+        ['aardvark', 'published', 2025]
+    ];
+    return rows.map(([id, stage, year]) =>
+        filed(id, {
+            stage,
+            form: 'journal',
+            ...(year !== undefined && { year }),
+            ...(pinned.includes(id) && { pin: true })
+        })
+    );
+}
+
+/** Three journal papers: y accepted in 2025, x published in 2025 and w published in 2026. */
+const YEARS = [
+    filed('y', { stage: 'accepted', form: 'journal', year: 2025 }),
+    filed('x', { stage: 'published', form: 'journal', year: 2025 }),
+    filed('w', { stage: 'published', form: 'journal', year: 2026 })
+];
+
+/** The shipped config with the `publications` row's `sort` set to `sort`, or taken off without. */
+function publicationsSort(...sort: unknown[]): Record<string, unknown> {
+    const rows = (CONFIG.categories as Record<string, unknown>[]).map((row) => {
+        if (row.key !== 'publications') return row;
+        const rest = Object.fromEntries(Object.entries(row).filter(([key]) => key !== 'sort'));
+        return sort.length === 0 ? rest : { ...rest, sort: sort[0] };
+    });
+    return { ...CONFIG, categories: rows };
+}
+
+/** One row of the card sections: a board, its config, its projects and the sections drawn. */
+type SectionRow = {
+    name: string;
+    board: string;
+    config?: Record<string, unknown>;
+    projects: Project[];
+    sections: [string, string[]][];
+};
+
 describe('the card sections', () => {
-    it.each([
+    it.each<SectionRow>([
+        {
+            name: 'publications go pinned first, then by stage, then newest year, then title',
+            board: 'archive',
+            projects: papers(),
+            sections: [['publications', ['zeta', 'aardvark', 'beta', 'alpha', 'gamma']]]
+        },
+        {
+            name: 'a pinned publication goes before every unpinned one',
+            board: 'archive',
+            projects: papers('gamma'),
+            sections: [['publications', ['gamma', 'zeta', 'aardvark', 'beta', 'alpha']]]
+        },
+        {
+            name: "two pinned publications go by the row's sort, before the unpinned ones",
+            board: 'archive',
+            projects: papers('alpha', 'beta'),
+            sections: [['publications', ['beta', 'alpha', 'zeta', 'aardvark', 'gamma']]]
+        },
+        {
+            name: 'a row with no sort goes by stage, then title, whatever the year',
+            board: 'projects',
+            projects: [
+                filed('b', { stage: 'exploring', year: 2025 }),
+                filed('a', { stage: 'exploring' }),
+                filed('c', { stage: 'building' })
+            ],
+            sections: [['in-flight', ['a', 'b', 'c']]]
+        },
+        {
+            name: 'other outputs go by newest year at one stage',
+            board: 'archive',
+            projects: [
+                filed('a-thesis', { stage: 'published', form: 'thesis', year: 2018 }),
+                filed('b-poster', { stage: 'published', form: 'poster', year: 2023 })
+            ],
+            sections: [['other-outputs', ['b-poster', 'a-thesis']]]
+        },
+        {
+            name: 'sort: [year] breaks a tie of years by stage',
+            board: 'archive',
+            config: publicationsSort(['year']),
+            projects: YEARS,
+            sections: [['publications', ['w', 'y', 'x']]]
+        },
+        {
+            name: 'sort: [title] goes by title after the pinned card',
+            board: 'archive',
+            config: publicationsSort(['title']),
+            projects: [
+                filed('b', { stage: 'accepted', form: 'journal' }),
+                filed('a', { stage: 'published', form: 'journal' }),
+                filed('p', { stage: 'published', form: 'journal', pin: true })
+            ],
+            sections: [['publications', ['p', 'a', 'b']]]
+        },
+        {
+            name: 'sort: year, one word as a text, reads as the list of that word',
+            board: 'archive',
+            config: publicationsSort('year'),
+            projects: YEARS,
+            sections: [['publications', ['w', 'y', 'x']]]
+        },
+        {
+            name: "sort: [] goes by the board's order",
+            board: 'archive',
+            config: publicationsSort([]),
+            projects: papers(),
+            sections: [['publications', ['zeta', 'aardvark', 'alpha', 'beta', 'gamma']]]
+        },
+        {
+            name: "a publications row naming no sort goes by the board's order",
+            board: 'archive',
+            config: publicationsSort(),
+            projects: papers(),
+            sections: [['publications', ['zeta', 'aardvark', 'alpha', 'beta', 'gamma']]]
+        },
+        {
+            name: "a sort holding a word outside the three reads as no sort, the board's order",
+            board: 'archive',
+            config: publicationsSort(['stage', 'nonsense']),
+            projects: papers(),
+            sections: [['publications', ['zeta', 'aardvark', 'alpha', 'beta', 'gamma']]]
+        },
+        {
+            name: 'a year of 0 is a year, after a newer one and before no year',
+            board: 'archive',
+            projects: [
+                filed('a0', { stage: 'published', form: 'journal', year: 0 }),
+                filed('gamma', { stage: 'published', form: 'journal' }),
+                filed('alpha', { stage: 'published', form: 'journal', year: 2016 })
+            ],
+            sections: [['publications', ['alpha', 'a0', 'gamma']]]
+        },
         {
             name: 'case 14: a project in no category is in the other section, last',
             board: 'archive',
@@ -269,13 +415,24 @@ describe('the card sections', () => {
             ]
         }
     ])('$name', (row) => {
-        const preset = presetFor(row.board, CONFIG);
+        const preset = presetFor(row.board, row.config ?? CONFIG);
         const items = boardItems(snapshotOf(row.projects), preset);
         const drawn = cardSections(items, preset).map((one) => [
             one.key,
             one.items.map((item) => item.id)
         ]);
         expect(drawn).toEqual(row.sections);
+    });
+
+    it("leaves the board's items in the board's order, which a grid board draws", () => {
+        const items = boardItems(snapshotOf(papers()), presetFor('archive', CONFIG));
+        expect(items.map((item) => item.id)).toEqual([
+            'zeta',
+            'aardvark',
+            'alpha',
+            'beta',
+            'gamma'
+        ]);
     });
 
     it.each([

@@ -259,15 +259,15 @@ roles:
   - { key: other,        label: Other }
 
 
-# The categories a project is filed under on every board, in order: a project's category is the first row whose `stages:` and `forms:` blocks it meets, each block with the lists `words` (one of the project's words is listed), `not_words` (none is), `flags` (its word carries one of the flags) and `not_flags` (it carries none), and a project no row holds has none. A board shows the rows that hold at least one of its projects, in this order: its sections, the slices of its bar and the counts of its tab. Every row names the `color` it is drawn in; a row without one is a finding naming the row, and is drawn in no colour. The flags:
+# The categories a project is filed under on every board, in order: a project's category is the first row whose `stages:` and `forms:` blocks it meets, each block with the lists `words` (one of the project's words is listed), `not_words` (none is), `flags` (its word carries one of the flags) and `not_flags` (it carries none), and a project no row holds has none. A board shows the rows that hold at least one of its projects, in this order: its sections, the slices of its bar and the counts of its tab. A row's `sort` orders the cards of its section after the pinned ones, its words `stage`, `year` (newest first, no year last) and `title` read left to right, and a row with none goes by stage, then title; a `sort` of another word or kind is a finding naming the row and is not read. Every row names the `color` it is drawn in; a row without one is a finding naming the row, and is drawn in no colour. The flags:
 # - `rail`: a board gives the rail the count of its projects in such rows, drawn in `rail_color` below.
 # - `archival`: the Pillars view's Archival band, which groups these projects by the `dead` number of their stage; such a project is no real work, so a venue's use counts, the Orphans card, a pillar's and a domain's members and the project strip at a card's foot, which groups its projects by these rows, leave it out.
 categories:
   - { key: in-review,     label: "in review",     stages: { words: [submitted] }, color: "#0ea5e9" }
   - { key: in-flight,     label: "in flight",     stages: { flags: [live] }, color: "#16a34a", rail: true }
   - { key: idea,          label: idea,            stages: { words: [nascent, scoping] }, color: "#7c5cff" }
-  - { key: publications,  label: publications,    stages: { words: [accepted, published] }, forms: { words: [journal, conference] }, color: "#db2777" }
-  - { key: other-outputs, label: "other outputs", stages: { words: [accepted, published] }, forms: { words: [thesis, abstract, poster, tech-report] }, color: "#9333ea" }
+  - { key: publications,  label: publications,    stages: { words: [accepted, published] }, forms: { words: [journal, conference] }, color: "#db2777", sort: [stage, year, title] }
+  - { key: other-outputs, label: "other outputs", stages: { words: [accepted, published] }, forms: { words: [thesis, abstract, poster, tech-report] }, color: "#9333ea", sort: [stage, year, title] }
   - { key: released,      label: released,        stages: { words: [released] }, color: "#0d9488" }
   - { key: dead-ends,     label: dead-ends,       stages: { flags: [dead] }, color: "#9ca3af", archival: true }
 

@@ -443,13 +443,15 @@ The hub's own settings. A key of oculus's `config/catalogs/vocab.yml` set here i
 #     report: { label: views.statements, glyph: views.statements_glyph, noun: focus.command.word_task }
 
 # The categories this hub's projects are filed under, each a row with its `key` and its `color`; a
-# row naming no colour is a finding and is drawn with none. A row named here replaces oculus's row
-# of that key in oculus's place, a new row comes after oculus's, and
+# row naming no colour is a finding and is drawn with none. A row's `sort` orders its section's
+# cards after the pinned ones, a list of `stage`, `year` (newest first, no year last) and `title`,
+# and a row with none goes by stage, then title. A row named here replaces oculus's row of that key
+# whole, its `sort` included, in oculus's place, a new row comes after oculus's, and
 # `{ key: <key>, removed: true }` takes oculus's row out.
 # categories: []
 #   example:
 #   categories:
-#     - { key: idea, label: "early ideas", color: "#7c5cff", stages: { words: [nascent, scoping] } }
+#     - { key: idea, label: "early ideas", color: "#7c5cff", stages: { words: [nascent, scoping] }, sort: [title] }
 #     - { key: released, removed: true }
 
 # The colour this hub's project boards draw their rail count in, written #rrggbb, in place of

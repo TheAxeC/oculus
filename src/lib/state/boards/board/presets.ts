@@ -9,7 +9,10 @@
 // from the same rows (`boardViews`), each named and drawn by the words its row names. Two presets
 // no row names: the Awaiting box's board (`awaitingPreset`), which a name of the Focus board's
 // Awaiting box opens for the projects it counts, and the Map's (`mapPreset`), which takes every
-// project of every hub for the Map's bar.
+// project of every hub for the Map's bar. The order of the cards is compared here, beside the stage
+// order it reads (`compareCards`): pinned first, then by stage and title on the board as a whole
+// (items.ts), and by a category's `sort:` words first inside its section (facets.ts), so the two
+// files share one comparison and neither imports the other for it.
 
 import { z } from 'zod';
 import type { Finding, Id, Project, Resource, Venue } from '../../../data/model/index.ts';
@@ -19,7 +22,11 @@ import { boardsGroup } from '../../../data/sources/config/rail.ts';
 import { focusSetting, text as str } from '../../../data/helpers/guards.ts';
 import { readAs, rowsShape, wordShape } from '../../../data/shapes/shapes.ts';
 import { vocabKeys, type WordsOf } from '../../../data/shapes/vocab-keys.ts';
-import { categoriesOf, type Category } from '../../../data/shapes/boards/categories.ts';
+import {
+    categoriesOf,
+    type CardSort,
+    type Category
+} from '../../../data/shapes/boards/categories.ts';
 import { rolesOf, type Role } from '../../../data/shapes/boards/roles.ts';
 import {
     boardRows,
@@ -320,6 +327,53 @@ export const LIST_CELLS = [
 export function stageRank(stage: string | undefined, order: readonly string[]): number {
     const at = stage === undefined ? -1 : order.indexOf(stage);
     return at < 0 ? order.length : at;
+}
+
+/** The board's own order of its cards after the pinned ones: by stage, then by title. */
+export const BOARD_SORT: readonly CardSort[] = ['stage', 'title'];
+
+/**
+ * How two projects compare under one word of a category's `sort:`, below 0 when `left` goes first:
+ * `stage` by its place in `order` (`stageRank`), `year` newest first with a project with no year
+ * after every project with one, a year of 0 being a year, and `title` by its letters.
+ */
+function byWord(
+    word: CardSort,
+    left: Pick<Project, 'stage' | 'year' | 'title'>,
+    right: Pick<Project, 'stage' | 'year' | 'title'>,
+    order: readonly string[]
+): number {
+    switch (word) {
+        case 'stage':
+            return stageRank(left.stage, order) - stageRank(right.stage, order);
+        case 'year':
+            if (left.year === undefined || right.year === undefined) {
+                return Number(left.year === undefined) - Number(right.year === undefined);
+            }
+            return right.year - left.year;
+        case 'title':
+            return left.title.localeCompare(right.title);
+    }
+}
+
+/**
+ * How two cards compare, below 0 when `left` goes first: a pinned project (`pin: true`) before an
+ * unpinned one, then each word of `words` in turn, each breaking the ties the words before it
+ * leave. The board's own order is `BOARD_SORT`; a category's section reads its row's `sort` first.
+ */
+export function compareCards(
+    left: BoardItem,
+    right: BoardItem,
+    words: readonly CardSort[],
+    order: readonly string[]
+): number {
+    const pinned = Number(right.project.pin === true) - Number(left.project.pin === true);
+    if (pinned !== 0) return pinned;
+    for (const word of words) {
+        const by = byWord(word, left.project, right.project, order);
+        if (by !== 0) return by;
+    }
+    return 0;
 }
 
 /**

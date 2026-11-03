@@ -4,7 +4,9 @@
 // and the list's With column leave out the user (the person marked `self: true`), and the search
 // reads the whole team. Which projects a board holds, a card's category and the user's role on a
 // project are read by data/shapes/boards/, the rules the audit reads too, each under the words of
-// the project's own hub; the cards sort by the stage order of every hub's words.
+// the project's own hub; the cards sort pinned first, then by the stage order of every hub's words,
+// then by title (presets.ts `compareCards`), and a category's section orders its own cards by its
+// row's `sort:` (facets.ts `cardSections`).
 
 import { byKey } from '../../../data/helpers/guards.ts';
 import { keyOf, rootOf } from '../../../data/helpers/hub-names.ts';
@@ -23,8 +25,9 @@ import { waitedOn } from '../waiting.ts';
 import { sliceValue, sliceWord } from './facets.ts';
 import { selfIds, shownTeam, teamOf } from './team.ts';
 import {
+    BOARD_SORT,
     SESSIONS_NONE,
-    stageRank,
+    compareCards,
     venueText,
     type BoardItem,
     type BoardPreset,
@@ -177,13 +180,9 @@ function peopleOf(snapshot: Snapshot): People {
     return { names: personNames(snapshot), self: selfIds(snapshot) };
 }
 
-/** Pinned first, then the config's stage order, then the title. */
+/** The board's own order: pinned first, then the config's stage order, then the title. */
 function compare(left: BoardItem, right: BoardItem, order: string[]): number {
-    const pinned = Number(right.project.pin === true) - Number(left.project.pin === true);
-    if (pinned !== 0) return pinned;
-    const byStage = stageRank(left.project.stage, order) - stageRank(right.project.stage, order);
-    if (byStage !== 0) return byStage;
-    return left.project.title.localeCompare(right.project.title);
+    return compareCards(left, right, BOARD_SORT, order);
 }
 
 /**

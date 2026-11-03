@@ -723,9 +723,9 @@ describe("oculus's own config directory", () => {
                 .map(([field, one]) => ({ key: `${key}.${field}`, help: one.description ?? '' }))
         );
         // 12 stage flags, no form flag, 1 chip flag, 7 status flags, 4 lead status flags, 2 tier
-        // flags (`unmarked`, `default`), the 3 keys of a roles row and the 5 keys of a categories
+        // flags (`unmarked`, `default`), the 3 keys of a roles row and the 6 keys of a categories
         // row.
-        expect(keys).toHaveLength(34);
+        expect(keys).toHaveLength(35);
         expect(keys.filter((one) => one.help.trim() === '').map((one) => one.key)).toEqual([]);
     });
 

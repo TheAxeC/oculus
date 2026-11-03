@@ -9,9 +9,10 @@
 // of both hubs' projects, and one filter picks the projects of both. A waited-on value that names
 // no record is its words as written. The words are the ones a project card draws for the
 // record, which items.ts gives by the key. The card view's sections, one per category, are cut here
-// too, and so are the slices of the bar's second line, each the projects of one category at one
-// stage or, for a category whose row has a `forms:` block, of one form: a slice is the slice
-// facet's value laid out, and a project is in one slice at most.
+// too, each ordering its cards by its row's `sort:` after the pinned ones (presets.ts
+// `compareCards`), and so are the slices of the bar's second line, each the projects of one
+// category at one stage or, for a category whose row has a `forms:` block, of one form: a slice is
+// the slice facet's value laid out, and a project is in one slice at most.
 
 import { byKey } from '../../../data/helpers/guards.ts';
 import { keyOf } from '../../../data/helpers/hub-names.ts';
@@ -31,11 +32,13 @@ import {
 } from '../../shared/words/tones.ts';
 import { tierWords } from '../../../data/shapes/boards/tiers.ts';
 import {
+    BOARD_SORT,
     CODE_VALUES,
     FACETS,
     NONE,
     REPRODUCED_VALUES,
     SESSIONS_VALUES,
+    compareCards,
     shortWords,
     stageRank,
     type BoardItem,
@@ -334,16 +337,23 @@ type CardSection = { key: string; label: string; color: string; items: BoardItem
 
 /**
  * The sections of the card view and of the list: one per row of `categories` holding a card, in
- * the list's order, then one with the empty key for the cards in no row, each section's cards in
- * the order given.
+ * the list's order, then one with the empty key for the cards in no row. A row's cards go pinned
+ * first, then by its `sort:` words, then by the board's own order (stage, then title), the row
+ * being the one of `preset.categories` the section is drawn by, so every card of a section goes by
+ * one row whatever hub it is from; the cards in no row keep the order given.
  */
 export function cardSections(items: BoardItem[], preset: BoardPreset): CardSection[] {
-    const sections = preset.categories.map((one) => ({
-        key: one.key,
-        label: one.label,
-        color: one.color,
-        items: items.filter((item) => item.category === one.key)
-    }));
+    const sections = preset.categories.map((one) => {
+        const words = [...one.sort, ...BOARD_SORT];
+        return {
+            key: one.key,
+            label: one.label,
+            color: one.color,
+            items: items
+                .filter((item) => item.category === one.key)
+                .sort((left, right) => compareCards(left, right, words, preset.stageOrder))
+        };
+    });
     const known = new Set(preset.categories.map((one) => one.key));
     const other = items.filter((item) => !known.has(item.category));
     return [...sections, { key: '', label: '', color: '', items: other }].filter(

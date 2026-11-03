@@ -24,20 +24,6 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 
 ```yaml
 dispatch:           # steps in flight, up to six (Z632)
-- step: O128
-  base: 8ae9afb82
-  worktree: .agents/worktrees/migration-O128
-  executor: agent
-  worker: claude:opus
-  session_id: a1f38c408a7b19f9c
-  model: claude-opus-5-5
-  launched: 2026-11-03
-  report: .scratch/migration/agents/reviews/O128-report.md
-  round: 1
-  builder_usage: first run (cases hand-back) 229973 tokens, 78 tool uses, 10 min 12 s; build after the cases ruling 342176 tokens, 82 tool uses, 12 min 20 s
-  reviewer_report: .scratch/migration/agents/reviews/O128-refuter.md (adc685d3ef30c1258, claude-opus-5-5, 189945 tokens, 39 tool uses, 8 min 14 s)
-  brief_check: .scratch/migration/agents/reviews/O128-brief-check.md (aad602adef6203102, claude-opus-5-5, 229764 tokens, 91 tool uses, 11 min 50 s)
-  landing: not-started
 - step: O129
   base: 81a913408
   worktree: .agents/worktrees/migration-O129
@@ -48,6 +34,8 @@ dispatch:           # steps in flight, up to six (Z632)
   launched: 2026-11-03
   report: .scratch/migration/agents/reviews/O129-report.md
   round: 0
+  builder_usage: first run 242247 tokens, 176 tool uses, 14 min 16 s
+  reviewer_report: .scratch/migration/agents/reviews/O129-refuter.md (a9c8c428e5b66ae90, claude-opus-5-5, 209753 tokens, 64 tool uses, 11 min 26 s)
   brief_check: .scratch/migration/agents/reviews/O129-brief-check.md (ab2ec14cae7da1de4, claude-opus-5-5, 216711 tokens, 103 tool uses, 11 min 11 s)
   shared_paths: docs/HELP.md (O129 line 249, O128 line 307) and docs/diagrams (both regenerate) with O128
   landing: not-started
@@ -191,6 +179,7 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
 - Open item 645 (2026-11-03): the rows of `categories:` of a hub other than the primary are held to the whole-file shape only, never to the config check `categoriesFindings` (`src/lib/server/root/watch/portfolio/payload.ts:91` runs it on the primary's config alone), so such a hub's `stages: { words: [nonsense] }` or a row with no `color` gives no finding and the word is not read (the run quoted in `agents/reviews/O128-report.md`, "What is handed back" 2). (a) recommended: a new step that runs `categoriesFindings` over each other hub's merged config in `readOtherHub` (`src/lib/data/index.ts:628-650`), its findings naming that hub's settings file, so every hub's category rows are checked alike; it makes findings appear for such a hub's wrong words, which today are silent. (b) no change, the lazy option: a second hub's wrong category word stays silent.
+- Open item 646 (2026-11-03): in a hub's `.oculus/config.yml` the editor's schema of every `multi` field is `{ type: ['array', 'string'], items: { enum: <words> } }` (`src/lib/data/sources/config/catalog/schemas/options.ts:107-113` `multiSchema`, read), and `items` holds only a list, so the one-text form (a word, or words joined by spaces) is never held to the words: `sort: nonsense` on a category row, or a wrong word in any other `multi` field written as one text, gets no mark in the editor, though the whole-file shape still reports it (O128's builder, `agents/reviews/O128-report.md`, round 1). It was so for every `multi` field before O128. (a) recommended: a new step that gives the text form a pattern of the field's words joined by spaces (`anyOf` of the list and the text), each word escaped, so the editor marks a wrong word in either form, and the head comment of `options.ts` ("so the editor marks what the Settings view refuses"), false today for such a text, becomes true; it makes marks appear in hub files that are silent today. (b) no change, the lazy option: the editor keeps passing a wrong word written as one text.
 
 ## Closed items
 - Open item 644 (2026-11-03), closed by Axel the same day: (a), step O129; (b) was the lazy option.
@@ -792,6 +781,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-11-03 (O128 landed). O128, the order of a category's cards, landed (booking in plan.md under O128, `agents/reviews/O128-landing.md`): the review over round 1 found nothing; the gate passed; the look on 8797 showed publications and other outputs by stage, newest year, title. G124 rewritten for ruling (B). Open item 646 raised (the editor's schema of a one-text `multi` value). O129 is reviewed (`agents/reviews/O129-refuter.md`, one Standards finding, `format.ts:6-7`); its repair round is next. In flight (1 of 6): O129 (reviewed). Open items: 646, 645.
 - 2026-11-03 (O128 round 1 sent). O128's builder a1f38c408a7b19f9c reported (`agents/reviews/O128-report.md`, usage under builder_usage); the orchestrator read the whole diff. The review adc685d3ef30c1258 (claude-opus-5-5), `agents/reviews/O128-refuter.md`: every item holds, every case met, one finding (Behaviour 1, the editor's offer of `sort` not stated). Repair round 1 (`agents/briefs/O128-round-1.md`) states it, words C18 as ruled and accepts `config-folder.test.ts:723-728` and `docs/diagrams/writes.*` into the paths; snapshot `.agents/worktrees/migration-O128-round-1`. G124's text and Test line are rewritten at landing for option (B). In flight (2 of 6): O128 (round 1), O129 (building). Open items: 645.
 - 2026-11-03 (O129 building). O129's brief check (`agents/reviews/O129-brief-check.md`, ab2ec14cae7da1de4, claude-opus-5-5) closed in the brief under its Closed heading; prepared at 81a913408; worktree `.agents/worktrees/migration-O129` with `npm ci` and `svelte-kit sync`; base copy `.agents/worktrees/O129-base` with `unused-exports.txt` (338 lines); builder a2610b093b6cffbd3 (claude-opus-5-5) runs. Shared paths with O128: `docs/HELP.md` (lines 249 and 307) and `docs/diagrams`. In flight (2 of 6): O128 (building, cases ruling), O129 (building). Open items: 645.
 - 2026-11-03 (O128 cases ruled). O128's builder handed back the cases' first run (`agents/reviews/O128-report.md`): four rows passing on the unchanged tree and a second hub's rows reaching no `categoriesFindings`. The cases ruling `agents/briefs/O128-cases.md` takes (a) and (B); the builder is resumed with it. O129's brief check ab2ec14cae7da1de4 runs. In flight (2 of 6): O128 (building), O129 (brief check). Open items: 645.

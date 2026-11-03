@@ -306,6 +306,15 @@ export const wordBlock = z.strictObject({
     not_flags: blockList("Flags of the map's rows none of which the project's word carries.")
 });
 
+/** A word of a category's `sort`: what the cards of its section are ordered by. */
+const sortWord = z.enum(['stage', 'year', 'title']);
+
+/**
+ * A category's `sort`: one word, or a list of words read left to right. The reader of the rows
+ * (data/shapes/boards/categories.ts) reads a value this shape refuses as no `sort`.
+ */
+export const categorySort = z.union([sortWord, z.array(sortWord)]);
+
 /** One row of `categories`: a category of the boards, the stages and forms it holds, its flags. */
 const categoryRow = z.strictObject({
     key: text.describe(
@@ -319,6 +328,11 @@ const categoryRow = z.strictObject({
         ),
     stages: wordBlock.optional().describe("The block a project's `stage` is held against."),
     forms: wordBlock.optional().describe("The block a project's `form` is held against."),
+    sort: categorySort
+        .optional()
+        .describe(
+            "The order of the category's cards after the pinned ones, its words read left to right, each breaking the ties of the words before it: stage by the stage order, year newest first with no year last, title by its letters; with none the cards go by stage, then title."
+        ),
     rail: flag(
         'A board gives the rail the count of its projects in such rows, drawn in `rail_color`.'
     ),

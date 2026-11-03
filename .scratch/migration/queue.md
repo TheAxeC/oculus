@@ -1,12 +1,12 @@
-In flight (2 of 6 slots in use):
-- O128 (a category sets the order of its cards), building with the cases ruling.
-- O129 (the Status view's line count removed whole), building.
+In flight (1 of 6 slots in use):
+- O129 (the Status view's line count removed whole), reviewed; its repair round is next.
 
 Queued, in order: none.
 
 Owed looks: none.
 
 Landed, newest first:
+- O128 (a category sets the order of its cards), one repair round, no fix at landing in code.
 - O127 (a card shows the year a paper appeared), one repair round, one fix at landing in code.
 - O126 (the Sessions tab's shape), one repair round, one fix at landing in code.
 - O125 (headings solid over a wallpaper), one repair round, three fixes at landing.

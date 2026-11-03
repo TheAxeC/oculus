@@ -318,7 +318,7 @@ options:
     categories:
         heading: boards
         section: Vocabulary
-        help: "The categories a project is filed under on every board: the first row whose blocks it meets. A hub's row replaces oculus's row of its key in its place, a new key comes after oculus's rows, and { key: <key>, removed: true } takes one out."
+        help: "The categories a project is filed under on every board: the first row whose blocks it meets. A row's sort orders the cards of its section after the pinned ones, read left to right, and a row with none goes by stage, then title. A hub's row replaces oculus's row of its key in its place, a new key comes after oculus's rows, and { key: <key>, removed: true } takes one out."
         key: key
         fields:
             key: the word the category is named by, which a board filter stores
@@ -334,6 +334,10 @@ options:
                 help: "the block a project's form is held against"
                 control: words
                 from: project_forms
+            sort:
+                help: "orders the category's cards after the pinned projects, its words read left to right: stage by the stage order, year newest first with no year last, title by its letters; a row with none goes by stage, then title"
+                control: multi
+                options: [stage, year, title]
             rail:
                 help: a board gives the rail the count of its projects in such rows, drawn in rail_color
                 control: toggle

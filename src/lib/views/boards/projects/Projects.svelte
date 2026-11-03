@@ -79,10 +79,12 @@
     // (ui/controls/heads/GroupHead.svelte), which draws the section, its heading that stays at the
     // top of the pane while the section scrolls under it, and its fold; a press on the fold control
     // folds the section, which the board remembers under `folded` of its state, written with the
-    // rest of that state through the folds of state/shared/page/folds.ts (`stateFolds`). A board
-    // whose `cards:` says `grid` draws its cards and its list as one section with no heading. The
-    // cards are drawn in the shared card grid (views/shared/card/record/CardGrid.svelte), the list
-    // as one table per section (views/boards/projects/BoardList.svelte).
+    // rest of that state through the folds of state/shared/page/folds.ts (`stateFolds`). A
+    // section's cards go pinned first, then by its row's `sort:`, as `cardSections` orders them, on
+    // a board and on the Awaiting box's tab alike. A board whose `cards:` says `grid` draws its
+    // cards and its list as one section with no heading, in the board's order. The cards are drawn
+    // in the shared card grid (views/shared/card/record/CardGrid.svelte), the list as one table per
+    // section (views/boards/projects/BoardList.svelte).
     //
     // It joins nothing and counts nothing itself: the projects come from the board selector already
     // joined, and the facets, the slices, the groups, the filters, the counts on the controls and

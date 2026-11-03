@@ -4,14 +4,19 @@
 // The board cards and their sections, the slices of a board's bar, the rail's count and the
 // Pillars view's Archival band all read a project's category through `categoryOf`, so the rule is
 // written once and the boards name no categories of their own. A project is filed under the
-// categories and the words of its own hub (`categoriesBy`).
+// categories and the words of its own hub (`categoriesBy`). A row's `sort:` is read here into the
+// words its section's cards are ordered by (state/boards/board/facets.ts `cardSections`).
 
 import { z } from 'zod';
 import type { Rooted } from '../../model/index.ts';
 import { HEX_COLOUR } from '../catalog-files/common.ts';
+import { categorySort } from '../catalog-files/vocab.ts';
 import { readAs, rowsShape } from '../shapes.ts';
 import { recordWords, type WordsOf } from '../vocab-keys.ts';
 import { blockHolds, blockOf, wordList, type WordBlock } from './words.ts';
+
+/** A word of a row's `sort:`: `stage`, `year` or `title`. */
+export type CardSort = Extract<z.infer<typeof categorySort>, string>;
 
 /** One row of `categories:` as the code reads it. */
 export type Category = {
@@ -22,6 +27,11 @@ export type Category = {
     color: string;
     stages: WordBlock | null;
     forms: WordBlock | null;
+    /**
+     * The words of the row's `sort:` in their order, each once, that its section's cards are
+     * ordered by after the pinned ones; empty when the row names none or one the shape refuses.
+     */
+    sort: CardSort[];
     /** `rail: true`: a board's rail count is the count of its projects in such rows. */
     rail: boolean;
     /** `archival: true`: the Pillars view's Archival band, and no real work. */
@@ -43,6 +53,16 @@ function colourOf(own: unknown): string {
 }
 
 /**
+ * The words of a row's `sort`, each once and in their order: one word written as a text is the
+ * list of that word, and a value the row's shape refuses (null, a number, a word outside the three)
+ * is no `sort`, which the whole-file shape reports (data/shapes/shape-issues.ts).
+ */
+function sortOf(own: unknown): CardSort[] {
+    const read = readAs(categorySort, own) ?? [];
+    return [...new Set(typeof read === 'string' ? [read] : read)];
+}
+
+/**
  * The rows of `categories:` in the merged config, in the list's order. A row without a key is no
  * category, and a key a row before it holds is the first row's alone.
  */
@@ -61,6 +81,7 @@ export function categoriesOf(config: Record<string, unknown>): Category[] {
             color: colourOf(row.color),
             stages,
             forms: blockOf(row.forms),
+            sort: sortOf(row.sort),
             rail: row.rail === true,
             archival: row.archival === true
         });
