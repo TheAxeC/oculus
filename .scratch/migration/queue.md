@@ -1,7 +1,8 @@
 In flight (1 of 6 slots in use):
-- O125 (a group heading solid over a wallpaper), brief checked, builder next.
+- O125 (headings solid over a wallpaper), building.
 
-Queued, in order (0 steps): none.
+Queued, in order (1 step):
+- O126 (the Sessions tab's shape), to prepare.
 
 Owed looks: none.
 
