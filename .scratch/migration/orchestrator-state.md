@@ -35,8 +35,8 @@ dispatch:           # steps in flight, up to six (Z632)
   launched: 2026-11-03
   report: .scratch/migration/agents/reviews/O125-report.md
   builder_usage: first run 146862 tokens, 26 tool uses, 4 min 11 s (handed back two cases); after the cases ruling 184103 tokens, 29 tool uses, 4 min 56 s
-  reviewer_report: "running: a443d746ae26f8353 (claude-opus-5-5)"
-  round: 0
+  reviewer_report: .scratch/migration/agents/reviews/O125-refuter.md (a443d746ae26f8353, claude-opus-5-5, 208795 tokens, 73 tool uses, 10 min 42 s)
+  round: 1
   landing: not-started
 - step: O126
   base: 936a411b2

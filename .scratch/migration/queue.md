@@ -1,5 +1,5 @@
 In flight (2 of 6 slots in use):
-- O125 (headings solid over a wallpaper), built, under review.
+- O125 (headings solid over a wallpaper), repair round 1.
 - O126 (the Sessions tab's shape), building.
 
 Queued, in order (0 steps):
