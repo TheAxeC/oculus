@@ -66,28 +66,33 @@ The hub's own settings. A key of oculus's `config/catalogs/vocab.yml` set here i
 # `lead_applications`, `dissemination` (with `dissemination_skip:`) and `tasks`; `ticker:` the word
 # of `ticker_categories` its lines carry, naming the command center group of its dated lines, with
 # `undated: true` for open work with no date (the lines of the file flagged `tasks` are Tasks lines,
-# dated or not); `group:`, `order:`, `label:`, `glyph:` and `about:`, its place in the view
-# catalogue and the dotted keys of its name, glyph and line in Make Folder a Hub; and
-# `primary_key:`, the field an entry is found by, for a file with no `schema:` only (the Findings
-# view's Set as primary key writes it), since a schema flags its own. The domains registry holds
-# each domain's colour and label and which domains expect a dataset; the venues and datasets
-# registries hold their theme words as the options of their `themes` field. A file the list leaves
-# out has no view, and Make Folder a Hub writes the ticked entries as they stand here.
+# dated or not); `sort:` the fields of the file's schema its cards are sorted by, in their order:
+# pinned first, then by those fields read left to right, then in the file's order, the status field
+# in the order of its options, a field of the type `date` oldest first, any other field
+# alphabetically, case and accents ignored, and a missing value last; a field the schema does not
+# name is a finding, and a `collections:` entry with no `sort:` draws its cards by their title;
+# `group:`, `order:`, `label:`, `glyph:` and `about:`, its place in the view catalogue and the
+# dotted keys of its name, glyph and line in Make Folder a Hub; and `primary_key:`, the field an
+# entry is found by, for a file with no `schema:` only (the Findings view's Set as primary key
+# writes it), since a schema flags its own. The domains registry holds each domain's colour and
+# label and which domains expect a dataset; the venues and datasets registries hold their theme
+# words as the options of their `themes` field. A file the list leaves out has no view, and Make
+# Folder a Hub writes the ticked entries as they stand here.
 # collections:
 #   - { key: data, file: ".oculus/data/research/data.yml", registry: datasets, about: files.make_collection_line_data }
 #   - { key: venues, file: ".oculus/data/research/venues.yml", registry: venues, ticker: { category: conference }, about: files.make_collection_line_venues }
 #   - { key: pillars, file: ".oculus/data/pillars/pillars.yml", registry: pillars, about: files.make_collection_line_pillars }
 #   - { key: domains, file: ".oculus/data/pillars/domains.yml", registry: domains, about: files.make_collection_line_domains }
-#   - { key: statements, file: ".oculus/data/research/statements.yml", group: registries, order: 3, label: views.statements, glyph: views.statements_glyph, about: files.make_collection_line_statements }
-#   - { key: people, file: ".oculus/data/people/people.yml", registry: people, group: registries, order: 4, label: views.people, glyph: views.people_glyph, about: files.make_collection_line_people }
-#   - { key: organisations, file: ".oculus/data/people/organisations.yml", registry: organisations, group: registries, order: 5, label: views.organisations, glyph: views.organisations_glyph, about: files.make_collection_line_organisations }
-#   - { key: resources, file: ".oculus/data/research/resources.yml", registry: resources, group: registries, order: 6, label: views.resources, glyph: views.resources_glyph, about: files.make_collection_line_resources }
-#   - { key: funding, file: ".oculus/data/academic/funding.yml", registry: funding, ticker: { category: funding }, group: academic, order: 0, label: views.funding, glyph: views.funding_glyph, about: files.make_collection_line_funding }
-#   - { key: events, file: ".oculus/data/academic/events.yml", dissemination: true, dissemination_skip: { role: attend }, ticker: { category: event }, group: academic, order: 1, label: views.events, glyph: views.events_glyph, about: files.make_collection_line_events }
-#   - { key: education, file: ".oculus/data/academic/education.yml", band_teaching: true, dissemination: true, ticker: { category: teaching }, group: academic, order: 2, label: views.education, glyph: views.education_glyph, about: files.make_collection_line_education }
-#   - { key: applications, file: ".oculus/data/academic/applications.yml", band_positions: true, awaiting: true, open_badge: true, lead_applications: true, dissemination: true, ticker: { category: position }, group: academic, order: 3, label: views.applications, glyph: views.applications_glyph, about: files.make_collection_line_applications }
-#   - { key: tasks, file: ".oculus/data/academic/tasks.yml", tasks: true, ticker: { category: task, undated: true }, group: academic, order: 5, label: views.tasks, glyph: views.tasks_glyph, about: files.make_collection_line_tasks }
-#   - { key: literature, file: ".oculus/data/literature/literature.yml", registry: literature, group: literature, order: 2, label: views.literature, glyph: views.literature_glyph, about: files.make_collection_line_literature }
+#   - { key: statements, file: ".oculus/data/research/statements.yml", sort: [status, title], group: registries, order: 3, label: views.statements, glyph: views.statements_glyph, about: files.make_collection_line_statements }
+#   - { key: people, file: ".oculus/data/people/people.yml", registry: people, sort: [name], group: registries, order: 4, label: views.people, glyph: views.people_glyph, about: files.make_collection_line_people }
+#   - { key: organisations, file: ".oculus/data/people/organisations.yml", registry: organisations, sort: [name], group: registries, order: 5, label: views.organisations, glyph: views.organisations_glyph, about: files.make_collection_line_organisations }
+#   - { key: resources, file: ".oculus/data/research/resources.yml", registry: resources, sort: [kind, name], group: registries, order: 6, label: views.resources, glyph: views.resources_glyph, about: files.make_collection_line_resources }
+#   - { key: funding, file: ".oculus/data/academic/funding.yml", registry: funding, ticker: { category: funding }, sort: [status, deadline], group: academic, order: 0, label: views.funding, glyph: views.funding_glyph, about: files.make_collection_line_funding }
+#   - { key: events, file: ".oculus/data/academic/events.yml", dissemination: true, dissemination_skip: { role: attend }, ticker: { category: event }, sort: [status, date], group: academic, order: 1, label: views.events, glyph: views.events_glyph, about: files.make_collection_line_events }
+#   - { key: education, file: ".oculus/data/academic/education.yml", band_teaching: true, dissemination: true, ticker: { category: teaching }, sort: [status, date], group: academic, order: 2, label: views.education, glyph: views.education_glyph, about: files.make_collection_line_education }
+#   - { key: applications, file: ".oculus/data/academic/applications.yml", band_positions: true, awaiting: true, open_badge: true, lead_applications: true, dissemination: true, ticker: { category: position }, sort: [status, deadline], group: academic, order: 3, label: views.applications, glyph: views.applications_glyph, about: files.make_collection_line_applications }
+#   - { key: tasks, file: ".oculus/data/academic/tasks.yml", tasks: true, ticker: { category: task, undated: true }, sort: [status, deadline], group: academic, order: 5, label: views.tasks, glyph: views.tasks_glyph, about: files.make_collection_line_tasks }
+#   - { key: literature, file: ".oculus/data/literature/literature.yml", registry: literature, sort: [title], group: literature, order: 2, label: views.literature, glyph: views.literature_glyph, about: files.make_collection_line_literature }
 #   - { key: leads, file: ".oculus/data/academic/leads.yml", registry: leads, ticker: { category: lead }, about: files.make_collection_line_leads }
 #   - { key: radar, file: ".oculus/data/literature/radar.yml", registry: radar, about: files.make_collection_line_radar }
 

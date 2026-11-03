@@ -297,14 +297,16 @@ type TickerSource = {
 /**
  * What a `collections:` entry says its file is, beside its key and path: the registry it is
  * (`registry:`), the features that read it (a flag of `COLLECTION_FLAGS` set to true), the entries
- * Disseminated in leaves out of it (`dissemination_skip:`), the ticker's reading of it (`ticker:`)
- * and the field a file with no schema is addressed by (`primary_key:`). A field the entry does not
- * set, or sets to something no reader takes, is absent.
+ * Disseminated in leaves out of it (`dissemination_skip:`), the ticker's reading of it (`ticker:`),
+ * the fields its cards are sorted by, in their order (`sort:`), and the field a file with no schema
+ * is addressed by (`primary_key:`). A field the entry does not set, or sets to something no reader
+ * takes, is absent, and so is a `sort:` that is an empty list.
  */
 export type CollectionTraits = {
     registry?: RegistryWord;
     dissemination_skip?: When;
     ticker?: TickerSource;
+    sort?: string[];
     primary_key?: string;
 } & Partial<Record<CollectionFlag, true>>;
 

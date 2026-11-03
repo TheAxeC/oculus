@@ -227,8 +227,6 @@ export function createWorkbenchKeys(options: Options): WorkbenchKeys {
             }
         } else if (action.kind === 'cursor') {
             return moveCursor(pane, action.direction);
-        } else if (action.kind === 'move') {
-            return moveCard(pane, action.direction);
         } else if (action.kind === 'activate') {
             return activateCursor(pane, cursorIn(pane));
         } else if (action.kind === 'search') {
@@ -421,22 +419,6 @@ export function createWorkbenchKeys(options: Options): WorkbenchKeys {
                       direction === 'up' ? -1 : 1
                   );
         return selectCard(pane, next);
-    }
-
-    /**
-     * Ask the view showing this pane to carry the card under the cursor one place. The shell holds
-     * no order of its own: what a list is ordered by is the view's, so it is asked rather than
-     * told.
-     */
-    function moveCard(pane: HTMLElement | null, direction: 'left' | 'right'): boolean {
-        const id = instanceIn(pane);
-        const cursor = cursorIn(pane);
-        if (id === null || cursor === null) return false;
-        // A held cursor whose row is not drawn names no card under the cursor: the view may hide
-        // that card behind a filter, and carrying it would reorder an entry the reader cannot see.
-        if (!cards(pane).some((card) => card.id === cursor)) return false;
-        options.ui.requestCardMove(id, cursor, direction === 'left' ? -1 : 1);
-        return true;
     }
 
     /** The active instance id carried by a rendered pane. */

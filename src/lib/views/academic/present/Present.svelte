@@ -120,7 +120,7 @@
     let { instance }: ViewProps = $props();
 
     /** The card cursor's keys, which act on the overview grid's tiles inside the box. */
-    const GRID_KEYS = new Set(['j', 'k', 'i', 'J', 'K', 'ArrowUp', 'ArrowDown']);
+    const GRID_KEYS = new Set(['j', 'k', 'i', 'ArrowUp', 'ArrowDown']);
 
     const tabShown = useShown();
 

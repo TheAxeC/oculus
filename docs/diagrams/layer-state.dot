@@ -36,7 +36,6 @@ digraph layer_state {
         "folder state/feeds to folder state/boards" [label="2", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder state/feeds to folder state/shared" [label="7", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder state/feeds to layer data" [label="39", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
-        "folder state/life to folder state/boards" [label="1", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder state/life to folder state/shared" [label="12", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder state/life to folder state/sources" [label="2", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder state/life to folder state/system" [label="1", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
@@ -48,7 +47,7 @@ digraph layer_state {
         "folder state/system to folder state/sources" [label="8", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder state/system to layer data" [label="119", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder state/boards to folder state/forms" [label="1", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
-        "folder state/boards to folder state/shared" [label="19", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+        "folder state/boards to folder state/shared" [label="20", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder state/boards to folder state/sources" [label="5", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder state/boards to layer data" [label="92", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder state/sources to folder state/shared" [label="31", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
@@ -123,8 +122,6 @@ digraph layer_state {
     "folder state/feeds" -> "folder state/feeds to layer data" [arrowhead=none, style=dashed];
     "folder state/feeds to layer data" -> "layer data from folder state/feeds" [style=dashed];
     { rank=same; "folder state/feeds"; "folder state/feeds to layer data"; "layer data from folder state/feeds"; }
-    "folder state/life" -> "folder state/life to folder state/boards" [arrowhead=none, minlen=3, weight=10];
-    "folder state/life to folder state/boards" -> "folder state/boards" [];
     "folder state/life" -> "folder state/life to folder state/shared" [arrowhead=none, minlen=5, weight=10];
     "folder state/life to folder state/shared" -> "folder state/shared" [];
     "folder state/life" -> "folder state/life to folder state/sources" [arrowhead=none, minlen=3, weight=10];

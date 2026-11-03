@@ -7,10 +7,10 @@
 // A collection is a hub file of like records: datasets, statements, funding schemes, talks,
 // teaching, applications, tasks or repositories. An entry of the list says what its file is beside
 // its key and path (data/helpers/hub-names.ts reads the list): the registry it is, the features
-// that read it, what Disseminated in leaves out of it and how the ticker reads it, which the
-// collection read here carries. The registries are also carried as entities; the file of the
-// `datasets` registry lists its records under `datasets:` and every other collection under
-// `entries:`.
+// that read it, what Disseminated in leaves out of it, how the ticker reads it and the fields its
+// cards are sorted by, which the collection read here carries. The registries are also carried as
+// entities; the file of the `datasets` registry lists its records under `datasets:` and every other
+// collection under `entries:`.
 
 import { join } from 'node:path';
 import { byKey, isMap } from '../helpers/guards.ts';
@@ -109,7 +109,8 @@ function listKey(entry: Pick<CollectionEntry, 'registry'>): string {
 
 /**
  * What a read collection carries from its entry: its registry, its flags, what Disseminated in
- * leaves out, its ticker reading, the primary key it names, and the entry's position in the list.
+ * leaves out, its ticker reading, the fields its cards are sorted by, the primary key it names,
+ * and the entry's position in the list.
  */
 function traitsOf(entry: CollectionEntry, index: number): CollectionTraits & { index: number } {
     const traits: CollectionTraits & { index: number } = { index };
@@ -118,6 +119,7 @@ function traitsOf(entry: CollectionEntry, index: number): CollectionTraits & { i
     if (entry.dissemination_skip !== undefined)
         traits.dissemination_skip = entry.dissemination_skip;
     if (entry.ticker !== undefined) traits.ticker = entry.ticker;
+    if (entry.sort !== undefined) traits.sort = entry.sort;
     if (entry.primary_key !== undefined) traits.primary_key = entry.primary_key;
     return traits;
 }

@@ -238,13 +238,14 @@ describe('a make', () => {
         const config = parse(readFileSync(join(folder, '.oculus/config.yml'), 'utf8')) as {
             collections: Record<string, unknown>[];
         };
-        // Each entry as the template line writes it: its registry, flags, ticker and words.
+        // Each entry as the template line writes it: its registry, flags, ticker, sort and words.
         expect(config.collections).toEqual([
             {
                 key: 'funding',
                 file: '.oculus/data/academic/funding.yml',
                 registry: 'funding',
                 ticker: { category: 'funding' },
+                sort: ['status', 'deadline'],
                 group: 'academic',
                 order: 0,
                 label: 'views.funding',
@@ -256,6 +257,7 @@ describe('a make', () => {
                 file: '.oculus/data/academic/tasks.yml',
                 tasks: true,
                 ticker: { category: 'task', undated: true },
+                sort: ['status', 'deadline'],
                 group: 'academic',
                 order: 5,
                 label: 'views.tasks',

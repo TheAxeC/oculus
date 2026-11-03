@@ -509,9 +509,16 @@ describe('the rules of a hub schema', () => {
     });
 });
 
-/** A tasks file whose schema is the lines given, holding one task. */
+const STATUS = '{ field: status, type: text }';
+const DEADLINE = '{ field: deadline, type: date }';
+
+/**
+ * A tasks file whose schema is the lines given and the `status` and `deadline` fields its entry of
+ * oculus's list sorts by, holding one task.
+ */
 function tasks(schema: string[], entries = ['  - { key: t1, title: One }']): string {
-    return ['schema:', ...schema.map((one) => `  - ${one}`), 'entries:', ...entries, ''].join('\n');
+    const sorted = [...schema, STATUS, DEADLINE];
+    return ['schema:', ...sorted.map((one) => `  - ${one}`), 'entries:', ...entries, ''].join('\n');
 }
 
 const KEY = '{ field: key, type: text, primary_key: true }';
@@ -664,6 +671,20 @@ const KEY_ROWS: KeyRow[] = [
         found: [['schema[2].from', sentence('findings.schema.not_declared', 'schema[2].from')]]
     },
     {
+        name: 'a sort naming a field the schema does not name',
+        files: { [TASKS_FILE]: tasks([KEY, TITLE]) },
+        config: withEntry('tasks', { sort: ['status', 'due'] }),
+        file: TASKS_FILE,
+        found: [['schema', sentence('findings.schema.sort_unknown', 'due')]]
+    },
+    {
+        name: 'nothing for a sort whose fields the schema names',
+        files: { [TASKS_FILE]: tasks([KEY, TITLE]) },
+        config: withEntry('tasks', { sort: ['status', 'title'] }),
+        file: TASKS_FILE,
+        found: []
+    },
+    {
         name: 'a reference naming a venue by its name rather than its id',
         files: { '.oculus/data/research/data.yml': datasets(['  - key: d1', '    venue: One']) },
         file: '.oculus/data/research/data.yml',
@@ -676,7 +697,7 @@ const KEY_ROWS: KeyRow[] = [
     }
 ];
 
-describe('the primary key, the foreign keys and the display ranks of a hub schema', () => {
+describe('the primary key, the foreign keys, the display ranks and the sort fields of a hub schema', () => {
     it.each(KEY_ROWS)('gives the findings of $name', (row) => {
         const hub = plantScratch(
             'oculus-schema-keys-',

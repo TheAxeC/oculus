@@ -25,7 +25,6 @@ import { z } from 'zod';
 import { hueNames } from '../../data/sources/config/catalog/options.ts';
 import { fields, isMap, strings } from '../../data/helpers/guards.ts';
 import { mapOfShape, readAs, stringItemsShape } from '../../data/shapes/shapes.ts';
-import { movedOrder } from '../boards/collection/index.ts';
 import { instanceFolded } from '../shared/page/folds.ts';
 import { t } from '../shared/words/text.ts';
 import type { DeckGroup, DeckKeys, DeckOrderEntry } from '../../data/model/index.ts';
@@ -170,6 +169,18 @@ export function groupRows(group: DeckGroup, list: string[]): GroupRow[] {
 export function withTick(list: string[], name: string, on: boolean): string[] {
     const without = list.filter((one) => one !== name);
     return on ? [...without, name] : without;
+}
+
+/**
+ * A list of names with the name at `at` taken out and put back at `to`, or null when either place
+ * is outside the list or the two are one.
+ */
+function movedOrder(order: readonly string[], at: number, to: number): string[] | null {
+    if (at < 0 || to < 0 || at >= order.length || to >= order.length || at === to) return null;
+    const moved = [...order];
+    const [held] = moved.splice(at, 1);
+    moved.splice(to, 0, held);
+    return moved;
 }
 
 /** One name moved to another place in a list, and nothing when it cannot go there. */

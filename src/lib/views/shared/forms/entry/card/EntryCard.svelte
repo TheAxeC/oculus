@@ -1,14 +1,14 @@
 <script lang="ts">
     // Layer 3, shared view partial. One entry of one collection file as the record card
-    // (views/shared/card/record/RecordCard.svelte): the grip it is dragged by, the Lead badge, the
-    // status chip, the fields the file's own schema names, its subtasks and follow-up notes, and
-    // the strip of the projects that name the entry at the foot: a scheme's, an organisation's, a
-    // resource's or the entry's `related:` list's, and for a person one labelled strip per role
-    // (state/boards/structure/cross-links.ts, `crossLinks` and `roleLinks`), grouped by the rows
-    // of `categories:`. The collection view draws one per entry, its strip narrowed to the projects
+    // (views/shared/card/record/RecordCard.svelte): the Lead badge, the status chip, the fields the
+    // file's own schema names, its subtasks and follow-up notes, and the strip of the projects that
+    // name the entry at the foot: a scheme's, an organisation's, a resource's or the entry's
+    // `related:` list's, and for a person one labelled strip per role
+    // (state/boards/structure/cross-links.ts, `crossLinks` and `roleLinks`), grouped by the rows of
+    // `categories:`. The collection view draws one per entry, its strip narrowed to the projects
     // the picks of its bar's Projects section keep (`keeps`), and the entry's page draws one open,
-    // with no grip and the whole strip, so the card lives here and not under either view. The
-    // fields are EntryFields.svelte, which says how each field is drawn.
+    // with the whole strip, so the card lives here and not under either view. The fields are
+    // EntryFields.svelte, which says how each field is drawn.
     //
     // Nothing here knows what a scheme or an event is. Every action is one call of the write path,
     // except the `extra` ones the collection passes in (Start Agent on a task's card).
@@ -51,7 +51,6 @@
         showActions
     } from '../entry-actions';
     import { blockedBy, fileNameOf, openEntry } from '../../entry-file';
-    import Grip from './Grip.svelte';
     import EntryFields from './EntryFields.svelte';
     import {
         entryStatus,
@@ -104,12 +103,6 @@
         file: ViewSource | null;
         /** Why a write cannot address this entry, when the file's identities say so. */
         fault: IdentityFault | undefined;
-        /**
-         * The reader picked this card up by its grip, or dropped one on it. A card handed neither
-         * is not reordered and draws no grip.
-         */
-        ondragfrom?: (value: string) => void;
-        ondropon?: (value: string) => void;
         onsaid: (said: string) => void;
         /** Whether the long body fields are drawn whole rather than cut to their clamp. */
         more: boolean;
@@ -141,8 +134,6 @@
         statuses,
         file,
         fault,
-        ondragfrom,
-        ondropon,
         onsaid,
         more,
         onmore,
@@ -186,9 +177,6 @@
             choices.length > 0 &&
             !choices.some((one) => one.id === status)
     );
-
-    /** True once the grip is held down, which is what makes the card draggable and nothing else. */
-    let armed = $state(false);
 
     /** True while the question before a delete is open. */
     let deleting = $state(false);
@@ -276,7 +264,10 @@
         onsaid(answerWords(answer));
     }
 
-    /** Float the card to the top of its list, or let it fall back into file order. */
+    /**
+     * Float the card to the top of its list, or let it fall back into its place in the collection's
+     * order.
+     */
     async function pin(): Promise<void> {
         said(await writeEntry(collection, entry.id, { pin: pinned ? null : true }));
     }
@@ -285,26 +276,9 @@
     async function setStatus(next: string): Promise<void> {
         said(await writeEntry(collection, entry.id, { status: next }));
     }
-
-    function dragstart(): void {
-        ondragfrom?.(value);
-    }
-
-    function dragover(event: DragEvent): void {
-        event.preventDefault();
-    }
-
-    function drop(event: DragEvent): void {
-        event.preventDefault();
-        armed = false;
-        ondropon?.(value);
-    }
 </script>
 
 {#snippet meta()}
-    {#if addressable && ondragfrom !== undefined}
-        <Grip {blocked} onpress={() => (armed = true)} />
-    {/if}
     {#if lead}
         <Tag label={t('roles.lead')} glyph={t('roles.lead_glyph')} />
     {/if}
@@ -320,19 +294,7 @@
     <EntryFields {entry} {collection} {schema} {root} {onsaid} {more} {onmore} {page} />
 {/snippet}
 
-<!-- The card is dragged by its grip and by nothing else: the grip arms it on mousedown and the
-     drag disarms it again, so the words on the card stay selectable. -->
-<div
-    class="slot"
-    data-entry={entry.id}
-    data-ident={value}
-    draggable={armed}
-    ondragstart={dragstart}
-    ondragover={dragover}
-    ondrop={drop}
-    ondragend={() => (armed = false)}
-    role="listitem"
->
+<div class="slot" data-entry={entry.id} data-ident={value} role="listitem">
     <RecordCard
         id={value}
         {cursor}

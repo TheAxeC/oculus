@@ -8,12 +8,12 @@
 // outside its options, a reference to a key no hub of the workspace holds, a field outside its
 // `when`, a required field that is missing, a key that stands twice in a referenced file, a
 // `schema:` block that does not read, a file of entries whose primary key is missing, doubled or
-// does not read, a `display:` rank that does not read or orders two fields, and a file a
-// `foreign_key:` names whose schema ranks no field by `display:`. The documents checked are the
-// project manifests and the hub's data files. The other schemas serve the editor alone: the readers
-// of their files report their own findings. The texts of the manifests and hub data files the run
-// read come back with it, so the reference index (snapshot/references/) scans them without reading
-// a file again.
+// does not read, a `display:` rank that does not read or orders two fields, a file a `foreign_key:`
+// names whose schema ranks no field by `display:`, and a field the file's `collections:` entry
+// sorts its cards by that its schema does not name. The documents checked are the project manifests
+// and the hub's data files. The other schemas serve the editor alone: the readers of their files
+// report their own findings. The texts of the manifests and hub data files the run read come back
+// with it, so the reference index (snapshot/references/) scans them without reading a file again.
 //
 // Server side only: it reads the files it checks.
 
@@ -70,9 +70,17 @@ export type SchemaRun = { set: SchemaSet; findings: Finding[]; read: ReadTexts }
 
 /**
  * A hub data file the gate checks, by its hub-relative path, with the primary key its
- * `collections:` entry names (`named`), which a file with no schema is keyed by.
+ * `collections:` entry names (`named`), which a file with no schema is keyed by, and the fields
+ * that entry sorts its cards by (`sort`), each of which its schema must name.
  */
-type HubFile = { path: string; kind: FileKind; list: string; collection: boolean; named?: string };
+type HubFile = {
+    path: string;
+    kind: FileKind;
+    list: string;
+    collection: boolean;
+    named?: string;
+    sort?: string[];
+};
 
 /** The hub's data files: the registries, the collections, the feeds and the career file. */
 function hubFiles(config: PortfolioConfig): HubFile[] {
@@ -82,7 +90,8 @@ function hubFiles(config: PortfolioConfig): HubFile[] {
         files.set(file.path, {
             ...file,
             collection: file.collection || (held?.collection ?? false),
-            named: file.named ?? held?.named
+            named: file.named ?? held?.named,
+            sort: file.sort ?? held?.sort
         });
     };
     const listOf = (path: string): string =>
@@ -92,8 +101,15 @@ function hubFiles(config: PortfolioConfig): HubFile[] {
         add({ path, kind: 'entries', list: listOf(path), collection: false, named });
     }
     for (const one of config.collections) {
-        const named = one.primary_key;
-        add({ path: one.file, kind: 'entries', list: listOf(one.file), collection: true, named });
+        const { primary_key: named, sort } = one;
+        add({
+            path: one.file,
+            kind: 'entries',
+            list: listOf(one.file),
+            collection: true,
+            named,
+            sort
+        });
     }
     for (const feed of ['leads', 'radar'] as const) {
         const named = feedPrimaryKey(config.merged.collections, feed);
@@ -342,6 +358,26 @@ function keyFindings(
 }
 
 /**
+ * The findings of the `sort:` of a file's `collections:` entry against the fields of its schema:
+ * one per field the entry sorts by that the schema does not name, at the file's `schema` key. The
+ * card order (state/boards/collection/ `cardOrder`) leaves such a field out.
+ */
+function sortFieldFindings(
+    catalog: TextCatalog,
+    file: string,
+    text: string,
+    fields: readonly SchemaField[],
+    sort: readonly string[] | undefined
+): Finding[] {
+    const named = new Set(fields.map((one) => one.field));
+    const unknown = (field: string): Finding => {
+        const sentence = findingText(catalog, 'findings.schema.sort_unknown', field);
+        return findingAt(file, text, ['schema'], sentence);
+    };
+    return (sort ?? []).filter((field) => !named.has(field)).map(unknown);
+}
+
+/**
  * The findings of the `display:` ranks of a `schema:` block: a rank that is no whole number from
  * 1, and a rank two fields carry, on the second of them.
  */
@@ -535,6 +571,7 @@ export function runSchemas(
         findings.push(...displayFindings(config.text, path, text, block));
         if (file.kind === 'entries') {
             findings.push(...keyFindings(config.text, path, text, block, file.named));
+            findings.push(...sortFieldFindings(config.text, path, text, fields, file.sort));
         }
         schemas.set(file.path, fields);
         target(fields, file.path);

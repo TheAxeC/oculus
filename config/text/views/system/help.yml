@@ -33,8 +33,6 @@ text:
         group_latex: LaTeX
         group_workbench: Workbench
         loading: Reading the editor's keys...
-        move_left: carry the card under the cursor left
-        move_right: carry the card under the cursor right
         new_session: "start a new agent session: the composer in the page's Terminal tab (a new one when it has none), in that tab's folder"
         new_text_file: new text file in the focused pane
         next_problem: go to the next problem, across files

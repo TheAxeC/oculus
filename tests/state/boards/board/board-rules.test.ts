@@ -756,6 +756,7 @@ describe('the roles of a collection', () => {
             'schema:',
             '  - { field: title, type: text, primary_key: true }',
             '  - { field: status, type: text }',
+            '  - { field: deadline, type: date }',
             `  - { field: lead, type: tags, foreign_key: people${required ? ', required: true' : ''} }`,
             'entries:',
             ...entries,

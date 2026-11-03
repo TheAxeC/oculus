@@ -50,13 +50,6 @@ import {
     wallpaperOnTheme
 } from '../shared/words/appearance.ts';
 
-/**
- * One reorder the keyboard asked a view for: which instance was focused, which card its cursor
- * held, which way it goes, and a sequence number so a view performs one request once. The shell
- * knows nothing of what a card is ordered by, so it asks and the view writes.
- */
-export type CardMove = { instance: string; card: string; step: -1 | 1; seq: number };
-
 export type { BusyTerminal, OwnedInstance, TerminalOwner };
 
 /**
@@ -177,8 +170,6 @@ export type UiStore = CloseHooks & {
     requestPalette: (text: string) => void;
     /** The palette request the workbench observes: its number moves with every request. */
     paletteRequested: () => { seq: number; text: string };
-    requestCardMove: (instance: string, card: string, step: -1 | 1) => void;
-    cardMoveRequested: (instance: string) => CardMove | null;
     setTheme: (name: string) => void;
     setCrt: (on: boolean) => void;
     setTerminalFont: (size: number | null) => void;
@@ -227,8 +218,6 @@ export function createUi(given: Partial<UiDeps> = {}): UiStore {
     /** A transient signal from a view to the shell that owns the Update tray. */
     const updateTray = $state({ requested: 0 });
     const palette = $state({ seq: 0, text: '' });
-
-    const cardMove = $state<{ held: CardMove | null }>({ held: null });
 
     /** What a palette list shows while its selection rests on it, which nothing writes. */
     let previewing = $state<Preview>(NO_PREVIEW);
@@ -426,18 +415,6 @@ export function createUi(given: Partial<UiDeps> = {}): UiStore {
         return { seq: palette.seq, text: palette.text };
     }
 
-    /** Ask the view that holds one card to move it one place, in its own order. */
-    function requestCardMove(instance: string, card: string, step: -1 | 1): void {
-        const seq = (cardMove.held?.seq ?? 0) + 1;
-        cardMove.held = { instance, card, step, seq };
-    }
-
-    /** The reorder asked of one instance, or null when the last request was for another. */
-    function cardMoveRequested(instance: string): CardMove | null {
-        const one = cardMove.held;
-        return one !== null && one.instance === instance ? one : null;
-    }
-
     /** Switch to a theme: one the config does not list is written as the start, the empty name. */
     function setTheme(name: string): void {
         const named = known(name) === name ? name : '';
@@ -573,8 +550,6 @@ export function createUi(given: Partial<UiDeps> = {}): UiStore {
         updateTrayRequested,
         requestPalette,
         paletteRequested,
-        requestCardMove,
-        cardMoveRequested,
         setTheme,
         setCrt,
         setTerminalFont,

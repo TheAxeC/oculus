@@ -263,6 +263,9 @@ const wordShape = z.string().min(1);
 /** A whole number. */
 const orderShape = z.number().int();
 
+/** A `sort:` field: the fields the cards are sorted by, each a text with something in it. */
+const sortShape = z.array(wordShape);
+
 /** What a shape makes of a value, or null when it refuses it. */
 function parsed<T>(shape: z.ZodType<T>, value: unknown): T | null {
     const read = shape.safeParse(value);
@@ -298,11 +301,12 @@ function isRegistryWord(value: unknown): value is RegistryWord {
 }
 
 /**
- * One entry with the fields that read. A field of the wrong kind (a flag that is not true, an
- * order that is no whole number) is left out here, and the options catalog's check of the list
- * words it; an unknown registry word, a `ticker:` or a `dissemination_skip:` that does not read,
- * and, when `words` is given, a word the catalog, the categories or the groups do not hold, is
- * left out with a problem.
+ * One entry with the fields that read. A field of the wrong kind (a flag that is not true, an order
+ * that is no whole number) is left out here, and the options catalog's check of the list words it;
+ * an unknown registry word, a `ticker:`, a `dissemination_skip:` or a `sort:` that does not read,
+ * and, when `words` is given, a word the catalog, the categories or the groups do not hold, is left
+ * out with a problem. A `sort:` reads as a list of texts and is kept as it stands; an empty list is
+ * no sort and no problem.
  */
 function entryOf(
     raw: z.infer<typeof entryShape>,
@@ -335,6 +339,11 @@ function entryOf(
                 'findings.collections.skip_unread',
                 raw.dissemination_skip
             );
+    }
+    if (raw.sort !== undefined) {
+        const sort = parsed(sortShape, raw.sort);
+        if (sort === null) unread('sort', 'findings.collections.sort_unread', raw.sort);
+        else if (sort.length > 0) entry.sort = sort;
     }
     if (raw.ticker !== undefined) {
         const ticker = parsed(tickerShape, raw.ticker);
@@ -491,10 +500,10 @@ export function feedPrimaryKey(value: unknown, feed: 'leads' | 'radar'): string 
 }
 
 /**
- * The problems of a `collections:` list: an unknown registry word, a `ticker:` or a
- * `dissemination_skip:` that does not read, a registry or a single flag an earlier entry already
- * has, a group, a label, glyph or about, or a ticker category `words` does not hold, and a plain
- * collection keyed by the id of the view of one of oculus's registries.
+ * The problems of a `collections:` list: an unknown registry word, a `ticker:`, a
+ * `dissemination_skip:` or a `sort:` that does not read, a registry or a single flag an earlier
+ * entry already has, a group, a label, glyph or about, or a ticker category `words` does not hold,
+ * and a plain collection keyed by the id of the view of one of oculus's registries.
  */
 export function listProblems(value: unknown, words: ListWords): ListProblem[] {
     return readList(value, words).problems;

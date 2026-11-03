@@ -239,6 +239,7 @@ describe('the fields of a collections entry', () => {
                 dissemination: true,
                 dissemination_skip: { role: 'attend' },
                 ticker: { category: 'position' },
+                sort: ['status', 'deadline'],
                 group: 'academic',
                 order: 3,
                 label: 'views.applications',
@@ -257,7 +258,7 @@ describe('the fields of a collections entry', () => {
         expect(collectionFiles(list, WORDS)).toEqual(list);
     });
 
-    it('carries the registry, the flags, the skip and the ticker onto the collection read', () => {
+    it('carries the registry, the flags, the skip, the ticker and the sort onto the collection read', () => {
         const hub = scratch();
         write(hub, 'todo.yml', 'entries:\n  - { title: Renew the allocation }\n');
         const entries = collectionFiles(
@@ -268,7 +269,8 @@ describe('the fields of a collections entry', () => {
                     registry: 'funding',
                     tasks: true,
                     dissemination_skip: { role: 'attend' },
-                    ticker: { category: 'task', undated: true }
+                    ticker: { category: 'task', undated: true },
+                    sort: ['status', 'title']
                 }
             ],
             WORDS
@@ -279,8 +281,44 @@ describe('the fields of a collections entry', () => {
             tasks: true,
             dissemination_skip: { role: 'attend' },
             ticker: { category: 'task', undated: true },
+            sort: ['status', 'title'],
             index: 0
         });
+    });
+
+    it.each([
+        { name: 'a list of fields', sort: ['status', 'date'], read: ['status', 'date'], found: [] },
+        {
+            name: 'a text',
+            sort: 'deadline',
+            read: undefined,
+            found: [
+                'the sort "deadline" of the entry events is not a list of fields; its cards go by their title'
+            ]
+        },
+        { name: 'an empty list', sort: [], read: undefined, found: [] },
+        {
+            name: 'a map',
+            sort: { by: 'date' },
+            read: undefined,
+            found: [
+                'the sort {"by":"date"} of the entry events is not a list of fields; its cards go by their title'
+            ]
+        },
+        {
+            name: 'a list holding a number',
+            sort: ['status', 3],
+            read: undefined,
+            found: [
+                'the sort ["status",3] of the entry events is not a list of fields; its cards go by their title'
+            ]
+        }
+    ])('reads a sort that is $name', (row) => {
+        const list = [{ key: 'events', file: 'events.yml', sort: row.sort }];
+        expect(findingsOf(list)).toEqual(
+            row.found.map((message) => ({ key: 'collections[0].sort', message }))
+        );
+        expect(collectionFiles(list, WORDS)[0].sort).toEqual(row.read);
     });
 
     it('keeps an entry keyed by the id of a registry view and naming no registry, as a finding with no card list (case 4)', () => {

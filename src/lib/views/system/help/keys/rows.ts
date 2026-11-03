@@ -98,8 +98,6 @@ function actionMeaning(action: KeyAction, names: ActionNames): string | null {
             return action.by === 1 ? t('keys.next_tab') : t('keys.previous_tab');
         case 'cursor':
             return cursorMeaning(action.direction);
-        case 'move':
-            return action.direction === 'left' ? t('keys.move_left') : t('keys.move_right');
         case 'activate':
             return t('keys.activate');
         case 'search':

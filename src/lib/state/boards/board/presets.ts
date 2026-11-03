@@ -321,8 +321,8 @@ export const LIST_CELLS = [
 ];
 
 /**
- * Where a stage sorts in `order`, the keys of `stages`: its place there, and after every stage the
- * order names for a stage it does not name or no stage at all.
+ * Where a value sorts in `order`: its place there, and after every value the order names for a
+ * value it does not name or no value at all.
  */
 export function stageRank(stage: string | undefined, order: readonly string[]): number {
     const at = stage === undefined ? -1 : order.indexOf(stage);

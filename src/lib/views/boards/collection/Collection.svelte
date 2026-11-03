@@ -11,12 +11,14 @@
     // Layer 3, view. One collection file as its own tab: the file's title, the bar under the header
     // (a project board's two lines, drawn by views/shared/forms/bar/FilterBar.svelte and
     // SliceLine.svelte), an Add that asks the new entry's fields and opens its page, and its
-    // entries, the pinned ones first, as one card each in the shared card grid
-    // (views/shared/card/record/CardGrid.svelte) or, with List pressed in the toolbar (the Cards
-    // and List buttons of views/shared/forms/bar/ModeButtons.svelte), as one table
-    // (EntryList.svelte) whose columns the toolbar's Columns menu shows and hides. The title of a
-    // card or row with a key opens its page, the `entry` view's tab, where the entry is deleted
-    // and whose Edit opens the editor. The keyboard move of a card acts in cards mode only.
+    // entries as one card each in the shared card grid (views/shared/card/record/CardGrid.svelte)
+    // or, with List pressed in the toolbar (the Cards and List buttons of
+    // views/shared/forms/bar/ModeButtons.svelte), as one table (EntryList.svelte) whose columns the
+    // toolbar's Columns menu shows and hides. Each hub's entries are drawn in their collection's
+    // order (state/boards/collection/ `cardOrder`): the pinned ones first, then by the `sort:` of
+    // that hub's `collections:` entry, then in the file's order; a write that changes a sorted
+    // field moves the card to its place. The title of a card or row with a key opens its page, the
+    // `entry` view's tab, where the entry is deleted and whose Edit opens the editor.
     //
     // It is registered once per collection view the page is given and reads which collection it is
     // from the id of the instance it was mounted as, exactly as Projects.svelte reads which board
@@ -69,7 +71,6 @@
     import { copyBibtex, literatureCardActions } from '$lib/views/shared/card/feed/literature-card';
     import AddButton from '../../shared/forms/AddButton.svelte';
     import { collectionAsk, literatureAsk, type Ask } from '../../shared/forms/entry/entry-add';
-    import { blockedBy } from '../../shared/forms/entry-file';
     import CardGrid from '../../shared/card/record/CardGrid.svelte';
     import Reveal from '../../shared/card/Reveal.svelte';
     import SaidBody from '../../shared/writes/SaidBody.svelte';
@@ -77,16 +78,14 @@
     import {
         NO_FUNDING,
         TITLE_COLUMN,
+        cardOrder,
         entryColumns,
-        fileOrder,
         identityFaults,
         identityValue,
         joinedRegistries,
-        movedOrder,
         offeredStatuses,
         parseCollectionState,
         pickColumn,
-        pinnedFirst,
         statusFacets,
         type CollectionMode,
         type CollectionState,
@@ -122,9 +121,8 @@
         terminals: { composeAt },
         fs: { primary, roots },
         selectors: { board, collectionOf, collectionsOfKey, configMap, projects, selfPeople },
-        source: { unsavedFile },
-        ui: { cardMoveRequested, instanceState, setInstanceState },
-        writes: { reorderEntries, writeToken }
+        ui: { instanceState, setInstanceState },
+        writes: { writeToken }
     } = client;
 
     let { instance }: ViewProps = $props();
@@ -154,7 +152,12 @@
             faults: identityFaults(one.entries, one.primary_key ?? null, one.key_fault)
         }))
     );
-    const entries = $derived(pinnedFirst(parts.flatMap((part) => part.collection.entries)));
+    /** Every hub's entries, each hub's in its collection's order, the parts in the hubs' order. */
+    const entries = $derived(
+        parts.flatMap((part) =>
+            cardOrder(part.collection.entries, part.collection.sort, part.schema)
+        )
+    );
     const schemas = $derived(parts.map((part) => part.schema));
     /** The hubs of the Hub group, none while the workspace has one hub. */
     const hubs = $derived(hubList(roots(), primary()));
@@ -213,7 +216,7 @@
     const unfundedShown = $derived(unfunded.filter(filtered.strip));
     const shown = $derived(
         parts.flatMap((part) =>
-            pinnedFirst(part.collection.entries)
+            cardOrder(part.collection.entries, part.collection.sort, part.schema)
                 .filter(filtered.keeps)
                 .map((entry) => ({ entry, part }))
         )
@@ -231,9 +234,6 @@
         const refused = await composeAt({ task });
         if (refused !== '') said = refused;
     }
-
-    /** The identity value of the card the reader picked up, while a drag is in flight. */
-    let dragged = $state('');
 
     function write(next: Partial<CollectionState>): void {
         setInstanceState(instance.id, storedState({ ...held, ...next }, ['more']));
@@ -293,77 +293,6 @@
                 : [...held.more, id]
         });
     }
-
-    /**
-     * The drop: the dragged entry moves to the place of the card it was dropped on, and the file is
-     * written in the whole new order. A card dropped on a card of another hub's file moves nothing.
-     * The order is taken over every entry of the file, not over the ones the filter leaves, so a
-     * drag while a search is typed cannot drop the entries it is hiding, and it is the file's own
-     * order rather than the pinned-first one the cards are drawn in, so a drag while an entry is
-     * pinned does not write the pinned-first order into the file.
-     */
-    async function drop(onto: string): Promise<void> {
-        const from = dragged;
-        dragged = '';
-        if (from === '' || from === onto) return;
-        const part = partOf(from);
-        if (part === undefined) return;
-        const order = fileOrder(part.collection.entries);
-        await writeOrder(part, order, order.indexOf(from), order.indexOf(onto));
-    }
-
-    /** The collection of the hub whose file holds the card a write addresses by `value`. */
-    function partOf(value: string): (typeof parts)[number] | undefined {
-        return parts.find((part) =>
-            part.collection.entries.some((entry) => identityValue(entry) === value)
-        );
-    }
-
-    /**
-     * The keyboard reorder: the card under the pane's cursor changes places with its neighbour in
-     * the file's order. It is the drag's other path, so a list is reorderable without a pointer.
-     */
-    async function carry(value: string, step: -1 | 1): Promise<void> {
-        const part = partOf(value);
-        if (part === undefined) return;
-        const order = fileOrder(part.collection.entries);
-        const at = order.indexOf(value);
-        await writeOrder(part, order, at, at + step);
-    }
-
-    /** Move one place of the order to another and write the whole new order to the file. */
-    async function writeOrder(
-        part: (typeof parts)[number],
-        order: string[],
-        at: number,
-        to: number
-    ): Promise<void> {
-        const moved = movedOrder(order, at, to);
-        if (moved === null) return;
-        const file = part.file;
-        const held = file !== null && unsavedFile(file.root, file.path);
-        const blocked = blockedBy(file, held, [...part.faults.values()].at(0));
-        if (blocked !== '') {
-            said = blocked;
-            return;
-        }
-        const answer = await reorderEntries(key, moved);
-        said = answer.ok
-            ? t('editor.saved', answer.changed.join(', '))
-            : t('editor.failed', answer.error ?? '');
-    }
-
-    /**
-     * The sequence number of the last keyboard reorder performed, so one request moves one card.
-     */
-    let carried = 0;
-
-    $effect(() => {
-        const asked = cardMoveRequested(instance.id);
-        if (asked === null || asked.seq === carried) return;
-        carried = asked.seq;
-        if (held.mode === 'cards') void carry(asked.card, asked.step);
-    });
 
     /**
      * The pane's words: the file's own title, and the view's registered name before it arrives,
@@ -484,8 +413,6 @@
                                 statuses={lifecycle}
                                 file={part.file}
                                 fault={part.faults.get(entry.index)}
-                                ondragfrom={(value: string) => (dragged = value)}
-                                ondropon={drop}
                                 onsaid={(words: string) => (said = words)}
                                 lead={filtered.lead(entry)}
                                 keeps={filtered.strip}

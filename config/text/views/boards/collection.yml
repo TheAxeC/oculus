@@ -14,7 +14,6 @@ text:
         folder_glyph: folder
         form_cancel: Cancel
         fundstmt_tip: verbatim funder acknowledgment - paste into a manuscript's Funding section
-        grip_glyph: grip
         identity_unusable: 'Writes are off: {0} "{1}" is empty or shared with another entry'
         no_primary_key_none: 'Writes are off: {0} has no primary key, as its schema flags no field with primary_key: true; flag the field an entry is addressed by'
         no_primary_key_two: 'Writes are off: {0} has no primary key, as its schema flags {1} with primary_key: true and a file has only one; keep the flag on one of them'
@@ -38,7 +37,6 @@ text:
         pin_to_top: Pin to Top
         project_category: Category
         projects: Projects
-        reorder_hint: drag to reorder
         search: Search {0} ...
         show_in_files: Show in Files
         show_in_files_tip: select {0} in the Files view

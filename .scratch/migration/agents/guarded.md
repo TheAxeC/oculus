@@ -255,9 +255,9 @@ One entry per guarantee. An entry keeps one test per unit it covers: each API ro
 - G14. The real hub builds with no findings, read only.
   Code: `src/lib/data/index.ts`.
   Test: `tests/checks/config/integrity.test.ts`, held whole.
-- G56. Each rule a hub schema states gives its finding naming the file and the line: a reference to a key that does not exist, a key that exists twice in the referenced file, a value outside its options, a field outside its `when:`, a required field missing, and a field no schema declares.
+- G56. Each rule a hub schema states gives its finding naming the file and the line: a reference to a key that does not exist, a key that exists twice in the referenced file, a value outside its options, a field outside its `when:`, a required field missing, a field no schema declares, and a field the `sort:` of the file's `collections:` entry names that its schema does not.
   Code: the hub validation through the generated schemas (`src/lib/data/snapshot/validate.ts` and the generator folder M8 adds under `src/lib/data/snapshot/`).
-  Test: written by M8, one table over the validation function with one row per rule, its file and title named in M8's landing report; the option rows of a select or tags field: `tests/data/snapshot/schema-rules.test.ts`, every row.
+  Test: written by M8, one table over the validation function with one row per rule, its file and title named in M8's landing report; the option rows of a select or tags field: `tests/data/snapshot/schema-rules.test.ts`, every row; the sort rows: its describe 'the primary key, the foreign keys, the display ranks and the sort fields of a hub schema'.
 - G57. A root dropped on a Files tree reorders only that tree's roots: a drag from another tab, or one whose start was in another tree, writes no order, even when the tree's own last root drag ended without `dragend`.
   Code: `src/lib/views/shared/explorer/tree/control/dragging.svelte.ts`.
   Test: `tests/views/shared/explorer/root-drag.test.ts`, describe 'the root drag of the tree': 'writes no order for a drag from another tab over a tree whose own drag never ended', "still takes the drop of the tree's own drag"; landed by D33.

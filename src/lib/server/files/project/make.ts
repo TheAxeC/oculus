@@ -15,11 +15,11 @@
 // change, which the git watcher lists again (watch/git.ts).
 //
 // `hub` writes `.oculus/config.yml` with the chosen collections, each entry as its template line
-// sets it (its registry, flags, ticker and words with its key and file), then the chosen hub files
-// of HUB_CHOICES (`local`: `.oculus/local.yml`, mode 600, with the `.oculus/.gitignore` that keeps
-// it out of git; `schedules`: `.oculus/schedules.yml`), then each chosen collection's data file at
-// its default path. `project` writes `.oculus/project.yml`, and `repository` the chosen files of
-// REPOSITORY_FILES. Every file comes from its template in oculus's docs/templates.md
+// sets it (its registry, flags, ticker, sort and words with its key and file), then the chosen hub
+// files of HUB_CHOICES (`local`: `.oculus/local.yml`, mode 600, with the `.oculus/.gitignore` that
+// keeps it out of git; `schedules`: `.oculus/schedules.yml`), then each chosen collection's data
+// file at its default path. `project` writes `.oculus/project.yml`, and `repository` the chosen
+// files of REPOSITORY_FILES. Every file comes from its template in oculus's docs/templates.md
 // (data/sources/documents/templates.ts), and only on that press. `git` runs `git init -q` in the
 // folder through the target's `initGit`, one argument vector and no shell.
 //
