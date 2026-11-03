@@ -11,9 +11,10 @@
     // ui/menu/Tooltip.svelte with the words of its kind ("Stage: Submitted", "Venue: Neural
     // Networks"). They are, in order, the status marks the lanes give (the stage, the form and the
     // chips each in its word's hue, tones.ts `statusMarkTone`, a chip whose word carries `blocked`
-    // in red), then the facts (the user's role, the tier, the venue by its short name with its
-    // whole name in the tip). Every tag is drawn: the tags a line has no room for wrap onto a
-    // further line under it, and the name stays alone on its own line above them.
+    // in red), then the facts (the year the paper appeared, at a stage that carries both `terminal`
+    // and `public`, with "Year: 2025" in its tip, the user's role, the tier, the venue by its short
+    // name with its whole name in the tip). Every tag is drawn: the tags a line has no room for
+    // wrap onto a further line under it, and the name stays alone on its own line above them.
     //
     // A card is its own markup rather than ui/frame/Card.svelte: it is a drag handle whose first
     // line is one row of the tree's height, which is a different thing from the titled box with a
@@ -55,8 +56,8 @@
          */
         marks: string[];
         /**
-         * The facts drawn after the marks: the user's role, the tier and the venue where each says
-         * something (state/boards/focus.ts `laneFacts`).
+         * The facts drawn after the marks: the year the paper appeared, the user's role, the tier
+         * and the venue where each says something (state/boards/focus.ts `laneFacts`).
          */
         facts: LaneFact[];
         /** The name the card draws, which the lanes work out from `focus_label_mode`. */
@@ -110,13 +111,15 @@
 
     /** The glyph of each kind of fact. */
     const FACT_GLYPHS: Record<LaneFact['kind'], string> = {
+        year: t('project.card.year_glyph'),
         role: t('project.card.role_glyph'),
         tier: t('project.card.tier_glyph'),
         venue: t('project.card.venue_glyph')
     };
 
-    /** The words of a fact's tip, which name its kind: "Role: Supervisor", "Venue: ...". */
+    /** The words of a fact's tip, which name its kind: "Year: 2025", "Role: Supervisor". */
     function factTip(fact: LaneFact): string {
+        if (fact.kind === 'year') return t('project.card.year_tip', fact.whole);
         if (fact.kind === 'role') return t('project.card.lead_tip', fact.whole);
         if (fact.kind === 'tier') return t('project.card.tier_tip', fact.whole);
         return t('project.card.venue_tip', fact.whole);

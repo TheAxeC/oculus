@@ -1,5 +1,7 @@
 // Layer 2, client state. Focus lanes and waiting arithmetic live here because changes to the board
-// do not change deadline ticker calculations.
+// do not change deadline ticker calculations. It also holds the facts a lane card draws after its
+// status marks (`laneFacts`), and the year a card draws for a paper that appeared (`cardYear`),
+// which a project board card draws as well.
 //
 // No words live here. An item carries what it is (`kind`), the glyph it is drawn with and the
 // number of days, and the view turns that into a sentence through the text catalogs; a colour is a
@@ -579,10 +581,30 @@ export function venueLabel(venue: Venue | undefined): string {
  * One fact a lane card draws in its row of tags: which kind it is, the words the tag shows, and
  * the whole words its tip names, which differ only for a venue drawn by its short name.
  */
-export type LaneFact = { kind: 'role' | 'tier' | 'venue'; label: string; whole: string };
+export type LaneFact = { kind: 'year' | 'role' | 'tier' | 'venue'; label: string; whole: string };
 
 /**
- * The facts a lane card draws after its status marks, in this order: the user's role on the project
+ * The year a project's card draws among its facts: the manifest's `year` where the project's stage
+ * carries both `terminal` and `public` in `stages` (accepted and published in oculus's words), and
+ * none with no `year`, with no stage or at any other stage. Only those stages, since the year of a
+ * paper in flight is not the year it appeared, and a stage that closes the work without making it
+ * public names no paper that appeared. The flags are read with `hasWord` in `words`, the words of
+ * the project's own hub, never by a stage's name, so a hub that names its own stages is read in its
+ * own words.
+ */
+export function cardYear(
+    project: Pick<Project, 'stage' | 'year'>,
+    words: Record<string, unknown>
+): number | undefined {
+    const appeared =
+        hasWord(words, 'stages', 'terminal', project.stage) &&
+        hasWord(words, 'stages', 'public', project.stage);
+    return appeared ? project.year : undefined;
+}
+
+/**
+ * The facts a lane card draws after its status marks, in this order: the year the paper appeared
+ * (`cardYear`), with the year as its label and its whole words; the user's role on the project
  * unless its row of `roles:` carries `unmarked: true`, read only while a person is marked as the
  * user (`self` not empty); the project's tier unless its word of `tiers:` carries `unmarked: true`;
  * and the venue where the stage carries `placed` in `stages`, shown by its short name
@@ -595,6 +617,11 @@ export function laneFacts(
     venues: Record<Id, Venue>
 ): LaneFact[] {
     const facts: LaneFact[] = [];
+    const year = cardYear(project, words);
+    if (year !== undefined) {
+        const label = String(year);
+        facts.push({ kind: 'year', label, whole: label });
+    }
     if (self.size > 0) {
         const roles = rolesOf(words);
         const role = projectRole(project, roles, self);

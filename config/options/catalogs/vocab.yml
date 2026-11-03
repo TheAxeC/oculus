@@ -32,7 +32,7 @@ options:
                 help: the in-flight group, which the audit's rules over in-flight work, the pillar cards and the Funding tab read
                 control: toggle
             terminal:
-                help: the done group, a done or closed outcome
+                help: the done group, a done or closed outcome; with public too, a card draws the project's year at the stage
                 control: toggle
             dead:
                 help: "a dead outcome: the stage's place in the Pillars view's Archival band, a whole number from 1"
@@ -46,7 +46,7 @@ options:
                 help: a stage that has a venue, so the audit asks for one
                 control: toggle
             public:
-                help: a public outcome, which the audit of the website's publications asks for on the site
+                help: a public outcome, which the audit of the website's publications asks for on the site; with terminal too, a card draws the project's year at the stage
                 control: toggle
             negative:
                 help: a negative result, which stays in the hub; the website audit reports its project when the site shows it

@@ -157,13 +157,23 @@ export const ENTITY_KINDS = [
     'collections'
 ];
 
-/** A finite number: NaN and Infinity are not JSON-safe and are dropped with them. */
-const numberShape = z.number();
+/** A whole number: an integer from 0 to the largest safe integer. */
+const wholeNumber = z.number().int().min(0);
 
-/** A number value, or undefined. */
-function num(value: unknown): number | undefined {
-    return numberShape.safeParse(value).data;
-}
+/**
+ * A whole number given as a number or as a text of the digits 0 to 9 alone, the text read as the
+ * number it spells under the same bound. A fraction, a negative number, a number past the largest
+ * safe integer, an empty text and a text with any other character, spaces included, give none, and
+ * so do NaN and Infinity, which are not JSON-safe.
+ */
+const wholeShape = z.union([
+    wholeNumber,
+    z
+        .string()
+        .regex(/^[0-9]+$/)
+        .transform(Number)
+        .pipe(wholeNumber)
+]);
 
 /** A record keyed by id, filled in sorted id order, so its JSON does not depend on read order. */
 export function byId<T extends { id: Id }>(items: T[]): Record<Id, T> {
@@ -275,7 +285,11 @@ function project(
         form: str(manifest.form),
         title: str(manifest.title) ?? '',
         short: str(manifest.short),
-        year: num(manifest.year),
+        // The year is read as a whole number from a number or a text of digits: the schema gives
+        // `year` as a text "as a whole number" (config/schemas/manifest-schema.yml), and the
+        // manifest form writes the year as text into a manifest that has none (`coerce` in
+        // server/edit/writes/manifest.ts keeps a number only where the field holds one).
+        year: wholeShape.safeParse(manifest.year).data,
         pin: manifest.pin === true ? true : undefined,
         chips: strings(status.chips),
         statusLine: str(status.line),

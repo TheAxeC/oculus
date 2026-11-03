@@ -1,10 +1,11 @@
 <script lang="ts">
     // Layer 3, shared view. A project drawn as the record card (record/RecordCard.svelte beside
     // this folder), whose head, menu, body order and add forms every kind shares; this file hands
-    // it the project's words, actions and slots. The row of facts (the Lead badge, the Focus
-    // lane, the form and chips, the code status, reproduced, the compute resources and the folder,
-    // each with its glyph and a hover title naming its kind) is CardFacts.svelte; WAITING ON,
-    // BLOCKED and the cross-links down to the venue are the labelled lines of CardLinks.svelte.
+    // it the project's words, actions and slots. The row of facts (the Lead badge, the Focus lane,
+    // the form and chips, the year the paper appeared, the code status, reproduced, the compute
+    // resources and the folder, each with its glyph and a hover title naming its kind) is
+    // CardFacts.svelte; WAITING ON, BLOCKED and the cross-links down to the venue are the labelled
+    // lines of CardLinks.svelte.
     //
     // A board draws every card closed. The card's title, its Open project page action and Enter on
     // the keyboard cursor open the project page beside the board as the preview tab of the pane it

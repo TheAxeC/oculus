@@ -194,7 +194,7 @@ No case was wrong under the brief's rules.
 | 4. The words `year_glyph: calendar`, `year_tip: 'Year: {0}'` | DONE | `config/text/views/boards/project.yml:146-147`; case run prints `glyph=calendar tip "Year: 2026"` from them |
 | 5. The flags' descriptions | DONE | `config/catalogs/vocab.yml:55,59`, `vocab.ts:154,169` (`git diff`) |
 | 6. The page | DONE | `docs/HELP.md:296,298` (`git diff -U0 docs/HELP.md` hunks `@@ -296 +296 @@` and `@@ -298 +298 @@`) |
-| Verify 1: `npm run diagrams` then `npm run test:quick`, once | DONE | last line: `test:quick: 56.5 s; every command passed` (lines below) |
+| Verify 1: `npm run diagrams` then `npm run test:quick`, once after the last change | DONE | last line of the final run, the round's: `test:quick: 203.0 s; every command passed` ("Repair round 1"); the first build's run below |
 | Verify 2: the case-run program before and after | DONE | both outputs above |
 | Verify 3: `sh utils/unused-exports.sh` against the base | DONE | `diff .agents/worktrees/O127-base/unused-exports.txt <after>` printed nothing, `diff exit 0`: the step added no line |
 | Verify 4: comments and doc sentences read against spec.md:21 and spec.md:45 | DONE | read; no departure (section below) |
@@ -238,7 +238,7 @@ From `diff -rq .agents/worktrees/O127-base/<dir> .agents/worktrees/migration-O12
 | `src/lib/state/boards/focus.ts` | 30 / 3 | 791 | yes |
 | `src/lib/views/shared/card/project/CardFacts.svelte` | 17 / 5 | 150 | yes |
 | `src/lib/views/shared/card/project/ProjectCard.svelte` | 5 / 4 | 430 | yes, lines 2-7; the rewrapped paragraph is now lines 2-8 |
-| `src/lib/views/boards/focus/lanes/LaneCard.svelte` | 7 / 4 | 319 | yes |
+| `src/lib/views/boards/focus/lanes/LaneCard.svelte` | 9 / 6 | 319 | yes |
 | `src/lib/data/shapes/catalog-files/vocab.ts` | 2 / 2 | 533 | yes, lines 154 and 169 |
 | `config/catalogs/vocab.yml` | 2 / 2 | 307 | yes, lines 55 and 59 |
 | `config/text/views/boards/project.yml` | 2 / 0 | 196 | yes |
@@ -461,6 +461,6 @@ The other changed files are unchanged since the first build: `config/catalogs/vo
 ### For the orchestrator
 
 - `agents/guarded.md` G32 names 'fills a project from the manifest keys of the same meaning' as the snapshot test; the new table "reads a manifest's year given as %s" sits in the same describe and is not named there. The ledger is the orchestrator's, so the entry is left as it is.
-- With the year read from a text of digits, the boards' year filter (`takes.ts:94`, which reads `project.year`) also takes a year written as text. The round brief names this outcome for both readers. No other reader of `year` changes.
-- A text of many digits (`'99999999999999999999'`) reads as the number it spells, beyond a safe integer; the ruling sets no cap, and no manifest holds one. Not run.
+- With the year read from a text of digits, every reader of `project.year` takes a year written as text and drops a fraction or a negative one: the boards' year filter (`takes.ts:94`), the board item's year (`board/items.ts:166`, read by `board/state.ts:51`), the manifest form's value (`forms/schema.ts:464`) and the website entry's `pub_date` (`audit/website/papers.ts:99`). Over the hub's 127 manifests the year reads the same before and after.
+- A text of digits past the largest safe integer reads as none, as a number past it does (`normalise.ts`, `wholeNumber`; the table's row 'a text of 20 digits, past the largest safe integer, as none').
 - The round's write list was widened by the files items 1 and 2 name, as the round brief says; no other path was added.

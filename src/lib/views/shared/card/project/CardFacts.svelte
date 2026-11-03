@@ -3,9 +3,10 @@
     // each a glyph and its words, in this order: the Lead badge while the project's `lead:` names
     // the user (the person marked `self: true`), the Focus lane it sits on among its own hub's
     // lanes, its form and its chips with their words and glyphs of `forms` and `chips` of its hub's
-    // words, its code status, whether it is reproduced, its compute resources, and last the name of
-    // its folder with the folder glyph. The stage is the card's filled chip, drawn by
-    // ProjectCard.svelte in its heading.
+    // words, the year the paper appeared at a stage that carries both `terminal` and `public` in
+    // its hub's `stages` (state/boards/focus.ts `cardYear`), its code status, whether it is
+    // reproduced, its compute resources, and last the name of its folder with the folder glyph. The
+    // stage is the card's filled chip, drawn by ProjectCard.svelte in its heading.
     //
     // The folder is the workspace folder the project is read from, else the last part of its
     // `folder:`; its tip is the whole path, the workspace folder's directory or the hub-relative
@@ -30,7 +31,7 @@
     import Tooltip from '$lib/ui/menu/Tooltip.svelte';
     import { codeLabel, computeGlyph, laneGlyph, wordGlyph } from '../card';
     import type { BoardItem } from '$lib/state/boards/board';
-    import { isBlocked, projectLane } from '$lib/state/boards/focus';
+    import { cardYear, isBlocked, projectLane } from '$lib/state/boards/focus';
     import { rootOf } from '$lib/state/shared/page/hubs';
     import {
         chipGlyphName,
@@ -50,7 +51,10 @@
 
     const hub = $derived(rootOf(item.project));
 
-    /** The words of the project's own hub, which say which chip blocks it. */
+    /**
+     * The words of the project's own hub, which say which chip blocks it and at which stages its
+     * year is drawn.
+     */
     const words = $derived(vocabOf(hub));
 
     /** The folder's name and its whole path, or null for a project with no folder. */
@@ -63,6 +67,9 @@
 
     /** The Focus board lane the project sits on, among its own hub's lanes. */
     const lane = $derived(projectLane(item.project, vocabOf));
+
+    /** The year the paper appeared, read in the words of the project's own hub, or none. */
+    const year = $derived(cardYear(item.project, words));
 
     /** Whether the word at place `at` of `item.chips` is the project's form, which comes first. */
     function isForm(at: number): boolean {
@@ -95,6 +102,11 @@
         />
     </Tooltip>
 {/each}
+{#if year !== undefined}
+    <Tooltip text={t('project.card.year_tip', year)}>
+        <Tag label={String(year)} glyph={t('project.card.year_glyph')} />
+    </Tooltip>
+{/if}
 {#if item.code !== ''}
     <Tooltip text={t('project.card.code_tip', codeLabel(item.code, t))}>
         <Tag label={codeLabel(item.code, t)} glyph={t('project.card.code_glyph')} />

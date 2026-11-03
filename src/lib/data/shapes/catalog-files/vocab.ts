@@ -151,7 +151,7 @@ const stageWord = z.strictObject({
         "The in-flight group: the audit's rules over in-flight work, the Focus board's unplaced projects and manifests behind, a pillar card's in-flight count and tier strip, a venue's concentration marker and the Funding tab's card of unfunded work."
     ),
     terminal: flag(
-        'The done group, a done or closed outcome: the boards that take or leave out done work by it, quick add, which offers no such project, and the Focus chip lanes, which hold none; the audit lists such a project that carries a chip of a chip lane.'
+        "The done group, a done or closed outcome: the boards that take or leave out done work by it, quick add, which offers no such project, and the Focus chip lanes, which hold none; the audit lists such a project that carries a chip of a chip lane. With `public` too, a stage whose paper appeared: a project card and a Focus lane card draw the manifest's `year` at such a stage, and at no other."
     ),
     dead: z
         .number()
@@ -166,7 +166,7 @@ const stageWord = z.strictObject({
     ),
     placed: flag('A stage that has a venue, so the audit asks for one.'),
     public: flag(
-        "A public outcome: a manifest at the stage that carries `publication:` is written into the website's publications, in the section the hub's `website.kinds` gives it."
+        "A public outcome: a manifest at the stage that carries `publication:` is written into the website's publications, in the section the hub's `website.kinds` gives it. With `terminal` too, a stage whose paper appeared, where a card draws the manifest's `year`."
     ),
     negative: flag(
         'A negative result, which stays in the hub: a manifest at the stage that carries `publication:` gives no website entry and a finding of the audit.'

@@ -1,5 +1,5 @@
-In flight (1 of 6 slots in use):
-- O127 (a card shows the year a paper appeared), repair round 1 built, under review.
+In flight (0 of 6 slots in use):
+- none.
 
 Queued, in order (0 steps):
 - none.
@@ -7,6 +7,7 @@ Queued, in order (0 steps):
 Owed looks: none.
 
 Landed, newest first:
+- O127 (a card shows the year a paper appeared), one repair round, one fix at landing in code.
 - O126 (the Sessions tab's shape), one repair round, one fix at landing in code.
 - O125 (headings solid over a wallpaper), one repair round, three fixes at landing.
 - O123 (sessions move into the Explorer), one repair round, five closures at landing.

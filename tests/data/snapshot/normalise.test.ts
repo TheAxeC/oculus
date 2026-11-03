@@ -378,4 +378,20 @@ describe('normalise, the field mapping', () => {
             file: '/hub/projects/active/alpha/project.yml'
         });
     });
+
+    it.each<[string, unknown, number | undefined]>([
+        ['the number 2025 as 2025', 2025, 2025],
+        ["the text '2025' as 2025", '2025', 2025],
+        ['the fraction 2025.5 as none', 2025.5, undefined],
+        ['the negative number -3 as none', -3, undefined],
+        ['an empty text as none', '', undefined],
+        ["the text 'circa 2020' as none", 'circa 2020', undefined],
+        ["the text ' 2025' as none", ' 2025', undefined],
+        ['a text of 20 digits, past the largest safe integer, as none', '9'.repeat(20), undefined]
+    ])("reads a manifest's year given as %s", (_name, given, year) => {
+        const raw = portfolio();
+        const manifests = [manifest({ title: 'Gamma', year: given }, 'gamma')];
+        const built = normalise({ ...raw, manifests }, [], {});
+        expect(built.entities.projects.gamma.year).toBe(year);
+    });
 });

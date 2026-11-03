@@ -143,6 +143,8 @@ text:
             waiting_glyph: waiting
             waiting_on: Waiting on
             workbench_glyph: app_view
+            year_glyph: calendar
+            year_tip: 'Year: {0}'
         doc_failed: 'the document was not read: {0}'
         doc_loading: loading the document ...
         documents: Documents
