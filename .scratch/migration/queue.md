@@ -1,48 +1,48 @@
 In flight (4 of 6 slots in use):
-- O135 (an Add Front Matter command for a note), repair round 1 reported, review over the round next (base c931e9418).
-- O137 (a collection is always sorted, the reorder by hand removed), building, case C13 ruled at its first run (base 6779731e1).
-- O138 (an `interview` and an `offered` status oculus offers), rulings Interview status, Offered status, 657 (a), 659 (b) and 660 (a), building (base ceb3622c0); rulings 663 (a) and 664 (a) sent to its builder.
+- O135 (an Add Front Matter command for a note), review over repair round 1 running.
+- O137 (a collection is always sorted, the reorder by hand removed), building.
+- O138 (an `interview` and an `offered` status), building.
+- O139 (a finding names the hub of its file and opens it), building.
 
-- O139 (a finding of another hub names its hub, every file finding opens its file), rulings 656, 658 and 662, prepared; builder launching.
-Queued, in order (0 steps): none.
+Queued, in order: none.
 
 Owed looks: none.
 
 Landed, newest first:
-- O136 (the editor holds a keyed family to the form its reader takes), one repair round, the editor's message built at landing.
-- O132 (every hub's words held to the vocabulary check), one repair round, two report fixes at landing.
-- O133 (one front-matter pattern for every Markdown reader), one repair round, five fixes at landing.
-- O131 (the editor holds a one-text `multi` value to its words), one repair round, five fixes at landing.
-- O134 (a Notes section in the templates page), a small text step, three fixes at landing.
-- O130 (every hub's category rows held to the config check), no repair round, three report sentences fixed at landing.
-- O129 (the Status view's line count removed whole), one repair round, two fixes at landing.
-- O128 (a category sets the order of its cards), one repair round, no fix at landing in code.
-- O127 (a card shows the year a paper appeared), one repair round, one fix at landing in code.
-- O126 (the Sessions tab's shape), one repair round, one fix at landing in code.
-- O125 (headings solid over a wallpaper), one repair round, three fixes at landing.
-- O123 (sessions move into the Explorer), one repair round, five closures at landing.
-- O124 (the System page's merges), one repair round, no fix at landing in code.
-- O122 (a Transcript draws only what is in view), one repair round, one fix at landing.
-- O121 (a chip row takes no height for its controls), 2026-11-02.
-- O120 (a card takes no height for its controls, Career's colours), 2026-11-02.
-- O119 (Transcript right-click, tool-call runs, the import cycle), 2026-11-02.
-- O118 (a Transcript's older turns load on scrolling up), 2026-11-02.
-- O117 (the transcript's own text size), 2026-11-02.
-- O116 (a transcript's first read takes only the end of the file), 2026-11-02.
-- O115 (the transcript reads as a conversation), 2026-11-02.
-- O114 (one Terminal view for a session), 2026-11-02.
-- O113 (Timeline a section of the Session view), 2026-11-01.
-- O111 (Settings responds and folds under a search), 2026-11-01.
-- O110 (terminal text keeps its characters), 2026-11-01.
-- O112 (the Session view's type sizes), 2026-11-01.
-- O108 (one desktop app), 2026-10-31.
-- O109 (the app's server starts), 2026-10-31.
-- O107 (an entry of a file with no schema opens its page), 2026-10-31.
-- O106 (cards and the entry page), 2026-10-31; hub aa8f2d669; web a885f2d.
-- O105 (the website keeps its own words), 2026-10-31; hub f35ad1faf; web 33ff3b0.
-- O104 (one page frame and one editor), 2026-10-30; hub 2db7d35dd.
-- O101 (the Zenodo deposit), 2026-10-30; hub 6abb17c8b.
-- O102 (the website data files from oculus), 2026-10-30; hub 9e297c9c5; web 574da70.
+- O136 (the editor holds a keyed family to the form its reader takes), 2026-11-03, cf81d99d0.
+- O132 (every hub's words held to the vocabulary check), 2026-11-03, f8e23dcc3.
+- O133 (one front-matter pattern for every Markdown reader), 2026-11-03, 7b0316118.
+- O131 (the editor holds a one-text `multi` value to its words), 2026-11-03, 849c4c580.
+- O134 (a Notes section in the templates page), 2026-11-03, 2fbb4d34b.
+- O130 (every hub's category rows held to the config check), 2026-11-03, e3a4b556c.
+- O129 (the Status view's line count removed whole), 2026-11-03, 247cfe1ba.
+- O128 (a category sets the order of its cards), 2026-11-03, f5996150f.
+- O127 (a card shows the year a paper appeared), 2026-11-03, d16835f40.
+- O126 (the Sessions tab's shape), 2026-11-03, 582d7a4bc.
+- O125 (headings solid over a wallpaper), 2026-11-03, 8ae45835e.
+- O123 (sessions move into the Explorer), 2026-11-03, 5a761e08d.
+- O124 (the System page's merges), 2026-11-03, 1880ed8eb.
+- O122 (a Transcript draws only what is in view), 2026-11-03, b27c65ccf.
+- O121 (a chip row takes no height for its controls), 2026-11-02, 80649753f.
+- O120 (a card takes no height for its controls, Career's colours), 2026-11-02, d0d076e6a.
+- O119 (Transcript right-click, tool-call runs, the import cycle), 2026-11-02, 9abe534c0.
+- O118 (a Transcript's older turns load on scrolling up), 2026-11-02, fc6799363.
+- O117 (the transcript's own text size), 2026-11-02, af0d61278.
+- O116 (a transcript's first read takes only the end of the file), 2026-11-02, d107cdff7.
+- O115 (the transcript reads as a conversation), 2026-11-02, 4e4e1cc23.
+- O114 (one Terminal view for a session), 2026-11-02, 4014172a0.
+- O113 (Timeline a section of the Session view), 2026-11-01, f29684ef5.
+- O111 (Settings responds and folds under a search), 2026-11-01, 4f76fdcce.
+- O110 (terminal text keeps its characters), 2026-11-01, 4a5ba07ce.
+- O112 (the Session view's type sizes), 2026-11-01, 915e5e075.
+- O108 (one desktop app), 2026-10-31, e584a8a02.
+- O109 (the app's server starts), 2026-10-31, 0564d75a9.
+- O107 (an entry of a file with no schema opens its page), 2026-10-31, 9f0e6caf9.
+- O106 (cards and the entry page), 2026-10-31, ed1f47130; hub aa8f2d669; web a885f2d.
+- O105 (the website keeps its own words), 2026-10-31, d512cbaaa; hub f35ad1faf; web 33ff3b0.
+- O104 (one page frame and one editor), 2026-10-30, e136031a7; hub 2db7d35dd.
+- O101 (the Zenodo deposit), 2026-10-30, 29fe4a2d4; hub 6abb17c8b.
+- O102 (the website data files from oculus), 2026-10-30, 087f7ed7e; hub 9e297c9c5; web 574da70.
 - O99 (every setting edited in Settings by scope), 2026-10-29, 626ae2a6; hub 60f0c606d.
 - O103 (applications and leads split, a task's subtasks in Focus), 2026-10-29, bafb20bd.
 - O97 (the journal browser and one configurable reader), 2026-10-29, d909bafd; hub 3f4d5d883.
