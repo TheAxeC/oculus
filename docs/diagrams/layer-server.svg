@@ -288,7 +288,7 @@
 <g id="node33" class="node">
 <title>folder server/machine to folder server/core</title>
 <polygon fill="none" stroke="none" points="128.55,-392.84 109.45,-392.84 109.45,-380.36 128.55,-380.36 128.55,-392.84"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="119" y="-384.2" font-family="Helvetica,Arial,sans-serif" font-size="8.00">113</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="119" y="-384.2" font-family="Helvetica,Arial,sans-serif" font-size="8.00">112</text>
 </g>
 <!-- folder server/machine&#45;&gt;folder server/machine to folder server/core -->
 <g id="edge54" class="edge">
@@ -332,7 +332,7 @@
 <g id="node37" class="node">
 <title>folder server/machine to layer data</title>
 <polygon fill="none" stroke="none" points="252.55,-658.04 233.45,-658.04 233.45,-645.56 252.55,-645.56 252.55,-658.04"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="243" y="-649.4" font-family="Helvetica,Arial,sans-serif" font-size="8.00">209</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="243" y="-649.4" font-family="Helvetica,Arial,sans-serif" font-size="8.00">207</text>
 </g>
 <!-- folder server/machine&#45;&gt;folder server/machine to layer data -->
 <g id="edge62" class="edge">

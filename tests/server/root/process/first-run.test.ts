@@ -70,7 +70,7 @@ function installed(
 }
 
 /** The programs the second part looks for on every platform, and on Linux. */
-const PROGRAMS = ['git', 'tmux', 'perl', 'claude'];
+const PROGRAMS = ['git', 'tmux', 'claude'];
 const LINUX_PROGRAMS = ['zenity', 'xdg-open', 'wslview'];
 
 /** A scratch folder `bin` under `root` holding a runnable file for each program named. */

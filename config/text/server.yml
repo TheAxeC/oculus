@@ -536,7 +536,6 @@ text:
             fix_brew: Run brew install {0}.
             fix_claude: Install the Claude CLI from https://code.claude.com/docs/en/setup, or set claude_bin in the .oculus/local.yml of the primary hub to its path.
             fix_install: Install {0} with your package manager.
-            fix_perl_xcode: Perl comes with the macOS Command Line Tools; run xcode-select --install.
             fix_xcode: Run xcode-select --install.
             handler_failed: 'oculus: the server handler {0} could not be loaded: {1}'
             handler_not_built: 'oculus: the server handler {0} does not exist; run npm run build in {1} to make it'
@@ -546,7 +545,6 @@ text:
             needs_claude: the chat terminals, the worktree agents, the usage refresh, the update tasks, the prompts of schedules and the suggested commit messages
             needs_git: Source Control and History
             needs_opener: opening a file in its program, showing a folder and opening a link
-            needs_perl: the line counts of the Status view
             needs_tmux: the terminals and their sessions
             needs_zenity: the folder panel of Add Folder to Workspace and Open Folder
             port_in_use: 'oculus: port {0} is in use'

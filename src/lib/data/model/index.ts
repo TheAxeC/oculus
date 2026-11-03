@@ -405,30 +405,6 @@ export type Picture = {
     height: number | null;
 };
 
-/** The lines of a set of files as cloc splits them, with how many of their lines carry a TODO. */
-export type LineTally = {
-    files: number;
-    blank: number;
-    comment: number;
-    code: number;
-    todo: number;
-};
-
-/** One language inside a folder of the line count. */
-export type LanguageLines = LineTally & { language: string };
-
-/**
- * One folder of the line count, its languages in descending code lines. The top level, the files
- * no folder holds, is the empty folder name.
- */
-export type FolderLines = LineTally & { folder: string; languages: LanguageLines[] };
-
-/**
- * What GET /api/lines answers: oculus's own tracked files by folder in path order, the sum of
- * every folder, and the ISO time the count finished.
- */
-export type LineCount = { rows: FolderLines[]; total: LineTally; counted: string };
-
 export type {
     AnonymizeRow,
     Chip,

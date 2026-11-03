@@ -77,7 +77,6 @@ import type { Desktop } from '../shared/stores/desktop.ts';
 import { createWindows } from '../workbench/layout/open/float/browser.ts';
 import { createLayout } from '../workbench/layout.svelte.ts';
 import { appsSettings } from '../../data/sources/config/settings/machine.ts';
-import { createLines } from '../system/lines.svelte.ts';
 import { createFormDraft } from '../forms/form-draft.ts';
 import { createPages, pageDraftTarget } from '../forms/page-entry.ts';
 import { createSettled } from '../forms/settled.svelte.ts';
@@ -427,7 +426,6 @@ export function createClientState(
     const audit = createAudit(entities);
     const memories = withQueries('memories', createMemories(queries));
     const wallpapers = withQueries('wallpapers', createWallpapers(queries));
-    const lines = withQueries('lines', createLines(queries));
     const present = withQueries(
         'present',
         createPresent(entities, queries, writes.writeToken, fs.roots, fs.primary)
@@ -847,7 +845,6 @@ export function createClientState(
         website,
         memories,
         wallpapers,
-        lines,
         present,
         repositories,
         search,

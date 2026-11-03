@@ -13,10 +13,9 @@
 
 <script lang="ts">
     // Layer 3, view. What the page knows: whether the socket is up, which snapshot it is holding,
-    // and how many of each entity that snapshot carries, then the line counts of oculus's own files
-    // (LineCounts.svelte), the Claude Code hooks block (Hooks.svelte) and the Gallery of every
-    // primitive (Gallery.svelte). It is the view that says whether the data layer underneath is
-    // alive.
+    // and how many of each entity that snapshot carries, then the Claude Code hooks block
+    // (Hooks.svelte) and the Gallery of every primitive (Gallery.svelte). It is the view that says
+    // whether the data layer underneath is alive.
     //
     // The Gallery is a group that starts closed, by the pane-state key `showGallery`, and its body
     // is mounted only while the group is open, so a closed Gallery draws none of its samples and
@@ -24,9 +23,9 @@
     // the group is open, and calls the mounted body.
     //
     // The view draws cards, so the pane asks for no tint, and over a wallpaper the sample cards
-    // paint their own fill. What it draws outside them is read off a `Surface`: the facts, the line
-    // counts and the hooks. The Gallery stands outside that `Surface`, since a card inside one
-    // paints nothing (ui/frame/Card.svelte), and its own sections carry their own surfaces.
+    // paint their own fill. What it draws outside them is read off a `Surface`: the facts and the
+    // hooks. The Gallery stands outside that `Surface`, since a card inside one paints nothing
+    // (ui/frame/Card.svelte), and its own sections carry their own surfaces.
 
     import GroupHead from '$lib/ui/controls/heads/GroupHead.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
@@ -39,7 +38,6 @@
     import { instanceFlag, withInstanceKey } from '$lib/state/workbench/layout/instance';
     import Gallery from './Gallery.svelte';
     import Hooks from './Hooks.svelte';
-    import LineCounts from './LineCounts.svelte';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
 
@@ -125,8 +123,7 @@
             {/if}
             <p>{t('app.sessions', records.length, live)}</p>
             <p>{t('app.git', workspaces)}</p>
-            <div class="groups">
-                <LineCounts />
+            <div class="hooks">
                 <Hooks origin={servedOrigin()} />
             </div>
         </Surface>
@@ -171,12 +168,8 @@
         padding-left: 18px;
     }
 
-    /* The line counts and the hooks, two groups 16 px below the facts and apart, and the Gallery
-       16 px below them. */
-    .groups {
-        display: flex;
-        flex-direction: column;
-        gap: 16px;
+    /* The hooks 16 px below the facts, and the Gallery 16 px below the hooks. */
+    .hooks {
         margin-top: 16px;
     }
 

@@ -1,7 +1,7 @@
-// Layer 2, server. The git forms the file browser, the Status view and Submit read a folder by:
-// which entries of a listed folder the repository ignores, the paths it tracks under a folder, the
-// paths it keeps under a folder (tracked, or untracked and not ignored), and the commits that
-// touched one file. Every command goes through run.ts.
+// Layer 2, server. The git forms the file browser, Submit and the Timeline read a folder or a file
+// by: which entries of a listed folder the repository ignores, the paths it keeps under a folder
+// (tracked, or untracked and not ignored), and the commits that touched one file. Every command
+// goes through run.ts.
 
 import type { GitFilePage } from '../../../data/model/index.ts';
 import { words } from '../words.ts';
@@ -45,23 +45,6 @@ export async function ignoredIn(
     if (!done.ok) return none;
     const said = new Set(done.text.split('\0').filter((one) => one !== ''));
     return new Set(names.filter((name) => said.has(name)));
-}
-
-/**
- * The paths the repository tracks under the folder, relative to it, for the Status view's line
- * counts. `-z` ends each path with a NUL and writes it unquoted, so a name with a space or an
- * accented letter comes back as it is on disk. A folder in no repository, a git that is missing and
- * a run that timed out answer why instead.
- */
-export async function trackedFiles(
-    credentials: GitCredentials,
-    root: string,
-    text: Record<string, string>,
-    timeout: number = TIMEOUT_MS
-): Promise<Read<string[]>> {
-    const done = await run(credentials, root, ['ls-files', '-z'], milliseconds(timeout));
-    if (!done.ok) return refused(reasonOf(done, text));
-    return { ok: true, value: done.text.split('\0').filter((path) => path !== '') };
 }
 
 /**

@@ -246,7 +246,7 @@ Off macOS, Cmd is Ctrl.
 | `session-list` | Sessions | Every agent session on this machine and oculus's terminals, with the sections of the session picked under them. A press shows the session in the page's Terminal tab. |
 | `session-detail` | Session | The tab of one pinned session: Details, Changes, Timeline, Agents. It stands on no page by itself. |
 | `terminal` | Terminal | Terminals running Claude, Codex or a shell, inside tmux, and a session's turns. Live or Transcript on the bar, Lock in the header; an agent typed in a shell is detected. |
-| `status` | Status | The connection, the snapshot, oculus's line counts, the hooks block, and the Gallery, a closed section with every UI primitive on sample data. |
+| `status` | Status | The connection, the snapshot, the hooks block, and the Gallery, a closed section with every UI primitive on sample data. |
 | `findings` | Findings | Every problem found in the hub's files, with file and key, and in its Audit section what the hub is missing: open markers, manifest gaps, and what breaks the conventions the hub's `audit:` sets. |
 | `hpc` | Live HPC | The queue and quota of each cluster. |
 | `usage` | Usage | What each agent account has spent. |

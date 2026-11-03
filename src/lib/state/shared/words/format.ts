@@ -1,11 +1,14 @@
-// Layer 2, client state. The small conversions the views share: a count in three digits, a count
-// with its thousands grouped, a stamp a rail row has room for, a time ahead with its weekday, a
-// span in seconds, a model's short name, and a path relative to a workspace. No runes here, so
-// every one of them is a pure function over its arguments and is tested directly.
+// Layer 2, client state. The small conversions the views share: a count in three digits, a stamp a
+// rail row has room for, a time ahead with its weekday, a span in seconds, a model's short name,
+// and a path relative to a workspace. No runes here, so every one of them is a pure function over
+// its arguments.
 //
-// The words come from the catalog like every other word: a suffix and a separator are strings a
-// reader sees, so they are keys rather than literals. What is left in a function is arithmetic and
-// slicing.
+// The words come from the catalog like every other word: the count suffixes (`sessions.n_millions`,
+// `sessions.n_thousands`), the day names (`app.schedules.day_sun` to `app.schedules.day_sat`) and
+// the templates that join a stamp's or a span's parts (`sessions.stamp_day`, `app.schedules.ahead`,
+// `sessions.ag_secs`, `sessions.ag_mins`). Two characters are written by the functions themselves:
+// the `:` between the hours and the minutes of `stamp` and `clock`, and the `-` between the month
+// and the day of `stamp`. What is left in a function is arithmetic, padding and slicing.
 
 import { scalar } from '../../../data/helpers/guards.ts';
 import { t } from './text.ts';
@@ -36,19 +39,6 @@ export function compactCount(value: number): string {
     }
     if (count >= 1000) return t('sessions.n_thousands', String(Math.round(count / 1000)));
     return String(Math.round(count));
-}
-
-/**
- * A whole count with its thousands grouped, `1,234,567`, for a column of counts a reader compares
- * digit by digit. The separator is the catalog's, like every other character a reader sees. The
- * caller hands a whole number: the line store refuses any other before it reaches a view.
- */
-export function grouped(value: number): string {
-    const digits = String(Math.abs(value)).replace(
-        /\B(?=(\d{3})+(?!\d))/g,
-        t('app.thousands_separator')
-    );
-    return value < 0 ? `-${digits}` : digits;
 }
 
 /**

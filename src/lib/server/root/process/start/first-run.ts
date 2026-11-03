@@ -15,13 +15,13 @@
 // the catalog's sentences: the programs oculus runs by name.
 //
 // A lack is required (the Node version, the packages: oculus cannot run without it) or optional
-// (git, tmux, perl and the Claude CLI, and on Linux the folder panel `zenity` and the opener,
-// `xdg-open` of xdg-utils or `wslview` of wslu under WSL2: oculus runs and the parts that need the
-// program do not work). The packages are compared with `package-lock.json` through the hidden
-// lockfile npm writes at `npm ci` and `npm install` (`node_modules/.package-lock.json`): every
-// entry of the lockfile other than the root and those marked optional must be there at the same
-// version. Another package manager writes no hidden lockfile and so reads as not installed, with
-// `npm ci` as the fix.
+// (git, tmux and the Claude CLI, and on Linux the folder panel `zenity` and the opener, `xdg-open`
+// of xdg-utils or `wslview` of wslu under WSL2: oculus runs and the parts that need the program do
+// not work). The packages are compared with `package-lock.json` through the hidden lockfile npm
+// writes at `npm ci` and `npm install` (`node_modules/.package-lock.json`): every entry of the
+// lockfile other than the root and those marked optional must be there at the same version.
+// Another package manager writes no hidden lockfile and so reads as not installed, with `npm ci` as
+// the fix.
 
 import { spawnSync } from 'node:child_process';
 import { readFileSync, realpathSync } from 'node:fs';
@@ -50,10 +50,10 @@ const OPENER_PACKAGES: Record<string, string> = { 'xdg-open': 'xdg-utils', wslvi
 
 export type Lack = {
     /**
-     * What is missing: `node`, `packages`, the program's name for the four programs and `zenity`,
+     * What is missing: `node`, `packages`, the program's name for the three programs and `zenity`,
      * or `opener` for the program that opens files and addresses.
      */
-    kind: 'node' | 'packages' | 'git' | 'tmux' | 'perl' | 'claude' | 'zenity' | 'opener';
+    kind: 'node' | 'packages' | 'git' | 'tmux' | 'claude' | 'zenity' | 'opener';
     /** Whether oculus cannot run without it. */
     required: boolean;
     /** What is missing, what of oculus needs it and its fix, in one text. */
@@ -171,7 +171,7 @@ function linuxLacks(facts: MachineFacts, t: Words): Lack[] {
 }
 
 /**
- * The second part: the four programs, and on Linux the folder panel and the opener. A workspace
+ * The second part: the three programs, and on Linux the folder panel and the opener. A workspace
  * with no folder, or with no hub among them, is no lack. A program is looked up with `programPath`
  * in the environment given, which is the one the server runs with, so a packaged app is asked in
  * its login shell's environment. On macOS a git found at the stub's path counts only when
@@ -202,11 +202,6 @@ export function machineLacks(facts: MachineFacts, t: Words): Lack[] {
             : t('server.start.fix_install', 'tmux');
         const sentence = missing('tmux', t('server.start.needs_tmux'), fix);
         lacks.push({ kind: 'tmux', required: false, sentence });
-    }
-    if (programPath('perl', env) === null) {
-        const fix = mac ? t('server.start.fix_perl_xcode') : t('server.start.fix_install', 'perl');
-        const sentence = missing('perl', t('server.start.needs_perl'), fix);
-        lacks.push({ kind: 'perl', required: false, sentence });
     }
     if (programPath(claudeBin, env) === null) {
         const sentence = missing(

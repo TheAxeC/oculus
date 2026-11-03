@@ -55,7 +55,6 @@ The app carries its own runtime, so it needs no Node. It uses these programs whe
 
 - `git` for the Repositories view and every other git feature.
 - `tmux` for the terminals.
-- `perl` for the line counts of the Status view.
 - `claude`, the Claude Code CLI, for the agent sessions.
 - On Linux, `zenity` for the folder panel and `xdg-open` (package `xdg-utils`, or `wslview` from `wslu` under WSL2) to open files and links.
 

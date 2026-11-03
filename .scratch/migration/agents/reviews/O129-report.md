@@ -1,10 +1,29 @@
 # Report: O129, the Status view's line count removed whole
 
-Everything in the brief is done
+Everything in the brief is done, as repair round 1 amends it.
+
+One sentence the round's point asked for, "the `:` of the clock is the one character a function writes itself", is left unwritten: the read of `src/lib/state/shared/words/format.ts` shows it false. Line 60 of that file, `const day = \`${pad(date.getMonth() + 1)}-${pad(date.getDate())}\`;`, writes the `-` between a stamp's month and day as a literal too, beside the `:` of lines 51 and 88. The paragraph says instead that two characters are written by the functions themselves, and names both.
 
 ## Open items of the state file, verbatim
 
 - Open item 645 (2026-11-03): the rows of `categories:` of a hub other than the primary are held to the whole-file shape only, never to the config check `categoriesFindings` (`src/lib/server/root/watch/portfolio/payload.ts:91` runs it on the primary's config alone), so such a hub's `stages: { words: [nonsense] }` or a row with no `color` gives no finding and the word is not read (the run quoted in `agents/reviews/O128-report.md`, "What is handed back" 2). (a) recommended: a new step that runs `categoriesFindings` over each other hub's merged config in `readOtherHub` (`src/lib/data/index.ts:628-650`), its findings naming that hub's settings file, so every hub's category rows are checked alike; it makes findings appear for such a hub's wrong words, which today are silent. (b) no change, the lazy option: a second hub's wrong category word stays silent.
+
+## Repair round 1
+
+The point: the head comment of `src/lib/state/shared/words/format.ts`, its second paragraph (lines 6-11 after the round, 6-8 before). It said "a suffix and a separator are strings a reader sees, so they are keys rather than literals", and with `grouped` gone the file reads no separator key. It now reads:
+
+```
+// The words come from the catalog like every other word: the count suffixes (`sessions.n_millions`,
+// `sessions.n_thousands`), the day names (`app.schedules.day_sun` to `app.schedules.day_sat`) and
+// the templates that join a stamp's or a span's parts (`sessions.stamp_day`, `app.schedules.ahead`,
+// `sessions.ag_secs`, `sessions.ag_mins`). Two characters are written by the functions themselves:
+// the `:` between the hours and the minutes of `stamp` and `clock`, and the `-` between the month
+// and the day of `stamp`. What is left in a function is arithmetic, padding and slicing.
+```
+
+Each name checked against the file: `t('sessions.n_millions', ...)` line 38, `t('sessions.n_thousands', ...)` line 40, `t('sessions.stamp_day', day, time)` line 61, `t('app.schedules.day_sun')` to `t('app.schedules.day_sat')` lines 73-79, `t('app.schedules.ahead', ...)` line 81, `t('sessions.ag_secs', ...)` line 112, `t('sessions.ag_mins', ...)` line 113; the literal `:` at lines 51 (`stamp`) and 88 (`clock`), the literal `-` at line 60 (`stamp`); `pad` (line 20) writes the leading `0`, which "padding" names. Every key is in the catalog (`grep -rnE "^\s+(n_millions|n_thousands|stamp_day|ag_secs|ag_mins|ahead|day_sun|day_sat):" config/text`: `session-list.yml:37,38,60`, `agents.yml:9,12`, `app.yml:192,198,199`). The paragraph is wrapped greedily at 100 columns (widths 100, 98, 100, 99, 98, 89).
+
+The round's checks are in the table below (rows "Round 1").
 
 ## The cases' first run
 
@@ -41,6 +60,9 @@ Every case was run or read on the unchanged tree before any change to the code. 
 | Item 5: every sentence naming them made true | DONE | the grep of item 5 below, each hit judged; "Head comments and documents" below |
 | C5: no line added by `sh utils/unused-exports.sh` | DONE | `diff ../O129-base/unused-exports.txt <after>`: only `<` lines (removals) and the two counts, `Unused exports (228)` to `(226)` and `Unused exported types (108)` to `(107)` |
 | Verify 2a: `npx vitest run tests/server/machine/hpc/submit-files.test.ts tests/checks/config/config-folder.test.ts` before and after | DONE | before: `Test Files  2 passed (2)`, `Tests  32 passed | 2 skipped (34)`; after (run with `first-run.test.ts` in the same call, after the last source change): `Test Files  3 passed (3)`, `Tests  49 passed | 2 skipped (51)`; the two skipped rows both times are config-folder's real-hub rows, `skipped: OCULUS_TEST_HUB is not set` |
+| Round 1: the head comment of `format.ts` lines 6-8 rewritten | DONE | the paragraph quoted under "Repair round 1"; every key it names read at its line in the file |
+| Round 1: `npx vitest run tests/checks/source/comment-width.test.ts tests/checks/source/history.test.ts` | DONE, under the checks' own time limit | as written, with vitest's default 5000 ms per test, it was red twice on one row and on nothing else: `history.test.ts > no history in code > names no package id, date or session in any comment` gave `Error: Test timed out in 5000ms.` (5877 ms in the run with both files, 6714 ms alone), `Tests  1 failed | 7 passed (8)`, then `Tests  1 failed | 5 passed (6)`. That row scans every comment of the tree, and the tree runs `tests/checks` with no time limit (`package.json:16` `"test:checks": "vitest run tests/checks --testTimeout 0 --hookTimeout 0"`, `tests/tiers/quick.mjs:285`, `vite.config.ts:479-480`). The same command with `--testTimeout 0 --hookTimeout 0`: `Test Files  2 passed (2)`, `Tests  8 passed (8)`, that row passing in 5728 ms, and both comment-width rows passing ('ends by the hundredth column everywhere under src, tests and utils', 'is found in each language the tree is written in'). Neither test file is changed by the step |
+| Round 1: `LC_ALL=C grep -n '[^ -~]' src/lib/state/shared/words/format.ts` | DONE | prints nothing, exit 1; `npx prettier --check src/lib/state/shared/words/format.ts`: `All matched files use Prettier code style!` |
 | Verify 3: `npm run diagrams` then `npm run test:quick`, once | DONE | `npm run diagrams` exit 0; `npm run test:quick` (34 changed files, 327 test files chosen, among them `first-run.test.ts`, `submit-files.test.ts`, `config-folder.test.ts`, `tests/checks/source/keys.test.ts` and `tests/checks/diagrams/diagrams.test.ts`) ends with the lines quoted below, `test:quick: 306.7 s; every command passed` |
 
 ## The commands quoted
@@ -153,7 +175,7 @@ From `git status --short` and `git diff --numstat` (the base copy holds only `un
 | `docs/diagrams/layer-views.dot`, `.svg` | | 3 / 3 each | yes |
 | `docs/diagrams/layer-state.dot`, `.svg` | | 3 / 3 each | yes |
 | `docs/diagrams/layer-server.dot`, `.svg` | | 2 / 2 each | yes |
-| `src/lib/state/shared/words/format.ts` | 123 | 4 / 17 | no: `grouped` (and its head-comment clause) had `LineCounts.svelte` as its one importer, so the export rule of `spec.md:89` and item 2's "every other word the deleted code alone read" remove it |
+| `src/lib/state/shared/words/format.ts` | 126 | 10 / 20 | no: `grouped` (and its head-comment clause) had `LineCounts.svelte` as its one importer, so the export rule of `spec.md:89` and item 2's "every other word the deleted code alone read" remove it |
 | `config/text/app.yml` | 337 | 0 / 1 | no: `app.thousands_separator` was read only by `grouped` (item 2) |
 | `.scratch/migration/agents/reviews/O129-report.md` | this file | | yes |
 
@@ -175,7 +197,7 @@ No row is added, removed or changed; no allow list or predicate is edited. The r
 - `keptFiles`' doc comment (`files.ts:50-56`): still true.
 - `shipped.ts:1-5`: rewritten, it names only the release app.
 - `first-run.ts:17-24` (head, perl gone, paragraph rewrapped), `:53` and `:174` ("three programs"): rewritten. `packageLacks`' and `machineFacts`' doc comments: still true.
-- `format.ts:1-4`: rewritten without "a count with its thousands grouped".
+- `format.ts:1-4`: rewritten without "a count with its thousands grouped". `format.ts:6-11`: rewritten in repair round 1, quoted above.
 - `pane-fold.ts:1-16` ("the Status and Processes views' sections"): still true, the hooks block is a Status section folded through it.
 - `Hooks.svelte:1-8`: still true.
 - `docs/third-party.md:3`: rewritten, "One bundled program is under a copyleft license and is not linked into oculus's code: it is a separate program that oculus runs in a process of its own." Checked against 7z-wasm: `src/lib/server/machine/runs/recover/unpack.ts:1` says it is "run by Node in a process of its own".
@@ -192,6 +214,7 @@ ASCII: `LC_ALL=C grep -n '[^ -~]'` over every touched file prints nothing (exit 
 1. The wrapper that holds the hooks is renamed from `groups` to `hooks` (`<div class="hooks">`, rule `.hooks`), since it holds one group. The class is scoped by Svelte to `Status.svelte`; no test or other file names `.groups` of this view (`grep -rn "\.groups" src/lib/views/system/status tests` finds only unrelated `groups` fields).
 2. `grouped` of `format.ts` and `app.thousands_separator` are removed with the count, outside the write list, for the reason in the file table.
 3. The `files.ts` head comment names the Timeline as the reader of the commits of one file, where it named the Status view before for the tracked paths; I chose to name the reader that is left rather than drop the readers' list.
+4. In repair round 1, the `format.ts` paragraph names both literal characters (`:` and `-`) where the round asked for the `:` alone as "the one character", since the read shows two.
 
 ## Host- or user-visible changes, before and after
 
@@ -203,7 +226,12 @@ ASCII: `LC_ALL=C grep -n '[^ -~]'` over every touched file prints nothing (exit 
 
 ## Anything in the brief that was wrong or impossible
 
-Nothing. Two places the brief's lists did not name were needed, `format.ts` and `app.yml`, for the reason above.
+In the first brief, nothing; two places its lists did not name were needed, `format.ts` and `app.yml`, for the reason above.
+
+In repair round 1, two things:
+
+- The sentence it asked for, that the `:` of the clock is the one character a function writes itself, is false by the read of `format.ts:60`, which writes the `-` of a stamp's day as a literal too. It is left unwritten; the paragraph names both characters.
+- Its check command, run as written, uses vitest's default 5000 ms limit, under which the history check's comment scan timed out twice (5877 ms, 6714 ms). The tree's own runners give `tests/checks` no time limit, and under that setting both files pass (table, "Round 1").
 
 ## Limitations and sharp edges
 
@@ -213,4 +241,4 @@ Nothing. Two places the brief's lists did not name were needed, `format.ts` and 
 
 ## Runs of the list and whole-suite commands
 
-`npm run test:quick` ran once, after the last change, with `npm run diagrams` right before it. No whole-suite command was run.
+`npm run test:quick` ran once, with `npm run diagrams` right before it, after the step's last change of the first round. Repair round 1 changes one comment paragraph of `format.ts` and runs the checks its brief names (the table's "Round 1" rows) and not the list, as that brief orders; the list was not run again over the round's change. No whole-suite command was run.

@@ -1,11 +1,13 @@
-In flight (1 of 6 slots in use):
-- O129 (the Status view's line count removed whole), repair round 1.
+In flight (0 of 6 slots in use): none.
 
-Queued, in order: none.
+Queued, in order:
+- O130 (every hub's category rows held to the config check), ruling 645.
+- O131 (the editor holds a one-text `multi` value to its words), ruling 646.
 
 Owed looks: none.
 
 Landed, newest first:
+- O129 (the Status view's line count removed whole), one repair round, two fixes at landing.
 - O128 (a category sets the order of its cards), one repair round, no fix at landing in code.
 - O127 (a card shows the year a paper appeared), one repair round, one fix at landing in code.
 - O126 (the Sessions tab's shape), one repair round, one fix at landing in code.

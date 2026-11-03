@@ -33,7 +33,6 @@ import type { Desktop } from '../../shared/stores/desktop.ts';
 import type { PageStateStore } from '../../shared/stores/page-state.svelte.ts';
 import type { Windows } from '../../workbench/layout/open/float/browser.ts';
 import type { LayoutStore } from '../../workbench/layout.svelte.ts';
-import type { LinesStore } from '../../system/lines.svelte.ts';
 import type { FormDraftStore } from '../../forms/form-draft.ts';
 import type { Pages } from '../../forms/page-entry.ts';
 import type { SettledStore } from '../../forms/settled.svelte.ts';
@@ -148,8 +147,6 @@ export type ClientState = {
     website: WebsiteStore;
     memories: MemoriesStore;
     wallpapers: WallpapersStore;
-    /** The Status view's line counts of oculus's own files. */
-    lines: LinesStore;
     present: PresentStore;
     repositories: RepositoriesStore;
     search: SearchStore;

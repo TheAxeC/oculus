@@ -319,7 +319,6 @@ text:
             scout_note: academic openings (web | minutes)
             tasks: Tasks
             update_tasks: Update tasks
-        thousands_separator: ','
         title: oculus
         title_waiting: oculus ({0} waiting) | {1}
         update: Update
