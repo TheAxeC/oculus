@@ -23,7 +23,13 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 ```
 
 ```yaml
-dispatch: []        # steps in flight, up to six (Z632)
+dispatch:           # steps in flight, up to six (Z632)
+- step: O130
+  brief_check: "running: a0194efcc505ed3c8"
+  landing: preparing
+- step: O131
+  brief_check: "running: abd6789ecd2085c43"
+  landing: preparing
 ```
 
 ## The standing demands (from Axel, in force)
@@ -163,7 +169,7 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
-- None.
+- Open item 647 (2026-11-03): the words of a hub other than the primary are held to the whole-file shape only, never to `vocabFindings` (`src/lib/data/sources/config/sections/vocab.ts`, run in `READER_FINDINGS` over the primary's merged config alone, as `categoriesFindings` was before O130), so in such a hub's `.oculus/config.yml` two stages carrying `new_idea`, a `focus_clusters` row whose `label` names no catalog word, or a Focus lane's `move_writes` naming a word the vocabulary lacks gives no finding, and the page passes over the value silently (O130's brief check, `agents/reviews/O130-brief-check.md`, check 6). (a) recommended: a new step that runs `vocabFindings` in `readOtherHub` over each other hub's merged config when its settings file sets a vocabulary key, its findings naming that file, as O130 does for `categories`; it makes findings appear for such a hub's wrong words. (b) no change, the lazy option: a second hub's wrong vocabulary flags and lanes stay silent.
 
 ## Closed items
 - Open item 646 (2026-11-03), closed by Axel the same day: (a), step O131; (b) was the lazy option.
