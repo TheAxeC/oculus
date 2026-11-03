@@ -38,8 +38,18 @@ dispatch:           # steps in flight, up to six (Z632)
   brief_check: .scratch/migration/agents/reviews/O128-brief-check.md (aad602adef6203102, claude-opus-5-5, 229764 tokens, 91 tool uses, 11 min 50 s)
   landing: not-started
 - step: O129
-  brief_check: "running: ab2ec14cae7da1de4"
-  landing: preparing
+  base: 81a913408
+  worktree: .agents/worktrees/migration-O129
+  executor: agent
+  worker: claude:opus
+  session_id: a2610b093b6cffbd3
+  model: claude-opus-5-5
+  launched: 2026-11-03
+  report: .scratch/migration/agents/reviews/O129-report.md
+  round: 0
+  brief_check: .scratch/migration/agents/reviews/O129-brief-check.md (ab2ec14cae7da1de4, claude-opus-5-5, 216711 tokens, 103 tool uses, 11 min 11 s)
+  shared_paths: docs/HELP.md (O129 line 249, O128 line 307) and docs/diagrams (both regenerate) with O128
+  landing: not-started
 ```
 
 ## The standing demands (from Axel, in force)
@@ -781,6 +791,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-11-03 (O129 building). O129's brief check (`agents/reviews/O129-brief-check.md`, ab2ec14cae7da1de4, claude-opus-5-5) closed in the brief under its Closed heading; prepared at 81a913408; worktree `.agents/worktrees/migration-O129` with `npm ci` and `svelte-kit sync`; base copy `.agents/worktrees/O129-base` with `unused-exports.txt` (338 lines); builder a2610b093b6cffbd3 (claude-opus-5-5) runs. Shared paths with O128: `docs/HELP.md` (lines 249 and 307) and `docs/diagrams`. In flight (2 of 6): O128 (building, cases ruling), O129 (building). Open items: 645.
 - 2026-11-03 (O128 cases ruled). O128's builder handed back the cases' first run (`agents/reviews/O128-report.md`): four rows passing on the unchanged tree and a second hub's rows reaching no `categoriesFindings`. The cases ruling `agents/briefs/O128-cases.md` takes (a) and (B); the builder is resumed with it. O129's brief check ab2ec14cae7da1de4 runs. In flight (2 of 6): O128 (building), O129 (brief check). Open items: 645.
 - 2026-11-03 (O128 building). Axel ruled 643 (d), step O128, and 644 (a), step O129. O128's brief (`agents/briefs/O128.md`) carries the brief check's findings closed (`agents/reviews/O128-brief-check.md`, "Closed"); prepared at 8ae9afb82; builder a1f38c408a7b19f9c (claude-opus-5-5) runs in `.agents/worktrees/migration-O128`. In flight (1 of 6): O128 (building). Queued: O129. Open items: none.
 - 2026-11-03 (O127 landed). O127 is on main (booked under O127 in `plan.md`, `agents/reviews/O127-landing.md`); `test:quick` passed in the gate and main equals the gate; the long-text edge of the year read fixed at landing with a test row; the look taken on a scratch server on 8797 from the gate, stopped after. In flight: none. Queued: none. Open items: none.
