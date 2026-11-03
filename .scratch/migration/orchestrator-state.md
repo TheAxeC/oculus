@@ -33,7 +33,9 @@ dispatch:           # steps in flight, up to six (Z632)
   model: claude-opus-5-5
   launched: 2026-11-03
   report: .scratch/migration/agents/reviews/O133-report.md
-  round: 0
+  builder_usage: first run 255722 tokens, 124 tool uses, 28 min 26 s
+  reviewer_report: .scratch/migration/agents/reviews/O133-refuter.md (a65e7d50717ad34a0, claude-opus-5-5, 208309 tokens, 45 tool uses, 13 min 46 s)
+  round: 1
   brief_check: .scratch/migration/agents/reviews/O133-brief-check.md (aa8f129fd1b7631ff, claude-opus-5-5, 223032 tokens, 61 tool uses, 12 min 14 s)
   landing: not-started
 - step: O132
@@ -45,10 +47,15 @@ dispatch:           # steps in flight, up to six (Z632)
   model: claude-opus-5-5
   launched: 2026-11-03
   report: .scratch/migration/agents/reviews/O132-report.md
+  builder_usage: first run 194868 tokens, 101 tool uses, 21 min 11 s
+  reviewer_report: "running: a3d8deb001529c2b6, claude-opus-5-5"
   round: 0
   brief_check: .scratch/migration/agents/reviews/O132-brief-check.md (a3a364c925924ff9a, claude-opus-5-5, 226477 tokens, 74 tool uses, 11 min 31 s)
   shared_paths: docs/HELP.md and docs/diagrams (O133 writes HELP.md lines 400-410 and this step lines 588-596, far apart; each landing regenerates the diagrams)
   landing: not-started
+- step: O136
+  brief_check: "running: a9fae723e1ab7ad1b"
+  landing: preparing
 ```
 
 ## The standing demands (from Axel, in force)
@@ -188,9 +195,10 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
-- Open item 653 (2026-11-03): step O136 (the editor holds a keyed family to the form the Settings write takes) stopped at /spec on a premise found wrong. The step's line says `familySchema` gives a keyed family "the form `familyProblem` takes, a map", and names `research_audit` among the families. On main: `familyProblem` (`src/lib/data/sources/config/catalog/value-rule.ts:249`) runs only for a family field (`control: records`, given by `catalog/options.ts:436` to a family that is no top-level option), and every keyed family field of the catalog is a key/value family, so for those a map is right (a board's `stages`, `chips`, `forms` and `match`, the reader rows' `params`, `headers` and the rest). A top-level keyed family is never read by `familyProblem` (`valueProblem` of `research_audit` gives no problem for a map or a list of rows); its form is the one its reader takes, and they differ: a hub's `.oculus/config.yml` with `research_audit` or `stages` written as a list of rows gives "research_audit must be a map; oculus's value stands" and "stages must be a map; oculus's value stands", and one with `categories` written as a map gives "categories must be a list; oculus's value stands" (`loadConfig` on a scratch hub). `stages` has the fields of a list of records and is written as a map, so its form does not follow from its fields. The editor schema gives every top-level keyed family `type: ['array', 'object']` (`schemas/options.ts:323`), so none of these is marked. Options: (a) the schema of every keyed family takes the form its reader takes: a family field a map, as `familyProblem` holds it; a top-level keyed family the form its whole-file shape and the in-place merge read (`src/lib/data/sources/config/merge/in-place.ts`, `src/lib/data/shapes/catalog-files/`), a map for `research_audit`, `stages`, `palette` and the others merged by their words, a list of rows for `categories`, `focus_lanes` and the others read as rows, in every options file that has one; with a case per form in oculus's files and a hub's settings file. Pros: the editor marks every keyed family written in the form its reader refuses, `research_audit` included as the line asks. Cons: a larger step, which reads each top-level family's form from its shape. (b) family fields only, a map, `research_audit` and the other top-level families left as they are. Pros: a small step, exact to `familyProblem`. Cons: `research_audit`, `stages` or `categories` written in the wrong form stays unmarked while its reader refuses it, and the head comment of `options.ts` keeps that kind among the places the schema and the rule part. Recommendation (a); (b) is the lazy option.
+- None.
 
 ## Closed items
+- Open item 653 (2026-11-03), closed by Axel the same day: (a), O136's line rewritten to every keyed family; (b) was the lazy option.
 - Open item 652 (2026-11-03), closed by Axel the same day: (1) (a), (2) (a), (3) (a), O133's line rewritten; (1) (c), (2) (c) and (3) (b) were the lazy options.
 - Open item 651 (2026-11-03), closed by Axel the same day: (a), step O136; (b) was the lazy option.
 - Open item 650 (2026-11-03), closed by Axel the same day: (a), step O135; (c) was the lazy option.
