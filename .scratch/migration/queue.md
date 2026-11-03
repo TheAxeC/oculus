@@ -1,9 +1,9 @@
-In flight (1 of 6 slots in use):
+In flight (2 of 6 slots in use):
 - O135 (an Add Front Matter command for a note), building (base c931e9418).
+- O137 (a collection is always sorted, the reorder by hand removed), brief check running.
 
-Queued, in order (3 steps):
-- O137 (a collection is always sorted, the reorder by hand removed), ruling 654.
-- O138 (an `interview` and an `offered` status oculus offers), rulings Interview status and Offered status.
+Queued, in order (2 steps):
+- O138 (an `interview` and an `offered` status oculus offers), rulings Interview status and Offered status; waits on open item 657.
 - O139 (a finding of another hub names its hub), ruling 656.
 
 Owed looks: none.

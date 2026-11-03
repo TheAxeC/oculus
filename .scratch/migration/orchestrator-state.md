@@ -36,6 +36,9 @@ dispatch:           # steps in flight, up to six (Z632)
   round: 0
   brief_check: .scratch/migration/agents/reviews/O135-brief-check.md (a283b3d0c29ce5214, claude-opus-5-5, 229441 tokens, 92 tool uses, 12 min 31 s)
   landing: not-started
+- step: O137
+  brief_check: "running: a361b40d4a9410a68"
+  landing: preparing
 ```
 
 ## The standing demands (from Axel, in force)
@@ -175,7 +178,7 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
-None.
+- Open item 657 (2026-11-03, O138, ruling Interview status): the Focus board's positions column and the Applications view's green badge count only the statuses of `position_stages` (`config/catalogs/vocab.yml:200-202`: Active `[active]`, Applied `[applied]`; read by `stagedEntries` in `src/lib/state/boards/focus/focus-lanes.ts` and `openCount` in `src/lib/state/workbench/rail-badges/rail-badges.svelte.ts:278-285`), and the hub names no `position_stages` of its own. Once UGent's entry is set to `interview` at landing, as O138's line says, it leaves that column and the badge, though it is still a live application; an `offered` entry does the same. (a) O138 also adds two rows to `position_stages` after Applied: `{ label: "Interview", color: "#7c3aed", statuses: [interview] }` and `{ label: "Offered", color: "#059669", statuses: [offered] }`, so the column stacks them as stages of their own in the statuses' colours and the badge counts them. Pros: the entry stays where an applied one is, and the column shows how far it is. Cons: two more stacks in the column. (b) the Applied row becomes `statuses: [applied, interview, offered]`. Pros: the column keeps two stacks. Cons: the stack's label Applied names an entry that is at interview or holds an offer. (c) no change: the lazy option; UGent's entry leaves the column and the badge the day it is set to interview. Recommended: (a).
 
 ## Closed items
 - Open item 656 (2026-11-03), closed by Axel the same day: (a), step O139; (b) was the lazy option.
