@@ -1,9 +1,9 @@
-In flight (1 of 6 slots in use):
+In flight (2 of 6 slots in use):
 - O133 (one front-matter pattern for every Markdown reader), building.
+- O132 (every hub's words held to the vocabulary check), brief check.
 
-Queued, in order (3 steps):
-- O132 (every hub's words held to the vocabulary check), ruling 647; O130 has landed, so it is unblocked.
-- O136 (the editor holds a keyed family to the map the Settings write takes), ruling 651; O131 has landed, so it is unblocked.
+Queued, in order (2 steps):
+- O136 (the editor holds a keyed family to the form its reader takes), stopped at /spec; waits on open item 653.
 - O135 (an Add Front Matter command for a note), ruling 650; after O133 lands, since it reads the header by O133's pattern.
 
 Owed looks: none.
