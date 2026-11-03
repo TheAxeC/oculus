@@ -24,6 +24,9 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 
 ```yaml
 dispatch:           # steps in flight, up to six (Z632)
+- step: O128
+  brief_check: "running: aad602adef6203102"
+  landing: preparing
 ```
 
 ## The standing demands (from Axel, in force)
@@ -164,6 +167,8 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
 ## Closed items
+- Open item 644 (2026-11-03), closed by Axel the same day: (a), step O129; (b) was the lazy option.
+- Open item 643 (2026-11-03), closed by Axel the same day: (d), step O128, a `sort:` key on a row of `categories:`; (a) was the lazy option.
 - Open item 642 (2026-11-03), closed by Axel the same day: (a), carried by O127 in its repair round; (c), no change, was the lazy option.
 - Open item 641 (2026-11-03), closed by Axel the same day: (a), step O127 after O126; (c), no change, was the lazy option.
 - Open item 640 (2026-11-03), closed by Axel the same day: (a), carried by step O125 at its landing; (b), keeping it translucent, was the lazy option.
@@ -761,7 +766,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
-- 2026-11-03 (O127 landed). O127 is on main (booked under O127 in `plan.md`, `agents/reviews/O127-landing.md`); `test:quick` passed in the gate and main equals the gate; the long-text edge of the year read fixed at landing with a test row; the look taken on a scratch server on 8797 from the gate, stopped after. In flight: none. Queued: none. Open items: none.
+- 2026-11-03 (O127 landed). O127 is on main (booked under O127 in `plan.md`, `agents/reviews/O127-landing.md`); `test:quick` passed in the gate and main equals the gate; the long-text edge of the year read fixed at landing with a test row; the look taken on a scratch server on 8797 from the gate, stopped after. In flight: none. Queued: none. Open items: none (644 ruled (a), step O129 added). In flight (1 of 6): O128, being prepared.
 - 2026-11-03 (O126 landed). O126 is on main (booked under O126 in `plan.md`, `agents/reviews/O126-landing.md`); `test:quick` passed in the gate and main equals the gate; one comment fixed at landing, Behaviour 1 kept; the look taken on a scratch server on 8797 from the gate, stopped after. In flight (1 of 6): O127, its round 1 under review (a86efa7addc7ea610). Queued: none. Open items: none.
 - 2026-11-03 (O127 round 1 sent). O127's review a8e6e45d7bcf15b6b (claude-opus-5-5) is saved in `agents/reviews/O127-refuter.md`: items 1-6 hold, C1-C9 and C11 met, C10 left to the look; findings Spec 1, Standards 1-2. Round 1 (`agents/briefs/O127-round1.md`, copied into the worktree with the review; snapshot `.agents/worktrees/migration-O127-round-1`) carries ruling 642 (a) and the three findings. O126's reviewer over round 1 ac782cca5d8c0891d runs. In flight (2 of 6): O126 (round 1 under review), O127 (repair round 1). Open items: none.
 - 2026-11-03 (O126 round 1 under review). O126's builder reported round 1 (appended to `agents/reviews/O126-report.md`, saved in the main ledger; usage under builder_usage); the orchestrator read the round's delta against `.agents/worktrees/migration-O126-round-1` (17 listed paths changed, 2 new: TreeSection.svelte and Section.svelte). Its reviewer over round 1, ac782cca5d8c0891d (claude-opus-5-5), runs. O127's reviewer a8e6e45d7bcf15b6b runs. In flight (2 of 6): O126, O127, both under review. Open items: none.
