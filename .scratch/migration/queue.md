@@ -1,6 +1,6 @@
 In flight (2 of 6 slots in use):
 - O133 (one front-matter pattern for every Markdown reader), building.
-- O132 (every hub's words held to the vocabulary check), brief check.
+- O132 (every hub's words held to the vocabulary check), preparing: brief checked, worktree next.
 
 Queued, in order (2 steps):
 - O136 (the editor holds a keyed family to the form its reader takes), stopped at /spec; waits on open item 653.
