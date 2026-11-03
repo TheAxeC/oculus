@@ -1,13 +1,13 @@
-In flight (3 of 6 slots in use):
+In flight (2 of 6 slots in use):
 - O137 (always-sorted collections), under review.
-- O138 (interview and offered statuses), landing.
-- O139 (a finding names its hub), under review.
+- O139 (a finding names its hub), repair round 1 running.
 
 Queued, in order (0 steps): none.
 
 Owed looks: none.
 
 Landed, newest first:
+- O138 (interview and offered statuses), 2026-11-03, cbc5ee487; hub 1c0d40fdd.
 - O135 (Add Front Matter for a note), 2026-11-03, acbbb2228.
 - O136 (keyed families in the editor), 2026-11-03, cf81d99d0.
 - O132 (the vocabulary check on every hub), 2026-11-03, f8e23dcc3.
