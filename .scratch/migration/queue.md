@@ -1,6 +1,6 @@
 In flight (2 of 6 slots in use):
-- O137 (always-sorted collections), under review.
-- O139 (a finding names its hub), repair round 1 running.
+- O137 (always-sorted collections), repair round 1 running.
+- O139 (a finding names its hub), review over round 1 running.
 
 Queued, in order (0 steps): none.
 
