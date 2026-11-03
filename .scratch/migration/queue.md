@@ -1,10 +1,10 @@
 In flight (3 of 6 slots in use):
-- O135 (an Add Front Matter command for a note), built, under review (base c931e9418).
+- O135 (an Add Front Matter command for a note), built and reviewed; repair round 1 next (base c931e9418).
 - O137 (a collection is always sorted, the reorder by hand removed), building (base 6779731e1).
-- O139 (a finding of another hub names its hub, every file finding opens its file), rulings 656 and 658, brief check running.
+- O138 (an `interview` and an `offered` status oculus offers), rulings Interview status, Offered status, 657 (a) and 659 (b), brief check running; open item 660 decides what its landing writes to the hub's applications options.
 
 Queued, in order (1 step):
-- O138 (an `interview` and an `offered` status oculus offers), rulings Interview status and Offered status, rulings 657 (a) and 659 (b) given; /spec next; open item 660 decides what its landing writes to the hub's applications options.
+- O139 (a finding of another hub names its hub, every file finding opens its file), rulings 656 and 658, stopped at /spec on open item 662.
 
 Owed looks: none.
 
