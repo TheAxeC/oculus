@@ -1,11 +1,12 @@
-In flight (1 of 6 slots in use):
-- O140 (interview drawn apart from planned), brief check reported.
+In flight (0 of 6 slots in use): none.
 
-Queued, in order (0 steps): none.
+Queued, in order (1 step):
+- O140 (interview drawn apart from planned), waits on open item 666.
 
 Owed looks: none.
 
 Landed, newest first:
+- O137 (always-sorted collections), 2026-11-03, c6792b0d6.
 - O139 (a finding names its hub), 2026-11-03, 5e03d8bfa.
 - O138 (interview and offered statuses), 2026-11-03, cbc5ee487; hub 1c0d40fdd.
 - O135 (Add Front Matter for a note), 2026-11-03, acbbb2228.
