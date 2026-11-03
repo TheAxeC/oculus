@@ -1,10 +1,10 @@
-In flight (4 of 6 slots in use):
-- O130 (every hub's category rows held to the config check), built; in review.
-- O131 (the editor holds a one-text `multi` value to its words), built; in review.
-- O133 (one front-matter pattern for every Markdown reader), ruling 648; brief written, brief check running.
-- O134 (a Notes section in the templates page), ruling 649; a small text step, building.
+In flight (3 of 6 slots in use):
+- O130 (every hub's category rows held to the config check), reviewed; landing.
+- O131 (the editor holds a one-text `multi` value to its words), built and reviewed; repair round 1 building.
+- O134 (a Notes section in the templates page), ruling 649; a small text step, built; in review.
 
 Queued, in order:
+- O133 (one front-matter pattern for every Markdown reader), ruling 648; stopped at its brief check, open item 652.
 - O132 (every hub's words held to the vocabulary check), ruling 647; after O130 lands, since both write `readOtherHub`.
 - O135 (an Add Front Matter command for a note), ruling 650; after O133 lands, since it reads the header by O133's pattern.
 

@@ -34,11 +34,11 @@ dispatch:           # steps in flight, up to six (Z632)
   launched: 2026-11-03
   report: .scratch/migration/agents/reviews/O130-report.md
   builder_usage: first run 179415 tokens, 77 tool uses, 21 min 16 s
-  reviewer_report: "running: a982d30fcbb0915af, claude-opus-5-5"
+  reviewer_report: .scratch/migration/agents/reviews/O130-refuter.md (a982d30fcbb0915af, claude-opus-5-5, 190139 tokens, 69 tool uses, 15 min 32 s)
   round: 0
   brief_check: .scratch/migration/agents/reviews/O130-brief-check.md (a0194efcc505ed3c8, claude-opus-5-5, 190092 tokens, 54 tool uses, 7 min 42 s)
   shared_paths: docs/diagrams (O131 regenerates them too; each landing runs npm run diagrams, so the merge is the generator's output)
-  landing: not-started
+  landing: cherry-picking
 - step: O131
   base: c0f69529b
   worktree: .agents/worktrees/migration-O131
@@ -55,9 +55,6 @@ dispatch:           # steps in flight, up to six (Z632)
   brief_check: .scratch/migration/agents/reviews/O131-brief-check.md (abd6789ecd2085c43, claude-opus-5-5, 232859 tokens, 68 tool uses, 10 min 42 s)
   shared_paths: docs/diagrams (O130 regenerates them too; each landing runs npm run diagrams, so the merge is the generator's output)
   landing: not-started
-- step: O133
-  brief_check: "running: aa8f129fd1b7631ff"
-  landing: preparing
 - step: O134
   base: c41dc24ec
   worktree: .agents/worktrees/migration-O134
@@ -67,6 +64,8 @@ dispatch:           # steps in flight, up to six (Z632)
   model: claude-opus-5-5
   launched: 2026-11-03
   report: .scratch/migration/agents/reviews/O134-report.md
+  builder_usage: first run 132004 tokens, 45 tool uses, 6 min 14 s
+  reviewer_report: "running: a05c46e52aec55295, claude-opus-5-5"
   round: 0
   brief_check: none, a small text step
   landing: not-started
@@ -210,6 +209,7 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
 - Open item 651 (2026-11-03): the editor takes a keyed family written as a list of rows, which the Settings write refuses. `familySchema` (`src/lib/data/sources/config/catalog/schemas/options.ts:322`) gives every keyed family `type: ['array', 'object']` with `items: rows`, and `familyProblem` (`src/lib/data/sources/config/catalog/value-rule.ts:249-251`) refuses any value that is no map (`{ kind: 'pairs' }` or `{ kind: 'record' }`); O131's review probed `stages: [{ key: words, value: building }]` in `config/defaults/layout.yml`: no mark in the editor, refused by the rule. The same holds for a board's `chips` and `forms` and for `research_audit`. Found by O131's review, outside O131's part (the `multi` schema). Options: (a) a step: the schema of a keyed family takes the form the rule takes, a map, so the editor marks a list of rows where the Settings write refuses it, with a case per family the shipped files and a hub write; (b) no change, the lazy option. Recommendation (a).
+- Open item 652 (2026-11-03): step O133 (one front-matter pattern) stopped at its brief check (`agents/reviews/O133-brief-check.md`); three questions. (1) The test. The rules file lets a builder write a test only as the test of a guarded entry, and no entry covers the note scan, the Outline, the preview, an embed or the Markdown server's header token (G32 covers the docs reader alone). Options: (a) a new entry: every reader of a Markdown file reads the same leading header (the note's tags and headings, the Outline, the preview, an embed, the Markdown server's token and the docs split), its Test the new table; (b) G32 widened to those readers, two guarantees in one entry; (c) no test, quoted runs only, the lazy option. Recommendation (a). (2) The paths the step must widen to: `tests/checks/tree/layer-rows.ts`, since the views row does not let `RenderedMarkdown.svelte` import from `data/prose/markdown/` and the boundaries test would go red; `config/text/server.yml:385`, the LinkedIn sentence 'no front matter between two --- lines', which names one closing form; `src/lib/data/sources/deck/split.ts:7`, a comment naming the pattern's place in docs.ts. Options: (a) all three widened, the views row given `data/prose/markdown/front-matter` alone with its reason in the table's comment; (b) the layer row left and the preview given the pattern through `ui/html.ts`, the other two widened; (c) no widening, the lazy option, which leaves the step unbuildable. Recommendation (a). (3) A premise found wrong: the docs reader's pattern, the ruled wider form, swallows the text after an empty header (`---` then `---`) up to a later `---` or `...` line; the brief check's probe gives `splitFrontmatter` of `---\n---\n# Title\n\nText\n\n---\n\n## More\n` a block `---\n# Title\n\nText\n\n`, and the Outline today gives `Title` and `More`. No file of the hub has such a header (five Jekyll fixtures under `vendor/` have an empty header and no later closing line). Options: (a) the one pattern tries the empty block first, so the header is the two lines alone, which changes `splitFrontmatter` for this input only, with a case; (b) the docs form as it is, every reader then swallowing that text, the lazy option. Recommendation (a).
 
 ## Closed items
 - Open item 650 (2026-11-03), closed by Axel the same day: (a), step O135; (c) was the lazy option.
