@@ -1,7 +1,7 @@
-In flight (0 of 6 slots in use): none.
+In flight (1 of 6 slots in use):
+- O140 (interview and offered drawn apart), building.
 
-Queued, in order (1 step):
-- O140 (interview drawn apart from planned), waits on open item 666.
+Queued, in order (0 steps): none.
 
 Owed looks: none.
 
