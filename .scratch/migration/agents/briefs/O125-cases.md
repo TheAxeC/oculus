@@ -1,0 +1,11 @@
+# O125, cases ruled before the build
+
+The builder's first run handed back two cases and a list of comments the change makes false. Each ruling below replaces the brief's text where they differ. Rulings 637 and 638 are lines 3453-3454 of `plan.md` on main; the worktree's copy of the ledger predates them.
+
+1. **C13, the table that stays (Ruling 1).** Option (a). C13 reads: wallpaper on, a `stays` table with its rows scrolled under the header, outside a surface (the Status Gallery's tones table, `Gallery.svelte:341`) and inside one (Problems, `Problems.svelte:313`, inside its tinted pane): the header cells solid `--panel`, no blur; the rows as now. The Processes table is not a `stays` table and its header has no rows under it; it leaves C13 and is not changed. Its actions column stays out of the step (open item 640).
+
+2. **The diff view's file header (Ruling 2).** Option (a). Ruling 638 is that no heading row anywhere has text behind it over a wallpaper, and the multi-file diff's file header is such a heading row. Item 8 is added: `src/lib/views/sources/repositories/diff/FileHeader.svelte`, over a wallpaper the header that stays (`.header.stays`) paints solid `--panel`, the colour it paints without one, with no blur; its comment (lines 10-14) and the rule (lines 120-127) say what is now true. Case C17: wallpaper on, a diff of several files scrolled under a file's header: the header solid `--panel`, no blur. The `tokens.css` sentence names the diff's file header among the strips that paint the panel solid; the Processes table's actions column is the one strip that keeps `panel_opacity`.
+
+3. **Comments the change makes false.** The write list widens to them, each changed only to say what is true after the step: `src/lib/ui/display/table/Table.svelte` (the whole file, the `stays` doc comment at lines 21-29 included), `src/lib/views/sources/search/Problems.svelte` lines 47-48, `src/lib/views/system/status/Gallery.svelte` lines 36-38, `src/lib/views/personal/calendar/Calendar.svelte` lines 39-40 beside 360-383, and `FileHeader.svelte` as item 2 says. Find the path of `Problems.svelte` by `git grep -ln` if it differs; the line ranges are as the builder's first run quoted them.
+
+4. **"What it must do"** reads "items 1 to 8" (with item 8 above), not "items 1 to 4".

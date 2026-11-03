@@ -34,8 +34,11 @@ dispatch:           # steps in flight, up to six (Z632)
   model: claude-opus-5-5
   launched: 2026-11-03
   report: .scratch/migration/agents/reviews/O125-report.md
+  builder_usage: first run 146862 tokens, 26 tool uses, 4 min 11 s (handed back two cases)
   round: 0
   landing: not-started
+- step: O126
+  landing: preparing
 ```
 
 ## The standing demands (from Axel, in force)
