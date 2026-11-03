@@ -49,8 +49,8 @@ dispatch:           # steps in flight, up to six (Z632)
   launched: 2026-11-03
   report: .scratch/migration/agents/reviews/O127-report.md
   builder_usage: first run 185001 tokens, 76 tool uses, 9 min 12 s
-  round: 0
-  reviewer_report: none yet
+  round: 1
+  reviewer_report: .scratch/migration/agents/reviews/O127-refuter.md (a8e6e45d7bcf15b6b, claude-opus-5-5, 165569 tokens, 33 tool uses, 6 min 16 s)
   brief_check: .scratch/migration/agents/reviews/O127-brief-check.md (ad6df2830a9462837, claude-opus-5-5, 184411 tokens, 66 tool uses, 8 min 47 s)
   shared_paths: with O126, in flight: `docs/HELP.md` (O127 lines 296 and 298, O126 lines 295 and 340-341; lines 295 and 296 touch, so the landing takes each step's paragraph whole) and the generated `docs/diagrams/layers.dot`, `layers.svg`, `layer-views.dot` and `layer-views.svg`, regenerated with `npm run diagrams` at landing
   landing: not-started
@@ -791,6 +791,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-11-03 (O127 round 1 sent). O127's review a8e6e45d7bcf15b6b (claude-opus-5-5) is saved in `agents/reviews/O127-refuter.md`: items 1-6 hold, C1-C9 and C11 met, C10 left to the look; findings Spec 1, Standards 1-2. Round 1 (`agents/briefs/O127-round1.md`, copied into the worktree with the review; snapshot `.agents/worktrees/migration-O127-round-1`) carries ruling 642 (a) and the three findings. O126's reviewer over round 1 ac782cca5d8c0891d runs. In flight (2 of 6): O126 (round 1 under review), O127 (repair round 1). Open items: none.
 - 2026-11-03 (O126 round 1 under review). O126's builder reported round 1 (appended to `agents/reviews/O126-report.md`, saved in the main ledger; usage under builder_usage); the orchestrator read the round's delta against `.agents/worktrees/migration-O126-round-1` (17 listed paths changed, 2 new: TreeSection.svelte and Section.svelte). Its reviewer over round 1, ac782cca5d8c0891d (claude-opus-5-5), runs. O127's reviewer a8e6e45d7bcf15b6b runs. In flight (2 of 6): O126, O127, both under review. Open items: none.
 - 2026-11-03 (O127 under review). O127's builder reported (`agents/reviews/O127-report.md`, saved in the main ledger, usage under builder_usage) and the orchestrator read the whole diff (8 tracked files, 67 lines added, 22 removed). Its reviewer a8e6e45d7bcf15b6b (claude-opus-5-5) runs. In flight (2 of 6): O126 (repair round 1), O127 (under review). Queued: none. Open items: none (642 ruled (a), carried by O127's repair round).
 - 2026-11-03 (O127 building). O127's brief (`agents/briefs/O127.md`) carries the brief check's findings closed (`agents/reviews/O127-brief-check.md`, "Closed"): the year tag on the project board card and the Focus lane card, the rule in `focus.ts`, the stage flags' descriptions and the Help page. The text year the manifest form writes is open item 642. Prepared at 0e374c303; builder a09c9fb8b3606ecfe (claude-opus-5-5) runs in `.agents/worktrees/migration-O127`. In flight (2 of 6): O126 (repair round 1), O127 (building). Queued: none. Open items: 642.

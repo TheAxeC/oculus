@@ -1,6 +1,6 @@
 In flight (2 of 6 slots in use):
 - O126 (the Sessions tab's shape), repair round 1 built, under review.
-- O127 (a card shows the year a paper appeared), under review.
+- O127 (a card shows the year a paper appeared), repair round 1.
 
 Queued, in order (0 steps):
 - none.
