@@ -49,8 +49,9 @@ dispatch:           # steps in flight, up to six (Z632)
   launched: 2026-11-03
   report: .scratch/migration/agents/reviews/O131-report.md
   builder_usage: first run 258918 tokens, 123 tool uses, 19 min 46 s
-  reviewer_report: "running: a6d4eb65a0299f2eb, claude-opus-5-5"
-  round: 0
+  reviewer_report: .scratch/migration/agents/reviews/O131-refuter.md (a6d4eb65a0299f2eb, claude-opus-5-5, 181562 tokens, 40 tool uses, 9 min 30 s)
+  round: 1
+  round_1: agents/briefs/O131-round-1.md, snapshot .agents/worktrees/migration-O131-round-1
   brief_check: .scratch/migration/agents/reviews/O131-brief-check.md (abd6789ecd2085c43, claude-opus-5-5, 232859 tokens, 68 tool uses, 10 min 42 s)
   shared_paths: docs/diagrams (O130 regenerates them too; each landing runs npm run diagrams, so the merge is the generator's output)
   landing: not-started
@@ -208,7 +209,7 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
-- None.
+- Open item 651 (2026-11-03): the editor takes a keyed family written as a list of rows, which the Settings write refuses. `familySchema` (`src/lib/data/sources/config/catalog/schemas/options.ts:322`) gives every keyed family `type: ['array', 'object']` with `items: rows`, and `familyProblem` (`src/lib/data/sources/config/catalog/value-rule.ts:249-251`) refuses any value that is no map (`{ kind: 'pairs' }` or `{ kind: 'record' }`); O131's review probed `stages: [{ key: words, value: building }]` in `config/defaults/layout.yml`: no mark in the editor, refused by the rule. The same holds for a board's `chips` and `forms` and for `research_audit`. Found by O131's review, outside O131's part (the `multi` schema). Options: (a) a step: the schema of a keyed family takes the form the rule takes, a map, so the editor marks a list of rows where the Settings write refuses it, with a case per family the shipped files and a hub write; (b) no change, the lazy option. Recommendation (a).
 
 ## Closed items
 - Open item 650 (2026-11-03), closed by Axel the same day: (a), step O135; (c) was the lazy option.
