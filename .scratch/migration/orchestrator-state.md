@@ -181,6 +181,8 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
+- Open item 642 (2026-11-03, O127's brief check, a finding whose fix widens the step, ruling Brief check scope; `agents/reviews/O127-brief-check.md`): a year typed through the manifest form into a manifest that has none is written as the text `'2025'` (`src/lib/server/edit/writes/manifest.ts:218-220` writes a number only where the field already holds one), and `normalise.ts:278` reads `year` with `z.number()`, so such a year reaches neither the boards' year filter (`takes.ts:94`) nor O127's year tag. No manifest of the hub holds a year as text today. O127 goes on without it and draws the year as `normalise.ts` gives it. (a) Recommended, a judgment: `normalise.ts` reads `year` as a whole number from a whole number or a text of digits alone, and as nothing otherwise, the schema giving `year` as text "as a whole number" (`manifest-schema.yml:60`), with rows in the snapshot test G32 names; carried by O127 in its repair round. (b) The manifest form writes the year field as a number whatever it holds; cons: a year typed by hand into the file as `'2025'` still reads as nothing. (c) No change; the lazy option.
+
 ## Closed items
 - Open item 641 (2026-11-03), closed by Axel the same day: (a), step O127 after O126; (c), no change, was the lazy option.
 - Open item 640 (2026-11-03), closed by Axel the same day: (a), carried by step O125 at its landing; (b), keeping it translucent, was the lazy option.
