@@ -25,8 +25,18 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 ```yaml
 dispatch:           # steps in flight, up to six (Z632)
 - step: O130
-  brief_check: "running: a0194efcc505ed3c8"
-  landing: preparing
+  base: 1c312c834
+  worktree: .agents/worktrees/migration-O130
+  executor: agent
+  worker: claude:opus
+  session_id: abbd7df1d818a8d10
+  model: claude-opus-5-5
+  launched: 2026-11-03
+  report: .scratch/migration/agents/reviews/O130-report.md
+  round: 0
+  brief_check: .scratch/migration/agents/reviews/O130-brief-check.md (a0194efcc505ed3c8, claude-opus-5-5, 190092 tokens, 54 tool uses, 7 min 42 s)
+  shared_paths: docs/diagrams (O131 regenerates them too; each landing runs npm run diagrams, so the merge is the generator's output)
+  landing: not-started
 - step: O131
   brief_check: "running: abd6789ecd2085c43"
   landing: preparing
@@ -773,6 +783,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-11-03 (O130 building; O131 brief check). O130's brief check (`agents/reviews/O130-brief-check.md`, a0194efcc505ed3c8, claude-opus-5-5) closed in the brief under its Closed heading: the run is made only for a hub whose settings file sets `categories`, so `readOtherHub` keeps its signature; prepared at 1c312c834; worktree `.agents/worktrees/migration-O130` with `npm ci` and `svelte-kit sync`; base copy `.agents/worktrees/O130-base` with `unused-exports.txt` (335 lines); builder abbd7df1d818a8d10 (claude-opus-5-5) runs. O131's step line corrected (a one-text `multi` is one word); its brief check abd6789ecd2085c43 runs. Open item 647 raised. At O130's landing: G124's text, Code and Test lines. In flight (2 of 6): O130 (building), O131 (brief check). Open items: 647.
 - 2026-11-03 (O129 landed; rulings 645 and 646). O129, the Status view's line count removed whole, landed (booking in plan.md under O129, `agents/reviews/O129-landing.md`): the review over round 1 found two Standards points, fixed at landing; the gate passed every command over two runs, each run one timeout in a file the step does not change that passed in the other run and alone; the look on 8797 showed no Lines of code section and the two 16 px gaps. G73 drops `perl`; `lines` left the instance's `folded` list in `~/.oculus/views.json`. Axel ruled 645 (a), step O130, and 646 (a), step O131, both booked in plan.md. In flight: none. Next: /spec O130 and /spec O131. Open items: none.
 - 2026-11-03 (O129 round 1 sent). O129's review a9c8c428e5b66ae90 (claude-opus-5-5), `agents/reviews/O129-refuter.md`: every item holds, every case met, one finding (Standards 1, the head comment of `format.ts:6-7` names a separator key the file no longer reads). Repair round 1 (`agents/briefs/O129-round-1.md`) rewrites that paragraph; snapshot `.agents/worktrees/migration-O129-round-1`. In flight (1 of 6): O129 (round 1). Open items: 646, 645.
 - 2026-11-03 (O128 landed). O128, the order of a category's cards, landed (booking in plan.md under O128, `agents/reviews/O128-landing.md`): the review over round 1 found nothing; the gate passed; the look on 8797 showed publications and other outputs by stage, newest year, title. G124 rewritten for ruling (B). Open item 646 raised (the editor's schema of a one-text `multi` value). O129 is reviewed (`agents/reviews/O129-refuter.md`, one Standards finding, `format.ts:6-7`); its repair round is next. In flight (1 of 6): O129 (reviewed). Open items: 646, 645.
