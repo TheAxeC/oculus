@@ -123,3 +123,209 @@ Cases of the brief's "Cases":
 - The Monaco claims (an LF insert written in the model's CRLF ending, `forceMoveMarkers` moving a caret and a selection start at 1,1): the brief's premise from Monaco's source, not reread here; the look settles them.
 
 Reviewer usage: a75b874ccb284432f, claude-opus-5-5, 222808 tokens, 70 tool uses, 11 min 11 s.
+
+# Repair round 1, refuted
+
+Step O135, on /Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O135, base c931e9418. The round is read as the delta from the round snapshot (/Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O135-round-1) plus the two paths files.txt does not list, against the whole diff since the base.
+
+A page this report cites (the rules file, a standard, a skill's text) is named with its section, never with a line number. A finding in code keeps its `file:line`. The report is in the rules file's character set.
+
+```
+$ npx vitest run tests/data/prose/markdown/front-matter.test.ts tests/shell/panes/strip/tab-menu.test.ts tests/views/sources/source/save-key.client.test.ts tests/ui/controls/editor/reach-text.test.ts tests/checks/tree/boundaries.test.ts tests/shell/window/menu-answer.test.ts tests/views/sources/bar-actions.test.ts --reporter=dot
+ Test Files  1 failed | 6 passed (7)
+      Tests  2 failed | 172 passed (174)
+(uptime: load averages: 18.01 14.54 10.48. Both red lines are "tests/checks/tree/boundaries.test.ts > layer boundaries > holds across src/lib" and "> holds no process-wide state under src", each "Error: Test timed out in 5000ms.")
+$ npx vitest run tests/checks/tree/boundaries.test.ts --reporter=verbose   (alone; load averages 15.82 15.09 11.28)
+ x |unit| ... > layer boundaries > holds across src/lib 5821ms  -> Test timed out in 5000ms.
+ (the other 10 pass, "holds no process-wide state under src 2103ms" among them)
+(The importers of a changed module: grep -rlE of each changed module's path under tests lists the seven files above, layer-rows.ts itself and SaveKeyHost.svelte, and no other. vite.config.ts:475-480 says the tree checks under tests/checks run under npm run test:checks "with no time limit"; the scoped run applies the default 5 s, and test:quick below runs the same file in "vitest checks" green. A timeout under a load of 15 to 18, with no assertion red.)
+
+$ shasum docs/diagrams/* > <scratch>/o135r1-diag-before.txt; npm run diagrams; shasum docs/diagrams/* | diff <scratch>/o135r1-diag-before.txt - && echo "diagrams unchanged"
+diagrams unchanged
+$ git status --short docs/diagrams
+ M docs/diagrams/layer-shell.dot / layer-shell.svg / layer-views.dot / layer-views.svg / layers.dot / layers.svg
+
+$ npm run test:quick   (one run; load averages 15.96 before, 14.86 after)
+test:quick: 28 changed file(s), from git since HEAD
+test:quick: 29 test file(s)
+ok      prettier (2.1 s): All matched files use Prettier code style!
+ok      ASCII gate (2.3 s)
+ok      svelte-kit sync (5.3 s)
+ok      eslint (8.4 s)
+ok      svelte-check (21.7 s): 1793735928563 COMPLETED 582 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest (67.6 s): Duration  42.88s (transform 72.73s, setup 0ms, import 151.06s, tests 4.97s, environment 3.04s)
+ok      vitest slow (75.1 s): Duration  49.75s (transform 26.69s, setup 0ms, import 34.59s, tests 14.90s, environment 1ms)
+ok      vitest checks (100.2 s): Duration  75.24s (transform 23.93s, setup 0ms, import 50.28s, tests 177.86s, environment 3ms)
+test:quick: 105.8 s; every command passed
+
+$ LC_ALL=C perl -ne '<the rules file's ASCII gate>' <the 18 changed paths under src, tests and config, the report's list, front-matter-offer.svelte.ts and PaneView.svelte included>; echo "ASCII gate exit $?"
+ASCII gate exit 0
+$ LC_ALL=C grep -n '[^ -~]' docs/HELP.md docs/diagrams/layer-shell.dot docs/diagrams/layer-shell.svg docs/diagrams/layer-views.dot docs/diagrams/layer-views.svg docs/diagrams/layers.dot docs/diagrams/layers.svg; echo "docs grep exit $?"
+docs grep exit 1
+$ LC_ALL=C grep -n '[^ -~]' .scratch/migration/agents/reviews/O135-report.md; echo "report grep exit $?"
+report grep exit 1
+(git status --short lists 28 lines: 23 modified, the 2 new src files and the 3 ledger files; 25 paths of the step, all in the two lists above.)
+
+$ diff ../O135-base/unused-exports.txt <(sh utils/unused-exports.sh 2>&1); echo "unused diff exit $?"
+unused diff exit 0
+$ sh utils/folder-check.sh; echo "folder-check exit $?"
+folder-check exit 0
+$ wc -l src/lib/views/sources/source/Source.svelte src/lib/shell/panes/PaneView.svelte src/lib/views/sources/source/SourceBody.svelte
+     518 src/lib/views/sources/source/Source.svelte
+     514 src/lib/shell/panes/PaneView.svelte
+     217 src/lib/views/sources/source/SourceBody.svelte
+$ ls src/lib/views/sources/source/status | wc -l; ls src/lib/views/sources/source | wc -l
+      10
+      10
+
+The round report's evidence, rerun:
+$ node <S>/cases.mts "$PWD" | wc -l
+      19
+$ node <S>/cases.mts "$PWD" | diff - <S>/after-run.txt; echo "case-run vs after-run exit $?"
+case-run vs after-run exit 0
+$ wc -l <S>/first-run.txt <S>/after-run.txt
+      19 .../first-run.txt
+      19 .../after-run.txt
+$ diff <(tail -n +2 <S>/first-run.txt) <(tail -n +2 <S>/after-run.txt); echo "diff exit $?"
+diff exit 0
+$ (item 8) copy of ../O135-base's src, tests, utils, config, docs with package.json, tsconfig.json, vite.config.ts, .npmrc, the worktree's SaveKeyHost.svelte and save-key.client.test.ts, and a clone of node_modules, in my scratchpad; then in it:
+$ diff -rq <base>/src src; echo "src vs base exit $?"
+src vs base exit 0
+$ diff <base>/tests/views/sources/source/SaveKeyHost.svelte tests/views/sources/source/SaveKeyHost.svelte
+51a52
+>             frontMatter: false,
+79a81
+>             addFrontMatter: nothing,
+$ npx vitest run tests/views/sources/source/save-key.client.test.ts
+ Test Files  1 passed (1)
+      Tests  1 passed (1)
+(the copy removed afterwards)
+$ diff ../O135-base/tests/views/sources/source/save-key.client.test.ts tests/views/sources/source/save-key.client.test.ts; echo "test file vs base exit $?"
+test file vs base exit 0
+$ grep -rlE "panes/PaneView(\.svelte)?['\"]|front-matter-offer" tests; echo "grep exit $?"
+grep exit 1
+$ npx eslint src/lib/views/sources/source/status/front-matter-offer.svelte.ts; echo "eslint exit $?"
+eslint exit 0
+$ sed -n '407p' docs/HELP.md | wc -w
+      75
+$ git diff c931e9418 --numstat -- <the round's six paths>
+1 0 docs/HELP.md | 1 0 PaneView.svelte | 21 1 tab-menu-state.svelte.ts | 21 7 tab-menu.ts | 17 6 editor-status.svelte.ts | 19 21 Source.svelte
+$ wc -l tab-menu-state.svelte.ts tab-menu.ts editor-status.svelte.ts
+     254 / 320 / 324
+$ { git diff -U0 c931e9418 -- src tests; diff -U0 /dev/null <editor-actions.ts>; diff -U0 /dev/null <front-matter-offer.svelte.ts>; } | grep '^+' | grep -v '^+++' | grep -E '^\+\s*(//|\*|/\*\*)' | grep -i -E "before|used to|no longer|still|always has been|always had|as before|previously|the step adds|after this package|O[0-9]+|20[0-9][0-9]-"; echo "exit $?"
++// offered. The editor queues a command asked before it has loaded (ui/controls/editor/Editor.svelte
+exit 0
+(the same single hit the round report quotes; "before" orders two events at run time and names no earlier state of the code, so I agree it stays)
+$ awk 'length($0)>100' over the four round-changed comment files
+src/lib/state/workbench/navigation/editor-status.svelte.ts:292   (an eslint-disable directive present in the base, grep -c 1 there; no comment of the round passes 100 columns)
+```
+
+`<S>` is the builder's /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/o135build. The scratch outputs the "Programs" section names are all there (`ls -la`), each modified at or before 20:12, earlier than the round snapshot at 20:34. That fits the round's claim that it wrote no new output file.
+
+## The round's eight items, closure by closure
+
+1. Standards 1, the HELP sentence: closed. `docs/HELP.md:407` now says the palette offers the command "on the tab in view" and the tab's menu "once the tab has been shown since the page loaded". Both match the code:
+   - The palette lists "The editor actions of the source tab on screen" (`src/lib/state/workbench/palette.ts:262-279`).
+   - The menu reads `statusOf(found.id)?.actions` (`tab-menu-state.svelte.ts:118-119`), which only a mounted tab publishes (`status/source-status.svelte.ts:37-44`).
+   The sentence is 75 words. The report names that length and its reason under "Prose".
+2. Behaviour 1, the pick on a hidden tab: closed by reading. The screen settles it at the look.
+   - Same call as a strip press: `layout.activateInstance(tab, deps.page())` (`tab-menu-state.svelte.ts:232-237`) matches the strip's `onselect={(id: string) => activateInstance(id, page)}` (`PaneView.svelte:449`). Here `deps.page` is PaneView's `page: () => page` (`:366`), and both use `client.layout`'s `activateInstance` (`PaneView.svelte:105-107`, `tab-menu-state.svelte.ts:63`).
+   - Tab already in view: unchanged, since `deps.shown() !== tab` guards the activation and `shown` is PaneView's `active` (`:168-170`, `:370`). That guard keeps a pick on the shown tab from calling `touchPane`, `remembered` and `revealed`, so it is needed.
+   - Focus, by reading:
+     - ContextMenu answers a pick only after `onCloseAutoFocus` has handed the focus back to the strip's tab (`ui/menu/menu-items.ts:156-161`, `ContextMenu.svelte:12-15`, `:146-148`).
+     - The ask is then performed by `connectSourceStatus`'s `$effect` (`status/source-status.svelte.ts:47-51`). Svelte runs that effect after the flush that drops the `hidden` attribute (`TabView.svelte:48`).
+     - So `made.focus()` (`commands.ts:158`) runs last, on a drawn editor. Nothing on the activation path moves the focus again (`revealed`, `layout.svelte.ts:602-611`; PaneBody's focus asks start only from `focusAsked`).
+   - `shown` is optional only for the test: PaneView is the only production caller (`grep -rn createTabMenu src tests`), and `tests/shell/panes/strip/tab-menu.test.ts:96-110` builds the menu without it. That is a finding (Standards 2).
+3. Standards 2, a second queued run: closed for the path the round names.
+   - Does `asked` clear on every text change? Yes. `asked` holds the text the run was asked on (`front-matter-offer.svelte.ts:37`, `:54`), and the effect at `:38-40` clears it when the text differs. Every edit, an Undo or a Redo included, reaches `draft.text` through `onDidChangeContent` (`Editor.svelte:368-371`, with `applying` false for them). The prepend therefore clears `asked`, and a later Undo finds it already null.
+   - Is a non-note tab's text read? No. The effect reads `text` only while `asked` is set, and `offered` reads it after `isNoteFile`.
+   - Can the offer stick false? Only on two paths of the load window, which the report does not state (Standards 3).
+   - The path outside the write list is justified by the size rule. Holding the flag, its effect and the run in Source.svelte would have taken it from 517 lines (snapshot `wc -l`) past 520, and the rules file's size rule asks for a split by concern. The report names the path with that reason.
+   - Folder limit: `status/` now holds 10 items, which is the limit, and `folder-check.sh` passes.
+   - The round asked that Source.svelte keep the flag. The partial is a different place for it, not a different mechanism.
+4. Standards 3, the `EditorStatus.actions` doc comment: closed. `editor-status.svelte.ts:58-62` now covers both publishers, and `Diff.svelte:328-343` publishes its diff editor's `actions`. The comment wraps at 93, 77 and 100 columns, each break forced by the next word.
+5. Spec 1, the "Programs" section: closed. The section lists the inline `python3` edit of `cases.mts` and each redirect, for all seven output files. The orchestrator reads those hunks under the "Unapproved builder scripts" ruling.
+6. Proof 1, the line counts: closed. 19 lines, lines 2 to 19, reproduced above.
+7. Proof 2, the ASCII gate: closed. Both commands are reproduced over all 25 paths.
+8. Proof 3, the fixture over the base code: closed. The run is reproduced, `1 passed (1)`, over base `src` with the changed fixture. The report's reading is right: the two new fields change nothing at run time, and the test is an audit of them.
+
+## Verdicts, for the whole diff since the base
+
+Items of the brief's "What to build":
+
+- 1: holds. `readFrontMatter` is at `front-matter.ts:51-54` and `scanNote` calls it at `note-links.ts:276`. The module head (:22-26) and `layer-rows.ts:228-238` name it. The case-run gives the same 18 lines on the base and after the change.
+- 2: holds. `NOTE_HEAD` is at `front-matter.ts:38`, and its doc comment (:33-37) names the templates page's note head.
+- 3: holds. `isNoteFile` is exported at `note-hooks.ts:29`. The head comment at :8-9 stays true: the source tab now asks through `status/front-matter-offer.svelte.ts:15`, `:44`.
+- 4: holds.
+  - `offered` is one `$derived` boolean (`front-matter-offer.svelte.ts:41-46`), in the order `editing`, `asked === null`, `isNoteFile`, then the reading. The partial is allowed by item 4.
+  - The getter is at `Source.svelte:345-347`, and the action is pushed at `ask-perform.ts:97-103`.
+  - `FRONT_MATTER_ACTION` is at `editor-status.svelte.ts:109-115` and the label at `source.yml:89`.
+  - The head comments name it, and `SaveKeyHost.svelte` has both new fields.
+- 5: holds. `prepend` is at `commands.ts:146-158`. Since the round, a pick on a hidden tab shows the tab before the ask, so the editor takes the keyboard there too (item 2 above, by reading; the screen at the look).
+- 6: holds. The item is in its own group (`tab-menu.ts:165`), the menu reads the status at `tab-menu-state.svelte.ts:118-119`, and the pick asks `{ kind: 'action', id: FRONT_MATTER_ACTION }` (`:236`). See Standards 2 on `shown?`.
+- 7: holds. `docs/HELP.md:407` matches the code (item 1 above).
+- 8: holds. `wc -l` prints 518. The partials are `status/editor-actions.ts` and `status/front-matter-offer.svelte.ts`, and `status/` is at its 10-item limit.
+
+Cases of the brief's "Cases":
+
+- C1: not verifiable. The case-run reads no header. The palette and menu entries, the caret at line 4 column 1 and the one Undo are seen at the look.
+- C2: met for the reading (the case-run reads a header). With no offer, `offered` is false (`front-matter-offer.svelte.ts:45`). The screen is checked at the look.
+- C3: met, case-run (a header ending in `...`).
+- C4: met, case-run (`---<tab>`).
+- C5: met. The case-run gives `inNotes null` and `isNote false`, and `one.hub === true` is at `note-hooks.ts:33`.
+- C6: met for the reading. The edit is seen at the look.
+- C7: met for the reading. The edit is seen at the look.
+- C8: met for the reading. The screen is checked at the look.
+- C9: not verifiable. The bytes after the save are read at the look.
+- C10: met by reading. `editing` is false (`status/tab-shown.ts:62`, `save/locked-words.ts:26-30`), which ends the `&&` at `front-matter-offer.svelte.ts:42`.
+- C11: met, case-run.
+- C12: not verifiable. The selection is seen at the look.
+- C13: met by reading. A tab seen once stays mounted and publishes. A null status gives no item (`tab-menu-state.svelte.ts:118-119`), and a pick now shows the hidden tab (`:232-237`). The screen is checked at the look.
+- C14: met. `docs/HELP.md:407` is in the notes section and is now true of both places.
+
+## 1. Spec
+
+None. Two changes are outside the round's write list or beyond its literal ask, and both are justified:
+- `src/lib/views/sources/source/status/front-matter-offer.svelte.ts` is outside the write list. The round asked for the flag in Source.svelte, and the size rule forces it into a partial. The report names it with that reason.
+- The rewritten doc of `TabPickDeps.addFrontMatter` (`tab-menu.ts:282-285`) follows item 2.
+
+## 2. Proof
+
+- `.scratch/migration/agents/reviews/O135-report.md`, "DONE / NOT DONE" and "Files" tables, which the round did not update:
+  - Row 8 and Verify 5 still read "`wc -l src/lib/views/sources/source/Source.svelte` prints `517 src/lib/views/sources/source/Source.svelte`". My `wc -l` prints 518.
+  - Row 6 still cites "`tab-menu-state.svelte.ts:111-112`, `:225-226`". The read is now at :118-119 and the pick at :232-237. The same stale :111-112 and :112 appear in "The cases after the change" (C1, C13).
+  - Row Verify 2 quotes "test:quick: 57.9 s; every command passed" with "23 changed file(s)", which is the first round's run. The final run is the round's 62.7 s run, over 28 files.
+  - The "Files" table still gives Source.svelte "18 / 21 | 517", tab-menu-state.svelte.ts "10 / 1 | 243", tab-menu.ts "18 / 7 | 317" and editor-status.svelte.ts "16 / 6 | 323". The current numstat and `wc -l` give 19/21 518, 21/1 254, 21/7 320 and 17/6 324.
+
+  What is wrong: the rules file's "Report" and "Working rules" sections require each DONE row to quote the final run, and every count and `file:line` to be taken after the last change. These rows quote figures from before the round. The round's own table has the right figures, but it says "Every other file's figures are those of the Files table above", so the two tables disagree on the four files. No decision rests on the figures: 518 is under 520 either way. Failure scenario: the orchestrator books the step from the DONE table and records 517 lines and line references that point at other code. Verdict: none.
+
+## 3. Standards
+
+- `src/lib/shell/panes/strip/tab-menu-state.svelte.ts:47-51` and `:233`: "shown?: () => string;" and "if (deps.shown !== undefined && deps.shown() !== tab) {".
+  - What is wrong: the field is optional only so that `tests/shell/panes/strip/tab-menu.test.ts:96-110` type-checks unchanged (the report's item 2 says so). Leaving it out silently restores the behaviour item 2 removes: the head is written into a hidden tab and the keyboard does not move. The rules file's "What every package obeys" says code written only so a check passes is a finding. The round's "No test is added or changed" ruled out the required form, which needs `shown: () => ''` (or similar) in that test's fixture, the kind of field SaveKeyHost.svelte gained in the main build.
+  - Failure scenario: a second caller of `createTabMenu` (a float's or a window's strip) omits `shown` and compiles clean. A pick of Add Front Matter on a hidden tab then writes the head off screen and leaves the keyboard where it was.
+  - Verdict: none (item 6 holds). Whether to make the field required with that one-line fixture field is the orchestrator's call at landing. Keeping it optional is the lazy option.
+- `src/lib/views/sources/source/status/front-matter-offer.svelte.ts:37-40` and `:53-56`: "let asked = $state<string | null>(null); $effect(() => { if (asked !== null && text !== asked) asked = null; });".
+  - What is wrong: the rules file's "What every package obeys" asks the report to state what the code does on every asynchronous path, in flight, after close and superseded. Keying the flag to the text leaves two paths of the load window unstated:
+    - (a) Superseded. While the first `prepend` is queued (`Editor.svelte:467-471`), a change of `draft.text` from outside the editor, such as a reread of the note changed on disk, clears `asked`. The offer comes back, a second run queues a second `prepend`, and the note gets two heads once the editor loads. This is the defect item 3 closes, in a narrower window.
+    - (b) Dropped. A read that fails in that window sets `draft.error`. The draft keeps its text (`status/tab-shown.ts:34-36`, `:55-61`), and SourceBody unmounts the Editor for the error branch (`SourceBody.svelte:140-145`), taking its `waiting` queue with it. When the read succeeds, a new Editor mounts with the text unchanged and `asked` still equal to it, so Add Front Matter is offered nowhere until the reader types.
+  - Failure scenario: in both cases the first note opened in a session is changed on disk, or briefly unreadable, during the second or so Monaco takes to load. The result is two heads in (a), with no text lost, or a missing command in (b) until a keystroke.
+  - Found by reading, not run. Verdict: none.
+
+## 4. Behaviour
+
+None. The round's two user-visible changes have their before and after in the report. The hidden-tab pick is under "What a user sees, before and after", and the missing palette entry during the load window is under "Keys and asynchronous paths".
+
+## Declined to judge
+
+- What only the look settles: where the focus ends after a pick on a hidden tab (my reading says the editor), the palette and menu entries, the caret and Undo of C1, the CRLF bytes of C9, the selection of C12, and the screen of C13.
+- Whether the "Programs" list is complete. Only the builder's transcript shows every command. The scratch file times agree with it.
+- The scoped run's timeout of `tests/checks/tree/boundaries.test.ts` under load 15 to 18. It is a 5 s default limit that the tree checks do not have under test:quick (`vite.config.ts:475-480`), and the same file passes there. The rules file's "Verify before you report" section says such a failure is not counted.
+
+Reviewer usage: a9f05aa5b3678a368, claude-opus-5-5, 204038 tokens, 68 tool uses, 17 min 7 s.
+
+## Closed (the findings of the run over repair round 1, the last round)
+
+- Proof (the report's DONE rows 6, 8, Verify 2 and Verify 5, C1, C13 and the Files table quoting figures from before the round): fixed at landing in the report, each to the figure after the round (518 lines, `tab-menu-state.svelte.ts:118-119` and `:232-237`, the round's run of 62.7 s over 28 files, and the round's numstat and `wc -l` for the four files).
+- Standards 1 (`TabMenuDeps.shown` optional only so that `tests/shell/panes/strip/tab-menu.test.ts` type-checks unchanged): fixed at landing. `shown` is required (`tab-menu-state.svelte.ts:51`), the pick's guard reads `deps.shown() !== tab` (`:233`), and the test's fixture gains `shown: () => ''`. Keeping it optional was the lazy option.
+- Standards 2 (two paths of the load window: a reread of the note while the first `prepend` waits clears the flag and lets a second run queue a second head; an Editor remounted after a failed read leaves the flag set, so the command is offered nowhere until a keystroke): fixed at landing. `asked` (`status/front-matter-offer.svelte.ts:43`) holds the editor the run was asked of, and the effect clears it once the text has a header, which the run's edit gives it, or once the tab holds another editor, whose queue no longer holds the run; `prepend` gains `unless` (`ui/controls/editor/types.ts`), which `runCommand` tests on the model's text when the edit runs (`commands.ts:147`), and the offer passes the header reading, so a note read again from disk with a header while the editor loads gets no second head. The head comments of both files say so.

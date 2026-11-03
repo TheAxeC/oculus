@@ -367,6 +367,7 @@
         page: () => page,
         path: () => path,
         roots: () => roots,
+        shown: () => active,
         stripItems: () => stripItems,
         stripPick,
         closeTab,

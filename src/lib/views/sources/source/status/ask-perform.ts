@@ -5,18 +5,19 @@
 // is asked only while the text may be written.
 //
 // The tab's own actions are File: Save, File: Revert File, View: Toggle Word Wrap (Alt+Z),
-// Markdown: Toggle Rendered Half, Markdown: Open Preview to the Side, Slurm: Submit Job and Git:
-// Toggle Git Blame Editor Decoration, and for a LaTeX file the actions of
-// latex/latex-tab.svelte.ts, then the linters' Run Again and each one's Fix All Auto-fixable
-// Problems (language/lint-fixes.ts). Each is in `tabActions` only while it applies, so the palette
-// lists what the tab on screen can do, whether or not it draws an editor, and an ask for an action
-// that does not apply does nothing.
+// Markdown: Toggle Rendered Half, Markdown: Open Preview to the Side, Markdown: Add Front Matter
+// (on a note the tab may write that has no front matter header), Slurm: Submit Job and Git: Toggle
+// Git Blame Editor Decoration, and for a LaTeX file the actions of latex/latex-tab.svelte.ts, then
+// the linters' Run Again and each one's Fix All Auto-fixable Problems (language/lint-fixes.ts).
+// Each is in `tabActions` only while it applies, so the palette lists what the tab on screen can
+// do, whether or not it draws an editor, and an ask for an action that does not apply does nothing.
 //
 // Cmd+S is the shell key action `save` (data/helpers/keys/oculus/resolve.ts), performed
 // in workbench-keys.svelte.ts by an ask to the source tab on screen, and Alt+Z is the key of word
 // wrap in the editor.
 
 import {
+    FRONT_MATTER_ACTION,
     REVERT_ACTION,
     SAVE_ACTION,
     type EditorAsk,
@@ -27,8 +28,20 @@ import { WRAP_ACTION } from '$lib/ui/controls/editor/options';
 import type { EditorHandle, EditorOwnAction } from '$lib/ui/controls/editor/types';
 import { t } from '$lib/state/shared/words/text';
 
+/** What the tab's own actions call on the tab, one function per action. */
+export type TabActionCalls = {
+    save: () => void;
+    revert: () => void;
+    toggleWrap: () => void;
+    toggleRendered: () => void;
+    previewSide: () => void;
+    addFrontMatter: () => void;
+    submit: () => void;
+    toggleBlame: () => void;
+};
+
 /** What the tab's own actions read of the tab and call on it. */
-export type TabActionDeps = {
+export type TabActionDeps = TabActionCalls & {
     /** Whether the text may be written, which is when Save, Revert and word wrap apply. */
     editing: boolean;
     /** Whether the file has a rendered half, which is what a Markdown file has. */
@@ -37,15 +50,13 @@ export type TabActionDeps = {
     previewable: boolean;
     /** Whether the file is in a repository and its text is loaded. */
     blameable: boolean;
+    /**
+     * Whether the tab may write a note of a hub that has no front matter header, which is when Add
+     * Front Matter applies.
+     */
+    frontMatter: boolean;
     /** Whether the file is a .slurm job script on disk under a served root. */
     submittable: boolean;
-    save: () => void;
-    revert: () => void;
-    toggleWrap: () => void;
-    toggleRendered: () => void;
-    previewSide: () => void;
-    submit: () => void;
-    toggleBlame: () => void;
     /** The actions a language server adds, which follow the tab's own in the palette. */
     language: EditorOwnAction[];
     /** The actions of a LaTeX file (build, view, SyncTeX, editing), which follow the server's. */
@@ -81,6 +92,13 @@ export function tabActions(deps: TabActionDeps): EditorOwnAction[] {
             id: 'oculus.previewSide',
             label: t('source.cmd_preview_side'),
             run: deps.previewSide
+        });
+    }
+    if (deps.frontMatter) {
+        listed.push({
+            id: FRONT_MATTER_ACTION,
+            label: t('source.cmd_front_matter'),
+            run: deps.addFrontMatter
         });
     }
     if (deps.submittable) {

@@ -99,6 +99,7 @@ describe('the closes of the tab menu, through its state', () => {
             page: () => page,
             path: () => [],
             roots: () => [],
+            shown: () => '',
             stripItems: () => [],
             stripPick: () => undefined,
             closeTab: (id) => void closes.push(question.closeTab(id)),

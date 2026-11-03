@@ -33,8 +33,7 @@ import {
     type Tokens
 } from 'marked';
 import { isMap, isScalar, isSeq, parseDocument, type Scalar } from 'yaml';
-import { withoutMark } from '../text-edits.ts';
-import { FRONT_MATTER } from './front-matter.ts';
+import { readFrontMatter } from './front-matter.ts';
 import { NOTE_SUFFIX, isNote, nameKey, noteTitle } from './note-names.ts';
 
 /** The token types the three readings make. */
@@ -274,8 +273,7 @@ function noteLexer(): Marked {
 
 /** Everything a note holds that its readers ask for, from one reading of its text. */
 export function scanNote(source: string): NoteScan {
-    const text = withoutMark(source).replace(/\r\n?/g, '\n');
-    const front = FRONT_MATTER.exec(text);
+    const { text, front } = readFrontMatter(source);
     const skip = front === null ? 0 : front[0].length;
     const starts = startsOf(text);
     const scan: NoteScan = { links: [], tags: [], headings: [], text };

@@ -1,8 +1,7 @@
-In flight (4 of 6 slots in use):
-- O135 (an Add Front Matter command for a note), review over repair round 1 running.
-- O137 (a collection is always sorted, the reorder by hand removed), building.
-- O138 (an `interview` and an `offered` status), building.
-- O139 (a finding names the hub of its file and opens it), building.
+In flight (3 of 6 slots in use):
+- O137 (a collection is always sorted, the reorder by hand removed), built, review next.
+- O138 (an `interview` and an `offered` status), reviewed with no finding, landing next.
+- O139 (a finding names the hub of its file and opens it), built, review next.
 
 Queued, in order: none.
 

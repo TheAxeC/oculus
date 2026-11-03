@@ -4,8 +4,9 @@
 // bookmark, Open in Browser and program items, the two compare items, Keep Open and Pin or Unpin,
 // the splits, and in the desktop app Move into New Window and Copy into New Window. A PDF tab also
 // offers Open in New Tab, and Open in New Window where the app's Move into New Window is not
-// offered. Apart from the component so the items, the tabs each close closes and the path copies
-// can be read without a DOM.
+// offered, and a note tab that offers Markdown: Add Front Matter offers it as Add Front Matter.
+// Apart from the component so the items, the tabs each close closes and the path copies can be
+// read without a DOM.
 //
 // Every close goes through `askAndClose`, so a tab holding unsaved text is asked about, and a
 // pinned tab is closed by Close alone.
@@ -49,6 +50,11 @@ export type TabFacts = {
      * the tab of a unique view may not, it is held once.
      */
     copyable?: boolean;
+    /**
+     * Whether the tab offers Add Front Matter: its published actions hold it, which a source tab's
+     * do on a note it may write that has no front matter header.
+     */
+    frontMatter?: boolean;
 };
 
 export const TAB_CLOSE = 'close';
@@ -69,6 +75,7 @@ const TAB_PDF_WINDOW = 'pdf-window';
 const TAB_OPEN_PROGRAM = 'open-program';
 export const TAB_SELECT_COMPARE = 'select-compare';
 export const TAB_COMPARE_WITH = 'compare-with';
+const TAB_FRONT_MATTER = 'front-matter';
 export const TAB_KEEP_OPEN = 'keep-open';
 export const TAB_PIN = 'pin';
 export const TAB_UNPIN = 'unpin';
@@ -95,11 +102,11 @@ function tabEdge(id: string): Edge | null {
  * The menu of one tab, in VS Code's groups: the closes; the path copies; Reveal in Finder (Open
  * Containing Folder off macOS), Show in Files and Open Timeline, which shows the file's history in
  * the Files view; the bookmark, Open in New Tab and Open in New Window (a PDF), Open in Browser and
- * Open in Program items; the compare items; Keep Open and Pin or Unpin; the splits; in the desktop
- * app, Move into New Window and, off a Terminal tab or the tab of a unique view, Copy into New
- * Window. The file groups are offered for a tab showing a file only. Close Others needs a second
- * tab and Close to the Right a tab to the right; Keep Open is drawn on every tab and enabled on a
- * preview.
+ * Open in Program items; the compare items; Add Front Matter, in a group of its own, on a tab that
+ * offers it; Keep Open and Pin or Unpin; the splits; in the desktop app, Move into New Window and,
+ * off a Terminal tab or the tab of a unique view, Copy into New Window. The file groups are
+ * offered for a tab showing a file only. Close Others needs a second tab and Close to the Right a
+ * tab to the right; Keep Open is drawn on every tab and enabled on a preview.
  */
 export function tabMenu(facts: TabFacts, t: Words): MenuItem[] {
     const item = (id: string, label: string, disabled = false): MenuItem =>
@@ -155,6 +162,7 @@ export function tabMenu(facts: TabFacts, t: Words): MenuItem[] {
                   item(TAB_SELECT_COMPARE, t('files.menu_select_compare'))
               ]
             : [],
+        facts.frontMatter === true ? [item(TAB_FRONT_MATTER, t('ui.tab_front_matter'))] : [],
         [
             item(TAB_KEEP_OPEN, t('ui.tab_keep_open'), !facts.preview),
             facts.pinned ? item(TAB_UNPIN, t('ui.tab_unpin')) : item(TAB_PIN, t('ui.tab_pin'))
@@ -271,6 +279,11 @@ export type TabPickDeps = {
     openProgram: () => void;
     selectForCompare: () => void;
     compareWith: () => void;
+    /**
+     * Add Front Matter: the tab, shown first when it is hidden, is asked to run its action of that
+     * name.
+     */
+    addFrontMatter: () => void;
     keepOpen: () => void;
     pin: () => void;
     unpin: () => void;
@@ -298,6 +311,7 @@ export function tabPicked(id: string, deps: TabPickDeps): void {
     else if (id === TAB_OPEN_PROGRAM) deps.openProgram();
     else if (id === TAB_SELECT_COMPARE) deps.selectForCompare();
     else if (id === TAB_COMPARE_WITH) deps.compareWith();
+    else if (id === TAB_FRONT_MATTER) deps.addFrontMatter();
     else if (id === TAB_KEEP_OPEN) deps.keepOpen();
     else if (id === TAB_PIN) deps.pin();
     else if (id === TAB_UNPIN) deps.unpin();

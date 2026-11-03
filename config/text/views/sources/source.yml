@@ -86,6 +86,7 @@ text:
         cmd_clangd_restart: 'clangd: Restart language server'
         cmd_find_implementations: 'References: Find All Implementations'
         cmd_find_references: 'References: Find All References'
+        cmd_front_matter: 'Markdown: Add Front Matter'
         cmd_latex_output: 'LaTeX: Show Language Server Output'
         cmd_latex_restart: 'LaTeX: Restart Language Server'
         cmd_lint_fix_all: '{0}: Fix All Auto-fixable Problems'

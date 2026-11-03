@@ -2,10 +2,10 @@
 // `EditorCommand`), done on the editor and its model: go to a line, go to a place and select the
 // word at it, select a range, set or convert the indentation, set the line ending, set the language
 // (and load its grammar when it has not loaded), insert a text or a snippet at the selections,
-// replace the whole text as one edit, or run one of the editor's actions; and the first line the
-// editor shows, which the parent keeps so that a copy of the tab opens at it; and the edits a text
-// the parent handed in was reached by, made in the model as they are, or the whole text when the
-// model refuses them.
+// insert a text at the start of the text (`prepend`), replace the whole text as one edit, or run
+// one of the editor's actions; and the first line the editor shows, which the parent keeps so that
+// a copy of the tab opens at it; and the edits a text the parent handed in was reached by, made in
+// the model as they are, or the whole text when the model refuses them.
 //
 // A place is revealed by Monaco's own reveal, which keeps it clear of the sticky scroll lines. An
 // ask run before the editor has its height (a tab opened at a problem, its editor made a moment
@@ -143,6 +143,20 @@ export function runCommand(
             );
             made.pushUndoStop();
         }
+    } else if (command.kind === 'prepend') {
+        if (command.unless?.(held.getValue()) === true) return;
+        // Force-moved markers put a caret or a selection that starts at the insertion point after
+        // the inserted text, so it stays on the text it was on and does not grow over the new.
+        made.pushUndoStop();
+        made.executeEdits('oculus-prepend', [
+            {
+                range: { startLineNumber: 1, startColumn: 1, endLineNumber: 1, endColumn: 1 },
+                text: command.text,
+                forceMoveMarkers: true
+            }
+        ]);
+        made.pushUndoStop();
+        made.focus();
     } else if (command.kind === 'replace') {
         made.pushUndoStop();
         made.executeEdits('oculus-replace', [

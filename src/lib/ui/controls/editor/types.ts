@@ -89,6 +89,9 @@ export type EditorChangeWords = { next: string; previous: string; open: string }
 /**
  * What the parent asks the editor to do through `perform`. A command that goes to a place takes
  * the keyboard into the editor unless `focus` is false. A place past the text is clamped to it.
+ * `prepend` inserts its text at line 1 column 1 as one edit that one Undo takes back, the caret
+ * and the selections moving down with the text they were on, and then takes the keyboard; it does
+ * nothing when `unless` holds of the text at the time it runs.
  */
 export type EditorCommand =
     | { kind: 'goto'; line: number; column?: number; focus?: boolean }
@@ -106,6 +109,7 @@ export type EditorCommand =
     | { kind: 'ending'; ending: EditorEnding }
     | { kind: 'language'; language: string }
     | { kind: 'insert'; text: string; snippet?: boolean }
+    | { kind: 'prepend'; text: string; unless?: (text: string) => boolean }
     | { kind: 'replace'; text: string }
     | { kind: 'action'; id: string };
 

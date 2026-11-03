@@ -100,6 +100,7 @@ text:
         tab_close_saved: Close Saved
         tab_copy_refused: The clipboard refused the copy.
         tab_deleted: Deleted
+        tab_front_matter: Add Front Matter
         tab_keep_open: Keep Open
         tab_path: Path of the open file
         tab_pin: Pin

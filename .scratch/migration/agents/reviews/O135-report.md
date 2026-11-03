@@ -122,18 +122,18 @@ No case of the first run gives a result the brief's rules get wrong.
 | 3. `isNoteFile` exported, head comment | DONE | `note-hooks.ts:29`, head comment :8-9 |
 | 4. The action in `tabActions`, the `$derived` boolean, the id beside `SAVE_ACTION`, the label, head comments, `SaveKeyHost.svelte` | DONE | `status/front-matter-offer.svelte.ts:41-46` (created at `Source.svelte:311-317`), the getter `Source.svelte:345-347`; `ask-perform.ts:97-103`; `editor-status.svelte.ts:109-114`; `source.yml:89`; svelte-check in the verify list: `0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS` |
 | 5. `prepend` command, one `executeEdits` with `forceMoveMarkers: true` between two `pushUndoStop`, then `made.focus()` | DONE | `commands.ts:146-158`, `types.ts:111`; behaviour at the look |
-| 6. Tab menu item `Add Front Matter` in its own group after the compare items, pick asks `{ kind: 'action', id }` | DONE | `tab-menu.ts:165`, `:311`; `tab-menu-state.svelte.ts:111-112`, `:225-226`; `ui.yml:103` |
+| 6. Tab menu item `Add Front Matter` in its own group after the compare items, pick asks `{ kind: 'action', id }` | DONE | `tab-menu.ts:165`, `:311`; `tab-menu-state.svelte.ts:118-119`, `:232-237`; `ui.yml:103` |
 | 7. HELP sentence after line 406 | DONE | `docs/HELP.md:407` |
-| 8. Source.svelte at or under 520, code moved into a partial under `status/` | DONE | `wc -l src/lib/views/sources/source/Source.svelte` prints `517 src/lib/views/sources/source/Source.svelte`; partial `status/editor-actions.ts` |
+| 8. Source.svelte at or under 520, code moved into a partial under `status/` | DONE | `wc -l src/lib/views/sources/source/Source.svelte` prints `518 src/lib/views/sources/source/Source.svelte`; partials `status/editor-actions.ts` and `status/front-matter-offer.svelte.ts` |
 | Verify 1: scoped tests | DONE | `npx vitest run tests/data/prose/markdown/front-matter.test.ts tests/shell/panes/strip/tab-menu.test.ts tests/views/sources/source/save-key.client.test.ts tests/ui/controls/editor/reach-text.test.ts tests/checks/tree/boundaries.test.ts tests/shell/window/menu-answer.test.ts tests/views/sources/bar-actions.test.ts --reporter=dot` (the last two found by `grep -rlE` of each changed module under `tests`): `Tests  174 passed (174)` |
-| Verify 2: `npm run diagrams`, then `npm run test:quick` | DONE | `test:quick: 57.9 s; every command passed` (lines below) |
+| Verify 2: `npm run diagrams`, then `npm run test:quick` | DONE | `test:quick: 62.7 s; every command passed`, over 28 changed files (the run of "Repair round 1") |
 | Verify 3: ASCII gate over the changed files | DONE | over all 25 changed paths, after repair round 1: the rules file's perl form over the 18 under `src`, `tests` and `config` prints nothing, `ASCII gate exit 0`; `LC_ALL=C grep -n '[^ -~]'` over the 7 under `docs` prints nothing, `docs grep exit 1` (the commands are under "Repair round 1") |
 | Verify 4: unused exports | DONE | `diff ../O135-base/unused-exports.txt <after>` prints nothing, `diff exit 0` |
-| Verify 5: size and folders | DONE | `517 src/lib/views/sources/source/Source.svelte`; `sh utils/folder-check.sh` prints nothing, `folder-check exit 0` |
+| Verify 5: size and folders | DONE | `518 src/lib/views/sources/source/Source.svelte`; `sh utils/folder-check.sh` prints nothing, `folder-check exit 0` |
 | Verify 6: changed test run on the unchanged tree and after | DONE | see "Tests" below |
 | Verify 7: list items and sentence length | DONE | see "Prose" below |
 
-The verify list's result lines, from the second run:
+The verify list's result lines of the first run, from its second run; the final run is under "Repair round 1":
 
 ```
 test:quick: 23 changed file(s), from git since HEAD
@@ -167,14 +167,14 @@ The case-run's output after the last change (`node .../cases.mts "$PWD"`, exit 0
 
 The look cases, with the code path that gives each result:
 
-- C1 offered: `status/front-matter-offer.svelte.ts:41-46` derives `offered = editing && asked === null && isNoteFile(roots, root/path) && readFrontMatter(text).front === null`, created at `Source.svelte:311-317`; the `facts` getter `Source.svelte:345-347` returns it; `tab-asks.svelte.ts:109` passes it to `tabActions`, which pushes `{ id: FRONT_MATTER_ACTION, label: t('source.cmd_front_matter') }` (`ask-perform.ts:97-103`) after Open Preview to the Side; `listed` publishes it (`tab-asks.svelte.ts:148`). The palette runs it through `editor.ask(instance, { kind: 'action', id: action })` (`shell/keys/palette-open.ts:74`), and `performAsk` runs `own.run()` (`ask-perform.ts:138-140`). The tab menu reads `statusOf(found.id)?.actions` (`tab-menu-state.svelte.ts:111-112`), `tabMenu` adds the group (`tab-menu.ts:165`), and a pick shows a hidden tab and asks the tab (`tab-menu-state.svelte.ts:232-237`). Running: `does.addFrontMatter` (`Source.svelte:403`, the partial's `add` at `front-matter-offer.svelte.ts:53-56`) performs `{ kind: 'prepend', text: NOTE_HEAD }`, which `commands.ts:146-158` makes one edit at 1,1 with `forceMoveMarkers: true` between `pushUndoStop` calls, then `made.focus()`. The caret at 1,1 is a marker at the insertion point, which force-move puts after the inserted text, on line 4 column 1. One Undo takes back the one edit between the two undo stops.
+- C1 offered: `status/front-matter-offer.svelte.ts:41-46` derives `offered = editing && asked === null && isNoteFile(roots, root/path) && readFrontMatter(text).front === null`, created at `Source.svelte:311-317`; the `facts` getter `Source.svelte:345-347` returns it; `tab-asks.svelte.ts:109` passes it to `tabActions`, which pushes `{ id: FRONT_MATTER_ACTION, label: t('source.cmd_front_matter') }` (`ask-perform.ts:97-103`) after Open Preview to the Side; `listed` publishes it (`tab-asks.svelte.ts:148`). The palette runs it through `editor.ask(instance, { kind: 'action', id: action })` (`shell/keys/palette-open.ts:74`), and `performAsk` runs `own.run()` (`ask-perform.ts:138-140`). The tab menu reads `statusOf(found.id)?.actions` (`tab-menu-state.svelte.ts:118-119`), `tabMenu` adds the group (`tab-menu.ts:165`), and a pick shows a hidden tab and asks the tab (`tab-menu-state.svelte.ts:232-237`). Running: `does.addFrontMatter` (`Source.svelte:403`, the partial's `add` at `front-matter-offer.svelte.ts:53-56`) performs `{ kind: 'prepend', text: NOTE_HEAD }`, which `commands.ts:146-158` makes one edit at 1,1 with `forceMoveMarkers: true` between `pushUndoStop` calls, then `made.focus()`. The caret at 1,1 is a marker at the insertion point, which force-move puts after the inserted text, on line 4 column 1. One Undo takes back the one edit between the two undo stops.
 - C2, C3, C4, C8, C11: `readFrontMatter(draft.text).front` is not null (case-run), so `frontMatter` is false and `tabActions` pushes nothing; the published actions lack the id, so the tab menu's `frontMatter` is false and `tabMenu` adds `[]`.
 - C5: `isNoteFile` (`note-hooks.ts:29-35`): `docs/plan.md` gives `inNotes` null; a non-hub root fails `one.hub === true` (:33); a `.txt` file fails `isNote` (:34).
 - C6, C7: `front` is null (case-run), so offered; the edit is the C1 path at 1,1.
 - C9: the C1 path; Monaco writes the inserted LF text in the model's CRLF ending (`pieceTreeTextBuffer.js:194-200`, per the brief), and the save writes the draft's text.
 - C10: `editing` false (`status/tab-shown.ts:62`, `save/locked-words.ts:26-30`) ends the `&&` at `front-matter-offer.svelte.ts:42`.
 - C12: the C1 path; force-move moves the selection's start at 1,1 past the inserted text and the end moves with its line, so the selection covers the old text.
-- C13: a once-shown hidden tab keeps its view mounted and publishes (`status/source-status.svelte.ts:37-44`), so `statusOf` holds the action; a tab not shown since load has no status, `statusOf` gives null and `status?.actions.some(...) === true` is false (`tab-menu-state.svelte.ts:112`).
+- C13: a once-shown hidden tab keeps its view mounted and publishes (`status/source-status.svelte.ts:37-44`), so `statusOf` holds the action; a tab not shown since load has no status, `statusOf` gives null and `status?.actions.some(...) === true` is false (`tab-menu-state.svelte.ts:119`).
 - C14: `docs/HELP.md:407` reads: "On a note you can edit that has no front matter, Markdown: Add Front Matter in the palette, on the tab in view, and Add Front Matter in the tab's menu, once the tab has been shown since the page loaded, write `---`, `tags: []` and `---` at its top as one edit that one Undo takes back; a note with front matter and a file that is no note are not offered it."
 
 ## Files
@@ -186,15 +186,15 @@ From `diff -rq ../O135-base/<folder> <folder>` over src, tests, utils, config an
 | `src/lib/data/prose/markdown/front-matter.ts` | 25 / 3 | 54 | yes |
 | `src/lib/data/prose/markdown/note-links.ts` | 2 / 4 | 453 | yes |
 | `src/lib/state/life/note-hooks.ts` | 3 / 2 | 101 | yes |
-| `src/lib/state/workbench/navigation/editor-status.svelte.ts` | 16 / 6 | 323 | yes |
-| `src/lib/views/sources/source/Source.svelte` | 18 / 21 | 517 | yes |
+| `src/lib/state/workbench/navigation/editor-status.svelte.ts` | 17 / 6 | 324 | yes |
+| `src/lib/views/sources/source/Source.svelte` | 19 / 21 | 518 | yes |
 | `src/lib/views/sources/source/status/ask-perform.ts` | 32 / 14 | 160 | yes |
 | `src/lib/views/sources/source/status/tab-asks.svelte.ts` | 15 / 16 | 176 | yes |
 | `src/lib/views/sources/source/status/editor-actions.ts` | new | 31 | yes, the partial of item 8 |
 | `src/lib/ui/controls/editor/types.ts` | 3 / 0 | 165 | yes |
 | `src/lib/ui/controls/editor/commands.ts` | 17 / 4 | 298 | yes |
-| `src/lib/shell/panes/strip/tab-menu.ts` | 18 / 7 | 317 | yes |
-| `src/lib/shell/panes/strip/tab-menu-state.svelte.ts` | 10 / 1 | 243 | yes |
+| `src/lib/shell/panes/strip/tab-menu.ts` | 21 / 7 | 320 | yes |
+| `src/lib/shell/panes/strip/tab-menu-state.svelte.ts` | 21 / 1 | 254 | yes |
 | `tests/views/sources/source/SaveKeyHost.svelte` | 2 / 0 | 90 | yes |
 | `tests/checks/tree/layer-rows.ts` | 4 / 2, lines 233-238 | 368 | yes (lines 228-236 at the base) |
 | `config/text/views/sources/source.yml` | 1 / 0 | | yes |

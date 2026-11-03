@@ -38,9 +38,9 @@
     // star, Open in Program, Open Preview, Open Preview to the Side, Submit Job, Toggle Blame and,
     // for a LaTeX file, Build, View PDF and Build Log, each where it applies, and nothing for the
     // tab row. Word wrap and the rendered half are the palette's, which lists Save, Revert File,
-    // word wrap, the rendered half, Open Preview to the Side, Submit Job, Toggle Blame and the
-    // LaTeX actions while each applies (status/tab-asks.svelte.ts), and Cmd+S asks the tab on
-    // screen to save. The save outcome and what the tab said stay under the editor
+    // word wrap, the rendered half, Open Preview to the Side, Add Front Matter, Submit Job, Toggle
+    // Blame and the LaTeX actions while each applies (status/tab-asks.svelte.ts), and Cmd+S asks
+    // the tab on screen to save. The save outcome and what the tab said stay under the editor
     // (save/SourceNote.svelte): an alert for a refusal, a status for Submit's progress; the line
     // about the file on disk (changed under unsaved text, deleted, or a Save refused as newer) is
     // save/DiskNote.svelte. A file that could not be read is the message box with a control that
@@ -94,7 +94,8 @@
     import { createTabAsks } from './status/tab-asks.svelte';
     import { createTabFile } from './status/tab-file.svelte';
     import { createLibraryTab } from './status/library-tab.svelte';
-    import { appEditorActions, quickDiffActions } from './status/app-actions';
+    import { tabEditorActions } from './status/editor-actions';
+    import { createFrontMatterOffer } from './status/front-matter-offer.svelte';
     import { tabFacts } from './status/tab-state';
     import { instanceMap } from '$lib/state/workbench/layout';
     import { tabShown } from './status/tab-shown';
@@ -116,7 +117,6 @@
 
     const client = useState();
     const {
-        appShell,
         editorStatus,
         explorer,
         fs: { roots: currentRoots },
@@ -307,6 +307,14 @@
     let selection = $state('');
     /** The editor, which performs the asks that act on its model. */
     let editor: EditorHandle | undefined = $state();
+    /** Add Front Matter: whether it applies (an editable note with no header) and its run. */
+    const frontMatter = createFrontMatterOffer({
+        editing: () => editing,
+        roots: currentRoots,
+        file: () => `${root}/${path}`,
+        text: () => draft.text,
+        editor: () => editor
+    });
     /** What the tab offers the palette and the status bar, and what it does on their asks. */
     const asks = createTabAsks({
         store: editorStatus,
@@ -333,6 +341,9 @@
             },
             get submittable() {
                 return submit.submittable;
+            },
+            get frontMatter() {
+                return frontMatter.offered;
             },
             get indent() {
                 return indent;
@@ -389,6 +400,7 @@
             toggleWrap: tabDraft.toggleWrap,
             toggleRendered: () => toggleSourceRendered(instance.id),
             previewSide: () => openBeside(MARKDOWN_PREVIEW_VIEW, markdownPreviewState(root, path)),
+            addFrontMatter: frontMatter.add,
             submit: () => void submit.press(),
             toggleBlame: () => toggleSourceBlame(instance.id),
             openCommit: () => gutter.openBlamed(blameMap.get(caret.line)),
@@ -397,22 +409,8 @@
             select: tabLanguage.lsp.select
         }
     });
-    const own = $derived([
-        ...asks.own,
-        ...quickDiffActions(client.appTools.scm.sources(), { root, path }, repositories.openDiff),
-        ...appEditorActions(
-            appShell.menu(
-                'editor/context',
-                appShell.place(
-                    { id: instance.id, view: instance.view, state: instance.state },
-                    { language },
-                    true
-                )
-            ),
-            { root, path },
-            (offer, args) => void appShell.runOffer(offer, args)
-        )
-    ]);
+    /** What the editor binds and lists: the tab's actions, a quick diff's and the apps'. */
+    const own = $derived(tabEditorActions(client, instance, asks.own, { root, path }, language));
 
     // The bar's actions go up to the pane while the tab is mounted and one of them applies
     // (ui/tabs/tab-actions.svelte.ts).

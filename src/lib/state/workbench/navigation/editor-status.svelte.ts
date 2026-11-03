@@ -12,11 +12,11 @@
 // was made does not perform it.
 //
 // A tab also publishes the editor actions it offers the palette, those of the editor's Cmd+K
-// chords (and of Ctrl+K on macOS) with the chord that runs each in the editor (F1, which the
-// editor gives up to the workbench and which opens the palette's command mode, has no action to
-// list), and the palette asks the tab to run one by its id.
-// A diff pane publishes its diff editor's actions the same way, and says nothing else of use to
-// the bar.
+// chords (and of Ctrl+K on macOS) with the chord that runs each in the editor (F1, which the editor
+// gives up to the workbench and which opens the palette's command mode, has no action to list),
+// and the palette asks the tab to run one by its id, as the tab menu does with Add Front Matter on
+// a tab that lists it. A diff pane publishes its diff editor's actions the same way, and says
+// nothing else of use to the bar.
 //
 // The store also holds the source tab whose editor the reader focused last and what it last said,
 // until that tab is closed or the reader focuses another source tab's editor: a project command
@@ -55,7 +55,11 @@ export type EditorStatus = {
     writable: boolean;
     /** The caret line's blame in the bar's words, and the empty string for a line with none. */
     blame: string;
-    /** The editor actions the tab offers the palette, none for a tab drawing no editor. */
+    /**
+     * The actions the tab offers the palette: for a source tab, its own that apply, then its
+     * editor's while the editor is drawn; for a diff pane, its diff editor's
+     * (views/sources/repositories/diff/Diff.svelte). The tab menu reads Add Front Matter from them.
+     */
     actions: EditorAction[];
     /** The absolute path of the file the tab shows, empty for a tab showing no file on disk. */
     file: string;
@@ -102,6 +106,13 @@ export const SAVE_ACTION = 'oculus.save';
 
 /** The id of the tab action the desktop app's Revert File asks of the source tab on screen. */
 export const REVERT_ACTION = 'oculus.revert';
+
+/**
+ * The id of the tab action Markdown: Add Front Matter, which a source tab offers on a note it may
+ * write that has no front matter header, and which the tab menu offers and runs on a tab whose
+ * published actions hold it.
+ */
+export const FRONT_MATTER_ACTION = 'oculus.addFrontMatter';
 
 /** An ask as the instance reads it, numbered so it is performed once. */
 export type EditorRequest = EditorAsk & { instance: string; seq: number };

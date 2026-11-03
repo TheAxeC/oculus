@@ -49,6 +49,7 @@
             previewable: false,
             blameable: false,
             submittable: false,
+            frontMatter: false,
             get indent() {
                 return options.indent;
             },
@@ -77,6 +78,7 @@
             toggleWrap: nothing,
             toggleRendered: nothing,
             previewSide: nothing,
+            addFrontMatter: nothing,
             submit: nothing,
             toggleBlame: nothing,
             openCommit: nothing,

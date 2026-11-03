@@ -1,14 +1,16 @@
 // Layer 3, view partial of Source.svelte. What the tab offers to the places that ask it things and
 // what it does when one asks: the tab's own actions that apply now (Save, Revert File, word wrap,
-// the rendered half, Open Preview to the Side, Submit Job, Toggle Blame, then a language server's,
-// a LaTeX file's and the linters'), the list the palette shows (those, then the editor's own
-// actions while the editor is drawn), the status the bar draws for the tab, and the performing of
-// an ask of the bar, the palette or Cmd+S (ask-perform.ts, source-status.svelte.ts).
+// the rendered half, Open Preview to the Side, Add Front Matter, Submit Job, Toggle Blame, then a
+// language server's, a LaTeX file's and the linters'), the list the palette shows (those, then the
+// editor's own actions while the editor is drawn), which the tab menu reads Add Front Matter from,
+// the status the bar draws for the tab, and the performing of an ask of the bar, the palette, the
+// tab menu or Cmd+S (ask-perform.ts, source-status.svelte.ts).
 //
 // The tab reads its own state through `facts`, an object of getters that this partial reads inside
 // the effects and deriveds it registers, so each of them runs again when a fact it read changes and
-// for no other fact (the actions do not move with the caret or the text); `does` holds what a press
-// calls on the tab, which reads nothing.
+// for no other fact (the actions do not move with the caret, and move with the text only when a
+// note gains or loses its front matter header, a boolean the tab derives); `does` holds what a
+// press calls on the tab, which reads nothing.
 
 import type {
     EditorAction,
@@ -24,7 +26,7 @@ import {
 import { ownListing } from '$lib/ui/controls/editor/chords';
 import { onMac } from '$lib/ui/controls/editor/kit/load';
 import type { EditorHandle, EditorOwnAction } from '$lib/ui/controls/editor/types';
-import { performAsk, tabActions } from './ask-perform';
+import { performAsk, tabActions, type TabActionCalls } from './ask-perform';
 import { connectSourceStatus } from './source-status.svelte';
 
 /** What the tab is now, each fact a getter, read when the actions, the status or an ask need it. */
@@ -43,6 +45,8 @@ type SourceFacts = {
     blameable: boolean;
     /** Whether the file is a .slurm job script on disk under a served root. */
     submittable: boolean;
+    /** Whether the tab may write a note that has no front matter header. */
+    frontMatter: boolean;
     /** The indentation in force, null while the configuration has not arrived. */
     indent: Indent | null;
     ending: LineEnding;
@@ -67,15 +71,8 @@ type SourceFacts = {
     lintActions: EditorOwnAction[];
 };
 
-/** What a press on one of the tab's actions calls on the tab. */
-type SourceDoes = {
-    save: () => void;
-    revert: () => void;
-    toggleWrap: () => void;
-    toggleRendered: () => void;
-    previewSide: () => void;
-    submit: () => void;
-    toggleBlame: () => void;
+/** What a press on one of the tab's actions, or an ask of the bar, calls on the tab. */
+type SourceDoes = TabActionCalls & {
     openCommit: () => void;
     setLanguage: (language: string) => void;
     setIndent: (indent: Indent) => void;
@@ -109,12 +106,14 @@ export function createTabAsks(deps: TabAsksDeps): TabAsks {
             previewable: facts.previewable,
             blameable: facts.blameable,
             submittable: facts.submittable,
+            frontMatter: facts.frontMatter,
             save: does.save,
             revert: does.revert,
             toggleWrap: does.toggleWrap,
             toggleRendered: does.toggleRendered,
             submit: does.submit,
             previewSide: does.previewSide,
+            addFrontMatter: does.addFrontMatter,
             toggleBlame: does.toggleBlame,
             language: facts.drawn ? facts.languageActions : [],
             latex: facts.latexActions,

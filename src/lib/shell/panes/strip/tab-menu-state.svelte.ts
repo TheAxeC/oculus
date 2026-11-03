@@ -2,11 +2,17 @@
 // is for, the items it reads from the right-click, and what each pick does over the stores. The
 // pane's strip menu shares the right-click, so a pick that is not a tab's goes back to the pane.
 // The items and the picks' dispatch are strip/tab-menu.ts's; this is the part that holds a value
-// between the right-click and the pick, and the refusal a pick said.
+// between the right-click and the pick, and the refusal a pick said. Add Front Matter is offered on
+// a tab whose published editor status lists the action (`FRONT_MATTER_ACTION`), which a source tab
+// publishes while its view is mounted, on screen or hidden behind another tab, so a tab not shown
+// since the page loaded is offered none. Its pick shows a hidden tab first, by the call a press on
+// the tab in the strip makes, and then asks the tab to run the action, so the head is written in
+// the tab on screen and its editor takes the keyboard.
 
 import type { ClientState } from '$lib/state/client/context';
 import { t } from '$lib/state/shared/words/text';
 import { tabWithEditor, type Instance, type WindowBounds } from '$lib/state/workbench/layout';
+import { FRONT_MATTER_ACTION } from '$lib/state/workbench/navigation/editor-status.svelte';
 import {
     bookmarkTabFile,
     fileOfTab,
@@ -38,6 +44,11 @@ export type TabMenuDeps = {
     roots: () => TabRoot[];
     /** The pane's place on the screen, which a new window opens at; the app's panes give it. */
     windowBounds?: () => WindowBounds;
+    /**
+     * The tab the pane shows. A pick of Add Front Matter on another tab of the pane shows that tab
+     * first, as a press on it in the strip does; PaneView gives it.
+     */
+    shown: () => string;
     /** The strip's own menu, for a right-click that lands on no tab. */
     stripItems: () => MenuItem[];
     /** A pick of the strip's menu. */
@@ -104,6 +115,8 @@ export function createTabMenu(deps: TabMenuDeps) {
             deps.client.appShell.editorsOf(file.root, file.path).length > 0
                 ? [{ id: REOPEN_WITH, label: t('apps.reopen_with') }]
                 : [];
+        const status = deps.client.editorStatus.statusOf(found.id);
+        const frontMatter = status?.actions.some((one) => one.id === FRONT_MATTER_ACTION) === true;
         return [
             ...tabMenu(
                 {
@@ -115,6 +128,7 @@ export function createTabMenu(deps: TabMenuDeps) {
                     compareWith: other !== null,
                     windows: deps.client.desktop !== undefined,
                     copyable: layout.copiesToWindow(found.id),
+                    frontMatter,
                     ...facts
                 },
                 t
@@ -214,6 +228,12 @@ export function createTabMenu(deps: TabMenuDeps) {
                 if (file !== null && against !== null) {
                     openComparison(layout.openView, file, against);
                 }
+            },
+            addFrontMatter: () => {
+                if (deps.shown() !== tab) {
+                    layout.activateInstance(tab, deps.page());
+                }
+                void deps.client.editorStatus.ask(tab, { kind: 'action', id: FRONT_MATTER_ACTION });
             },
             keepOpen: () => layout.keepPreview(tab),
             pin: () => layout.pinTab(tab),

@@ -5,7 +5,8 @@
 // (`ExplorerNotes`): the link plan of a rename or a move
 // (state/system/machine/refactor/note-link-plan.ts), the notice a refused link edit is told on, and
 // what a removal does to the tabs of the notes it removed, which close with their waiting saves
-// dropped, so no file is written at the place a note was removed from.
+// dropped, so no file is written at the place a note was removed from. The source tab asks the
+// same `isNoteFile` whether its file is a note, which is when it offers Markdown: Add Front Matter.
 
 import { inNotes, isNote } from '../../data/prose/markdown/note-names.ts';
 import { autosaveMs } from './notes.ts';
@@ -25,7 +26,7 @@ function placeOfFile(file: string): Place | null {
 }
 
 /** Whether a tab's file, `root/path`, is a note: a Markdown file of a hub's notes folder. */
-function isNoteFile(roots: readonly FsRoot[], file: string): boolean {
+export function isNoteFile(roots: readonly FsRoot[], file: string): boolean {
     const place = placeOfFile(file);
     if (place === null) return false;
     const inside = inNotes(place.path);

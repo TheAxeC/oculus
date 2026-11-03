@@ -230,8 +230,10 @@
 // note scan, the Outline and the docs split read, so the preview leaves out the lines the others
 // take as the header, but for one byte-order mark before the opening line, which the note scan
 // and the Outline alone skip, and lone CR line ends, which the note scan and the Markdown server
-// alone read; the module holds that pattern and the count of a header's lines, no reader and no
-// I/O.
+// alone read; and because the source tab offers Markdown: Add Front Matter on a note in which the
+// note scan's reading finds no header, and writes the head the module holds. The module holds that
+// pattern, the count of a header's lines, the note scan's reading of a header and that head, no
+// reader and no I/O.
 export const ALLOWED: Record<string, string[]> = {
     ui: [
         'ui/**',
