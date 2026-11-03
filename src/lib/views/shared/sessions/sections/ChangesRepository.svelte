@@ -1,12 +1,12 @@
 <script lang="ts">
-    // Layer 3, partial of views/sessions/session-detail/SessionDetail.svelte. The repository the
-    // session works in, drawn in the body of the Changes section in whichever of its six shapes the
-    // repository is in. It asks before a write and presses through
+    // Layer 3, partial of SessionSections.svelte beside it. The repository the session works in,
+    // drawn in the body of the Changes section in whichever of its six shapes the repository is
+    // in. It asks before a write and presses through
     // state/sources/repositories/repositories.svelte.ts, the store the Repositories view presses
     // through, so which repository has a write in flight and what the last write answered are the
-    // same in both. It is drawn while the section is open, so the branches are listed once when the
-    // section opens and again whenever the repository's state changes while it stays open, and not
-    // at all while it is closed.
+    // same in both. It is drawn while the section is open, so the branches are listed once when
+    // the section opens and again whenever the repository's state changes while it stays open, and
+    // not at all while it is closed.
 
     import AskConfirm from '$lib/views/shared/writes/AskConfirm.svelte';
     import type { Ask } from '$lib/views/shared/writes/ask';

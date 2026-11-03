@@ -1,8 +1,8 @@
 // Layer 2, client state. Where a view opened for something lands: a project, a person, a deposit,
 // a manifest edit, a hub document, a file, a source file, a diff, a merge, a note, a customization
-// file, which are the views registered with no catalogue group. A page keeps its tool views in the
-// panes its arrangement gave them and its opened documents in a pane of their own, so a document
-// opened from a card never covers the board the card is on.
+// file, a session, which are the views registered with no catalogue group or with `opened: true`.
+// A page keeps its tool views in the panes its arrangement gave them and its opened documents in a
+// pane of their own, so a document opened from a card never covers the board the card is on.
 //
 // The rule reads the tree and five facts the caller holds: which views are opened for something,
 // the tabs of that kind the page received, newest last, the pane the reader is in, the pane of the
@@ -18,9 +18,9 @@ import { paneAt } from '../tree.ts';
 export type Landing = { kind: 'pane' | 'split'; path: number[] };
 
 /**
- * Whether a pane holds a tool view: a tab of a view with a catalogue group that the page did not
- * receive as a document. A tool view opened with the `document` option is a document for the pane
- * it landed in.
+ * Whether a pane holds a tool view: a tab of a view with a catalogue group and no `opened: true`
+ * that the page did not receive as a document. A tool view opened with the `document` option is a
+ * document for the pane it landed in.
  */
 export function holdsTool(
     pane: Pane,

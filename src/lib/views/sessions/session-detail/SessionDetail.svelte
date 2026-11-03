@@ -1,59 +1,37 @@
 <script module lang="ts">
-    // Layer 3, view registration. The Session view opens the right pane of the Sessions page and
-    // follows Transcript in its group.
+    // Layer 3, view registration. The Session view is the tab a pinned session opens: it stands in
+    // no arrangement, and closes the Explorer's group, so the catalogue lists it last and a press
+    // there opens it as a document (state/client/context.ts `registerOpened`).
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
     export const registration: ViewRegistration = {
         id: 'session-detail',
         label: 'sessions.detail_title',
         glyph: 'sessions.detail_glyph',
-        group: 'sessions',
-        order: 4
+        group: 'explorer',
+        order: 11,
+        opened: true
     };
 </script>
 
 <script lang="ts">
-    // Layer 3, view. One session in a tab of its own, in four sections built as the sections under
-    // the Files tree are (SessionSection.svelte): Details, what the session is and the controls
-    // that pin, rename and resume it (DetailsBody.svelte); Changes, the files it touched and the
-    // repository it works in (ChangesTouched.svelte, ChangesRepository.svelte); Timeline, the turns
-    // it took and what happened in each (TimelineTurns.svelte); and Agents, the subagents it
-    // dispatched (AgentRows.svelte). One picker in the bar picks the session all four show. With
-    // no session the view asks for one and draws no section.
-    //
-    // The tab keeps which sections are closed and the order they are drawn in with its own state
-    // (session-sections.ts), so a reload, a switch of tab and a pick of another session keep them.
-    // Each head is dragged among the others, and moved by Alt+Up and Alt+Down, with the drag the
-    // Files view moves its section heads with (views/shared/explorer/sections/list-drag.svelte.ts).
-    // The pane's toolbar opens the Transcript of the session, which is a view of its own.
+    // Layer 3, view. One session in a tab of its own, drawn in the sections the Sessions tab draws
+    // (views/shared/sessions/sections/SessionSections.svelte). One picker in the bar picks the
+    // session they show. With no session the view asks for one and draws no section. The pane's
+    // toolbar opens the Transcript of the session, which is a view of its own.
 
     import PickSession from '$lib/views/shared/sessions/PickSession.svelte';
     import SessionPicker from '$lib/views/shared/sessions/SessionPicker.svelte';
-    import { createListDrag } from '$lib/views/shared/explorer/sections/list-drag.svelte';
+    import SessionSections from '$lib/views/shared/sessions/sections/SessionSections.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import { pinnedSession } from '$lib/state/workbench/selection.svelte';
-    import { newestFirst, timelineTurns } from '$lib/state/sessions/folds';
     import { t } from '$lib/state/shared/words/text';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
-    import AgentRows from './AgentRows.svelte';
-    import ChangesRepository from './ChangesRepository.svelte';
-    import ChangesTouched from './ChangesTouched.svelte';
-    import DetailsBody from './DetailsBody.svelte';
-    import SessionSection from './SessionSection.svelte';
-    import TimelineTurns from './TimelineTurns.svelte';
-    import {
-        rowKey,
-        sectionIsOpen,
-        sectionOrder,
-        sectionToggled,
-        sectionsOrdered,
-        type SectionId
-    } from './session-sections';
 
     const {
-        layout: { instanceLayoutState, restateInstance },
+        layout: { instanceLayoutState },
         selectors: { sessionFor },
         terminals: { openSession }
     } = useState();
@@ -61,29 +39,7 @@
     let { instance }: ViewProps = $props();
 
     const record = $derived(sessionFor(instance.id));
-    const saved = $derived(instanceLayoutState(instance.id));
-    const panePin = $derived(pinnedSession(saved));
-    const order = $derived(sectionOrder(saved));
-    const files = $derived(record?.files ?? []);
-    const turns = $derived(timelineTurns(record?.timeline ?? []));
-    /** Newest first by the moment each started, an agent with no stamp last. */
-    const agents = $derived(newestFirst(record?.agents ?? []));
-
-    /** The drags and the Alt+Up and Alt+Down steps of the section heads over each other. */
-    const sectionDrag = createListDrag({
-        type: 'application/x-oculus-session-section',
-        order: () => order,
-        drawn: () => order,
-        write: (next: string[]) => restateInstance(instance.id, sectionsOrdered(saved, next))
-    });
-    const move = (id: SectionId) => ({
-        drag: sectionDrag.row(id),
-        step: (direction: 'up' | 'down') => sectionDrag.step(id, direction)
-    });
-
-    function toggle(id: SectionId): void {
-        restateInstance(instance.id, sectionToggled(saved, id));
-    }
+    const panePin = $derived(pinnedSession(instanceLayoutState(instance.id)));
 
     /** Open the turns of the session on screen, for a session the pane still holds. */
     function openTranscript(): void {
@@ -120,96 +76,15 @@
         {#if record === null}
             <PickSession message={t('sessions.detail_empty')} glyph={t('sessions.empty_glyph')} />
         {:else}
-            {#each order as id (id)}
-                {#if id === 'details'}
-                    <SessionSection
-                        {id}
-                        label={t('sessions.section_details')}
-                        rows={[]}
-                        open={sectionIsOpen(saved, id)}
-                        ontoggle={() => toggle(id)}
-                        move={move(id)}
-                    >
-                        {#snippet body()}
-                            <DetailsBody {record} />
-                        {/snippet}
-                    </SessionSection>
-                {:else if id === 'changes'}
-                    <SessionSection
-                        {id}
-                        label={t('sessions.section_changes')}
-                        count={files.length}
-                        rows={files.map((file) => rowKey('file', file.path))}
-                        open={sectionIsOpen(saved, id)}
-                        ontoggle={() => toggle(id)}
-                        move={move(id)}
-                    >
-                        {#snippet body(nav)}
-                            <ChangesTouched
-                                recordId={record.id}
-                                {files}
-                                workspace={record.workspace}
-                                {nav}
-                            />
-                            <li role="none">
-                                <ChangesRepository {record} />
-                            </li>
-                        {/snippet}
-                    </SessionSection>
-                {:else if id === 'timeline'}
-                    <SessionSection
-                        {id}
-                        label={t('sessions.section_timeline')}
-                        count={turns.length}
-                        rows={[]}
-                        open={sectionIsOpen(saved, id)}
-                        ontoggle={() => toggle(id)}
-                        move={move(id)}
-                    >
-                        {#snippet body()}
-                            <li role="none">
-                                <TimelineTurns {record} place={order.indexOf(id)} />
-                            </li>
-                        {/snippet}
-                    </SessionSection>
-                {:else if id === 'agents'}
-                    <SessionSection
-                        {id}
-                        label={t('sessions.section_agents')}
-                        count={agents.length}
-                        rows={agents.map((agent) => rowKey('agent', agent.id))}
-                        open={sectionIsOpen(saved, id)}
-                        ontoggle={() => toggle(id)}
-                        move={move(id)}
-                    >
-                        {#snippet body(nav)}
-                            <AgentRows {agents} session={record} {nav} />
-                        {/snippet}
-                    </SessionSection>
-                {/if}
-            {/each}
+            <SessionSections owner={instance.id} {record} />
         {/if}
     </div>
 </Pane>
 
 <style>
-    /* The view's words are the size of a sidebar's, `--fs-sm`, its boxes to type in among them.
-       The pane's title stands one step above, `--fs-md`, and each section's head at the tree's own
-       heading size, `--tree-heading-font`. A section's own sizes (a label, a sub-heading, a row)
-       stand as each section sets them. */
+    /* The pane's title stands one step above the sections' words, `--fs-md`. */
     .session {
-        display: flex;
-        flex-direction: column;
         min-width: 0;
         font-size: var(--fs-sm);
-    }
-
-    .session :global(.oculus-field) {
-        font-size: var(--fs-sm);
-    }
-
-    /* The terminal shape: one face for the whole view, so the columns of every section line up. */
-    :global(body.rice:where(:not(.rice-sans))) .session {
-        font-family: var(--font-mono);
     }
 </style>

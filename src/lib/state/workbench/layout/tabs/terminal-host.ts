@@ -8,7 +8,8 @@
 // and the layout's ways to change them, and keeps the ownership itself: a terminal shown, moved or
 // ended changes the tabs of any page. A tab it opens is opened on the page it names; its state
 // carries an identity of its own, so the layout opens it rather than activating another Terminal
-// tab.
+// tab. It opens in the pane of a Terminal tab the page holds, so a New, a resume or a terminal
+// row while that tab reads a session lands beside it and not over the view that asked.
 
 import { readTab, TERMINAL_VIEW } from '../../../sessions/terminal/terminal-tabs.ts';
 import type { TerminalTabs } from '../../../sessions/terminal/session/workbench-shape.ts';
@@ -20,7 +21,7 @@ import { panes, tabsOf } from '../instance.ts';
 /** What the layout and the ui store give of what the terminals store reads of the workbench. */
 export type TerminalHost = Omit<
     TerminalTabs,
-    'upkeep' | 'selected' | 'select' | 'hubRoot' | 'defaultFolder'
+    'upkeep' | 'selected' | 'select' | 'hubRoot' | 'defaultFolder' | 'pageFolder'
 >;
 
 /**
@@ -40,7 +41,8 @@ export function terminalHost(
                         id: tab.id,
                         page: host.id,
                         view: tab.view,
-                        state: tab.state
+                        state: tab.state,
+                        pinned: tab.pinned === true
                     }))
             ),
         restate: (id, _page, state) => layout.restateInstance(id, state),
@@ -51,7 +53,15 @@ export function terminalHost(
             const active = layout.activeInstance(page);
             return active?.view === TERMINAL_VIEW ? active.id : null;
         },
-        open: (page, state, document) => layout.openView(TERMINAL_VIEW, state, page, { document }),
+        open: (page, state, document) => {
+            const root = layout.workbench(page).root;
+            const holder = panes(root).find(({ pane }) =>
+                pane.tabs.some((one) => one.view === TERMINAL_VIEW)
+            );
+            return holder === undefined
+                ? layout.openView(TERMINAL_VIEW, state, page, { document })
+                : layout.openInPane(TERMINAL_VIEW, state, page, holder.path);
+        },
         openBeside: (tab, page, state) => {
             const root = layout.workbench(page).root;
             const holder = panes(root).find(({ pane }) => pane.tabs.some((one) => one.id === tab));

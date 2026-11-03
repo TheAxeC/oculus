@@ -1,9 +1,8 @@
 <script lang="ts">
-    // Layer 3, partial of views/sessions/session-detail/SessionDetail.svelte. The mark of a file
-    // that other live sessions hold open, with their titles in its tooltip. The Changes section
-    // draws it on the rows of the files the session touched and on the rows of the repository's
-    // changes, so the words and the colour are written once. It draws nothing for a file no other
-    // session holds.
+    // Layer 3, partial of SessionSections.svelte beside it. The mark of a file that other live
+    // sessions hold open, with their titles in its tooltip. The Changes section draws it on the
+    // rows of the files the session touched and on the rows of the repository's changes, so the
+    // words and the colour are written once. It draws nothing for a file no other session holds.
 
     import { t } from '$lib/state/shared/words/text';
 

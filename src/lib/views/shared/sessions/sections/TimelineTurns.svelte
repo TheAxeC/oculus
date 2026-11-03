@@ -1,9 +1,9 @@
 <script lang="ts">
-    // Layer 3, partial of views/sessions/session-detail/SessionDetail.svelte. The body of the
-    // Timeline section: what the session did, newest last, one group per turn under the prompt that
-    // opened it and that prompt's time; each event a clock, what kind of thing it was, and the
-    // thing itself. A path is shown as its last name with the whole of it in the tooltip; a prompt
-    // keeps its words, because a slash in a prompt is not a path.
+    // Layer 3, partial of SessionSections.svelte beside it. The body of the Timeline section: what
+    // the session did, newest last, one group per turn under the prompt that opened it and that
+    // prompt's time; each event a clock, what kind of thing it was, and the thing itself. A path is
+    // shown as its last name with the whole of it in the tooltip; a prompt keeps its words, because
+    // a slash in a prompt is not a path.
     //
     // The turns scroll in a box of their own, at most 40vh tall, so the section under it stays
     // reachable, and where the box stands is the one piece of behaviour here. A fresh session, or a

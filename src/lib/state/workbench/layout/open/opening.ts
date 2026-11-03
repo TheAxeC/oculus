@@ -7,10 +7,10 @@
 // floats, then in every other page, and the first instance found is shown where it is, by showing
 // the page that holds it when that page is not drawn on screen. Where a new tool view lands is the
 // pane the reader was last in, or a new pane beside it when the caller asked for one; a view opened
-// for something (one registered with no catalogue group) lands where layout/open/landing.ts says,
-// whichever of the two was asked, since a page keeps its documents apart from its tools. A pane
-// hidden inside a folded child is expanded first, since opening a view into something invisible
-// would look like nothing happening.
+// for something (one registered with no catalogue group or with `opened: true`) lands where
+// layout/open/landing.ts says, whichever of the two was asked, since a page keeps its documents
+// apart from its tools. A pane hidden inside a folded child is expanded first, since opening a view
+// into something invisible would look like nothing happening.
 
 import {
     activePath,
@@ -58,8 +58,8 @@ export type OpenOptions = {
     preview?: boolean;
     /**
      * Land as a view opened for something lands (landing.ts), whatever the view is: in the page's
-     * documents pane and never over its tool panes. A Terminal tab, a Transcript and a Session tab
-     * opened from a workbench's sessions list take it.
+     * documents pane and never over its tool panes. A Terminal tab a sessions list opens on a page
+     * with none takes it.
      */
     document?: boolean;
     /**
@@ -152,8 +152,8 @@ function leavesTo(
 
 /**
  * `opened` says whether a view is one opened for something, which the registry answers: a
- * registration with no catalogue group. `unique` says whether a view is held once, which the
- * registry answers too: a registration marked `unique`.
+ * registration with no catalogue group or with `opened: true`. `unique` says whether a view is held
+ * once, which the registry answers too: a registration marked `unique`.
  */
 export function createOpening(
     access: LayoutAccess,

@@ -15,16 +15,18 @@
 // or in a folder given, and shows it, `newTerminalIn` and `startOnPage` do the same in a Terminal
 // tab of one pane and of one page, and `splitTerminal` starts one of the split terminal's kind and
 // folder right of it in the tab's row, refusing one whose folder tmux did not report (`splitShown`
-// splits the one a tab shows, when it can); `composeIn` puts the composer of a start with
-// a prompt in the page's Terminal tab, in the tab's folder; `composeAt` does the same for a folder
-// and an agent a worktree names, or for a hub task, whose seed it asks the server for
+// splits the one a tab shows, when it can); `composeIn` puts the composer of a start with a prompt
+// in the tab of the page that holds a typed prompt, else in the page's Terminal tab, in the tab's
+// folder; `composeAt` puts it in the page's Terminal tab for a folder and an agent a worktree
+// names, or for a hub task, whose seed it asks the server for
 // (state/sessions/terminal/composer/opening.svelte.ts holds the three composers and the held
 // seeds); `approveSeed` posts the approval a task's seed asked for, and `startingIn` says that a
 // tab's start is in flight. A refused start is said on the tab (`refusal`) and changes nothing.
 // The store keeps what each start answered until the payload lists it, so a terminal started a
 // moment ago can be split. A terminal that ends leaves the `sessions` payload's list, and the store
 // takes it out of every tab that owned it, closes a tab left owning none, on any page, unless the
-// reader is composing or reading its session in it, and clears a selection that was that terminal.
+// reader is composing or reading its session in it or the tab is pinned, and clears a selection
+// that was that terminal.
 // A closed Terminal tab, pane or page, and a page reset that removes a tab, end the running
 // terminals oculus started that the tab lists (the registration the ui store holds), and a start
 // answered after its tab closed is ended; a tab that is moved, split or reloaded ends none. The
@@ -40,7 +42,6 @@ import type { EntitiesStore, SocketStore, WritesStore } from '../shared/stores/s
 import { t } from '../shared/words/text.ts';
 import type {
     ComposeStart,
-    LatexApproval,
     TaskRef,
     Terminal,
     StartKind,
@@ -49,7 +50,12 @@ import type {
 } from '../../data/model/index.ts';
 import { isOwnTerminal } from '../../data/model/index.ts';
 import { tabMarkOf } from './terminal/terminal-marks.ts';
-import { targetFields, type LatexTarget } from './terminal/latex-target.ts';
+import {
+    latexCalls,
+    type LatexBuildAsk,
+    type LatexCalls,
+    type LatexStep
+} from './terminal/latex-target.ts';
 import {
     TERMINAL_VIEW,
     emptyTab,
@@ -116,17 +122,13 @@ export { isOwnTerminal } from '../../data/model/index.ts';
 // file import this module and not `data/helpers/run/tasks`, so the type reaches the tray from here.
 export type { UpdateTask };
 
-/**
- * What a LaTeX terminal does to one main file: build it, clear what a build left beside it, stop
- * the build that runs, or check its citations.
- */
-export type LatexStep = 'build' | 'clean' | 'stop' | 'checkcites';
+export type { LatexBuildAsk, LatexStep };
 
-/** What a build asks for beyond the main file: a recipe by name, the last one used, and force. */
-export type LatexBuildAsk = { recipe?: string; last?: string; force?: boolean };
+/** The calls the store takes from the modules that word them. */
+type WordedCalls = SessionOpening & LatexCalls;
 
 /** The terminals one client owns, and the actions it runs on them. */
-export type TerminalsStore = SessionOpening & {
+export type TerminalsStore = WordedCalls & {
     terminals: () => Terminal[];
     terminalById: (id: string | null) => Terminal | null;
     /** The strip mark of a tab: its shown terminal's icon and colour token, for a Terminal tab. */
@@ -142,24 +144,6 @@ export type TerminalsStore = SessionOpening & {
         root: string,
         cols?: number,
         rows?: number
-    ) => Promise<TerminalAnswer>;
-    latex: (
-        target: LatexTarget,
-        main: string,
-        step: LatexStep,
-        ask?: LatexBuildAsk,
-        cols?: number,
-        rows?: number
-    ) => Promise<TerminalAnswer>;
-    /**
-     * Approve what a build or clean asked about, with the texts it was shown; the answer is ok, or
-     * the refusal, `latex-changed` when the files changed since they were listed.
-     */
-    approveLatex: (
-        target: LatexTarget,
-        main: string,
-        approval: LatexApproval,
-        ask?: LatexBuildAsk
     ) => Promise<TerminalAnswer>;
     startChat: (id: string | null, cols?: number, rows?: number) => Promise<TerminalAnswer>;
     resumeTerminal: (
@@ -213,9 +197,14 @@ export type TerminalsStore = SessionOpening & {
     adopt: (made: Terminal) => void;
     /**
      * Move a terminal to a Terminal tab at an index of its order; a tab left owning none closes
-     * unless the reader is composing in it.
+     * unless the reader is composing in it or it is pinned.
      */
     moveTerminal: (id: string, toTab: string, toPage: string, index: number) => void;
+    /**
+     * Move a terminal into a new Terminal tab of the page on screen: beside the Terminal tab the
+     * page holds, and in the page's documents pane on a page with none.
+     */
+    moveToNewTab: (id: string) => void;
     /** The running terminals no Terminal tab on any page owns, in the order the list names them. */
     attachable: () => Terminal[];
     /**
@@ -228,7 +217,7 @@ export type TerminalsStore = SessionOpening & {
     /**
      * New: the composer in the Terminal tab of a page (the one on screen by default), or a new one.
      */
-    composeIn: (page?: string) => void;
+    composeIn: (page?: string, documents?: boolean) => void;
     /** New in one Terminal tab, the bar's New: the composer there, as `composeIn` shows it. */
     composeInTab: (tab: string, agent?: StartKind) => void;
     /**
@@ -375,7 +364,7 @@ export function createTerminals(
         return workbench?.defaultFolder() ?? Promise.resolve('');
     }
 
-    /** The Terminal tab of a page that a terminal no tab owns, or New, goes to (`pageTabOf`). */
+    /** The Terminal tab of a page a terminal no tab owns goes to, or a start (`pageTabOf`). */
     function pageTab(tabs: readonly TerminalTab[], page: string): TerminalTab | null {
         return workbench === undefined ? null : pageTabOf(workbench, tabs, page);
     }
@@ -397,6 +386,14 @@ export function createTerminals(
     /** Move a terminal into a Terminal tab; the rule is moveInto's. */
     function moveTerminal(id: string, toTab: string, toPage: string, index: number): void {
         if (workbench !== undefined) moveInto(workbench, terminalTabs(), id, toTab, toPage, index);
+    }
+
+    /** Move a terminal into a new Terminal tab of the page on screen, by `open`'s landing. */
+    function moveToNewTab(id: string): void {
+        if (workbench === undefined) return;
+        const page = workbench.currentPage();
+        const tab = workbench.open(page, emptyTab(crypto.randomUUID()), true);
+        if (tab !== '') moveTerminal(id, tab, page, 0);
     }
 
     /** The running terminals no Terminal tab owns, from the latest list and every page's tabs. */
@@ -439,11 +436,20 @@ export function createTerminals(
         return postTerminal(body, writes);
     }
 
+    /**
+     * The folder a new terminal of a tab starts in: its shown terminal's, else its first's, else
+     * the folder of the workbench page it is on; null for a tab with none of them.
+     */
+    function folderOf(tab: TerminalTab): string | null {
+        const known = tabFolder(readTab(tab.state), (one) => terminalRecord(one)?.cwd ?? null);
+        return known ?? workbench?.pageFolder(tab.page) ?? null;
+    }
+
     const opening = createComposerOpening({
         workbench,
         terminalTabs,
         pageTab,
-        folderOf: (tab) => tabFolder(readTab(tab.state), (one) => terminalRecord(one)?.cwd ?? null),
+        folderOf,
         seedTask: (task) => post({ action: 'seed', task })
     });
 
@@ -493,39 +499,7 @@ export function createTerminals(
         return post({ action: 'task', kind, root, cols, rows });
     }
 
-    /**
-     * Build, clean, stop or check the citations of one main file of a project's manuscript or of a
-     * folder of a served root. The page sends the folder's name and the file's, and for a build the
-     * recipe it asks for; the server checks the name against the folder's own main files and
-     * supplies both the command and the folder it runs in.
-     */
-    async function latex(
-        target: LatexTarget,
-        main: string,
-        step: LatexStep,
-        ask: LatexBuildAsk = {},
-        cols: number = COLS,
-        rows: number = ROWS
-    ): Promise<TerminalAnswer> {
-        return post({ action: 'latex', ...targetFields(target), main, step, ...ask, cols, rows });
-    }
-
-    async function approveLatex(
-        target: LatexTarget,
-        main: string,
-        approval: LatexApproval,
-        ask: LatexBuildAsk = {}
-    ): Promise<TerminalAnswer> {
-        const { step, texts } = approval;
-        return post({
-            action: 'approve-latex',
-            ...targetFields(target),
-            main,
-            step,
-            ...ask,
-            texts
-        });
-    }
+    const { latex, approveLatex } = latexCalls(post);
 
     /**
      * Start a project-focused or portfolio-wide Claude chat; the server supplies argv and
@@ -679,11 +653,7 @@ export function createTerminals(
         try {
             const target = tabById(id);
             if (target === null) return { ok: false, id: '', error: '' };
-            const known = tabFolder(
-                readTab(target.state),
-                (one) => terminalRecord(one)?.cwd ?? null
-            );
-            const folder = at !== '' ? at : (known ?? (await defaultFolder()));
+            const folder = at !== '' ? at : (folderOf(target) ?? (await defaultFolder()));
             if (folder === '') {
                 say(id, t('sessions.terminal_no_folder'));
                 return { ok: false, id: '', error: '' };
@@ -854,6 +824,7 @@ export function createTerminals(
         hideTerminal,
         adopt,
         moveTerminal,
+        moveToNewTab,
         attachable,
         attachTerminal,
         ...opening,

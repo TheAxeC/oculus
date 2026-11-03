@@ -418,10 +418,10 @@ export function resizedShares(
 }
 
 /**
- * The Terminal tab of a page that takes a terminal no tab owns, and New's composer: the active tab
- * of the page's focused pane when it is a Terminal tab, else the first Terminal tab of the page in
- * tab order, else none, and a new tab is opened. A tab that reads a session of its own is left out,
- * so a start from elsewhere does not land on it.
+ * The Terminal tab of a page that takes a terminal no tab owns, and New's composer while no tab of
+ * the page holds a typed prompt: the active tab of the page's focused pane when it is a Terminal
+ * tab, else the first Terminal tab of the page in tab order, else none, and a new tab is opened. A
+ * tab that reads a session of its own is left out, so a start from elsewhere does not land on it.
  */
 export function pageTarget(
     tabs: readonly { id: string; view: string; state?: unknown }[],

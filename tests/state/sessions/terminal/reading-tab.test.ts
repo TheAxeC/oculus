@@ -25,7 +25,10 @@ import {
     composingIn,
     type TerminalTabState
 } from '../../../../src/lib/state/sessions/terminal/terminal-tabs.ts';
-import { closeEnded } from '../../../../src/lib/state/sessions/terminal/terminal-lists.ts';
+import {
+    closeEnded,
+    moveInto
+} from '../../../../src/lib/state/sessions/terminal/terminal-lists.ts';
 import {
     sessionTerminal,
     terminalSession
@@ -260,12 +263,35 @@ describe('a tab that reads a session', () => {
         expect(readTab(tabs[0].state).label).toBe('y');
     });
 
-    it('opens one tab per session for presses in a list limited to a folder', () => {
+    it('retargets one tab for two presses that open it in the documents pane', () => {
         const tabs: TerminalTab[] = [];
         const { workbench, count } = bench(tabs);
         open(tabs, workbench, { session: SESSION, label: 'x', press: true, documents: true });
         open(tabs, workbench, { session: OTHER, label: 'y', press: true, documents: true });
+        expect(count()).toBe(1);
+        expect(readTab(tabs[0].state).transcript?.session).toBe(OTHER);
+    });
+
+    it.each<[string, (tabs: TerminalTab[], workbench: TerminalTabs) => void]>([
+        ['ended', (tabs, workbench) => closeEnded(workbench, tabs, [A], () => null)],
+        ['moved out', (tabs, workbench) => moveInto(workbench, tabs, A, 'u', 'p', 0)]
+    ])('stands pinned when its last terminal %s, and takes the next press', (_case, leave) => {
+        const tabs = [
+            { ...tab('t', readTab({ terminals: [A], shown: A })), pinned: true },
+            tab('u', readTab({ terminals: [B], shown: B }))
+        ];
+        const { workbench, closed, count } = bench(tabs);
+        leave(tabs, workbench);
+        const left = readTab(tabs[0].state);
+        expect([closed, left.terminals, left.composing, left.showing]).toEqual([
+            [],
+            [],
+            true,
+            'live'
+        ]);
+        open(tabs, workbench, { session: SESSION, label: 'x', press: true });
         expect(count()).toBe(2);
+        expect(readTab(tabs[0].state).transcript?.session).toBe(SESSION);
     });
 
     it('shows a session with a terminal there, on Transcript from a command', () => {

@@ -117,6 +117,11 @@ export type Registration = {
      */
     listed?: boolean;
     /**
+     * Whether the view is one opened for something though a catalogue group lists it: the layout
+     * lands it as it lands a view of no group, in the documents pane and off a page's tool panes.
+     */
+    opened?: boolean;
+    /**
      * Whether the view is held once: no opener and no build makes a second instance of it, and
      * opening it goes to an instance already held on a page or a float. Absent means the view may
      * be open any number of times.

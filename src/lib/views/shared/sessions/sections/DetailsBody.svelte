@@ -1,8 +1,8 @@
 <script lang="ts">
-    // Layer 3, partial of views/sessions/session-detail/SessionDetail.svelte. The body of the
-    // Details section: what one session is, the key-value block, the controls that pin, rename and
-    // resume it, then the three measurements under them. It is drawn while the section is open, so
-    // a title typed and not written, and a resume asked once, are gone when the section closes.
+    // Layer 3, partial of SessionSections.svelte beside it. The body of the Details section: what
+    // one session is, the key-value block, the controls that pin, rename and resume it, then the
+    // three measurements under them. It is drawn while the section is open, so a title typed and
+    // not written, and a resume asked once, are gone when the section closes.
     //
     // The meter is the context window, and what it measures is the last turn's occupancy, never the
     // lifetime sums beside it: a session that has run for hours has sent far more tokens than any

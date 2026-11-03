@@ -2,7 +2,7 @@
     // Layer 3, shared view partial. One session as a row of the lists that name the sessions
     // working in a folder: the project page's and the entry page's. A row shows the session's tool
     // and title, whether it is live, its model and when it started, and pressing it selects the
-    // session for the page, so it is the same row the session list draws.
+    // session for the page.
 
     import RowButton from '$lib/ui/controls/RowButton.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
@@ -23,7 +23,7 @@
 
     let { entry, now }: Props = $props();
 
-    /** What a live row says of itself, the same two words the session list uses. */
+    /** What a live row says of itself. */
     const liveLabel = $derived(
         entry.liveStatus === 'busy'
             ? t('sessions.live_busy')

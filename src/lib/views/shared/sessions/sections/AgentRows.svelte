@@ -1,8 +1,8 @@
 <script lang="ts">
-    // Layer 3, partial of views/sessions/session-detail/SessionDetail.svelte. The rows of the
-    // Agents section: the subagents one session dispatched, newest first, as the rows of the
-    // section's tree (level 2, ids from rowKey). Each says what kind it was, on what model, what it
-    // was asked for, and how it went. Each is named by the session's own transcript.
+    // Layer 3, partial of SessionSections.svelte beside it. The rows of the Agents section: the
+    // subagents one session dispatched, newest first, as the rows of the section's tree (level 2,
+    // ids from rowKey). Each says what kind it was, on what model, what it was asked for, and how
+    // it went. Each is named by the session's own transcript.
     //
     // A press on a row opens the agent's own transcript in a Terminal tab keyed on the session and
     // the agent, or brings that tab forward. A row whose agent named no transcript (no agent id,

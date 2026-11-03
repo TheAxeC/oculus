@@ -4,8 +4,17 @@
 
 import type { TerminalTabState } from '../terminal-tabs.ts';
 
-/** One tab of any page, as the layout holds it: its view is read to find the Terminal tabs. */
-export type TerminalTab = { id: string; page: string; view: string; state: unknown };
+/**
+ * One tab of any page, as the layout holds it: its view is read to find the Terminal tabs, and a
+ * pinned tab stands when it is left owning no terminal.
+ */
+export type TerminalTab = {
+    id: string;
+    page: string;
+    view: string;
+    state: unknown;
+    pinned?: boolean;
+};
 
 /**
  * What the terminals store needs of the workbench to keep which tab owns which terminal: the tabs
@@ -26,7 +35,10 @@ export type TerminalTabs = {
     switchPage: (page: string) => void;
     currentPage: () => string;
     activeTab: (page: string) => string | null;
-    /** Open a Terminal tab on a page, in its documents pane when `documents` is set. */
+    /**
+     * Open a Terminal tab on a page: in the pane of a Terminal tab the page holds, and on a page
+     * with none in its documents pane when `documents` is set.
+     */
     open: (page: string, state: TerminalTabState, documents?: boolean) => string;
     /** Open a Terminal tab on a page in the pane that holds another tab. */
     openBeside: (tab: string, page: string, state: TerminalTabState) => string;
@@ -43,6 +55,8 @@ export type TerminalTabs = {
      * primary hub's folder, else the home folder.
      */
     defaultFolder: () => Promise<string>;
+    /** The absolute folder a workbench page belongs to; null for any other page or a float. */
+    pageFolder: (page: string) => string | null;
     /** The Terminal tab of the pane at a path of a page that a New there starts in, or null. */
     paneTab: (page: string, path: number[]) => string | null;
     /** A new Terminal tab in the pane at a path of a page, answering its id. */

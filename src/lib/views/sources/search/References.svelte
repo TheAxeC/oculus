@@ -1,13 +1,13 @@
 <script module lang="ts">
-    // Layer 3, view registration. References is the fourth view of the Explorer page's group, after
-    // Search, so it is reached by the chord `s4`.
+    // Layer 3, view registration. References is the eighth view of the Explorer page's group, after
+    // Problems, so it is reached by the chord `s8`.
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
     export const registration: ViewRegistration = {
         id: 'references',
         label: 'views.references',
         glyph: 'views.references_glyph',
         group: 'explorer',
-        order: 3
+        order: 7
     };
 </script>
 

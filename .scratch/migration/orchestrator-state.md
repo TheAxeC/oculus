@@ -24,21 +24,6 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 
 ```yaml
 dispatch:           # steps in flight, up to six (Z632)
-- step: O123
-  base: 3e2595261
-  worktree: .agents/worktrees/migration-O123
-  executor: agent
-  worker: claude:opus
-  session_id: acbcf929837bf5594 (claude-opus-5-5)
-  launched: 2026-11-02
-  report: .scratch/migration/agents/reviews/O123-report.md
-  round: 1
-  reviewer_report: agents/reviews/O123-refuter.md (a782a024916820caa, claude-opus-5-5, 88630 tokens, 56 tool uses, 17 min 56 s)
-  builder_usage: first run 365848 tokens, 59 tool uses, 10 min 43 s; build 100660 tokens, 385 tool uses, 59 min 48 s
-  cases: agents/briefs/O123-cases.md
-  brief_check: agents/reviews/O123-brief-check.md (afb7b4f6cc7cbec97, claude-opus-5-5, 332174 tokens, 59 tool uses, 12 min 34 s)
-  shared_paths: config/defaults/layout.yml, docs/HELP.md, GroupHead.svelte and registry.ts with migration O124, docs/HELP.md and docs/diagrams with migration O122; a few single lines touched by both (layout.yml 307, HELP 52, 143, 455), each merged by hand at landing in one edit, and generated files rebuilt
-  landing: not-started
 ```
 
 ## The standing demands (from Axel, in force)
@@ -771,6 +756,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-11-03 (O123 landed). O123 is on main (booked under O123 in `plan.md`, `agents/reviews/O123-landing.md`); `test:quick` passed in the gate and main equals the gate; the saved layout is edited. O122, O123 and O124 are all landed. In flight: none. Queued: none. Open items: 637.
 - 2026-11-03 (O124 landed). O124 is on main (booked under O124 in `plan.md`, `agents/reviews/O124-landing.md`); `test:quick` passed in the gate and main equals the gate. In flight: O123 in repair round 1, its builder acbcf929837bf5594 running. Open items: 637.
 - 2026-11-03 (O122 landed). O122 is on main (booked under O122 in `plan.md`, `agents/reviews/O122-landing.md`), `test:quick` passed in the gate and main equals the gate. One fix at landing from the look: each row is measured as it is drawn. In flight: O123 built, its /refute next; O124 in repair round 1, its builder aa1e08bc105965980 running. Open items: none.
 - 2026-11-02 (O122 building). O122 builds at 4ffed7fbe. Queued: O123, O124. Open items: none.

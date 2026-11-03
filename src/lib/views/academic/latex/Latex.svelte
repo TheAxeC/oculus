@@ -8,7 +8,7 @@
         label: 'views.latex',
         glyph: 'views.latex_glyph',
         group: 'explorer',
-        order: 5,
+        order: 4,
         listed: true
     };
 </script>

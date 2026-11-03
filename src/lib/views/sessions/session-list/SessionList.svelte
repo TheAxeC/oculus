@@ -1,7 +1,7 @@
 <script module lang="ts">
-    // Layer 3, view registration. The session list opens the Sessions page's group, as it opens the
-    // page. Its badge is how many sessions the list draws as needing input, an archived one left
-    // out, its count, drawn where its row of `counts` says; a list limited to a folder carries the
+    // Layer 3, view registration. The Sessions tab is the Explorer's third, after Repositories. Its
+    // badge is how many sessions the list draws as needing input, an archived one left out, its
+    // count, drawn in amber where its row of `counts` says; a list limited to a folder carries the
     // same count, the view's.
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
     import { countText } from '$lib/state/workbench/rail-badges/rail-badges';
@@ -10,39 +10,49 @@
         id: 'session-list',
         label: 'sessions.rail_title',
         glyph: 'sessions.rail_glyph',
-        group: 'sessions',
-        order: 0,
+        group: 'explorer',
+        order: 2,
         badge: (client) => countText(client.railBadges.sessionInputCount()),
-        countPart: (client) => ({ count: client.railBadges.sessionInputCount() })
+        countPart: (client) => ({
+            count: client.railBadges.sessionInputCount(),
+            tone: 'amber'
+        })
     };
 </script>
 
 <script lang="ts">
-    // Layer 3, sessions view. The sessions list of VS Code's Agents window: New, the filter menu
-    // and the search box in its header, the sessions grouped by workspace, every terminal oculus
-    // started with each by-hand terminal, and the Customizations section at its foot. A terminal
-    // row shows its terminal in the Terminal tab that owns it, or, for one no tab owns (its tab was
-    // closed, or a task, a hook or LaTeX started it, or it is by hand), in the Terminal tab of the
-    // page on screen; `Open in its own pane` moves it into a new Terminal tab. New shows the
-    // composer in the page's Terminal tab.
+    // Layer 3, view. The Sessions tab, built as Repositories is: New, the filter menu and the
+    // search box in its header, then a fold headed Sessions that holds the list, at most ten rows
+    // tall and scrolled inside itself, and under the fold the sections of the session the tab
+    // follows (views/shared/sessions/sections/SessionSections.svelte) and the Customizations
+    // section. The pane scrolls all of it. The tab keeps the session it shows as a Session tab does
+    // (state/workbench/selection.svelte.ts `keepShown`), follows a session's terminal to its
+    // session, and leaves the sections as they were for a terminal with no session. With no
+    // session to follow the sections are not drawn and Customizations stays.
+    //
+    // The list is one tree (ui/tree/TreeView.svelte), so it is one stop of the focus order: the
+    // fold's head, the heads of the groups and the rows are its rows (session-list.ts `listRows`)
+    // and the arrows walk them, scrolling a row into the fold. It holds the sessions grouped by
+    // workspace, then every terminal oculus started with each by-hand terminal.
+    //
+    // A press on a session picks it and shows its terminal or transcript in the page's Terminal
+    // tab. A terminal row shows its terminal in the Terminal tab that owns it, on whichever page,
+    // or, for one no tab owns (its tab was closed, or a task, a hook or LaTeX started it, or it is
+    // by hand), in the Terminal tab of the page on screen; `Open in its own pane` moves it into a
+    // new Terminal tab beside it. New shows the composer in the tab of the page that holds a typed
+    // prompt, else in the page's Terminal tab. On a page with no Terminal tab a press and New open
+    // one in the page's documents pane.
     //
     // A list a workbench limited to a folder (state/sources/explorer/view/limit.ts) holds the
     // sessions and terminals that work in the folder or are filed into it, with the line "In
-    // root/folder" and the control that lists every session again. Its pages have no Terminal tab
-    // of their own: New opens one in the page's documents pane, in the folder, and a picked session
-    // opens a Terminal tab that reads it and its Session view there.
+    // root/folder" and the control that lists every session again. New there starts in the folder.
     //
     // A group is named as the workspace picker names its folder (place-names.ts): a hub of the open
     // workspace by the name the workspace file gives it, any other folder by its last segment, and
     // two groups that would read the same by the folders above them.
     //
     // The filter and the search text are kept in the instance's state, so a list comes back as it
-    // was left. The marks a row menu sets (pinned to the top, archived, a title) are writes to
-    // ~/.oculus/sessions.json and are drawn at once, before the write lands. A mark drawn ahead is
-    // held while its write is in flight and then until the sessions channel gives its row the same
-    // mark, and a write that does not land drops it: from then on the row's mark is the channel's,
-    // so a change made from another place is drawn and the list's archived rows are the ones the
-    // channel names.
+    // was left. The marks a row menu sets are session-marks.svelte.ts's.
 
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Menu from '$lib/ui/menu/Menu.svelte';
@@ -50,14 +60,18 @@
     import Search from '$lib/ui/controls/text/Search.svelte';
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import TreeSection from '$lib/ui/tree/TreeSection.svelte';
+    import TreeView from '$lib/ui/tree/TreeView.svelte';
+    import type { TreeNav } from '$lib/ui/tree/tree-keys';
     import FolderLine from '$lib/views/shared/links/FolderLine.svelte';
+    import SessionSections from '$lib/views/shared/sessions/sections/SessionSections.svelte';
+    import { usePaneFold } from '$lib/views/shared/card/pane-fold';
     import { limitDir, limitOf, withLimit } from '$lib/state/sources/explorer/view/limit';
     import { servesRoot } from '$lib/state/sources/fs-transport';
     import type { GroupedSession } from '$lib/state/client/selectors.svelte';
     import {
         LIST_AGENTS,
         LIST_STATES,
-        isTop,
         listFilterOf,
         listGroups,
         sessionRows,
@@ -65,32 +79,44 @@
     } from '$lib/state/sessions/folds';
     import { toggled } from '$lib/state/shared/lists/lists';
     import type { Terminal } from '$lib/state/sessions/terminals.svelte';
-    import { TERMINAL_VIEW, emptyTab } from '$lib/state/sessions/terminal/terminal-tabs';
     import { t } from '$lib/state/shared/words/text';
     import { instanceMap } from '$lib/state/workbench/layout';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
+    import { followedSession, keepShown } from '$lib/state/workbench/selection.svelte';
     import Customizations from './Customizations.svelte';
     import SessionWorkspace from './SessionWorkspace.svelte';
     import TerminalRows from './TerminalRows.svelte';
-    import { filterGroups, sessionsInFolder, terminalsInFolder } from './session-list';
+    import {
+        LIST_FOLD,
+        TERMINALS_FOLD,
+        filterGroups,
+        foldOfRow,
+        listRows,
+        sessionRowId,
+        sessionsInFolder,
+        terminalRowId,
+        terminalsInFolder
+    } from './session-list';
+    import { createSessionMarks } from './session-marks.svelte';
     import { hubPlaces, placeNames } from '$lib/views/shared/sessions/place-names';
     import { useState } from '$lib/state/client/use';
 
     const {
         agents: { exportSession },
         fs: { roots, workspaces },
-        layout: { currentPage, openView },
-        selection: { select },
-        selectors: { sessionsByWorkspace },
+        layout: { instanceLayoutState, openView, restateInstance },
+        selection: { select, selected, selectedTerminal },
+        selectors: { sessionById, sessionsByWorkspace },
         clock: { minuteNow, startMinuteClock },
         ui: { instanceState, setInstanceState },
         terminals: {
             composeAt,
             composeIn,
             forkTerminal,
-            moveTerminal,
+            moveToNewTab,
             openSession,
             resumeTerminal,
+            sessionOfTerminal,
             showTerminal,
             stopTerminal,
             terminals
@@ -100,22 +126,29 @@
 
     let { instance }: ViewProps = $props();
 
-    /**
-     * The marks drawn ahead of their writes, by session id, each held while its write is in flight
-     * and then until the channel gives the row the same mark.
-     */
-    let archivedNow: Record<string, boolean> = $state({});
-    let topNow: Record<string, boolean> = $state({});
-    /** The writes of a mark in flight, by `<field>:<session id>`, counted. */
-    let writing: Record<string, number> = $state({});
-    // A mark drawn ahead goes once the channel's row carries it and no write of it is in flight.
-    $effect(() => {
-        const rows = sessionRows(sessionsByWorkspace(true));
-        const archivedHeld = uncarried(archivedNow, rows, (row) => row.hidden, 'hidden');
-        if (archivedHeld !== null) archivedNow = archivedHeld;
-        const topHeld = uncarried(topNow, rows, isTop, 'top');
-        if (topHeld !== null) topNow = topHeld;
+    const fold = usePaneFold();
+
+    /** The session the selection names: its own id, or the session its terminal runs, if any. */
+    const pickedSession = $derived.by(() => {
+        const terminal = selectedTerminal();
+        return terminal === null ? selected() : (sessionOfTerminal(terminal)?.id ?? null);
     });
+    /** The session the sections under the fold show. */
+    const followed = $derived(
+        sessionById(followedSession(instanceLayoutState(instance.id), pickedSession))
+    );
+    keepShown({
+        state: () => instanceLayoutState(instance.id),
+        selected: () => pickedSession,
+        shown: () => followed?.id ?? null,
+        write: (state) => restateInstance(instance.id, state)
+    });
+
+    const marks = createSessionMarks({
+        rows: () => sessionRows(sessionsByWorkspace(true)),
+        write: writeSession
+    });
+    const { archived, top } = marks;
     let failure = $state('');
     let arming = $state('');
     let armedResume = $state('');
@@ -144,6 +177,23 @@
         listed.map((group) => ({ ...group, name: names.get(group.key) ?? group.name }))
     );
     const panes = $derived(folder === null ? terminals() : terminalsInFolder(terminals(), dir));
+    /** The groups of the list as its tree walks them, the Terminals group after the workspaces'. */
+    const keyRows = $derived(
+        listRows(
+            [
+                ...groups.map((group) => ({
+                    key: group.key,
+                    rows: group.rows.map((row) => sessionRowId(row.id))
+                })),
+                ...(panes.length === 0
+                    ? []
+                    : [{ key: TERMINALS_FOLD, rows: panes.map((one) => terminalRowId(one.id)) }])
+            ],
+            fold.open
+        )
+    );
+    /** How many rows the list holds, drawn on the fold's head. */
+    const held = $derived(groups.reduce((sum, group) => sum + group.rows.length, panes.length));
     const filtered = $derived(
         filter.states.length > 0 || filter.agents.length > 0 || filter.query.trim() !== ''
     );
@@ -163,55 +213,6 @@
         });
     }
 
-    /**
-     * The marks of `drawn` that no row of the channel carries yet or whose write is in flight, or
-     * null when none goes, so an unchanged map is not written.
-     */
-    function uncarried(
-        drawn: Record<string, boolean>,
-        rows: GroupedSession[],
-        mark: (row: GroupedSession) => boolean,
-        field: 'hidden' | 'top'
-    ): Record<string, boolean> | null {
-        const carried = new Set(
-            rows
-                .filter((row) => drawn[row.id] === mark(row) && !writing[`${field}:${row.id}`])
-                .map((row) => row.id)
-        );
-        if (carried.size === 0) return null;
-        return Object.fromEntries(Object.entries(drawn).filter(([id]) => !carried.has(id)));
-    }
-
-    /** Draw one mark of one row ahead of the channel. */
-    function drawAhead(field: 'hidden' | 'top', id: string, value: boolean): void {
-        if (field === 'hidden') archivedNow = { ...archivedNow, [id]: value };
-        else topNow = { ...topNow, [id]: value };
-    }
-
-    /** Stop drawing one row's mark ahead, so the row draws the channel's mark again. */
-    function forget(field: 'hidden' | 'top', id: string): void {
-        const without = (drawn: Record<string, boolean>) =>
-            Object.fromEntries(Object.entries(drawn).filter(([one]) => one !== id));
-        if (field === 'hidden') archivedNow = without(archivedNow);
-        else topNow = without(topNow);
-    }
-
-    /** Count one write of a row's mark in, or one answered write out. */
-    function hold(key: string, step: 1 | -1): void {
-        const count = (writing[key] ?? 0) + step;
-        writing = Object.fromEntries(
-            Object.entries({ ...writing, [key]: count }).filter(([, held]) => held > 0)
-        );
-    }
-
-    function archived(row: GroupedSession): boolean {
-        return archivedNow[row.id] ?? row.hidden;
-    }
-
-    function top(row: GroupedSession): boolean {
-        return topNow[row.id] ?? isTop(row);
-    }
-
     /** A pick in the filter menu: a state or an agent kept or let go. */
     function picked(id: string, group?: string): void {
         if (group === 'state') {
@@ -224,38 +225,27 @@
     }
 
     /**
-     * Start a new session: the composer in the Terminal tab of the page on screen, which keeps the
-     * terminals it owns, or in a new Terminal tab when the page has none. The workbench's `n` key
-     * does the same.
+     * Start a new session: the composer in the tab of the page on screen that holds a typed prompt,
+     * else in its Terminal tab, which keeps the terminals it owns, or in a new Terminal tab in the
+     * documents pane when the page has none. The workbench's `n` key does the same.
      */
     function newSession(): void {
-        if (dir === null) composeIn();
-        else void composeAt({ cwd: dir, agent: 'claude', documents: true });
+        if (dir === null) composeIn(undefined, true);
+        else void composeAt({ cwd: dir, agent: 'claude', documents: true, asNew: true });
     }
 
     /**
-     * A press on a session: it is the selection and it opens, since no tab follows the selection to
-     * show its turns; a workbench shows it, with its details, in its documents.
+     * A press on a session: it is the selection, so the sections follow it, and it shows in the
+     * page's Terminal tab, or in a new one in the documents pane when the page has none.
      */
     function pick(row: GroupedSession): void {
         select(row.id);
-        const documents = folder !== null;
-        openSession({ session: row.id, label: row.title, press: true, documents });
-        if (!documents) return;
-        const pinned = { session: row.id, label: row.title };
-        openView('session-detail', pinned, currentPage().id, { document: true, keep: true });
+        openSession({ session: row.id, label: row.title, press: true, documents: true });
     }
 
     /** Take the folder away from this list: it lists every session again. */
     function clearFolder(): void {
         setInstanceState(instance.id, withLimit(instanceState(instance.id), null));
-    }
-
-    /** Open a new Terminal tab on the page on screen and move the terminal into it. */
-    function ownPane(entry: Terminal): void {
-        const page = currentPage().id;
-        const opened = openView(TERMINAL_VIEW, emptyTab(crypto.randomUUID()), page);
-        if (opened !== '') moveTerminal(entry.id, opened, page, 0);
     }
 
     async function stop(entry: Terminal): Promise<void> {
@@ -296,27 +286,15 @@
         showTerminal(answer.id);
     }
 
-    /**
-     * Flip one mark at once and write it. A write that does not land stops drawing the mark ahead,
-     * so the row draws the mark the channel carries, whatever another place wrote meanwhile.
-     */
+    /** Flip one mark, and say so when its write did not land. */
     async function mark(
         row: GroupedSession,
         field: 'hidden' | 'top',
         next: boolean
     ): Promise<void> {
-        const key = `${field}:${row.id}`;
-        drawAhead(field, row.id, next);
         failure = '';
-        hold(key, 1);
-        try {
-            const answer = await writeSession(row.id, { [field]: next });
-            if (answer.ok) return;
-            if (writing[key] === 1) forget(field, row.id);
-            failure = field === 'hidden' ? t('sessions.archive_failed') : t('sessions.top_failed');
-        } finally {
-            hold(key, -1);
-        }
+        if (await marks.set(row, field, next)) return;
+        failure = field === 'hidden' ? t('sessions.archive_failed') : t('sessions.top_failed');
     }
 
     /** A title typed and taken (a string), the field opened (null), or closed without one (''). */
@@ -404,45 +382,74 @@
                 <Empty error message={failure} />
             </div>
         {/if}
-        <div class="rows">
-            {#if groups.length === 0 && panes.length === 0}
-                <Empty message={emptyWords} glyph={t('sessions.empty_glyph')} />
-            {:else}
-                {#each groups as group (group.key)}
-                    <SessionWorkspace
-                        {group}
-                        {now}
-                        {armedResume}
-                        {renaming}
-                        isArchived={archived}
-                        topOf={top}
-                        onaction={action}
-                        onpick={pick}
-                        onrename={(row: GroupedSession, title: string | null) =>
-                            void rename(row, title)}
-                    />
-                {/each}
-                <TerminalRows entries={panes} {now} {arming} onstop={stop} onpinned={ownPane} />
-            {/if}
-        </div>
+        <TreeView
+            label={t('sessions.rail_title')}
+            rows={keyRows}
+            ontoggle={(id: string) => fold.toggle(foldOfRow(id))}
+        >
+            {#snippet children(nav: TreeNav)}
+                <TreeSection
+                    label={t('sessions.rail_title')}
+                    id={LIST_FOLD}
+                    {nav}
+                    count={held}
+                    open={fold.open(LIST_FOLD)}
+                    ontoggle={() => fold.toggle(LIST_FOLD)}
+                >
+                    <li class="fold" role="none" tabindex="-1" data-session-fold>
+                        {#if groups.length === 0 && panes.length === 0}
+                            <Empty message={emptyWords} glyph={t('sessions.empty_glyph')} />
+                        {:else}
+                            {#each groups as group (group.key)}
+                                <SessionWorkspace
+                                    {group}
+                                    {nav}
+                                    {now}
+                                    {armedResume}
+                                    {renaming}
+                                    isArchived={archived}
+                                    topOf={top}
+                                    onaction={action}
+                                    onpick={pick}
+                                    onrename={(row: GroupedSession, title: string | null) =>
+                                        void rename(row, title)}
+                                />
+                            {/each}
+                            <TerminalRows
+                                entries={panes}
+                                {nav}
+                                {now}
+                                {arming}
+                                onstop={stop}
+                                onpinned={(entry: Terminal) => moveToNewTab(entry.id)}
+                            />
+                        {/if}
+                    </li>
+                </TreeSection>
+            {/snippet}
+        </TreeView>
+        {#if followed !== null}
+            <SessionSections owner={instance.id} record={followed} />
+        {/if}
         <Customizations owner={instance.id} />
     </div>
 </Pane>
 
 <style>
+    /* The pane scrolls the fold, the sections and Customizations together. */
     .list {
         display: flex;
         flex-direction: column;
-        height: 100%;
-        min-height: 0;
+        min-width: 0;
+        font-size: var(--fs-sm);
     }
 
-    .rows {
-        flex: 1 1 auto;
-        min-height: 0;
+    /* At most ten rows tall, scrolling inside itself, and no Tab stop of its own: the tree is one.
+       A row an arrow moves to stops clear of the sticky head of its group. */
+    .fold {
+        max-height: calc(10 * var(--tree-row) * var(--text-scale, 1));
         overflow: auto;
-        display: flex;
-        flex-direction: column;
+        scroll-padding-top: calc(var(--tree-row) * var(--text-scale, 1) + 8px);
     }
 
     .failure {

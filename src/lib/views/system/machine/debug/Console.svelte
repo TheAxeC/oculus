@@ -1,6 +1,7 @@
 <script module lang="ts">
-    // Layer 3, view registration. The Debug Console is a tab of the Explorer pane, after the Debug
-    // view, and a debug session opens it there when it starts.
+    // Layer 3, view registration. The Debug Console is a tab of the bottom pane of the Explorer
+    // page and of a workbench, after the Debug view in the group, and a debug session opens it
+    // there when it starts.
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
 
     export const registration: ViewRegistration = {
@@ -8,7 +9,7 @@
         label: 'views.debug_console',
         glyph: 'views.debug_console_glyph',
         group: 'explorer',
-        order: 7
+        order: 9
     };
 </script>
 

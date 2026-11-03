@@ -20,7 +20,6 @@ text:
         export_tip: save the conversation as a Markdown file
         files_n: '{0} files'
         files_one: 1 file
-        files_tip: files the session changed
         filter: Filter
         filter_agent: Agent
         filter_empty: No session is kept by the filter and the search.
@@ -50,7 +49,6 @@ text:
         pin_top: Pin to the top
         prompts_n: '{0} prompts'
         prompts_one: 1 prompt
-        prompts_tip: prompts the session was given
         rail_glyph: list
         rail_title: Sessions
         rename: Rename

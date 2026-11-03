@@ -1,10 +1,10 @@
 <script lang="ts">
-    // Layer 3, partial of views/sessions/session-detail/ChangesRepository.svelte. The repository a
-    // session works in when git has read it: its branch line, the new-branch field, its changes and
-    // the commit box. The commit box is views/shared/changes/CommitBox.svelte, the one the
-    // Repositories view draws, so a message typed here is the message that view shows for the same
-    // repository, the four ways to commit are the same four, and its one button says Sync Changes
-    // or Publish Branch where there is nothing to commit, which is how this section pushes.
+    // Layer 3, partial of ChangesRepository.svelte beside it. The repository a session works in
+    // when git has read it: its branch line, the new-branch field, its changes and the commit box.
+    // The commit box is views/shared/changes/CommitBox.svelte, the one the Repositories view draws,
+    // so a message typed here is the message that view shows for the same repository, the four ways
+    // to commit are the same four, and its one button says Sync Changes or Publish Branch where
+    // there is nothing to commit, which is how this section pushes.
 
     import Menu from '$lib/ui/menu/Menu.svelte';
     import type { MenuItem } from '$lib/ui/menu/menu-items';

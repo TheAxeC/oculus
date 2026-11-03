@@ -1,10 +1,10 @@
 <script lang="ts">
-    // Layer 3, partial of views/sessions/session-detail/SessionDetail.svelte. One section of the
-    // Session view, built as the sections under the Files tree are: its own tree
-    // (ui/tree/TreeView.svelte), so it is one stop of the focus order, its head drawn by the
-    // sections' shared head (views/shared/explorer/sections/Section.svelte) with the name and the
-    // count, and the caller's body under the head while the section is open. A section that is
-    // closed unmounts its body, which is what stops a timer or a request the body started.
+    // Layer 3, partial of SessionSections.svelte beside it. One section of a session, built as the
+    // sections under the Files tree are: its own tree (ui/tree/TreeView.svelte), so it is one stop
+    // of the focus order, its head drawn by the sections' shared head
+    // (views/shared/explorer/sections/Section.svelte) with the name and the count, and the caller's
+    // body under the head while the section is open. A section that is closed unmounts its body,
+    // which is what stops a timer or a request the body started.
     //
     // The body holds the section's tree rows, each an `li` with role none around a row of level 2
     // whose id is among `rows`, and whatever else the section shows (a form, a commit box) as an

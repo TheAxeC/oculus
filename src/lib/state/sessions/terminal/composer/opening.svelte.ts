@@ -8,6 +8,11 @@
 // A task start asks the server for the seed before anything opens, so a task the hub does not hold
 // opens nothing and is said as its sentence. A later `composeAt` that begins while an earlier one
 // waits on its seed is the one that opens; the earlier one is answered with nothing to say.
+//
+// A tab reading a session is no place a start lands (`pageTarget`), with one exception here: New
+// goes first to a tab of the page that holds a typed prompt (`draft`), reading a session or not,
+// since a press took the composer off its screen and New brings that prompt back. A start from a
+// place or a task never takes a reading tab and never ends a reading.
 
 import type { AgentId, StartKind, TaskRef } from '../../../../data/model/index.ts';
 import { t } from '../../../shared/words/text.ts';
@@ -20,17 +25,27 @@ import {
     type TerminalTabState
 } from '../terminal-tabs.ts';
 import type { TerminalTab, TerminalTabs } from '../session/workbench-shape.ts';
-import { composerOf, freshComposer, splitState, startedAt, withComposer } from './composer.ts';
+import {
+    composerOf,
+    freshComposer,
+    splitState,
+    startedAt,
+    withComposer,
+    withDraft
+} from './composer.ts';
 
 /** The seed, folder and name the server answered for the task a tab's composer carries. */
 export type HeldTask = { ref: TaskRef; seed: string; cwd: string; name: string };
 
 /**
  * Where a start opens its composer: a folder, or a task. The agent defaults to Claude. A folder
- * start with `documents` set opens the Terminal tab it needs in the page's documents pane.
+ * start with `documents` set, on a page with no Terminal tab, opens the Terminal tab it needs in
+ * the page's documents pane. `asNew` says the folder start is New pressed in a list limited to a
+ * folder, which takes the tab New takes.
  */
 export type ComposeAt =
-    { cwd: string; agent: AgentId; documents?: boolean } | { task: TaskRef; agent?: AgentId };
+    | { cwd: string; agent: AgentId; documents?: boolean; asNew?: boolean }
+    | { task: TaskRef; agent?: AgentId };
 
 /** What the opening reads of the terminals store. */
 export type OpeningHost = {
@@ -52,20 +67,41 @@ export function createComposerOpening(host: OpeningHost) {
     /** The `composeAt` that began last, so an earlier one that waits on its seed gives way. */
     let latest = 0;
 
+    /** The tab of a page holding a typed prompt: of several, `pageTab`'s pick, else the first. */
+    function typedTab(tabs: readonly TerminalTab[], on: string): TerminalTab | null {
+        if (workbench === undefined) return null;
+        const typed = tabs.filter(
+            (tab) =>
+                tab.page === on && composerOf(workbench.instanceState(tab.id)).draft !== undefined
+        );
+        return host.pageTab(typed, on) ?? typed.at(0) ?? null;
+    }
+
     /**
-     * New with a prompt (the `n` key, the Sessions view's New): the composer in the Terminal tab of
+     * The Terminal tab of a page a composer shows in: for New (`asNew`) the tab that holds a typed
+     * prompt, so the prompt is never left hidden; then the page's Terminal tab; then a new one
+     * there, in the documents pane of a page with no Terminal tab when `documents` is set.
+     */
+    function targetTab(on: string, documents: boolean, asNew: boolean): TerminalTab | null {
+        if (workbench === undefined) return null;
+        const tabs = host.terminalTabs();
+        const existing = (asNew ? typedTab(tabs, on) : null) ?? host.pageTab(tabs, on);
+        if (existing !== null) return existing;
+        const id = workbench.open(on, emptyTab(crypto.randomUUID()), documents);
+        return host.terminalTabs().find((tab) => tab.id === id) ?? null;
+    }
+
+    /**
+     * New with a prompt (the `n` key, the Sessions tab's New): the composer in the Terminal tab of
      * a page, which keeps the terminals it owns, or in a new Terminal tab there; the tab is
      * activated. The page is the one on screen unless named. The composer starts in the tab's
-     * folder.
+     * folder, and `targetTab` says which tab it is.
      */
-    function composeIn(page?: string): void {
+    function composeIn(page?: string, documents = false): void {
         if (workbench === undefined) return;
         const on = page ?? workbench.currentPage();
-        const target = host.pageTab(host.terminalTabs(), on);
-        if (target === null) {
-            workbench.open(on, emptyTab(crypto.randomUUID()));
-            return;
-        }
+        const target = targetTab(on, documents, true);
+        if (target === null) return;
         showComposer(target);
         workbench.activate(target.id, on);
     }
@@ -104,19 +140,6 @@ export function createComposerOpening(host: OpeningHost) {
         return { ...fresh, composer: { ...record, agent } };
     }
 
-    /**
-     * The Terminal tab a start from a place or a task shows its composer in: the page on screen's
-     * Terminal tab, or a new one there, in the page's documents pane when `documents` is set.
-     */
-    function targetTab(documents = false): TerminalTab | null {
-        if (workbench === undefined) return null;
-        const on = workbench.currentPage();
-        const existing = host.pageTab(host.terminalTabs(), on);
-        if (existing !== null) return existing;
-        const id = workbench.open(on, emptyTab(crypto.randomUUID()), documents);
-        return host.terminalTabs().find((tab) => tab.id === id) ?? null;
-    }
-
     /** Show the composer of a tab in the state `startedAt` makes of a start. */
     function showAt(
         target: TerminalTab,
@@ -124,7 +147,11 @@ export function createComposerOpening(host: OpeningHost) {
         tabState: TerminalTabState
     ): void {
         if (workbench === undefined) return;
-        workbench.setInstanceState(target.id, startedAt(workbench.instanceState(target.id), at));
+        // A composer off the tab's screen brings no typed prompt into a start: the prompt waits for
+        // New, and only a composer on screen keeps its words under a seed.
+        const held = workbench.instanceState(target.id);
+        const kept = tabState.composing ? held : withDraft(held, '', []);
+        workbench.setInstanceState(target.id, startedAt(kept, at));
         workbench.restate(target.id, target.page, liveTab(composingIn(tabState)));
         workbench.activate(target.id, target.page);
     }
@@ -138,7 +165,11 @@ export function createComposerOpening(host: OpeningHost) {
         if (workbench === undefined) return '';
         const mine = ++latest;
         if (!('task' in at)) {
-            const target = targetTab(at.documents === true);
+            const target = targetTab(
+                workbench.currentPage(),
+                at.documents === true,
+                at.asNew === true
+            );
             if (target !== null) showAt(target, at, readTab(target.state));
             return '';
         }
@@ -147,7 +178,7 @@ export function createComposerOpening(host: OpeningHost) {
         if (!answer.ok || answer.seeded === undefined) {
             return answer.error === '' ? t('sessions.terminal_start_failed') : answer.error;
         }
-        const target = targetTab();
+        const target = targetTab(workbench.currentPage(), false, false);
         if (target === null) return '';
         held.tasks[target.id] = { ref: at.task, ...answer.seeded };
         showAt(

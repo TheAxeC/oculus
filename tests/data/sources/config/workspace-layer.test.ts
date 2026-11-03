@@ -71,7 +71,7 @@ describe('the workspace layer of loadConfig', () => {
             expect(mine[page], page).toEqual(shipped[page]);
         }
         expect(read.from.arrangements).toBe(FILE);
-        expect(read.from['arrangements.sessions']).toBe(OCULUS_FROM.arrangements);
+        expect(read.from['arrangements.explorer']).toBe(OCULUS_FROM.arrangements);
     });
 
     it('replaces only the rail entry of its page, at the head of the rail', () => {

@@ -10,7 +10,6 @@ rail:
   - { label: "Focus", glyph: compass, page: focus, chord: f, group_glyph: focus }
   - { label: "Projects", glyph: paper, page: projects, chord: p, group_glyph: paper, project_boards: true }
   - { label: "Incoming", glyph: email, page: incoming, chord: e, group_glyph: email }
-  - { label: "Sessions", glyph: live, page: sessions, chord: m, group_glyph: live }
   - { label: "Explorer", glyph: folder, page: explorer, chord: s, group_glyph: folder }
   - { label: "Academic Life", glyph: scout, page: academic, chord: c, group_glyph: scout }
   - { label: "Pillars", glyph: pillar, page: pillars, chord: l, group_glyph: book }
@@ -31,33 +30,13 @@ nav_groups:
 direct_chord: v
 
 
-# What each rail page is first made from, by the key its `rail:` entry names, and what Reset gives it back. After that first press the page is the one the reader arranged, kept in the saved layout. An arrangement carries `root`, the page's one tree. A node is `{ kind: split, dir, sizes, children }` or `{ kind: pane, view }`, where `view` is one view id or a list of them (the tabs of that pane), and a tab of the list may be `{ view, state }` to open it in a state of its own, as the sessions page's Files tab follows the selected session with `state: { follow: true }`. A tab written `{ view, pinned: true }` or `{ view, state, pinned: true }` starts pinned: it comes first in its pane, draws a pin where its close control is, and Close All, Close Others and Cmd+W leave it open; every tab of the shipped arrangements is pinned, so a stray press does not close the tabs a page starts with. A `pinned:` of any other value makes the arrangement not add up. `view: []` is an empty pane, the one a view opened for something (a project, a document, a file) lands in. It is the layout tree with the instance ids left out, since those are minted fresh when the page is made. An arrangement that does not add up makes no page. A document of `docs:` whose `group` is the page's key is added to the page when it is made, as a pinned `doc` tab after the first tab of the page's first pane, and a page already saved is given each such document it lacks, once, pinned with the pane's pinned tabs.
+# What each rail page is first made from, by the key its `rail:` entry names, and what Reset gives it back. After that first press the page is the one the reader arranged, kept in the saved layout. An arrangement carries `root`, the page's one tree. A node is `{ kind: split, dir, sizes, children }` or `{ kind: pane, view }`, where `view` is one view id or a list of them (the tabs of that pane), and a tab of the list may be `{ view, state }` to open it in a state of its own, as a Files tab follows the selected session with `state: { follow: true }`. A tab written `{ view, pinned: true }` or `{ view, state, pinned: true }` starts pinned: it comes first in its pane, draws a pin where its close control is, and Close All, Close Others and Cmd+W leave it open; every tab of the shipped arrangements is pinned, so a stray press does not close the tabs a page starts with. A `pinned:` of any other value makes the arrangement not add up. `view: []` is an empty pane, the one a view opened for something (a project, a document, a file) lands in. It is the layout tree with the instance ids left out, since those are minted fresh when the page is made. An arrangement that does not add up makes no page. A document of `docs:` whose `group` is the page's key is added to the page when it is made, as a pinned `doc` tab after the first tab of the page's first pane, and a page already saved is given each such document it lacks, once, pinned with the pane's pinned tabs.
 arrangements:
   focus:
     root:
       kind: pane
       view:
         - { view: focus, pinned: true }
-  sessions:
-    root:
-      kind: split
-      dir: row
-      sizes: [0.7, 0.3]
-      children:
-        - kind: split
-          dir: row
-          sizes: [0.28, 0.72]
-          children:
-            - kind: pane
-              view:
-                - { view: session-list, pinned: true }
-            - kind: pane
-              view:
-                - { view: terminal, pinned: true }
-        - kind: pane
-          view:
-            - { view: session-detail, pinned: true }
-            - { view: files, state: { follow: true }, pinned: true }
   projects:
     root:
       kind: pane
@@ -92,11 +71,20 @@ arrangements:
           view:
             - { view: files, pinned: true }
             - { view: repositories, pinned: true }
+            - { view: session-list, pinned: true }
             - { view: search, pinned: true }
-            - { view: references, pinned: true }
             - { view: latex, pinned: true }
-            - { view: problems, pinned: true }
-        - { kind: pane, view: [] }
+        - kind: split
+          dir: col
+          sizes: [0.6, 0.4]
+          children:
+            - { kind: pane, view: [] }
+            - kind: pane
+              view:
+                - { view: terminal, pinned: true }
+                - { view: problems, pinned: true }
+                - { view: references, pinned: true }
+                - { view: debug-console, pinned: true }
   academic:
     root:
       kind: pane
@@ -190,7 +178,7 @@ arrangements:
         - { kind: pane, view: [] }
 
 
-# The arrangement every workbench page is made from, and what Reset layout gives it back: a page that belongs to one folder (a project, a funding or education entry or any folder), made when that folder is opened as a workbench. It has the shape of one entry of `arrangements:` above, `root` and its tree, and each tab is given the folder when the page is made: Files rooted at it, Search, Problems, Repositories and the sessions list limited to it, LaTeX pointed at it, and Deposit set to the project the page was opened for. A page whose project has no deposit (no `code/` folder and a `code_availability` naming neither a `repo` nor a `url`), and a page opened for no project, is made without the Deposit tab. The first tab of a pane is the one shown. `view: []` is the empty pane a project, an entry, a session or a file opens in. It is not a key of `arrangements:`, so no `rail:` entry can name it and the Settings view does not offer it as a rail page.
+# The arrangement every workbench page is made from, and what Reset layout gives it back: a page that belongs to one folder (a project, a funding or education entry or any folder), made when that folder is opened as a workbench. It has the shape of one entry of `arrangements:` above, `root` and its tree, and each tab is given the folder when the page is made: Files rooted at it, Search, Problems, Repositories and the sessions list limited to it, LaTeX pointed at it, the Terminal tab's composer opened in it, and Deposit set to the project the page was opened for. A page whose project has no deposit (no `code/` folder and a `code_availability` naming neither a `repo` nor a `url`), and a page opened for no project, is made without the Deposit tab. The first tab of a pane is the one shown. `view: []` is the empty pane a project, an entry, a session or a file opens in. It is not a key of `arrangements:`, so no `rail:` entry can name it and the Settings view does not offer it as a rail page.
 workbench:
   root:
     kind: split
@@ -200,13 +188,22 @@ workbench:
       - kind: pane
         view:
           - { view: files, pinned: true }
-          - { view: search, pinned: true }
           - { view: repositories, pinned: true }
           - { view: deposit, pinned: true }
-          - { view: latex, pinned: true }
-          - { view: problems, pinned: true }
           - { view: session-list, pinned: true }
-      - { kind: pane, view: [] }
+          - { view: search, pinned: true }
+          - { view: latex, pinned: true }
+      - kind: split
+        dir: col
+        sizes: [0.6, 0.4]
+        children:
+          - { kind: pane, view: [] }
+          - kind: pane
+            view:
+              - { view: terminal, pinned: true }
+              - { view: problems, pinned: true }
+              - { view: references, pinned: true }
+              - { view: debug-console, pinned: true }
 
 
 # The floats a workspace with no saved layout starts with, and Reset all pages gives back: panes over every page, each one a pane of tabs (`view` is one view id or a list of them, as in an arrangement's pane) placed either docked on an edge of the window, `{ view, dock: left | right | bottom, size }` where `size` is the fraction of the window's width (its height for `bottom`) from 0.1 to 0.6, or free, `{ view, x, y, w, h }` in fractions of the window with `x + w` and `y + h` at most 1 and `w` and `h` at least 0.1. One float may be docked on an edge; of two on one edge the first stays. After that first load the floats are the reader's own, kept in the saved layout beside the pages. An entry that does not add up is left out and the rest kept.
@@ -302,7 +299,7 @@ boards:
     label_mode: short
 
 
-# The views that draw a count, by view id, and where each count is drawn: `tab: true` draws it on the view's tabs and in the view catalogue, and `rail: true` adds it to the badge of the rail button of the page the view's tab is on, whose tooltip names the view with its count. A view with no row draws no count and gives the rail nothing. A board counts its cards by the categories of `categories` in config/catalogs/vocab.yml, and gives the rail the count of its projects in the rows carrying `rail: true`, in the colour `rail_color` of config/catalogs/vocab.yml gives, and 0 when none of its projects is in such a row. A collection counts the entries whose status is one of `match`, compared trimmed and in lower case, says `label` on hover, and draws the colour of the first status of `match` in `statuses` of config/catalogs/vocab.yml, so `in-prep` on the Funding tab is the violet that `statuses` gives `in-prep`, unless `tone` (red, amber or green) sets an urgency class, used where a count means "act" rather than "here is how many"; a collection with no `match` counts nothing. Applications counts the applications open under `focus:` of config/defaults/behavior.yml or the open workspace file's `settings:`, in green. `days` is for Position Leads alone: it counts the open leads whose deadline falls from today through that many days ahead, in amber. The other views count what their tab shows: Inbox the threads awaiting an answer, Calendar today's events not ended, Repositories the changes, Problems its open rows, Findings its file findings and the open findings of its Audit section, Processes the programs running, Live HPC its running and pending jobs, and the Session list the sessions needing input. A row whose id is no view that draws a count, a field other than these, a `days` on any row but `leads`, or a `tab` or `rail` that is not true or false is a finding of the config check. A hub's .oculus/config.yml may override `counts` whole.
+# The views that draw a count, by view id, and where each count is drawn: `tab: true` draws it on the view's tabs and in the view catalogue, and `rail: true` adds it to the badge of the rail button of the page the view's tab is on, whose tooltip names the view with its count. A tab says how much is in the view, and the rail says only what needs the reader now, so a view whose count is a size, such as Repositories' changes and Problems' rows, says `rail: false`. A view with no row draws no count and gives the rail nothing. A board counts its cards by the categories of `categories` in config/catalogs/vocab.yml, and gives the rail the count of its projects in the rows carrying `rail: true`, in the colour `rail_color` of config/catalogs/vocab.yml gives, and 0 when none of its projects is in such a row. A collection counts the entries whose status is one of `match`, compared trimmed and in lower case, says `label` on hover, and draws the colour of the first status of `match` in `statuses` of config/catalogs/vocab.yml, so `in-prep` on the Funding tab is the violet that `statuses` gives `in-prep`, unless `tone` (red, amber or green) sets an urgency class, used where a count means "act" rather than "here is how many"; a collection with no `match` counts nothing. Applications counts the applications open under `focus:` of config/defaults/behavior.yml or the open workspace file's `settings:`, in green. `days` is for Position Leads alone: it counts the open leads whose deadline falls from today through that many days ahead, in amber. The other views count what their tab shows: Inbox the threads awaiting an answer, Calendar today's events not ended, Repositories the changes, Problems its open rows, Findings its file findings and the open findings of its Audit section, Processes the programs running, Live HPC its running and pending jobs, and the Session list the sessions needing input. A row whose id is no view that draws a count, a field other than these, a `days` on any row but `leads`, or a `tab` or `rail` that is not true or false is a finding of the config check. A hub's .oculus/config.yml may override `counts` whole.
 counts:
   projects:     { tab: true, rail: true }
   supervision:  { tab: true, rail: true }
@@ -313,8 +310,8 @@ counts:
   inbox:        { tab: true, rail: true }
   leads:        { days: 14, tab: true, rail: false }
   calendar:     { tab: true, rail: false }
-  repositories: { tab: true, rail: true }
-  problems:     { tab: true, rail: true }
+  repositories: { tab: true, rail: false }
+  problems:     { tab: true, rail: false }
   findings:     { tab: true, rail: true }
   processes:    { tab: true, rail: false }
   hpc:          { tab: true, rail: false }

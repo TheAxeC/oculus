@@ -1,15 +1,14 @@
 <script module lang="ts">
-    // Layer 3, view registration. Problems is the last of the eight views of the Explorer page's
-    // group (orders 0, 1, 2, 3, 5, 6 and 7 are Files, Repositories, Search, References, LaTeX, the
-    // debug view and the debug console), so it is reached by the chord `s8`, and its badge is the
-    // number of problems the page holds, its count, drawn where its row of `counts` says.
+    // Layer 3, view registration. Problems follows Terminal in the Explorer page's group, so it is
+    // reached by the chord `s7`, and its count is the number of problems the page holds, drawn
+    // where its row of `counts` says.
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
     export const registration: ViewRegistration = {
         id: 'problems',
         label: 'views.problems',
         glyph: 'views.problems_glyph',
         group: 'explorer',
-        order: 8,
+        order: 6,
         badge: (client) => client.railBadges.problemsBadge(),
         badgeTitle: (client) => client.railBadges.problemsBadgeTitle(),
         countPart: (client) => ({ count: client.railBadges.problemsCount() })

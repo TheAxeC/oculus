@@ -1,6 +1,6 @@
 <script module lang="ts">
-    // Layer 3, view registration. The Debug view is a tab of the Explorer pane, after the TeX view,
-    // and a pause of the program opens it there.
+    // Layer 3, view registration. The Debug view is in the Explorer page's group, the last with a
+    // chord, `s9`, and a pause of the program opens it there.
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
 
     export const registration: ViewRegistration = {
@@ -8,7 +8,7 @@
         label: 'views.debug',
         glyph: 'views.debug_glyph',
         group: 'explorer',
-        order: 6
+        order: 8
     };
 </script>
 

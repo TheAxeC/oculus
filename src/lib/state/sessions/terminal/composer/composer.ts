@@ -1,7 +1,12 @@
 // Layer 2, client state. The composer's own record and the words it puts into a prompt: what each
-// picker last chose in one tab, where a session may start, a file attached as `@<path>`, and the
-// start the composer sends. Pure over what it is handed, so every rule is checked without a
-// browser; the component holds only the prompt being typed.
+// picker last chose in one tab, the prompt being typed, where a session may start, a file attached
+// as `@<path>`, and the start the composer sends. Pure over what it is handed, so every rule is
+// checked without a browser.
+//
+// The prompt being typed is the record's `draft`, with the files attached to it as `attached`, so
+// both outlive the composer's component: a press in the sessions list that makes the tab read a
+// session takes the composer off the screen, and the next composer of the tab shows them again. A
+// start that lands takes them off.
 //
 // The picks live in the tab's instance state under `composer`, one map of list key to value id per
 // agent, so switching from Claude to Codex and back keeps both agents' choices, and a tab's next
@@ -30,6 +35,7 @@ import { validName, worktreePath } from '../../../../data/helpers/worktrees.ts';
 import {
     filledTextShape,
     mapOfShape,
+    optionalItemsShape,
     readAs,
     stringItemsShape,
     taskRefOf
@@ -64,6 +70,10 @@ export type ComposerRecord = {
      * answered for it is held by the terminals store per tab and never saved with the layout.
      */
     task?: TaskRef;
+    /** The prompt being typed; absent while the box is empty. */
+    draft?: string;
+    /** The files attached by path to the prompt being typed; absent while there are none. */
+    attached?: string[];
 };
 
 /** The instance-state field the record is kept under. */
@@ -86,8 +96,8 @@ const picksShape = z
     .catch(() => ({ claude: {}, codex: {} }));
 
 /**
- * The record a tab keeps, each field as typed or unset; the split and the worktree are absent
- * unless they are named.
+ * The record a tab keeps, each field as typed or unset; the split, the worktree, the draft and the
+ * attached files are absent unless they are named.
  */
 const composerShape = z
     .object({
@@ -97,13 +107,17 @@ const composerShape = z
         picks: picksShape,
         split: filledTextShape,
         worktree: filledTextShape,
-        task: z.unknown().optional().transform(taskRefOf)
+        task: z.unknown().optional().transform(taskRefOf),
+        draft: filledTextShape,
+        attached: optionalItemsShape.catch(undefined)
     })
-    .transform(({ split, worktree, task, ...record }) => ({
+    .transform(({ split, worktree, task, draft, attached, ...record }) => ({
         ...record,
         ...(split === undefined ? {} : { split }),
         ...(worktree === undefined ? {} : { worktree }),
-        ...(task === undefined ? {} : { task })
+        ...(task === undefined ? {} : { task }),
+        ...(draft === undefined ? {} : { draft }),
+        ...(attached === undefined ? {} : { attached })
     })) satisfies z.ZodType<ComposerRecord>;
 
 /** A tab's instance state as far as its composer: the record under `composer`, which is a map. */
@@ -165,28 +179,51 @@ export function withComposer(state: unknown, record: ComposerRecord): Record<str
 }
 
 /**
+ * The tab's instance state with the prompt being typed and the files attached to it; an empty
+ * prompt and an empty list leave nothing in the record.
+ */
+export function withDraft(
+    state: unknown,
+    draft: string,
+    attached: string[]
+): Record<string, unknown> {
+    const { draft: _prompt, attached: _files, ...rest } = composerOf(state);
+    return withComposer(state, {
+        ...rest,
+        ...(draft === '' ? {} : { draft }),
+        ...(attached.length === 0 ? {} : { attached })
+    });
+}
+
+/** What a new composer keeps of the record it replaces: accounts, picks and the prompt typed. */
+function keptOf(record: ComposerRecord): Partial<ComposerRecord> {
+    const { accounts, picks, draft, attached } = record;
+    return {
+        accounts,
+        picks,
+        ...(draft === undefined ? {} : { draft }),
+        ...(attached === undefined ? {} : { attached })
+    };
+}
+
+/**
  * The instance state of a tab once a New with a prompt shows its composer: the composer in the
- * tab's folder and the kind chosen, with the accounts and picks the tab's record already held
- * and the rest of the tab's instance state kept.
+ * tab's folder and the kind chosen, with the accounts, picks and draft the tab's record already
+ * held and the rest of the tab's instance state kept.
  */
 export function splitState(
     folder: string,
     agent: ComposerAgent,
     held?: unknown
 ): Record<string, unknown> {
-    const kept = composerOf(held);
-    return withComposer(held, {
-        ...splitRecord(folder, agent),
-        accounts: kept.accounts,
-        picks: kept.picks
-    });
+    return withComposer(held, { ...splitRecord(folder, agent), ...keptOf(composerOf(held)) });
 }
 
 /**
  * The instance state of a tab once a start from a place or a task shows its composer: the folder
  * the start names, offered as a place of its own, the agent, that agent's lists back at the
- * catalog's defaults (its picks cleared; the other agent's kept), the account the tab held, and
- * the task when there is one.
+ * catalog's defaults (its picks cleared; the other agent's kept), the account and draft the tab
+ * held, and the task when there is one.
  */
 export function startedAt(
     held: unknown,
@@ -195,7 +232,7 @@ export function startedAt(
     const kept = composerOf(held);
     return withComposer(held, {
         ...splitRecord(at.cwd, at.agent),
-        accounts: kept.accounts,
+        ...keptOf(kept),
         picks: { ...kept.picks, [at.agent]: {} },
         ...(at.task === undefined ? {} : { task: at.task })
     });
@@ -203,13 +240,12 @@ export function startedAt(
 
 /**
  * The instance state of a tab once New shows its composer: the folder and kind back to a new
- * composer's own (the hub, Claude) and no folder split from, with the accounts and picks the tab's
- * record already held and the rest of the tab's instance state kept, so the folder and kind of a
- * New with a prompt do not carry into a later New.
+ * composer's own (the hub, Claude) and no folder split from, with the accounts, picks and draft the
+ * tab's record already held and the rest of the tab's instance state kept, so the folder and kind
+ * of a New with a prompt do not carry into a later New.
  */
 export function freshComposer(held?: unknown): Record<string, unknown> {
-    const kept = composerOf(held);
-    return withComposer(held, { ...COMPOSER_EMPTY, accounts: kept.accounts, picks: kept.picks });
+    return withComposer(held, { ...COMPOSER_EMPTY, ...keptOf(composerOf(held)) });
 }
 
 /**

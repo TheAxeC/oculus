@@ -8,7 +8,7 @@
 //
 // `endingOf` names what an app runs, for the question a disable asks.
 //
-// A Terminal tab is titled by `terminalTabTitle`, which only the tab uses; the Sessions view's rows
+// A Terminal tab is titled by `terminalTabTitle`, which only the tab uses; the Sessions tab's rows
 // and the Processes view keep `terminalLabel` (title, else name).
 
 import { isTerminalId, type DebugPayload, type Terminal } from '../../../data/model/index.ts';
@@ -90,8 +90,9 @@ export function terminalTabTitle(
  * Take the ended terminals out of every tab that owned them, on any page; a tab left owning none
  * closes unless the reader is composing in it, where it keeps its composer, shown alone, and what
  * was typed, or reading in it: a tab on Transcript stays on the session `sessionOf` names for the
- * terminal it showed. A selection that was one of them is cleared. A tab that owned none of them is
- * left as it is, so a tab showing a composer it never started from stays.
+ * terminal it showed. A pinned tab left with nothing to read stands and shows its composer. A
+ * selection that was one of them is cleared. A tab that owned none of them is left as it is, so a
+ * tab showing a composer it never started from stays.
  */
 export function closeEnded(
     workbench: TerminalTabs,
@@ -108,8 +109,11 @@ export function closeEnded(
         const reading = held.showing === 'transcript' && held.shown !== null;
         const session = left && reading ? sessionOf(held.shown ?? '') : null;
         const transcript = session === null ? next.transcript : { session, agent: '' };
-        workbench.restate(tab.id, tab.page, { ...next, transcript });
-        if (left && transcript === null && !held.composing) workbench.close(tab.id, tab.page);
+        const stands = left && transcript === null && tab.pinned === true;
+        workbench.restate(tab.id, tab.page, stands ? liveTab(next) : { ...next, transcript });
+        if (left && transcript === null && !held.composing && !stands) {
+            workbench.close(tab.id, tab.page);
+        }
     }
     const selected = workbench.selected();
     if (selected !== null && ended.includes(selected)) workbench.select(null);
@@ -119,7 +123,8 @@ export function closeEnded(
  * Move a terminal into a Terminal tab before the row at `index` of that tab's order (`index` equal
  * to its length puts it last), shown there. Within one tab it is a reorder. The tab it left closes
  * when it owns nothing more, unless the reader is composing in it, where it keeps its composer
- * shown alone. A tab id no page holds moves nothing.
+ * shown alone, or it is pinned, where it stands and shows its composer. A tab id no page holds
+ * moves nothing.
  */
 export function moveInto(
     workbench: TerminalTabs,
@@ -138,8 +143,10 @@ export function moveInto(
     if (from !== null && from.id !== target.id) {
         const was = readTab(from.state);
         const left = withoutTerminal(was, id);
-        workbench.restate(from.id, from.page, left);
-        if (left.terminals.length === 0 && !was.composing) workbench.close(from.id, from.page);
+        const none = left.terminals.length === 0;
+        const stands = none && from.pinned === true;
+        workbench.restate(from.id, from.page, stands ? liveTab(left) : left);
+        if (none && !was.composing && !stands) workbench.close(from.id, from.page);
     }
     const held = readTab(target.state);
     const before = held.terminals.indexOf(id);
@@ -151,7 +158,8 @@ export function moveInto(
 
 /**
  * The Terminal tab of a page or float that a terminal no tab owns, New and the app menu's starts
- * go to: pageTarget's rule over that page's tabs.
+ * go to: pageTarget's rule over that page's tabs, after, for New, the tab holding a typed prompt
+ * (`typedTab` in composer/opening.svelte.ts).
  */
 export function pageTabOf(
     workbench: TerminalTabs,

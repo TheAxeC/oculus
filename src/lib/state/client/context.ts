@@ -56,6 +56,7 @@ import { createEntities } from './entities.svelte.ts';
 import { createFeeds } from '../feeds/feeds.svelte.ts';
 import { createFiles } from '../sources/files.svelte.ts';
 import { cardTreePrefix } from '../sources/explorer/view/card-tree.ts';
+import { limitDir } from '../sources/explorer/view/limit.ts';
 import { createFolderPages } from '../workbench/layout/open/float/folder-opener.ts';
 import { createFs } from '../sources/fs.svelte.ts';
 import { fileNamed } from '../../data/helpers/files/paths.ts';
@@ -262,6 +263,10 @@ export function createClientState(
             const read = await fs.workspacesNow();
             const own = read.folders.find((one) => one.key === read.primary);
             return own?.dir ?? read.home;
+        },
+        pageFolder: (page) => {
+            const folder = layout.pages().find((one) => one.id === page)?.folder;
+            return folder === undefined ? null : limitDir(fs.roots(), folder);
         }
     });
     // A closed Terminal tab, pane or page, and a page reset that removes a tab, end the running
@@ -709,10 +714,12 @@ export function createClientState(
     entities.afterReceive(sources.heard);
     writes.onUnwritten(sources.unwritten);
     pageState.onRefused(sources.stateRefused);
-    // A view registered with no catalogue group is one opened for something (a project, a
-    // document, a file), and the layout lands it apart from a page's tool views. The registry is
-    // built over the layout, so the layout is told the rule once both exist.
-    layout.registerOpened((view) => registry.viewFor(view)?.group === '');
+    // A view registered with no catalogue group, or that says `opened`, is one opened for something
+    // (a project, a document, a file, a session), and the layout lands it apart from a page's tool
+    // views. The registry is built over the layout, so the layout is told the rule once both exist.
+    layout.registerOpened(
+        (view) => registry.viewFor(view)?.group === '' || registry.viewFor(view)?.opened === true
+    );
     // A view whose registration says `unique` is held once: the layout shows the instance a page or
     // float holds instead of opening a second, and the rule reaches it the same way.
     layout.registerUnique((view) => registry.viewFor(view)?.unique === true);

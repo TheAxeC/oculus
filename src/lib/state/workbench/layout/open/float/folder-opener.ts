@@ -8,10 +8,10 @@
 //
 // Each tab starts limited to the folder in the state its view reads: Files is rooted at it (`top`),
 // Search is under it (`under`), Problems is scoped to its root and path (`scope` and `under`),
-// Repositories and the sessions list hold it as `folder` (limit.ts), and LaTeX points at it in the
-// folder-only shape `{ root, path }` that names the folder's first main file. Files and LaTeX carry
-// no folder name, so their tabs read Files and LaTeX. A tab of a view that is not listed here
-// starts as the arrangement gives it.
+// Repositories and the sessions list hold it as `folder` (limit.ts), LaTeX points at it in the
+// folder-only shape `{ root, path }` that names the folder's first main file, and a Terminal tab's
+// composer opens in it. Files and LaTeX carry no folder name, so their tabs read Files and LaTeX. A
+// tab of a view that is not listed here starts as the arrangement gives it.
 //
 // The Deposit tab belongs to the project the page was opened for (the item is the project view): it
 // starts as that project's deposit, and the arrangement drops it for a page opened for no project
@@ -34,8 +34,10 @@ import {
 import { recordField, stateRecord } from '../../../../shared/page/records.ts';
 import type { LayoutStore } from '../../../layout.svelte.ts';
 import type { FsRoot } from '../../../../sources/explorer/view/place.ts';
-import { withLimit } from '../../../../sources/explorer/view/limit.ts';
+import { limitDir, withLimit } from '../../../../sources/explorer/view/limit.ts';
 import { rootedState } from '../../../../sources/explorer/view/tab-roots.ts';
+import { splitState } from '../../../../sessions/terminal/composer/composer.ts';
+import { TERMINAL_VIEW } from '../../../../sessions/terminal/terminal-tabs.ts';
 
 /** What one tab starts with: its layout state, and the state its view keeps in the ui store. */
 type Start = { layout?: unknown; ui?: unknown };
@@ -81,8 +83,11 @@ function hasDeposit(project: Project | undefined): boolean {
     return project.codeFolder === true || (code?.repo ?? '') !== '' || (code?.url ?? '') !== '';
 }
 
-/** What each view of the left pane starts with, given the folder and the project it is for. */
-function startOf(view: string, folder: FolderRef, project: string): Start {
+/**
+ * What each view of the page starts with, given the folder and the project it is for; a Terminal
+ * tab's composer takes the folder's absolute path, which `dir` is, or null for a root not served.
+ */
+function startOf(view: string, folder: FolderRef, project: string, dir: string | null): Start {
     switch (view) {
         case 'files':
             return {
@@ -100,6 +105,8 @@ function startOf(view: string, folder: FolderRef, project: string): Start {
             return { layout: { root: folder.root, path: folder.path } };
         case 'deposit':
             return { layout: recordField(project) };
+        case TERMINAL_VIEW:
+            return dir === null ? {} : { ui: splitState(dir, 'claude') };
         default:
             return {};
     }
@@ -113,7 +120,8 @@ function arranged(
     node: unknown,
     folder: FolderRef,
     project: string,
-    deposit: boolean
+    deposit: boolean,
+    dir: string | null
 ): FolderLayout | null {
     const made = parseArrangement(node);
     if (made === null) return null;
@@ -124,7 +132,7 @@ function arranged(
             root = closeInstance(root, tab.id);
             continue;
         }
-        const start = startOf(tab.view, folder, project);
+        const start = startOf(tab.view, folder, project, dir);
         if (start.layout !== undefined) root = restate(root, tab.id, start.layout);
         if (start.ui !== undefined) states[tab.id] = start.ui;
     }
@@ -137,7 +145,8 @@ export function createFolderPages(deps: FolderPagesDeps): FolderPages {
     function make(folder: FolderRef, item?: FolderItem): FolderLayout | null {
         const project = projectIdOf(item);
         const deposit = project !== '' && hasDeposit(deps.project(project));
-        return arranged(fields(deps.config()).workbench, folder, project, deposit);
+        const dir = limitDir(deps.roots(), folder);
+        return arranged(fields(deps.config()).workbench, folder, project, deposit, dir);
     }
 
     function open(folder: FolderRef, opened: { label?: string; item?: FolderItem } = {}): string {

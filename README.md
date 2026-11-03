@@ -13,7 +13,7 @@ A researcher's work is spread over many places: manuscripts in LaTeX, code and d
 - Funding, talks, teaching, position applications and tasks are each a YAML file that the views read and edit. Every write can be undone from History.
 - The Literature page searches the literature sources, watches for new papers, keeps the papers you save in a file of your hub, and copies their BibTeX.
 - A LaTeX manuscript builds in a terminal and opens in the PDF viewer, with SyncTeX between the source and the PDF and the errors listed in Problems.
-- The Claude Code sessions working on your projects show on the Sessions page, each with its transcript and the changes it made.
+- The Claude Code sessions working on your projects show in the Explorer's Sessions tab, each with its transcript and the changes it made.
 - A talk is a folder of Markdown slides, shown with a presenter screen and exported to PDF.
 
 ## Why a software engineer would use it
@@ -22,7 +22,7 @@ Oculus is an editor in the style of VS Code that also follows the coding agents 
 
 - The Explorer page has the file tree, the Monaco editor with language servers, search across the files, and Source Control with every repository and worktree of the workspace.
 - Terminals run in tmux, so they keep running when the server or the window stops.
-- The Sessions page follows every Claude Code or Codex session on the machine, with its terminal, transcript, timeline and changes, and an agent's worktree is listed under its repository.
+- The Sessions tab follows every Claude Code or Codex session on the machine, with its terminal, transcript, timeline and changes, and an agent's worktree is listed under its repository.
 - A repository's build and test commands come from its `.oculus/commands.yml` and from what oculus finds: CMake presets, `package.json` scripts and `Makefile` targets.
 - Settings are YAML: oculus's defaults, overridden per workspace in the workspace file's `settings:`, and Ctrl+Space in a settings file completes each key with its description.
 - Apps add views, commands, themes, language servers and debuggers, declared with VS Code's contribution points. The [Apps guide](docs/apps.md) shows how to build one.
@@ -34,8 +34,7 @@ Each button on the rail at the left opens a page:
 - **Focus**: see what wants attention now, such as deadlines, follow-ups, tasks and the lanes your projects sit on.
 - **Projects**: browse your projects as cards or a list, with separate tabs for coauthored, archived, personal and software projects.
 - **Incoming**: read your mail, position leads, LinkedIn posts and calendars.
-- **Sessions**: follow every Claude Code or Codex session on the machine, with its terminal, transcript, timeline and changes.
-- **Explorer**: work on files, with the file tree, git, search, references, the TeX view and the problems list.
+- **Explorer**: work on files and sessions, with the file tree, git, every Claude Code or Codex session on the machine with its terminal, transcript, timeline and changes, search, references, the TeX view and the problems list.
 - **Academic Life**: track funding, talks and events, teaching and service, position applications, tasks and photos.
 - **Pillars**: see your projects grouped by research pillar and application domain, and as a graph of what links them.
 - **Registries**: keep the shared lists of venues, datasets, statements, people, organisations and computing resources.

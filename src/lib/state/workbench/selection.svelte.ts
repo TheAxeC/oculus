@@ -3,14 +3,14 @@
 // The selection is the page's and is not saved, so a reload starts with none. A view that follows
 // it keeps the session it shows in its own saved state (`{ shown: <id> }`, written by `keepShown`)
 // and reads that while the selection names none (`followedSession`), so after a reload each
-// Session tab, and each Files tab in follow mode, shows what it showed, as VS Code restores what
-// each editor showed; the next pick in the rail moves them all together again. A remembered session
-// the payload does not hold reads as none, the view's empty state.
+// Session tab, the Sessions tab, and each Files tab in follow mode, shows what it showed, as VS
+// Code restores what each editor showed; the next pick in the list moves them all together again.
+// A remembered session the payload does not hold reads as none, the view's empty state.
 //
-// The list sets this and those views follow it, so a click in the rail moves the Session view, with
-// its Changes, Timeline and Agents sections. A view whose own instance state pins a session
-// (`{ session: <id> }`) reads that instead and stops following, which is how two detail views show
-// two sessions side by side.
+// The list sets this and those views follow it, so a press in the list moves the sections under it
+// and a Session tab, with its Changes, Timeline and Agents. A view whose own instance state pins a
+// session (`{ session: <id> }`) reads that instead and stops following, which is how two Session
+// tabs show two sessions side by side.
 
 // A terminal selects the same way. The server puts a record per terminal in the `sessions` payload,
 // and a terminal's id cannot collide with a session's, so one store holds both and the two readers

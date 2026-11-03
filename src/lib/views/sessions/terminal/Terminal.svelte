@@ -1,12 +1,13 @@
 <script module lang="ts">
-    // Layer 3, view registration. Terminal follows the session list in the Sessions page's group.
+    // Layer 3, view registration. Terminal stands first in the bottom pane of the Explorer page and
+    // of a workbench, and follows the left pane's views in the Explorer page's group.
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
     export const registration: ViewRegistration = {
         id: 'terminal',
         label: 'sessions.view_terminal',
         glyph: 'sessions.terminal_glyph',
-        group: 'sessions',
-        order: 1
+        group: 'explorer',
+        order: 5
     };
 </script>
 
@@ -16,10 +17,10 @@
     // state/sessions/terminal/terminal-tabs.ts, and draws only those. A terminal belongs to exactly
     // one tab; the terminals store (state/sessions/terminals.svelte.ts) keeps which, shows a
     // terminal started anywhere in the tab that owns it or in the page's Terminal tab, and takes an
-    // ended terminal out of its tab, closing a tab left with none unless it shows the composer or
-    // reads that terminal's session. Closing the tab, its pane or its page ends the terminals
-    // oculus started that it owns (the layout asks the ui store, which asks the terminals store);
-    // moving the tab ends none.
+    // ended terminal out of its tab, closing a tab left with none unless it is pinned, shows the
+    // composer or reads that terminal's session. Closing the tab, its pane or its page ends the
+    // terminals oculus started that it owns (the layout asks the ui store, which asks the terminals
+    // store); moving the tab ends none.
     //
     // A tab reads a session as well: the session of the terminal it shows, or one it holds with no
     // terminal (`transcript`, state/sessions/terminal/session/open-session.ts). While it has one,

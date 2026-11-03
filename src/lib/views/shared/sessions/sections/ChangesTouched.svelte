@@ -1,7 +1,7 @@
 <script lang="ts">
-    // Layer 3, partial of views/sessions/session-detail/SessionDetail.svelte. The files one session
-    // touched, as the first rows of the Changes section: they change independently of the
-    // repository's status and controls, which ChangesRepository.svelte draws under them.
+    // Layer 3, partial of SessionSections.svelte beside it. The files one session touched, as the
+    // first rows of the Changes section: they change independently of the repository's status and
+    // controls, which ChangesRepository.svelte draws under them.
     //
     // Each file is a row of the section's tree (level 2, ids from rowKey). A row says the file's
     // name first with the mark of a file another live session holds open before it, then the file's

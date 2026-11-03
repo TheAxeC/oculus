@@ -13,9 +13,11 @@
         /** Whether what the heading folds is open, and the press of the control. */
         open: boolean;
         ontoggle: () => void;
+        /** The control's place in the focus order: -1 where its heading is itself a tree row. */
+        reach?: number;
     };
 
-    let { name, open, ontoggle }: Props = $props();
+    let { name, open, ontoggle, reach }: Props = $props();
 </script>
 
 <ToolButton
@@ -23,5 +25,6 @@
     label={open ? t('focus.fold', name) : t('focus.unfold', name)}
     glyph={open ? t('project.card.collapse_glyph') : t('project.card.expand_glyph')}
     expanded={open}
+    tabindex={reach}
     onclick={ontoggle}
 />

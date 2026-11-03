@@ -6,12 +6,13 @@
     // shows no terminal, and right of the row of terminals while the tab is composing (New With a
     // Prompt, or the `n` key).
     //
-    // What each picker last chose is kept in the tab's instance state
-    // (state/sessions/terminal/composer/composer.ts), so the tab's next composer opens on the same
-    // accounts and picks; the prompt being typed is this component's own. A Shell takes none of the
-    // agent pickers, and its prompt is the first command it runs. A composer shown for a tab that
-    // has a folder starts in it, which the workspace picker offers first when none of its places
-    // holds it; one shown for a tab with none starts in a new composer's own folder and kind.
+    // What each picker last chose, the prompt being typed and the files attached to it are kept in
+    // the tab's instance state (state/sessions/terminal/composer/composer.ts), so the tab's next
+    // composer opens on the same accounts and picks, and a prompt left when the tab went to read a
+    // session comes back. A Shell takes none of the agent pickers, and its prompt is the first
+    // command it runs. A composer shown for a tab that has a folder starts in it, which the
+    // workspace picker offers first when none of its places holds it; one shown for a tab with none
+    // starts in a new composer's own folder and kind.
     //
     // The prompt goes to the server as one field and reaches the agent as one argument; nothing on
     // this side quotes, splits or escapes it, since nothing on either side hands it to a shell.
@@ -59,6 +60,7 @@
         skipQuestion,
         splitEnded,
         withComposer,
+        withDraft,
         type SkipQuestion,
         type ComposerAgent,
         type ComposerRecord
@@ -91,12 +93,8 @@
         ui: { instanceState, setInstanceState }
     } = useState();
 
-    /** The prompt being typed, and where the caret was when the box last moved it. */
-    let prompt = $state('');
+    /** Where the caret was when the box last moved it. */
     let caret = 0;
-
-    /** The files attached by path, which a Codex start passes on as images. */
-    let attached: string[] = $state([]);
 
     /** Whether the attach picker is open, and what the last start or drop was refused with. */
     let picking = $state(false);
@@ -113,6 +111,9 @@
     let worktree = $state<WorktreeChoice | null>(null);
 
     const record = $derived(composerOf(instanceState(owner)));
+    /** The prompt being typed, and the files attached, which a Codex start passes on as images. */
+    const prompt = $derived(record.draft ?? '');
+    const attached = $derived(record.attached ?? []);
     const hub = $derived(hubRoot());
     const places = $derived(
         offeredPlaces(composerPlaces(hub, workspaces().folders, sessionsByWorkspace(true)), record)
@@ -179,6 +180,11 @@
         keep({ accounts: { ...record.accounts, [agent]: label } });
     }
 
+    /** Keep the prompt and the files attached to it in the tab's instance state. */
+    function keepDraft(text: string, files: string[]): void {
+        setInstanceState(owner, withDraft(instanceState(owner), text, files));
+    }
+
     /** Put a file into the prompt as a mention of its path inside the workspace. */
     function attach(path: string): void {
         const relative = relativeIn(workspace, path);
@@ -188,9 +194,8 @@
         }
         failure = '';
         const next = insertMention(prompt, caret, mention(relative));
-        prompt = next.text;
         caret = next.caret;
-        if (!attached.includes(path)) attached = [...attached, path];
+        keepDraft(next.text, attached.includes(path) ? attached : [...attached, path]);
         picking = false;
     }
 
@@ -207,12 +212,14 @@
     }
 
     function typed(value: string): void {
-        prompt = value;
         // A mention the reader deleted from the text is no longer attached.
-        attached = attached.filter((path) => {
-            const relative = relativeIn(workspace, path);
-            return relative !== null && value.includes(mention(relative));
-        });
+        keepDraft(
+            value,
+            attached.filter((path) => {
+                const relative = relativeIn(workspace, path);
+                return relative !== null && value.includes(mention(relative));
+            })
+        );
     }
 
     function keyed(event: KeyboardEvent): void {
@@ -281,9 +288,7 @@
             if (answer.refused === 'task-changed') void loadTask(owner, true);
             return;
         }
-        prompt = '';
-        attached = [];
-        setInstanceState(owner, splitEnded(instanceState(owner)));
+        setInstanceState(owner, splitEnded(withDraft(instanceState(owner), '', [])));
         onstarted(answer.id, profileWords(agent, t));
     }
 

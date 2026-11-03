@@ -63,8 +63,7 @@
     // The source controls the apps' hosts created (`oculus.scm.createSourceControl`) are rows of
     // the same list, after the repositories, with the count their host gives as a badge; the one
     // pressed is shown in place of the repository (apps/AppSource.svelte), and the count of every
-    // control is added to the view's rail badge. Which control is shown is the instance's state
-    // too.
+    // control is added to the view's count. Which control is shown is the instance's state too.
     //
     // A repository closed in this tab leaves its list and is never the one shown; it is a filter on
     // what this tab draws, kept in the instance's state, and the channel still carries it. Reopen

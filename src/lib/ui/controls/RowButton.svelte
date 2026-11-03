@@ -1,11 +1,10 @@
 <script lang="ts">
     // Layer 3, primitive. The pressable body of a list row whose lines the caller draws: one button
     // across the row's width beside the row's own controls, of one line or several stacked, with
-    // no border and no fill of its own, so the row's hover and selection tint show through it. The
-    // Sessions list draws its session and terminal rows with it, as VS Code's Agents window draws
-    // a session, a card draws its sessions with it and the project tab its own, and a transcript
-    // draws a run of tool calls with it, which says whether the run is open through `expanded`. A
-    // row of an explorer tree is ui/tree/TreeItem.svelte's.
+    // no border and no fill of its own, so the row's hover and selection tint show through it. A
+    // card draws its sessions with it and the project tab its own, and a transcript draws a run of
+    // tool calls with it, which says whether the run is open through `expanded`. A row of an
+    // explorer tree is ui/tree/TreeItem.svelte's.
 
     import type { Snippet } from 'svelte';
 

@@ -1,28 +1,34 @@
 <script lang="ts">
     // Layer 3, sessions view partial. One workspace's group of the sessions list: the group every
     // grouping of a view is drawn as (ui/controls/heads/GroupHead.svelte), headed with the
-    // workspace's name and count and its folder under the pointer, then its rows. The group folds
-    // by its key in the list's pane state (views/shared/card/pane-fold.ts), the workspace without a
-    // folder under the empty key.
+    // workspace's name and count and its folder under the pointer, then its rows. The heading is a
+    // row of the list's tree, and the group folds by its key in the list's pane state
+    // (views/shared/card/pane-fold.ts), the workspace without a folder under the empty key.
     //
-    // A row is VS Code's agent session item, two lines 3px in from the row's edges (40 px): an 18
-    // px line with the state at the left and the title, and a 16 px line with the agent, the model,
-    // how long ago it last moved, the files it changed and its prompts. The model and the age are
-    // left out when the session has none, and the whole line is cut with an ellipsis where the pane
-    // ends. A row being renamed holds the title's field in place of the title and is as high as
-    // that field.
+    // A row is one line of the tree's row height, in the look of the Files tree: the session's
+    // state as a dot, the pin mark of a session pinned to the top of its group, the title, and how
+    // long ago it last moved at the right. What else there is to say of a session is the row's
+    // hover words (`sessionRowWords`). A session needing input keeps its amber left edge. A second
+    // press on a row, or the row's menu, opens the title's field in place of the title. The field
+    // holds what was typed in `typed`, so a title arriving on the channel leaves the words alone.
 
+    import { tick } from 'svelte';
     import GroupHead from '$lib/ui/controls/heads/GroupHead.svelte';
-    import RowButton from '$lib/ui/controls/RowButton.svelte';
-    import Tag from '$lib/ui/controls/Tag.svelte';
-    import TextInput from '$lib/ui/forms/TextInput.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import Menu from '$lib/ui/menu/Menu.svelte';
-    import { modelShort } from '$lib/state/shared/words/format';
+    import TreeItem from '$lib/ui/tree/TreeItem.svelte';
+    import NameField from '$lib/ui/tree/row/NameField.svelte';
+    import type { TreeNav } from '$lib/ui/tree/tree-keys';
     import type { GroupedSession } from '$lib/state/client/selectors.svelte';
     import { ago, rowState, type ListGroup, type ListStateKey } from '$lib/state/sessions/folds';
     import { t } from '$lib/state/shared/words/text';
-    import { sessionRowItems, stateLabel } from './session-list';
+    import {
+        groupRow,
+        sessionRowId,
+        sessionRowItems,
+        sessionRowWords,
+        stateLabel
+    } from './session-list';
     import { usePaneFold } from '$lib/views/shared/card/pane-fold';
     import { useState } from '$lib/state/client/use';
 
@@ -33,6 +39,8 @@
 
     type Props = {
         group: ListGroup;
+        /** The tree the group's head and rows are rows of. */
+        nav: TreeNav;
         now: number;
         armedResume: string;
         /** The row whose title is being typed, and the empty string for none. */
@@ -48,6 +56,7 @@
 
     let {
         group,
+        nav,
         now,
         armedResume,
         renaming,
@@ -83,35 +92,35 @@
         return t('sessions.ago_d', String(told.count));
     }
 
-    function agentWords(row: GroupedSession): string {
-        return row.tool === 'codex' ? t('sessions.kind_codex') : t('sessions.kind_claude');
+    function startRename(entry: GroupedSession): void {
+        typed = entry.title;
+        onrename(entry, null);
     }
 
-    function startRename(row: GroupedSession): void {
-        typed = row.title;
-        onrename(row, null);
+    /** The title's field closed, with a title or with '': the focus goes back to the row. */
+    async function renamed(entry: GroupedSession, title: string): Promise<void> {
+        onrename(entry, title);
+        await tick();
+        nav.focus(sessionRowId(entry.id));
     }
 
-    // Escape closes the rename field without a title. The field is a primitive that takes no key
-    // handler, so the key is read on the document while a field is open.
+    // Escape closes the title's field without a title wherever the focus is, so the key is read on
+    // the document while a field is open. With the focus in the field the field's own Escape does
+    // it, which brings the focus back to the row.
     $effect(() => {
         const open = renaming;
         if (open === '') return;
-        const row = group.rows.find((one) => one.id === open);
-        if (row === undefined) return;
+        const entry = group.rows.find((one) => one.id === open);
+        if (entry === undefined) return;
+        const field = `[data-session-row="${CSS.escape(open)}"] input`;
         const escape = (event: KeyboardEvent): void => {
             if (event.key !== 'Escape') return;
+            if (event.target instanceof Element && event.target.closest(field) !== null) return;
             event.preventDefault();
             event.stopPropagation();
-            onrename(row, '');
+            onrename(entry, '');
         };
         document.addEventListener('keydown', escape, true);
-        // The field opens with the focus in it and its text selected, as an inline rename does.
-        const field = document.querySelector(`[data-rename="${CSS.escape(open)}"] input`);
-        if (field instanceof HTMLInputElement) {
-            field.focus();
-            field.select();
-        }
         return () => document.removeEventListener('keydown', escape, true);
     });
 </script>
@@ -120,90 +129,80 @@
     {@const archived = isArchived(entry)}
     {@const state = rowState(entry, archived)}
     {@const top = topOf(entry)}
-    {@const age = since(entry)}
+    {@const on = entry.id === selected()}
     <div
         class="row"
-        class:on={entry.id === selected()}
         class:input={state === 'input'}
         class:away={archived}
         data-session-row={entry.id}
         data-state={state}
     >
         {#if renaming === entry.id}
-            <form
-                class="rename"
-                data-rename={entry.id}
-                onsubmit={(event) => {
+            <TreeItem
+                label=""
+                name={t('sessions.rename_field')}
+                id={sessionRowId(entry.id)}
+                {nav}
+                level={3}
+                depth={1}
+                selected={on}
+            >
+                {#snippet field()}
+                    <NameField
+                        value={typed}
+                        label={t('sessions.rename_field')}
+                        oninput={(value: string) => (typed = value)}
+                        onsubmit={(title: string) => void renamed(entry, title)}
+                        oncancel={() => void renamed(entry, '')}
+                        onleave={() => undefined}
+                    />
+                {/snippet}
+            </TreeItem>
+        {:else}
+            <TreeItem
+                label={entry.title}
+                id={sessionRowId(entry.id)}
+                {nav}
+                level={3}
+                depth={1}
+                selected={on}
+                title={sessionRowWords(entry, state)}
+                onclick={() => onpick(entry)}
+                onpressagain={(event: MouseEvent) => {
+                    // The press would otherwise take the focus from the field it opens.
                     event.preventDefault();
-                    onrename(entry, typed);
+                    startRename(entry);
                 }}
             >
-                <TextInput
-                    value={typed}
-                    label={t('sessions.rename_field')}
-                    oninput={(value: string) => (typed = value)}
-                />
-            </form>
-        {:else}
-            <RowButton
-                title={t('sessions.select_tip')}
-                selected={entry.id === selected()}
-                onclick={() => onpick(entry)}
-                ondblclick={() => startRename(entry)}
-            >
-                <span class="line one">
+                {#snippet words()}
                     <span class="dot" style={dotStyle(state)} title={stateLabel(state)}></span>
-                    <span class="nm">{entry.title}</span>
                     {#if top}
                         <span class="mark" title={t('sessions.top_mark')}><Glyph name="pin" /></span
                         >
                     {/if}
-                    {#if state === 'input'}
-                        <span class="mark" title={entry.hook?.message ?? undefined}
-                            ><Tag label={t('sessions.state_input')} tone="amber" /></span
-                        >
-                    {/if}
-                </span>
-                <span class="line two">
-                    <span>{agentWords(entry)}</span>
-                    {#if entry.model !== null}
-                        <span class="sep">{t('sessions.meta_sep')}</span>
-                        <span>{modelShort(entry.model)}</span>
-                    {/if}
-                    {#if age !== ''}
-                        <span class="sep">{t('sessions.meta_sep')}</span>
-                        <span>{age}</span>
-                    {/if}
-                    <span class="sep">{t('sessions.meta_sep')}</span>
-                    <span title={t('sessions.files_tip')}
-                        >{entry.files.length === 1
-                            ? t('sessions.files_one')
-                            : t('sessions.files_n', String(entry.files.length))}</span
-                    >
-                    <span class="sep">{t('sessions.meta_sep')}</span>
-                    <span title={t('sessions.prompts_tip')}
-                        >{entry.prompts === 1
-                            ? t('sessions.prompts_one')
-                            : t('sessions.prompts_n', String(entry.prompts))}</span
-                    >
-                </span>
-            </RowButton>
-            <div class="menu">
-                <Menu
-                    label={t('ui.row_menu')}
-                    items={sessionRowItems(entry, armedResume, { top, archived })}
-                    glyph={t('ui.pane_menu_glyph')}
-                    compact
-                    bare
-                    inherit={entry.id === selected()}
-                    placement="down"
-                    align="right"
-                    onpick={(id: string) => {
-                        if (id === 'rename') startRename(entry);
-                        else onaction(id, entry);
-                    }}
-                />
-            </div>
+                    {entry.title}
+                {/snippet}
+                {#snippet actions(reach: number)}
+                    <Menu
+                        label={t('ui.row_menu')}
+                        items={sessionRowItems(entry, armedResume, { top, archived })}
+                        glyph={t('ui.pane_menu_glyph')}
+                        compact
+                        bare
+                        inherit={on}
+                        tabindex={reach}
+                        placement="down"
+                        align="right"
+                        onpick={(id: string) => {
+                            if (id === 'rename') startRename(entry);
+                            else onaction(id, entry);
+                        }}
+                    />
+                {/snippet}
+                {#snippet end()}
+                    {since(entry)}
+                {/snippet}
+            </TreeItem>
         {/if}
     </div>
 {/snippet}
@@ -215,6 +214,7 @@
     count={group.rows.length}
     open={fold.open(group.key)}
     ontoggle={() => fold.toggle(group.key)}
+    row={{ id: groupRow(group.key), nav }}
 >
     <div class="rows">
         {#each group.rows as entry (entry.id)}
@@ -230,40 +230,9 @@
         min-width: 0;
     }
 
-    /* The row's menu is drawn while the pointer is on the row, the focus is inside it, it is the
-       selected row, and always on a screen that does not hover. */
     .row {
-        --row-reveal: 0;
-        display: flex;
-        align-items: stretch;
         min-width: 0;
         border-left: 2px solid transparent;
-    }
-
-    .row:hover,
-    .row:focus-within,
-    .row.on {
-        --row-reveal: 1;
-    }
-
-    @media (hover: none) {
-        .row {
-            --row-reveal: 1;
-        }
-    }
-
-    .row:hover {
-        background: var(--chip);
-    }
-
-    .row.on {
-        background: var(--accent-bg);
-        color: var(--on-accent-bg, var(--ink));
-    }
-
-    /* The selected row's details line and its menu read in the ink of the selection tint. */
-    .row.on .two {
-        color: inherit;
     }
 
     .row.input {
@@ -274,66 +243,18 @@
         opacity: 0.6;
     }
 
-    .line {
-        min-width: 0;
-        white-space: nowrap;
-    }
-
-    /* The title line of VS Code's agent session item: 18 px, 3px below the row's top edge. */
-    .one {
-        display: flex;
-        align-items: center;
-        gap: 4px;
-        height: calc(18px * var(--text-scale, 1));
-        margin-top: 3px;
-    }
-
-    .one .nm {
-        overflow: hidden;
-        text-overflow: ellipsis;
-        font-size: var(--fs-sm);
-    }
-
-    /* The details line: 16 px, 3px above the row's bottom edge, under the title and past the
-       state's dot. It is a block of inline parts and not a flex box, so the whole line is cut with
-       one ellipsis where the pane ends. */
-    .two {
-        display: block;
-        height: calc(16px * var(--text-scale, 1));
-        margin-bottom: 3px;
-        padding-left: 12px;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        line-height: calc(16px * var(--text-scale, 1));
-        color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-xs);
-    }
-
     .mark {
-        flex: none;
         display: inline-flex;
+        margin-right: 4px;
         font-size: var(--fs-xs);
     }
 
     .dot {
-        flex: none;
+        display: inline-block;
         width: 8px;
         height: 8px;
+        margin-right: 6px;
         border-radius: var(--radius-pill);
         background: var(--tone);
-    }
-
-    .menu {
-        display: flex;
-        align-items: flex-start;
-        padding-top: 1px;
-        opacity: var(--row-reveal);
-        transition: opacity 120ms ease-out;
-    }
-
-    .rename {
-        flex: 1 1 auto;
-        min-width: 0;
-        padding: 2px 6px;
     }
 </style>

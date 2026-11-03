@@ -1,16 +1,93 @@
-// Layer 3, view support. Session-list menu builders live here because row actions change
-// independently of the parent view and are unit-tested without a DOM.
+// Layer 3, view support. What the session list and its row partials share, each a function of what
+// it is handed and holding no state, so the components hold only what they draw: the menu builders
+// of a row, the rows the list's tree walks (`listRows`) and the hover words of a session row
+// (`sessionRowWords`).
+//
+// A row of the tree has an id of its own, its kind before its key, so a session, a terminal and a
+// group with the same key stay apart. A fold is kept in the pane's state under its key: `list` for
+// the fold headed Sessions, `terminals` for the Terminals group, and a workspace's path for its
+// group, the workspace with no folder under the empty key. A path is absolute, so it meets neither
+// of the two words.
 
 import type { MenuGroup, MenuItem } from '$lib/ui/menu/menu-items';
+import type { KeyRow } from '$lib/ui/tree/tree-keys';
 import {
     LIST_AGENTS,
     LIST_STATES,
     type ListFilter,
     type ListStateKey
 } from '$lib/state/sessions/folds';
-import { inFolder, type Workspace } from '$lib/state/client/selectors.svelte';
+import { inFolder, type GroupedSession, type Workspace } from '$lib/state/client/selectors.svelte';
 import type { Terminal } from '$lib/state/sessions/terminals.svelte';
+import { modelShort } from '$lib/state/shared/words/format';
 import { t } from '$lib/state/shared/words/text';
+
+/** The fold headed Sessions: its row of the tree and the key it folds under. */
+export const LIST_FOLD = 'list';
+
+/** The key the Terminals group folds under. */
+export const TERMINALS_FOLD = 'terminals';
+
+/** What starts the tree row of a group that folds. */
+const GROUP_ROW = 'group:';
+
+/** The tree row of the group that folds under `key`. */
+export function groupRow(key: string): string {
+    return `${GROUP_ROW}${key}`;
+}
+
+/** The tree row of a session. */
+export function sessionRowId(id: string): string {
+    return `session:${id}`;
+}
+
+/** The tree row of a terminal. */
+export function terminalRowId(id: string): string {
+    return `terminal:${id}`;
+}
+
+/** The key a row of the tree folds under: a group's own, and the fold headed Sessions' id. */
+export function foldOfRow(id: string): string {
+    return id.startsWith(GROUP_ROW) ? id.slice(GROUP_ROW.length) : id;
+}
+
+/** One group of rows as the tree walks it: the key it folds under and the ids of its rows. */
+type RowGroup = { key: string; rows: string[] };
+
+/**
+ * The list's rows as the keyboard reads them, in the order they are drawn: the fold's head, each
+ * group's head and the rows of a group that is open. A folded group keeps its rows in the page,
+ * hidden, so they are left out here and the arrows pass them by.
+ */
+export function listRows(groups: RowGroup[], open: (key: string) => boolean): KeyRow[] {
+    const head: KeyRow = { id: LIST_FOLD, parent: null, open: open(LIST_FOLD) };
+    if (!head.open) return [head];
+    const rows: KeyRow[] = [head];
+    for (const group of groups) {
+        const id = groupRow(group.key);
+        const unfolded = open(group.key);
+        rows.push({ id, parent: LIST_FOLD, open: unfolded });
+        if (unfolded) rows.push(...group.rows.map((row) => ({ id: row, parent: id })));
+    }
+    return rows;
+}
+
+/**
+ * The hover words of a session row: what the session is waiting for when it needs input, then its
+ * agent, its model where it has one, the files it changed and its prompts.
+ */
+export function sessionRowWords(row: GroupedSession, state: ListStateKey): string {
+    const facts = [
+        row.tool === 'codex' ? t('sessions.kind_codex') : t('sessions.kind_claude'),
+        ...(row.model === null ? [] : [modelShort(row.model)]),
+        row.files.length === 1
+            ? t('sessions.files_one')
+            : t('sessions.files_n', String(row.files.length)),
+        row.prompts === 1 ? t('sessions.prompts_one') : t('sessions.prompts_n', String(row.prompts))
+    ].join(` ${t('sessions.meta_sep')} `);
+    if (state !== 'input') return facts;
+    return `${row.hook?.message ?? t('sessions.state_input')}\n${facts}`;
+}
 
 export type SessionRow = { id: string; live: boolean; cwd: string | null };
 

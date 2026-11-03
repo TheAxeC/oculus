@@ -1,10 +1,11 @@
-// Layer 3, view helper of views/sessions/session-detail/. The sections of the Session view and what
-// a Session tab keeps of them in its own state: `sections`, the order they are drawn in, and
-// `closed`, the ones the reader closed. Both live beside the tab's `session` and `label`, so a
-// reload, a switch of tab and a move of the tab keep them, and a pick or a pin changes only the two
-// fields it is about (state/workbench/layout/tabs/instances.ts). A section starts open, and a list
-// the state holds wrongly (a name no section has, a section twice, a value that is no list) is read
-// as if the bad part were absent.
+// Layer 3, view helper of SessionSections.svelte beside it. The sections of a session and what a
+// tab that draws them keeps of them in its own state: `sections`, the order they are drawn in, and
+// `closed`, the ones the reader closed. Each tab that draws them keeps its own (a Session tab
+// beside its `session` and `label`, the Sessions tab beside its `shown`), so a reload, a switch of
+// tab and a move of the tab keep them, and a pick or a pin changes only the two fields it is about
+// (state/workbench/layout/tabs/instances.ts). A section starts open, and a list the state holds
+// wrongly (a name no section has, a section twice, a value that is no list) is read as if the bad
+// part were absent.
 
 import { instanceMap } from '$lib/state/workbench/layout/instance';
 

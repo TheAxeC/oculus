@@ -42,6 +42,11 @@
     // state: each view keeps which of its groups are folded, a pane in its saved state under
     // `folded` (state/shared/page/folds.ts `instanceFolded`, `foldedWith`).
     //
+    // A heading drawn inside a tree (ui/tree/TreeView.svelte) takes `row`: its strip is then the
+    // tree's row, which arrows walk to and Left and Right fold, so the list stays one stop of the
+    // focus order and the fold control is out of it. A press on the control hands the focus to the
+    // strip, where the tree's keys are read. The look of the strip is the same.
+    //
     // The views that draw it: the project boards (views/boards/projects/Projects.svelte); Focus's
     // `columns` clusters, the lanes of a `full_width` cluster and the band
     // (views/boards/focus/lanes/Lanes.svelte, views/boards/focus/Band.svelte); Venues; Lit Watch's
@@ -88,6 +93,14 @@
         tip?: string;
         /** What acts on the whole group, drawn at the right end of the heading's line. */
         actions?: Snippet;
+        /**
+         * The strip's id in the tree it is a row of, for a heading drawn inside a tree, and the
+         * part of the tree's `nav` that hands a row its attributes.
+         */
+        row?: {
+            id: string;
+            nav: { row: (id: string, label: string) => Record<string, unknown> };
+        };
         /** The group's body. */
         children: Snippet;
     };
@@ -102,6 +115,7 @@
         count,
         tip,
         actions,
+        row,
         children,
         ...attributes
     }: Props = $props();
@@ -109,9 +123,21 @@
     /** The strip's height, which a nested strip and a sticky header row in the body stand under. */
     let strip = $state(0);
 
+    /** The strip itself, which takes the focus back from the fold control of a tree's row. */
+    let box: HTMLElement | undefined = $state();
+
+    /** What the strip spreads as a row of the tree it is drawn in, and nothing outside a tree. */
+    const treeRow = $derived(row === undefined ? {} : row.nav.row(row.id, label));
+
     /** Unfold a folded group, as a find-in-page match inside it asks. */
     function found(): void {
         if (!open) ontoggle();
+    }
+
+    /** The press of the fold control, which leaves the focus on the strip of a tree's row. */
+    function pressed(): void {
+        if (row !== undefined) box?.focus({ preventScroll: true });
+        ontoggle();
     }
 </script>
 
@@ -120,8 +146,13 @@
     class="group"
     style={tone === undefined ? undefined : `--group: var(--c-${tone}-txt)`}
 >
-    <h3 class="strip" title={tip} bind:offsetHeight={strip}>
-        <FoldControl name={name ?? label} {open} {ontoggle} />
+    <h3 class="strip" title={tip} bind:offsetHeight={strip} bind:this={box} {...treeRow}>
+        <FoldControl
+            name={name ?? label}
+            {open}
+            ontoggle={pressed}
+            reach={row === undefined ? undefined : -1}
+        />
         <span class="words">
             {#if glyph !== undefined}
                 <Glyph name={glyph} />
@@ -169,6 +200,12 @@
         background: var(--panel);
         font-size: var(--fs-md);
         color: var(--group, var(--muted-txt));
+    }
+
+    /* The strip of a tree's row, which takes the keyboard's focus as a row of the tree does. */
+    .strip:focus-visible {
+        outline: 1px solid var(--accent);
+        outline-offset: -1px;
     }
 
     /* Over a wallpaper the strip is the one translucent layer a Surface paints. Inside a tinted

@@ -18,7 +18,7 @@ type SessionAsk = {
     label: string;
     /** A press in the session list, which keeps the tab's own choice and retargets its tab. */
     press?: boolean;
-    /** A press in a list limited to a folder: a tab in the page's documents pane, per session. */
+    /** Open a tab a page with no Terminal tab needs in its documents pane, off the list. */
     documents?: boolean;
 };
 
@@ -26,6 +26,16 @@ type SessionAsk = {
 function reads(tab: TerminalTab, target: TabTranscript): boolean {
     const held = readTab(tab.state).transcript;
     return held?.session === target.session && held.agent === target.agent;
+}
+
+/** The tab of a page that a press retargets: the one reading a session, else one that is empty. */
+function pressTarget(onPage: readonly TerminalTab[]): TerminalTab | undefined {
+    const states = onPage.map((tab) => ({ tab, held: readTab(tab.state) }));
+    const reading = states.find(({ held }) => held.transcript?.agent === '');
+    const empty = states.find(
+        ({ held }) => held.transcript === null && held.terminals.length === 0
+    );
+    return (reading ?? empty)?.tab;
 }
 
 /** A tab activated, on its own page. */
@@ -38,9 +48,10 @@ function activate(workbench: TerminalTabs, tab: TerminalTab): void {
  * Open a session by its rules. `terminal` is the terminal it runs in, or null; `show` shows that
  * terminal. A session's terminal is shown, on Transcript unless the ask is a press, which leaves
  * the tab's own choice. A subagent, and a session with no terminal, is read in a tab of its own:
- * the one that reads it now, else for a press with no folder the page's tab that reads a session,
- * then retargeted so presses do not pile up tabs, else a new one in the pane of the page's Terminal
- * tab, so a press in the sessions list does not cover the list.
+ * the one that reads it now, else for a press the page's tab that reads a session or that holds
+ * nothing, then retargeted so presses do not pile up tabs, else a new one in the pane of the page's
+ * Terminal tab, so a press in the sessions list does not cover the list. Only a page with no
+ * Terminal tab takes the `documents` path.
  */
 function openSessionIn(
     workbench: TerminalTabs,
@@ -63,18 +74,17 @@ function openSessionIn(
         return;
     }
     const page = workbench.currentPage();
-    const reading = tabs().find(
-        (tab) => tab.page === page && readTab(tab.state).transcript?.agent === ''
-    );
+    const onPage = tabs().filter((tab) => tab.page === page);
+    const pressed = ask.press === true ? pressTarget(onPage) : undefined;
     const fields = { transcript: target, label: ask.label, showing: 'transcript' as const };
-    if (ask.press === true && ask.documents !== true && reading !== undefined) {
-        workbench.restate(reading.id, reading.page, { ...readTab(reading.state), ...fields });
-        activate(workbench, reading);
+    if (pressed !== undefined) {
+        workbench.restate(pressed.id, pressed.page, { ...readTab(pressed.state), ...fields });
+        activate(workbench, pressed);
         return;
     }
     const state = { ...emptyTab(crypto.randomUUID()), ...fields };
-    const sibling = tabs().find((tab) => tab.page === page);
-    if (ask.documents !== true && sibling !== undefined) {
+    const sibling = onPage.at(0);
+    if (sibling !== undefined) {
         workbench.openBeside(sibling.id, page, state);
         return;
     }
