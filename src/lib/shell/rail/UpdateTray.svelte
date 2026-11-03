@@ -258,12 +258,9 @@
         box-shadow: var(--shadow);
     }
 
-    /* The tray floats over a pane, so it keeps more of its colour than the pane does. A group's
-       sticky strip inside it paints the panel share of a wallpaper layer, which here is the tray's
-       own fill, so what scrolls under the strip stays hidden. */
+    /* The tray floats over a pane, so it keeps more of its colour than the pane does. */
     :global(body.wall) .tray {
-        --panel-on-wall: color-mix(in srgb, var(--panel) var(--wall-popover), transparent);
-        background: var(--panel-on-wall);
+        background: color-mix(in srgb, var(--panel) var(--wall-popover), transparent);
         backdrop-filter: blur(var(--wall-blur));
     }
 

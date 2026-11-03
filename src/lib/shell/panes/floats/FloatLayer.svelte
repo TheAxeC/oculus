@@ -134,7 +134,6 @@
         role="group"
         aria-label={t('ui.float_label')}
         data-float={float.id}
-        data-float-place={place.kind === 'dock' ? place.edge : 'free'}
         data-surface={place.kind === 'free' ? '' : undefined}
         style={style(float)}
         onpointerdowncapture={() => raise(float.id)}

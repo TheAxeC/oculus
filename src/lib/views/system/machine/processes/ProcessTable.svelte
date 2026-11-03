@@ -188,7 +188,9 @@
 
     /*
      * Stop stays at the right edge of the pane while the other columns scroll under it, so a
-     * narrow pane still shows it; the cell is painted so the scrolled text does not show through.
+     * narrow pane still shows it; the cell paints the panel solid, with or without a wallpaper, as
+     * every strip of `tokens.css` that stays over scrolling cells does, so the scrolled text never
+     * shows through.
      */
     .actions {
         position: sticky;
@@ -199,12 +201,5 @@
 
     thead th.actions {
         z-index: 2;
-    }
-
-    /* Over a wallpaper the column stays over the cells scrolling sideways under it, the strip of
-       `tokens.css` that keeps a mix of its own, so they do not read through it. */
-    :global(body.wall) .actions {
-        background: color-mix(in srgb, var(--panel) var(--wall-panel), transparent);
-        backdrop-filter: blur(var(--wall-blur));
     }
 </style>

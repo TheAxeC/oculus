@@ -45,7 +45,7 @@
     // The filter, the buttons and the root are the instance's own state, kept with the page.
     //
     // Over a wallpaper the box is tinted. The table's header row stays over its rows as the pane
-    // scrolls (`stays`), so it keeps a mix of its own, the sticky strip of `tokens.css`.
+    // scrolls (`stays`), so it paints the panel solid, one of the strips of `tokens.css`.
 
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';

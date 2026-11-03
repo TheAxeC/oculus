@@ -37,7 +37,8 @@
     // callbacks, which set the period title, keep the view, open an event's page and put its
     // tooltip on it. The library's colours are its `--ec-*` properties, every one set below from
     // oculus's tokens, so each theme draws the calendar in its own colours, and its surfaces are
-    // the pane's own, so a wallpaper shows through them.
+    // the pane's own, so a wallpaper shows through them, except the header rows, which paint the
+    // panel solid.
 
     import { Calendar as EventCalendar, DayGrid, List, TimeGrid } from '@event-calendar/core';
     import Pane from '$lib/ui/frame/Pane.svelte';
@@ -360,25 +361,15 @@
     }
 
     /* The strips that stay in place while the grid scrolls under them, the day headings and a list
-       view's date headings, are painted with the pane's own surface, so the rows scrolled beneath
-       them do not show through; a date heading keeps today's chip over it. Over a wallpaper a
-       strip keeps the panel's colour at the popover's fraction with the wallpaper blur over the
-       pane's tint, since at the pane's own fraction the rows passing under it still show; the
-       shorthand resets the date heading's chip, so it is laid again after it. The more-events
-       popup keeps the panel's own colour over the grid. */
+       view's date headings, paint the panel solid with or without a wallpaper, as every strip of
+       `tokens.css` that stays over scrolling rows does, so the rows scrolled beneath them never
+       show through; a date heading keeps today's chip over it. The more-events popup keeps the
+       panel's own colour over the grid. */
     .grid :global(.ec-header),
     .grid :global(.ec-list .ec-day-head) {
         background-color: var(--panel);
     }
     .grid :global(.ec-list .ec-day-head) {
-        background-image: linear-gradient(var(--ec-day-bg-color), var(--ec-day-bg-color));
-    }
-    :global(body.wall) .grid :global(.ec-header),
-    :global(body.wall) .grid :global(.ec-list .ec-day-head) {
-        background: color-mix(in srgb, var(--panel) var(--wall-popover), transparent);
-        backdrop-filter: blur(var(--wall-blur));
-    }
-    :global(body.wall) .grid :global(.ec-list .ec-day-head) {
         background-image: linear-gradient(var(--ec-day-bg-color), var(--ec-day-bg-color));
     }
 

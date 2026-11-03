@@ -34,8 +34,8 @@
     // The Status view draws this outside its own `Surface`. Over a wallpaper each sample card is
     // its own surface, and the bar and every other section's body are read off a `Surface`. The
     // table is drawn on none: its header row stays over its rows, under both groups' strips, as the
-    // pane scrolls (`stays`), so the header row and the rows carry the surface themselves and
-    // nothing is drawn behind the header row.
+    // pane scrolls (`stays`), so the header row paints the panel solid, the rows carry the surface
+    // themselves and nothing is drawn behind the header row.
 
     import Card from '$lib/ui/frame/Card.svelte';
     import Chip from '$lib/ui/controls/Chip.svelte';

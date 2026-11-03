@@ -19,13 +19,13 @@
         /** Whether a click on a heading sorts by that column. */
         sortable?: boolean;
         /**
-         * Every table's header row is sticky: it stays at the top of the box that scrolls the
-         * table up and down, and scrolls away with its rows inside a box that never scrolls up or
-         * down. `stays` sets the grounds over a wallpaper of a table whose header row stays over
-         * its rows while they scroll under it (Problems, Gallery): the header row and the rows
-         * paint the panel at the wallpaper's opacity with the wallpaper's blur behind them, the
-         * rows painting nothing inside a surface. Without it, the header row over a wallpaper
-         * paints nothing.
+         * Every table's header row is sticky: it stays at the top of the box that scrolls the table
+         * up and down, and scrolls away with its rows inside a box that never scrolls up or down.
+         * `stays` sets the grounds over a wallpaper of a table whose header row stays over its rows
+         * while they scroll under it (Problems, Gallery): the header row paints the panel solid,
+         * and the rows paint the panel at the wallpaper's opacity with the wallpaper's blur behind
+         * them, or nothing inside a surface. Without it, the header row over a wallpaper paints
+         * nothing.
          */
         stays?: boolean;
     };
@@ -123,19 +123,17 @@
     }
 
     /* Over a wallpaper the table is read off the surface it sits on (a tinted box, a `Surface`, a
-       slide's frame), so its header row paints nothing. A header row that stays over its rows
-       while they scroll under it (`stays`) is the strip of `tokens.css` that keeps a mix of its
-       own, the panel at the wallpaper's opacity, so the rows do not read through its words. Its
-       rows then carry the same surface wherever nothing under the table paints one, so the
-       header row is never a second layer over a surface behind it; inside a surface they paint
-       nothing. */
+       slide's frame), so its header row paints nothing. A header row that stays over its rows while
+       they scroll under it (`stays`) is one of the strips of `tokens.css` that paint the panel
+       solid, inside a surface or not, so the rows never read through its words. Its rows carry the
+       panel at the wallpaper's opacity wherever nothing under the table paints a surface, and
+       inside a surface they paint nothing. */
     :global(body.wall) th {
         background: transparent;
     }
 
     :global(body.wall) .stays th {
-        background: var(--panel-on-wall);
-        backdrop-filter: blur(var(--wall-blur));
+        background: var(--panel);
     }
 
     :global(body.wall) .stays tbody tr:not(:hover) td {

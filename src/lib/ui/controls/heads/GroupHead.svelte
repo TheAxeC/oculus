@@ -12,12 +12,12 @@
     // scrolls under it (`position: sticky`), above the cards. It sits inside its group's section,
     // so at the end of the group the next group's strip takes its place. The strip has the input
     // rounding and pads its words the same in every mode, and 8 px under it is the only space
-    // between the heading and what it heads. It is painted in every mode, so what scrolls under it
-    // never shows through: without a wallpaper it is the pane's background (`--panel`); over a
-    // wallpaper it is the one translucent layer ui/frame/Surface.svelte paints (`--panel-on-wall`
-    // with the blur); inside a tinted pane, which carries `data-surface` and sets `--panel-on-wall`
-    // to its own share, the same rule paints the pane's fill; inside a free float it paints the
-    // float's fill, the popover's firmer share of `--panel`.
+    // between the heading and what it heads. It paints the pane's background (`--panel`) solid in
+    // every mode and wherever it stands, so what scrolls under it never shows through. Over a
+    // wallpaper it is therefore a solid band, as the small controls are: over the picture where
+    // nothing around it paints a surface (an untinted pane, an untinted view in a docked float),
+    // and inside the surface around it elsewhere (a tinted pane, a card, a lane, a `Surface`, a
+    // free float), and never a second translucent layer over that surface.
     //
     // The body tells what it holds how tall the strips above it are together (`--group-strip`), so
     // a group nested in the body stands its strip under this one, and a table's sticky header row
@@ -206,19 +206,6 @@
     .strip:focus-visible {
         outline: 1px solid var(--accent);
         outline-offset: -1px;
-    }
-
-    /* Over a wallpaper the strip is the one translucent layer a Surface paints. Inside a tinted
-       pane, which sets `--panel-on-wall` to its own share, the same rule paints the pane's fill. */
-    :global(body.wall) .strip {
-        background: var(--panel-on-wall);
-        backdrop-filter: blur(var(--wall-blur));
-    }
-
-    /* Inside a free float it paints the float's fill, the popover's share of the panel. */
-    :global(body.wall [data-float-place='free']) .strip {
-        background: color-mix(in srgb, var(--panel) var(--wall-popover), transparent);
-        backdrop-filter: none;
     }
 
     .words {

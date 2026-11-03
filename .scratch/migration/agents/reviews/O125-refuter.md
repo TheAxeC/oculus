@@ -141,3 +141,273 @@ none.
 - The report's `git grep` lines, rerun only as plain `grep`, since the reviewer runs no git command beyond `git diff 2760ac090`, `git status --short` and `git show 2760ac090:<path>`. The plain-grep results reproduce the report's conclusions (see Verification).
 
 Reviewer usage: a443d746ae26f8353, claude-opus-5-5, 208795 tokens, 73 tool uses, 10 min 42 s.
+
+## Repair round 1, refuted
+
+```
+$ npm run diagrams        (from the worktree root, PATH with node v24.21.0)
+diagrams exit=0
+docs/diagrams/channels.svg
+docs/diagrams/writes.dot
+docs/diagrams/writes.svg
+(git status --short after it lists the 10 step files, the modified brief O125.md and the untracked O125-cases.md, O125-round1.md, O125-refuter.md, O125-report.md; no diagram file changed)
+
+$ npm run test:quick 2>&1 | tail -12
+        tests/checks/tree/size.test.ts: scans the source text of a changed file
+ok      prettier (1.0 s): All matched files use Prettier code style!
+ok      ASCII gate (1.1 s)
+ok      svelte-kit sync (2.7 s)
+ok      eslint (2.2 s)
+ok      svelte-check (7.8 s): 1793700050199 COMPLETED 582 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest checks (39.1 s): Duration  29.52s (transform 12.89s, setup 0ms, import 26.19s, tests 39.49s, environment 2ms)
+test:quick: 41.9 s; every command passed
+test:quick: not covered: tests that reach no changed file within the import depth,
+            other than the checks under tests/checks/source and tests/checks/tree,
+            which run for any change under src, tests or utils; the build, the lint
+            of unchanged files
+(A second `npm run test:quick` was started by the reviewer with its output piped into `head -5 >/dev/null`; its output is not used. git status --short afterwards is the listing above, unchanged.)
+
+$ grep -n 'body.wall' src/lib/ui/controls/heads/GroupHead.svelte
+(nothing; exit=1)
+
+$ grep -n -i 'translucent\|panel-on-wall\|wall-popover' src/lib/ui/controls/heads/GroupHead.svelte
+20:    // second translucent layer over that surface.
+
+$ git status --short -- tests ; git diff 2760ac090 --stat -- tests
+(nothing)
+
+$ for d in src tests utils config; do diff -rq ../O125-base/$d $d -x local.yml; done
+Files ../O125-base/src/lib/shell/panes/floats/FloatLayer.svelte and src/lib/shell/panes/floats/FloatLayer.svelte differ
+Files ../O125-base/src/lib/shell/rail/UpdateTray.svelte and src/lib/shell/rail/UpdateTray.svelte differ
+Files ../O125-base/src/lib/themes/tokens.css and src/lib/themes/tokens.css differ
+Files ../O125-base/src/lib/ui/controls/heads/GroupHead.svelte and src/lib/ui/controls/heads/GroupHead.svelte differ
+Files ../O125-base/src/lib/ui/display/table/Table.svelte and src/lib/ui/display/table/Table.svelte differ
+Files ../O125-base/src/lib/views/personal/calendar/Calendar.svelte and src/lib/views/personal/calendar/Calendar.svelte differ
+Files ../O125-base/src/lib/views/sources/repositories/diff/FileHeader.svelte and src/lib/views/sources/repositories/diff/FileHeader.svelte differ
+Files ../O125-base/src/lib/views/sources/search/Problems.svelte and src/lib/views/sources/search/Problems.svelte differ
+Files ../O125-base/src/lib/views/system/status/Gallery.svelte and src/lib/views/system/status/Gallery.svelte differ
+
+$ sh utils/unused-exports.sh > <scratchpad>/ue.txt; diff ../O125-base/unused-exports.txt <scratchpad>/ue.txt
+diff_exit=0 lines=     338
+
+$ LC_ALL=C grep -n '[^ -~]' <the 10 changed files> .scratch/migration/agents/reviews/O125-report.md
+ascii exit=1
+
+$ git diff 2760ac090 -- src docs | grep '^+' | grep -v '^+++' | grep -i -E "before|used to|no longer|still|always|as before|previously|the step|after this|O1[0-9][0-9]|2026"
+hist exit=1
+
+$ git diff 2760ac090 --numstat -- src docs
+1<tab>1<tab>docs/HELP.md
+0<tab>1<tab>src/lib/shell/panes/floats/FloatLayer.svelte
+2<tab>5<tab>src/lib/shell/rail/UpdateTray.svelte
+23<tab>22<tab>src/lib/themes/tokens.css
+6<tab>19<tab>src/lib/ui/controls/heads/GroupHead.svelte
+13<tab>15<tab>src/lib/ui/display/table/Table.svelte
+6<tab>15<tab>src/lib/views/personal/calendar/Calendar.svelte
+3<tab>4<tab>src/lib/views/sources/repositories/diff/FileHeader.svelte
+1<tab>1<tab>src/lib/views/sources/search/Problems.svelte
+2<tab>2<tab>src/lib/views/system/status/Gallery.svelte
+
+$ wc -l <the 10 changed files>
+     617 docs/HELP.md
+     230 src/lib/shell/panes/floats/FloatLayer.svelte
+     310 src/lib/shell/rail/UpdateTray.svelte
+     346 src/lib/themes/tokens.css
+     240 src/lib/ui/controls/heads/GroupHead.svelte
+     203 src/lib/ui/display/table/Table.svelte
+     425 src/lib/views/personal/calendar/Calendar.svelte
+     164 src/lib/views/sources/repositories/diff/FileHeader.svelte
+     449 src/lib/views/sources/search/Problems.svelte
+     425 src/lib/views/system/status/Gallery.svelte
+(all match the report's two files tables)
+
+The round's delta, diff -u snapshot migration-O125-round-1/<path> against the worktree, for each path of files.txt:
+docs/HELP.md, UpdateTray.svelte, GroupHead.svelte, Calendar.svelte, FileHeader.svelte, Problems.svelte, Gallery.svelte: no difference.
+src/lib/themes/tokens.css: one hunk @@ -220,30 +220,29 @@, the comment over --wall-panel rewrapped, nothing else.
+src/lib/ui/display/table/Table.svelte: hunks @@ -19,13 +19,13 @@ (the `stays` prop doc) and @@ -123,11 +123,11 @@ (the CSS comment), nothing else.
+Not in files.txt, from git diff 2760ac090: src/lib/shell/panes/floats/FloatLayer.svelte @@ -134,7 +134,6 @@
+-        data-float-place={place.kind === 'dock' ? place.edge : 'free'}
+
+$ diff <(tr -s ' \n' '\n\n' < round-1 snapshot copy | grep -v '^\*$') <(same over the worktree copy)   (tokens.css and Table.svelte)
+src/lib/themes/tokens.css: word stream identical (ignoring lone *)
+src/lib/ui/display/table/Table.svelte: word stream identical (ignoring lone *)
+
+The rewrap measurement (line length + 1 + length of the next line's first word, after stripping leading space and a leading `*`, `/*` or `//`; SHORT when at most 100; OVER when a line passes 100), the reviewer's own awk:
+src/lib/themes/tokens.css:223: 98 + 1 + 3 (the) = 102
+src/lib/themes/tokens.css:224: 95 + 1 + 9 (component) = 105
+src/lib/themes/tokens.css:225: 97 + 1 + 3 (the) = 101
+src/lib/themes/tokens.css:226: 99 + 1 + 6 (layers) = 106
+src/lib/themes/tokens.css:227: 95 + 1 + 8 (nothing,) = 104
+src/lib/themes/tokens.css:228: 97 + 1 + 8 (surface,) = 106
+src/lib/themes/tokens.css:229: 99 + 1 + 2 (of) = 102
+src/lib/themes/tokens.css:230: 98 + 1 + 7 (surface) = 106
+src/lib/themes/tokens.css:231: 85 + 1 + 16 (`editor.opacity`) = 102
+src/lib/themes/tokens.css:232: 90 + 1 + 15 (`panel_opacity`) = 106
+src/lib/themes/tokens.css:233: 99 + 1 + 5 (strip) = 105
+src/lib/themes/tokens.css:234: 98 + 1 + 6 (sticky) = 105
+src/lib/themes/tokens.css:235: 97 + 1 + 6 (paints) = 104
+src/lib/themes/tokens.css:236: 97 + 1 + 7 (actions) = 105
+src/lib/themes/tokens.css:237: 94 + 1 + 7 (panel's) = 102
+src/lib/themes/tokens.css:238: 94 + 1 + 6 (solid,) = 101
+src/lib/themes/tokens.css:239: 100 + 1 + 7 (surface) = 108
+src/lib/themes/tokens.css:240: 96 + 1 + 7 (halves.) = 104
+src/lib/themes/tokens.css:241: 96 + 1 + 5 (thing) = 102
+src/lib/themes/tokens.css:242: 100 + 1 + 4 (drag) = 105
+src/lib/themes/tokens.css:243: 99 + 1 + 7 (confirm) = 107
+src/lib/themes/tokens.css:244: 94 + 1 + 7 (surface) = 102
+src/lib/themes/tokens.css:245: 40 (last line)
+src/lib/ui/display/table/Table.svelte:22: 100 + 1 + 2 (up) = 103
+src/lib/ui/display/table/Table.svelte:23: 98 + 1 + 7 (`stays`) = 106
+src/lib/ui/display/table/Table.svelte:24: 100 + 1 + 5 (while) = 106
+src/lib/ui/display/table/Table.svelte:25: 97 + 1 + 3 (and) = 101
+src/lib/ui/display/table/Table.svelte:26: 99 + 1 + 5 (them,) = 105
+src/lib/ui/display/table/Table.svelte:27: 96 + 1 + 8 (nothing.) = 105
+src/lib/ui/display/table/Table.svelte:28: 19 (last line)
+src/lib/ui/display/table/Table.svelte:125: 98 + 1 + 7 (slide's) = 106
+src/lib/ui/display/table/Table.svelte:126: 100 + 1 + 4 (they) = 105
+src/lib/ui/display/table/Table.svelte:127: 95 + 1 + 6 (solid,) = 102
+src/lib/ui/display/table/Table.svelte:128: 99 + 1 + 5 (panel) = 105
+src/lib/ui/display/table/Table.svelte:129: 94 + 1 + 6 (inside) = 101
+src/lib/ui/display/table/Table.svelte:130: 46 (last line)
+(no SHORT, no OVER; equal to the report's quoted output line for line)
+The same measurement over GroupHead.svelte 11-20, Calendar.svelte 32-41 and 363-367, FileHeader.svelte 10-14, Problems.svelte 47-48, Gallery.svelte 34-38, filtered to SHORT|OVER|last:
+src/lib/ui/controls/heads/GroupHead.svelte:20: 50 (last line)
+src/lib/views/personal/calendar/Calendar.svelte:41: 19 (last line)
+src/lib/views/personal/calendar/Calendar.svelte:367: 43 (last line)
+src/lib/views/sources/repositories/diff/FileHeader.svelte:14: 72 (last line)
+src/lib/views/sources/search/Problems.svelte:48: 90 (last line)
+src/lib/views/system/status/Gallery.svelte:38: 61 (last line)
+
+$ awk 'length($0)>100 {print FILENAME":"FNR}' <the 9 changed source files>
+src/lib/views/sources/search/Problems.svelte:399
+src/lib/views/system/status/Gallery.svelte:287
+src/lib/views/system/status/Gallery.svelte:291
+src/lib/views/system/status/Gallery.svelte:310
+
+The removed attribute, every reader:
+$ grep -rn 'float-place\|floatPlace\|floatplace' src tests utils docs README.md
+exit=1
+$ grep -rn --exclude=local.yml 'float-place\|floatPlace' config
+config exit=1
+$ grep -rn --exclude=local.yml --exclude-dir=node_modules --exclude-dir=.git --exclude-dir=.scratch --exclude-dir=.oculus --exclude-dir=.svelte-kit 'float-place\|floatPlace' .
+exit=1
+$ grep -rn 'float-place' ../O125-base/src ../O125-base/tests ../O125-base/utils
+../O125-base/src/lib/ui/controls/heads/GroupHead.svelte:219:    :global(body.wall [data-float-place='free']) .strip {
+../O125-base/src/lib/shell/panes/floats/FloatLayer.svelte:137:        data-float-place={place.kind === 'dock' ? place.edge : 'free'}
+(the `[data-float]` readers, FrameLayer.svelte:69 and window-bounds.ts:45, read `data-float`, which stays at FloatLayer.svelte:136)
+
+The report's plain-grep lines, rerun:
+$ grep -rn '\.strip\b' src | grep -v heads/GroupHead.svelte   (selector hits only)
+src/lib/ui/tabs/Tabs.svelte:386:    .strip {
+src/lib/ui/tabs/Tabs.svelte:401:    :global(body.wall) .strip {
+src/lib/ui/tabs/Tabs.svelte:434:    .strip.wrapping {
+src/lib/ui/tabs/ActionStrip.svelte:81:    .strip {
+src/lib/ui/tabs/TabFace.svelte:226:    :global(.strip.unfocused) .tab.current {
+src/lib/ui/tabs/TabFace.svelte:324-327,331:    :global(.strip.unfocused) .tab... / .label
+src/lib/shell/panes/SplitView.svelte:195:    .strip {
+src/lib/shell/panes/SplitView.svelte:202:    .strip > :global(*) {
+(the other hits are TypeScript `.strip` property reads and calls, no CSS)
+$ grep -rn -E '(^|[ ,>(])h3([ ,:{)]|$)' src   (comment lines and markup left out)
+src/lib/shell/rail/ScheduleDialog.svelte:253:    h3,
+src/lib/shell/rail/ScheduleDialog.svelte:258:    h3 {
+src/lib/views/personal/account-setup/GitSteps.svelte:212:    h3 {
+src/lib/views/personal/account-setup/AccountSetup.svelte:203:    h3 {
+src/lib/views/shared/prose/Markdown.svelte:259:    .doc :global(h3),
+src/lib/views/shared/prose/Markdown.svelte:273:    .doc :global(h3) {
+src/lib/views/system/machine/hpc/Cluster.svelte:162:    h3 {
+src/lib/views/sessions/terminal/transcript/TurnList.svelte:233:    .answer :global(.doc h3),
+src/lib/views/sessions/terminal/transcript/TurnList.svelte:244:    .answer :global(.doc h3),
+$ grep -rn -- '--panel-on-wall:' src ; grep -rn 'style:--panel-on-wall' src
+src/lib/themes/tokens.css:299:    --panel-on-wall: color-mix(in srgb, var(--panel) var(--wall-panel), transparent);
+src/lib/ui/frame/Pane.svelte:71:    style:--panel-on-wall={share === undefined ? undefined : `var(--${share}-on-wall)`}
+$ grep -rn 'data-file-header' src ; grep -rn -E '\.header\b' src/lib/views/sources/repositories/diff | grep -v FileHeader.svelte
+src/lib/views/sources/repositories/diff/FileHeader.svelte:61:<div class="header" class:stays={foldable} data-file-header={path}>
+exit=1
+$ grep -rn -i -E 'keeps a mix|mix of its own' src docs README.md ; grep -rn --exclude=local.yml -i -E 'keeps a mix|mix of its own' config
+src/lib/views/system/machine/processes/ProcessTable.svelte:205:       `tokens.css` that keeps a mix of its own, so they do not read through it. */
+cfg exit=1
+$ grep -rn 'chip-on-wall' src docs README.md
+Pane.svelte:253, TickerGroup.svelte:140, Code.svelte:77, RenderedMarkdown.svelte:187, Tasks.svelte:195, LockedCode.svelte:50, tokens.css:290 (equal to the report's list)
+$ grep -rn -E "\[data-part|\[data-scope|\[role=.treeitem|:global\(\[aria-selected|\[data-selected" src --include='*.svelte' --include='*.css'
+(no rule that paints a tree row; the hits are scoped `.item[data-selected]` rules of pickers and two querySelector calls)
+
+Cited lines after the last change, read with awk:
+FloatLayer.svelte:137 data-surface; :206-212 the wallpaper comment; :213-215 `:global(body.wall) .dock { background: transparent; }`; :217-219 `.free`. Calendar.svelte:240 `<Pane title={t('views.calendar')} toolbar={tools} {bar} tinted>`; :363-367 the CSS comment; :368-374 the two base rules. Table.svelte:131-133, :135-137, :139-147. FileHeader.svelte:120-122, :124-126. UpdateTray.svelte:261-265. GroupHead.svelte:189-203, :206-209. Status.svelte:110-132 the Surface, :133-145 `<div class="samples">` with the Gallery GroupHead at :134-144.
+```
+
+The tab characters of the numstat output are written `<tab>`.
+
+### Verdicts
+
+Items of the brief's "What to build", in its numbering, with `agents/briefs/O125-cases.md` and `agents/briefs/O125-round1.md`:
+
+- 1: holds. The two `body.wall` strip rules are gone (check 2 prints nothing); `GroupHead.svelte:189-203` `.strip { ... background: var(--panel); ... }` is the only paint rule; the plain `.strip` and `h3` greps above list no rule outside the component that reaches the strip's paint, and no global tree-row rule paints it.
+- 2: holds. `GroupHead.svelte:15-20` states the solid paint in every mode; check 3 prints line 20, which is true. Standards R3 below concerns one parenthetical of this comment and carries no verdict.
+- 3: holds. `tokens.css:223-245` names the group heading, the table's sticky header row, the Calendar's header rows and the diff's file header as painting the panel solid and the Processes actions column as keeping `panel_opacity`; the whole paragraph is rewrapped and the measurement prints no SHORT and no OVER; the word stream equals the round-1 snapshot's; numstat 23/22 lies inside the comment; no token changed. The first report's S1 is closed.
+- 4: holds. `docs/HELP.md:571`, one added sentence, one line per bullet.
+- 5: holds. `UpdateTray.svelte:261-265`, the redefinition gone, `background: color-mix(in srgb, var(--panel) var(--wall-popover), transparent)` with `blur(var(--wall-blur))`.
+- 6: holds. `Table.svelte:135-137` `background: var(--panel)`, no backdrop filter; rows `:139-147` unchanged; the prop doc `:21-29` and the CSS comment `:125-130` are true and now measure clean.
+- 7: holds. No `body.wall` rule left in `Calendar.svelte`; `:368-374` paint `--panel` with today's chip as `background-image` in every mode; comments `:37-41` and `:363-367` true.
+- 8 (cases ruling item 2): holds. `FileHeader.svelte:124-126` `background: var(--panel)`, `:120-122` transparent for a header that does not stay, comment `:10-14` true.
+- Cases ruling item 1 (C13 on the Gallery tones table and Problems; Processes out): holds. `ProcessTable.svelte` is not in the diff.
+- Cases ruling item 3 (comments made false): holds. `Problems.svelte:47-48`, `Gallery.svelte:34-38`, `Table.svelte:21-29`, `Calendar.svelte:37-41`, `FileHeader.svelte:10-14` rewritten; `ProcessTable.svelte:204-205` stays true against the new `tokens.css` sentence.
+- Cases ruling item 4 ("What it must do" items 1 to 8): holds; items 1 to 8 hold above.
+- Round item 1 (S1, the rewrap): holds. The measurement reproduces the report's output line for line; the words are unchanged (word-stream diff empty).
+- Round item 2 (S2, the attribute): holds. `FloatLayer.svelte:137` removed, the only change in that file; the grep over src, tests, utils, docs, README.md, config (local.yml excluded) and the whole worktree outside node_modules prints nothing; its one base reader was `GroupHead.svelte:219`, removed by item 1; `data-float` and `data-surface` stay.
+- Round item 3 (P1, P2, P3, B1): holds. P1: the report quotes both lines of the `background\|backdrop` grep. P2: the `h3` list equals the rerun. P3: `Calendar.svelte:240`, `:363-367`, `FloatLayer.svelte:213-215` and `:206-212` match the tree. B1: "Before and after" gives a before for the Update tray, the Sessions list and the Account setup in a dark and a light theme. Proof R1 and R2 below are stale or loose numbers the round did not reach; neither carries a verdict.
+- Round item 4 (S3, git grep): holds. "Anything in the brief that was wrong or impossible" states the clash and that the other `git grep` lines were the builder's own; the only `git grep` text left in the report is in that paragraph and in the round's item 4 note.
+
+Cases:
+
+- C1: not verifiable. The cascade gives `--panel`, no blur (`GroupHead.svelte:189-203` alone). Settled by the landing's look with computed style.
+- C2: not verifiable. Reading gives `--panel`, no blur. Settled by the look.
+- C3: met by reading. The strip reads no `--*-on-wall`, so `Pane.svelte:71` cannot reach it.
+- C4: not verifiable. No rule keys on the free float any more; reading gives `--panel`. Settled by the look.
+- C5: not verifiable. Reading gives `--panel` inside a card, lane or `Surface`. Settled by the look.
+- C6: not verifiable. The base rule is unchanged. Settled by the look.
+- C7: not verifiable. Both strips `--panel`, `top: var(--group-above)` (`:191`) unchanged. Settled by the look.
+- C8: met by reading. `.strip:focus-visible` (`:206-209`) unchanged; no global tree-row rule paints the strip.
+- C9: met by reading. The strip paints `var(--panel)`.
+- C10: met by reading. Outside a free float and the tray nothing changes; inside them 97 % to 100 %, stated in the report.
+- C11: not verifiable. Reading gives solid strips and the tray's fill at the base's computed value. Settled by the look.
+- C12: met by reading. `FloatLayer.svelte:213-215` paints the docked float transparent; the strip paints `--panel`.
+- C13: not verifiable. Reading gives a solid header for the Gallery tones table and Problems. Settled by the look.
+- C14: met by reading. `Table.svelte:131-133` unchanged.
+- C15: not verifiable. Reading gives solid headings with today's chip. Settled by the look.
+- C16: met by reading. `Table.svelte:112` and `Calendar.svelte:368-374` are the base rules.
+- C17: met by reading. `FileHeader.svelte:124-126`.
+
+### Findings
+
+#### 1. Spec
+
+none.
+
+#### 2. Proof
+
+- R1. `.scratch/migration/agents/reviews/O125-report.md`, DONE / NOT DONE rows and the line after the table: "lists only the 8 source files below; nothing under `tests`", "`LC_ALL=C grep -n '[^ -~]'` over the 9 changed files prints nothing", "`npm run test:quick` ran once.", and the Verify 1 row quoting `ok      eslint (12.6 s)` / `test:quick: 47.6 s; every command passed`; and in "Repair round 1": "`git status --short` after it lists only the step's 10 files, the brief and the three ledger files of the round". What is wrong: the rules file's section "The working rules that bind every package" requires every count to be taken after the last change. After the round, `diff -rq` lists 9 source files, the changed files are 10, the list ran twice across the step, and the Verify 1 row quotes the run before the round. `git status --short` lists four untracked ledger files (O125-cases.md, O125-round1.md, O125-refuter.md, O125-report.md), so "the three ledger files of the round" leaves out `O125-cases.md`. The "Repair round 1" section carries the current counts and run, so no decision rests on the stale ones. Failure scenario: a reader of the DONE table takes "8 source files" and misses `FloatLayer.svelte` as a changed path. Verdict: none.
+- R2. Same report, the C1 row: "the strip in `<div class=\"samples\">` outside the Surface (`Status.svelte:132-143`)". What is wrong: `Status.svelte:132` is `</Surface>`; the `samples` div is `:133-145` and the Gallery `GroupHead` `:134-144`. No decision rests on the range. Failure scenario: the landing's look opens `Status.svelte:132` for the strip and lands on the Surface's closing tag. Verdict: none.
+
+#### 3. Standards
+
+- R3. `src/lib/ui/controls/heads/GroupHead.svelte:17-18`: "over the picture where / nothing around it paints a surface (an untinted pane, a docked float), and inside the surface around it elsewhere (a tinted pane, ...)". What is wrong: the rules file's section "What every package obeys" says a sentence in a head comment the change makes false is a defect. A docked float paints nothing itself (`FloatLayer.svelte:206-215`: "the view inside is that layer: its tinted box, or its cards and surfaces"), so a strip in a docked float stands over the picture only when the view inside is untinted, which "an untinted pane" already covers; for a tinted view in a docked float the parenthetical puts the strip in both lists. The rule the sentence states ("where nothing around it paints a surface") is correct; only the example is loose. The fix is to drop "a docked float" from the first parenthetical or to write "an untinted view in a docked float". Failure scenario: a later editor reads that a strip in a docked float is always over the bare picture and writes a docked-float rule for strips on that premise. Verdict: none (item 2 holds; the paint is right in every case).
+
+#### 4. Behaviour
+
+none. The round's changes are comment rewraps and the removal of an attribute that no code, style, test or document reads (grep above); nothing a host or a user sees changes in the round.
+
+### Declined to judge
+
+- The paint of C1, C2, C4, C5, C6, C7, C11, C13, C15 and C17 in a browser, and how strong the solid band looks inside translucent surfaces. A reviewer runs no page; the landing's look with computed style settles these.
+- Open item 640 (the Processes actions column), still open in main's `orchestrator-state.md:191` and unruled in `plan.md` (`grep -n 640` lists no ruling). It is Axel's ruling; under (a) before landing it would add `ProcessTable.svelte:204-209` and the `tokens.css` sentence on that column to O125.
+- Whether the round's history-word grep, which the report runs as `git diff -- src docs` without a base, covers the same lines as `git diff 2760ac090`: that needs the worktree's HEAD, a fact only `git rev-parse` or `git log` gives. The reviewer's own run against `2760ac090` prints nothing.
+- Who wrote the worktree's modified `.scratch/migration/agents/briefs/O125.md` and the untracked ledger files: attribution needs `git log` or the session transcripts.
+- Whether the report's word-stream check of the rewrap was run as stated: its scratch files are removed. The reviewer's own word-stream diff against the round-1 snapshot is empty for both files.
+
+Reviewer usage: a0996b58b66546e51, claude-opus-5-5, 181256 tokens, 42 tool uses, 6 min 56 s.
+
+## Closed
+
+- First run S1, S2, P1, P2, P3, B1 and S3: closed by repair round 1 (the round's verdicts above).
+- R1 and R2: closed at landing in the booking, which quotes the counts and the run taken after the round; the report's stale rows are named there. No decision rests on them.
+- R3: fixed at landing in `GroupHead.svelte:17-18`, "a docked float" written as "an untinted view in a docked float".
