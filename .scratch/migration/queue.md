@@ -1,5 +1,5 @@
 In flight (1 of 6 slots in use):
-- O129 (the Status view's line count removed whole), reviewed; its repair round is next.
+- O129 (the Status view's line count removed whole), repair round 1.
 
 Queued, in order: none.
 

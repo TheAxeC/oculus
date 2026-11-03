@@ -33,7 +33,7 @@ dispatch:           # steps in flight, up to six (Z632)
   model: claude-opus-5-5
   launched: 2026-11-03
   report: .scratch/migration/agents/reviews/O129-report.md
-  round: 0
+  round: 1
   builder_usage: first run 242247 tokens, 176 tool uses, 14 min 16 s
   reviewer_report: .scratch/migration/agents/reviews/O129-refuter.md (a9c8c428e5b66ae90, claude-opus-5-5, 209753 tokens, 64 tool uses, 11 min 26 s)
   brief_check: .scratch/migration/agents/reviews/O129-brief-check.md (ab2ec14cae7da1de4, claude-opus-5-5, 216711 tokens, 103 tool uses, 11 min 11 s)
@@ -781,6 +781,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-11-03 (O129 round 1 sent). O129's review a9c8c428e5b66ae90 (claude-opus-5-5), `agents/reviews/O129-refuter.md`: every item holds, every case met, one finding (Standards 1, the head comment of `format.ts:6-7` names a separator key the file no longer reads). Repair round 1 (`agents/briefs/O129-round-1.md`) rewrites that paragraph; snapshot `.agents/worktrees/migration-O129-round-1`. In flight (1 of 6): O129 (round 1). Open items: 646, 645.
 - 2026-11-03 (O128 landed). O128, the order of a category's cards, landed (booking in plan.md under O128, `agents/reviews/O128-landing.md`): the review over round 1 found nothing; the gate passed; the look on 8797 showed publications and other outputs by stage, newest year, title. G124 rewritten for ruling (B). Open item 646 raised (the editor's schema of a one-text `multi` value). O129 is reviewed (`agents/reviews/O129-refuter.md`, one Standards finding, `format.ts:6-7`); its repair round is next. In flight (1 of 6): O129 (reviewed). Open items: 646, 645.
 - 2026-11-03 (O128 round 1 sent). O128's builder a1f38c408a7b19f9c reported (`agents/reviews/O128-report.md`, usage under builder_usage); the orchestrator read the whole diff. The review adc685d3ef30c1258 (claude-opus-5-5), `agents/reviews/O128-refuter.md`: every item holds, every case met, one finding (Behaviour 1, the editor's offer of `sort` not stated). Repair round 1 (`agents/briefs/O128-round-1.md`) states it, words C18 as ruled and accepts `config-folder.test.ts:723-728` and `docs/diagrams/writes.*` into the paths; snapshot `.agents/worktrees/migration-O128-round-1`. G124's text and Test line are rewritten at landing for option (B). In flight (2 of 6): O128 (round 1), O129 (building). Open items: 645.
 - 2026-11-03 (O129 building). O129's brief check (`agents/reviews/O129-brief-check.md`, ab2ec14cae7da1de4, claude-opus-5-5) closed in the brief under its Closed heading; prepared at 81a913408; worktree `.agents/worktrees/migration-O129` with `npm ci` and `svelte-kit sync`; base copy `.agents/worktrees/O129-base` with `unused-exports.txt` (338 lines); builder a2610b093b6cffbd3 (claude-opus-5-5) runs. Shared paths with O128: `docs/HELP.md` (lines 249 and 307) and `docs/diagrams`. In flight (2 of 6): O128 (building, cases ruling), O129 (building). Open items: 645.
