@@ -1,6 +1,5 @@
-In flight (2 of 6 slots in use):
-- O136 (the editor holds a keyed family to the form its reader takes), repair round 1 reported; review over the round running.
-- O135 (an Add Front Matter command for a note), brief check running.
+In flight (1 of 6 slots in use):
+- O135 (an Add Front Matter command for a note), brief check reported; brief being closed.
 
 Queued, in order (3 steps):
 - O137 (a collection is always sorted, the reorder by hand removed), ruling 654.
@@ -10,6 +9,7 @@ Queued, in order (3 steps):
 Owed looks: none.
 
 Landed, newest first:
+- O136 (the editor holds a keyed family to the form its reader takes), one repair round, the editor's message built at landing.
 - O132 (every hub's words held to the vocabulary check), one repair round, two report fixes at landing.
 - O133 (one front-matter pattern for every Markdown reader), one repair round, five fixes at landing.
 - O131 (the editor holds a one-text `multi` value to its words), one repair round, five fixes at landing.

@@ -47,7 +47,7 @@ import { HUB_FILE, ROOT_FOLDER, hubFileOf, hubKeys } from '../../../../helpers/h
 import { shapeSchema, type JsonSchema } from '../../../../snapshot/schema/json.ts';
 import { SCHEMA_BLOCK, SCHEMA_DEFINITIONS } from '../../../../snapshot/schema/record.ts';
 import { APP_SETTINGS_KEY } from '../../../../helpers/files/apps/settings.ts';
-import { appSettingsSchema, optionsSchema, type OptionLists } from './options.ts';
+import { appSettingsSchema, formOf, optionsSchema, type OptionLists } from './options.ts';
 import { settingsSchema } from './settings.ts';
 import type { NamedSchema } from '../../../../snapshot/schema/set.ts';
 import { SCHEMA_FILES } from '../../../../snapshot/schema/static.ts';
@@ -136,10 +136,12 @@ function orNull(schema: unknown): JsonSchema {
 /**
  * A key's schema in the form the merge of its shape reads it: a map, each word or name its row or
  * null; a list of rows told apart by a field, each row a full row or the row of that field with
- * `removed: true`; or a list replaced whole.
+ * `removed: true`; or a list replaced whole. A keyed family's schema is shaped in its `else`, the
+ * branch that holds its form (options.ts, `formOf`), whose form the shape's agrees with.
  */
 function shapedSchema(schema: JsonSchema, shape: InPlace): JsonSchema {
     if (shape.kind === 'colour') return schema;
+    if (formOf(schema) !== schema) return { ...schema, else: shapedSchema(formOf(schema), shape) };
     const { items, additionalProperties, properties, ...rest } = schema;
     if (shape.kind === 'map') {
         const named = (properties ?? {}) as Record<string, unknown>;
@@ -191,13 +193,9 @@ function withShapes(schema: JsonSchema): JsonSchema {
     shapeKeys(properties, '');
     const text = properties[TEXT_KEY] as JsonSchema | undefined;
     if (text !== undefined) {
-        const { items: _rows, ...words } = text;
-        const member = words.additionalProperties as { anyOf?: JsonSchema[] } | undefined;
-        properties[TEXT_KEY] = {
-            ...words,
-            type: 'object',
-            additionalProperties: member?.anyOf?.[0] ?? member
-        };
+        const form = formOf(text);
+        const member = form.additionalProperties as { anyOf?: JsonSchema[] } | undefined;
+        form.additionalProperties = member?.anyOf?.[0] ?? member;
     }
     return schema;
 }
@@ -275,13 +273,14 @@ function workspaceSchema(catalog: Catalog, groups: Groups, lists: OptionLists): 
 /** The schemas of the config folder's files, the hub's own files and the repository settings. */
 export function engineSchemas(raw: RawPortfolio, config: PortfolioConfig): NamedSchema[] {
     const merged = config.merged;
-    const lists: OptionLists = { merged, items: optionSource(raw, config) };
+    const lists: OptionLists = { merged, items: optionSource(raw, config), text: config.text };
     // The user's key of a `local.yml` names a person of any hub, resolved from the primary, so the
     // file's schema holds it as text and not to the people of the hub this build reads; a key no
     // hub holds is the finding of the merge (data/snapshot/hubs/self.ts).
     const localLists: OptionLists = {
         merged,
-        items: (source) => (source === 'people' ? null : lists.items(source))
+        items: (source) => (source === 'people' ? null : lists.items(source)),
+        text: config.text
     };
     const { catalog, groups } = readCatalog(merged);
     const found: NamedSchema[] = [];

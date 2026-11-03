@@ -6,7 +6,10 @@
 // allowed, and `x-required-when` the condition under which it is required. They validate nothing;
 // they let a finding say "this value is not a key of venues" rather than "this value is not one of
 // 71 words". `enumDescriptions` gives the editor's completion the label of each enum word, from
-// the field's `{ key, label }` options.
+// the field's `{ key, label }` options. `errorMessage` is yaml-language-server's message for a
+// value the schema refuses, which a keyed family carries for the other form
+// (catalog/schemas/options.ts, `heldToForm`); ajv takes it as a no-op, so oculus's checker words
+// that value as it words any wrong type.
 
 import type { SchemaObject } from 'ajv';
 import { z } from 'zod';
@@ -15,7 +18,13 @@ import { z } from 'zod';
 export type JsonSchema = SchemaObject;
 
 /** The annotation keywords oculus puts on a schema, each registered with ajv as a no-op. */
-export const ANNOTATIONS = ['x-from', 'x-when', 'x-required-when', 'enumDescriptions'] as const;
+export const ANNOTATIONS = [
+    'x-from',
+    'x-when',
+    'x-required-when',
+    'enumDescriptions',
+    'errorMessage'
+] as const;
 
 /** The scalar types a plain text field accepts: a text, and the integer a year is written as. */
 export const TEXT_TYPES = ['string', 'number', 'null'];

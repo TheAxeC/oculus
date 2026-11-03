@@ -9,8 +9,10 @@
 // options of local.yml, which are `self` alone: the person it names.
 //
 // The fields of a family are walked as schemas/options.ts walks them (a list of records, or a map
-// from its `key` to a record, a list or one value), so what the editor checks and what the index
-// follows are the same places.
+// from its `key` to a record, a list or one value), so for a family written in the form its reader
+// takes, what the editor checks and what the index follows are the same places. A keyed family
+// written in the other form is followed by the index through its fields all the same, while the
+// editor marks the family and checks none of its fields.
 
 import { VOCAB_SOURCE, recordOf } from '../../../../snapshot/references/specs.ts';
 import type { FieldNode, OptionFile } from '../../../../snapshot/references/model.ts';

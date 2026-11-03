@@ -18,10 +18,17 @@
 // texts, and a `joined` one is one text of words separated by single spaces. The schema and the
 // rule part on these kinds of value: a word outside a multi's words that the file already holds,
 // which the rule takes from the Settings write alone, is refused here; a multi with no words, whose
-// every word the rule refuses, is any text or a list of texts here; a list of lists in a map that
-// holds lists (`holds: lists`), refused by the rule, is taken here; and a keyed family in the wrong
-// one of its two forms, a map from a key to a value written as a list of rows or a list of rows
-// written as a map, refused by the rule, is taken here when its rows or values fit their fields.
+// every word the rule refuses, is any text or a list of texts here; and a list of lists in a map
+// that holds lists (`holds: lists`), refused by the rule, is taken here.
+//
+// A keyed family, one whose fields hold a `key` field, takes one form here, the form its reader
+// takes, since each reader takes the form oculus's own file is written in: a key/value family a
+// map, and any other keyed family the form of oculus's value of it, its entry's `default`. A family
+// field's map is the form the rule holds it to (familyProblem); the rule reads no form of a
+// top-level family, which has no control, and the schema holds such a family to the form its
+// reader takes. A keyed family written in the other form is told so in oculus's checker's words
+// (`boards must be a map, not a list`), and any other value of the wrong type keeps the editor's
+// own message (heldToForm).
 
 import type { CatalogEntry, FieldSpec, Source } from '../options.ts';
 import {
@@ -33,6 +40,9 @@ import {
     pickedSources,
     takesRecord
 } from '../options.ts';
+import { findingText, type TextCatalog } from '../../../../helpers/finding-text.ts';
+import { isMap } from '../../../../helpers/guards.ts';
+import { SETTINGS_KEY } from '../../merge/workspace-layer.ts';
 import { BLOCK_LISTS } from '../../../../shapes/boards/words.ts';
 import { glyphNames } from '../../rail.ts';
 import { FORM_PATTERNS, JOINED_FORM } from '../value-rule.ts';
@@ -48,6 +58,8 @@ export type OptionLists = {
      * take the rows and keys that take oculus's entries out.
      */
     overrides?: boolean;
+    /** The text catalog that words the editor's message for a keyed family in the wrong form. */
+    text: TextCatalog;
 };
 
 /** The description of the field that takes oculus's entry of a keyed list out. */
@@ -257,7 +269,7 @@ export function recordSchema(
     const rules: JsonSchema[] = [];
     for (const [name, spec] of Object.entries(fields)) {
         const free = loose && spec.control === 'text' && spec.fields === undefined;
-        properties[name] = free ? described({}, spec.help) : fieldSchema(spec, lists, defs);
+        properties[name] = free ? described({}, spec.help) : fieldSchema(name, spec, lists, defs);
         rules.push(...pickedRules(name, spec, lists));
     }
     const schema: JsonSchema = { type: 'object', properties, additionalProperties: false };
@@ -290,29 +302,46 @@ function pickedByKey(
     return Object.fromEntries(
         Object.entries(picked.sources).map(([word, source]) => [
             word,
-            fieldSchema({ ...value, from: [source] }, lists, defs)
+            fieldSchema(word, { ...value, from: [source] }, lists, defs)
         ])
     );
 }
 
 /**
- * The schema of a family: a list of its records, a map from a key to a record or a value, or for
- * a field that holds one record (`holds: record`) that record.
+ * The schema of a family: a list of its records, or for a field that holds one record (`holds:
+ * record`) that record. A keyed family, one whose fields hold a `key` field, takes the one form
+ * its reader takes: a key/value family a map from a key to a value, and any other keyed family the
+ * form of `shipped`, oculus's own value of it, a map from a key to a record when that value is a
+ * map and a list of its records otherwise (a family field passes none, and is the list of records
+ * the rule reads). Each reader takes the form oculus's own file is written in, so a family written
+ * in the other form is refused here as its reader refuses it, in the words of `heldToForm` under
+ * `name`, the key or the field the family is.
  */
 function familySchema(
+    name: string,
     entry: CatalogEntry,
     lists: OptionLists,
     defs: Definitions,
-    loose = false
+    loose = false,
+    shipped?: unknown
 ): JsonSchema {
     const fields = entry.fields ?? {};
     if (entry.holds === 'record') return recordSchema(fields, lists, defs, loose);
     const keyed = 'key' in fields;
     if (loose && !keyed) return recordSchema(fields, lists, defs, true);
-    const rows = recordSchema(fields, lists, defs, loose);
-    // A table holds one value a key, or a list of such values where it holds lists; a value that
-    // is a list already is the list. Any other keyed family holds one record a key.
-    const value = isPairs(fields) ? fieldSchema(fields.value, lists, defs) : null;
+    const pairs = isPairs(fields);
+    if (!keyed) return { type: 'array', items: recordSchema(fields, lists, defs, loose) };
+    if (!pairs && !isMap(shipped)) {
+        return heldToForm(
+            { type: 'array', items: recordSchema(fields, lists, defs, loose) },
+            name,
+            lists.text
+        );
+    }
+    // A key/value family is a map of one value a key, or of a list of such values where it holds
+    // lists; a value that is a list already is the list. Any other keyed family that is a map holds
+    // one record a key, its fields without the `key` the map names it by.
+    const value = pairs ? fieldSchema(name, fields.value, lists, defs) : null;
     const wrapped = value !== null && entry.holds === 'lists' && fields.value.control !== 'list';
     const member: JsonSchema =
         value === null
@@ -320,20 +349,53 @@ function familySchema(
             : wrapped
               ? { anyOf: [value, { type: 'array', items: value }] }
               : value;
-    const schema: JsonSchema = { type: keyed ? ['array', 'object'] : 'array', items: rows };
-    if (keyed) schema.additionalProperties = member;
+    const schema: JsonSchema = { type: 'object', additionalProperties: member };
     const byKey = value === null || wrapped ? null : pickedByKey(fields, lists, defs);
     if (byKey !== null) schema.properties = byKey;
-    return schema;
+    return heldToForm(schema, name, lists.text);
+}
+
+/**
+ * A keyed family's schema in its one form, `form` a map or a list of rows, with the message the
+ * editor shows for a value of the other form: oculus's checker's sentence (`findings.schema.type`,
+ * `boards must be a map, not a list`). yaml-language-server shows a schema's `errorMessage` for
+ * every value whose type it refuses, a text, a number and an empty key among them, so the message
+ * sits on the branch an `if` takes for the other form alone, and every other value is read against
+ * `else`, the form with its fields, and keeps the editor's own message. The fields stay beside
+ * their type in `else`, where ajv's strict mode reads them; `formOf` gives that branch.
+ */
+function heldToForm(form: JsonSchema, name: string, text: TextCatalog): JsonSchema {
+    const type = form.type as string;
+    const map = type === 'object';
+    const mapWord = findingText(text, 'findings.schema.is_map');
+    const listWord = findingText(text, 'findings.schema.is_list');
+    const message = map
+        ? findingText(text, 'findings.schema.type', name, mapWord, listWord)
+        : findingText(text, 'findings.schema.type', name, listWord, mapWord);
+    return {
+        if: { type: map ? 'array' : 'object' },
+        then: { type, errorMessage: message },
+        else: form
+    };
+}
+
+/** The branch of a schema that holds its form and fields: `else` of a keyed family, else itself. */
+export function formOf(schema: JsonSchema): JsonSchema {
+    return (schema.else as JsonSchema | undefined) ?? schema;
 }
 
 /**
  * The schema of one field of a family as it stands: its control, or its help line alone as a
  * text; a text field that takes one record of its fields (takesRecord) takes either.
  */
-function ownSchema(spec: FieldSpec, lists: OptionLists, defs: Definitions): JsonSchema {
+function ownSchema(
+    name: string,
+    spec: FieldSpec,
+    lists: OptionLists,
+    defs: Definitions
+): JsonSchema {
     if (spec.fields === undefined) return described(controlSchema(spec, lists), spec.help);
-    const family = familySchema(spec, lists, defs);
+    const family = familySchema(name, spec, lists, defs);
     if (!takesRecord(spec)) return described(family, spec.help);
     return described({ anyOf: [controlSchema(spec, lists), family] }, spec.help);
 }
@@ -343,14 +405,19 @@ function ownSchema(spec: FieldSpec, lists: OptionLists, defs: Definitions): Json
  * definition, made the first time it is met and carrying no help line, with its own help line; any
  * other is its own schema.
  */
-function fieldSchema(spec: FieldSpec, lists: OptionLists, defs: Definitions): JsonSchema {
-    if (spec.described === undefined) return ownSchema(spec, lists, defs);
-    const name = definitionName(spec.described);
-    if (!defs.has(name)) {
-        defs.set(name, null);
-        defs.set(name, ownSchema({ ...spec, help: '' }, lists, defs));
+function fieldSchema(
+    name: string,
+    spec: FieldSpec,
+    lists: OptionLists,
+    defs: Definitions
+): JsonSchema {
+    if (spec.described === undefined) return ownSchema(name, spec, lists, defs);
+    const definition = definitionName(spec.described);
+    if (!defs.has(definition)) {
+        defs.set(definition, null);
+        defs.set(definition, ownSchema(name, { ...spec, help: '' }, lists, defs));
     }
-    return described({ allOf: [{ $ref: `#/definitions/${name}` }] }, spec.help);
+    return described({ allOf: [{ $ref: `#/definitions/${definition}` }] }, spec.help);
 }
 
 /**
@@ -359,13 +426,14 @@ function fieldSchema(spec: FieldSpec, lists: OptionLists, defs: Definitions): Js
  */
 function withOverrides(schema: JsonSchema, entry: CatalogEntry): void {
     const fields = entry.fields ?? {};
-    const rows = schema.items as { properties?: Record<string, JsonSchema> } | undefined;
+    const form = formOf(schema);
+    const rows = form.items as { properties?: Record<string, JsonSchema> } | undefined;
     if (entry.key !== undefined && rows?.properties !== undefined) {
         rows.properties.removed = { const: true, description: REMOVED_HELP };
     }
-    const member: unknown = schema.additionalProperties;
+    const member: unknown = form.additionalProperties;
     if ('key' in fields && typeof member === 'object' && member !== null) {
-        schema.additionalProperties = {
+        form.additionalProperties = {
             anyOf: [member as JsonSchema, { type: 'null', description: NULL_HELP }]
         };
     }
@@ -381,7 +449,14 @@ function entrySchema(
     const schema =
         entry.fields === undefined
             ? controlSchema({ ...entry, control: entry.control ?? 'text' }, lists)
-            : familySchema(entry, lists, defs, OWN_READER.includes(path));
+            : familySchema(
+                  lists.overrides === true ? `${SETTINGS_KEY}.${path}` : path,
+                  entry,
+                  lists,
+                  defs,
+                  OWN_READER.includes(path),
+                  entry.default
+              );
     if (lists.overrides === true && entry.fields !== undefined) withOverrides(schema, entry);
     if (Object.hasOwn(entry, 'default')) schema.default = entry.default;
     return described(schema, entry.help);

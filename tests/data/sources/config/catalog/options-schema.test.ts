@@ -13,7 +13,15 @@
 // layout.yml) takes one of its words alone or a list of them, and a word outside them, alone or in
 // a list, is a problem on the line that writes it, as is a text of two words, which the value rule
 // reads as one word. A theme's `joined` class in a workspace file's `settings:` takes words
-// separated by single spaces, and a doubled space is a problem on its line.
+// separated by single spaces, and a doubled space is a problem on its line. A keyed family takes
+// the one form its reader takes, in oculus's layout.yml and behavior.yml, a hub's
+// .oculus/config.yml and a workspace file's `settings:` alike: one written as a list of rows where
+// the file takes a map, or as a map where it takes a list, a reader row's `params` among them, is
+// one problem on the line of its first row or key, whose message names the form. A family written
+// in the form its reader takes, a hub's word set to null and a hub's row marked `removed: true`
+// give no problem. A key/value family with no default (`leads_fit`, `text`) is held to a map: a
+// value of it written as a list gives the problem of its value, a text where a list is written, and
+// no form problem, and the family written as a list gives the form problem.
 
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -154,9 +162,9 @@ function categoryWith(sort: string): string {
     return `categories:\n  - key: drafts\n    label: Drafts\n    color: '#888888'\n    sort: ${sort}\n`;
 }
 
-/** A `boards:` list of one board whose `tier`, on line 4, is `tier`. */
+/** A `boards:` map of one board, `mine`, whose `tier`, on line 4, is `tier`. */
 function boardWith(tier: string): string {
-    return `boards:\n  - key: mine\n    label: Mine\n    tier: ${tier}\n`;
+    return `boards:\n  mine:\n    label: Mine\n    tier: ${tier}\n`;
 }
 
 /** A hub's `research_audit:` map whose `skip_tiers`, on line 2, is `tiers`. */
@@ -212,5 +220,149 @@ describe('the schema of a multi', () => {
     it.each(MULTIS)('places the problems of %s on their lines', (_case, read, rows) => {
         const found = rows.map(([text]) => read(text).map((line) => line.split(' ')[0]));
         expect(found).toEqual(rows.map(([, lines]) => lines));
+    });
+});
+
+const inBehavior = (text: string) => problemsOf(schemas, 'config', 'defaults/behavior.yml', text);
+
+/** The line of a problem and the form its message names, "must be a map" or "must be a list". */
+function placed(line: string): [string, string | null] {
+    return [line.split(' ')[0], /must be a (map|list)/.exec(line)?.[0] ?? null];
+}
+
+/** The words of a problem's message for a family that must be a map, or a list. */
+const MAP = 'must be a map';
+const LIST = 'must be a list';
+
+/**
+ * A keyed family as one text writes it, the file it is read in, and the line of each of its
+ * problems with the form the problem's message names.
+ */
+const FAMILIES: [string, (text: string) => string[], string, [string, string | null][]][] = [
+    [
+        'boards as a list in layout.yml',
+        inLayout,
+        'boards:\n  - { key: b, label: B }\n',
+        [['2:', MAP]]
+    ],
+    [
+        "a reader row's params as a list in behavior.yml",
+        inBehavior,
+        'literature:\n  sources:\n    - key: x\n      params:\n        - { key: q, value: v }\n',
+        [['5:', MAP]]
+    ],
+    [
+        'counts as a list in layout.yml',
+        inLayout,
+        'counts:\n  - { key: projects, tab: true }\n',
+        [['2:', MAP]]
+    ],
+    [
+        'links as a map in behavior.yml',
+        inBehavior,
+        "links:\n  doi: { address: 'https://doi.org/{id|path}' }\n",
+        [['2:', LIST]]
+    ],
+    [
+        'read_limits as a list in behavior.yml',
+        inBehavior,
+        'read_limits:\n  - { key: next, value: 300 }\n',
+        [['2:', MAP]]
+    ],
+    [
+        'collections as a map in a hub',
+        inHub,
+        'collections:\n  notes: { file: .oculus/data/notes.yml }\n',
+        [['2:', LIST]]
+    ],
+    [
+        'counts as a list in a hub',
+        inHub,
+        'counts:\n  - { key: projects, tab: true }\n',
+        [['2:', MAP]]
+    ],
+    [
+        'audit.required_sections as a map in a hub',
+        inHub,
+        'audit:\n  required_sections:\n    x: { file: README.md, heading: Results, folders: [] }\n',
+        [['3:', LIST]]
+    ],
+    [
+        'settings.boards as a list in a workspace file',
+        inWorkspace,
+        'settings:\n  boards:\n    - { key: b, label: B }\n',
+        [['3:', MAP]]
+    ],
+    ['boards as a map in layout.yml', inLayout, 'boards:\n  b: { label: B }\n', []],
+    [
+        "a reader row's params as a map in behavior.yml",
+        inBehavior,
+        'literature:\n  sources:\n    - key: x\n      params: { q: v }\n',
+        []
+    ],
+    ['counts as a map in layout.yml', inLayout, 'counts:\n  projects: { tab: true }\n', []],
+    [
+        'links as a list in behavior.yml',
+        inBehavior,
+        "links:\n  - { key: doi, address: 'https://doi.org/{id|path}' }\n",
+        []
+    ],
+    ['read_limits as a map in behavior.yml', inBehavior, 'read_limits:\n  next: 300\n', []],
+    [
+        'collections as a list in a hub',
+        inHub,
+        'collections:\n  - { key: notes, file: .oculus/data/notes.yml }\n',
+        []
+    ],
+    ['counts as a map in a hub', inHub, 'counts:\n  projects: { tab: true }\n', []],
+    [
+        'audit.required_sections as a list in a hub',
+        inHub,
+        'audit:\n  required_sections:\n    - { file: README.md, heading: Results, key: status.line, folders: [] }\n',
+        []
+    ],
+    [
+        'settings.boards as a map in a workspace file',
+        inWorkspace,
+        'settings:\n  boards:\n    b: { label: B }\n',
+        []
+    ],
+    [
+        'stages as a list in a hub',
+        inHub,
+        'stages:\n  - { key: drafting, label: Drafting }\n',
+        [['2:', MAP]]
+    ],
+    ['categories as a map in a hub', inHub, 'categories:\n  x: { label: X }\n', [['2:', LIST]]],
+    [
+        'a leads_fit value that is a list in a hub',
+        inHub,
+        'leads_fit:\n  strong: [a, b]\n',
+        [['2:', null]]
+    ],
+    [
+        'leads_fit as a list in a hub',
+        inHub,
+        'leads_fit:\n  - { key: strong, value: green }\n',
+        [['2:', MAP]]
+    ],
+    [
+        'settings.text as a list in a workspace file',
+        inWorkspace,
+        'settings:\n  text:\n    - { key: a.b, value: x }\n',
+        [['3:', MAP]]
+    ],
+    ["stages taking oculus's word out in a hub", inHub, 'stages:\n  drafting: null\n', []],
+    [
+        "categories taking oculus's row out in a hub",
+        inHub,
+        'categories:\n  - { key: x, removed: true }\n',
+        []
+    ]
+];
+
+describe('the schema of a keyed family', () => {
+    it.each(FAMILIES)('places the problems of %s on their lines', (_case, read, text, expected) => {
+        expect(read(text).map(placed)).toEqual(expected);
     });
 });

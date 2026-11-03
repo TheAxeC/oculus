@@ -24,21 +24,6 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 
 ```yaml
 dispatch:           # steps in flight, up to six (Z632)
-- step: O136
-  base: 175987c9b
-  worktree: .agents/worktrees/migration-O136
-  executor: agent
-  worker: claude:opus
-  session_id: a0d181eb863e4804e
-  model: claude-opus-5-5
-  launched: 2026-11-03
-  report: .scratch/migration/agents/reviews/O136-report.md
-  builder_usage: first run 222338 tokens, 92 tool uses, 20 min 37 s; round 1 331534 tokens, 92 tool uses, 15 min 14 s
-  reviewer_report: ".scratch/migration/agents/reviews/O136-refuter.md (aeaee453e5f924a28, claude-opus-5-5, 243963 tokens, 70 tool uses, 15 min 44 s); over round 1: a7092f0eec696b116, claude-opus-5-5, running"
-  round: 1
-  brief_check: .scratch/migration/agents/reviews/O136-brief-check.md (a9fae723e1ab7ad1b, claude-opus-5-5, 236992 tokens, 68 tool uses, 14 min 46 s)
-  shared_paths: docs/HELP.md and docs/diagrams (this step writes HELP.md line 570, O133 lines 400-410 and O132 lines 588-596, far apart; each landing regenerates the diagrams)
-  landing: not-started
 - step: O135
   brief_check: "running: a283b3d0c29ce5214"
   landing: preparing
@@ -795,6 +780,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-11-03 (O136 landed). O136, the editor holds a keyed family to the form its reader takes, landed (booking in plan.md under O136, `agents/reviews/O136-landing.md`): round 1's item 1, handed back unbuilt, was built at landing as the conditional schema `heldToForm` (ruling "O136 editor message"), so the editor says oculus's words for a map written as a list or a list written as a map and its own words for any other wrong type; the first gate run was red on two over-wide comment lines and an `any` assignment of that fix, fixed, and the second passed; the look on 8797 shows "collections must be a list, not a map". O135's brief check a283b3d0c29ce5214 reported during the landing and is saved after its commit. In flight (1 of 6): O135 (brief check reported). Queued: O137, O138, O139. Open items: none.
 - 2026-11-03 (O132 landed; open item 656). O132, the words of every hub held to the vocabulary check, landed (booking in plan.md under O132, `agents/reviews/O132-landing.md`): the review over round 1 found two report figures (R1, R2), fixed at landing, and a here-document redirect into the report (R3), recorded under "Unapproved builder scripts"; G13's Test line names the new describe; the gate's `vitest slow` was red on two timeouts in `hub-portfolio.test.ts`, which passes alone and takes no longer with the step; main equals the gate under `cmp`. The look found that a second hub's finding is drawn with no hub chip, which predates the step: open item 656. In flight (1 of 6): O136 (round 1). Queued: O135, O137, O138. Open items: 655, 656.
 - 2026-11-03 (O136 round 1 sent; O132 reviewed over round 1). O136's review aeaee453e5f924a28 (claude-opus-5-5), `agents/reviews/O136-refuter.md`: items 1, 3 and 4 hold, every case met; Spec 1 (the editor's message names the JSON type, not a map or a list), Standards 1 (`references.ts:11-13`), Standards 2 (the test head comment), Behaviour 1 (completion in the refused form lost, unstated) and the report's `file:line` figures. Repair round 1 (`agents/briefs/O136-round-1.md`) sends all five, the path list widened to `engine.ts`, `json.ts` and `references.ts`; snapshot `.agents/worktrees/migration-O136-round-1`. O132's review over round 1 acbc1234def53be42 (claude-opus-5-5), appended to `agents/reviews/O132-refuter.md`: every round item holds but R1 (the report's "twelve" for thirteen red tests), R2 (the report's line counts of `vocab.test.ts`) and R3 (a here-document redirect into the report, under the ruling "Unapproved builder scripts"), all for landing. In flight (2 of 6): O132 (landing next), O136 (round 1). Queued: O135, O137, O138. Open items: 655.
 - 2026-11-03 (O133 landed; open item 655). O133, one front-matter pattern for every Markdown reader, landed (booking in plan.md under O133, `agents/reviews/O133-landing.md`): the review over round 1 found no defect in a round item; its findings fixed at landing (the report's figures, four sentences of the same claim, `withoutMark` in place of a second byte-order mark helper, HELP for lone CR line ends), and the look's (HELP:406 and G150 name the Outline the Markdown server draws, which keeps a byte-order mark); G150 added; the gate passed every command and main equals the gate under `cmp`. Rulings 654 (a), step O137, and Interview status, step O138, booked in plan.md. Open item 655 raised (a collection's `status` renamed `stage`). O132's review over round 1, acbc1234def53be42, and O136's review, aeaee453e5f924a28, have reported; both are saved after this landing's commit. In flight (2 of 6): O132 (reviewed over round 1; landing next), O136 (reviewed; repair round next). Queued: O135, O137, O138. Open items: 655.

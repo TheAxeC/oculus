@@ -70,7 +70,7 @@ No case of the brief's rules was found wrong by the first run, so no case was ha
 | 2. head comment, doc comment, inner comment; test head comment; grep of item 2 | DONE | the greps in "Greps" below; text of the comments in `options.ts:1-29`, `:304-312`, `:328-330`, test file `:16-24` |
 | 3. `docs/HELP.md:570` sentence | DONE | `git diff --numstat` printed `1<tab>1<tab>docs/HELP.md`; the sentence is quoted in "Before and after" |
 | 4. the test, describe 'the schema of a keyed family', and the `boardWith` rewrite | DONE | unchanged code: `Tests  9 failed | 16 passed | 18 skipped (43)` with `-t "the schema of a keyed family"`; after: every row passes (verbose run above) |
-| 5. case-run of yaml-language-server for C1 and C6 | DONE, with the wording finding | `YLS C1 => ["2: Incorrect type. Expected \"object\"."]`, `YLS C6 => ["2: Incorrect type. Expected \"array\"."]` |
+| 5. case-run of yaml-language-server for C1 and C6 | NOT DONE by the builder, the message naming the map and the list; built at landing by the orchestrator (the landing report) | `YLS C1 => ["2: Incorrect type. Expected \"object\"."]`, `YLS C6 => ["2: Incorrect type. Expected \"array\"."]` |
 | Verify 1, the four test files | DONE | `npx vitest run tests/data/sources/config/catalog/options-schema.test.ts tests/checks/config/config-folder.test.ts tests/data/sources/config/catalog/options.test.ts tests/data/sources/config/workspace-layer.test.ts`: `Test Files  4 passed (4)` / `Tests  94 passed | 2 skipped (96)` |
 | Verify 2, `npm run diagrams` then `npm run test:quick` | DONE | `test:quick: 57.7 s; every command passed` |
 | Verify 3, character-set check | DONE | `LC_ALL=C perl -ne 'print "$ARGV:$.:$_" if /[^\x20-\x7E\n]/; close ARGV if eof' src/lib/data/sources/config/catalog/schemas/options.ts tests/data/sources/config/catalog/options-schema.test.ts docs/HELP.md docs/diagrams/layer-data.dot` printed nothing, `ascii exit 0`; the same over `docs/diagrams/layer-data.svg` printed nothing, `svg ascii exit 0` |
@@ -343,15 +343,16 @@ and in `entrySchema`: `familySchema(entry, lists, defs, OWN_READER.includes(path
 ## Before and after, what a user sees
 
 - The editor (yaml-language-server over the served schema), from the case-run of item 5:
-  - `config/defaults/layout.yml` with `boards:\n  - { key: b, label: B }\n`: before, no mark; after, a mark on line 2, `Incorrect type. Expected "object".`
-  - a hub's `.oculus/config.yml` with `collections:\n  notes: { file: .oculus/data/notes.yml }\n`: before, no mark; after, a mark on line 2, `Incorrect type. Expected "array".`
+  - `config/defaults/layout.yml` with `boards:\n  - { key: b, label: B }\n`: before, no mark; after the builder's work, a mark on line 2, `Incorrect type. Expected "object".`; after the fix at landing, `boards must be a map, not a list`.
+  - a hub's `.oculus/config.yml` with `collections:\n  notes: { file: .oculus/data/notes.yml }\n`: before, no mark; after the builder's work, a mark on line 2, `Incorrect type. Expected "array".`; after the fix at landing, `collections must be a list, not a map`.
+  - after the fix at landing, `boards:` empty, a text or a number keeps the editor's own `Incorrect type. Expected "object".`, and `collections:` empty or a text `Incorrect type. Expected "array".` (the landing report's probe runs).
   - the same families in their reader's form: no mark, before and after.
 - The look at landing: open, on a scratch server started from this step's checkout, a hub's `.oculus/config.yml` in the editor and write `collections:` as a map of one entry, and `config/defaults/layout.yml` with `boards:` as a list of one row. Each should show a warning squiggle on the line of the first key or row with the messages above, where the unchanged tree shows none; `collections:` as a list and `boards:` as a map should show none.
 - Completion, from the case-run's `COMPLETE` lines (yaml-language-server's `doComplete` at a cursor in a row or entry, the program run with `O136_ROOT` set to the base copy for before and with no `O136_ROOT` for after; output quoted in "Repair round 1"):
   - in `config/defaults/layout.yml`, on a row of `boards:` written as a list, completion offered the 13 board fields and `key` before and offers nothing after;
   - in a hub's `.oculus/config.yml`, on an entry of `collections:` written as a map, completion offered the 17 entry fields before and offers nothing after;
   - in the reader's form (`boards:` as a map, `collections:` as a list) completion is the same before and after: the 13 board fields, and the 17 entry fields and `key`.
-- Hover in a family written in the form its reader refuses is not verified.
+- Hover, measured by the review over round 1 (`hover.mts`): on a field of a family written in the form its reader refuses, hover gives no text after the step, where before it gave the field's description (`boards` as a list in layout.yml, `collections` as a map in a hub); in the reader's form hover is the same before and after.
 - The Settings view and the Findings view are unchanged: the Settings view reads the catalog, and the hub check (`run.ts`) checks only manifests and hub data files against a schema.
 
 ## Anything in the brief that was wrong or impossible
@@ -362,7 +363,7 @@ and in `entrySchema`: `familySchema(entry, lists, defs, OWN_READER.includes(path
 
 - A hub or workspace file that today writes a family in the form its reader refuses will now show an editor mark where it showed none. That is the step's purpose; whether the real hub's files hold such a text was not checked (the hub's folders are not read by this step), not verified.
 - The case-run drives the language service in-process, not the server binary over stdio; the validator and schema resolution are the same module the server uses, but the server's own settings handshake is not exercised.
-- Completion on a row or entry of a family written in the form its reader refuses offers nothing after the change (measured, "Before and after"); hover there is not verified.
+- Completion on a row or entry of a family written in the form its reader refuses offers nothing after the change, and hover gives no text there (both measured, "Before and after").
 
 ## Repair round 1
 

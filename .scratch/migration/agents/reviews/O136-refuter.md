@@ -89,11 +89,11 @@ $ npx vitest run tests/data/sources/config/catalog/options-schema.test.ts --repo
       Tests  43 passed (43)
 
 $ git diff 175987c9b --numstat
-1	1	docs/HELP.md
-1	1	docs/diagrams/layer-data.dot
-1	1	docs/diagrams/layer-data.svg
-29	14	src/lib/data/sources/config/catalog/schemas/options.ts
-154	3	tests/data/sources/config/catalog/options-schema.test.ts
+1<tab>1<tab>docs/HELP.md
+1<tab>1<tab>docs/diagrams/layer-data.dot
+1<tab>1<tab>docs/diagrams/layer-data.svg
+29<tab>14<tab>src/lib/data/sources/config/catalog/schemas/options.ts
+154<tab>3<tab>tests/data/sources/config/catalog/options-schema.test.ts
 $ wc -l options.ts options-schema.test.ts docs/HELP.md
 464 / 367 / 618
 $ grep -rn "familySchema" src docs tests config --exclude=local.yml
@@ -206,3 +206,235 @@ none.
 - G13's Test line names the new describe at landing, as the brief says. That is the orchestrator's work.
 
 Reviewer usage: aeaee453e5f924a28, claude-opus-5-5, 243963 tokens, 70 tool uses, 15 min 44 s.
+
+## Repair round 1, refuted
+
+A page this report cites (the rules file, a brief) is named by its section. A finding in code keeps its `file:line`. Reviewer probes are print-only and sit in `/private/tmp/o136r2/`, outside the worktree.
+
+## Verification lines (rerun by the reviewer, from the worktree root)
+
+```
+$ ls docs/adr
+ls: docs/adr: No such file or directory
+
+$ uptime
+19:29  up 1 day,  3:31, 1 user, load averages: 3.64 5.31 7.19
+$ npx vitest run tests/data/sources/config/catalog/options-schema.test.ts tests/checks/config/config-folder.test.ts tests/data/sources/config/catalog/options.test.ts tests/data/sources/config/workspace-layer.test.ts --reporter=dot
+ Test Files  4 passed (4)
+      Tests  94 passed | 2 skipped (96)
+   Start at  19:29:06
+   Duration  21.43s (transform 12.14s, setup 0ms, import 17.99s, tests 14.63s, environment 1ms)
+$ uptime
+19:29  up 1 day,  3:32, 1 user, load averages: 4.53 5.38 7.16
+
+$ npx vitest run tests/data/sources/config/catalog/options-schema.test.ts --reporter=verbose
+25 rows matching "the schema of a keyed family > places", all passed
+ <check mark> |unit| ... > the schema of a collections entry > passes the .oculus/config.yml Make Folder a Hub writes with every collection ticked 59ms
+ <check mark> |unit| ... > the schema of a multi > places the problems of a board's tier in layout.yml on their lines 12ms
+ Test Files  1 passed (1)
+      Tests  43 passed (43)
+
+$ npm run diagrams; npm run test:quick
+(not run: the orchestrator's prompt says not to run test:quick, and npm run diagrams writes docs/diagrams/ in the worktree)
+$ npx vitest run tests/checks/diagrams/diagrams.test.ts --testTimeout=120000 --reporter=dot     (a file the step does not change; load averages 4.88 5.00 6.58 before, 5.36 5.10 6.56 after)
+ Test Files  1 passed (1)
+      Tests  47 passed (47)
+
+$ LC_ALL=C perl -ne 'print "$ARGV:$.:$_" if /[^\x20-\x7E\n]/; close ARGV if eof' docs/HELP.md docs/diagrams/layer-data.dot docs/diagrams/layer-data.svg src/lib/data/sources/config/catalog/schemas/options.ts src/lib/data/sources/config/catalog/schemas/references.ts tests/data/sources/config/catalog/options-schema.test.ts .scratch/migration/agents/reviews/O136-report.md; echo exit=$?
+exit=0
+$ sh utils/unused-exports.sh > /private/tmp/o136r2/unused.txt; diff ../O136-base/unused-exports.txt /private/tmp/o136r2/unused.txt; echo diff=$?
+diff=0        (base list 335 lines)
+
+$ git status --short
+ M docs/HELP.md
+ M docs/diagrams/layer-data.dot
+ M docs/diagrams/layer-data.svg
+ M src/lib/data/sources/config/catalog/schemas/options.ts
+ M src/lib/data/sources/config/catalog/schemas/references.ts
+ M tests/data/sources/config/catalog/options-schema.test.ts
+?? .scratch/migration/agents/briefs/O136-round-1.md
+?? .scratch/migration/agents/reviews/O136-refuter.md
+?? .scratch/migration/agents/reviews/O136-report.md
+$ git diff 175987c9b --numstat
+1<tab>1<tab>docs/HELP.md
+1<tab>1<tab>docs/diagrams/layer-data.dot
+1<tab>1<tab>docs/diagrams/layer-data.svg
+29<tab>14<tab>src/lib/data/sources/config/catalog/schemas/options.ts
+4<tab>2<tab>src/lib/data/sources/config/catalog/schemas/references.ts
+155<tab>3<tab>tests/data/sources/config/catalog/options-schema.test.ts
+$ wc -l options.ts references.ts options-schema.test.ts docs/HELP.md
+464 / 174 / 368 / 618
+$ diff ../O136-base/.../engine.ts src/.../engine.ts; echo engine=$?   ->  engine=0
+$ diff ../O136-base/.../json.ts src/.../json.ts; echo json=$?         ->  json=0
+$ diff -rq over src, tests, config (-x local.yml), docs, utils against ../O136-base
+only options.ts, references.ts, options-schema.test.ts, docs/HELP.md, layer-data.dot, layer-data.svg differ
+
+Round delta, `diff -u` of each files.txt snapshot against the worktree:
+docs/HELP.md, layer-data.dot, layer-data.svg, options.ts: no difference
+options-schema.test.ts: only the head comment lines 20-24 (the item 3 sentence)
+references.ts (not in files.txt): its whole `git diff 175987c9b` hunk, lines 12-15
+
+$ cmp .scratch/migration/agents/reviews/O136-report.md /Users/axelfaes/workspace/oculus/.scratch/migration/agents/reviews/O136-report.md; echo cmp=$?
+cmp=0
+
+$ grep -rn "familySchema" src docs tests config --exclude=local.yml
+options.ts:313, :351, :399
+$ grep -rni "keyed famil" src docs config tests --exclude=local.yml
+references.ts:13; options.ts:24, :26, :306, :307, :329; options-schema.test.ts:16, :238, :364
+$ grep -n "function boardWith\|function placed\|^const FAMILIES\|^describe('the schema of a keyed" options-schema.test.ts
+166, 229, 241, 364
+$ diff ../O136-base/tests/.../options-schema.test.ts tests/.../options-schema.test.ts | grep -E '^[0-9]'
+16c16,24 / 157c165 / 159c167 / 214a223,366
+$ git diff 175987c9b -U0 -- src tests docs/HELP.md | grep '^+' | grep -v '^+++' | grep -niE "before|used to|no longer|still|always has been|always had|as before|previously|the step adds|after this package|keep|O1[0-9][0-9]|20[0-9][0-9]-"; echo grep=$?
+grep=1
+(comment widths: references.ts:11-15 are 98, 99, 95, 96, 57 columns; options-schema.test.ts:16-24 are 97 to 100, last 76)
+
+$ npx tsx <scratch>/o136build/cases.mts > /private/tmp/o136r2/after.txt     (the builder's case-run, after)
+exit=0; every line equal to the report's "Item 4" after-blocks: C1 to C9 one checker problem naming the form, YLS C1 to C9 `Incorrect type. Expected "object".` / `"array".`, the four "neither form" lines, and
+COMPLETE layout boards list row => (none)
+COMPLETE layout boards map row => cards,chips,columns,forms,glyph,hub,label,label_mode,match,role,search,stages,tier
+COMPLETE hub collections list row => about,awaiting,band_positions,band_teaching,dissemination,dissemination_skip,file,glyph,group,key,label,lead_applications,open_badge,order,primary_key,registry,tasks,ticker
+COMPLETE hub collections map row => (none)
+$ O136_ROOT=/Users/axelfaes/workspace/oculus/.agents/worktrees/O136-base npx tsx <scratch>/o136build/cases.mts > /private/tmp/o136r2/before.txt   (before)
+exit=0; C1 to C9 => []; YLS C1, C6, C9 => []
+COMPLETE layout boards list row => cards,chips,columns,forms,glyph,hub,key,label,label_mode,match,role,search,stages,tier
+COMPLETE layout boards map row => cards,chips,columns,forms,glyph,hub,label,label_mode,match,role,search,stages,tier
+COMPLETE hub collections list row => about,...,key,...,ticker   (the 17 entry fields and key)
+COMPLETE hub collections map row => the 17 entry fields without key
+(equal to the report's before-block)
+$ ps -ef | grep -E "quick.mjs|vitest" | grep "migration-O136" | grep -v grep; echo ps=$?
+ps=1
+```
+
+Reviewer's own probes over item 1 (print only, schemas changed in memory, nothing written to the tree):
+
+```
+$ npx tsx /private/tmp/o136r2/optB.mts    (the ruled form: errorMessage on the typed node; "YLS A" here is that form)
+boards other form | YLS A => ["2: boards must be a map, not a list"] | YLS served => ["2: Incorrect type. Expected \"object\"."]
+boards a text | YLS A => ["1: boards must be a map, not a list"] | YLS served => ["1: Incorrect type. Expected \"object\"."]
+boards a number | YLS A => ["1: boards must be a map, not a list"] | YLS served => ["1: Incorrect type. Expected \"object\"."]
+boards empty | YLS A => ["1: boards must be a map, not a list"] | YLS served => ["1: Incorrect type. Expected \"object\"."]
+hub collections a text | YLS A => ["1: collections must be a list, not a map"] | YLS served => ["1: Incorrect type. Expected \"array\"."]
+hub collections empty | YLS A => ["1: collections must be a list, not a map"] | YLS served => ["1: Incorrect type. Expected \"array\"."]
+
+$ npx tsx /private/tmp/o136r2/optA.mts    (option A: if {type: other}, then {type: form, errorMessage}, else {type: form, items/additionalProperties/properties}; ajv built as check.ts builds it, ANNOTATIONS plus errorMessage, logger captured)
+served boards keys: type,additionalProperties,default,description type "object"
+served collections keys: type,items,default,description type "array"
+boards other form | YLS A => ["2: boards must be a map, not a list"] | YLS served => ["2: Incorrect type. Expected \"object\"."] | checker A => ["2: boards must be a map, not a list"] (same as served)
+boards a text | YLS A => ["1: Incorrect type. Expected \"object\"."] | YLS served => same | checker A => ["1: boards must be a map, not a string"] (same as served)
+boards a number | YLS A => ["1: Incorrect type. Expected \"object\"."] | YLS served => same | checker A => ["1: boards must be a map, not a number"] (same as served)
+boards empty | YLS A => ["1: Incorrect type. Expected \"object\"."] | YLS served => same | checker A => ["1: boards must be a map, not null"] (same as served)
+boards right form | [] | [] | [] (same as served)
+boards right form bad field | YLS A => ["2: Property nonesuch is not allowed."] | same | checker A => ["2: key boards.b.nonesuch is not declared by the schema of this file"] (same as served)
+boards right form bad tier | YLS A => ["4: Value is not accepted. Valid values: \"research\", \"personal\", \"software\"."] | same | checker A => ["4: boards.b.tier does not fit the schema of this file"] (same as served)
+hub collections other form | YLS A => ["2: collections must be a list, not a map"] | YLS served => ["2: Incorrect type. Expected \"array\"."] | checker A => ["2: collections must be a list, not a map"] (same as served)
+hub collections a text / empty | YLS A => ["1: Incorrect type. Expected \"array\"."] | same | checker A same as served
+hub collections right form / bad field | [] / ["2: Property nonesuch is not allowed."] | same | checker same as served
+complete boards map row | A => cards,...,tier (13) | served => the same
+complete boards list row | A => (none) | served => (none)
+complete collections list row | A => the 17 entry fields and key | served => the same
+complete collections map row | A => (none) | served => (none)
+hover boards key / board label / collections key / collection file | A => equal to served on all four
+ajv warnings: (none)
+$ npx tsx /private/tmp/o136r2/optA2.mts   (option A on a hub's stages and categories after withShapes, a reader row's params in behavior.yml, a workspace's settings.boards)
+stages other form | YLS A => ["2: stages must be a map, not a list"] | served => ["2: Incorrect type. Expected \"object\"."] | checker same as served
+stages null word | [] | [] | [] ; stages empty | YLS A => ["1: Incorrect type. Expected \"object\"."] | same | checker same
+categories other form | YLS A => ["2: categories must be a list, not a map"] | served => ["2: Incorrect type. Expected \"array\"."] | checker same
+categories removed row | [] | [] | [] ; categories a text | `Incorrect type. Expected "array".` both | checker same
+params other form | YLS A => ["5: params must be a map, not a list"] | served => ["5: Incorrect type. Expected \"object\"."] | checker A => ["5: literature.sources[0].params must be a map, not a list"] (same as served)
+params right form [] ; params a text `Incorrect type. Expected "object".` both | checker same
+ws boards other form | YLS A => ["3: settings.boards must be a map, not a list"] | served => ["3: Incorrect type. Expected \"object\"."] | checker same
+ws boards null entry [] ; ws boards empty `Incorrect type. Expected "object".` both | checker same
+ajv warnings: (none)
+$ npx tsx /private/tmp/o136r2/optA3.mts   (completion at an empty family under option A)
+complete under empty boards | A => (none) | served => (none)
+complete under empty collections | A => (none) | served => (none)
+complete value of collections | A => Default value | served => Default value
+complete value of boards | A => Default value | served => Default value
+ajv warnings: (none)
+
+$ npx tsx /private/tmp/o136r2/hover.mts, after and with O136_ROOT=../O136-base before
+AFTER:  boards list row, label => ""     boards map row, label => "the dotted key of the text-catalog word ..."
+        collections map entry, file => ""    collections list entry, file => "the YAML file of the collection, relative to the hub ..."
+BEFORE: all four rows give the field's description
+$ npx tsx /private/tmp/o136r2/textval.mts
+ws text value a list => ["3: settings.text.views.settings must be a text, not a list"]
+```
+
+Read of yaml-language-server 1.24.0, `node_modules/yaml-language-server/out/server/src/languageservice/parser/schemaValidation/baseValidator.js`: `:427-450`, both branches of the `type` check write `message: schema.errorMessage || ...` whenever `matchesSchemaType` fails, and `matchesSchemaType` (`:340-349`) compares the node's own type, so a null, a text and a number fail an `object` or `array` type exactly as the other form does. `:556-588`, `if/then/else` validates `if` on its own result and runs `then` only when `if` has no problem, else `else`. `errorMessage` also replaces the messages at `:983` (required), `:1012`, `:1056` and `:1132` (property not allowed) of the same node.
+
+## Verdicts
+
+Items of the brief's "What to build", for the whole diff since the base:
+
+- 1: holds. `familySchema` (`options.ts:313-343`), `entrySchema` passing `entry.default` (`:399`), `ownSchema` passing none (`:351`); case-run C1 to C9 one problem each, C10 none.
+- 2: holds. The three comments of `options.ts` (`:21-29`, `:304-312`, `:328-330`) as before the round; `references.ts:11-15` now true of both forms (item 2 of the round); the test's head comment `:16-24` says what the rows give (item 3 of the round).
+- 3: holds. `docs/HELP.md:570`, unchanged by the round.
+- 4: holds. Describe 'the schema of a keyed family', 25 rows, all passing; `boardWith` at `:165-168`; 'the schema of a multi' passes.
+- 5: violated, Spec 1. The editor's message for a list where a map is taken is `Incorrect type. Expected "object".` and the reverse `Incorrect type. Expected "array".`.
+
+Cases of the brief's "Cases":
+
+- C1 to C9: met, each one problem on the brief's line naming the form (case-run after), `[]` before (case-run with `O136_ROOT` at the base copy); test rows pass.
+- C10: met, the nine texts `[]` before and after.
+- C11: met, one problem each on line 2, before and after.
+- C12: met, `config-folder.test.ts` passes in the four-file run.
+- C13: met, the Make Folder a Hub row passes (verbose run).
+- C14: met, `C14 => []` before and after.
+- C15: met, the three problems as the brief gives, before and after.
+- C16: met, `[]` for both, before and after.
+
+Items of the round brief:
+
+- 1: violated, unbuilt, Spec 1. The hand-back's reason reproduces: by the read of `baseValidator.js:427-450` and by `optB.mts`, the ruled form shows "boards must be a map, not a list" for a text, a number and an empty `boards:`.
+- 2: holds. `references.ts:11-15` reads: for a family in the reader's form the editor and the index cover the same places, and for one in the other form the index still follows its fields while the editor marks the family and checks none of them. `visitFamily` (`scan.ts:194-212`) follows a seq and a map alike. The editor checks no field of a family in the other form, because the map form carries no `items` and the list form no `additionalProperties`, so C1 to C9 each give one mark.
+- 3: holds. `options-schema.test.ts:20-24` names the no-problem rows (the reader's form, a null word, a removed row) and the problems of the key/value family. The ruling's wording, "gives the problem of its value ... and no form problem", is false for the rows `leads_fit` as a list and `settings.text` as a list, so the builder added that the family written as a list gives the form problem. That makes the sentence true of the table, and it does not reach beyond the finding. A `text` value written as a list gives its value's problem (`textval.mts`), so the sentence also holds for `text`.
+- 4: holds. "Before and after, what a user sees" (`O136-report.md:350-354`) and "Limitations" (`:365`) give the measured completion change, and the COMPLETE lines reproduce before and after. Hover is still "not verified", which the round allows.
+- 5: holds. Every `file:line` and line count the round section gives matches the reviewer's greps, the `diff` hunks, and the `wc -l` above.
+
+## 1. Spec
+
+- `src/lib/data/sources/config/catalog/schemas/options.ts:325` and `:328`, the two forms `familySchema` returns, "return { type: 'array', items: recordSchema(fields, lists, defs, loose) };" / "const schema: JsonSchema = { type: 'object', additionalProperties: member };", with `O136-report.md:3` and `:383-414`. What is wrong: round item 1 and brief item 5 are not built, so the editor still names the JSON type. The cause the builder gives for the stop is right: the ruled form shows a sentence that is false for a text, a number and an empty family (`optB.mts`, above). That makes a premise of the ruling wrong, which the rules file treats as a stop. The hand-back has two gaps in what it gives the orchestrator to rule on:
+  - (a) Option A works as the builder says, on every shape the reviewer could build in memory. That covers `boards`, a hub's `collections`, `stages` and `categories` after `withShapes`, a reader row's `params`, a workspace's `settings.boards`, a null word, a removed row and a `{ projects: null }` entry. Under it:
+    - the editor shows the sentence only for the other form, and keeps its own wording for null, a text and a number;
+    - completion and hover in the reader's form are the same as the served schema's, and so is completion at an empty family;
+    - ajv, with `errorMessage` registered beside `ANNOTATIONS`, compiles with no strict warning;
+    - oculus's checker gives the same lines on all 24 texts (`optA.mts`, `optA2.mts`, `optA3.mts`).
+
+    Not checked are the production edits A needs: `withOverrides` (`options.ts:377-383`) and `shapedSchema` with the `text` branch of `withShapes` (`engine.ts:121-200`), which read and set the structural keywords at the top. No other reader of a family's structural keywords was found (`grep -rn "\.additionalProperties\|\.items\b\|\.properties\b"` over `catalog/schemas/`, `snapshot/schema/` and `machine/lsp`). Also, the `then` message of a family field names the field alone ("params must be a map, not a list"), while the checker names its path (`literature.sources[0].params`), since one schema serves every row.
+  - (b) The options list leaves out a smaller option that is also true. Option D: `errorMessage` on the typed node, as ruled, worded by the catalog's existing `findings.config.shape_type`, `'{0} must be {1}'` (`config/text/findings.yml:175`, read by `src/lib/data/shapes/shape-issues.ts:83`). The editor would say "boards must be a map" or "collections must be a list", which is true for every value the `type` refuses, because yaml-language-server shows it for every mismatch (`baseValidator.js:432`, `:444`). It needs no change to the structure of the served schema and none to `withOverrides`, `shapedSchema` or `withShapes`. The other messages `errorMessage` replaces on the same node (`:983`, `:1012`, `:1056`, `:1132`) do not arise there: neither form carries `required`, and the map form's `additionalProperties` is a schema, never `false`. That is a reading only, not run. Cons: the editor drops the checker's "not a list" clause and departs from the ruling's `findings.schema.type`. A is the option that matches oculus's checker word for word. D is the smaller option that is still true, and it is not the lazy one, since it closes the finding. C leaves the finding open and is the lazy one.
+
+  Failure scenario: a hub owner writes `collections:` as a map in `.oculus/config.yml`. The editor shows `Incorrect type. Expected "array".`, so a reader who knows oculus's files from Help, which says "list" and "map", is not told in those words to write a list of rows. Verdicts: brief item 5 violated, round item 1 violated (unbuilt).
+
+## 2. Proof
+
+- `O136-report.md:73`, the DONE / NOT DONE row of brief item 5: "| 5. case-run of yaml-language-server for C1 and C6 | DONE, with the wording finding |". What is wrong: the rules file's "Report" section says never to present partial work as complete. Item 5's clause on the message naming the map and the list is unmet, and the report's own first line (`:3`) and Spec 1 say so, but the row says DONE. Failure scenario: an orchestrator booking from the table reads item 5 as done and ticks the step, while the first line says it is not. Verdict: brief item 5 (Spec 1).
+
+## 3. Standards
+
+- `O136-report.md:560`: "A second `npm run test:quick` was started by mistake in the command that ran the character-set check (`npm run test:quick 2>&1 >/dev/null | head -0`) ... It is a run of the list beyond the one the rules file allows." What is wrong: the rules file's "Token discipline" says to run the list once after the last change, and that a run of the list beyond what it allows is a finding of the review. The round brief asks for `npm run test:quick` once. The builder ran the list once, and the result is quoted (`:546-557`, "test:quick: 138.5 s; every command passed"). The second run is an extra whole-list run (prettier, eslint, svelte-check, vitest, vitest checks, vitest slow), with its output thrown away and its end unknown. Nothing of it is running now (`ps=1` above). It has no effect on the diff. Failure scenario: on a machine where several suites run at once (load 7.22 rising to 15.37 across the first run, `:546`), a second run of about 140 s of the whole list raises the load under other agents' timed tests. That is the cost the rule exists to prevent. Verdict: none of the brief's items; a finding against the round.
+
+## 4. Behaviour
+
+none. For the look at landing, the reviewer measured hover (`hover.mts`), which the report leaves "not verified":
+- in a family written in the form its reader refuses, hover on a field returns an empty text after the change, where before it gave the field's description (`boards` as a list in layout.yml, `collections` as a map in a hub);
+- in the reader's form, hover is the same before and after.
+
+## Declined to judge
+
+- `npm run diagrams` and `npm run test:quick`: not run. The prompt bars test:quick, and diagrams writes in the worktree. `diagrams.test.ts`, run alone, passed 47 of 47.
+- Option A as production code: no build of it is in the tree, so the edits it needs in `withOverrides`, `shapedSchema` and `withShapes`, and the served schema of every keyed family other than the six tried in memory, are not judged. The builder's claim that structural keywords left at the top beside `if` give ajv strict warnings was not rerun. Only the `else` placement was run, and it gives none.
+- Option D: not run; judged from the read of `baseValidator.js` and the `optB.mts` run, which shows that an `errorMessage` on the typed node is shown for every mismatch.
+- The builder's quoted editor lines of its removed build (`O136-report.md:388-402`) cannot be rerun, since that build is not in the tree. `optB.mts` reproduces the same lines for `boards` and `collections`.
+- Whether the second `npm run test:quick` ran to its end: not knowable from the tree.
+- Whether every file edit was made with the Edit and Write tools: not visible from the diff.
+- G13's Test line naming the new describe is the orchestrator's work at landing.
+
+Usage: a7092f0eec696b116, claude-opus-5-5, 206818 tokens, 46 tool uses, 9 min 34 s
+
+## Closed (the findings of the run over repair round 1, the last round)
+
+- Spec 1 (round item 1 and brief item 5 unbuilt): fixed at landing by the orchestrator as option A, the conditional schema, per the booked ruling "O136 editor message" (`plan.md:3501`). The reviewer's option D (the message `findings.config.shape_type`, "boards must be a map", on the plain form) is true for every value but gives the editor words that differ from oculus's checker; A gives the checker's words, so A stands.
+- Proof 1 (the report's DONE row of brief item 5): fixed at landing in the report.
+- Standards 1 (a second `npm run test:quick` beyond the one the rules file allows): recorded as a breach in the booking; nothing of it is in the diff, and no fix applies.
+- Behaviour (none; the reviewer's hover measure): the report's "Before and after" gains the measured hover at landing: in a family written in the form its reader refuses, hover on a field gives no text after the step, and in the reader's form hover is the same before and after.
