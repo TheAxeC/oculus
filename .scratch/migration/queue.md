@@ -1,8 +1,8 @@
 In flight (1 of 6 slots in use):
-- O126 (the Sessions tab's shape), building.
+- O126 (the Sessions tab's shape), under review.
 
-Queued, in order (0 steps):
-- none.
+Queued, in order (1 step):
+- O127 (a card shows the year a paper appeared).
 
 Owed looks: none.
 

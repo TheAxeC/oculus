@@ -33,8 +33,9 @@ dispatch:           # steps in flight, up to six (Z632)
   model: claude-opus-5-5
   launched: 2026-11-03
   report: .scratch/migration/agents/reviews/O126-report.md
-  builder_usage: first run 285292 tokens, 66 tool uses, 8 min 29 s (handed back C1 and two points)
+  builder_usage: first run 285292 tokens, 66 tool uses, 8 min 29 s (handed back C1 and two points); after the cases ruling 299779 tokens, 179 tool uses, 33 min 21 s
   round: 0
+  reviewer_report: running (a5a6eef1ec6ba505c, claude-opus-5-5)
   brief_check: .scratch/migration/agents/reviews/O126-brief-check.md (a6698c519c0fa9d0a, claude-opus-5-5, 239318 tokens, 72 tool uses, 9 min 27 s)
   shared_paths: with O125, landed: `src/lib/ui/controls/heads/GroupHead.svelte` (O126 lines 57-58, O125 lines 11-20 and the removed rules) and `docs/HELP.md` (O126 lines 295 and 340-341, O125 line 571); separate lines, a simple merge at O126's landing.
   landing: not-started
@@ -174,11 +175,11 @@ Lifted 2026-09-30 by Axel's green light: the two round-1 refutations are saved, 
 Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with the three slots kept filled, open items booked and reported without ending the turn, and the order below. Before that, in force from 2026-09-29, Axel: the loop paused once D13b's reviewer and Q86c's builder were done; he then asked for Q83's landing and the slow-test work (Z64) done inline, with a report of how long each part of the verify list takes a builder. Nothing else is dispatched, no D13b landing, no Q86c review and no `/spec` Q102, until he says go. On his go the order is (Axel, 2026-09-30): `/refute` Q86c; `/spec` Q102 and its Sonnet 5.5 builder, the model check right after the launch; D13b's landing while those two run; Q88b into the slot D13b frees; Q103's look while the cluster answers.
 
 ## Open items (only what Axel must rule on; every report tells him these in plain words, decisions first, until he has ruled)
-- Open item 641 (2026-11-03), Axel's question whether the cards should show a date such as the year a paper was published. The manifest's `year` (manifest-schema.yml:60, "The year of the paper or of the project") is set in 50 of the hub's 120 manifests, in every one at the stages submitted, accepted and published; the boards already filter by it (`takes.ts:94`); no card draws it. The `public` stage flag also covers in-prep, submit-ready, submitted and revision, so the year of a paper in flight is not a publication year. (a) Recommended, a judgment: a year tag (glyph and number, tip "Year: 2025") in the facts row of the project board card and the Focus lane card, drawn only at the stages that carry both `terminal` and `public` (accepted and published), so it always reads as the year the paper appeared; a new step after O126. (b) The tag on every card whose manifest has a year; cons: 21 of the 50 read 2026 and a submitted paper's year reads as published. (c) No change; the lazy option.
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
 ## Closed items
+- Open item 641 (2026-11-03), closed by Axel the same day: (a), step O127 after O126; (c), no change, was the lazy option.
 - Open item 640 (2026-11-03), closed by Axel the same day: (a), carried by step O125 at its landing; (b), keeping it translucent, was the lazy option.
 - Open item 639 (2026-11-03), closed by Axel the same day: (a) on all three parts, step O126; each (b) was the lazy option.
 - Open item 638 (2026-11-03), closed by Axel the same day: (a), carried by step O125; (b), keeping them translucent, was the lazy option.
@@ -774,6 +775,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-11-03 (O126 under review; 641 ruled). O126's builder reported (`agents/reviews/O126-report.md`, saved in the main ledger, usage under builder_usage) and the orchestrator read the whole diff (33 tracked files, the new files whole). Its reviewer a5a6eef1ec6ba505c (claude-opus-5-5) runs. Open item 641 ruled (a): step O127 added after O126. In flight (1 of 6): O126 (under review). Queued: O127. Open items: none.
 - 2026-11-03 (O125 landed). O125 is on main (booked under O125 in `plan.md`, `agents/reviews/O125-landing.md`); `test:quick` passed in the gate and main equals the gate; ruling 640 carried out at landing; the look taken on a scratch server on 8797 from the gate, stopped after. In flight (1 of 6): O126, building under its cases ruling (`agents/briefs/O126-cases.md`). Next: O126's report, /refute O126, its round and landing. Open items: 641.
 - 2026-11-03 (O123 landed). O123 is on main (booked under O123 in `plan.md`, `agents/reviews/O123-landing.md`); `test:quick` passed in the gate and main equals the gate; the saved layout is edited. O122, O123 and O124 are all landed. In flight: none. Queued: none. Open items: 637.
 - 2026-11-03 (O124 landed). O124 is on main (booked under O124 in `plan.md`, `agents/reviews/O124-landing.md`); `test:quick` passed in the gate and main equals the gate. In flight: O123 in repair round 1, its builder acbcf929837bf5594 running. Open items: 637.
