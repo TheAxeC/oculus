@@ -4,10 +4,11 @@
 // holding only `---` that is outside a fenced code block, of any fence length, and outside an HTML
 // comment, including one that spans lines. A slide after a separator opens with its own front
 // matter when the separator is followed directly, with no blank line, by lines and a closing line,
-// the front matter rule of docs.ts, and those lines read as a YAML map with a key; lines that do
-// not (a heading and a list, which YAML reads as a comment and a sequence) are the slide's body.
-// The first slide's front matter is the file's, and is found by the same rule with the start of the
-// file standing for the separator.
+// the front matter rule of data/prose/markdown/front-matter.ts read through docs.ts's
+// splitFrontmatter, and those lines read as a YAML map with a key; lines that do not (a heading and
+// a list, which YAML reads as a comment and a sequence) are the slide's body. The first slide's
+// front matter is the file's, and is found by the same rule with the start of the file standing
+// for the separator.
 //
 // A file with only a front matter is one slide, and a file with nothing in it is none. A slide with
 // neither a front matter nor a body, such as the one a trailing separator leaves, is not a slide.

@@ -43,7 +43,8 @@ import {
     renderDocumentParts,
     type RenderedHeading
 } from '../data/prose/markdown/markdown.ts';
-import { FRONT_MATTER, scanNote, sectionOf } from '../data/prose/markdown/note-links.ts';
+import { FRONT_MATTER } from '../data/prose/markdown/front-matter.ts';
+import { scanNote, sectionOf } from '../data/prose/markdown/note-links.ts';
 import {
     EMBED_CLASS,
     LINK_CLASS,

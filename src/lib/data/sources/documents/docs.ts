@@ -13,6 +13,7 @@ import { readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { parse } from 'yaml';
 import { findingText, type TextCatalog } from '../../helpers/finding-text.ts';
+import { FRONT_MATTER } from '../../prose/markdown/front-matter.ts';
 import type { DocPresence, Finding } from '../../model/index.ts';
 import { mapShape, readAs } from '../../shapes/shapes.ts';
 import { errorLine } from '../yaml-file.ts';
@@ -49,21 +50,17 @@ function marks(label: string): { human: boolean } {
 }
 
 /**
- * A `---` line at the very start of the file, the block up to the next line that is `---` or
- * `...`, and the rest. No `m` flag, so `^` is the start of the file and a `---` rule further down
- * a document is never mistaken for an opening delimiter. The block group either is empty or ends
- * in a newline, which is what puts the closing delimiter at the start of its own line and lets an
- * empty block (`---` immediately followed by `---`) split.
- */
-const FRONTMATTER = /^---[ \t]*\r?\n((?:[\s\S]*?\r?\n)?)(?:---|\.\.\.)[ \t]*(?:\r?\n|$)/;
-
-/**
  * One document split in two: the frontmatter block as it was written, null when the file opens with
- * no block, and everything after it. Text only, so a reader that wants the body of a file whose
- * block does not parse still has it.
+ * no block, and everything after it. The block is matched by the pattern every reader of a
+ * Markdown file matches with (data/prose/markdown/front-matter.ts, which names the texts the
+ * readers part on). Text only, so a reader that wants the body of a file whose block does not
+ * parse still has it.
  */
 export function splitFrontmatter(text: string): { block: string | null; body: string } {
-    const match = FRONTMATTER.exec(text);
+    // A string's own method, where the other readers call `FRONT_MATTER.exec`: the write diagram
+    // (utils/diagrams/writes.mjs) draws a call of a method of an imported value in its group of
+    // what is not placed, and `text.match` keeps the write diagram as it is.
+    const match = text.match(FRONT_MATTER);
     if (match === null) return { block: null, body: text };
     return { block: match[1], body: text.slice(match[0].length) };
 }

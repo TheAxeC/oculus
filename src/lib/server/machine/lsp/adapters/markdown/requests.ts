@@ -16,15 +16,17 @@ import { extname } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import MarkdownIt from 'markdown-it';
 import { TEXT_LIMIT } from '../../../../../data/file-ops.ts';
-import { FRONT_MATTER } from '../../../../../data/prose/markdown/note-links.ts';
+import { FRONT_MATTER, headerLines } from '../../../../../data/prose/markdown/front-matter.ts';
 import type { Introduction } from '../asks.ts';
 import type { ServerAsk } from '../../servers.ts';
 import { listing, markdownFiles, reachable, statOf } from './places.ts';
 
 /**
  * The tokens of a text, as the server reads them; raw HTML is parsed as VS Code's preview does, and
- * a YAML front matter block at the top (`FRONT_MATTER`, a note's `tags:` among it) is one hidden
- * `front_matter` token, as VS Code's Markdown engine reads it, so its last line is no heading.
+ * a YAML front matter block at the top (`FRONT_MATTER`, the pattern every reader of a Markdown file
+ * matches with, a note's `tags:` among it) is one hidden `front_matter` token over all of its
+ * lines, the closing line included, as VS Code's Markdown engine reads it, so its last line is no
+ * heading.
  */
 const parser = new MarkdownIt({ html: true });
 parser.block.ruler.before('table', 'front_matter', (state, start, _end, silent) => {
@@ -32,7 +34,7 @@ parser.block.ruler.before('table', 'front_matter', (state, start, _end, silent) 
     const found = FRONT_MATTER.exec(state.src);
     if (found === null) return false;
     if (silent) return true;
-    const lines = found[0].replace(/\r?\n$/, '').split(/\r?\n/).length;
+    const lines = headerLines(found[0]);
     const token = state.push('front_matter', '', 0);
     token.hidden = true;
     token.block = true;

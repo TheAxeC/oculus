@@ -421,13 +421,13 @@
 <!-- folder views/shared to layer data -->
 <g id="node42" class="node">
 <title>folder views/shared to layer data</title>
-<polygon fill="none" stroke="none" points="200.1,-143.68 189.9,-143.68 189.9,-131.2 200.1,-131.2 200.1,-143.68"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="195" y="-135.04" font-family="Helvetica,Arial,sans-serif" font-size="8.00">9</text>
+<polygon fill="none" stroke="none" points="202.33,-143.68 187.67,-143.68 187.67,-131.2 202.33,-131.2 202.33,-143.68"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="195" y="-135.04" font-family="Helvetica,Arial,sans-serif" font-size="8.00">10</text>
 </g>
 <!-- folder views/shared&#45;&gt;folder views/shared to layer data -->
 <g id="edge72" class="edge">
 <title>folder views/shared&#45;&gt;folder views/shared to layer data</title>
-<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M133.28,-137.44C152.09,-137.44 170.89,-137.44 189.7,-137.44"/>
+<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M133.28,-137.44C151.28,-137.44 169.28,-137.44 187.29,-137.44"/>
 </g>
 <!-- folder views/shared to layer state -->
 <g id="node43" class="node">
@@ -778,8 +778,8 @@
 <!-- folder views/shared to layer data&#45;&gt;layer data from folder views/shared -->
 <g id="edge73" class="edge">
 <title>folder views/shared to layer data&#45;&gt;layer data from folder views/shared</title>
-<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M200.39,-137.44C217.66,-137.44 234.93,-137.44 252.2,-137.44"/>
-<polygon fill="currentColor" stroke="currentColor" points="252.08,-139.54 258.08,-137.44 252.08,-135.34 252.08,-139.54"/>
+<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M202.55,-137.44C219.19,-137.44 235.84,-137.44 252.48,-137.44"/>
+<polygon fill="currentColor" stroke="currentColor" points="252.11,-139.54 258.11,-137.44 252.11,-135.34 252.11,-139.54"/>
 </g>
 <!-- layer state from folder views/shared -->
 <g id="node68" class="node">

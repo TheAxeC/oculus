@@ -200,3 +200,219 @@ none
 - G150's own text and its Code and Test lines, which the orchestrator writes at landing.
 
 Reviewer usage: a65e7d50717ad34a0, claude-opus-5-5, 208309 tokens, 45 tool uses, 13 min 46 s.
+
+## Repair round 1, refuted
+
+```
+# load before verify 1: 18:21  up 1 day,  2:24, 1 user, load averages: 5.31 8.01 10.36
+# Verify 1, from the worktree root
+npx vitest run tests/data/prose/markdown/front-matter.test.ts tests/data/sources/docs.test.ts tests/data/sources/present.test.ts tests/server/edit/feeds.test.ts tests/server/machine/lsp/adapters/markdown-requests.test.ts tests/ui/html.dom.test.ts tests/server/machine/runs/lint/writing.test.ts tests/checks/tree/boundaries.test.ts
+ Test Files  8 passed (8)
+      Tests  119 passed (119)
+   Duration  9.69s (transform 9.50s, setup 0ms, import 19.59s, tests 9.11s, environment 1.06s)
+
+# Verify 2
+grep -rnE "FRONT_MATTER|FRONTMATTER|frontMatterEnd" src
+src/lib/ui/html.ts:46:import { FRONT_MATTER } from '../data/prose/markdown/front-matter.ts';
+src/lib/ui/html.ts:629:        const body = source === null ? null : source.replace(FRONT_MATTER, '');
+src/lib/server/machine/lsp/adapters/markdown/requests.ts:19:import { FRONT_MATTER, headerLines } from '../../../../../data/prose/markdown/front-matter.ts';
+src/lib/server/machine/lsp/adapters/markdown/requests.ts:26: * a YAML front matter block at the top (`FRONT_MATTER`, the header every reader of a Markdown file
+src/lib/server/machine/lsp/adapters/markdown/requests.ts:33:    const found = FRONT_MATTER.exec(state.src);
+src/lib/state/sources/explorer/sections/outline.ts:21:    FRONT_MATTER,
+src/lib/state/sources/explorer/sections/outline.ts:67:    const header = FRONT_MATTER.exec(text.replace(BYTE_ORDER_MARK, ''));
+src/lib/data/sources/documents/docs.ts:16:import { FRONT_MATTER } from '../../prose/markdown/front-matter.ts';
+src/lib/data/sources/documents/docs.ts:59:    // A string's own method, where the other readers call `FRONT_MATTER.exec`: the write diagram
+src/lib/data/sources/documents/docs.ts:62:    const match = text.match(FRONT_MATTER);
+src/lib/data/prose/markdown/note-links.ts:35:import { BYTE_ORDER_MARK, FRONT_MATTER } from './front-matter.ts';
+src/lib/data/prose/markdown/note-links.ts:276:    const front = FRONT_MATTER.exec(text);
+src/lib/data/prose/markdown/front-matter.ts:27:export const FRONT_MATTER = /^---[ \t]*\r?\n((?:[\s\S]*?\r?\n)??)(?:---|\.\.\.)[ \t]*(?:\r?\n|$)/;
+src/lib/data/prose/markdown/front-matter.ts:32:/** The number of lines a match of `FRONT_MATTER` spans, its closing line included. */
+src/lib/views/shared/prose/RenderedMarkdown.svelte:37:    import { FRONT_MATTER } from '$lib/data/prose/markdown/front-matter';
+src/lib/views/shared/prose/RenderedMarkdown.svelte:121:            ? blockMarkdownParts(text.replace(FRONT_MATTER, ''), { note, math, image })
+exit 0
+grep -rnF -- '^---' src
+src/lib/data/sources/deck/split.ts:51:const SEPARATOR = /^---[ \t]*$/;
+src/lib/data/sources/deck/outline.ts:25:const CUT = /^---[ \t]*$/;
+src/lib/data/prose/markdown/front-matter.ts:27:export const FRONT_MATTER = /^---[ \t]*\r?\n((?:[\s\S]*?\r?\n)??)(?:---|\.\.\.)[ \t]*(?:\r?\n|$)/;
+exit 0
+
+# Verify 3: shasum docs/diagrams/* before, npm run diagrams, shasum after
+diff diag-before.txt diag-after.txt && echo "diagrams unchanged"
+diagrams unchanged
+# npm run test:quick -- --base 651a57b8a (the state file's reviewer form), run twice; the first run was moved to the background by the runner after 180 s and was still running when the second started, so the two overlapped for about a minute
+# first run (start 18:21, load average 7.61; end 18:27, load average 14.30); its output was cut to the last 40 lines by my filter, so the red test of `vitest` is not among the captured lines
+ FAIL  |unit| tests/data/hubs/hub-portfolio.test.ts > the portfolio of several hubs > reports the findings each hub gives, the second hub own naming its files
+Error: Test timed out in 20000ms.
+ FAIL  |unit| tests/data/hubs/hub-portfolio.test.ts > the portfolio of several hubs > resolves a reference of the second hub in the primary hub when the primary alone holds the key
+Error: Test timed out in 20000ms.
+ Test Files  1 failed | 8 passed (9)
+      Tests  4 failed | 88 passed | 59 skipped (151)
+test:quick: 327.5 s; failed: vitest, vitest slow
+# second run (start 18:26, load average 16.25; end 18:29, load average 14.46)
+test:quick: 25 changed file(s), from git since 651a57b8a
+test:quick: 58 test file(s)
+ok      prettier (13.9 s): All matched files use Prettier code style!
+ok      ASCII gate (14.8 s)
+ok      svelte-kit sync (57.7 s): svelte-kit types: waiting for the vitest runs 31259, 31260
+ok      eslint (5.4 s)
+ok      svelte-check (19.4 s): 1793726859864 COMPLETED 582 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest (97.4 s): Duration  73.01s (transform 48.71s, setup 0ms, import 136.41s, tests 134.89s, environment 5.22s)
+ok      vitest checks (134.6 s): Duration  109.82s (transform 103.07s, setup 0ms, import 174.22s, tests 196.60s, environment 3ms)
+ok      vitest slow (145.6 s): Duration  120.96s (transform 51.40s, setup 0ms, import 105.71s, tests 189.47s, environment 2ms)
+test:quick: 205.8 s; every command passed
+exit 0
+# the red file of the first run, a file the step does not change, rerun alone twice
+npx vitest run tests/data/hubs/hub-portfolio.test.ts   (load average 14.32)
+<horizontal line extension x7> Failed Tests 2 <horizontal line extension x7>
+ Test Files  1 failed (1)
+      Tests  2 failed | 14 passed (16)
+npx vitest run tests/data/hubs/hub-portfolio.test.ts   (load average 13.63, then 9.02)
+ Test Files  1 passed (1)
+      Tests  16 passed (16)
+grep -rln "front-matter\|note-links\|splitFrontmatter\|FRONT_MATTER" tests/data/hubs/hub-portfolio.test.ts
+grep exit 1
+
+# Verify 4, over the twelve changed source, test, config and docs files and the ten layer diagram files
+LC_ALL=C perl -ne 'print "$ARGV:$.:$_" if /[^\x20-\x7E\n]/; close ARGV if eof' <those 22 files>
+perl exit 0   (nothing printed)
+
+# Verify 5
+sh utils/unused-exports.sh > unused.txt; diff ../O133-base/unused-exports.txt unused.txt
+diff exit 0   (nothing printed; 335 lines)
+
+# Verify 6: no test changed in the round (diff -u of the snapshot's front-matter.test.ts against the worktree's prints nothing); the new test after the round
+npx vitest run tests/data/prose/markdown/front-matter.test.ts
+ Test Files  1 passed (1)
+      Tests  14 passed (14)
+
+# Commands the round's report section quotes as evidence, rerun
+grep -rnE "BYTE_ORDER_MARK|headerLines|uFEFF|u\{FEFF\}|split\(/\\\\r\?\\\\n/\)\.length" src
+src/lib/server/machine/lsp/adapters/markdown/requests.ts:19:import { FRONT_MATTER, headerLines } from '../../../../../data/prose/markdown/front-matter.ts';
+src/lib/server/machine/lsp/adapters/markdown/requests.ts:36:    const lines = headerLines(found[0]);
+src/lib/server/machine/runs/lint/routes.ts:216:            rows = readChktex(ran.stdout, file, tabSizeOf(rc), content.startsWith('<BOM>'));
+src/lib/server/machine/runs/lint/text.ts:13:    return text.startsWith('<BOM>') ? text.slice(1) : text;
+src/lib/server/machine/runs/lint/readers.ts:87:        const shown = marked && line === 1 ? `<BOM>${text}` : text;
+src/lib/server/files/source/source.ts:241:    return withMark(Buffer.from(content, 'utf8'), marked && !content.startsWith('<BOM>'));
+src/lib/state/sources/explorer/sections/outline.ts:20:    BYTE_ORDER_MARK,
+src/lib/state/sources/explorer/sections/outline.ts:22:    headerLines
+src/lib/state/sources/explorer/sections/outline.ts:67:    const header = FRONT_MATTER.exec(text.replace(BYTE_ORDER_MARK, ''));
+src/lib/state/sources/explorer/sections/outline.ts:68:    const skip = header === null ? 0 : headerLines(header[0]);
+src/lib/data/prose/markdown/note-links.ts:35:import { BYTE_ORDER_MARK, FRONT_MATTER } from './front-matter.ts';
+src/lib/data/prose/markdown/note-links.ts:275:    const text = source.replace(BYTE_ORDER_MARK, '').replace(/\r\n?/g, '\n');
+src/lib/data/prose/markdown/front-matter.ts:30:export const BYTE_ORDER_MARK = /^\u{FEFF}/u;
+src/lib/data/prose/markdown/front-matter.ts:33:export function headerLines(header: string): number {
+src/lib/data/prose/markdown/front-matter.ts:34:    return header.replace(/\r?\n$/, '').split(/\r?\n/).length;
+src/lib/data/prose/text-edits.ts:26:const BOM = '<BOM>';
+npx eslint <the six files the round changes>
+eslint exit 0
+wc -l: front-matter.ts 35, note-links.ts 453, docs.ts 154, requests.ts 133, outline.ts 169, layer-rows.ts 366   (as the round's table)
+diff -rq ../O133-base/<src|tests|utils|config|docs> <same> -x local.yml | wc -l
+      22   (the twelve paths of the step and the ten layer diagram files)
+git status --short: docs/diagrams/writes.* not among the changed paths
+# a case-run program in my scratchpad (probe.mts), importing the readers from the worktree, for the two exceptions the round names
+node probe.mts
+bom {"tags":[{"tag":"alpha","line":1}],"headings":[["Title",3]],"outline":["Title"],"block":null,"stripped":"none","token":{"type":"heading_open","hidden":false,"map":[0,3]}}
+lonecr {"tags":[{"tag":"alpha","line":1}],"headings":[["Title",3]],"outline":[],"block":null,"stripped":"none","token":{"type":"front_matter","hidden":true,"map":[0,3]}}
+crlf {"tags":[{"tag":"alpha","line":1}],"headings":[["Title",3]],"outline":["Title"],"block":"tags: [alpha]\r\n","stripped":"header","token":{"type":"front_matter","hidden":true,"map":[0,3]}}
+eot {"tags":[{"tag":"alpha","line":1}],"headings":[],"outline":[],"block":"tags: [alpha]\n","stripped":"header","token":{"type":"front_matter","hidden":true,"map":[0,3]}}
+headerLines 2 3 3
+```
+
+(bom = `<BOM>---\ntags: [alpha]\n---\n# Title\n`; lonecr = `---\rtags: [alpha]\r---\r# Title\r`; "stripped" is `text.replace(FRONT_MATTER, '')` on the raw text, which is what the preview and an embed do.)
+
+### Verdicts
+
+Items of the brief's "What to build":
+
+- 1: holds. `front-matter.ts:27` is the pattern the first review judged, unchanged by the round. The head comment (`:1-24`) says what it reads, why the empty block is tried first, that it is the one pattern, the two exceptions (`:8-11`, which the probe reproduces: a BOM text is a header to the note scan and the Outline alone, a lone-CR text to the note scan and the server alone), and what the module now holds (`:22-24`). There is still no reader and no I/O in it.
+- 2: holds. Verify 2 prints the one export and the six readers' imports and uses and nothing else. Verify 1 passes `boundaries.test.ts` within its 5000 ms limit in my run, at load average 5.31. The views row and its reason are at `layer-rows.ts:228-234,290`.
+- 3: holds. `HELP.md:406`, `server.yml:385` and `split.ts:7-8` are in place. The sentences that remain false for the two exception texts are Standards 1.
+- 4: holds. The test is unchanged in the round, and its 14 rows pass (verify 6).
+
+Cases of the brief's "Cases" (judged from the same test and the runs above):
+
+- C1, C2, C3, C5, C8 (both rows), C9, C11, C12: met. Each row passes after the round. The first-run failures quoted in the first report stand, since no row changed.
+- C4, C6, C7, C10, C13: met, as audits that pass after the round. The probe's `crlf`, `bom` and `eot` lines give the same columns as rows C4, C10 and C13.
+- C14: met. docs, present and feeds pass in my verify 1 run (8 of 8 files).
+
+Items of the round's brief:
+
+- R1, the two exceptions named: holds. They are named at `front-matter.ts:8-11` and `layer-rows.ts:231-233`, each in one clause, and the probe reproduces both. `HELP.md:406` is one line, says that either line may end in spaces or tabs, and names only the BOM for the tags, the Outline, the preview and an embed, as the item says. Other sentences of the same claim that the item does not list are Standards 1.
+- R2, the rule of the header's lines exists once: holds. `BYTE_ORDER_MARK` (`front-matter.ts:30`) is imported by `note-links.ts:35,275` and `outline.ts:20,67`. `headerLines` (`:33-35`) is called by `outline.ts:68` and `requests.ts:36`. The item 2 grep shows no other copy of the count. The probe's `headerLines 2 3 3` matches the old expression on an empty header, a header with no line end after it, and a CRLF header closed by `...`. The module's head comment says what it holds. The test rows are unchanged and pass. That an older BOM helper exists in the tree is Standards 2.
+- R3, the reason at docs.ts: holds. The comment at `docs.ts:59-61` gives the reason, which agrees with `utils/diagrams/writes.mjs:12-13` on reading. My `npm run diagrams` left every diagram byte-identical.
+- R4, the visible changes added: holds. The report now has the C3 preview at its line 189, the note-scan headings for C2, C3 and C12 offered after `[[note#` at line 188, and the Outline with a no-break space after the opening `---` at line 185, each with its before and after.
+- R5, the first line and the rows of checks 1 and 3: holds. No row is marked DONE on a red last run. My verify 1 is green (`Tests  119 passed (119)`), and my second test:quick run prints `every command passed`. The rest of the report still carries figures from before the round; that is Proof 1.
+
+### 1. Spec
+
+none
+
+### 2. Proof
+
+- `.scratch/migration/agents/reviews/O133-report.md`, the sections above "Repair round 1": the DONE row "Check 2 ... outputs quoted below" and the block it points to (`front-matter.ts:23:export const FRONT_MATTER`, `outline.ts:19:import { FRONT_MATTER }`, `outline.ts:66: ... text.replace(BOM, '')`, `requests.ts:19:import { FRONT_MATTER } from`); the Files table (`front-matter.ts ... 23`, `docs.ts ... 151`, `outline.ts ... 168`, `layer-rows.ts ... 363`); "Verify list runs: three."
+  - What is wrong: these figures are from before the round, and my runs do not reproduce them. Verify 2 now prints `front-matter.ts:27`, `outline.ts:21,67` with `BYTE_ORDER_MARK`, and `requests.ts:19` with `headerLines`. `wc -l` gives 35, 154, 169 and 366.
+  - The round section's opening sentence lists the parts it supersedes: "the judgment calls on the line count and the Outline's BOM constant, and the 'Wrong or impossible' bullet on check 1". It does not list the check 2 block, the Files table or the run count.
+  - The rules file's Report rule says every count, line count and `file:line` is taken after the last change, and a figure from before it is taken again or removed.
+  - Decision resting on it: at landing, the orchestrator checks the verify 2 output and the file list against the DONE row's quoted block.
+  - Failure scenario: the orchestrator compares the gate's verify 2 output with the block at report lines 87-110, reads the mismatch (`:27` against `:23`, the `headerLines` import) as a change made after the report, and goes looking for an edit that does not exist.
+  - Verdict: none, since the round section has the current figures.
+
+### 3. Standards
+
+- Standards 1. Four sentences still say, with no exception, that every reader takes the same lines. Each is false for the two exception texts the round names:
+  - `src/lib/data/sources/documents/docs.ts:54-55`: "The block is the one every reader of a Markdown file takes as its header (data/prose/markdown/front-matter.ts)."
+  - `src/lib/data/prose/markdown/note-links.ts:13-14`: "the YAML front matter at the top, the header every reader of a Markdown file reads (front-matter.ts)."
+  - `src/lib/server/machine/lsp/adapters/markdown/requests.ts:26-27`: "(`FRONT_MATTER`, the header every reader of a Markdown file reads, a note's `tags:` among it)."
+  - `tests/data/prose/markdown/front-matter.test.ts:6-7`: "Each row is one text, and every reader of it takes the same lines as the header, or none."
+  - What is wrong: the probe shows the claim fails for both exception texts. For the `bom` text, `splitFrontmatter` gives `block: null` and the server's first token is `heading_open`, while the note scan gives tag `alpha` and the Outline skips the header. For the `lonecr` text, the server hides `[0, 3]` while the docs split, the Outline and the preview's strip read no header. The test's own C10 row is titled 'a header after a BOM, a header to the note scan and the Outline alone', which contradicts the test's line 6-7.
+  - The round report keeps `note-links.ts:13-14` and `requests.ts:26-27` as "naming the shared pattern". Judged on their text, they say "the header every reader ... reads", which is the same unqualified claim the round qualified at `front-matter.ts:7-11`. They do not say "the pattern every reader matches with".
+  - Round item 1 lists three places by name. Its opening sentence, "The sentences that say every reader takes the same lines are made true by naming the two exceptions", covers these four as well.
+  - The rule broken is in the rules file's "What every package obeys" section: a sentence in a document or a head comment that the change makes false is a defect of the change.
+  - Failure scenario: a maintainer reads `docs.ts:54-55` or `requests.ts:26-27` as a guarantee. They then take a BOM-prefixed note's `splitFrontmatter` null, or the server's hidden lines for a lone-CR file, as a bug in one reader, and change it against decisions 3 and 4.
+  - Fix at landing: name the pattern rather than the lines (for example "the pattern every reader of a Markdown file matches with, front-matter.ts, which names the two texts they read apart"), and state the C10 exception in the test's sentence.
+  - Verdict: none.
+- Standards 2. `src/lib/data/prose/markdown/front-matter.ts:29-30`: "/** One byte-order mark at the start of a text. */ export const BYTE_ORDER_MARK = /^\u{FEFF}/u;"
+  - What is wrong: the tree already has an exported helper for exactly this. `src/lib/data/prose/text-edits.ts:28-31` is "The text without a leading byte order mark", `export function withoutMark(text: string)`. It is used by `data/snapshot/references/scan.ts:315`, `rename.ts:210` and `data/helpers/files/yaml/collection-text.ts:56`, and `data/prose/text-edits` is already in the views row.
+  - The round adds a second leading-BOM rule in another `data/prose` module. It does not have `note-links.ts:275` and `outline.ts:67` call `withoutMark`.
+  - The rules file's principles section says a rule exists once and is reused, and that a helper is grepped for and reused before one is written.
+  - The builder's grep printed `text-edits.ts:26` and set it aside as "a BOM of a linted or saved file, not a header". `withoutMark` is not tied to a linted or saved file.
+  - Round item 2's first bullet asked for this export by name, so the builder followed the ruling. Closing the finding means changing the ruled shape: drop `BYTE_ORDER_MARK` and import `withoutMark` in the two readers. That is the orchestrator's call.
+  - Failure scenario: someone widens what counts as a leading mark in `withoutMark`, for example to the UTF-16 mark a pasted file brings. The Outline and the note scan go on reading by `BYTE_ORDER_MARK`, and the two places in `data/prose` disagree on what a leading mark is.
+  - Verdict: none.
+- Standards 3. The round report, "Check 3, full verify list runs in this round: two."
+  - What is wrong: the first run of the round was red only on `tests/data/hubs/workspace-projects.test.ts`, a file the step does not change, and the list was then run again.
+  - The changed files' last modification is 18:09:08 (`requests.ts`; `HELP.md` and `layer-rows.ts` 18:09:07; `ls -lT`), and the report was written at 18:18:04. Both runs took over 100 s and both followed the last change: the first run's prettier line was not red, so the `prettier --write` the report names came before it.
+  - The rules file's Token discipline section: "A red line in a file the step does not change is rerun alone and named with that run in the report, and the list is not run again for it", and a run beyond that is a finding of the review.
+  - Failure scenario: none for the tree. The cost is about 100 s of the whole list on a shared machine, the same kind as the first review's Standards 3, which the round brief left to be noted at landing.
+  - Verdict: none.
+
+### 4. Behaviour
+
+none. The round changes no reader's result: `headerLines` is the old expression moved, and `BYTE_ORDER_MARK` matches what `/^<BOM>/` and `/^\u{FEFF}/u` matched. Verify 6 and the probe give the same columns.
+
+### Declined to judge
+
+- `docs/HELP.md:406` stays false for a note with lone CR line ends. For such a text the probe gives the tags while the preview's strip reads no header. Round item 1 rules that the HELP bullet names the BOM alone, so this is the orchestrator's ruling, and I do not judge it as a defect of the round.
+- The `vitest` red line of my first test:quick run. My filter cut it from the captured output, and the run overlapped my second one, so the load was above 14. The `vitest slow` reds in that run were 20000 ms timeouts in `hub-portfolio.test.ts`, a file that reads no front-matter name (grep exit 1). Run alone, that file was red at load 14.32 and green at 13.63. A third test:quick run on a quiet machine would settle which `vitest` test was red; I did not start one.
+- Whether `FRONT_MATTER.exec(text)` at `docs.ts:62` would move docs.ts into the write diagram's not-placed group, as the comment at `:59-61` says. Settling it needs the code changed, so I judged it by reading `writes.mjs:12-13` alone.
+- The tree after staging, and whether `docs/diagrams/*` match a clean checkout of the base plus this diff. That needs `git diff --cached` or a commit, which this review does not run. My `npm run diagrams` left every file byte-identical.
+- G150's text and its Code and Test lines, which the orchestrator writes at landing.
+
+Reviewer usage: a7df403ff43b2bf2e, claude-opus-5-5, 209676 tokens, 48 tool uses, 15 min 27 s.
+
+## Closed
+
+The first review's findings, closed in repair round 1 (`agents/briefs/O133-round-1.md`), each closure judged by the review over the round:
+- Proof 1 (check 1's row) and Proof 2 (check 3's row): round item 5; the review over the round gives R5 holds.
+- Standards 1 (the sentence that every reader takes the same lines): round item 1; R1 holds. The other sentences of the same claim are the round review's Standards 1, below.
+- Standards 2 (the BOM pattern and the line count written twice): round item 2; R2 holds. The second BOM helper the round added is the round review's Standards 2, below.
+- Standards 3 (three runs of the verify list): no change asked; its cost is noted in the booking.
+- Standards 4 (`text.match` at docs.ts): round item 3; R3 holds.
+- Behaviour 1 (three visible changes without before and after): round item 4; R4 holds.
+
+The review over round 1, its findings fixed at landing on the gate and carried to main:
+- Proof 1 (the report's check 2 output, Files table and run count from before the round): fixed at landing in `agents/reviews/O133-report.md`; the check 2 output and the Files table give the tree as landed, the run count reads "in the first build", and the round section names the byte-order mark as landed.
+- Standards 1 (four sentences that every reader takes the same lines): fixed at landing. `docs.ts:54-56`, `note-links.ts:13-14` and `requests.ts:26-27` name the pattern every reader matches with and point at front-matter.ts for the texts the readers part on; `front-matter.test.ts:6-8` names the byte-order mark exception.
+- Standards 2 (`BYTE_ORDER_MARK` beside `withoutMark` of `data/prose/text-edits.ts`): fixed at landing. `BYTE_ORDER_MARK` is removed from front-matter.ts; `scanNote` and `markdownOutline` call `withoutMark`, which the state row already allows; the head comments of front-matter.ts and `layer-rows.ts:228-234` say what the module holds. The round's ruling of item 2 named the export; the landing replaces that ruling with the existing helper, a rule that exists once.
+- Standards 3 (two runs of the verify list in the round): no change; its cost is noted in the booking.
+- Declined to judge, `docs/HELP.md:406` for a note with lone CR line ends: fixed at landing; the bullet adds that in such a note the tags read front matter that the preview, an embed and the Outline do not.

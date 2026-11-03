@@ -68,7 +68,7 @@ Edits to the test after its first run, each checked by reading: the BOM row's tw
 
 | Item | State | Proof (command, output as printed) |
 | --- | --- | --- |
-| 1. `front-matter.ts` with `FRONT_MATTER`, empty block tried first | DONE | `grep -rnE "FRONT_MATTER\|FRONTMATTER\|frontMatterEnd" src` prints `src/lib/data/prose/markdown/front-matter.ts:23:export const FRONT_MATTER = /^---[ \t]*\r?\n((?:[\s\S]*?\r?\n)??)(?:---\|\.\.\.)[ \t]*(?:\r?\n\|$)/;`; rows C5, C11 pass |
+| 1. `front-matter.ts` with `FRONT_MATTER`, empty block tried first | DONE | `grep -rnE "FRONT_MATTER\|FRONTMATTER\|frontMatterEnd" src` prints `src/lib/data/prose/markdown/front-matter.ts:27:export const FRONT_MATTER = /^---[ \t]*\r?\n((?:[\s\S]*?\r?\n)??)(?:---\|\.\.\.)[ \t]*(?:\r?\n\|$)/;`; rows C5, C11 pass |
 | 2. Every reader uses it, no copy left; views row and its reason | DONE | the grep of check 2 below; `npx vitest run tests/checks/tree/boundaries.test.ts`: `Tests  11 passed (11)` |
 | 3. HELP sentence, LinkedIn sentence, split.ts:7 comment, head comments | DONE | `git diff docs/HELP.md config/text/server.yml src/lib/data/sources/deck/split.ts`; the grep table below |
 | 4. Test of G150, one table, readers only | DONE | `npx vitest run tests/data/prose/markdown/front-matter.test.ts`: `Tests  14 passed (14)` |
@@ -82,21 +82,23 @@ Edits to the test after its first run, each checked by reading: the BOM row's tw
 | Check 6, before and after runs | DONE | first run quoted above; after: `Tests  14 passed (14)` |
 | Check 7, list items and sentences | DONE | below |
 
-Check 2, `grep -rnE "FRONT_MATTER|FRONTMATTER|frontMatterEnd" src`:
+Check 2, `grep -rnE "FRONT_MATTER|FRONTMATTER|frontMatterEnd" src`, as landed, after the fixes at landing:
 
 ```
 src/lib/ui/html.ts:46:import { FRONT_MATTER } from '../data/prose/markdown/front-matter.ts';
 src/lib/ui/html.ts:629:        const body = source === null ? null : source.replace(FRONT_MATTER, '');
-src/lib/server/machine/lsp/adapters/markdown/requests.ts:19:import { FRONT_MATTER } from '../../../../../data/prose/markdown/front-matter.ts';
-src/lib/server/machine/lsp/adapters/markdown/requests.ts:26: * a YAML front matter block at the top (`FRONT_MATTER`, the header every reader of a Markdown file
-src/lib/server/machine/lsp/adapters/markdown/requests.ts:33:    const found = FRONT_MATTER.exec(state.src);
-src/lib/state/sources/explorer/sections/outline.ts:19:import { FRONT_MATTER } from '../../../../data/prose/markdown/front-matter.ts';
-src/lib/state/sources/explorer/sections/outline.ts:66:    const header = FRONT_MATTER.exec(text.replace(BOM, ''));
+src/lib/server/machine/lsp/adapters/markdown/requests.ts:19:import { FRONT_MATTER, headerLines } from '../../../../../data/prose/markdown/front-matter.ts';
+src/lib/server/machine/lsp/adapters/markdown/requests.ts:26: * a YAML front matter block at the top (`FRONT_MATTER`, the pattern every reader of a Markdown file
+src/lib/server/machine/lsp/adapters/markdown/requests.ts:34:    const found = FRONT_MATTER.exec(state.src);
+src/lib/state/sources/explorer/sections/outline.ts:19:import { FRONT_MATTER, headerLines } from '../../../../data/prose/markdown/front-matter.ts';
+src/lib/state/sources/explorer/sections/outline.ts:64:    const header = FRONT_MATTER.exec(withoutMark(text));
 src/lib/data/sources/documents/docs.ts:16:import { FRONT_MATTER } from '../../prose/markdown/front-matter.ts';
-src/lib/data/sources/documents/docs.ts:59:    const match = text.match(FRONT_MATTER);
-src/lib/data/prose/markdown/note-links.ts:35:import { FRONT_MATTER } from './front-matter.ts';
-src/lib/data/prose/markdown/note-links.ts:276:    const front = FRONT_MATTER.exec(text);
-src/lib/data/prose/markdown/front-matter.ts:23:export const FRONT_MATTER = /^---[ \t]*\r?\n((?:[\s\S]*?\r?\n)??)(?:---|\.\.\.)[ \t]*(?:\r?\n|$)/;
+src/lib/data/sources/documents/docs.ts:60:    // A string's own method, where the other readers call `FRONT_MATTER.exec`: the write diagram
+src/lib/data/sources/documents/docs.ts:63:    const match = text.match(FRONT_MATTER);
+src/lib/data/prose/markdown/note-links.ts:37:import { FRONT_MATTER } from './front-matter.ts';
+src/lib/data/prose/markdown/note-links.ts:278:    const front = FRONT_MATTER.exec(text);
+src/lib/data/prose/markdown/front-matter.ts:27:export const FRONT_MATTER = /^---[ \t]*\r?\n((?:[\s\S]*?\r?\n)??)(?:---|\.\.\.)[ \t]*(?:\r?\n|$)/;
+src/lib/data/prose/markdown/front-matter.ts:29:/** The number of lines a match of `FRONT_MATTER` spans, its closing line included. */
 src/lib/views/shared/prose/RenderedMarkdown.svelte:37:    import { FRONT_MATTER } from '$lib/data/prose/markdown/front-matter';
 src/lib/views/shared/prose/RenderedMarkdown.svelte:121:            ? blockMarkdownParts(text.replace(FRONT_MATTER, ''), { note, math, image })
 ```
@@ -106,12 +108,12 @@ src/lib/views/shared/prose/RenderedMarkdown.svelte:121:            ? blockMarkdo
 ```
 src/lib/data/sources/deck/split.ts:51:const SEPARATOR = /^---[ \t]*$/;
 src/lib/data/sources/deck/outline.ts:25:const CUT = /^---[ \t]*$/;
-src/lib/data/prose/markdown/front-matter.ts:23:export const FRONT_MATTER = /^---[ \t]*\r?\n((?:[\s\S]*?\r?\n)??)(?:---|\.\.\.)[ \t]*(?:\r?\n|$)/;
+src/lib/data/prose/markdown/front-matter.ts:27:export const FRONT_MATTER = /^---[ \t]*\r?\n((?:[\s\S]*?\r?\n)??)(?:---|\.\.\.)[ \t]*(?:\r?\n|$)/;
 ```
 
 `SEPARATOR` is at `split.ts:51`, one line below the brief's `:50`, since the rewrapped head comment of split.ts gained a line.
 
-Verify list runs: three. The first was red on `svelte-check` in the new test file (`NoteHeading` and `NoteTag` are not exported by note-links.ts); fixed, the file rerun alone, the list run again: `test:quick: 119.1 s; every command passed`. The third ran after the last change to docs.ts (the `text.match` judgment call below): red on `vitest slow` in `tests/data/hubs/hub-portfolio.test.ts`, a file the step does not change, which passes alone. No whole-suite command was run.
+Verify list runs in the first build: three. The first was red on `svelte-check` in the new test file (`NoteHeading` and `NoteTag` are not exported by note-links.ts); fixed, the file rerun alone, the list run again: `test:quick: 119.1 s; every command passed`. The third ran after the last change to docs.ts (the `text.match` judgment call below): red on `vitest slow` in `tests/data/hubs/hub-portfolio.test.ts`, a file the step does not change, which passes alone. No whole-suite command was run.
 
 Check 7: the spec's one standards page asks for one line per bullet or paragraph and plain prose. The HELP bullet is one line of two sentences (28 and 17 words, `wc -w` over its parts); the LinkedIn sentence is one sentence of 20 words; the new comments are whole paragraphs rewrapped at 100 columns. No departure.
 
@@ -145,21 +147,21 @@ Edits to an existing assertion, allow list or predicate (from `diff` of `tests/c
 
 ## Files
 
-From `diff -rq` of src, tests, utils, config and docs against `../O133-base`, line counts from `git diff --numstat` (added, removed) and `wc -l`:
+From `diff -rq` of src, tests, utils, config and docs against `../O133-base`, line counts from `git diff --numstat` (added, removed) and `wc -l`, as landed, after the fixes at landing:
 
 | Path | Change | Lines now |
 | --- | --- | --- |
-| `src/lib/data/prose/markdown/front-matter.ts` | new | 23 |
-| `src/lib/data/prose/markdown/note-links.ts` | +10 -12 | 453 |
-| `src/lib/data/sources/documents/docs.ts` | +5 -12 | 151 |
+| `src/lib/data/prose/markdown/front-matter.ts` | new | 32 |
+| `src/lib/data/prose/markdown/note-links.ts` | +13 -13 | 455 |
+| `src/lib/data/sources/documents/docs.ts` | +9 -12 | 155 |
 | `src/lib/ui/html.ts` | +2 -1 | 712 |
-| `src/lib/server/machine/lsp/adapters/markdown/requests.ts` | +4 -3 | 133 |
+| `src/lib/server/machine/lsp/adapters/markdown/requests.ts` | +6 -4 | 134 |
 | `src/lib/views/shared/prose/RenderedMarkdown.svelte` | +4 -7 | 192 |
-| `src/lib/state/sources/explorer/sections/outline.ts` | +11 -8 | 168 |
+| `src/lib/state/sources/explorer/sections/outline.ts` | +10 -9 | 166 |
 | `src/lib/data/sources/deck/split.ts` (lines 3-11) | +5 -4 | 139 |
 | `config/text/server.yml` (line 385) | +1 -1 | |
-| `tests/checks/tree/layer-rows.ts` (lines 227-231, 287) | +6 -0 | 363 |
-| `tests/data/prose/markdown/front-matter.test.ts` | new | 263 |
+| `tests/checks/tree/layer-rows.ts` (lines 227-234, 290) | +9 -0 | 366 |
+| `tests/data/prose/markdown/front-matter.test.ts` | new | 264 |
 | `docs/HELP.md` (line 406) | +1 -0 | |
 | `docs/diagrams/layer-data`, `layer-state`, `layer-ui`, `layer-views`, `layers` (`.dot` and `.svg`) | regenerated by `npm run diagrams` | |
 | `.scratch/migration/agents/reviews/O133-report.md` | this report | |
@@ -204,7 +206,7 @@ Each is seen on landing on a scratch server; texts are note texts under a hub's 
 
 ## Repair round 1
 
-Every item of `agents/briefs/O133-round-1.md` is done. This section states the state after the round; where it differs from the sections above (the judgment calls on the line count and the Outline's BOM constant, and the "Wrong or impossible" bullet on check 1), this section holds.
+Every item of `agents/briefs/O133-round-1.md` is done. This section states the state after the round; where it differs from the sections above (the judgment calls on the line count and the Outline's BOM constant, and the "Wrong or impossible" bullet on check 1), this section holds. As landed, the note scan and the Outline take the byte-order mark off with `withoutMark` of `data/prose/text-edits.ts` in place of the `BYTE_ORDER_MARK` this section names, which front-matter.ts does not export; the check 2 output and the Files table above give the tree as landed.
 
 ### Item 1, the two exceptions named
 

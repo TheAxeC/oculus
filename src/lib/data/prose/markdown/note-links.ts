@@ -10,9 +10,11 @@
 // table's own reading turns back into `|` before the link is read, and the scan below reads `\|`
 // as `|` too. A tag is `#word` after a space or at the start of a run of text, of letters, digits,
 // `_`, `-` and `/` with at least one character that is not a digit, or an entry of a `tags:` list
-// in the YAML front matter at the top. The text is read by marked's own lexer with these three
-// tokenizers added, so a link, an embed or a tag inside a fenced block, an indented block, a code
-// span, an ordinary link or an address is text, as marked reads it.
+// in the YAML front matter at the top, matched by the pattern every reader of a Markdown file
+// matches with (front-matter.ts, which names the texts the readers part on). The text is read by
+// marked's own lexer with these three tokenizers added, so a link, an embed or a tag inside a
+// fenced block, an indented block, a code span, an ordinary link or an address is text, as marked
+// reads it.
 //
 // Each link and tag is placed in the text by finding the source of each token in turn, the
 // tokens of a block inside the block's own source, so the places are those of the text and not of
@@ -31,10 +33,9 @@ import {
     type Tokens
 } from 'marked';
 import { isMap, isScalar, isSeq, parseDocument, type Scalar } from 'yaml';
+import { withoutMark } from '../text-edits.ts';
+import { FRONT_MATTER } from './front-matter.ts';
 import { NOTE_SUFFIX, isNote, nameKey, noteTitle } from './note-names.ts';
-
-/** A YAML front matter block at the head of a text, which the document route splits off too. */
-export const FRONT_MATTER = /^---\r?\n[\s\S]*?\r?\n---(?:\r?\n|$)/;
 
 /** The token types the three readings make. */
 const WIKI_TOKEN = 'noteLink';
@@ -220,11 +221,10 @@ function lineAt(text: string, offset: number): number {
 /**
  * The tags of a front matter block, each at its line: the entries of its `tags:` list, or the words
  * of a `tags:` text, which are split on spaces and commas. A block that does not read as YAML, or
- * whose `tags:` is neither, has none.
+ * whose `tags:` is neither, has none. The block is the lines between the header's opening line and
+ * its closing line, so it starts on the second line of the text.
  */
-function frontTags(block: string): NoteTag[] {
-    const head = /^---\n/.exec(block)?.[0].length ?? 0;
-    const body = block.slice(head).replace(/\n---(?:\n)?$/, '');
+function frontTags(body: string): NoteTag[] {
     const read = parseDocument(body);
     if (read.errors.length > 0 || !isMap(read.contents)) return [];
     const pair = read.contents.items.find((one) => isScalar(one.key) && one.key.value === 'tags');
@@ -232,7 +232,7 @@ function frontTags(block: string): NoteTag[] {
     const found: NoteTag[] = [];
     const add = (words: string, offset: number): void => {
         const tag = tagWord(words.trim().replace(/^#/, ''));
-        if (tag !== null) found.push({ tag, line: lineAt(block, head + offset) });
+        if (tag !== null) found.push({ tag, line: 1 + lineAt(body, offset) });
     };
     const textOf = (node: unknown): node is Scalar<string> =>
         isScalar(node) && typeof node.value === 'string';
@@ -274,12 +274,12 @@ function noteLexer(): Marked {
 
 /** Everything a note holds that its readers ask for, from one reading of its text. */
 export function scanNote(source: string): NoteScan {
-    const text = source.replace(/^\uFEFF/, '').replace(/\r\n?/g, '\n');
+    const text = withoutMark(source).replace(/\r\n?/g, '\n');
     const front = FRONT_MATTER.exec(text);
     const skip = front === null ? 0 : front[0].length;
     const starts = startsOf(text);
     const scan: NoteScan = { links: [], tags: [], headings: [], text };
-    if (front !== null) scan.tags.push(...frontTags(front[0]));
+    if (front !== null) scan.tags.push(...frontTags(front[1]));
     const tokens = noteLexer().lexer(text.slice(skip));
     place(tokens, text, skip, text.length, (token, at, end) => {
         if (token.type === TAG_TOKEN) {

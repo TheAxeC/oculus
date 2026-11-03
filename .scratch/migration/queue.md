@@ -1,14 +1,16 @@
-In flight (3 of 6 slots in use):
-- O133 (one front-matter pattern for every Markdown reader), repair round 1 built; under review.
-- O132 (every hub's words held to the vocabulary check), repair round 1 sent.
-- O136 (the editor holds a keyed family to the form its reader takes), building.
+In flight (2 of 6 slots in use):
+- O132 (every hub's words held to the vocabulary check), repair round 1 reviewed; landing next.
+- O136 (the editor holds a keyed family to the form its reader takes), reviewed; repair round 1 next.
 
-Queued, in order (1 step):
-- O135 (an Add Front Matter command for a note), ruling 650; after O133 lands, since it reads the header by O133's pattern.
+Queued, in order (3 steps):
+- O135 (an Add Front Matter command for a note), ruling 650; O133, whose pattern it reads, has landed.
+- O137 (a collection is always sorted, the reorder by hand removed), ruling 654.
+- O138 (an `interview` status oculus offers), ruling Interview status.
 
 Owed looks: none.
 
 Landed, newest first:
+- O133 (one front-matter pattern for every Markdown reader), one repair round, five fixes at landing.
 - O131 (the editor holds a one-text `multi` value to its words), one repair round, five fixes at landing.
 - O134 (a Notes section in the templates page), a small text step, three fixes at landing.
 - O130 (every hub's category rows held to the config check), no repair round, three report sentences fixed at landing.

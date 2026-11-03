@@ -24,20 +24,6 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 
 ```yaml
 dispatch:           # steps in flight, up to six (Z632)
-- step: O133
-  base: 651a57b8a
-  worktree: .agents/worktrees/migration-O133
-  executor: agent
-  worker: claude:opus
-  session_id: ad1c4e85c8b936035
-  model: claude-opus-5-5
-  launched: 2026-11-03
-  report: .scratch/migration/agents/reviews/O133-report.md
-  builder_usage: first run 255722 tokens, 124 tool uses, 28 min 26 s; round 1 309528 tokens, 51 tool uses, 10 min 13 s
-  reviewer_report: ".scratch/migration/agents/reviews/O133-refuter.md (a65e7d50717ad34a0, claude-opus-5-5, 208309 tokens, 45 tool uses, 13 min 46 s); over round 1: running: a7df403ff43b2bf2e, claude-opus-5-5"
-  round: 1
-  brief_check: .scratch/migration/agents/reviews/O133-brief-check.md (aa8f129fd1b7631ff, claude-opus-5-5, 223032 tokens, 61 tool uses, 12 min 14 s)
-  landing: not-started
 - step: O132
   base: 95025410b
   worktree: .agents/worktrees/migration-O132
@@ -47,8 +33,8 @@ dispatch:           # steps in flight, up to six (Z632)
   model: claude-opus-5-5
   launched: 2026-11-03
   report: .scratch/migration/agents/reviews/O132-report.md
-  builder_usage: first run 194868 tokens, 101 tool uses, 21 min 11 s
-  reviewer_report: .scratch/migration/agents/reviews/O132-refuter.md (a3d8deb001529c2b6, claude-opus-5-5, 180985 tokens, 52 tool uses, 14 min 58 s)
+  builder_usage: first run 194868 tokens, 101 tool uses, 21 min 11 s; round 1 225398 tokens, 29 tool uses, 14 min 14 s
+  reviewer_report: ".scratch/migration/agents/reviews/O132-refuter.md (a3d8deb001529c2b6, claude-opus-5-5, 180985 tokens, 52 tool uses, 14 min 58 s); over round 1: running: acbc1234def53be42, claude-opus-5-5"
   round: 1
   brief_check: .scratch/migration/agents/reviews/O132-brief-check.md (a3a364c925924ff9a, claude-opus-5-5, 226477 tokens, 74 tool uses, 11 min 31 s)
   shared_paths: docs/HELP.md and docs/diagrams (O133 writes HELP.md lines 400-410 and this step lines 588-596, far apart; each landing regenerates the diagrams)
@@ -62,6 +48,8 @@ dispatch:           # steps in flight, up to six (Z632)
   model: claude-opus-5-5
   launched: 2026-11-03
   report: .scratch/migration/agents/reviews/O136-report.md
+  builder_usage: first run 222338 tokens, 92 tool uses, 20 min 37 s
+  reviewer_report: "running: aeaee453e5f924a28, claude-opus-5-5"
   round: 0
   brief_check: .scratch/migration/agents/reviews/O136-brief-check.md (a9fae723e1ab7ad1b, claude-opus-5-5, 236992 tokens, 68 tool uses, 14 min 46 s)
   shared_paths: docs/HELP.md and docs/diagrams (this step writes HELP.md line 570, O133 lines 400-410 and O132 lines 588-596, far apart; each landing regenerates the diagrams)
@@ -205,9 +193,10 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
-- None.
+- Open item 655 (2026-11-03): rename a collection's `status` field to `stage`, as a project's manifest names its lifecycle word `stage:`? The two are separate vocabularies today: `stages:` of `config/catalogs/vocab.yml` (line 63, the project words with label, icon and the flags `live`, `placed`, `pauses_countdown`, `deadline_met`) and `statuses:` (line 109, the record words with `closes_deadline`, `deadline_met`, `waiting`, `acknowledged`, `default_application`, `default_task`), and five words stand in both with different flags (`submitted`, `in-prep`, `exploring`, `nascent`, `scoping`; `submitted` pauses a project's countdown, and marks a record's deadline met and its entry waiting). A project's manifest also has a `status:` of its own, `{ chips, line }`. The hub's six collection files hold about 170 records with a `status:` (statements, applications, funding, education, leads, events), and their words are mostly outcomes: completed, cancelled, declined, rejected, awarded, ready. Options: (a) keep `status` for a record. Pros: the field names a record's outcome, which most of its words are; the two vocabularies keep two names, so a reader never takes `submitted` of a record for `submitted` of a project; no data file, template or website export changes. Cons: a project's lifecycle word and a record's are named differently, and `status` means a record's word in a collection and the chips and line in a manifest. (b) rename it `stage` in every collection: the hub's six files and their `schema:` blocks, `vocab.yml` `statuses:` to a name beside `stages:`, every reader that finds the field by the name `status` (`src/lib/server/content/audit/projects.ts:532`, `src/lib/server/edit/feeds/feeds.ts:66` and `:540`, `src/lib/server/content/audit/website/cv.ts:45` and `:111`, which the website's CV export reads, and the collection, Focus and deadline readers), `docs/templates.md`, `docs/HELP.md` and `docs/data-map.md`. Pros: one name for a lifecycle word in a project and a record. Cons: two vocabularies with different flags under one name, which reads as one list; a rename across oculus, the hub and the website export for no change in behaviour. Recommendation (a), a judgment on the meaning of the words, not on the size of (b). The lazy option would be choosing (a) because (b) is large; that is not the reason given.
 
 ## Closed items
+- Open item 654 (2026-11-03), closed by Axel the same day: (a), step O137; (c) was the lazy option.
 - Open item 653 (2026-11-03), closed by Axel the same day: (a), O136's line rewritten to every keyed family; (b) was the lazy option.
 - Open item 652 (2026-11-03), closed by Axel the same day: (1) (a), (2) (a), (3) (a), O133's line rewritten; (1) (c), (2) (c) and (3) (b) were the lazy options.
 - Open item 651 (2026-11-03), closed by Axel the same day: (a), step O136; (b) was the lazy option.
@@ -816,6 +805,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-11-03 (O133 landed; open item 655). O133, one front-matter pattern for every Markdown reader, landed (booking in plan.md under O133, `agents/reviews/O133-landing.md`): the review over round 1 found no defect in a round item; its findings fixed at landing (the report's figures, four sentences of the same claim, `withoutMark` in place of a second byte-order mark helper, HELP for lone CR line ends), and the look's (HELP:406 and G150 name the Outline the Markdown server draws, which keeps a byte-order mark); G150 added; the gate passed every command and main equals the gate under `cmp`. Rulings 654 (a), step O137, and Interview status, step O138, booked in plan.md. Open item 655 raised (a collection's `status` renamed `stage`). O132's review over round 1, acbc1234def53be42, and O136's review, aeaee453e5f924a28, have reported; both are saved after this landing's commit. In flight (2 of 6): O132 (reviewed over round 1; landing next), O136 (reviewed; repair round next). Queued: O135, O137, O138. Open items: 655.
 - 2026-11-03 (O131 landed). O131, the editor holds a one-text `multi` value to its words, landed (booking in plan.md under O131, `agents/reviews/O131-landing.md`): the review over round 1 found no defect in a round item; its five findings fixed at landing, the joined form now one `JOINED_FORM` in `value-rule.ts` read by the rule and the schema, the others sentences of the builder's report; G13's Code and Test lines; the gate passed every command and main equals the gate under `cmp`; the look on 8797 showed the `sort: nonsense` mark and the joined class's mark. In flight: none. Queued: O133 (/spec again, ruling 652), O132 (unblocked), O136 (unblocked), O135 (after O133). Open items: none.
 - 2026-11-03 (O134 landed). O134, a Notes section in the templates page, landed (booking in plan.md under O134, `agents/reviews/O134-landing.md`): three fixes at landing, the review's two text findings (the tags sentence; `docs/data-map.md:23`) and the look's (the headings `notes/<name>.md` and `workspaces/<name>.yml` drawn without `<name>`, now written with `\<`); the gate passed every command and main equals the gate under `cmp`. O131's review over round 1, aca92485dd8b68b63 (claude-opus-5-5), has reported; it is saved after this landing's commit. In flight (1 of 6): O131 (reviewed over round 1; landing next). Queued: O133 (/spec again), O132, O135, O136. Open items: none.
 - 2026-11-03 (O130 landed; O131 round 1 under review; O134 reviewed). O130, every hub's category rows held to the config check, landed (booking in plan.md under O130, `agents/reviews/O130-landing.md`): the review found no defect in the code, so no repair round; three sentences of the builder's report fixed at landing; G124's text, Code and Test lines rewritten; the gate passed every command and main equals the gate under `cmp`; the look on 8797 showed lab's `categories[7]` finding with no hub chip. O131's builder reported round 1 (report section "Repair round 1", saved in the main ledger, usage under builder_usage); the orchestrator read the round's delta (`options.ts`, `options-schema.test.ts` against the snapshot, `docs/HELP.md:570`); its reviewer over round 1, aca92485dd8b68b63 (claude-opus-5-5), runs. O134's review a05c46e52aec55295 (claude-opus-5-5), `agents/reviews/O134-refuter.md`: every item holds, every case met; Standards 1 (`docs/templates.md:893`, the digit-only and code-span tag exceptions and a `#` inside the head) and Standards 2 (`docs/data-map.md:23`, notes "written by oculus") to fix at landing. In flight (2 of 6): O131 (review over round 1), O134 (reviewed; landing next). Queued: O133 (/spec again), O132 (now unblocked), O135, O136. Open items: none.

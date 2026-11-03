@@ -12,8 +12,9 @@
     // route under the file's root (data/helpers/files/address.ts, `figureUrl`), as the document
     // route resolves a figure, so a diagram beside the file draws; an address the browser resolves
     // itself, and one that climbs out of the root, are left as the file wrote them. A front matter
-    // block at the head of the file is the manifest of a document and not its prose, so it is
-    // left out as the document route leaves it out.
+    // block at the head of the file is the manifest of a document and not its prose, so it is left
+    // out by the pattern the document route splits the same block off with
+    // (data/prose/markdown/front-matter.ts), which the note scan and the Outline read too.
     //
     // A note of a hub (a file of its `.oculus/notes/`, named by `root` and `path`) is drawn with
     // its links, embeds and tags (state/sources/explorer/notes/note-press.ts's noteDrawing): an
@@ -33,6 +34,7 @@
     import { getContext } from 'svelte';
     import Markdown from './Markdown.svelte';
     import { blockMarkdownParts, type MathDrawing } from '$lib/ui/html';
+    import { FRONT_MATTER } from '$lib/data/prose/markdown/front-matter';
     import { docOfHtml, type RenderedHeading } from '$lib/state/system/docs.svelte';
     import { STATE_KEY } from '$lib/state/client/use';
     import type { ClientState } from '$lib/state/client/context';
@@ -76,11 +78,6 @@
         onheadings
     }: Props = $props();
     let box: HTMLDivElement | undefined = $state();
-
-    /**
-     * A YAML front matter block at the head of the file, which the document route splits off too.
-     */
-    const FRONT_MATTER = /^---\r?\n[\s\S]*?\r?\n---\r?\n?/;
 
     /**
      * The client's stores, which a note is read through. A document drawn outside the workbench,

@@ -16,6 +16,8 @@
 
 import type { RenderedHeading } from '../../../../data/model/index.ts';
 import { lazyRewrites, type BibRewrites } from '../../../../data/prose/bib.ts';
+import { FRONT_MATTER, headerLines } from '../../../../data/prose/markdown/front-matter.ts';
+import { withoutMark } from '../../../../data/prose/text-edits.ts';
 import {
     lazyReader,
     lazyTree,
@@ -52,19 +54,18 @@ export function headingOutline(headings: readonly RenderedHeading[]): OutlineHea
     );
 }
 
-/** The lines of a leading front matter block (`---` to `---`), which hold no headings. */
-function frontMatterEnd(lines: string[]): number {
-    if (lines[0]?.trim() !== '---') return 0;
-    const end = lines.findIndex((line, at) => at > 0 && /^(---|\.\.\.)\s*$/.test(line));
-    return end < 0 ? 0 : end + 1;
-}
-
-/** The Markdown headings of a text: `#` to `######`, outside fenced code. */
+/**
+ * The Markdown headings of a text: `#` to `######`, outside fenced code and outside the lines of a
+ * leading front matter header, matched with one leading BOM taken off, since a BOM is no text of
+ * the file a reader sees.
+ */
 export function markdownOutline(text: string): OutlineItem[] {
     const lines = text.split(/\r?\n/);
+    const header = FRONT_MATTER.exec(withoutMark(text));
+    const skip = header === null ? 0 : headerLines(header[0]);
     const found: Omit<OutlineItem, 'depth'>[] = [];
     let fence: { char: string; size: number } | null = null;
-    for (let at = frontMatterEnd(lines); at < lines.length; at += 1) {
+    for (let at = skip; at < lines.length; at += 1) {
         const line = lines[at];
         const opens = /^ {0,3}(`{3,}|~{3,})/.exec(line);
         if (fence !== null) {

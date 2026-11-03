@@ -224,6 +224,14 @@
 // `state/client/context` is where the client's stores are wired together, and it names nothing of
 // layer 3: the view registry is a state module, and the page root makes the primitives' tooltip
 // counter beside the client object, so the state row reaches no layer above it.
+//
+// `data/prose/markdown/front-matter` is in the views row because the source tab's preview
+// (views/shared/prose/RenderedMarkdown.svelte) strips a file's leading header by the pattern the
+// note scan, the Outline and the docs split read, so the preview leaves out the lines the others
+// take as the header, but for one byte-order mark before the opening line, which the note scan
+// and the Outline alone skip, and lone CR line ends, which the note scan and the Markdown server
+// alone read; the module holds that pattern and the count of a header's lines, no reader and no
+// I/O.
 export const ALLOWED: Record<string, string[]> = {
     ui: [
         'ui/**',
@@ -279,6 +287,7 @@ export const ALLOWED: Record<string, string[]> = {
         'state/**',
         'views/shared/**',
         'data/shapes/shapes',
+        'data/prose/markdown/front-matter',
         'data/prose/linkedin-idea',
         'data/prose/lsp-servers',
         'data/prose/text-edits',
