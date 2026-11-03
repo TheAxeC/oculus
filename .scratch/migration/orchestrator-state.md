@@ -48,7 +48,7 @@ dispatch:           # steps in flight, up to six (Z632)
   model: claude-opus-5-5
   launched: 2026-11-03
   report: .scratch/migration/agents/reviews/O127-report.md
-  builder_usage: none yet
+  builder_usage: first run 185001 tokens, 76 tool uses, 9 min 12 s
   round: 0
   reviewer_report: none yet
   brief_check: .scratch/migration/agents/reviews/O127-brief-check.md (ad6df2830a9462837, claude-opus-5-5, 184411 tokens, 66 tool uses, 8 min 47 s)
@@ -193,9 +193,8 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
-- Open item 642 (2026-11-03, O127's brief check, a finding whose fix widens the step, ruling Brief check scope; `agents/reviews/O127-brief-check.md`): a year typed through the manifest form into a manifest that has none is written as the text `'2025'` (`src/lib/server/edit/writes/manifest.ts:218-220` writes a number only where the field already holds one), and `normalise.ts:278` reads `year` with `z.number()`, so such a year reaches neither the boards' year filter (`takes.ts:94`) nor O127's year tag. No manifest of the hub holds a year as text today. O127 goes on without it and draws the year as `normalise.ts` gives it. (a) Recommended, a judgment: `normalise.ts` reads `year` as a whole number from a whole number or a text of digits alone, and as nothing otherwise, the schema giving `year` as text "as a whole number" (`manifest-schema.yml:60`), with rows in the snapshot test G32 names; carried by O127 in its repair round. (b) The manifest form writes the year field as a number whatever it holds; cons: a year typed by hand into the file as `'2025'` still reads as nothing. (c) No change; the lazy option.
-
 ## Closed items
+- Open item 642 (2026-11-03), closed by Axel the same day: (a), carried by O127 in its repair round; (c), no change, was the lazy option.
 - Open item 641 (2026-11-03), closed by Axel the same day: (a), step O127 after O126; (c), no change, was the lazy option.
 - Open item 640 (2026-11-03), closed by Axel the same day: (a), carried by step O125 at its landing; (b), keeping it translucent, was the lazy option.
 - Open item 639 (2026-11-03), closed by Axel the same day: (a) on all three parts, step O126; each (b) was the lazy option.
@@ -792,6 +791,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-11-03 (O127 under review). O127's builder reported (`agents/reviews/O127-report.md`, saved in the main ledger, usage under builder_usage) and the orchestrator read the whole diff (8 tracked files, 67 lines added, 22 removed). Its reviewer a8e6e45d7bcf15b6b (claude-opus-5-5) runs. In flight (2 of 6): O126 (repair round 1), O127 (under review). Queued: none. Open items: none (642 ruled (a), carried by O127's repair round).
 - 2026-11-03 (O127 building). O127's brief (`agents/briefs/O127.md`) carries the brief check's findings closed (`agents/reviews/O127-brief-check.md`, "Closed"): the year tag on the project board card and the Focus lane card, the rule in `focus.ts`, the stage flags' descriptions and the Help page. The text year the manifest form writes is open item 642. Prepared at 0e374c303; builder a09c9fb8b3606ecfe (claude-opus-5-5) runs in `.agents/worktrees/migration-O127`. In flight (2 of 6): O126 (repair round 1), O127 (building). Queued: none. Open items: 642.
 - 2026-11-03 (O126 round 1 sent; O127 brief checked). O126's review a5a6eef1ec6ba505c (claude-opus-5-5) is saved in `agents/reviews/O126-refuter.md`: items 1-3 and 5-7 hold, item 4 violated in one clause, C12 partial (the wrap is left to the look); findings Spec 1-2, Proof 1, Standards 1-4, Behaviour 1. Round 1 (`agents/briefs/O126-round1.md`, copied into the worktree with the review; snapshot `.agents/worktrees/migration-O126-round-1` with `files.txt`, 49 paths) carries all of them. O127's brief check ad6df2830a9462837 (claude-opus-5-5) is saved in `agents/reviews/O127-brief-check.md`. In flight (2 of 6): O126 (round 1), O127 (preparing).
 - 2026-11-03 (O126 under review; 641 ruled). O126's builder reported (`agents/reviews/O126-report.md`, saved in the main ledger, usage under builder_usage) and the orchestrator read the whole diff (33 tracked files, the new files whole). Its reviewer a5a6eef1ec6ba505c (claude-opus-5-5) runs. Open item 641 ruled (a): step O127 added after O126. In flight (1 of 6): O126 (under review). Queued: O127. Open items: none.

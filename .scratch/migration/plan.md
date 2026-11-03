@@ -3457,6 +3457,7 @@ Independent of each other; two may run side by side under R9's rule when their b
 - Open item 639 (2026-11-03): (a) on all three parts, step O126: a line between the session list and the sections; every heading of the Sessions tab and a Session tab a group row of the Repositories look, the repository's groups drawn by the Repositories view's Changes partial and `ChangeGroups.svelte` deleted; Details as one-line rows under Session, Model and Usage with its controls as icon actions on its head; each (b) was the lazy option (the user).
 - Open item 640 (2026-11-03): (a), the Processes table's actions column paints solid `--panel` over a wallpaper, carried by step O125 at its landing; (b), keeping it translucent, was the lazy option (the user).
 - Open item 641 (2026-11-03): (a), step O127, a year tag on the project board card and the Focus lane card at the accepted and published stages only; (b), the tag on every card with a year, reads a submitted paper's year as published; (c), no change, was the lazy option (the user).
+- Open item 642 (2026-11-03): (a), carried by step O127 in its repair round: `normalise.ts` reads `year` as a whole number from a whole number or a text of digits alone, and as nothing otherwise, with rows in the snapshot test G32 names; (b), the form writing the year as a number, leaves a hand-typed text year unread; (c), no change, was the lazy option (the user).
 
 ## Agents
 
