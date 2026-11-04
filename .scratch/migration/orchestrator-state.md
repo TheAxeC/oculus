@@ -39,9 +39,18 @@ dispatch:           # steps in flight, up to six (Z632)
   shared_paths: "config/catalogs/vocab.yml with O143 of this plan: O141 writes lines 181-192 and 213-214, O143 lines 145-147, separate hunks a cherry-pick merges without conflict"
   landing: not-started
 - step: O144
+  base: 069decb7c
+  worktree: .agents/worktrees/migration-O144
+  executor: agent
+  worker: claude:opus
+  session_id: abe622183bd8e8a7b
+  model: claude-opus-5-5
+  launched: 2026-11-04
+  report: .scratch/migration/agents/reviews/O144-report.md
+  round: 0
   brief_check: ".scratch/migration/agents/reviews/O144-brief-check.md (aa81eb9066685f0b8, claude-opus-5-5, 248970 tokens, 104 tool uses, 14 min 45 s)"
   shared_paths: "config/catalogs/vocab.yml with O141 of this plan: O144 writes line 105, O141 lines 181-192 and 213-214 on its base, separate hunks a cherry-pick merges without conflict"
-  landing: preparing
+  landing: not-started
 ```
 
 ## The standing demands (from Axel, in force)
@@ -810,6 +819,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-11-04 (O144 building; O141 waits on open item 672). O144's brief check (`agents/reviews/O144-brief-check.md`, aa81eb9066685f0b8, claude-opus-5-5) closed in the brief under its Closed heading: the period reader takes the EDTF level 0 date-time to the second alone, two periods order by the first day of the start then the last day of the end, the paths widened to every reader and text of the old fields the check found; G151 added to `agents/guarded.md` for the reader's table test; choices booked in `choices.md`; prepared at 069decb7c; worktree `.agents/worktrees/migration-O144` with `npm ci` and `svelte-kit sync`; base copy `.agents/worktrees/O144-base` with `unused-exports.txt` (335 lines); builder abe622183bd8e8a7b (claude-opus-5-5) runs. At O144's landing: the research hub's rewrite of item 10 (hub data, `scout.md:107,120`, the hub's schema help texts) and oculus's own `.oculus/project.yml` `cv.duration`, by the orchestrator. In flight (2 of 6): O141 (waits on 672), O144 (building). Open items: 672.
 - 2026-11-04 (O142 landed). O142, a nested group's heading one level down, landed (booking in plan.md under O142, `agents/reviews/O142-landing.md`): nested strips at the small label size, indented one fold control and gap per level; fixes at landing HELP:295 (the gap named) and the report's positions; the gate passed and main equals the gate under `cmp`; the look on 8797 measured the Audit kinds and Gallery sections at 12 px with the fold control under the parent's label. In flight (1 of 6): O141 (waits on 672). Queued: O144, its /spec next. Open items: 672.
 - 2026-11-04 (O143 landed; O142 reviewed over round 1). O143, the `stopped` status, landed (booking in plan.md under O143, `agents/reviews/O143-landing.md`): `statuses:` gains `stopped` grey with `closes_deadline: true`, the Funding template names it; fixes at landing P-r1-1 and P-r1-2 (report text), the breach Sp-r1-1 recorded; the gate passed and main equals the gate under `cmp`; the look on 8797 saw the radar drop a scheme at `stopped` and the Funding chip in grey. O142's review over round 1 (aa17a11de3b868799) is saved; its landing is next. In flight (2 of 6): O141 (waits on 672), O142 (reviewed over round 1). Queued: O144, its /spec next now that O143 has landed. Open items: 672.
 - 2026-11-04 (rulings 667 to 669 booked; nothing in flight). Axel ruled 667 (a), 668 (a) and 669 (`stopped` is an entry he stopped pursuing, essentially `not-applied` for funding and the other collections); booked in `plan.md` Rulings and as steps O141, O142 and O143. In flight (0 of 6). Queued: O141, O142, O143. Open items: none.
