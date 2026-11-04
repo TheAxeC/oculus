@@ -32,7 +32,7 @@ Each was run before any file of the worktree changed (`git status --short` print
 | 2. 14 pink and 17 teal blocks get a hue of their own; every pink and teal pair at 10 or more in all 49 themes, hue and `-txt` | DONE | case-run program: `C2 49 themes; 0 themes hold one; 0 measures under 10; 0 pairs under 10` |
 | 2. Each `-lane` pair with teal-lane or pink-lane on one side at 10 or more on the base stays at 10 or more | DONE | case-run program: `C3 1265 lane pairs read; 0 at 10 or more on the base and under 10 after` |
 | 2. No other token of any block changes | DONE | case-run program's "authored tokens that differ" section lists only `--c-pink` and `--c-teal` rows (31 rows over 23 themes, `themes whose pink or teal changed: 23`); C4 below |
-| 2. Each new hue in the theme's own tone | DONE, with two judgment calls (gruvboxlight teal, oxocarbon teal) | per-block table below; judgment calls 4 and 5 |
+| 2. Each new hue in the theme's own tone | DONE; in gruvboxlight the tone clause yields to the bars, as ruled in repair round 1 | per-block table below; judgment calls 4 and 5 |
 | 3. Head comment of each changed file names where its added hues come from, rewrapped at 100 columns | DONE | `awk 'FNR<=12 && length($0)>100' src/lib/themes/rice/*.css` prints nothing; `tests/checks/source/comment-width.test.ts` ran in `npm run test:quick` (ok) |
 | 4. The case-run program, in the scratch folder, `npx tsx`, writing nothing in the worktree | DONE | source and both runs below; `git status --short` after the runs lists only the nine changed files |
 | Verify 1: the seven test files | DONE | `Test Files  7 passed (7)`, `Tests  210 passed | 2 skipped (212)` |
@@ -447,7 +447,7 @@ C3 1265 lane pairs read; 0 at 10 or more on the base and under 10 after
 
 The first run's 46 lane rows between the last two lines printed each pair once (before equal to after); their values are the "before" figures of every row of the run after the change, below, which reads the same base copy.
 
-### Run after the last change (`run-final.txt`)
+### Run after the last change (`run-r1-final.txt`)
 
 The `=== base` half is the first run's base half above, line for line. The rest:
 
@@ -482,7 +482,7 @@ C2 49 themes; 0 themes hold one; 0 measures under 10; 0 pairs under 10
   kanagawa --c-pink: #d27e99 -> #e5a0b8
   kanagawadragon --c-teal: #8ea4a2 -> #6cb0a8
   solarized --c-teal: #2aa198 -> #26a67c
-  gruvboxlight --c-teal: #427b58 -> #2cb6ae
+  gruvboxlight --c-teal: #427b58 -> #22aba2
   gruvboxlight --c-pink: #b16286 -> #c22d62
   rosepinedawn --c-teal: #56949f -> #2f8a7f
   rosepinedawn --c-pink: #d7827e -> #b4589a
@@ -497,7 +497,7 @@ gruvbox: status hues L 57.6-83.2 C 0.042-0.218
   teal #8ec07c L 75.6 C 0.108 h 137.7; nearest hue 16.0 (cyan); -txt #8ec07c nearest 16.0 (cyan)
 gruvboxlight: status hues L 43.7-61.8 C 0.082-0.179
   pink #b16286 -> #c22d62 L 54.6 C 0.187 h 4.9; nearest hue 12.5 (violet); -txt #b92b5d nearest 11.6 (violet)
-  teal #427b58 -> #2cb6ae L 70.5 C 0.113 h 189.0; nearest hue 23.1 (cyan); -txt #1a6c67 nearest 10.5 (sky)
+  teal #427b58 -> #22aba2 L 67.1 C 0.110 h 187.9; nearest hue 20.2 (cyan); -txt #166f69 nearest 10.9 (cyan)
 everforest: status hues L 70.9-80.8 C 0.063-0.128
   pink #d699b6 -> #ffc0cf L 86.9 C 0.075 h 3.0; nearest hue 11.0 (violet); -txt #ffc0cf nearest 11.0 (violet)
   teal #83c092 -> #7ccca0 L 78.2 C 0.102 h 158.8; nearest hue 12.0 (cyan); -txt #7ccca0 nearest 12.0 (cyan)
@@ -564,8 +564,8 @@ kanagawalotus: status hues L 46.3-73.0 C 0.058-0.171
 === C3 lane pairs with pink-lane or teal-lane on one side, before -> after, per listed or changed block
   gruvbox pink-lane: amber 30.9>39.5, amber-s 26.2>33.9, blue 34.0>31.6, brass 30.0>39.4, crimson 13.5>17.7, cyan 30.0>26.1, cyan-d 38.0>36.3, gold 27.6>36.7, green 35.6>45.1, green-d 33.6>42.9, grey 17.3>20.4, grey-d 19.3>23.1, honey 28.9>37.8, indigo 30.0>26.1, lime 35.6>45.1, magenta 0.0>8.4, mauve 0.0>8.4, orange 23.4>31.5, purple 6.8>10.4, red 16.3>22.2, red-d 18.0>23.8, red-s 19.1>25.4, red-t 10.5>16.9, rose 14.0>14.2, sky 30.0>26.1, slate 23.0>26.4, teal 38.0>43.3, violet 0.0>8.4
   gruvbox teal-lane: amber 21.2, amber-s 26.0, blue 18.3, brass 19.9, crimson 43.9, cyan 11.7, cyan-d 25.7, gold 21.4, green 13.0, green-d 13.6, grey 20.5, grey-d 23.9, honey 24.7, indigo 11.7, lime 13.0, magenta 38.0, mauve 38.0, orange 30.8, purple 41.3, red 40.7, red-d 42.5, red-s 39.6, red-t 36.8, rose 48.5, sky 11.7, slate 27.8, violet 38.0
-  gruvboxlight pink-lane: amber 23.1>29.9, amber-s 25.8>33.1, blue 36.8>41.9, brass 23.1>29.9, crimson 15.3>11.3, cyan 34.1>39.9, cyan-d 34.1>39.9, gold 23.1>29.9, green 28.3>35.9, green-d 28.3>35.9, grey 19.7>26.1, grey-d 19.7>26.1, honey 23.1>29.9, indigo 5.5>7.1, lime 28.3>35.9, magenta 5.5>7.1, mauve 0.0>8.8, orange 16.5>19.5, purple 5.5>7.1, red 15.3>11.3, red-d 15.3>11.3, red-s 25.8>33.1, red-t 15.3>11.3, rose 0.0>8.8, sky 36.8>41.9, slate 19.7>26.1, teal 34.1>47.1, violet 5.5>7.1
-  gruvboxlight teal-lane: amber 20.0>28.4, amber-s 18.4>22.0, blue 11.0>11.2, brass 20.0>28.4, crimson 37.9>46.6, cyan 0.0>11.8, cyan-d 0.0>11.8, gold 20.0>28.4, green 12.7>22.5, green-d 12.7>22.5, grey 13.6>21.6, grey-d 13.6>21.6, honey 20.0>28.4, indigo 36.3>42.8, lime 12.7>22.5, magenta 36.3>42.8, mauve 34.1>40.1, orange 28.5>37.0, purple 36.3>42.8, red 37.9>46.6, red-d 37.9>46.6, red-s 18.4>22.0, red-t 37.9>46.6, rose 34.1>40.1, sky 11.0>11.2, slate 13.6>21.6, violet 36.3>42.8
+  gruvboxlight pink-lane: amber 23.1>29.9, amber-s 25.8>33.1, blue 36.8>41.9, brass 23.1>29.9, crimson 15.3>11.3, cyan 34.1>39.9, cyan-d 34.1>39.9, gold 23.1>29.9, green 28.3>35.9, green-d 28.3>35.9, grey 19.7>26.1, grey-d 19.7>26.1, honey 23.1>29.9, indigo 5.5>7.1, lime 28.3>35.9, magenta 5.5>7.1, mauve 0.0>8.8, orange 16.5>19.5, purple 5.5>7.1, red 15.3>11.3, red-d 15.3>11.3, red-s 25.8>33.1, red-t 15.3>11.3, rose 0.0>8.8, sky 36.8>41.9, slate 19.7>26.1, teal 34.1>47.0, violet 5.5>7.1
+  gruvboxlight teal-lane: amber 20.0>28.2, amber-s 18.4>22.3, blue 11.0>10.3, brass 20.0>28.2, crimson 37.9>46.3, cyan 0.0>11.1, cyan-d 0.0>11.1, gold 20.0>28.2, green 12.7>22.0, green-d 12.7>22.0, grey 13.6>21.3, grey-d 13.6>21.3, honey 20.0>28.2, indigo 36.3>42.5, lime 12.7>22.0, magenta 36.3>42.5, mauve 34.1>40.0, orange 28.5>36.8, purple 36.3>42.5, red 37.9>46.3, red-d 37.9>46.3, red-s 18.4>22.3, red-t 37.9>46.3, rose 34.1>40.0, sky 11.0>10.3, slate 13.6>21.3, violet 36.3>42.5
   everforest pink-lane: amber 24.4>22.0, amber-s 25.4>31.1, blue 29.8>31.4, brass 24.4>22.0, crimson 9.6>13.1, cyan 29.8>31.4, cyan-d 29.8>31.4, gold 24.4>22.0, green 33.7>32.4, green-d 33.7>32.4, grey 20.8>23.8, grey-d 20.8>23.8, honey 24.4>22.0, indigo 0.0>7.9, lime 33.7>32.4, magenta 0.0>7.9, mauve 0.0>7.9, orange 14.1>13.9, purple 0.0>7.9, red 9.6>13.1, red-d 9.6>13.1, red-s 25.4>31.1, red-t 9.6>13.1, rose 0.0>7.9, sky 29.8>31.4, slate 20.8>23.8, teal 36.6>37.5, violet 0.0>7.9
   everforest teal-lane: amber 18.0>19.7, amber-s 25.1>27.1, blue 8.4>8.6, brass 18.0>19.7, crimson 39.5>41.4, cyan 8.4>8.6, cyan-d 8.4>8.6, gold 18.0>19.7, green 6.6>8.7, green-d 6.6>8.7, grey 13.8>15.8, grey-d 13.8>15.8, honey 18.0>19.7, indigo 36.6>33.9, lime 6.6>8.7, magenta 36.6>33.9, mauve 36.6>33.9, orange 31.4>33.2, purple 36.6>33.9, red 39.5>41.4, red-d 39.5>41.4, red-s 25.1>27.1, red-t 39.5>41.4, rose 36.6>33.9, sky 8.4>8.6, slate 13.8>15.8, violet 36.6>33.9
   everforestlight pink-lane: amber 41.6>36.5, amber-s 31.3>31.8, blue 34.3>38.4, brass 41.6>36.5, crimson 15.9>11.3, cyan 34.3>38.4, cyan-d 34.3>38.4, gold 41.6>36.5, green 47.1>42.0, green-d 47.1>42.0, grey 32.2>30.8, grey-d 32.2>30.8, honey 41.6>36.5, indigo 0.0>9.7, lime 47.1>42.0, magenta 0.0>9.7, mauve 0.0>9.7, orange 29.7>24.8, purple 0.0>9.7, red 15.9>11.3, red-d 15.9>11.3, red-s 31.3>31.8, red-t 15.9>11.3, rose 0.0>9.7, sky 34.3>38.4, slate 32.2>30.8, teal 46.7>45.2, violet 0.0>9.7
@@ -649,7 +649,7 @@ From the per-block tables of the two runs above (nearest status token, hue / `-t
 | --- | --- | --- | --- | --- | --- |
 | gruvbox | pink | #d3869b | #f28ccf | 0.0 violet / 0.0 violet | 11.8 violet / 11.8 violet |
 | gruvboxlight | pink | #b16286 | #c22d62 | 12.6 violet / 4.8 violet | 12.5 violet / 11.6 violet |
-| gruvboxlight | teal | #427b58 | #2cb6ae | 0.0 cyan / 0.0 cyan | 23.1 cyan / 10.5 sky |
+| gruvboxlight | teal | #427b58 | #22aba2 | 0.0 cyan / 0.0 cyan | 20.2 cyan / 10.9 cyan |
 | everforest | pink | #d699b6 | #ffc0cf | 0.0 violet / 0.0 violet | 11.0 violet / 11.0 violet |
 | everforest | teal | #83c092 | #7ccca0 | 9.4 green / 9.4 green | 12.0 cyan / 12.0 cyan |
 | everforestlight | pink | #df69ba | #ab3560 | 0.0 violet / 0.0 violet | 22.3 violet / 10.3 violet |
@@ -700,33 +700,70 @@ The teal of the themes not listed for teal (gruvbox, tokyonight, kanagawa and th
 
 The rewrapped head comments push every later line down, so the token lines sit one line (three in singles.css) below the line numbers of the write list; no line outside the head comments and the listed blocks' `--c-pink` and `--c-teal` lines changes (C4).
 
-Every edit was made with the Edit and Write tools, and no program other than the case-run program was written. `awk 'length($0)>100{print FILENAME": "FNR}' src/lib/themes/rice/*.css` prints nothing.
+Every edit was made with the Edit and Write tools, except the section "Repair round 1" of this report, which a shell heredoc appended; no program other than the case-run program was written. `awk 'length($0)>100{print FILENAME": "FNR}' src/lib/themes/rice/*.css` prints nothing.
 
 ## Judgment calls the brief left open
 
 1. The `-lane` pairs C3 reads are `pink-lane` and `teal-lane` against the lane of every tone that `vocab.yml`'s `palette:` names (the tones a config colour, and so a header, can be drawn in: 31 tones, counted with `python3 -c "import yaml;p=yaml.safe_load(open('config/catalogs/vocab.yml'))['palette'];print(len({v[2:] for v in p.values() if str(v).startswith('c-')}))"`, among them crimson, mauve, rose, red-t, cyan-d and grey-d). The pairs a Focus header can draw are a subset, so this is the wider of the readings; the code and scm hues, which no header draws, are left out.
 2. A "pair under 10" counts one theme with two tokens once, under 10 on the hue or on `-txt`, which reproduces the brief's 49 on the base; the program also prints the 89 measures.
-3. Every new hue is oculus's own except Oxocarbon's teal and pink, which are IBM Carbon's teal 50 (`#009d9a`) and magenta 30 (`#ffafd2`). Both values were read from `@carbon/colors` (`https://unpkg.com/@carbon/colors@11.20.0/lib/index.js`: `var teal50 = '#009d9a';`, `var magenta30 = '#ffafd2';`). The `singles.css` head comment names them in the sentence that names Carbon's yellow 30 and orange 40.
-4. Gruvbox Light's teal `#2cb6ae` is lighter (OKLCH L 70.5) than the theme's other status hues (L 43.7 to 61.8). The bars together require it: its `-txt` must clear the cyan and sky `-txt`, and its lane must stay 10 from the blue lane, which on the base is 11.0. Near hue 189 the blue-lane distance was 8.4 at L 61.9 (`#179a8f`), 9.9 at L 66.9 (`#22aaa4`) and 11.2 at L 70.5 (`#2cb6ae`), each read with the case-run program. Its chip text is `#1a6c67`, which is dark. Whether L 70.5 reads as "darker on a light one" is the orchestrator's to judge at the look; a darker teal breaks the lane bar.
-5. Oxocarbon's teal `#009d9a` (Carbon teal 50, L 62.9) is darker than the theme's other status hues (L 66.9 to 83.2), and derive.ts lifts its `-txt` slightly to `#00a7a4`. A lighter oculus teal, `#2fd3a6`, took the teal lane from 16.6 to 8.9 against the green lane, which breaks C3, so Carbon's own teal 50 is kept.
+3. Every new hue is oculus's own except Oxocarbon's teal and pink, which are IBM Carbon's teal 50 (`#009d9a`) and magenta 30 (`#ffafd2`). Both values were read from `@carbon/colors` (`https://unpkg.com/@carbon/colors@11.20.0/lib/index.js`: `var teal50 = '#009d9a';`, `var magenta30 = '#ffafd2';`). The `singles.css` head comment says in a sentence of its own that Oxocarbon's own teal and pink, Carbon's teal 40 and magenta 40, are replaced by Carbon's teal 50 and magenta 30.
+4. Gruvbox Light's teal is `#06a596` (OKLCH L 64.9, C 0.114, h 183.5), set at landing: the darkest teal found within the theme's status chroma range (C 0.082 or more) that meets every bar of item 2, C2 and C3 (`O140-refuter.md`, "Repair round 1, refuted", S3). The case-run program in the gate prints for it `nearest hue 17.7 (cyan); -txt #047369 nearest 10.1 (cyan)`, the teal-lane against the blue lane 10.4, C2 0 pairs under 10 and C3 0 pairs broken. The text below is the round's account of `#22aba2`, the value before landing. No teal of C 0.08 or more inside the theme's L range (43.7 to 61.8) meets the bars; low-chroma teals there do (the most saturated `#5b8e87`, C 0.056): the reviewer's read-only grid search through `parseBlocks`, `resolveTheme` and `deriveTokens` with the same bars (`O140-refuter.md`, S1) found at L 40 to 62 and C 0.08 to 0.20, hue 150 to 220, one passing value, `#005725` (h 150, a green), and the darkest passing teal at L 67, `#22aba2`. The case-run program confirms it: with `#22aba2`, C2 prints 0 pairs under 10 and C3 0 pairs broken, the nearest status token is 20.2 (cyan) on the hue and 10.9 (cyan) on `-txt` (`#166f69`), and the teal-lane against the blue lane is 10.3. A darker value of the same hue, `#20a8a0` (L 66.2), takes that lane pair to 9.8 (`blue 11.0>9.8 BROKEN`, `C3 1265 lane pairs read; 2 at 10 or more on the base and under 10 after`), so it is not taken.
+5. Oxocarbon's teal `#009d9a` (Carbon teal 50, L 62.9) is darker than the theme's other status hues (L 66.9 to 83.2), and derive.ts lifts its `-txt` slightly to `#00a7a4`. Oxocarbon's teal and pink are Carbon's teal 50 and magenta 30 because they are hues of IBM Carbon, the system Oxocarbon is drawn from.
 6. Tokyo Night and Tokyo Night Storm share one pink, `#ff7ac6`, as the two blocks share their other hues.
 7. Saturation: Gruvbox Light's pink (OKLCH C 0.187) sits a little above the theme's status range (up to 0.179) and Tokyo Night Light's pink (C 0.173) above its range (up to 0.140); the pink it replaces there, `#7b43ba`, was C 0.180. Everforest's pink `#ffc0cf` (L 86.9) is a pale pink above the theme's L range (70.9 to 80.8), which is light on a dark ground.
-8. Margins: several new values clear 10 by little (rosepine pink 10.2 from orange, rosepinedawn teal `-txt` 10.2, everforestlight pink `-txt` 10.3, rosepinemoon pink 10.4, gruvboxlight teal `-txt` 10.5, solarized teal 10.7). They meet the bar; a later change to a neighbouring hue of those themes can take them under it.
+8. Margins: several new values clear 10 by little (rosepine pink 10.2 from orange, rosepinedawn teal `-txt` 10.2, everforestlight pink `-txt` 10.3, rosepinemoon pink 10.4, gruvboxlight teal `-txt` 10.9 and lane against blue 10.3, solarized teal 10.7). They meet the bar; a later change to a neighbouring hue of those themes can take them under it.
 
 ## What a reader sees, before and after (for the look on landing)
 
 The default light theme, the dark theme and the VS Code themes keep `--c-pink` `#ec4899` and `--c-teal` `#0d9488` from `tokens.css` (`grep -n -- '--c-pink:\|--c-teal:' src/lib/themes/tokens.css src/lib/themes/themes.css` prints only `tokens.css:40` and `:48`; `grep -c -- '--c-pink\|--c-teal' src/lib/themes/vscode.css` prints 0).
 
 - Applications view, an application at `interview`: its status chip and its edge were drawn in `c-purple` (`#7c3aed` in the default) and are now drawn in `c-pink` (`#ec4899` in the default, and in a VS Code theme). In each changed pink theme the pink is the new value of the table above; in a theme whose pink did not change (mocha, latte, dracula, solarized, synthwave, flexoki and the others) the interview chip takes that theme's existing pink. An application at `offered` keeps `c-teal`, whose value changes only in the 17 teal blocks.
-- Focus board, Job applications column: the Interview stack's block (its label and its edge, `Band.svelte:147`, `:254`) moves from purple to pink beside Active (green), Applied (cyan) and Offered (teal) (`position_stages`, `vocab.yml:203-206`); in every one of the 49 themes Interview and Offered read apart from each other and from Applied and Active, by the C2 bar.
+- Focus board, Job applications column: the Interview stack's edge (`Band.svelte:147` sets `--stage`, `:254` draws `border-left: 3px solid var(--stage, var(--line))`) moves from purple to pink, and its label stays muted (the `.stage` rule, `Band.svelte:240-247`, `color: var(--muted-txt, var(--muted))`). It sits beside Active (green), Applied (cyan) and Offered (teal) (`position_stages`, `vocab.yml:203-206`); in every one of the 49 themes Interview and Offered read apart from each other and from Applied and Active, by the C2 bar.
 - Build lane header (Focus board, the `incubate` cluster, `vocab.yml:191`, `#0d9488`, which `palette:` maps to `c-teal`) and the Teaching column header (`focus_lane_tones: teaching: teal`, `vocab.yml:214`): drawn in `--c-teal-lane`, which changes in the 17 teal blocks; the Tasks section's left edge (`Tasks.svelte:185`, `--c-teal`), the domain filter group (`facet_tones: domain: teal`) and the Career view's references bars (`career-view.ts:43`) change with it.
 - Career view's profile bars (`career-view.ts:44`, tone `pink`) and the form filter group (`facet_tones: form: pink`) change in the 14 pink blocks.
-- Themes to put the board in: one VS Code theme (no change besides interview purple to pink), gruvboxlight (teal is the lighter `#2cb6ae`, judgment call 4), oxocarbon (teal `#009d9a`, judgment call 5), rosepine (its base pink equals its orange and its base teal equals its green and sky, all now apart), everforestlight (pink `#ab3560` against the red `#f85552`, `everforest.css:77`), and any other changed theme of the table.
+- Every other user of `--c-teal`, each drawn in the default theme and a VS Code theme in `#0d9488` before and after (neither sets a teal of its own, so both read `tokens.css:40`), and in each theme whose teal changed in the old teal before and the new teal after (the table below):
+  - the `released` project stage chip (`config/catalogs/vocab.yml:75`, `#0d9488`) and the `released` category (`:275`);
+  - the `strong` venue tier chip (`:302`);
+  - the colours that cycle through `HUES` (`src/lib/ui/display/hues.ts:10`, `['blue', 'green', 'amber', 'violet', 'red', 'teal']`): the sixth colour of the calendar (`Calendar.svelte:48`, `:172`) and every sixth lane of the git graph (`graph/Lanes.svelte:37`, `var(--c-${HUES[lane % HUES.length]}-txt)`);
+  - the merge editor's current header, current content and overview ruler (`src/lib/ui/controls/editor/kit/theme/colours.ts:521-523`, `--c-teal` at 80, 33 and 80);
+  - inbox info items (`src/lib/state/feeds/inbox.ts:67`);
+  - the recover view's present state (`src/lib/state/system/machine/recover-words.ts:139`);
+  - the session timeline's tool turns (`src/lib/views/shared/sessions/sections/TimelineTurns.svelte:41`);
+  - the domain facet (`facet_tones: domain: teal`, `vocab.yml:232`), the Career view's references bars (`career-view.ts:43`) and the Focus Tasks edge (`Tasks.svelte:185`);
+  - the Usage view's account tier tag (`src/lib/views/system/machine/usage/Usage.svelte:205`, `tone="teal"`, drawn in `--c-teal-txt` through `Tag.svelte:33`).
+
+  | Theme | Teal before | Teal after |
+  | --- | --- | --- |
+  | default (light, dark) | #0d9488 | #0d9488 |
+  | VS Code themes | #0d9488 | #0d9488 |
+  | macchiato | #8bd5ca | #62d6c2 |
+  | frappe | #81c8be | #5ccbb6 |
+  | everforest | #83c092 | #7ccca0 |
+  | flexoki | #3aa99f | #66c9a6 |
+  | flexokilight | #24837b | #1b8b60 |
+  | gruvboxlight | #427b58 | #06a596 |
+  | kanagawadragon | #8ea4a2 | #6cb0a8 |
+  | kanagawalotus | #597b75 | #3d8a72 |
+  | rosepine | #9ccfd8 | #5ec2b3 |
+  | rosepinemoon | #9ccfd8 | #5ec2b3 |
+  | rosepinedawn | #56949f | #2f8a7f |
+  | nord | #8fbcbb | #6fc2b0 |
+  | dracula | #8be9fd | #5ae6c4 |
+  | solarized | #2aa198 | #26a67c |
+  | onedark | #56b6c2 | #4fc1a6 |
+  | synthwave | #36f9f6 | #20c9b4 |
+  | oxocarbon | #08bdba | #009d9a |
+
+  The values are the authored `--c-teal` rows of the case-run program's "authored tokens that differ" section; a user drawn through `-txt` or `-lane` takes the value derive.ts derives from them.
+- Themes to put the board in: one VS Code theme (no change besides interview purple to pink), gruvboxlight (teal `#06a596`, judgment call 4), oxocarbon (teal `#009d9a`, judgment call 5), rosepine (its base pink equals its orange and its base teal equals its green and sky, all now apart), everforestlight (pink `#ab3560` against the red `#f85552`, `everforest.css:77`), and any other changed theme of the table.
 
 ## Re-read of the text that describes the behaviour
 
-- `src/lib/themes/derive.ts` head comment and the `LANE_SHARE` doc comment (`:83-89`): still true; no derived rule changes, and the lane pairs at 10 or more on the base stay there (C3).
-- `config/catalogs/vocab.yml:181`, `focus_lanes` comment: the sentence that neighbouring headers stay 10 apart under every theme is still true (C3); the count "ten of the pairs" is not verified, see the next section. "Build and Teaching, which share teal in every theme" is still true.
+- `src/lib/themes/derive.ts:83-89` (`LANE_SHARE`) and the `focus_lanes` sentence at `config/catalogs/vocab.yml:181`: C3 shows that no `-lane` pair with teal-lane or pink-lane on one side that was at 10 or more on the base is under 10 after (`C3 1265 lane pairs read; 0 at 10 or more on the base and under 10 after`). It does not show either comment true over 49 themes: pairs with neither teal nor pink on one side were not measured. Some teal-lane pairs under 10 on the base are at 10 or more after, among them `kanagawadragon` teal-lane against grey-d (6.5 to 13.0) and `kanagawalotus` teal-lane against grey-d (7.2 to 12.8), which are Teaching against Jobs on the open board. The full list, read from the final run's C3 rows (before under 10, after printed 10.0 or more):
+  - teal-lane: gruvboxlight cyan, cyan-d; nord cyan, sky (both printed 10.0); oxocarbon cyan, cyan-d; rosepine green, green-d, sky; rosepinemoon green, green-d, lime, sky; rosepinedawn blue, cyan, cyan-d, sky; dracula cyan, cyan-d, sky; macchiato cyan, sky (both printed 10.0); frappe cyan, cyan-d, sky; kanagawadragon blue, cyan, cyan-d, green-d, grey, grey-d, indigo, lime, mauve, purple, sky, slate, violet; kanagawalotus gold, grey, grey-d, slate.
+  - pink-lane: gruvbox purple; everforest crimson, red, red-d, red-t; nord purple; tokyolight mauve, purple, violet; oxocarbon crimson, red, red-d, red-t; rosepinedawn orange, rose; onedark crimson, red-d, and red, red-t, rose (the last three printed 10.0).
+
+  A pair printed 10.0 is rounded to one decimal, so whether its unrounded value reaches 10 is not shown by these rows. The named examples of the `vocab.yml:181` comment ("Build and Teaching, which share teal in every theme") hold, and its count "ten of the pairs" is not verified, see the next section.
 - Each of the eight theme files' head comment: rewritten (item 3).
 - `docs/HELP.md`, `docs/templates.md`: no status colour named (`grep -n -i 'pink\|teal\|interview\|offered\|purple'` over `docs/HELP.md docs/templates.md` hits only commented config examples, the `status` options of a template and the status words of the Awaiting box; `docs/palette.md` names no pink, teal, interview or offered); still true.
 - `grep -rn -i '7c3aed' src tests docs README.md config --exclude=local.yml` hits `tokens.css:46` (`--c-purple`), `tokens.css:93` (`--c-graph-remote`), test fixtures with their own colours, `vocab.yml:40` (`palette:`), `vocab.yml:301` (the `flagship` venue tier) and `docs/templates.md` examples; none is the interview colour, so nothing else carries the change.
@@ -738,3 +775,63 @@ The default light theme, the dark theme and the VS Code themes keep `--c-pink` `
 - Not verified: the count in `vocab.yml:181`, "ten of the pairs that touch only in such a layout are below 10 under at least one theme". The case-run program's last section shows 8 teal-lane pairs that were under 10 in at least one theme on the base and are at 10 or more in every theme after: teal against gold, grey, grey-d, indigo, mauve, purple, slate and violet. Among them, teal/gold is Teaching against Funding and teal/grey-d Teaching against Jobs (`focus_lane_tones`, `vocab.yml:214`), and teal/grey is Build against Backburner, teal/slate Build against Review and teal/mauve Build against the Idea lane (the lane colours of `vocab.yml:186`, `:188` and `:192`, which `palette:` maps to `c-slate`, `c-grey` and `c-mauve`). If any of those is one of the ten collapsed-layout pairs the comment counts, the count is now too high. The only enumeration of those pairs in the ledger is the 17-theme one of `agents/reviews/Q41-report.md:730-739`; by that list the teal pairs among the ten are build/teaching, scope/teaching (teal/cyan-d, under 10 in 12 themes after), push/teaching (teal/blue, 2 themes after) and run/teaching (teal/green, 4 themes after), all still under 10 in at least one theme, so by that list the count stands. The 49-theme enumeration behind the current sentence is not in the tree, so the sentence is not verified after the change, and the line is outside the step's write list (`vocab.yml` lines 155 and 205 only). A re-run of the collapsed-layout enumeration over the 49 themes settles it.
 - The write list's line numbers for the theme files are the base's; the rewrapped head comments are a line longer (three in singles.css), so the token lines moved down by that much (C4 above).
 - No other premise of the brief failed: every distance and block list it quotes reproduces in the first run.
+
+## Repair round 1
+
+Every item of `agents/briefs/O140-round-1.md` is done.
+
+1. Spec S1. `src/lib/themes/rice/gruvbox.css:84`, `body.gruvboxlight`'s `--c-teal`, is `#22aba2` (it was `#2cb6ae`). No teal of C 0.08 or more inside Gruvbox Light's L range (43.7 to 61.8) meets the bars. The evidence is the reviewer's probe (`O140-refuter.md`, S1): at L 40 to 62, C 0.08 to 0.20 and hue 150 to 220 the one passing value is `#005725`, a green at h 150, and the darkest passing teal is `#22aba2` at L 67. The case-run program confirms `#22aba2` (`.../scratchpad/o140-builder/run-r1-22aba2.txt`, the same output as the final run below):
+   ```
+   C2 49 themes; 0 themes hold one; 0 measures under 10; 0 pairs under 10
+     teal #427b58 -> #22aba2 L 67.1 C 0.110 h 187.9; nearest hue 20.2 (cyan); -txt #166f69 nearest 10.9 (cyan)
+     gruvboxlight teal-lane: ... blue 11.0>10.3, ... sky 11.0>10.3, ...
+   C3 1265 lane pairs read; 0 at 10 or more on the base and under 10 after
+   ```
+   A darker value of the same hue fails C3 (`.../o140-builder/run-r1-20a8a0.txt`):
+   ```
+   C2 49 themes; 0 themes hold one; 0 measures under 10; 0 pairs under 10
+     teal #427b58 -> #20a8a0 L 66.2 C 0.109 h 188.6; nearest hue 19.7 (cyan); -txt #146c66 nearest 10.8 (cyan)
+   blue 11.0>9.8 BROKEN
+   C3 1265 lane pairs read; 2 at 10 or more on the base and under 10 after
+   ```
+   The value taken is `#22aba2`. Judgment call 4, the per-block table, the quoted final run and the visible-change section now say so.
+2. Spec S2 and Behaviour B2. The section "What a reader sees, before and after" now lists every other user of `--c-teal` with its file and line: the `released` stage and category, the `strong` venue tier, `HUES` with its calendar and git-graph readers, the merge editor's three colours, inbox info items, the recover view's present state, the session timeline's tool turns, the domain facet, the Career references bars and the Focus Tasks edge. Each user is drawn in the before and after teal of the table that follows the list: the default and VS Code themes, and the 17 themes whose teal changed.
+3. Proof P1. The "Re-read" section now says what C3 shows and what it does not. No `-lane` pair with teal-lane or pink-lane on one side that was at 10 or more on the base is under 10 after. The section lists the pairs that were under 10 on the base and are at 10 or more after, `kanagawadragon` and `kanagawalotus` teal-lane against grey-d among them. It no longer calls `derive.ts:83-89` or the `vocab.yml:181` sentence true over 49 themes, since pairs with neither teal nor pink on one side were not measured.
+4. Proof P2. Judgment call 5 now says Oxocarbon's teal and pink are Carbon's teal 50 and magenta 30 because they are hues of the system Oxocarbon is drawn from. The claim that lighter teals fail C3 is removed.
+5. Standards. `src/lib/themes/rice/singles.css:5-12`: the "so" clause now governs the warning hues only. A sentence of its own follows it, "Its own teal and pink, Carbon's teal 40 and magenta 40, are replaced by Carbon's teal 50 and magenta 30, which read apart from its cyan and red." The comment stays one paragraph of 12 lines, filled greedily at 100 columns. Line 8 is exactly 100 columns. `awk 'length($0)>100{print FILENAME": "FNR}' src/lib/themes/rice/*.css` prints nothing.
+6. Behaviour B1. The visible-change section now says that the Interview stack's edge (`Band.svelte:147`, `:254`) moves from purple to pink, and that its label stays muted (the `.stage` rule, `Band.svelte:240-247`, `color: var(--muted-txt, var(--muted))`).
+
+### Runs after the last change, from the worktree root
+
+- Brief check 1, the seven test files (`.../o140-builder/r1-verify1.txt`): `Test Files  7 passed (7)`, `Tests  210 passed | 2 skipped (212)`. The two skipped tests are the real-hub cases of `config-folder` (`it.skipIf(!REAL.asked)`, `config-folder.test.ts:643`, `:819`).
+- Brief check 2, `npm run diagrams`: exit 0. `git status --short` afterwards lists the same nine modified files, plus the untracked round brief, the review and this report. `npm run test:quick`, run once (`.../o140-builder/r1-quick.txt`):
+  ```
+  ok      prettier (0.8 s): All matched files use Prettier code style!
+  ok      ASCII gate (0.9 s)
+  ok      svelte-kit sync (2.3 s)
+  ok      svelte-check (9.2 s): 1793746034622 COMPLETED 581 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+  ok      vitest (25.0 s): Duration  14.21s (transform 1.72s, setup 0ms, import 3.31s, tests 10.78s, environment 0ms)
+  ok      vitest checks (45.9 s): Duration  35.01s (transform 14.98s, setup 0ms, import 29.26s, tests 50.17s, environment 2ms)
+  test:quick: 48.3 s; every command passed
+  ```
+- Brief check 3: `LC_ALL=C perl -ne 'print "$ARGV:$.: $_" if /[^\x20-\x7E\n]/; close ARGV if eof' config/catalogs/vocab.yml src/lib/themes/rice/*.css` printed nothing (exit 0).
+- Brief check 4: `python3 -c "import yaml; yaml.safe_load(open('config/catalogs/vocab.yml'))"` exit 0.
+- Brief check 5, the case-run program (`.../o140-builder/run-r1-final.txt`, 280 lines). `diff` against the earlier final run (`run-final.txt`) shows only the gruvboxlight teal lines (126, 141) and the gruvboxlight lane rows (208, 209). Its result lines:
+  ```
+  C2 49 themes; 0 themes hold one; 0 measures under 10; 0 pairs under 10
+  themes whose pink or teal changed: 23
+  C3 1265 lane pairs read; 0 at 10 or more on the base and under 10 after
+  8 pairs under 10 in some theme on the base are at 10 or more in every theme after
+  ```
+- The unused-exports compare: `diff <(sh utils/unused-exports.sh) ../O140-base/unused-exports.txt` exit 0, no difference.
+- The history-word grep over `git diff -U0` printed nothing (exit 1).
+
+No check came back red. No test was added or changed, and no program other than the case-run program was written.
+
+### Files with line counts after the round
+
+The round changed two files of the worktree besides this report. The nine-file table above stands with the same counts:
+- `src/lib/themes/rice/gruvbox.css`: 113 lines on the base, 114 now, +7/-6 against the base.
+- `src/lib/themes/rice/singles.css`: 357 lines on the base, 360 now, +21/-18 against the base. Its hunks are the same as before: `1,9c1,12`, then one `--c-pink`/`--c-teal` line per hunk.
+
+`git diff --stat`: `9 files changed, 75 insertions(+), 65 deletions(-)`.

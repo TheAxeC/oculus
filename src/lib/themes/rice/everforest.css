@@ -1,7 +1,8 @@
-/* Everforest (sainnhe/everforest, MIT), medium contrast: dark, then light. One block per
-   palette, each a set of overrides on the tokens of tokens.css; the shape every rice palette
-   shares is `body.rice` in themes.css, and the theme list's rows are the `themes:` rows of
-   config/defaults/appearance.yml. */
+/* Everforest (sainnhe/everforest, MIT), medium contrast: dark, then light. The teal and the pink of
+   the dark palette and the pink of the light one are oculus's own, chosen to read apart from the
+   theme's other status hues. One block per palette, each a set of overrides on the tokens of
+   tokens.css; the shape every rice palette shares is `body.rice` in themes.css, and the theme
+   list's rows are the `themes:` rows of config/defaults/appearance.yml. */
 
 /* --- Everforest (sainnhe/everforest) ------------------------------------- */
 body.everforest {
@@ -30,7 +31,7 @@ body.everforest {
     --c-green: #a7c080;
     --c-green-d: #a7c080;
     --c-lime: #a7c080;
-    --c-teal: #83c092;
+    --c-teal: #7ccca0;
     --c-cyan: #7fbbb3;
     --c-cyan-d: #7fbbb3;
     --c-sky: #7fbbb3;
@@ -39,7 +40,7 @@ body.everforest {
     --c-violet: #d699b6;
     --c-purple: #d699b6;
     --c-magenta: #d699b6;
-    --c-pink: #d699b6;
+    --c-pink: #ffc0cf;
     --c-rose: #d699b6;
     --c-mauve: #d699b6;
     --c-crimson: #e67e80;
@@ -97,7 +98,7 @@ body.everforestlight {
     --c-violet: #df69ba;
     --c-purple: #df69ba;
     --c-magenta: #df69ba;
-    --c-pink: #df69ba;
+    --c-pink: #ab3560;
     --c-rose: #df69ba;
     --c-mauve: #df69ba;
     --c-crimson: #f85552;

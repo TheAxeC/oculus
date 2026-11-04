@@ -1,6 +1,7 @@
-/* Kanagawa (rebelot/kanagawa.nvim, MIT): Wave and Dragon, then Lotus. One block per palette,
-   each a set of overrides on the tokens of tokens.css; the shape every rice palette shares is
-   `body.rice` in themes.css, and the theme list's rows are the `themes:` rows of
+/* Kanagawa (rebelot/kanagawa.nvim, MIT): Wave and Dragon, then Lotus. The pink of Wave and the teal
+   of Dragon and of Lotus are oculus's own, chosen to read apart from the theme's other status hues.
+   One block per palette, each a set of overrides on the tokens of tokens.css; the shape every rice
+   palette shares is `body.rice` in themes.css, and the theme list's rows are the `themes:` rows of
    config/defaults/appearance.yml. */
 
 /* --- Kanagawa (rebelot/kanagawa.nvim) ------------------------------------ */
@@ -39,7 +40,7 @@ body.kanagawa {
     --c-violet: #957fb8;
     --c-purple: #957fb8;
     --c-magenta: #d27e99;
-    --c-pink: #d27e99;
+    --c-pink: #e5a0b8;
     --c-rose: #d27e99;
     --c-mauve: #d27e99;
     --c-crimson: #c34043;
@@ -89,7 +90,7 @@ body.kanagawadragon {
     --c-green: #87a987;
     --c-green-d: #8a9a7b;
     --c-lime: #8a9a7b;
-    --c-teal: #8ea4a2;
+    --c-teal: #6cb0a8;
     --c-cyan: #8ba4b0;
     --c-cyan-d: #8ba4b0;
     --c-sky: #8ba4b0;
@@ -147,7 +148,7 @@ body.kanagawalotus {
     --c-green: #6f894e;
     --c-green-d: #6e915f;
     --c-lime: #6e915f;
-    --c-teal: #597b75;
+    --c-teal: #3d8a72;
     --c-cyan: #4e8ca2;
     --c-cyan-d: #5a7785;
     --c-sky: #6693bf;

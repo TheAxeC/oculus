@@ -1,7 +1,8 @@
-/* Flexoki (kepano/flexoki, MIT): dark on its 400 hues, then light on its 600 hues. One block per
-   palette, each a set of overrides on the tokens of tokens.css; the shape every rice palette
-   shares is `body.rice` in themes.css, and the theme list's rows are the `themes:` rows of
-   config/defaults/appearance.yml. */
+/* Flexoki (kepano/flexoki, MIT): dark on its 400 hues, then light on its 600 hues. Flexoki has no
+   teal, so the teal of both palettes is oculus's own, chosen to read apart from the theme's other
+   status hues. One block per palette, each a set of overrides on the tokens of tokens.css; the
+   shape every rice palette shares is `body.rice` in themes.css, and the theme list's rows are the
+   `themes:` rows of config/defaults/appearance.yml. */
 
 /* --- Flexoki (kepano/flexoki) ----------------------------------------- */
 body.flexoki {
@@ -30,7 +31,7 @@ body.flexoki {
     --c-green: #879a39;
     --c-green-d: #879a39;
     --c-lime: #879a39;
-    --c-teal: #3aa99f;
+    --c-teal: #66c9a6;
     --c-cyan: #3aa99f;
     --c-cyan-d: #3aa99f;
     --c-sky: #3aa99f;
@@ -88,7 +89,7 @@ body.flexokilight {
     --c-green: #66800b;
     --c-green-d: #66800b;
     --c-lime: #66800b;
-    --c-teal: #24837b;
+    --c-teal: #1b8b60;
     --c-cyan: #24837b;
     --c-cyan-d: #24837b;
     --c-sky: #24837b;

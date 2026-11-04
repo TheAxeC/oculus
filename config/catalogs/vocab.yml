@@ -152,7 +152,7 @@ statuses:
   ready:         { color: "#16a34a" }
   archived:      { color: "#9ca3af", closes_deadline: true }
   applied:       { color: "#0891b2", closes_deadline: true, deadline_met: true }
-  interview:     { color: "#7c3aed", closes_deadline: true, deadline_met: true, live_subtasks: true }
+  interview:     { color: "#ec4899", closes_deadline: true, deadline_met: true, live_subtasks: true }
   offered:       { color: "#0d9488", closes_deadline: true, deadline_met: true, live_subtasks: true }
 
 
@@ -202,7 +202,7 @@ fund_stages:
 position_stages:
   - { label: "Active",    color: "#16a34a", statuses: [active] }
   - { label: "Applied",   color: "#0891b2", statuses: [applied] }
-  - { label: "Interview", color: "#7c3aed", statuses: [interview] }
+  - { label: "Interview", color: "#ec4899", statuses: [interview] }
   - { label: "Offered",   color: "#0d9488", statuses: [offered] }
 
 # Teaching stages stacked inside the Focus Teaching & supervision column (label / colour / the statuses each matches).

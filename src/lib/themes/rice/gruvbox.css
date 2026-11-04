@@ -1,6 +1,7 @@
-/* Gruvbox (morhetz/gruvbox, MIT): dark, then light. One block per palette, each a set of
-   overrides on the tokens of tokens.css; the shape every rice palette shares is `body.rice` in
-   themes.css, and the theme list's rows are the `themes:` rows of
+/* Gruvbox (morhetz/gruvbox, MIT): dark, then light. The pink of both palettes and the teal of the
+   light one are oculus's own, chosen to read apart from the theme's other status hues. One block
+   per palette, each a set of overrides on the tokens of tokens.css; the shape every rice palette
+   shares is `body.rice` in themes.css, and the theme list's rows are the `themes:` rows of
    config/defaults/appearance.yml. */
 
 /* --- Gruvbox dark -------------------------------------------------------- */
@@ -36,7 +37,7 @@ body.gruvbox {
     --c-violet: #d3869b;
     --c-purple: #b16286;
     --c-magenta: #d3869b;
-    --c-pink: #d3869b;
+    --c-pink: #f28ccf;
     --c-mauve: #d3869b;
     --c-on: #1d2021;
     /* Source Control: added, modified, deleted and conflicted paths and lines. */
@@ -80,7 +81,7 @@ body.gruvboxlight {
     --c-green: #79740e;
     --c-green-d: #79740e;
     --c-lime: #79740e;
-    --c-teal: #427b58;
+    --c-teal: #06a596;
     --c-cyan: #427b58;
     --c-cyan-d: #427b58;
     --c-sky: #076678;
@@ -89,7 +90,7 @@ body.gruvboxlight {
     --c-violet: #8f3f71;
     --c-purple: #8f3f71;
     --c-magenta: #8f3f71;
-    --c-pink: #b16286;
+    --c-pink: #c22d62;
     --c-rose: #b16286;
     --c-mauve: #b16286;
     --c-crimson: #9d0006;

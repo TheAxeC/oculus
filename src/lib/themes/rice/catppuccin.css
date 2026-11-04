@@ -1,5 +1,6 @@
-/* Catppuccin (catppuccin.com, MIT): Mocha, Macchiato and Frappe, then Latte. One block per
-   palette, each a set of overrides on the tokens of tokens.css; the shape every rice palette
+/* Catppuccin (catppuccin.com, MIT): Mocha, Macchiato and Frappe, then Latte. The teal of Macchiato
+   and of Frappe is oculus's own, chosen to read apart from the theme's other status hues. One block
+   per palette, each a set of overrides on the tokens of tokens.css; the shape every rice palette
    shares is `body.rice` in themes.css, and the theme list's rows are the `themes:` rows of
    config/defaults/appearance.yml. */
 
@@ -81,7 +82,7 @@ body.macchiato {
     --c-green: #a6da95;
     --c-green-d: #a6da95;
     --c-lime: #a6da95;
-    --c-teal: #8bd5ca;
+    --c-teal: #62d6c2;
     --c-cyan: #91d7e3;
     --c-cyan-d: #7dc4e4;
     --c-sky: #91d7e3;
@@ -140,7 +141,7 @@ body.frappe {
     --c-green: #a6d189;
     --c-green-d: #a6d189;
     --c-lime: #a6d189;
-    --c-teal: #81c8be;
+    --c-teal: #5ccbb6;
     --c-cyan: #99d1db;
     --c-cyan-d: #85c1dc;
     --c-sky: #99d1db;

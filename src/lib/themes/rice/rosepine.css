@@ -1,6 +1,7 @@
-/* Rose Pine (rose-pine/palette, MIT): main and Moon, then Dawn. One block per palette, each a
-   set of overrides on the tokens of tokens.css; the shape every rice palette shares is
-   `body.rice` in themes.css, and the theme list's rows are the `themes:` rows of
+/* Rose Pine (rose-pine/palette, MIT): main and Moon, then Dawn. The teal and the pink of the three
+   palettes are oculus's own, chosen to read apart from the theme's other status hues. One block per
+   palette, each a set of overrides on the tokens of tokens.css; the shape every rice palette shares
+   is `body.rice` in themes.css, and the theme list's rows are the `themes:` rows of
    config/defaults/appearance.yml. */
 
 /* --- Rose Pine (rosepinetheme.com) --------------------------------------- */
@@ -30,7 +31,7 @@ body.rosepine {
     --c-green: #9ccfd8;
     --c-green-d: #9ccfd8;
     --c-lime: #a3be8c;
-    --c-teal: #9ccfd8;
+    --c-teal: #5ec2b3;
     --c-cyan: #31748f;
     --c-cyan-d: #31748f;
     --c-sky: #9ccfd8;
@@ -39,7 +40,7 @@ body.rosepine {
     --c-violet: #c4a7e7;
     --c-purple: #c4a7e7;
     --c-magenta: #eb6f92;
-    --c-pink: #ebbcba;
+    --c-pink: #fcb2cc;
     --c-rose: #ebbcba;
     --c-mauve: #c4a7e7;
     --c-crimson: #eb6f92;
@@ -90,7 +91,7 @@ body.rosepinemoon {
     --c-green: #9ccfd8;
     --c-green-d: #9ccfd8;
     --c-lime: #9ccfd8;
-    --c-teal: #9ccfd8;
+    --c-teal: #5ec2b3;
     --c-cyan: #3e8fb0;
     --c-cyan-d: #3e8fb0;
     --c-sky: #9ccfd8;
@@ -99,7 +100,7 @@ body.rosepinemoon {
     --c-violet: #c4a7e7;
     --c-purple: #c4a7e7;
     --c-magenta: #eb6f92;
-    --c-pink: #ea9a97;
+    --c-pink: #f4a6bf;
     --c-rose: #ea9a97;
     --c-mauve: #c4a7e7;
     --c-crimson: #eb6f92;
@@ -149,7 +150,7 @@ body.rosepinedawn {
     --c-green: #56949f;
     --c-green-d: #56949f;
     --c-lime: #56949f;
-    --c-teal: #56949f;
+    --c-teal: #2f8a7f;
     --c-cyan: #286983;
     --c-cyan-d: #286983;
     --c-sky: #286983;
@@ -158,7 +159,7 @@ body.rosepinedawn {
     --c-violet: #907aa9;
     --c-purple: #907aa9;
     --c-magenta: #b4637a;
-    --c-pink: #d7827e;
+    --c-pink: #b4589a;
     --c-rose: #d7827e;
     --c-mauve: #907aa9;
     --c-crimson: #b4637a;

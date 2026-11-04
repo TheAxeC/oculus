@@ -1,7 +1,8 @@
-/* Tokyo Night (folke/tokyonight.nvim, Apache-2.0, and enkia/tokyo-night-vscode-theme, MIT):
-   Night, Storm and Neon, then Light. One block per palette, each a set of overrides on the
-   tokens of tokens.css; the shape every rice palette shares is `body.rice` in themes.css, and
-   the theme list's rows are the `themes:` rows of config/defaults/appearance.yml. */
+/* Tokyo Night (folke/tokyonight.nvim, Apache-2.0, and enkia/tokyo-night-vscode-theme, MIT): Night,
+   Storm and Neon, then Light. The pink of Night, Storm and Light is oculus's own, chosen to read
+   apart from the theme's other status hues. One block per palette, each a set of overrides on the
+   tokens of tokens.css; the shape every rice palette shares is `body.rice` in themes.css, and the
+   theme list's rows are the `themes:` rows of config/defaults/appearance.yml. */
 
 /* --- Tokyo Night (folke/tokyonight.nvim) --------------------------------- */
 body.tokyonight {
@@ -39,7 +40,7 @@ body.tokyonight {
     --c-violet: #bb9af7;
     --c-purple: #bb9af7;
     --c-magenta: #bb9af7;
-    --c-pink: #ff75a0;
+    --c-pink: #ff7ac6;
     --c-rose: #ff75a0;
     --c-mauve: #c0a4e0;
     --c-crimson: #f7768e;
@@ -98,7 +99,7 @@ body.tokyostorm {
     --c-violet: #bb9af7;
     --c-purple: #bb9af7;
     --c-magenta: #bb9af7;
-    --c-pink: #ff75a0;
+    --c-pink: #ff7ac6;
     --c-rose: #ff75a0;
     --c-mauve: #c0a4e0;
     --c-crimson: #f7768e;
@@ -215,7 +216,7 @@ body.tokyolight {
     --c-violet: #5a3e8e;
     --c-purple: #5a3e8e;
     --c-magenta: #7b43ba;
-    --c-pink: #7b43ba;
+    --c-pink: #a83a8f;
     --c-rose: #8c4351;
     --c-mauve: #5a3e8e;
     --c-crimson: #8c4351;

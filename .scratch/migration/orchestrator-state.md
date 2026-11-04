@@ -23,21 +23,7 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 ```
 
 ```yaml
-dispatch:           # steps in flight, up to six (Z632)
-- step: O140
-  base: 3680ded21
-  worktree: .agents/worktrees/migration-O140
-  executor: agent
-  worker: claude:opus
-  session_id: a1af65dc72468561d
-  model: claude-opus-5-5
-  launched: 2026-11-03
-  report: .scratch/migration/agents/reviews/O140-report.md
-  builder_usage: first run 208174 tokens, 148 tool uses, 27 min 27 s
-  round: 1
-  brief_check: .scratch/migration/agents/reviews/O140-brief-check.md (ad6e98d66c1edb3ea, claude-opus-5-5, 180152 tokens, 47 tool uses, 9 min 14 s)
-  reviewer_report: .scratch/migration/agents/reviews/O140-refuter.md (ada1bd113ba2a7360, claude-opus-5-5, 216228 tokens, 57 tool uses, 12 min 14 s)
-  landing: not-started
+dispatch: []        # steps in flight, up to six (Z632)
 ```
 
 ## The standing demands (from Axel, in force)
@@ -176,6 +162,10 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 ## Open items (only what Axel must rule on; every report tells him these in plain words, decisions first, until he has ruled)
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
+
+- 667 (2026-11-04, O140's landing; both reviews declined it as outside the write list). The `focus_lanes` comment at `config/catalogs/vocab.yml:181` says that with every cluster open neighbouring lane headers differ by a CIEDE2000 of 10 or more under every theme, and that "ten of the pairs" that touch only in a collapsed layout fall below 10 under at least one theme. O140's case-run program measured only the pairs with teal or pink on one side; pairs with neither were never enumerated over the 49 themes, and on the base Teaching against Jobs was under 10 in kanagawadragon and kanagawalotus (now 13.0 and 12.8). (a) A step that measures every lane pair of both layouts over the 49 themes with the case-run program's method and rewrites the comment to the measured count and pairs, changing a lane colour where an every-cluster-open pair is under 10. Pros: the comment becomes true and the open-layout promise is checked. Cons: one more step; it may change lane colours. (b) The comment's count and the "every theme" sentence taken out, nothing measured: the lazy option. Recommended (a), a judgment.
+- 668 (2026-11-04, Axel: the audit subheadings look exactly like the Audit heading, "audit and website"). The Findings view's Audit group (`src/lib/views/system/findings/AuditSection.svelte:189-232`) nests a `GroupHead` per kind (Open items, Missing data, Hub conventions, Manifest guardrails, Readability, Website) and Muted inside the Audit `GroupHead`; `GroupHead.svelte` draws a nested strip the same as its parent (same size, colour and indent; only `--group-strip` stacks it under the parent), so "Website" reads as a sibling of "Audit". The Status view's Gallery sections nest the same way. (a) `GroupHead` draws a strip inside another group's body one level down: the label at the small size, indented to the parent's label, the count beside it; one rule in `GroupHead.svelte`, so the Audit kinds, Muted and the Gallery sections all change. Pros: every nested group reads as a level below, written once. Cons: the Gallery changes too. (b) The Audit kinds alone take a sub-heading look through a prop. Pros: touches one view. Cons: the Gallery keeps the same defect. (c) The outer Audit heading removed, the kinds standing as top-level groups beside Files. Cons: the Audit count and its one fold go. (d) No change: the lazy option. Recommended (a), a judgment.
+- 669 (2026-11-04, Axel: "we need another status => stopped"). No status `stopped` exists in `config/catalogs/vocab.yml` `statuses:`. Choices: 1, what it means and where it goes: (a) an application whose procedure the employer stopped (vacancy cancelled, closed or put on hold), added to `statuses:` with `closes_deadline: true`, to the Applications schema options in the research hub's `.oculus/data/academic/applications.yml:9` and in oculus's template (`docs/templates.md:1565`, and its comment at `:1583`), placed after `withdrawn`, with an `archive/stopped/` folder named in the file's head comment; (b) the same word in `statuses:` only, offered by no collection until a hub's schema lists it. 2, its colour: (a) slate `#475569`, the colour of `withdrawn`, since both end an application with no decision on it; (b) grey `#9ca3af`, the colour of `not-applied`, `cancelled` and `skipped`; (c) a hue of its own, checked at a CIEDE2000 of 10 against the other application statuses in all 49 themes, as O140 did for interview. Recommended 1 (a) and 2 (a), a judgment; 1 (b) is the lazy option, since the word would then appear nowhere he can pick it. If he meant another collection (funding, tasks), he names it and that file's options get it the same way.
 
 
 
@@ -800,6 +790,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-11-04 (O140 landed; nothing in flight). O140, interview and offered drawn apart in every theme, landed (booking in plan.md under O140, `agents/reviews/O140-landing.md`): `interview` takes pink `#ec4899`, 14 theme blocks a pink of their own and 17 a teal of their own, every one at a CIEDE2000 of 10 or more from the status tokens in all 49 themes; fixes at landing S3 (`gruvbox.css:84` teal `#06a596`), P3, T1 (a heredoc into the report, under "Unapproved builder scripts") and B3; the gate passed and main equals the gate under `cmp`; the look on 8797 saw interview and offered apart in six themes. Open items raised: 667 (the `focus_lanes` comment at `vocab.yml:181`), 668 (the Audit kinds drawn like the Audit heading, Axel), 669 (a `stopped` status, Axel). In flight (0 of 6). Open items: 667, 668, 669.
 - 2026-11-03 (O140 round 1 sent). O140's builder reported (`agents/reviews/O140-report.md`, usage under builder_usage) and the orchestrator read the whole diff. Its review (`agents/reviews/O140-refuter.md`, ada1bd113ba2a7360, claude-opus-5-5): items 1, 3 and 4 hold, item 2 violated by S1 (Gruvbox Light's teal out of tone and not handed back), every case met; findings S2, P1, P2, a Standards wording point and B1, B2. Repair round 1 (`agents/briefs/O140-round-1.md`, 6 items: the darkest passing teal for Gruvbox Light with the bars kept, and report and head-comment corrections) copied into the worktree with the review; snapshot `.agents/worktrees/migration-O140-round-1`. In flight (1 of 6): O140 (round 1). Open items: none.
 - 2026-11-03 (O140 building). Axel ruled 666 1 (a) and 2 (a), booked in plan.md. O140's brief rewritten to rulings 665 and 666 (14 pink blocks and 17 teal blocks under a CIEDE2000 of 10 in a sweep on main, the case-run program approved), its brief check's findings closed under its Closed heading; prepared at 3680ded21; worktree `.agents/worktrees/migration-O140` with `npm ci` and `svelte-kit sync`; base copy `.agents/worktrees/O140-base` with `unused-exports.txt` (335 lines); builder a1af65dc72468561d (claude-opus-5-5) runs. In flight (1 of 6): O140 (building). Open items: none.
 - 2026-11-03 (O140 stopped on 666). O140's brief check (`agents/reviews/O140-brief-check.md`, ad6e98d66c1edb3ea, claude-opus-5-5) found ruling 665's premise wrong: pink equals planned's violet in three more themes, seven more sit under the bar, and Rose Pine draws offered like active. Raised as open item 666; O140 stopped, its brief taken out until the ruling. In flight: none. Open items: 666.
