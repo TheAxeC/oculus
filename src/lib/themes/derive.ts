@@ -81,11 +81,18 @@ const ACCENT_SHARE = 0.2;
 const ORANGE_HOVER_SHARE = 0.75;
 
 /**
- * How much of a hue a lane header's surface carries, the rest being the panel. At half, with every
- * Focus cluster open and every band column drawn, the headers drawn next to each other, stacked in
- * a column and beside the full-width Idea lane stay a CIEDE2000 of 10 apart under every theme in
- * the colours config/catalogs/vocab.yml gives them. A smaller share folds those neighbours into one
- * colour in a theme that gives two hues near values.
+ * How much of a hue a lane header's surface carries, the rest being the panel. At half, in the
+ * colours config/catalogs/vocab.yml gives the headers, every header's surface is a CIEDE2000 of 10
+ * or more from the panel under every theme, and with every Focus cluster open and every band column
+ * drawn, every two headers that touch (side by side, stacked above and below, or above the
+ * full-width Idea lane) are 10 or more apart under every theme. Of the pairs that touch only when a
+ * cluster is folded or a band column is not drawn, 13 are under 10 in at least one theme: Teaching
+ * and Build in all 49 themes; Jobs and Review in 47; Jobs and Backburner in 45; Funding and Revise
+ * in 41; Funding and De-risk in 32; Teaching and Run in rosepinedawn, kanagawadragon, everforest
+ * and kanagawalotus; Jobs, Review and Backburner, each above the Idea lane, in rosepinedawn,
+ * kanagawadragon and rosepinemoon; Teaching and Push in everforest and synthwave; Jobs and De-risk
+ * in kanagawalotus; Push above the Idea lane in kanagawalotus; and Blocked above the Idea lane in
+ * mocha.
  */
 const LANE_SHARE = 0.5;
 

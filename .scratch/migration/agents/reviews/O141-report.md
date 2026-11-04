@@ -1,315 +1,495 @@
 # O141 builder report
 
-Everything in the brief is done.
+Everything in the brief and in repair round 1 is done. No header was handed back: every `-lane` surface is 10 or more from `--panel` in every theme, with bars 1 and 2, C11 and C12 holding.
 
-Five points need a ruling or a reading before landing; each is set out with its evidence under "For the coordinator first" below:
-1. A grep I ran read `config/local.yml`, which the brief forbids. It printed no line from that file.
-2. Scope is now crimson. It sits under 10 from Blocked's red in 48 themes. The two never touch in any layout.
-3. I passed over the literal choice rule in one place. A Jobs recolour to `amber-s` would need 7 theme hues instead of 11, but that header then all but vanishes into the panel.
-4. The Tomorrow Night Blue override in themes.css moves that class from place 47 to place 2 in the Settings class-word list.
-5. In everforest the Idea lane header's text turns from light to dark.
+Points that need a ruling or a reading before landing, each set out below:
+1. Scope and Blocked share a red in 48 themes; the two never touch (section "For the coordinator", point 2).
+2. Jobs keeps `grey-d` rather than a surface tint (point 3).
+3. An app colour theme converted at run time by `themeSheet` does not get the converter's `ADDED` tokens, so Tomorrow Night Blue loaded that way would draw the headers without the fix (point 4).
+4. In everforest the Idea lane header's text turns from light to dark (point 5).
+5. In nord, onedark and solarized the Jobs header (`grey-d`) is now a light grey-blue, and in onedark and solarized the Review header (`slate`) is light too (point 5).
 
 ## Open items of the state file, verbatim
 
-`.scratch/migration/orchestrator-state.md:171-175`: the section "## Open items (only what Axel must rule on; every report tells him these in plain words, decisions first, until he has ruled)" holds no entry. Its only text under the heading is: "An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own."
+The worktree's `.scratch/migration/orchestrator-state.md:171-175` (`grep -n '^## Open items' -A6`): the section "## Open items (only what Axel must rule on; every report tells him these in plain words, decisions first, until he has ruled)" holds no entry. Its only text is: "An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own." The worktree's copy is the one at main's head when the worktree was made; I did not open the main checkout's copy.
 
-## For the coordinator first
+## Repair round 1
 
-### 1. A grep read `config/local.yml`
+Full verify list runs: 1, after the last change to a source file. No command failed, so none was rerun. The output is `W-verify-1.txt` in the scratch folder, quoted under "Verify list and checks after the last change".
 
-This command, run while checking the changed hexes against docs, read `config/local.yml`:
+### Item 1, the head comments
 
-```sh
-for h in 6272a4 5e81ac ...; do grep -rn -i -- "#$h" docs README.md src config tests utils --exclude=local.yml | ...; done
-```
-
-The `--` ends the options, so grep took `--exclude=local.yml` as a file name. It printed `grep: --exclude=local.yml: No such file or directory` and searched all of `config/`, `config/local.yml` included, for 12 hex strings. No line of its output came from `config/local.yml`. Every grep after it puts `--exclude=local.yml` before the paths, for example `grep -rn -i --exclude=local.yml -- "#$h" docs README.md src config tests utils`, and none of those printed that error.
-
-### 2. Scope and Blocked now share a red in 48 themes
-
-Scope moved from `#0e7490` (`c-cyan-d`) to `#e2374d` (`c-crimson`). The program's `--lane scope` run (`J-lane-scope.txt`) prints `Blocked: 25.5 (kanagawadragon) -> 0.0 (macchiato); under 10 in 0 -> 48 themes`, and in macchiato `--c-red` and `--c-crimson` are both `#ed8796` (`L2-tokens.txt`).
-- The two headers never touch. Blocked is column 2 of the `parked` row and Scope is column 1 of the `incubate` row, and the pair `Blocked-Scope` is in neither the open nor the collapsed-only list of the 128 layouts.
-- The bars do not cover two lanes of one colour that sit apart, so this is a user-visible effect outside them.
-- The options, each measured on the changed tree with `--trial '{"lanes":{"scope":"<tone>"}}'` (files `K-scope-<tone>.txt`):
-
-| Option | What the trial prints |
-| --- | --- |
-| (a) crimson, as built | 0 open measures under 10; 0 bar 2 breaks; 13 collapsed-only pairs under 10 |
-| (b) orange | `open-layout measures under 10 5; bar 2 breaks 6` (Scope-De-risk in gruvbox, tokyonight, tokyostorm, onedark and kanagawadragon; Funding-Scope in vscode-red, tokyonight, tokyostorm, onedark, kanagawadragon and tokyolight) |
-| (c) magenta | `open-layout measures under 10 18; bar 2 breaks 0`, all of them Scope-Idea |
-| (d) rose | `open-layout measures under 10 24; bar 2 breaks 0` |
-| (e) pink | `open-layout measures under 10 36; bar 2 breaks 0` |
-
-Options (b) to (e) each need more theme hues on top of the 11 the tree already has. My recommendation, as a judgment, is (a). The brief's bars measure headers that touch, and these two never do. If Axel counts two lanes of one colour on the board as a defect, (a) is the lazy option and (b) is the next to measure.
-
-### 3. Where I passed over the literal choice rule: no surface tints as lane tones
-
-The cases file says to choose "the change that ends each failing pair with the fewest theme hues changed". A Jobs recolour to `amber-s` ends more pairs at once. Over the base, `--on-base --trial '{"lanes":{"scope":"crimson","jobs":"amber-s"}}'` leaves 8 open measures under 10, in 7 themes (`M-base-crimson-ambers.txt`): vscode-red, solarized, gruvboxlight, kanagawalotus, dracula, rosepinedawn and everforest. Fixing those would take 7 theme hues where the built change takes 11.
-
-I did not take it, and `--panel` (`N-panel.txt`) gives the reason. `amber-s` is a surface tint, and in half the themes its lane surface is close to the panel the header is drawn on:
-
-| Surface against `--panel` | Smallest | Median | Themes under 10 |
-| --- | --- | --- | --- |
-| `amber-s-lane` | 1.7 (rosepine) | 7.1 | 26 |
-| `red-s-lane` | 1.7 (rosepine) | 7.1 | 28 |
-| `grey-d-lane`, the Jobs tone now | 8.2 (nord) | 15.8 | 3 |
-
-With `amber-s` the Jobs header would hardly differ from the panel in 26 themes. In the light theme its surface would be `#faecc6`. `red-s`, the only other Jobs tone with at most one bar-2 break in `E-candidates.txt`, behaves the same.
-- Options: (a) as built, Jobs keeps `grey-d`, 11 theme hues; (b) Jobs to `amber-s` and 7 theme hues.
-- I recommend (a), as a judgment. (b) changes fewer hues, but it costs the header its colour.
-
-### 4. Tomorrow Night Blue's blue lives in themes.css, which moves it in the Settings class list
-
-The theme's block in vscode.css sets no `--c-blue`, so before this change the theme took tokens.css's `#2563eb`. vscode.css is generated: its head says to change the converter and run it, never the file. So the override is a block of its own in themes.css:
+Each sheet's head now says, in two sentences, what the added hues do and how they were picked. The catppuccin head as it stands (`src/lib/themes/rice/catppuccin.css:1-11`):
 
 ```css
-/* --- VS Code Tomorrow Night Blue: oculus's blue -------------------------- */
-/* The theme's block in vscode.css sets no `--c-blue`, so the theme would take the blue of
-   tokens.css. This `--c-blue` is oculus's own: the value nearest that blue that sets the Focus
-   board's lane and band headers 10 or more apart in CIEDE2000 and stays 10 or more from the
-   theme's other status hues. */
-body.vscode-tomorrow-night-blue {
-    --c-blue: #003abc;
-}
+/* Catppuccin (catppuccin.com, MIT): Mocha, Macchiato and Frappe, then Latte. The teal of Macchiato
+   and of Frappe is oculus's own, chosen to read apart from the theme's other status hues. The
+   `--c-blue` of Frappe and the `--c-slate` of Mocha are oculus's own as well: each brings the Focus
+   headers drawn in it that touch with every cluster open to a CIEDE2000 of 10 or more from each
+   other and from the panel, and stays 10 or more from every other status hue of the theme, on the
+   hue and on its `-txt`. Each was picked as the nearest to the palette's colour, or to tokens.css's
+   where the palette gives none (the slate of Mocha), among the hexes of the palette's own block and
+   an OKLCH grid around that colour (lightness 0.15 to 0.97 in steps of 0.01, chroma x0.6 to x1.4 in
+   steps of 0.2, hue -20 to +20 in steps of 10), with every measure at 10.5 or more. One block per
+   palette, each a set of overrides on the tokens of tokens.css; the shape every rice palette shares
+   is `body.rice` in themes.css, and the theme list's rows are the `themes:` rows of
+   config/defaults/appearance.yml. */
 ```
 
-`parseBlocks` merges the two blocks of the class, and the converter's `readBases` (`utils/migrations/convert-vscode-themes.ts:174-180`) reads only `:root` and `body.dark` of themes.css, so the next conversion run is unaffected. The class's first appearance is now in themes.css, though, and `themeClasses()` (`src/lib/ui/theme/theme.ts:161`) lists classes in that order. The Settings view offers that list as the words of a theme's `class` (`settings/scopes/lists.svelte.ts:42`). The program's `--classes` run prints:
+The same two sentences, with the hues each sheet adds:
+
+| File | The hues it names | The colour each was picked near |
+| --- | --- | --- |
+| `rice/singles.css:1-21` | Nord `--c-blue`, `--c-slate`, `--c-grey-d`; Dracula `--c-grey-d`; Solarized `--c-green`, `--c-slate`, `--c-grey`, `--c-grey-d`; One Dark `--c-slate`, `--c-grey`, `--c-grey-d` | the palette's colour, tokens.css's for Nord's slate and grey-d |
+| `rice/kanagawa.css:1-11` | Dragon `--c-blue`; Lotus `--c-green`, `--c-gold` | the palette's colour |
+| `rice/catppuccin.css:1-12` | Frappe `--c-blue`; Mocha `--c-slate` | the palette's colour, tokens.css's for Mocha's slate |
+| `rice/gruvbox.css:1-12` | dark `--c-slate`; light `--c-green` | the palette's colour, tokens.css's for the dark slate |
+| `rice/rosepine.css:1-11` | Dawn `--c-blue` | the palette's pine |
+| `rice/everforest.css:1-11` | dark `--c-mauve` | the palette's purple |
+| `themes.css:1-22` | dark `--c-slate` | tokens.css's slate |
+| converter `ADDED`, written into `vscode.css` | Tomorrow Night Blue `--c-blue`, `--c-slate`; Solarized Dark `--c-slate`; Quiet Light `--c-grey` | tokens.css's colour of the token's name (`#2563eb`, `#475569`, `#9ca3af`) |
+
+"Its own block" is what the program reads as candidates: `start.own[theme]`, the tokens the theme's own class blocks set (`case-run.mts`, `--hue`). Three picks are own-block hexes: nord slate `#4b432c` (`--c-amber-s`), Tomorrow Night Blue slate `#7285b7` (`--c-code-comment`) and Quiet Light grey `#6d705b` (`--muted`). The rest are grid points.
+
+The VS Code sentence differs in one place: the converter writes `--panel` where the rice heads say "the panel", and it adds "since the theme gives none", which `blockOf` enforces by failing when the mapping already gives an `ADDED` token.
+
+### Item 2, wrapping
+
+Every edited comment paragraph was rewrapped as a whole, greedy at 100 columns. The check, over the head of each sheet: for every line but the last, the line plus one space plus the next line's first word is over 100 columns, and no line is over 100. It printed nothing. `awk 'length>100'` over `rice/*.css`, `themes.css` and `vscode.css` prints nothing.
+- `singles.css:10-21` and the paragraph it belongs to are rewrapped together.
+- The Tomorrow Night Blue comment is written by the converter's `wrapped()`, at its `WIDTH = 100`.
+- `themes.css:2-3` keep the base break before "VS Code" so the name stays on one line; line 2 is 97 columns. Line 3 ends short because the next word is the 42-column path `utils/migrations/convert-vscode-themes.ts`, as in the base.
+- The converter's own head paragraph (`convert-vscode-themes.ts:25-35`) passes the same fill check; its one flagged line, `:21`, is an item of a list.
+- `derive.ts:84-95`, the `LANE_SHARE` doc, is rewrapped whole.
+
+### Item 3, the C3 count
+
+```
+$ grep -c '^  moved ' H2-after-final.txt
+250
+```
+
+The round-0 report's 433 counted every line holding "moved", which includes the 182 `open moved` lines and the summary line `open-layout measures that moved: 182`. On the tree after this round:
+
+```
+$ grep -c '^  moved ' R1-plain.txt
+312
+```
+
+### Item 4, the readers of each changed hue
+
+Found with `grep -rnE "['\"](blue|green|gold|grey-d|mauve|slate|grey)['\"]" src` and `grep -rnoE -- "--c-(blue|green|gold|grey-d|mauve|slate|grey)(-[a-z]+)?\b" src` outside `src/lib/themes/` (`R4-var-readers.txt`, 54 lines; `--c-green-d` lines dropped, a separate token), and in config with `grep -rnE --exclude=local.yml` of the token names and of the palette hexes that map to them. A reader that takes a tone name draws the token `--c-<tone>` and its derived `-txt`, `-lane` and tints.
+
+**blue**, changes in nord, frappe, kanagawadragon, rosepinedawn, vscode-tomorrow-night-blue:
+
+| Reader | View |
+| --- | --- |
+| `src/lib/ui/display/hues.ts:10` `HUES`, read by `views/sources/repositories/graph/Lanes.svelte:37` and `views/personal/calendar/Calendar.svelte:172` | Source Control Graph lane colours; Calendar event colours |
+| `state/forms/career-view.ts:40` | Career form, positions |
+| `views/shared/sessions/sections/TimelineTurns.svelte:40,141` | Session timeline, prompt turns |
+| `state/shared/words/tones.ts:302` (`ICON_HUES`, blue icon) | status legend icons, every view with a legend |
+| `state/sources/registries/venues.ts:77` | Venues, Q2 / core A rank |
+| `views/shared/changes/repo-shape.ts:30`, read by `views/sources/repositories/RepoList.svelte:308` | Repositories list, shape badge |
+| `views/sessions/session-list/SessionWorkspace.svelte:85` | Sessions list, idle |
+| `data/model/machine/model-machine.ts:271` with `state/sessions/terminal/terminal-marks.ts:17` | terminal, ANSI blue |
+| `data/helpers/files/apps/tools/decoration-colors.ts:17,19,31,34,42` | app colour decorations (submodule, `charts.blue` and others) |
+| `ui/controls/editor/kit/theme/colours.ts:443-464` | editor: info colours, minimap and ruler info, peek and merge colours |
+| `views/sources/search/problem-rows.ts:176` | Search, info glyph |
+| `config/catalogs/vocab.yml:184,112,295,238` | Focus Push lane; `accepted` status; `pillar`; `role` facet tone |
+
+**green**, changes in solarized, gruvboxlight, kanagawalotus:
+
+| Reader | View |
+| --- | --- |
+| `hues.ts:10` (`HUES`), as above | Source Control Graph; Calendar |
+| `TimelineTurns.svelte:43` | Session timeline, agent turns |
+| `tones.ts:299` | status legend icons |
+| `venues.ts:84` | Venues, free to publish |
+| `state/system/machine/hpc/hpc.ts:149,152` | HPC, running jobs and fill |
+| `shell/rail/rail.ts:82` (`URGENT_TONES`) | rail badges: ranks the tone, draws no colour |
+| `state/system/machine/recover-words.ts:137`, `views/sources/data/recover/RecoverAccess.svelte:20` | Data recovery |
+| `views/personal/account-setup/AccountSetup.svelte:93`, `views/shared/forms/accounts/AccountList.svelte:87` | Account setup and accounts |
+| `views/shared/card/project/CardSessions.svelte:33,64`, `views/shared/sessions/sections/AgentRows.svelte:42`, `details/detail-facts.ts:73`, `SessionWorkspace.svelte:84` | project card sessions; session agents and meter; Sessions list |
+| `views/feeds/literature/LiteratureCard.svelte:178`, `views/feeds/linkedin/Linkedin.svelte:335` | Literature; LinkedIn |
+| `views/system/machine/usage/Usage.svelte:97,98`, `hpc/Login.svelte:103`, `hpc/Quota.svelte:12`, `hpc/Recent.svelte:72`, `hpc/Capacity.svelte:142` | Usage; HPC |
+| `views/boards/collection/rail-part.ts:15`, `registration.ts:60` | collection boards, rail badge |
+| `model-machine.ts:269` with `terminal-marks.ts:15,53` | terminal, ANSI green |
+| `decoration-colors.ts:22,35,40`, `colours.ts:496,499`, `editor/kit/theme/theme.ts:79` | app decorations; editor success colours and `markup.inserted` |
+| `views/shared/changes/ChangeCounts.svelte:38`, `views/sources/search/RefactorPreview.svelte:265`, `search/Results.svelte:336`, `views/sources/venues/Ribbon.svelte:263` | change counts; Search; Venues ribbon |
+| `vocab.yml` lines 66, 74, 119, 121, 131, 134, 136, 139, 140, 152, 183, 198, 203, 210, 271, 279, 283, 310 (`#16a34a`) | Focus Run lane, stages, statuses, band stages, `rail_color`, `data_access: open` |
+
+**gold**, changes in kanagawalotus:
+
+| Reader | View |
+| --- | --- |
+| `career-view.ts:42` | Career form, awards |
+| `tones.ts:301` (yellow icon) | status legend icons |
+| `terminal-marks.ts:16` | terminal, ANSI yellow |
+| `decoration-colors.ts:20,41` | app decorations, `charts.yellow` |
+| `colours.ts:492` | editor, bracket colour 1 |
+| `vocab.yml:214` (`funding: gold`), `vocab.yml:68` (`#a16207`) | Focus Funding band column; `in-prep` stage |
+
+**grey-d**, changes in dracula, nord, onedark, solarized: `vocab.yml:214` (`jobs: grey-d`, the Focus Jobs band column) and `vocab.yml:235` (`hub` facet tone). No reader in `src`; the palette hex `#6b7280` is used by no vocab entry.
+
+**mauve**, changes in everforest: `vocab.yml:192`, the Focus Idea lane, its top border and its group heading. No reader in `src`.
+
+**slate**, changes in dark, nord, onedark, solarized, mocha, gruvbox, vscode-tomorrow-night-blue, vscode-solarized-dark:
+
+| Reader | View |
+| --- | --- |
+| `tones.ts:305` (black icon) | status legend icons |
+| `state/feeds/inbox.ts:68` | Inbox, kinds without a tone |
+| `hpc.ts:149` | HPC, jobs neither running nor pending |
+| `state/sources/repositories/repositories.ts:703` | Source Control, untracked files |
+| `AgentRows.svelte:45,74` | session agents, done and the fallback |
+| `hpc/Recent.svelte:74` | HPC, recent jobs |
+| `SessionWorkspace.svelte:87`, `CardSessions.svelte:36` | Sessions list, archived; project card sessions |
+| `vocab.yml:186,145,283` | Focus Review lane; `withdrawn`; `data_access: private` |
+
+**grey**, changes in onedark, solarized, vscode-quiet-light:
+
+| Reader | View |
+| --- | --- |
+| `tones.ts:34` (`UNKNOWN_TONE`), `tones.ts:304` | every tone that resolves to nothing; status legend icons |
+| `state/feeds/leads.ts:168-173`, `views/shared/card/feed/LeadCard.svelte:312,360` | Leads |
+| `state/feeds/radar.ts:96` | Radar, low relevance |
+| `venues.ts:78,87` | Venues |
+| `repositories.ts:748`, `RepoList.svelte:308` | Source Control status fallback; Repositories list badge fallback |
+| `SessionWorkspace.svelte:86`, `CardSessions.svelte:35` | Sessions list, ended; project card sessions |
+| `ui/controls/editor/gutter/marks.css:64` | editor, disabled breakpoint |
+| `vocab.yml:188,77,123,146-153,276,297` | Focus Backburner lane; `stopped`, `paused` and the closed statuses; `dead-ends`; `offpillar` |
+
+The hub's own data can name these colours too; I did not read it.
+
+### Item 5, Tomorrow Night Blue into the converter
+
+- `themes.css` holds no Tomorrow Night Blue block, and its head is the base text plus the dark-theme sentence of item 6.
+- `utils/migrations/convert-vscode-themes.ts:74-103` holds `BRINGS`, `AMONG` and the table `ADDED`, keyed by class; `describe` (`:258-259`) appends `Added by oculus: <why>` to the block comment, `blockOf` (`:263-272`) writes the entries after `mapTheme`'s and fails if the mapping already gives one, and `build` fails on a key no converted theme has (`:306-307`).
+- The file head (`:33-35`) and the generated sheet's head (`headOf`, `:274-278`) say the tokens oculus adds are written from `ADDED`. No file under `docs/` names the converter or `vscode.css` (`grep -rnE 'convert-vscode-themes|vscode\.css' docs README.md CLAUDE.md` prints nothing).
+
+The run, `node utils/migrations/convert-vscode-themes.ts`:
+
+```
+wrote .../src/lib/themes/vscode.css and .../src/lib/themes/vscode-rules.json: 19 themes of VS Code 1.137.0
+```
+
+`vscode-rules.json` is byte-equal to the base (`diff` prints nothing). `git diff -- src/lib/themes/vscode.css` (`vscode-run-diff.txt`):
+
+```diff
+@@ -5,9 +5,9 @@
+    block sets the chrome tokens, the Source Control tokens, the diff's outlines of inserted and
+    removed text (--diff-added-outline, --diff-deleted-outline), the Source Control Graph's three
+    name colours (--c-graph-ref, --c-graph-remote, --c-graph-base), the tab tokens the theme
+-   holds, the window's title bar strip (--titlebar-bg, --titlebar-txt, --titlebar-line) and the
+-   six code hues; its comment names each token that VS Code's registered default or oculus's base
+-   gave. */
++   holds, the window's title bar strip (--titlebar-bg, --titlebar-txt, --titlebar-line), the six
++   code hues and the tokens oculus adds to that theme (the converter's ADDED); its comment names
++   each token that VS Code's registered default or oculus's base gave and each token oculus adds. */
+@@ -193,7 +193,13 @@ body.vscode-light-visual-studio {
+    --titlebar-txt (titleBar.activeForeground). oculus base: --c-scm-conflict-bg,
+-   --diff-added-outline, --diff-deleted-outline. */
++   --diff-added-outline, --diff-deleted-outline. Added by oculus: --c-grey is oculus's own, since
++   the theme gives none: it brings the Focus headers drawn in it that touch with every cluster
++   open to a CIEDE2000 of 10 or more from each other and from --panel, stays 10 or more from
++   every other status hue of the theme on the hue and on its -txt, and was picked as the nearest
++   to tokens.css's #9ca3af among the hexes of the theme's own block and an OKLCH grid around that
++   colour (lightness 0.15 to 0.97 in steps of 0.01, chroma x0.6 to x1.4 in steps of 0.2, hue -20
++   to +20 in steps of 10), with every measure at 10.5 or more. */
+ body.vscode-quiet-light {
+@@ -225,6 +231,7 @@ body.vscode-quiet-light {
+     --c-code-string: #448c27;
++    --c-grey: #6d705b;
+ }
+@@ -729,7 +736,13 @@ body.vscode-red {
+-   --diff-added-outline, --diff-deleted-outline. */
++   --diff-added-outline, --diff-deleted-outline. Added by oculus: --c-slate is oculus's own,
++   since the theme gives none: it brings ... [the same sentence, nearest to tokens.css's #475569] ... */
+ body.vscode-solarized-dark {
+@@ -769,6 +782,7 @@ body.vscode-solarized-dark {
+     --c-code-string: #2aa198;
++    --c-slate: #505575;
+ }
+@@ -781,7 +795,14 @@ body.vscode-solarized-dark {
+-   --diff-added-outline, --diff-deleted-outline. */
++   --diff-added-outline, --diff-deleted-outline. Added by oculus: --c-blue and --c-slate are
++   oculus's own, since the theme gives neither: each brings ... [the same sentence, nearest to
++   tokens.css's colour of its name (#2563eb, #475569)] ... */
+ body.vscode-tomorrow-night-blue {
+@@ -819,6 +840,8 @@ body.vscode-tomorrow-night-blue {
+     --c-code-string: #d1f1a9;
++    --c-blue: #699bff;
++    --c-slate: #7285b7;
+ }
+```
+
+The two elided comments are quoted in full in `vscode-run-diff.txt`. The diff reaches past the Tomorrow Night Blue block in two ways, and I kept the generated file:
+- The sheet's head is `headOf`'s text, which item 5 asks to update so it names the added tokens. Copying the base `vscode.css` back would make `--check` fail on the head.
+- Quiet Light and Solarized Dark get `ADDED` entries under item 6, which routes a VS Code theme's hue through this table.
+
+After the run: `node utils/migrations/convert-vscode-themes.ts --check` prints `19 themes up to date`. `--classes` prints:
 
 ```
   base: 49 classes; first 8: dark rice mocha macchiato frappe latte everforest everforestlight; vscode-tomorrow-night-blue at 47
-  worktree: 49 classes; first 8: dark vscode-tomorrow-night-blue rice mocha macchiato frappe latte everforest; vscode-tomorrow-night-blue at 2
+  worktree: 49 classes; first 8: dark rice mocha macchiato frappe latte everforest everforestlight; vscode-tomorrow-night-blue at 47
 ```
 
-Options:
-- (a) Keep it as built.
-- (b) Give the converter a per-theme token it writes into the generated block. This widens the paths to `utils/migrations/convert-vscode-themes.ts`, rerunning it rewrites vscode.css, and it puts a hand-chosen value inside a file that converts VS Code's own colours.
-- (c) Hand-edit vscode.css. A rerun loses the edit, and the file's head forbids it.
+### Item 6, every header against the panel
 
-My judgment is (a). themes.css is where oculus's hand-written tokens live, and the only cost is the order of one suggestion. (c) is the lazy option.
+C13 is the program's `--panel` with no list, which takes every tone a Focus header resolves to. Its first run, on the tree as round 0 left it (`P0-panel-all.txt`, the same 12 tones given as a list):
 
-### 5. Other effects a look should read
-
-- **Idea header text in everforest.** `--c-mauve` goes from `#d699b6` to `#f1acec`. The lane surface goes from `#816778` to `#8f7093`, and the derived header text flips from `#f9f0f4` to `#150314` (`L2-tokens.txt`). `contrast.test.ts` passes, so the text reads, but it is dark on purple where every other dark-theme header has light text. The group heading (`--c-mauve-txt`) goes from `#d699b6` to `#f1acec`.
-- **kanagawalotus gold.** `--c-gold` goes from `#77713f` to `#3a4a00`, a darker olive. Gold also draws the terminal's ANSI yellow (`terminal-marks.ts:16`, `decoration-colors.ts:41`), the editor's first bracket colour (`colours.ts:492`), `charts.yellow`, and the `in-prep` stage (`vocab.yml:68`, `#a16207`). The other hue of the failing pair, `--c-grey-d`, has a passing value `#39352c` 19.7 from its old value, against gold's 17.3 (`F-hue-search.txt`, `G-hue-search.txt`). It has no direct user outside the theme sheets, but it is the farther move. I kept the one rule: the nearer passing value. Switching would leave the yellow alone at the cost of a larger move of the Jobs header.
-- **Headers against the panel.** This lies outside the brief's bars and is not changed. The `--panel` run shows three header tones under 10 against the panel they are drawn on:
-  - `grey-d-lane` (Jobs) in nord 8.2, onedark 8.9 and solarized 9.3.
-  - `slate-lane` (Review) in 8 themes, nord the lowest at 3.2.
-  - `grey-lane` (Backburner) in onedark, solarized and vscode-quiet-light.
-
-  That is a different concern from header-to-header distance. It is reported here so the coordinator can fold it into a step.
-- **O140's program needed a copy.** Its `BASE` is `/Users/axelfaes/workspace/oculus/.agents/worktrees/O140-base`, which no longer exists: run as is, it exits 1 with `path: '.../O140-base/src/lib/themes/tokens.css'`. I ran a copy that differs in that one line only, `o140-case-run-on-O141-base.mts` in my scratch folder (`diff` prints `13c13`, `O140-base` to `O141-base`). The base only feeds its "base" half; the `C2` line for the worktree is computed on the worktree alone.
-
-## The cases' first run, on the unchanged tree
-
-Runs A (`A-plain.txt`) and B (`B-search.txt`) of the round before stand as the first run.
-- **C1.** Run A prints `C1/C2 open pairs under 10 in at least one theme: 7` and `C1 collapsed-only pairs under 10 in at least one theme: 19`, with 128 layouts, 20 open-layout pairs and 37 collapsed-only pairs.
-- **C2.** Run A has 7 open-layout pairs under 10:
-
-  | Pair | Themes |
-  | --- | --- |
-  | Funding-Jobs | kanagawalotus 4.9 |
-  | Funding-Run | kanagawalotus 5.7, solarized 8.9, gruvboxlight 9.3 |
-  | Jobs-Push | dracula 0.0, nord 6.5, kanagawadragon 7.2, vscode-tomorrow-night-blue 8.3, frappe 8.9 |
-  | Run-Push | rosepinedawn 6.9 |
-  | Run-Review | kanagawalotus 7.9 |
-  | Review-Scope | vscode-solarized-dark 6.8, kanagawadragon 7.2, kanagawalotus 7.7, vscode-tomorrow-night-blue 8.3, vscode-abyss 9.9 |
-  | Scope-Idea | kanagawadragon 6.2 |
-
-- **C3.** Run A, on identical trees: `C3 1813 collapsed-only measures read; 0 break item 3's second bar; collapsed-only pairs under 10: base 19, worktree 19`.
-- **C4.** `vocab.yml:181` claimed the open-layout pairs were at 10 or more in every theme, which run A shows false (7 pairs), and "ten" collapsed-only pairs under 10 where run A counts 19. `derive.ts:83-89` made the same open-layout claim. `vocab.yml:213` said "the Idea lane above them", which is false: the band is drawn above the lanes (`behavior.yml:50`).
-- **C5.** `diff` of `vocab.yml` and `derive.ts` against the base copy printed nothing.
-- **C6.** `npx vitest run tests/checks/look/contrast.test.ts tests/data/shapes/catalog-files/vocab.test.ts tests/checks/config/config-folder.test.ts`: `Tests  108 passed | 2 skipped (110)`.
-- **C7.** The chosen layouts of run A. With the band holding Funding and Jobs, the touching pairs include `Funding-Run, Funding-Push, Jobs-Push, Jobs-Revise`. With Funding alone: `Funding-Run, Funding-Push, Funding-Revise`.
-- **C8.** With all three band columns and every cluster folded: `Funding-Jobs, Jobs-Teaching, Funding-Idea, Jobs-Idea, Teaching-Idea`. With Jobs alone and every cluster folded: `Jobs-Idea`.
-- **C9.** `Band.svelte:141` draws a column when `stages.length + gone > 0`. The run prints `C9 layouts in which Funding is drawn: 64 of 128`, and the same for Jobs and Teaching.
-- **C10.** Every lane hex maps through `palette:` to a `c-` tone, and every band value is a tone name the palette holds. Every one of the 13 headers has its `-lane` token in all 49 themes.
-- **C11 and C12.** They did not exist at the first run. O140's program ran on the unchanged tree in round 1 and printed `0 pairs under 10`.
-
-## DONE / NOT DONE
-
-| Deliverable | State | Proof, the last line it printed |
-| --- | --- | --- |
-| Item 1, layout model | DONE | the read under "The layout model as confirmed" |
-| Item 2, case-run program | DONE | `npx tsx <scratch>/case-run.mts`: exit 0, `C11 theme hues changed: 11; under 10 from a status token: 0` |
-| Item 3, recolour | DONE | Scope to `#e2374d` and 11 theme hues; `bars: open-layout measures under 10 0; bar 2 breaks 0; collapsed-only pairs under 10 13` |
-| Item 4, three comments rewritten | DONE | `vocab.yml:181`, `vocab.yml:213`, `derive.ts:83-95`; read pair by pair against the run (C4 below) |
-| Theme head comments | DONE | the head comments of 7 sheets; `diff` against the base, C5 below |
-| Verify 1, three test files | passes | `Tests  108 passed \| 2 skipped (110)`, `scoped exit 0` |
-| Verify 2, `npm run diagrams` | passes | `diagrams exit 0`; `git status --short` shows no change under `docs/` |
-| Verify 2, `npm run test:quick` | passes | `test:quick: 62.0 s; every command passed` |
-| Verify 3, ASCII perl over `vocab.yml` and `derive.ts` | prints nothing | no output |
-| spec.md ASCII gate, `LC_ALL=C grep -n '[^ -~]'` over the 9 touched files | prints nothing | no output |
-| Verify 4, `yaml.safe_load` | exit 0 | `yaml 0` |
-| Verify 5, C2 and C3 after the last change | hold | `C1/C2 open pairs under 10 in at least one theme: 0`; `C3 1813 collapsed-only measures read; 0 break item 3's second bar; collapsed-only pairs under 10: base 19, worktree 13` |
-| C11 | holds | 11 lines, each at 10 or more; `under 10 from a status token: 0` |
-| C12, O140's program | holds | `C2 49 themes; 0 themes hold one; 0 measures under 10; 0 pairs under 10` |
-| `sh utils/unused-exports.sh` against the base list | same | `diff` against `O141-base/unused-exports.txt`: exit 0 |
-| History words in added comment lines | no history wording | grep below |
-
-Full verify list runs: 1, after the last change. No command failed, so nothing was rerun alone, and `uptime` read `load averages: 8.79 5.57 4.17` afterwards. Tests added or changed: none.
-
-The spec.md history grep over the added lines of the 9 files:
-
-```sh
-diff ../O141-base/$f $f | grep '^>' | grep -n -i -E "before|used to|no longer|still|always has been|always had|as before|previously|the step adds|after this package lands|O1[0-9]{2}|Q[0-9]+|D[0-9]+c|20[0-9]{2}"
+```
+  gold-lane against --panel: min 16.7 (gruvboxlight); median 26.5; under 10 in 0
+  grey-d-lane against --panel: min 8.2 (nord); median 15.8; under 10 in 3: nord 8.2, onedark 8.9, solarized 9.3
+  teal-lane against --panel: min 18.6 (vscode-solarized-dark); median 25.0; under 10 in 0
+  green-lane against --panel: min 11.5 (kanagawalotus); median 28.8; under 10 in 0
+  blue-lane against --panel: min 8.4 (vscode-tomorrow-night-blue); median 25.3; under 10 in 1: vscode-tomorrow-night-blue 8.4
+  amber-lane against --panel: min 15.3 (kanagawalotus); median 26.5; under 10 in 0
+  slate-lane against --panel: min 3.2 (nord); median 14.7; under 10 in 8: nord 3.2, vscode-solarized-dark 7.8, vscode-tomorrow-night-blue 7.9, onedark 8.9, mocha 9.0, dark 9.2, gruvbox 9.2, solarized 9.3
+  red-lane against --panel: min 18.1 (vscode-red); median 28.6; under 10 in 0
+  grey-lane against --panel: min 8.9 (onedark); median 16.5; under 10 in 3: onedark 8.9, solarized 9.3, vscode-quiet-light 9.8
+  crimson-lane against --panel: min 17.7 (vscode-red); median 28.4; under 10 in 0
+  honey-lane against --panel: min 15.3 (kanagawalotus); median 33.1; under 10 in 0
+  mauve-lane against --panel: min 17.2 (vscode-red); median 24.9; under 10 in 0
 ```
 
-It hit 10 lines, each judged:
-- Every hit in a CSS file and in `derive.ts` is `2000` in "CIEDE2000", the name of the measure.
-- `vocab.yml:181` matches `2000` twice and `before` once. That `before` is in "the glyph name drawn before the lane's label", a sentence of the base line I did not change (the base line has it too: `grep -c -i before` prints 1).
-- `vocab.yml:213` matches only `2000`.
+The round-0 Tomorrow Night Blue blue `#003abc` is the 8.4 in that run, so that theme's blue was searched again from tokens.css's `#2563eb`.
+
+Its run after the change (`P1-panel-after.txt`):
+
+```
+C13 every header tone's -lane against --panel, 12 tones over 49 themes:
+  green-lane against --panel: min 11.5 (kanagawalotus); median 28.8; under 10 in 0
+  blue-lane against --panel: min 13.9 (dracula); median 25.3; under 10 in 0
+  amber-lane against --panel: min 15.3 (kanagawalotus); median 26.5; under 10 in 0
+  slate-lane against --panel: min 10.4 (vscode-dark-plus); median 15.8; under 10 in 0
+  red-lane against --panel: min 18.1 (vscode-red); median 28.6; under 10 in 0
+  grey-lane against --panel: min 10.5 (light); median 16.7; under 10 in 0
+  crimson-lane against --panel: min 17.7 (vscode-red); median 28.4; under 10 in 0
+  honey-lane against --panel: min 15.3 (kanagawalotus); median 33.1; under 10 in 0
+  teal-lane against --panel: min 18.6 (vscode-solarized-dark); median 25.0; under 10 in 0
+  mauve-lane against --panel: min 17.2 (vscode-red); median 24.9; under 10 in 0
+  gold-lane against --panel: min 16.7 (gruvboxlight); median 26.5; under 10 in 0
+  grey-d-lane against --panel: min 11.4 (dracula); median 15.8; under 10 in 0
+```
+
+The hues, each the nearest pick of `--hue <theme> <token>` with every measure at 10.5 or more, and with C13 added to the measures (files `Q1-hue.txt` to `Q5-hue.txt`; the line each pick has there):
+
+| Theme | Token, file:line | Old to new | From old | Panel | Picked as |
+| --- | --- | --- | --- | --- | --- |
+| nord | `--c-slate`, `rice/singles.css:58` (added) | `#475569` (tokens.css) to `#4b432c` | 24.2 | 10.8 | own block, `--c-amber-s` |
+| nord | `--c-grey-d`, `rice/singles.css:59` (added) | `#6b7280` (tokens.css) to `#dfdff4` | 32.9 | 30.1 | OKLCH L 0.91 C x1.2 h +20 |
+| solarized | `--c-slate`, `rice/singles.css:177` | `#586e75` to `#aad0d1` | 30.9 | 26.7 | OKLCH L 0.83 C x1.4 h -20 |
+| solarized | `--c-grey`, `rice/singles.css:178` | `#586e75` to `#60767d` | 3.1 | 10.7 | OKLCH L 0.55 C x1 h +0 |
+| solarized | `--c-grey-d`, `rice/singles.css:179` | `#586e75` to `#c1ccd5` | 31.2 | 26.7 | OKLCH L 0.84 C x0.6 h +20 |
+| onedark | `--c-slate`, `rice/singles.css:236` | `#5c6370` to `#b7b8cf` | 30.6 | 24.6 | OKLCH L 0.79 C x1.4 h +20 |
+| onedark | `--c-grey`, `rice/singles.css:237` | `#5c6370` to `#646c7c` | 3.6 | 10.6 | OKLCH L 0.53 C x1.2 h +0 |
+| onedark | `--c-grey-d`, `rice/singles.css:238` | `#5c6370` to `#bfd0de` | 35.1 | 28.4 | OKLCH L 0.85 C x1.2 h -20 |
+| mocha | `--c-slate`, `rice/catppuccin.css:49` (added) | `#475569` (tokens.css) to `#335469` | 6.3 | 11.3 | OKLCH L 0.43 C x1.4 h -20 |
+| gruvbox | `--c-slate`, `rice/gruvbox.css:49` (added) | `#475569` (tokens.css) to `#35576c` | 6.5 | 10.7 | OKLCH L 0.44 C x1.4 h -20 |
+| dark | `--c-slate`, `themes.css:38` (added) | `#475569` (tokens.css) to `#7b81a3` | 19.1 | 16.9 | OKLCH L 0.61 C x1.4 h +20 |
+| vscode-tomorrow-night-blue | `--c-blue`, converter `ADDED` | `#2563eb` (tokens.css) to `#699bff` | 18.5 | 20.5 | OKLCH L 0.70 C x0.8 h +0 |
+| vscode-tomorrow-night-blue | `--c-slate`, converter `ADDED` | `#475569` (tokens.css) to `#7285b7` | 20.7 | 15.5 | own block, `--c-code-comment` |
+| vscode-solarized-dark | `--c-slate`, converter `ADDED` | `#475569` (tokens.css) to `#505575` | 7.1 | 10.6 | OKLCH L 0.46 C x1.4 h +20 |
+| vscode-quiet-light | `--c-grey`, converter `ADDED` | `#9ca3af` (tokens.css) to `#6d705b` | 25.3 | 16.9 | own block, `--muted` |
+
+How the set was chosen:
+- One hue per failing tone and theme: each failing measure is one tone against the panel, so the fewest hues is one per (theme, tone) under 10, 15 in all. Tomorrow Night Blue's blue is a changed round-0 hue, not a new one.
+- Where slate, grey and grey-d share one hex (onedark, solarized), they were searched slate, then grey, then grey-d, each over the trial holding the ones before. This order matters: a status hue's C11 check covers slate and grey but not grey-d, so a grey-d searched first could take slate's pick and fail C11 afterwards.
+- The combined trial, `--trial` of all 15 on the round-0 tree (`Q6-trial.txt`), printed `trial: open-layout measures under 10 0; bar 2 breaks 0; collapsed-only pairs under 10 13 (base 19)`.
+
+Every one of the 15 C11 lines is at 10 or more; the plain run quotes them under C11 below.
+
+The comments that count pairs changed with this: `vocab.yml:181` and the `derive.ts` doc now give Jobs-Review in 47 themes and Jobs-Backburner in 45, where both were 48, and both say every header's surface is 10 or more from the panel.
+
+## For the coordinator
+
+### 1. A grep read `config/local.yml` in round 0
+
+A round-0 command, `grep -rn -i -- "#$h" docs README.md src config tests utils --exclude=local.yml`, took `--exclude=local.yml` as a file name after `--` and searched `config/local.yml` for 12 hex strings. It printed `grep: --exclude=local.yml: No such file or directory` and no line from that file. Every grep over `config/` since puts `--exclude=local.yml` before the paths with no `--` before it.
+
+### 2. Scope and Blocked share a red in 48 themes
+
+Scope moved from `#0e7490` (`c-cyan-d`) to `#e2374d` (`c-crimson`). The `--lane scope` run (`J-lane-scope.txt`) prints `Blocked: 25.5 (kanagawadragon) -> 0.0 (macchiato); under 10 in 0 -> 48 themes`; in macchiato `--c-red` and `--c-crimson` are both `#ed8796`.
+- The two headers never touch: Blocked is column 2 of the `parked` row and Scope is column 1 of the `incubate` row, and the pair is in neither pair list of the 128 layouts.
+- The bars do not cover two lanes of one colour that sit apart.
+
+| Option | What the trial prints (`K-scope-<tone>.txt`, round 0) |
+| --- | --- |
+| (a) crimson, as built | 0 open measures under 10; 0 bar 2 breaks; 13 collapsed-only pairs under 10 |
+| (b) orange | `open-layout measures under 10 5; bar 2 breaks 6` |
+| (c) magenta | `open-layout measures under 10 18; bar 2 breaks 0` |
+| (d) rose | `open-layout measures under 10 24; bar 2 breaks 0` |
+| (e) pink | `open-layout measures under 10 36; bar 2 breaks 0` |
+
+My recommendation, as a judgment, is (a): the bars measure headers that touch, and these two never do. If two lanes of one colour on the board count as a defect, (a) is the lazy option and (b) is the next to measure.
+
+### 3. Jobs keeps `grey-d` rather than a surface tint
+
+A Jobs recolour to `amber-s` would have needed 7 theme hues where round 0 took 11 (`M-base-crimson-ambers.txt`). `amber-s-lane` is under 10 from `--panel` in 26 themes (`N-panel.txt`, smallest 1.7 in rosepine), so the header would hardly differ from its panel, which C13 now forbids outright. Options: (a) as built; (b) `amber-s`, which fails C13 in 26 themes. I recommend (a).
+
+### 4. An app colour theme does not get `ADDED`
+
+`ADDED` is applied by the converter, after `mapTheme`. An app's colour theme converted at run time goes through `themeSheet` (`src/lib/themes/vscode-map.ts:2-8`), which does not read `ADDED`. A Tomorrow Night Blue, Solarized Dark or Quiet Light loaded as an app colour theme would therefore draw the Focus headers with tokens.css's blue, slate or grey, the values that failed C2 and C13 in the shipped copies; that an app theme reaches the Focus board this way is read from the code, not verified by a run. The 49 shipped themes the cases measure are unaffected. Options:
+- (a) Leave it: an app theme is the user's own file and outside the 49 themes the cases measure.
+- (b) Move the table into `vscode-map.ts`, keyed by the theme's label, so `themeSheet` and the converter apply it alike. This widens the paths to `vscode-map.ts`.
+My judgment is (b), since the file's head says a theme file maps the same way wherever it is read; (a) is the lazy option.
+
+### 5. Effects a look should read
+
+- **Idea header text in everforest.** `--c-mauve` goes from `#d699b6` to `#f1acec`; the lane surface from `#816778` to `#8f7093`, and the derived header text flips from `#f9f0f4` to `#150314` (`L2-tokens.txt`). `contrast.test.ts` passes, but it is dark text on purple.
+- **Light Jobs and Review headers in three dark themes.** The nearest passing `grey-d` in nord, onedark and solarized, and the nearest passing `slate` in onedark and solarized, are light (`#dfdff4`, `#bfd0de`, `#c1ccd5`; `#b7b8cf`, `#aad0d1`). The surfaces are halfway between those and the panel. The hues also recolour their other readers in those themes: slate draws the untracked files of Source Control, archived sessions and the Inbox fallback, so these become light grey-blue there.
+- **nord slate is a brown.** `#4b432c` is nord's own `--c-amber-s`, the nearest roomy candidate to `#475569`; nord's Review header becomes brown-olive, and slate's other readers above follow it.
+- **kanagawalotus gold** goes from `#77713f` to `#3a4a00`; gold also draws the terminal's ANSI yellow, the editor's first bracket colour, `charts.yellow` and the `in-prep` stage.
+- **O140's program needs a copy.** Its `BASE` names `O140-base`, which no longer exists. I ran a copy that differs in that line only, `o140-case-run-on-O141-base.mts` (`diff` prints `13c13`).
+
+## Verify list and checks after the last change
+
+The verify list, run once after the last change (`W-verify-1.txt`):
+
+| Verify item | Result, the lines it printed |
+| --- | --- |
+| 1, `npx vitest run tests/checks/look/contrast.test.ts tests/data/shapes/catalog-files/vocab.test.ts tests/checks/config/config-folder.test.ts` | `Test Files  3 passed (3)`, `Tests  108 passed \| 2 skipped (110)` |
+| 2, `npm run diagrams` | wrote the six `docs/diagrams/` files; `git status --short docs` prints nothing |
+| 2, `npm run test:quick` | `ok prettier`, `ok ASCII gate`, `ok svelte-kit sync`, `ok eslint`, `ok svelte-check (14.1 s): ... 581 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS`, `ok vitest slow`, `ok vitest`, `ok vitest checks`; `test:quick: 53.6 s; every command passed` |
+| 3, the perl ASCII check over `vocab.yml` and `derive.ts` | prints nothing, `perl exit 0` |
+| 4, `yaml.safe_load` of `vocab.yml` | `yaml exit 0` |
+| 5, the plain case run | `C1/C2 open pairs under 10 in at least one theme: 0`; `C3 1813 collapsed-only measures read; 0 break item 3's second bar; collapsed-only pairs under 10: base 19, worktree 13`; `bars: open-layout measures under 10 0; bar 2 breaks 0; collapsed-only pairs under 10 13`; `C11 theme hues changed: 25; under 10 from a status token: 0` |
+
+`test:quick` prints what it does not cover: `tests that reach no changed file within the import depth, other than the checks under tests/checks/source and tests/checks/tree, which run for any change under src, tests or utils; the build, the lint of unchanged files`.
+
+Checks run while working, after the last change to a source file:
+
+| Check | Result |
+| --- | --- |
+| Plain run, `npx tsx case-run.mts` (`R1-plain.txt`, 728 lines) | `C1/C2 open pairs under 10 in at least one theme: 0`; `C1 collapsed-only pairs under 10 in at least one theme: 13`; `C3 1813 collapsed-only measures read; 0 break item 3's second bar; collapsed-only pairs under 10: base 19, worktree 13`; `bars: open-layout measures under 10 0; bar 2 breaks 0; collapsed-only pairs under 10 13`; `C11 theme hues changed: 25; under 10 from a status token: 0` |
+| C13, `--panel` | 12 tones, `under 10 in 0` each (quoted above) |
+| C12, O140's program (`R2-o140.txt`) | worktree `C2 49 themes; 0 themes hold one; 0 measures under 10; 0 pairs under 10`; `0 pairs under 10 in some theme on the base are at 10 or more in every theme after` |
+| `--classes` | `vscode-tomorrow-night-blue at 47` for both trees |
+| converter `--check` | `19 themes up to date` |
+| `npx vitest run` of the three verify-1 files | `Tests  108 passed \| 2 skipped (110)` |
+| `npx vitest run` of the other tests that read the theme sheets (`window-guard`, `app-theme-start`, `hooks-server`) | `Tests  71 passed (71)` |
+| `npx prettier --check` of the converter and every touched sheet | `All matched files use Prettier code style!` |
+| `sh utils/unused-exports.sh` against `O141-base/unused-exports.txt` | `diff` prints nothing; `Unused exports (226)` |
+| `LC_ALL=C grep -n '[^ -~]'` over the 11 changed files | prints nothing, exit 1 |
+| History-word grep over the added lines of `git diff -U0` | every hit is `2000` of "CIEDE2000"; no other word matches |
+
+Tests added or changed: none.
+
+C11, the plain run's lines:
+
+```
+  C11 dark --c-slate #475569 -> #7b81a3: nearest status hue 13.9 (grey), -txt 10.6 (grey)
+  C11 vscode-quiet-light --c-grey #9ca3af -> #6d705b: nearest status hue 22.4 (teal), -txt 18.7 (brass)
+  C11 vscode-solarized-dark --c-slate #475569 -> #505575: nearest status hue 18.9 (blue), -txt 11.0 (grey)
+  C11 vscode-tomorrow-night-blue --c-blue #2563eb -> #699bff: nearest status hue 11.6 (slate), -txt 10.5 (slate)
+  C11 vscode-tomorrow-night-blue --c-slate #475569 -> #7285b7: nearest status hue 11.6 (blue), -txt 10.5 (blue)
+  C11 mocha --c-slate #475569 -> #335469: nearest status hue 33.7 (grey), -txt 11.4 (blue)
+  C11 frappe --c-blue #8caaee -> #8cafff: nearest status hue 16.6 (grey), -txt 14.6 (grey)
+  C11 gruvbox --c-slate #475569 -> #35576c: nearest status hue 19.7 (blue), -txt 11.0 (grey)
+  C11 nord --c-blue #5e81ac -> #8493db: nearest status hue 14.5 (grey), -txt 12.2 (grey)
+  C11 nord --c-slate #475569 -> #4b432c: nearest status hue 34.8 (red), -txt 10.8 (amber)
+  C11 nord --c-grey-d #6b7280 -> #dfdff4: nearest status hue 16.9 (grey), -txt 10.9 (grey)
+  C11 everforest --c-mauve #d699b6 -> #f1acec: nearest status hue 10.7 (violet), -txt 10.7 (violet)
+  C11 dracula --c-grey-d #6272a4 -> #00467d: nearest status hue 18.1 (blue), -txt 17.5 (blue)
+  C11 onedark --c-slate #5c6370 -> #b7b8cf: nearest status hue 20.8 (blue), -txt 10.6 (grey)
+  C11 onedark --c-grey #5c6370 -> #646c7c: nearest status hue 25.1 (violet), -txt 10.6 (slate)
+  C11 onedark --c-grey-d #5c6370 -> #bfd0de: nearest status hue 10.6 (slate), -txt 10.6 (slate)
+  C11 kanagawadragon --c-blue #8ba4b0 -> #b2c9d0: nearest status hue 10.5 (cyan), -txt 10.5 (cyan)
+  C11 solarized --c-green #859900 -> #859638: nearest status hue 18.4 (amber), -txt 19.9 (amber)
+  C11 solarized --c-slate #586e75 -> #aad0d1: nearest status hue 19.8 (cyan), -txt 12.3 (grey)
+  C11 solarized --c-grey #586e75 -> #60767d: nearest status hue 16.1 (violet), -txt 12.3 (slate)
+  C11 solarized --c-grey-d #586e75 -> #c1ccd5: nearest status hue 10.6 (slate), -txt 10.6 (slate)
+  C11 gruvboxlight --c-green #79740e -> #6b7700: nearest status hue 19.2 (cyan), -txt 18.7 (cyan)
+  C11 rosepinedawn --c-blue #286983 -> #13568a: nearest status hue 10.5 (cyan), -txt 10.5 (cyan)
+  C11 kanagawalotus --c-gold #77713f -> #3a4a00: nearest status hue 21.7 (brass), -txt 11.7 (green)
+  C11 kanagawalotus --c-green #6f894e -> #80b16f: nearest status hue 18.3 (teal), -txt 10.7 (teal)
+C11 theme hues changed: 25; under 10 from a status token: 0
+```
+
+nord's `--c-blue` `-txt` reads 12.2 (grey) here where round 0 read 10.5 (slate), since nord's slate moved.
 
 ## The cases after the change
 
-- **C1.** The plain run (`H2-after-final.txt`, 621 lines) prints, for the worktree, `C1/C2 open pairs under 10 in at least one theme: 0` and `C1 collapsed-only pairs under 10 in at least one theme: 13`.
-- **C2.** Every open-layout pair is at 10 or more in every theme. These are the smallest over the 49 themes:
+- **C1.** `C1/C2 open pairs under 10 in at least one theme: 0`; `C1 collapsed-only pairs under 10 in at least one theme: 13`.
+- **C2.** Every open-layout pair is at 10 or more in every theme (`R1-plain.txt:79-115`).
+- **C3.** `C3 1813 collapsed-only measures read; 0 break item 3's second bar; collapsed-only pairs under 10: base 19, worktree 13`, with 312 `moved` lines (item 3).
+- **C4.** `vocab.yml:181` and the `derive.ts` doc name the run's 13 collapsed-only pairs with their themes (`R1-plain.txt:116-154`): Teaching-Build in 49; Jobs-Review in 47; Jobs-Backburner in 45; Funding-Revise in 41; Funding-De-risk in 32; Teaching-Run in rosepinedawn, kanagawadragon, everforest and kanagawalotus; Jobs-Idea, Review-Idea and Backburner-Idea in rosepinedawn, kanagawadragon and rosepinemoon; Teaching-Push in everforest and synthwave; Jobs-De-risk and Push-Idea in kanagawalotus; Blocked-Idea in mocha. `vocab.yml:213` names the band-header pairs among them, which are unchanged.
+- **C5.** `diff` of each file against the base copy:
 
-  | Pair | Smallest | Pair | Smallest |
-  | --- | --- | --- | --- |
-  | Funding-Jobs | 10.5 (kanagawalotus) | Revise-Backburner | 11.1 (phosphoramber) |
-  | Funding-Run | 10.7 (flexokilight) | Review-Blocked | 12.7 (rosepinedawn) |
-  | Jobs-Teaching | 10.1 (phosphor) | Review-Scope | 12.7 (rosepinedawn) |
-  | Jobs-Push | 10.1 (macchiato) | Blocked-Backburner | 12.7 (rosepinedawn) |
-  | Teaching-Revise | 18.0 (kanagawadragon) | Blocked-De-risk | 17.0 (tokyolight) |
-  | Run-Push | 12.0 (rosepinedawn) | Backburner-Build | 10.1 (phosphor) |
-  | Run-Review | 11.2 (kanagawadragon) | Scope-De-risk | 17.0 (tokyolight) |
-  | Push-Revise | 14.0 (kanagawadragon) | Scope-Idea | 10.2 (vscode-solarized-light) |
-  | Push-Blocked | 21.6 (nord) | De-risk-Build | 14.6 (tokyolight) |
-  | De-risk-Idea | 13.8 (kanagawalotus) | Build-Idea | 15.7 (kanagawadragon) |
+  | File | Lines, base to now | `diff` hunks |
+  | --- | --- | --- |
+  | `config/catalogs/vocab.yml` | 311 to 311 | `181c181 189c189 213c213` |
+  | `src/lib/themes/derive.ts` | 320 to 327 | `84,88c84,95` |
+  | `src/lib/themes/themes.css` | 109 to 116 | `13,16c13,22 31a38` |
+  | `src/lib/themes/rice/singles.css` | 360 to 371 | `10,12c10,21 42c51 48a58,59 108c119 150c161 166,168c177,179 225,227c236,238` |
+  | `src/lib/themes/rice/kanagawa.css` | 181 to 187 | `3,5c3,11 97c103 144c150 148c154` |
+  | `src/lib/themes/rice/catppuccin.css` | 232 to 240 | `2,4c2,11 41a49 148c156` |
+  | `src/lib/themes/rice/gruvbox.css` | 114 to 122 | `2,5c2,12 41a49 81c89` |
+  | `src/lib/themes/rice/rosepine.css` | 184 to 190 | `2c2,8 157c163` |
+  | `src/lib/themes/rice/everforest.css` | 122 to 128 | `3c3,9 45c51` |
+  | `src/lib/themes/vscode.css` | 921 to 944 | `8,10c8,10 196c196,202 227a234 732c739,745 771a785 784c798,805 821a843,844` |
+  | `utils/migrations/convert-vscode-themes.ts` | 457 to 500 | `33c33,35 71a74,104 211c244 224a258,259 229c264,270 235c276 258c299 264a306,307` |
 
-- **C3.** The run prints `C3 1813 collapsed-only measures read; 0 break item 3's second bar; collapsed-only pairs under 10: base 19, worktree 13`. The bars section prints `bars: open-layout measures under 10 0; bar 2 breaks 0; collapsed-only pairs under 10 13`. Every collapsed-only pair meets bar 2 with the theme hues changed.
-  - These 6 pairs left the under-10 set: Funding-Review and Funding-Backburner (kanagawalotus 4.9 to 10.5), Jobs-Run (kanagawalotus 7.9 to 12.1), and Jobs-Scope, Teaching-Scope and Run-Scope (the Scope recolour).
-  - The run reports 433 `moved` lines (`grep -c moved`): 182 open-layout measures and 251 collapsed-only measures whose rounded value changed. They are in `H2-after-final.txt`, lines 172-606.
-- **C4.** The comments, read pair by pair against the run.
-  - `vocab.yml:181` names 13 pairs:
-    - Teaching and Build in 49 themes (`under 10 in 49`).
-    - Jobs-Review and Jobs-Backburner in 48 each (`under 10 in 48`, both).
-    - Funding-Revise in 41.
-    - Funding-De-risk in 32.
-    - Teaching-Run in rosepinedawn, kanagawadragon, everforest and kanagawalotus.
-    - Jobs-Idea, Review-Idea and Backburner-Idea, each in rosepinedawn, kanagawadragon and rosepinemoon.
-    - Teaching-Push in everforest and synthwave.
-    - Jobs-De-risk in kanagawalotus.
-    - Push-Idea in kanagawalotus.
-    - Blocked-Idea in mocha.
+  Each sheet's hunks are its head comment and its hue lines. `vscode-rules.json` equals the base. `git status --short` lists these 11 files and three ledger files of this step (`briefs/O141-cases.md`, `briefs/O141-round-1.md`, this report).
+- **C6.** `contrast.test.ts` passes (verify 1).
+- **C7 to C10.** The run prints the same chosen layouts and `64 of 128` lines as before; every header's `-lane` token is in all 49 themes.
+- **C11, C12, C13.** Quoted above.
 
-    These are the run's 13 pairs, with the same themes.
-  - The `derive.ts` doc names the same 13 pairs and counts.
-  - `vocab.yml:213` says that the three band hues differ from each other by 10 or more whichever are drawn. The run shows Funding-Jobs at least 10.5 and Jobs-Teaching at least 10.1 (open pairs), and Funding-Teaching at least 14.1 (collapsed-only). It names the 9 pairs that involve a band header (Teaching-Build, Jobs-Review, Jobs-Backburner, Funding-Revise, Funding-De-risk, Teaching-Run, Teaching-Push, Jobs-De-risk, Jobs-Idea), which are the band-header pairs among the 13.
-- **C5.** `diff` against the base copy:
-  - `vocab.yml`: `181c181`, `189c189`, `213c213` and nothing else.
-  - `derive.ts`: `84,88c84,94`, the `LANE_SHARE` doc only.
-  - Each rice sheet: its head comment plus its changed hue lines:
-    - singles.css: `42c45`, `108c111`, `150c153`.
-    - kanagawa.css: `97c100`, `144c147`, `148c151`.
-    - catppuccin.css: `148c150`.
-    - gruvbox.css: `81c83`.
-    - rosepine.css: `157c159`.
-    - everforest.css: `45c48`.
-  - themes.css: its head comment (`3,4c3,5`) and the added block (`42a44,52`), whose one declaration is the changed hue.
-  - No other file of `src tests utils config` differs (`git status --short` lists only these 9 and the two ledger files of this step).
-- **C6.** `contrast.test.ts` passes: the three-file run prints `Test Files  3 passed (3)`.
-- **C7 to C10.** The final run prints the same chosen layouts and the same `64 of 128` lines as the first run. The tone table now reads `Scope: #e2374d -> c-crimson -> crimson; --c-crimson-lane in 49 of 49`.
-- **C11.** The plain run prints one line for every theme hue whose resolved value differs from the base:
+## The cases' first run, on the unchanged tree
 
-  ```
-    C11 vscode-tomorrow-night-blue --c-blue #2563eb -> #003abc: nearest status hue 14.4 (slate), -txt 12.3 (slate)
-    C11 frappe --c-blue #8caaee -> #8cafff: nearest status hue 16.6 (grey), -txt 14.6 (grey)
-    C11 nord --c-blue #5e81ac -> #8493db: nearest status hue 14.5 (grey), -txt 10.5 (slate)
-    C11 everforest --c-mauve #d699b6 -> #f1acec: nearest status hue 10.7 (violet), -txt 10.7 (violet)
-    C11 dracula --c-grey-d #6272a4 -> #00467d: nearest status hue 18.1 (blue), -txt 17.5 (blue)
-    C11 kanagawadragon --c-blue #8ba4b0 -> #b2c9d0: nearest status hue 10.5 (cyan), -txt 10.5 (cyan)
-    C11 solarized --c-green #859900 -> #859638: nearest status hue 18.4 (amber), -txt 19.9 (amber)
-    C11 gruvboxlight --c-green #79740e -> #6b7700: nearest status hue 19.2 (cyan), -txt 18.7 (cyan)
-    C11 rosepinedawn --c-blue #286983 -> #13568a: nearest status hue 10.5 (cyan), -txt 10.5 (cyan)
-    C11 kanagawalotus --c-gold #77713f -> #3a4a00: nearest status hue 21.7 (brass), -txt 11.7 (green)
-    C11 kanagawalotus --c-green #6f894e -> #80b16f: nearest status hue 18.3 (teal), -txt 10.7 (teal)
-  C11 theme hues changed: 11; under 10 from a status token: 0
-  ```
+From round 0 (`A-plain.txt`): 7 open-layout pairs under 10 and 19 collapsed-only pairs under 10, over 128 layouts, 20 open-layout pairs and 37 collapsed-only pairs.
 
-  The status tokens are those `statuses:` maps to, as O140's program reads them: `c-amber c-blue c-brass c-cyan c-green c-grey c-orange c-pink c-red c-sky c-slate c-teal c-violet`. O140's program lists the same 11 tokens under "authored tokens that differ between base and worktree", and `themes whose pink or teal changed: 0`.
-- **C12.** O140's program from the worktree prints `C2 49 themes; 0 themes hold one; 0 measures under 10; 0 pairs under 10`, `C3 1265 lane pairs read; 0 at 10 or more on the base and under 10 after` and `0 pairs under 10 in some theme on the base are at 10 or more in every theme after` (`I-o140.txt`, 163 lines; run through the one-line copy of point 5 above).
+| Pair | Themes under 10 on the base |
+| --- | --- |
+| Funding-Jobs | kanagawalotus 4.9 |
+| Funding-Run | kanagawalotus 5.7, solarized 8.9, gruvboxlight 9.3 |
+| Jobs-Push | dracula 0.0, nord 6.5, kanagawadragon 7.2, vscode-tomorrow-night-blue 8.3, frappe 8.9 |
+| Run-Push | rosepinedawn 6.9 |
+| Run-Review | kanagawalotus 7.9 |
+| Review-Scope | vscode-solarized-dark 6.8, kanagawadragon 7.2, kanagawalotus 7.7, vscode-tomorrow-night-blue 8.3, vscode-abyss 9.9 |
+| Scope-Idea | kanagawadragon 6.2 |
 
-## The layout model as confirmed
+## The layout model
 
-- Section order: `config/defaults/behavior.yml:50` `sections: [command_center, tasks, quick_add, awaiting, band, lanes]`, drawn in that order by `Focus.svelte:314-396`, so the band is directly above the lanes.
-- Band: three columns drawn by one snippet in the order Funding, Jobs, Teaching (`Band.svelte:164-189`).
-  - A column is drawn when `stages.length + gone > 0` (`:141`).
-  - The band is drawn only when `anything` (`:160`), and it folds as a whole (`:161`).
-  - The grid is `repeat(auto-fit, minmax(min(290px, 100%), 1fr))` with `gap: 8px` (`:197-201`). auto-fit collapses the empty tracks, so k drawn columns split the width into k.
-- Clusters: `Lanes.svelte:267-306` draws `focus_clusters` in order (`clusters`, `state/boards/focus.ts:103`).
-  - The lanes of a `columns` cluster go in `focus_lanes` order (`lanesIn`, `focus.ts:752`) in the same auto-fit grid (`Lanes.svelte:311-315`).
-  - The `full_width` lane has a one-column grid of its own (`:317-319`).
-- Folding: a folded group's body is `hidden="until-found"` (`GroupHead.svelte:173`), so a folded cluster draws no lane header.
-- Header surfaces:
-  - `LaneHead.svelte:40` paints `--lane: var(--c-${tone}-lane); --lane-txt: var(--c-${tone}-lane-txt)`.
-  - The lane's 3 px top border is `border-top: 3px solid var(--tone, var(--line))` with `--tone: var(--c-${one.tone})` (`Lanes.svelte:211,327`). The band's is the same (`Band.svelte:142,209`).
-  - A lane's tone comes from `toneOf(row.color)` and a band tone from `namedTone` (`Band.svelte:83-87`, `tones.ts:207-212`).
-- Touching, as the program models it (`case-run.mts` `touching`): neighbours in a row touch. Headers of consecutive drawn rows touch when `i*m < (j+1)*n && j*n < (i+1)*m`, which is true when their spans overlap by more than a shared edge. A folded Idea lane brings no pair together that no other layout does (`pairs that only a folded Idea lane brings together: 0`).
-
-The pairs:
-- 20 open-layout pairs: Funding-Jobs, Funding-Run, Jobs-Teaching, Jobs-Push, Teaching-Revise, Run-Push, Run-Review, Push-Revise, Push-Blocked, Revise-Backburner, Review-Blocked, Review-Scope, Blocked-Backburner, Blocked-De-risk, Backburner-Build, Scope-De-risk, Scope-Idea, De-risk-Build, De-risk-Idea, Build-Idea.
-- 37 collapsed-only pairs: Funding-Teaching, Funding-Push, Funding-Revise, Funding-Review, Funding-Blocked, Funding-Backburner, Funding-Scope, Funding-De-risk, Funding-Build, Funding-Idea, Jobs-Run, Jobs-Revise, Jobs-Review, Jobs-Blocked, Jobs-Backburner, Jobs-Scope, Jobs-De-risk, Jobs-Build, Jobs-Idea, Teaching-Run, Teaching-Push, Teaching-Review, Teaching-Blocked, Teaching-Backburner, Teaching-Scope, Teaching-De-risk, Teaching-Build, Teaching-Idea, Run-Scope, Run-Idea, Push-De-risk, Push-Idea, Revise-Build, Revise-Idea, Review-Idea, Blocked-Idea, Backburner-Idea.
+- Section order: `config/defaults/behavior.yml:50`, `sections: [command_center, tasks, quick_add, awaiting, band, lanes]`, drawn in that order by `Focus.svelte:314-396`, so the band is directly above the lanes.
+- Band: three columns in the order Funding, Jobs, Teaching (`Band.svelte:164-189`). A column is drawn when `stages.length + gone > 0` (`:141`); the grid is `repeat(auto-fit, minmax(min(290px, 100%), 1fr))` with `gap: 8px` (`:197-201`).
+- Clusters: `Lanes.svelte:267-306` draws `focus_clusters` in order; a `columns` cluster's lanes go in `focus_lanes` order in the same auto-fit grid, and the `full_width` lane has a one-column grid (`:311-319`). A folded group's body is `hidden="until-found"` (`GroupHead.svelte:173`).
+- Header surfaces: `LaneHead.svelte:40` paints `--lane: var(--c-${tone}-lane)`, which is where C13 measures; the 3 px top border is `var(--c-${one.tone})` (`Lanes.svelte:211,327`, `Band.svelte:142,209`).
+- Touching: neighbours in a row touch; headers of consecutive drawn rows touch when `i*m < (j+1)*n && j*n < (i+1)*m`. A folded Idea lane brings no pair of its own.
 
 ## The case-run program and every run
 
-The source is `/private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/o141-builder/case-run.mts`, 765 lines. It reads the base copy and the worktree, imports `parse.ts` and `derive.ts` from the worktree for both trees (the step changes neither function), and prints only. Every output named here sits in the same folder.
-
-The runs after the change, each from the worktree root with `PATH=/Users/axelfaes/.nvm/versions/node/v24.21.0/bin:$PATH npx tsx <source> [mode]`, every one exit 0:
+The source is `/private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/o141-builder/case-run.mts`; every output named in this report sits in the same folder. It reads the base copy and the worktree, imports `parse.ts` and `derive.ts` from the worktree, and prints only. This round it gained the panel measure in `--hue` and the no-list form of `--panel` (C13). Each run is from the worktree root with `PATH=/Users/axelfaes/.nvm/versions/node/v24.21.0/bin:$PATH npx tsx <source> [mode]`, exit 0.
 
 | File | Mode | What it shows |
 | --- | --- | --- |
-| `H-after.txt`, `H2-after-final.txt` (621 lines each) | none | C1, C3, C7 to C11 and the bars. `H2` was run with the final source, and `diff` against `H` printed nothing. |
-| `J-lane-scope.txt` | `--lane scope` | Scope against every header (each colour, below) |
-| `L-tokens.txt`, `L2-tokens.txt`, `L3-txt.txt` | `--tokens ...` | the surfaces before and after (user-visible changes, below) |
-| `K-scope-<tone>.txt`, 7 files | `--trial '{"lanes":{"scope":"<tone>"}}'` | the Scope alternatives of point 2 |
-| `M-base-crimson.txt` | `--on-base --trial '{"lanes":{"scope":"crimson"}}'` | `open-layout measures under 10 12; bar 2 breaks 0; collapsed-only pairs under 10 16 (base 19)` |
-| `M-base-crimson-ambers.txt` | `--on-base --trial '{"lanes":{"scope":"crimson","jobs":"amber-s"}}'` | `open-layout measures under 10 8; bar 2 breaks 0; collapsed-only pairs under 10 13 (base 19)` |
-| `N-panel.txt` | `--panel amber-s,red-s,red-t,grey-d,gold,teal,crimson,cyan-d,slate,grey,mauve` | point 3 and point 5 |
-| (stdout) | `--classes` | point 4 |
-| `I-o140.txt` | O140's program, the one-line copy | C12 |
+| `R1-plain.txt`, `W5-plain.txt` | none | C1, C3, C7 to C11, the bars |
+| `P0-panel-all.txt`, `P1-panel-after.txt` | `--panel` | C13 first and after |
+| `Q1-hue.txt` to `Q5-hue.txt` | `--hue <theme> <token> [json]` | the item-6 searches |
+| `Q6-trial.txt` | `--trial` | the 15 item-6 hues together |
+| `R2-o140.txt` | O140's program, the one-line copy | C12 |
+| (stdout) | `--classes` | item 5 |
+| `vscode-run-diff.txt` | `git diff -- src/lib/themes/vscode.css` | item 5 |
 
-The runs that chose the values were made on the unchanged tree, before any edit:
-- `F-hue-search.txt` and `G-hue-search.txt` hold the `--hue` searches.
-- `--trial` runs of the combined set printed `trial: open-layout measures under 10 0; bar 2 breaks 0; collapsed-only pairs under 10 13 (base 19)`.
+Round 0's runs (`A` to `N`, `H2-after-final.txt`, `I-o140.txt`) stay in the folder.
 
-The final run reproduces that result on the changed tree. The `--hue` header line and the pick for each changed hue:
+## Judgment calls the brief left open
 
-```
-=== dracula --c-grey-d #6272a4 (OKLCH L 0.560 C 0.080 h 270.1): 346 of 1779 candidates meet the bars
-  #00467d OKLCH L 0.39 C x1.4 h -20; 18.1 from the old value; smallest measure 10.7; status hue 18.1 (blue), -txt 17.5 (blue)
-=== nord --c-blue #5e81ac (OKLCH L 0.594 C 0.077 h 254.0): 421 of 1713 candidates meet the bars
-  #8493db OKLCH L 0.68 C x1.4 h +20; 10.2 from the old value; smallest measure 10.5; status hue 14.5 (grey), -txt 10.5 (slate)
-=== kanagawadragon --c-blue #8ba4b0 (OKLCH L 0.704 C 0.033 h 228.4): 677 of 1998 candidates meet the bars
-  #b2c9d0 OKLCH L 0.82 C x0.8 h -10; 10.5 from the old value; smallest measure 10.5; status hue 10.5 (cyan), -txt 10.5 (cyan)
-=== frappe --c-blue #8caaee (OKLCH L 0.742 C 0.104 h 265.7): 615 of 1608 candidates meet the bars
-  #8cafff OKLCH L 0.76 C x1.2 h +0; 2.3 from the old value; smallest measure 10.5; status hue 16.6 (grey), -txt 14.6 (grey)
-=== vscode-tomorrow-night-blue --c-blue #2563eb (OKLCH L 0.546 C 0.215 h 262.9): 214 of 873 candidates meet the bars
-  #003abc OKLCH L 0.42 C x1 h +0; 13.9 from the old value; smallest measure 10.6; status hue 14.4 (slate), -txt 12.3 (slate)
-=== solarized --c-green #859900 (OKLCH L 0.644 C 0.151 h 118.6): 934 of 1199 candidates meet the bars
-  #859638 OKLCH L 0.64 C x0.8 h +0; 4.8 from the old value; smallest measure 11.6; status hue 18.4 (amber), -txt 19.9 (amber)
-=== gruvboxlight --c-green #79740e (OKLCH L 0.546 C 0.112 h 106.5): 784 of 1403 candidates meet the bars
-  #6b7700 OKLCH L 0.54 C x1.2 h +10; 4.9 from the old value; smallest measure 12.1; status hue 19.2 (cyan), -txt 18.7 (cyan)
-=== kanagawalotus --c-gold #77713f (OKLCH L 0.542 C 0.070 h 102.4): 257 of 1757 candidates meet the bars
-  #3a4a00 OKLCH L 0.38 C x1.4 h +20; 17.3 from the old value; smallest measure 10.5; status hue 21.7 (brass), -txt 11.7 (green)
-=== kanagawalotus --c-green #6f894e (OKLCH L 0.595 C 0.089 h 128.3): 686 of 1728 candidates meet the bars
-  #80b16f OKLCH L 0.71 C x1.2 h +10; 12.7 from the old value; smallest measure 10.6; status hue 18.3 (teal), -txt 10.7 (teal)
-=== rosepinedawn --c-blue #286983 (OKLCH L 0.491 C 0.077 h 228.0): 371 of 1526 candidates meet the bars
-  #13568a OKLCH L 0.44 C x1.4 h +20; 10.5 from the old value; smallest measure 10.5; status hue 10.5 (cyan), -txt 10.5 (cyan)
-=== everforest --c-mauve #d699b6 (OKLCH L 0.750 C 0.082 h 349.2): 227 of 1832 candidates meet the bars
-  #f1acec OKLCH L 0.83 C x1.4 h -20; 10.7 from the old value; smallest measure 10.7; status hue 10.7 (violet), -txt 10.7 (violet)
-```
+1. The per-theme rule for which hue to change and to what: the hue whose nearest passing value is closest to its old value in CIEDE2000, a passing value having every measure at 10.5 or more so that hex rounding cannot pull it under. In dracula `--c-blue` and `--c-grey-d` tie at 18.1, and I changed `--c-grey-d`, the one that is not a status token.
+2. For a hue a palette does not set (nord, mocha, gruvbox, dark and the three VS Code themes), the colour searched near is tokens.css's, which is what the theme drew before.
+3. Surface tints (`amber-s`, `red-s`) are not taken as lane tones (point 3).
+4. Scope takes crimson (point 2).
+5. `ADDED` holds one `why` per theme, naming all of that theme's tokens in one sentence, built from the shared `BRINGS` and `AMONG` so the three entries say the measure in the same words.
+6. `--panel` with no list takes the tones from the headers the program loads, so C13 cannot miss a header tone a list would leave out.
 
-The other hue of each failing pair was searched the same way, and its nearest pick was farther from its old value:
-- dracula `--c-blue`: 18.1. This is a tie, broken as judgment call 3 says.
-- nord, kanagawadragon, frappe and tomorrow-night-blue `--c-grey-d`: 25.4, 23.4, 19.4 and 28.5.
-- kanagawalotus `--c-grey-d`: 19.7.
-- solarized `--c-gold`: 10.7.
-- gruvboxlight `--c-gold`: 12.5.
-- rosepinedawn `--c-green`: 30.3.
-- everforest `--c-crimson`: 12.4.
+## Files
 
-The source as it stands:
+The 11 files of the C5 table, and this report. Every comment line in the CSS files and `derive.ts` is at most 100 columns; the `vocab.yml` comments are one line each.
+
+## The case-run program source, as run at landing (added at landing)
+
+The source of `o141-builder/case-run.mts`, quoted whole, since the scratch folder does not outlast the session:
 
 ```ts
 // O141 case-run program. Reads the theme sheets, config/defaults/appearance.yml and
@@ -963,10 +1143,14 @@ if (process.argv.includes('--classes')) {
 }
 
 // --panel <tone>,...: each tone's -lane surface against the panel it is drawn on, over the 49 themes
-// of the worktree: the smallest distance, the theme it falls in, and the themes under 10.
+// of the worktree: the smallest distance, the theme it falls in, and the themes under 10. With no
+// list, every tone a Focus header resolves to (C13).
 const panelAt = process.argv.indexOf('--panel');
 if (panelAt > 0) {
-    for (const tone of process.argv[panelAt + 1].split(',')) {
+    const listed = process.argv[panelAt + 1];
+    const tones = listed && !listed.startsWith('--') ? listed.split(',') : [...new Set(Object.values(wt.headers).map((h) => (h as Header).tone))];
+    console.log(`C13 every header tone's -lane against --panel, ${tones.length} tones over ${wt.names.length} themes:`);
+    for (const tone of tones) {
         const rows = wt.names.map((n) => ({ n, d: de(wt.tokens[n][`--c-${tone}-lane`], wt.tokens[n]['--panel']) })).sort((p, q) => p.d - q.d);
         const low = rows.filter((r) => !(r.d >= LINE));
         console.log(`  ${tone}-lane against --panel: min ${f(rows[0].d)} (${rows[0].n}); median ${f(rows[Math.floor(rows.length / 2)].d)}; under 10 in ${low.length}${low.length ? `: ${low.map((r) => `${r.n} ${f(r.d)}`).join(', ')}` : ''}`);
@@ -1010,10 +1194,11 @@ if (trialAt > 0) {
 }
 
 // --hue <theme> <token> [json]: candidate values for one theme hue, over the trial in json when
-// given. Candidates are the hexes the theme's own block holds (its palette), and the current value
-// moved in OKLCH lightness at its own hue and chroma. A candidate is kept when, in that theme, no
-// open-layout pair is under 10, every collapsed-only pair meets bar 2, and the hue is at 10 or more
-// from every status token on the hue and on -txt.
+// given. Candidates are the hexes the theme's own block holds (its palette), and an OKLCH grid
+// around the current value: lightness 0.15 to 0.97 in steps of 0.01, chroma x0.6 to x1.4 in steps
+// of 0.2, hue -20 to +20 in steps of 10. A candidate is kept when, in that theme, no open-layout
+// pair is under 10, every collapsed-only pair meets bar 2, the hue is at 10 or more from every
+// status token on the hue and on -txt, and its -lane surface is 10 or more from --panel (C13).
 const hueAt = process.argv.indexOf('--hue');
 if (hueAt > 0) {
     const theme = process.argv[hueAt + 1];
@@ -1062,8 +1247,11 @@ if (hueAt > 0) {
         }
         const s = statusCheck(tree, theme, hue);
         if (s.under.length > 0) ok = false;
-        const least = Math.min(margin, parseFloat(s.hue), parseFloat(s.txt));
-        if (ok) kept.push({ hex, why, margin: least, note: `status hue ${s.hue}, -txt ${s.txt}` });
+        // C13: the hue's header surface against the panel it is drawn on.
+        const panel = de(tree.tokens[theme][`--c-${hue}-lane`], tree.tokens[theme]['--panel']);
+        if (!(panel >= LINE)) ok = false;
+        const least = Math.min(margin, parseFloat(s.hue), parseFloat(s.txt), panel);
+        if (ok) kept.push({ hex, why, margin: least, note: `status hue ${s.hue}, -txt ${s.txt}; panel ${f(panel)}` });
     }
     // Nearest to the old value first, by CIEDE2000: the smallest visible change that meets the bars.
     const away = (hex: string): number => de(current, hex);
@@ -1077,140 +1265,355 @@ if (hueAt > 0) {
         console.log(`  ${k.hex} ${k.why}; ${f(away(k.hex))} from the old value; smallest measure ${f(k.margin)}; ${k.note}`);
     }
 }
+
 ```
 
-## Each colour changed
+## Corrections and the measures on the final tree (added at landing)
 
-### The Scope lane: `vocab.yml:189`, `#0e7490` (`c-cyan-d`) to `#e2374d` (`c-crimson`)
+- The table under Item 6 gave nord `--c-slate` 25.4 from its old value, gruvbox `--c-slate` 11.4 from the panel and dark `--c-slate` 16.3 from the panel; the `--hue` reruns print 24.2, 10.7 and 16.9, and the cells now read so.
+- Nord `--c-blue` is `#7281c7` on main, not `#8493db`: the `--hue` run on the final tree picks it first, 6.2 from `#5e81ac`. Solarized `--c-slate` stays `#aad0d1`: the first pick there, `#a4c9cb`, puts `--c-grey-d` at 10.4, and the head comment of `rice/singles.css` says that Solarized's slate, grey and grey-d were picked in that order. The C11 lines below are from the final tree.
+- Tomorrow Night Blue's `--c-blue` is `#699bff`, not the `#003abc` Item 5 names: `#003abc`'s lane measured 8.4 from `--panel`, so item 6 re-picked it.
 
-It ends Review-Scope in all five themes and Scope-Idea in kanagawadragon:
+The program's plain run on the final tree, from the gate worktree: every pair measure that moved between the base and the final tree, with its theme, before and after (312 lines; an open pair that goes from under 10 to 10 or more is a pair the change ends), then the bars and the C11 lines.
 
-| Pair | Theme | Before | After |
-| --- | --- | --- | --- |
-| Review-Scope | vscode-solarized-dark | 6.8 | 34.0 |
-| Review-Scope | kanagawadragon | 7.2 | 20.5 |
-| Review-Scope | kanagawalotus | 7.7 | 24.8 |
-| Review-Scope | vscode-tomorrow-night-blue | 8.3 | 26.9 |
-| Review-Scope | vscode-abyss | 9.9 | 29.0 |
-| Scope-Idea | kanagawadragon | 6.2 | 19.1 |
-
-Scope against every header, the smallest over the 49 themes, before and after (`--lane scope`):
-
-| Header | Touches Scope | Before | After | Themes under 10 |
-| --- | --- | --- | --- | --- |
-| Funding | collapsed-only | 11.5 (kanagawalotus) | 17.1 (vscode-red) | 0 to 0 |
-| Jobs | collapsed-only | 6.4 (vscode-solarized-dark) | 12.7 (rosepinedawn) | 5 to 0 |
-| Teaching | collapsed-only | 6.2 (flexokilight) | 28.6 (tokyolight) | 12 to 0 |
-| Run | collapsed-only | 6.9 (rosepinedawn) | 30.9 (kanagawadragon) | 1 to 0 |
-| Push | never | 0.0 (rosepine) | 23.1 (tokyolight) | 13 to 0 |
-| Revise | never | 15.2 (kanagawadragon) | 10.3 (frappe) | 0 to 0 |
-| Review | open | 6.8 (vscode-solarized-dark) | 12.7 (rosepinedawn) | 5 to 0 |
-| Blocked | never | 25.5 (kanagawadragon) | 0.0 (macchiato) | 0 to 48 |
-| Backburner | never | 7.2 (kanagawadragon) | 12.7 (rosepinedawn) | 2 to 0 |
-| De-risk | open | 12.1 (kanagawalotus) | 17.0 (tokyolight) | 0 to 0 |
-| Build | never | 6.2 (flexokilight) | 28.6 (tokyolight) | 12 to 0 |
-| Idea | open | 6.2 (kanagawadragon) | 10.2 (vscode-solarized-light) | 1 to 0 |
-
-Other users on screen: `#e2374d` is the palette's `c-crimson` (`vocab.yml:12`). No other vocab entry uses it, and no component outside `src/lib/themes/` names `--c-crimson`.
-
-### The theme hues
-
-The "before to after" figures are the program's `moved` lines for that theme.
-
-| Theme | Token, file:line | Old to new | Pairs it ends, before to after | Other pairs it moves, before to after |
-| --- | --- | --- | --- | --- |
-| dracula | `--c-grey-d`, `rice/singles.css:111` | `#6272a4` to `#00467d` | Jobs-Push 0.0 to 10.7 (open); Jobs-Review and Jobs-Backburner 0.0 to 10.7 (collapsed-only) | Funding-Jobs 42.3 to 48.9, Jobs-Teaching 30.5 to 33.9, Jobs-Idea 21.9 to 31.6 |
-| nord | `--c-blue`, `rice/singles.css:45` | `#5e81ac` to `#8493db` | Jobs-Push 6.5 to 11.5 | Push-Idea 15.7 to 11.7, Push-Blocked 24.5 to 21.6, Run-Push 25.0 to 27.3 |
-| kanagawadragon | `--c-blue`, `rice/kanagawa.css:100` | `#8ba4b0` to `#b2c9d0` | Jobs-Push 7.2 to 12.9; Push-Idea 6.2 to 11.2 (collapsed-only) | Push-Revise 15.2 to 14.0, Teaching-Push 10.2 to 11.6 |
-| frappe | `--c-blue`, `rice/catppuccin.css:150` | `#8caaee` to `#8cafff` | Jobs-Push 8.9 to 10.5 | Run-Push 30.3 to 31.5, Push-Blocked 23.8 to 24.5 |
-| vscode-tomorrow-night-blue | `--c-blue`, `themes.css:50` (was tokens.css `:root`) | `#2563eb` to `#003abc` | Jobs-Push 8.3 to 10.6 | Push-Blocked 30.4 to 28.7, Teaching-Push 20.0 to 22.5 |
-| kanagawalotus | `--c-gold`, `rice/kanagawa.css:147` | `#77713f` to `#3a4a00` | Funding-Jobs 4.9 to 10.5; Funding-Review and Funding-Backburner 4.9 to 10.5, Funding-De-risk 3.3 to 10.3 (collapsed-only) | Funding-Teaching 13.2 to 14.1, Funding-Revise 13.8 to 19.0 |
-| kanagawalotus | `--c-green`, `rice/kanagawa.css:151` | `#6f894e` to `#80b16f` | Run-Review 7.9 to 12.1; Jobs-Run 7.9 to 12.1 (collapsed-only); with the gold, Funding-Run 5.7 to 14.4 | Run-Push 18.8 to 20.9, Run-Idea 19.5 to 22.4 |
-| solarized | `--c-green`, `rice/singles.css:153` | `#859900` to `#859638` | Funding-Run 8.9 to 11.6 | Teaching-Run 18.6 to 13.0, Run-Push 43.4 to 35.5, Run-Review 28.5 to 22.2 |
-| gruvboxlight | `--c-green`, `rice/gruvbox.css:83` | `#79740e` to `#6b7700` | Funding-Run 9.3 to 12.1 | Run-Review 11.1 to 13.1, Run-Push 22.2 to 22.0 |
-| rosepinedawn | `--c-blue`, `rice/rosepine.css:159` | `#286983` to `#13568a` | Run-Push 6.9 to 12.0 | Teaching-Push 10.7 to 16.1, Jobs-Push 16.0 to 15.8, Push-Blocked 31.6 to 30.2 |
-| everforest | `--c-mauve`, `rice/everforest.css:48` | `#d699b6` to `#f1acec` | Scope-Idea, which the Scope recolour alone puts at 9.6 (`M-base-crimson.txt`), stays at 15.3; Blocked-Idea 9.6 to 15.3 (collapsed-only) | Build-Idea 33.9 to 32.7, De-risk-Idea 24.4 to 29.9 |
-
-C11 for each is quoted under "The cases after the change".
-
-The hue's other users on screen, found with `grep -rnE --include='*.svelte' --include='*.ts' --include='*.css' -- "--c-<hue>..." src` outside `src/lib/themes/`, and in vocab through the palette hex:
-- `--c-blue` (nord, kanagawadragon, frappe, rosepinedawn, vscode-tomorrow-night-blue):
-  - The Push lane, the `accepted` status (`vocab.yml:112`), `pillar` (`vocab.yml:295`) and the `role` filter tone (`vocab.yml:238`).
-  - `colours.ts` (20 lines: the editor's info colours, peek border, `charts.blue`, bracket 3, the merge "incoming" colours).
-  - `decoration-colors.ts` (5), `problem-rows.ts:176` (the info glyph) and `terminal-marks.ts:17` (ANSI blue).
-  - Every component that takes a tone (Chip, Tag, Card, MenuList and others) when the tone is blue.
-- `--c-grey-d` (dracula): the Jobs band column and the `hub` filter tone (`vocab.yml:235`). No direct user. Its palette hex `#6b7280` is used by no vocab entry.
-- `--c-green` (solarized, gruvboxlight, kanagawalotus):
-  - The Run lane and the 18 vocab entries coloured `#16a34a` (`vocab.yml` lines 66, 74, 119, 121, 131, 134, 136, 139, 140, 152, 183, 198, 203, 210, 271, 279, 283, 310). Among them are the de-risking and published stages, the statuses running, active, doing, ongoing, awarded, granted and ready, the Submitted, Active and Ongoing band stages, `rail_color` and `data_access: open`.
-  - `decoration-colors.ts` (3), `colours.ts` (2), `terminal-marks.ts` (2), and one line each in `Capacity.svelte`, `Ribbon.svelte`, `Results.svelte`, `RefactorPreview.svelte`, `ChangeCounts.svelte`, `CardSessions.svelte`, `Linkedin.svelte` and `editor/kit/theme/theme.ts:79` (`markup.inserted`).
-- `--c-gold` (kanagawalotus): the Funding band column and the `in-prep` stage (`vocab.yml:68`, `#a16207`); `colours.ts:492` (bracket 1); `decoration-colors.ts` (`charts.yellow`, `terminal.ansiYellow`); `terminal-marks.ts:16` (ANSI yellow).
-- `--c-mauve` (everforest): the Idea lane, its top border and its group heading (`vocab.yml:192`). No direct user.
-
-In each changed theme, the tokens that shared the old hex keep it: for example dracula's `--c-blue`, `--c-slate`, `--c-grey` and `--c-graph-ref` stay `#6272a4`, and kanagawadragon's `--c-cyan`, `--c-sky` and `--c-graph-ref` stay `#8ba4b0` (the old-hex grep). No sentence of `docs/` or `README.md` names a changed hue. `grep -rn -i --exclude=local.yml` of every old and new hex over `docs README.md src config tests utils` finds the old hexes only in the theme sheets, in `vocab.yml`'s palette and lane rows, in tests that use them as arbitrary colours (`vocab.test.ts:60,78`, the `#2563eb` cases) and in `docs/templates.md`'s commented vocab examples (`color: "#2563eb"` at lines 375, 403, 535, 1275), none of which names a theme. The grep of the theme names beside a hue word over `docs README.md` printed nothing.
-
-## Files
-
-| File | Lines, base to now | Changed lines (`diff`, both sides) |
-| --- | --- | --- |
-| `config/catalogs/vocab.yml` | 311 to 311 | 6 |
-| `src/lib/themes/derive.ts` | 320 to 326 | 16 |
-| `src/lib/themes/themes.css` | 109 to 119 | 14 |
-| `src/lib/themes/rice/singles.css` | 360 to 363 | 15 |
-| `src/lib/themes/rice/kanagawa.css` | 181 to 184 | 11 |
-| `src/lib/themes/rice/catppuccin.css` | 232 to 234 | 12 |
-| `src/lib/themes/rice/gruvbox.css` | 114 to 116 | 12 |
-| `src/lib/themes/rice/rosepine.css` | 184 to 186 | 12 |
-| `src/lib/themes/rice/everforest.css` | 122 to 125 | 11 |
-| `.scratch/migration/agents/reviews/O141-report.md` | this report | |
-
-Every comment line in the CSS and TS files is at most 100 columns (`awk 'length($0)>100'` over themes.css, every sheet of `rice/` and `derive.ts` prints nothing). The `vocab.yml` comments are one line each.
-
-## Judgment calls the brief left open
-
-1. "Side by side" means direct neighbours in a row. Rows touch when their column spans overlap by more than an edge.
-2. A folded Idea lane is modelled as a layout and brings no pair of its own (`0`).
-3. The per-theme rule for which hue of a failing pair to change, and to what. I change the hue whose nearest passing value is closest to its old value in CIEDE2000, a passing value having every measure at 10.5 or more so that hex rounding cannot pull it under. In dracula, `--c-blue` and `--c-grey-d` have the same old value and tie at 18.1, so I changed `--c-grey-d`. It is not a status token, and `--c-blue`, `--c-slate` and `--c-grey` (all `#6272a4`) are.
-4. The candidates are the theme's own-block hexes, its published palette, plus an OKLCH grid around the old value (L 0.15 to 0.97 in 0.01 steps, chroma x0.6 to x1.4, hue -20 to +20). None of the 11 picks is an own-block hex: in every listing an own-block candidate either fails a bar or is farther. So each head comment names the hue as oculus's own and gives the rule.
-5. Surface tints (`amber-s`, `red-s`) are not taken as lane tones (point 3 above).
-6. Scope takes crimson, the fewest-hues route among the Scope tones measured (point 2 above).
-7. The Tomorrow Night Blue override sits in themes.css (point 4 above).
-8. The `derive.ts` doc's last sentence, "A smaller share folds those neighbours into one colour in a theme that gives two hues near values", is not in the rewrite. No run of this step measured another `LANE_SHARE`. The doc now states only what the run measured at 0.5.
-9. The head comments follow the wording O140 used ("oculus's own, chosen to read apart from ..."), extended with the rule in one sentence. A comment that changes a non-status hue (`--c-mauve`) says "every status hue of the theme". One that changes a status hue says "every other status hue" or "the theme's other status hues".
-10. In `vocab.yml:181`, "a dark grey against a slate and a grey" names the tokens `grey-d`, `slate` and `grey`. In dracula `--c-grey-d` is now a dark blue, but dracula is not among the 48 themes the sentence counts.
-
-## Host- or user-visible changes
-
-Header surface (`-lane`), header text (`-lane-txt`) and the 3 px top border (the hue itself), before and after, from `L-tokens.txt`, `L2-tokens.txt` and `L3-txt.txt`:
-
-| Header | Theme | Surface | Text | Top border |
-| --- | --- | --- | --- | --- |
-| Scope | light (default) | `#86b9c7` to `#f09ba6` | `#084758` to `#891322` | `#0e7490` to `#e2374d` |
-| Scope | vscode-dark-modern | `#164957` to `#802b36` | `#23bfea` to `#f1a1ab` | `#0e7490` to `#e2374d` |
-| Scope | kanagawadragon | `#546064` to `#704843` | | |
-| Scope | vscode-tomorrow-night-blue | `#074c70` to `#712d4f` | | |
-| Scope | kanagawalotus | `#a6b1a0` to `#dd9687` | | |
-| Scope | vscode-solarized-dark | `#074f63` to `#713141` | | |
-| Scope | vscode-abyss | `#074054` to `#712132` | | |
-| Scope | everforest | `#89595d` (crimson, unchanged in this theme) | | |
-| Jobs | dracula | `#454e6d` to `#143859` | `#bbc2d7` to `#35a6ff` | `#6272a4` to `#00467d` |
-| Push | nord | `#4c617f` to `#5f6a96` | `#d6dfe9` to `#f1f3fa` | `#5e81ac` to `#8493db` |
-| Push | kanagawadragon | `#546064` to `#677274` | `#d3dde1` to `#f1f5f6` | `#8ba4b0` to `#b2c9d0` |
-| Push | frappe | `#5e6f9a` to `#5e71a2` | `#f6f8fd` to `#fcfdfe` | `#8caaee` to `#8cafff` |
-| Push | vscode-tomorrow-night-blue | `#12439e` to `#002f86` | `#9db8f5` to `#739efe` | `#2563eb` to `#003abc` |
-| Push | rosepinedawn | `#93b1bb` to `#89a8be` | `#194354` to `#0c3a5d` | `#286983` to `#13568a` |
-| Funding | kanagawalotus | `#b4ae7d` to `#969b5e` | `#403e22` to `#222b00` | `#77713f` to `#3a4a00` |
-| Run | kanagawalotus | `#b0ba85` to `#b9ce95` | `#394728` to `#39562e` | `#6f894e` to `#80b16f` |
-| Run | solarized | `#466721` to `#46663d` | `#cbea00` to `#d3dea6` | `#859900` to `#859638` |
-| Run | gruvboxlight | `#bab26a` to `#b3b463` | `#413e07` to `#3c4300` | `#79740e` to `#6b7700` |
-| Idea | everforest | `#816778` to `#8f7093` | `#f9f0f4` to `#150314` | `#d699b6` to `#f1acec` |
-
-- The Idea lane's group heading is drawn in `--c-mauve-txt`. It changes only in everforest, `#d699b6` to `#f1acec`. In the default theme and every VS Code theme the Idea lane is unchanged.
-- The Scope header changes in every theme, since `c-cyan-d` and `c-crimson` resolve to tokens.css's `#0e7490` and `#e2374d` in the default theme and in the VS Code themes alike.
-- Each changed theme hue also recolours the other users listed under "Each colour changed", in that theme only.
-- The Settings class-word list order changes as point 4 shows.
-
-## What in the brief was wrong or impossible
-
-- **C5's "`diff` of `derive.ts` shows only lines 83-89".** The diff is the `LANE_SHARE` doc only, but the doc now runs over `derive.ts:83-95`. Naming 13 pairs and their themes, which item 4 asks for, takes 11 lines where the old doc had 5.
-- **The cases file's C5 for themes.css.** For each theme file, C5 expects only changed hue lines and the head comment. In themes.css the changed hue is an added block of 9 lines with its own comment, because the theme it belongs to has no hand-written block anywhere.
-- **The brief names O140's program for C12.** Its base path `.agents/worktrees/O140-base` no longer exists (`ENOENT` on `tokens.css`), so it cannot run as written (point 5 above).
+```
+  moved Funding-Teaching kanagawalotus: 13.2 -> 14.1
+  moved Funding-Push vscode-tomorrow-night-blue: 39.0 -> 36.9
+  moved Funding-Push frappe: 27.4 -> 28.6
+  moved Funding-Push nord: 28.3 -> 31.9
+  moved Funding-Push kanagawadragon: 15.2 -> 14.0
+  moved Funding-Push rosepinedawn: 30.5 -> 35.1
+  moved Funding-Push kanagawalotus: 18.3 -> 21.1
+  moved Funding-Revise kanagawalotus: 13.8 -> 19.0
+  moved Funding-Review dark: 27.7 -> 29.3
+  moved Funding-Review vscode-solarized-dark: 27.9 -> 30.7
+  moved Funding-Review vscode-tomorrow-night-blue: 27.8 -> 31.5
+  moved Funding-Review mocha: 32.3 -> 33.6
+  moved Funding-Review gruvbox: 30.4 -> 33.1
+  moved Funding-Review nord: 28.3 -> 22.8
+  moved Funding-Review onedark: 27.0 -> 21.8
+  moved Funding-Review solarized: 28.3 -> 29.3
+  moved Funding-Review kanagawalotus: 4.9 -> 10.5
+  moved Funding-Blocked kanagawalotus: 26.2 -> 31.4
+  moved Funding-Backburner vscode-quiet-light: 22.0 -> 15.4
+  moved Funding-Backburner onedark: 27.0 -> 26.3
+  moved Funding-Backburner solarized: 28.3 -> 28.0
+  moved Funding-Backburner kanagawalotus: 4.9 -> 10.5
+  moved Funding-Scope light: 30.2 -> 26.3
+  moved Funding-Scope dark: 32.6 -> 26.2
+  moved Funding-Scope vscode-dark-modern: 32.4 -> 24.5
+  moved Funding-Scope vscode-light-modern: 30.2 -> 26.3
+  moved Funding-Scope vscode-light-2026: 30.2 -> 26.3
+  moved Funding-Scope vscode-light-plus: 30.2 -> 26.3
+  moved Funding-Scope vscode-light-visual-studio: 30.2 -> 26.3
+  moved Funding-Scope vscode-quiet-light: 30.3 -> 26.3
+  moved Funding-Scope vscode-solarized-light: 29.4 -> 26.1
+  moved Funding-Scope vscode-abyss: 32.5 -> 26.1
+  moved Funding-Scope vscode-dark-2026: 32.5 -> 24.2
+  moved Funding-Scope vscode-dark-plus: 32.3 -> 24.9
+  moved Funding-Scope vscode-dark-visual-studio: 32.3 -> 24.9
+  moved Funding-Scope vscode-kimbie-dark: 31.9 -> 23.3
+  moved Funding-Scope vscode-monokai: 32.0 -> 25.1
+  moved Funding-Scope vscode-monokai-dimmed: 32.3 -> 24.9
+  moved Funding-Scope vscode-red: 33.7 -> 17.1
+  moved Funding-Scope vscode-solarized-dark: 30.8 -> 31.2
+  moved Funding-Scope vscode-tomorrow-night-blue: 31.1 -> 29.4
+  moved Funding-Scope vscode-dark-high-contrast: 32.2 -> 23.1
+  moved Funding-Scope vscode-light-high-contrast: 30.2 -> 26.3
+  moved Funding-Scope mocha: 32.9 -> 33.2
+  moved Funding-Scope macchiato: 24.3 -> 24.4
+  moved Funding-Scope frappe: 23.4 -> 23.2
+  moved Funding-Scope gruvbox: 35.0 -> 30.6
+  moved Funding-Scope nord: 30.4 -> 31.4
+  moved Funding-Scope synthwave: 35.0 -> 40.3
+  moved Funding-Scope tokyoneon: 30.0 -> 37.6
+  moved Funding-Scope tokyonight: 30.9 -> 25.1
+  moved Funding-Scope tokyostorm: 29.4 -> 24.6
+  moved Funding-Scope rosepine: 32.6 -> 27.5
+  moved Funding-Scope rosepinemoon: 31.5 -> 26.5
+  moved Funding-Scope everforest: 19.8 -> 23.8
+  moved Funding-Scope dracula: 27.8 -> 42.4
+  moved Funding-Scope onedark: 26.1 -> 26.6
+  moved Funding-Scope oxocarbon: 32.2 -> 44.5
+  moved Funding-Scope flexoki: 28.9 -> 29.5
+  moved Funding-Scope phosphor: 26.3 -> 40.8
+  moved Funding-Scope phosphoramber: 27.5 -> 34.0
+  moved Funding-Scope kanagawa: 24.4 -> 28.2
+  moved Funding-Scope kanagawadragon: 15.2 -> 20.0
+  moved Funding-Scope solarized: 27.2 -> 35.3
+  moved Funding-Scope latte: 38.0 -> 32.9
+  moved Funding-Scope gruvboxlight: 20.0 -> 26.0
+  moved Funding-Scope rosepinedawn: 30.5 -> 25.0
+  moved Funding-Scope tokyolight: 27.4 -> 21.0
+  moved Funding-Scope kanagawalotus: 11.5 -> 31.4
+  moved Funding-Scope everforestlight: 35.3 -> 29.4
+  moved Funding-Scope flexokilight: 25.3 -> 26.7
+  moved Funding-De-risk kanagawalotus: 3.3 -> 10.3
+  moved Funding-Build kanagawalotus: 13.2 -> 14.1
+  moved Funding-Idea everforest: 24.4 -> 29.9
+  moved Funding-Idea kanagawalotus: 16.3 -> 21.0
+  moved Jobs-Run nord: 22.1 -> 21.0
+  moved Jobs-Run dracula: 39.9 -> 45.2
+  moved Jobs-Run onedark: 26.9 -> 21.8
+  moved Jobs-Run solarized: 28.5 -> 24.9
+  moved Jobs-Run gruvboxlight: 11.1 -> 13.1
+  moved Jobs-Run kanagawalotus: 7.9 -> 12.1
+  moved Jobs-Revise nord: 26.4 -> 20.7
+  moved Jobs-Revise dracula: 32.3 -> 38.8
+  moved Jobs-Revise onedark: 22.1 -> 21.8
+  moved Jobs-Revise solarized: 28.3 -> 30.4
+  moved Jobs-Review dark: 5.4 -> 5.8
+  moved Jobs-Review vscode-solarized-dark: 4.8 -> 6.5
+  moved Jobs-Review vscode-tomorrow-night-blue: 5.1 -> 5.4
+  moved Jobs-Review mocha: 5.4 -> 7.7
+  moved Jobs-Review gruvbox: 5.5 -> 7.6
+  moved Jobs-Review nord: 5.6 -> 32.0
+  moved Jobs-Review dracula: 0.0 -> 10.7
+  moved Jobs-Review onedark: 0.0 -> 6.6
+  moved Jobs-Review solarized: 0.0 -> 4.9
+  moved Jobs-Blocked nord: 20.0 -> 26.9
+  moved Jobs-Blocked dracula: 27.9 -> 35.4
+  moved Jobs-Blocked onedark: 23.2 -> 28.6
+  moved Jobs-Blocked solarized: 37.9 -> 40.6
+  moved Jobs-Backburner vscode-quiet-light: 6.5 -> 8.9
+  moved Jobs-Backburner nord: 9.0 -> 12.2
+  moved Jobs-Backburner dracula: 0.0 -> 10.7
+  moved Jobs-Backburner onedark: 0.0 -> 18.4
+  moved Jobs-Backburner solarized: 0.0 -> 16.5
+  moved Jobs-Scope light: 14.6 -> 23.7
+  moved Jobs-Scope dark: 11.2 -> 26.3
+  moved Jobs-Scope vscode-dark-modern: 13.5 -> 25.0
+  moved Jobs-Scope vscode-light-modern: 14.6 -> 23.7
+  moved Jobs-Scope vscode-light-2026: 14.6 -> 23.7
+  moved Jobs-Scope vscode-light-plus: 14.6 -> 23.7
+  moved Jobs-Scope vscode-light-visual-studio: 14.6 -> 23.7
+  moved Jobs-Scope vscode-quiet-light: 14.6 -> 23.8
+  moved Jobs-Scope vscode-solarized-light: 15.4 -> 24.3
+  moved Jobs-Scope vscode-abyss: 9.7 -> 27.7
+  moved Jobs-Scope vscode-dark-2026: 12.6 -> 25.6
+  moved Jobs-Scope vscode-dark-plus: 12.9 -> 25.7
+  moved Jobs-Scope vscode-dark-visual-studio: 12.9 -> 25.7
+  moved Jobs-Scope vscode-kimbie-dark: 14.8 -> 23.9
+  moved Jobs-Scope vscode-monokai: 13.2 -> 25.8
+  moved Jobs-Scope vscode-monokai-dimmed: 12.9 -> 25.7
+  moved Jobs-Scope vscode-red: 24.2 -> 18.5
+  moved Jobs-Scope vscode-solarized-dark: 6.4 -> 33.0
+  moved Jobs-Scope vscode-tomorrow-night-blue: 7.0 -> 27.0
+  moved Jobs-Scope vscode-dark-high-contrast: 11.9 -> 25.9
+  moved Jobs-Scope vscode-light-high-contrast: 14.6 -> 23.7
+  moved Jobs-Scope mocha: 13.2 -> 24.8
+  moved Jobs-Scope macchiato: 14.9 -> 19.4
+  moved Jobs-Scope frappe: 13.4 -> 20.0
+  moved Jobs-Scope gruvbox: 13.1 -> 25.6
+  moved Jobs-Scope nord: 12.7 -> 32.9
+  moved Jobs-Scope synthwave: 30.2 -> 25.9
+  moved Jobs-Scope tokyoneon: 24.9 -> 25.8
+  moved Jobs-Scope tokyonight: 22.0 -> 23.6
+  moved Jobs-Scope tokyostorm: 18.2 -> 21.8
+  moved Jobs-Scope rosepine: 14.6 -> 18.6
+  moved Jobs-Scope rosepinemoon: 16.1 -> 16.6
+  moved Jobs-Scope everforest: 10.3 -> 26.2
+  moved Jobs-Scope dracula: 25.5 -> 35.4
+  moved Jobs-Scope onedark: 19.2 -> 31.4
+  moved Jobs-Scope oxocarbon: 22.1 -> 23.5
+  moved Jobs-Scope flexoki: 18.0 -> 23.5
+  moved Jobs-Scope phosphor: 15.1 -> 51.2
+  moved Jobs-Scope phosphoramber: 30.1 -> 25.7
+  moved Jobs-Scope kanagawa: 15.8 -> 20.9
+  moved Jobs-Scope kanagawadragon: 7.2 -> 20.5
+  moved Jobs-Scope solarized: 11.5 -> 40.6
+  moved Jobs-Scope latte: 19.6 -> 25.1
+  moved Jobs-Scope gruvboxlight: 13.6 -> 24.7
+  moved Jobs-Scope rosepinedawn: 16.0 -> 12.7
+  moved Jobs-Scope tokyolight: 13.2 -> 14.7
+  moved Jobs-Scope kanagawalotus: 7.7 -> 24.8
+  moved Jobs-Scope everforestlight: 17.1 -> 28.6
+  moved Jobs-Scope flexokilight: 15.9 -> 22.0
+  moved Jobs-De-risk nord: 32.0 -> 32.4
+  moved Jobs-De-risk dracula: 42.3 -> 48.9
+  moved Jobs-De-risk onedark: 27.0 -> 21.2
+  moved Jobs-De-risk solarized: 28.3 -> 30.4
+  moved Jobs-Build nord: 20.8 -> 20.9
+  moved Jobs-Build dracula: 30.5 -> 33.9
+  moved Jobs-Build onedark: 24.1 -> 19.0
+  moved Jobs-Build solarized: 16.5 -> 19.2
+  moved Jobs-Idea nord: 13.3 -> 16.0
+  moved Jobs-Idea everforest: 20.8 -> 23.7
+  moved Jobs-Idea dracula: 21.9 -> 31.6
+  moved Jobs-Idea onedark: 19.5 -> 20.6
+  moved Jobs-Idea solarized: 28.1 -> 32.1
+  moved Teaching-Run solarized: 18.6 -> 13.0
+  moved Teaching-Run gruvboxlight: 22.5 -> 21.6
+  moved Teaching-Push vscode-tomorrow-night-blue: 20.0 -> 18.3
+  moved Teaching-Push frappe: 22.2 -> 22.7
+  moved Teaching-Push nord: 20.4 -> 24.2
+  moved Teaching-Push kanagawadragon: 10.2 -> 11.6
+  moved Teaching-Push rosepinedawn: 10.7 -> 16.1
+  moved Teaching-Review dark: 20.4 -> 21.8
+  moved Teaching-Review vscode-solarized-dark: 16.1 -> 18.9
+  moved Teaching-Review vscode-tomorrow-night-blue: 17.5 -> 16.9
+  moved Teaching-Review mocha: 28.2 -> 27.0
+  moved Teaching-Review gruvbox: 27.8 -> 27.6
+  moved Teaching-Review nord: 24.4 -> 25.7
+  moved Teaching-Review onedark: 24.1 -> 22.1
+  moved Teaching-Review solarized: 16.5 -> 15.7
+  moved Teaching-Backburner vscode-quiet-light: 19.4 -> 17.9
+  moved Teaching-Backburner onedark: 24.1 -> 23.1
+  moved Teaching-Backburner solarized: 16.5 -> 15.9
+  moved Teaching-Scope light: 10.1 -> 45.3
+  moved Teaching-Scope dark: 12.3 -> 45.5
+  moved Teaching-Scope vscode-dark-modern: 12.2 -> 45.8
+  moved Teaching-Scope vscode-light-modern: 10.1 -> 45.3
+  moved Teaching-Scope vscode-light-2026: 10.1 -> 45.3
+  moved Teaching-Scope vscode-light-plus: 10.1 -> 45.3
+  moved Teaching-Scope vscode-light-visual-studio: 10.1 -> 45.3
+  moved Teaching-Scope vscode-quiet-light: 10.1 -> 45.4
+  moved Teaching-Scope vscode-solarized-light: 9.5 -> 45.9
+  moved Teaching-Scope vscode-abyss: 12.6 -> 45.5
+  moved Teaching-Scope vscode-dark-2026: 12.5 -> 45.3
+  moved Teaching-Scope vscode-dark-plus: 12.2 -> 45.9
+  moved Teaching-Scope vscode-dark-visual-studio: 12.2 -> 45.9
+  moved Teaching-Scope vscode-kimbie-dark: 11.8 -> 46.8
+  moved Teaching-Scope vscode-monokai: 11.8 -> 46.4
+  moved Teaching-Scope vscode-monokai-dimmed: 12.2 -> 45.9
+  moved Teaching-Scope vscode-red: 14.2 -> 43.2
+  moved Teaching-Scope vscode-solarized-dark: 11.7 -> 47.1
+  moved Teaching-Scope vscode-tomorrow-night-blue: 11.1 -> 42.4
+  moved Teaching-Scope vscode-dark-high-contrast: 12.8 -> 45.1
+  moved Teaching-Scope vscode-light-high-contrast: 10.1 -> 45.3
+  moved Teaching-Scope mocha: 21.9 -> 41.1
+  moved Teaching-Scope macchiato: 14.2 -> 42.2
+  moved Teaching-Scope frappe: 14.0 -> 43.1
+  moved Teaching-Scope gruvbox: 25.7 -> 43.9
+  moved Teaching-Scope nord: 17.6 -> 40.9
+  moved Teaching-Scope synthwave: 9.8 -> 51.2
+  moved Teaching-Scope tokyoneon: 14.2 -> 44.2
+  moved Teaching-Scope tokyonight: 14.8 -> 41.4
+  moved Teaching-Scope tokyostorm: 15.0 -> 41.4
+  moved Teaching-Scope rosepine: 17.9 -> 38.2
+  moved Teaching-Scope rosepinemoon: 14.4 -> 37.4
+  moved Teaching-Scope everforest: 8.6 -> 41.4
+  moved Teaching-Scope dracula: 13.7 -> 48.9
+  moved Teaching-Scope onedark: 9.5 -> 42.8
+  moved Teaching-Scope oxocarbon: 10.7 -> 42.1
+  moved Teaching-Scope flexoki: 7.6 -> 44.8
+  moved Teaching-Scope phosphor: 7.0 -> 53.6
+  moved Teaching-Scope phosphoramber: 6.9 -> 49.8
+  moved Teaching-Scope kanagawa: 7.7 -> 33.0
+  moved Teaching-Scope kanagawadragon: 10.2 -> 34.6
+  moved Teaching-Scope solarized: 7.5 -> 46.8
+  moved Teaching-Scope latte: 9.7 -> 44.8
+  moved Teaching-Scope gruvboxlight: 11.5 -> 47.7
+  moved Teaching-Scope rosepinedawn: 10.7 -> 37.5
+  moved Teaching-Scope tokyolight: 10.1 -> 28.6
+  moved Teaching-Scope kanagawalotus: 9.4 -> 37.8
+  moved Teaching-Scope everforestlight: 18.9 -> 43.1
+  moved Teaching-Scope flexokilight: 6.2 -> 40.9
+  moved Teaching-Idea everforest: 33.9 -> 32.7
+  moved Run-Scope light: 22.5 -> 51.1
+  moved Run-Scope dark: 27.3 -> 53.3
+  moved Run-Scope vscode-dark-modern: 26.1 -> 53.2
+  moved Run-Scope vscode-light-modern: 22.5 -> 51.1
+  moved Run-Scope vscode-light-2026: 22.5 -> 51.1
+  moved Run-Scope vscode-light-plus: 22.5 -> 51.1
+  moved Run-Scope vscode-light-visual-studio: 22.5 -> 51.1
+  moved Run-Scope vscode-quiet-light: 22.6 -> 51.3
+  moved Run-Scope vscode-solarized-light: 20.0 -> 50.6
+  moved Run-Scope vscode-abyss: 27.4 -> 52.7
+  moved Run-Scope vscode-dark-2026: 26.6 -> 52.9
+  moved Run-Scope vscode-dark-plus: 25.7 -> 53.1
+  moved Run-Scope vscode-dark-visual-studio: 25.7 -> 53.1
+  moved Run-Scope vscode-kimbie-dark: 23.9 -> 52.9
+  moved Run-Scope vscode-monokai: 24.6 -> 53.0
+  moved Run-Scope vscode-monokai-dimmed: 25.7 -> 53.1
+  moved Run-Scope vscode-red: 27.4 -> 51.0
+  moved Run-Scope vscode-solarized-dark: 26.6 -> 52.0
+  moved Run-Scope vscode-tomorrow-night-blue: 26.7 -> 52.3
+  moved Run-Scope vscode-dark-high-contrast: 26.5 -> 52.3
+  moved Run-Scope vscode-light-high-contrast: 22.5 -> 51.1
+  moved Run-Scope mocha: 29.4 -> 47.0
+  moved Run-Scope macchiato: 23.7 -> 41.1
+  moved Run-Scope frappe: 23.4 -> 38.8
+  moved Run-Scope gruvbox: 35.4 -> 42.3
+  moved Run-Scope nord: 24.1 -> 40.8
+  moved Run-Scope synthwave: 11.6 -> 51.8
+  moved Run-Scope tokyoneon: 26.1 -> 53.4
+  moved Run-Scope tokyonight: 31.8 -> 43.1
+  moved Run-Scope tokyostorm: 32.3 -> 43.7
+  moved Run-Scope rosepine: 17.0 -> 32.0
+  moved Run-Scope rosepinemoon: 13.3 -> 31.1
+  moved Run-Scope everforest: 12.8 -> 35.4
+  moved Run-Scope dracula: 27.7 -> 57.4
+  moved Run-Scope onedark: 19.5 -> 38.9
+  moved Run-Scope oxocarbon: 17.6 -> 55.2
+  moved Run-Scope flexoki: 19.4 -> 34.9
+  moved Run-Scope phosphor: 17.4 -> 61.1
+  moved Run-Scope phosphoramber: 21.1 -> 48.1
+  moved Run-Scope kanagawa: 23.4 -> 39.9
+  moved Run-Scope kanagawadragon: 11.8 -> 30.9
+  moved Run-Scope solarized: 24.9 -> 42.0
+  moved Run-Scope latte: 32.9 -> 52.8
+  moved Run-Scope gruvboxlight: 12.7 -> 35.7
+  moved Run-Scope rosepinedawn: 6.9 -> 31.4
+  moved Run-Scope tokyolight: 25.2 -> 35.2
+  moved Run-Scope kanagawalotus: 10.7 -> 35.7
+  moved Run-Scope everforestlight: 33.2 -> 37.7
+  moved Run-Scope flexokilight: 18.7 -> 33.6
+  moved Run-Idea everforest: 33.7 -> 38.5
+  moved Run-Idea solarized: 54.6 -> 49.3
+  moved Run-Idea gruvboxlight: 28.3 -> 31.0
+  moved Run-Idea kanagawalotus: 19.5 -> 22.4
+  moved Push-De-risk vscode-tomorrow-night-blue: 48.3 -> 43.7
+  moved Push-De-risk frappe: 27.4 -> 28.6
+  moved Push-De-risk nord: 37.0 -> 40.2
+  moved Push-De-risk kanagawadragon: 15.2 -> 14.0
+  moved Push-De-risk rosepinedawn: 30.5 -> 35.1
+  moved Push-Idea vscode-tomorrow-night-blue: 17.5 -> 19.7
+  moved Push-Idea frappe: 18.8 -> 19.5
+  moved Push-Idea nord: 15.7 -> 12.2
+  moved Push-Idea everforest: 29.8 -> 28.8
+  moved Push-Idea kanagawadragon: 6.2 -> 11.2
+  moved Push-Idea rosepinedawn: 21.2 -> 20.5
+  moved Revise-Idea everforest: 24.4 -> 29.9
+  moved Review-Idea dark: 19.9 -> 16.0
+  moved Review-Idea vscode-solarized-dark: 23.3 -> 19.7
+  moved Review-Idea vscode-tomorrow-night-blue: 16.0 -> 15.2
+  moved Review-Idea mocha: 23.1 -> 27.2
+  moved Review-Idea gruvbox: 23.0 -> 28.4
+  moved Review-Idea nord: 17.2 -> 21.7
+  moved Review-Idea everforest: 20.8 -> 23.7
+  moved Review-Idea onedark: 19.5 -> 17.6
+  moved Review-Idea solarized: 28.1 -> 35.6
+  moved Blocked-Idea everforest: 9.6 -> 15.3
+  moved Backburner-Idea vscode-quiet-light: 18.6 -> 23.2
+  moved Backburner-Idea everforest: 20.8 -> 23.7
+  moved Backburner-Idea onedark: 19.5 -> 18.6
+  moved Backburner-Idea solarized: 28.1 -> 28.2
+bars: open-layout measures under 10 0; bar 2 breaks 0; collapsed-only pairs under 10 13
+  C11 dark --c-slate #475569 -> #7b81a3: nearest status hue 13.9 (grey), -txt 10.6 (grey)
+  C11 vscode-quiet-light --c-grey #9ca3af -> #6d705b: nearest status hue 22.4 (teal), -txt 18.7 (brass)
+  C11 vscode-solarized-dark --c-slate #475569 -> #505575: nearest status hue 18.9 (blue), -txt 11.0 (grey)
+  C11 vscode-tomorrow-night-blue --c-blue #2563eb -> #699bff: nearest status hue 11.6 (slate), -txt 10.5 (slate)
+  C11 vscode-tomorrow-night-blue --c-slate #475569 -> #7285b7: nearest status hue 11.6 (blue), -txt 10.5 (blue)
+  C11 mocha --c-slate #475569 -> #335469: nearest status hue 33.7 (grey), -txt 11.4 (blue)
+  C11 frappe --c-blue #8caaee -> #8cafff: nearest status hue 16.6 (grey), -txt 14.6 (grey)
+  C11 gruvbox --c-slate #475569 -> #35576c: nearest status hue 19.7 (blue), -txt 11.0 (grey)
+  C11 nord --c-blue #5e81ac -> #7281c7: nearest status hue 17.1 (grey), -txt 10.9 (grey)
+  C11 nord --c-slate #475569 -> #4b432c: nearest status hue 34.8 (red), -txt 10.8 (amber)
+  C11 nord --c-grey-d #6b7280 -> #dfdff4: nearest status hue 16.9 (grey), -txt 10.7 (blue)
+  C11 everforest --c-mauve #d699b6 -> #f1acec: nearest status hue 10.7 (violet), -txt 10.7 (violet)
+  C11 dracula --c-grey-d #6272a4 -> #00467d: nearest status hue 18.1 (blue), -txt 17.5 (blue)
+  C11 onedark --c-slate #5c6370 -> #b7b8cf: nearest status hue 20.8 (blue), -txt 10.6 (grey)
+  C11 onedark --c-grey #5c6370 -> #646c7c: nearest status hue 25.1 (violet), -txt 10.6 (slate)
+  C11 onedark --c-grey-d #5c6370 -> #bfd0de: nearest status hue 10.6 (slate), -txt 10.6 (slate)
+  C11 kanagawadragon --c-blue #8ba4b0 -> #b2c9d0: nearest status hue 10.5 (cyan), -txt 10.5 (cyan)
+  C11 solarized --c-green #859900 -> #859638: nearest status hue 18.4 (amber), -txt 19.9 (amber)
+  C11 solarized --c-slate #586e75 -> #aad0d1: nearest status hue 19.8 (cyan), -txt 12.3 (grey)
+  C11 solarized --c-grey #586e75 -> #60767d: nearest status hue 16.1 (violet), -txt 12.3 (slate)
+  C11 solarized --c-grey-d #586e75 -> #c1ccd5: nearest status hue 10.6 (slate), -txt 10.6 (slate)
+  C11 gruvboxlight --c-green #79740e -> #6b7700: nearest status hue 19.2 (cyan), -txt 18.7 (cyan)
+  C11 rosepinedawn --c-blue #286983 -> #13568a: nearest status hue 10.5 (cyan), -txt 10.5 (cyan)
+  C11 kanagawalotus --c-gold #77713f -> #3a4a00: nearest status hue 21.7 (brass), -txt 11.7 (green)
+  C11 kanagawalotus --c-green #6f894e -> #80b16f: nearest status hue 18.3 (teal), -txt 10.7 (teal)
+C11 theme hues changed: 25; under 10 from a status token: 0
+```

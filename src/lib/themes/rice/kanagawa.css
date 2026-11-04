@@ -1,8 +1,14 @@
 /* Kanagawa (rebelot/kanagawa.nvim, MIT): Wave and Dragon, then Lotus. The pink of Wave and the teal
    of Dragon and of Lotus are oculus's own, chosen to read apart from the theme's other status hues.
-   One block per palette, each a set of overrides on the tokens of tokens.css; the shape every rice
-   palette shares is `body.rice` in themes.css, and the theme list's rows are the `themes:` rows of
-   config/defaults/appearance.yml. */
+   The `--c-blue` of Dragon and the `--c-green` and `--c-gold` of Lotus are oculus's own as well:
+   each brings the Focus headers drawn in it that touch with every cluster open to a CIEDE2000 of 10
+   or more from each other and from the panel, and stays 10 or more from every other status hue of
+   the theme, on the hue and on its `-txt`. Each was picked as the nearest to the palette's colour
+   among the hexes of the palette's own block and an OKLCH grid around that colour (lightness 0.15
+   to 0.97 in steps of 0.01, chroma x0.6 to x1.4 in steps of 0.2, hue -20 to +20 in steps of 10),
+   with every measure at 10.5 or more. One block per palette, each a set of overrides on the tokens
+   of tokens.css; the shape every rice palette shares is `body.rice` in themes.css, and the theme
+   list's rows are the `themes:` rows of config/defaults/appearance.yml. */
 
 /* --- Kanagawa (rebelot/kanagawa.nvim) ------------------------------------ */
 body.kanagawa {
@@ -94,7 +100,7 @@ body.kanagawadragon {
     --c-cyan: #8ba4b0;
     --c-cyan-d: #8ba4b0;
     --c-sky: #8ba4b0;
-    --c-blue: #8ba4b0;
+    --c-blue: #b2c9d0;
     --c-indigo: #949fb5;
     --c-violet: #8992a7;
     --c-purple: #8992a7;
@@ -141,11 +147,11 @@ body.kanagawalotus {
     --c-amber: #de9800;
     --c-amber-s: #d5cea3;
     --c-amber-bg: #e7dba0;
-    --c-gold: #77713f;
+    --c-gold: #3a4a00;
     --c-orange: #cc6d00;
     --c-honey: #836f4a;
     --c-brass: #836f4a;
-    --c-green: #6f894e;
+    --c-green: #80b16f;
     --c-green-d: #6e915f;
     --c-lime: #6e915f;
     --c-teal: #3d8a72;

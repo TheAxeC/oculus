@@ -6022,3 +6022,15 @@ Builds on it: O135
 Builds on it: O144
 - 2026-11-04, O144's review: the portfolio payload apps read carries a funding scheme's period as `when`, the name the hub's funding entries now hold, in place of `date`, which no entry fills after the hub rewrite; dropping the field, which leaves apps no period of a scheme, was the lazy option, and keeping `date` filled from `when` keeps the old name over new data. The card sort lives in `state/boards/collection/card-order.ts`, as built. A lead note made of the posting's deadline words opens "Deadline as posted: ". Named in the next report.
 Builds on it: O144
+- 2026-11-04, O141's round 0: Scope takes crimson `#e2374d`, the one Scope tone that meets every bar with the fewest theme hues; it is the red of Blocked in 48 themes, and the two headers never touch in any of the 128 layouts; orange, magenta, rose and pink each leave open pairs under 10 and need more theme hues. Keeping cyan-d was the lazy option. Named in the next report.
+Builds on it: O141
+- 2026-11-04, O141's round 0: Jobs keeps `grey-d` in place of `amber-s` (7 theme hues against 11), since `amber-s-lane` is under 10 from `--panel` in 26 themes and the header would all but vanish; the reviewer reproduced both runs. Named in the next report.
+Builds on it: O141
+- 2026-11-04, O141's review: Tomorrow Night Blue's added `--c-blue` goes into the VS Code theme converter's output as a table of tokens oculus adds to a converted theme, in place of a block in themes.css, which moved that class from place 47 to place 2 of the Settings class-word list; keeping it in themes.css was the lazy option. Round 1 item 5. Named in the next report.
+Builds on it: O141
+- 2026-11-04, O141's round 0 report: the headers under 10 from `--panel` (Review's slate 3.2 in nord, Jobs's grey-d and Backburner's grey in a few themes) are folded into O141's round 1 as item 6 and case C13, under the rule that a finding no brief covers goes into the step that changes its files; leaving them was the lazy option. Named in the next report.
+Builds on it: O141
+- 2026-11-04, O141's landing: the converter's `ADDED` table stays in `utils/migrations/convert-vscode-themes.ts`, and `src/lib/themes/vscode-map.ts`'s head says the converter alone adds those tokens to three shipped themes; an app's colour theme is the app author's file under its own class, and keying oculus's tokens to it by a label it happens to share would recolour a theme oculus does not ship. Moving the table into `vscode-map.ts` was the builder's recommendation, not taken. Named in the next report.
+Builds on it: O141
+- 2026-11-04, O141's landing: the hues item 6 needs stay as measured where a token's value departs from its name (Nord's `--c-slate` the brown `#4b432c`, `--c-grey-d` lighter than `--c-grey` in Nord, One Dark and Solarized); every slate and grey-d reader in those themes changes with them, as ruling 672 (a) named in its cons, and each head comment names the hues and the rule that picked them. Named in the next report.
+Builds on it: O141

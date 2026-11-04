@@ -122,3 +122,106 @@ None.
 - What the recoloured headers look like on screen: the look at landing.
 
 Reviewer usage: a9237e0891ab87709, claude-opus-5-5, 251769 tokens, 72 tool uses, 16 min 49 s.
+
+## Repair round 1, refuted
+
+My runs wrote only under `/private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/o141-review-r1/` (plain.txt, panel.txt, classes.txt, o140.txt, unused.txt, words.txt, vars.txt, hue-nord-slate.txt, and tmp/ as TMPDIR), the builder's programs run as `node --import file:///Users/axelfaes/.npm/_npx/fd45a72a545557e9/node_modules/tsx/dist/loader.mjs <program>` on node v24.21.0. `git status --short` lists the same 11 files and 3 ledger files before and after my runs.
+
+```
+npx vitest run tests/checks/look/contrast.test.ts tests/data/shapes/catalog-files/vocab.test.ts tests/checks/config/config-folder.test.ts
+  Test Files  3 passed (3)
+       Tests  108 passed | 2 skipped (110)
+npm run diagrams; npm run test:quick
+  not rerun (Declined to judge); the report quotes "test:quick: 53.6 s; every command passed"
+LC_ALL=C perl -ne 'print "$ARGV:$.: $_" if /[^\x20-\x7E\n]/; close ARGV if eof' config/catalogs/vocab.yml src/lib/themes/derive.ts
+  (no output) perl exit 0
+python3 -c "import yaml; yaml.safe_load(open('config/catalogs/vocab.yml'))"
+  yaml exit 0
+case-run program, plain mode (verify 5, C1 to C11)
+  exit 0; 728 lines; diff against o141-builder/R1-plain.txt and W5-plain.txt: identical
+  C1/C2 open pairs under 10 in at least one theme: 7     (base)
+  C1 collapsed-only pairs under 10 in at least one theme: 19   (base)
+  C1/C2 open pairs under 10 in at least one theme: 0     (worktree)
+  C1 collapsed-only pairs under 10 in at least one theme: 13   (worktree)
+  C9 layouts in which Funding is drawn: 64 of 128 (same for Jobs, Teaching)
+  pairs that only a folded Idea lane brings together: 0
+  C3 1813 collapsed-only measures read; 0 break item 3's second bar; collapsed-only pairs under 10: base 19, worktree 13
+  bars: open-layout measures under 10 0; bar 2 breaks 0; collapsed-only pairs under 10 13
+  C11 theme hues changed: 25; under 10 from a status token: 0   (the 25 C11 lines identical to the report's)
+grep -c '^  moved ' plain.txt
+  312
+spec.md ASCII gate (perl form over src tests config, ! -name local.yml, plus the converter)
+  (no output) exit 0
+LC_ALL=C grep -n '[^ -~]' over the 11 changed files
+  (no output) exit 1
+sh utils/unused-exports.sh | diff - ../O141-base/unused-exports.txt
+  UNUSED-SAME
+npx prettier --check (converter, every touched sheet, derive.ts, vocab.yml)
+  All matched files use Prettier code style!
+```
+
+```
+--panel (C13, no list)          12 tones, "under 10 in 0" each; values identical to P1-panel-after.txt
+                                slate-lane min 10.4 (vscode-dark-plus); grey-lane min 10.5 (light); grey-d-lane min 11.4 (dracula)
+--classes                       base and worktree: "vscode-tomorrow-night-blue at 47"
+O140 program copy (13c13, O140-base to O141-base)
+                                exit 0; identical to R2-o140.txt; "C2 49 themes; 0 themes hold one; 0 measures under 10; 0 pairs under 10"
+node utils/migrations/convert-vscode-themes.ts --check
+                                19 themes up to date (exit 0)
+--hue <theme> <token> with only that token reset to its old value, on the final tree:
+  nord --c-slate #475569       pick #4b432c, 24.2 from the old value (the report's table says 25.4), panel 10.8
+  nord --c-grey-d #6b7280      pick #dfdff4, 32.9, panel 30.1
+  dark --c-slate #475569       pick #7b81a3, 19.1, panel 16.9 (the table says 16.3)
+  gruvbox --c-slate #475569    pick #35576c, 6.5, panel 10.7 (the table says 11.4)
+  mocha, vscode-solarized-dark, vscode-quiet-light, TNB --c-blue (from #2563eb), TNB --c-slate: each pick is the built value
+  onedark slate, grey, grey-d; solarized grey, grey-d: each pick is the built value
+  solarized --c-slate #586e75  pick #a4c9cb, 29.3 from the old value; the built #aad0d1 (30.9) is second
+  nord --c-blue #5e81ac        pick #7281c7, 6.2 from the old value; the built #8493db is not first
+  dracula grey-d, solarized green, frappe blue: each pick is the built value
+grep for readers of the changed hue words and tokens in src (outside src/lib/themes)
+  every hit is in the report's item 4 tables except src/lib/ui/display/file-icons.ts:27,63, which name Seti colour variables and read no oculus token
+```
+
+### Verdicts
+
+Closures of the first review: Proof 1 closed (250 for H2, 312 now); Standards 1 closed for what each sentence claims, the "nearest" pick not reproducing for two hues (Standards 1 below); Standards 2 closed (only `themes.css:2`, the base line item 5 restores, flags; `derive.ts:84-95` fills at 100; vscode.css comments from the converter's `wrapped()`); Standards 3 declined to judge; Behaviour 1 closed by item 4.
+
+Round items: 1 holds, except Standards 1; 2 holds; 3 holds; 4 holds (no reader the tables miss); 5 holds for the move (no TNB block in `themes.css`, its head lines 1-9 equal to the base, `ADDED` in the converter, `--check` "19 themes up to date", `--classes` 47, `vscode-rules.json` unchanged), partial on its last bullet (Standards 2); 6 holds (C13 no tone under 10; bars 1 and 2, C11 with 25 hues, C12 and `contrast.test.ts` hold; each of the 15 failing measures takes one hue; the TNB blue searched again from `#2563eb`, Spec 1).
+
+Whole diff since the base: item 1 holds; item 2 partial (Proof 1); item 3 as the rulings change it holds (bar 1 0, bar 2 0 breaks, collapsed-only 19 to 13, 25 hues each 10 or more from every status token on the hue and `-txt`, C12, C13, Scope to `c-crimson`); item 4 holds (`vocab.yml:181`, `:213`, `derive.ts:84-95` match pair by pair: Teaching-Build 49, Jobs-Review 47, Jobs-Backburner 45, Funding-Revise 41, Funding-De-risk 32, and the smaller pairs with their themes; the panel clause matches C13; band hues at least 10.1 apart). Ruling 672 change 1 holds; change 2 holds; change 3 holds for the names and the rule, the redo partial for two hues (Standards 1); change 4 holds; "The report adds" partial (Proof 1).
+
+Cases: C1 met; C2 met; C3 met; C4 met; C5 met (`vocab.yml` `181c181 189c189 213c213`, `derive.ts` the `LANE_SHARE` doc only, each sheet its head comment and hue lines, `diff -rq` the 11 files); C6 met; C7 met; C8 met; C9 met; C10 met; C11 met (25 lines, nearest 10.5); C12 met; C13 met.
+
+### Findings
+
+- Proof 1: the report, "The case-run program and every run": "The source is `/private/tmp/.../o141-builder/case-run.mts`; every output named in this report sits in the same folder."; what is wrong: item 2, the brief's Report part, the cases file and spec.md's case-run rule ask for the source quoted, and the rewritten report quotes no line of it (`grep -c 'function touching\|const hueAt'` prints 0), though the program changed this round; the rewrite also dropped the brief's per-colour "distances of every pair it is in, before and after" and the ruling's "the pairs it ends" for the 11 round-0 hues, while its first line says everything is done; failure scenario: once the session-scoped scratchpad is gone, nobody can reread the measure the comments rest on, and the look has no per-hue list of the pairs each round-0 hue ends; verdict: item 2 partial, the ruling's report addition partial.
+- Proof 2: the report's item 6 table: nord `--c-slate` 25.4, gruvbox panel 11.4, dark panel 16.3; what is wrong: the reruns print 24.2, 10.7 and 16.9; no decision rests on them; failure scenario: a reader checking the table finds three wrong cells; verdict: none.
+- Standards 1: `src/lib/themes/rice/singles.css:10-21`: "Each was picked as the nearest to the palette's colour ... among the hexes of the palette's own block and an OKLCH grid around that colour (...), with every measure at 10.5 or more."; what is wrong: on the shipped tree `--hue` gives another hex for two hues: Solarized slate `#a4c9cb` (29.3) where `#aad0d1` (30.9) is built, picked while grey and grey-d still held `#586e75`; Nord blue `#7281c7` (6.2) where `#8493db` is built, Nord's slate having moved this round; re-pick both (`#7281c7` and `#a4c9cb` meet every bar in the final tree's `--hue` run) and rerun, or state the search order; failure scenario: an author rerunning the stated rule gets two other hexes; Nord's blue moves 10.2 where 6.2 would do; verdict: ruling 672 change 3 and round item 1 partial for these two hues.
+- Standards 2: `src/lib/themes/vscode-map.ts:1-7`: "The converter ... writes the shipped themes of Visual Studio Code with it, and an app's colour theme is converted into its block by `themeSheet` ..., so a theme file maps the same way wherever it is read."; what is wrong: the shipped blocks of Tomorrow Night Blue, Solarized Dark and Quiet Light carry `ADDED` tokens `themeSheet` does not write, so the sentence is false; round item 5 asks such a sentence to be updated; failure scenario: an app builder reads that a theme file maps the same everywhere and ships Tomorrow Night Blue as an app theme, whose Push and Review headers fall under 10 from the panel unseen; verdict: round item 5, last bullet, partial.
+- Spec 1: the report, "Item 5", names `#003abc` while the built row is `['--c-blue', '#699bff']` (`convert-vscode-themes.ts:90`); item 6 requires it (`#003abc`'s lane 8.4 from `--panel`) and the report says so under item 6, but not as a departure in item 5 or the opening points; failure scenario: the orchestrator expects `#003abc` at the look and sees a light blue; verdict: none.
+- Behaviour 1: `rice/singles.css:58-59`, `:177,179`, `:236,238`: hues whose values contradict their names. Nord `--c-slate: #4b432c` is nord's own `--c-amber-s`, an olive brown, `-txt` beige `#c8bfa2`; every slate reader in nord turns brown (the Review header and border, the `withdrawn` chip and `data_access: private`, Source Control's untracked files `repositories.ts:703`, archived sessions `SessionWorkspace.svelte:87`, `CardSessions.svelte:36`, the Inbox fallback `inbox.ts:68`, HPC's other jobs `hpc.ts:149`, `Recent.svelte:74`, the agents' done rows `AgentRows.svelte:45,74`, the legend's black icon `tones.ts:305`). `--c-grey-d`, the darker grey in tokens.css (`#6b7280` against `#9ca3af`), is near white in nord `#dfdff4`, onedark `#bfd0de` and solarized `#c1ccd5`, lighter than the theme's grey; its readers are the Jobs header and border and the `hub` facet tone (`vocab.yml:235`); `vocab.yml:181` still calls Jobs "a dark grey". The slates of onedark (`#b7b8cf`) and solarized (`#aad0d1`, toward cyan) are light. The other new hues keep their names; Dark `#7b81a3` changes the default Dark theme's slate readers; Quiet Light's grey `#6d705b` equals its `--muted`. Failure scenario: a later author "corrects" `--c-grey-d: #dfdff4` or a brown `--c-slate` and breaks bars 1, 2 or C13 with no test to catch it; a nord reader sees withdrawn chips and untracked files in beige-brown beside the amber statuses; verdict: none.
+
+### Declined to judge
+
+- `npm run diagrams` and `npm run test:quick`, not rerun: both write into the worktree. Prettier, the ASCII gate and unused-exports were run instead; eslint ignores the converter, as on the base.
+- Whether the seven head comments were written with the Edit tool: their mtimes fall within 70 ms, and `o141-builder/heads/` holds `*.txt` and `*.wrapped` copies made a minute earlier by a command the report does not name; parallel Edit calls also fit those times.
+- Whether the round-0 grep printed any line of `config/local.yml`.
+- Whether vitest wrote its cache under the worktree's `node_modules`.
+- The user's calls, each in the report with options: Scope and Blocked sharing a red; Jobs keeping `grey-d`; `ADDED` for app themes (also Standards 2); everforest's dark Idea text; the light and brown headers.
+- What the recoloured headers and readers look like on screen: the look at landing.
+
+Reviewer usage: aa99a0f580a6576fd, claude-opus-5-5, 234288 tokens, 51 tool uses, 11 min 35 s.
+
+## Closed
+
+- First review, Proof 1 (the C3 count): closed in repair round 1, item 3; the review over round 1 reproduced 250 for the round-0 tree and 312 now.
+- First review, Standards 1 (the head comments overstate what the hues achieve and how they were picked): closed in repair round 1, item 1, for what each sentence claims; the two hues whose pick did not reproduce are the round-1 Standards 1 below.
+- First review, Standards 2 (comment lines wrapped short): closed in repair round 1, item 2.
+- First review, Standards 3 (the round-0 grep read `config/local.yml`): no change; the builder's transcript shows no line of that file printed.
+- First review, Behaviour 1 (the readers of each changed hue): closed in repair round 1, item 4.
+- Over round 1, Proof 1 (the program source and the per-pair before and after missing from the report): fixed at landing; `O141-report.md` quotes the program source as run at landing, and its section "Corrections and the measures on the final tree" quotes the 312 moved pair measures with their themes, before and after, and the C11 lines of the final tree.
+- Over round 1, Proof 2 (three wrong cells in item 6's table): fixed at landing; the cells read 24.2, 10.7 and 16.9, as the reruns print.
+- Over round 1, Standards 1 (two hues not the nearest pick on the final tree): fixed at landing; nord `--c-blue` is `#7281c7`, the first pick of `--hue nord --c-blue` on the final tree; Solarized `--c-slate` stays `#aad0d1`, since the first pick `#a4c9cb` puts `--c-grey-d` at 10.4, and the head comment of `rice/singles.css` says that Solarized's slate, grey and grey-d were picked in that order, each with the ones before it in place.
+- Over round 1, Standards 2 (`vscode-map.ts`'s head says a theme file maps the same wherever it is read): fixed at landing; the head adds that the converter alone adds the tokens of its table `ADDED` to the blocks of three shipped themes, which no VS Code file gives and an app's theme does not get. Moving `ADDED` into `vscode-map.ts` was not taken; the choice is in `.scratch/migration/choices.md`.
+- Over round 1, Spec 1 (the report names `#003abc` for Tomorrow Night Blue's blue): fixed at landing; the report's landing section says the built value is `#699bff` and why.
+- Over round 1, Behaviour 1 (hues whose values contradict their names): no change; ruling 672 (a) names these readers changing in its cons, and the head comments name the hues and the rule that picked them; `vocab.yml:182` now reads "`grey-d` against `slate`/`grey`" in place of "a dark grey". Accepted as built, in `.scratch/migration/choices.md`.

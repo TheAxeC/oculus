@@ -10,10 +10,16 @@
    independent overlay that goes on any of them. Two classes go on a rice palette's body only when
    the reader turns its option off (the Settings view's option, written into the workspace file's
    `settings:`): `rice-plain`, for `rice.brackets` off, draws the buttons, chips and tags without
-   brackets, and `rice-sans`, for `rice.monospace` off, draws the chrome in the default sans font.
-   A rule that belongs to one of the toggles selects `body.rice:where(:not(<class>))`.
-   The theme names and the class string each one puts on the body are the `themes:` list of
-   config/defaults/appearance.yml; light is :root alone and carries no class. */
+   brackets, and `rice-sans`, for `rice.monospace` off, draws the chrome in the default sans font. A
+   rule that belongs to one of the toggles selects `body.rice:where(:not(<class>))`. The theme names
+   and the class string each one puts on the body are the `themes:` list of
+   config/defaults/appearance.yml; light is :root alone and carries no class. The `--c-slate` of the
+   dark theme is oculus's own: it brings the Focus headers drawn in it that touch with every cluster
+   open to a CIEDE2000 of 10 or more from each other and from the panel, and stays 10 or more from
+   every other status hue of the theme, on the hue and on its `-txt`. It was picked as the nearest
+   to tokens.css's slate among the hexes of the dark theme's own block and an OKLCH grid around that
+   colour (lightness 0.15 to 0.97 in steps of 0.01, chroma x0.6 to x1.4 in steps of 0.2, hue -20 to
+   +20 in steps of 10), with every measure at 10.5 or more. */
 
 body.dark {
     color-scheme: dark;
@@ -29,6 +35,7 @@ body.dark {
     --c-red-s: #7f1d1d;
     --c-amber-bg: #3b2f0b;
     --c-amber-s: #5c4a14;
+    --c-slate: #7b81a3;
     /* Source Control: added, modified, deleted and conflicted paths and lines. */
     --c-scm-added: #16a34a;
     --c-scm-modified: #b45309;

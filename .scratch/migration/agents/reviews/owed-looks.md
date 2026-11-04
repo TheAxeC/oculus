@@ -8,6 +8,8 @@ Found with `grep -n -i "not seen in the look\|not seen at the look\|not looked a
 
 Every look below is owed from a landed step and taken while O37 builds, on TEST or on a scratch oculus with a scratch hub, and recorded under "Taken" with what was seen (plan.md, O37, Step 0, the looks). Found by the triage of 2026-10-16 over every landing report, plan.md, the state file and the history, each checked against "Taken".
 
+- O141, the git graph's lanes (`views/sources/repositories/graph/Lanes.svelte:37`) and the calendar's account colours (`views/personal/calendar/Calendar.svelte:172`), which draw `--c-blue` and `--c-green` through `src/lib/ui/display/hues.ts:10`, in the themes whose blue or green O141 changed: blue in nord, kanagawadragon, frappe, rosepinedawn and Tomorrow Night Blue; green in solarized, gruvboxlight and kanagawalotus. The look at landing on 8797 found the Repositories graph empty ("Nothing is on the channel yet") and the calendar unconfigured on the scratch hub, so neither could be shown (`agents/reviews/O141-landing.md`).
+
 ## Cannot be taken on this hub (each held by its test, named in its landing report)
 
 - O64, the Calendar Refresh turning: a press makes the server fetch the ICS calendar address, which the session never fetches; `Calendar.svelte:199` hands its head `refreshing={refreshing()}` as `Inbox.svelte:125` does, and the Inbox's turning was seen.

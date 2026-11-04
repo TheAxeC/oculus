@@ -4,8 +4,10 @@
 // block by `themeSheet`, which the page calls (ui/theme/app-theme.ts), the server calls for the
 // block a page's first HTML carries (hooks.server.ts) and the desktop host calls for the colours a
 // window takes (desktop/windows/start-colours.ts), so a theme file maps the same way wherever it is
-// read. The id of the style element that holds the block, `APP_THEME_STYLE_ID`, is here for the
-// same reason: the page replaces the element the server sent rather than adding a second one.
+// read; the converter alone adds the tokens of its table `ADDED` to the blocks of three shipped
+// themes, which no VS Code file gives and an app's theme does not get. The id of the style element
+// that holds the block, `APP_THEME_STYLE_ID`, is here for the same reason: the page replaces the
+// element the server sent rather than adding a second one.
 //
 // `mapTheme` is a function of a resolved theme (`colors` and `tokenColors`, the `include` chain
 // applied), its `uiTheme` and a context: the git extension's registered colours (`GIT_DEFAULTS`)

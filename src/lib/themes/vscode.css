@@ -5,9 +5,9 @@
    block sets the chrome tokens, the Source Control tokens, the diff's outlines of inserted and
    removed text (--diff-added-outline, --diff-deleted-outline), the Source Control Graph's three
    name colours (--c-graph-ref, --c-graph-remote, --c-graph-base), the tab tokens the theme
-   holds, the window's title bar strip (--titlebar-bg, --titlebar-txt, --titlebar-line) and the
-   six code hues; its comment names each token that VS Code's registered default or oculus's base
-   gave. */
+   holds, the window's title bar strip (--titlebar-bg, --titlebar-txt, --titlebar-line), the six
+   code hues and the tokens oculus adds to that theme (the converter's ADDED); its comment names
+   each token that VS Code's registered default or oculus's base gave and each token oculus adds. */
 
 /* Light 2026: theme-defaults/themes/2026-light.json, uiTheme vs. Registered VS Code defaults:
    --c-scm-added-bg (diffEditor.insertedLineBackground), --c-scm-deleted-bg
@@ -193,7 +193,13 @@ body.vscode-light-visual-studio {
    --c-graph-ref (scmGraph.historyItemRefColor), --c-graph-remote
    (scmGraph.historyItemRemoteRefColor), --c-graph-base (scmGraph.historyItemBaseRefColor),
    --titlebar-txt (titleBar.activeForeground). oculus base: --c-scm-conflict-bg,
-   --diff-added-outline, --diff-deleted-outline. */
+   --diff-added-outline, --diff-deleted-outline. Added by oculus: --c-grey is oculus's own, since
+   the theme gives none: it brings the Focus headers drawn in it that touch with every cluster
+   open to a CIEDE2000 of 10 or more from each other and from --panel, stays 10 or more from
+   every other status hue of the theme on the hue and on its -txt, and was picked as the nearest
+   to tokens.css's #9ca3af among the hexes of the theme's own block and an OKLCH grid around that
+   colour (lightness 0.15 to 0.97 in steps of 0.01, chroma x0.6 to x1.4 in steps of 0.2, hue -20
+   to +20 in steps of 10), with every measure at 10.5 or more. */
 body.vscode-quiet-light {
     --bg: #f2f2f2;
     --panel: #f5f5f5;
@@ -225,6 +231,7 @@ body.vscode-quiet-light {
     --c-code-name: #aa3731;
     --c-code-number: #9c5d27;
     --c-code-string: #448c27;
+    --c-grey: #6d705b;
 }
 
 /* Solarized Light: theme-solarized-light/themes/solarized-light-color-theme.json, uiTheme vs.
@@ -729,7 +736,13 @@ body.vscode-red {
    --c-graph-ref (scmGraph.historyItemRefColor), --c-graph-remote
    (scmGraph.historyItemRemoteRefColor), --c-graph-base (scmGraph.historyItemBaseRefColor),
    --titlebar-txt (titleBar.activeForeground). oculus base: --c-scm-conflict-bg,
-   --diff-added-outline, --diff-deleted-outline. */
+   --diff-added-outline, --diff-deleted-outline. Added by oculus: --c-slate is oculus's own,
+   since the theme gives none: it brings the Focus headers drawn in it that touch with every
+   cluster open to a CIEDE2000 of 10 or more from each other and from --panel, stays 10 or more
+   from every other status hue of the theme on the hue and on its -txt, and was picked as the
+   nearest to tokens.css's #475569 among the hexes of the theme's own block and an OKLCH grid
+   around that colour (lightness 0.15 to 0.97 in steps of 0.01, chroma x0.6 to x1.4 in steps of
+   0.2, hue -20 to +20 in steps of 10), with every measure at 10.5 or more. */
 body.vscode-solarized-dark {
     color-scheme: dark;
     --shadow: none;
@@ -769,6 +782,7 @@ body.vscode-solarized-dark {
     --c-code-name: #268bd2;
     --c-code-number: #d33682;
     --c-code-string: #2aa198;
+    --c-slate: #505575;
 }
 
 /* Tomorrow Night Blue: theme-tomorrow-night-blue/themes/tomorrow-night-blue-color-theme.json,
@@ -781,7 +795,14 @@ body.vscode-solarized-dark {
    --c-graph-ref (scmGraph.historyItemRefColor), --c-graph-remote
    (scmGraph.historyItemRemoteRefColor), --c-graph-base (scmGraph.historyItemBaseRefColor),
    --titlebar-txt (titleBar.activeForeground). oculus base: --c-scm-conflict-bg,
-   --diff-added-outline, --diff-deleted-outline. */
+   --diff-added-outline, --diff-deleted-outline. Added by oculus: --c-blue and --c-slate are
+   oculus's own, since the theme gives neither: each brings the Focus headers drawn in it that
+   touch with every cluster open to a CIEDE2000 of 10 or more from each other and from --panel,
+   stays 10 or more from every other status hue of the theme on the hue and on its -txt, and was
+   picked as the nearest to tokens.css's colour of its name (#2563eb, #475569) among the hexes of
+   the theme's own block and an OKLCH grid around that colour (lightness 0.15 to 0.97 in steps of
+   0.01, chroma x0.6 to x1.4 in steps of 0.2, hue -20 to +20 in steps of 10), with every measure
+   at 10.5 or more. */
 body.vscode-tomorrow-night-blue {
     color-scheme: dark;
     --shadow: none;
@@ -819,6 +840,8 @@ body.vscode-tomorrow-night-blue {
     --c-code-name: #bbdaff;
     --c-code-number: #ffc58f;
     --c-code-string: #d1f1a9;
+    --c-blue: #699bff;
+    --c-slate: #7285b7;
 }
 
 /* Dark High Contrast: theme-defaults/themes/hc_black.json, uiTheme hc-black. Registered VS Code

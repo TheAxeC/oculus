@@ -1,8 +1,15 @@
 /* Gruvbox (morhetz/gruvbox, MIT): dark, then light. The pink of both palettes and the teal of the
-   light one are oculus's own, chosen to read apart from the theme's other status hues. One block
-   per palette, each a set of overrides on the tokens of tokens.css; the shape every rice palette
-   shares is `body.rice` in themes.css, and the theme list's rows are the `themes:` rows of
-   config/defaults/appearance.yml. */
+   light one are oculus's own, chosen to read apart from the theme's other status hues. The
+   `--c-slate` of the dark palette and the `--c-green` of the light one are oculus's own as well:
+   each brings the Focus headers drawn in it that touch with every cluster open to a CIEDE2000 of 10
+   or more from each other and from the panel, and stays 10 or more from every other status hue of
+   the theme, on the hue and on its `-txt`. Each was picked as the nearest to the palette's colour,
+   or to tokens.css's where the palette gives none (the slate of the dark palette), among the hexes
+   of the palette's own block and an OKLCH grid around that colour (lightness 0.15 to 0.97 in steps
+   of 0.01, chroma x0.6 to x1.4 in steps of 0.2, hue -20 to +20 in steps of 10), with every measure
+   at 10.5 or more. One block per palette, each a set of overrides on the tokens of tokens.css; the
+   shape every rice palette shares is `body.rice` in themes.css, and the theme list's rows are the
+   `themes:` rows of config/defaults/appearance.yml. */
 
 /* --- Gruvbox dark -------------------------------------------------------- */
 body.gruvbox {
@@ -39,6 +46,7 @@ body.gruvbox {
     --c-magenta: #d3869b;
     --c-pink: #f28ccf;
     --c-mauve: #d3869b;
+    --c-slate: #35576c;
     --c-on: #1d2021;
     /* Source Control: added, modified, deleted and conflicted paths and lines. */
     --c-scm-added: #b8bb26;
@@ -78,7 +86,7 @@ body.gruvboxlight {
     --c-orange: #af3a03;
     --c-honey: #b57614;
     --c-brass: #b57614;
-    --c-green: #79740e;
+    --c-green: #6b7700;
     --c-green-d: #79740e;
     --c-lime: #79740e;
     --c-teal: #06a596;

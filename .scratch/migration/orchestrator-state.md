@@ -23,22 +23,7 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 ```
 
 ```yaml
-dispatch:           # steps in flight, up to six (Z632)
-- step: O141
-  base: 979477f2b
-  worktree: .agents/worktrees/migration-O141
-  executor: agent
-  worker: claude:opus
-  session_id: a75e398d248021445
-  model: claude-opus-5-5
-  launched: 2026-11-04
-  report: .scratch/migration/agents/reviews/O141-report.md
-  builder_usage: first run 257865 tokens, 63 tool uses, 16 min 37 s; round 0 320603 tokens, 171 tool uses, 32 min 27 s
-  round: 1
-  reviewer_report: .scratch/migration/agents/reviews/O141-refuter.md (a9237e0891ab87709, claude-opus-5-5, 251769 tokens, 72 tool uses, 16 min 49 s)
-  brief_check: .scratch/migration/agents/reviews/O141-brief-check.md (a6792e18665cffd1a, claude-opus-5-5, 179435 tokens, 45 tool uses, 7 min 28 s)
-  shared_paths: "config/catalogs/vocab.yml with O143 of this plan: O141 writes lines 181-192 and 213-214, O143 lines 145-147, separate hunks a cherry-pick merges without conflict"
-  landing: not-started
+dispatch: []      # steps in flight, up to six (Z632)
 ```
 
 ## The standing demands (from Axel, in force)
@@ -806,6 +791,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-11-04 (O141 landed). O141, the Focus lane colours measured in every theme, landed (booking in plan.md under O141, `agents/reviews/O141-landing.md`): every open-layout pair of Focus headers 10 or more apart and every header 10 or more from `--panel` in all 49 themes, 25 theme hues of their own, Scope crimson, the collapsed-only pairs under 10 from 19 to 13 and named in `vocab.yml`. Fixes at landing: nord `--c-blue` `#7281c7`, the Solarized pick order named, `vscode-map.ts`'s head on `ADDED`, `vocab.yml:182`'s wording, the report's source, measures and cells. The gate passed and main equals the gate under `cmp`; the look on 8797 saw the lane and band headers in nine themes; the git graph and the calendar are an owed look. The automode choices moved from `.scratch/choices.md` into `.scratch/migration/choices.md`. In flight (0 of 6). Queued: none. Open items: none.
 - 2026-11-04 (O141 repair round 1 sent). O141's builder a75e398d248021445 reported on round 0 (320603 tokens, 171 tool uses, 32 min 27 s): every open-layout pair at 10 or more, collapsed-only pairs under 10 from 19 to 13, Scope crimson, 11 theme hues. Its review (`agents/reviews/O141-refuter.md`, a9237e0891ab87709, claude-opus-5-5) holds items 1, 2, 4 and C1 to C12; ruling change 3 violated (Standards 1), the report addition partial (Behaviour 1). Round 1 (`agents/briefs/O141-round-1.md`) sends Standards 1 and 2, Proof 1, Behaviour 1 and the Settings class order. Standards 3, the builder's grep that read `config/local.yml`, is closed: no line of that file is in the builder's transcript (grep count of `config/local.yml:` 0). Snapshot `.agents/worktrees/migration-O141-round-1` (9 paths). Open items: none. In flight (1 of 6): O141 (round 1).
 - 2026-11-04 (O141 round 0 sent; open items 672 and 673 closed). Axel ruled 672 (a) and 673 (a). The hub's side of O144 is committed in the research hub as 3eb85ff62, 25 files, his `note` hunk in `applications.yml` left unstaged. O141's builder a75e398d248021445 is resumed with the round-0 ruling `agents/briefs/O141-cases.md`: the theme sheets widened in, bar 2 kept, each changed hue at 10 or more against every status token on the hue and `-txt`. In flight (1 of 6): O141 (round 0). Open items: none.
 - 2026-11-04 (O144 landed). O144, a `period` type for when an entry happens, landed (booking in plan.md under O144, `agents/reviews/O144-landing.md`): every period of the hub's collections, career file and manifests in one `when`, sorted newest first within each status, checked and refused on write; leads' `deadline` a date with `rolling` and `note`. Fixes at landing T6 to T9, oculus's `.oculus/project.yml`, and from the look a red border on a refused field (`field.css`) and the hub's Literature and radar `year` typed `period`. The gate passed and main equals the gate under `cmp`. The hub's side is on disk, uncommitted, waiting on open item 673. In flight (1 of 6): O141 (waits on 672). Open items: 672, 673.

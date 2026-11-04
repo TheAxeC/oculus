@@ -30,7 +30,9 @@
 // The mapping is `mapTheme` of src/lib/themes/vscode-map.ts, which the page uses too to convert the
 // colour theme of an app. This script reads the files and writes the two outputs; the git
 // extension's colours the mapping uses are the table `GIT_DEFAULTS` there, and `--check` names each
-// that differs from the installed extension's.
+// that differs from the installed extension's. The tokens oculus adds to a shipped theme, which no
+// VS Code file gives, are the table `ADDED` here, written after the mapping's tokens in that
+// theme's block.
 
 import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
@@ -68,6 +70,37 @@ const WIDTH = 100;
 
 /** A theme as an extension's package.json lists it. */
 type Listed = { label: string; ui: UiTheme; file: string };
+
+/** The words of each `why` of `ADDED` for what its hue does on the Focus board. */
+const BRINGS =
+    'brings the Focus headers drawn in it that touch with every cluster open to a CIEDE2000 of 10 or more from each other and from --panel, stays 10 or more from every other status hue of the theme on the hue and on its -txt';
+
+/** The words of each `why` of `ADDED` for the values its hue was picked from. */
+const AMONG =
+    "among the hexes of the theme's own block and an OKLCH grid around that colour (lightness 0.15 to 0.97 in steps of 0.01, chroma x0.6 to x1.4 in steps of 0.2, hue -20 to +20 in steps of 10), with every measure at 10.5 or more";
+
+/**
+ * The tokens oculus adds to a converted theme, by the class of its block: each entry is written
+ * after the tokens `mapTheme` gives, and the block's comment names it with `why`. A token the
+ * mapping already gives is a failure, so an entry never overrides a theme's own colour unseen.
+ */
+const ADDED: Record<string, { tokens: [string, string][]; why: string }> = {
+    'vscode-tomorrow-night-blue': {
+        tokens: [
+            ['--c-blue', '#699bff'],
+            ['--c-slate', '#7285b7']
+        ],
+        why: `--c-blue and --c-slate are oculus's own, since the theme gives neither: each ${BRINGS}, and was picked as the nearest to tokens.css's colour of its name (#2563eb, #475569) ${AMONG}.`
+    },
+    'vscode-solarized-dark': {
+        tokens: [['--c-slate', '#505575']],
+        why: `--c-slate is oculus's own, since the theme gives none: it ${BRINGS}, and was picked as the nearest to tokens.css's #475569 ${AMONG}.`
+    },
+    'vscode-quiet-light': {
+        tokens: [['--c-grey', '#6d705b']],
+        why: `--c-grey is oculus's own, since the theme gives none: it ${BRINGS}, and was picked as the nearest to tokens.css's #9ca3af ${AMONG}.`
+    }
+};
 
 function fail(message: string): never {
     throw new Error(message);
@@ -208,7 +241,7 @@ function wrapped(text: string): string {
     return lines.join('\n');
 }
 
-function describe(label: string, file: string, ui: UiTheme, mapped: Mapped): string {
+function describe(cls: string, label: string, file: string, ui: UiTheme, mapped: Mapped): string {
     const parts = [`${label}: ${file}, uiTheme ${ui}.`];
     if (mapped.registered.length > 0) {
         parts.push(`Registered VS Code defaults: ${mapped.registered.join(', ')}.`);
@@ -222,17 +255,25 @@ function describe(label: string, file: string, ui: UiTheme, mapped: Mapped): str
     if (mapped.nudged.length > 0) {
         parts.push(`Nudged to ${MINIMUM}:1: ${mapped.nudged.join(', ')}.`);
     }
+    const added = ADDED[cls];
+    if (added !== undefined) parts.push(`Added by oculus: ${added.why}`);
     return wrapped(parts.join(' '));
 }
 
 function blockOf(cls: string, mapped: Mapped, note: string): string {
-    const body = mapped.entries.map(([name, value]) => `    ${name}: ${value};`);
+    const added = ADDED[cls]?.tokens ?? [];
+    for (const [name] of added) {
+        if (mapped.entries.some(([given]) => given === name)) {
+            fail(`${cls}: ADDED names ${name}, which the theme's mapping already gives`);
+        }
+    }
+    const body = [...mapped.entries, ...added].map(([name, value]) => `    ${name}: ${value};`);
     return `${note}\nbody.${cls} {\n${body.join('\n')}\n}`;
 }
 
 function headOf(version: string): string {
     return wrapped(
-        `The VS Code themes: one block per colour theme of Visual Studio Code ${version}, written by utils/migrations/convert-vscode-themes.ts from the theme files under extensions/ of the installed app, which are Microsoft's and MIT licensed with VS Code. Generated: change the converter and run it, never this file, with: node utils/migrations/convert-vscode-themes.ts. A block sets the chrome tokens, the Source Control tokens, the diff's outlines of inserted and removed text (--diff-added-outline, --diff-deleted-outline), the Source Control Graph's three name colours (--c-graph-ref, --c-graph-remote, --c-graph-base), the tab tokens the theme holds, the window's title bar strip (--titlebar-bg, --titlebar-txt, --titlebar-line) and the six code hues; its comment names each token that VS Code's registered default or oculus's base gave.`
+        `The VS Code themes: one block per colour theme of Visual Studio Code ${version}, written by utils/migrations/convert-vscode-themes.ts from the theme files under extensions/ of the installed app, which are Microsoft's and MIT licensed with VS Code. Generated: change the converter and run it, never this file, with: node utils/migrations/convert-vscode-themes.ts. A block sets the chrome tokens, the Source Control tokens, the diff's outlines of inserted and removed text (--diff-added-outline, --diff-deleted-outline), the Source Control Graph's three name colours (--c-graph-ref, --c-graph-remote, --c-graph-base), the tab tokens the theme holds, the window's title bar strip (--titlebar-bg, --titlebar-txt, --titlebar-line), the six code hues and the tokens oculus adds to that theme (the converter's ADDED); its comment names each token that VS Code's registered default or oculus's base gave and each token oculus adds.`
     );
 }
 
@@ -255,13 +296,15 @@ function build(from: string): { built: Built[]; version: string } {
             const mapped = mapTheme(readTheme(item.file), item.ui, context);
             const cls = slugOf(item.label);
             const file = relative(from, item.file);
-            const css = blockOf(cls, mapped, describe(item.label, file, item.ui, mapped));
+            const css = blockOf(cls, mapped, describe(cls, item.label, file, item.ui, mapped));
             return { cls, label: item.label, ui: item.ui, css, mapped, group: groupOf(item.ui) };
         })
         .sort((a, b) => a.group - b.group || a.cls.localeCompare(b.cls));
     const names = built.map((one) => one.cls);
     const twice = names.find((name, at) => names.indexOf(name) !== at);
     if (twice !== undefined) fail(`two themes give the class ${twice}`);
+    const stray = Object.keys(ADDED).find((cls) => !names.includes(cls));
+    if (stray !== undefined) fail(`ADDED names ${stray}, which no converted theme gives`);
     return { built, version: versionOf(from) };
 }
 

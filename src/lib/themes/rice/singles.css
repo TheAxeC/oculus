@@ -7,9 +7,19 @@
    Carbon's teal 40 and magenta 40, are replaced by Carbon's teal 50 and magenta 30, which read
    apart from its cyan and red. The teal of Nord, Dracula, Solarized, One Dark and Synthwave '84 and
    the pink of Nord and One Dark are oculus's own, chosen to read apart from the theme's other
-   status hues. One block per palette, each a set of overrides on the tokens of tokens.css; the
-   shape every rice palette shares is `body.rice` in themes.css, and the theme list's rows are the
-   `themes:` rows of config/defaults/appearance.yml. */
+   status hues. The `--c-blue`, `--c-slate` and `--c-grey-d` of Nord, the `--c-grey-d` of Dracula,
+   the `--c-green`, `--c-slate`, `--c-grey` and `--c-grey-d` of Solarized and the `--c-slate`,
+   `--c-grey` and `--c-grey-d` of One Dark are oculus's own as well: each brings the Focus headers
+   drawn in it that touch with every cluster open to a CIEDE2000 of 10 or more from each other and
+   from the panel, and stays 10 or more from every other status hue of the theme, on the hue and on
+   its `-txt`. Each was picked as the nearest to the palette's colour, or to tokens.css's where the
+   palette gives none (the slate and grey-d of Nord), among the hexes of the palette's own block and
+   an OKLCH grid around that colour (lightness 0.15 to 0.97 in steps of 0.01, chroma x0.6 to x1.4 in
+   steps of 0.2, hue -20 to +20 in steps of 10), with every measure at 10.5 or more; Solarized's
+   slate, grey and grey-d were picked in that order, each with the ones before it in place. One
+   block per palette, each a set of overrides on the tokens of tokens.css; the shape every rice
+   palette shares is `body.rice` in themes.css, and the theme list's rows are the `themes:` rows of
+   config/defaults/appearance.yml. */
 
 /* --- Nord ---------------------------------------------------------------- */
 body.nord {
@@ -39,13 +49,15 @@ body.nord {
     --c-teal: #6fc2b0;
     --c-cyan: #88c0d0;
     --c-sky: #88c0d0;
-    --c-blue: #5e81ac;
+    --c-blue: #7281c7;
     --c-indigo: #81a1c1;
     --c-violet: #b48ead;
     --c-purple: #a37b9c;
     --c-magenta: #b48ead;
     --c-pink: #f7a6d0;
     --c-mauve: #b48ead;
+    --c-slate: #4b432c;
+    --c-grey-d: #dfdff4;
     --c-on: #2e3440;
     /* Source Control: added, modified, deleted and conflicted paths and lines. */
     --c-scm-added: #a3be8c;
@@ -105,7 +117,7 @@ body.dracula {
     --c-crimson: #ff5555;
     --c-slate: #6272a4;
     --c-grey: #6272a4;
-    --c-grey-d: #6272a4;
+    --c-grey-d: #00467d;
     --c-on: #21222c;
     /* Source Control: added, modified, deleted and conflicted paths and lines. */
     --c-scm-added: #50fa7b;
@@ -147,7 +159,7 @@ body.solarized {
     --c-orange: #cb4b16;
     --c-honey: #b58900;
     --c-brass: #b58900;
-    --c-green: #859900;
+    --c-green: #859638;
     --c-green-d: #859900;
     --c-lime: #859900;
     --c-teal: #26a67c;
@@ -163,9 +175,9 @@ body.solarized {
     --c-rose: #d33682;
     --c-mauve: #d33682;
     --c-crimson: #dc322f;
-    --c-slate: #586e75;
-    --c-grey: #586e75;
-    --c-grey-d: #586e75;
+    --c-slate: #aad0d1;
+    --c-grey: #60767d;
+    --c-grey-d: #c1ccd5;
     --c-on: #002b36;
     /* Source Control: added, modified, deleted and conflicted paths and lines. */
     --c-scm-added: #859900;
@@ -222,9 +234,9 @@ body.onedark {
     --c-rose: #e06c75;
     --c-mauve: #c678dd;
     --c-crimson: #be5046;
-    --c-slate: #5c6370;
-    --c-grey: #5c6370;
-    --c-grey-d: #5c6370;
+    --c-slate: #b7b8cf;
+    --c-grey: #646c7c;
+    --c-grey-d: #bfd0de;
     --c-on: #21252b;
     /* Source Control: added, modified, deleted and conflicted paths and lines. */
     --c-scm-added: #98c379;

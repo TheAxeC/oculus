@@ -1,12 +1,12 @@
-In flight (1 of 6 slots in use):
-- O141 (Focus lane colours measured in every theme), builder handed item 3 back; waits on open item 672.
+In flight (0 of 6 slots in use): none.
 
 Queued, in order (0 steps): none.
 
-Owed looks: none.
+Owed looks: 1, O141's git graph and calendar in the themes whose blue or green changed (`agents/reviews/owed-looks.md`, "To take").
 
 Landed, newest first:
-- O144 (a `period` type for when an entry happens), 2026-11-04, see `git log --grep 'in one when field'`; hub side uncommitted, open item 673.
+- O141 (Focus lane colours measured in every theme), 2026-11-04, see `git log --grep 'Measure the Focus lane colours'`.
+- O144 (a `period` type for when an entry happens), 2026-11-04, f72c5c797; hub 3eb85ff62.
 - O142 (a nested group's heading one level down), 2026-11-04, 57295adb6.
 - O143 (a `stopped` status), 2026-11-04, 85e161ad0.
 - O140 (interview and offered drawn apart), 2026-11-04, a6800d96f.

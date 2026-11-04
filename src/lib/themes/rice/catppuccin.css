@@ -1,7 +1,14 @@
 /* Catppuccin (catppuccin.com, MIT): Mocha, Macchiato and Frappe, then Latte. The teal of Macchiato
-   and of Frappe is oculus's own, chosen to read apart from the theme's other status hues. One block
-   per palette, each a set of overrides on the tokens of tokens.css; the shape every rice palette
-   shares is `body.rice` in themes.css, and the theme list's rows are the `themes:` rows of
+   and of Frappe is oculus's own, chosen to read apart from the theme's other status hues. The
+   `--c-blue` of Frappe and the `--c-slate` of Mocha are oculus's own as well: each brings the Focus
+   headers drawn in it that touch with every cluster open to a CIEDE2000 of 10 or more from each
+   other and from the panel, and stays 10 or more from every other status hue of the theme, on the
+   hue and on its `-txt`. Each was picked as the nearest to the palette's colour, or to tokens.css's
+   where the palette gives none (the slate of Mocha), among the hexes of the palette's own block and
+   an OKLCH grid around that colour (lightness 0.15 to 0.97 in steps of 0.01, chroma x0.6 to x1.4 in
+   steps of 0.2, hue -20 to +20 in steps of 10), with every measure at 10.5 or more. One block per
+   palette, each a set of overrides on the tokens of tokens.css; the shape every rice palette shares
+   is `body.rice` in themes.css, and the theme list's rows are the `themes:` rows of
    config/defaults/appearance.yml. */
 
 /* --- Catppuccin Mocha ---------------------------------------------------- */
@@ -39,6 +46,7 @@ body.mocha {
     --c-magenta: #dd9ce8;
     --c-pink: #f5c2e7;
     --c-mauve: #e5a3c6;
+    --c-slate: #335469;
     --c-on: #181825;
     /* Source Control: added, modified, deleted and conflicted paths and lines. */
     --c-scm-added: #a6e3a1;
@@ -145,7 +153,7 @@ body.frappe {
     --c-cyan: #99d1db;
     --c-cyan-d: #85c1dc;
     --c-sky: #99d1db;
-    --c-blue: #8caaee;
+    --c-blue: #8cafff;
     --c-indigo: #babbf1;
     --c-violet: #ca9ee6;
     --c-purple: #ca9ee6;
