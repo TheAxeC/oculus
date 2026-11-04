@@ -34,33 +34,37 @@ Every case reproduced the brief's base result; no case was wrong.
 | Item | State | Command | Last line printed |
 | --- | --- | --- | --- |
 | 1. `stopped` in `statuses:` after `not-applied` | DONE | `git diff config/catalogs/vocab.yml` | `+  stopped:       { color: "#9ca3af", closes_deadline: true }` |
-| 2. Funding template options and entry comment | DONE | `git diff docs/templates.md` | `+#                                 # awarded, rejected, withdrawn or stopped` |
+| 2. Funding template options and entry comment | DONE | `git diff docs/templates.md` | `+#                                 # rejected, withdrawn or stopped` |
 | 3. Item 3's grep, each hit named | DONE | the grep below | every hit judged in the section below; none made false |
 | Verify 1, the four test files | DONE | `npx vitest run tests/data/shapes/catalog-files/vocab.test.ts tests/data/sources/config/layers/hub-vocab.test.ts tests/checks/config/config-folder.test.ts tests/data/snapshot/schema-rules.test.ts` | `Test Files  4 passed (4)` / `Tests  139 passed \| 2 skipped (141)` |
-| Verify 2, diagrams then the verify list once | DONE | `npm run diagrams`, then `npm run test:quick` | `test:quick: 35.5 s; every command passed` |
+| Verify 2, diagrams then the verify list once | DONE | `npm run diagrams`, then `npm run test:quick` | `test:quick: 22.8 s; every command passed` |
 | Verify 3, ASCII of the two files | DONE | `LC_ALL=C perl -ne 'print "$ARGV:$.: $_" if /[^\x20-\x7E\n]/; close ARGV if eof' config/catalogs/vocab.yml docs/templates.md` | nothing (exit 0) |
 | Verify 4, YAML parses | DONE | `python3 -c "import yaml; yaml.safe_load(open('config/catalogs/vocab.yml'))"` | nothing (exit 0) |
 | Cases C1 to C8 after the change | DONE | the reads and the case-run program below | see "The cases after the change" |
 
 The two skipped tests of verify 1 are named by the verbose reporter: `tests/checks/config/config-folder.test.ts > oculus's own config directory > names a group of its own and a path under the hub for every document of the real hub (skipped: OCULUS_TEST_HUB is not set)` and `... > matches the real hub's own files to a schema each, read with no finding (skipped: OCULUS_TEST_HUB is not set)`.
 
-The verify list's result lines (`npm run test:quick`, exit 0):
+The verify list's result lines (`npm run test:quick` after the last change of repair round 1, exit 0), with what it does not cover:
 
 ```
-test:quick: 2 changed file(s), from git since HEAD
+test:quick: 5 changed file(s), from git since HEAD
 test:quick: 2 test file(s)
         tests/checks/config/templates.test.ts: named for a changed file
         tests/data/shapes/catalog-files/vocab.test.ts: named for a changed file
-ok      prettier (1.4 s): All matched files use Prettier code style!
-ok      ASCII gate (1.5 s)
-ok      svelte-kit sync (2.9 s)
-ok      vitest checks (16.8 s): Duration  1.78s (transform 687ms, setup 0ms, import 1.59s, tests 24ms, environment 0ms)
-ok      vitest (27.8 s): Duration  12.77s (transform 3.00s, setup 0ms, import 4.51s, tests 8.13s, environment 0ms)
-ok      svelte-check (32.4 s): 1793753202739 COMPLETED 581 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
-test:quick: 35.5 s; every command passed
+ok      prettier (0.9 s): All matched files use Prettier code style!
+ok      ASCII gate (1.0 s)
+ok      svelte-kit sync (2.3 s)
+ok      svelte-check (9.0 s): 1793755743101 COMPLETED 581 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest checks (11.4 s): Duration  905ms (transform 395ms, setup 0ms, import 787ms, tests 18ms, environment 0ms)
+ok      vitest (20.4 s): Duration  9.92s (transform 1.19s, setup 0ms, import 2.29s, tests 7.53s, environment 0ms)
+test:quick: 22.8 s; every command passed
+test:quick: not covered: tests that reach no changed file within the import depth,
+            other than the checks under tests/checks/source and tests/checks/tree,
+            which run for any change under src, tests or utils; the build, the lint
+            of unchanged files
 ```
 
-The verify list ran once. No whole-suite command ran. The four-file vitest run of verify 1 ran twice, the second time with the verbose reporter only to name the two skipped tests.
+The five changed files it counts are the two of the step and the three untracked ledger files of the worktree (`git status --short`). The verify list ran once in the first build and once after repair round 1. No whole-suite command ran. The four-file vitest run of verify 1 ran twice in the first build, the second time with the verbose reporter only to name the two skipped tests, and once after repair round 1.
 
 The full ASCII gate of spec.md over the two files (`LC_ALL=C perl -ne 'my $l = $_; $l =~ s/\xC3[\x80-\xBF]//g if $ARGV =~ m{^config/}; ...' config/catalogs/vocab.yml docs/templates.md`) printed nothing.
 
@@ -74,7 +78,7 @@ No test is added or changed.
 - C2. `C2 stopped: deadline radar lines 0` and `C2 withdrawn: deadline radar lines 0`. The scheme at `stopped` leaves the radar as the one at `withdrawn` does.
 - C3. `C3 findings 0`.
 - C4. `C4 stopped: awaiting grants 0`, control `C4 submitted: awaiting grants 1 "Scheme at submitted"`. Unchanged.
-- C5. `sed -n 1407p docs/templates.md | grep -o 'options: \[[^]]*\]'` printed `options: [in-prep, planned, submitted, contributing, awarded, rejected, withdrawn, stopped]`; `sed -n 1436,1437p` printed `#    status: in-prep              # required: in-prep, planned, submitted, contributing,` / `#                                 # awarded, rejected, withdrawn or stopped`.
+- C5. `sed -n 1407p docs/templates.md | grep -o 'options: \[[^]]*\]'` printed `options: [in-prep, planned, submitted, contributing, awarded, rejected, withdrawn, stopped]`; `awk 'NR>=1436 && NR<=1437 {print length($0)": "$0}' docs/templates.md` printed `97: #    status: in-prep              # required: in-prep, planned, submitted, contributing, awarded,` / `66: #                                 # rejected, withdrawn or stopped`.
 - C6. `sed -n 1565p docs/templates.md | grep -o ...` printed `options: [active, applied, interview, offered, accepted, not-applied, declined, rejected, withdrawn]`; its comment `:1582-1583` reads `# required: active, applied, interview, offered, accepted,` / `# not-applied, declined, rejected or withdrawn`. Unchanged, no `stopped`.
 - C7. `C7 stopped: task lines 0`.
 - C8. `C8 stopped: tone grey`.
@@ -313,7 +317,7 @@ C8 stopped: tone grey
 | `tests/fixtures/hubs/demo/.oculus/data/academic/applications.yml:8` | the demo hub's own Applications options | a fixture hub's own list of an Applications file, no copy of the Funding template; unchanged |
 | `tests/data/snapshot/schema-rules.test.ts:250` | the closest-word row `not applied` to `not-applied` | still true: verify 1 ran this file green with `stopped` in the list |
 
-A second grep for the Funding options in other words, `grep -rn -e 'in-prep, planned' -e 'contributing, awarded' config docs src tests README.md --exclude=local.yml`, hits only `docs/templates.md:1407` and `:1436`. The demo hub's `tests/fixtures/hubs/demo/.oculus/data/academic/funding.yml:8` (`options: [in-prep, planned, submitted, awarded, rejected]`, found with `find tests/fixtures -name funding.yml`) is that fixture hub's own list, which already differs from the template (no `contributing`, no `withdrawn`); it is not changed.
+A second grep for the Funding options in other words, `grep -rn -e 'in-prep, planned' -e 'contributing, awarded' config docs src tests README.md --exclude=local.yml`, hits three lines: `docs/templates.md:1407` and `:1436`, the Funding template changed by item 2, and `tests/fixtures/hubs/demo/.oculus/data/academic/funding.yml:8` (`options: [in-prep, planned, submitted, awarded, rejected]`). The demo hub's line is that fixture hub's own Funding schema, no copy of the template: it already differs from it (no `contributing`, no `withdrawn`), and the template's options are what the make item writes into a new hub, while the fixture is a hub's own data that oculus's `statuses:` reads. It is not changed.
 
 No hit is made false by the change, so no path was widened.
 
@@ -325,6 +329,31 @@ No hit is made false by the change, so no path was widened.
 - `src/lib/data/shapes/catalog-files/vocab.ts:212-219`, the flag descriptions: still true.
 - The head comments and doc comments of `closesDeadline`, `deadlineMet`, `statusFlag` (`src/lib/state/boards/focus.ts:189-225`), `wordFlag` (`src/lib/data/shapes/vocab-keys.ts:178-189`), `statusTone` (`src/lib/state/shared/words/tones.ts:228-232`) and `checkEntryStatus` (`src/lib/data/snapshot/validate.ts:258-279`): still true; no code changed.
 
+## History words in the added and changed comment lines
+
+spec.md:44's grep over every line the diff adds (the step's one changed comment paragraph, `docs/templates.md:1436-1437`, among them), with package ids and dates added to the listed words:
+
+```
+git diff -U0 | grep -E '^\+[^+]' | grep -n -i -E "before|used to|no longer|still|always has been|always had|as before|previously|the step adds|after this package lands|\b[A-Z][0-9]+[a-z]?\b|20[0-9]{2}-[0-9]{2}"
+```
+
+It printed nothing (exit 1). The lines it read:
+
+```
++  stopped:       { color: "#9ca3af", closes_deadline: true }
++  - { field: status,    type: select,   options: [in-prep, planned, submitted, contributing, awarded, rejected, withdrawn, stopped], required: true, section: Core, help: "Where it stands." }
++#    status: in-prep              # required: in-prep, planned, submitted, contributing, awarded,
++#                                 # rejected, withdrawn or stopped
+```
+
+No hit, so none to judge.
+
+## The new key `stopped`: empty, duplicated, colliding
+
+- Empty: the key is the word `stopped`. `python3` over `yaml.safe_load` of `vocab.yml` printed `empty key False` for `'' in statuses`.
+- Duplicated: `grep -n "^  stopped:" config/catalogs/vocab.yml` prints `:77` (in `stages:`) and `:147` (in `statuses:`), so `statuses:` holds it once; the same `python3` read printed `in statuses 1`.
+- Colliding with another map: `stopped` is also a key of `stages:` (`vocab.yml:77`, the project stage). The `python3` intersection of the two maps' keys prints `['accepted', 'building', 'de-risking', 'exploring', 'in-prep', 'nascent', 'published', 'revision', 'scoping', 'stopped', 'submitted']`: ten words already in both, `stopped` the eleventh. No code reads the two maps as one for an entry's status. `grep -rln "'statuses'" src | xargs grep -ln "'stages'"` names five files, and in each the two maps are read apart: `src/lib/state/boards/focus.ts:192` reads `statuses` for a record's status and `:208`, `:233`, `:329`, `:528-529`, `:600-601`, `:638`, `:747` read `stages` for a project's `stage`; `src/lib/server/content/audit/rules.ts:159-171` flags each map by its own key; `src/lib/data/shapes/hub-keys.ts:20,23`, `src/lib/data/sources/config/sections/vocab.ts:30-32,48` and `src/lib/data/helpers/hub-names.ts:729,732` list the keys one by one. `statusMarkTone` (`src/lib/state/shared/words/tones.ts:314-317`) reads `stages` first, and its callers are project marks only (`CardFacts.svelte:101`, `LaneCard.svelte:137,147`, from `grep -rn statusMarkTone src`); both rows of `stopped` are `#9ca3af`, so the hue is the same either way. `lead_statuses` does not hold `stopped` (`python3` printed `lead_statuses has stopped False`).
+
 ## Files with line counts
 
 From `diff -rq .agents/worktrees/O143-base/<d> .agents/worktrees/migration-O143/<d> --exclude=local.yml` over `src tests utils config` (one line: `config/catalogs/vocab.yml differ`), and `git diff --numstat` for `docs/`, which the base copy does not hold:
@@ -332,7 +361,7 @@ From `diff -rq .agents/worktrees/O143-base/<d> .agents/worktrees/migration-O143/
 | Path | Change | In the write list |
 | --- | --- | --- |
 | `config/catalogs/vocab.yml` | +1 -0 (line 147), 312 lines | yes |
-| `docs/templates.md` | +2 -2 (lines 1407, 1437), 1925 lines | yes |
+| `docs/templates.md` | +3 -3 (lines 1407, 1436, 1437), 1925 lines | yes |
 | `.scratch/migration/agents/reviews/O143-report.md` | this report | yes |
 
 `npm run diagrams` rewrote nothing tracked: `git status --short` after it printed only the two files above.
@@ -350,6 +379,9 @@ From `diff -rq .agents/worktrees/O143-base/<d> .agents/worktrees/migration-O143/
 - Colour: an entry at `stopped` is grey before and after (C8); the Funding view's card of either research-hub entry is drawn in the same grey.
 - Focus board: a funding scheme at `stopped` whose deadline lies inside 90 days was a command center Deadlines line and is not after; its due follow-ups and open subtasks were Tasks lines and are not after (C2, C7). No research-hub entry shows this; the look needs a hub entry at `stopped` with a deadline, a follow-up or a subtask.
 - Files view make item: a new hub's `funding.yml` written from the Funding template names `stopped` in its `status` options and in the entry comment (C5), and its Funding view's status select offers `stopped` after `withdrawn`.
+- Start Agent on a task card: an entry at `stopped` of a collection flagged `tasks` (the collection view `views/boards/collection/Collection.svelte` and the entry page `views/boards/entry/Entry.svelte`) carried the Start Agent control before, since `taskCardActions` returns no controls only when `closesDeadline(config, status) || deadlineMet(config, status)` (`src/lib/views/shared/forms/entry/task-card.ts:29`), and both were false for an unknown word; after, `closesDeadline` is true and the card carries no Start Agent. Read, not run; the look needs a task of the tasks file at `status: stopped`.
+- Focus band card countdown: a band card at `stopped` counted down to its deadline before, since `bandItem` sets `card.deadline` when `!deadlineMet(words, status) && !closesDeadline(words, status)` (`src/lib/state/boards/focus/focus-lanes.ts:211`); after, it carries no deadline and shows no countdown. Only a hub whose own `fund_stages`, `position_stages` or `teaching_stages` lists `stopped` among a stage's `statuses` puts such a card in the band: oculus's lists (`config/catalogs/vocab.yml:197-212`, read with `sed -n 195,214p`) do not, and the research hub sets none of the three in its `.oculus/config.yml` (`grep -n -e 'fund_stages' -e 'position_stages' -e 'teaching_stages' .oculus/config.yml` there exits 1), so the research hub shows no change here. Read, not run.
+- Settings editor (`src/lib/views/system/workbench/Settings.svelte`): oculus's `statuses` list gains one row, `stopped`, between `not-applied` and `not-attending`. Not verified on screen; the look on landing.
 
 ## Anything in the brief that was wrong or impossible
 
@@ -360,3 +392,48 @@ From `diff -rq .agents/worktrees/O143-base/<d> .agents/worktrees/migration-O143/
 
 - The case-run program reaches the ticker, the awaiting box, the vocabulary check and the tone through their functions; what the Focus board, the Findings view and the Funding view draw is the look on landing, as the section above names.
 - C2 and C7 use a funding scheme only; an entry of another collection at `stopped` goes through the same `closesDeadline` call of `ticker.ts:328`, `:463` and `:524`, read and not run.
+
+## Repair round 1
+
+Every item of `agents/briefs/O143-round-1.md` is done.
+
+1. Standards S1. `docs/templates.md:1436-1437` is filled at 100 columns, its `#` columns unchanged. `awk 'NR>=1436 && NR<=1437 {print length($0)": "$0}' docs/templates.md` prints:
+
+    ```
+    97: #    status: in-prep              # required: in-prep, planned, submitted, contributing, awarded,
+    66: #                                 # rejected, withdrawn or stopped
+    ```
+
+    `git diff docs/templates.md` now changes `:1407`, `:1436` and `:1437` and no other line.
+2. Spec Sp1. The section "History words in the added and changed comment lines" above quotes spec.md:44's grep over the diff's added lines, with package ids and dates added: it printed nothing (exit 1), so no hit to judge.
+3. Spec Sp2. The section "The new key `stopped`: empty, duplicated, colliding" above gives the reads: not empty, held once in `statuses:` (`grep -n "^  stopped:"` prints `:77` in `stages:` and `:147`), also a key of `stages:` as ten other words are (the `python3` intersection), and no code reads the two maps as one for an entry's status (the five files the grep names, each read by its lines).
+4. Proof P1. The second grep's sentence in "Item 3's grep and what it found" now names its three hits, `tests/fixtures/hubs/demo/.oculus/data/academic/funding.yml:8` included, with the reading that leaves the demo fixture unchanged.
+5. Proof P2. The quoted `test:quick` result lines in the DONE / NOT DONE section are the run after this round, the four `test:quick: not covered: ...` lines included.
+6. Behaviour B1. "Host- or user-visible changes, before and after" gains the Start Agent control of a task card (`task-card.ts:29`), shown before and gone after; the Focus band card's countdown (`focus-lanes.ts:211`), shown before and gone after, and only in a hub whose own `fund_stages`, `position_stages` or `teaching_stages` lists `stopped`; and the settings editor's list of oculus's `statuses`, one row more.
+
+Runs after the last change, from the worktree root:
+
+- Verify 1, the four test files (`--reporter=dot`), exit 0:
+
+    ```
+     Test Files  4 passed (4)
+          Tests  139 passed | 2 skipped (141)
+    ```
+
+- Verify 2: `npm run diagrams` exit 0, then `npm run test:quick` once, exit 0, last lines `test:quick: 22.8 s; every command passed` and the four `not covered` lines (all quoted in the DONE / NOT DONE section). No red line.
+- Verify 3, the perl ASCII check over `config/catalogs/vocab.yml docs/templates.md`: printed nothing, exit 0.
+- Verify 4, `python3 -c "import yaml; yaml.safe_load(open('config/catalogs/vocab.yml'))"`: exit 0.
+- `sh utils/unused-exports.sh` compared with `diff ../O143-base/unused-exports.txt <the new list>`: no difference, exit 0, 335 lines.
+- `LC_ALL=C grep -n '[^ -~]'` over this report: nothing.
+
+No test is added or changed, and no program other than the approved case-run program was written or run in this round.
+
+Git commands of this round: `git diff` and `git status --short`, plus one `git -C /dev/null status`, which spec.md:33 does not allow. It ran outside any repository, printed nothing, and changed nothing.
+
+Files after the round (`git diff --numstat`, `wc -l`, and `diff -rq` against the base copy over `src tests utils config`, which prints only `config/catalogs/vocab.yml`):
+
+| Path | Change | Lines |
+| --- | --- | --- |
+| `config/catalogs/vocab.yml` | +1 -0 (line 147) | 312 |
+| `docs/templates.md` | +3 -3 (lines 1407, 1436, 1437) | 1925 |
+| `.scratch/migration/agents/reviews/O143-report.md` | this report | |

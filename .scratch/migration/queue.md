@@ -1,9 +1,10 @@
 In flight (3 of 6 slots in use):
-- O141 (Focus lane colours measured in every theme), builder running.
-- O142 (a nested group's heading one level down), builder running.
-- O143 (a `stopped` status), builder running.
+- O141 (Focus lane colours measured in every theme), builder handed item 3 back; waits on open item 672.
+- O142 (a nested group's heading one level down), repair round 1 running.
+- O143 (a `stopped` status), review over repair round 1 running.
 
-Queued, in order (0 steps): none.
+Queued, in order (1 step):
+- O144 (a `period` type for when an entry happens), brief written; its /spec waits for O143 to land, since both write the Funding template of `docs/templates.md`.
 
 Owed looks: none.
 

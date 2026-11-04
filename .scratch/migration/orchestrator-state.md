@@ -61,14 +61,12 @@ dispatch:           # steps in flight, up to six (Z632)
   model: claude-opus-5-5
   launched: 2026-11-04
   report: .scratch/migration/agents/reviews/O143-report.md
-  builder_usage: first run 183010 tokens, 65 tool uses, 9 min 21 s
+  builder_usage: first run 183010 tokens, 65 tool uses, 9 min 21 s; round 1 228295 tokens, 29 tool uses, 3 min 47 s
   round: 1
   brief_check: .scratch/migration/agents/reviews/O143-brief-check.md (a8d6da3737d3eb6cc, claude-opus-5-5, 179203 tokens, 68 tool uses, 7 min 54 s)
   reviewer_report: .scratch/migration/agents/reviews/O143-refuter.md (a0173c7cce622909c, claude-opus-5-5, 148258 tokens, 46 tool uses, 7 min 24 s)
   shared_paths: "config/catalogs/vocab.yml with O141 of this plan: O143 writes lines 145-147, O141 lines 181-192 and 213-214, separate hunks a cherry-pick merges without conflict"
   landing: not-started
-- step: O144
-  landing: preparing
 ```
 
 ## The standing demands (from Axel, in force)
@@ -207,6 +205,8 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 ## Open items (only what Axel must rule on; every report tells him these in plain words, decisions first, until he has ruled)
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
+
+- 672 (2026-11-04, O141's builder hand-back, ruling 667, `agents/reviews/O141-report.md`): ruling 667 rests on a lane colour in `vocab.yml` being able to bring every Focus pair that touches with every cluster open to a CIEDE2000 of 10 in every theme, and that is wrong. The builder's case-run program, rerun by the orchestrator with the same output, finds 7 such pairs under 10 on the base (Funding-Jobs, Funding-Run, Jobs-Push, Run-Push, Run-Review, Review-Scope, Scope-Idea), and its search over every set of recoloured headers and all 29 palette tones finds 0 assignments that meet the brief's three bars (bar 1, every open pair at 10 or more; bar 2, no pair at 10 or more falls under 10 and no pair under 10 gets closer, collapsed layouts included; bar 3, no theme token changes). Part of the cause is in the theme blocks: dracula gives `--c-blue`, `--c-slate` and `--c-grey` one value, `#6272a4` (`singles.css:97,106,107`), so Jobs-Push measures 0.0 there, and kanagawalotus puts gold and grey-d 4.9 apart. (a) O141 widened to the theme sheets: the theme blocks where two lane hues alias or sit under 10 get hues of their own, alongside lane recolours where they help, until every open pair is at 10 or more in every theme, bar 2 kept, each changed hue also measured at 10 or more against every status token on the hue and on `-txt` as O140 measured, and each touched head comment naming where its added hues come from. Pros: ends the cause, with the bars as ruled. Cons: authored theme colours change in several themes, and the other users of those hues (status chips, the git graph, the calendar) change with them; a look at landing in each touched theme. (b) Recolour under bar 1 alone, dropping bar 2: one of the 36 assignments that meet bar 1 (Jobs and Run in the red family, Scope teal). Pros: no theme file changes. Cons: Jobs and Run sit beside Blocked's red and Scope on Teaching's and Build's teal, so collapsed layouts get pairs at 0.0. (c) Only the comments rewritten to the measured state (7 open pairs and 19 collapsed-only pairs under 10): the lazy option; the headers stay too close. Recommended: (a).
 
 
 ## Closed items
