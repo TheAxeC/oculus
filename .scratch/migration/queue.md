@@ -1,11 +1,14 @@
-In flight (1 of 6 slots in use):
-- O140 (interview and offered drawn apart), repair round 1.
+In flight (0 of 6 slots in use): none.
 
-Queued, in order (0 steps): none.
+Queued, in order (3 steps):
+- O141 (Focus lane colours measured in every theme).
+- O142 (a nested group's heading one level down).
+- O143 (a `stopped` status).
 
 Owed looks: none.
 
 Landed, newest first:
+- O140 (interview and offered drawn apart), 2026-11-04, a6800d96f.
 - O137 (always-sorted collections), 2026-11-03, c6792b0d6.
 - O139 (a finding names its hub), 2026-11-03, 5e03d8bfa.
 - O138 (interview and offered statuses), 2026-11-03, cbc5ee487; hub 1c0d40fdd.
