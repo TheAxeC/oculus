@@ -335,6 +335,7 @@ Greps:
 - `GroupHead.svelte:218`, the `.name` comment: rewritten (the two sizes added).
 - `tokens.css:233-235` (the sentence starting at `:234`), a group's heading paints the panel solid so nothing scrolling under it shows through: still true.
 - `docs/HELP.md:573`, a group's heading stays solid whatever `panel_opacity` is: still true.
+- `docs/HELP.md:295`, the Groups bullet (one strip per group; a group that folds inside another, such as a kind of the Audit section or a section of the Gallery, whose strip stands under the outer one): rewritten (repair round 1, item 3).
 - `Gallery.svelte:28-30`, each section is the group nested in the Gallery group: still true. `AuditSection.svelte:23-26`, each kind and Muted a group of its own inside the Audit: still true.
 
 ## Judgment calls the brief left open
@@ -344,8 +345,8 @@ Each reversible, none a user-visible shape beyond the ruled look.
 1. The mechanism is the value the body passes down (the brief's first form), with three new internal custom properties: `--group-indent` and `--group-label` set by the body (`.body`, `:198-201`), and `--group-inset` the section's copy of `--group-indent` (`:192`), named after the existing `--group-strip` and `--group-above` pair. The scoped `.body` with a `:global(...)` tail was not used, since it would match any `.group > .strip` of another component inside a `GroupHead` body and would need a selector per depth for C9.
 2. The small size is set on the label (`.name`) alone; the strip keeps `font-size: var(--fs-md)`, so the glyph's `vertical-align: -0.125em` and every other inherited size stay as on a top-level strip, per the brief's decision 1 ("no other property changes"). The count was already `--fs-sm`.
 3. A group two deep keeps its label at `--fs-sm` (no `--fs-xs`): the ruling names the small size, and only the indent adds per level.
-4. The `6px` of the indent is written as a literal beside the strip's `gap: 6px` (`:212`), each with a comment naming the other, rather than a new custom property for the gap.
-5. No `docs/HELP.md` bullet: the change is a look and adds nothing a user does, and the brief's write list holds only `GroupHead.svelte` and this report.
+4. The strip's gap is one value, `--group-gap: 6px`, declared once on `.group` (`GroupHead.svelte:193`); the strip's `gap` reads it (`:217`) and the body's `--group-indent` adds it (`:202-204`), and the comments over `.body` (`:197-199`) and `.strip` (`:207-210`) name it. The gap of `.words` (`:237`, `gap: 6px`, between the glyph, the label and the count) is a separate value and stays a literal.
+5. The `docs/HELP.md:295` Groups bullet says the nested look in one clause (the ruling of repair round 1, item 3).
 
 ## Host- and user-visible changes, before and after
 
@@ -353,14 +354,148 @@ What the look at landing reads against. State: the Findings view with the Audit 
 
 - The Audit kinds (`AuditSection.svelte:199`: Open items, Missing data, Hub conventions, Manifest guardrails, Readability, Website) and Muted (`:216`). Before: each strip drawn exactly as the Audit strip, label 13 px, fold control at 8 px from the group's left edge. After, in Light (the default, the first theme) and Dark and VS Code Dark Modern (`vscode-dark-modern`) and Light Modern: label 12 px (the count 12 px as before), the fold control at 8 + 22 + 6 = 36 px, standing under the first letter of "Audit"; the `--panel` band still spans from the group's left edge, nothing of the rows scrolling under it showing in the 28 px left of the fold control. In a terminal theme (Catppuccin Mocha, `body.rice`): label 11 px against Audit's 12 px, same indent. At text size 1.2: label 14.4 px, indent 8 + 26.4 + 6 px. The strip's height, the 8 px under it, the stickiness under the Audit strip, the hue (the kinds carry none, so the muted text colour) and the actions are unchanged.
 - The eight Gallery sections (`Gallery.svelte:235`, `:277`, `:299`, `:317`, `:336`, `:344`, `:364`, `:382`) under the Gallery group (`Status.svelte:131`). Before: each drawn as the Gallery strip. After, in the same themes: as the Audit kinds above, under the first letter of "Gallery"; the Table section (`:336`) keeps its sticky header row under both strips when its rows scroll.
+- The label's room before its ellipsis, in every nested group above. Before: a nested strip's label had the same room as its parent's. After: one fold control and one gap less at each level (`22px * scale + 6px`, 28 px at text scale 1), from the left padding (`GroupHead.svelte:220`) with the label cut at `text-overflow: ellipsis` (`:248`); the smaller font gives part of it back. In a narrow pane a long kind label such as "Manifest guardrails", or a long Gallery section label, is cut about 28 px sooner than before.
 - Unchanged everywhere else: the Audit and Files strips, the Gallery and Hooks strips, the Venues view, the Projects board's sections, the Usage view's Live (in a Card) and History, the Settings groups, and every other top-level group of the 39 callers.
 
 ## Wrong or impossible in the brief
 
-Nothing. Every premise checked held: `GroupHead.svelte` 239 lines with the cited ranges (`cat -n`), the nesting places (item 2), the other `.body` elements, `--fs-sm`/`--fs-md` at `tokens.css:167-168` and `themes.css:53-54`, the bare box at `ToolButton.svelte:230` and `--tab-action` at `tokens.css:193`, Svelte 5.57.1 (`node_modules/svelte/package.json`).
+One premise does not reproduce: the list of `.body` elements (brief, "What is on the tree", fourth bullet). `grep -rn 'class="body"' src --include='*.svelte'` on the base copy prints 16 hits; the brief names five besides GroupHead's own (`Pane.svelte:89`, `Card.svelte:126`, `Settings.svelte:446`, `PaneBody.svelte:316`, `Workbench.svelte:389`), and the other ten are `views/shared/forms/entry/card/EntryLink.svelte:53`, `:57`, `:61`, `views/shared/forms/entry/card/EntryFields.svelte:181`, `views/academic/present/parts/Plain.svelte:24`, `:39`, `:42`, `views/academic/present/parts/Project.svelte:116`, `views/system/workbench/editors/Fold.svelte:68` and `views/sessions/terminal/transcript/TurnList.svelte:100`. None of the ten holds a `GroupHead` (`grep -c '<GroupHead'` over the six files prints 0 for each), and the mechanism keys on GroupHead's own scoped `.body`, so nothing built rests on the brief's list.
+
+Every other premise checked held: `GroupHead.svelte` 239 lines with the cited ranges (`cat -n`), the nesting places (item 2), `--fs-sm`/`--fs-md` at `tokens.css:167-168` and `themes.css:53-54`, the bare box at `ToolButton.svelte:230` and `--tab-action` at `tokens.css:193`, Svelte 5.57.1 (`node_modules/svelte/package.json`).
 
 ## Limitations and sharp edges
 
 - The alignment of C8 rests on the fold control being exactly its minimum box: its 16 px icon box plus 2 px of room either side (20 px at scale 1) is under the 22 px minimum. A fold glyph drawn wider than the box (under the terminal themes' ASCII stand-ins, `rice.icons: false`, the glyph is text at the stand-in's size; not measured) would widen the parent's control and the nested control would stand that much left of the parent's label. The look at landing in a terminal theme with icons off shows it.
 - `--group-label` and `--group-indent` are inherited by everything inside a group's body; no rule outside `GroupHead.svelte` reads either (the grep above), so nothing else changes, but a future component that reads a property of those names would pick them up.
 - The computed values on a page (font size, padding, the alignment under the parent's label, the painted band while rows scroll) are seen only at the look on landing; this step ran no page, as the rules file says.
+
+## Repair round 1
+
+Every item of `agents/briefs/O142-round-1.md` is done.
+
+The `file:line` positions of `GroupHead.svelte` in the sections above the judgment calls ("The cases after the change", "The diff", the greps) are of the file before this round; the round moved the style block down. The current positions: `.group` `:190-195` (`--group-inset` `:192`, `--group-gap` `:193`), the `.body` comment `:197-199` and rule `:200-205` (`--group-label` `:201`, `--group-indent` `:202-204`), the `.strip` comment `:207-210`, `.strip` `:211` with `top` `:213`, `gap` `:217`, `padding` `:220`, `.name` `:243` with `font-size` `:245` and `text-overflow` `:248`, `.count` `:251`. The head comment (`:28-42`) and the markup are unchanged by the round.
+
+### Item 1, the gap as one value
+
+`.group` declares `--group-gap: 6px` once (`:193`); `.strip` reads it as `gap: var(--group-gap);` (`:217`); the body's indent adds it in place of the literal:
+
+```css
+    .body {
+        --group-label: var(--fs-sm);
+        --group-indent: calc(
+            var(--group-inset) + var(--bare-box, var(--tab-action)) + var(--group-gap)
+        );
+    }
+```
+
+The three-line form of `--group-indent` is prettier's print of the one-line form (`npx prettier src/lib/ui/controls/heads/GroupHead.svelte`, printed to stdout, written into the file with the Edit tool). The comment over `.body` now ends "one fold control's box and the strip's gap (`--group-gap`, which the strip's `gap` reads as well).", and the comment over `.strip` adds "The gap between the strip's parts is the section's `--group-gap`, which the body adds to the indent at each level." The head comment's sentence "one fold control's box and the strip's 6 px gap more at each level" stays true: the value is 6 px. The `.words` gap (`:237`) is the gap inside the words and is not the strip's gap; it is unchanged. `grep -rn -- '--group-gap' src tests docs README.md` and the same over `config --exclude=local.yml` found nothing before the change (exit 1).
+
+The case-run program after the change (`node compile-grouphead.mjs $W $W/src/lib/ui/controls/heads/GroupHead.svelte > run3-round1.txt`, then `grep -n 'group-gap\|group-inset\|group-indent\|group-label\|svelte-yopwl3 {\|^---'` over it):
+
+```
+2:--- css
+4:    .group.svelte-yopwl3 {
+6:        --group-inset: var(--group-indent, 0px);
+7:        --group-gap: 6px;
+12:       level deeper than this group's, one fold control's box and the strip's gap (`--group-gap`,
+14:    .body.svelte-yopwl3 {
+15:        --group-label: var(--fs-sm);
+16:        --group-indent: calc(
+17:            var(--group-inset) + var(--bare-box, var(--tab-action)) + var(--group-gap)
+24:       parts is the section's `--group-gap`, which the body adds to the indent at each level. */
+25:    .strip.svelte-yopwl3 {
+31:        gap: var(--group-gap);
+34:        padding: 2px 8px 2px calc(8px + var(--group-inset));
+47:    .words.svelte-yopwl3 {
+57:    .name.svelte-yopwl3 {
+59:        font-size: var(--group-label, var(--fs-md));
+65:    .count.svelte-yopwl3 {
+70:    .actions.svelte-yopwl3 {
+79:--- warnings: 0
+80:--- unused comments: 0
+81:--- css_unused_selector warnings: 0
+```
+
+The nested rule `.body.svelte-yopwl3` is live, and no `css_unused_selector` warning is printed.
+
+### Item 2, judgment call 4
+
+Rewritten in "Judgment calls the brief left open": the gap is one value, `--group-gap: 6px` on `.group` (`:193`), read by the strip's `gap` (`:217`) and added by the body's `--group-indent` (`:202-204`), named in the comments over `.body` (`:197-199`) and `.strip` (`:207-210`). Judgment call 5, which said no `docs/HELP.md` bullet, was made false by item 3 and now says the bullet carries the nested look.
+
+### Item 3, `docs/HELP.md:295`
+
+The Groups bullet's sentence on a heading inside a group, after the round (the rest of the bullet unchanged; `git diff --stat docs/HELP.md` prints `1 file changed, 1 insertion(+), 1 deletion(-)`):
+
+> A heading inside a group is a plain label that does not fold, such as a Settings section or a sub-heading of the Gallery or the Views catalogue, or a group that folds, such as a kind of the Audit section or a section of the Gallery, whose strip stands under the outer one and reads one level under it: its label and its count at the small size, and the words of its strip indented by one fold control.
+
+The added words are "and reads one level under it: its label and its count at the small size, and the words of its strip indented by one fold control".
+
+### Item 4, the list of `.body` elements
+
+"Wrong or impossible in the brief" now names the premise as not reproduced. `grep -rn 'class="body"' src --include='*.svelte'` on the base copy (`O142-base`):
+
+```
+src/lib/ui/frame/Pane.svelte:89:    <div class="body" class:flush data-scroll>
+src/lib/ui/frame/Card.svelte:126:            <div class="body">{@render children()}</div>
+src/lib/ui/controls/heads/GroupHead.svelte:171:        class="body"
+src/lib/shell/Workbench.svelte:389:        <div class="body" style={bodyTracks(shownFloats())}>
+src/lib/shell/panes/PaneBody.svelte:316:    class="body"
+src/lib/views/shared/forms/entry/card/EntryLink.svelte:53:    <p class="body">
+src/lib/views/shared/forms/entry/card/EntryLink.svelte:57:    <p class="body">
+src/lib/views/shared/forms/entry/card/EntryLink.svelte:61:    <p class="body">
+src/lib/views/shared/forms/entry/card/EntryFields.svelte:181:            <div class="body">
+src/lib/views/academic/present/parts/Plain.svelte:24:        <div class="body"><Words text={row.body} block /></div>
+src/lib/views/academic/present/parts/Plain.svelte:39:            <div class="body"><Words text={row.rest} block /></div>
+src/lib/views/academic/present/parts/Plain.svelte:42:        <div class="body"><Words text={row.code} block /></div>
+src/lib/views/academic/present/parts/Project.svelte:116:        <div class="body"><Words text={slide.body} block /></div>
+src/lib/views/system/workbench/editors/Fold.svelte:68:    <div id={body} class="body">
+src/lib/views/system/workbench/Settings.svelte:446:        <div class="body">
+src/lib/views/sessions/terminal/transcript/TurnList.svelte:100:                        <div class="body">
+```
+
+16 hits (`wc -l`). `grep -c '<GroupHead'` over `EntryLink.svelte`, `EntryFields.svelte`, `present/parts/Plain.svelte`, `present/parts/Project.svelte`, `editors/Fold.svelte` and `TurnList.svelte` prints 0 for each, so none of the ten holds a `GroupHead`, and the mechanism is unaffected.
+
+### Item 5, the label's room
+
+"Host- and user-visible changes" gains a bullet: a nested strip's label has one fold control and one gap less room before its ellipsis at each level (`22px * scale + 6px`, 28 px at text scale 1), before and after, with "Manifest guardrails" in a narrow pane as the example.
+
+### Item 6, the doc paragraph list
+
+The list of comments and doc paragraphs on the strip's look adds `docs/HELP.md:295`, marked 'rewritten'.
+
+### Runs, after the last change of the round
+
+- `npm run diagrams`, then `npm run test:quick` once:
+
+```
+test:quick: 5 changed file(s), from git since HEAD
+test:quick: 9 test file(s)
+ok      prettier (0.9 s): All matched files use Prettier code style!
+ok      ASCII gate (1.0 s)
+ok      svelte-kit sync (2.5 s)
+ok      svelte-check (10.1 s): 1793755903197 COMPLETED 581 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      eslint (10.1 s)
+ok      vitest checks (46.3 s): Duration  34.08s (transform 14.50s, setup 0ms, import 29.77s, tests 44.07s, environment 2ms)
+test:quick: 48.9 s; every command passed
+```
+
+  The five changed files are the two source files and the three untracked ledger files (the round brief, the review, this report). After `npm run diagrams`, `git status --short` printed only ` M docs/HELP.md`, ` M src/lib/ui/controls/heads/GroupHead.svelte` and the three `??` ledger files, so no diagram changed. Not covered, as test:quick prints: tests that reach no changed file within the import depth, the build, the lint of unchanged files.
+- The case-run program: quoted under item 1, `--- css_unused_selector warnings: 0`.
+- `LC_ALL=C perl -ne 'print "$ARGV:$.: $_" if /[^\x20-\x7E\n]/; close ARGV if eof' src/lib/ui/controls/heads/GroupHead.svelte docs/HELP.md`: prints nothing (exit 0).
+- `awk 'length($0)>100{print FILENAME": "FNR}' src/lib/ui/controls/heads/GroupHead.svelte`: prints nothing (exit 0).
+- `npx prettier --check src/lib/ui/controls/heads/GroupHead.svelte docs/HELP.md`: "All matched files use Prettier code style!"
+- `sh utils/unused-exports.sh` to `unused-r1.txt` in the scratch folder, `diff ../O142-base/unused-exports.txt` against it: prints nothing (exit 0).
+- History words over the added lines of `GroupHead.svelte` (`grep '^+' g2.diff | grep -inE "before|used to|no longer|still|always has been|always had|as before|previously|the step adds|after this package|O[0-9]+|20[0-9][0-9]-"`): one hit besides the `+++` header, `+       before the fold control, so the strip paints its whole band. The gap between the strip's`; "before" names the place in the strip, as the review judged.
+- `diff -rq -x local.yml -x node_modules ../O142-base/<d> <d>` over `src tests utils config`: the one line `Files ../O142-base/src/lib/ui/controls/heads/GroupHead.svelte and src/lib/ui/controls/heads/GroupHead.svelte differ`. `docs/` is not in the base copy; `git status --short` lists ` M docs/HELP.md`.
+
+The verify list ran once in this round. No whole-suite command was run. No test was added or changed. No program other than the case-run program was written; every edit was made with the Edit tool.
+
+### Files
+
+| File | Lines | Change against the base |
+| --- | --- | --- |
+| `src/lib/ui/controls/heads/GroupHead.svelte` | 264 (`wc -l`; 239 on the base) | +32 -8 (`grep -c` over `diff -u` against the base copy) |
+| `docs/HELP.md` | 621 (`wc -l`) | line 295 changed, `1 insertion(+), 1 deletion(-)` (`git diff --stat`) |
+| `.scratch/migration/agents/reviews/O142-report.md` | this report | the edits of items 2, 4, 5 and 6 and this section |
+
+`docs/HELP.md:295` is inside the round's widened paths.

@@ -160,3 +160,186 @@ Nothing else was found: no bar loosened, no check exempted, and no case that wou
 - Whether the builder ran any git command beyond those allowed. Only the report's own account was available, and it names `git diff` and `git status --short`.
 
 Reviewer usage: a0173c7cce622909c, claude-opus-5-5, 148258 tokens, 46 tool uses, 7 min 24 s
+
+## Repair round 1, refuted
+
+### Verification lines, verbatim
+
+All commands were run from `/Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O143` with `PATH=/Users/axelfaes/.nvm/versions/node/v24.21.0/bin:$PATH`.
+
+Verify 1, `npx vitest run tests/data/shapes/catalog-files/vocab.test.ts tests/data/sources/config/layers/hub-vocab.test.ts tests/checks/config/config-folder.test.ts tests/data/snapshot/schema-rules.test.ts --reporter=dot`, exit 0:
+```
+ Test Files  4 passed (4)
+      Tests  139 passed | 2 skipped (141)
+```
+
+Verify 2: `npm run diagrams` exited 0. After it, `git status --short` printed only ` M config/catalogs/vocab.yml`, ` M docs/templates.md` and the three `??` ledger files, so it rewrote nothing tracked. Then `npm run test:quick`, run once, exit 0:
+```
+test:quick: 5 changed file(s), from git since HEAD
+test:quick: 2 test file(s)
+        tests/checks/config/templates.test.ts: named for a changed file
+        tests/data/shapes/catalog-files/vocab.test.ts: named for a changed file
+ok      prettier (0.9 s): All matched files use Prettier code style!
+ok      ASCII gate (1.1 s)
+ok      svelte-kit sync (2.8 s)
+ok      svelte-check (10.1 s): 1793755997589 COMPLETED 581 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest checks (12.6 s): Duration  1.17s (transform 399ms, setup 0ms, import 973ms, tests 19ms, environment 0ms)
+ok      vitest (21.4 s): Duration  9.90s (transform 1.35s, setup 0ms, import 2.32s, tests 7.44s, environment 0ms)
+test:quick: 24.3 s; every command passed
+test:quick: not covered: tests that reach no changed file within the import depth,
+            other than the checks under tests/checks/source and tests/checks/tree,
+            which run for any change under src, tests or utils; the build, the lint
+            of unchanged files
+```
+
+Verify 3, `LC_ALL=C perl -ne 'print "$ARGV:$.: $_" if /[^\x20-\x7E\n]/; close ARGV if eof' config/catalogs/vocab.yml docs/templates.md`: printed nothing, exit 0.
+
+Verify 4, `python3 -c "import yaml; yaml.safe_load(open('config/catalogs/vocab.yml'))"`: printed nothing, exit 0.
+
+spec.md's full ASCII gate over the two files: printed nothing, exit 0.
+
+The round's `awk 'NR>=1436 && NR<=1437 {print length($0)": "$0}' docs/templates.md`:
+```
+97: #    status: in-prep              # required: in-prep, planned, submitted, contributing, awarded,
+66: #                                 # rejected, withdrawn or stopped
+```
+The same `awk` over `git show 9cdccce4e:docs/templates.md` prints `88: ...contributing,` and `66: ...# awarded, rejected or withdrawn`.
+
+Unused exports: `sh utils/unused-exports.sh` (output in my scratch folder, exit 0), then `diff ../O143-base/unused-exports.txt <that output>`: exit 0, no lines, 335 lines in each.
+
+`LC_ALL=C grep -n '[^ -~]' .scratch/migration/agents/reviews/O143-report.md`: exit 1, nothing printed.
+
+`diff -rq --exclude=local.yml ../O143-base/<d> <d>` for `src tests utils config`: one line, `Files ../O143-base/config/catalogs/vocab.yml and config/catalogs/vocab.yml differ`.
+
+`wc -l`: 312 `config/catalogs/vocab.yml`, 1925 `docs/templates.md`. `git diff 9cdccce4e --numstat`: `1 0 config/catalogs/vocab.yml`, `3 3 docs/templates.md`.
+
+The round's delta. `diff -u` of each path in the snapshot's `files.txt` against the worktree: `config/catalogs/vocab.yml` exit 0, no difference. `docs/templates.md` has one hunk:
+```
+-#    status: in-prep              # required: in-prep, planned, submitted, contributing,
+-#                                 # awarded, rejected, withdrawn or stopped
++#    status: in-prep              # required: in-prep, planned, submitted, contributing, awarded,
++#                                 # rejected, withdrawn or stopped
+```
+`git status --short` lists no changed path outside `files.txt`, apart from the three untracked ledger files: the round brief, the copied refuter report and the builder's report.
+
+I reran the commands the round's section quotes as evidence, in the same form, and they match its claims:
+- The history-word grep, run as `git diff 9cdccce4e -U0 | grep -E '^\+[^+]' | grep -n -i -E "before|used to|no longer|still|always has been|always had|as before|previously|the step adds|after this package lands|\b[A-Z][0-9]+[a-z]?\b|20[0-9]{2}-[0-9]{2}"`, exits 1. The report's form is `git diff -U0` with no base; I named the base. The four added lines it reads are the four the report quotes.
+- The key checks. A `python3` read of `vocab.yml` prints `empty key False`, `in statuses 1`, `lead_statuses has stopped False`, and the intersection `['accepted', 'building', 'de-risking', 'exploring', 'in-prep', 'nascent', 'published', 'revision', 'scoping', 'stopped', 'submitted']`. `grep -n "^  stopped:" config/catalogs/vocab.yml` prints `77:` (in `stages:`) and `147:` (in `statuses:`). An `awk` over the `statuses:` block alone counts 1.
+- `grep -rln "'statuses'" src | xargs grep -ln "'stages'"` names the five files the report names. The lines it cites read as it says: `focus.ts:192` reads `statuses`; `:208`, `:233`, `:329`, `:528-529`, `:600-601`, `:638` and `:747` read `stages` for `project.stage`. Also `rules.ts:159-171`, `hub-keys.ts:20,23`, `sections/vocab.ts:30-32,48`, `hub-names.ts:729,732`, and `tones.ts:314-317`. `grep -rn statusMarkTone src` names only `CardFacts.svelte:101` and `LaneCard.svelte:137,147` as callers.
+- The second grep, `grep -rn -e 'in-prep, planned' -e 'contributing, awarded' config docs src tests README.md --exclude=local.yml`, prints three hits: `docs/templates.md:1407`, `docs/templates.md:1436` and `tests/fixtures/hubs/demo/.oculus/data/academic/funding.yml:8`. These are the three the report names.
+- Item 3's grep prints the hits of the report's table, no more and no fewer.
+- The builder's saved round run (`.../scratchpad/o143-builder/quick-r1.txt`) holds the lines the report quotes, `22.8 s; every command passed` and the four `not covered` lines included.
+- The B1 reads:
+  - `task-card.ts:29` reads `if (closesDeadline(config, status) || deadlineMet(config, status)) return [];`.
+  - `taskCardActions` is used at `Collection.svelte:422` and `Entry.svelte:331`.
+  - `focus-lanes.ts:211` reads `if (!deadlineMet(words, status) && !closesDeadline(words, status)) {`.
+  - `vocab.yml:197-212` holds `fund_stages`, `position_stages` and `teaching_stages`, and none of them lists `stopped`.
+
+The case-run program: `cmp` shows the three scratch files (`.../scratchpad/o143-reviewer/` against `.../o143-builder/`) are the same. A `diff` of each against the source the report quotes (`O143-report.md:99-108`, `:114-133`, `:139-275`) is empty. Run with `npx tsx --import <scratch>/svelte-hook.mjs <scratch>/cases.mts`. On the worktree:
+```
+deadline_horizon_days = 90; now = 2026-11-04; deadline = 2026-12-01
+C2 stopped: deadline radar lines 0
+C2 withdrawn: deadline radar lines 0
+C3 findings 0
+C4 stopped: awaiting grants 0
+C4 submitted: awaiting grants 1 "Scheme at submitted"
+C7 stopped: task lines 0
+C8 stopped: tone grey
+```
+On the scratch base tree, whose `vocab.yml` `cmp`-equals the base copy's:
+```
+deadline_horizon_days = 90; now = 2026-11-04; deadline = 2026-12-01
+C2 stopped: deadline radar lines 1 "Scheme at stopped"
+C2 withdrawn: deadline radar lines 0
+C3 findings 1
+C3   entries[0].status: status "stopped" is not a word of the statuses list; the closest word is dropped
+C4 stopped: awaiting grants 0
+C4 submitted: awaiting grants 1 "Scheme at submitted"
+C7 stopped: task lines 2 "Scheme at stopped - Chase the funder" "Scheme at stopped: Draft the budget"
+C8 stopped: tone grey
+```
+Both runs match the report's quoted output line for line. `git status --short` after them is unchanged.
+
+### Closure of each round item
+
+1. Standards S1: closed. The `awk` above shows `:1436` ending `contributing, awarded,` at 97 columns and `:1437` reading `#                                 # rejected, withdrawn or stopped`. The `#` columns are as they stood: the prefix of `:1437` is byte-equal to the base line's. Adding `rejected,` to `:1436` would make it 107 columns, over 100, so the fill is correct at 100. The finding was fixed in the comment itself; no check was removed. The round's delta touches only these two lines.
+2. Spec Sp1: closed. `O143-report.md:332-349` quotes the grep, its exit 1 and the four lines it reads. My rerun exits 1 over the same four lines. The grep covers every added line, the one comment paragraph among them, plus package ids and dates. It is wider than spec.md:44 asks, not narrower.
+3. Spec Sp2: closed. `O143-report.md:351-355` states the empty, duplicated and colliding checks, each with its read, and every read reproduces (above). The grep the report quotes names only files that hold both words as single-quoted literals. The sentence it supports ("No code reads the two maps as one") is wider than that grep: see Proof below. A wider grep that also matches `.statuses`/`.stages` and double-quoted keys names ten files. I read the extra five (`tones.ts:118-140,228-237`, `focus-lanes.ts:114,140,182`, `validate.ts:324-384,529`, `options.ts:768-782`, `data/index.ts:210-212`), and each keeps the two maps apart. `installed()` in `tones.ts` keeps `statuses` and `stages` as separate fields, and its `legend.words` is built from `stages`, `forms` and `chips`, not from `statuses`. So the conclusion holds.
+4. Proof P1: closed. `O143-report.md:320` names all three hits my rerun prints, the demo fixture's `funding.yml:8` included, with the reading that leaves it unchanged.
+5. Proof P2: closed. `O143-report.md:49-65` quotes the round's run with the four `not covered` lines, and the builder's saved `quick-r1.txt` holds them.
+6. Behaviour B1: closed. `O143-report.md:382-384` adds all three items with a before and an after:
+   - the Start Agent control (`task-card.ts:29`, with the two views that call it);
+   - the band card countdown (`focus-lanes.ts:211`), with the condition that only a hub whose own `fund_stages`, `position_stages` or `teaching_stages` lists `stopped` shows it;
+   - the settings editor's extra row, marked "Not verified on screen".
+
+   My reads of the cited lines agree. The round adds no code or behaviour beyond its findings: the only change to a tracked file is the two-line rewrap.
+
+### Item verdicts (the whole diff since the base)
+
+1. Holds. `config/catalogs/vocab.yml:147` reads `  stopped:       { color: "#9ca3af", closes_deadline: true }`, right after `not-applied` at `:146`, aligned with the rows around it. It carries no `deadline_met` and no `default_application`.
+2. Holds. `docs/templates.md:1407` reads `options: [in-prep, planned, submitted, contributing, awarded, rejected, withdrawn, stopped]`. `:1436-1437` reads "... contributing, awarded, / rejected, withdrawn or stopped", filled at 100 columns as round item 1 rules. `git diff 9cdccce4e` changes `:1407`, `:1436` and `:1437` and no other line of the template.
+3. Holds. Item 3's grep, rerun, prints exactly the hits of the report's table (`O143-report.md:309-318`). None is made false: the language-server and app-request senses of "withdrawn" are unrelated, the Applications lines are kept by the ruling, and `schema-rules.test.ts:250` passes in verify 1. No path was widened.
+
+### Case verdicts (the whole diff since the base)
+
+- C1 met. `statuses.stopped` is `{'color': '#9ca3af', 'closes_deadline': True}` on the worktree and `ABSENT` on the base copy (the `python3` reads above).
+- C2 met. Radar lines for a scheme at `stopped`: 1 on the base, 0 after. The control at `withdrawn` gives 0 on both.
+- C3 met. The base gives 1 finding naming `dropped`; after, 0.
+- C4 met. Awaiting grants at `stopped`: 0 on both trees. The `submitted` control gives 1 on both. This case is a guard, so equal results are its outcome.
+- C5 met. The options line reads as the case says, and the entry comment names `stopped`. `git show 9cdccce4e:docs/templates.md` shows neither.
+- C6 met. The Applications options `:1565` and the comment `:1582-1583` compare equal to the base's (the `diff` above printed `applications unchanged`) and name no `stopped`.
+- C7 met. Task lines at `stopped`: 2 on the base (the follow-up and the subtask), 0 after.
+- C8 met. The tone is `grey` on both trees.
+
+### Spec
+
+- Sp-r1-1 (spec.md:33). The place is `O143-report.md:431`:
+  ```
+  Git commands of this round: `git diff` and `git status --short`, plus one `git -C /dev/null status`, which spec.md:33 does not allow. It ran outside any repository, printed nothing, and changed nothing.
+  ```
+  - What is wrong: spec.md:33 bans `git -C` by name ("any other git command, `log`, `ls-files`, `rev-parse`, `check-ignore`, `git -C` ... you never run"). By the report's own account the builder ran it, and the report gives no reason for running it.
+  - The harm: `/dev/null` is not a directory, so the command could reach no repository and change no state (my judgment, not verified, since I may not run it). The rule is still broken. The disclosure is honest.
+  - Failure scenario: a builder that runs `git -C <path>` can read or change a repository other than its worktree, the main checkout included. The ban exists so that the orchestrator need not check where such a command pointed. Here it pointed nowhere, but the step's record now holds a disallowed command.
+  - Nothing in the diff depends on the command.
+
+### Proof
+
+- P-r1-1. The place is `O143-report.md:431`, "printed nothing". By my judgment, git given `-C` with a path that is not a directory prints a `fatal: cannot change to '/dev/null'` error on stderr and exits non-zero. So "printed nothing" holds only if stderr was discarded, and the report does not say it was. I could not rerun it (the command is outside the reviewer's allowed git set), so this is not verified. Failure scenario: a reader takes "printed nothing" as an exact record of the run when the run likely failed with an error. No decision rests on it.
+- P-r1-2. The place is `O143-report.md:355`:
+  ```
+  No code reads the two maps as one for an entry's status. `grep -rln "'statuses'" src | xargs grep -ln "'stages'"` names five files, and in each the two maps are read apart
+  ```
+  - What is wrong: the grep matches only single-quoted literal keys, so it does not enumerate what the sentence claims. Property reads (`words.statuses`, `merged.stages`, `vocab.stages`) in `tones.ts`, `focus-lanes.ts`, `validate.ts`, `catalog/options.ts` and `data/index.ts` fall outside it.
+  - My wider grep and reads of those five files (Closure, item 3) show the claim is true, so no decision rests on the narrow evidence.
+  - Failure scenario: a reader who trusts the quoted grep as the full enumeration would not know that `tones.ts` `installed()`, which builds both maps side by side, was ever looked at.
+
+No bar was loosened, no check was exempted, and no finding was closed by removing a check. No test was added or changed: `diff -rq` over `tests` prints nothing.
+
+### Standards
+
+None over the round's delta:
+- The rewrapped comment is filled at 100 columns, with `:1436` at 97 and the sentence ending on `:1437`.
+- It is ASCII: verify 3 and the full gate print nothing.
+- It carries no history word: the history grep exits 1.
+- `:1436` is now the widest comment line of the Funding template (97; the next is `:1431` at 76). That follows from the 100-column fill, which round item 1 rules.
+
+### Behaviour
+
+None. The round changes no code and no config value. Its one change to a tracked file is the wrap of a comment inside the template that the make item writes (`make.ts:22`), so a new hub's `funding.yml` gets the two lines as rewrapped. The words are the same as before the round.
+
+### Declined to judge
+
+- What the Findings view, the Focus board, the Funding view, the task card's Start Agent control, the band card countdown and the Settings editor's `statuses` rows draw, and the order of the new row in that editor. I started no page; this is the look on landing.
+- Whether `git -C /dev/null status` printed anything and what it returned. The command is outside the git commands this review may run, and the report's account is the only source.
+- Why the builder ran `git -C /dev/null status`. The report gives no reason, and I did not guess one.
+- Whether the Funding template's help "Where it stands." (`:1407`) should tell `stopped` apart from `withdrawn`, and whether `docs/HELP.md` should gain a bullet. Both were declined in the first review, and the round does not touch them; they are the user's and the orchestrator's calls.
+- Whether the base copy and the scratch base tree hold every file the case-run program imports in its base form. I checked `vocab.yml` with `cmp`, and the scratch base tree was built from the base copy's `src tests utils config` in the first review. I did not recheck its other files.
+
+Reviewer usage: a8f3618bbe491b67a, claude-opus-5-5, 137562 tokens, 24 tool uses, 5 min 2 s
+
+## Closed
+
+- First review, Standards S1, Spec Sp1 and Sp2, Proof P1 and P2, Behaviour B1: closed in repair round 1; the review over round 1 reproduced each closure.
+- Over round 1, Sp-r1-1 (`git -C /dev/null status 2>/dev/null`, against `agents/spec.md:33`): the breach recorded in the booking; it reached no repository and nothing in the diff rests on it.
+- Over round 1, P-r1-1: fixed at landing; `O143-report.md` names the command with its `2>/dev/null`, as the builder's transcript holds it.
+- Over round 1, P-r1-2: fixed at landing; `O143-report.md` names the five further files the wider grep finds and that each keeps the two maps apart.

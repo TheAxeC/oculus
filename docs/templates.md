@@ -1404,7 +1404,7 @@ schema:
   - { field: sub,       type: text,     section: Core, help: "Scheme, role, period." }
   - { field: funder,    type: select,   foreign_key: organisations, section: Core, help: "The funder's organisation key." }
   - { field: award,     type: text,     section: Core, help: "The funder's number of the award, which a Zenodo deposit names with the title." }
-  - { field: status,    type: select,   options: [in-prep, planned, submitted, contributing, awarded, rejected, withdrawn], required: true, section: Core, help: "Where it stands." }
+  - { field: status,    type: select,   options: [in-prep, planned, submitted, contributing, awarded, rejected, withdrawn, stopped], required: true, section: Core, help: "Where it stands." }
   - { field: date,      type: text,     section: Dates, help: "Year or range." }
   - { field: deadline,  type: date,     section: Dates, help: "Shows on Focus while live." }
   - { field: meta,      type: metalist, section: Core, help: "Label and value rows." }
@@ -1433,8 +1433,8 @@ entries:
 #    sub: ""                      # scheme, role, period
 #    funder: my-funder            # an organisation key
 #    award: ""                    # the funder's award number
-#    status: in-prep              # required: in-prep, planned, submitted, contributing,
-#                                 # awarded, rejected or withdrawn
+#    status: in-prep              # required: in-prep, planned, submitted, contributing, awarded,
+#                                 # rejected, withdrawn or stopped
 #    date: "2026-2030"
 #    deadline: YYYY-MM-DD
 #    meta:

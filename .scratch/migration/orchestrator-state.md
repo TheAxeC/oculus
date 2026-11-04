@@ -47,25 +47,10 @@ dispatch:           # steps in flight, up to six (Z632)
   model: claude-opus-5-5
   launched: 2026-11-04
   report: .scratch/migration/agents/reviews/O142-report.md
-  builder_usage: first run 169221 tokens, 55 tool uses, 9 min 52 s
+  builder_usage: first run 169221 tokens, 55 tool uses, 9 min 52 s; round 1 215970 tokens, 26 tool uses, 3 min 16 s
   round: 1
   brief_check: .scratch/migration/agents/reviews/O142-brief-check.md (a9d682e40ef0d4ed4, claude-opus-5-5, 204165 tokens, 70 tool uses, 9 min 13 s)
-  reviewer_report: .scratch/migration/agents/reviews/O142-refuter.md (a987dd72ad0cf6880, claude-opus-5-5, 182086 tokens, 40 tool uses, 9 min 35 s)
-  landing: not-started
-- step: O143
-  base: 9cdccce4e
-  worktree: .agents/worktrees/migration-O143
-  executor: agent
-  worker: claude:opus
-  session_id: ad9f5539c272f5968
-  model: claude-opus-5-5
-  launched: 2026-11-04
-  report: .scratch/migration/agents/reviews/O143-report.md
-  builder_usage: first run 183010 tokens, 65 tool uses, 9 min 21 s; round 1 228295 tokens, 29 tool uses, 3 min 47 s
-  round: 1
-  brief_check: .scratch/migration/agents/reviews/O143-brief-check.md (a8d6da3737d3eb6cc, claude-opus-5-5, 179203 tokens, 68 tool uses, 7 min 54 s)
-  reviewer_report: .scratch/migration/agents/reviews/O143-refuter.md (a0173c7cce622909c, claude-opus-5-5, 148258 tokens, 46 tool uses, 7 min 24 s)
-  shared_paths: "config/catalogs/vocab.yml with O141 of this plan: O143 writes lines 145-147, O141 lines 181-192 and 213-214, separate hunks a cherry-pick merges without conflict"
+  reviewer_report: .scratch/migration/agents/reviews/O142-refuter.md (a987dd72ad0cf6880, claude-opus-5-5, 182086 tokens, 40 tool uses, 9 min 35 s); over round 1: aa17a11de3b868799, claude-opus-5-5, 153451 tokens, 26 tool uses, 5 min 16 s
   landing: not-started
 ```
 
@@ -835,6 +820,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-11-04 (O143 landed; O142 reviewed over round 1). O143, the `stopped` status, landed (booking in plan.md under O143, `agents/reviews/O143-landing.md`): `statuses:` gains `stopped` grey with `closes_deadline: true`, the Funding template names it; fixes at landing P-r1-1 and P-r1-2 (report text), the breach Sp-r1-1 recorded; the gate passed and main equals the gate under `cmp`; the look on 8797 saw the radar drop a scheme at `stopped` and the Funding chip in grey. O142's review over round 1 (aa17a11de3b868799) is saved; its landing is next. In flight (2 of 6): O141 (waits on 672), O142 (reviewed over round 1). Queued: O144, its /spec next now that O143 has landed. Open items: 672.
 - 2026-11-04 (rulings 667 to 669 booked; nothing in flight). Axel ruled 667 (a), 668 (a) and 669 (`stopped` is an entry he stopped pursuing, essentially `not-applied` for funding and the other collections); booked in `plan.md` Rulings and as steps O141, O142 and O143. In flight (0 of 6). Queued: O141, O142, O143. Open items: none.
 - 2026-11-04 (O140 landed; nothing in flight). O140, interview and offered drawn apart in every theme, landed (booking in plan.md under O140, `agents/reviews/O140-landing.md`): `interview` takes pink `#ec4899`, 14 theme blocks a pink of their own and 17 a teal of their own, every one at a CIEDE2000 of 10 or more from the status tokens in all 49 themes; fixes at landing S3 (`gruvbox.css:84` teal `#06a596`), P3, T1 (a heredoc into the report, under "Unapproved builder scripts") and B3; the gate passed and main equals the gate under `cmp`; the look on 8797 saw interview and offered apart in six themes. Open items raised: 667 (the `focus_lanes` comment at `vocab.yml:181`), 668 (the Audit kinds drawn like the Audit heading, Axel), 669 (a `stopped` status, Axel). In flight (0 of 6). Open items: 667, 668, 669.
 - 2026-11-03 (O140 round 1 sent). O140's builder reported (`agents/reviews/O140-report.md`, usage under builder_usage) and the orchestrator read the whole diff. Its review (`agents/reviews/O140-refuter.md`, ada1bd113ba2a7360, claude-opus-5-5): items 1, 3 and 4 hold, item 2 violated by S1 (Gruvbox Light's teal out of tone and not handed back), every case met; findings S2, P1, P2, a Standards wording point and B1, B2. Repair round 1 (`agents/briefs/O140-round-1.md`, 6 items: the darkest passing teal for Gruvbox Light with the bars kept, and report and head-comment corrections) copied into the worktree with the review; snapshot `.agents/worktrees/migration-O140-round-1`. In flight (1 of 6): O140 (round 1). Open items: none.
