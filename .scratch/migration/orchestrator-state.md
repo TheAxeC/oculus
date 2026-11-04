@@ -38,6 +38,10 @@ dispatch:           # steps in flight, up to six (Z632)
   brief_check: .scratch/migration/agents/reviews/O141-brief-check.md (a6792e18665cffd1a, claude-opus-5-5, 179435 tokens, 45 tool uses, 7 min 28 s)
   shared_paths: "config/catalogs/vocab.yml with O143 of this plan: O141 writes lines 181-192 and 213-214, O143 lines 145-147, separate hunks a cherry-pick merges without conflict"
   landing: not-started
+- step: O144
+  brief_check: ".scratch/migration/agents/reviews/O144-brief-check.md (aa81eb9066685f0b8, claude-opus-5-5, 248970 tokens, 104 tool uses, 14 min 45 s)"
+  shared_paths: "config/catalogs/vocab.yml with O141 of this plan: O144 writes line 105, O141 lines 181-192 and 213-214 on its base, separate hunks a cherry-pick merges without conflict"
+  landing: preparing
 ```
 
 ## The standing demands (from Axel, in force)

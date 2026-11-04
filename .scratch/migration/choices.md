@@ -6018,3 +6018,5 @@ Builds on it: O138
 Builds on it: O136
 - 2026-11-03, O135's brief check: the note's header reading and the inserted text live in `front-matter.ts`, the one module of the note scan the views layer may import, and the action id beside `SAVE_ACTION` in `editor-status.svelte.ts`; a new allow-list line for `note-links` was the weaker option. Named in the next report.
 Builds on it: O135
+- 2026-11-04, O144's brief check: the period reader takes EDTF level 0's date-time to the second, alone and never inside a span, as level 0 has it, so the hub's one time is `2026-10-27T11:00:00`; two periods order by the first day of the start, then the last day of the end, newest first, which is a total order; a collection entry's words that are not a period go to its `note`, since `about` is the CV text, and a career row's to its `about`; a lead's "not stated (posted <day>)" gives no deadline. Accepting the minute form outside the standard was the lazy option. Named in the next report.
+Builds on it: O144
