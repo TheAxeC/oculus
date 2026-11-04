@@ -1,6 +1,6 @@
 In flight (2 of 6 slots in use):
 - O141 (Focus lane colours measured in every theme), builder handed item 3 back; waits on open item 672.
-- O144 (a `period` type for when an entry happens), building: base 069decb7c, builder on claude-opus-5-5.
+- O144 (a `period` type for when an entry happens), repair round 1: base 069decb7c, builder on claude-opus-5-5.
 
 Queued, in order (0 steps): none.
 
