@@ -13,7 +13,7 @@ results:
     - 'One app holds the projects, manuscripts, grants, data, sessions and code of a hub.'
     - 'Project boards, Focus and Career read the hub; every record opens on one page frame and editor.'
     - 'Write the website generates the website data files from the hub.'
-    - 'The Deposit view archives a project''s code on Zenodo through its GitHub integration.'
+    - "The Deposit view archives a project's code on Zenodo through its GitHub integration."
     - 'Several hubs and several clusters work side by side, each with its own connections.'
 related: [research-hub]
 links: []
@@ -27,7 +27,7 @@ repository:
     date: 2026-10-21
 cv:
     url: 'https://github.com/TheAxeC/oculus'
-    duration: '2026 - Current'
+    when: '2026/..'
     role: 'Lead Developer'
     about: 'An open-source desktop workbench that brings the projects, manuscripts, grants, data and code of a research hub into one VS Code-like app.'
     rank: 9

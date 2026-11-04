@@ -191,13 +191,14 @@ const MANIFESTS: Record<string, string> = {
 /**
  * The career file of the copy: a reference naming no person of the people file, a position, a
  * position keyed as an entry of the demo hub's events file is, a position with an empty key, a
- * profile row naming each of the first two, and one award with a day and a time of day.
+ * profile row naming each of the first two, and one award with a day, which the CV writes with
+ * the time of day the website parses.
  */
 const CAREER = `references:
   - { person: nobody-known, reason: A reason }
 positions:
-  - { key: postdoc, title: Postdoc, location: A university, duration: 2024 - now }
-  - { key: neurips-attending, title: A visit, location: A lab, duration: 2023 }
+  - { key: postdoc, title: Postdoc, location: A university, when: "2024/.." }
+  - { key: neurips-attending, title: A visit, location: A lab, when: 2023 }
   - { key: '', title: A visiting post }
 profiles:
   shared: { location: A city }
@@ -215,7 +216,7 @@ profiles:
 awards:
   - award: A best paper award
     event: A conference
-    date: 2018-01-01 15:59:00-0400
+    when: "2018-01-01"
     location: A city
 `;
 
@@ -655,10 +656,10 @@ const ROWS: { rule: string; check: () => void }[] = [
                 Record<string, { content: Record<string, unknown>[] }>
             >;
             expect(profiles.employer.experience.content).toEqual([
-                { title: 'Researcher', location: 'A university', duration: '2024 - now' }
+                { title: 'Researcher', location: 'A university', duration: '2024 - Current' }
             ]);
             expect(profiles.employer.projects.content).toEqual([
-                { title: 'A tool', duration: '2024 - now' }
+                { title: 'A tool', duration: '2024 - Current' }
             ]);
         }
     }

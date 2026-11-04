@@ -323,6 +323,7 @@ text:
             no_key: '{0} is {1}, which is not a key of {2}'
             not_allowed: '{0} is {1}, which is not one of {2}'
             not_a_date: '{0} is {1}, which is not a day written YYYY-MM-DD'
+            not_a_period: '{0} is {1}, which is not a period such as 2025, 2025-09, 2026-10-27 or 2025-09/2026-09'
             not_form: '{0} is {1}, which does not match the form {2}'
             below_min: '{0} is {1}, which is below {2}'
             above_max: '{0} is {1}, which is above {2}'

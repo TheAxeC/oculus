@@ -258,8 +258,8 @@ export type Publication = {
 export type ProjectCv = {
     title?: string;
     url?: string;
-    /** The period as the CV prints it, a year written as a number kept a number. */
-    duration?: string | number;
+    /** The period of the row, which the CV builder prints in its one form. */
+    when?: string | number;
     about?: string;
     role?: string;
     hide?: boolean;
@@ -423,7 +423,10 @@ export type Project = Rooted & {
     form?: string;
     title: string;
     short?: string;
+    /** The year the manifest's `year` period starts in. */
     year?: number;
+    /** The manifest's `year` as written, a period or any text, which the form shows and edits. */
+    yearWritten?: string | number;
     /** `pin: true` floats the card to the top of its board. False and absent are both no pin. */
     pin?: boolean;
     /**
@@ -774,7 +777,8 @@ export type Funding = Rooted & {
     title: string;
     sub?: string;
     status?: string;
-    date?: string;
+    /** The scheme's period as its `when:` writes it, a year read as its text. */
+    when?: string;
     deadline?: string;
     note?: string;
     /** The verbatim funder acknowledgment a manuscript pastes. */

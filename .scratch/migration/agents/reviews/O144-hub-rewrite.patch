@@ -1,0 +1,2398 @@
+diff --git a/.oculus/data/academic/applications.yml b/.oculus/data/academic/applications.yml
+index 842313c8a..8fde7e3dd 100644
+--- a/.oculus/data/academic/applications.yml
++++ b/.oculus/data/academic/applications.yml
+@@ -7,14 +7,14 @@ schema:
+   - { field: title,   type: text,     display: 1, required: true, section: Core, help: "The name of the application." }
+   - { field: sub,     type: text,     label: "Subtitle", section: Core, help: "A second line under the title, such as the institution." }
+   - { field: status,  type: select,   options: [active, applied, interview, offered, accepted, not-applied, declined, rejected, withdrawn], required: true, section: Core, help: "Where the application stands." }
+-  - { field: date,    type: text, section: Dates, help: "The year the application was made." }
++  - { field: when,    type: period, section: Dates, help: "When you applied: a year, a month or a day." }
+   - { field: meta,    type: metalist, section: Core, help: "Label and value rows shown on the card." }
+   - { field: tags,    type: tags, section: Core, help: "Words the card is filtered by." }
+   - { field: note,    type: textarea, section: Content, help: "Free notes on the application." }
+   - { field: link,    type: text, section: Core, help: "A path in the hub to the application's documents." }
+   - { field: url,     type: text,     section: Core, help: "Posting (http)" }
+   - { field: related, type: tags,     foreign_key: projects, section: Connections, help: "Project ids" }
+-  - { field: deadline, type: date, section: Dates, help: "an actual deadline if any (the `date` field above is the year applied)" }
++  - { field: deadline, type: date, section: Dates, help: "an actual deadline if any (the `when` field above is when you applied)" }
+   - { field: lead,          type: tags,     foreign_key: people, required: true, section: Connections, help: "Who leads it." }
+   - { field: collaborators, type: tags,     foreign_key: people, section: Connections, help: "Who works on it with the lead." }
+   - { field: supervisors,   type: tags,     foreign_key: people, section: Connections, help: "Who supervises it." }
+@@ -26,7 +26,7 @@ entries:
+     lead: [axel-faes]
+     sub: "Group Leader (VIB) / Professor, AI in biology, Computer Science and Electrical Engineering line - application in preparation, deadline 2026-11-15"
+     status: active
+-    date: "2026"
++    when: 2026
+     meta:
+       - { label: Institution, value: "VIB.AI (VIB Center for AI & Computational Biology), Leuven + Ghent hubs" }
+       - { label: Role, value: "Group Leader at VIB + Professor (tenure track); junior and senior both advertised" }
+@@ -51,7 +51,7 @@ entries:
+     lead: [axel-faes]
+     sub: "Assistant professor, Cognitive Neuroscience (FPN) - application submitted 2026-10-31"
+     status: applied
+-    date: "2026"
++    when: 2026
+     meta:
+       - { label: Institution, value: "Maastricht University, Department of Cognitive Neuroscience, Faculty of Psychology and Neuroscience (FPN)" }
+       - { label: Role, value: "Assistant professor, 12-month contract (1.0 FTE) with the prospect of a permanent contract based on mutual satisfaction; tenure track not stated; research and teaching roughly evenly (BSc Brain Science and the FPN Psychology programmes)" }
+@@ -72,7 +72,7 @@ entries:
+     lead: [axel-faes]
+     sub: "Assistant professor, Faculty of Health, Medicine and Life Sciences (FHML), 0.7 FTE - application in preparation, deadline 2026-11-04"
+     status: active
+-    date: "2026"
++    when: 2026
+     meta:
+       - { label: Institution, value: "Maastricht University, Faculty of Health, Medicine and Life Sciences (FHML)" }
+       - { label: Role, value: "Assistant professor, 0.7 FTE (0.5 FTE research, 0.2 FTE teaching), one-year contract with the prospect of a permanent contract" }
+@@ -85,14 +85,14 @@ entries:
+     link: "applications/active/2026-maastricht-clinical-epidemiology"
+     url: "https://www.academictransfer.com/en/jobs/364688/universitair-docent-klinische-epidemiologie/"
+     deadline: "2026-11-04"
+-    note: "The leads file rates it moderate: prediction-model and clinical decision-support methodology in a medical faculty with radiology and oncology partners, but the advert names no machine learning or AI. Open: how firm the permanent prospect is, and whether the department wants ML methods or classical clinical epidemiology. The advert names the contact, prof. dr. Luc Smits. The linked folder holds the advert text and its printed page, and in submitted/ the website CV with publications and the BKO certificate; the Dutch motivatiebrief and the onderwijsportfolio go through the academic-paper skill."
++    note: "The leads file rates it moderate: prediction-model and clinical decision-support methodology in a medical faculty with radiology and oncology partners, but the advert names no machine learning or AI. Open: how firm the permanent prospect is, and whether the department wants ML methods or classical clinical epidemiology. The advert names the contact, prof. dr. Luc Smits. The linked folder holds the advert text and its printed page; submitted/ holds the four documents to upload: the website CV with publications, the BKO certificate, the Dutch motivatiebrief (2 pp) and the onderwijsportfolio (3 pp), both written and reviewed through the academic-paper skill. Not yet submitted."
+ 
+   - key: maastricht-methodology-statistics
+     title: "Maastricht University, Assistant Professor in Methodology and Statistics"
+     lead: [axel-faes]
+     sub: "Assistant professor, FPN with the Department of Methodology and Statistics (FHML) - application in preparation, deadline 2026-11-22"
+     status: active
+-    date: "2026"
++    when: 2026
+     meta:
+       - { label: Institution, value: "Maastricht University, Faculty of Psychology and Neuroscience, working with the Department of Methodology and Statistics (FHML)" }
+       - { label: Role, value: "Assistant professor, 12-month contract (1.0 FTE) with the prospect of a permanent contract based on mutual satisfaction; tenure track not mentioned; teaches and coordinates Bachelor's Psychology statistics and methodology courses, researches methodology and statistics, gives statistical support" }
+@@ -113,7 +113,7 @@ entries:
+     lead: [axel-faes]
+     sub: "Postdoc, Luxembourg Centre for Systems Biomedicine (LCSB), 30 months - inquiry sent, reply awaited, deadline 2026-11-27"
+     status: active
+-    date: "2026"
++    when: 2026
+     meta:
+       - { label: Institution, value: "University of Luxembourg, Luxembourg Centre for Systems Biomedicine (LCSB), Belval Campus, Esch-sur-Alzette" }
+       - { label: Reference, value: "UOL08485" }
+@@ -136,7 +136,7 @@ entries:
+     lead: [axel-faes]
+     sub: "Doctor-assistent, Data Analysis and Mathematical Modelling (BioML), invited to interview, new date requested"
+     status: interview
+-    date: "2026"
++    when: 2026
+     meta:
+       - { label: Institution, value: "Ghent University, Faculty of Bioscience Engineering, Department of Data Analysis and Mathematical Modelling, BioML group" }
+       - { label: Role, value: "Doctor-assistent (AAP5), 3 years renewable up to 3 more, at least 70 percent research, lecturer of Introduction to Data Science, start 2027-01-01 at the earliest" }
+@@ -158,7 +158,7 @@ entries:
+     lead: [axel-faes]
+     sub: "Belgian Defence reservist officer (data, AI, cyber) - blocked by a 2012 medical unfitness, no vacancy applied for yet"
+     status: active
+-    date: "2026"
++    when: 2026
+     meta:
+       - { label: Institution, value: "Belgian Defence (DG HR, reserve needs office HRB-PERS-RES-BESOINS)" }
+       - { label: Vacancies, value: "22805 Data-analist met ervaring (Heverlee), 22762 AI Engineer (Vilvoorde, full-time), 22739 Ingenieur Marine (Evere), 22840 Hoofd Intelligence & Cooperation (Zeebrugge, full-time)" }
+@@ -177,7 +177,7 @@ entries:
+     lead: [axel-faes]
+     sub: "Docent (tenure track) Immunologie"
+     status: rejected
+-    date: "2026"
++    when: 2026
+     meta:
+       - { label: Institution, value: "UHasselt, BIOMED, Immunologie & Infectie" }
+       - { label: Role, value: "ZAP / tenure track (docent to hoofddocent)" }
+@@ -194,7 +194,7 @@ entries:
+     lead: [axel-faes]
+     sub: "Engine Programmer (animation-related systems, game engine development)"
+     status: rejected
+-    date: "2026"
++    when: 2026
+     meta:
+       - { label: Institution, value: "Larian Studios (Baldur's Gate 3, Divinity: Original Sin 2), Ghent" }
+       - { label: Role, value: "industry, Engine Programmer (C++ engine / animation systems)" }
+@@ -210,7 +210,7 @@ entries:
+     lead: [axel-faes]
+     sub: "Senior Data Analyst (Analytics team, game development)"
+     status: rejected
+-    date: "2026"
++    when: 2026
+     meta:
+       - { label: Institution, value: "Guerrilla Games (Sony / PlayStation Studios), Amsterdam" }
+       - { label: Role, value: "industry, Senior Data Analyst (player / gameplay analytics)" }
+@@ -226,7 +226,7 @@ entries:
+     lead: [axel-faes]
+     sub: "Postdoc Position: Multi-Modal AI for Early Detection of Liver Cancer"
+     status: accepted
+-    date: "2025"
++    when: 2025
+     meta:
+       - { label: Institution, value: "Univ. Twente" }
+       - { label: Role, value: "postdoc, AI-HCC" }
+@@ -245,7 +245,7 @@ entries:
+     lead: [axel-faes]
+     sub: "Postdoc - Federated Learning (Biomedical Data Sciences)"
+     status: accepted
+-    date: "2024"
++    when: 2024
+     meta:
+       - { label: Institution, value: "UHasselt, Biomedical Data Sciences" }
+       - { label: Role, value: "federated learning" }
+@@ -259,7 +259,7 @@ entries:
+     lead: [axel-faes]
+     sub: "Postdoctoral Research Fellow - Real World Evidence"
+     status: declined
+-    date: "2025"
++    when: 2025
+     meta:
+       - { label: Institution, value: "University College Dublin" }
+       - { label: Role, value: "postdoc" }
+@@ -277,7 +277,7 @@ entries:
+     lead: [axel-faes]
+     sub: "Postdoc - Federated Learning and Integrative Omics for Antibiotic Discovery"
+     status: declined
+-    date: "2025"
++    when: 2025
+     meta:
+       - { label: Institution, value: "Wageningen Univ." }
+       - { label: Topic, value: "federated learning" }
+@@ -296,7 +296,7 @@ entries:
+     lead: [axel-faes]
+     sub: "Postdoctoral Research Fellow - Machine Learning"
+     status: rejected
+-    date: "2025"
++    when: 2025
+     meta:
+       - { label: Institution, value: "Univ. Oslo" }
+       - { label: Topic, value: "machine learning (Integreat)" }
+@@ -314,7 +314,7 @@ entries:
+     lead: [axel-faes]
+     sub: "Postdoctoral Position - Machine Learning Theory"
+     status: rejected
+-    date: "2025"
++    when: 2025
+     meta:
+       - { label: Institution, value: "Uppsala Univ." }
+       - { label: Topic, value: "ML theory" }
+@@ -332,7 +332,7 @@ entries:
+     lead: [axel-faes]
+     sub: "Postdoc - AI-based Treatment Selection in Aneurysm Patients"
+     status: rejected
+-    date: "2025"
++    when: 2025
+     meta:
+       - { label: Institution, value: "Univ. Twente" }
+       - { label: Topic, value: "AI-based aneurysm treatment" }
+@@ -349,7 +349,7 @@ entries:
+     lead: [axel-faes]
+     sub: "Assistant Professor / Lecturer in Computer Science (x3 positions)"
+     status: rejected
+-    date: "2025"
++    when: 2025
+     meta:
+       - { label: Institution, value: "Maynooth Univ." }
+       - { label: Role, value: "faculty (CS)" }
+@@ -367,7 +367,7 @@ entries:
+     lead: [axel-faes]
+     sub: "Tenure Track Faculty Position in Computer Science (Data Science)"
+     status: rejected
+-    date: "2025"
++    when: 2025
+     meta:
+       - { label: Institution, value: "UHasselt" }
+       - { label: Role, value: "ZAP / faculty" }
+@@ -385,7 +385,7 @@ entries:
+     lead: [axel-faes]
+     sub: "Postdoctoral Research Fellow - Epidemiological Modelling (Plague)"
+     status: withdrawn
+-    date: "2025"
++    when: 2025
+     meta:
+       - { label: Institution, value: "Univ. Oslo" }
+       - { label: PI, value: "Nils Christian Stenseth" }
+@@ -402,7 +402,7 @@ entries:
+     lead: [axel-faes]
+     sub: "Postdoctoral Researcher in Machine Learning for Precision Neuropsychiatry"
+     status: withdrawn
+-    date: "2025"
++    when: 2025
+     meta:
+       - { label: Institution, value: "Tilburg Univ." }
+       - { label: Topic, value: "EEG" }
+@@ -420,7 +420,7 @@ entries:
+     lead: [axel-faes]
+     sub: "Postdoctoral Researcher in Natural Language Processing and Real-World Data"
+     status: withdrawn
+-    date: "2025"
++    when: 2025
+     meta:
+       - { label: Institution, value: "Utrecht Univ. (UMC)" }
+       - { label: Topic, value: "NLP / real-world data" }
+@@ -439,7 +439,7 @@ entries:
+     lead: [axel-faes]
+     sub: "Tenure-Track Assistant Professors and Associate Professors in Artificial Intelligence"
+     status: not-applied
+-    date: "2025"
++    when: 2025
+     meta:
+       - { label: Institution, value: "Denmark" }
+       - { label: Role, value: "ZAP / faculty" }
+@@ -458,7 +458,7 @@ entries:
+     lead: [axel-faes]
+     sub: "Postdoc in Foundation Models for Sign Language"
+     status: not-applied
+-    date: "2025"
++    when: 2025
+     meta:
+       - { label: Institution, value: "KTH" }
+       - { label: Topic, value: "sign-language BCI / foundation models" }
+@@ -477,7 +477,7 @@ entries:
+     lead: [axel-faes]
+     sub: "Postdoctoral fellow (Research Associate) in Clinical and Translational Medicine Informatics"
+     status: not-applied
+-    date: "2025"
++    when: 2025
+     meta:
+       - { label: Institution, value: "Univ. Luxembourg" }
+       - { label: Topic, value: "AI" }
+@@ -495,7 +495,7 @@ entries:
+     lead: [axel-faes]
+     sub: "ZAP / Faculty - AI"
+     status: not-applied
+-    date: "2025"
++    when: 2025
+     meta:
+       - { label: Institution, value: "Univ. Luxembourg" }
+       - { label: Role, value: "ZAP / faculty" }
+@@ -507,7 +507,7 @@ entries:
+     lead: [axel-faes]
+     sub: "Assistant Professor of Data-Driven Precision Medicine and Diagnostics (DDLS Fellow)"
+     status: not-applied
+-    date: "2025"
++    when: 2025
+     meta:
+       - { label: Institution, value: "Umeå Univ." }
+       - { label: Role, value: "ZAP / faculty" }
+@@ -526,7 +526,7 @@ entries:
+     lead: [axel-faes]
+     sub: "Associate Senior Lecturer / Assistant Professor (DDLS Fellow) in Data-Driven Research in Precision Medicine and Diagnostics"
+     status: not-applied
+-    date: "2025"
++    when: 2025
+     meta:
+       - { label: Institution, value: "Uppsala Univ." }
+       - { label: Role, value: "ZAP / faculty" }
+@@ -545,7 +545,7 @@ entries:
+     lead: [axel-faes]
+     sub: "Postdoctoral Fellow in AI and Paleogenomics of the Silk Roads"
+     status: not-applied
+-    date: "2024"
++    when: 2024
+     meta:
+       - { label: Institution, value: "Lund Univ." }
+       - { label: Topic, value: "paleogenomics" }
+@@ -563,7 +563,7 @@ entries:
+     lead: [axel-faes]
+     sub: "Tenure Track / Professor of Neurosciences, Multi-Omics Data Analysis"
+     status: not-applied
+-    date: "2024"
++    when: 2024
+     meta:
+       - { label: Institution, value: "UHasselt" }
+       - { label: Role, value: "ZAP / faculty" }
+@@ -581,7 +581,7 @@ entries:
+     lead: [axel-faes]
+     sub: "ZAP Biomedical Data Sciences, multi-omics and bioinformatics (Department of Biomedical Sciences)"
+     status: not-applied
+-    date: "2026"
++    when: 2026
+     meta:
+       - { label: Institution, value: "University of Antwerp" }
+       - { label: Role, value: "ZAP / faculty" }
+@@ -596,7 +596,7 @@ entries:
+     lead: [axel-faes]
+     sub: "Ad Astra Fellow - Assistant Professor of Artificial Intelligence in Medical Diagnostics"
+     status: not-applied
+-    date: "2025"
++    when: 2025
+     meta:
+       - { label: Institution, value: "University College Dublin" }
+       - { label: Role, value: "Ad Astra fellow / faculty" }
+diff --git a/.oculus/data/academic/career.yml b/.oculus/data/academic/career.yml
+index 8b6bf6b20..afccdb02f 100644
+--- a/.oculus/data/academic/career.yml
++++ b/.oculus/data/academic/career.yml
+@@ -14,7 +14,7 @@ schema:
+     help: "The order of work, in priority order."
+     fields:
+       - { field: task, type: text, required: true, help: "What to do." }
+-      - { field: when, type: text, help: "When it is due, as text." }
++      - { field: when, type: period, help: "When it is due." }
+       - { field: note, type: text, help: "An optional remark on the task." }
+   - field: positions
+     type: records
+@@ -24,7 +24,7 @@ schema:
+       - { field: key, type: text, help: "The key a profile row names this position by." }
+       - { field: title, type: text, required: true, help: "The position as the CV prints it." }
+       - { field: location, type: text, help: "Where." }
+-      - { field: duration, type: text, help: "When, as the CV prints it." }
++      - { field: when, type: period, help: "When it happens: a year, a month, a day or a span, such as 2025-09/2026-09 or 2025/.." }
+       - { field: url, type: text, help: "An address the title links to." }
+       - { field: about, type: textarea, help: "What the CV prints under it." }
+       - { field: hide, type: checkbox, help: "Kept off the CV." }
+@@ -38,7 +38,7 @@ schema:
+       - { field: key, type: text, help: "The key a profile row names this degree by." }
+       - { field: title, type: text, required: true, help: "The degree as the CV prints it." }
+       - { field: location, type: text, help: "Where." }
+-      - { field: duration, type: text, help: "When, as the CV prints it." }
++      - { field: when, type: period, help: "When it happens: a year, a month, a day or a span, such as 2025-09/2026-09 or 2025/.." }
+       - { field: url, type: text, help: "An address the title links to." }
+       - { field: about, type: textarea, help: "What the CV prints under it." }
+       - { field: hide, type: checkbox, help: "Kept off the CV." }
+@@ -52,7 +52,7 @@ schema:
+       - { field: key, type: text, help: "The key a profile row names this award by." }
+       - { field: award, type: text, help: "The award as the CV prints it." }
+       - { field: event, type: text, help: "The event it was given at." }
+-      - { field: date, type: text, help: "The day, written as the CV reads it." }
++      - { field: when, type: period, help: "When it happens: a year, a month, a day or a span, such as 2025-09/2026-09 or 2025/.." }
+       - { field: location, type: text, help: "Where." }
+       - { field: content, type: textarea, help: "What the CV prints under it." }
+       - { field: funding, type: text, help: "A funding entry, by key, whose title, place and text the award takes." }
+@@ -107,7 +107,7 @@ schema:
+               - { field: title, type: text, help: "The entry as this CV prints it." }
+               - { field: role, type: text, help: "The role, for a project." }
+               - { field: location, type: text, help: "Where, when this CV prints it differently." }
+-              - { field: duration, type: text, help: "When, when this CV prints it differently." }
++              - { field: when, type: period, help: "When, when this CV prints it differently." }
+               - { field: url, type: text, help: "An address, when this CV prints another." }
+               - { field: about, type: textarea, help: "What this CV prints under it." }
+               - { field: about_compact, type: textarea, help: "What the one-page CV prints under it." }
+@@ -128,7 +128,7 @@ schema:
+               - { field: award, type: text, help: "The award as this CV prints it." }
+               - { field: event, type: text, help: "The event it was given at." }
+               - { field: location, type: text, help: "Where, when this CV prints it differently." }
+-              - { field: date, type: text, help: "The day, when this CV prints it differently." }
++              - { field: when, type: period, help: "When, when this CV prints it differently." }
+               - { field: compact, type: checkbox, help: "Whether the one-page CV prints the row; a row without it is printed." }
+       - field: letter
+         type: records
+@@ -149,30 +149,30 @@ milestone_date: "2026-11-17"
+ 
+ # Order of work, in priority order (task, when and an optional note)
+ order:
+-  - { task: "Quantitative Researcher", when: "", note: "" }
+-  - { task: "Diplomat", when: "", note: "" }
+-  - { task: "ERC Starting Grant", when: "Oct 2027", note: "" }
++  - { task: "Quantitative Researcher", note: "" }
++  - { task: Diplomat, note: "" }
++  - { task: "ERC Starting Grant", when: '2027-10', note: "" }
+ 
+ positions:
+   - key: postdoc-twente
+     title: "Postdoctoral Researcher: Foundation Models & Multi-Modal Federated Learning for Precision Medicine and Liver Cancer Detection"
+     location: University of Twente / Medisch Spectrum Twente
+-    duration: January 2026 - Current
++    when: '2026-01/..'
+     about: |
+       Developing advanced deep learning and foundation models integrating longitudinal MRI data, multi-omics profiles, and clinical variables for early detection and risk prediction of hepatocellular carcinoma (HCC).
+       Building explainable AI (XAI) frameworks that link imaging features and molecular markers to clinically meaningful outcomes in precision oncology within the AI-HCC ZonMw project, in the CoDE group (Cognition, Data and Education).
+   - key: postdoc-uhasselt
+     title: "Postdoctoral Researcher: Federated Learning in Healthcare & Real-World Evidence"
+     location: UHasselt
+-    duration: January 2024 - January 2026 (Research Affiliate from 2026)
+-    about: |
++    when: '2024-01/2026-01'
++    about: |-
+       Scientific Coordinator of the Flanders AI Research Program Use Case Real World Evidence, leading multi-institutional research on privacy-preserving healthcare analytics. As Technical Machine Learning Lead of the Biomedical Data Sciences Group (Prof. Liesbet Peeters), developed federated learning frameworks enabling collaborative clinical research across Belgian healthcare institutions without sharing sensitive patient data.
+ 
+-      Research encompasses federated tensor regression for longitudinal health data, distributed learning architectures for heterogeneous clinical datasets, and translation of federated AI methods into practical healthcare applications.
++      Research encompasses federated tensor regression for longitudinal health data, distributed learning architectures for heterogeneous clinical datasets, and translation of federated AI methods into practical healthcare applications. Research Affiliate from 2026.
+   - key: postdoc-kuleuven
+     title: "Postdoctoral Researcher: Deep Learning & Tensor Regression for Sign Language Alphabet Decoding via Brain-Computer Interfaces"
+     location: KU Leuven
+-    duration: May 2023 - January 2024
++    when: '2023-05/2024-01'
+     about: |
+       Developed advanced machine learning methods for decoding sign language alphabet gestures from high-density intracranial brain activity (ECoG). Combined deep learning architectures with tensor regression models to capture complex spatiotemporal patterns in neural signals associated with linguistic motor control.
+ 
+@@ -180,17 +180,17 @@ positions:
+   - key: consultant-flanders-bci
+     title: Data Science Consultant
+     location: Flanders BCI
+-    duration: 2022 - 2024
++    when: '2022/2024'
+     about: "Provided consultancy for physical experiments using Synamps RT and Neuvo EEG Systems.\nSupported the data analysis for hybrid BCI with new analytical EEG modeling techniques & signal detection- and classification algorithms. \nInfer emotion from EEG signals using machine learning techniques.\nUsage of ECoG signals from semi-invasive recording for imagined movement detection and language processing.\n"
+   - key: research-stay-gloreha
+     title: "Research Stay Idrogenet Srl, Gloreha: Robotic Rehabilitation"
+     location: Lumezzane, Italy
+-    duration: Dec. 2022 - Jan. 2023
++    when: '2022-12/2023-01'
+     about: "Develop custom software for the control of the Gloreha robotic rehabilitation device, \nSpecifically the R-TOUCH PRO Sinfonia, a custom-built robotic exoskeleton for hand rehabilitation.\n"
+   - key: phd-kuleuven
+     title: PhD Researcher in Computational Neuroscience
+     location: KU Leuven
+-    duration: Sep. 2018 - May 2023
++    when: '2018-09/2023-05'
+     about: |
+       Cognitive and Molecular Neuroscience
+       PhD Thesis: Finger Movement Decoding: From Source-Localisation to Tensor Regression Modelling
+@@ -198,34 +198,34 @@ positions:
+   - key: internship-web-performance
+     title: "Web Performance Research Internship"
+     location: UHasselt
+-    duration: Jul. 2016 - Sep. 2016
++    when: '2016-07/2016-09'
+     about: |
+       I worked on the iMinds PRO-FLOW project @ Expertise centre for Digital Media (EDM)
+       focus on the difference between the http versions (http1.1, https, http2).
+   - key: internship-physical-computing
+     title: Summer Research Internship Physical Computing
+     location: UHasselt
+-    duration: Aug. 2015 - Sep. 2015
++    when: '2015-08/2015-09'
+     about: "Interfacing between human entity, a drone and virtual objects @ Expertise centre for Digital Media (EDM). \n(C++, Optitrack motion capture, custom built drone)\n"
+ 
+ degrees:
+   - key: sign-language
+     title: Flemish Sign Language course
+     location: Flemish Sign Language Centre
+-    duration: Sep. 2022 - May 2024
++    when: '2022-09/2024-05'
+     about: |
+       Graduates are able to engage in day-to-day conversations with deaf and hard-of-hearing individuals.
+   - key: phd
+     title: Doctoral Programme in Biomedical Science (PhD) in Computational Neuroscience
+     location: KU Leuven
+-    duration: Sep. 2018 - May 2023
++    when: '2018-09/2023-05'
+     about: |
+       Cognitive and Molecular Neuroscience
+       PhD Thesis: Finger Movement Decoding: From Source-Localisation to Tensor Regression Modelling
+   - key: msc-ai
+     title: Advanced Master of Science in Engineering (M.Sc.) in Artificial Intelligence
+     location: KU Leuven
+-    duration: Sep. 2017 - Jul. 2019
++    when: '2017-09/2019-07'
+     about: |
+       Engineering and Computer Science (76% - Cum Laude)
+       Thesis: An Information Theoretical Approach to EEG Source-Reconstructed Connectivity (on Github)
+@@ -233,33 +233,33 @@ degrees:
+     title: Honours programme of the Faculty of Engineering Science (Research Track)
+     url: https://eng.kuleuven.be/studeren/engineering-essentials/honoursprogramma
+     location: KU Leuven
+-    duration: Sep. 2016 - Oct. 2018
++    when: '2016-09/2018-10'
+     about: |
+       Research Assistant: design of type-&-effect system for Eff  based on row polymorphism
+       Research Assistent: efficient compilation of algebraic effect handlers (in Eff)
+   - key: msc-cs
+     title: Master of Science in Engineering (M.Sc.) in Computer Science (Burgerlijk Ingenieur - ir.)
+     location: KU Leuven
+-    duration: Sep. 2016 - Sep. 2018
++    when: '2016-09/2018-09'
+     about: |
+       Artificial Intelligence & Theoretical Computer Science (76% - Cum Laude)
+       Thesis: Algebraic Subtyping for Algebraic Effects and Handlers (on Github)
+   - key: summer-school-manchester
+     title: "Business Summer School: United in Manchester (0739)"
+     location: The University of Manchester
+-    duration: Jul. 2015 - Aug. 2015
++    when: '2015-07/2015-08'
+     about: International Business
+   - key: bsc
+     title: "Bachelor of Science (B.Sc.) in Computer Science"
+     location: UHasselt
+-    duration: Sep. 2013 - Jul. 2016
++    when: '2013-09/2016-07'
+     about: |
+       Physics and General courses (79% - Magna Cum Laude)
+       Thesis: Machine learning techniques for flow-based network intrusion detection systems (on Github)
+   - key: twente-health-school
+     title: Twente Health School (summer school)
+     location: University of Twente
+-    duration: 2026
++    when: 2026
+     about: Interdisciplinary health-research summer school at the University of Twente.
+     cv_section: extracurricular
+     cv_rank: 1
+@@ -268,45 +268,45 @@ awards:
+   - key: efsa
+     award: Selected for EFSA Framework Contract
+     event: European Food Safety Authority
+-    date: 2025-06-01 15:59:00-0400
++    when: '2025-06-01'
+     location: Europe
+     content: "Statistical & Epidemiological Analysis - Ranked 4th among international contractors in competitive evaluation - Contributed to case studies demonstrating expertise in Bayesian spatial modeling, \n  AI/ML applications for data classification, and advanced statistical training design\n- Quality score: 130.5/170 across methodology, implementation, and risk management criteria\n"
+   - key: fwo-grant
+     funding: FWO-PhD
+     event: FWO
+-    date: 2018-01-01 15:59:00-0400
++    when: '2018-01-01'
+   - key: cyber-security
+     award: Finalist
+     event: Cyber Security Challenge 2018
+-    date: 2018-03-24 15:59:00-0400
++    when: '2018-03-24'
+     location: Brussels, Belgium
+     content: "A Capture The Flag (CTF) challenge-based game covering a wide range of security issues. \n"
+   - key: icfp-src-2017
+     award: 3rd place
+     event: ICFP 2017 Student Research Competition
+-    date: 2017-09-01 15:59:00-0400
++    when: '2017-09-01'
+     location: Oxford, UK
+   - key: bachelor-award
+     award: Bachelor Award
+     event: in Computer Science
+-    date: 2016-07-01 15:59:00-0400
++    when: '2016-07-01'
+     location: UHasselt, Belgium
+     content: >
+       Award presented by the examination committee of Computer Science at Hasselt University for meritorious achievements, and contribution to a positive image of the bachelor in Computer Science.
+   - key: chi-sdc
+     award: 3rd place
+     event: ACM CHI 2016 Student Design Competition
+-    date: 2016-05-01 15:59:00-0400
++    when: '2016-05-01'
+     location: San Jose, CA, USA
+   - key: begdc
+     award: 2nd place
+     event: BeGDC (Belgian Game Development Championship)
+-    date: 2016-02-01 15:59:00-0400
++    when: '2016-02-01'
+     location: Brussels, Belgium
+   - key: ielts
+     award: IELTS
+     event: Academic Module (8.0/9.0)
+-    date: 2016-01-01 15:59:00-0400
++    when: '2016-01-01'
+     location: Brussels, Belgium
+ 
+ references:
+@@ -369,14 +369,14 @@ profiles:
+       content:
+         - title: "Postdoctoral Researcher - AI & Data Science"
+           records: [postdoc-twente]
+-          duration: Jan 2026 - Present
++          when: '2026-01/..'
+           about: |
+             Build predictive models over large, longitudinal multi-modal datasets (imaging, molecular, clinical), owning the full pipeline from raw data to validated insight.
+             Design explainable analytics that connect model outputs to the outcomes stakeholders care about, communicated to non-technical decision-makers.
+         - title: "Scientific Coordinator & Machine-Learning Lead - Real-World Evidence"
+           records: [postdoc-uhasselt, FAIR]
+           location: UHasselt (Flanders AI Research Program)
+-          duration: Jan 2024 - Jan 2026
++          when: '2024-01/2026-01'
+           about: |
+             Led a ~10-person, 4-institution analytics programme; converted open-ended objectives into concrete, measurable KPIs and well-scoped analyses for diverse stakeholders.
+             Built distributed / federated analytics pipelines over heterogeneous, messy real-world datasets; owned data-quality, completeness and reliability checks across sites.
+@@ -388,7 +388,7 @@ profiles:
+             Mentored junior researchers; set reproducibility standards (Git, notebooks).
+         - title: "Researcher - Behavioural Signal Decoding (Brain-Computer Interfaces)"
+           records: [phd-kuleuven, postdoc-kuleuven]
+-          duration: 2018 - 2024
++          when: '2018/2024'
+           about: |
+             Analysed high-density behavioural and neural time-series (millions of events per session) to detect patterns and predict actions, using SQL-style querying and aggregation over large event streams.
+             Designed and validated instrumentation and event pipelines for real-time behavioural data; monitored signal quality end-to-end.
+@@ -407,26 +407,26 @@ profiles:
+         - role: Researcher / Developer
+           title: "Household Survival - room-scale game using everyday objects as controllers (Unity, OptiTrack)"
+           records: [chi-household-survival]
+-          duration: 2015 - 2016
++          when: '2015/2016'
+           about: |
+             Built a room-scale game where brooms, fans and vacuums became controllers; 2nd place at the Belgian Game Development Championship and still used as a university teaching example.
+         - role: Lead Developer
+           title: "iCal for KU Leuven - schedule generator (Node.js)"
+           records: [ical-kuleuven]
+-          duration: 2016 - Present
++          when: '2016/..'
+           about: |
+             A small product shipped to real users: generates calendar feeds for KU Leuven courses, with 1000+ active users.
+         - role: Lead Developer
+           title: "Cardinal - VM & language platform (C++20)"
+           records: [cardinal-revamped]
+           url: https://github.com/TheAxeC/Cardinal
+-          duration: 2015 - Present
++          when: '2015/..'
+           about: |
+             A clear, well-documented virtual machine used as a platform for student theses and language / compiler experiments.
+         - role: Author
+           title: "Reproducible federated-learning tutorial (Wisconsin Breast Cancer)"
+           records: [federated-learning-tutorial]
+-          duration: 2025 - Present
++          when: '2025/..'
+           compact: false   # one-pager: dropped (3 projects carry the story)
+           about: |
+             Step-by-step, reproducible analysis walkthrough with documented markdown guides for newcomers.
+@@ -437,19 +437,19 @@ profiles:
+         - title: "PhD, Computational Neuroscience"
+           records: [phd]
+           about: Large-scale time-series & tensor modelling
+-          duration: 2018 - 2023
++          when: '2018/2023'
+         - title: "M.Sc. Artificial Intelligence (Cum Laude)"
+           records: [msc-ai]
+           about: Engineering & Computer Science
+-          duration: 2017 - 2019
++          when: '2017/2019'
+         - title: "M.Sc. Computer Science Engineering (Cum Laude)"
+           records: [msc-cs]
+           about: AI & theoretical computer science
+-          duration: 2016 - 2018
++          when: '2016/2018'
+         - title: "B.Sc. Computer Science (Magna Cum Laude)"
+           records: [bsc]
+           about: ""
+-          duration: 2013 - 2016
++          when: '2013/2016'
+ 
+     awards:
+       title: Awards & Highlights
+@@ -458,25 +458,25 @@ profiles:
+           records: [begdc]
+           event: Game development competition
+           location: Brussels
+-          date: "2016"
++          when: 2016
+         - award: "3rd place - ACM CHI Student Design Competition"
+           records: [chi-sdc]
+           event: Everyday objects as game controllers
+           location: San Jose, USA
+-          date: "2016"
++          when: 2016
+         - award: "Selected (ranked 4th) - EFSA Framework Contract"
+           records: [efsa]
+           event: Statistical & epidemiological analysis
+-          date: "2025"
++          when: 2025
+         - award: "3rd place - ACM SIGPLAN Student Research Competition (ICFP)"
+           records: [icfp-src-2017]
+           event: Programming languages & compilers
+-          date: "2017"
++          when: 2017
+         - award: "IELTS Academic - 8.0 / 9.0"
+           records: [ielts]
+           event: English proficiency
+           location: ""
+-          date: "2016"
++          when: 2016
+           compact: false   # one-pager: dropped
+ 
+     letter:
+@@ -553,28 +553,28 @@ profiles:
+       content:
+         - title: "Postdoctoral Researcher - AI for Healthcare & Precision Oncology"
+           records: [postdoc-twente]
+-          duration: Jan 2026 - Present
++          when: '2026-01/..'
+           about: |
+             Develop deep-learning and foundation models integrating longitudinal MRI, multi-omics and clinical variables for early detection and risk prediction of hepatocellular carcinoma (AI-HCC, ZonMw).
+             Build explainable-AI frameworks linking imaging and molecular markers to clinically meaningful outcomes.
+         - title: "Scientific Coordinator & ML Lead - Real-World Evidence"
+           records: [postdoc-uhasselt, FAIR]
+           location: UHasselt (Flanders AI Research Program)
+-          duration: Jan 2024 - Jan 2026
++          when: '2024-01/2026-01'
+           about: |
+             Led multi-institutional privacy-preserving healthcare analytics across Belgian institutions, enabling collaborative clinical research without sharing patient data.
+             Developed federated tensor regression for longitudinal health data and distributed learning for heterogeneous clinical datasets; owned data quality and harmonisation.
+             Translated federated AI methods into practical applications; mentored junior researchers and students.
+         - title: "Researcher - Computational Neuroscience & Biomedical ML"
+           records: [phd-kuleuven, postdoc-kuleuven]
+-          duration: 2018 - 2024
++          when: '2018/2024'
+           about: |
+             Built ML and tensor-regression models for high-density biomedical time-series; designed statistical evaluations and reproducible analysis pipelines.
+             Supervised graduate and doctoral students across clinical and engineering projects.
+         - title: "Statistical & Epidemiological Analysis - EFSA Framework"
+           records: [efsa]
+           location: European Food Safety Authority
+-          duration: 2025
++          when: 2025
+           about: |
+             Selected (ranked 4th among international contractors) for the EFSA framework; contributed Bayesian spatial modelling and AI / ML for data classification.
+ 
+@@ -584,19 +584,19 @@ profiles:
+         - role: Lead Researcher & Developer
+           title: "Block-Term Tensor Regression (BTTR) - open-source Python package"
+           records: [bttr-block-term-tensor-regression]
+-          duration: 2022 - Present
++          when: '2022/..'
+           about: |
+             Accessible, reproducible tensor-regression tooling for neuroscience and biomedical data.
+         - role: Contributor
+           title: "Federated Learning Kit (FLkit) for the life sciences"
+           records: [fl-kit-elixir-federated-learning-kit]
+-          duration: 2025 - Present
++          when: '2025/..'
+           about: |
+             Guidance, techniques and tools helping life scientists apply privacy-preserving federated learning to sensitive, decentralised data.
+         - role: Author
+           title: "Reproducible federated-learning tutorial (Wisconsin Breast Cancer)"
+           records: [federated-learning-tutorial]
+-          duration: 2025 - Present
++          when: '2025/..'
+           about: |
+             End-to-end, documented walkthrough of a federated study using the FL4E framework.
+ 
+@@ -606,19 +606,19 @@ profiles:
+         - title: "PhD, Computational Neuroscience"
+           records: [phd]
+           about: Biomedical ML & tensor regression
+-          duration: 2018 - 2023
++          when: '2018/2023'
+         - title: "M.Sc. Artificial Intelligence (Cum Laude)"
+           records: [msc-ai]
+           about: Engineering & Computer Science
+-          duration: 2017 - 2019
++          when: '2017/2019'
+         - title: "M.Sc. Computer Science Engineering (Cum Laude)"
+           records: [msc-cs]
+           about: AI & theoretical computer science
+-          duration: 2016 - 2018
++          when: '2016/2018'
+         - title: "B.Sc. Computer Science (Magna Cum Laude)"
+           records: [bsc]
+           about: ""
+-          duration: 2013 - 2016
++          when: '2013/2016'
+ 
+     awards:
+       title: Awards & Highlights
+@@ -626,21 +626,21 @@ profiles:
+         - award: "Selected (ranked 4th) - EFSA Framework Contract"
+           records: [efsa]
+           event: Statistical & epidemiological analysis
+-          date: "2025"
++          when: 2025
+         - award: "FWO Fundamental Research Grant"
+           records: [fwo-grant]
+           event: Research Foundation Flanders
+-          date: "2018"
++          when: 2018
+         - award: "Bachelor Award in Computer Science"
+           records: [bachelor-award]
+           event: Examination committee distinction
+           location: UHasselt
+-          date: "2016"
++          when: 2016
+         - award: "IELTS Academic - 8.0 / 9.0"
+           records: [ielts]
+           event: English proficiency
+           location: ""
+-          date: "2016"
++          when: 2016
+ 
+     letter:
+       recipient_name: "Hiring Team"
+@@ -718,7 +718,7 @@ profiles:
+       content:
+         - title: "Postdoctoral Researcher - AI & High-Performance Computing"
+           records: [postdoc-twente]
+-          duration: Jan 2026 - Present
++          when: '2026-01/..'
+           about: |
+             Design and optimise performance-critical pipelines over large multi-modal datasets, owning the full path from raw data to validated result.
+             Write GPU-accelerated (CUDA / PyTorch) code and profile it to hit runtime and memory targets on shared HPC clusters.
+@@ -727,7 +727,7 @@ profiles:
+         - title: "Machine-Learning Lead & Scientific Coordinator"
+           records: [postdoc-uhasselt, FAIR]
+           location: UHasselt (Flanders AI Research Program)
+-          duration: Jan 2024 - Jan 2026
++          when: '2024-01/2026-01'
+           about: |
+             Led a ~10-person, 4-institution engineering programme; turned open-ended goals into concrete, measurable deliverables.
+             Built distributed, multithreaded data pipelines over heterogeneous systems; owned reliability and data quality across sites.
+@@ -736,7 +736,7 @@ profiles:
+             Led a ~10-person, 4-institution programme; built distributed, multithreaded pipelines, set code-review / Git / reproducibility standards, and mentored junior engineers.
+         - title: "Postdoctoral Researcher - Deep Learning & Tensor Methods"
+           records: [postdoc-kuleuven]
+-          duration: 2023 - 2024
++          when: '2023/2024'
+           about: |
+             Built GPU deep-learning and tensor-decomposition models for high-density neural time-series (millions of samples per session).
+             Implemented block-term tensor decomposition and cross-subject generalisation; profiled and optimised compute- and memory-bound routines.
+@@ -744,7 +744,7 @@ profiles:
+             Built GPU deep-learning and tensor-decomposition models for high-density time-series; implemented block-term decomposition and optimised compute- and memory-bound routines.
+         - title: "PhD Researcher - High-Performance Numerical & Systems Code"
+           records: [phd-kuleuven]
+-          duration: 2018 - 2023
++          when: '2018/2023'
+           about: |
+             Wrote high-performance numerical and tensor code for very large time-series; designed reproducible, version-controlled pipelines.
+             Supervised MSc theses on engine-adjacent systems work: single-pass compiler optimisation and a redesign of VM bytecode for faster execution and lower memory use.
+@@ -753,7 +753,7 @@ profiles:
+         - title: "Research Stay - Real-Time C++ for Robotic Control"
+           records: [research-stay-gloreha]
+           location: Idrogenet Srl (Gloreha), Italy
+-          duration: 2022 - 2023
++          when: '2022/2023'
+           about: |
+             Developed custom C++ software to control a robotic hand-rehabilitation exoskeleton (R-TOUCH PRO Sinfonia), including real-time device I/O.
+           about_compact: |
+@@ -761,7 +761,7 @@ profiles:
+         - title: "Research Intern - Real-Time C++, Motion Capture & Web Performance"
+           records: [internship-physical-computing, internship-web-performance]
+           location: UHasselt (Expertise Centre for Digital Media)
+-          duration: 2015 - 2016
++          when: '2015/2016'
+           about: |
+             Built real-time C++ software interfacing a custom-built drone, human motion and virtual objects through OptiTrack motion capture.
+             Profiled and compared HTTP/1.1, HTTPS and HTTP/2 performance in a follow-up web-performance research internship.
+@@ -775,35 +775,35 @@ profiles:
+           title: "Cardinal - C++20 virtual machine & language platform"
+           records: [cardinal-revamped]
+           url: https://github.com/TheAxeC/Cardinal
+-          duration: 2015 - Present
++          when: '2015/..'
+           about: |
+             A from-scratch C++20 virtual machine and runtime: bytecode compiler, fiber-based concurrency, managed memory and a clean C embedding API.
+             Built for clarity and performance, and used as a platform for MSc theses on compiler optimisation and bytecode efficiency.
+         - role: Researcher / Developer
+           title: "Household Survival - room-scale game with everyday objects as controllers (Unity, OptiTrack)"
+           records: [chi-household-survival]
+-          duration: 2015 - 2016
++          when: '2015/2016'
+           about: |
+             A room-scale game turning brooms, fans and vacuums into motion-tracked controllers; 2nd place at the Belgian Game Development Championship and still used as a university teaching example.
+         - role: Supervisor
+           title: "Wren VM optimisation - bytecode redesign & single-pass compiler tuning (MSc research)"
+           records: [msc-supervision-computer-science-2025-2026]
+           url: https://github.com/TheAxeC/Cardinal
+-          duration: 2025 - Present
++          when: '2025/..'
+           compact: false   # one-pager: dropped (covered in Experience)
+           about: |
+             Supervised MSc research redesigning VM bytecode for faster execution and lower memory footprint, and optimising a single-pass compiler, directly on runtime performance and memory.
+         - role: Lead Developer
+           title: "Block-Term Tensor Regression (BTTR) - open-source library"
+           records: [bttr-block-term-tensor-regression]
+-          duration: 2022 - Present
++          when: '2022/..'
+           compact: false   # one-pager: dropped
+           about: |
+             An open-source library for tensor-based regression: reproducible, documented, and actively maintained for research use.
+         - role: Lead Developer
+           title: "iCal for KU Leuven - schedule generator (Node.js)"
+           records: [ical-kuleuven]
+-          duration: 2016 - Present
++          when: '2016/..'
+           compact: false   # one-pager: dropped (Cardinal + Household Survival carry the story)
+           about: |
+             A small product shipped to real users: generates calendar feeds for KU Leuven courses, with 1000+ active users.
+@@ -814,23 +814,23 @@ profiles:
+         - title: "PhD, Computational Neuroscience"
+           records: [phd]
+           about: Large-scale time-series & tensor computation
+-          duration: 2018 - 2023
++          when: '2018/2023'
+         - title: "M.Sc. Artificial Intelligence (Cum Laude)"
+           records: [msc-ai]
+           about: Engineering & Computer Science
+-          duration: 2017 - 2019
++          when: '2017/2019'
+         - title: "M.Sc. Computer Science Engineering (ir., Cum Laude)"
+           records: [msc-cs]
+           about: AI & theoretical CS; thesis on algebraic subtyping (type systems / compilers)
+-          duration: 2016 - 2018
++          when: '2016/2018'
+         - title: "Honours Programme, Faculty of Engineering (Research Track)"
+           records: [honours]
+           about: Compiler research - efficient compilation of algebraic effect handlers
+-          duration: 2016 - 2018
++          when: '2016/2018'
+         - title: "B.Sc. Computer Science (Magna Cum Laude)"
+           records: [bsc]
+           about: Physics & general engineering courses
+-          duration: 2013 - 2016
++          when: '2013/2016'
+           compact: false   # one-pager: dropped
+ 
+     teaching:
+@@ -839,20 +839,20 @@ profiles:
+         - title: "Lecturer & Guest Lecturer"
+           records: [bioinformatics-2025-2026, data-science-in-healthcare-4747-lecturer, advanced-topics-in-data-science, brain-computer-interfacing-b-kul-h08m0a-guest-lecturer]
+           location: UHasselt / KU Leuven
+-          duration: 2022 - Present
++          when: '2022/..'
+           about: |
+             Coordinating lecturer in Bioinformatics (UHasselt) and lecturer in Data Science in Healthcare and Advanced Topics in Data Science.
+             Guest lecturer in Brain-Computer Interfacing (KU Leuven, 2022 - 2025).
+         - title: "Student Supervision"
+           records: [msc-supervision-computer-science-2025-2026, student-supervision, phd-daily-supervision-biomedical-sciences-2022-2023, internship-msc-ai-students-2020-2021]
+           location: KU Leuven / UHasselt
+-          duration: 2020 - Present
++          when: '2020/..'
+           about: |
+             Supervised 15+ MSc and PhD students, including theses on compiler optimisation and VM bytecode redesign, tensor methods, and federated learning.
+         - title: "Programming Coach & Outreach"
+           records: [coach-coderdojo, coach-djangogirls]
+           location: CoderDojo, DjangoGirls
+-          duration: 2014 - 2025
++          when: '2014/2025'
+           about: |
+             Taught programming to children and adults (Scratch, Python, Lego Mindstorms) and coached beginners toward confident, independent coding.
+ 
+@@ -863,38 +863,38 @@ profiles:
+           records: [begdc]
+           event: Game development competition
+           location: Brussels
+-          date: "2016"
++          when: 2016
+         - award: "3rd place - ACM SIGPLAN Student Research Competition (ICFP)"
+           records: [icfp-src-2017]
+           event: Programming languages & compilers
+-          date: "2017"
++          when: 2017
+         - award: "3rd place - ACM CHI Student Design Competition"
+           records: [chi-sdc]
+           event: Everyday objects as game controllers
+           location: San Jose, USA
+-          date: "2016"
++          when: 2016
+         - award: "Finalist - Cyber Security Challenge"
+           records: [cyber-security]
+           event: Capture-the-Flag, low-level & systems security
+           location: Brussels
+-          date: "2018"
++          when: 2018
+           compact: false   # one-pager: dropped
+         - award: "FWO Fundamental Research Grant"
+           records: [fwo-grant]
+           event: Research Foundation Flanders
+-          date: "2018"
++          when: 2018
+           compact: false   # one-pager: dropped
+         - award: "Bachelor Award in Computer Science"
+           records: [bachelor-award]
+           event: Examination committee distinction
+           location: UHasselt
+-          date: "2016"
++          when: 2016
+           compact: false   # one-pager: dropped
+         - award: "IELTS Academic - 8.0 / 9.0"
+           records: [ielts]
+           event: English proficiency
+           location: ""
+-          date: "2016"
++          when: 2016
+           compact: false   # one-pager: dropped
+ 
+     letter:
+diff --git a/.oculus/data/academic/education.yml b/.oculus/data/academic/education.yml
+index 8dc050f7c..eb4cd3033 100644
+--- a/.oculus/data/academic/education.yml
++++ b/.oculus/data/academic/education.yml
+@@ -5,9 +5,9 @@ title: Education & Service
+ schema:
+   - { field: key, type: text, primary_key: true, required: true, section: Core, help: "The entry's short name, unique in this file; a write and Edit in File address the entry by it." }
+   - { field: title,    type: text,     display: 1, required: true, section: Core, help: "The name of the course or programme." }
+-  - { field: sub,      type: text,     label: "Subtitle", section: Core, help: "Institution | period" }
++  - { field: sub,      type: text,     label: "Subtitle", section: Core, help: "Institution and role." }
+   - { field: status,   type: select,   options: [ongoing, planned, completed], required: true, section: Core, help: "Whether it is planned, ongoing or completed." }
+-  - { field: date,     type: text,     section: Dates, help: "Year or range, e.g. 2025-2026" }
++  - { field: when, type: period, section: Dates, help: "When it happens: a year, a month, a day or a span, such as 2025-09/2026-09 or 2025/.." }
+   - { field: deadline, type: date,     section: Dates, help: "ISO date; surfaces in the Focus deadline radar" }
+   - { field: meta,     type: metalist, section: Core, help: "Label/value rows" }
+   - { field: tags,     type: tags, section: Core, help: "Words the card is filtered by." }
+@@ -22,7 +22,6 @@ schema:
+   - { field: cv_title,   type: text,     label: "CV title", section: Website, help: "The title the CV prints, when it is not the title." }
+   - { field: cv_url,     type: text,     label: "CV address", section: Website, help: "The address the CV links." }
+   - { field: location,   type: text,     label: "Location", section: Website, help: "Where, as the CV prints it." }
+-  - { field: duration,   type: text,     label: "CV period", section: Website, help: "The period as the CV prints it." }
+   - { field: about,      type: textarea, label: "CV text", section: Website, help: "What the CV prints under it." }
+   - { field: hide,       type: checkbox, label: "Hidden on the CV", section: Website, help: "Kept off the CV while it stays listed." }
+   - field: students
+@@ -33,7 +32,8 @@ schema:
+     fields:
+       - { field: person, type: text, required: true, foreign_key: people, help: "The student, by key." }
+       - { field: topic,  type: text, help: "The topic, as the CV prints it." }
+-      - { field: degree, type: text, help: "The degree and year, as the CV prints them." }
++      - { field: degree, type: text, help: "The degree, as the CV prints it." }
++      - { field: when, type: period, help: "When the student was supervised, where it differs from the entry's." }
+ 
+ entries:
+   - key: msc-supervision-statistics-data-science-2026-2027
+@@ -41,7 +41,7 @@ entries:
+     lead: [axel-faes]
+     sub: "Proposals"
+     status: ongoing
+-    date: "2026-2027"
++    when: '2026/2027'
+     meta:
+       - { label: Students, value: "0" }
+       - { label: Institution, value: "UHasselt" }
+@@ -60,7 +60,7 @@ entries:
+     supervisors: [axel-faes, guichelaar]
+     sub: "University of Twente | thesis market Tue 24 Nov 2026, 12:30-13:30"
+     status: ongoing
+-    date: "2026-2027"
++    when: '2026/2027'
+     deadline: "2026-11-24"
+     meta:
+       - { label: Institution, value: "University of Twente" }
+@@ -78,9 +78,9 @@ entries:
+   - key: bioinformatics-2025-2026
+     title: "Bioinformatics (3740) - Coordinating lecturer"
+     lead: [axel-faes]
+-    sub: "UHasselt | Sept 2025 - Sept 2026"
++    sub: "UHasselt"
+     status: completed
+-    date: "2025-2026"
++    when: '2025-09/2026-09'
+     meta:
+       - { label: Institution, value: "UHasselt" }
+     tags: [teaching]
+@@ -89,14 +89,13 @@ entries:
+     cv_rank: 1
+     cv_title: Bioinformatics (3740) Coordinating lecturer
+     location: UHasselt
+-    duration: Sept. 2025 - Sept. 2026
+ 
+   - key: bioinformatics-2024-2025
+     title: "Bioinformatics (3740) - Coordinating lecturer (2024-2025)"
+     lead: [axel-faes]
+-    sub: "UHasselt | Sept 2024 - Sept 2025"
++    sub: "UHasselt"
+     status: completed
+-    date: "2024-2025"
++    when: '2024-09/2025-09'
+     meta:
+       - { label: Institution, value: "UHasselt" }
+     tags: [teaching]
+@@ -105,14 +104,13 @@ entries:
+     cv_rank: 5
+     cv_title: Bioinformatics (3740) Coordinating lecturer
+     location: UHasselt
+-    duration: Sept. 2024 - Sept. 2025
+ 
+   - key: msc-supervision-computer-science-2025-2026
+     title: "MSc supervision - Computer Science (2025-2026)"
+     lead: [axel-faes]
+     sub: "Brecht Heeren | Denzell Mgbokwere | Robert Rysskin"
+     status: completed
+-    date: "2025-2026"
++    when: '2025/2026'
+     meta:
+       - { label: Students, value: "3" }
+       - { label: Programme, value: "MSc Computer Science" }
+@@ -122,29 +120,28 @@ entries:
+     cv_section: students
+     cv_rank: 1
+     students:
+-      - { person: brecht-heeren, topic: "Federated Machine Learning for Health Data", degree: "Master of Science in Computer Science (2025-2026)" }
+-      - { person: denzell-mgbokwere, topic: "Optimization and Type Checking in Single-Pass Compilers - a Case Study with the Wren Programming Language", degree: "Master of Science in Computer Science (2025-2026)" }
+-      - { person: robert-rysskin, topic: "Redesign of Wren Bytecode - Towards More Efficient Execution and Memory Usage", degree: "Master of Science in Computer Science (2025-2026)" }
++      - { person: brecht-heeren, topic: "Federated Machine Learning for Health Data", degree: "Master of Science in Computer Science" }
++      - { person: denzell-mgbokwere, topic: "Optimization and Type Checking in Single-Pass Compilers - a Case Study with the Wren Programming Language", degree: "Master of Science in Computer Science" }
++      - { person: robert-rysskin, topic: "Redesign of Wren Bytecode - Towards More Efficient Execution and Memory Usage", degree: "Master of Science in Computer Science" }
+ 
+   - key: reader-2026
+     title: "MSc thesis assessor / reader (2026)"
+     lead: [axel-faes]
+     status: completed
+-    date: "2026"
++    when: 2026
+     tags: [service]
+     link: "education/thesis-students-assessor/reader-2026"
+     cv_section: academic
+     cv_rank: 10
+     cv_title: MSc thesis assessor (second reader)
+     location: UHasselt
+-    duration: "2026"
+ 
+   - key: advanced-topics-in-data-science
+     title: "Advanced Topics in Data Science (4569 & 4585) - Lecturer (Federated Learning)"
+     lead: [axel-faes]
+-    sub: "UHasselt | June 2024 - Sept 2025 | teaching-team member"
++    sub: "UHasselt | teaching-team member"
+     status: completed
+-    date: "2024-2025"
++    when: '2024-06/2025-09'
+     meta:
+       - { label: Institution, value: "UHasselt" }
+     tags: [teaching]
+@@ -153,14 +150,13 @@ entries:
+     cv_rank: 4
+     cv_title: Advanced Topics in Data Science (4569 & 4585) Lecturer Federated Learning (teaching team member)
+     location: UHasselt
+-    duration: June 2024 - Sept. 2025
+ 
+   - key: data-science-in-healthcare-4747-lecturer
+     title: "Data Science in Healthcare (4747) - Lecturer"
+     lead: [axel-faes]
+-    sub: "UHasselt | Sept 2025 - Dec 2025 | teaching-team member"
++    sub: "UHasselt | teaching-team member"
+     status: completed
+-    date: "2025"
++    when: '2025-09/2025-12'
+     meta:
+       - { label: Institution, value: "UHasselt" }
+     tags: [teaching]
+@@ -168,14 +164,13 @@ entries:
+     cv_rank: 3
+     cv_title: Data Science in Healthcare (4747) Lecturer (teaching team member)
+     location: UHasselt
+-    duration: Sept. 2025 - Dec. 2025
+ 
+   - key: brain-computer-interfacing-b-kul-h08m0a-guest-lecturer
+     title: "Brain-Computer Interfacing (B-KUL-H08M0A) - Guest lecturer"
+     lead: [axel-faes]
+-    sub: "KU Leuven | 2022-2025"
++    sub: "KU Leuven"
+     status: completed
+-    date: "2022-2025"
++    when: '2022/2025'
+     meta:
+       - { label: Institution, value: "KU Leuven" }
+     tags: [teaching]
+@@ -183,7 +178,6 @@ entries:
+     cv_rank: 9
+     cv_title: Brain-Computer Interfacing (B-KUL-H08M0A) Guest Lecturer
+     location: KU Leuven
+-    duration: 2022-2025
+ 
+   # -- Teaching qualification --------------------------------------------------
+ 
+@@ -192,7 +186,7 @@ entries:
+     lead: [axel-faes]
+     sub: "Basis Kwalificatie Onderwijs | Teacher Professionalization track"
+     status: completed
+-    date: "2025"
++    when: 2025
+     meta:
+       - { label: Stage, value: "completed (2025)" }
+       - { label: Institution, value: "UHasselt" }
+@@ -203,7 +197,6 @@ entries:
+     cv_rank: 2
+     cv_title: BKO (Basic Teaching Qualification) - Teacher Professionalization
+     location: UHasselt
+-    duration: 2025
+ 
+   # -- Student supervision (by cohort) -----------------------------------------
+ 
+@@ -212,7 +205,7 @@ entries:
+     lead: [axel-faes]
+     sub: "Anh Phuong DO (doctoral co-supervisor)"
+     status: completed
+-    date: "2024-2025"
++    when: '2024/2025'
+     meta:
+       - { label: Students, value: "1" }
+       - { label: Programme, value: "Doctoral Program in Sciences, Statistics" }
+@@ -223,14 +216,14 @@ entries:
+     cv_section: students
+     cv_rank: 2
+     students:
+-      - { person: do, topic: "Individual Reference Intervals for Clinical Event Prediction", degree: "Doctoral Program in Sciences, Statistics (co-supervisor, 2024 - 2025)" }
++      - { person: do, topic: "Individual Reference Intervals for Clinical Event Prediction", degree: "Doctoral Program in Sciences, Statistics, co-supervisor" }
+ 
+   - key: msc-supervision-statistics-data-science-2024-2025
+     title: "MSc supervision - Statistics & Data Science (2024-2025)"
+     lead: [axel-faes]
+     sub: "Matteo | Mohsen | Meseret (Kerga)"
+     status: completed
+-    date: "2024-2025"
++    when: '2024/2025'
+     meta:
+       - { label: Students, value: "3" }
+       - { label: Programme, value: "Master of Statistics and Data Science" }
+@@ -242,16 +235,16 @@ entries:
+     cv_section: students
+     cv_rank: 3
+     students:
+-      - { person: matteo, topic: "Estimating Household Wealth in Guyana - Remote Sensing and Convolutional Neural Network Approach", degree: "Master Statistics & Data Science (2024-2025)" }
+-      - { person: mohsen, topic: "AI for time series imputation", degree: "Master Statistics & Data Science (2024-2025)" }
+-      - { person: kerga, topic: "Predicting Cirrhosis Patient Survival Using Machine Learning - A Data-Driven Approach", degree: "Master Statistics & Data Science (2024-2025)" }
++      - { person: matteo, topic: "Estimating Household Wealth in Guyana - Remote Sensing and Convolutional Neural Network Approach", degree: "Master Statistics & Data Science" }
++      - { person: mohsen, topic: "AI for time series imputation", degree: "Master Statistics & Data Science" }
++      - { person: kerga, topic: "Predicting Cirrhosis Patient Survival Using Machine Learning - A Data-Driven Approach", degree: "Master Statistics & Data Science" }
+ 
+   - key: msc-supervision-computer-science-2024-2025
+     title: "MSc supervision - Computer Science (2024-2025)"
+     lead: [axel-faes]
+     sub: "Dongho | Dries | Ward"
+     status: completed
+-    date: "2024-2025"
++    when: '2024/2025'
+     meta:
+       - { label: Students, value: "3" }
+       - { label: Programme, value: "MSc Computer Science" }
+@@ -263,16 +256,16 @@ entries:
+     cv_section: students
+     cv_rank: 4
+     students:
+-      - { person: dongho, topic: "Clustering with Cardiovascular Health Data", degree: "Master of Science in Computer Science (2024-2025)" }
+-      - { person: dries-cornelissen, topic: "BTTR for arrhythmia detection/prediction on sinus rhythms", degree: "Master of Science in Computer Science (2024-2025)" }
+-      - { person: ward, topic: "Cross Subject training for finger movement decoding with high-density ECoG", degree: "Master of Science in Computer Science (2024-2025)" }
++      - { person: dongho, topic: "Clustering with Cardiovascular Health Data", degree: "Master of Science in Computer Science" }
++      - { person: dries-cornelissen, topic: "BTTR for arrhythmia detection/prediction on sinus rhythms", degree: "Master of Science in Computer Science" }
++      - { person: ward, topic: "Cross Subject training for finger movement decoding with high-density ECoG", degree: "Master of Science in Computer Science" }
+ 
+   - key: phd-daily-supervision-biomedical-sciences-2022-2023
+     title: "PhD daily supervision - Biomedical Sciences (2022-2023)"
+     lead: [axel-faes]
+     sub: "Qiang Sun | Eva Calvo Merino"
+     status: completed
+-    date: "2022-2023"
++    when: '2022/2023'
+     meta:
+       - { label: Students, value: "2" }
+       - { label: Programme, value: "Doctoral Program in Biomedical Sciences" }
+@@ -282,15 +275,15 @@ entries:
+     cv_section: students
+     cv_rank: 5
+     students:
+-      - { person: qiang-sun, topic: "Hand exoskeleton dexterity achieved by shared control with a semi-invasive brain-computer interface", degree: "Doctoral Program in Biomedical Sciences (daily supervision 2022-2023)" }
+-      - { person: eva-calvo-merino, topic: "Restoring finger dexterity with an exoskeleton controlled by human intracranial recordings", degree: "Doctoral Program in Biomedical Sciences (daily supervision 2022-2023)" }
++      - { person: qiang-sun, topic: "Hand exoskeleton dexterity achieved by shared control with a semi-invasive brain-computer interface", degree: "Doctoral Program in Biomedical Sciences, daily supervision" }
++      - { person: eva-calvo-merino, topic: "Restoring finger dexterity with an exoskeleton controlled by human intracranial recordings", degree: "Doctoral Program in Biomedical Sciences, daily supervision" }
+ 
+   - key: internship-msc-ai-students-2020-2021
+     title: "Internship & MSc AI students (2020-2021)"
+     lead: [axel-faes]
+     sub: "Aurélie de Borman | Diogo Sousa Morais | Guilherme de Borras Silva | Iris Vantieghem | Didier Quintius"
+     status: completed
+-    date: "2020-2021"
++    when: '2020/2021'
+     meta:
+       - { label: Students, value: "5" }
+       - { label: Programme, value: "Internship / MSc Artificial Intelligence" }
+@@ -300,11 +293,11 @@ entries:
+     cv_section: students
+     cv_rank: 6
+     students:
+-      - { person: aurelie-de-borman, topic: "Investigating the effect of Source Mixing on Directed Connectivity estimated between Simulated Reconstructed EEG Sources", degree: "Internship Student 2021" }
+-      - { person: diogo-sousa-morais, topic: "Estimating the effectiveness of source localized EEG for BCIs", degree: "Internship Student 2021" }
+-      - { person: guilherme-de-borras-silva, topic: "Cluster Permutation Analysis of N-Back related EEG-ERP Data", degree: "Internship Student 2021" }
+-      - { person: iris-vantieghem, topic: "Using Neural Networks to derive Directed Connectivity between Reconstructed EEG Sources", degree: "Master of Science in Artificial Intelligence (2020-2021)" }
+-      - { person: didier-quintius, topic: "Neural Network Approach to the Inverse Problem", degree: "Master of Science in Artificial Intelligence (2020-2021)" }
++      - { person: aurelie-de-borman, topic: "Investigating the effect of Source Mixing on Directed Connectivity estimated between Simulated Reconstructed EEG Sources", degree: "Internship Student", when: 2021 }
++      - { person: diogo-sousa-morais, topic: "Estimating the effectiveness of source localized EEG for BCIs", degree: "Internship Student", when: 2021 }
++      - { person: guilherme-de-borras-silva, topic: "Cluster Permutation Analysis of N-Back related EEG-ERP Data", degree: "Internship Student", when: 2021 }
++      - { person: iris-vantieghem, topic: "Using Neural Networks to derive Directed Connectivity between Reconstructed EEG Sources", degree: "Master of Science in Artificial Intelligence" }
++      - { person: didier-quintius, topic: "Neural Network Approach to the Inverse Problem", degree: "Master of Science in Artificial Intelligence" }
+ 
+   # -- Academic service --------------------------------------------------------
+ 
+@@ -314,7 +307,7 @@ entries:
+     collaborators: [peeters]
+     sub: "Expert in the BIOMED support programme for PhD students (with CenStat)"
+     status: completed
+-    date: "2024"
++    when: 2024
+     meta:
+       - { label: Institution, value: "UHasselt, BIOMED with CenStat" }
+       - { label: Role, value: "Data science expert (machine learning, technical ML lead of the Biomedical Data Sciences group)" }
+@@ -324,7 +317,6 @@ entries:
+     cv_rank: 11
+     cv_title: "Data Science Support for PhD Students (BIOMED), data science expert"
+     location: UHasselt
+-    duration: "2024"
+     note: "A support programme for BIOMED PhD students, introduced at a meet-and-greet (slides of 2024-09-23 in the folder). Experts: Liesbet Peeters, Axel Faes, Ibrahim Hamad (omics bioinformatics), Pieter-Jan Volders (genomics bioinformatics, Jessa), Ward Schrooten (epidemiology, real-world data), with the CenStat consultancy team for statistics. Planned support: a one-stop data science shop with a database of courses, online material and trainings (the spreadsheet in the folder is its empty template), a weekly open office for short questions, and longer one-on-one support with an assigned expert."
+ 
+   - key: guest-associate-editor-frontiers-in-immunology
+@@ -332,7 +324,7 @@ entries:
+     lead: [axel-faes]
+     sub: "Research Topic: Use of Big Data and AI in Multiple Sclerosis"
+     status: completed
+-    date: "2024-2025"
++    when: '2024/2025'
+     meta:
+       - { label: Venue, value: "Frontiers in Immunology" }
+     tags: [service, editorial]
+@@ -340,13 +332,12 @@ entries:
+     cv_rank: 6
+     cv_title: Guest Associate Editor Use of Big Data and Artificial Intelligence in Multiple Sclerosis
+     location: Frontiers in Immunology
+-    duration: "2024 - 2025"
+ 
+   - key: vlaio-baekeland-spin-off-mandates-evaluator
+     title: "VLAIO Baekeland spin-off mandates - Evaluator"
+     lead: [axel-faes]
+     status: completed
+-    date: "2025"
++    when: 2025
+     meta:
+       - { label: Body, value: "VLAIO" }
+     tags: [service]
+@@ -354,14 +345,13 @@ entries:
+     cv_rank: 7
+     cv_title: VLAIO Evaluator for BAEKELAND SPIN OFF MANDATES
+     location: VLAIO
+-    duration: "2025"
+ 
+   - key: student-research-competition-judge-icfp
+     title: "Student Research Competition Judge - ICFP"
+     lead: [axel-faes]
+     sub: "International Conference on Functional Programming"
+     status: completed
+-    date: "2024"
++    when: 2024
+     meta:
+       - { label: Venue, value: "ICFP" }
+     tags: [service]
+@@ -369,73 +359,67 @@ entries:
+     cv_rank: 8
+     cv_title: Student Research Competition Judge (International Conference on Functional Programming)
+     location: ICFP
+-    duration: "2024"
+ 
+   # Tutoring, coaching and student representation ---------------------------
+ 
+   - key: tutoring
+     title: "Mathematics & Natural Sciences Tutor"
+     lead: [axel-faes]
+-    sub: "Freelance | Sept. 2015 - 2024"
++    sub: "Freelance"
+     status: completed
+-    date: "2015-2024"
++    when: '2015-09/2024'
+     tags: [teaching]
+     cv_section: extracurricular
+     cv_rank: 2
+     location: Freelance
+-    duration: Sept. 2015 - 2024
+     about: Supporting high school and university students in mastering mathematics (and other natural sciences) through personalized tutoring
+ 
+   - key: coach-djangogirls
+     title: Coach
+     lead: [axel-faes]
+-    sub: "DjangoGirls | Mar. 2018 - 2024"
++    sub: "DjangoGirls"
+     status: completed
+-    date: "2018-2024"
++    when: '2018-03/2024'
+     tags: [teaching, outreach]
+     cv_section: extracurricular
+     cv_rank: 3
+     location: DjangoGirls
+-    duration: Mar. 2018 - 2024
+     about: Inspire women to fall in love with programming (Python, Django workshops)
+ 
+   - key: coach-coderdojo
+     title: Coach
+     lead: [axel-faes]
+-    sub: "CoderDojo (UHasselt, PXL) | Sep. 2014 - 2025"
++    sub: "CoderDojo (UHasselt, PXL)"
+     status: completed
+-    date: "2014-2025"
++    when: '2014-09/2025'
+     tags: [teaching, outreach]
+     cv_section: extracurricular
+     cv_rank: 4
+     location: CoderDojo (UHasselt, PXL)
+-    duration: Sep. 2014 - 2025
+     about: Teach children programming (Scratch, Python, Minecraft and Lego mindstorm).
+ 
+   - key: student-representative-kuleuven
+     title: Student Representative
+     lead: [axel-faes]
+-    sub: "KU Leuven | Sep. 2017 - Sep. 2018"
++    sub: "KU Leuven"
+     status: completed
+-    date: "2017-2018"
++    when: '2017-09/2018-09'
+     tags: [service]
+     cv_section: extracurricular
+     cv_rank: 5
+     location: KU Leuven
+-    duration: Sep. 2017 - Sep. 2018
+     about: "POC (Education Committee) of Master Computer Science Engineering, \nPOC (Education Committee) of Advanced Master Artificial Intelligence, \nMember of Departmental council of Computer Science, Department board of Computer Science and Faculty council of Engineering Science\n"
+ 
+   - key: student-council-stura-uhasselt
+     title: Student Council Member
+     lead: [axel-faes]
+-    sub: "StuRa UHasselt | Mar. 2015 - Aug. 2016"
++    sub: "StuRa UHasselt"
+     status: completed
+-    date: "2015-2016"
++    when: '2015-03/2016-08'
+     tags: [service]
+     cv_section: extracurricular
+     cv_rank: 6
+     location: StuRa UHasselt
+-    duration: Mar. 2015 - Aug. 2016
+     about: |
+       Member of Board of Education, Faculty Council. Board of Student Facilities, Diversity Commission,
+       Temporary representative in VVS (Flemish Union of Students)
+@@ -443,14 +427,13 @@ entries:
+   - key: student-representative-uhasselt
+     title: Student Representative
+     lead: [axel-faes]
+-    sub: "UHasselt | Sep. 2013 - Jul. 2016"
++    sub: "UHasselt"
+     status: completed
+-    date: "2013-2016"
++    when: '2013-09/2016-07'
+     tags: [service]
+     cv_section: extracurricular
+     cv_rank: 7
+     location: UHasselt
+-    duration: Sep. 2013 - Jul. 2016
+     about: "Representing students interests in a Computer Science education context. \nRepresenting Computer Science education for high school students\n"
+ 
+   # -- Thesis-proposal submissions (UHasselt, 2026-2027) -----------------------
+@@ -526,7 +509,7 @@ entries:
+     lead: [axel-faes]
+     sub: "UHasselt | submit Apr 2027 | not obligatory"
+     status: planned
+-    date: "2027"
++    when: 2027
+     deadline: "2027-04-30"
+     meta:
+       - { label: Institution, value: "UHasselt" }
+diff --git a/.oculus/data/academic/events.yml b/.oculus/data/academic/events.yml
+index ee4af7634..79061b91b 100644
+--- a/.oculus/data/academic/events.yml
++++ b/.oculus/data/academic/events.yml
+@@ -8,7 +8,7 @@ schema:
+   - { field: sub,      type: text,     label: "Subtitle", section: Core, help: "A second line under the title, such as the place." }
+   - { field: role,     type: select,   options: [present, co-present, attend, media], required: true, section: Core, help: "present = a talk/poster I give (feeds 'Disseminated in'); co-present = a co-author gives it and I do not; attend = attending only; media = an article or a video about my work" }
+   - { field: status,   type: select,   options: [upcoming, planned, completed, cancelled, not-attending], required: true, section: Core, help: "Whether the event is upcoming, planned, completed, cancelled or not attended." }
+-  - { field: date,     type: text, section: Dates, help: "When the event takes place, as text." }
++  - { field: when, type: period, section: Dates, help: "When it happens: a year, a month, a day or a span, such as 2025-09/2026-09 or 2025/.." }
+   - { field: deadline, type: date,     section: Dates, help: "ISO date; shows on the Focus radar while live" }
+   - { field: meta,     type: metalist, section: Core, help: "Label and value rows shown on the card." }
+   - { field: tags,     type: tags, section: Core, help: "Words the card is filtered by." }
+@@ -23,7 +23,6 @@ schema:
+   - { field: cv_title,   type: text,     label: "CV title", section: Website, help: "The title the CV prints, when it is not the title." }
+   - { field: cv_url,     type: text,     label: "CV address", section: Website, help: "The address the CV links." }
+   - { field: location,   type: text,     label: "Location", section: Website, help: "Where, as the CV prints it." }
+-  - { field: duration,   type: text,     label: "CV period", section: Website, help: "When, as the CV prints it." }
+   - { field: about,      type: textarea, label: "CV text", section: Website, help: "What the CV prints under it." }
+   - { field: hide,       type: checkbox, label: "Hidden on the CV", section: Website, help: "Kept off the CV while it stays listed." }
+ 
+@@ -35,7 +34,6 @@ entries:
+     sub: "Applied cryptography research institute"
+     status: planned
+     meta:
+-      - { label: When, value: "not scheduled" }
+       - { label: Host, value: "3MI Labs (https://www.3milabs.tech/)" }
+       - { label: Type, value: talk }
+     tags: [talk]
+@@ -52,16 +50,14 @@ entries:
+     cv_rank: 1
+     cv_title: "Federate What Transfers: Component-Aware Federation of Self-Supervised Backbones for Longitudinal 3D MRI"
+     location: IEEE FLTA (International Conference on Federated Learning Technologies and Applications)
+-    duration: 2026
++    when: '2026-10-27/2026-10-30'   # 27-30 Oct 2026, Paris, submission deadline was 2026-07-01 (on funding/projects)
+     status: completed
+-    date: "2026-10-29"   # 27-30 Oct 2026, Paris, submission deadline was 2026-07-01 (on funding/projects)
+     meta:
+-      - { label: When, value: "27-30 Oct 2026" }
+       - { label: Where, value: "Paris, France" }
+       - { label: Type, value: "conference (HCCNet-FL target)" }
+     tags: [federated, conference]
+     related: [hccnet-fl]
+-    note: "Where HCCNet-FL targets. The submission deadline (2026-07-01) drives the ticker via the project line; this entry tracks attending/presenting (if accepted) at the conference itself."
++    note: "Where HCCNet-FL targets. The submission deadline (2026-07-01) drives the ticker via the project line; this entry tracks attending/presenting (if accepted) at the conference itself. On 2026-10-29."
+ 
+   - key: mentoring-trajectory-info-session
+     title: "Info session mentoring trajectory: academic and civic track"
+@@ -69,9 +65,8 @@ entries:
+     role: present
+     sub: "Doctoral Schools | online (Teams)"
+     status: completed
+-    date: "2026-10-27"
++    when: '2026-10-27T11:00:00'
+     meta:
+-      - { label: When, value: "27 Oct 2026, 11:00" }
+       - { label: Where, value: "Online (Teams, link in the calendar placeholder)" }
+       - { label: Host, value: "Rosanne Ceuppens (Doctoral Schools)" }
+       - { label: Type, value: "testimonial, mentee in the academic track 2025, 11:40" }
+@@ -86,15 +81,14 @@ entries:
+     status: planned
+     snooze: 2027-01-08
+     sub: "HCC cross-hospital federation with Mattias Ekstedt"
+-    date: "2027-03-01"   # March 2027 (exact day TBC)
++    when: '2027-03'   # March 2027 (exact day TBC)
+     meta:
+-      - { label: When, value: "March 2027 (day TBC)" }
+       - { label: Where, value: "Linköping University, Sweden" }
+       - { label: Host, value: "Mattias Ekstedt (hepatology)" }
+       - { label: Type, value: "research visit" }
+     tags: [hcc, federated, visit, sweden]
+     related: [hccnet-fl-sweden]
+-    note: "Site visit for the real cross-hospital HCC federation (Twente NL + Linköping SE), the HCCNet FL-Sweden line, with Mattias Ekstedt. Pin the exact November day when set."
++    note: "Site visit for the real cross-hospital HCC federation (Twente NL + Linköping SE), the HCCNet FL-Sweden line, with Mattias Ekstedt. Pin the exact November day when set. Day to be confirmed."
+ 
+   - key: graz-bci-conference-2026
+     title: "Graz BCI Conference 2026"
+@@ -103,9 +97,8 @@ entries:
+     role: co-present
+     sub: "Finger-abduction ECoG paper - accepted / to appear"
+     status: not-attending
+-    date: "2026-09-14"
++    when: '2026-09-14/2026-09-18'
+     meta:
+-      - { label: When, value: "14-18 Sep 2026" }
+       - { label: Where, value: "Graz, Austria" }
+       - { label: Type, value: "conference (co-author presents; Axel NOT attending)" }
+     tags: [bci, ecog, conference]
+@@ -121,9 +114,8 @@ entries:
+     cv_rank: 4
+     cv_title: Federated Learning for Healthcare - From Brain-Computer Interfaces to Disease Prediction
+     location: IEEE FLTA (International Conference on Federated Learning Technologies and Applications)
+-    duration: 2025
++    when: 2025
+     status: completed
+-    date: "2025"
+     meta:
+       - { label: Event, value: "FLTA 2025 - Federated Learning: Theory & Applications" }
+       - { label: Type, value: presentation }
+@@ -141,9 +133,8 @@ entries:
+     cv_rank: 3
+     cv_title: Optimizing Federated Block-Term Tensor Regression - Strategy Comparisons and Applications
+     location: Symposium on Federated Learning and Intelligent Computing Systems (FLICS)
+-    duration: 2025
++    when: 2025
+     status: completed
+-    date: "2025"
+     meta:
+       - { label: Event, value: "FLLM 2025" }
+       - { label: Type, value: presentation }
+@@ -157,7 +148,7 @@ entries:
+     role: present
+     sub: "Hospital pitch"
+     status: completed
+-    date: "2024"
++    when: 2024
+     meta:
+       - { label: Venue, value: "Inkendaal (hospital)" }
+       - { label: Type, value: pitch }
+@@ -171,161 +162,147 @@ entries:
+     lead: [axel-faes]
+     role: present
+     status: completed
+-    date: "2026"
++    when: 2026
+     related: [hcc-modality-poster]
+     cv_section: news
+     cv_rank: 2
+     location: 4th XAI-NL Meet-Up
+-    duration: 2026
+ 
+   - key: ohdsi-europe-2025
+     title: OHDSI Europe Symposium 2025
+     lead: [axel-faes]
+     role: present
+     status: completed
+-    date: "2025"
++    when: 2025
+     cv_section: news
+     cv_rank: 5
+     location: OHDSI Europe Symposium
+-    duration: 2025
+ 
+   - key: guest-lecture-kuleuven-2025
+     title: Guest Lecture "Federated Finger movement decoding - brain-computer interfacing"
+     lead: [axel-faes]
+     role: present
+     status: completed
+-    date: "2025"
++    when: 2025
+     cv_section: news
+     cv_rank: 6
+     location: KULeuven
+-    duration: 2025
+ 
+   - key: fair-research-day-2024
+     title: Use Case - Real-World Evidence
+     lead: [axel-faes]
+     role: present
+     status: completed
+-    date: "2024"
++    when: 2024
+     cv_section: news
+     cv_rank: 7
+     location: Flanders Artificial Intelligence Research Program (FAIR) Research Day
+-    duration: 2024
+ 
+   - key: fair-rwe-kickoff-2024
+     title: FAIR Use Case Real World Evidence Kick-off Event
+     lead: [axel-faes]
+     role: present
+     status: completed
+-    date: "2024"
++    when: 2024
+     cv_section: news
+     cv_rank: 8
+     location: Flanders Artificial Intelligence Research Program (FAIR)
+-    duration: 2024
+ 
+   - key: mindseed-2023
+     title: Decoding finger movements from invasive recordings in human motor cortex
+     lead: [axel-faes]
+     role: present
+     status: completed
+-    date: "2023"
++    when: 2023
+     cv_section: news
+     cv_rank: 9
+     cv_url: "https://www.ntxl.org/mindseed"
+     location: Mindseed event Leuven, NeuroTech Leuven
+-    duration: 2023
+ 
+   - key: guest-lecture-kuleuven-2023
+     title: Guest Lecture "Finger movement decoding - brain-computer interfacing"
+     lead: [axel-faes]
+     role: present
+     status: completed
+-    date: "2023"
++    when: 2023
+     cv_section: news
+     cv_rank: 10
+     location: KULeuven
+-    duration: 2023
+ 
+   - key: humanities-vs-sciences-2022
+     title: Coordinated Finger Movements Predicted from Intracranial Brain Activity
+     lead: [axel-faes]
+     role: present
+     status: completed
+-    date: "2022"
++    when: 2022
+     cv_section: news
+     cv_rank: 11
+     cv_url: /publications/other/hum-vs-sciences.pdf
+     location: "International Congress Humanities vs Sciences & the Knowledge Accelerating in Modern World: Parallels an Interaction,"
+-    duration: 2022
+ 
+   - key: ae-expo-2022
+     title: BCI demo - Advanced Engineering, Antwerp Expo
+     lead: [axel-faes]
+     role: present
+     status: completed
+-    date: "2022"
++    when: 2022
+     cv_section: news
+     cv_rank: 12
+     cv_url: "https://www.ae-expo.be/en/"
+     location: AI Flanders, Flanders Industry 4.0
+-    duration: 2022
+ 
+   - key: guest-lecture-kuleuven-2022
+     title: Guest Lecture "Decoding single and coordinated finger actions from intracranial brain activity"
+     lead: [axel-faes]
+     role: present
+     status: completed
+-    date: "2022"
++    when: 2022
+     cv_section: news
+     cv_rank: 13
+     location: KULeuven
+-    duration: 2022
+ 
+   - key: leuven-ai-workshop-2022
+     title: "Finger abduction trajectory prediction from high-density ECoG"
+     lead: [axel-faes]
+     role: present
+     status: completed
+-    date: "2022"
++    when: 2022
+     related: [abduction]
+     cv_section: news
+     cv_rank: 14
+     location: Leuven AI Scientific Workshop
+-    duration: 2022
+ 
+   - key: science-for-peace-2021
+     title: Decoding single and coordinated finger actions from intracranial brain activity.
+     lead: [axel-faes]
+     role: present
+     status: completed
+-    date: "2021"
++    when: 2021
+     cv_section: news
+     cv_rank: 15
+     location: XIV World Scientific Congress - SCIENCE FOR PEACE Modern Science, Global and Regional Theory and Practice
+-    duration: 2021
+ 
+   - key: guest-lecture-kuleuven-2021
+     title: Guest Lecture "Finger Movement Decoding - From Source-Localisation to Tensor Regression Modelling"
+     lead: [axel-faes]
+     role: present
+     status: completed
+-    date: "2021"
++    when: 2021
+     cv_section: news
+     cv_rank: 16
+     location: KULeuven
+-    duration: 2021
+ 
+   - key: volga-neuroscience-meeting-2021
+     title: Reconstructing single finger trajectories from intracranial brain activity
+     lead: [axel-faes]
+     role: present
+     status: completed
+-    date: "2021"
++    when: 2021
+     related: [volga-finger-trajectories]
+     cv_section: news
+     cv_rank: 17
+     cv_url: /publications/abstracts/VNM2021.pdf
+     location: III International Conference "Volga Neuroscience Meeting 2021"
+-    duration: 2021
+     about: |
+       Leading scientists from all over the world will meet together to discuss topical problems in the field of neuroscience and artificial intelligence. The conference is organized by Lobachevsky State University of Nizhny Novgorod (UNN).
+ 
+@@ -334,58 +311,53 @@ entries:
+     lead: [axel-faes]
+     role: present
+     status: cancelled
+-    date: "2021"
++    when: 2021
+     cv_section: news
+     cv_rank: 18
+     location: Technopolis (canceled due to the COVID-19 situation)
+-    duration: 2021
+ 
+   - key: mindspeller-concert-2019
+     title: Presentation "'MINDSPELLER' Medical Research Project on Brain Computer Interfaces" and concert (with Tigran Maytesian and his Mind Speller Chamber Orchestra)
+     lead: [axel-faes]
+     role: present
+     status: completed
+-    date: "2019"
++    when: 2019
+     cv_section: news
+     cv_rank: 19
+     location: Cathedral of St. Michael and St. Gudula, Brussels
+-    duration: 2019
+ 
+   - key: kuleuven-news-bronze-medal-2017
+     title: Honours student Axel Faes wins bronze medal in ACM SIGPLAN
+     lead: [axel-faes]
+     role: media
+     status: completed
+-    date: "2017"
++    when: 2017
+     related: [icfp-src-abstract]
+     cv_section: news
+     cv_rank: 20
+     cv_url: "http://wms.cs.kuleuven.be/cs/nieuws/honours-student-axel-faes-wins-bronze-model-in-acm-sigplan"
+     location: KU Leuven, Department of Computer Science
+-    duration: 2017
+ 
+   - key: dtai-news-bronze-medal-2017
+     title: Student Axel Faes wins bronze medal in the ACM SIGPLAN Student Research Competition in ICFP conference
+     lead: [axel-faes]
+     role: media
+     status: completed
+-    date: "2017"
++    when: 2017
+     related: [icfp-src-abstract]
+     cv_section: news
+     cv_rank: 21
+     cv_url: "https://dtai.cs.kuleuven.be/news/student-axel-faes-wins-bronze-medal-acm-sigplan-student-research-competition-icfp-conference"
+     location: KU Leuven, Department of Computer Science, DTAI
+-    duration: 2017
+ 
+   - key: chi-2016-video
+     title: Purpose-Centric Appropriation of Everyday Objects as Game Controllers
+     lead: [axel-faes]
+     role: media
+     status: completed
+-    date: "2016"
++    when: 2016
+     related: [chi-purpose-centric]
+     cv_section: news
+     cv_rank: 22
+     cv_url: "https://www.youtube.com/watch?v=Q4_rK2upGEY"
+     location: ACM SIGCHI
+-    duration: 2016
+diff --git a/.oculus/data/academic/funding.yml b/.oculus/data/academic/funding.yml
+index f999e22e0..932962c29 100644
+--- a/.oculus/data/academic/funding.yml
++++ b/.oculus/data/academic/funding.yml
+@@ -5,11 +5,11 @@ title: Funding
+ schema:
+   - { field: key,       type: text, primary_key: true, required: true, section: Core, help: "Cross-link anchor (the funding: tag on manifests)" }
+   - { field: title,     type: text,     display: 1, required: true, section: Core, help: "The name of the funding scheme or application." }
+-  - { field: sub,       type: text,     label: "Subtitle", section: Core, help: "Scheme | role | period" }
++  - { field: sub,       type: text,     label: "Subtitle", section: Core, help: "Scheme or role." }
+   - { field: funder,    type: select,   foreign_key: organisations, section: Core, help: "The organisation that funds the scheme, as a key of organisations.yml." }
+   - { field: award,     type: text,     section: Core, help: "The funder's number of the award, which a Zenodo deposit names with the title." }
+   - { field: status,    type: select,   options: [in-prep, planned, submitted, contributing, awarded, rejected, withdrawn, stopped], required: true, section: Core, help: "Where the scheme stands, from in-prep to awarded or rejected; withdrawn is pulled after submission, stopped is preparation ended before submission." }
+-  - { field: date,      type: text,     section: Dates, help: "Year or range" }
++  - { field: when, type: period, section: Dates, help: "When it happens: a year, a month, a day or a span, such as 2025-09/2026-09 or 2025/.." }
+   - { field: deadline,  type: date,     section: Dates, help: "ISO date; shows on the Focus radar while live" }
+   - { field: meta,      type: metalist, section: Core, help: "Label and value rows shown on the card." }
+   - { field: tags,      type: tags, section: Core, help: "Words the card is filtered by." }
+@@ -27,7 +27,6 @@ schema:
+   - { field: cv_status,  type: text,     label: "CV status", section: Website, help: "The status the CV prints for the grant." }
+   - { field: role,       type: text,     label: "CV role", section: Website, help: "Your role as the CV prints it." }
+   - { field: location,   type: text,     label: "Location", section: Website, help: "Where, as the CV prints it." }
+-  - { field: duration,   type: text,     label: "CV period", section: Website, help: "The period as the CV prints it." }
+   - { field: about,      type: textarea, label: "CV text", section: Website, help: "What the CV prints under it." }
+   - { field: hide,       type: checkbox, label: "Hidden on the CV", section: Website, help: "Kept off the CV while it stays listed." }
+ 
+@@ -37,7 +36,7 @@ entries:
+     lead: [axel-faes]
+     sub: "Belgian host; alternative to the NL track (not an addition)"
+     status: in-prep
+-    date: "2026"
++    when: 2026
+     deadline: "2026-11-17"   # 17 Nov 2026, 5pm CET (Oct 2027 start); verified against the FWO 2026 call info session
+     link: "funding/2026-fwo-senior-transplant"
+     meta:
+@@ -54,7 +53,7 @@ entries:
+     lead: [axel-faes]
+     sub: "Host candidate Geert Meyfroidt (Intensive Care Medicine, UZ/KU Leuven); stopped"
+     status: stopped
+-    date: "2026"
++    when: 2026
+     link: "funding/2026-fwo-senior-stopped-meyfroidt"
+     meta:
+       - { label: Scheme, value: "FWO Senior postdoc, same call as 2026-fwo-senior-transplant" }
+@@ -67,7 +66,7 @@ entries:
+     lead: [axel-faes]
+     sub: "Host candidate Ingeborg Stalmans with Jan Van Eijgen (ophthalmology / retinal AI, UZ/KU Leuven); stopped"
+     status: stopped
+-    date: "2026"
++    when: 2026
+     link: "funding/2026-fwo-senior-stopped-stalmans"
+     meta:
+       - { label: Scheme, value: "FWO Senior postdoc, same call as 2026-fwo-senior-transplant" }
+@@ -85,11 +84,10 @@ entries:
+     cv_url: ""
+     cv_status: "Submitted, decision pending"
+     role: Applicant
+-    duration: 2026
++    when: 2026
+     about: |
+       Funder: NWO, Veni scheme (pre-proposal)
+     status: submitted
+-    date: "2026"
+     deadline: "2026-09-01"   # pre-proposal (~1 Sep); full proposal ~late Jan 2027
+     meta:
+       - { label: Scheme, value: "NWO Veni - personal grant" }
+@@ -110,11 +108,10 @@ entries:
+     cv_url: ""
+     cv_status: "Submitted, decision pending"
+     role: Applicant
+-    duration: 2026
++    when: 2026
+     about: |
+       Funder: NWO, Open Competition Domain Science XS (ENW-XS), Life Sciences cluster
+     status: submitted
+-    date: "2026"
+     deadline: "2026-10-20"   # assessor duty: assessment form due 14:00 CEST or the own proposal is withdrawn; call deadline (package 26-3) was 15 Sep, submitted 14 Sep; decision expected 19 Nov 2026
+     meta:
+       - { label: Scheme, value: "NWO ENW-XS - €50k" }
+@@ -135,7 +132,7 @@ entries:
+     cv_title: "Use Case Real World Evidence - Flanders AI Research Program"
+     cv_url: ""
+     role: Scientific Coordinator
+-    duration: 2024 - Jan. 2026
++    when: '2024/2026-01'
+     about: |
+       Role: Scientific coordinator (UHasselt) and AI Researcher
+       Team: approx. 10 researchers across 4 institutions
+@@ -153,7 +150,7 @@ entries:
+     lead: [axel-faes]
+     sub: "UTwente x MST / ZGT / Deventer - tech-clinical collaboration voucher"
+     status: planned
+-    date: "2026"
++    when: 2026
+     meta:
+       - { label: Scheme, value: "Innovation voucher (PIHC)" }
+       - { label: Funder, value: "UTwente | Saxion | MST | ZGT | Deventer Hospital" }
+@@ -167,7 +164,7 @@ entries:
+     lead: [axel-faes]
+     sub: "Curiosity-driven frontier research (~€1.5M / 5 yr)"
+     status: planned
+-    date: "2027"
++    when: 2027
+     deadline: "2027-10-13"   # the ERC-2028-STG call (~Oct 2027, TBC), SKIP the Oct-2026 call, submit in 2027
+     meta:
+       - { label: Scheme, value: "ERC StG - ERC-2028-STG (target Oct 2027)" }
+@@ -187,7 +184,7 @@ entries:
+     cv_title: "AI-HCC: Predicting the Development of Primary Liver Cancer Using the AI-HCC Model - ZonMw"
+     cv_url: ""
+     role: Postdoctoral Researcher
+-    duration: 2026 - Current
++    when: '2026/..'
+     about: |
+       Role: Postdoctoral researcher (University of Twente / Medisch Spectrum Twente)
+       Funder: ZonMw, The Netherlands Organisation for Health Research and Development
+@@ -207,7 +204,7 @@ entries:
+     award: "1157019N"
+     sub: "Finger movement decoding: from source-localisation to graph-based regression modelling"
+     status: awarded
+-    date: "2018"
++    when: 2018
+     location: Belgium
+     about: >
+       FWO fundamental research grant for the project "Finger movement decoding: From source-localisation to graph-based regression modelling"
+@@ -226,13 +223,12 @@ entries:
+     lead: [axel-faes]
+     sub: "Federated Learning for Population Health Management"
+     status: rejected
+-    date: "2025"
++    when: '2025/..'
+     cv_section: projects
+     cv_rank: 1
+     cv_title: "Federated Learning for Population Health Management (FL4PHM)"
+     cv_url: ""
+     role: Co-supervisor
+-    duration: 2025 - Current
+     hide: true
+     about: |
+       FWO Senior Research Project (2025)
+@@ -255,7 +251,7 @@ entries:
+     award: "1220324N"
+     sub: "Sign Language Alphabet decoding from intracranial brain activity"
+     status: rejected
+-    date: "2022"
++    when: 2022
+     meta:
+       - { label: Scheme, value: "FWO postdoctoral fellowship junior" }
+       - { label: Decision, value: "July 2023" }
+@@ -271,7 +267,7 @@ entries:
+     award: "12A5026N"
+     sub: "Federated Enhanced Regression and Medical Analytics with Tensors"
+     status: rejected
+-    date: "2024"
++    when: 2024
+     meta:
+       - { label: Scheme, value: "FWO postdoctoral fellowship junior" }
+       - { label: Decision, value: "June 2025" }
+@@ -284,7 +280,7 @@ entries:
+     lead: [axel-faes]
+     sub: "Consortium partner (UHasselt): health data re-use and federated analyses"
+     status: contributing
+-    date: "2023-2025"
++    when: '2023/2025'
+     tags: [federated, health]
+     note: "A funded programme contributed to as a consortium partner, not an own grant."
+     statement: 'This work was supported by the Research Foundation - Flanders (FWO) for ELIXIR Belgium (I000323N).'
+@@ -292,5 +288,4 @@ entries:
+     cv_rank: 4
+     cv_url: ""
+     role: Consortium Partner
+-    duration: 2023 - 2025
+     about: "Role: Consortium partner (UHasselt), focusing on health data re-use and federated analyses  \nCollaborations: KU Leuven (Yves Moreau), University of Antwerp (Geert Vandeweyer), VIB (Frederik Coppens)  \nContext: ELIXIR Belgium is part of ELIXIR Europe, an ESFRI initiative funded by the European Commission and national agencies\n"
+diff --git a/.oculus/data/academic/leads.yml b/.oculus/data/academic/leads.yml
+index 8d9bf1885..4fa22d949 100644
+--- a/.oculus/data/academic/leads.yml
++++ b/.oculus/data/academic/leads.yml
+@@ -64,8 +64,10 @@ schema:
+   - { field: fit, label: "Fit", type: textarea, section: Core, help: "How the position fits the hub owner's work." }
+   - { field: status, label: "Status", type: select, options: [open, applied, declined], section: Core, help: "Whether the lead is open, applied for or declined." }
+   - { field: date, label: "Date", type: date, section: Dates, help: "The day the scout found the lead." }
+-  - { field: deadline, label: "Deadline", type: text, section: Dates, help: "The deadline as the posting words it." }
++  - { field: deadline, label: "Deadline", type: date, section: Dates, help: "The deadline, a day." }
++  - { field: rolling, label: Rolling, type: checkbox, section: Dates, help: "Applications are read as they arrive, with or without a deadline." }
+   - { field: url, label: "URL", type: text, section: Core, help: "The link to the posting." }
++  - { field: note, label: Note, type: textarea, section: Content, help: "Notes on the posting." }
+ 
+ entries:
+   - title: "Bioinformatician"
+@@ -76,7 +78,7 @@ entries:
+     fit: "**moderate** - a clinical omics role in a university hospital with a different method emphasis: pipelines and validation first, research as a possibility. Asks a PhD or 4 years of bioinformatics work and hands-on omics analysis in R or Python, plus workflow and container tools. Permanent contract."
+     status: declined
+     date: 2026-11-02
+-    deadline: "not stated (listed 2026-11-02)"
++    note: "Deadline as posted: not stated (listed 2026-11-02)."
+     url: "https://www.uzbrusselwerkt.be/vacatures/viewjob/402972"
+   - title: "Academique en Optimization and Learning for Data-Driven Decision systems"
+     inst: "UCLouvain, Louvain School of Management and LIDAM, ref. 38690 / LSM 067 / 2027"
+@@ -86,8 +88,9 @@ entries:
+     fit: "**reach** - the ML hook is real, but the core is optimization in a business school with no health line. Asks a PhD in operations research, applied mathematics, systems engineering, computer science or a close quantitative field. Teaching in English and French. Starts 2027-09-01."
+     status: declined
+     date: 2026-11-02
+-    deadline: "2026-11-05 (12:00 UTC+1)"
++    deadline: '2026-11-05'
+     url: "https://jobs.uclouvain.be/PersonnelAcademique/job/Un%C2%B7e-acad%C3%A9mique-en-Optimization-and-Learning-for-Data-Driven-Decision-systems/1433460233/"
++    note: "Deadline as posted: 12:00 UTC+1."
+   - title: "Postdoc Position: Usable Privacy-Enhancing Technologies and Attribute-Based Identity Wallet Technology"
+     inst: "Radboud University, Nijmegen, REAL-PETS project"
+     country: NL
+@@ -166,7 +169,7 @@ entries:
+     fit: "**reach** - multimodal integration and ML on multi-omics in a neurodegeneration setting is the hook, but the core is regulatory genomics. Caveats: asks solid experience with single-cell analysis, gene regulatory mechanisms and 3D chromatin organization, which the profile does not show; no deadline stated in the advert (posted 30 October 2026)."
+     status: declined
+     date: 2026-11-02
+-    deadline: "not stated (posted 2026-10-30, start February 2027)"
++    note: "Deadline as posted: not stated (posted 2026-10-30, start February 2027)."
+     url: "https://jobs.vib.be/j/138263/postdoctoral-position-in-the-computational-neurobiology-lab"
+   - title: "Postdoctoraal onderzoeker / universitair docent Revalidatie"
+     inst: "Erasmus MC (University Medical Center Rotterdam), Department of Rehabilitation Medicine (contact Prof. dr. Gerard Ribbers)"
+@@ -256,8 +259,10 @@ entries:
+     fit: "**reach** - one hook through EEG and multi-omics data analysis (the computational-neuroscience heritage of the profile), but the core is statistical genetics and consortium coordination rather than AI methods; neural networks are named as an advantage only. Caveats: asks a PhD in imaging genetics, genetic epidemiology, neuroscience or biological psychology with Bash, Python or R scripting and no stated years of experience; only a 12-month contract; applications are reviewed on a rolling basis and the post may close early; internal candidates are prioritised on equal suitability."
+     status: declined
+     date: 2026-10-17
+-    deadline: "2026-11-05 (rolling review, may close early)"
++    deadline: '2026-11-05'
+     url: "https://www.academictransfer.com/en/jobs/364794/postdoc-position-in-imaging-genetics/"
++    rolling: true
++    note: "Deadline as posted: rolling review, may close early."
+   - title: "Assistant Professor in Predictive Brain Processes"
+     inst: "Maastricht University, Department of Cognitive Neuroscience, Faculty of Psychology and Neuroscience (FPN)"
+     country: NL
+@@ -306,8 +311,10 @@ entries:
+     fit: "**reach** - multi-layer omics integration and predictive modelling with ML or AI preferred, but fundamental and synthetic biology with no health or clinical framing. Caveat: asks a PhD in computational biology, bioinformatics, genomics or computer science with large-dataset integration experience; closes 15-12-2026 or when filled."
+     status: declined
+     date: 2026-10-14
+-    deadline: "2026-12-15 (or until filled)"
++    deadline: '2026-12-15'
+     url: "https://jobs.vib.be/j/138005/post-doc-in-computational-genomics-and-high-throughput-genome-editing"
++    rolling: true
++    note: "Deadline as posted: or until filled."
+   - title: "Doctor-assistent vakgroep Data-analyse en wiskundige modellering (BioML)"
+     inst: "Ghent University, Faculty of Bioscience Engineering, Department of Data Analysis and Mathematical Modelling, BioML group"
+     country: BE
+@@ -396,7 +403,7 @@ entries:
+     fit: "**moderate** - ML on high-dimensional biomedical omics data with a causal and probabilistic emphasis, in the VIB.AI setting; the method focus (causal inference on perturbation screens) differs from the tensor, federated and imaging core. Caveat: the call is shared with PhD candidates and no closing date is stated."
+     status: declined
+     date: 2026-09-21
+-    deadline: "not stated (posted 2026-09-18)"
++    note: "Deadline as posted: not stated (posted 2026-09-18)."
+     url: "https://jobs.vib.be/j/137660"
+   - title: "Postdoc Position in AI Foundation Models for Crop Microbiomes"
+     inst: "Utrecht University, AI Technology for Life and Plant-Microbe Interactions"
+@@ -556,8 +563,9 @@ entries:
+     fit: "**strong** - multimodal and multi-omics integration IS his method line (fed-multicellular immune tensor, covert-vfl-bttr, raw-pls), and the disease areas overlap his oncology and neuro work. A method-first biomedical-AI role with no clinical-degree requirement. Caveat: 24 months, and the group frames the work as integrative analysis rather than methodological innovation, so the tensor and interpretability angle would have to be argued in the letter"
+     status: declined
+     date: 2026-08-27
+-    deadline: "rolling (open)"
++    rolling: true
+     url: "https://www.lih.lu/en/job/?value=JA/PD0426/VD/BIOINFO"
++    note: "Deadline as posted: rolling (open)."
+   - title: "Postdoc in health-data harmonization and analysis"
+     inst: "University of Luxembourg (Luxembourg Centre for Systems Biomedicine LCSB, Clinical and Translational Informatics group, Dr Venkata Satagopam)"
+     country: LU
+@@ -566,7 +574,7 @@ entries:
+     fit: "**strong** - federated privacy-preserving clinical-data infrastructure across cancer and neuro cohorts is the exact overlap of his covert-vfl-bttr, hccnet-fl-network and fed-multicellular lines, with the clinician-facing interdisciplinary shape he targets. Caveats: the advertised profile is infrastructure-and-standards heavy (OMOP/FHIR engineering) rather than model-methods, so the ML contribution would need arguing; and the deadline is UNVERIFIED, see the note in the log before spending effort on it"
+     status: declined
+     date: 2026-08-27
+-    deadline: "not stated (published 2026-08-20; unverified, see log)"
++    note: "Deadline as posted: not stated (published 2026-08-20; unverified, see log)."
+     url: "https://academicpositions.com/ad/university-of-luxembourg/2026/postdoc-in-health-data-harmonization-analysis/252058"
+   - title: "Postdoc Innovative Deep Learning Techniques for Image-guided Surgery"
+     inst: "Netherlands Cancer Institute (NKI), Image Guided Surgery group (Prof. Theo Ruers) with the AI for Oncology Lab (Dr Jonas Teuwen)"
+@@ -576,8 +584,9 @@ entries:
+     fit: "**moderate** - medical-imaging AI inside precision oncology, and the AI for Oncology Lab is a serious methods group, but the core is segmentation and registration for the operating room rather than the interpretable, federated or multiway methods he builds. Salary is well below the Dutch postdoc scale on the other NL leads in this file"
+     status: declined
+     date: 2026-08-27
+-    deadline: "rolling (open)"
++    rolling: true
+     url: "https://www.nki.nl/research/research-groups/theo-ruers/postdoc-innovative-deep-learning-techniques-for-image-guided-surgery"
++    note: "Deadline as posted: rolling (open)."
+   - title: "Postdoc Position Data Science and Artificial Intelligence in Cardiac Electrophysiology"
+     inst: "Maastricht University (Dept. of Physiology, Cardiovascular Research Institute Maastricht CARIM, FHML)"
+     country: NL
+@@ -696,8 +705,9 @@ entries:
+     fit: "reach - hooks the profile via bioinformatics + large-omics ML ('proficiency in machine learning and large omics data analysis is preferred') and it is explicitly computational, no wet-lab. BUT the core is microbiome/nutrition-immunology data analysis in a support role for existing projects, not an independent AI-methods line, and it asks a PhD in bioinformatics; ML is only 'preferred', so little method-novelty room. No Dutch req; no deadline shown (rolling)"
+     status: declined
+     date: 2026-07-24
+-    deadline: "rolling (open)"
++    rolling: true
+     url: "https://www.lih.lu/en/job/?value=JA/PDGMB0326/MD/DIIA"
++    note: "Deadline as posted: rolling (open)."
+   - title: "Research Professor in Genomics Medicine (BOFZAP)"
+     inst: "KU Leuven (Dept. Human Genetics)"
+     country: BE
+@@ -726,8 +736,9 @@ entries:
+     fit: "reach - multi-omics + ML hook matches, but core is computational immunology and it is a permanent (CDI) service data-scientist role, not an independent research line; less method-novelty room. PhD or MSc-CS-with-bio-application; no Dutch req; rolling (ref JA/DS0326/PN/DMIDII)"
+     status: declined
+     date: 2026-06-27
+-    deadline: "rolling (open)"
++    rolling: true
+     url: "https://www.lih.lu/en/job/?value=JA/DS0326/PN/DMIDII"
++    note: "Deadline as posted: rolling (open)."
+   - title: "Postdoc - Explainable Machine Learning & Survival Analysis"
+     inst: "KU Leuven (itec, campus Kulak / Kortrijk) + imec"
+     country: BE
+@@ -736,8 +747,9 @@ entries:
+     fit: "**strong** - interpretable AI + survival/competing-risks + clinical risk prediction squarely match Axel's interpretable-AI + survival line (cf. cirrhosis competing-risks, HCC prognosis); Dutch is an asset (native). Caveat: domain split health/education; rolling - \"open until a suitable candidate is found\""
+     status: declined
+     date: 2026-06-23
+-    deadline: "rolling (open until filled)"
++    rolling: true
+     url: "https://itec.kuleuven-kulak.be/we-are-looking-for-a-postdoc-researcher-in-explainable-machine-learning-and-survival-analysis/"
++    note: "Deadline as posted: rolling (open until filled)."
+   - title: "Postdoc - Scalable Graph Learning"
+     inst: "TU Delft"
+     country: NL
+@@ -766,8 +778,9 @@ entries:
+     fit: "**strong** - medical imaging AI + multi-modal + clinical translation; matches imaging, interpretable-AI and multi-modal profile. Caveat: exact deadline not confirmed via direct fetch; posting confirmed open as of info meeting 10 Jun 2026; apply promptly"
+     status: declined
+     date: 2026-06-21
+-    deadline: "Closed: the AcademicTransfer detail page states 'deadline was 6 May 25' (checked 2026-07-09)"
++    deadline: '2025-05-06'
+     url: "https://www.academictransfer.com/en/jobs/351325/postdoc-positions-in-ai-for-accessible-medical-imaging/"
++    note: "Deadline as posted: Closed: the AcademicTransfer detail page states 'deadline was 6 May 25' (checked 2026-07-09)."
+   - title: "Postdoctoral Researcher - Computational Biology and Machine Learning"
+     inst: "University of Luxembourg (LCSB / del Sol group)"
+     country: LU
+@@ -776,8 +789,9 @@ entries:
+     fit: "**moderate** - ML + computational biology + disease modeling in Luxembourg; connects to Axel's neuroscience heritage and multi-omics ML methods; but primary focus (gene networks, stem-cell fate) differs from his imaging/clinical/federated domain. Rolling deadline (posted Apr 2026, applications processed upon reception)"
+     status: declined
+     date: 2026-06-21
+-    deadline: "Open until filled"
++    rolling: true
+     url: "https://www.uni.lu/en/jobs/postdoctoral-researcher-in-computational-biology-and-machine-learning/"
++    note: "Deadline as posted: Open until filled."
+   - title: "ZAP - Biomedical Data Science, Multi-omics & Bioinformatics"
+     inst: "University of Antwerp"
+     country: BE
+diff --git a/.oculus/data/literature/literature.yml b/.oculus/data/literature/literature.yml
+index 3fa5a3a07..fa26b4431 100644
+--- a/.oculus/data/literature/literature.yml
++++ b/.oculus/data/literature/literature.yml
+@@ -8,7 +8,7 @@ schema:
+   - { field: title,    type: text,     display: 1, section: Core, help: "The paper's title. A paper saved from an address alone has none, and its title is written in the entry's editor." }
+   - { field: authors,  type: tags,     filter: true, section: Core, help: "The paper's authors, each name as the source wrote it." }
+   - { field: venue,    type: text,     filter: true, section: Core, help: "The journal or conference; a name that matches a venue of the Venues view links to its page." }
+-  - { field: year,     type: text,     filter: true, section: Core, help: "The year the paper appeared, a whole number." }
++  - { field: year,     type: period,   filter: true, section: Core, help: "The year the paper appeared." }
+   - { field: doi,      type: text,     label: "DOI", section: Core, help: "The paper's DOI, without the doi.org address." }
+   - { field: url,      type: text,     label: "Address", section: Core, help: "The web address of the paper." }
+   - { field: abstract, type: textarea, section: Content, help: "The paper's abstract, as plain text." }
+diff --git a/.oculus/data/literature/radar.yml b/.oculus/data/literature/radar.yml
+index a12966ffe..a89235f67 100644
+--- a/.oculus/data/literature/radar.yml
++++ b/.oculus/data/literature/radar.yml
+@@ -15,7 +15,7 @@ schema:
+   - { field: title, type: text, primary_key: true, display: 1, required: true, section: Core, help: "The paper's title." }
+   - { field: authors, type: text, section: Core, help: "The authors, in the order the paper lists them." }
+   - { field: venue, type: text, section: Core, help: "Where the paper appeared, or the preprint server." }
+-  - { field: year, type: text, section: Core, help: "The year of the paper, as a whole number." }
++  - { field: year, type: period, section: Core, help: "The year of the paper." }
+   - { field: url, type: text, required: true, section: Core, help: "The paper's web address, which the sweep deduplicates by." }
+   - { field: bucket, type: select, foreign_key: vocab.radar_buckets, required: true, section: Core, help: "How the paper bears on the project: a pre-emption risk, a paper to cite or run as a baseline, an adjacent paper or an idea spark." }
+   - { field: project, type: select, foreign_key: projects, section: Connections, help: "The project the sweep found the paper for." }
+diff --git a/.oculus/tasks/scout.md b/.oculus/tasks/scout.md
+index 6a0f28972..07a5845cb 100644
+--- a/.oculus/tasks/scout.md
++++ b/.oculus/tasks/scout.md
+@@ -104,7 +104,9 @@ University hospitals (all seven; most rows are clinical, so filter to research,
+      - { field: fit, label: "Fit", type: textarea }
+      - { field: status, label: "Status", type: select, options: [open, applied, declined] }
+      - { field: date, label: "Date", type: date }
+-     - { field: deadline, label: "Deadline", type: text }
++     - { field: deadline, label: "Deadline", type: date }
++     - { field: rolling, label: "Rolling", type: checkbox }
++     - { field: note, label: "Note", type: textarea }
+      - { field: url, label: "URL", type: text }
+    ```
+    Each entry:
+@@ -117,7 +119,9 @@ University hospitals (all seven; most rows are clinical, so filter to research,
+        fit: "**strong** - one-line reason + any eligibility caveat"   # strong | moderate | reach (keep the rating word)
+        status: open           # open (the scout ALWAYS writes open; the user sets applied/declined from the view)
+        date: 2026-07-01       # date found (ISO)
+-       deadline: "2026-08-15" # or "rolling (open)" etc.
++       deadline: '2026-08-15' # the posting's deadline, a day; left out when the posting names none
++       rolling: false         # true for a posting that reads applications as they arrive
++       note: "..."            # every other word of the posting about its deadline
+        url: "https://..."
+    ```
+    **Write every value ASCII-only** (the hub de-AI-tell rule): no em/en dash (use `-`), arrows become a word, `x` not the multiply glyph, `<=`/`>=` not the unicode, straight quotes. Do NOT set `status` to anything but `open`, and never overwrite a lead the user already marked applied/declined.
+diff --git a/projects/coauthor/published/2016/chi-household-survival/project.yml b/projects/coauthor/published/2016/chi-household-survival/project.yml
+index 85624cba0..4a84352e8 100644
+--- a/projects/coauthor/published/2016/chi-household-survival/project.yml
++++ b/projects/coauthor/published/2016/chi-household-survival/project.yml
+@@ -24,7 +24,7 @@ publication:
+ cv:
+   title: "Household Survival: Immersive Room-Sized Gaming Using Everyday Objects as Weapons (Unity, Optitrack Motion Capture)"
+   url: https://www.youtube.com/watch?v=Q4_rK2upGEY
+-  duration: Sep. 2015 - Dec. 2015
++  when: '2015-09/2015-12'
+   role: Researcher
+   about: "Developed a room-scale AR game using everyday objects as controllers (broom, fan, vacuum, mousetrap). \nDemonstrated immersive physical-virtual interactions. \nStill used in university courses as a teaching example.\n"
+   rank: 13
+diff --git a/projects/software/bttr-block-term-tensor-regression/project.yml b/projects/software/bttr-block-term-tensor-regression/project.yml
+index 0e42edb0c..b73a7ade7 100644
+--- a/projects/software/bttr-block-term-tensor-regression/project.yml
++++ b/projects/software/bttr-block-term-tensor-regression/project.yml
+@@ -10,7 +10,7 @@ repository:
+ cv:
+   title: "Open Source Python Package - Block-Term Tensor Regression (BTTR)"
+   url: https://github.com/TheAxeC/block-term-tensor-regression
+-  duration: 2022 - Current
++  when: '2022/..'
+   role: Lead Researcher & Developer
+   about: |
+     The open-source BTTR implementation provides researchers and practitioners with accessible, reproducible tools for tensor-based regression in neuroscience and related domains. It is actively developed and documented to support experimentation, education, and further research.
+diff --git a/projects/software/federated-learning-tutorial/project.yml b/projects/software/federated-learning-tutorial/project.yml
+index 2ff15ec88..d37a7fbbc 100644
+--- a/projects/software/federated-learning-tutorial/project.yml
++++ b/projects/software/federated-learning-tutorial/project.yml
+@@ -11,7 +11,7 @@ repository:
+ cv:
+   title: "Wisconsin Breast Cancer Dataset Research Tutorial for Federated Learning"
+   url: https://github.com/TheAxeC/federated-learning-tutorial
+-  duration: 2025 - Current
++  when: '2025/..'
+   role: Research Tutorial Author
+   about: |
+     This repository serves as a step-by-step tutorial for running federated learning studies with the FL4E framework. Using the Wisconsin Breast Cancer dataset as an example, it guides researchers and students through the full workflow.
+diff --git a/projects/software/fl-kit-elixir-federated-learning-kit/project.yml b/projects/software/fl-kit-elixir-federated-learning-kit/project.yml
+index da57ea459..ebd05d94a 100644
+--- a/projects/software/fl-kit-elixir-federated-learning-kit/project.yml
++++ b/projects/software/fl-kit-elixir-federated-learning-kit/project.yml
+@@ -13,7 +13,7 @@ repository:
+ cv:
+   title: "Federated Learning Kit (FLkit)"
+   url: https://github.com/UHasselt-BiomedicalDataSciences/federated-learning-toolkit
+-  duration: 2025 - Current
++  when: '2025/..'
+   role: Contributor
+   about: |
+     FLkit is designed to help life scientists apply federated learning in their research. It offers guidance, techniques, and tools for working with decentralized and sensitive data, enabling privacy-preserving collaboration and deeper insights without sharing raw data.
+diff --git a/side-projects/finished/axeski/project.yml b/side-projects/finished/axeski/project.yml
+index 6d05c9b4d..4574b5e5f 100644
+--- a/side-projects/finished/axeski/project.yml
++++ b/side-projects/finished/axeski/project.yml
+@@ -14,7 +14,7 @@ repository:
+ cv:
+   title: "Visual Programming IDE"
+   url: https://github.com/TheAxeC/AxeSki
+-  duration: Feb. 2015 - Jul. 2015
++  when: '2015-02/2015-07'
+   role: Developer
+   hide: true
+   about: |
+diff --git a/side-projects/finished/cardinal-revamped/project.yml b/side-projects/finished/cardinal-revamped/project.yml
+index 7b53426e6..2e3f224eb 100644
+--- a/side-projects/finished/cardinal-revamped/project.yml
++++ b/side-projects/finished/cardinal-revamped/project.yml
+@@ -14,7 +14,7 @@ repository:
+ cv:
+   title: "Cardinal: Educational and Research platform for MSc theses in PL/compilers"
+   url: https://github.com/TheAxeC/cardinal-revamped
+-  duration: Jan. 2015 - Current
++  when: '2015-01/..'
+   role: Lead Developer
+   about: |
+     Cardinal is a C++20 reimplementation of the Wren VM, designed for clarity, research, and education. It provides a small, well-documented virtual machine and runtime for exploring compilers, concurrency (fibers), and language embedding.
+diff --git a/side-projects/finished/cardinal/project.yml b/side-projects/finished/cardinal/project.yml
+index c925bc323..c20d4be47 100644
+--- a/side-projects/finished/cardinal/project.yml
++++ b/side-projects/finished/cardinal/project.yml
+@@ -14,7 +14,7 @@ repository:
+ cv:
+   title: "Cardinal: a small, fully dynamic scripting language"
+   url: https://github.com/TheAxeC/cardinal
+-  duration: Sep. 2015 - Oct. 2016
++  when: '2015-09/2016-10'
+   role: Lead Developer
+   hide: true
+   about: |
+diff --git a/side-projects/finished/cv-autogenerator/project.yml b/side-projects/finished/cv-autogenerator/project.yml
+index 5661a95e5..eeade5de5 100644
+--- a/side-projects/finished/cv-autogenerator/project.yml
++++ b/side-projects/finished/cv-autogenerator/project.yml
+@@ -13,7 +13,7 @@ repository:
+   url: "https://github.com/TheAxeC/cv-autogenerator"
+ cv:
+   url: https://github.com/TheAxeC/cv-autogenerator
+-  duration: Oct. 2017 - May 2024
++  when: '2017-10/2024-05'
+   role: Developer
+   hide: true
+   about: |
+diff --git a/side-projects/finished/ical-kuleuven/project.yml b/side-projects/finished/ical-kuleuven/project.yml
+index ab33f21b6..dd89d79c0 100644
+--- a/side-projects/finished/ical-kuleuven/project.yml
++++ b/side-projects/finished/ical-kuleuven/project.yml
+@@ -14,7 +14,7 @@ repository:
+ cv:
+   title: ICAL parser for KU Leuven schedules
+   url: https://github.com/TheAxeC/ical-kuleuven
+-  duration: Aug. 2016 - Current
++  when: '2016-08/..'
+   role: Lead Developer
+   about: |
+     A Node.js application to create an iCalendar file for courses at KU Leuven. (>1000 active users)
+diff --git a/side-projects/finished/iot-sensor-platform/project.yml b/side-projects/finished/iot-sensor-platform/project.yml
+index 8bb530dc3..903c63227 100644
+--- a/side-projects/finished/iot-sensor-platform/project.yml
++++ b/side-projects/finished/iot-sensor-platform/project.yml
+@@ -12,7 +12,7 @@ tags: [personal, iot]
+ cv:
+   title: IoT-platform with pluggable sensors
+   url: ""
+-  duration: Feb. 2017 - Jul. 2017
++  when: '2017-02/2017-07'
+   role: Developer
+   hide: true
+   about: |
+diff --git a/side-projects/finished/search-recommendation-vod/project.yml b/side-projects/finished/search-recommendation-vod/project.yml
+index 2b358e5b4..92757571a 100644
+--- a/side-projects/finished/search-recommendation-vod/project.yml
++++ b/side-projects/finished/search-recommendation-vod/project.yml
+@@ -11,7 +11,7 @@ links: []
+ tags: [personal, recommender-systems]
+ cv:
+   url: ""
+-  duration: Feb. 2016 - Jul. 2016
++  when: '2016-02/2016-07'
+   role: Team Member
+   hide: true
+   about: |
+diff --git a/side-projects/finished/starcraft-rl-agent/project.yml b/side-projects/finished/starcraft-rl-agent/project.yml
+index 775099b1c..5c4ad7ebb 100644
+--- a/side-projects/finished/starcraft-rl-agent/project.yml
++++ b/side-projects/finished/starcraft-rl-agent/project.yml
+@@ -12,7 +12,7 @@ tags: [personal, machine-learning, reinforcement-learning, python]
+ cv:
+   title: Reinforcement Learning Agent in Google Deepmind's StarCraft II Framework
+   url: ""
+-  duration: Feb. 2018 - Jul. 2018
++  when: '2018-02/2018-07'
+   role: Developer
+   hide: true
+   about: |
+diff --git a/side-projects/finished/theaxec-profile-readme/project.yml b/side-projects/finished/theaxec-profile-readme/project.yml
+index 3ab223b41..7e7424389 100644
+--- a/side-projects/finished/theaxec-profile-readme/project.yml
++++ b/side-projects/finished/theaxec-profile-readme/project.yml
+@@ -14,7 +14,7 @@ repository:
+ cv:
+   title: "GitHub profile README"
+   url: https://github.com/TheAxeC/TheAxeC
+-  duration: Mar. 2025 - Current
++  when: '2025-03/..'
+   role: Developer
+   hide: true
+   about: |
+diff --git a/side-projects/school/effect-handler-optimization-honours-project/project.yml b/side-projects/school/effect-handler-optimization-honours-project/project.yml
+index 4131d79bf..ffe79d381 100644
+--- a/side-projects/school/effect-handler-optimization-honours-project/project.yml
++++ b/side-projects/school/effect-handler-optimization-honours-project/project.yml
+@@ -15,7 +15,7 @@ repository:
+ cv:
+   title: "Honours project: an optimising compiler for Eff"
+   url: https://github.com/TheAxeC/honoursproject-effect-handler-optimization
+-  duration: 2016 - 2017
++  when: '2016/2017'
+   role: Honours student
+   hide: true
+   about: |
+diff --git a/side-projects/school/quasi-monte-carlo-points-on-collections-of-triangles/project.yml b/side-projects/school/quasi-monte-carlo-points-on-collections-of-triangles/project.yml
+index df048acfd..6a1075078 100644
+--- a/side-projects/school/quasi-monte-carlo-points-on-collections-of-triangles/project.yml
++++ b/side-projects/school/quasi-monte-carlo-points-on-collections-of-triangles/project.yml
+@@ -14,7 +14,7 @@ repository:
+ cv:
+   title: "Honours project proposal: quasi-Monte Carlo point sets on collections of triangles"
+   url: https://github.com/TheAxeC/quasi-monte-carlo-points-on-collections-of-triangles
+-  duration: 2018
++  when: 2018
+   role: Honours student
+   hide: true
+   about: |
+diff --git a/side-projects/school/row-based-effects-honours-project/project.yml b/side-projects/school/row-based-effects-honours-project/project.yml
+index 29fbc7eae..32750c9c2 100644
+--- a/side-projects/school/row-based-effects-honours-project/project.yml
++++ b/side-projects/school/row-based-effects-honours-project/project.yml
+@@ -15,7 +15,7 @@ repository:
+ cv:
+   title: "Honours project: a core language with row-based effects"
+   url: https://github.com/TheAxeC/honoursproject-row-based-effects
+-  duration: 2017 - 2018
++  when: '2017/2018'
+   role: Honours student
+   hide: true
+   about: |

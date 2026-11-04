@@ -1,9 +1,11 @@
 // Layer 2, client state. Pure Position Leads status, deadline, fit, ordering, search, and saved
-// view state. The view receives ready-to-draw live and expired lists and owns no feed rules. A
-// lead's status is read under the words of its own hub, given as `wordsOf`, and under the config
-// given without it.
+// view state. A lead's `deadline` is a day written YYYY-MM-DD, and `rolling: true` says the
+// posting reads applications as they arrive, with or without a day. The view receives
+// ready-to-draw live and expired lists and owns no feed rules. A lead's status is read under the
+// words of its own hub, given as `wordsOf`, and under the config given without it.
 
 import { z } from 'zod';
+import { ISO_DATE } from '../../data/helpers/dates.ts';
 import { scalar } from '../../data/helpers/guards.ts';
 import { hubId } from '../../data/helpers/hub-names.ts';
 import {
@@ -54,7 +56,6 @@ export {
 /** The merged config a lead's status and fit are read through. */
 type Config = Record<string, unknown>;
 
-const DATE = /\d{4}-\d{2}-\d{2}/;
 const TONE = /^c-([a-z][a-z0-9-]*)$/;
 
 /** The vocabulary's two maps a lead's fit colour is read through. */
@@ -134,13 +135,26 @@ export function declinedCount(
     ).length;
 }
 
-/** The first ISO date inside deadline prose, or null when it contains none. */
-export function deadlineOf(text: unknown): string | null {
-    const found = DATE.exec(scalar(text));
-    return found === null ? null : found[0];
+/** A lead's `deadline` when it is a day written YYYY-MM-DD, or null for any other value. */
+export function deadlineOf(value: unknown): string | null {
+    const text = scalar(value);
+    return ISO_DATE.test(text) ? text : null;
 }
 
-/** A closed lead or one whose ISO deadline precedes today belongs in the expired list. */
+/**
+ * The words of a lead card's deadline line: the lead's day and, when `rolling: true` says it reads
+ * applications as they arrive, the word `rolling`, joined by " | "; the empty text for neither.
+ */
+export function deadlineLine(lead: LeadEntry, rolling: string): string {
+    const day = deadlineOf(lead.deadline) ?? '';
+    const parts = [day, lead.rolling === true ? rolling : ''];
+    return parts.filter((one) => one !== '').join(' | ');
+}
+
+/**
+ * A closed lead or one whose deadline day precedes today belongs in the expired list; a lead with
+ * no day, `rolling` or not, stays live until it is closed.
+ */
 export function isExpired(
     config: Config,
     lead: LeadEntry,
@@ -173,7 +187,10 @@ export function fitTone(fit: unknown, vocab: unknown): string {
     return TONE.exec(token)?.[1] ?? 'grey';
 }
 
-/** Split and order live leads soonest first, and expired leads newest first, undated last. */
+/**
+ * Split and order live leads soonest first, and expired leads newest first, undated last: a
+ * `rolling` lead with no day orders with the undated ones.
+ */
 export function splitLeads(
     config: Config,
     entries: LeadEntry[],

@@ -10,6 +10,10 @@
 // value the schema refuses, which a keyed family carries for the other form
 // (catalog/schemas/options.ts, `heldToForm`); ajv takes it as a no-op, so oculus's checker words
 // that value as it words any wrong type.
+//
+// `x-period` is the one keyword oculus adds that validates: on a `period` field it runs the reader
+// of helpers/dates.ts (schema/check.ts registers it), since a pattern cannot say the calendar or
+// the order of a span's two ends. An editor that does not know it checks the field's pattern alone.
 
 import type { SchemaObject } from 'ajv';
 import { z } from 'zod';
@@ -25,6 +29,9 @@ export const ANNOTATIONS = [
     'enumDescriptions',
     'errorMessage'
 ] as const;
+
+/** The keyword that runs the reader of a period on a `period` field's value. */
+export const PERIOD_KEYWORD = 'x-period';
 
 /** The scalar types a plain text field accepts: a text, and the integer a year is written as. */
 export const TEXT_TYPES = ['string', 'number', 'null'];

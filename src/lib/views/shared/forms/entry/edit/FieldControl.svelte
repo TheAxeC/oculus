@@ -1,10 +1,12 @@
 <script lang="ts">
     // Layer 3, shared view partial. The control of one form field, by the field's type: the project
     // editor and the editor of an entry, a person and the career file all draw their fields through
-    // it. A text, a text with choices, a long text, a pick, tags, a date, a checkbox, a list of
-    // label-value rows, and a `records` field in the four shapes the schema's value takes (a list
-    // of cards, one card, a map of facts as rows, a map of named cards). A record's own fields are
-    // controls of this same component.
+    // it. A text, a text with choices, a long text, a pick, tags, a date, a period, a checkbox, a
+    // list of label-value rows, and a `records` field in the four shapes the schema's value takes
+    // (a list of cards, one card, a map of facts as rows, a map of named cards). A record's own
+    // fields are controls of this same component. A period is one line of text, its examples as
+    // the hint, marked wrong while the period reader refuses what is typed (state/forms/schema.ts
+    // `periodRefusal`).
     //
     // It holds no value of its own: the value comes in as a prop, in the form record-values.ts
     // gives it, and every change goes out whole. A record names the fields its schema declares,
@@ -39,6 +41,7 @@
     import {
         asList,
         asText,
+        periodRefusal,
         picksPeople,
         selectChoices,
         withPicked,
@@ -219,6 +222,14 @@
     <DateInput
         value={asText(value)}
         label={field.label}
+        oninput={(held: string) => onchange(held)}
+    />
+{:else if field.type === 'period'}
+    <TextInput
+        value={asText(value)}
+        label={field.label}
+        placeholder={t('editor.period_hint')}
+        invalid={periodRefusal(asText(value))}
         oninput={(held: string) => onchange(held)}
     />
 {:else if field.type === 'metalist'}

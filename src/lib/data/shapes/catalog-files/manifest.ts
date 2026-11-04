@@ -18,6 +18,7 @@ export const MANIFEST_WIDGETS = [
     'chips',
     'tags',
     'date',
+    'period',
     'checkbox',
     'keymap',
     'rows'

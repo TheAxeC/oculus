@@ -349,6 +349,7 @@ text:
             shared_identity: 'two entries share the {0} {1}, so a write cannot address one of them'
             type_checkbox: '{0} takes true or false'
             type_date: '{0} takes a date written YYYY-MM-DD'
+            type_period: '{0} takes a period such as 2025, 2025-09, 2026-10-27 or 2025-09/2026-09'
             type_option: '{0} takes one of its own options'
             type_options: '{0} takes one of {1}'
             type_records: '{0} takes records of named values'

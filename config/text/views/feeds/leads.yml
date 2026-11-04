@@ -27,6 +27,7 @@ text:
         fit_none: '-'
         hide_declined: Hide declined ({0})
         no_deadline: no deadline
+        rolling: Rolling
         no_file: No leads file configured.
         posting: Posting
         log_all: show all {0} lines

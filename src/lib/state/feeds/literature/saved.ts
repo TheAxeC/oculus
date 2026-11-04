@@ -7,6 +7,7 @@
 // page already has, by the same rule (`samePaper` of data/prose/literature.ts), so a card can say
 // `In Literature` without a request.
 
+import { periodYear } from '../../../data/helpers/dates.ts';
 import { samePaper } from '../../../data/prose/literature.ts';
 import { textOrNumber } from '../../../data/shapes/shapes.ts';
 import type { SavedPaper } from './bibtex.ts';
@@ -37,7 +38,8 @@ export function hitPaper(hit: MergedHit): Record<string, unknown> {
 
 /**
  * The fields Save to Literature sends for a Lit Watch entry: its title, venue, year and address,
- * and its authors as the names of its one line, which Lit Watch writes joined by commas.
+ * and its authors as the names of its one line, which Lit Watch writes joined by commas. The year
+ * is the year the entry's `year` period starts in.
  */
 export function radarPaper(entry: Record<string, unknown>): Record<string, unknown> {
     const authors = textOrNumber(entry.authors)
@@ -48,7 +50,7 @@ export function radarPaper(entry: Record<string, unknown>): Record<string, unkno
         title: textOrNumber(entry.title),
         authors,
         venue: textOrNumber(entry.venue),
-        year: textOrNumber(entry.year),
+        year: yearText(entry.year),
         url: textOrNumber(entry.url)
     };
 }
@@ -61,7 +63,15 @@ export function venueNamed<V extends { name: string }>(name: string, venues: V[]
         : venues.find((one) => one.name.trim().toLowerCase() === wanted);
 }
 
-/** A saved paper's fields as its BibTeX entry is made from them, as text, its key the file's. */
+/** The year a `year` period starts in, as text, and the empty text for a value that is none. */
+function yearText(value: unknown): string {
+    return String(periodYear(value) ?? '');
+}
+
+/**
+ * A saved paper's fields as its BibTeX entry is made from them, as text, its key the file's and its
+ * year the year its `year` period starts in.
+ */
 export function savedPaperOf(fields: Record<string, unknown>): SavedPaper {
     const authors = Array.isArray(fields.authors)
         ? fields.authors.map((one) => textOrNumber(one)).filter((one) => one !== '')
@@ -71,7 +81,7 @@ export function savedPaperOf(fields: Record<string, unknown>): SavedPaper {
         title: textOrNumber(fields.title),
         authors,
         venue: textOrNumber(fields.venue),
-        year: textOrNumber(fields.year),
+        year: yearText(fields.year),
         doi: textOrNumber(fields.doi),
         url: textOrNumber(fields.url)
     };

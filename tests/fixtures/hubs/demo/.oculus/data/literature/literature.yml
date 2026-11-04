@@ -8,7 +8,7 @@ schema:
   - { field: title,    type: text,     display: 1, section: Core, help: "The paper's title. A paper saved from an address alone has none, and its title is written in the entry's editor." }
   - { field: authors,  type: tags,     filter: true, section: Core, help: "The paper's authors, each name as the source wrote it." }
   - { field: venue,    type: text,     filter: true, section: Core, help: "The journal or conference; a name that matches a venue of the Venues view links to its page." }
-  - { field: year,     type: text,     filter: true, section: Core, help: "The year the paper appeared, a whole number." }
+  - { field: year,     type: period,   filter: true, section: Core, help: "The year the paper appeared." }
   - { field: doi,      type: text,     label: "DOI", section: Core, help: "The paper's DOI, without the doi.org address." }
   - { field: url,      type: text,     label: "Address", section: Core, help: "The web address of the paper." }
   - { field: abstract, type: textarea, section: Content, help: "The paper's abstract, as plain text." }

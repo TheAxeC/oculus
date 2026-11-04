@@ -11,7 +11,7 @@ schema:
     help: "The order of work."
     fields:
       - { field: task, type: text, required: true, help: "What to do." }
-      - { field: when, type: text, help: "When." }
+      - { field: when, type: period, help: "When it is due." }
       - { field: note, type: text, help: "A remark." }
   - field: positions
     type: records
@@ -21,7 +21,7 @@ schema:
       - { field: key, type: text, help: "The key a profile row names this position by." }
       - { field: title, type: text, required: true, help: "The position as the CV prints it." }
       - { field: location, type: text, help: "Where." }
-      - { field: duration, type: text, help: "When, as the CV prints it." }
+      - { field: when, type: period, help: "When it happens: a year, a month, a day or a span, such as 2025-09/2026-09 or 2025/.." }
       - { field: url, type: text, help: "An address the title links to." }
       - { field: about, type: textarea, help: "What the CV prints under it." }
       - { field: hide, type: checkbox, help: "Kept off the CV." }
@@ -35,7 +35,7 @@ schema:
       - { field: key, type: text, help: "The key a profile row names this degree by." }
       - { field: title, type: text, required: true, help: "The degree as the CV prints it." }
       - { field: location, type: text, help: "Where." }
-      - { field: duration, type: text, help: "When, as the CV prints it." }
+      - { field: when, type: period, help: "When it happens: a year, a month, a day or a span, such as 2025-09/2026-09 or 2025/.." }
       - { field: url, type: text, help: "An address the title links to." }
       - { field: about, type: textarea, help: "What the CV prints under it." }
       - { field: hide, type: checkbox, help: "Kept off the CV." }
@@ -49,7 +49,7 @@ schema:
       - { field: key, type: text, help: "The key a profile row names this award by." }
       - { field: award, type: text, help: "The award as the CV prints it." }
       - { field: event, type: text, help: "The event it was given at." }
-      - { field: date, type: text, help: "The day, written as the CV reads it." }
+      - { field: when, type: period, help: "When it happens: a year, a month, a day or a span, such as 2025-09/2026-09 or 2025/.." }
       - { field: location, type: text, help: "Where." }
       - { field: content, type: textarea, help: "What the CV prints under it." }
       - { field: funding, type: text, help: "A funding entry, by key, whose title, place and text the award takes." }
@@ -104,7 +104,7 @@ schema:
               - { field: title, type: text, help: "The entry as this CV prints it." }
               - { field: role, type: text, help: "The role, for a project." }
               - { field: location, type: text, help: "Where, when this CV prints it differently." }
-              - { field: duration, type: text, help: "When, when this CV prints it differently." }
+              - { field: when, type: period, help: "When, when this CV prints it differently." }
               - { field: url, type: text, help: "An address, when this CV prints another." }
               - { field: about, type: textarea, help: "What this CV prints under it." }
               - { field: about_compact, type: textarea, help: "What the one-page CV prints under it." }
@@ -119,13 +119,13 @@ schema:
           - { field: title, type: text, help: "The heading." }
           - field: content
             type: records
-            help: "One row per award. A row names the records it stands for, and takes the first one's place and day where it prints none of its own."
+            help: "One row per award. A row names the records it stands for, and takes the first one's place and period where it prints none of its own."
             fields:
               - { field: records, type: tags, help: "The keys of the records the row stands for." }
               - { field: award, type: text, help: "The award as this CV prints it." }
               - { field: event, type: text, help: "The event it was given at." }
               - { field: location, type: text, help: "Where, when this CV prints it differently." }
-              - { field: date, type: text, help: "The day, when this CV prints it differently." }
+              - { field: when, type: period, help: "When, when this CV prints it differently." }
               - { field: compact, type: checkbox, help: "Whether the one-page CV prints the row; a row without it is printed." }
       - field: letter
         type: records
@@ -145,18 +145,18 @@ milestone: "Fellowship application"
 milestone_date: "2027-10-15"
 
 order:
-  - { task: "Ship the streaming-anomaly paper", when: "Q3 2026" }
-  - { task: "Draft the fellowship concept note", when: "Aug 2026", note: "align with a host lab" }
-  - { task: "Line up two reference letters", when: "Sep 2026" }
+  - { task: "Ship the streaming-anomaly paper", when: "2026-07/2026-09" }
+  - { task: "Draft the fellowship concept note", when: "2026-08", note: "align with a host lab" }
+  - { task: "Line up two reference letters", when: "2026-09" }
 
 positions:
-  - { key: postdoc, title: "Postdoc", location: "A host university", duration: "2024 - now", about: "Reproducible ML for streaming and graph systems." }
+  - { key: postdoc, title: "Postdoc", location: "A host university", when: "2024/..", about: "Reproducible ML for streaming and graph systems." }
 
 degrees:
-  - { key: phd, title: "PhD, Computer Science", location: "A university", duration: "2019 - 2023" }
+  - { key: phd, title: "PhD, Computer Science", location: "A university", when: "2019/2023" }
 
 awards:
-  - { award: "Best paper award", event: "A workshop", date: 2023-06-01 15:59:00-0400, location: "A city" }
+  - { award: "Best paper award", event: "A workshop", when: "2023-06-01", location: "A city" }
 
 references:
   - { person: c-senior, reason: "PhD supervisor" }

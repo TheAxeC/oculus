@@ -5,7 +5,9 @@
     // page, and on that page (views/boards/entry/Entry.svelte), where it is handed `page` and no
     // page opener, its title is words, and its subtasks and follow-ups are listed. A lead with no
     // key has no page, so its title is words and it offers no Page. Feed rules stay in state and
-    // server modules.
+    // server modules. The deadline line prints the lead's day, Rolling for a lead with
+    // `rolling: true`, or both (state/feeds/leads.ts `deadlineLine`), and is drawn for a live
+    // lead with either and for every expired lead.
     //
     // The strip holds Applied and Page, or Edit on the page. The menu holds Page, Edit, which opens
     // the editor beside the card (entry-actions.ts `editorRows`), and the posting in its Open run,
@@ -37,6 +39,7 @@
     import { createCardMath } from '$lib/views/shared/latex/card-math.svelte';
     import {
         appliedWord,
+        deadlineLine,
         declinedWord,
         fitKey,
         fitTone,
@@ -138,7 +141,8 @@
     const focus = $derived(word('focus'));
     const fit = $derived(word('fit'));
     const status = $derived(word('status').trim().toLowerCase());
-    const deadline = $derived(word('deadline'));
+    /** The deadline line's words: the day, Rolling, or both. */
+    const deadline = $derived(deadlineLine(entry, t('leads.rolling')));
     const url = $derived(word('url'));
     const key = $derived(fitKey(fit, vocab));
     const tone = $derived(fitTone(fit, vocab));

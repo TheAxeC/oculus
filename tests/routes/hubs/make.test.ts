@@ -245,7 +245,7 @@ describe('a make', () => {
                 file: '.oculus/data/academic/funding.yml',
                 registry: 'funding',
                 ticker: { category: 'funding' },
-                sort: ['status', 'deadline'],
+                sort: ['status', 'when', 'deadline'],
                 group: 'academic',
                 order: 0,
                 label: 'views.funding',

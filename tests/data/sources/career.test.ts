@@ -36,10 +36,10 @@ goal: "Assistant professor"
 milestone: "FWO Senior"
 milestone_date: "2026-11-17"
 positions:
-  - { title: "Postdoc", location: "U Twente", duration: "2023 - now" }
+  - { title: "Postdoc", location: "U Twente", when: "2023/.." }
 order:
-  - { task: "Veni pre-proposal", when: "~1 Sep" }
-  - { task: "ENW-XS", when: "15 Sep", note: "optional" }
+  - { task: "Veni pre-proposal", when: "2026-09" }
+  - { task: "ENW-XS", when: "2026-09-15", note: "optional" }
   - "a plain string task"
 order_note: "the order is a priority order"
 `;
@@ -88,8 +88,8 @@ describe('normalising it', () => {
         expect(held?.milestone).toBe('FWO Senior');
         expect(held?.milestoneDate).toBe('2026-11-17');
         expect(held?.order).toEqual([
-            { task: 'Veni pre-proposal', when: '~1 Sep' },
-            { task: 'ENW-XS', when: '15 Sep', note: 'optional' },
+            { task: 'Veni pre-proposal', when: '2026-09' },
+            { task: 'ENW-XS', when: '2026-09-15', note: 'optional' },
             { task: 'a plain string task' }
         ]);
         expect(held?.orderNote).toBe('the order is a priority order');
@@ -180,7 +180,7 @@ describe('what the editor edits', () => {
             'order_note'
         ]);
         expect(read?.sections.positions).toEqual([
-            { title: 'Postdoc', location: 'U Twente', duration: '2023 - now' }
+            { title: 'Postdoc', location: 'U Twente', when: '2023/..' }
         ]);
         expect(read?.schema).toBeUndefined();
     });
@@ -336,12 +336,12 @@ describe('what the Career view draws', () => {
         {
             name: 'an award by its award',
             section: 'awards',
-            rows: [{ award: 'Best paper', date: '2024' }],
+            rows: [{ award: 'Best paper', when: '2024' }],
             card: {
                 id: 'awards:0',
                 title: 'Best paper',
                 hidden: false,
-                lines: [{ label: 'date', text: '2024' }]
+                lines: [{ label: 'when', text: '2024' }]
             }
         },
         {
@@ -364,12 +364,12 @@ describe('what the Career view draws', () => {
         {
             name: 'a row with no title by its first line',
             section: 'positions',
-            rows: [{ location: 'U Twente', duration: 'now' }],
+            rows: [{ location: 'U Twente', when: '2024/..' }],
             card: {
                 id: 'positions:0',
                 title: 'U Twente',
                 hidden: false,
-                lines: [{ label: 'duration', text: 'now' }]
+                lines: [{ label: 'when', text: '2024/..' }]
             }
         }
     ])('draws $name', ({ section, rows, card }) => {

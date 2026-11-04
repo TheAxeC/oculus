@@ -54,6 +54,7 @@ import type {
 } from '../model/index.ts';
 import { domainColorOf, entryIdOf, entryTitleOf, primaryKeyOf } from '../model/index.ts';
 import { keyFaultOf } from '../model/model-collections.ts';
+import { periodYear } from '../helpers/dates.ts';
 import { isMap, scalar, str, strings } from '../helpers/guards.ts';
 import {
     collectionFiles,
@@ -157,23 +158,14 @@ export const ENTITY_KINDS = [
     'collections'
 ];
 
-/** A whole number: an integer from 0 to the largest safe integer. */
-const wholeNumber = z.number().int().min(0);
-
 /**
- * A whole number given as a number or as a text of the digits 0 to 9 alone, the text read as the
- * number it spells under the same bound. A fraction, a negative number, a number past the largest
- * safe integer, an empty text and a text with any other character, spaces included, give none, and
- * so do NaN and Infinity, which are not JSON-safe.
+ * The manifest's `year` as it writes it, any text or number, so the project form shows a stored
+ * value that is no period as written while the schema check names it; undefined for any other
+ * value.
  */
-const wholeShape = z.union([
-    wholeNumber,
-    z
-        .string()
-        .regex(/^[0-9]+$/)
-        .transform(Number)
-        .pipe(wholeNumber)
-]);
+function writtenYear(value: unknown): string | number | undefined {
+    return typeof value === 'string' || typeof value === 'number' ? value : undefined;
+}
 
 /** A record keyed by id, filled in sorted id order, so its JSON does not depend on read order. */
 export function byId<T extends { id: Id }>(items: T[]): Record<Id, T> {
@@ -285,11 +277,11 @@ function project(
         form: str(manifest.form),
         title: str(manifest.title) ?? '',
         short: str(manifest.short),
-        // The year is read as a whole number from a number or a text of digits: the schema gives
-        // `year` as a text "as a whole number" (config/schemas/manifest-schema.yml), and the
-        // manifest form writes the year as text into a manifest that has none (`coerce` in
-        // server/edit/writes/manifest.ts keeps a number only where the field holds one).
-        year: wholeShape.safeParse(manifest.year).data,
+        // `year` is a period (config/schemas/manifest-schema.yml): the project's year is the year
+        // it starts in, a whole number whether the manifest writes `2025` or `"2025-09"`, and the
+        // value as written is kept for the form that edits it.
+        year: periodYear(manifest.year),
+        yearWritten: writtenYear(manifest.year),
         pin: manifest.pin === true ? true : undefined,
         chips: strings(status.chips),
         statusLine: str(status.line),
@@ -527,7 +519,7 @@ function funding(entry: RawRegistryEntry): Funding {
         title,
         sub: str(entry.sub),
         status: str(entry.status),
-        date: str(entry.date),
+        when: scalar(entry.when) || undefined,
         deadline: str(entry.deadline),
         note: str(entry.note),
         statement: str(entry.statement),

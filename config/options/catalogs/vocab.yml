@@ -105,7 +105,7 @@ options:
                 help: under closes_deadline, the entry's subtasks and follow-up notes stay on the radar
                 control: toggle
             waiting:
-                help: an entry waiting on someone else, which the audit asks a date to track by
+                help: an entry waiting on someone else, which the audit asks a period to track by
                 control: toggle
             acknowledged:
                 help: a funding entry a manuscript acknowledges, so it needs a statement

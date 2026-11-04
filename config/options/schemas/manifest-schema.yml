@@ -16,7 +16,19 @@ options:
                 help: the widget the field is edited by
                 control: choice
                 options:
-                    [readonly, text, textarea, lines, select, chips, tags, date, checkbox, keymap]
+                    [
+                        readonly,
+                        text,
+                        textarea,
+                        lines,
+                        select,
+                        chips,
+                        tags,
+                        date,
+                        period,
+                        checkbox,
+                        keymap
+                    ]
             section: the section of the project form the field is drawn in
             help: the help line the form shows for the field
             foreign_key: the collection, projects or vocab list a select or chips field takes its choices from, as a field of manifest_schema names it

@@ -22,6 +22,7 @@ import {
     type RawFeeds
 } from '../../model/index.ts';
 import { keyedSchema } from '../../snapshot/schema/field.ts';
+import { ISO_DATE } from '../../helpers/dates.ts';
 import { feedPrimaryKey } from '../../helpers/hub-names.ts';
 // `str` here is the shared `text`: this file's reading of a missing or mistyped value has always
 // been the empty string rather than undefined, and the alias keeps that reading at every call it
@@ -34,9 +35,6 @@ import { identityFindings, leadStatusFindings } from '../../snapshot/validate.ts
 import { vocabKeys } from '../../shapes/vocab-keys.ts';
 import { findingText, type TextCatalog } from '../../helpers/finding-text.ts';
 import { errorLine, readYamlMap } from '../yaml-file.ts';
-
-/** An ISO date anywhere inside a string; the leads feed writes prose around its dates. */
-const DATE = /\d{4}-\d{2}-\d{2}/;
 
 /** A `meta.log` line of the leads feed that records a scout run, and the date it ran on. */
 const SCOUT_RUN = /^\s*(\d{4}-\d{2}-\d{2})\b.*?scout/i;
@@ -52,13 +50,13 @@ function metaOf(data: Record<string, unknown>): Record<string, unknown> {
     return readOr(mapShape, data.meta, {});
 }
 
-/** One lead of the feed, with the ISO date its `deadline:` text holds. */
+/** One lead of the feed, with its `deadline:` when it is a day written YYYY-MM-DD. */
 function lead(entry: Record<string, unknown>): Lead {
-    const date = DATE.exec(str(entry.deadline));
+    const deadline = str(entry.deadline);
     const fit = str(entry.fit);
     return {
         title: str(entry.title),
-        deadline: date === null ? null : date[0],
+        deadline: ISO_DATE.test(deadline) ? deadline : null,
         status: str(entry.status),
         fit: fit === '' ? null : fit
     };

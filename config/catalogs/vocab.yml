@@ -102,7 +102,7 @@ chips:
 # - `closes_deadline`: the status ends an entry's deadline on the deadline radar; compared trimmed and in lower case (`wordFlag`).
 # - `deadline_met`: the status ends a funding entry's or another entry's own deadline, so it leaves the deadline radar, and a funding entry carrying it is listed in the Focus board's awaiting box under Grants, an entry of a file flagged `awaiting` under Applications; compared trimmed and in lower case (`wordFlag`).
 # - `live_subtasks`: a status with `closes_deadline` under which an entry's subtasks and follow-up notes stay on the radar; compared trimmed and in lower case (`wordFlag`).
-# - `waiting`: an entry waiting on someone else, which the audit asks a date to track by; the audit compares the entry's status in lower case, untrimmed.
+# - `waiting`: an entry waiting on someone else, which the audit asks a period to track by; the audit compares the entry's status in lower case, untrimmed.
 # - `acknowledged`: a funding entry a manuscript acknowledges, so it needs a `statement`; the entry's status is compared as written.
 # - `default_application`: the status of the Applications entry a Position Lead's apply control makes, carried by one word at most; that word is written, two words carrying it are a finding naming both and the entry is then made with no status, and nothing is compared with it.
 # - `default_task`: the status of a task added from the palette, carried by one word at most; that word is written, two words carrying it are a finding naming both and the task is then added with no status, and nothing is compared with it.

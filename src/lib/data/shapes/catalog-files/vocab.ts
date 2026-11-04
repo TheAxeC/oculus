@@ -219,7 +219,7 @@ const statusWord = z.strictObject({
         "A status with `closes_deadline` under which an entry's subtasks and follow-up notes stay on the radar; compared trimmed and in lower case."
     ),
     waiting: flag(
-        "An entry waiting on someone else, which the audit asks a date to track by; the audit compares the entry's status in lower case."
+        "An entry waiting on someone else, which the audit asks a period to track by; the audit compares the entry's status in lower case."
     ),
     acknowledged: flag(
         "A funding entry a manuscript acknowledges, so it needs a `statement`; the entry's status is compared as written."

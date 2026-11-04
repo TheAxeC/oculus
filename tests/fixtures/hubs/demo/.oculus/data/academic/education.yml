@@ -6,15 +6,15 @@ schema:
   - { field: title,  type: text,   display: 1, required: true, section: Core }
   - { field: sub,    type: text, section: Core }
   - { field: status, type: select, options: [ongoing, done], section: Core }
-  - { field: date,   type: text, section: Dates }
+  - { field: when,   type: period, section: Dates, help: "When it happens: a year, a month, a day or a span, such as 2025-09/2026-09 or 2025/.." }
 entries:
   - key: machine-learning-msc
     title: Machine Learning (MSc)
     sub: Lecturer | 2x
     status: ongoing
-    date: 2025-
+    when: "2025/.."
   - key: supervised-msc-thesis-on-graph-transfer
     title: 'Supervised: MSc thesis on graph transfer'
     sub: Daily supervisor
     status: done
-    date: '2025'
+    when: 2025

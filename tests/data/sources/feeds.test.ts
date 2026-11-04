@@ -48,7 +48,7 @@ const LEADS = `meta:
     - "2026-09-09 scout (the Scout update task): the newest pass"
     - "2026-09-10 litwatch (the Lit Watch update task): a different task, not a run of this feed"
 entries:
-  - { title: "Postdoc AI", deadline: "20-09-2026 (2026-09-20)", status: open, fit: strong }
+  - { title: "Postdoc AI", deadline: "2026-09-20", status: open, fit: strong }
   - { title: "Closed one", deadline: "2026-09-30", status: applied }
   - { title: "Dismissed one", deadline: "2026-09-30", status: dismissed }
   - { title: "No date", status: open }
@@ -101,7 +101,7 @@ describe('the three feeds, all present', () => {
         expect(read.feeds.linkedin).toEqual({ lastPost: '2026-09-02' });
     });
 
-    it('keeps the live leads with the ISO date inside their deadline text, dismissed ones out', () => {
+    it('keeps the live leads with the day of their deadline, dismissed ones out', () => {
         expect(read.feeds.leads).toEqual([
             { title: 'Postdoc AI', deadline: '2026-09-20', status: 'open', fit: 'strong' },
             { title: 'No date', deadline: null, status: 'open', fit: null }

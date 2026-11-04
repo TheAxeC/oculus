@@ -1,13 +1,14 @@
 // Layer 2, server. The audit's sections over the projects and collections: the open markers left in
 // a document, a manifest field a live project has not filled in, a manifest naming no lead, a
 // project no board takes, a project at a terminal stage carrying the chip of a Focus chip lane, a
-// field long enough to stop being a glance, a collection entry whose date or link wants doing, and
-// the conventions the hub's own `audit:` setting names (setting.ts): a file a project must hold, a
-// heading a file must hold while a manifest key has a value, the folders a project at a stage is
-// kept under, and every part of the setting that is not of its shape. A hub that sets no `audit:`
-// is held to none of those conventions. A stage word or a form written as a chip, and a tier that
-// is missing or no word of `tiers`, are the manifest check's findings (data/snapshot/validate.ts
-// and the manifest schema), drawn in the Findings view, and are not scanned here.
+// field long enough to stop being a glance, a collection entry whose period or link wants doing,
+// and the conventions the hub's own `audit:` setting names (setting.ts): a file a project must
+// hold, a heading a file must hold while a manifest key has a value, the folders a project at a
+// stage is kept under, and every part of the setting that is not of its shape. A hub that sets no
+// `audit:` is held to none of those conventions. A stage word or a form written as a chip, and a
+// tier that is missing or no word of `tiers`, are the manifest check's findings
+// (data/snapshot/validate.ts and the manifest schema), drawn in the Findings view, and are not
+// scanned here.
 //
 // Whether a path lies in a folder is read from server/core/paths.ts (`below`).
 
@@ -505,7 +506,7 @@ export function readability(input: AuditInput, add: (f: Raised) => void): void {
  */
 const entryFieldsShape = z.object({
     status: scalarShape,
-    date: scalarShape,
+    when: scalarShape,
     link: scalarShape,
     related: namesShape
 });
@@ -551,7 +552,7 @@ export function collections(input: AuditInput, add: (f: Raised) => void): void {
                     file: fileOf(input.hub, collection.file),
                     ...sentence('audit.msg_entry_no_status')
                 });
-            } else if (rules.waitingStatus.has(status.toLowerCase()) && fields.date === '') {
+            } else if (rules.waitingStatus.has(status.toLowerCase()) && fields.when === '') {
                 add({
                     scope: bareId(collection),
                     where: label,

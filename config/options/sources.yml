@@ -104,7 +104,7 @@ options:
                 help: Add Task, Start Agent on a task card, the task hub list and the task lines read this file; on two entries the first is read
                 control: toggle
             sort:
-                help: "the fields of the file's schema the cards of the file's card list are sorted by, in their order, after the pinned cards come first: the status field in the order of its options, a date field oldest first, any other field alphabetically, a missing value last, then the file's order; a field the schema does not name is a finding; with none the cards go by their title"
+                help: "the fields of the file's schema the cards of the file's card list are sorted by, in their order, after the pinned cards come first: the status field in the order of its options, a date field oldest first, a period field newest first, any other field alphabetically, a missing value last, then the file's order; a field the schema does not name is a finding; with none the cards go by their title"
                 control: list
             ticker:
                 help: 'the lines of the file: its dated entries in the command center, and every line of the file flagged tasks in the Tasks section; with none the file gives no lines'

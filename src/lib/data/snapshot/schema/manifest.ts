@@ -44,6 +44,7 @@ const WIDGET_TYPES: Record<string, string> = {
     chips: 'tags',
     tags: 'tags',
     date: 'date',
+    period: 'period',
     checkbox: 'checkbox',
     readonly: 'raw',
     keymap: 'raw',

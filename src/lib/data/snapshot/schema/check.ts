@@ -1,6 +1,8 @@
 // Layer 1, data. The check of a hub document against its generated schema, and the findings an ajv
 // error becomes. ajv does the checking; this module owns what ajv cannot say: which catalog
-// sentence an error is, and which line of the file it is on. An ajv message is never shown.
+// sentence an error is, and which line of the file it is on. An ajv message is never shown. The
+// one keyword it adds to ajv that validates, `x-period`, holds a `period` field to the reader of
+// helpers/dates.ts.
 //
 // A validator is compiled once for each distinct schema text and kept by the checker it was asked
 // of, so a rebuild whose schemas did not change compiles nothing. The checker is handed in, never
@@ -16,8 +18,8 @@ import { LineCounter, isCollection, isMap, isPair, isScalar, parseDocument } fro
 import type { Document, Node } from 'yaml';
 import { findingText, type TextCatalog } from '../../helpers/finding-text.ts';
 import type { Finding } from '../../model/index.ts';
-import { ISO_DATE } from '../../helpers/dates.ts';
-import { ANNOTATIONS, type JsonSchema } from './json.ts';
+import { ISO_DATE, readPeriod } from '../../helpers/dates.ts';
+import { ANNOTATIONS, PERIOD_KEYWORD, type JsonSchema } from './json.ts';
 
 /** A file read and parsed once, with the schema that governs it. */
 export type SchemaDoc = {
@@ -40,6 +42,12 @@ export type Checker = {
 export function createChecker(): Checker {
     const ajv = new Ajv({ allErrors: true, verbose: true, allowUnionTypes: true });
     for (const keyword of ANNOTATIONS) ajv.addKeyword({ keyword });
+    ajv.addKeyword({
+        keyword: PERIOD_KEYWORD,
+        schemaType: 'boolean',
+        validate: (on: boolean, value: unknown) =>
+            !on || value === null || readPeriod(value) !== null
+    });
     const compiled = new Map<
         string,
         { validate: ValidateFunction | undefined; schema: JsonSchema }
@@ -180,10 +188,15 @@ function keyWords(
 /**
  * The errors of a validation that say something. A union reports the errors of every branch beside
  * its own: a union with one branch that is not null (an optional value) is worded by that branch's
- * errors alone, and any other union by its own error alone.
+ * errors alone, and any other union by its own error alone. A `period` field's value is worded by
+ * its `x-period` error alone, since its type, pattern and range say less about the same value.
  */
 function surfaced(errors: ErrorObject[]): ErrorObject[] {
-    const dropped = new Set<ErrorObject>();
+    const dropped = new Set<ErrorObject>(
+        errors.filter(
+            (one) => one.keyword !== PERIOD_KEYWORD && annotation(one, PERIOD_KEYWORD) === true
+        )
+    );
     const unions = errors
         .filter((one) => one.keyword === 'anyOf' || one.keyword === 'oneOf')
         .sort((a, b) => a.schemaPath.length - b.schemaPath.length);
@@ -295,6 +308,16 @@ function worded(error: ErrorObject, catalog: TextCatalog): { key: string; messag
                           )
             };
         }
+        case PERIOD_KEYWORD:
+            return {
+                key: here,
+                message: findingText(
+                    catalog,
+                    'findings.schema.not_a_period',
+                    here,
+                    shown(error.data)
+                )
+            };
         case 'minimum':
         case 'maximum': {
             const limit = (error.params as { limit: number }).limit;

@@ -7,7 +7,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { isDeepStrictEqual } from 'node:util';
 import { z } from 'zod';
-import { localDate } from '../../../data/helpers/dates.ts';
+import { localDate, periodYear } from '../../../data/helpers/dates.ts';
 import { scalar } from '../../../data/helpers/guards.ts';
 import { addressKey, radarText, sameTitle } from '../../../data/prose/literature.ts';
 import { words } from '../../core/words.ts';
@@ -132,12 +132,12 @@ export function addRadarEntry(
         return refuse('url', words(config.text, 'server.feeds.paper_in_file'));
     }
 
-    const year = typeof fields.year === 'number' ? fields.year : Number(text('year'));
+    const year = periodYear(typeof fields.year === 'number' ? fields.year : text('year'));
     const given: Record<string, unknown> = {
         title,
         authors: text('authors'),
         venue: text('venue'),
-        year: Number.isInteger(year) && year > 0 ? year : '',
+        year: year ?? '',
         url,
         bucket,
         project: text('project'),

@@ -252,6 +252,7 @@ A schema is a list of fields. Each is a map with `field` and `type`, and may car
 | `select` | one of `options`, or a key from `foreign_key` |
 | `tags` | a list of strings |
 | `date` | `YYYY-MM-DD` |
+| `period` | a date or a span, EDTF: a year `2025`, a month `2025-09`, a day `YYYY-MM-DD`, a moment `YYYY-MM-DDTHH:MM:SS`, with an optional `Z`, `+HH:MM` or `-HH:MM`, a span `2025-09/2026-09`, an open span `2025/..` |
 | `checkbox` | `true` or `false` |
 | `metalist` | a list of `{ label, value }` |
 | `raw` | a nested map |

@@ -4,11 +4,11 @@
 // browser.
 //
 // An edit is plain JSON, so the draft in the ui store (form-draft.ts) can keep it across a reload:
-//   text, textarea, select, date  a string
-//   tags                          a list of strings
-//   checkbox                      a boolean
-//   metalist                      a list of { label, value } rows
-//   records                       a RecordsEdit, in one of the four shapes below
+//   text, textarea, select, date, period  a string
+//   tags                                  a list of strings
+//   checkbox                              a boolean
+//   metalist                              a list of { label, value } rows
+//   records                               a RecordsEdit, in one of the four shapes below
 //
 // A `records` field holds a list of records, one record, a map from a name to one record, or a map
 // of label-value rows. The saved value decides which (a list is a list, a map with the fields

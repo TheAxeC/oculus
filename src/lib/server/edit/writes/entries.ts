@@ -7,10 +7,11 @@
 // it.
 //
 // A field's value is checked against the type its own schema declares before anything is written: a
-// select takes one of its options, a date one ISO day, a checkbox a boolean, and a text field one
-// line of text. A value that does not fit is refused with the reason, never coerced into something
-// the file did not mean, and the other fields of the same request are written: a request may set
-// several fields of the entry in one call, so one bad value holds back itself and nothing else.
+// select takes one of its options, a date one ISO day, a period what the period reader of
+// data/helpers/dates.ts reads, a checkbox a boolean, and a text field one line of text. A value
+// that does not fit is refused with the reason, never coerced into something the file did not
+// mean, and the other fields of the same request are written: a request may set several fields of
+// the entry in one call, so one bad value holds back itself and nothing else.
 //
 // server/edit/writes.ts is the route and re-exports the public half of this file.
 //
@@ -29,7 +30,7 @@ import { relative } from 'node:path';
 import { isDeepStrictEqual } from 'node:util';
 import { parse } from 'yaml';
 import { z } from 'zod';
-import { ISO_DATE } from '../../../data/helpers/dates.ts';
+import { ISO_DATE, readPeriod } from '../../../data/helpers/dates.ts';
 import { isMap, scalar } from '../../../data/helpers/guards.ts';
 import { mapShape } from '../../../data/shapes/shapes.ts';
 import { throughSchema } from '../../../data/snapshot/hubs/references.ts';
@@ -76,7 +77,7 @@ export function saved(file: string, source: string, edit: EditResult): WriteOutc
 
 /**
  * Why a value does not fit the type its schema field declares, or the empty string when it does.
- * The five types a control writes are checked, and a `tags` field with options of its own is held
+ * The six types a control writes are checked, and a `tags` field with options of its own is held
  * to their keys; any other `tags`, a `metalist` or a `raw` field carries a shape rather than a
  * value and is left to yaml-edit's own vocabulary. An empty value clears a field, whatever its
  * type, so it is never refused here.
@@ -93,6 +94,10 @@ function typeRefusal(field: SchemaField, value: unknown, catalog: Record<string,
             return words(catalog, 'server.entries.type_date', name);
         }
         return '';
+    }
+    if (field.type === 'period') {
+        const read = readPeriod(typeof value === 'string' ? value.trim() : value);
+        return read === null ? words(catalog, 'server.entries.type_period', name) : '';
     }
     if (field.type === 'checkbox') {
         return typeof value === 'boolean'

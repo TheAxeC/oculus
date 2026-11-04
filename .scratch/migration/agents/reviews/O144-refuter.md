@@ -231,3 +231,199 @@ The CV texts of the C18 run:
 - S2 (the funding payload key), S3 (the note prefix) and P3 (accepting the reworded data-map row) are the user's or the orchestrator's to rule.
 
 Reviewer usage: ac632786ca06c2f07, claude-opus-5-5, 362152 tokens, 96 tool uses, 19 min 5 s
+
+## Repair round 1, refuted
+
+Worktree `/Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O144`, base `069decb7c`. I changed no file of the worktree. Everything I wrote is in `/private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/o144-reviewer-r1/`: copies of `cases.mts`, `rewrite.mts` and `review-cases.mts`, and the run outputs. The base-tree copy I built for P4 has been removed (`rm -rf`, and `ls` of the folder shows no `base-tree`).
+
+All twelve round items are closed and every verdict holds or is met. Five low findings are left: T6, T7, T8 and T9 under Standards and P5 under Proof. None blocks landing, and each is a one-line text fix.
+
+## Verification lines
+
+The round's delta. Each path of the snapshot's `files.txt` was compared with `cmp`, then read with `diff -u <snapshot> <worktree>`. Nine files differ: `docs/HELP.md`, `docs/apps.md`, `docs/data-map.md`, `src/lib/data/model/model-entities.ts`, `src/lib/data/snapshot/normalise.ts`, `src/lib/data/sources/documents/feeds.ts`, `src/lib/state/feeds/leads.ts`, `src/lib/views/shared/forms/entry/edit/FieldControl.svelte` and `tests/data/sources/career.test.ts`. The paths `git status --short` lists now, with `.scratch` left out, are the same set as `files.txt` (`diff` printed `same-set`). So the round touched no path that `files.txt` does not list.
+
+Verify 1. `npm run test:quick`, run once. I did not run `npm run diagrams`, because it writes files. The round's `cmp` shows that no `docs/diagrams/*` file changed in the round.
+
+```
+ 5:15  up 1 day, 13:18, 1 user, load averages: 3.53 7.07 7.37
+test:quick: 75 changed file(s), from git since HEAD
+test:quick: 246 test file(s)
+ok      prettier (0.9 s): All matched files use Prettier code style!
+ok      ASCII gate (0.9 s)
+ok      svelte-kit sync (2.4 s)
+ok      eslint (2.4 s)
+ok      svelte-check (9.3 s): 1793765719534 COMPLETED 581 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest checks (126.1 s): Duration  113.88s (transform 44.55s, setup 0ms, import 120.99s, tests 301.52s, environment 5ms)
+FAILED  vitest (188.3 s)
+FAILED  vitest slow (274.4 s)
+test:quick: 277.1 s; failed: vitest, vitest slow
+test:quick: not covered: tests that reach no changed file within the import depth,
+            other than the checks under tests/checks/source and tests/checks/tree,
+            which run for any change under src, tests or utils; the build, the lint
+            of unchanged files
+```
+
+The red lines are six timeouts, all in test files the step does not change:
+- `tests/data/sources/config/layers/agents.test.ts` and `hub-vocab.test.ts`: `Error: Test timed out in 5000ms.`
+- `tests/data/hubs/hub-portfolio.test.ts`, `tests/routes/edit/config-key.test.ts`, `tests/routes/sessions/website.test.ts` and `tests/routes/hubs/hub-writes.test.ts`: `Error: Test timed out in 20000ms.`
+
+I reran each alone once, with the flags the quick tier uses for it:
+- `5:20 ... load averages: 9.69 11.82 9.81`: `npx vitest run <the two> --tagsFilter '!slow'` gave `Test Files  2 passed (2)`, `Tests  34 passed | 2 skipped (36)`.
+- `load averages: 8.80 11.52 9.74`: `npx vitest run <the four> --tagsFilter slow --testTimeout 20000` gave `Test Files  4 passed (4)`, `Tests  97 passed (97)`.
+
+Under spec.md:80 these failures are not the step's.
+
+Verify 2. `npx vitest run` of `period.test.ts`, `website-files.test.ts`, `normalise.test.ts`, `career.test.ts`, `feeds.test.ts`, `make.test.ts` and `duplication.test.ts`: `Test Files  7 passed (7)`, `Tests  171 passed (171)`. `history.test.ts` run with the checks' own flags (`--testTimeout 0 --hookTimeout 0`, as `npm run test:checks` runs it): `Test Files  1 passed (1)`, `Tests  6 passed (6)`.
+
+Verify 3. `LC_ALL=C xargs perl -ne 'print "$ARGV:$.: $_" if /[^\x20-\x7E\n]/; close ARGV if eof'` over the 72 changed files gave `perl exit 0`. The same check over the report gave `report perl exit 0`. The full-tree gate of spec.md:103, over `find src tests config -type f ! -name local.yml`, gave `gate exit 0`.
+
+Verify 4. The YAML parse over the changed `.yml` files: `yaml exit 0`.
+
+Verify 5. `sh utils/unused-exports.sh` against `../O144-base/unused-exports.txt`: `diff exit 0`, no output.
+
+Verify 6. In the round's delta, the added lines over 100 columns are two Markdown table rows that are one line each: `docs/apps.md: 619` and `docs/data-map.md: 207`. Over the whole diff, the added `.ts` and `.svelte` lines over 100 columns are the string literal at `vocab.ts:222`, which is 137 columns on the base, and one-line YAML rows. The two new files have none.
+
+Every command the round's section quotes, rerun in the same form:
+- `cd ../O144-base && npx tsx <scratch>/cases.mts C14 C19` (plus B2). It prints C14 `the template's schema: deadline {"field":"deadline","type":"text","section":"Dates","help":"Deadline as posted."}` and `findings: ["line 3: [entries[1].rolling] key entries[1].rolling is not declared by the schema of this file"]`, and C19 `bar group of year: ["2024","2021","2025-09","2026"]`. This is the same as `o144-builder/base-c14-c19.txt`.
+- B2 on the base copy: `period-c: year undefined, yearWritten undefined`. Its only finding is `[stage] stage "drafting" is not a word of the stages list`, a fixture artifact.
+- B2 on the changed tree: `period-c: year undefined, yearWritten "Sept 2025"`, with findings `[stage] ...` and `[year] year is Sept 2025, which is not a period such as 2025, 2025-09, 2026-10-27 or 2025-09/2026-09`.
+- `review-cases.mts R1` on the changed tree: `CV rows with a period text: 17, without: 85`, the four radar days `""`, `funding records with when: 0 of 14`.
+- `review-cases.mts R1` on the base: `102, without: 0`, `"2026-10-29"`, `"2026-10-27"`, `"2027-03-01"`, `"2026-09-14"`, `funding records with when: 0 of 14`.
+- The whole `cases.mts` on the changed tree. C4 to C17 and C19 are identical to `o144-builder/final-c4-c19.txt`; the only differences are the scratch path and the added B2. C18 prints `changed values: 511`, `findings of the copy before the rewrite: 21, after: 1, new after: 1`, `findings naming when, deadline, rolling or note after: 0`, `CV rows whose period text is the same: 74, different: 28` and `employer CV rows whose period text is the same: 40, different: 18`. C1 and C2 read and refuse every value, and C3 orders all three input orders the same.
+- The quoted `cases.mts` (report lines 365 to 1032) against the file: `cases-same`.
+- P4 base-tree runs. My copy was `../O144-base`, the seven root files from `git show 069decb7c:<file>` (`svelte.config.js` is absent at the base), `node_modules` linked, and the six changed tests copied in:
+  - `period.test.ts`: `Tests  34 failed (34)`, at `:79:16`, `:105:16` and `:125:55`, `TypeError: readPeriod is not a function`.
+  - `website-files.test.ts`: `2 failed | 39 passed (41)`, at `:561:42` and `:658:58`.
+  - `normalise.test.ts`: `1 failed | 12 passed (13)`, at `:308:23`.
+  - `career.test.ts`: `2 failed | 26 passed (28)`, at `:380:72`.
+  - `feeds.test.ts`: `2 passed (2)`.
+  - `make.test.ts`: `1 failed | 34 passed (35)`, at `:242:36`.
+  - Every row of the report's table reproduces.
+- `wc -l` of the round's nine files and `git diff 069decb7c --stat` (`70 files changed, 715 insertions(+), 409 deletions(-)`) match the report.
+
+## The round's items
+
+1. P1: **closed**. My base run prints the C14 and C19 lines that the report's first-run section now holds (report lines 103-104 and 155-157). The sentence that the base has no `year` order is gone. The base order by count is given in "Visible changes".
+2. P2: **closed**. Judgment call 3 (report line 1915) states the change from "period" to "length". The demo diff shows `help: "Scheme | role | period"` replaced by `"Scheme | role | length"`, and the `sub` texts are "... | 3 years" (`funding.yml:16`) and "... | 2 years" (`:28`).
+3. T1: **closed, with two inaccuracies** (T6 and T7). The three bullets are at `docs/HELP.md:277`, `:339` and `:351`, each where the user meets it. Item 11's list marks them 'rewritten' (report line 1904). `history.test.ts` passes over them.
+4. T2: **closed as ruled**. `docs/apps.md:402` names `` `yearWritten?` (the manifest's `year` as written, a period) ``. The words "a period" are false after item 8 (T8).
+5. T3: **closed**. `FieldControl.svelte:8` is 98 columns and `:9` holds `` `periodRefusal`). ``. The next word would make line 8 116 columns.
+6. T4: **closed**. `leads.ts:140` reads `const text = scalar(value);` and `feeds.ts:55` reads `const deadline = str(entry.deadline);`. `feeds.ts`'s `str` is the shared `text`, which returns `''` for a missing value, so dropping `.trim()` changes the type of nothing.
+   - No caller relied on the trim. The base never trimmed; it searched for a day anywhere in the text. The step's other readers of a deadline are `rail-badges.ts:69`, through `deadlineOf`, and `splitLeads`/`isExpired`.
+   - No hub lead holds a spaced deadline. A `python3` read of the hub's `leads.yml`, read only, printed `74 spaced: []`.
+   - The schema's `date` pattern refuses a spaced day, so the reader and the check now agree.
+7. T5: **closed**. My `diff -U0` against the base shows `:39` holding `when: "2023/.."`, `:41-42` holding `"2026-09"` and `"2026-09-15"`, and the assertions at `:91-92` and `:183` following. The test passes on both trees, and it still checks that the reader passes a career file's fields through with no schema.
+8. B2: **closed**. `writtenPeriod` (`normalise.ts:163-168`) returns any string or number. `Project.year` stays `periodYear`, which is undefined for "Sept 2025", as my B2 run shows. The `year` finding stays. The form posts only dirty fields (`state/forms/schema.ts:557-570`), so a stored bad `year` does not hold back a save of other fields. The function's name now says less than it does (T9).
+9. B1: **closed**. Both R1 runs reproduce the quoted figures, and "Visible changes" (report line 1940) and judgment call 14 state that the landing applies the code and the hub rewrite together. One clause of the base half is not printed by R1 (P5).
+10. S3: **closed**. Judgment call 15 (report line 1927) names the prefix and the 14 leads.
+11. P3: **closed as ruled**. `docs/data-map.md:255` reads `` a moment `YYYY-MM-DDTHH:MM:SS`, with an optional `Z` or `+HH:MM` ``. The reader also takes `-HH:MM` (T7).
+12. P4: **closed**. My base-tree runs reproduce every row of the failing-line table. My `diff -U0` of each changed test file and of `allow-duplication.txt` against the base copy gives exactly the 21 changed lines the assertion table lists, each before and after correct. The table gives line numbers on the changed tree.
+   - `allow-duplication.txt:16` changes only the line number in the reason text, from 145 to 159. The mark `c0785dd03b7f` is the same, so nothing is loosened.
+   - `feeds.test.ts` passes on the base, as the report says.
+
+None of the twelve is closed by removing a check. Every change stays inside the nine files and the round's paths. The `model-entities.ts:428` comment and the `readPeriod` import dropped in `normalise.ts` follow item 8.
+
+## Item verdicts (the whole diff since the base)
+
+1. Reader of a period: **holds**. C1 and C2 come from `cases.mts` and from `period.test.ts` (34 rows pass).
+2. Type `period`: **holds**. The type words, the `x-period` check, `typeRefusal`, `coerce`, the `FieldControl` period branch and the list column are all in place.
+3. Sort: **holds**. C3 and C4. The move to `card-order.ts` stays as built under the round's "Not sent".
+4. Radar and audit: **holds**. C7 and C8.
+5. CV builder: **holds**. C9 to C12, and C18.
+6. Manifests and literature years: **holds**. B2 is closed (B2 run, C6, C13, C19).
+7. Leads: **holds**. C14, and the trims are removed.
+8. Templates: **holds**. C15.
+9. Demo hub: **holds**. C16. Judgment call 3 is now accurate.
+10. Research hub rewrite: **holds**. C18 reproduces, `git status --short` lists no hub path, and the unrewritten-hub effects are stated.
+11. Docs and comments: **holds** for the sentences naming the old fields. The new HELP and apps sentences carry the Standards findings T6, T7 and T8.
+
+## Case verdicts
+
+- C1 **met**, C2 **met**, C3 **met**: my `cases.mts` run and `period.test.ts`.
+- C4 to C13 **met**: identical to the builder's final run, and C6 and C13 rerun after the round's `normalise.ts` change.
+- C14 **met**: `"2026-12-15 | Rolling"`, `"Rolling"`, `no line`, and the text deadline gives `no line` with the `date` finding.
+- C15 **met** and C16 **met**, both under judgment call 13's reading.
+- C17 **met**.
+- C18 **met**: 21/1, 0 findings naming the new fields, 74/28 and 40/18.
+- C19 **met**: no filter finding, and `["2026","2025-09","2024","2021"]`.
+
+## Spec
+
+none
+
+## Proof
+
+P5. One clause of the B1 "before" is not printed by the run it cites (low).
+- Place: report line 1940, "Before (base): ... the funding records carry `date`".
+- R1 on the base prints `funding records with when: 0 of 14` and nothing about `date`.
+- The clause is true by reading. The base's `normalise.ts:530` has `date: str(entry.date)`, and the hub's funding `date:` values are quoted strings (`grep` of `funding.yml`, for example `date: "2026"`).
+- Failure scenario: none in behaviour. A reader takes the clause as measured when it was not.
+
+## Standards
+
+T6. A HELP bullet says every award prints a day, which is false for the employer CVs (low).
+- Place: `docs/HELP.md:351`, "An award prints its period's first day, as the CV's awards read it."
+- Write the website also writes the employer CVs' file (`cv.ts:1-10`). A profile award row prints its period as text, because `profileRow` calls `withPeriod(section, out, false)` (`cv.ts:475,484`). C12 prints `date: "2016"`, and judgment call 7 says the same.
+- Failure scenario: a user who reads the bullet expects an employer CV's award to show a day and finds "2016".
+- Fix: say that the website's CV prints an award as its first day, and an employer CV prints its period text.
+
+T7. Two new doc sentences do not match what they describe (low).
+- `docs/HELP.md:277` says the hint gives "a day (YYYY-MM-DD)". The hint is `editor.period_hint`: `'2025, 2025-09, 2026-10-27 or 2025-09/2026-09'`. The placeholder is forced by `history.test.ts`, but the sentence reads as if the hint showed `YYYY-MM-DD`. "a day such as the 27th of October 2026" or "a day written year-month-day" would be true.
+- `docs/data-map.md:255` names the zone as "an optional `Z` or `+HH:MM`". The reader also takes a negative zone: `TIME` (`dates.ts:42`) is `` `T${HOUR}:${SIXTY}:${SIXTY}(?:Z|[+-]${HOUR}:${SIXTY})?` ``.
+- The data-map wording is the round's dictated text, so the change is the orchestrator's: `+HH:MM` or `-HH:MM`.
+- Failure scenario: a hub author writing `-05:00` believes it is refused.
+- Two smaller points are true but incomplete. `docs/HELP.md:339` does not say that an expired lead's line ends with ` | expired` or its status (`LeadCard.svelte:153-154,322-323`). The base already drew that tail.
+
+T8. The apps guide row says `yearWritten` is a period, and item 8 made it any text (low).
+- Place: `docs/apps.md:402`: `` `yearWritten?` (the manifest's `year` as written, a period) ``.
+- `normalise.ts:166` now returns any string or number. `model-entities.ts:428` says "a period or any text". So a portfolio app can receive `yearWritten: "Sept 2025"`.
+- The words come from round item 4, which item 8 of the same round contradicts. The builder followed both literally and did not raise the conflict.
+- Failure scenario: an app that parses `yearWritten` as a period, trusting the guide, meets text it cannot read.
+- Fix: "the manifest's `year` as written, a period or any other text".
+
+T9. The function's name says less than the function does (low).
+- Place: `normalise.ts:166`, `function writtenPeriod(value: unknown): string | number | undefined { return typeof value === 'string' || typeof value === 'number' ? value : undefined; }`.
+- The doc comment says it keeps any text, so it is not hidden. But "Period" in the name tells a reader of the call site (`normalise.ts:284`, `yearWritten: writtenPeriod(manifest.year)`) that the value is checked.
+- Fix: a name such as `writtenYear` or `asWritten`. The function has one caller.
+
+T10. The builder ran the verify list twice in the round (low; spec.md:26).
+- Place: report line 1954, "`npm run test:quick` ran twice in this round: the first run was stopped before its end when a `docs/HELP.md` line followed it".
+- The first run started before the last change, so it was not the one run after the last change that spec.md:26 allows. The report states this openly.
+
+## Behaviour
+
+none. I read the round's code changes against their callers:
+- `writtenPeriod`: the form posts only dirty fields, and `yearWritten`'s only reader is `schema.ts:465`.
+- The trim removal: no caller relied on it, and the hub has no spaced deadline.
+- The `FieldControl` comment, the `career.test.ts` fixture and the docs.
+
+None of them changes behaviour beyond what its item asks.
+
+## Declined to judge
+
+- `npm run diagrams`: not run, because it writes `docs/diagrams/*` in the worktree, which my task forbids. The round changed no diagram file (`cmp` against the snapshot), and the `vitest checks` line of my quick run passed.
+- The look on landing: the period control's marking and hint, a lead card's "Rolling" line and the view orders need a page, and I opened none.
+- Whether the website's templates print the number `2026` and the text `'2026'` identically: not read in the website's code. This is carried from the first review.
+- Whether the oculus manifest's `cv.when` row prints "2026 - Current" after the orchestrator rewrites `.oculus/project.yml`: C18 shows `Oculus | (no row)`, since that manifest is rewritten at landing.
+- How the orchestrator applies the hub rewrite at landing: that is the orchestrator's call.
+
+Reviewer usage: a1f249a028eeefda3, claude-opus-5-5, 218028 tokens, 76 tool uses, 16 min 3 s
+
+## Closed
+
+First review:
+- P1 to P4, T1 to T5, B1, B2 and S3: sent in repair round 1 (`agents/briefs/O144-round-1.md`); the review over round 1 holds each of them closed.
+- S1 (the card sort moved to `src/lib/state/boards/collection/card-order.ts`): kept as built.
+- S2 (the funding period in the portfolio payload): closed in automode, the payload names it `when` (`plan.md` Rulings, "O144 funding period in the payload"; `choices.md`).
+
+Review over round 1, at landing on main:
+- T6: `docs/HELP.md:351` reads "An award prints its period's first day on the website's CV, as its awards read it, and its period text on an employer CV."
+- T7: `docs/HELP.md:277` reads "a day written year-month-day"; `docs/data-map.md:255` reads "with an optional `Z`, `+HH:MM` or `-HH:MM`,".
+- T8: `docs/apps.md:402` reads "(the manifest's `year` as written, a period or any other text)".
+- T9: `normalise.ts` names the function `writtenYear`, at its definition and its one call.
+- P5: report text only; the clause is true by reading (`normalise.ts:530` on the base), and the landing report says it was read, not printed.
+- T10: report text only; the round's last verify run came after its last change, and the gate's run at landing is the run that counts.
+
+Found at landing, outside both reviews:
+- The look found a refused text box drawn like any other: `TextInput.svelte` sets `aria-invalid` and a title, and no stylesheet drew a mark, so the period control's wrong value showed nothing. `src/lib/ui/theme/field.css` borders a field with `aria-invalid='true'` in `--c-red`, the rice theme's line included; the look shows `2026-13` in a red border (computed `border-top-color` `rgb(220, 38, 38)`).
+- Item 10 names the hub's `literature.yml` and `radar.yml` in "What is on the tree", and the hub rewrite left their `year` lines `type: text`. Both are `type: period` with the demo hub's help text; the radar's 678 years are integers from 2022 to 2026, and the live check finds no new finding.

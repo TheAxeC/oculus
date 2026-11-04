@@ -68,7 +68,7 @@ export function projectCv(value: unknown): ProjectCv | undefined {
     return record<ProjectCv>(value, (map) => ({
         title: field(textShape, map.title),
         url: field(textShape, map.url),
-        duration: field(z.union([z.string(), z.number()]), map.duration),
+        when: field(z.union([z.string(), z.number()]), map.when),
         about: field(textShape, map.about),
         role: field(textShape, map.role),
         hide: field(z.boolean(), map.hide),

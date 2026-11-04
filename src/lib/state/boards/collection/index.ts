@@ -1,16 +1,15 @@
 // Layer 2, client state. The pure half of the collection view: what a card draws for one entry and
-// in what order, the order the cards are drawn in (`cardOrder`: pinned first, then by the `sort:`
-// of the collection's `collections:` entry, then the file's order), the values the status facet
-// offers, the view's saved state, the columns of its list, and the words a field's value reads as
-// (`fieldWords`), which the bar and the list both read. Its bar, the groups, the slices and what
-// they keep, is bar.ts beside it. No rune and no store here, so every rule below is checked without
-// a browser, exactly as state/boards/board/ is for the board.
+// in what order, the values the status facet offers, the view's saved state, the columns of its
+// list, and the words a field's value reads as (`fieldWords`), which the bar and the list both
+// read. Its bar, the groups, the slices and what they keep, is bar.ts beside it; the order the
+// cards are drawn in (`cardOrder`) is card-order.ts beside it. No rune and no store here, so every
+// rule below is checked without a browser, exactly as state/boards/board/ is for the board.
 //
 // A collection is drawn from its own file's `schema:` rather than from anything this module knows:
 // the order is the schema's order, a field the schema names and the entry lacks is skipped, and a
 // field the entry carries that the schema does not name is drawn after them. What differs per field
 // is how it is drawn, and that is decided by the field's name first and its type second, since the
-// seven hub files agree on the names (`status`, `tags`, `meta`, `note`) and use only six types. A
+// hub files agree on the names (`status`, `tags`, `meta`, `note`) and share one list of types. A
 // `records` field whose rows name a person is decided by its schema: it draws the people.
 //
 // The rows of the Website section feed the website, so a card leaves them out and the entry's page
@@ -37,7 +36,6 @@ import {
 } from '../../../data/shapes/shapes.ts';
 import {
     displayFields,
-    optionKeys,
     primaryKeyOf,
     type Entry,
     type Followup,
@@ -49,11 +47,9 @@ import { fileBytesUrl } from '../../sources/fs-transport.ts';
 import { normalisePath } from '../../sources/fs.ts';
 import { dirOf } from '../../sources/repositories/change-tree.ts';
 import { entryPageState } from '../../forms/page-entry.ts';
-import { entryWords } from '../../shared/page/idents.ts';
 import { t } from '../../shared/words/text.ts';
 import type { ListedColumn } from '../../../data/shapes/boards/columns.ts';
 import { freshPicks } from '../board/state.ts';
-import { stageRank } from '../board/presets.ts';
 
 // The boundary table lets `views/` import `state/` and nothing of `data/`, so the types the view
 // names reach it from here, beside the functions that return them.
@@ -173,7 +169,7 @@ export function parseCollectionState(raw: unknown): CollectionState {
 export const TITLE_COLUMN = ':title';
 
 /** The types of field the list draws a column of. */
-const COLUMN_TYPES = ['select', 'text', 'tags', 'chips', 'date'];
+const COLUMN_TYPES = ['select', 'text', 'tags', 'chips', 'date', 'period'];
 
 /** The people fields the list draws by default, by their literal names as the Add asks them. */
 const PEOPLE_COLUMNS = ['lead', 'supervisors', 'collaborators'];
@@ -729,92 +725,6 @@ export function identityFaults(
 /** Whether the file floats this entry to the top of its list: `pin: true` and nothing else. */
 export function isPinned(entry: Entry): boolean {
     return entry.fields.pin === true;
-}
-
-/**
- * The one comparison of the texts a card list is sorted by: English, so the order is the same in
- * every reader's locale, with case and accents ignored and the digits of a text read as a number,
- * so `2` sorts before `10`.
- */
-const CARD_COLLATOR = new Intl.Collator('en', { sensitivity: 'base', numeric: true });
-
-/**
- * The text a field's value sorts by: a text, a number as its text, a list by its first item's text;
- * undefined for no value, an empty text, a map, an empty list and anything else, which sorts after
- * every value.
- */
-function sortText(value: unknown): string | undefined {
-    const one: unknown = Array.isArray(value) ? value[0] : value;
-    const text =
-        typeof one === 'number' && Number.isFinite(one)
-            ? String(one)
-            : typeof one === 'string'
-              ? one
-              : '';
-    return text.trim() === '' ? undefined : text;
-}
-
-/** How two entries compare on one sort; 0 leaves them to the next. */
-type CardCompare = (left: Entry, right: Entry) => number;
-
-/** Two texts compared by `compare`, a missing one after the other. */
-function filledFirst(
-    left: string | undefined,
-    right: string | undefined,
-    compare: (left: string, right: string) => number
-): number {
-    if (left === undefined || right === undefined) {
-        return left === right ? 0 : left === undefined ? 1 : -1;
-    }
-    return compare(left, right);
-}
-
-/**
- * How one field of a sort compares two entries, by the field's line in the schema: the status field
- * in the order of its options, a value they do not hold after the ones they hold; a field of the
- * type `date` by its text, oldest first; and any other field, and a status field with no options,
- * by `CARD_COLLATOR`.
- */
-function fieldCompare(field: string, schema: SchemaField[] | undefined): CardCompare {
-    const declared = schema?.find((one) => one.field === field);
-    const options = field === STATUS_FIELD ? optionKeys(declared) : [];
-    const texts =
-        declared?.type === 'date'
-            ? (left: string, right: string): number => (left < right ? -1 : left > right ? 1 : 0)
-            : (left: string, right: string): number =>
-                  stageRank(left, options) - stageRank(right, options) ||
-                  CARD_COLLATOR.compare(left, right);
-    return (left, right) =>
-        filledFirst(sortText(left.fields[field]), sortText(right.fields[field]), texts);
-}
-
-/**
- * The order a collection's cards are drawn in: the pinned entries first, then the others, each
- * group by the fields of `sort` (its `collections:` entry's `sort:`) read left to right, then in
- * the file's order. A field the schema does not name is left out, which the schema check reports
- * (data/snapshot/schema/run.ts); a file with no schema reads every field. With no field left, the
- * cards go by the words they are headed by (`entryWords`), by `CARD_COLLATOR`. An entry that holds
- * no value of a field goes after those that hold one. The sort is stable, so the file's order
- * breaks every tie.
- */
-export function cardOrder(
-    entries: readonly Entry[],
-    sort: readonly string[] | undefined,
-    schema: SchemaField[] | undefined
-): Entry[] {
-    const named = schema === undefined ? null : new Set(schema.map((one) => one.field));
-    const fields = (sort ?? []).filter((field) => named === null || named.has(field));
-    const words: CardCompare = (left, right) =>
-        filledFirst(sortText(entryWords(left)), sortText(entryWords(right)), (one, other) =>
-            CARD_COLLATOR.compare(one, other)
-        );
-    const compares = fields.length === 0 ? [words] : fields.map((one) => fieldCompare(one, schema));
-    const pinned = (entry: Entry): number => (isPinned(entry) ? 0 : 1);
-    return [...entries].sort((left, right) => {
-        let order = pinned(left) - pinned(right);
-        for (const compare of compares) order ||= compare(left, right);
-        return order;
-    });
 }
 
 /** One status the entries carry, and how many carry it. */

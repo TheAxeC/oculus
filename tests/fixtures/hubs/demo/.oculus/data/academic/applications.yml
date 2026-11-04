@@ -6,16 +6,16 @@ schema:
   - { field: title,  type: text,   display: 1, required: true, section: Core }
   - { field: sub,    type: text, section: Core }
   - { field: status, type: select, options: [in-prep, applied, rejected, declined, withdrawn], section: Core }
-  - { field: date,   type: text, section: Dates }
+  - { field: when,   type: period, section: Dates, help: "When you applied: a year, a month or a day." }
   - { field: url,    type: text, section: Core }
 entries:
   - key: assistant-professor-ml
     title: Assistant Professor, ML
     sub: Example University
     status: applied
-    date: 2026-02
+    when: "2026-02"
   - key: postdoc-graph-learning
     title: Postdoc, graph learning
     sub: Research Institute
     status: declined
-    date: 2025-11
+    when: "2025-11"

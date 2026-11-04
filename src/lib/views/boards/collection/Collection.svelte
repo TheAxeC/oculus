@@ -78,7 +78,6 @@
     import {
         NO_FUNDING,
         TITLE_COLUMN,
-        cardOrder,
         entryColumns,
         identityFaults,
         identityValue,
@@ -98,6 +97,7 @@
         entryCountWords,
         type Strips
     } from '$lib/state/boards/collection/bar';
+    import { cardOrder } from '$lib/state/boards/collection/card-order';
     import { mapPreset, withPick, type BoardItem } from '$lib/state/boards/board';
     import {
         drawnProjects,

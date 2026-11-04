@@ -28,6 +28,7 @@
 // its slice keeps it, carry it under the other project groups' picks; the entry groups and the
 // status slices are counted over the entries the project picks leave.
 
+import { periodValueOrder } from '../../../data/helpers/dates.ts';
 import { byKey, isMap } from '../../../data/helpers/guards.ts';
 import { rootOf } from '../../../data/helpers/hub-names.ts';
 import { entryRoles } from '../../../data/shapes/boards/roles.ts';
@@ -333,8 +334,8 @@ function projectGroups(
 
 /**
  * The values of a field's group in their order: a field with options in the options' order, a
- * text field whose values are all whole numbers newest first, any other by how many entries hold
- * each, then by its words.
+ * `period` field newest first by the period reader's order, a text field whose values are all
+ * whole numbers newest first, any other by how many entries hold each, then by its words.
  */
 function fieldOrder(field: SchemaField, counts: Map<string, number>): string[] {
     const held = [...counts.keys()];
@@ -343,6 +344,7 @@ function fieldOrder(field: SchemaField, counts: Map<string, number>): string[] {
         const other = held.filter((one) => !options.includes(one));
         return [...options.filter((one) => counts.has(one)), ...other];
     }
+    if (field.type === 'period') return held.sort(periodValueOrder);
     if (field.type === 'text' && held.every(isWhole)) {
         return held.sort((a, b) => Number(b) - Number(a));
     }

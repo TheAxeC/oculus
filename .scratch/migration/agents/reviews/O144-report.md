@@ -100,7 +100,8 @@ Run from the worktree root on the unchanged tree with `npx tsx <scratch>/cases.m
     live text deadline: "rolling (open)"
     expired dated and rolling: "2026-12-15"
     expired dated: "2026-11-20"
-  error: Cannot convert undefined or null to object
+  the template's schema: deadline {"field":"deadline","type":"text","section":"Dates","help":"Deadline as posted."}
+  findings: ["line 3: [entries[1].rolling] key entries[1].rolling is not declared by the schema of this file"]
 
 ## C15
   findings: (the scratch hub's deck folder and five scan folders, the same as after the change)
@@ -150,11 +151,11 @@ Run from the worktree root on the unchanged tree with `npx tsx <scratch>/cases.m
 
 ## C19
   filter findings of the templates' literature file: none
-  year line: {"field":"year","type":"text","filter":true,"section":"Core","help":"The year it appeared, as a whole number."}
-  error: text key not in the text catalog (config/text/): collection.status_facet
+  year line: {"field":"year","type":"text","help":"The year it appeared, as a whole number.","section":"Core","filter":true}
+  bar group of year: ["2024","2021","2025-09","2026"]
 ```
 
-On reading: C14's last part (the template's leads schema and its findings) threw on the base, and C19's bar group was not reached on the base for the text-catalog error above, so the base has no bar order of `year` to set beside the changed tree's; C15's findings on the base are the six of the scratch hub only, the same six as after the change. C16's base run also prints the unchanged sorts of statements `["status","title"]`, people and organisations `["name"]`, resources `["kind","name"]`, tasks `["status","deadline"]` and literature `["title"]`.
+C14 and C19 above are the run of the quoted `cases.mts` on the base copy, `cd ../O144-base && npx tsx <scratch>/cases.mts C14 C19` (exit 0, `scratch hubs removed: true`). On the base the `year` group is ordered by count (2024 twice, then the rest in input order), the order C19's newest-first group is read against. On reading: C15's findings on the base are the six of the scratch hub only, the same six as after the change. C16's base run also prints the unchanged sorts of statements `["status","title"]`, people and organisations `["name"]`, resources `["kind","name"]`, tasks `["status","deadline"]` and literature `["title"]`.
 
 No case of the brief was wrong, so no part was handed back.
 
@@ -358,7 +359,7 @@ The program is two files in `/private/tmp/claude-502/-Users-axelfaes-workspace-r
 2. While building, single cases: C3, C6, C14 and C18 again after each piece they read was built, and C4 to C19 once more after the fixtures were done.
 3. After the last change: C4 to C19 (above), and C18 with all four switches (the section "Hub rewrite" and "Visible changes").
 
-`cases.mts` (656 lines; the fence is four backticks, since the source holds three):
+`cases.mts` (668 lines, with repair round 1's case B2; the fence is four backticks, since the source holds three):
 
 ````ts
 // O144's case-run program: cases C1 to C19 of the brief, each printed with its input and what the
@@ -700,6 +701,18 @@ await run('C13', () => {
     console.log(`  findings of the two manifests: ${own.length === 0 ? 'none' : show(own.map((one) => one.message))}`);
     const out = cvOf([], null, projects.filter((one) => one.id.endsWith('period-a')));
     console.log(`  CV projects row: ${show(out.file.projects.content)}`);
+});
+
+// Repair round 1, item 8: a manifest whose `year` is no period, as the project form is filled
+// from it (state/forms/schema.ts `fieldValues` gives `year: project.yearWritten`).
+await run('B2', () => {
+    const hub = demoCopy('b2');
+    put(hub, 'projects/manuscripts/period-c/project.yml', 'stage: drafting\ntier: research\nform: journal\ntitle: Period C\nyear: "Sept 2025"\nlead: [rivera-lab]\n');
+    const built = buildOf(hub);
+    const project = (Object.values(built.snapshot.entities.projects) as any[]).find((one) => one.id.endsWith('period-c'));
+    console.log(`  period-c: year ${show(project?.year)}, yearWritten ${show(project?.yearWritten)}`);
+    const own = allFindings(built).filter((one) => String(one.file).includes('period-c'));
+    console.log(`  findings of the manifest: ${own.length === 0 ? 'none' : show(own.map((one) => `[${one.key}] ${one.message}`))}`);
 });
 
 await run('C14', () => {
@@ -1888,6 +1901,7 @@ Files outside the brief's paths list, each needed:
 - `rolling`: 12 hits: `docs/templates.md:823` (the scout step), `:1679` and `:1694` (the leads template), `config/text/views/feeds/leads.yml:30` (`rolling: Rolling`), all rewritten; `docs/templates.md:1170` (a venue's `timing: "rolling"`), `docs/HELP.md:573`, `config/options/appearance.yml:217`, `config/defaults/appearance.yml:215` and the four `pdf_scroll_*` of `config/text/views/sources/file.yml:41-44` ("scrolling"), no lead deadline, still true.
 - `deadline`: 151 hits, read by file. Rewritten: `docs/templates.md:92,95` (the collections list's sorts), `:823` (the scout step), `:1678-1679,1693,1696` (the leads template), `config/defaults/sources.yml:45,48`, `config/options/sources.yml:107`, `docs/HELP.md:279` (the sort sentence). Still true: the venues' `deadline` and `deadline_month` (`docs/templates.md:1150-1172`, `config/text/views/sources/venues.yml`), the collections' own `deadline` lines of type `date` (`docs/templates.md:1411,1440,1465,1490,1512,1545,1573,1591,1606,1618`), the tasks list line (`:96`), the ticker and command-center groups (`docs/templates.md:443,445`, `docs/data-map.md:57,112`, `config/catalogs/vocab.yml:217,224`, `config/options/catalogs/vocab.yml:256`, `config/text/views/boards/focus.yml`), a project's `deadline` (`config/schemas/manifest-schema.yml:76`, `docs/HELP.md:282-310`, `config/text/views/boards/project.yml`, `projects.yml`), the leads horizon (`config/options/behavior.yml:199`, `config/defaults/behavior.yml:63`, `config/options/layout.yml:284`), `leads.no_deadline` (still drawn on an expired lead with no day), the apps payloads (`docs/apps.md:402,403,439,440`), the subtask and dated lines (`docs/templates.md:948`, `config/text/findings.yml:366`, `config/text/server.yml:559`), the README's Focus lines (`README.md:9,11,34`), the glyph and icon names (`config/catalogs/glyphs.yml`, `icons.yml`), the files words (`config/text/views/sources/files.yml:88,102`), and the `deadline_met` and `closes_deadline` flags (`config/catalogs/vocab.yml`, `config/options/catalogs/vocab.yml`). None names a lead's deadline as text.
 - `date` (`grep -rniw`, 83 whole-word hits): rewritten: `docs/templates.md:71` (the sort comment), `:1116` (the schema line's types), `config/defaults/sources.yml:32`, `config/options/sources.yml:107`, `docs/HELP.md:279`, `docs/data-map.md:254-255` (the type table), `config/schemas/manifest-schema.yml:12`, `config/options/schemas/manifest-schema.yml:27` (the type choice list, `period` after it), and, with no `date` hit left, `docs/apps.md:406` (the funding payload's `date?` became `when?`) and `config/catalogs/vocab.yml:105`, `config/options/catalogs/vocab.yml:108`, `src/lib/data/shapes/catalog-files/vocab.ts:222` ("asks a date" became "asks a period"). Also still true, each a day or a word of its own: `docs/templates.md:824` (the run log line starts with today's date), `:871` (the LinkedIn post files), `:947` (`snooze`), `:1150`, `:1646`, `:1714`, `:1749` (`date`-type lines of `deadline`, `added`, `found`, `milestone_date`), `docs/HELP.md:282-283,287,296` (deadline tags, follow-up `after:` dates, the Not before date), `:333` (the last sweep's date), `:573` (the Calendar's day and date headings), `:604` (a repository's `date`), `docs/apps.md:490` (`Date.now()`), `config/options/behavior.yml:1034,1403,1597` and `config/defaults/behavior.yml:544,596,614,640,690,692,739,785,872` (the literature sources' `date` keys and the Focus horizons), `config/schemas/manifest-schema.yml:76-80,91,97,99,104,131-132` (a manifest's dated fields), `config/text/views/system/audit.yml:37` ("deposit dated"), `config/text/views/boards/project.yml:23` (a follow-up's date), `config/text/views/boards/deposit.yml:53,84,88`, `config/text/server.yml:387` (a LinkedIn post's date). Still true: the fields of type `date` that are no entry's period (`deadline`, `snooze`, `added`, `found`, `milestone_date`, the leads' `date` "Day found." at `docs/templates.md:1677,1692`, a manifest's `code_availability.date`, `zenodo_date`, `repository.date`, `reproduced.date`), the letter's `date` (`docs/templates.md:1879`), the manifest template's `date: YYYY-MM-DD` lines (`:953,970,973`), the follow-up `after` date (`docs/data-map.md:240`, `docs/apps.md:441-442`), the literature reader's `date` operations and sort (`config/defaults/behavior.yml`, `config/text/views/feeds/literature.yml:63`), the LinkedIn post's `date:` (`docs/HELP.md:339`, `config/text/views/feeds/linkedin.yml:18`), the stale and cadence days (`config/options/behavior.yml:146,184,189,194,204`, `config/defaults/behavior.yml:3,52,59`), the undated task lines (`docs/templates.md:68`, `config/options/sources.yml:118`), the deposit's today's date (`config/text/views/boards/deposit.yml`), `type_date` (`config/text/server.yml:351`, a `date` field's refusal), the Calendar's date headings (`docs/HELP.md:573`) and `docs/licenses/LGPL-2.1.txt:170`.
+- `docs/HELP.md`, the three bullets of repair round 1 (a `period` field in the editor, after the Save bullet; a lead card's deadline line, after the Position Leads bullet; Write the website's period form, after the Career bullet): rewritten. `docs/apps.md:402` (`yearWritten?`) and `docs/data-map.md:255` (the moment's zone): rewritten.
 - The head comments of the changed files, `grep -nE "duration|\`date\`|'date'|rolling|CV period"`: `cv.ts:13-14` (the CV file's `duration` and awards `date`, the website's keys, decision 8), `dates.ts:17` (`ISO_DATE`), `record.ts:6`, `leads.ts:2`, `LeadCard.svelte:9`, `model-collections.ts:206`, all written by the step, still true.
 
 The history grep over the added lines, `git diff -U0 | grep '^+' | grep -niE '\b(before|used to|no longer|still|previously|anymore|now|formerly|was renamed|old)\b'` and over the two new files: 4 hits, all of order ("the second not before the first", "Negative when `a` comes before `b`" twice, "so `2` sorts before `10`"), none of history.
@@ -1898,18 +1912,19 @@ The renames, grepped across `src tests config docs README.md`: `cardOrder` lives
 
 1. `UNKEYED_TYPES` (`model-collections.ts:73`) is left as it is: a period is one scalar, as a date is.
 2. The demo hub's applications sort `[status, when]`: its applications schema holds no `deadline` (`grep -c deadline` printed 0), and a sort field the schema does not name is a finding.
-3. The demo funding `sub` help is "Scheme | role | length" as before, its entries' `sub` texts having no period.
+3. The demo funding `sub` help changes from "Scheme | role | period" to "Scheme | role | length": the demo's `sub` texts hold lengths ("3 years", "2 years"), and the period of a scheme is its `when`.
 4. A lead holding a day and `rolling: true` prints "2026-12-15 | Rolling": the hub's separator ` | ` of a card's words.
 5. A year typed in the entry editor is written as the text typed, `when: "2026"`; the manifest editor writes `year: 2027` as a number (C6). Both read as the same period. Rule 10's whole-number year is a rule of the hub rewrite, which writes them that way.
 6. The CV's month words and "Current" are held in `cv.ts`, not in oculus's text catalog: they are the website's CV text in the website's language, written into its file, and not words oculus draws.
 7. A profile award row prints its period as text ("2016", "Feb. 2016") in the employer CV, as `industry.yml`'s award rows hold it, and the academic CV's awards print the timestamp `to_date` parses.
 8. A career row naming `funding:` takes what `careerFields` takes, with `when` in place of `date` and `duration`; the hub's one such row (`awards[...] funding`) has no period of its own.
-9. `Project.yearWritten` (`model-entities.ts`) carries the manifest's `year` as written, so the project form shows `2025-09` as written while `Project.year` stays the start year 2025 for its readers.
+9. `Project.yearWritten` (`model-entities.ts`) carries the manifest's `year` as written, any text or number, so the project form shows `2025-09` as written, and a stored `year` that is no period (`"Sept 2025"`) as written beside its schema finding, while `Project.year` stays the start year (2025, and undefined for a value that is no period) for its readers.
 10. The career template's prose names "the place and the period in `awards`" and a sentence on the period form, the word "day" there becoming "period".
 11. The zone of a date-time is held to hours 00-23 and minutes 00-59, the same as the time.
 12. The funding entity's `date` became `when` (`Funding.when?: string`, a year read as its text), in `normalise.ts:519`, `model-entities.ts` and `docs/apps.md:406`. After the hub rewrite no funding entry holds `date`, so the field would always be empty. It is a key of the `portfolio` payload apps read (`docs/apps.md:406`), and no reader in oculus uses it (`grep -rnE "(scheme|funding|fund|grant|f|entry|e)\.date\b" src` names none). The alternative, keeping `date` empty in the payload, leaves a key that no file fills; the orchestrator may rule otherwise.
 13. C15 and C16's "no `date`" is read as no `date` field that is an entry's period: the leads' `date` (day found) and the career letter's `date` stay, as the brief's items 7 and 8 leave them.
-14. Until the orchestrator rewrites the research hub at landing, the shipped sorts naming `when` and the manifest schema's `cv.when` give the hub 21 findings (C18's copy before the rewrite): the landing applies the code and the rewrite together.
+14. Until the orchestrator rewrites the research hub at landing, the shipped sorts naming `when` and the manifest schema's `cv.when` give the hub 21 findings (C18's copy before the rewrite), and the code does more than that to the hub's unrewritten files (see "Visible changes", the unrewritten hub): the landing applies the code and the hub rewrite together.
+15. The hub rewrite writes every word of a lead's deadline that is no day into its `note` with the prefix "Deadline as posted: ", in the 14 leads of the leads table of "Hub rewrite" (`rewrite.mts` `rewriteLead`). The prefix stays: it tells the reader of the note that the words are the posting's, not the hub's.
 
 ## Visible changes
 
@@ -1920,7 +1935,9 @@ The renames, grepped across `src tests config docs README.md`: `cardOrder` lives
   - Applications, before by `[status, deadline]` and after by `[status, deadline, when]`: the undated entries of one status order by `when`, so `2026-uantwerpen-biomedical-data-science-zap` moves before `2025-denmark-ai-zap` and `2025-ucd-rwe-zap` before `2024-lund-paleogenomics`; the dated ones keep their order.
 - Radar lines of the four dated events: before, `entryDate` read a day `date` (the brief's `focus-lanes.ts:270-274`; C7's base run, `{"date":"2026-11-10"} -> "2026-11-10"`), and the hub holds `flta-2026` `date: "2026-10-29"`, `mentoring-trajectory-info-session` `"2026-10-27"`, `research-visit-linkoping-sweden` `"2027-03-01"`, `graz-bci-conference-2026` `"2026-09-14"` (`grep` of `events.yml`). After (C18, `entryDate` on the rewritten copy): `flta-2026` on 2026-10-27, `mentoring-trajectory-info-session` on 2026-10-27, `graz-bci-conference-2026` on 2026-09-14, and `research-visit-linkoping-sweden` none, its `when` being the month 2027-03 (decision 2). Every other radar day of the copy is the same before and after.
 - The editor's control for `when`: before, a `when` field was a plain text control taking any text (C6's base run wrote "Sept. 2025"). After, a one-line text control with the hint "2025, 2025-09, 2026-10-27 or 2025-09/2026-09", marked wrong while typed text is no period, its message "not a period such as 2025, 2025-09, 2026-10-27 or 2025-09/2026-09"; a save of such a value is refused with "when takes a period such as 2025, 2025-09, 2026-10-27 or 2025-09/2026-09" (C6).
-- The Literature view's year filter: before, `year` was a `text` field with `filter: true`; after, a `period` field with `filter: true`, no finding, its values listed newest first (`2026`, `2025-09`, `2024`, `2021`, C19), each filtering by the stored text.
+- The Literature view's year filter: before, `year` was a `text` field with `filter: true`, its values listed by count (`2024`, `2021`, `2025-09`, `2026`, C19 on the base copy); after, a `period` field with `filter: true`, no finding, its values listed newest first (`2026`, `2025-09`, `2024`, `2021`, C19), each filtering by the stored text.
+- A manifest holding `year: "Sept 2025"` (case B2 of `cases.mts`): before (the base copy), `year undefined, yearWritten undefined`, the form's Year empty (the base's `schema.ts:464` fills it from `project.year`) and no finding, `year` being a `text` field. After, `year undefined, yearWritten "Sept 2025"`, so the form's Year shows "Sept 2025" (`schema.ts:465`, `year: project.yearWritten`), marked wrong, and the manifest has the finding "[year] year is Sept 2025, which is not a period such as 2025, 2025-09, 2026-10-27 or 2025-09/2026-09".
+- The research hub as it stands, before the hub rewrite, under the step's code (the reviewer's case R1, `review-cases.mts R1`, run from a copy in the scratch folder on the changed tree and on the base copy). Before (base): `CV rows with a period text: 102, without: 0`; radar days `flta-2026` "2026-10-29", `mentoring-trajectory-info-session` "2026-10-27", `research-visit-linkoping-sweden` "2027-03-01", `graz-bci-conference-2026` "2026-09-14"; the funding records carry `date`. After (step's code, files unrewritten): `CV rows with a period text: 17, without: 85`, so a Write the website then writes 85 rows with no period; the radar day of each of the four dated events is `""`; `funding records with when: 0 of 14`; the Events, Education, Funding and Applications views lose their date order, since their `sort:` names `when` and their schemas hold none; and the hub has 21 findings (C18's copy before the rewrite). The landing applies the code and the hub rewrite together, so none of this reaches the hub.
 - The CV's period texts: the tables of "Hub rewrite"; "January" and "Sept." become "Jan." and "Sep.", "Present" becomes "Current", "2022-2025" becomes "2022 - 2025", a student's period prints as "(2025 - 2026)", FLTA 2026's news row prints "Oct. 2026" in place of 2026, and the postdoc-uhasselt row loses "(Research Affiliate from 2026)" from its period, the words going to its text.
 - A lead card's deadline line: before, the deadline as written ("rolling (open)", "2026-12-15") and no line for a lead without one. After, the day, "Rolling", or "2026-12-15 | Rolling"; no line for a live lead with neither; "no deadline" on an expired lead with none, as before (C14).
 - The Make item's new files: the events, education, funding and career files hold `when` (`period`) in place of `date` and `duration`, applications `when` with the help "When you applied: a year, a month or a day.", leads `deadline` of type `date` with `rolling` and `note`, and literature and radar `year` of type `period` (C15).
@@ -1931,4 +1948,89 @@ The renames, grepped across `src tests config docs README.md`: `cardOrder` lives
 - Item 2 gives `docs/data-map.md`'s type-table text as "a date or a span, EDTF: `2025`, `2025-09`, `2026-10-27`, `2026-10-27T11:00:00`, `2025-09/2026-09`, `2025/..`". A document line holding a day `YYYY-MM-DD` fails `tests/checks/source/history.test.ts` "names no package id, date or session in any document" (its `DATE` pattern, `:65`), which the quick tier's first run printed for this line and for two commented examples of `docs/templates.md` (`when: "2026-10-27/2026-10-30"` in the events entry and `when: "2023-06-01"` in the career awards). The check is left as it is; the table reads "a year `2025`, a month `2025-09`, a day `YYYY-MM-DD`, a moment `YYYY-MM-DDTHH:MM:SS`, a span `2025-09/2026-09`, an open span `2025/..`", and the two examples are `when: "2026-10"` and `when: "2023-06"`. The catalog sentences of item 2 keep their day `2026-10-27`: they are YAML values, which the check does not read.
 - "What is on the tree" lists the type-word lists to change; four more needed it: `config/options/schemas/manifest-schema.yml:19` (a hub field's type choice), `config/schemas/manifest-schema.yml:12` (the widget comment), `bar.ts` `fieldOrder` (C19) and the funding entity's `date` (judgment call 12). It also omits `tests/routes/hubs/make.test.ts`, which asserts the funding template line's sort.
 - The CV builder's awards rule (item 5) and C10 hold for the academic CV; an award row of an employer CV prints text (judgment call 7), which the brief does not say either way.
-</content>
+
+## Repair round 1
+
+Every item of `agents/briefs/O144-round-1.md` is done; S1 and S2 stay as built, as the round says. `npm run test:quick` ran twice in this round: the first run was stopped before its end when a `docs/HELP.md` line followed it; the run after the round's last change is the one that counts:
+
+```
+ 5:05  up 1 day, 13:08, 1 user, load averages: 10.97 6.87 5.93
+ok      prettier (1.3 s): All matched files use Prettier code style!
+ok      ASCII gate (1.4 s)
+ok      svelte-kit sync (2.6 s)
+ok      eslint (2.7 s)
+ok      svelte-check (9.6 s): 1793765153436 COMPLETED 581 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest checks (152.7 s): Duration  139.17s (transform 55.66s, setup 0ms, import 146.01s, tests 374.81s, environment 5ms)
+ok      vitest (209.7 s): Duration  197.77s (transform 146.55s, setup 0ms, import 311.43s, tests 444.10s, environment 9.09s)
+ok      vitest slow (284.6 s): Duration  272.72s (transform 23.55s, setup 0ms, import 132.33s, tests 947.36s, environment 14ms)
+test:quick: 287.4 s; every command passed
+test:quick: not covered: tests that reach no changed file within the import depth,
+            other than the checks under tests/checks/source and tests/checks/tree,
+            which run for any change under src, tests or utils; the build, the lint
+            of unchanged files
+exit 0
+```
+
+`npm run diagrams` ran just before it, in the same command (exit 0). The other checks over the round's files: the ASCII gate (`xargs env LC_ALL=C perl ...` over the nine files) `perl exit 0`; no YAML file changed; `git diff -U0` of the round's `.ts`, `.svelte` and test files has no added line over 100 columns (the awk printed nothing); `npx prettier --check` of the nine files `All matched files use Prettier code style!`; `npx eslint` of the six code files `ESLINT-CLEAN`; `sh utils/unused-exports.sh` against `../O144-base/unused-exports.txt`, `diff exit 0`. Related tests while working: `npx vitest run` of `normalise.test.ts`, `feeds.test.ts`, `career.test.ts`, `hub-words.test.ts`, `website-files.test.ts` and `duplication.test.ts`: `Test Files  6 passed (6)`, `Tests  106 passed (106)`; `history.test.ts -t document`: `Tests  2 passed | 4 skipped (6)`.
+
+### Each item
+
+1. P1. The first run's C14 and C19 are replaced, in "The cases' first run", by `cd ../O144-base && npx tsx <scratch>/cases.mts C14 C19` (exit 0). C14 now ends `the template's schema: deadline {"field":"deadline","type":"text","section":"Dates","help":"Deadline as posted."}` and `findings: ["line 3: [entries[1].rolling] key entries[1].rolling is not declared by the schema of this file"]`; C19 ends `bar group of year: ["2024","2021","2025-09","2026"]`. The sentence that the base has no bar order of `year` is removed, and the Literature filter's visible change gives the base order by count beside the new one.
+2. P2. Judgment call 3 says the demo funding `sub` help changes from "Scheme | role | period" to "Scheme | role | length", the demo's `sub` texts holding lengths (`funding.yml:16` "... | 3 years", `:28` "... | 2 years").
+3. T1. `docs/HELP.md` gains three bullets: after the editor's Save bullet, a `period` field is one line whose hint gives examples of its forms, marked wrong while its text is no period, refused at Save; after the Position Leads bullet, the deadline line prints the day, Rolling, or both parted by " | ", "no deadline" on an expired lead with neither; after the Career bullet, Write the website prints every period in one form, months abbreviated, an open end as Current, an award as its first day. The bullets name days as `YYYY-MM-DD`, since `history.test.ts` refuses a day in a document. Item 11's list marks the three 'rewritten'.
+4. T2. `docs/apps.md:402`: `` `year?`, `yearWritten?` (the manifest's `year` as written, a period), ``.
+5. T3. `FieldControl.svelte:8-9` is filled at 100 columns: `// the hint, marked wrong while the period reader refuses what is typed (state/forms/schema.ts` (98 columns) and `` // `periodRefusal`). ``.
+6. T4. `leads.ts:140` is `const text = scalar(value);` and `feeds.ts:55` is `const deadline = str(entry.deadline);`: the deadline is read as written, so `" 2026-11-05 "` is no day, as the schema's `date` pattern has it (`ISO_DATE = /^\d{4}-\d{2}-\d{2}$/`, `dates.ts:18`).
+7. T5. `tests/data/sources/career.test.ts:39` holds `when: "2023/.."`, asserted at `:183` as `when: '2023/..'`; `:41-42` hold `when: "2026-09"` and `when: "2026-09-15"`, asserted at `:91-92`. The test still checks that the reader passes a career file's fields through. Before the change: `Test Files  1 passed (1)`, `Tests  28 passed (28)`; after: `Test Files  1 passed (1)`, `Tests  28 passed (28)`.
+8. B2. `writtenPeriod` (`normalise.ts:166`) returns any text or number the manifest's `year` holds, its head comment saying so, and `readPeriod` left its imports; `Project.yearWritten`'s comment (`model-entities.ts:428`, above the field at `:429`) reads "a period or any text". Case B2 of `cases.mts`, on the changed tree: `period-c: year undefined, yearWritten "Sept 2025"`, findings `[year] year is Sept 2025, which is not a period such as 2025, 2025-09, 2026-10-27 or 2025-09/2026-09`; on the base copy: `year undefined, yearWritten undefined`, no `year` finding. "Visible changes" gives the before and after.
+9. B1. "Visible changes" gains the research hub as it stands under the step's code, from the reviewer's case R1 (`review-cases.mts`, copied into the scratch folder, run on the changed tree and on the base copy): changed tree `CV rows with a period text: 17, without: 85`, each of the four dated events' radar day `""`, `funding records with when: 0 of 14`; base `102, without: 0` and the four days `"2026-10-29"`, `"2026-10-27"`, `"2027-03-01"`, `"2026-09-14"`; plus the four collections with no date order, the 21 findings, and the sentence that the landing applies the code and the hub rewrite together. Judgment call 14 points at it.
+10. S3. Judgment call 15 names the note prefix "Deadline as posted: " of the hub rewrite, in the 14 leads of the leads table; the prefix stays.
+11. P3. `docs/data-map.md:255` reads `` a moment `YYYY-MM-DDTHH:MM:SS`, with an optional `Z` or `+HH:MM`, a span ``, the rest of the row as it stands.
+12. P4. Below.
+
+### P4: each changed test on the unchanged tree
+
+Run in a scratch copy of `../O144-base` (`<scratch>/base-tree`), with `package.json`, `tsconfig.json`, `vite.config.ts`, `.npmrc`, `eslint.config.js`, `.prettierrc` and `.gitignore` written from `git show 069decb7c:<file>`, `node_modules` linked to the worktree's, and the six changed test files copied in; `npx vitest run <file>` for each (`uptime`: `load averages: 3.30 4.12 5.04`); the copy removed after (`rm -rf`, `ls` of the scratch folder shows no `base-tree`).
+
+| Test | On the unchanged tree | Failing line |
+|------|-----------------------|--------------|
+| `tests/data/helpers/period.test.ts` | `Tests  34 failed (34)` | `period.test.ts:79:16` and `:105:16`, `TypeError: readPeriod is not a function`; `:125:55`, `AssertionError: expected [ 2025, '2025 - 2026', ...(6) ] to deeply equal [ '2026-10-27/2026-10-30', ...(7) ]` |
+| `tests/data/hubs/website-files.test.ts` | `Tests  2 failed | 39 passed (41)` | `:561:42`, `expected '# Generated by oculus from the resear...' to contain 'date: 2018-01-01 15:59:00-0400\n'`; `:658:58`, `expected [ { title: 'Researcher', ...(1) } ] to deeply equal [ { title: 'Researcher', ...(2) } ]` |
+| `tests/data/snapshot/normalise.test.ts` | `Tests  1 failed | 12 passed (13)` | `:308:23`, the expected `"yearWritten": 2026` missing from the project |
+| `tests/data/sources/career.test.ts` | `Tests  2 failed | 26 passed (28)` | `:380:72` twice, the expected `lines: [{ label: 'when', text: '2024' }]` and `[{ label: 'when', text: '2024/..' }]` received as `"lines": []` |
+| `tests/data/sources/feeds.test.ts` | `Tests  2 passed (2)` | passes: the fixture's deadline is now the day itself (`"2026-09-20"`), which the base's reader, finding a day inside any text, also reads; the change removes prose from the fixture, and no line asserts that prose is no longer read |
+| `tests/routes/hubs/make.test.ts` | `Tests  1 failed | 34 passed (35)` | `:242:36`, the expected funding sort's `"when"` missing |
+
+In `career.test.ts` the round's own fixture rows (`:39`, `:41-42`, `:91-92`, `:183`) pass on the base, since the reader there passes fields through with no schema; the two failures are the step's `when` rows at `:339-372`.
+
+Each changed assertion line, from `diff -U0` of each file against the base copy:
+
+| File:line | Before (base) | After |
+|-----------|---------------|-------|
+| `website-files.test.ts:194-195` | `* profile row naming each of the first two, and one award with a day and a time of day.` | `* profile row naming each of the first two, and one award with a day, which the CV writes with` / `* the time of day the website parses.` |
+| `website-files.test.ts:200` | `- { key: postdoc, title: Postdoc, location: A university, duration: 2024 - now }` | `- { key: postdoc, title: Postdoc, location: A university, when: "2024/.." }` |
+| `website-files.test.ts:201` | `- { key: neurips-attending, title: A visit, location: A lab, duration: 2023 }` | `- { key: neurips-attending, title: A visit, location: A lab, when: 2023 }` |
+| `website-files.test.ts:219` | `date: 2018-01-01 15:59:00-0400` | `when: "2018-01-01"` |
+| `website-files.test.ts:659` | `{ title: 'Researcher', location: 'A university', duration: '2024 - now' }` | `{ title: 'Researcher', location: 'A university', duration: '2024 - Current' }` |
+| `website-files.test.ts:662` | `{ title: 'A tool', duration: '2024 - now' }` | `{ title: 'A tool', duration: '2024 - Current' }` |
+| `normalise.test.ts:316` | (none) | `yearWritten: 2026,` |
+| `career.test.ts:39` | `- { title: "Postdoc", location: "U Twente", duration: "2023 - now" }` | `- { title: "Postdoc", location: "U Twente", when: "2023/.." }` |
+| `career.test.ts:41` | `- { task: "Veni pre-proposal", when: "~1 Sep" }` | `- { task: "Veni pre-proposal", when: "2026-09" }` |
+| `career.test.ts:42` | `- { task: "ENW-XS", when: "15 Sep", note: "optional" }` | `- { task: "ENW-XS", when: "2026-09-15", note: "optional" }` |
+| `career.test.ts:91` | `{ task: 'Veni pre-proposal', when: '~1 Sep' },` | `{ task: 'Veni pre-proposal', when: '2026-09' },` |
+| `career.test.ts:92` | `{ task: 'ENW-XS', when: '15 Sep', note: 'optional' },` | `{ task: 'ENW-XS', when: '2026-09-15', note: 'optional' },` |
+| `career.test.ts:183` | `{ title: 'Postdoc', location: 'U Twente', duration: '2023 - now' }` | `{ title: 'Postdoc', location: 'U Twente', when: '2023/..' }` |
+| `career.test.ts:339` | `rows: [{ award: 'Best paper', date: '2024' }],` | `rows: [{ award: 'Best paper', when: '2024' }],` |
+| `career.test.ts:344` | `lines: [{ label: 'date', text: '2024' }]` | `lines: [{ label: 'when', text: '2024' }]` |
+| `career.test.ts:367` | `rows: [{ location: 'U Twente', duration: 'now' }],` | `rows: [{ location: 'U Twente', when: '2024/..' }],` |
+| `career.test.ts:372` | `lines: [{ label: 'duration', text: 'now' }]` | `lines: [{ label: 'when', text: '2024/..' }]` |
+| `feeds.test.ts:51` | `- { title: "Postdoc AI", deadline: "20-09-2026 (2026-09-20)", status: open, fit: strong }` | `- { title: "Postdoc AI", deadline: "2026-09-20", status: open, fit: strong }` |
+| `feeds.test.ts:104` | `it('keeps the live leads with the ISO date inside their deadline text, dismissed ones out', () => {` | `it('keeps the live leads with the day of their deadline, dismissed ones out', () => {` |
+| `make.test.ts:248` | `sort: ['status', 'deadline'],` | `sort: ['status', 'when', 'deadline'],` |
+| `allow-duplication.txt:16` | `... c0785dd03b7f the same 12 lines at 145 and 82, to fold into one place` | `... c0785dd03b7f the same 12 lines at 159 and 82, to fold into one place` |
+
+`period.test.ts` is new (128 lines), so it has no before; its rows are in "The cases after the change".
+
+### Files of the round, with line counts
+
+`xargs wc -l`: `docs/HELP.md` 624 (621 on the base), `docs/apps.md` 847, `docs/data-map.md` 307, `src/lib/state/feeds/leads.ts` 254, `src/lib/data/sources/documents/feeds.ts` 173, `src/lib/data/snapshot/normalise.ts` 693, `src/lib/data/model/model-entities.ts` 809, `src/lib/views/shared/forms/entry/edit/FieldControl.svelte` 368, `tests/data/sources/career.test.ts` 412; `docs/diagrams/*` regenerated. `git diff --stat` ends `70 files changed, 715 insertions(+), 409 deletions(-)`, with `card-order.ts` and `period.test.ts` new. The scratch program gained case B2 (`cases.mts`, 668 lines, quoted above as it stands, `diff` printed nothing), and `review-cases.mts` is the reviewer's file copied in unchanged.

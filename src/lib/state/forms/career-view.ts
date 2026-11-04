@@ -51,7 +51,7 @@ const PERSON_FIELD = 'person';
 const HIDE_FIELD = 'hide';
 
 /** The types of a schema row whose value a card's line draws as text. */
-const TEXT_TYPES = ['text', 'textarea', 'date', 'select'];
+const TEXT_TYPES = ['text', 'textarea', 'date', 'period', 'select'];
 
 /** The filled text fields of a row, in the schema's order, less the one that titles the card. */
 function linesOf(

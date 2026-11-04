@@ -313,6 +313,7 @@ describe('normalise, the field mapping', () => {
             short: 'a',
             lead: ['someone'],
             year: 2026,
+            yearWritten: 2026,
             chips: ['parked'],
             statusLine: 'submit-ready',
             eli5: 'about alpha',

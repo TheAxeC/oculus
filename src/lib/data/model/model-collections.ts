@@ -204,7 +204,7 @@ export function entryTitleOf(
  * the vocabulary a collection is drawn by: the view walks the list and renders each field of an
  * entry in this order, so the file decides what its records look like and the model names no field
  * of any collection. `type` is the file's word (`text`, `select`, `tags`, `textarea`, `date`,
- * `metalist` in the hub's files); a type a view does not know is drawn as text.
+ * `period`, `metalist` in the hub's files); a type a view does not know is drawn as text.
  */
 export type SchemaField = {
     field: string;
@@ -256,7 +256,7 @@ export type SchemaOption = string | { key: string; label: string };
  * The types a field's `filter: true` draws a filter for. The schema run gives a finding for
  * `filter: true` on any other type, and the collection board draws no filter for it.
  */
-export const FILTERED_TYPES: readonly string[] = ['select', 'tags', 'text'];
+export const FILTERED_TYPES: readonly string[] = ['select', 'tags', 'text', 'period'];
 
 /** The key of one option: the word itself, or the row's key. */
 export function optionKey(option: SchemaOption): string {
@@ -424,7 +424,7 @@ export type Collection = Rooted &
 /** One live lead of the position scout's feed, as the command center counts it down. */
 export type Lead = Rooted & {
     title: string;
-    /** The ISO date inside the feed's own `deadline:` text, and null when it holds none. */
+    /** The feed's own `deadline:` when it is a day written YYYY-MM-DD, and null otherwise. */
     deadline: string | null;
     status: string;
     fit: string | null;

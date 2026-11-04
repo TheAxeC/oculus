@@ -8,7 +8,7 @@ schema:
   - { field: sub,      type: text,     label: "Subtitle", section: Core }
   - { field: role,     type: select,   options: [present, attend], required: true, section: Core, help: "present = a talk/poster I give; attend = attending only" }
   - { field: status,   type: select,   options: [upcoming, planned, completed, cancelled, not-attending], required: true, section: Core }
-  - { field: date,     type: text, section: Dates }
+  - { field: when,     type: period,   section: Dates, help: "When it happens: a year, a month, a day or a span, such as 2025-09/2026-09 or 2025/.." }
   - { field: deadline, type: date,     section: Dates, help: "ISO date; shows on the Focus radar while live" }
   - { field: meta,     type: metalist, section: Core }
   - { field: tags,     type: tags, section: Core }
@@ -22,7 +22,7 @@ entries:
     sub: "Invited talk, Northwood Systems Seminar"
     role: present
     status: completed
-    date: "2026-03-12"
+    when: "2026-03-12"
     tags: [talk, streaming]
     related: [streaming-anomaly]
 
@@ -31,7 +31,7 @@ entries:
     sub: "MLShift Workshop"
     role: present
     status: upcoming
-    date: "2026-09-01"
+    when: "2026-09-01"
     deadline: "2026-07-25"
     tags: [poster]
     related: [robust-embeddings]
@@ -40,5 +40,5 @@ entries:
     title: "NeurIPS (attending)"
     role: attend
     status: planned
-    date: "2026-12"
+    when: "2026-12"
     tags: [conference]

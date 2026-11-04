@@ -4,10 +4,11 @@
    ui/forms/DateInput.svelte and ui/controls/text/Search.svelte. It sits in the lowest folder of ui,
    so both folders may import it. Each field imports it and puts the class on its field, so every
    kind of field reads as one kind: the same border, corner, ground, words, line and padding, one
-   height for a field of one line, the same focus outline, a disabled field muted, and the rice
-   theme's terminal shape, a prompt on the panel with a line under it and no box round it. What one
-   kind sets otherwise (its width, a text area's height, the rice line of a text area) is in its own
-   style, whose class selector outranks this one. */
+   height for a field of one line, the same focus outline, a disabled field muted, a refused field
+   (`aria-invalid`) bordered red, and the rice theme's terminal shape, a prompt on the panel with
+   a line under it and no box round it. What one kind sets otherwise (its width, a text area's
+   height, the rice line of a text area) is in its own style, whose class selector outranks this
+   one. */
 .oculus-field {
     min-width: 0;
     border: 1px solid var(--line);
@@ -43,6 +44,11 @@
 .oculus-field:disabled {
     color: var(--muted-txt, var(--muted));
     cursor: not-allowed;
+}
+
+.oculus-field[aria-invalid='true'],
+body.rice .oculus-field[aria-invalid='true'] {
+    border-color: var(--c-red);
 }
 
 .oculus-field:focus-visible {

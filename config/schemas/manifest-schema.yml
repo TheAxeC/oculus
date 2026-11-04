@@ -9,7 +9,8 @@
 #             `code_availability.review_link` is written by the Zenodo deposit alone)
 #   text      one line | textarea several lines | lines one list item per line
 #   select    one of a list | chips several of a list, with a filter | tags several free strings
-#   date      an ISO date | checkbox a flag | keymap a map the form does not write
+#   date      an ISO date | period a date or a span, EDTF, such as 2025 or 2025-09/2026-09
+#   checkbox  a flag | keymap a map the form does not write
 #   rows      a list of rows of the text fields its `fields:` names, each drawn as a card
 # `primary_key: true` marks the field a project is addressed by, its id: no write sets it, and a
 # reference to a project stores it. `display:` ranks the fields a reference to a project shows,
@@ -57,7 +58,7 @@ manifest_schema:
     venue:         { label: "Venue", type: select, foreign_key: venues, section: Core, help: "The venue the project is aimed at or published in, picked from the venues list by its id." }
     links:         { label: "Links", type: tags, section: Core, help: "Web addresses or paths that belong to the project, one per entry." }
     tags:          { label: "Tags", type: tags, section: Core, help: "Words the project is found by, one per entry, such as the language of a software project. The board search reads them." }
-    year:          { label: "Year", type: text, section: Core, help: "The year of the paper or of the project, as a whole number." }
+    year:          { label: "Year", type: period, section: Core, help: "The year the paper appeared, or of the project." }
     eli5:          { label: "ELI5", type: textarea, section: Content, help: "The project in two plain sentences for a reader outside the field." }
     next:          { label: "Next", type: textarea, section: Content, help: "The next action on the project, the first thing to do when it is picked up again." }
     latest:        { label: "Latest", type: textarea, section: Content, help: "What changed most recently in the project, in a sentence or two." }
@@ -112,7 +113,7 @@ manifest_schema:
     "publication.rank": { label: "Place", type: text, section: Website, help: "The place of the entry in its website section, lowest first, as a whole number." }
     "cv.title": { label: "CV title", type: text, section: Website, help: "The title the CV's projects list the project with, when it is not the manifest's title. A manifest that carries a cv record is listed in the CV's projects." }
     "cv.url": { label: "CV address", type: text, section: Website, help: "The address the CV links the project to; empty for none." }
-    "cv.duration": { label: "CV period", type: text, section: Website, help: "The period of the project as the CV prints it, such as Jan. 2015 - Current." }
+    "cv.when": { label: "CV period", type: period, section: Website, help: "When the project ran, a year, a month or a span, such as 2015-01/.., which the CV prints as Jan. 2015 - Current." }
     "cv.about": { label: "CV text", type: textarea, section: Website, help: "The text the CV prints under the project." }
     "cv.role": { label: "CV role", type: text, section: Website, help: "Your role in the project as the CV prints it." }
     "cv.hide": { label: "Hidden on the CV", type: checkbox, section: Website, help: "Tick to keep the project off the CV while it stays in the file." }

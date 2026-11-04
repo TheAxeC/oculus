@@ -8,6 +8,7 @@
 
 import { z } from 'zod';
 import type { Collection, Entry, Id, Project, Snapshot } from '../../../data/model/index.ts';
+import { readPeriod } from '../../../data/helpers/dates.ts';
 import { focusSetting, text as str } from '../../../data/helpers/guards.ts';
 import {
     bareId,
@@ -266,16 +267,28 @@ function isoDate(value: unknown): string {
     return /^\d{4}-\d{2}-\d{2}$/.test(text) ? text : '';
 }
 
-/** A collection deadline or date, then the first valid Deadline metadata row: the ticker's rule. */
+/**
+ * The day a period starts on when it names a day, a time dropped; none for a period of a year or
+ * a month, whose first day no one gave, and for a value that is no period.
+ */
+function startDay(value: unknown): string {
+    const start = readPeriod(value)?.start;
+    return start?.precision === 'day' || start?.precision === 'time' ? start.first : '';
+}
+
+/**
+ * A collection deadline, else the day the entry's `when` starts on, then the first valid Deadline
+ * metadata row: the ticker's rule.
+ */
 export function entryDate(entry: Entry): string {
-    const top = isoDate(entry.fields.deadline) || isoDate(entry.fields.date);
+    const top = isoDate(entry.fields.deadline) || startDay(entry.fields.when);
     if (top !== '') return top;
     return metaDeadline(entry);
 }
 
 /**
- * The rule for a lane card's countdown: a top-level deadline, else the Deadline metadata row; a
- * bare `date` does not count.
+ * The rule for a lane card's countdown: a top-level deadline, else the Deadline metadata row; the
+ * period of `when` does not count.
  */
 export function entryDeadline(entry: Entry): string {
     const top = isoDate(entry.fields.deadline);

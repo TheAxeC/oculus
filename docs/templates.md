@@ -68,9 +68,11 @@ The hub's own settings. A key of oculus's `config/catalogs/vocab.yml` set here i
 # `undated: true` for open work with no date (the lines of the file flagged `tasks` are Tasks lines,
 # dated or not); `sort:` the fields of the file's schema its cards are sorted by, in their order:
 # pinned first, then by those fields read left to right, then in the file's order, the status field
-# in the order of its options, a field of the type `date` oldest first, any other field
-# alphabetically, case and accents ignored, and a missing value last; a field the schema does not
-# name is a finding, and a `collections:` entry with no `sort:` draws its cards by their title;
+# in the order of its options, a field of the type `date` oldest first, a field of the type
+# `period` newest first (the later start first, then the later end, a value that is no period
+# after the periods), any other field alphabetically, case and accents ignored, and a missing
+# value last; a field the schema does not name is a finding, and a `collections:` entry with no
+# `sort:` draws its cards by their title;
 # `group:`, `order:`, `label:`, `glyph:` and `about:`, its place in the view catalogue and the
 # dotted keys of its name, glyph and line in Make Folder a Hub; and `primary_key:`, the field an
 # entry is found by, for a file with no `schema:` only (the Findings view's Set as primary key
@@ -87,10 +89,10 @@ The hub's own settings. A key of oculus's `config/catalogs/vocab.yml` set here i
 #   - { key: people, file: ".oculus/data/people/people.yml", registry: people, sort: [name], group: registries, order: 4, label: views.people, glyph: views.people_glyph, about: files.make_collection_line_people }
 #   - { key: organisations, file: ".oculus/data/people/organisations.yml", registry: organisations, sort: [name], group: registries, order: 5, label: views.organisations, glyph: views.organisations_glyph, about: files.make_collection_line_organisations }
 #   - { key: resources, file: ".oculus/data/research/resources.yml", registry: resources, sort: [kind, name], group: registries, order: 6, label: views.resources, glyph: views.resources_glyph, about: files.make_collection_line_resources }
-#   - { key: funding, file: ".oculus/data/academic/funding.yml", registry: funding, ticker: { category: funding }, sort: [status, deadline], group: academic, order: 0, label: views.funding, glyph: views.funding_glyph, about: files.make_collection_line_funding }
-#   - { key: events, file: ".oculus/data/academic/events.yml", dissemination: true, dissemination_skip: { role: attend }, ticker: { category: event }, sort: [status, date], group: academic, order: 1, label: views.events, glyph: views.events_glyph, about: files.make_collection_line_events }
-#   - { key: education, file: ".oculus/data/academic/education.yml", band_teaching: true, dissemination: true, ticker: { category: teaching }, sort: [status, date], group: academic, order: 2, label: views.education, glyph: views.education_glyph, about: files.make_collection_line_education }
-#   - { key: applications, file: ".oculus/data/academic/applications.yml", band_positions: true, awaiting: true, open_badge: true, lead_applications: true, dissemination: true, ticker: { category: position }, sort: [status, deadline], group: academic, order: 3, label: views.applications, glyph: views.applications_glyph, about: files.make_collection_line_applications }
+#   - { key: funding, file: ".oculus/data/academic/funding.yml", registry: funding, ticker: { category: funding }, sort: [status, when, deadline], group: academic, order: 0, label: views.funding, glyph: views.funding_glyph, about: files.make_collection_line_funding }
+#   - { key: events, file: ".oculus/data/academic/events.yml", dissemination: true, dissemination_skip: { role: attend }, ticker: { category: event }, sort: [status, when], group: academic, order: 1, label: views.events, glyph: views.events_glyph, about: files.make_collection_line_events }
+#   - { key: education, file: ".oculus/data/academic/education.yml", band_teaching: true, dissemination: true, ticker: { category: teaching }, sort: [status, when], group: academic, order: 2, label: views.education, glyph: views.education_glyph, about: files.make_collection_line_education }
+#   - { key: applications, file: ".oculus/data/academic/applications.yml", band_positions: true, awaiting: true, open_badge: true, lead_applications: true, dissemination: true, ticker: { category: position }, sort: [status, deadline, when], group: academic, order: 3, label: views.applications, glyph: views.applications_glyph, about: files.make_collection_line_applications }
 #   - { key: tasks, file: ".oculus/data/academic/tasks.yml", tasks: true, ticker: { category: task, undated: true }, sort: [status, deadline], group: academic, order: 5, label: views.tasks, glyph: views.tasks_glyph, about: files.make_collection_line_tasks }
 #   - { key: literature, file: ".oculus/data/literature/literature.yml", registry: literature, sort: [title], group: literature, order: 2, label: views.literature, glyph: views.literature_glyph, about: files.make_collection_line_literature }
 #   - { key: leads, file: ".oculus/data/academic/leads.yml", registry: leads, ticker: { category: lead }, about: files.make_collection_line_leads }
@@ -818,7 +820,7 @@ This file is the whole instruction for one run of the Scout update task, and it 
 1. Read the leads file and collect every logged `url`, and every title with its institution.
 2. Search the sources above for positions open today or later.
 3. For each position in scope that the file does not hold, rate its fit with a one-line reason.
-4. Add each new position at the top of `entries:`, in the fields of the file's `schema:`, with `status: open`. Keep the `schema:` block as it is.
+4. Add each new position at the top of `entries:`, in the fields of the file's `schema:`, with `status: open`. Write `deadline` as the posting's closing day, `YYYY-MM-DD`, or leave it out when the posting gives none; write `rolling: true` for a posting that reads applications as they arrive, with or without a day; and put every other word the posting says about its deadline in `note`. Keep the `schema:` block as it is.
 5. Add one line at the top of `meta.log` that starts with today's date and holds the word `scout`, then the sources checked and the count of new leads. Oculus reads the scout's last run from the newest such line, so a run that finds nothing still writes its line.
 
 ## Guardrails
@@ -991,7 +993,7 @@ stage: nascent          # nascent, scoping, de-risking, exploring, in-prep, buil
 # cv:                   # the project's row in the CV's projects
 #   title: ""           # when it is not the manifest's title
 #   url: ""
-#   duration: ""        # the period as the CV prints it
+#   when: 2015-01/..    # the period, which the CV prints as Jan. 2015 - Current
 #   about: ""
 #   role: ""
 #   hide: false         # kept off the CV
@@ -1111,14 +1113,14 @@ A schema line takes these keys:
 
 ```yaml
 - field: name          # the key in each entry
-  type: text           # text, textarea, date, checkbox, select, tags, metalist, raw or records
+  type: text           # text, textarea, date, period, checkbox, select, tags, metalist, raw or records
   label: "Name"        # the words for the field in the editor, a list's column and a card or page; the field name when absent
   primary_key: true    # the field an entry is found by; one field, never a list or map field
   display: 1           # what a reference to the entry shows, the lowest filled rank first
   required: true       # or required: { when: { role: present } }
   options: [a, b]      # the values a select or tags field takes: a word, or { key: a, label: "A" }
   foreign_key: people  # takes the primary keys of a collection by its key, `projects`, or `vocab.<list>`
-  filter: true         # select, tags or text: a filter of the field beside the view's search
+  filter: true         # select, tags, text or period: a filter of the field beside the view's search
   when: { category: conference }   # the field is allowed only while this holds
   help: "One line."    # shown in the editor and on hover
   section: Core        # the editor's group; a name of the form's list keeps its place, another comes after them, and a row with none goes under Other, last
@@ -1401,11 +1403,11 @@ title: Funding
 schema:
   - { field: key,       type: text,     primary_key: true, required: true, section: Core, help: "The key a project's funding names." }
   - { field: title,     type: text,     display: 1, required: true, section: Core, help: "Scheme or application." }
-  - { field: sub,       type: text,     section: Core, help: "Scheme, role, period." }
+  - { field: sub,       type: text,     section: Core, help: "Scheme or role." }
   - { field: funder,    type: select,   foreign_key: organisations, section: Core, help: "The funder's organisation key." }
   - { field: award,     type: text,     section: Core, help: "The funder's number of the award, which a Zenodo deposit names with the title." }
   - { field: status,    type: select,   options: [in-prep, planned, submitted, contributing, awarded, rejected, withdrawn, stopped], required: true, section: Core, help: "Where it stands." }
-  - { field: date,      type: text,     section: Dates, help: "Year or range." }
+  - { field: when,      type: period,   section: Dates, help: "When it happens: a year, a month, a day or a span, such as 2025-09/2026-09 or 2025/.." }
   - { field: deadline,  type: date,     section: Dates, help: "Shows on Focus while live." }
   - { field: meta,      type: metalist, section: Core, help: "Label and value rows." }
   - { field: tags,      type: tags,     section: Core, help: "Filter words." }
@@ -1424,18 +1426,17 @@ schema:
   - { field: cv_status,  type: text,     label: "CV status", section: Website, help: "The status the CV prints for the grant." }
   - { field: role,       type: text,     label: "CV role", section: Website, help: "Your role as the CV prints it." }
   - { field: location,   type: text,     label: "Location", section: Website, help: "Where, as the CV prints it." }
-  - { field: duration,   type: text,     label: "CV period", section: Website, help: "The period as the CV prints it." }
   - { field: about,      type: textarea, label: "CV text", section: Website, help: "What the CV prints under it." }
   - { field: hide,       type: checkbox, label: "Hidden on the CV", section: Website, help: "Kept off the CV while it stays listed." }
 entries:
 #  - key: my-grant                # required; what a project's funding names
 #    title: "My grant"            # required
-#    sub: ""                      # scheme, role, period
+#    sub: ""                      # scheme or role
 #    funder: my-funder            # an organisation key
 #    award: ""                    # the funder's award number
 #    status: in-prep              # required: in-prep, planned, submitted, contributing, awarded,
 #                                 # rejected, withdrawn or stopped
-#    date: "2026-2030"
+#    when: "2026/2030"            # a year, a month, a day or a span
 #    deadline: YYYY-MM-DD
 #    meta:
 #      - { label: Amount, value: "250k" }
@@ -1460,7 +1461,7 @@ schema:
   - { field: sub,      type: text,     section: Core, help: "Place." }
   - { field: role,     type: select,   options: [present, co-present, attend, media], required: true, section: Core, help: "Your role; media is an article or a video about your work." }
   - { field: status,   type: select,   options: [upcoming, planned, completed, cancelled, not-attending], required: true, section: Core, help: "Where it stands." }
-  - { field: date,     type: text,     section: Dates, help: "When." }
+  - { field: when,     type: period,   section: Dates, help: "When it happens: a year, a month, a day or a span, such as 2025-09/2026-09 or 2025/.." }
   - { field: deadline, type: date,     section: Dates, help: "Shows on Focus while live." }
   - { field: meta,     type: metalist, section: Core, help: "Label and value rows." }
   - { field: tags,     type: tags,     section: Core, help: "Filter words." }
@@ -1476,7 +1477,6 @@ schema:
   - { field: cv_title,   type: text,     label: "CV title", section: Website, help: "The title the CV prints, when it is not the title." }
   - { field: cv_url,     type: text,     label: "CV address", section: Website, help: "The address the CV links." }
   - { field: location,   type: text,     label: "Location", section: Website, help: "Where, as the CV prints it." }
-  - { field: duration,   type: text,     label: "CV period", section: Website, help: "When, as the CV prints it." }
   - { field: about,      type: textarea, label: "CV text", section: Website, help: "What the CV prints under it." }
   - { field: hide,       type: checkbox, label: "Hidden on the CV", section: Website, help: "Kept off the CV while it stays listed." }
 entries:
@@ -1486,7 +1486,7 @@ entries:
 #    role: present                # required: present, co-present, attend or media
 #    status: upcoming             # required: upcoming, planned, completed, cancelled
 #                                 # or not-attending
-#    date: YYYY-MM-DD
+#    when: "2026-10"              # a year, a month, a day or a span
 #    deadline: YYYY-MM-DD
 #    meta: []
 #    tags: []
@@ -1506,9 +1506,9 @@ title: Education & Service
 schema:
   - { field: key,      type: text,     primary_key: true, required: true, section: Core, help: "Short name." }
   - { field: title,    type: text,     display: 1, required: true, section: Core, help: "Course or role." }
-  - { field: sub,      type: text,     section: Core, help: "Institution, period." }
+  - { field: sub,      type: text,     section: Core, help: "Institution and role." }
   - { field: status,   type: select,   options: [ongoing, planned, completed], required: true, section: Core, help: "Where it stands." }
-  - { field: date,     type: text,     section: Dates, help: "Year or range." }
+  - { field: when,     type: period,   section: Dates, help: "When it happens: a year, a month, a day or a span, such as 2025-09/2026-09 or 2025/.." }
   - { field: deadline, type: date,     section: Dates, help: "Shows on Focus while live." }
   - { field: meta,     type: metalist, section: Core, help: "Label and value rows." }
   - { field: tags,     type: tags,     section: Core, help: "Filter words." }
@@ -1524,7 +1524,6 @@ schema:
   - { field: cv_title,   type: text,     label: "CV title", section: Website, help: "The title the CV prints, when it is not the title." }
   - { field: cv_url,     type: text,     label: "CV address", section: Website, help: "The address the CV links." }
   - { field: location,   type: text,     label: "Location", section: Website, help: "Where, as the CV prints it." }
-  - { field: duration,   type: text,     label: "CV period", section: Website, help: "The period as the CV prints it." }
   - { field: about,      type: textarea, label: "CV text", section: Website, help: "What the CV prints under it." }
   - { field: hide,       type: checkbox, label: "Hidden on the CV", section: Website, help: "Kept off the CV while it stays listed." }
   - field: students
@@ -1535,13 +1534,14 @@ schema:
     fields:
       - { field: person, type: text, required: true, foreign_key: people, help: "The student, by key." }
       - { field: topic,  type: text, help: "The topic, as the CV prints it." }
-      - { field: degree, type: text, help: "The degree and year, as the CV prints them." }
+      - { field: degree, type: text, help: "The degree, as the CV prints it." }
+      - { field: when,   type: period, help: "When the student was supervised, where it differs from the entry's." }
 entries:
 #  - key: ml-course               # required
 #    title: "Machine learning"    # required
-#    sub: "University, 2026"
+#    sub: "University"
 #    status: ongoing              # required: ongoing, planned or completed
-#    date: "2026"
+#    when: "2025-09/2026-09"      # a year, a month, a day or a span
 #    deadline: YYYY-MM-DD
 #    meta: []
 #    tags: []
@@ -1563,7 +1563,7 @@ schema:
   - { field: title,    type: text,     display: 1, required: true, section: Core, help: "Position." }
   - { field: sub,      type: text,     section: Core, help: "Institution." }
   - { field: status,   type: select,   options: [active, applied, interview, offered, accepted, not-applied, declined, rejected, withdrawn], required: true, section: Core, help: "Where it stands." }
-  - { field: date,     type: text,     section: Dates, help: "Year applied." }
+  - { field: when,     type: period,   section: Dates, help: "When you applied: a year, a month or a day." }
   - { field: meta,     type: metalist, section: Core, help: "Label and value rows." }
   - { field: tags,     type: tags,     section: Core, help: "Filter words." }
   - { field: note,     type: textarea, section: Content, help: "Notes." }
@@ -1581,7 +1581,7 @@ entries:
 #    sub: "University"
 #    status: active               # required: active, applied, interview, offered, accepted,
 #                                 # not-applied, declined, rejected or withdrawn
-#    date: "2026"
+#    when: 2026                   # a year, a month or a day
 #    meta: []
 #    tags: []
 #    note: ""
@@ -1636,7 +1636,7 @@ schema:
   - { field: title,    type: text,     display: 1, required: true, section: Core, help: "The paper's title." }
   - { field: authors,  type: tags,     filter: true, section: Core, help: "The authors in order, one name per entry." }
   - { field: venue,    type: text,     filter: true, section: Core, help: "The journal or conference; a venue of the venues registry by this name opens from it." }
-  - { field: year,     type: text,     filter: true, section: Core, help: "The year it appeared, as a whole number." }
+  - { field: year,     type: period,   filter: true, section: Core, help: "The year it appeared." }
   - { field: doi,      type: text,     section: Core, help: "The DOI, without the address in front of it." }
   - { field: url,      type: text,     section: Core, help: "The paper's address." }
   - { field: abstract, type: textarea, section: Content, help: "The abstract, as plain text." }
@@ -1675,8 +1675,10 @@ schema:
   - { field: fit,      type: textarea, section: Core, help: "How it fits; strong, moderate or reach colours the card." }
   - { field: status,   type: select,   foreign_key: vocab.lead_statuses, section: Core, help: "Where it stands: open, applied, declined, closed or dismissed." }
   - { field: date,     type: date,     section: Dates, help: "Day found." }
-  - { field: deadline, type: text,     section: Dates, help: "Deadline as posted." }
+  - { field: deadline, type: date,     section: Dates, help: "The deadline, a day." }
+  - { field: rolling,  type: checkbox, section: Dates, help: "Applications are read as they arrive, with or without a deadline." }
   - { field: url,      type: text,     section: Core, help: "The posting." }
+  - { field: note,     type: textarea, section: Content, help: "Notes on the posting." }
 meta:
   log: []
 entries:
@@ -1689,7 +1691,9 @@ entries:
 #    status: open                 # open, applied or declined
 #    date: YYYY-MM-DD
 #    deadline: YYYY-MM-DD
+#    rolling: false               # true when it reads applications as they arrive
 #    url: https://example.org/job
+#    note: ""                     # every other word the posting says about its deadline
 ```
 
 ### .oculus/data/literature/radar.yml
@@ -1701,7 +1705,7 @@ schema:
   - { field: title,      type: text,     primary_key: true, display: 1, required: true, section: Core, help: "Title." }
   - { field: authors,    type: text,     section: Core, help: "Authors in order." }
   - { field: venue,      type: text,     section: Core, help: "Where it appeared." }
-  - { field: year,       type: text,     section: Core, help: "Year." }
+  - { field: year,       type: period,   section: Core, help: "Year." }
   - { field: url,        type: text,     required: true, section: Core, help: "Address; the sweep deduplicates by it." }
   - { field: bucket,     type: select,   foreign_key: vocab.radar_buckets, required: true, section: Core, help: "preemption, cite_baseline, adjacent or idea." }
   - { field: project,    type: select,   foreign_key: projects, section: Connections, help: "The project it was found for." }
@@ -1735,7 +1739,7 @@ entries:
 
 ### .oculus/data/academic/career.yml
 
-One record of sections, shown in the Career view and edited in its editor: the strategy (the goal, the next milestone with its day, the order of work and its note) and the career record the website's CV is written from. A row of `positions` goes to the CV's experience, of `degrees` to its education, of `awards` to its awards and of `references` to its references, unless it names another section in `cv_section`; `cv_rank` orders the rows of a section, and `key` names the row for a profile row's `records`. A reference names a person of `people.yml` by key, whose name and email the CV prints. An award that names a funding entry by key (`funding`) takes its title, place and text from the entry where it prints none of its own. `profiles` holds the employer CVs: `shared`, the place, email, website parts (`parts`) and links (`links`, by name) they all print, and one map per profile whose rows may name the records they stand for (`records`), taking from the first record what the row's section of the employer CV prints and the row does not: the place and the day in `awards`, the period and the address in `projects`, the place and the period in the others.
+One record of sections, shown in the Career view and edited in its editor: the strategy (the goal, the next milestone with its day, the order of work and its note) and the career record the website's CV is written from. A row of `positions` goes to the CV's experience, of `degrees` to its education, of `awards` to its awards and of `references` to its references, unless it names another section in `cv_section`; `cv_rank` orders the rows of a section, and `key` names the row for a profile row's `records`. A reference names a person of `people.yml` by key, whose name and email the CV prints. An award that names a funding entry by key (`funding`) takes its title, place and text from the entry where it prints none of its own. `profiles` holds the employer CVs: `shared`, the place, email, website parts (`parts`) and links (`links`, by name) they all print, and one map per profile whose rows may name the records they stand for (`records`), taking from the first record what the row's section of the employer CV prints and the row does not: the place and the period in `awards`, the period and the address in `projects`, the place and the period in the others. A row's period is its `when`, which the CV prints in one form, such as Sep. 2025 - Sep. 2026, and an open end as Current.
 
 ```yaml
 schema:
@@ -1750,7 +1754,7 @@ schema:
     help: "The order of work."
     fields:
       - { field: task, type: text, required: true, help: "What to do." }
-      - { field: when, type: text, help: "When." }
+      - { field: when, type: period, help: "When it is due." }
       - { field: note, type: text, help: "A remark." }
   - field: positions
     type: records
@@ -1760,7 +1764,7 @@ schema:
       - { field: key, type: text, help: "The key a profile row names this position by." }
       - { field: title, type: text, required: true, help: "The position as the CV prints it." }
       - { field: location, type: text, help: "Where." }
-      - { field: duration, type: text, help: "When, as the CV prints it." }
+      - { field: when, type: period, help: "When it happens: a year, a month, a day or a span, such as 2025-09/2026-09 or 2025/.." }
       - { field: url, type: text, help: "An address the title links to." }
       - { field: about, type: textarea, help: "What the CV prints under it." }
       - { field: hide, type: checkbox, help: "Kept off the CV." }
@@ -1774,7 +1778,7 @@ schema:
       - { field: key, type: text, help: "The key a profile row names this degree by." }
       - { field: title, type: text, required: true, help: "The degree as the CV prints it." }
       - { field: location, type: text, help: "Where." }
-      - { field: duration, type: text, help: "When, as the CV prints it." }
+      - { field: when, type: period, help: "When it happens: a year, a month, a day or a span, such as 2025-09/2026-09 or 2025/.." }
       - { field: url, type: text, help: "An address the title links to." }
       - { field: about, type: textarea, help: "What the CV prints under it." }
       - { field: hide, type: checkbox, help: "Kept off the CV." }
@@ -1788,7 +1792,7 @@ schema:
       - { field: key, type: text, help: "The key a profile row names this award by." }
       - { field: award, type: text, help: "The award as the CV prints it." }
       - { field: event, type: text, help: "The event it was given at." }
-      - { field: date, type: text, help: "The day, written as the CV reads it." }
+      - { field: when, type: period, help: "When it happens: a year, a month, a day or a span, such as 2025-09/2026-09 or 2025/.." }
       - { field: location, type: text, help: "Where." }
       - { field: content, type: textarea, help: "What the CV prints under it." }
       - { field: funding, type: text, help: "A funding entry, by key, whose title, place and text the award takes." }
@@ -1843,7 +1847,7 @@ schema:
               - { field: title, type: text, help: "The entry as this CV prints it." }
               - { field: role, type: text, help: "The role, for a project." }
               - { field: location, type: text, help: "Where, when this CV prints it differently." }
-              - { field: duration, type: text, help: "When, when this CV prints it differently." }
+              - { field: when, type: period, help: "When, when this CV prints it differently." }
               - { field: url, type: text, help: "An address, when this CV prints another." }
               - { field: about, type: textarea, help: "What this CV prints under it." }
               - { field: about_compact, type: textarea, help: "What the one-page CV prints under it." }
@@ -1858,13 +1862,13 @@ schema:
           - { field: title, type: text, help: "The heading." }
           - field: content
             type: records
-            help: "One row per award. A row names the records it stands for, and takes the first one's place and day where it prints none of its own."
+            help: "One row per award. A row names the records it stands for, and takes the first one's place and period where it prints none of its own."
             fields:
               - { field: records, type: tags, help: "The keys of the records the row stands for." }
               - { field: award, type: text, help: "The award as this CV prints it." }
               - { field: event, type: text, help: "The event it was given at." }
               - { field: location, type: text, help: "Where, when this CV prints it differently." }
-              - { field: date, type: text, help: "The day, when this CV prints it differently." }
+              - { field: when, type: period, help: "When, when this CV prints it differently." }
               - { field: compact, type: checkbox, help: "Whether the one-page CV prints the row; a row without it is printed." }
       - field: letter
         type: records
@@ -1886,11 +1890,11 @@ title: Career strategy
 # order:
 #   - { task: "Apply for the fellowship", when: "2026-11", note: "" }
 # positions:
-#   - { key: postdoc, title: "Postdoc", location: "A university", duration: "2024 - now", about: "" }
+#   - { key: postdoc, title: "Postdoc", location: "A university", when: "2024/..", about: "" }
 # degrees:
-#   - { key: phd, title: "PhD", location: "A university", duration: "2019 - 2023" }
+#   - { key: phd, title: "PhD", location: "A university", when: "2019/2023" }
 # awards:
-#   - { award: "Best paper", event: "A conference", date: YYYY-MM-DD }
+#   - { award: "Best paper", event: "A conference", when: "2023-06" }
 #   - { funding: a-fellowship }
 # references:
 #   - { person: a-person, reason: "PhD supervisor" }

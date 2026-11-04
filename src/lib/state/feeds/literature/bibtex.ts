@@ -15,6 +15,7 @@
 // on and the entry's key as the item's id. citation-js is loaded when the first entry is
 // formatted, so the page does not carry it until a paper needs it.
 
+import { periodYear } from '../../../data/helpers/dates.ts';
 import type { HitType, SourceInfo } from '../../../data/model/index.ts';
 import { bibtexAnswer, bibtexUrl, type ServedFrom } from './answers.ts';
 import type { MergedHit } from './merge.ts';
@@ -142,7 +143,7 @@ function savedCsl(paper: SavedPaper): Record<string, unknown> {
         title: paper.title,
         author: paper.authors.map((literal) => ({ literal }))
     };
-    const year = /^\d{1,4}$/.test(paper.year) ? Number(paper.year) : undefined;
+    const year = periodYear(paper.year);
     if (paper.venue !== '') item['container-title'] = paper.venue;
     if (year !== undefined) item.issued = { 'date-parts': [[year]] };
     if (paper.doi !== '') item.DOI = paper.doi;

@@ -8,7 +8,9 @@
 // `manifest_schema`, whatever the project's tier.
 //
 // Every reason a write refuses with is a line of config/text/server.yml under
-// `server.manifest_write`, worded with `words` from the configuration's text catalog.
+// `server.manifest_write`, worded with `words` from the configuration's text catalog, but a
+// `period` field's value the period reader refuses, which takes the collection editor's sentence
+// `server.entries.type_period`, so both editors refuse a period in the same words.
 //
 // server/edit/writes.ts is the route and re-exports the writers an importer needs (`coerce`,
 // `createIdea`, `fieldTypes` and `writeManifest`); the undo imports `manifestValue`
@@ -25,6 +27,7 @@ import { existsSync, lstatSync, mkdirSync, readFileSync } from 'node:fs';
 import { basename, dirname, isAbsolute, join, normalize, relative, resolve, sep } from 'node:path';
 import { parse } from 'yaml';
 import { z } from 'zod';
+import { readPeriod } from '../../../data/helpers/dates.ts';
 import { byKey, isMap } from '../../../data/helpers/guards.ts';
 import { ROOT_FOLDER, inScan, tierOf } from '../../../data/helpers/hub-names.ts';
 import { projectFileIn } from '../../../data/sources/manifests.ts';
@@ -139,7 +142,7 @@ function hubOwnFields(
 const TRUE = [true, 'true', 'True', '1', 'on', 1];
 
 /** Types whose value is one line of text. */
-const TEXTS = ['text', 'textarea', 'date', 'select'];
+const TEXTS = ['text', 'textarea', 'date', 'period', 'select'];
 
 /** Types whose value is a list of strings. */
 const LISTS = ['tags', 'chips', 'lines'];
@@ -178,16 +181,21 @@ function unwritable(type: string, catalog: Record<string, string>): string | nul
  * One form value as the manifest's own kind of value. An empty text, an empty list and an unticked
  * checkbox all clear the field, which is what the form means by leaving a control empty. A number
  * the manifest holds as a number (`year`) stays a number, so editing the title beside it does not
- * turn it into a string.
+ * turn it into a string. A `period` field's value that the period reader refuses is refused with
+ * the field's name.
  */
 export function coerce(
     type: string,
     raw: unknown,
     current: unknown,
-    catalog: Record<string, string>
+    catalog: Record<string, string>,
+    name: string
 ): Coerced {
     const reason = unwritable(type, catalog);
     if (reason !== null) return { reason };
+    if (type === 'period' && notPeriod(raw)) {
+        return { reason: words(catalog, 'server.entries.type_period', name) };
+    }
     if (type === 'checkbox') {
         return { value: TRUE.includes(raw as string | number | boolean) ? true : null };
     }
@@ -218,6 +226,13 @@ export function coerce(
     if (typeof current === 'number' && /^-?\d+(?:\.\d+)?$/.test(text))
         return { value: Number(text) };
     return { value: text };
+}
+
+/** Whether a form value is neither empty nor a period, so a `period` field refuses it. */
+function notPeriod(raw: unknown): boolean {
+    if (raw === null || raw === undefined) return false;
+    const value = typeof raw === 'string' ? raw.trim() : raw;
+    return value !== '' && readPeriod(value) === null;
 }
 
 /**
@@ -253,11 +268,12 @@ function readValue(
     type: string,
     raw: unknown,
     current: unknown,
-    catalog: Record<string, string>
+    catalog: Record<string, string>,
+    name: string
 ): { value: unknown } | { reason: string } {
-    if (reading === 'form') return coerce(type, raw, current, catalog);
+    if (reading === 'form') return coerce(type, raw, current, catalog, name);
     if (reading === 'machine') {
-        return coerce(type === 'readonly' ? 'text' : type, raw, current, catalog);
+        return coerce(type === 'readonly' ? 'text' : type, raw, current, catalog, name);
     }
     const reason = unwritable(type, catalog);
     return reason === null ? { value: raw } : { reason };
@@ -476,7 +492,8 @@ export function writeManifest(
             types[field] ?? 'text',
             raw,
             currentOf(manifest.data, field),
-            config.text
+            config.text,
+            field
         );
         if ('reason' in out) {
             refused.push({ field, reason: out.reason });

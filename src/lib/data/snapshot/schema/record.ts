@@ -3,8 +3,9 @@
 // a type means one thing wherever it is written.
 //
 // Each type accepts what its reader accepts. A `text` field takes a text and the integer a year is
-// written as, a `date` a day written YYYY-MM-DD, a `checkbox` a flag, `tags` a list, `metalist` a
-// list of label and value maps, `raw` anything but a `followup` field, which takes the list of
+// written as, a `date` a day written YYYY-MM-DD, a `period` a date or a span in EDTF (the reader of
+// helpers/dates.ts, run by the `x-period` keyword), a `checkbox` a flag, `tags` a list, `metalist`
+// a list of label and value maps, `raw` anything but a `followup` field, which takes the list of
 // notes oculus writes there. Every field also accepts null, which is what a bare `key:` reads as. A
 // `select` takes the keys of its `options` and of its `foreign_key` targets, and any word when it
 // has neither, a `tags` field each of them as an item; a `text` takes its targets' keys as
@@ -17,7 +18,7 @@
 // with a `then` or an `else`; the schema carries the condition in `x-when` or `x-required-when` so
 // a finding can name it.
 
-import { ISO_DATE } from '../../helpers/dates.ts';
+import { ISO_DATE, PERIOD_FORM } from '../../helpers/dates.ts';
 import { findingText, type TextCatalog } from '../../helpers/finding-text.ts';
 import { withoutPath } from '../../helpers/files/yaml/collection-text.ts';
 import {
@@ -27,7 +28,7 @@ import {
     type SchemaField,
     type When
 } from '../../model/index.ts';
-import { TEXT_TYPES, type JsonSchema } from './json.ts';
+import { PERIOD_KEYWORD, TEXT_TYPES, type JsonSchema } from './json.ts';
 
 /**
  * The keys a `foreign_key` target offers, undefined for a target no list answers, and null for a
@@ -91,6 +92,7 @@ const FIELD_TYPES = [
     'text',
     'textarea',
     'date',
+    'period',
     'checkbox',
     'select',
     'tags',
@@ -187,6 +189,16 @@ function valueSchema(field: SchemaField, ctx: Context): JsonSchema {
     switch (field.type) {
         case 'date':
             return { type: ['string', 'null'], pattern: ISO_DATE.source };
+        case 'period':
+            // The marks refuse what a pattern and a range can say, for the editor; `x-period` runs
+            // the reader, which also holds a day to its month and a span's end to its start.
+            return {
+                type: ['string', 'integer', 'null'],
+                pattern: PERIOD_FORM.source,
+                minimum: 1000,
+                maximum: 9999,
+                [PERIOD_KEYWORD]: true
+            };
         case 'checkbox':
             return { type: ['boolean', 'null'] };
         case 'raw':

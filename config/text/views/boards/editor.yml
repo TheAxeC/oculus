@@ -16,6 +16,8 @@ text:
         none_glyph: edit
         not_in_model: the snapshot does not carry this field, so it opens empty; saving it writes what is typed
         other: Other
+        period_hint: '2025, 2025-09, 2026-10-27 or 2025-09/2026-09'
+        period_refused: not a period such as 2025, 2025-09, 2026-10-27 or 2025-09/2026-09
         record_status: Record status
         record_title: Edit
         record_toolbar: Record editor

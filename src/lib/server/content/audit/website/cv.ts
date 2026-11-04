@@ -5,15 +5,24 @@
 // supervision entry's students, and the manifests that carry a `cv:` record, each section's rows by
 // their rank and then in the order they are read in. The employer CVs are the career file's
 // `profiles`, whose rows name the records they stand for and take from the first one the place,
-// period, day or address their section prints where they print none of their own. A section's
-// title and the person's other details (portrait, titles, author, website) are the website's, which
-// its templates read from its own file.
+// period or address their section prints where they hold none of their own. A section's title and
+// the person's other details (portrait, titles, author, website) are the website's, which its
+// templates read from its own file.
+//
+// A record's period is its `when`, read by the period reader of data/helpers/dates.ts, and the CV
+// prints it in one form in the field the website reads (`periodText`): `duration` in every section,
+// and in the CV's awards `date`, the timestamp the website's `to_date` parses. A student's row
+// prints the degree with the student's period, else the supervision entry's. A record's `when`
+// that is no period, and a record with none, print no period. The month words and "Current" are
+// the website's CV text, which this file writes for it, so they are held here and not in oculus's
+// own catalog.
 //
 // A record is named by its key: a collection entry's key, a manifest's folder name, a career row's
 // `key`. A key two records hold names neither: a row that names it takes nothing from either and is
 // a problem naming the key, both places and the row.
 
 import { z } from 'zod';
+import { readPeriod, type PeriodPoint } from '../../../../data/helpers/dates.ts';
 import { bareId } from '../../../../data/helpers/hub-names.ts';
 import { isMap } from '../../../../data/helpers/guards.ts';
 import type { Career, Collection, Id, Person, Project } from '../../../../data/model/index.ts';
@@ -56,18 +65,96 @@ const CAREER_LISTS: { list: string; section: string }[] = [
     { list: 'awards', section: 'awards' }
 ];
 
+/** The field a record holds its period in. */
+const WHEN = 'when';
+
+/** The field of a row the CV prints the period text in, and the one of an award row. */
+const DURATION = 'duration';
+const DATE = 'date';
+
+/** The section whose rows print their period as the timestamp the website's `to_date` parses. */
+const AWARDS = 'awards';
+
+/** The month words of the CV's period text, January first. */
+const MONTHS = [
+    'Jan.',
+    'Feb.',
+    'Mar.',
+    'Apr.',
+    'May',
+    'Jun.',
+    'Jul.',
+    'Aug.',
+    'Sep.',
+    'Oct.',
+    'Nov.',
+    'Dec.'
+];
+
+/** The words the CV prints for an open end. */
+const OPEN_END = 'Current';
+
+/** The time and zone of an award's timestamp, after its day: the form `to_date` parses. */
+const AWARD_TIME = '15:59:00-0400';
+
+/** One end of a period as the CV prints it: its month and year, or its year alone. */
+function pointText(point: PeriodPoint): string {
+    return point.month === undefined
+        ? String(point.year)
+        : `${MONTHS[point.month - 1]} ${point.year}`;
+}
+
 /**
- * The fields a profile row takes from the first record it names when it prints none of its own: of
- * the place, the period, the day and the address, those its section of the employer CV prints (the
+ * A period as the CV prints it: `<start> - <end>`, `<start> - Current` for an open end, and one
+ * end alone when the two print the same; undefined for a value that is no period.
+ */
+function periodText(value: unknown): string | undefined {
+    const read = readPeriod(value);
+    if (read === null) return undefined;
+    const start = pointText(read.start);
+    const end = read.end === null ? OPEN_END : pointText(read.end);
+    return start === end ? start : `${start} - ${end}`;
+}
+
+/** An award's period as the timestamp the website parses, its day the start's first day. */
+function awardDate(value: unknown): string | undefined {
+    const read = readPeriod(value);
+    return read === null ? undefined : `${read.start.first} ${AWARD_TIME}`;
+}
+
+/**
+ * The fields of a row with its period printed in the field its section reads: an award's `date`
+ * as its timestamp, any other row's `duration` as its text (`stamped`), or with `stamped` false an
+ * award's `date` as its text, as an employer CV prints it. The `when` and any period text the
+ * record holds are left out, so a record with no `when` prints none.
+ */
+function withPeriod(
+    section: string,
+    fields: Record<string, unknown>,
+    stamped: boolean
+): Record<string, unknown> {
+    const into = section === AWARDS ? DATE : DURATION;
+    const out: Record<string, unknown> = {};
+    for (const [name, value] of Object.entries(fields)) {
+        if (name !== WHEN && name !== into) out[name] = value;
+    }
+    const text = into === DATE && stamped ? awardDate(fields[WHEN]) : periodText(fields[WHEN]);
+    if (text !== undefined) out[into] = text;
+    return out;
+}
+
+/**
+ * The fields a profile row takes from the first record it names when it holds none of its own: of
+ * the place, the period and the address, those its section of the employer CV prints (the
  * website's `_industry/src/cv/` templates), by the section's key.
  */
 const FROM_RECORD: Record<string, readonly string[]> = {
-    awards: ['location', 'date'],
-    projects: ['url', 'duration']
+    awards: ['location', WHEN],
+    projects: ['url', WHEN]
 };
 
 /** The fields a row of any other section of a profile takes from its record. */
-const FROM_RECORD_ELSE: readonly string[] = ['location', 'duration'];
+const FROM_RECORD_ELSE: readonly string[] = ['location', WHEN];
 
 /** The list that names the records a profile row stands for. */
 const RECORDS = 'records';
@@ -75,12 +162,22 @@ const RECORDS = 'records';
 /** A list of maps; anything else holds none. */
 const rowsShape = z.array(z.unknown()).transform((all) => all.filter(isMap));
 
-/** A student of a supervision entry: the person, the topic and the degree the CV prints. */
+/**
+ * A student of a supervision entry: the person, the topic, the degree the CV prints, and the
+ * student's own period where it differs from the entry's.
+ */
 const studentShape = z.object({
     person: z.string(),
     topic: z.string().optional(),
-    degree: z.string().optional()
+    degree: z.string().optional(),
+    when: z.union([z.string(), z.number()]).optional()
 });
+
+/** A student's CV text: the degree and the period, `<degree> (<period>)`, or either alone. */
+function studentText(degree: string | undefined, period: string | undefined): string | undefined {
+    if (degree === undefined || degree === '') return period;
+    return period === undefined ? degree : `${degree} (${period})`;
+}
 
 /** The rows of a list, the maps among them; none for anything that is no list. */
 function rowsOf(value: unknown): Record<string, unknown>[] {
@@ -212,23 +309,28 @@ class Cv {
                 if (typeof section !== 'string') continue;
                 const rank = rankOf(entry.fields.cv_rank, Number.POSITIVE_INFINITY);
                 if (Array.isArray(entry.fields.students)) {
-                    this.students(entry.fields.students, `${bareId(entry)}.students`, rank);
-                } else this.add(section, rank, fields);
+                    const where = `${bareId(entry)}.students`;
+                    this.students(entry.fields.students, where, rank, entry.fields[WHEN]);
+                } else this.add(section, rank, withPeriod(section, fields, true));
             }
         }
     }
 
-    /** One row per student of a supervision entry, in the entry's order. */
-    students(list: unknown[], where: string, rank: number): void {
+    /**
+     * One row per student of a supervision entry, in the entry's order, its period the student's
+     * own `when`, else the entry's (`when`).
+     */
+    students(list: unknown[], where: string, rank: number, when: unknown): void {
         list.forEach((one, index) => {
             const row = studentShape.safeParse(one);
             if (!row.success) return;
             const person = this.person(row.data.person, `${where}.${index}`);
             if (person === undefined) return;
+            const period = periodText(row.data.when) ?? periodText(when);
             this.add('students', rank, {
                 title: person.name,
                 location: row.data.topic,
-                duration: row.data.degree
+                [DURATION]: studentText(row.data.degree, period)
             });
         });
     }
@@ -252,7 +354,7 @@ class Cv {
                     });
                 } else if (typeof row.key === 'string') this.hold(row.key, where, fields);
                 const named = typeof row.cv_section === 'string' ? row.cv_section : section;
-                this.add(named, rankOf(row.cv_rank, index), fields);
+                this.add(named, rankOf(row.cv_rank, index), withPeriod(named, fields, true));
             });
         }
     }
@@ -286,7 +388,8 @@ class Cv {
             if (held === undefined) continue;
             const fields = { ...held, title: held.title ?? project.title };
             this.hold(bareId(project), `projects.${bareId(project)}`, fields);
-            this.add('projects', rankOf(held.rank, Number.POSITIVE_INFINITY), fields);
+            const rank = rankOf(held.rank, Number.POSITIVE_INFINITY);
+            this.add('projects', rank, withPeriod('projects', fields, true));
         }
     }
 
@@ -360,15 +463,16 @@ export function built(input: CvInput): Cv {
 
 /**
  * A profile row with the fields it takes from its first record (`taken`, its section's), its list
- * of records left out.
+ * of records left out, and its period printed as its section of the employer CV prints it.
  */
 function profileRow(
     row: Record<string, unknown>,
     cv: Cv,
     where: string,
+    section: string,
     taken: readonly string[]
 ): Record<string, unknown> {
-    if (!Array.isArray(row[RECORDS])) return row;
+    if (!Array.isArray(row[RECORDS])) return withPeriod(section, row, false);
     const keys = row[RECORDS].filter((one): one is string => typeof one === 'string');
     const out: Record<string, unknown> = {};
     for (const [name, value] of Object.entries(row)) if (name !== RECORDS) out[name] = value;
@@ -377,7 +481,7 @@ function profileRow(
     for (const name of taken) {
         if (out[name] === undefined && first?.[name] !== undefined) out[name] = first[name];
     }
-    return out;
+    return withPeriod(section, out, false);
 }
 
 /** A profile with every section's rows given their records' fields. */
@@ -390,7 +494,7 @@ function profileOf(profile: Record<string, unknown>, cv: Cv, where: string) {
         }
         const taken = Object.hasOwn(FROM_RECORD, name) ? FROM_RECORD[name] : FROM_RECORD_ELSE;
         const content = rowsOf(part.content).map((row, index) =>
-            profileRow(row, cv, `${where}.${name}.${index}`, taken)
+            profileRow(row, cv, `${where}.${name}.${index}`, name, taken)
         );
         out[name] = { ...part, content };
     }

@@ -15,15 +15,9 @@ import { join, relative, resolve } from 'node:path';
 import { isDeepStrictEqual } from 'node:util';
 import { parse } from 'yaml';
 import { z } from 'zod';
-import { localDate } from '../../../data/helpers/dates.ts';
+import { localDate, periodYear } from '../../../data/helpers/dates.ts';
 import { isMap, scalar } from '../../../data/helpers/guards.ts';
-import {
-    addressKey,
-    normalDoi,
-    plainText,
-    samePaper,
-    wholeNumber
-} from '../../../data/prose/literature.ts';
+import { addressKey, normalDoi, plainText, samePaper } from '../../../data/prose/literature.ts';
 import { collectionFiles } from '../../../data/helpers/hub-names.ts';
 import { primaryKeyOf } from '../../../data/model/index.ts';
 import { keyFaultOf } from '../../../data/model/model-collections.ts';
@@ -171,11 +165,11 @@ export function saveLiterature(
     if (read.entries.some((entry) => holds(entry, doi, title, url))) {
         return refusal('title', words(config.text, 'server.literature.paper_in_file'));
     }
-    const year = wholeNumber(textOf(paper.year));
+    const year = periodYear(textOf(paper.year));
     const base =
         title === ''
             ? addressBase(doi === '' ? url : doi)
-            : citationBase(authors, year === null ? '' : String(year), title);
+            : citationBase(authors, year === undefined ? '' : String(year), title);
     const taken = new Set(read.entries.map((entry) => scalar(entry[CITATION])));
     const citation = freeKey(base === '' ? citationBase([], '', '') : base, taken);
 

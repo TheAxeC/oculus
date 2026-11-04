@@ -37,6 +37,7 @@ import {
     type Snapshot
 } from '../../data/model/index.ts';
 import type { DraftTarget } from './form-draft.ts';
+import { readPeriod } from '../../data/helpers/dates.ts';
 import { byKey } from '../../data/helpers/guards.ts';
 import { asList, asText, fieldDiffers, payloadOf, toEdit } from './record-values.ts';
 import {
@@ -461,7 +462,7 @@ export function fieldValues(
         followup: followupText(project),
         pin: project.pin === true,
         venue: project.venueId === undefined ? undefined : keyOf(project.venueId),
-        year: project.year,
+        year: project.yearWritten,
         eli5: project.eli5,
         next: project.next,
         latest: project.latest,
@@ -542,6 +543,15 @@ export function withPicked(field: Pick<FormField, 'type'>, value: unknown, key: 
 
 /** The helpers of a value as the widget's own kind, which the controls read through this module. */
 export { asList, asText };
+
+/**
+ * Why the text typed into a `period` field is no period, in the catalog's words, or undefined for
+ * a period and for an empty text, which clears the field.
+ */
+export function periodRefusal(text: string): string | undefined {
+    const typed = text.trim();
+    return typed === '' || readPeriod(typed) !== null ? undefined : t('editor.period_refused');
+}
 
 /**
  * What a save posts, and what the draft drops once the server took it: the fields of `dirty` the
