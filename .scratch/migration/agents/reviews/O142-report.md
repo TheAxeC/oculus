@@ -67,17 +67,17 @@ Runs: `npm run diagrams` once and `npm run test:quick` once, both after the last
 
 ## The cases after the change
 
-Each read is of the worktree's `GroupHead.svelte` (259 lines) and the compiled CSS of run 2.
+Each read is of the worktree's `GroupHead.svelte` (264 lines) and the compiled CSS of the round's run (`run3-round1.txt`).
 
-- C1, the Audit strip (`AuditSection.svelte:189`). Its section stands in `Pane.svelte:89`'s `.body` and in `Findings.svelte`, neither a `GroupHead` body (Findings' own `GroupHead` is `:155-198`, and `<AuditSection>` is at `:200`, after it), so nothing sets `--group-indent` or `--group-label` above it: `.group` gives `--group-inset: var(--group-indent, 0px)` = `0px` (`:192`), `.strip` `padding: 2px 8px 2px calc(8px + 0px)` = `2px 8px` (`:215`), `.name` `font-size: var(--group-label, var(--fs-md))` = `--fs-md` (`:240`). Met: unchanged.
-- C2, the kind strips and Muted (`AuditSection.svelte:199`, `:216`). Their sections are descendants of the Audit group's `<div class="body">`, which the rule `.body` (`:198-201`) gives `--group-label: var(--fs-sm)` and `--group-indent: calc(0px + var(--bare-box, var(--tab-action)) + 6px)`. Inherited: `.name` at `--fs-sm`; `.count` at `--fs-sm` (`:246-249`, unchanged); `.strip` left padding `calc(8px + 22px * scale + 6px)` with `--bare-box` unset in a pane body. Met.
+- C1, the Audit strip (`AuditSection.svelte:189`). Its section stands in `Pane.svelte:89`'s `.body` and in `Findings.svelte`, neither a `GroupHead` body (Findings' own `GroupHead` is `:155-198`, and `<AuditSection>` is at `:200`, after it), so nothing sets `--group-indent` or `--group-label` above it: `.group` gives `--group-inset: var(--group-indent, 0px)` = `0px` (`:192`), `.strip` `padding: 2px 8px 2px calc(8px + 0px)` = `2px 8px` (`:220`), `.name` `font-size: var(--group-label, var(--fs-md))` = `--fs-md` (`:245`). Met: unchanged.
+- C2, the kind strips and Muted (`AuditSection.svelte:199`, `:216`). Their sections are descendants of the Audit group's `<div class="body">`, which the rule `.body` (`:200-205`) gives `--group-label: var(--fs-sm)` and `--group-indent: calc(0px + var(--bare-box, var(--tab-action)) + var(--group-gap))`, with `--group-gap: 6px` (`:193`). Inherited: `.name` at `--fs-sm`; `.count` at `--fs-sm` (`:251-254`, unchanged); `.strip` left padding `calc(8px + 22px * scale + 6px)` with `--bare-box` unset in a pane body. Met.
 - C3, Gallery (`Status.svelte:131`) unchanged by the C1 read (it stands in the Status view's top level); the eight sections (`Gallery.svelte:235` to `:382`) stand in its body through `<Gallery>` at `Status.svelte:139`, so each reads one level down as C2. Met.
 - C4, the Venues group and the Projects board's sections: they stand in `Pane.svelte:89`'s `.body`, which carries `Pane.svelte`'s scoped class and not `GroupHead`'s `svelte-yopwl3`, so the `.body.svelte-yopwl3` rule does not match it and nothing sets the two values: `--fs-md`, `2px 8px`. Met.
 - C5, the Usage view's Live group (`Usage.svelte:240`, in a Card whose `.body` is `Card.svelte:126`) and the Settings groups (`List.svelte`, under `Settings.svelte:446`): both `.body` elements are other components' scoped classes, so as C4: `--fs-md`, `2px 8px`. Met.
-- C6, stickiness: `top: var(--group-above)` (`:208`), `--group-above` (`:191`) and the body's `style:--group-strip` (`:181`) are as on the base, and the indent is padding, so the strip's height and the sum the body passes are unchanged; the Gallery's Table section (`Gallery.svelte:336-342`) keeps its header at `var(--group-strip, 0)` under both strips. Met by reading; the scrolled look is the look at landing.
-- C7, run 2: `.body.svelte-yopwl3 {` with `--group-label: var(--fs-sm);` and `--group-indent: calc(var(--group-inset) + var(--bare-box, var(--tab-action)) + 6px);`, `.group.svelte-yopwl3` with `--group-inset: var(--group-indent, 0px);`, `.strip.svelte-yopwl3` with `padding: 2px 8px 2px calc(8px + var(--group-inset));`, `.name.svelte-yopwl3` with `font-size: var(--group-label, var(--fs-md));`; `--- warnings: 0`, `--- unused comments: 0`, `--- css_unused_selector warnings: 0`. Met.
-- C8, the declared indent is `var(--bare-box, var(--tab-action)) + 6px` per level. The parent's fold control is a bare `ToolButton` with `box-sizing: border-box; min-width: var(--bare-box, var(--tab-action))` and `padding: 0 var(--tab-action-pad)` (`ToolButton.svelte:226-232`); its glyph is `calc(var(--icon-box) * var(--text-scale, 1))` wide with `--icon-box: 16px` (`tokens.css:253`), so its content box is `16 * scale + 2 * 2 * scale = 20 * scale`, under the `22 * scale` minimum, and the control is exactly `--tab-action` wide at every scale. The parent's words start at `8px + 22px * scale + 6px` from the section's edge (the strip's gap is `6px`, `:212`), and the nested fold control starts at `8px + (22px * scale + 6px)`: the same. The rice themes override only the `--fs-*` steps (`themes.css:51-57`; `grep -rn -- '--tab-action:' src/lib/themes/` finds only `tokens.css:193`) and `:global(body.rice) .tool.bare` takes the same box (`ToolButton.svelte:227`), so it holds there. `--bare-box` is set only on a pane's header, a toolbar's popover and a page leaf's head (`Pane.svelte:152`, `Toolbar.svelte:313`, `PageLeaf.svelte:142`), never around a group's body, so the body computes the box the fold control draws. Met by reading; the drawn alignment is the look at landing.
-- C9, two deep: a nested group's section carries `--group-inset` = its parent body's `--group-indent` (one level), and its own body computes `--group-indent: calc(<one level> + box + 6px)`, so a group in that body reads two levels. Met by reading; no place of the tree nests two deep.
+- C6, stickiness: `top: var(--group-above)` (`:213`), `--group-above` (`:191`) and the body's `style:--group-strip` (`:181`) are as on the base, and the indent is padding, so the strip's height and the sum the body passes are unchanged; the Gallery's Table section (`Gallery.svelte:336-342`) keeps its header at `var(--group-strip, 0)` under both strips. Met by reading; the scrolled look is the look at landing.
+- C7, the round's run: `.body.svelte-yopwl3 {` with `--group-label: var(--fs-sm);` and `--group-indent: calc(var(--group-inset) + var(--bare-box, var(--tab-action)) + var(--group-gap));`, `.group.svelte-yopwl3` with `--group-inset: var(--group-indent, 0px);` and `--group-gap: 6px;`, `.strip.svelte-yopwl3` with `padding: 2px 8px 2px calc(8px + var(--group-inset));`, `.name.svelte-yopwl3` with `font-size: var(--group-label, var(--fs-md));`; `--- warnings: 0`, `--- unused comments: 0`, `--- css_unused_selector warnings: 0`. Met.
+- C8, the declared indent is `var(--bare-box, var(--tab-action)) + var(--group-gap)` per level, `--group-gap` being `6px`. The parent's fold control is a bare `ToolButton` with `box-sizing: border-box; min-width: var(--bare-box, var(--tab-action))` and `padding: 0 var(--tab-action-pad)` (`ToolButton.svelte:226-232`); its glyph is `calc(var(--icon-box) * var(--text-scale, 1))` wide with `--icon-box: 16px` (`tokens.css:253`), so its content box is `16 * scale + 2 * 2 * scale = 20 * scale`, under the `22 * scale` minimum, and the control is exactly `--tab-action` wide at every scale. The parent's words start at `8px + 22px * scale + 6px` from the section's edge (the strip's gap is `var(--group-gap)`, 6px, `:217`), and the nested fold control starts at `8px + (22px * scale + 6px)`: the same. The rice themes override only the `--fs-*` steps (`themes.css:51-57`; `grep -rn -- '--tab-action:' src/lib/themes/` finds only `tokens.css:193`) and `:global(body.rice) .tool.bare` takes the same box (`ToolButton.svelte:227`), so it holds there. `--bare-box` is set only on a pane's header, a toolbar's popover and a page leaf's head (`Pane.svelte:152`, `Toolbar.svelte:313`, `PageLeaf.svelte:142`), never around a group's body, so the body computes the box the fold control draws. Met by reading; the drawn alignment is the look at landing.
+- C9, two deep: a nested group's section carries `--group-inset` = its parent body's `--group-indent` (one level), and its own body computes `--group-indent: calc(<one level> + box + var(--group-gap))`, so a group in that body reads two levels. Met by reading; no place of the tree nests two deep.
 
 ## The case-run program
 
@@ -181,7 +181,7 @@ svelte 5.57.1, file /Users/axelfaes/workspace/oculus/.agents/worktrees/migration
 --- css_unused_selector warnings: 0
 ```
 
-Run 2, after the last change (the rules that differ from run 1, then the summary; the rest is run 1's text):
+Run 2, after the first run's last change and before repair round 1 (the rules that differ from run 1, then the summary; the rest is run 1's text); the round's run is quoted under "Repair round 1":
 
 ```
     .group.svelte-yopwl3 {
@@ -244,7 +244,7 @@ All paths are under `src/lib/`. No place nests two deep. No caller changed (the 
 
 ## The diff of `GroupHead.svelte`
 
-`src/lib/ui/controls/heads/GroupHead.svelte`, 239 lines to 259 (`wc -l`), 26 lines added and 7 removed (`grep -c` over the saved `diff -u`). The only file of the step's tree that changed (the `diff -rq` row), besides this report.
+`src/lib/ui/controls/heads/GroupHead.svelte`, 239 lines to 264 (`wc -l`), 32 lines added and 8 removed (`grep -c` over `diff -u` against the base copy), as `git diff 261dc20b2 -- src/lib/ui/controls/heads/GroupHead.svelte` prints it after repair round 1. The only file of the step's tree that changed (the `diff -rq` row), besides this report.
 
 ```diff
 @@ -27,10 +27,19 @@
@@ -271,30 +271,38 @@ All paths are under `src/lib/`. No place nests two deep. No caller changed (the 
      //
      // A folded group's body stays in the page, hidden until found: its cards stay mounted, so a
      // reveal finds them, and the browser's find-in-page searches them; a match inside fires
-@@ -180,11 +189,20 @@
+@@ -180,21 +189,35 @@
  <style>
      .group {
          --group-above: var(--group-strip, 0px);
 +        --group-inset: var(--group-indent, 0px);
++        --group-gap: 6px;
          min-width: 0;
      }
  
 +    /* What the groups nested in the body read: the small size for their label, and an indent one
-+       level deeper than this group's, one fold control's box and the strip's 6 px gap. */
++       level deeper than this group's, one fold control's box and the strip's gap (`--group-gap`,
++       which the strip's `gap` reads as well). */
 +    .body {
 +        --group-label: var(--fs-sm);
-+        --group-indent: calc(var(--group-inset) + var(--bare-box, var(--tab-action)) + 6px);
++        --group-indent: calc(
++            var(--group-inset) + var(--bare-box, var(--tab-action)) + var(--group-gap)
++        );
 +    }
 +
      /* The fold control stands on the strip's centre line; the label and the count share a baseline
 -       after it, and the actions stand at the line's right end. */
 +       after it, and the actions stand at the line's right end. A nested group's indent is padding
-+       before the fold control, so the strip paints its whole band. */
++       before the fold control, so the strip paints its whole band. The gap between the strip's
++       parts is the section's `--group-gap`, which the body adds to the indent at each level. */
      .strip {
          position: sticky;
          top: var(--group-above);
-@@ -194,7 +212,7 @@
-         gap: 6px;
+         z-index: 2;
+         display: flex;
+         align-items: center;
+-        gap: 6px;
++        gap: var(--group-gap);
          min-width: 0;
          margin: 0 0 8px;
 -        padding: 2px 8px;
@@ -302,7 +310,7 @@ All paths are under `src/lib/`. No place nests two deep. No caller changed (the 
          border-radius: var(--input-radius);
          background: var(--panel);
          font-size: var(--fs-md);
-@@ -215,9 +233,11 @@
+@@ -215,9 +238,11 @@
          min-width: 0;
      }
  
@@ -321,7 +329,7 @@ Fill of the rewritten paragraph (`:28-42`): `awk 'NR>=28 && NR<=43 {print NR": "
 
 Greps:
 
-- The new names, `grep -rn -e '--group-label' -e '--group-indent' -e '--group-inset' src tests docs README.md` and the same over `config --exclude=local.yml`: hits only in `GroupHead.svelte` (`:36`, `:37`, `:192`, `:199`, `:200`, `:215`, `:240`); none elsewhere, so no other rule reads or sets them. The same names were absent on the base (`grep -rn -- '--group-' src` before the change listed only `--group-strip`, `--group-above` and `--group`).
+- The new names, `grep -rn -e '--group-label' -e '--group-indent' -e '--group-inset' src tests docs README.md` and the same over `config --exclude=local.yml`: hits only in `GroupHead.svelte` (`:36`, `:37`, `:192`, `:201`, `:202`, `:203`, `:220`, `:245`); none elsewhere, so no other rule reads or sets them. The same names were absent on the base (`grep -rn -- '--group-' src` before the change listed only `--group-strip`, `--group-above` and `--group`).
 - The history words over the added lines: `grep '^+' grouphead.diff | grep -inE "before|used to|no longer|still|always has been|always had|as before|previously|the step adds|after this package|O[0-9]+|20[0-9][0-9]-"` prints `+       before the fold control, so the strip paints its whole band. */` (and the diff's `+++` header line). Judged: "before" there is the place in the strip (the padding stands ahead of the fold control), the sense `GroupHead.svelte:96` already uses ("The glyph name drawn before the label"), not a comparison with an earlier state.
 
 ## The comments and doc paragraphs on the strip's look
@@ -342,7 +350,7 @@ Greps:
 
 Each reversible, none a user-visible shape beyond the ruled look.
 
-1. The mechanism is the value the body passes down (the brief's first form), with three new internal custom properties: `--group-indent` and `--group-label` set by the body (`.body`, `:198-201`), and `--group-inset` the section's copy of `--group-indent` (`:192`), named after the existing `--group-strip` and `--group-above` pair. The scoped `.body` with a `:global(...)` tail was not used, since it would match any `.group > .strip` of another component inside a `GroupHead` body and would need a selector per depth for C9.
+1. The mechanism is the value the body passes down (the brief's first form), with three new internal custom properties: `--group-indent` and `--group-label` set by the body (`.body`, `:200-205`), and `--group-inset` the section's copy of `--group-indent` (`:192`), named after the existing `--group-strip` and `--group-above` pair. The scoped `.body` with a `:global(...)` tail was not used, since it would match any `.group > .strip` of another component inside a `GroupHead` body and would need a selector per depth for C9.
 2. The small size is set on the label (`.name`) alone; the strip keeps `font-size: var(--fs-md)`, so the glyph's `vertical-align: -0.125em` and every other inherited size stay as on a top-level strip, per the brief's decision 1 ("no other property changes"). The count was already `--fs-sm`.
 3. A group two deep keeps its label at `--fs-sm` (no `--fs-xs`): the ruling names the small size, and only the indent adds per level.
 4. The strip's gap is one value, `--group-gap: 6px`, declared once on `.group` (`GroupHead.svelte:193`); the strip's `gap` reads it (`:217`) and the body's `--group-indent` adds it (`:202-204`), and the comments over `.body` (`:197-199`) and `.strip` (`:207-210`) name it. The gap of `.words` (`:237`, `gap: 6px`, between the glyph, the label and the count) is a separate value and stays a literal.
@@ -373,7 +381,7 @@ Every other premise checked held: `GroupHead.svelte` 239 lines with the cited ra
 
 Every item of `agents/briefs/O142-round-1.md` is done.
 
-The `file:line` positions of `GroupHead.svelte` in the sections above the judgment calls ("The cases after the change", "The diff", the greps) are of the file before this round; the round moved the style block down. The current positions: `.group` `:190-195` (`--group-inset` `:192`, `--group-gap` `:193`), the `.body` comment `:197-199` and rule `:200-205` (`--group-label` `:201`, `--group-indent` `:202-204`), the `.strip` comment `:207-210`, `.strip` `:211` with `top` `:213`, `gap` `:217`, `padding` `:220`, `.name` `:243` with `font-size` `:245` and `text-overflow` `:248`, `.count` `:251`. The head comment (`:28-42`) and the markup are unchanged by the round.
+The `file:line` positions of `GroupHead.svelte` in the sections above are of the file after this round: `.group` `:190-195` (`--group-inset` `:192`, `--group-gap` `:193`), the `.body` comment `:197-199` and rule `:200-205` (`--group-label` `:201`, `--group-indent` `:202-204`), the `.strip` comment `:207-210`, `.strip` `:211` with `top` `:213`, `gap` `:217`, `padding` `:220`, `.name` `:243` with `font-size` `:245` and `text-overflow` `:248`, `.count` `:251`. The head comment (`:28-42`) and the markup are unchanged by the round.
 
 ### Item 1, the gap as one value
 

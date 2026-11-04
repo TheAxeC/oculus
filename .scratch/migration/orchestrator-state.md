@@ -38,20 +38,6 @@ dispatch:           # steps in flight, up to six (Z632)
   brief_check: .scratch/migration/agents/reviews/O141-brief-check.md (a6792e18665cffd1a, claude-opus-5-5, 179435 tokens, 45 tool uses, 7 min 28 s)
   shared_paths: "config/catalogs/vocab.yml with O143 of this plan: O141 writes lines 181-192 and 213-214, O143 lines 145-147, separate hunks a cherry-pick merges without conflict"
   landing: not-started
-- step: O142
-  base: 261dc20b2
-  worktree: .agents/worktrees/migration-O142
-  executor: agent
-  worker: claude:opus
-  session_id: a14726c8e3496ad88
-  model: claude-opus-5-5
-  launched: 2026-11-04
-  report: .scratch/migration/agents/reviews/O142-report.md
-  builder_usage: first run 169221 tokens, 55 tool uses, 9 min 52 s; round 1 215970 tokens, 26 tool uses, 3 min 16 s
-  round: 1
-  brief_check: .scratch/migration/agents/reviews/O142-brief-check.md (a9d682e40ef0d4ed4, claude-opus-5-5, 204165 tokens, 70 tool uses, 9 min 13 s)
-  reviewer_report: .scratch/migration/agents/reviews/O142-refuter.md (a987dd72ad0cf6880, claude-opus-5-5, 182086 tokens, 40 tool uses, 9 min 35 s); over round 1: aa17a11de3b868799, claude-opus-5-5, 153451 tokens, 26 tool uses, 5 min 16 s
-  landing: not-started
 ```
 
 ## The standing demands (from Axel, in force)
@@ -820,6 +806,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-11-04 (O142 landed). O142, a nested group's heading one level down, landed (booking in plan.md under O142, `agents/reviews/O142-landing.md`): nested strips at the small label size, indented one fold control and gap per level; fixes at landing HELP:295 (the gap named) and the report's positions; the gate passed and main equals the gate under `cmp`; the look on 8797 measured the Audit kinds and Gallery sections at 12 px with the fold control under the parent's label. In flight (1 of 6): O141 (waits on 672). Queued: O144, its /spec next. Open items: 672.
 - 2026-11-04 (O143 landed; O142 reviewed over round 1). O143, the `stopped` status, landed (booking in plan.md under O143, `agents/reviews/O143-landing.md`): `statuses:` gains `stopped` grey with `closes_deadline: true`, the Funding template names it; fixes at landing P-r1-1 and P-r1-2 (report text), the breach Sp-r1-1 recorded; the gate passed and main equals the gate under `cmp`; the look on 8797 saw the radar drop a scheme at `stopped` and the Funding chip in grey. O142's review over round 1 (aa17a11de3b868799) is saved; its landing is next. In flight (2 of 6): O141 (waits on 672), O142 (reviewed over round 1). Queued: O144, its /spec next now that O143 has landed. Open items: 672.
 - 2026-11-04 (rulings 667 to 669 booked; nothing in flight). Axel ruled 667 (a), 668 (a) and 669 (`stopped` is an entry he stopped pursuing, essentially `not-applied` for funding and the other collections); booked in `plan.md` Rulings and as steps O141, O142 and O143. In flight (0 of 6). Queued: O141, O142, O143. Open items: none.
 - 2026-11-04 (O140 landed; nothing in flight). O140, interview and offered drawn apart in every theme, landed (booking in plan.md under O140, `agents/reviews/O140-landing.md`): `interview` takes pink `#ec4899`, 14 theme blocks a pink of their own and 17 a teal of their own, every one at a CIEDE2000 of 10 or more from the status tokens in all 49 themes; fixes at landing S3 (`gruvbox.css:84` teal `#06a596`), P3, T1 (a heredoc into the report, under "Unapproved builder scripts") and B3; the gate passed and main equals the gate under `cmp`; the look on 8797 saw interview and offered apart in six themes. Open items raised: 667 (the `focus_lanes` comment at `vocab.yml:181`), 668 (the Audit kinds drawn like the Audit heading, Axel), 669 (a `stopped` status, Axel). In flight (0 of 6). Open items: 667, 668, 669.

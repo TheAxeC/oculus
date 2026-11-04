@@ -27,10 +27,19 @@
     //
     // The line inside the strip is the fold control (FoldControl.svelte beside it), a bare button
     // named "Fold <name>" or "Unfold <name>" with the fold glyph of the state, then the group's
-    // glyph where it has one, its label at the medium size in the group's hue, in the muted text
-    // colour where it has none, and its count at the small size in the same colour, then the
-    // group's `actions` at the line's right end, for what acts on the whole group. A label longer
-    // than the pane is cut with an ellipsis, so the strip stays one line.
+    // glyph where it has one, its label in the group's hue, in the muted text colour where it has
+    // none, and its count in the same colour, then the group's `actions` at the line's right end,
+    // for what acts on the whole group. A group in no other group's body draws its label at the
+    // medium size and its count at the small size. A group nested in another group's body reads one
+    // level under it: its label and its count are at the small size, and the words of its strip
+    // stand one level in, so its fold control starts under its parent's glyph or label. The body
+    // passes the groups inside it the size of their label (`--group-label`) and how far in they
+    // stand (`--group-indent`, which the section carries as `--group-inset`, as it carries the
+    // strip heights), one fold control's box and the strip's 6 px gap more at each level, so the
+    // indent holds at every text size and in every theme, and a group nested two deep stands two
+    // levels in. The indent is padding inside the strip, so the strip's `--panel` paint covers its
+    // whole band from the group's left edge and nothing scrolling under it shows beside the words.
+    // A label longer than the pane is cut with an ellipsis, so the strip stays one line.
     //
     // A folded group's body stays in the page, hidden until found: its cards stay mounted, so a
     // reveal finds them, and the browser's find-in-page searches them; a match inside fires
@@ -180,21 +189,35 @@
 <style>
     .group {
         --group-above: var(--group-strip, 0px);
+        --group-inset: var(--group-indent, 0px);
+        --group-gap: 6px;
         min-width: 0;
     }
 
+    /* What the groups nested in the body read: the small size for their label, and an indent one
+       level deeper than this group's, one fold control's box and the strip's gap (`--group-gap`,
+       which the strip's `gap` reads as well). */
+    .body {
+        --group-label: var(--fs-sm);
+        --group-indent: calc(
+            var(--group-inset) + var(--bare-box, var(--tab-action)) + var(--group-gap)
+        );
+    }
+
     /* The fold control stands on the strip's centre line; the label and the count share a baseline
-       after it, and the actions stand at the line's right end. */
+       after it, and the actions stand at the line's right end. A nested group's indent is padding
+       before the fold control, so the strip paints its whole band. The gap between the strip's
+       parts is the section's `--group-gap`, which the body adds to the indent at each level. */
     .strip {
         position: sticky;
         top: var(--group-above);
         z-index: 2;
         display: flex;
         align-items: center;
-        gap: 6px;
+        gap: var(--group-gap);
         min-width: 0;
         margin: 0 0 8px;
-        padding: 2px 8px;
+        padding: 2px 8px 2px calc(8px + var(--group-inset));
         border-radius: var(--input-radius);
         background: var(--panel);
         font-size: var(--fs-md);
@@ -215,9 +238,11 @@
         min-width: 0;
     }
 
-    /* A label longer than the pane is cut with an ellipsis, so the strip stays one line. */
+    /* A label longer than the pane is cut with an ellipsis, so the strip stays one line. It is at
+       the medium size, and at the small size in a group nested in another's body. */
     .name {
         min-width: 0;
+        font-size: var(--group-label, var(--fs-md));
         overflow: hidden;
         white-space: nowrap;
         text-overflow: ellipsis;

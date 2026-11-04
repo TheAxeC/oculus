@@ -338,3 +338,10 @@ none. The round changes no computed value: `--group-gap` is 6px on every section
 - **The report's statement "Light (the default, the first theme)"** was not checked against `appearance.yml`, as in the first review.
 
 Reviewer usage: aa17a11de3b868799, claude-opus-5-5, 153451 tokens, 26 tool uses, 5 min 16 s
+
+## Closed
+
+- First review, every finding: closed in repair round 1 (round brief items 1 to 6); the review over round 1 reproduced each closure.
+- Over round 1, Proof (the report's positions, counts and diff from before the round): fixed at landing; `O142-report.md` gives the positions after the round, 264 lines and +32 -8, the diff as `git diff 261dc20b2 -- src/lib/ui/controls/heads/GroupHead.svelte` prints it, and labels the first run's quoted output as before the round.
+- Over round 1, Standards (`docs/HELP.md:295` names the fold control and not the gap): fixed at landing; the clause reads "indented by one fold control and the gap after it".
+- Over round 1, Standards ("its count at the small size"): no change; the words are the round ruling's, and the sentence is true.

@@ -1,6 +1,5 @@
-In flight (2 of 6 slots in use):
+In flight (1 of 6 slots in use):
 - O141 (Focus lane colours measured in every theme), builder handed item 3 back; waits on open item 672.
-- O142 (a nested group's heading one level down), reviewed over repair round 1; landing next.
 
 Queued, in order (1 step):
 - O144 (a `period` type for when an entry happens), brief drafted; its /spec runs again on main's head now that O143 has landed.
@@ -8,7 +7,8 @@ Queued, in order (1 step):
 Owed looks: none.
 
 Landed, newest first:
-- O143 (a `stopped` status), 2026-11-04, d6c32fb21.
+- O142 (a nested group's heading one level down), 2026-11-04, see `git log --grep 'nested group'`.
+- O143 (a `stopped` status), 2026-11-04, 85e161ad0.
 - O140 (interview and offered drawn apart), 2026-11-04, a6800d96f.
 - O137 (always-sorted collections), 2026-11-03, c6792b0d6.
 - O139 (a finding names its hub), 2026-11-03, 5e03d8bfa.
