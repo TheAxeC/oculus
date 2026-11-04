@@ -58,6 +58,7 @@ dispatch:           # steps in flight, up to six (Z632)
   model: claude-opus-5-5
   launched: 2026-11-04
   report: .scratch/migration/agents/reviews/O143-report.md
+  builder_usage: first run 183010 tokens, 65 tool uses, 9 min 21 s
   round: 0
   brief_check: .scratch/migration/agents/reviews/O143-brief-check.md (a8d6da3737d3eb6cc, claude-opus-5-5, 179203 tokens, 68 tool uses, 7 min 54 s)
   shared_paths: "config/catalogs/vocab.yml with O141 of this plan: O143 writes lines 145-147, O141 lines 181-192 and 213-214, separate hunks a cherry-pick merges without conflict"
@@ -203,6 +204,7 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
 
 
 ## Closed items
+- Open item 670 (2026-11-04), closed by Axel the same day: 1 (a), 2 (a), 3 (a), step O144, a field type `period` (EDTF) holding every period of the hub once in `when`, sorted newest first, the CV printing a month period abbreviated, leads' `deadline` typed `date` with a `rolling` checkbox; O144 runs before every other step; 1 (c) and 3 (b) were the lazy options.
 - Open item 669 (2026-11-04), closed by Axel the same day: `stopped` is an entry he stopped pursuing, essentially `not-applied` for funding and the other collections; step O143 gives it `not-applied`'s grey and `closes_deadline`, and the Funding template lists it; the word in `statuses:` alone was the lazy option.
 - Open item 668 (2026-11-04), closed by Axel the same day: (a), step O142, a nested group's heading drawn one level down in `GroupHead`; (d), no change, was the lazy option.
 - Open item 667 (2026-11-04), closed by Axel the same day: (a), step O141, every Focus lane pair measured over the 49 themes and the `vocab.yml:181` comment rewritten to it; (b) was the lazy option.
