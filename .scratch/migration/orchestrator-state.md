@@ -25,8 +25,18 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 ```yaml
 dispatch:           # steps in flight, up to six (Z632)
 - step: O141
-  brief_check: "running: a6792e18665cffd1a"
-  landing: preparing
+  base: 979477f2b
+  worktree: .agents/worktrees/migration-O141
+  executor: agent
+  worker: claude:opus
+  session_id: a75e398d248021445
+  model: claude-opus-5-5
+  launched: 2026-11-04
+  report: .scratch/migration/agents/reviews/O141-report.md
+  round: 0
+  brief_check: .scratch/migration/agents/reviews/O141-brief-check.md (a6792e18665cffd1a, claude-opus-5-5, 179435 tokens, 45 tool uses, 7 min 28 s)
+  shared_paths: "config/catalogs/vocab.yml with O143 of this plan: O141 writes lines 181-192 and 213-214, O143 lines 145-147, separate hunks a cherry-pick merges without conflict"
+  landing: not-started
 - step: O142
   brief_check: "running: a9d682e40ef0d4ed4"
   landing: preparing
