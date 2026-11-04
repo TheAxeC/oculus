@@ -2,7 +2,7 @@ In flight (0 of 6 slots in use): none.
 
 Queued, in order (0 steps): none.
 
-Owed looks: 1, O141's git graph and calendar in the themes whose blue or green changed (`agents/reviews/owed-looks.md`, "To take").
+Owed looks: none.
 
 Landed, newest first:
 - O141 (Focus lane colours measured in every theme), 2026-11-04, see `git log --grep 'Measure the Focus lane colours'`.
