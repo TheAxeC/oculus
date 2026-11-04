@@ -1,9 +1,9 @@
-In flight (0 of 6 slots in use): none.
+In flight (3 of 6 slots in use):
+- O141 (Focus lane colours measured in every theme), brief check.
+- O142 (a nested group's heading one level down), brief check.
+- O143 (a `stopped` status), brief check.
 
-Queued, in order (3 steps):
-- O141 (Focus lane colours measured in every theme).
-- O142 (a nested group's heading one level down).
-- O143 (a `stopped` status).
+Queued, in order (0 steps): none.
 
 Owed looks: none.
 
