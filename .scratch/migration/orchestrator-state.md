@@ -48,8 +48,9 @@ dispatch:           # steps in flight, up to six (Z632)
   launched: 2026-11-04
   report: .scratch/migration/agents/reviews/O142-report.md
   builder_usage: first run 169221 tokens, 55 tool uses, 9 min 52 s
-  round: 0
+  round: 1
   brief_check: .scratch/migration/agents/reviews/O142-brief-check.md (a9d682e40ef0d4ed4, claude-opus-5-5, 204165 tokens, 70 tool uses, 9 min 13 s)
+  reviewer_report: .scratch/migration/agents/reviews/O142-refuter.md (a987dd72ad0cf6880, claude-opus-5-5, 182086 tokens, 40 tool uses, 9 min 35 s)
   landing: not-started
 - step: O143
   base: 9cdccce4e
