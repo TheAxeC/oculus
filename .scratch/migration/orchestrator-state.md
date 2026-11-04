@@ -38,11 +38,30 @@ dispatch:           # steps in flight, up to six (Z632)
   shared_paths: "config/catalogs/vocab.yml with O143 of this plan: O141 writes lines 181-192 and 213-214, O143 lines 145-147, separate hunks a cherry-pick merges without conflict"
   landing: not-started
 - step: O142
-  brief_check: "running: a9d682e40ef0d4ed4"
-  landing: preparing
+  base: 261dc20b2
+  worktree: .agents/worktrees/migration-O142
+  executor: agent
+  worker: claude:opus
+  session_id: a14726c8e3496ad88
+  model: claude-opus-5-5
+  launched: 2026-11-04
+  report: .scratch/migration/agents/reviews/O142-report.md
+  round: 0
+  brief_check: .scratch/migration/agents/reviews/O142-brief-check.md (a9d682e40ef0d4ed4, claude-opus-5-5, 204165 tokens, 70 tool uses, 9 min 13 s)
+  landing: not-started
 - step: O143
-  brief_check: "running: a8d6da3737d3eb6cc"
-  landing: preparing
+  base: 9cdccce4e
+  worktree: .agents/worktrees/migration-O143
+  executor: agent
+  worker: claude:opus
+  session_id: ad9f5539c272f5968
+  model: claude-opus-5-5
+  launched: 2026-11-04
+  report: .scratch/migration/agents/reviews/O143-report.md
+  round: 0
+  brief_check: .scratch/migration/agents/reviews/O143-brief-check.md (a8d6da3737d3eb6cc, claude-opus-5-5, 179203 tokens, 68 tool uses, 7 min 54 s)
+  shared_paths: "config/catalogs/vocab.yml with O141 of this plan: O143 writes lines 145-147, O141 lines 181-192 and 213-214, separate hunks a cherry-pick merges without conflict"
+  landing: not-started
 ```
 
 ## The standing demands (from Axel, in force)
