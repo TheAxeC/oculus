@@ -1,5 +1,5 @@
 In flight (2 of 6 slots in use):
-- O148 (the Project facts strip), builder running (base 2a8e5f6db).
+- O148 (the Project facts strip), builder resumed with the cases ruling (C15's person row, the deck route's domain fix).
 - O150 (the hub's portfolio deck), built inline in the hub (uncommitted there), /refute running; hub commit on Axel's word; open item 689 (engine.md's sentence) awaits his ruling.
 
 Queued, in order (2 steps):
