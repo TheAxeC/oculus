@@ -1,17 +1,18 @@
-In flight (0 of 6 slots in use): none.
+In flight (1 of 6 slots in use):
+- O146 (a deck's frame size, slide findings), /spec: worktree being made.
 
 Queued, in order (6 steps):
-- O146 (a deck's frame size, slide findings), next.
 - O147 (the Present view's filter bar), after O146 lands.
 - O148 (the Project facts strip), after O147 lands.
 - O149 (the Decks guide), after O146 to O148 land.
 - O150 (the hub's portfolio deck), after O147 lands; hub commit on Axel's word.
 - O151 (a deck for every research project), after O146 and O148; hub commit on Axel's word.
+- O152 (the Venue tag's tier icon), beside O146 or after it.
 
 Owed looks: none.
 
 Landed, newest first:
-- O145 (the deck arranged in the Overview), 2026-11-05, f0894fd85.
+- O145 (the deck arranged in the Overview), 2026-11-05, 678bf5527.
 - O141 (Focus lane colours in every theme), 2026-11-04, 8b436978a.
 - O144 (a `period` type for when an entry happens), 2026-11-04, f72c5c797; hub 3eb85ff62.
 - O142 (a nested group's heading one level down), 2026-11-04, 57295adb6.

@@ -23,7 +23,10 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 ```
 
 ```yaml
-dispatch: []      # steps in flight, up to six (Z632)
+dispatch:           # steps in flight, up to six (Z632)
+- step: O146
+  brief_check: "agents/reviews/O146-brief-check.md (ab81b2ba12033c208, claude-opus-5-5, 236854 tokens, 102 tool uses, 13 min 29 s)"
+  landing: preparing
 ```
 
 ## The standing demands (from Axel, in force)
@@ -163,9 +166,8 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
-- 686 (2026-11-05, Axel's request on the cards' Venue tag). The project card's Venue tag is `venueText` (`src/lib/state/boards/board/presets.ts:670-679`, used by `state/boards/board/items.ts:147`): name, quartile, JIF and the `free` text joined by bars, so a long cost note fills the card. The venues carry a `tier` (70 venues: 25 flagship, 25 strong, 20 specialist; `vocab.yml:301-305` `venue_tiers`, each with a colour, none with a glyph). (a) The tag reads a tier icon, then name, quartile and JIF; the cost leaves the card and stays on the Venues view's card; each `venue_tiers` row gains a `glyph:` (flagship `crown`, strong `star`, specialist `target`, unrated none, lucide icons through `glyphs.yml` and `icons.yml`), drawn in the tier's colour with the tier's label as its tooltip. Pros: the card shows prestige at a glance and the line stays short. Cons: one new key on `venue_tiers`. (b) The same with name and quartile only, the JIF left off. Cons: the JIF is what tells two Q1 venues apart. (c) Only the cost taken off, no icon. Cons: the tier stays invisible on the card; the lazy option. Recommended (a).
-
 ## Closed items
+- Open item 686 (2026-11-05), closed by Axel the same day: (a), the Venue tag reads a tier icon, then name, quartile and JIF; the cost leaves the card; each `venue_tiers` row of `config/catalogs/vocab.yml` gains a `glyph:` naming a `glyphs:` key, as `radar_buckets` does, described in `config/options/catalogs/vocab.yml`; booked as step O152.
 - Open item 685 (2026-11-05), closed by Axel the same day: (a), the decks of the seven failed and stopped projects are written like every other project's deck, and the 679 line in `plan.md` Rulings says so; (b), the limit kept, was the lazy option.
 - Open items 682, 683 and 684 (2026-11-05), closed by Axel the same day: 682 (a), one Present view whose controls follow the deck, (b) two views was the lazy option; 683 (a), a `frame: { width, height }` setting in `config/defaults/present.yml` with its options entry and a per-deck `deck.frame` override, (c) kept fixed was the lazy option; 684, no conflict: the Project facts strip shows the stage as it is, `failed` and `stopped` included, since a deck in the workbench is not a publication.
 - Open item 677 (2026-11-05), closed by Axel the same day: (a), a Decks guide page pinned on the Help page; (b) and (c) were the lazy options. Its step is O149 in `plan.md`.
