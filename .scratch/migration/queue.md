@@ -1,6 +1,5 @@
-In flight (2 of 6 slots in use):
-- O147 (the Present view's filter bar), repair round 1 running.
-- O153 (Deposit in every project card's menu), building.
+In flight (1 of 6 slots in use):
+- O147 (the Present view's filter bar), review over repair round 1 in, landing next.
 
 Queued, in order (4 steps):
 - O148 (the Project facts strip), after O147 lands.
@@ -11,6 +10,7 @@ Queued, in order (4 steps):
 Owed looks: none.
 
 Landed, newest first:
+- O153 (Deposit in every project card's menu), 2026-11-05, landing commit below.
 - O152 (the Venue tag's tier icon), 2026-11-05, de7276141.
 - O146 (a deck's frame size, slide findings), 2026-11-05, 1842b5751.
 - O145 (the deck arranged in the Overview), 2026-11-05, 678bf5527.

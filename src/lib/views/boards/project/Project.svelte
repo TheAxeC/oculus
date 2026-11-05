@@ -25,14 +25,14 @@
     // repository, of the repository.
     //
     // The card is views/shared/card/project/ProjectCard.svelte, the one the board draws, with
-    // `page` and `deposit` on: this tab's card draws its blocks in two columns under the closed
-    // card, carries the deposit control and has no Open project page action. Every project has
-    // the deposit control whatever its tier or placement; the deposit mirrors the `code/` folder of
-    // the project's own folder. It is drawn with `documents` off, since the documents section
-    // below is this tab's list of the project's documents, and with no clamp state, so its ELI5 is
-    // drawn whole. That list draws a known document the project has not got as the card's tag for
-    // it. Everything else the card shows, the pin, the stale badge, the file finder and the
-    // subtasks among it, is the board's card unchanged.
+    // `page` on: this tab's card draws its blocks in two columns under the closed card and has no
+    // Open project page action. The card carries the deposit control on every page that draws it,
+    // whatever the project's tier or placement; the deposit mirrors the `code/` folder of the
+    // project's own folder. It is drawn with `documents` off, since the documents section below is
+    // this tab's list of the project's documents, and with no clamp state, so its ELI5 is drawn
+    // whole. That list draws a known document the project has not got as the card's tag for it.
+    // Everything else the card shows, the pin, the stale badge, the file finder and the subtasks
+    // among it, is the board's card unchanged.
     //
     // The frame is views/shared/card/record/RecordPage.svelte, the frame of every record's page: a
     // board opens this view as a preview tab, and typing anywhere in it (a subtask, a follow-up or
@@ -139,7 +139,6 @@
                 {now}
                 cursor={cursor === item.id}
                 page
-                deposit
                 documents={false}
                 label={item.project.title}
                 tab={item.project.title}

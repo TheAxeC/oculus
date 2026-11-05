@@ -27,10 +27,11 @@
     // the Related line of CardLinks.svelte.
     //
     // Every project is drawn by this card, whatever its tier: its folder is the one `placeOf`
-    // names, a repository's own Files root for a project read from a repository. The project view
-    // passes `deposit` for every project, a project read from a repository included. The team is
-    // the TEAM row of tags (CardLinks.svelte) alone, and a project whose `lead:` names the person
-    // marked `self: true`, the user, carries the Lead badge.
+    // names, a repository's own Files root for a project read from a repository. Every card carries
+    // the Deposit row in its menu, on every page that draws it, a project read from a repository
+    // included; the row opens the project's deposit beside the card. The team is the TEAM row of
+    // tags (CardLinks.svelte) alone, and a project whose `lead:` names the person marked
+    // `self: true`, the user, carries the Lead badge.
     import type { Snippet } from 'svelte';
     import Chip from '$lib/ui/controls/Chip.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
@@ -86,8 +87,6 @@
         now: number;
         /** How many stale days make the manifest warning visible. */
         staleLag: number;
-        /** Whether the deposit action belongs in this card's controls. */
-        deposit?: boolean;
         /** Show the outcome of a write or action in the board. */
         onsaid: (said: string) => void;
         /** Whether the project page's blocks list the project's documents. */
@@ -105,7 +104,6 @@
         tab,
         now,
         staleLag,
-        deposit = false,
         onsaid,
         documents = true,
         more = false,
@@ -200,6 +198,14 @@
                 title: t('project.helper.copy_context_tip'),
                 glyph: t('project.card.copy_glyph'),
                 onclick: copyContext
+            },
+            {
+                id: 'deposit',
+                label: t('project.card.deposit'),
+                glyph: t('project.card.deposit_glyph'),
+                onclick: () => {
+                    openBeside('deposit', recordField(item.id));
+                }
             }
         ];
         if (!page) {
@@ -233,16 +239,6 @@
                     // The project's deck is the identity of its tab: one tab per deck, activated
                     // when it is open already.
                     showDeck({ root: hub, path: deck }, '', true);
-                }
-            });
-        }
-        if (deposit) {
-            rows.push({
-                id: 'deposit',
-                label: t('project.card.deposit'),
-                glyph: t('project.card.deposit_glyph'),
-                onclick: () => {
-                    openBeside('deposit', recordField(item.id));
                 }
             });
         }

@@ -72,7 +72,7 @@
     /** One row of `git branch --format`, as POST /api/deposit answers it. */
     type Branch = { name: string; upstream: string; current: boolean };
 
-    /** The project this instance was opened for, from the state the card handed openView. */
+    /** The project this instance was opened for, from the state the card handed openBeside. */
     const id = $derived(stateRecord(instance.state));
     const held = $derived(mirror(id));
     // Named `now` rather than `state`: a variable called `state` in a component is read as the
