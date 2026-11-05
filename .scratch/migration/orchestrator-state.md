@@ -177,6 +177,8 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
+- Open item 689 (2026-11-06, O150's brief check): `deck/engine.md:12` in the research hub reads "Each of the next slides leads with the governing equation, then specs, method, and results." With O150's one group, the next slides are all 25 research decks, of which nine are `kind: idea` and two `kind: text`, with no equation, so the sentence becomes false; O150's line rewrites `deck/present.yml` only, and a change to the hub's own words outside it is yours. (a) Reword it in the same hub commit to "The slides that follow are every research project's deck, in folder order; a project slide leads with its governing equation, then specs, method, and results.": the slide stays true of the whole run. (b) Delete the sentence: true, but the section slide loses its pointer to what follows. (c) Keep it as written: the lazy option, a false sentence on the deck's second slide. Recommendation (a). O150 is built with the sentence as it stands, and the hub commit, which waits on your word anyway, carries (a) or (b) when you rule.
+
 ## Closed items
 
 - Open item 688 (2026-11-05), closed by Axel the same day: (a), every project, personal included, keeps Deposit; ruling 37's "not Deposit" marked replaced in `plan.md` Rulings.

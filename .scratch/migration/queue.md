@@ -1,6 +1,6 @@
 In flight (2 of 6 slots in use):
 - O148 (the Project facts strip), builder running (base 2a8e5f6db).
-- O150 (the hub's portfolio deck), /spec: brief check done, its findings being closed; hub commit on Axel's word.
+- O150 (the hub's portfolio deck), built inline by the orchestrator in the hub; hub commit on Axel's word; open item 689 (engine.md's sentence) awaits his ruling.
 
 Queued, in order (2 steps):
 - O149 (the Decks guide), after O148 lands.
