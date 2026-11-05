@@ -230,6 +230,198 @@ describe('the deck reader', () => {
         ]);
     });
 
+    it('narrows every group of project decks to the kept projects, in the slides, counts, summary, grid, legend and nested groups, and marks each member', () => {
+        const dir = plantScratch('oculus-deck-keep-', {
+            'projects/manuscripts/alpha/present/present.yml': [
+                'deck: { title: Alpha }',
+                'order: [main.md]'
+            ].join('\n'),
+            'projects/manuscripts/alpha/present/main.md': '# Alpha\n',
+            'projects/manuscripts/beta/present/present.yml': [
+                'deck: { title: Beta }',
+                'groups:',
+                '    inner:',
+                '        find: { folders: projects/*/*/present }',
+                '        slides: [alpha, gamma]',
+                'order: [one.md, { slides: inner }]'
+            ].join('\n'),
+            'projects/manuscripts/beta/present/one.md': '# Beta\n',
+            'projects/manuscripts/gamma/present/present.yml': [
+                'deck: { title: Gamma }',
+                'order: [one.md]'
+            ].join('\n'),
+            'projects/manuscripts/gamma/present/one.md': '# Gamma\n',
+            'talks/talk/present.yml': ['deck: { title: Talk }', 'order: [one.md]'].join('\n'),
+            'talks/talk/one.md': '# Talk\n',
+            'deck/present.yml': [
+                'deck: { title: Portfolio }',
+                'groups:',
+                '    first:',
+                '        find: { folders: [projects/*/*/present, talks/*] }',
+                '        slides: [alpha, beta, talk]',
+                '    second:',
+                '        find: { folders: projects/*/*/present }',
+                '        slides: [alpha, gamma]',
+                'order:',
+                '    - title.md',
+                '    - { slides: first }',
+                '    - { kind: summary, of: first, title: Overview }',
+                '    - { kind: grid, of: second, title: Grid }'
+            ].join('\n'),
+            'deck/title.md': [
+                '---',
+                'kind: title',
+                'legend: first',
+                '---',
+                '# Portfolio',
+                '',
+                '{{first.count}} slides.'
+            ].join('\n')
+        });
+        const read = (keep?: string[]) =>
+            createReader({
+                hub: { key: 'hub', dir },
+                projects: [
+                    project('alpha', 'research', { domain: 'heart', short: 'Alpha' }),
+                    project('beta', 'research', { domain: 'brain', short: 'Beta' }),
+                    project('gamma', 'research', { domain: 'brain', short: 'Gamma' })
+                ],
+                domains: ['heart', 'brain'],
+                tagTones: {},
+                frame: frameSetting(loadConfig(engineDir()).config),
+                catalog: CATALOG,
+                ...(keep === undefined ? {} : { keep: new Set(keep) })
+            }).read({ key: 'hub', dir }, 'deck');
+        const rows: {
+            row: string;
+            keep?: string[];
+            slides: string[];
+            lede: string;
+            legend: string[];
+            summary: string[];
+            grid: string[];
+            counts: number[];
+            members: [string, string | undefined, boolean][][];
+            candidates: [string, string | undefined, boolean][][];
+        }[] = [
+            {
+                row: 'no filter',
+                slides: [
+                    'title.md#0',
+                    'alpha/main.md#0',
+                    'beta/one.md#0',
+                    'beta/alpha/main.md#0',
+                    'beta/gamma/one.md#0',
+                    'talk/one.md#0',
+                    'summary:first',
+                    'grid:second'
+                ],
+                lede: '5 slides.',
+                legend: ['heart', 'brain'],
+                summary: ['Alpha', 'Beta', 'Talk'],
+                grid: ['Alpha', 'Gamma'],
+                counts: [5, 2],
+                members: [
+                    [
+                        ['alpha', 'alpha', true],
+                        ['beta', 'beta', true],
+                        ['talk', undefined, true]
+                    ],
+                    [
+                        ['alpha', 'alpha', true],
+                        ['gamma', 'gamma', true]
+                    ]
+                ],
+                candidates: [[['gamma', 'gamma', true]], [['beta', 'beta', true]]]
+            },
+            {
+                row: 'beta and gamma kept, a key no project has and a duplicate',
+                keep: ['beta', 'gamma', 'gamma', 'nobody'],
+                slides: [
+                    'title.md#0',
+                    'beta/one.md#0',
+                    'beta/gamma/one.md#0',
+                    'summary:first',
+                    'grid:second'
+                ],
+                lede: '2 slides.',
+                legend: ['brain'],
+                summary: ['Beta'],
+                grid: ['Gamma'],
+                counts: [2, 1],
+                members: [
+                    [
+                        ['alpha', 'alpha', false],
+                        ['beta', 'beta', true],
+                        ['talk', undefined, false]
+                    ],
+                    [
+                        ['alpha', 'alpha', false],
+                        ['gamma', 'gamma', true]
+                    ]
+                ],
+                candidates: [[['gamma', 'gamma', true]], [['beta', 'beta', true]]]
+            },
+            {
+                row: 'nothing kept',
+                keep: [],
+                slides: ['title.md#0', 'summary:first', 'grid:second'],
+                lede: '0 slides.',
+                legend: [],
+                summary: [],
+                grid: [],
+                counts: [0, 0],
+                members: [
+                    [
+                        ['alpha', 'alpha', false],
+                        ['beta', 'beta', false],
+                        ['talk', undefined, false]
+                    ],
+                    [
+                        ['alpha', 'alpha', false],
+                        ['gamma', 'gamma', false]
+                    ]
+                ],
+                candidates: [[['gamma', 'gamma', true]], [['beta', 'beta', true]]]
+            }
+        ];
+        for (const one of rows) {
+            const deck = read(one.keep);
+            expect(deck.findings, one.row).toEqual([]);
+            expect(
+                deck.slides.map((slide) => slide.key),
+                one.row
+            ).toEqual(one.slides);
+            const title = deck.slides[0];
+            expect(title.kind === 'title' ? title.lede : '', one.row).toBe(one.lede);
+            expect(title.kind === 'title' ? title.legend : null, one.row).toEqual(one.legend);
+            const summary = deck.slides.find((slide) => slide.kind === 'summary');
+            expect(
+                summary?.kind === 'summary' ? summary.rows.map((row) => row.project) : null,
+                one.row
+            ).toEqual(one.summary);
+            const grid = deck.slides.find((slide) => slide.kind === 'grid');
+            expect(
+                grid?.kind === 'grid' ? grid.cards.map((card) => card.name) : null,
+                one.row
+            ).toEqual(one.grid);
+            expect(
+                deck.groups.map((group) => group.count),
+                one.row
+            ).toEqual(one.counts);
+            const marks = (list: { name: string; projectId?: string; kept: boolean }[]) =>
+                list.map((member) => [member.name, member.projectId, member.kept]);
+            expect(
+                deck.groups.map((group) => marks(group.members)),
+                one.row
+            ).toEqual(one.members);
+            expect(
+                deck.groups.map((group) => marks(group.candidates)),
+                one.row
+            ).toEqual(one.candidates);
+        }
+    });
+
     it('reads an image link percent-encoded by a drop back to the file of that name', () => {
         const dir = plantScratch('oculus-deck-image-', {
             'deck/present.yml': ['deck: { title: Images }', 'order: [one.md]'].join('\n'),

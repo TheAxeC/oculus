@@ -20,6 +20,14 @@
 // is read for its findings only: the deck the reader was asked for sets the frame of every slide
 // it draws. A slide with no title of its own is a Finding on its file at its line, under the key
 // `title`.
+//
+// A reader may be given a filter, the keys of the projects it keeps (`keep`). Every group of
+// project decks the read meets, a member deck's own groups included, then draws the members the
+// filter keeps (groups.ts `keptMembers`), and everything made of a group's members follows them:
+// the slides a `{ slides: <group> }` entry places, `{{<group>.count}}`, a summary's rows, a grid's
+// cards, a legend's domains and the group's `count`. The answer's `groups[].members` stay every
+// member, each saying whether the filter keeps it and the key of its project, so one answer gives
+// what a filter can pick and how many decks it keeps.
 
 import { existsSync, globSync, readFileSync, statSync } from 'node:fs';
 import { basename, dirname, join, relative } from 'node:path';
@@ -40,7 +48,7 @@ import { fileBytesUrl } from '../../helpers/files/address.ts';
 import { mustBe } from '../config/catalog/value-words.ts';
 import { deckFrame, type FrameSetting } from '../config/settings/present.ts';
 import { realOf, resolveIn, type DeckRoot } from './files.ts';
-import { resolveGroups, type Doc, type Finder, type Resolved } from './groups.ts';
+import { keptMembers, resolveGroups, type Doc, type Finder, type Resolved } from './groups.ts';
 import { buildSlide, type DeckProject, type KindContext } from './kinds.ts';
 import { orderText } from './order-text.ts';
 import { orderTokens, readSpec, type OrderEntry, type Raise } from './spec.ts';
@@ -69,6 +77,11 @@ export type DeckContext = {
      * is read from its draft; a path the deck does not read is never looked at.
      */
     drafts?: ReadonlyMap<string, string>;
+    /**
+     * The keys of the projects a filter keeps, each a project's key in its own hub's files
+     * (`DeckProject.id`); undefined for no filter, which keeps every member of every group.
+     */
+    keep?: ReadonlySet<string>;
 };
 
 /** A reader that keeps what it has read. */
@@ -286,6 +299,11 @@ export function createReader(context: DeckContext): DeckReader {
         return made;
     }
 
+    /** The members of a group the read draws, the ones the filter keeps. */
+    function drawnOf(found: Resolved): Resolved['members'] {
+        return keptMembers(found, context.keep);
+    }
+
     /** The slides of a deck's slide file, or null when the file is not usable. */
     function fileOf(doc: Doc, entry: Extract<OrderEntry, { kind: 'file' }>): RawSlide[] | null {
         const raise = raiseFor(doc.file);
@@ -320,16 +338,19 @@ export function createReader(context: DeckContext): DeckReader {
         return cut;
     }
 
-    /** The number of slides a group of a deck holds, and nothing for a group the deck lacks. */
+    /**
+     * The number of slides the drawn members of a group of a deck hold, and nothing for a group
+     * the deck lacks.
+     */
     function countOf(doc: Doc, group: string, stack: string[]): number | null {
         const found = groupsOf(doc).get(group);
         if (found === undefined) return null;
         let total = 0;
-        for (const member of found.members) total += slidesOf(member.doc, stack).length;
+        for (const member of drawnOf(found)) total += slidesOf(member.doc, stack).length;
         return total;
     }
 
-    /** The domains of a group's member projects, each once, in member order. */
+    /** The domains of a group's drawn member projects, each once, in member order. */
     function legendOf(doc: Doc, group: string, key: string): string[] {
         const found = groupsOf(doc).get(group);
         if (found === undefined) {
@@ -337,7 +358,7 @@ export function createReader(context: DeckContext): DeckReader {
             return [];
         }
         const domains: string[] = [];
-        for (const member of found.members) {
+        for (const member of drawnOf(found)) {
             const domain = member.doc.project?.domain;
             if (domain !== undefined && !domains.includes(domain)) domains.push(domain);
         }
@@ -415,7 +436,7 @@ export function createReader(context: DeckContext): DeckReader {
         );
     }
 
-    /** The summary table of a group. */
+    /** The summary table or the grid of a group, a row or a card for each drawn member. */
     function summary(
         doc: Doc,
         entry: Extract<OrderEntry, { kind: 'summary' | 'grid' }>,
@@ -435,8 +456,9 @@ export function createReader(context: DeckContext): DeckReader {
             line: (orderText(textOf(doc.file))?.slots.at(entry.index)?.line ?? 0) + 1
         };
         const title = entry.title.replace(/<[^>]*>/g, '');
+        const members = drawnOf(found);
         if (entry.kind === 'grid') {
-            const cards: DeckIdeaCard[] = found.members.map((member) => {
+            const cards: DeckIdeaCard[] = members.map((member) => {
                 const idea = firstOf(member.doc, 'idea', stack);
                 if (idea !== undefined) return idea.card;
                 const project = member.doc.project;
@@ -460,7 +482,7 @@ export function createReader(context: DeckContext): DeckReader {
                 legend: found.spec.find?.stages ?? []
             };
         }
-        const rows: DeckSummaryRow[] = found.members.map((member) => {
+        const rows: DeckSummaryRow[] = members.map((member) => {
             const project = member.doc.project;
             const first = firstOf(member.doc, 'project', stack);
             const row: DeckSummaryRow = {
@@ -503,7 +525,7 @@ export function createReader(context: DeckContext): DeckReader {
                     raiseFor(doc.file)(entry.at, 'findings.deck.order_group_unknown', entry.group);
                     continue;
                 }
-                for (const member of found.members) {
+                for (const member of drawnOf(found)) {
                     for (const one of slidesOf(member.doc, inside)) {
                         const key = `${member.doc.name}/${one.key}`;
                         const source = one.source;
@@ -533,22 +555,34 @@ export function createReader(context: DeckContext): DeckReader {
         });
     }
 
-    /** The groups of a deck as the Present view's Overview draws and arranges them. */
+    /**
+     * The groups of a deck as the Present view's Overview draws and arranges them: every member,
+     * each with its project's key and whether the filter keeps it, and the candidates, which no
+     * filter narrows.
+     */
     function groupsOfDeck(doc: Doc): DeckGroup[] {
         if (doc.spec === null) return [];
-        const listed = (one: Doc) => ({ name: one.name, title: one.title, path: one.path });
+        const listed = (one: Doc) => ({
+            name: one.name,
+            title: one.title,
+            path: one.path,
+            ...(one.project === null ? {} : { projectId: one.project.id })
+        });
         return doc.spec.groups.map((group) => {
             const found = groupsOf(doc).get(group.name);
+            const drawn = new Set(found === undefined ? [] : drawnOf(found));
             return {
                 name: group.name,
                 slides: group.slides,
                 members: (found?.members ?? []).map((member) => ({
                     ...listed(member.doc),
-                    named: member.named
+                    named: member.named,
+                    kept: drawn.has(member)
                 })),
                 candidates: (found?.candidates ?? []).map((one) => ({
                     ...listed(one),
-                    named: false
+                    named: false,
+                    kept: true
                 })),
                 missing: found?.missing ?? [],
                 conflicts: (found?.conflicts ?? []).map((conflict) => ({

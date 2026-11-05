@@ -9,6 +9,11 @@
 // order's tokens), which a write names as its bases, so an act is always made over the deck on
 // screen and the server refuses one made over a file that changed since.
 //
+// A group's tiles are the members the pane's filter keeps (`kept` of each member the deck's answer
+// lists), every member without a filter. A move writes the group's whole `slides:` list, so the
+// members the filter hides keep their places in the file: a tile dropped beside another goes
+// beside it in the list, and a step changes places with the next tile drawn.
+//
 // The keys the forms set (`deck.title`, `defaults.tag_tones` and each group's `find`, `sort` and
 // `discover`, the keys config/schemas/deck-schema.yml describes) are held by the form as work by
 // each key's path and written with the value the file held as their base.
@@ -95,14 +100,19 @@ function slidesByEntry(slides: DeckSlide[]): Map<number, DeckSlide[]> {
     return placed;
 }
 
-/** The decks of a group with the slides each placed, known by the key prefix of the deck. */
+/**
+ * The decks of a group the pane's filter keeps, every one without a filter, with the slides each
+ * placed, known by the key prefix of the deck.
+ */
 function decksOf(group: DeckGroup, slides: DeckSlide[]): DeckTile[] {
-    return group.members.map((member) => ({
-        name: member.name,
-        title: deckWords(member.title, member.name),
-        named: member.named,
-        slides: slides.filter((slide) => slide.key.startsWith(`${member.name}/`))
-    }));
+    return group.members
+        .flatMap((member) => (member.kept ? [member] : []))
+        .map((member) => ({
+            name: member.name,
+            title: deckWords(member.title, member.name),
+            named: member.named,
+            slides: slides.filter((slide) => slide.key.startsWith(`${member.name}/`))
+        }));
 }
 
 /**
@@ -281,14 +291,21 @@ export function deckDropped(
 
 /**
  * A group's `slides:` with one deck a place earlier (-1) or later (1) among the decks the group
- * draws, or null at either end. The decks before the moved one's new place, and every deck named
- * already, are named in the order drawn, so a deck found by discovery is named at its new place
- * and the decks it passes with it; a name that matches no deck keeps its place in the list.
+ * draws, or null at either end. The deck changes places with the next deck the pane's filter keeps
+ * in that direction, the neighbouring deck without a filter, so the decks the filter hides between
+ * the two keep their places. The decks before the moved one's new place, and every deck named
+ * already, are named in the order of the group's members, so a deck found by discovery is named at
+ * its new place and the decks it passes with it; a name that matches no deck keeps its place in
+ * the list.
  */
 export function deckStepped(group: DeckGroup, name: string, by: -1 | 1): string[] | null {
     const drawn = group.members.map((one) => one.name);
-    const next = withMove(drawn, name, drawn.indexOf(name) + by);
-    if (next === null) return null;
+    const at = drawn.indexOf(name);
+    const shown = group.members.flatMap((one, place) => (one.kept ? [place] : []));
+    const passed =
+        by === 1 ? shown.find((place) => place > at) : shown.findLast((place) => place < at);
+    if (at === -1 || passed === undefined) return null;
+    const next = drawn.with(at, drawn[passed]).with(passed, name);
     const named = new Set(group.members.filter((one) => one.named).map((one) => one.name));
     const last = Math.max(next.indexOf(name), ...next.map((one, at) => (named.has(one) ? at : -1)));
     const wanted = next.slice(0, last + 1);

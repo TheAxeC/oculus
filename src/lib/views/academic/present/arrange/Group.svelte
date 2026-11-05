@@ -1,10 +1,11 @@
 <script lang="ts">
     // Layer 3, Present partial. One group of a deck at its place in the Overview: the heading every
     // grouping of a view is drawn with (ui/controls/heads/GroupHead.svelte), naming the group and
-    // the count of its decks, with the names its `slides:` holds that match no deck and the decks
-    // two discovering groups both find as tags, and its Edit Rule control; under it the group's
-    // rule as one sentence, the rule's form while it is open, the slides of its decks as tiles in
-    // the group's order, a title tile for a deck that draws no slide, and the Add tile last.
+    // the count of the decks it draws (those the pane's filter keeps, every one without a filter),
+    // with the names its `slides:` holds that match no deck and the decks two discovering groups
+    // both find as tags, and its Edit Rule control; under it the group's rule as one sentence, the
+    // rule's form while it is open, the slides of its decks as tiles in the group's order, a title
+    // tile for a deck that draws no slide, and the Add tile last.
     //
     // The heading does not fold, so the pane's saved state holds nothing of it. The heading's strip
     // is dragged to move the entry the group is headed at. The group's place is a drop target: an
@@ -131,7 +132,7 @@
         data-group={name}
         aria-label={name}
         label={name}
-        count={block.group.members.length}
+        count={block.decks.length}
         draggable={block.token !== null && !busy && !rule.open()}
         onpointerdown={(event: PointerEvent) => (grabbed = event.target)}
         ondragstart={headDrag}

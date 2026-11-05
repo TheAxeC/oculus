@@ -3,22 +3,40 @@
 //
 // A deck is read by the server (data/sources/deck/read.ts) and arrives whole: the slides in order
 // with their words, the groups with their members. What is here is the pane's own state (the
-// slide it is on, whether its grid is open and the decks it has shown), the deck a tab's layout
-// state names, the moves over a deck's slides, the frame the slides are laid out in, and the one
-// hue a slide's status tag wears. A presentation adds the names its two windows share (the audience
-// address, and the window, channel and lock name), the messages they send each other, and the
-// presenter screen's timer and clock text.
+// slide it is on, whether its grid is open, the decks it has shown and its filter's picks), the
+// deck a tab's layout state names, the moves over a deck's slides, the frame the slides are laid
+// out in, and the one hue a slide's status tag wears. A presentation adds the names its two
+// windows share (the audience address, and the window, channel and lock name), the messages they
+// send each other, and the presenter screen's timer and clock text.
+//
+// A pane's filter keeps the member decks of the projects it picks. Its groups are Stage, Status,
+// Tier, Pillar and Form, a bar of project groups drawn by the boards' rules
+// (state/boards/collection/bar.ts `projectFilter`) over the member projects of the deck's groups
+// of project decks, and its picks are the pane's alone: the file is never written for them. The
+// deck route is asked for the deck with the keys of the projects the picks keep (`keptKeys`), and
+// the answer says which members are kept, which the toolbar counts (`deckTally`).
 //
 // Nothing here reads a store or a file.
 
 import { z } from 'zod';
 import { byKey, isMap, item } from '../../data/helpers/guards.ts';
+import { bareId, rootOf } from '../../data/helpers/hub-names.ts';
 import { MAX_DRAFT_BYTES, MAX_UPLOAD_BYTES, MAX_UPLOAD_MB } from '../../data/file-ops.ts';
 import { plainText } from '../../data/prose/literature.ts';
 import { optionalTextShape, readAs, rowsShape, unchangedAs } from '../../data/shapes/shapes.ts';
+import type { FilterGroup } from '../boards/board/filter-menu.ts';
+import type { BoardItem, BoardPreset } from '../boards/board/presets.ts';
+import { projectFilter, projectKeeps, type ProjectLayout } from '../boards/collection/bar.ts';
+import { STAGE_FACET } from '../boards/structure/map-bar.ts';
 import { domainTone } from '../shared/words/tones.ts';
 import { t } from '../shared/words/text.ts';
-import type { Deck, DeckFrame, DeckSlide, PresentSlide } from '../../data/model/index.ts';
+import type {
+    Deck,
+    DeckFrame,
+    DeckGroup,
+    DeckSlide,
+    PresentSlide
+} from '../../data/model/index.ts';
 
 export { DECK_GAP } from '../../data/model/index.ts';
 
@@ -59,6 +77,9 @@ export type DeckRef = { root: string; path: string };
 /** How many decks a pane remembers having shown. */
 const RECENT_LIMIT = 10;
 
+/** A pane's filter: the values picked in each of its groups, by the group's id. */
+export type DeckFilters = Record<string, string[]>;
+
 /** What one Present pane holds of its own: its place in the deck it shows and its history. */
 export type PresentState = {
     /** The key of the slide the pane draws; empty means the deck's first. */
@@ -66,6 +87,8 @@ export type PresentState = {
     overview: boolean;
     /** The decks the pane has shown, newest first, without the one it shows now. */
     recent: DeckRef[];
+    /** The values picked in its filter's groups; a group with no pick is not in it. */
+    filters: DeckFilters;
 };
 
 /** One remembered deck, kept when it names both halves. */
@@ -75,8 +98,37 @@ const refShape = z.object({ root: z.string().min(1), path: z.string() });
 const presentStateShape = z.object({
     slide: optionalTextShape,
     overview: z.boolean().catch(false),
-    recent: rowsShape(refShape).catch(() => [])
+    recent: rowsShape(refShape).catch(() => []),
+    filters: z.record(z.string(), z.array(z.string())).catch(() => ({}))
 });
+
+/** The board facets of a pane's filter, after the Map's Stage group, in the bar's order. */
+const FILTER_FACETS = ['status', 'tier', 'pillar', 'form'];
+
+/**
+ * The ids of the filter's groups, the order its bar draws them in: the Map's Stage group, then the
+ * board facets. It is frozen, since the pane hands it to the bar.
+ */
+export const FILTER_GROUPS: readonly string[] = Object.freeze([STAGE_FACET, ...FILTER_FACETS]);
+
+/** The filter as a bar of project groups: Stage, then the facets, each saved under its own key. */
+const FILTER_LAYOUT: ProjectLayout = {
+    category: null,
+    stage: STAGE_FACET,
+    facets: FILTER_FACETS,
+    idOf: (facet) => facet,
+    named: false
+};
+
+/** The picks of the filter's groups a saved map holds, each once; any other key is left out. */
+function filtersOf(held: Record<string, string[]>): DeckFilters {
+    return Object.fromEntries(
+        FILTER_GROUPS.flatMap((id) => {
+            const values = byKey(held, id) ?? [];
+            return values.length === 0 ? [] : [[id, [...new Set(values)]]];
+        })
+    );
+}
 
 /** One pane's own state out of what its instance holds, with defaults for what is missing. */
 export function parsePresentState(value: unknown): PresentState {
@@ -84,8 +136,109 @@ export function parsePresentState(value: unknown): PresentState {
     return {
         slide: held?.slide ?? '',
         overview: held?.overview ?? false,
-        recent: (held?.recent ?? []).slice(0, RECENT_LIMIT)
+        recent: (held?.recent ?? []).slice(0, RECENT_LIMIT),
+        filters: filtersOf(held?.filters ?? {})
     };
+}
+
+/** Whether a pane's filter holds a pick in any group. */
+export function filtering(filters: DeckFilters): boolean {
+    return Object.values(filters).some((values) => values.length > 0);
+}
+
+/**
+ * The groups of a deck that hold project decks: a member or a candidate of each is a project's
+ * deck. They are the groups the deck route narrows (data/sources/deck/groups.ts `ofProjects`).
+ */
+function projectDeckGroups(deck: Deck): DeckGroup[] {
+    return deck.groups.filter((group) =>
+        [...group.members, ...group.candidates].some((one) => one.projectId !== undefined)
+    );
+}
+
+/** Whether a deck holds a group of project decks, which is when its pane draws the filter. */
+export function filterable(deck: Deck | null): boolean {
+    return deck !== null && projectDeckGroups(deck).length > 0;
+}
+
+/**
+ * How many decks a deck's groups of project decks hold (`total`), and how many of them the filter
+ * its answer was read under keeps (`kept`): a project's deck counted once by its project's key and
+ * any other by its folder, so a deck in two groups counts once.
+ */
+export function deckTally(deck: Deck): { kept: number; total: number } {
+    const decks = new Map<string, boolean>();
+    for (const group of projectDeckGroups(deck)) {
+        for (const one of group.members) {
+            const id =
+                one.projectId === undefined ? `path:${one.path}` : `project:${one.projectId}`;
+            decks.set(id, decks.get(id) === true || one.kept);
+        }
+    }
+    return { kept: [...decks.values()].filter((kept) => kept).length, total: decks.size };
+}
+
+/**
+ * The hub a deck is read under, by the rule the deck route reads it by
+ * (server/content/deck/read.ts): its root when that root is a hub of the workspace, else the
+ * primary hub, else the root itself.
+ */
+export function deckHub(
+    ref: DeckRef,
+    roots: readonly { key: string; hub?: true }[],
+    primary: string | null
+): string {
+    if (roots.some((one) => one.key === ref.root && one.hub === true)) return ref.root;
+    return primary ?? ref.root;
+}
+
+/** The picks of one group of a filter, none for a group it does not hold. */
+function pickedIn(filters: DeckFilters): (id: string) => string[] {
+    return (id) => byKey(filters, id) ?? [];
+}
+
+/**
+ * The groups of a pane's filter over a deck, as the bar draws them: each lists the values of the
+ * member projects of the deck's groups of project decks, unfiltered, and counts each over those
+ * the other groups' picks leave. A member is matched to a board item of the deck's own hub by its
+ * project's key (`DeckMember.projectId`), so a project of another hub with the same key is never
+ * one; a group no member gives a value draws no group.
+ */
+export function filterGroupsOf(
+    deck: Deck,
+    items: readonly BoardItem[],
+    filters: DeckFilters,
+    preset: BoardPreset
+): FilterGroup[] {
+    const keys = new Set(
+        projectDeckGroups(deck).flatMap((group) =>
+            group.members.flatMap((one) => one.projectId ?? [])
+        )
+    );
+    const members = items.filter(
+        (one) => rootOf(one.project) === deck.hub && keys.has(bareId(one.project))
+    );
+    return projectFilter(members, preset, FILTER_LAYOUT, pickedIn(filters));
+}
+
+/**
+ * The keys of the projects a pane's filter keeps, as the deck route takes them: the keys, in their
+ * own hub's files, of the board items of the deck's hub (`hub`) that every group with a pick
+ * keeps, each once and sorted, so one filter asks under one query key. Null with no pick in any
+ * group, which asks for the whole deck.
+ */
+export function keptKeys(
+    items: readonly BoardItem[],
+    hub: string,
+    filters: DeckFilters,
+    preset: BoardPreset
+): string[] | null {
+    if (!filtering(filters)) return null;
+    const keeps = projectKeeps(preset, FILTER_LAYOUT, pickedIn(filters));
+    const keys = items
+        .filter((one) => rootOf(one.project) === hub && keeps(one))
+        .map((one) => bareId(one.project));
+    return [...new Set(keys)].sort();
 }
 
 /**
@@ -295,7 +448,8 @@ export function deckState(base: unknown, ref: DeckRef): Record<string, unknown> 
 
 /**
  * A pane's own state after it leaves the deck it showed (`shown`, null when none is resolved) for
- * `next`: the first slide, the grid closed, and the deck it left remembered.
+ * `next`: the first slide, the grid closed, no filter, since its picks are values of the members
+ * of the deck it left, and that deck remembered.
  */
 export function leftDeck(value: unknown, shown: DeckRef | null, next: DeckRef): PresentState {
     const held = parsePresentState(value);
@@ -303,7 +457,8 @@ export function leftDeck(value: unknown, shown: DeckRef | null, next: DeckRef): 
         ...held,
         slide: '',
         overview: false,
-        recent: shown === null ? held.recent : withRecent(held.recent, shown, next)
+        recent: shown === null ? held.recent : withRecent(held.recent, shown, next),
+        filters: {}
     };
 }
 
@@ -516,12 +671,30 @@ export function presentName(ref: DeckRef): string {
 }
 
 /**
- * What the two windows of a presentation say to each other over the channel. The presenter screen
- * says which slide is on (`slide`), that its deck was read again (`changed`), that it ended
- * (`end`, after which the audience window closes itself where it can) and that its page is going
- * away (`left`, after which the audience window says the screen has ended and offers to close, as
- * it does when the lock tells it). The audience window says that it opened, which slide its
- * reader moved to (`move`) and that it closed. Each key is the key a slide of the deck carries.
+ * What names one deck's export to PDF: the Web Lock the exporting pane holds from the press until
+ * its print page has the filter's kept list, so a second press of Export on the deck, from any
+ * pane, waits for none and says the export is in progress.
+ */
+export function exportName(ref: DeckRef): string {
+    return `oculus-present-export-${deckQuery(ref)}`;
+}
+
+/**
+ * What the windows of a presentation and an export say to each other over the deck's channel. The
+ * presenter screen says which slide is on (`slide`), that its deck was read again (`changed`),
+ * that it ended (`end`, after which the audience window closes itself where it can) and that its
+ * page is going away (`left`, after which the audience window says the screen has ended and offers
+ * to close, as it does when the lock tells it). The audience window says that it opened, which
+ * slide its reader moved to (`move`) and that it closed. Each key is the key a slide of the deck
+ * carries.
+ *
+ * The audience page, when it opens, and the print page, before it reads the deck, ask which
+ * projects the filter keeps (`keep-asked`, `from` naming which of the two asks). The answer is a
+ * `keep`, the kept list or null for no filter: the presenting pane answers the audience page with
+ * `at` 0, and says it again with `at` 0 whenever its kept list changes; the exporting pane answers
+ * the print page with `at` the moment of the press, in milliseconds. The audience page takes only
+ * the answers with `at` 0 and the print page only the others, so neither takes the kept list of a
+ * pane that is not its own.
  */
 const messageShape = z.discriminatedUnion('kind', [
     z.object({ kind: z.literal('slide'), key: z.string() }),
@@ -530,7 +703,13 @@ const messageShape = z.discriminatedUnion('kind', [
     z.object({ kind: z.literal('left') }),
     z.object({ kind: z.literal('opened') }),
     z.object({ kind: z.literal('move'), key: z.string() }),
-    z.object({ kind: z.literal('closed') })
+    z.object({ kind: z.literal('closed') }),
+    z.object({ kind: z.literal('keep-asked'), from: z.enum(['audience', 'print']) }),
+    z.object({
+        kind: z.literal('keep'),
+        keep: z.array(z.string()).nullable(),
+        at: z.number().int().nonnegative()
+    })
 ]);
 
 export type PresentMessage = z.infer<typeof messageShape>;

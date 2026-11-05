@@ -189,6 +189,13 @@ type DeckMember = {
     path: string;
     /** Whether the group's `slides:` names it; a member that is not was found by discovery. */
     named: boolean;
+    /** The key of the project whose deck it is, in its own hub's files; absent for any other. */
+    projectId?: string;
+    /**
+     * Whether the read's filter keeps it, so its slides are drawn: true for every member of a
+     * read with no filter and of a group of other decks, and for every candidate.
+     */
+    kept: boolean;
 };
 
 /** A deck two discovering groups both find and neither names, with the other groups. */
@@ -203,13 +210,14 @@ export type DeckGroup = {
     name: string;
     /** The group's `slides:` as the file holds it, which a write names as its `base`. */
     slides: string[];
+    /** Every member, the ones a filter leaves out included, each saying whether it is kept. */
     members: DeckMember[];
     /** Found by the group's `find:`, in no member's place. */
     candidates: DeckMember[];
     /** Names in `slides:` that match no deck. */
     missing: string[];
     conflicts: DeckConflict[];
-    /** The slides the group holds, which `{{<group>.count}}` is. */
+    /** The slides the group's kept members hold, which `{{<group>.count}}` is. */
     count: number;
 };
 

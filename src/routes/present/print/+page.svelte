@@ -10,6 +10,12 @@
     // A slide taller than its page is scaled down to fit it, from the top and centred, so no slide
     // is cut or split over two pages; the Present pane scrolls such a slide instead.
     //
+    // The deck is drawn as the exporting pane filters it. The address names the deck alone, so
+    // before it reads the deck the page asks over the deck's channel which projects the filter
+    // keeps (`keep-asked`), takes the first answer of an export (state/life/present.svelte.ts
+    // `exportKeep`) and reads the deck under it. With no answer within `KEEP_WAIT_MS`, well inside
+    // the desktop host's wait, the page says so and fails, and prints no deck.
+    //
     // The page says it is ready with a `data-ready` attribute on its root once the deck is read and
     // drawn, the fonts are loaded and every image has loaded or failed; the desktop app's hidden
     // window prints it then. A deck that cannot be read, or that draws no slide, is told on the
@@ -20,7 +26,7 @@
     import { onMount, tick } from 'svelte';
     import Slide from '$lib/views/academic/present/Slide.svelte';
     import type { Deck } from '$lib/state/life/present';
-    import { readDeck } from '$lib/state/life/present.svelte';
+    import { exportKeep, readDeck } from '$lib/state/life/present.svelte';
     import { desktopOf } from '$lib/state/shared/stores/desktop';
     import { t } from '$lib/state/shared/words/text';
     import { createTipIds, provideTipIds } from '$lib/ui/menu/tip-ids';
@@ -33,6 +39,9 @@
 
     /** The frame's padding above and below the slide, in px (themes/slide.css). */
     const PAGE_PADDING = 128;
+
+    /** The longest the page waits for the exporting pane to say which projects its filter keeps. */
+    const KEEP_WAIT_MS = 5000;
 
     let deck = $state<Deck | null>(null);
     let failed = $state('');
@@ -73,13 +82,16 @@
         }
     }
 
-    /** Read the deck the address names. */
-    function read(): Promise<Deck | string> {
+    /**
+     * Read the deck the address names, under the kept list the exporting pane answers; what the
+     * page fails with when it is not answered.
+     */
+    async function read(): Promise<Deck | string> {
         const asked = new URLSearchParams(window.location.search);
-        return readDeck(
-            { root: asked.get('root') ?? '', path: asked.get('path') ?? '' },
-            data.token
-        );
+        const ref = { root: asked.get('root') ?? '', path: asked.get('path') ?? '' };
+        const keep = await exportKeep(ref, KEEP_WAIT_MS);
+        if (keep === undefined) return t('present.print_unanswered', String(KEEP_WAIT_MS / 1000));
+        return readDeck(ref, data.token, keep);
     }
 
     onMount(() => {

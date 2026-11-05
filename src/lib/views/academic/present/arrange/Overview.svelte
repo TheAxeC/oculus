@@ -16,6 +16,11 @@
     // bound after the answer passes; a refusal or a failure holds nothing. The layout is
     // state/life/arrange.ts's (`overviewRuns`), read from the deck the server sent, so a push that
     // changes the file draws the Overview again in every pane that shows the deck.
+    //
+    // The deck is the pane's, read under the pane's filter: a group draws the decks the filter
+    // keeps and counts them, and a move made while it is in force writes the group's whole list,
+    // the decks it hides kept in their places. The Add tile lists the decks the group's `find:`
+    // matches and does not hold, which the filter does not narrow.
 
     import ContextMenu from '$lib/ui/menu/ContextMenu.svelte';
     import Menu from '$lib/ui/menu/Menu.svelte';
@@ -41,6 +46,11 @@
 
     type Props = {
         deck: Deck;
+        /**
+         * The deck as the server read it from its files, under the pane's filter as `deck` is,
+         * which an arranging act's hold waits on; null while it is not read.
+         */
+        saved: Deck | null;
         ref: DeckRef | null;
         /** The key of the slide the reader was on, marked as the one in force. */
         current: string;
@@ -53,18 +63,17 @@
         say: (line: string) => void;
     };
 
-    let { deck, ref, current, cursor, onpick, onact, say }: Props = $props();
+    let { deck, saved, ref, current, cursor, onpick, onact, say }: Props = $props();
 
     const {
         entities: { config },
-        present: { deck: deckOf },
         writes: { writeDeckSlides }
     } = useState();
 
     const arrange = createArrange({
         ref: () => ref,
         deck: () => deck,
-        files: () => (ref === null ? null : deckOf(ref).deck),
+        files: () => saved,
         write: writeDeckSlides,
         say: (line) => say(line)
     });

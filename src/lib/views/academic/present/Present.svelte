@@ -28,6 +28,11 @@
     // deck until it is pointed at another: a project's deck, a deck it has shown, or the one a
     // folder of the Files view opened it on. The deck menu in the toolbar lists them.
     //
+    // A deck whose groups hold project decks has a filter under the toolbar, Stage, Status, Tier,
+    // Pillar and Form, by the boards' rules (acts/filter.svelte.ts): its picks are the pane's, the
+    // deck is read with the projects they keep, and the pane, the overview, the presenter screen,
+    // the audience window and the PDF draw that deck. The file is never written for a pick.
+    //
     // Where the reader is, and whether the grid is open, belong to the instance rather than to the
     // store, so two panes on the deck hold two positions and a push that rebuilds the deck leaves
     // each reader where they were. The instance's `slide` is the key a slide of the deck carries.
@@ -77,8 +82,10 @@
     import AskConfirm from '$lib/views/shared/writes/AskConfirm.svelte';
     import Bar from './Bar.svelte';
     import { createActs } from './acts/acts.svelte';
+    import { createFilter } from './acts/filter.svelte';
     import { createDrawn } from './acts/live.svelte';
     import { slideMenu } from './acts/menu';
+    import { createPresentation } from './acts/presentation.svelte';
     import Overview from './arrange/Overview.svelte';
     import Presenter from './presenter/Presenter.svelte';
     import { createFullscreen } from './screen/fullscreen.svelte';
@@ -102,11 +109,9 @@
         stepKey,
         tabDeck,
         withLabel,
-        type Deck,
         type DeckRef,
         type PresentState
     } from '$lib/state/life/present';
-    import type { PresentLink } from '$lib/state/life/present.svelte';
     import { t } from '$lib/state/shared/words/text';
     import { useShown, useState } from '$lib/state/client/use';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
@@ -116,7 +121,7 @@
         explorer,
         layout: { holding, hosts, openBeside, pointInstance, restateInstance },
         paletteSource: { offer, withdraw },
-        present: { deck: deckOf, portfolio, presenting, projectDecks, shown: shownDeck },
+        present: { portfolio, presenting, projectDecks, shown: shownDeck },
         source: { reloadSource, sourceDirty, sourceDraft },
         ui: { instanceState, setInstanceState },
         writes: { writeDeckEdit }
@@ -130,7 +135,14 @@
 
     const held = $derived(parsePresentState(instanceState(instance.id)));
     const ref = $derived(shownDeck(deckRefOf(instance.state)));
-    const answer = $derived(ref === null ? null : deckOf(ref));
+    const filter = createFilter({
+        ref: () => ref,
+        instance: () => instance.id,
+        filters: () => held.filters,
+        slide: () => held.slide,
+        write: (changes) => write(changes)
+    });
+    const answer = $derived(filter.answer());
     const filesDeck = $derived(answer?.deck ?? null);
 
     /** The unsaved text of the source tabs of this pane's page, which the slide is drawn from. */
@@ -147,6 +159,7 @@
         instance: () => instance.id,
         presented: () => presented,
         drafts: () => drafts,
+        keep: filter.keep,
         files: () => filesDeck
     });
     const deck = $derived(drawnDeck());
@@ -168,12 +181,13 @@
         ref: () => ref,
         deck: () => deck,
         saved: () => filesDeck,
+        keep: filter.keep,
         shown: () => shown,
         grid: () => grid,
         write: writeDeckEdit,
         bridge: desktop?.bridge,
         upload: explorer.upload,
-        openTab: (address) => window.open(address, '_blank', 'noopener'),
+        openTab: (address) => window.open(address, '_blank'),
         openBeside,
         reread: (place) => {
             const folder = `${place.root}/${place.path}/`;
@@ -197,19 +211,15 @@
         setInstanceState(instance.id, { ...held, ...changes });
     }
 
-    // While the presenter screen is on, the audience window is told which slide is on and when
-    // the deck was read again, and the presentation ends with the deck's last slide gone.
-    $effect(() => {
-        if (presented && shown !== null) presenting.send(instance.id, shown.key);
-    });
-    let sentDeck: Deck | null = null;
-    $effect(() => {
-        const read = filesDeck;
-        if (presented && sentDeck !== null && read !== sentDeck) presenting.changed(instance.id);
-        sentDeck = read;
-    });
-    $effect(() => {
-        if (presented && rows.length === 0) presenting.end(instance.id);
+    const present = createPresentation({
+        instance: () => instance.id,
+        ref: () => ref,
+        presented: () => presented,
+        shown: () => shown,
+        rows: () => rows,
+        files: () => filesDeck,
+        keepFor: filter.keepFor,
+        focus: () => box?.focus()
     });
 
     /** The deck menu: the deck on screen, the portfolio deck, the projects' decks, recent ones. */
@@ -288,20 +298,6 @@
      */
     function step(by: number): void {
         write({ slide: stepKey(rows, held.slide, by) });
-        box?.focus();
-    }
-
-    /** Start the presenter screen over the deck as saved, and the audience window beside it. */
-    function present(): void {
-        if (ref === null || rows.length === 0) return;
-        const id = instance.id;
-        const link: PresentLink = {
-            current: () => parsePresentState(instanceState(id)).slide,
-            show: (key) =>
-                setInstanceState(id, { ...parsePresentState(instanceState(id)), slide: key }),
-            held: () => holding(id) !== null
-        };
-        presenting.start(id, ref, link);
         box?.focus();
     }
 
@@ -410,6 +406,7 @@
         onpresenter={present}
         onexport={acts.exportPdf}
         said={acts.said()}
+        filter={filter.bar()}
     />
 {/snippet}
 
@@ -446,6 +443,7 @@
         {:else if grid || shown === null}
             <Overview
                 {deck}
+                saved={filesDeck}
                 {ref}
                 current={shown?.key ?? ''}
                 {cursor}

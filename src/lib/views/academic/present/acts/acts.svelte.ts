@@ -8,6 +8,7 @@ import type { PaletteSourceStore } from '$lib/state/workbench/palette-source.sve
 import { slideActs } from '$lib/state/life/present';
 import type { WritesStore } from '$lib/state/shared/stores/shapes';
 import type { Deck, DeckRef, DeckSlide } from '$lib/state/life/present';
+import type { Keep } from '$lib/state/life/present.svelte';
 import { t } from '$lib/state/shared/words/text';
 import { exportPdf, type ExportDeps } from './export';
 import { actLabel, isAct } from './menu';
@@ -20,6 +21,8 @@ type Reads = {
     deck: () => Deck | null;
     /** The deck as saved, which the print route draws, so the PDF takes its frame. */
     saved: () => Deck | null;
+    /** The kept list of the pane's filter, which the print route is answered with. */
+    keep: () => Keep;
     /** The slide on screen, the one a command of the palette acts on. */
     shown: () => DeckSlide | null;
     /** Whether the overview grid is open, which has no slide to drop an image on. */
@@ -80,10 +83,13 @@ export function createActs(reads: Reads): Acts {
         const ref = reads.ref();
         const deck = reads.deck();
         const saved = reads.saved();
-        if (ref === null || deck === null || saved === null || deck.slides.length === 0) return;
+        const keep = reads.keep();
+        if (ref === null || deck === null || saved === null || keep === undefined) return;
+        if (deck.slides.length === 0) return;
         void exportPdf({
             ref,
             deck,
+            keep,
             frame: saved.frame,
             bridge: reads.bridge,
             upload: reads.upload,

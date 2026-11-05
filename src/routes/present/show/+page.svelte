@@ -17,6 +17,12 @@
     // before the page says the presentation ended. A reload of this window says it closed and
     // then opened, and the presenter screen keeps the presentation when it opens in time.
     //
+    // The deck is drawn as the presenting pane filters it. The address names the deck alone, so
+    // the page asks over the channel which projects the pane's filter keeps (`keep-asked`) when it
+    // opens, reads the deck once the presenter screen answers (a `keep` with `at` 0), and reads it
+    // again whenever the screen says the kept list changed; an answer that arrives after a later
+    // one is dropped.
+    //
     // A browser enters full screen only from a press in the window, so the page has a Full Screen
     // control and the key F. The control shows at the load, goes after the pointer has rested,
     // comes back with the pointer and is not drawn while the window fills the screen, which is the
@@ -67,6 +73,10 @@
     let channel: BroadcastChannel | null = null;
     let name = '';
     let ref: DeckRef = { root: '', path: '' };
+    /** The kept list of the presenting pane's filter; undefined until the screen has said it. */
+    let keep: readonly string[] | null | undefined = undefined;
+    /** How many reads the page has asked for, so only the last one's answer is drawn. */
+    let reads = 0;
     /** Whether the page is going on purpose, so the presenter screen is not told it closed. */
     let leaving = false;
     let restTimer: ReturnType<typeof setTimeout> | undefined;
@@ -124,7 +134,11 @@
 
     /** Read the deck again; a read that fails reloads the page once, and then the page ends. */
     async function read(): Promise<void> {
-        const held = await readDeck(ref, data.token);
+        if (keep === undefined) return;
+        reads += 1;
+        const asked = reads;
+        const held = await readDeck(ref, data.token, keep);
+        if (asked !== reads || ended) return;
         if (typeof held !== 'string' && held.slides.length > 0) {
             mark(false);
             deck = held;
@@ -144,7 +158,11 @@
         if (message === null || ended) return;
         if (message.kind === 'slide') key = message.key;
         else if (message.kind === 'changed') void read();
-        else if (message.kind === 'left') finish();
+        else if (message.kind === 'keep' && message.at === 0) {
+            if (keep !== undefined && JSON.stringify(message.keep) === JSON.stringify(keep)) return;
+            keep = message.keep;
+            void read();
+        } else if (message.kind === 'left') finish();
         else if (message.kind === 'end') {
             finish();
             if (closable) window.close();
@@ -195,7 +213,7 @@
         // gone; with no presenter screen at all the page is granted it at once and says so.
         void navigator.locks.request(name, finish);
         channel.postMessage({ kind: 'opened' });
-        void read();
+        channel.postMessage({ kind: 'keep-asked', from: 'audience' });
         const closed = (): void => {
             if (!leaving && !ended) channel?.postMessage({ kind: 'closed' });
         };

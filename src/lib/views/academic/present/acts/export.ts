@@ -6,12 +6,25 @@
 // about first, as the Files view asks. In a browser tab there is no host: the print route opens in
 // a new tab, which opens the browser's print dialog when it is ready.
 //
+// The print route's address names the deck and nothing else, so the PDF learns the pane's filter
+// over the deck's channel: from the press until the print page has asked for the kept list and been
+// answered, or for `EXPORT_HOLD_MS`, the pane holds the deck's export under a Web Lock named for it
+// (`exportName`) and answers the page's `keep-asked` with its kept list and the moment of the
+// press. This holds on both paths, the browser tab's too, where the export returns once the tab is
+// open. A press of Export on the same deck while the lock is held, from any pane of any window,
+// says an export is in progress and prints nothing. In a browser tab the print tab opens inside the
+// press, before the lock is asked for, so a press while the lock is held opens a tab and closes it
+// again.
+//
 // `<name>` is the deck folder's name, the project's name for a project's `present/` folder, and
 // the root's folder name for a deck at the top of a root (the deck's own `name`).
 
 import {
     MAX_UPLOAD_MB,
+    exportName,
+    parseMessage,
     pdfFits,
+    presentName,
     printAddress,
     type Deck,
     type DeckFrame,
@@ -27,13 +40,15 @@ import type { Ask } from '$lib/views/shared/writes/ask';
 export type ExportDeps = {
     ref: DeckRef;
     deck: Deck;
+    /** The kept list of the pane's filter, null for none, which the print page is answered. */
+    keep: readonly string[] | null;
     /** The frame of the deck as saved, the one the print route draws, which the host prints at. */
     frame: DeckFrame;
     /** The desktop bridge, or undefined in a browser. */
     bridge: DesktopBridge | undefined;
     upload: ExplorerStore['upload'];
-    /** Open the print route's address in a new browser tab. */
-    openTab: (address: string) => void;
+    /** Open the print route's address in a new browser tab, giving the tab's window when opened. */
+    openTab: (address: string) => Window | null;
     say: (line: string) => void;
     ask: (question: Ask) => void;
 };
@@ -81,13 +96,125 @@ async function put(deps: ExportDeps, name: string, data: string, replace: boolea
     } else deps.say(outcomeLine(outcome));
 }
 
+/** The longest an export holds the deck's export for its print page to ask for the kept list. */
+const EXPORT_HOLD_MS = 10_000;
+
+/**
+ * The answer of a print page's ask: done once it is given or the hold is over, or stopped. Nothing
+ * is answered before `grant`, so only the export that holds the deck's lock answers a print page.
+ */
+type KeepReply = { answered: Promise<void>; grant: () => void; stop: () => void };
+
+/**
+ * Answer the print page's ask for the kept list over the deck's channel, once, with `at` the moment
+ * of the press, after `grant`; an ask heard before it is answered at `grant`. Done once it is
+ * answered, after `EXPORT_HOLD_MS`, or when stopped.
+ */
+function answerPrint(ref: DeckRef, keep: readonly string[] | null, at: number): KeepReply {
+    const channel = new BroadcastChannel(presentName(ref));
+    let asked = false;
+    let granted = false;
+    let over = false;
+    let stop = (): void => undefined;
+    let reply = (): void => undefined;
+    const answered = new Promise<void>((done) => {
+        const finish = (): void => {
+            if (over) return;
+            over = true;
+            clearTimeout(timer);
+            channel.close();
+            done();
+        };
+        stop = finish;
+        reply = () => {
+            if (over || !asked || !granted) return;
+            channel.postMessage({ kind: 'keep', keep, at });
+            finish();
+        };
+        const timer = setTimeout(finish, EXPORT_HOLD_MS);
+        channel.onmessage = (event: MessageEvent<unknown>) => {
+            const message = parseMessage(event.data);
+            if (message?.kind !== 'keep-asked' || message.from !== 'print') return;
+            asked = true;
+            reply();
+        };
+    });
+    const grant = (): void => {
+        granted = true;
+        reply();
+    };
+    return { answered, grant, stop };
+}
+
+/**
+ * Take the deck's export when no export holds it, and hold it until the print page is answered:
+ * true once it is taken, false while another export of the deck holds it. `answer` is called once
+ * the lock is granted and gives the answer of the print page the lock waits for.
+ */
+function holdExport(ref: DeckRef, answer: () => Promise<void>): Promise<boolean> {
+    return new Promise((taken) => {
+        const held = (lock: Lock | null): Promise<void> | undefined => {
+            if (lock === null) {
+                taken(false);
+                return undefined;
+            }
+            const answered = answer();
+            taken(true);
+            return answered;
+        };
+        navigator.locks
+            .request(exportName(ref), { ifAvailable: true }, held)
+            .catch(() => taken(false));
+    });
+}
+
+/**
+ * The browser tab's export. The print tab opens inside the press, before anything is awaited, so no
+ * browser's rule for windows opened by a page blocks it, with the channel that answers its ask
+ * already listening; the export lock is taken after, and the tab is closed again when another
+ * export of the deck holds it. The tab is opened with its handle kept and its `opener` cut; a tab
+ * the browser blocks takes no lock and says so. The channel answers the print page only once the
+ * lock is granted, so a press the lock refuses never answers another export's print page.
+ */
+async function exportTab(deps: ExportDeps, address: string): Promise<void> {
+    const print = answerPrint(deps.ref, deps.keep, Date.now());
+    const tab = deps.openTab(address);
+    if (tab === null) {
+        print.stop();
+        deps.say(t('present.export_blocked'));
+        return;
+    }
+    tab.opener = null;
+    const granted = (): Promise<void> => {
+        print.grant();
+        return print.answered;
+    };
+    if (!(await holdExport(deps.ref, granted))) {
+        print.stop();
+        tab.close();
+        deps.say(t('present.export_running'));
+        return;
+    }
+    deps.say(t('present.export_opened'));
+}
+
 /** Export the deck to a PDF beside it. */
 export async function exportPdf(deps: ExportDeps): Promise<void> {
     // The host prints an address of the server the window shows, so it is named whole.
     const address = new URL(printAddress(deps.ref), window.location.origin).href;
     if (deps.bridge === undefined) {
-        deps.openTab(address);
-        deps.say(t('present.export_opened'));
+        await exportTab(deps, address);
+        return;
+    }
+    const at = Date.now();
+    // The channel listens before the page is opened, so the page's ask is never missed.
+    const granted = (): Promise<void> => {
+        const print = answerPrint(deps.ref, deps.keep, at);
+        print.grant();
+        return print.answered;
+    };
+    if (!(await holdExport(deps.ref, granted))) {
+        deps.say(t('present.export_running'));
         return;
     }
     deps.say(t('present.export_busy'));

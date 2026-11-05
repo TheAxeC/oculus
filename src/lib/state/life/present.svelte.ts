@@ -5,7 +5,13 @@
 // a folder of the hub) and the deck of every project that has one (the snapshot's `project.deck`),
 // both derived, so a deck added or a project given its first slide reaches the open deck menu on
 // the next push. The deck itself is asked of api/deck the first time it is wanted and held in the
-// client state's query client by its root and folder.
+// client state's query client by its root, its folder and the kept list of the pane's filter (the
+// keys of the projects the filter keeps, none for the whole deck), so a filtered answer and a whole
+// one are held apart, and every read of a pane's deck (its slides, the measures it keeps, the frame
+// its audience window opens at) is under the same key. A pane with picks whose kept list cannot be
+// worked out yet, before the first snapshot, asks for nothing. Each pane says which deck and list
+// it reads under (`asking`), and an answer held under a kept list no pane reads under any more is
+// dropped, so the page holds the whole deck and the lists in use, and a push marks only those.
 //
 // The deck is read by the server from files and from the portfolio, so three things make a held
 // answer stale: a slide file or `present.yml` written under a watched root (the `files` channel,
@@ -24,7 +30,12 @@
 // channel the two windows keep one slide over, the lock that tells the audience window the
 // presenter screen is gone, and the timer. It belongs to the page and is keyed by the pane's
 // instance id, so it outlives the pane's component: a tab switch, a page switch and any redraw of
-// the panes leave it on, and it ends when the instance leaves the layout.
+// the panes leave it on, and it ends when the instance leaves the layout. The kept list of the
+// pane's filter is read through the pane's link as its slide is, so the audience page is answered
+// it when it asks and told it again whenever it changes, while the pane is drawn or not.
+//
+// The print and audience routes hold no store: they read the deck through `readDeck` under the
+// kept list they were told, and the print page asks the exporting pane for it (`exportKeep`).
 
 import { SvelteMap } from 'svelte/reactivity';
 import { str } from '../../data/helpers/guards.ts';
@@ -52,8 +63,14 @@ import {
     type Timer
 } from './present.ts';
 
+/**
+ * The kept list a deck is asked for under: the keys of the projects a pane's filter keeps, null
+ * for the whole deck, and undefined while the pane cannot yet work it out, which asks for nothing.
+ */
+export type Keep = readonly string[] | null | undefined;
+
 /** One deck as the pane reads it. */
-type DeckAnswer = {
+export type DeckAnswer = {
     deck: Deck | null;
     /** What the request failed with, or the empty string. */
     error: string;
@@ -86,6 +103,8 @@ const TOO_TALL_PX = 1;
 export type PresentLink = {
     /** The key of the slide the pane is on; empty for the deck's first. */
     current: () => string;
+    /** The kept list of the pane's filter: null for none, undefined while it is not known. */
+    keep: () => Keep;
     /** Show the slide a key names in the pane. */
     show: (key: string) => void;
     /** Whether the pane's instance is still in the layout. */
@@ -164,14 +183,26 @@ export type PresentStore = {
     projectDecks: () => ProjectDeck[];
     /** The deck a reference names, the portfolio deck for the empty one; null when none is set. */
     shown: (ref: DeckRef) => DeckRef | null;
-    /** The answer for one deck. */
-    deck: (ref: DeckRef) => DeckAnswer;
+    /** The answer for one deck under a kept list; pending, and asked for nowhere, for undefined. */
+    deck: (ref: DeckRef, keep: Keep) => DeckAnswer;
+    /**
+     * The deck and the kept list a pane reads its saved deck under, by the pane's instance id; a
+     * null deck or an undefined list once it reads none. An answer held under a kept list that no
+     * pane reads under any more is dropped, and the measures follow the answers that remain; the
+     * whole deck's answer stays. It removes queries, so it is called from an effect.
+     */
+    asking: (pane: string, ref: DeckRef | null, keep: Keep) => void;
     /**
      * The deck read over the text editors hold unsaved: the same answer, from the files as the
-     * drafts have them. Asked on the page's own account and held nowhere, so only the pane that
-     * draws from the drafts holds it, and that pane hands the deck it draws to `drawing`.
+     * drafts have them, under the same kept list. Asked on the page's own account and held
+     * nowhere, so only the pane that draws from the drafts holds it, and that pane hands the deck
+     * it draws to `drawing`.
      */
-    drawn: (ref: DeckRef, drafts: DeckDraft[]) => Promise<DeckAnswer>;
+    drawn: (
+        ref: DeckRef,
+        drafts: DeckDraft[],
+        keep: readonly string[] | null
+    ) => Promise<DeckAnswer>;
     presenting: Presenting;
 };
 
@@ -196,14 +227,60 @@ async function deckOf(ask: () => Promise<Response>): Promise<Deck | string> {
 }
 
 /**
- * The deck a reference names as the deck route answers it for a page with no store (the print and
- * audience routes): the deck, or what the request failed with.
+ * The request that reads a deck as saved under a kept list: a GET for the whole deck, and under a
+ * kept list a POST with no drafts, the same read, since a list of many keys would pass the length
+ * the server takes for an address.
  */
-export function readDeck(ref: DeckRef, token: string): Promise<Deck | string> {
-    const query = new URLSearchParams({ root: ref.root, path: ref.path });
-    return deckOf(() =>
-        fetch(`/api/deck?${query.toString()}`, { headers: { 'x-oculus-token': token } })
-    );
+function askDeck(ref: DeckRef, token: string, keep: readonly string[] | null): Promise<Response> {
+    if (keep === null) {
+        const query = new URLSearchParams({ root: ref.root, path: ref.path });
+        return fetch(`/api/deck?${query.toString()}`, { headers: { 'x-oculus-token': token } });
+    }
+    return fetch('/api/deck', {
+        method: 'POST',
+        headers: { 'x-oculus-token': token, 'content-type': 'application/json' },
+        body: JSON.stringify({ root: ref.root, path: ref.path, drafts: [], keep })
+    });
+}
+
+/** The part of a deck's query key a kept list is: empty for the whole deck. */
+function keepKey(keep: readonly string[] | null): string {
+    return keep === null ? '' : JSON.stringify(keep);
+}
+
+/**
+ * The deck a reference names as the deck route answers it for a page with no store (the print and
+ * audience routes), under the kept list a pane's filter sent: the deck, or what the request failed
+ * with.
+ */
+export function readDeck(
+    ref: DeckRef,
+    token: string,
+    keep: readonly string[] | null
+): Promise<Deck | string> {
+    return deckOf(() => askDeck(ref, token, keep));
+}
+
+/**
+ * The kept list the exporting pane answers the print page with over the deck's channel: the first
+ * `keep` an export sends (`at` above 0) within `wait` ms of the ask, or undefined when none comes,
+ * which the page reads as a deck it cannot print as the pane filters it.
+ */
+export function exportKeep(ref: DeckRef, wait: number): Promise<Keep> {
+    return new Promise((answer) => {
+        const channel = new BroadcastChannel(presentName(ref));
+        const done = (keep: Keep): void => {
+            clearTimeout(timer);
+            channel.close();
+            answer(keep);
+        };
+        const timer = setTimeout(() => done(undefined), wait);
+        channel.onmessage = (event: MessageEvent<unknown>) => {
+            const message = parseMessage(event.data);
+            if (message?.kind === 'keep' && message.at > 0) done(message.keep);
+        };
+        channel.postMessage({ kind: 'keep-asked', from: 'print' });
+    });
 }
 
 export function createPresent(
@@ -265,33 +342,49 @@ export function createPresent(
         }
     });
 
-    /** The deck a reference names. The first call asks the server; what is held keeps showing. */
-    function deck(ref: DeckRef): DeckAnswer {
+    /** The query key of a deck under a kept list. */
+    function keyOf(ref: DeckRef, keep: readonly string[] | null): string[] {
+        return [KIND, ref.root, ref.path, keepKey(keep)];
+    }
+
+    /**
+     * The deck a reference names under a kept list. The first call asks the server; what is held
+     * keeps showing. An undefined list asks nothing and reads as pending.
+     */
+    function deck(ref: DeckRef, keep: Keep): DeckAnswer {
         if (ref.root === '') return NOTHING;
+        if (keep === undefined) return PENDING;
         // There is no fetch while the page is rendered on the server, and nothing to show there
         // either: the deck stays pending and the browser asks for it on the first client render.
-        const { data } = queries.read([KIND, ref.root, ref.path], () => load(ref), {
+        const key = keyOf(ref, keep);
+        const { data } = queries.read(key, () => load(ref, keep, key), {
             enabled: typeof fetch === 'function'
         });
         return data ?? PENDING;
     }
 
     /** The saved deck's answer, which the query holds; the measures follow it as it arrives. */
-    async function load(ref: DeckRef): Promise<DeckAnswer> {
-        const query = new URLSearchParams({ root: ref.root, path: ref.path });
-        const answer = await answered(() =>
-            fetch(`/api/deck?${query.toString()}`, { headers: { 'x-oculus-token': token() } })
-        );
-        if (answer.deck !== null) prune(answer.deck);
+    async function load(
+        ref: DeckRef,
+        keep: readonly string[] | null,
+        key: string[]
+    ): Promise<DeckAnswer> {
+        const answer = await answered(() => askDeck(ref, token(), keep));
+        if (answer.deck !== null) prune({ key, deck: answer.deck });
         return answer;
     }
 
-    function drawn(ref: DeckRef, drafts: DeckDraft[]): Promise<DeckAnswer> {
+    function drawn(
+        ref: DeckRef,
+        drafts: DeckDraft[],
+        keep: readonly string[] | null
+    ): Promise<DeckAnswer> {
+        const body = { root: ref.root, path: ref.path, drafts, ...(keep === null ? {} : { keep }) };
         return answered(() =>
             fetch('/api/deck', {
                 method: 'POST',
                 headers: { 'x-oculus-token': token(), 'content-type': 'application/json' },
-                body: JSON.stringify({ root: ref.root, path: ref.path, drafts })
+                body: JSON.stringify(body)
             })
         );
     }
@@ -328,19 +421,53 @@ export function createPresent(
     }
 
     /**
-     * Drop the measures of the slides that neither the saved deck nor any pane's deck holds.
-     * `saved` is a saved deck's answer that is arriving, which the query does not hold yet.
+     * The saved answers of one deck, one under each kept list it is held under (the whole deck's
+     * and those of the lists a pane reads under, `asking`): `arriving`, a saved answer the query
+     * does not hold yet, in place of what its key holds. The answers no mark has made stale since
+     * are the ones given; while every answer of the deck is stale they all are, so a deck whose
+     * files changed keeps its measures until it is read again.
      */
-    function prune(saved: Deck | null): void {
+    function savedOf(
+        root: string,
+        path: string,
+        arriving: { key: string[]; deck: Deck } | null
+    ): (Deck | null | undefined)[] {
+        const own = arriving?.deck.root === root && arriving.deck.path === path ? arriving : null;
+        const held = queries
+            .entries<DeckAnswer>([KIND, root, path])
+            .filter((one) => own === null || JSON.stringify(one.key) !== JSON.stringify(own.key))
+            .map((one) => ({ deck: one.data?.deck, stale: queries.peek(one.key).stale }));
+        const fresh = held.filter((one) => !one.stale).map((one) => one.deck);
+        const decks = own === null ? fresh : [own.deck, ...fresh];
+        return decks.length > 0 ? decks : held.map((one) => one.deck);
+    }
+
+    /**
+     * Drop the measures of the slides that neither a saved deck nor any pane's deck holds.
+     * `arriving` is a saved deck's answer under its query key, which the query does not hold yet.
+     */
+    function prune(arriving: { key: string[]; deck: Deck } | null): void {
         for (const [key, one] of tall) {
-            const savedDeck =
-                saved?.root === one.root && saved.path === one.path
-                    ? saved
-                    : queries.peek<DeckAnswer>([KIND, one.root, one.path]).data?.deck;
-            if (holds(savedDeck, one)) continue;
+            if (savedOf(one.root, one.path, arriving).some((deck) => holds(deck, one))) continue;
             if ([...drawnBy.values()].some((deck) => holds(deck, one))) continue;
             tall.delete(key);
         }
+    }
+
+    /** The query key each pane reads its saved deck under, by the pane's instance id. */
+    const askedBy = new Map<string, string[]>();
+
+    function asking(pane: string, ref: DeckRef | null, keep: Keep): void {
+        if (ref === null || ref.root === '' || keep === undefined) askedBy.delete(pane);
+        else askedBy.set(pane, keyOf(ref, keep));
+        const asked = new Set([...askedBy.values()].map((key) => JSON.stringify(key)));
+        let dropped = false;
+        for (const one of queries.entries<DeckAnswer>([KIND])) {
+            if (one.key[3] === keepKey(null) || asked.has(JSON.stringify(one.key))) continue;
+            queries.forget(one.key);
+            dropped = true;
+        }
+        if (dropped) prune(null);
     }
 
     function drawing(pane: string, deck: Deck | null): void {
@@ -414,9 +541,16 @@ export function createPresent(
         return ref.root === '' ? portfolio : ref;
     }
 
-    /** The frame of the deck as saved, the answer `deck` holds, or null while none is held. */
-    function savedFrame(ref: DeckRef): DeckFrame | null {
-        return queries.peek<DeckAnswer>([KIND, ref.root, ref.path]).data?.deck?.frame ?? null;
+    /**
+     * The frame of the deck as saved under a kept list, the answer `deck` holds for it, else the
+     * frame of any answer of the deck that is held, since a filter keeps the deck's frame; null
+     * while none is held.
+     */
+    function savedFrame(ref: DeckRef, keep: readonly string[] | null): DeckFrame | null {
+        const own = queries.peek<DeckAnswer>(keyOf(ref, keep)).data?.deck?.frame;
+        if (own !== undefined) return own;
+        const held = queries.entries<DeckAnswer>([KIND, ref.root, ref.path]);
+        return held.find((one) => (one.data?.deck ?? null) !== null)?.data?.deck?.frame ?? null;
     }
 
     return {
@@ -428,16 +562,19 @@ export function createPresent(
         projectDecks: () => projectDecks,
         shown,
         deck,
+        asking,
         drawn,
         presenting: createPresenting(savedFrame)
     };
 }
 
 /**
- * The page's presentations, one per pane that presents. `frameOf` is the frame of a deck as saved,
- * which the audience window draws and so opens at.
+ * The page's presentations, one per pane that presents. `frameOf` is the frame of a deck as saved
+ * under the pane's kept list, which the audience window draws and so opens at.
  */
-function createPresenting(frameOf: (ref: DeckRef) => DeckFrame | null): Presenting {
+function createPresenting(
+    frameOf: (ref: DeckRef, keep: readonly string[] | null) => DeckFrame | null
+): Presenting {
     const lives = new Map<string, Held>();
     const timers = new SvelteMap<string, Timer>();
     let listening = false;
@@ -474,7 +611,19 @@ function createPresenting(frameOf: (ref: DeckRef) => DeckFrame | null): Presenti
         if (held !== undefined) finish(instance, held, 'left', true);
     }
 
-    /** What the audience window says: it opened, its reader moved, it closed. */
+    /**
+     * Tell the audience window the kept list of the pane's filter; one that cannot be worked out
+     * yet is told once it can.
+     */
+    function sendKeep(held: Held): void {
+        const keep = held.link.keep();
+        if (keep !== undefined) held.channel.postMessage({ kind: 'keep', keep, at: 0 });
+    }
+
+    /**
+     * What the audience window says: it opened, it asks for the kept list, its reader moved, it
+     * closed. An ask of the print page is the exporting pane's to answer.
+     */
     function hear(instance: string, held: Held, data: unknown): void {
         const message = parseMessage(data);
         if (message === null || held.ended) return;
@@ -483,7 +632,8 @@ function createPresenting(frameOf: (ref: DeckRef) => DeckFrame | null): Presenti
             if (held.returning !== null) clearTimeout(held.returning);
             held.returning = null;
             held.channel.postMessage({ kind: 'slide', key: held.link.current() });
-        } else if (message.kind === 'move') held.link.show(message.key);
+        } else if (message.kind === 'keep-asked' && message.from === 'audience') sendKeep(held);
+        else if (message.kind === 'move') held.link.show(message.key);
         else if (message.kind === 'closed' && held.heard && held.returning === null) {
             held.returning = setTimeout(() => end(instance), RETURN_WAIT_MS);
         }
@@ -496,7 +646,7 @@ function createPresenting(frameOf: (ref: DeckRef) => DeckFrame | null): Presenti
             held.audience = window.open(
                 audienceAddress(held.ref),
                 presentName(held.ref),
-                audienceFeatures(frameOf(held.ref))
+                audienceFeatures(frameOf(held.ref, held.link.keep() ?? null))
             );
         }
     }
@@ -553,6 +703,16 @@ function createPresenting(frameOf: (ref: DeckRef) => DeckFrame | null): Presenti
         held.stop = $effect.root(() => {
             $effect(() => {
                 if (!link.held()) end(instance);
+            });
+            // The kept list is said at the start and again each time it changes; a push that
+            // leaves it as it was says nothing.
+            let said: string | null = null;
+            $effect(() => {
+                const keep = link.keep();
+                const now = JSON.stringify(keep);
+                if (held.ended || keep === undefined || now === said) return;
+                said = now;
+                sendKeep(held);
             });
         });
         if (!listening) {

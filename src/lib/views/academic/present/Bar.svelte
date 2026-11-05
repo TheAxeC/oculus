@@ -1,16 +1,22 @@
 <script lang="ts">
     // Layer 3, Present partial. The toolbar of the Present pane: the deck menu, the two step
-    // buttons, the overview, full-screen and presenter controls, the Export to PDF button, the
+    // buttons, the overview, full-screen and presenter controls, the Export to PDF button, while a
+    // filter is in force the line that says how many of the deck's decks it keeps and Clear, the
     // status line of the last act on a slide or on the deck's arrangement, and the place in the
-    // deck. It holds no state of its own; Present.svelte owns the deck and the position and hands
-    // each action in.
+    // deck. Under it, for a deck whose groups hold project decks, the filter's line: one group
+    // button per group that has a value (views/shared/forms/bar/FilterBar.svelte), with no search
+    // and no Mine only; a deck with no such group draws no line and keeps no room for one. It
+    // holds no state of its own; Present.svelte owns the deck and the position, and
+    // acts/filter.svelte.ts the filter, and each action is handed in.
 
     import Chip from '$lib/ui/controls/Chip.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import Select from '$lib/ui/forms/choice/Select.svelte';
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
+    import FilterBar from '$lib/views/shared/forms/bar/FilterBar.svelte';
     import { t } from '$lib/state/shared/words/text';
     import type { DeckChoice } from '$lib/state/life/present';
+    import type { FilterLine } from './acts/filter.svelte';
 
     type Props = {
         choices: DeckChoice[];
@@ -31,6 +37,8 @@
         onexport: () => void;
         /** What the last act on a slide or on the deck's arrangement came to, empty for none. */
         said: string;
+        /** The pane's filter, null for a deck with no group of project decks. */
+        filter: FilterLine | null;
     };
 
     let {
@@ -47,7 +55,8 @@
         onpresent,
         onpresenter,
         onexport,
-        said
+        said,
+        filter
     }: Props = $props();
 </script>
 
@@ -83,11 +92,35 @@
         onclick={onexport}
         disabled={count === 0}
     />
+    {#if filter !== null && filter.said !== ''}
+        <span class="filtered">{filter.said}</span>
+        <ToolButton
+            label={t('present.filter_clear')}
+            title={t('present.filter_clear_tip')}
+            onclick={filter.onclear}
+        />
+    {/if}
     <span class="said" role="status">{said}</span>
     <span class="counter">{t('present.counter', String(at), String(count))}</span>
 </Toolbar>
+{#if filter !== null}
+    <FilterBar
+        label={t('present.filter')}
+        groups={filter.groups}
+        line={filter.line}
+        ontoggle={filter.ontoggle}
+    />
+{/if}
 
 <style>
+    /* The filter's line reads as the status line does, beside the control that clears it. */
+    .filtered {
+        flex: none;
+        color: var(--muted-txt, var(--muted));
+        font-size: var(--fs-md);
+        white-space: nowrap;
+    }
+
     /* The status line takes the room between the controls and the place in the deck. */
     .said {
         flex: 1 1 0;

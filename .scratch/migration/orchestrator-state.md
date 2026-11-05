@@ -24,20 +24,6 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 
 ```yaml
 dispatch:           # steps in flight, up to six (Z632)
-- step: O147
-  base: 9ad4eb6c6
-  worktree: .agents/worktrees/migration-O147
-  executor: agent
-  worker: claude:opus
-  launched: 2026-11-05
-  report: .scratch/migration/agents/reviews/O147-report.md
-  session_id: a700c9cd6e18ea451   # claude-opus-5-5, read from the agent's record
-  builder_usage: 171430 tokens, 366 tool uses, 65 min 31 s; round 1: 359177 tokens, 140 tool uses, 28 min 7 s
-  reviewer_report: .scratch/migration/agents/reviews/O147-refuter.md (a531dbf1711f69533, claude-opus-5-5, 297296 tokens, 94 tool uses, 19 min 37 s)
-  round: 1
-  brief_check: .scratch/migration/agents/reviews/O147-brief-check.md (a5ec4b5cba21b2e92, claude-opus-5-5, 286289 tokens, 113 tool uses, 16 min 3 s)
-  shared_paths: "docs/HELP.md with O153 of this plan; O147 writes the Present paragraph (HELP.md:331), O153 the project card paragraph (HELP.md:299), different paragraphs, and docs/diagrams are regenerated at landing"
-  landing: not-started
 ```
 
 ## The standing demands (from Axel, in force)
@@ -815,6 +801,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-11-05 (O147 landed). O147, the Present view's filter bar, landed (booking in plan.md under O147, `agents/reviews/O147-landing.md`), with fixes at landing from the review over round 1: a blocked print tab says so and takes no lock, and the deck's channel answers a print page only once the export lock is granted; G32's Test line names the narrowing's test. Export in a browser tab was not looked at (the print dialog stops the browser tools). In flight: none. Next: O148 (the Project facts strip). Open items: none.
 - 2026-11-05 (O153 landed; O147's review over round 1 in). O153, Deposit in every project card's menu, landed (booking in plan.md under O153, `agents/reviews/O153-landing.md`), with one fix at landing: the `Deposit.svelte:75` doc comment names `openBeside`; the look on 8797 saw Deposit in the board card's right-click, `...` and Shift+F10 menus, on the project page and in the Person view, and the Deposit view opening beside the board. In flight (1 of 6): O147 (review over round 1 in, landing next). Open items: none.
 - 2026-11-05 (O153 prepared; O147 repair round 1 running). Axel ruled 687 (a), booked as step O153, and 688 (a), every project keeping Deposit, ruling 37's "not Deposit" replaced, both in plan.md Rulings. O153's brief check (`agents/reviews/O153-brief-check.md`, a1fe23ba35d510aa2, claude-opus-5-5) closed in the brief under its Closed heading: the keyboard menu, a project with no `code/` and an open Deposit view as cases, the Focus lane cards and the list mode named outside the step, the perl ASCII gate and the prose rule in the checks. In flight (2 of 6): O147 (repair round 1), O153 (building; prepared at 8ea70be0d, worktree `.agents/worktrees/migration-O153` with `npm ci` and `svelte-kit sync`, base copy `.agents/worktrees/O153-base` with `unused-exports.txt` (335 lines), builder a37253d9779601394, claude-opus-5-5). Open items: none.
 - 2026-11-05 (O152 landed; O147 reviewed). O152, the Venue tag's tier icon, landed (booking in plan.md under O152, `agents/reviews/O152-landing.md`), with fixes at landing: the test's server path widened to the blank and glyph-less tier rows with `home` as primary, and the head comments of `tones.ts` and `lines.ts`; G127's Code line names `venueTierMark`; the look on 8797 saw the crown, star and target marks in their hues, the tip on keyboard focus, the Pillars tier counts and one bracket pair under the terminal theme. O147's review (`agents/reviews/O147-refuter.md`, a531dbf1711f69533) found every item holding and Proof, Standards and Behaviour points; its repair round 1 is next. In flight (1 of 6): O147 (reviewed, round 1 next). Open items: none.

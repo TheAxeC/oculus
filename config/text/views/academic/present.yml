@@ -46,9 +46,11 @@ text:
         empty_unnamed: "No deck is set. Name the portfolio deck as `portfolio_deck` in .oculus/config.yml in the hub or in oculus's config/defaults/sources.yml, or open a deck from a project card or from a folder in the Files view."
         empty_unreadable: 'The present.yml in {0} does not parse as a map, so nothing is drawn. The Audit section of Findings says where.'
         export: Export to PDF
+        export_blocked: The browser blocked the print tab; allow pop-ups for this page and press Export again.
         export_busy: Making the PDF...
         export_done: 'Wrote {0} beside the deck.'
         export_opened: The deck opened in a new tab; the browser's print dialog saves it as a PDF.
+        export_running: An export of this deck is already in progress.
         export_tip: Write the deck to a PDF beside it, one slide to a page
         export_too_large: 'The PDF is larger than the {0} MB a file may be.'
         failed: 'The deck could not be read: {0}'
@@ -81,6 +83,11 @@ text:
         field_tones_help: The hue each slide tag's chip wears; no hue takes the tag out.
         figure_alt: A figure of the project
         figure_missing: 'missing figure: {0}'
+        filter: Filter the decks of the deck's groups by their projects
+        filter_clear: Clear
+        filter_clear_tip: Take out every pick of the filter and show every deck again
+        filtered: 'Filtered: {0} of {1} decks'
+        filtered_one: 'Filtered: {0} of 1 deck'
         form_apply: Apply
         form_cancel: Cancel
         key_hint: Arrow keys or Space move through the deck | O opens the overview | F shows it full screen | P opens the presenter screen
@@ -113,6 +120,7 @@ text:
         presenter_timer: Timer
         presenter_tip: Show the presenter screen here and the slide alone in a window for the audience (P, while the deck has the focus)
         previous: Previous
+        print_unanswered: 'no Present pane said within {0} s which projects its filter keeps, so the deck is not printed'
         read_failed: 'The file of the slide could not be read: {0}'
         results: Results
         rule_adds: '{0}, and adds what it finds, sorted {1}.'

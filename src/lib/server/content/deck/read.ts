@@ -6,6 +6,11 @@
 // same file named under a second root key is read from its draft, and a draft whose root or path
 // the roots do not serve names no file and is dropped.
 //
+// A read may be narrowed by the keys of the projects a filter keeps, each a project's key in the
+// files of the hub the deck is read under, the key the reader holds as `DeckProject.id`. Since the
+// reader holds the projects of that hub alone, a key names one project of it and never a project
+// of another hub that has the same key. With no keys the read is the whole deck.
+//
 // The roots are the folders of the open workspace, so a root that is not one of their names and a
 // path that climbs out of a root or leaves it through a link is refused by the rule the file route
 // answers by (`resolveRootPath`), ahead of any read. A folder inside a root that holds no deck is
@@ -72,13 +77,15 @@ function draftsOf(roots: Root[], drafts: Draft[]): Map<string, string> {
 
 /**
  * One deck, or the word saying why none was read: `outside` for a root nothing serves and a path
- * that leaves the root. A file the deck reads that a draft names is read from the draft.
+ * that leaves the root. A file the deck reads that a draft names is read from the draft. With
+ * `keep`, every group of project decks draws only the members whose project's key it holds.
  */
 export function readDeck(
     source: DeckSource,
     root: string,
     path: string,
-    drafts: Draft[] = []
+    drafts: Draft[] = [],
+    keep?: readonly string[]
 ): Deck | 'outside' {
     const found = resolveRootPath(source.roots, root, path);
     if ('error' in found && found.error === 'outside') return 'outside';
@@ -97,7 +104,8 @@ export function readDeck(
         tagTones: config.tagTones,
         frame: frameSetting(config.merged),
         catalog: config.text,
-        drafts: draftsOf(source.roots, drafts)
+        drafts: draftsOf(source.roots, drafts),
+        ...(keep === undefined ? {} : { keep: new Set(keep) })
     });
     const deck = reader.read({ key: held.key, dir: held.dir }, path);
     const inherited =

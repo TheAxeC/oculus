@@ -7,6 +7,12 @@
 // no group of the deck names, in the order `sort:` gives. Two groups that discover the same
 // unnamed deck both lose it, and say so. A group with no `find:` names project decks of the hub.
 //
+// A read may be narrowed by a filter, the keys of the projects it keeps (`keptMembers`). It
+// narrows only a group of project decks, one a member or a candidate of which is a project's deck
+// before any filter, and keeps of it the members whose project's key the filter holds, a member
+// that is no project's deck left out. A group of other decks keeps every member, and with no
+// filter every group does. The candidates, the missing names and the conflicts are never narrowed.
+//
 // Nothing here reads a file: the reader hands in the decks each glob found.
 
 import type { DeckState } from '../../model/index.ts';
@@ -192,4 +198,22 @@ export function resolveGroups(
         );
     }
     return resolved;
+}
+
+/** Whether a group holds project decks: a member or a candidate, before any filter, is one. */
+function ofProjects(group: Resolved): boolean {
+    return (
+        group.members.some((one) => one.doc.project !== null) ||
+        group.candidates.some((one) => one.project !== null)
+    );
+}
+
+/**
+ * The members of a group a read draws: every member with no filter (`keep` undefined) and in a
+ * group of other decks; in a group of project decks under a filter, the members whose project's
+ * key `keep` holds, in their order.
+ */
+export function keptMembers(group: Resolved, keep: ReadonlySet<string> | undefined): Member[] {
+    if (keep === undefined || !ofProjects(group)) return group.members;
+    return group.members.filter((one) => one.doc.project !== null && keep.has(one.doc.project.id));
 }

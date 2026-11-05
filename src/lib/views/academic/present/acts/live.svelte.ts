@@ -3,12 +3,14 @@
 // deck read over those drafts. The pane asks the deck route for that deck a twentieth of a second
 // after the last keystroke and draws it in place of the one the files give; the answer to a draft
 // typed over since is dropped. With no draft, or once the drafts are saved or closed, the pane
-// draws the files again. The deck the pane draws is handed to the Present store's `drawing`, so a
-// slide's measure stays while this pane draws a deck that holds the slide. It is called while the
-// view is being initialised, since it registers its effects there and reads the Present store from
-// the client state.
+// draws the files again. The drafted deck is read under the kept list of the pane's filter, as the
+// files deck is, and is not asked for while that list cannot be worked out. The deck the pane
+// draws is handed to the Present store's `drawing`, so a slide's measure stays while this pane
+// draws a deck that holds the slide. It is called while the view is being initialised, since it
+// registers its effects there and reads the Present store from the client state.
 
 import type { Deck, DeckDraft, DeckRef } from '$lib/state/life/present';
+import type { Keep } from '$lib/state/life/present.svelte';
 import { useState } from '$lib/state/client/use';
 
 /**
@@ -27,6 +29,8 @@ type Reads = {
     presented: () => boolean;
     /** The unsaved drafts of the source tabs of the pane's page. */
     drafts: () => DeckDraft[];
+    /** The kept list of the pane's filter. */
+    keep: () => Keep;
     /** The deck the files gave, which a new version of asks for the drafted deck again. */
     files: () => Deck | null;
 };
@@ -42,14 +46,15 @@ export function createDrawn(reads: Reads): () => Deck | null {
     $effect(() => {
         const ref = reads.ref();
         const drafts = reads.presented() ? [] : reads.drafts();
+        const keep = reads.keep();
         reads.files();
-        if (ref === null || drafts.length === 0) {
+        if (ref === null || drafts.length === 0 || keep === undefined) {
             live = null;
             return;
         }
         let current = true;
         const timer = setTimeout(() => {
-            void drawn(ref, drafts).then((answer) => {
+            void drawn(ref, drafts, keep).then((answer) => {
                 if (current) live = answer.deck;
             });
         }, DRAFT_REST_MS);

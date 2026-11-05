@@ -27,6 +27,11 @@
 // projects of the strips of the entries the other groups leave, and of the No funding card while
 // its slice keeps it, carry it under the other project groups' picks; the entry groups and the
 // status slices are counted over the entries the project picks leave.
+//
+// The same rules draw a bar of project groups over any board items by a layout of its own, the
+// groups it draws and the ids their picks are saved under (`ProjectLayout`): `projectFilter` gives
+// its groups and `projectKeeps` the rule that keeps an item. The Present view's filter over the
+// member projects of a deck is one (state/life/present.ts).
 
 import { periodValueOrder } from '../../../data/helpers/dates.ts';
 import { byKey, isMap } from '../../../data/helpers/guards.ts';
@@ -80,6 +85,37 @@ const PROJECT_FACETS = ['form', 'tier', 'role', 'pillar'];
 /** The id a board facet's group of the Projects section is saved under: `project_<facet>`. */
 function facetGroup(facet: string): string {
     return `project_${facet}`;
+}
+
+/**
+ * Which groups a bar of project groups draws over board items, and the ids their picks are saved
+ * under: the Category group or none, the Stage group, then board facets in their order.
+ */
+export type ProjectLayout = {
+    /** The id of the Category group, null for a bar that draws none. */
+    category: string | null;
+    /** The id of the Stage group. */
+    stage: string;
+    /** The board facets drawn after Stage, in their order. */
+    facets: readonly string[];
+    /** The id the picks of a board facet's group are saved under. */
+    idOf: (facet: string) => string;
+    /** Whether a person is marked as the user, without whom no project has a role. */
+    named: boolean;
+};
+
+/**
+ * The Projects section's layout: Category, Stage, then Form, Tier, Role and Pillar, Role only
+ * while a person is marked as the user (`named`), each saved under `project_<group>`.
+ */
+function sectionLayout(named: boolean): ProjectLayout {
+    return {
+        category: CATEGORY_GROUP,
+        stage: STAGE_GROUP,
+        facets: PROJECT_FACETS.filter((facet) => named || facet !== 'role'),
+        idOf: facetGroup,
+        named
+    };
 }
 
 /** The projects the cards of a view draw at their foot, which the Projects section filters. */
@@ -213,52 +249,50 @@ function distinct(items: Iterable<BoardItem>): BoardItem[] {
     return [...new Map([...items].map((item) => [item.id, item])).values()];
 }
 
-/** The Category group's rule: a project's row of `categories:`, `NONE` for one in no row. */
-function categoryRule(preset: BoardPreset): Rule<BoardItem> {
+/**
+ * The Category group's rule, under the id `id`: a project's row of `categories:`, `NONE` for one in
+ * no row.
+ */
+function categoryRule(preset: BoardPreset, id: string): Rule<BoardItem> {
     const known = new Set(preset.categories.map((row) => row.key));
     return {
-        id: CATEGORY_GROUP,
+        id,
         values: (item) => [known.has(item.category) ? item.category : NONE]
     };
 }
 
 /**
- * The rules of the Projects section's groups, in their order: Category; Stage, a project's stage;
- * then the board facets, Role only while a person is marked as the user (`named`), since without
- * one no project has a role.
+ * The rules of a layout's groups, in their order: Category where it draws one; Stage, a project's
+ * stage; then its board facets, each a board's facet values.
  */
-function projectRules(preset: BoardPreset, named: boolean): Rule<BoardItem>[] {
+function projectRules(preset: BoardPreset, layout: ProjectLayout): Rule<BoardItem>[] {
     return [
-        categoryRule(preset),
+        ...(layout.category === null ? [] : [categoryRule(preset, layout.category)]),
         {
-            id: STAGE_GROUP,
+            id: layout.stage,
             values: (item) => (item.project.stage === undefined ? [] : [item.project.stage])
         },
-        ...shownFacets(named).map((facet) => ({
-            id: facetGroup(facet),
+        ...layout.facets.map((facet) => ({
+            id: layout.idOf(facet),
             values: (item: BoardItem) => facetValues(item, facet)
         }))
     ];
-}
-
-/** The board facets the Projects section draws: Role only while a person is the user. */
-function shownFacets(named: boolean): string[] {
-    return PROJECT_FACETS.filter((facet) => named || facet !== 'role');
 }
 
 /**
  * The Category group: the rows of `categories:` of every hub's words (`preset.categories`) a
  * project of `whole` is in, in their order and drawn in their colour, the rows carrying `archival`
  * left out, then "other" for the projects in no row; each counted over `counted`, and a picked
- * value none of `whole` carries listed at 0 after them.
+ * value none of `whole` carries listed at 0 after them. Its id is `id`.
  */
 function categoryGroup(
+    id: string,
     whole: readonly BoardItem[],
     counted: readonly BoardItem[],
     preset: BoardPreset,
     picked: readonly string[]
 ): FilterGroup {
-    const rule = categoryRule(preset);
+    const rule = categoryRule(preset, id);
     const held = countsOf(whole, rule);
     const counts = countsOf(counted, rule);
     const rows = preset.categories.filter((row) => !row.archival && held.has(row.key));
@@ -275,36 +309,34 @@ function categoryGroup(
             ? other
             : (preset.categories.find((row) => row.key === value)?.label ?? value);
     const listed = withGone(values, picked, label);
-    return groupOf(CATEGORY_GROUP, t('collection.project_category'), namedTone(''), listed, picked);
+    return groupOf(id, t('collection.project_category'), namedTone(''), listed, picked);
 }
 
 /**
- * The groups of the Projects section, in their order: Category, Stage (the Map's listing, with no
- * stage rule of its own), then Form, Tier, Role and Pillar, a board's facets over the Map's
- * preset. `whole` is every project the cards draw, which the values are listed from; `left` the
- * projects of the kept cards that the picks of every project group but those of `skip` leave,
- * which the values are counted over. A group with no value is not drawn.
+ * The groups of a layout, in its order: Category where it draws one, Stage (the Map's listing,
+ * with no stage rule of its own), then its board facets over the Map's preset. `whole` is every
+ * project the bar is over, which the values are listed from; `left` the projects that the picks of
+ * every project group but those of `skip` leave, which the values are counted over. A group with
+ * no value is not drawn.
  */
 function projectGroups(
     whole: readonly BoardItem[],
     left: (skip: readonly string[]) => BoardItem[],
     preset: BoardPreset,
-    named: boolean,
+    layout: ProjectLayout,
     picked: (id: string) => string[]
 ): FilterGroup[] {
-    const shown = shownFacets(named);
-    const category = categoryGroup(whole, left([CATEGORY_GROUP]), preset, picked(CATEGORY_GROUP));
-    const stage = stageGroup(
-        [...whole],
-        left([STAGE_GROUP]),
-        preset.stageOrder,
-        picked(STAGE_GROUP)
-    );
+    const { category: categoryId, stage: stageId, facets: shown, idOf, named } = layout;
+    const category =
+        categoryId === null
+            ? []
+            : [categoryGroup(categoryId, whole, left([categoryId]), preset, picked(categoryId))];
+    const stage = stageGroup([...whole], left([stageId]), preset.stageOrder, picked(stageId));
     // The board facets are counted over the projects the Category and Stage picks leave, each
     // under the other facets' picks (`facets` with the picks in force), and listed from every
-    // project the cards draw, so a value keeps its row while the reader picks.
-    const filters = Object.fromEntries(shown.map((facet) => [facet, picked(facetGroup(facet))]));
-    const staged = left(shown.map(facetGroup));
+    // project of `whole`, so a value keeps its row while the reader picks.
+    const filters = Object.fromEntries(shown.map((facet) => [facet, picked(idOf(facet))]));
+    const staged = left(shown.map((facet) => idOf(facet)));
     const counted = facets(staged, preset, named, { filters, search: '' });
     const merged: Facet[] = facets([...whole], preset, named)
         .filter((facet) => shown.includes(facet.key))
@@ -324,12 +356,43 @@ function projectGroups(
             .filter((group) => group.id === facet)
             .map((group) => ({
                 ...group,
-                id: facetGroup(facet)
+                id: idOf(facet)
             }))
     );
-    return [category, { ...stage, id: STAGE_GROUP }, ...own].filter(
+    return [...category, { ...stage, id: stageId }, ...own].filter(
         (group) => group.items.length > 0
     );
+}
+
+/**
+ * The groups of a bar of project groups (`layout`) over the board items `whole`: each lists the
+ * values of `whole`, a picked value none of them holds at 0 after them, and counts each over the
+ * items of `whole` that the picks of every other group leave, as a board counts. A group with no
+ * value is not drawn. The Present view's filter is drawn from it (state/life/present.ts).
+ */
+export function projectFilter(
+    whole: readonly BoardItem[],
+    preset: BoardPreset,
+    layout: ProjectLayout,
+    picked: (id: string) => string[]
+): FilterGroup[] {
+    const rules = projectRules(preset, layout);
+    const left = (skip: readonly string[]): BoardItem[] =>
+        whole.filter((item) => meets(item, rules, picked, skip));
+    return projectGroups(whole, left, preset, layout, picked);
+}
+
+/**
+ * Whether a board item carries a picked value of every group of `layout` with a pick, which is
+ * every item while no group has one.
+ */
+export function projectKeeps(
+    preset: BoardPreset,
+    layout: ProjectLayout,
+    picked: (id: string) => string[]
+): (item: BoardItem) => boolean {
+    const rules = projectRules(preset, layout);
+    return (item) => meets(item, rules, picked, []);
 }
 
 /**
@@ -425,7 +488,9 @@ export function collectionBar(input: BarInput): CollectionBar {
     const whole = distinct([...entries.flatMap(stripOf), ...unfunded]);
     const preset = strips?.preset;
     const named = input.self.size > 0;
-    const itemRules = preset === undefined || whole.length === 0 ? [] : projectRules(preset, named);
+    const layout = sectionLayout(named);
+    const itemRules =
+        preset === undefined || whole.length === 0 ? [] : projectRules(preset, layout);
     const narrows = (item: BoardItem): boolean => meets(item, itemRules, picked, []);
     const picking = itemRules.some((rule) => picked(rule.id).length > 0);
     /** Whether an entry passes every entry rule but `but`'s and keeps a project of its strip. */
@@ -497,7 +562,7 @@ export function collectionBar(input: BarInput): CollectionBar {
         ]);
         const left = (skip: readonly string[]): BoardItem[] =>
             kept.filter((item) => meets(item, itemRules, picked, skip));
-        groups.push(...projectGroups(whole, left, preset, named, picked));
+        groups.push(...projectGroups(whole, left, preset, layout, picked));
     }
     const ids = groups.map((group) => group.id).filter((id) => !line.includes(id));
     const items = new Map(whole.map((item) => [item.id, item]));

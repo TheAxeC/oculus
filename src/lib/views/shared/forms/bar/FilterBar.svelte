@@ -1,16 +1,19 @@
 <script lang="ts">
     // Layer 3, shared view partial of the project boards (views/boards/projects/Projects.svelte),
-    // the collection views (views/boards/collection/Collection.svelte) and the Map
-    // (views/structure/map/Map.svelte). Line 1 of their bar: the search; the caller's toggles
-    // (`toggles`: a board's stale, deadline and waiting toggles, the Map's Show button and nothing
-    // on a collection); Mine only, drawn while a person is marked as the user (`named`) and drawn
-    // disabled, its tip saying every project here is the user's, where it would change nothing
-    // (`mine`); then one group button per group `line` names, in that order, each reading its picks
-    // ("Form: journal article +1") and opening its values (PickMenu.svelte); then More, which holds
-    // the groups `line` does not name as headed sections. A group button carries the red badge and
-    // the amber mark the caller gives it by its id (`badges`: a board's Situation and Venue). A
-    // caller's `section` names a run of the groups More holds, which More lists last under one
-    // heading over their own (a collection's Projects section).
+    // the collection views (views/boards/collection/Collection.svelte), the Map
+    // (views/structure/map/Map.svelte) and the Present view's filter
+    // (views/academic/present/Bar.svelte). Line 1 of their bar: the search, drawn when the caller
+    // gives `onsearch`; the caller's toggles (`toggles`: a board's stale, deadline and waiting
+    // toggles, the Map's Show button and nothing on a collection); Mine only, drawn when the caller
+    // gives `onmine` while a person is marked as the user (`named`) and drawn disabled, its tip
+    // saying every project here is the user's, where it would change nothing (`mine`); the Present
+    // view gives neither, so its line is the group buttons alone; then one group button per group
+    // `line` names, in that order, each reading its picks ("Form: journal article +1") and opening
+    // its values (PickMenu.svelte); then More, which holds the groups `line` does not name as
+    // headed sections. A group button carries the red badge and the amber mark the caller gives it
+    // by its id (`badges`: a board's Situation and Venue). A caller's `section` names a run of the
+    // groups More holds, which More lists last under one heading over their own (a collection's
+    // Projects section).
     //
     // The line is one line at any pane width: the group buttons that do not fit beside the
     // controls before them go into More, last in, first out, the search keeping `SEARCH_MIN`;
@@ -37,18 +40,20 @@
         /** The line's accessible name, already translated. */
         label: string;
         /** What is typed in the search box, and its placeholder, already translated. */
-        search: string;
-        placeholder: string;
-        onsearch: (value: string) => void;
+        search?: string;
+        placeholder?: string;
+        /** What the search box hands each change to; with none the line draws no search box. */
+        onsearch?: (value: string) => void;
         /** The caller's toggles, drawn after the search and never folded. */
         toggles?: Snippet;
         /** Whether a person is marked as the user, which draws Mine only. */
-        named: boolean;
+        named?: boolean;
         /** Whether Mine only changes what is shown, which is where it is pressable and applied. */
-        mine: boolean;
+        mine?: boolean;
         /** Whether Mine only is on. */
-        pressed: boolean;
-        onmine: () => void;
+        pressed?: boolean;
+        /** What a press of Mine only calls; with none the line draws no Mine only. */
+        onmine?: () => void;
         /** Every group of the bar, one per facet with its counts. */
         groups: FilterGroup[];
         /** The ids of the groups line 1 draws as buttons, in their order. */
@@ -63,13 +68,13 @@
 
     let {
         label,
-        search,
-        placeholder,
+        search = '',
+        placeholder = '',
         onsearch,
         toggles: callerToggles,
-        named,
-        mine,
-        pressed,
+        named = false,
+        mine = false,
+        pressed = false,
         onmine,
         groups,
         line: lineIds,
@@ -111,20 +116,21 @@
     }
 
     /**
-     * The room the group buttons have: the line less the search at its narrowest, the toggles and,
-     * where More holds groups of its own, More, each with a gap before the next; More is the
-     * opener only while it holds nothing else.
+     * The room the group buttons have: the line less the search at its narrowest where it is
+     * drawn, the toggles and, where More holds groups of its own, More, each with a gap before the
+     * next; More is the opener only while it holds nothing else.
      */
     function room(gap: number): { room: number; opener: number } | null {
         if (line === null || toggles === null) return null;
         if (moreBox !== null) moreWidth = moreBox.getBoundingClientRect().width;
         const always = ownGroups.length > 0;
+        const searched = onsearch !== undefined;
         return {
             room:
                 line.getBoundingClientRect().width -
-                SEARCH_MIN -
+                (searched ? SEARCH_MIN : 0) -
                 toggles.getBoundingClientRect().width -
-                gap * (always ? 3 : 2) -
+                gap * ((always ? 2 : 1) + (searched ? 1 : 0)) -
                 (always ? moreWidth : 0),
             opener: always ? 0 : moreWidth
         };
@@ -142,12 +148,14 @@
 {/snippet}
 
 <div class="line" role="toolbar" aria-label={label} bind:this={line}>
-    <span class="search">
-        <Search fill value={search} {placeholder} oninput={onsearch} />
-    </span>
+    {#if onsearch !== undefined}
+        <span class="search">
+            <Search fill value={search} {placeholder} oninput={onsearch} />
+        </span>
+    {/if}
     <span class="toggles" bind:this={toggles}>
         {@render callerToggles?.()}
-        {#if named}
+        {#if named && onmine !== undefined}
             <Chip
                 label={t('roles.mine')}
                 title={mine ? t('roles.mine_tip') : t('board.mine_all')}
