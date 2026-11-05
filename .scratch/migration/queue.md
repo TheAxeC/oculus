@@ -1,15 +1,15 @@
-In flight (0 of 6 slots in use): none.
+In flight (2 of 6 slots in use):
+- O148 (the Project facts strip), /spec: brief written, brief check running.
+- O150 (the hub's portfolio deck), /spec: brief written, brief check running; hub commit on Axel's word.
 
-Queued, in order (4 steps):
-- O148 (the Project facts strip), next.
+Queued, in order (2 steps):
 - O149 (the Decks guide), after O148 lands.
-- O150 (the hub's portfolio deck), ready; hub commit on Axel's word.
 - O151 (a deck for every research project), after O148; hub commit on Axel's word.
 
 Owed looks: none.
 
 Landed, newest first:
-- O147 (the Present view's filter bar), 2026-11-05, landing commit below.
+- O147 (the Present view's filter bar), 2026-11-05, 57649a80d.
 - O153 (Deposit in every project card's menu), 2026-11-05, 6a2b38d06.
 - O152 (the Venue tag's tier icon), 2026-11-05, de7276141.
 - O146 (a deck's frame size, slide findings), 2026-11-05, 1842b5751.
