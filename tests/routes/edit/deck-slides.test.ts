@@ -294,13 +294,13 @@ describe("writing a deck's keys", () => {
         expect(deckOf(into)).toBe(before);
     });
 
-    it('refuses a key the view does not set, a value the key does not take, a base the file does not hold, and a group it does not have', async () => {
+    it('refuses a key the Overview does not set, a value the key does not take, a base the file does not hold, and a group it does not have', async () => {
         const into = deckTarget();
         const rows: { row: string; key: [string[], unknown, unknown]; reason: string }[] = [
             {
-                row: 'a key the view does not set',
+                row: 'a key the Overview does not set',
                 key: [['deck', 'author'], null, 'me'],
-                reason: 'deck.author is not a key the Slides view sets'
+                reason: "deck.author is not a key the Present view's Overview sets"
             },
             {
                 row: 'an empty title',

@@ -1,12 +1,13 @@
 <script lang="ts">
-    // Layer 3, primitive. A group of a view that folds: its section, its heading and its body. It
-    // is the one heading every grouping of a view is drawn with, so the strip, its rounding, the
-    // space under it, the fold control and the colour rule are written here once and no view draws
-    // an element of its own around a heading or sets space between a heading and its body. The
-    // section takes any other attribute it is given (a `data-*`, an `aria-label`, a drop target's
-    // `ondragover` and `ondrop`). FoldHead.svelte beside it heads a box instead, with its count as
-    // a badge: the command center and the tasks section of Focus. A heading inside a group is
-    // SubHead.svelte beside it where it does not fold, and this component where it does.
+    // Layer 3, primitive. A group of a view that folds, or that does not (below): its section, its
+    // heading and its body. It is the one heading every grouping of a view is drawn with, so the
+    // strip, its rounding, the space under it, the fold control and the colour rule are written
+    // here once and no view draws an element of its own around a heading or sets space between a
+    // heading and its body. The section takes any other attribute it is given (a `data-*`, an
+    // `aria-label`, a drop target's `ondragover` and `ondrop`, a drag source's `draggable` and
+    // `ondragstart`). FoldHead.svelte beside it heads a box instead, with its count as a badge: the
+    // command center and the tasks section of Focus. A heading inside a group is SubHead.svelte
+    // beside it where it does not fold, and this component where it does.
     //
     // The heading is a strip that stays at the top of the pane's scrolling body while its group
     // scrolls under it (`position: sticky`), above the cards. It sits inside its group's section,
@@ -24,6 +25,10 @@
     // stands under them all (ui/display/table/Table.svelte). A custom property cannot read itself
     // on one element, so the section carries the height from above in a second one
     // (`--group-above`), which the strip's `top` and the body's sum read.
+    //
+    // A group given no `ontoggle` does not fold: its strip draws no fold control and its body is
+    // always open, for a view whose groups are places in a list it arranges rather than sections
+    // a reader closes.
     //
     // The line inside the strip is the fold control (FoldControl.svelte beside it), a bare button
     // named "Fold <name>" or "Unfold <name>" with the fold glyph of the state, then the group's
@@ -62,19 +67,19 @@
     // buckets and Dismissed (views/feeds/radar/Bucket.svelte, Radar.svelte); Position Leads'
     // Expired and run log; the Inbox's sections and Triaged; LinkedIn's Ideas and Posted; the
     // Findings view's Files and Audit, with the Audit's kinds and Muted nested in it
-    // (views/system/findings/AuditSection.svelte); the Slides groups and their order
-    // (Slides.svelte, Order.svelte); the Pillars sections; the Catalogue's groups; the Keys
-    // sections; the Settings groups (views/system/workbench/settings/List.svelte); the Person
-    // page's blocks; the record page's blocks (Entry.svelte, EntryFolder.svelte,
-    // views/shared/forms/entry/Referrers.svelte); the project page's blocks (Project.svelte,
-    // Latex.svelte); the editor view's form sections; the Status view's hooks and Gallery, with the
-    // Gallery's sections nested in it (Hooks.svelte, views/system/status/Gallery.svelte); the
-    // Processes view's app hosts (AppHosts.svelte); the Usage view's Live and History; the HPC
-    // view's capacity, disk quota, finished jobs and Login node (Capacity.svelte, Quota.svelte,
-    // Recent.svelte, Login.svelte); each provider of Account setup; and the Update tray's Schedules
-    // and Tasks (shell/rail/UpdateTray.svelte, ScheduleList.svelte). A folder's files drawn under a
-    // heading of their own (views/shared/links/FolderFiles.svelte) take it through their `heading`
-    // snippet.
+    // (views/system/findings/AuditSection.svelte); the groups of a deck in the Present view's
+    // Overview, which do not fold (views/academic/present/arrange/Group.svelte); the Pillars
+    // sections; the Catalogue's groups; the Keys sections; the Settings groups
+    // (views/system/workbench/settings/List.svelte); the Person page's blocks; the record page's
+    // blocks (Entry.svelte, EntryFolder.svelte, views/shared/forms/entry/Referrers.svelte); the
+    // project page's blocks (Project.svelte, Latex.svelte); the editor view's form sections; the
+    // Status view's hooks and Gallery, with the Gallery's sections nested in it (Hooks.svelte,
+    // views/system/status/Gallery.svelte); the Processes view's app hosts (AppHosts.svelte); the
+    // Usage view's Live and History; the HPC view's capacity, disk quota, finished jobs and Login
+    // node (Capacity.svelte, Quota.svelte, Recent.svelte, Login.svelte); each provider of Account
+    // setup; and the Update tray's Schedules and Tasks (shell/rail/UpdateTray.svelte,
+    // ScheduleList.svelte). A folder's files drawn under a heading of their own
+    // (views/shared/links/FolderFiles.svelte) take it through their `heading` snippet.
 
     import type { Snippet } from 'svelte';
     import type { HTMLAttributes } from 'svelte/elements';
@@ -86,9 +91,12 @@
         label: string;
         /** The words that name the fold control after "Fold" or "Unfold"; the label if none. */
         name?: string;
-        /** Whether the group is open, and the press of the fold control. */
-        open: boolean;
-        ontoggle: () => void;
+        /**
+         * Whether the group is open, and the press of the fold control. A group given no
+         * `ontoggle` does not fold: its strip draws no fold control and its body is always open.
+         */
+        open?: boolean;
+        ontoggle?: () => void;
         /**
          * A hue name the label and the count are drawn in, or nothing for the muted text colour.
          */
@@ -116,7 +124,7 @@
     let {
         label,
         name,
-        open,
+        open = true,
         ontoggle,
         tone,
         glyph,
@@ -139,13 +147,13 @@
 
     /** Unfold a folded group, as a find-in-page match inside it asks. */
     function found(): void {
-        if (!open) ontoggle();
+        if (!open) ontoggle?.();
     }
 
     /** The press of the fold control, which leaves the focus on the strip of a tree's row. */
     function pressed(): void {
         if (row !== undefined) box?.focus({ preventScroll: true });
-        ontoggle();
+        ontoggle?.();
     }
 </script>
 
@@ -155,12 +163,14 @@
     style={tone === undefined ? undefined : `--group: var(--c-${tone}-txt)`}
 >
     <h3 class="strip" title={tip} bind:offsetHeight={strip} bind:this={box} {...treeRow}>
-        <FoldControl
-            name={name ?? label}
-            {open}
-            ontoggle={pressed}
-            reach={row === undefined ? undefined : -1}
-        />
+        {#if ontoggle !== undefined}
+            <FoldControl
+                name={name ?? label}
+                {open}
+                ontoggle={pressed}
+                reach={row === undefined ? undefined : -1}
+            />
+        {/if}
         <span class="words">
             {#if glyph !== undefined}
                 <Glyph name={glyph} />

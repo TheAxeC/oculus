@@ -172,8 +172,9 @@ export type LiteratureSaveWrite = {
  * The lists of a deck's `present.yml` to write in one edit: the served root and the file's path
  * under it, each group's `slides:` as `{ group, base, slides }` (`base` is the list the page read,
  * which the file must hold, and `slides` the list to write), the `order:` list as `{ base,
- * entries }`, both the tokens of its entries, and each key the Slides view sets as `{ path, base,
- * value }`, `value` null to take the key out. The body names at least one list or key.
+ * entries }`, both the tokens of its entries, and each key the Present view's Overview sets as
+ * `{ path, base, value }`, `value` null to take the key out. The body names at least one list or
+ * key.
  */
 export type DeckSlidesWrite = {
     kind: 'deck-slides';

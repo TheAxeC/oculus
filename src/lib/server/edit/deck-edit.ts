@@ -17,8 +17,8 @@
 // the comment lines between entries stay where they are. The same read-back guard holds each edit
 // to the original with only the order list changed.
 //
-// The keys the Slides view sets beside its lists (`deck.title`, `defaults.tag_tones` and a group's
-// `find`, `sort` and `discover`) are set over the bytes too, a key at a time
+// The keys the Present view's Overview sets beside the lists (`deck.title`, `defaults.tag_tones`
+// and a group's `find`, `sort` and `discover`) are set over the bytes too, a key at a time
 // (server/core/files/yaml/key-path.ts), and the read-back guard holds the result to the original
 // with only those keys changed.
 
@@ -189,8 +189,8 @@ export function removeOrderEntries(source: string, places: number[]): string | n
 }
 
 /**
- * One key of a deck the Slides view sets: its path from the top of the file and the value it is
- * given, null to take it out.
+ * One key of a deck the Overview sets: its path from the top of the file and the value it is given,
+ * null to take it out.
  */
 export type DeckKey = { path: string[]; value: unknown };
 

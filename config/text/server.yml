@@ -144,7 +144,7 @@ text:
         deck_slides:
             changed: The group's slides list changed on disk while you were working. Read the deck again and make the change again.
             key_changed: '{0} changed on disk while you were working. Read the deck again and make the change again.'
-            key_unknown: '{0} is not a key the Slides view sets'
+            key_unknown: "{0} is not a key the Present view's Overview sets"
             key_value: '{0} cannot hold that value: {1}'
             value_discover: it takes true or false
             value_find: it takes a map whose folders is a glob or a list of globs, with the lists tiers, stages, forms and status beside it

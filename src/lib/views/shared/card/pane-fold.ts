@@ -11,7 +11,7 @@
 // does, and keeps the folds there under `folded` (state/shared/page/folds.ts `instanceFolded`,
 // `foldedWith`). Every other key of the state is kept by a fold, and the view that owns the state
 // keeps `folded` in each write of its own. A view that keeps `folded` in the state its parser reads
-// (Projects, Slides, Lit Watch, the Inbox, LinkedIn, Venues, Pillars) folds through `stateFolds` of
+// (Projects, Lit Watch, the Inbox, LinkedIn, Venues, Pillars) folds through `stateFolds` of
 // state/shared/page/folds.ts instead. Drawn outside any pane, every group is open and a fold writes
 // nothing.
 

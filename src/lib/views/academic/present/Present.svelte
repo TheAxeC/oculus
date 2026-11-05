@@ -18,8 +18,9 @@
     // screen.
     //
     // A slide is drawn in a frame of 1280 by 720 px, scaled uniformly to the pane and centred in it
-    // (screen/Stage.svelte). The overview grid and the empty state are not scaled and keep the
-    // UI's tokens.
+    // (screen/Stage.svelte). The overview draws every slide the same way, scaled to its tile, and
+    // is where the deck is arranged (arrange/Overview.svelte); a deck with an entry or a group and
+    // no slide draws it in place of a slide. The empty state keeps the UI's tokens.
     //
     // The deck is a folder the server reads (api/deck): `present.yml` and the Markdown slide files,
     // so a slide edited on disk is the slide on screen at the next push. A pane shows the portfolio
@@ -36,7 +37,11 @@
     // view is mounted and on a press inside it, so the arrows work from the moment the deck is
     // opened. The keys are the arrows, Page Up and Page Down, Home and End, Space (the next slide,
     // Shift+Space the previous one), `O` for the grid, `F` for full screen, `P` for the presenter
-    // screen and Escape to close the grid, and then to end the presentation.
+    // screen and Escape to close the grid, and then to end the presentation. A key pressed in a
+    // field inside the box (an input, a text area, a select, editable text) is the field's, so a
+    // form of the overview keeps what is typed in it; Escape in a field closes the grid unless the
+    // field or the form around it took it. On a button or a link the deck's keys act, except
+    // Space, which presses the control.
     //
     // The presenter screen (presenter/Presenter.svelte) takes the place of the slide in the pane:
     // the slide, the next one, the slide's notes, the time and a timer, while the audience sees
@@ -50,16 +55,17 @@
     // the box fills the screen on the page's background colour with the frame centred and edge to
     // edge, a click on the slide moves to the next one, and the pointer hides after it has rested.
     // In full screen the shell's keys are held back, since what they open is drawn outside the box:
-    // the deck's keys, the card cursor's keys over the grid and Enter on a control act, Tab wraps
-    // inside the box, and the focus leaving for an element outside the box (a modified key such as
-    // Cmd+Shift+F) ends the full screen.
+    // the deck's keys, the card cursor's keys over the grid, Enter and Space on a control and what
+    // is typed in a field act, Tab wraps inside the box, and the focus leaving for an element
+    // outside the box (a modified key such as Cmd+Shift+F) ends the full screen.
     //
     // A slide has a menu on a right-click, on the slide and on its tile in the grid (acts/menu.ts):
     // Edit Slide, New Slide, Duplicate Slide and Delete Slide, which are also commands in the
-    // palette for the slide on screen. An image dropped on a slide of the deck's own files is added
-    // to it. While a source tab of the same page holds text its file does not, the slide is drawn
-    // from that text (acts/live.svelte.ts), except while the presenter screen is on. The pane's
-    // status line, at the end of the toolbar, says what an act came to.
+    // palette for the slide on screen, and on a tile the arranging acts after them. An image
+    // dropped on a slide of the deck's own files is added to it. While a source tab of the same
+    // page holds text its file does not, the slide is drawn from that text (acts/live.svelte.ts),
+    // except while the presenter screen is on. The pane's status line, at the end of the toolbar,
+    // says what an act came to, an arranging act's included.
     //
     // Over a wallpaper the slide's frame is the one surface under the slide (screen/Stage.svelte),
     // the overview's tiles are cards, and the empty line is read off a `Surface`.
@@ -72,10 +78,10 @@
     import { createActs } from './acts/acts.svelte';
     import { createLive } from './acts/live.svelte';
     import { slideMenu } from './acts/menu';
-    import Overview from './Overview.svelte';
+    import Overview from './arrange/Overview.svelte';
     import Presenter from './presenter/Presenter.svelte';
     import { createFullscreen } from './screen/fullscreen.svelte';
-    import { CONTROLS, keepTab, moveOf } from './screen/keys';
+    import { CONTROLS, heldBack, inField, keepTab, moveOf } from './screen/keys';
     import Slide from './Slide.svelte';
     import Stage from './screen/Stage.svelte';
     import { cardCursor, tabsOf } from '$lib/state/workbench/layout/instance';
@@ -98,7 +104,6 @@
         withLabel,
         type Deck,
         type DeckRef,
-        type DeckSlide,
         type PresentState
     } from '$lib/state/life/present';
     import type { PresentLink } from '$lib/state/life/present.svelte';
@@ -118,9 +123,6 @@
     } = useState();
 
     let { instance }: ViewProps = $props();
-
-    /** The card cursor's keys, which act on the overview grid's tiles inside the box. */
-    const GRID_KEYS = new Set(['j', 'k', 'i', 'ArrowUp', 'ArrowDown']);
 
     const tabShown = useShown();
 
@@ -301,33 +303,33 @@
         box?.focus();
     }
 
-    function keys(event: KeyboardEvent): void {
-        if (event.altKey || event.ctrlKey || event.metaKey) return;
+    /** The deck's own keys: the moves, the grid, full screen, the presenter screen and Escape. */
+    function deckKey(event: KeyboardEvent): boolean {
         const move = moveOf(event);
-        if (move !== null && (event.key !== ' ' || !inControl(event.target))) {
+        if (move !== null) {
             event.preventDefault();
             if (event.key !== ' ' || !event.repeat) {
                 write({ slide: movedKey(rows, held.slide, move) });
             }
-            return;
+            return true;
         }
         switch (event.key) {
             case 'o':
             case 'O':
                 event.preventDefault();
                 write({ overview: !grid });
-                return;
+                return true;
             case 'f':
             case 'F':
-                if (rows.length === 0) return;
+                if (rows.length === 0) return true;
                 event.preventDefault();
                 if (!event.repeat) screen.toggle();
-                return;
+                return true;
             case 'p':
             case 'P':
                 event.preventDefault();
                 if (!event.repeat) present();
-                return;
+                return true;
             case 'Escape':
                 if (grid) {
                     event.preventDefault();
@@ -336,24 +338,26 @@
                     event.preventDefault();
                     presenting.end(instance.id);
                 }
-                return;
-            case ' ':
-                // Space on a control of the slide acts on the control.
-                return;
-            case 'Tab':
-                if (full && box !== null) keepTab(event, box);
-                return;
+                return true;
             default:
-                // A key the deck does not own is not left to the shell in full screen: its keys
-                // open sheets, search and chords that are drawn outside the full-screen element,
-                // so the keyboard would be lost with the slide in view. The card cursor's keys act
-                // on the grid's tiles inside the box and pass while the grid is open, and a
-                // control inside the slide keeps Enter, which activates it.
-                if (!full) return;
-                if (grid && GRID_KEYS.has(event.key)) return;
-                if (event.key === 'Enter' && (inControl(event.target) || (grid && cursor !== null)))
-                    return;
-                event.preventDefault();
+                return false;
+        }
+    }
+
+    function keys(event: KeyboardEvent): void {
+        if (event.altKey || event.ctrlKey || event.metaKey) return;
+        // A key in a field is the field's, Escape too when the field or a form around it took it;
+        // Space on a button or a link acts on it; every other key is the deck's on any control.
+        const control = inControl(event.target);
+        const typed = inField(event.target) && (event.key !== 'Escape' || event.defaultPrevented);
+        const pressed = control && event.key === ' ';
+        if (!typed && !pressed && deckKey(event)) return;
+        if (event.key === 'Tab') {
+            if (full && box !== null) keepTab(event, box);
+            return;
+        }
+        if (full && heldBack(event, { control, grid, cursor: cursor !== null })) {
+            event.preventDefault();
         }
     }
 
@@ -402,9 +406,6 @@
         onpresent={screen.toggle}
         presenting={presented}
         onpresenter={present}
-        onslides={() => {
-            openBeside('slides', deckState({}, deckRefOf(instance.state)));
-        }}
         onexport={acts.exportPdf}
         said={acts.said()}
     />
@@ -434,20 +435,21 @@
         ondragover={(event: DragEvent) => acts.carriesFiles(event) && event.preventDefault()}
         ondrop={acts.dropped}
     >
-        {#if rows.length === 0 || deck === null}
+        {#if deck === null || (rows.length === 0 && deck.order.length === 0 && deck.groups.length === 0)}
             <Empty
                 message={nothing.message}
                 error={nothing.error}
                 glyph={t('present.empty_glyph')}
             />
-        {:else if grid}
+        {:else if grid || shown === null}
             <Overview
-                {rows}
+                {deck}
+                {ref}
                 current={shown?.key ?? ''}
                 {cursor}
                 onpick={pick}
-                menu={(row: DeckSlide) => slideMenu(deck, row)}
                 onact={acts.act}
+                say={acts.say}
             />
         {:else if shown !== null}
             <ContextMenu

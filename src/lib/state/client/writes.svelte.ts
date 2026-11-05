@@ -517,9 +517,9 @@ export function createWrites(
 
     /**
      * Save the lists of a deck's `present.yml` as one edit: the `slides:` of each group in
-     * `groups`, when given the `order:` entries, and the keys the Slides view sets. Each list's and
-     * key's `base` is what the caller read, so a file that changed since is refused and nothing is
-     * written, as is a name no deck of its group answers to.
+     * `groups`, when given the `order:` entries, and the keys the Present view's Overview sets.
+     * Each list's and key's `base` is what the caller read, so a file that changed since is
+     * refused and nothing is written, as is a name no deck of its group answers to.
      */
     async function writeDeckSlides(
         deck: { root: string; path: string },

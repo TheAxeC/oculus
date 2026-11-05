@@ -233,9 +233,10 @@ const rowLabelShape = z.object({ label: filledTextShape }).transform((row) => ro
  * The entries of one keyed vocabulary list of config/catalogs/vocab.yml, as choices, or the keys of
  * one held as a map (`stages`, `chips`, `data_access`), read as the schema check reads them, each
  * under its row's `label` when it has one. A source that names a field
- * (`vocab.statuses.acknowledged`) offers the keys of the map whose row carries it as `true`.
+ * (`vocab.statuses.acknowledged`) offers the keys of the map whose row carries it as `true`. The
+ * Present view's Overview offers and names a group rule's words by it too.
  */
-function vocabChoices(config: Record<string, unknown>, name: string): Choice[] {
+export function vocabChoices(config: Record<string, unknown>, name: string): Choice[] {
     const { key, field } = vocabSource(name);
     const raw = byKey(config, key);
     const map = readAs(mapShape, raw);

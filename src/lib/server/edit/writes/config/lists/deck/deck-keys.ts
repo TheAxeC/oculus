@@ -1,11 +1,11 @@
-// Layer 2, server, pure. The keys of a deck's `present.yml` the Slides view sets beside its lists,
-// as the `deck-slides` write names them (deck.ts): `deck.title`, `defaults.tag_tones`, and a
-// group's `find`, `sort` and `discover`, each by its path from the top of the file. Which paths a
-// write may name, the values each takes (`config/schemas/deck-schema.yml` gives their meaning, and
-// data/sources/deck/spec.ts is the reader they must read back through), and the record a change of
-// one leaves: keyed by the map that holds it (`deck`, `defaults` or `groups.<group>`) with the
-// key's own name as its field, so a record of a key is told from a group's list (`slides`) and the
-// order (`order`) by its field.
+// Layer 2, server, pure. The keys of a deck's `present.yml` the Present view's Overview sets
+// beside its lists, as the `deck-slides` write names them (deck.ts): `deck.title`,
+// `defaults.tag_tones`, and a group's `find`, `sort` and `discover`, each by its path from the top
+// of the file. Which paths a write may name, the values each takes
+// (`config/schemas/deck-schema.yml` gives their meaning, and data/sources/deck/spec.ts is the
+// reader they must read back through), and the record a change of one leaves: keyed by the map
+// that holds it (`deck`, `defaults` or `groups.<group>`) with the key's own name as its field, so a
+// record of a key is told from a group's list (`slides`) and the order (`order`) by its field.
 
 import { isMap } from '../../../../../../data/helpers/guards.ts';
 import { words } from '../../../../../core/words.ts';
@@ -100,8 +100,8 @@ function takenWords(text: Record<string, string>, field: KeyField): string {
 }
 
 /**
- * Why one key of a write is refused, or null: a path the Slides view does not set, a value of
- * another shape than the key takes.
+ * Why one key of a write is refused, or null: a path the Overview does not set, a value of another
+ * shape than the key takes.
  */
 export function keyRefusal(
     text: Record<string, string>,

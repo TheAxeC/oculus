@@ -1,6 +1,16 @@
 # Oculus text owned by the Present view.
 text:
     present:
+        arrange_add: Add a deck
+        arrange_add_none: No deck to add; the rule finds none the group does not hold
+        arrange_already_in: '{0} is already in {1}; nothing is written.'
+        arrange_conflict: '{0} is found by {1} too'
+        arrange_failed: The deck was not changed.
+        arrange_failed_file: The deck file could not be read or written on this machine.
+        arrange_missing: '{0}: no deck has this name'
+        arrange_no_slide: draws no slide
+        arrange_placeholder: '{0}: {1}'
+        arrange_places_nothing: places no slide
         at: '{0}'
         audience_close: Close
         audience_close_tab: Close this tab to leave.
@@ -13,6 +23,9 @@ text:
         col_mechanism: Core mechanism
         col_project: Project
         counter: '{0} / {1}'
+        deck_edit: Edit
+        deck_edit_tip: Set the deck's title and the hue of each slide tag
+        deck_form: The deck's title and tag tones
         deck_menu: Deck
         delete_detail: 'The slide is in {0}. A file that holds only this slide goes to the Trash; in a file of several slides only this slide is removed.'
         delete_entry: The entry leaves the order in {0}; no slide file is deleted.
@@ -40,15 +53,46 @@ text:
         export_too_large: 'The PDF is larger than the {0} MB a file may be.'
         failed: 'The deck could not be read: {0}'
         failed_network: The change did not reach the server.
+        field_discover: takes the decks it finds beyond the ones it names
+        field_discover_none: unset, takes only the decks it names
+        field_find: Find
+        field_find_folders: 'folders {0} finds decks in'
+        field_find_folders_hint: 'folder globs, such as projects/*/*/present, separated by commas'
+        field_find_forms: forms
+        field_find_help: Which project folders the group finds, and the tiers, stages, forms and status chips their projects must have; a list left empty keeps every project.
+        field_find_list: '{0} of {1}'
+        field_find_stages: stages
+        field_find_status: status chips
+        field_find_tiers: tiers
+        field_sort: Sort
+        field_sort_folder: by folder
+        field_sort_help: How the found decks are ordered.
+        field_sort_none: unset, by folder
+        field_sort_of: 'sort of {0}'
+        field_sort_title: by title
+        field_title: Title
+        field_title_help: The title shown on the first slide and in the deck list.
+        field_tone_add: Add
+        field_tone_hue: hue of the new tag
+        field_tone_none: no hue
+        field_tone_of: 'hue of {0}'
+        field_tone_tag: new tag
+        field_tones: Tag tones
+        field_tones_help: The hue each slide tag's chip wears; no hue takes the tag out.
         figure_alt: A figure of the project
         figure_missing: 'missing figure: {0}'
+        form_apply: Apply
+        form_cancel: Cancel
         key_hint: Arrow keys or Space move through the deck | O opens the overview | F shows it full screen | P opens the presenter screen
         loading: Reading the deck ...
         menu_delete: Delete Slide
         menu_duplicate: Duplicate Slide
+        menu_earlier: Move Earlier
         menu_edit: Edit Slide
         menu_label: Slide actions
+        menu_later: Move Later
         menu_new: New Slide
+        menu_remove: Remove from Group
         method: Method
         next: Next
         overview: Overview
@@ -71,10 +115,32 @@ text:
         previous: Previous
         read_failed: 'The file of the slide could not be read: {0}'
         results: Results
+        rule_adds: '{0}, and adds what it finds, sorted {1}.'
+        rule_and: '{0} and {1}'
+        rule_comma: ', '
+        rule_edit: Edit Rule
+        rule_edit_tip: 'Set which decks {0} finds, how it sorts them and whether it adds them'
+        rule_finds: 'Finds {0}'
+        rule_folders: 'in {0}'
+        rule_form: 'The rule of {0}'
+        rule_forms: 'of the forms {0}'
+        rule_named: Shows the project decks it names.
+        rule_names_only: '{0}, and shows only the decks it names.'
+        rule_projects: '{0} projects'
+        rule_projects_any: projects
+        rule_stages: 'at the stages {0}'
+        rule_status: 'with the status chips {0}'
         said_added: 'Added {0} to the slide.'
         said_copied: The slide is copied.
+        said_deck_added: '{0} is added to {1}.'
+        said_deck_joined: '{0} moved to {1}.'
+        said_deck_moved: '{0} moved in {1}.'
+        said_deck_removed: '{0} is taken out of {1}.'
+        said_deck_set: The deck's title and tag tones are written.
         said_deleted: The slide is deleted.
+        said_entry_moved: '{0} moved in the order.'
         said_new: A new slide is added.
+        said_rule_set: 'The rule of {0} is written.'
         title: Present
         toolbar: Deck controls
     views:

@@ -813,17 +813,17 @@
 <path fill="none" stroke="currentColor" d="M702.62,-2597C945.59,-2597 1188.55,-2597 1431.52,-2597 1431.52,-2121 1431.52,-1645 1431.52,-1169 1509.15,-1169 1586.79,-1169 1664.42,-1169"/>
 <polygon fill="currentColor" stroke="currentColor" points="1664.06,-1171.1 1670.06,-1169 1664.06,-1166.9 1664.06,-1171.1"/>
 </g>
-<!-- views/academic/slides -->
+<!-- views/academic/present -->
 <g id="node96" class="node">
-<title>views/academic/slides</title>
-<polygon fill="none" stroke="currentColor" points="1710.77,-2661 1710.77,-2683 1820.69,-2683 1820.69,-2661 1710.77,-2661"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="start" x="1716.77" y="-2668" font-family="Helvetica,Arial,sans-serif" font-size="10.00">views/academic/slides</text>
+<title>views/academic/present</title>
+<polygon fill="none" stroke="currentColor" points="1706.87,-2661 1706.87,-2683 1824.59,-2683 1824.59,-2661 1706.87,-2661"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="start" x="1712.87" y="-2668" font-family="Helvetica,Arial,sans-serif" font-size="10.00">views/academic/present</text>
 </g>
-<!-- ch config&#45;&gt;views/academic/slides -->
+<!-- ch config&#45;&gt;views/academic/present -->
 <g id="edge45" class="edge">
-<title>ch config&#45;&gt;views/academic/slides</title>
-<path fill="none" stroke="currentColor" d="M702.62,-2685C969.59,-2685 1236.55,-2685 1503.52,-2685 1503.52,-2680.67 1503.52,-2676.33 1503.52,-2672 1570.19,-2672 1636.86,-2672 1703.53,-2672"/>
-<polygon fill="currentColor" stroke="currentColor" points="1703.26,-2674.1 1709.26,-2672 1703.26,-2669.9 1703.26,-2674.1"/>
+<title>ch config&#45;&gt;views/academic/present</title>
+<path fill="none" stroke="currentColor" d="M702.62,-2685C969.59,-2685 1236.55,-2685 1503.52,-2685 1503.52,-2680.67 1503.52,-2676.33 1503.52,-2672 1568.84,-2672 1634.16,-2672 1699.48,-2672"/>
+<polygon fill="currentColor" stroke="currentColor" points="1699.36,-2674.1 1705.36,-2672 1699.36,-2669.9 1699.36,-2674.1"/>
 </g>
 <!-- views/feeds/leads -->
 <g id="node104" class="node">

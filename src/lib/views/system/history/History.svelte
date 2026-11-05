@@ -121,7 +121,7 @@
         return t(`history.kind_${word}`);
     }
 
-    /** The fields of the records of a deck's keys, which the Slides view sets beside its lists. */
+    /** The fields of the records of a deck's keys, which the Present view's Overview sets. */
     const DECK_KEYS = new Set(['title', 'tag_tones', 'find', 'sort', 'discover']);
 
     /**

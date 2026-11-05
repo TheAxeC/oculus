@@ -200,3 +200,171 @@ The zenodo timeout: the step's diff does not reach the failing case through any 
 - The report's whole `test:quick` totals were not rerun. No decision rests on them beyond the zenodo line, judged above.
 
 Reviewer usage: a5bb0bc8f6d579102, claude-opus-5-5, 305450 tokens, 105 tool uses, 25 min 12 s.
+
+## Repair round 1, refuted (on /Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O145, base 3f0078305)
+
+```
+Brief check 1, `npm run diagrams && npm run docs:palette`: not run, because both write into the worktree. Their staleness tests were run instead:
+  npx vitest run tests/checks/diagrams/palette.test.ts tests/checks/diagrams/diagrams.test.ts --testTimeout 0
+  Test Files  2 passed (2) / Tests  48 passed (48)
+Brief check 1, `npm run test:quick`: not run as a whole. Its parts, rerun one by one:
+  npx prettier --check <every changed and new file, docs/diagrams excluded>  -> All matched files use Prettier code style!
+  npx eslint --no-warn-ignored <every changed and new .ts/.svelte file>     -> eslint exit 0
+  npx svelte-check --threshold error  -> COMPLETED 4599 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+  the vitest tiers: not rerun as a whole. A sample of the files the report says timed out in its run, each alone at its tier's limit (uptime at the start: load averages 5.29 9.90 10.54):
+    npx vitest run tests/data/hubs/workspace-projects.test.ts --tagsFilter '!slow'          -> Tests 5 passed (5), 5.29s
+    npx vitest run tests/data/sources/config/boards.test.ts --tagsFilter '!slow'            -> Tests 39 passed (39), 3.50s
+    npx vitest run tests/server/machine/runs/schedules/run.test.ts --tagsFilter '!slow'     -> Tests 1 passed (1), 9.98s
+    npx vitest run tests/data/hubs/self.test.ts --tagsFilter slow --testTimeout 20000       -> Tests 17 passed (17), 28.24s
+Brief check 2, the rules file's ASCII gate (perl) over src tests bin config  -> prints nothing, perl exit 0
+  LC_ALL=C grep -rn '[^ -~]' over the 37 changed and new paths of `git status --short` (deleted paths and .scratch excluded)  -> grep exit 1, nothing printed
+  LC_ALL=C grep -n '[^ -~]' .scratch/migration/agents/reviews/O145-report.md  -> exit 1, nothing printed
+Brief check 3, as the brief writes it:
+  npx vitest run tests/routes/edit/deck-slides.test.ts tests/server/core/changes.test.ts tests/server/edit/deck/deck-edit.test.ts tests/checks/config/config-folder.test.ts tests/checks/diagrams/palette.test.ts
+  Test Files  1 failed | 4 passed (5) / Tests  1 failed | 51 passed | 2 skipped (54)
+  the failure: FAIL |unit| tests/checks/diagrams/palette.test.ts > the palette page > is what the palette gives now, "Error: Test timed out in 5000ms."; it passes with --testTimeout 0 (above).
+Brief check 4, C11's grep  -> prints nothing, exit 1
+Brief check 5, wc -l: Present.svelte 520, Bar.svelte 108, acts/menu.ts 93, screen/keys.ts 87, state/life/present.ts 582, state/life/arrange.ts 514, arrange/arrange.svelte.ts 387, DeckForm 142, Group 245, KeyForm 99, Overview 249, RuleForm 167, Tile 163, GroupHead 274, writes.svelte.ts 870, bodies.ts 778, model-deck.ts 276, read.ts 625, schema.ts 638, deck-files.ts 464
+  ls -A | wc -l: present 10, present/arrange 7, state/life 10, views/academic 4, state/forms 10, data/sources/deck 10, data/model 10, writes/config/lists/deck 6; sh utils/folder-check.sh exit 0
+Brief check 6, sh utils/unused-exports.sh > <scratch>/o145-review-r1/unused.txt (exit 0); diff ../O145-base/unused-exports.txt <that file>  -> nothing printed, exit 0
+Brief check 7, git diff 3f0078305 -- tests: 2 files, 3 insertions, 4 deletions: config-folder.test.ts loses 'views/academic/slides.yml'; deck-slides.test.ts title "a key the Overview does not set", row 'a key the Overview does not set', reason "deck.author is not a key the Present view's Overview sets". Nothing else.
+
+The commands the report quotes as evidence, rerun:
+  npx vitest run tests/server/edit/deck/deck-acts.test.ts   -> Test Files 1 passed (1), Tests 7 passed (7)     (report: 7 passed)
+  npx vitest run tests/routes/edit/apps/app-gate.test.ts    -> Test Files 1 passed (1), Tests 22 passed (22)   (report: 22 passed)
+  npx vitest run tests/routes/edit/undo/undo.test.ts        -> Test Files 1 passed (1), Tests 40 passed (40)   (report: 40 passed)
+  also run, since read.ts changed in code: tests/data/sources/present.test.ts -> Tests 4 passed (4); tests/routes/docs/deck.test.ts -> Tests 4 passed (4)
+  the history-word grep (git diff 3f0078305 -U0 ... | grep '^+' | grep -niE ..., and the same words over arrange.ts and arrange/*)  -> HELP.md "no longer has" and "before or after that group"; arrange.ts:86,161,284; arrange.svelte.ts:63,72,313; Group.svelte:11; KeyForm.svelte:9,11,55,63. The same lines as the report, each a place in a list or the order of two events.
+  grep for package ids and dates in arrange.ts and arrange/*  -> nothing, exit 1
+  item 6's grep for vocabChoices  -> schema.ts:239 (the definition), schema.ts:402, Overview.svelte:92 (report: the same, with :92 after item 4)
+  item 7: grep -rlw for each exported type of arrange.ts, menu.ts and arrange.svelte.ts  -> every one has an importer outside its file (DeckKeys: DeckForm, RuleForm, arrange.svelte.ts; OverviewRun, DeckDrop and ArrangePlace are no longer exported)
+  item 4's reads: query-core utils.js:171-183 replaceData returns replaceEqualDeep(prevData, data) unless structuralSharing is false; query.js:87 setData stores it; queries.svelte.ts:47-51 sets no structuralSharing; present.svelte.ts:237-246 deck(ref) returns the query's data  -> as the report says
+  the report's file line counts  -> each the same as my wc -l above
+  the report's whole test:quick totals (45 timeouts in 16 files): not rerun.
+
+Files written: one, /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/o145-review-r1/unused.txt (the output of unused-exports.sh). The harness moved my foreground run of undo.test.ts to the background after 180 s and wrote its output to /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/tasks/bsw0j0j5y.output; it ended with exit 0 before this report. Vitest may also have written its caches under the worktree's node_modules (not verified).
+```
+
+### Verdicts
+
+Items of the brief's "What to build", for the whole diff since the base:
+
+- 1: holds. Tile.svelte:100-104 draws `Slide` in `Stage` inside `<div class="shot" inert>`, with the place and title in the `Card` under it. The tile keeps the tone edge, the current outline, the cursor through `Card`, the press (`pressed`, `ontitle`) and the ContextMenu. The scaling is for the look.
+- 2: holds. `overviewRuns` (arrange.ts) now looks up slides by `entry.entry`, the YAML index (`placed.get(entry.entry)`). read.ts `orderOfDeck` sets `entry: entry.index` and `findings` filtered by `one.file === doc.file && one.key === entry.at`. For `order: [title.md, 42, engine.md, closing.md]`, title, engine and closing look up 0, 2 and 3, and no kept entry has `at` `order[1]`. Groups at their `slides:` entry, at their first summary or grid, or at the end; members by the key prefix; title tiles and placeholders; the count is `members.length`.
+- 3: partial, Behaviour 1. A key typed in the DeckForm's tag-tone field (a bits-ui Select trigger, a `<button>`) is not kept by the field. The rule sentence, RuleForm, DeckForm and KeyForm with Apply and Cancel, the field rule and Escape otherwise hold.
+- 4: holds. Spec 1 is closed (`start` and `end` stop propagation; `headDrag` starts the entry only from the strip). Spec 3 is closed (the title tile's menu button). Spec 4 is closed (the hold reads the files deck and has a 3 s bound). Disabling, the status line, Remove from Group, Add, missing and conflict tags and `plainText` labels are as in round 0.
+- 5: holds. Overview.svelte:130-151 and DeckForm write through `setKeys`, then `send`, then `writeDeckSlides`'s `keys`.
+- 6: holds. The Slides folder, `slides.ts` and `slides.yml` are deleted, the Bar button and `onslides` are gone, and config-folder.test.ts passes.
+- 7: holds. `deckLabel` goes through `deckWords`. The round did not touch it.
+- 8: holds. The C11 grep prints nothing. Both HELP.md drag bullets (333, 334) are true by my reading of the drag path below.
+
+Cases of the brief's "Cases":
+
+- C1: met by reading (`overviewRuns` against the portfolio `order:` as the brief gives it). The drawing is for the look.
+- C2: met by reading. The tile's `dragstart` goes to `start` (entry) and stops at the tile. The drop goes through `dropOnEntry`, then `moveEntry`, then `entryDropped`, then `send({ order: { base, entries } })`, and `groups` is `change.groups ?? []`.
+- C3: met by reading (`deckStepped`, base `held.slides`).
+- C4: met by reading. The pillars tile's `dragstart` calls `start(event, { kind: 'deck', group: 'pillars', name })`, which runs `event.stopPropagation()` (arrange.svelte.ts:290), so the section never sees it. Over the `more` header, `overGroup` takes a deck. `dropOnGroup` calls `moveDeck('pillars', name, 'more', null, 'after')`, and `deckDropped` gives `withCross`: two GroupLists in one `send({ groups })`.
+- C5: met by reading (`removable: one.named`).
+- C6: met by reading (the candidates go through `deckWords`; the Menu is `waiting` with `arrange_add_none` when there are none).
+- C7: met by reading (`arrangeLine` gives the refusal's reason; `arrangeWrote` false holds nothing).
+- C8: met by reading, as in round 0.
+- C9: met by reading, with the labels round item 6 rules: `ruleSentence(keys, group, choices)` gives "nascent (concept), scoping (lit-check and framing), de-risking (feasibility experiment) and exploring" (vocab.yml:64-67).
+- C10: met (the case-run of round 0, and `deckWords`; unchanged this round).
+- C11: met (the grep prints nothing).
+- C12: not verifiable by reading alone. The look settles it (the shot is `inert`).
+- C13: met by reading.
+- C14: met by reading. Each pane draws from the store's deck, and each pane's hold is its own. The look settles the redraw.
+- C15: met by reading. `{ slides: nosuch }` is a placeholder whose `findingOf(entry)` reads the entry's own `order_group_unknown` (raised with `raiseFor(doc.file)` at `entry.at`, read.ts:378/455), and Move Later goes through `entryStepped`. An `ideas` title tile now has a Menu button (Tile.svelte:122-124) holding Move Earlier, Move Later and Remove from Group, reached by Tab, with `deckStepped` for Move Later.
+- C16: met by reading. In the folder field (TextInput, an `input`), `typed` holds, so `p` and `o` reach no deck key. Escape is taken by KeyForm with stopPropagation.
+- C17: met by reading. `sending` holds the controls, then `waiting` holds them until the files deck object changes (the pushed answer differs, so replaceEqualDeep gives a new object) or 3 s pass. Which of the two ends a given run is for the look.
+- C18: met (round 0's case-run; unchanged).
+- C19: met by reading. `dropOnGroup` calls `moveDeck('more', x, 'pillars', null, 'after')`. Since `more.slides` does not include x, `deckDropped` returns pillars' list alone.
+
+Round items:
+
+- 1, closed.
+  - `Group.svelte:136-137` records `grabbed` on pointerdown, and `headDrag` (`:111-120`) starts the entry only when `grabbed` is inside `:scope > h3`. GroupHead's `h3.strip` is a direct child of the section (GroupHead.svelte:166).
+  - `start` and `end` call `stopPropagation`. `dragstart` and `dragend` are not in Svelte 5.57.1's delegated list (node_modules/svelte/src/utils.js:110-134), so the native stop reaches the section.
+  - Drag within a group: `overDeck` and `dropOnDeck` stop propagation and call `moveDeck(name, x, name, onto, side)`.
+  - Group header strip: carries `{ kind: 'entry', token }`. On a tile in another group, `overDeck` returns without stopping, `overGroup` takes it and `dropOnGroup` calls `moveEntry`. The `ideas` header carries the grid's token the same way.
+  - A non-draggable tile in a group (busy, or no source) no longer drags its group: `headDrag` cancels.
+- 2, closed. `DeckOrderEntry.entry` and `findings` (model-deck.ts:227-234), `orderOfDeck` (read.ts:521-545), `slidesByEntry` and `findingOf`. Findings come only from the deck's own file and its own `order[N]`. The same lookup is fixed in `placedBy` (present.ts:390-395) and `entryAt` (deck-files.ts:166-168, used at :179 and :324). The deck-files change is the accepted ruling. Its covering tests pass (deck-acts 7, app-gate 22, undo 40, deck-edit and changes in check 3).
+- 3, closed. Tile.svelte:110 passes the `titleMenu` snippet as the Card heading for a title tile: a `Menu` labelled with `words` (the deck's `deckWords` title, arrange.ts `decksOf`), holding `deckMenu`'s items. key-dom.ts:70 presses `.title button`, which is that button.
+- 4, closed as ruled.
+  - The hold reads `files: () => deckOf(ref).deck` (Overview.svelte:66). `over` is taken at the answer (arrange.svelte.ts:125), and the effect releases at the first `now !== over` (:93-96) or at `HOLD_MS = 3000` (:76, :127). A refusal or failure returns at :124 and holds nothing. The teardown clears the timer (:97).
+  - `listsSignature` is gone: grep over src, tests, docs and config prints no hit.
+  - The two-summaries case ends by the push by reading: the swapped titles make the answer differ, so it is a new object. It ends by the bound when the push lands before the answer.
+- 5, closed as ruled, with Behaviour 1.
+  - Present.svelte:349-361: `typed` is `inField(...) && (key !== 'Escape' || defaultPrevented)`, and `pressed` is `control && key === ' '`. On a presenter-screen button, PageDown now moves (the round-0 finding is closed). On a link, the deck's keys act as on the base (O145-base Present.svelte:304-361).
+  - `heldBack`'s `control` is `inControl`, as the added ruling keeps it.
+  - The head comment (:34-44) and the comment over `keys` are rewritten. C16 holds.
+- 6, closed. There is one `vocabChoices`, in schema.ts:239, now exported. For a map vocabulary it gives the same `{id, label}` the removed arrange.ts copy gave, since `vocabSource('stages')` is `{ key: 'stages' }` and `byKey` reads `config.stages`. `ruleSentence` takes `choices`.
+- 7, closed. `export type { DeckKeys }` alone remains. `OverviewRun`, `DeckDrop` and `ArrangePlace` are local. unused-exports diff prints nothing.
+- 8, closed, with Proof 1 (one HELP.md bullet misquoted). The file:line of the history words match my rerun, and the verify count is stated. The comments list, the helper greps and judgment calls 4 and 9 are present.
+
+Added rulings:
+
+- The hold on the files deck: closed (round item 4 above).
+- `heldBack`'s `control` kept as a button or a link keeping Enter and Space in full screen, with a field keeping every key: closed. keys.ts:35-43 returns false for `inField`, for the grid keys, for Enter on a control or under the cursor, and for Space on a control.
+- `entryAt` in deck-files.ts accepted as part of item 2: closed. Its tests pass as above.
+
+No finding is closed by removing a check. `listsSignature` was the hold's only reader, and the hold it fed is replaced by the ruled one. No fix reaches past its finding beyond the accepted `placedBy` and `entryAt` lookups of the same defect.
+
+### Findings
+
+Spec: none.
+
+Proof:
+
+- Proof 1. `.scratch/migration/agents/reviews/O145-report.md`, Repair round 1, item 1: "The HELP.md bullet the review named (`docs/HELP.md:333`, "Drag a tile, a placeholder or a group's heading to move its entry of the order; ...") is true as it stands."
+  - What is wrong: the review named the bullet "Drag a deck's tile within its group to move it, or onto another group to move it there", which is `docs/HELP.md:334` (grep -n prints 333 and 334 as two bullets). The report rereads the neighbouring bullet. Both are true by my reading of the drag path, so no decision rests on it.
+  - Failure scenario: the orchestrator takes the deck-drag bullet as reread when the report checked another one.
+  - Verdict: none.
+
+Standards:
+
+- Standards 1. `src/lib/views/academic/present/arrange/KeyForm.svelte:25`, `RuleForm.svelte:41`, `DeckForm.svelte:33`: "/** True while a write is in flight, which holds Apply. */". Also `Overview.svelte:14-15`: "From a write until the server sends the deck read again after it, or a bound after the answer, every arranging control is held."
+  - What is wrong:
+    - `busy` is `arrange.busy()`, which is `sending || waiting`. It stays true after the answer, until the files deck changes or 3 s pass. KeyForm's head comment, rewritten this round (:5-7), says so; the prop doc beside it and the two in RuleForm and DeckForm say "while a write is in flight".
+    - The Overview sentence says every write holds until the push or the bound. A refused or failed write holds nothing after its answer (arrange.svelte.ts:124).
+    - Rules file, "What every package obeys": after changing what code does, the doc comments that describe it are re-read and made true.
+  - Failure scenario: a reader of RuleForm sees Apply disabled after the status line reported a write and, from the prop doc, looks for a write still in flight. A reader of Overview expects a refusal to hold the controls for up to 3 s.
+  - Verdict: none.
+
+Behaviour:
+
+- Behaviour 1. `src/lib/views/academic/present/Present.svelte:352-355` with `screen/keys.ts:20`: "const typed = inField(event.target) && (event.key !== 'Escape' || event.defaultPrevented); const pressed = control && event.key === ' '; if (!typed && !pressed && deckKey(event)) return;" with "const FIELDS = 'input, textarea, select, [contenteditable]';"
+  - What is wrong:
+    - DeckForm's tag-tone field is `HueSelect` (DeckForm.svelte:88). It is a bits-ui Select drawn by FieldSelect.svelte:59-75 as a `<button class="select oculus-field">` with the trigger's role (bits-ui Select.Trigger). That is not in FIELDS, so a key on it is a key on a control and the deck's keys act.
+    - bits-ui's closed trigger reads a letter as type-ahead and ArrowDown/ArrowUp as open (node_modules/bits-ui/dist/bits/select/select.svelte.js:650-664). It does not stop the event, and FieldSelect's `triggerKeys` (trigger-keys.ts) only filters modifier keys. The key then reaches the box's `keys`.
+    - In round 0, `inControl` kept every key on any control, so this field kept its keys. Brief item 3 asks that a key typed in a field inside the Overview stays with the field. Round item 5 narrows "field" to FIELDS, which leaves this field out; its intent is that only a field needs every key.
+    - The report's before and after for a key on a field and a key on a button does not name this field.
+  - Failure scenario:
+    - Open the Overview, press Edit, focus the tone field of a tag and type `o` to jump to orange (vocab.yml has c-orange, c-pink, c-purple). The grid closes (`write({ overview: !grid })`), the DeckForm unmounts and its unsaved work is lost.
+    - Typing `p` for pink or purple starts the presenter screen, and `f` toggles full screen.
+    - ArrowDown on the closed trigger opens its list and also moves the slide in force.
+  - Fix within the ruling's intent: count a select trigger as a field, for example `[role="combobox"]` added to FIELDS, or the trigger's keys kept from the box. This is the orchestrator's call, since FIELDS is the ruling's text.
+  - Verdict: item 3 partial.
+
+### Declined to judge
+
+- The look cases, which reading alone cannot settle:
+  - C12's `inert` press.
+  - C14's redraw in two panes.
+  - The tiles' scaling (item 1).
+  - Decision 4's opening time on the portfolio deck.
+  - Which end of the hold, the push or the 3 s bound, ends C17 and the two-summaries case on a given run. The code takes the push only when it lands after the answer (`over = reads.files()` at arrange.svelte.ts:125); the order of the answer and the push is not fixed by the code.
+- Whether a drag that starts on a title tile's title or on a placeholder drags the tile. Both are bits-ui menu triggers, which open the menu on pointerdown (node_modules/bits-ui/dist/bits/menu/menu.svelte.js:1428-1439). The rest of the tile drags. The look settles it.
+- Whether Enter under the card cursor on a title tile opens its menu once. The shell clicks `.title button` (key-dom.ts:70) and bits-ui's trigger also handles Enter on keydown. The look settles it.
+- The whole `test:quick` was not rerun. Four of the sixteen files the report lists as timed out pass alone at their tier's limit (above). The rules file's Verify section does not count a timeout in a file the step does not change against the step, and the list runs again at landing.
+
+Reviewer usage: a4a02238582c1777c, claude-opus-5-5, 263945 tokens, 88 tool uses, 21 min 43 s.
+
+## Closed
+
+The findings of the run over the last round are not sent to the builder; each is closed at landing.
+
+- Repair round 1, Behaviour 1 (a key on the tag-tone select reaches the deck's keys): fixed at landing, inside item 3 and round item 5's intent that a field keeps every key: `[role="combobox"]` added to `FIELDS` in `src/lib/views/academic/present/screen/keys.ts`, so a select trigger counts as a field, with the doc line over it naming it.
+- Repair round 1, Standards 1 (doc comments of the hold): fixed at landing: the `busy` prop docs of `KeyForm.svelte:25`, `RuleForm.svelte:41` and `DeckForm.svelte:33`, and the sentence of `Overview.svelte:14-15`, rewritten to the hold as built (a write until its answer, and after a write that changed the file until the next push or the bound; a refusal or a failure holds nothing).
+- Repair round 1, Proof 1 (the report reread the neighbouring HELP.md bullet): no change; the reviewer reads both bullets, `docs/HELP.md:333` and `:334`, as true, and no decision rests on it.
+- First run, every finding: closed in round 1, as the round's verdicts above give them.

@@ -18,7 +18,6 @@ Every registered view is listed by its words.
 | LaTeX | latex |
 | Math Preview | math-preview |
 | Present | present |
-| Slides | slides |
 | Apps | apps |
 | Deposit | deposit |
 | Editor | editor |

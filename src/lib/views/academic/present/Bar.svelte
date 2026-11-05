@@ -1,9 +1,9 @@
 <script lang="ts">
     // Layer 3, Present partial. The toolbar of the Present pane: the deck menu, the two step
-    // buttons, the overview, full-screen and presenter controls, the button that opens the Slides
-    // view on this deck, the Export to PDF button, the status line of the last slide act, and the
-    // place in the deck. It holds no state of its own; Present.svelte owns the deck and the
-    // position and hands each action in.
+    // buttons, the overview, full-screen and presenter controls, the Export to PDF button, the
+    // status line of the last act on a slide or on the deck's arrangement, and the place in the
+    // deck. It holds no state of its own; Present.svelte owns the deck and the position and hands
+    // each action in.
 
     import Chip from '$lib/ui/controls/Chip.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
@@ -28,9 +28,8 @@
         onoverview: () => void;
         onpresent: () => void;
         onpresenter: () => void;
-        onslides: () => void;
         onexport: () => void;
-        /** What the last act of a slide came to, empty for none. */
+        /** What the last act on a slide or on the deck's arrangement came to, empty for none. */
         said: string;
     };
 
@@ -47,7 +46,6 @@
         onoverview,
         onpresent,
         onpresenter,
-        onslides,
         onexport,
         said
     }: Props = $props();
@@ -79,7 +77,6 @@
         onclick={onpresenter}
         disabled={count === 0}
     />
-    <ToolButton label={t('slides.open')} title={t('slides.open_tip')} onclick={onslides} />
     <ToolButton
         label={t('present.export')}
         title={t('present.export_tip')}

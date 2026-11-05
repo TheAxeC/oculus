@@ -104,8 +104,9 @@ export type DeckSummaryRow = {
 
 /**
  * Where a slide is written: the served root and the file under it, the slide's place in that file
- * counted from 0, and `entry`, the place in the shown deck's `order:` of the entry that placed it
- * (a group's entry for a slide of a member deck). For a summary or a grid the file is the deck's
+ * counted from 0, and `entry`, the place in the shown deck's `order:` list of the entry that placed
+ * it (a group's entry for a slide of a member deck), counted with the items the reader dropped as
+ * malformed, as the `entry` of a DeckOrderEntry is. For a summary or a grid the file is the deck's
  * `present.yml` and `index` is its entry's place, the same as `entry`. `line` is the 1-based line
  * of the file the slide starts on: the entry's line in `present.yml` for a summary or a grid.
  */
@@ -197,7 +198,7 @@ type DeckConflict = {
     others: string[];
 };
 
-/** One group of a deck, as the Slides view lists it. */
+/** One group of a deck, as the Present view's Overview draws and arranges it. */
 export type DeckGroup = {
     name: string;
     /** The group's `slides:` as the file holds it, which a write names as its `base`. */
@@ -213,21 +214,29 @@ export type DeckGroup = {
 };
 
 /**
- * One entry of a deck's `order:` as the Slides view lists it: its `token`, which a write names it
- * by, what it is (a slide file, a group's slides, a summary or a grid), the file or group it
- * names, and the words that show it (the title of a file's first slide, a summary's own title).
+ * One entry of a deck's `order:` as the Present view's Overview arranges it: its `token`, which a
+ * write names it by, what it is (a slide file, a group's slides, a summary or a grid), the file or
+ * group it names, and the words that show it (the title of a file's first slide, a summary's own
+ * title).
+ *
+ * `entry` is the entry's place in the file's `order:` list, counted with the items the reader
+ * dropped as malformed, which is the place a slide's `source.entry` gives, so the slides of an
+ * entry are found by it rather than by the entry's place among the entries kept. `findings` are
+ * the messages the reader raised at the entry in the deck's own `present.yml`.
  */
 export type DeckOrderEntry = {
     token: string;
     kind: 'file' | 'group' | 'summary' | 'grid';
     name: string;
     title: string;
+    entry: number;
+    findings: string[];
 };
 
 /**
- * The keys of a deck's `present.yml` the Slides view sets, each as the file holds it, null for a
- * key the file does not hold: `deck.title`, `defaults.tag_tones`, and each group's `find`, `sort`
- * and `discover`. A write names one of them by its path and this value as its base.
+ * The keys of a deck's `present.yml` the Present view's Overview sets, each as the file holds it,
+ * null for a key the file does not hold: `deck.title`, `defaults.tag_tones`, and each group's
+ * `find`, `sort` and `discover`. A write names one of them by its path and this value as its base.
  */
 export type DeckKeys = {
     title: unknown;
@@ -261,7 +270,7 @@ export type Deck = {
     order: DeckOrderEntry[];
     groups: DeckGroup[];
     tagTones: Record<string, string>;
-    /** The keys the Slides view sets, as the file holds them; null for a file that was not read. */
+    /** The keys the Overview sets, as the file holds them; null for a file that was not read. */
     keys: DeckKeys | null;
     findings: Finding[];
 };

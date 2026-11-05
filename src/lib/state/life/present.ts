@@ -14,6 +14,7 @@
 import { z } from 'zod';
 import { byKey, isMap, item } from '../../data/helpers/guards.ts';
 import { MAX_DRAFT_BYTES, MAX_UPLOAD_BYTES, MAX_UPLOAD_MB } from '../../data/file-ops.ts';
+import { plainText } from '../../data/prose/literature.ts';
 import { optionalTextShape, readAs, rowsShape, unchangedAs } from '../../data/shapes/shapes.ts';
 import { domainTone } from '../shared/words/tones.ts';
 import { t } from '../shared/words/text.ts';
@@ -246,9 +247,22 @@ export function slideTone(row: DeckSlide): string | undefined {
     return undefined;
 }
 
-/** The words a deck's tab and menu entry carry: its title, else its name. */
+/**
+ * A deck's title in plain words, the markup a title may hold taken out and its entities read as
+ * text, or the deck's name when nothing is left: what a member, a candidate or a deck is named by
+ * outside its own slides, which draw the title with its markup.
+ */
+export function deckWords(title: string, name: string): string {
+    const plain = plainText(title);
+    return plain === '' ? name : plain;
+}
+
+/**
+ * The words a deck's tab, its menu entry and the audience window carry: its title in plain words,
+ * else its name.
+ */
 export function deckLabel(deck: Deck): string {
-    return deck.title === '' ? deck.name : deck.title;
+    return deckWords(deck.title, deck.name);
 }
 
 /** The `label` a tab's layout state holds, which names the tab; empty for none. */
@@ -368,10 +382,16 @@ export type SlideAct = (typeof SLIDE_ACTS)[number];
 /** The extensions an image dropped on a slide may have, which the server takes. */
 const IMAGE_ENDINGS = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'];
 
-/** The kind of `order:` entry that placed a slide, or undefined for a slide with no source. */
+/**
+ * The kind of `order:` entry that placed a slide, or undefined for a slide with no source. The
+ * slide names the entry by its place in the file's list (`source.entry`), which is the entry's
+ * `entry`.
+ */
 function placedBy(deck: Deck, row: DeckSlide): Deck['order'][number]['kind'] | undefined {
     const source = row.source;
-    return source === undefined ? undefined : deck.order.at(source.entry)?.kind;
+    return source === undefined
+        ? undefined
+        : deck.order.find((one) => one.entry === source.entry)?.kind;
 }
 
 /** Whether a file entry of the deck's `order:` placed the slide, so its file is the deck's own. */

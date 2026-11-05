@@ -74,7 +74,7 @@ export type DeckSpec = {
     tagTones: Record<string, string>;
     groups: GroupSpec[];
     order: OrderEntry[];
-    /** The keys the Slides view sets, as the file holds them. */
+    /** The keys the Present view's Overview sets, as the file holds them. */
     keys: DeckKeys;
 };
 
@@ -84,7 +84,7 @@ function heldAt(map: unknown, key: string): unknown {
 }
 
 /**
- * The keys the Slides view sets, as the parsed file holds them; a group that is no map has none.
+ * The keys the Overview sets, as the parsed file holds them; a group that is no map has none.
  */
 function readKeys(value: Record<string, unknown>): DeckKeys {
     const groups = isMap(value.groups) ? Object.entries(value.groups) : [];

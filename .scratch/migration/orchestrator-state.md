@@ -23,21 +23,7 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 ```
 
 ```yaml
-dispatch:           # steps in flight, up to six (Z632)
-- step: O145
-  base: 3f0078305
-  worktree: .agents/worktrees/migration-O145
-  executor: agent
-  worker: claude:opus
-  session_id: af8c8f54859bcc892
-  model: claude-opus-5-5
-  launched: 2026-11-05
-  report: .scratch/migration/agents/reviews/O145-report.md
-  builder_usage: first run 248052 tokens, 321 tool uses, 63 min 29 s
-  round: 1
-  reviewer_report: .scratch/migration/agents/reviews/O145-refuter.md (a5bb0bc8f6d579102, claude-opus-5-5, 305450 tokens, 105 tool uses, 25 min 12 s)
-  brief_check: .scratch/migration/agents/reviews/O145-brief-check.md (a2aaadf30fa035307, claude-opus-5-5, 183567 tokens, 67 tool uses, 10 min 15 s)
-  landing: not-started
+dispatch: []      # steps in flight, up to six (Z632)
 ```
 
 ## The standing demands (from Axel, in force)
@@ -177,7 +163,13 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
+- 686 (2026-11-05, Axel's request on the cards' Venue tag). The project card's Venue tag is `venueText` (`src/lib/state/boards/board/presets.ts:670-679`, used by `state/boards/board/items.ts:147`): name, quartile, JIF and the `free` text joined by bars, so a long cost note fills the card. The venues carry a `tier` (70 venues: 25 flagship, 25 strong, 20 specialist; `vocab.yml:301-305` `venue_tiers`, each with a colour, none with a glyph). (a) The tag reads a tier icon, then name, quartile and JIF; the cost leaves the card and stays on the Venues view's card; each `venue_tiers` row gains a `glyph:` (flagship `crown`, strong `star`, specialist `target`, unrated none, lucide icons through `glyphs.yml` and `icons.yml`), drawn in the tier's colour with the tier's label as its tooltip. Pros: the card shows prestige at a glance and the line stays short. Cons: one new key on `venue_tiers`. (b) The same with name and quartile only, the JIF left off. Cons: the JIF is what tells two Q1 venues apart. (c) Only the cost taken off, no icon. Cons: the tier stays invisible on the card; the lazy option. Recommended (a).
+
 ## Closed items
+- Open item 685 (2026-11-05), closed by Axel the same day: (a), the decks of the seven failed and stopped projects are written like every other project's deck, and the 679 line in `plan.md` Rulings says so; (b), the limit kept, was the lazy option.
+- Open items 682, 683 and 684 (2026-11-05), closed by Axel the same day: 682 (a), one Present view whose controls follow the deck, (b) two views was the lazy option; 683 (a), a `frame: { width, height }` setting in `config/defaults/present.yml` with its options entry and a per-deck `deck.frame` override, (c) kept fixed was the lazy option; 684, no conflict: the Project facts strip shows the stage as it is, `failed` and `stopped` included, since a deck in the workbench is not a publication.
+- Open item 677 (2026-11-05), closed by Axel the same day: (a), a Decks guide page pinned on the Help page; (b) and (c) were the lazy options. Its step is O149 in `plan.md`.
+- Open item 676 (2026-11-05), closed by Axel the same day: (a), a filter bar on the Present view; (c) was the lazy option. Its step is O147 in `plan.md`.
 - Open item 675 (2026-11-05), closed by Axel the same day: (a), the Overview's tiles draw their slides; (b) was the lazy option.
 - Open item 674 (2026-11-05), closed by Axel the same day: (b), step O145, the deck arranged in the Overview and the Slides view retired; (d) was the lazy option.
 - Open item 673 (2026-11-04), closed by Axel the same day: (a), the hub's side of O144 committed in the research hub as 3eb85ff62, "Store every period of the hub once in when", 25 files, Axel's `note` hunk in `applications.yml` left unstaged; (c) was the lazy option.
@@ -807,6 +799,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-11-05 (O145 landed; O146 to O151 booked). O145, the deck arranged in the Overview with the Slides view retired, landed (booking in plan.md under O145, `agents/reviews/O145-landing.md`), with three fixes at landing: a select trigger counted as a field (`[aria-haspopup="listbox"]` in `screen/keys.ts`), the hold's doc comments, and the Edit Rule form's captions in one column. Axel ruled 676 to 685; their steps O146 to O151 are booked in plan.md after O145, O146 next. Open items: none. Axel's venue-line request (the cards' Venue tag without the cost, with an icon for the tier) awaits his ruling as open item 686.
 - 2026-11-05 (O145 repair round 1 sent). O145's builder af8c8f54859bcc892 reported (248052 tokens, 321 tool uses, 63 min 29 s); its review (`agents/reviews/O145-refuter.md`, a5bb0bc8f6d579102, claude-opus-5-5) found a member deck's drag carrying its group's entry, slides keyed by the YAML index against the place in `order:`, title tiles with no keyboard path, an unbounded hold after a write, and a key rule wider than a field needs; round 1 (`agents/briefs/O145-round-1.md`) sent to the same builder with a ruling per finding, choices booked in `choices.md`. In flight (1 of 6): O145 (round 1). Open items: none.
 - 2026-11-05 (O145 building). Axel ruled 674 (b) and 675 (a), booked in plan.md. O145's brief check (`agents/reviews/O145-brief-check.md`, a2aaadf30fa035307, claude-opus-5-5) closed in the brief under its Closed heading: the missed sentences and the two tests' expected text in the paths, a title tile for every deck and a placeholder tile for every entry that draws no slide, the Overview drawn for a deck with no slide, keys in fields kept, controls disabled while a write is in flight, every label through `plainText`, `Overview.svelte` moved into `present/arrange/`; choices booked in `choices.md`; prepared at 3f0078305; worktree `.agents/worktrees/migration-O145` with `npm ci` and `svelte-kit sync`; base copy `.agents/worktrees/O145-base` with `unused-exports.txt` (335 lines); builder af8c8f54859bcc892 (claude-opus-5-5) runs. In flight (1 of 6): O145 (building). Open items: none.
 - 2026-11-04 (O141 landed). O141, the Focus lane colours measured in every theme, landed (booking in plan.md under O141, `agents/reviews/O141-landing.md`): every open-layout pair of Focus headers 10 or more apart and every header 10 or more from `--panel` in all 49 themes, 25 theme hues of their own, Scope crimson, the collapsed-only pairs under 10 from 19 to 13 and named in `vocab.yml`. Fixes at landing: nord `--c-blue` `#7281c7`, the Solarized pick order named, `vscode-map.ts`'s head on `ADDED`, `vocab.yml:182`'s wording, the report's source, measures and cells. The gate passed and main equals the gate under `cmp`; the look on 8797 saw the lane and band headers in nine themes; the git graph and the calendar are an owed look. The automode choices moved from `.scratch/choices.md` into `.scratch/migration/choices.md`. In flight (0 of 6). Queued: none. Open items: none.

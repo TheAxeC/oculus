@@ -159,6 +159,15 @@ type Placed = {
 };
 
 /**
+ * The entry of `order:` a slide's `source.entry` names: its place in the file's list, counted with
+ * the items the reader dropped as malformed, so it is found by that place rather than by its place
+ * among the entries kept.
+ */
+function entryAt(open: OpenDeck, index: number): OrderEntry | undefined {
+    return open.spec.order.find((one) => one.index === index);
+}
+
+/**
  * The slide of the deck's own files that `key` names, or the refusal: the deck must hold the
  * slide, a file entry of `order:` must have placed it, and the file must hold `base`.
  */
@@ -167,7 +176,7 @@ function placed(open: OpenDeck, key: string, base: string): Placed | ActOutcome 
     if (slide === undefined)
         return refusal(open, words(open.into.config.text, 'server.deck_edit.no_slide', key));
     const source = slide.source;
-    const entry = source === undefined ? undefined : open.spec.order.at(source.entry);
+    const entry = source === undefined ? undefined : entryAt(open, source.entry);
     if (source === undefined || entry?.kind !== 'file') {
         return refusal(open, words(open.into.config.text, 'server.deck_edit.not_own', key));
     }
@@ -312,7 +321,7 @@ export async function remove(
     deps: FilesDeps
 ): Promise<ActOutcome> {
     const slide = open.deck.slides.find((one) => one.key === key);
-    const entry = slide?.source === undefined ? undefined : open.spec.order.at(slide.source.entry);
+    const entry = slide?.source === undefined ? undefined : entryAt(open, slide.source.entry);
     if (entry !== undefined && (entry.kind === 'summary' || entry.kind === 'grid')) {
         if (base !== open.text)
             return refusal(

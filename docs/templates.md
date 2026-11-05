@@ -27,7 +27,7 @@ Every YAML file oculus reads, and the Markdown file of each update task, as a fi
 | `cpp.yml` | `<repository>/.oculus/cpp.yml` | Add Repository Configuration..., the compile database item's Add, Edit and Delete Configuration, or you |
 | `app.yml` | `<apps folder>/<name>/app.yml` | you |
 | the hub's data files | the paths `collections:` names | oculus's views, or you |
-| `present.yml` | a deck folder | the Slides view, or you |
+| `present.yml` | a deck folder | the Present view's Overview, or you |
 
 These have no template, since they hold pictures or oculus writes them:
 

@@ -485,7 +485,7 @@ export function createReader(context: DeckContext): DeckReader {
         });
     }
 
-    /** The groups of a deck as the Slides view lists them. */
+    /** The groups of a deck as the Present view's Overview draws and arranges them. */
     function groupsOfDeck(doc: Doc): DeckGroup[] {
         if (doc.spec === null) return [];
         const listed = (one: Doc) => ({ name: one.name, title: one.title, path: one.path });
@@ -513,21 +513,34 @@ export function createReader(context: DeckContext): DeckReader {
         });
     }
 
-    /** The entries of a deck's `order:` as the Slides view lists them. */
+    /**
+     * The entries of a deck's `order:` as the Present view's Overview draws and arranges them, each
+     * with its place in the file's list and the findings raised at it in the deck's own file. It
+     * runs after the deck's slides are read, so those findings have been raised.
+     */
     function orderOfDeck(doc: Doc): DeckOrderEntry[] {
         if (doc.spec === null) return [];
         const tokens = orderTokens(doc.spec.order);
         return doc.spec.order.map((entry, at) => {
             const token = tokens[at];
+            const findings = raised
+                .filter((one) => one.file === doc.file && one.key === entry.at)
+                .map((one) => one.message);
+            const placed = { token, entry: entry.index, findings };
             if (entry.kind === 'file') {
                 const first = fileSlides(doc, entry, [doc.dir]).at(0);
-                return { token, kind: 'file', name: entry.file, title: first?.title ?? entry.file };
+                return {
+                    ...placed,
+                    kind: 'file',
+                    name: entry.file,
+                    title: first?.title ?? entry.file
+                };
             }
             if (entry.kind === 'group') {
-                return { token, kind: 'group', name: entry.group, title: entry.group };
+                return { ...placed, kind: 'group', name: entry.group, title: entry.group };
             }
             const title = entry.title.replace(/<[^>]*>/g, '');
-            return { token, kind: entry.kind, name: entry.of, title };
+            return { ...placed, kind: entry.kind, name: entry.of, title };
         });
     }
 

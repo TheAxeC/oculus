@@ -127,7 +127,6 @@ glyphs:
   book: "[b]"
   page: "[p]"
   poster: "[P]"
-  section: "S"
   applications: "[=]"
   venue_dist: "[b]"
   refresh_live: "(r)"

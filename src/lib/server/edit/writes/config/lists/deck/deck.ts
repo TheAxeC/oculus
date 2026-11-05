@@ -1,12 +1,12 @@
 // Layer 2, server. The lists of a deck's `present.yml` written, and taken back: the `slides:` of
-// any number of groups, the `order:` list and the keys the Slides view sets beside them
-// (deck-keys.ts), in one edit of the file.
+// any number of groups, the `order:` list and the keys the Present view's Overview sets beside
+// them (deck-keys.ts), in one edit of the file.
 //
 // The file is any `present.yml` under a served root: the hub's portfolio deck, a project's deck or
 // a custom deck. The request names the root and the file's path under it, one `{ group, base,
 // slides }` for each group it changes, `order: { base, entries }` for the order, and `{ path, base,
 // value }` for each key, `base` the value the page read and `value` null to take the key out. It is
-// refused whole, with nothing written, unless every key is one the Slides view sets, of a group the
+// refused whole, with nothing written, unless every key is one the Overview sets, of a group the
 // file holds, holding its `base` and given a value it takes, and unless the path is a `present.yml`
 // inside a served root, the file holds each `base`, no name is repeated in a list, `entries` is a
 // permutation of the order's `base`, and every name of a group's list is a member, a candidate, a
