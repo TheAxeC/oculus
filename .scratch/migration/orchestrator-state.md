@@ -33,7 +33,9 @@ dispatch:           # steps in flight, up to six (Z632)
   model: claude-opus-5-5
   launched: 2026-11-05
   report: .scratch/migration/agents/reviews/O146-report.md
-  round: 0
+  builder_usage: 113217 tokens (the final notice; the notice at the hand-back read 328084), 488 tool uses, 70 min 0 s
+  round: 1
+  reviewer_report: .scratch/migration/agents/reviews/O146-refuter.md (afd5d153ef1fe296b, claude-opus-5-5, 282804 tokens, 84 tool uses, 24 min 25 s)
   brief_check: .scratch/migration/agents/reviews/O146-brief-check.md (ab81b2ba12033c208, claude-opus-5-5, 236854 tokens, 102 tool uses, 13 min 29 s)
   landing: not-started
 ```

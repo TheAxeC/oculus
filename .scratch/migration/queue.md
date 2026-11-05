@@ -1,5 +1,5 @@
 In flight (1 of 6 slots in use):
-- O146 (a deck's frame size, slide findings), builder running.
+- O146 (a deck's frame size, slide findings), repair round 1 with the builder.
 
 Queued, in order (6 steps):
 - O147 (the Present view's filter bar), after O146 lands.
