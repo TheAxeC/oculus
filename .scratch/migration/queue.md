@@ -1,6 +1,6 @@
 In flight (2 of 6 slots in use):
-- O147 (the Present view's filter bar), brief check running.
-- O152 (the Venue tag's tier icon), brief check running.
+- O147 (the Present view's filter bar), builder running.
+- O152 (the Venue tag's tier icon), builder running.
 
 Queued, in order (4 steps):
 - O148 (the Project facts strip), after O147 lands.

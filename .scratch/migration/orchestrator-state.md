@@ -27,11 +27,27 @@ dispatch:           # steps in flight, up to six (Z632)
 - step: O147
   base: 9ad4eb6c6
   worktree: .agents/worktrees/migration-O147
-  brief_check: "running: a5ec4b5cba21b2e92"
-  landing: preparing
+  executor: agent
+  worker: claude:opus
+  launched: 2026-11-05
+  report: .scratch/migration/agents/reviews/O147-report.md
+  session_id: a700c9cd6e18ea451   # claude-opus-5-5, read from the agent's record
+  round: 0
+  brief_check: .scratch/migration/agents/reviews/O147-brief-check.md (a5ec4b5cba21b2e92, claude-opus-5-5, 286289 tokens, 113 tool uses, 16 min 3 s)
+  shared_paths: "docs/HELP.md and docs/templates.md with O152 of this plan; O147 writes the Present paragraph (HELP.md:331) and the present.yml section (templates.md:1910-1929), O152 the card's Venue sentence (HELP.md:299) and the venue_tiers comment (templates.md:541-546), different paragraphs, and docs/diagrams are regenerated at landing"
+  landing: not-started
 - step: O152
-  brief_check: "running: a43403bea8848ebc5"
-  landing: preparing
+  base: 3ad2d2346
+  worktree: .agents/worktrees/migration-O152
+  executor: agent
+  worker: claude:opus
+  launched: 2026-11-05
+  report: .scratch/migration/agents/reviews/O152-report.md
+  session_id: a94ae9654f1813d77   # claude-opus-5-5, read from the agent's record
+  round: 0
+  brief_check: .scratch/migration/agents/reviews/O152-brief-check.md (a43403bea8848ebc5, claude-opus-5-5, 223233 tokens, 61 tool uses, 10 min 42 s)
+  shared_paths: "docs/HELP.md and docs/templates.md with O147 of this plan, different paragraphs (see O147's entry)"
+  landing: not-started
 ```
 
 ## The standing demands (from Axel, in force)
