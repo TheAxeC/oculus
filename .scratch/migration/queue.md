@@ -1,5 +1,5 @@
 In flight (1 of 6 slots in use):
-- O146 (a deck's frame size, slide findings), /spec: worktree being made.
+- O146 (a deck's frame size, slide findings), builder running.
 
 Queued, in order (6 steps):
 - O147 (the Present view's filter bar), after O146 lands.
