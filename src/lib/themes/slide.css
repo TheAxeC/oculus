@@ -1,7 +1,10 @@
-/* The frame a slide is laid out in, at the design size of 1280 by 720 px: the slide type scale in
-   px at that size, which follows the text size, the reading width, the padding and the surface.
-   The Present pane scales the frame to its box and the print route prints it at scale 1, both
-   through this one class. */
+/* The frame a slide is laid out in, at its deck's frame: the slide type scale in px, which follows
+   the text size, the reading width, the padding and the surface. Where the frame is drawn
+   (screen/Stage.svelte, the print route's page) sizes it to the deck's frame. The reading column
+   is at most 1040 px wide whatever the frame, since the type sizes are in px; it takes the
+   frame's inner width, less the padding and the border, where that is narrower, 894 px in a 1024
+   frame with its border. The Present pane scales the frame to its box and the print route prints
+   it at scale 1, both through this one class. */
 .slide-frame {
     --slide-fs-title: calc(56px * var(--text-scale, 1));
     --slide-fs-h: calc(36px * var(--text-scale, 1));

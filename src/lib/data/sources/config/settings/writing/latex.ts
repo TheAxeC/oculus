@@ -1,9 +1,9 @@
 // Layer 1, data. The typed readers of the LaTeX settings of behavior.yml: the formatter and its
 // paths, and what a build and its follow-ups are set by, the lists of tools and recipes among them.
-// A plain key reads through settingReader (reader.ts); a list of records reads each row by the
-// fields of its entry, a row the rule refuses left out and named as a problem.
+// A plain key reads through settingReader (settings/reader.ts); a list of records reads each row by
+// the fields of its entry, a row the rule refuses left out and named as a problem.
 
-import { byKey } from '../../../helpers/guards.ts';
+import { byKey } from '../../../../helpers/guards.ts';
 import {
     AUTO_BUILDS,
     AUTO_CLEANS,
@@ -17,9 +17,15 @@ import {
     type RecipeDefault,
     type ReverseSynctex,
     type TexcountAutorun
-} from '../../../prose/latex.ts';
-import type { FieldSpec } from '../catalog/options.ts';
-import { checkedRows, noRule, settingEntry, settingReader, type SettingProblem } from './reader.ts';
+} from '../../../../prose/latex.ts';
+import type { FieldSpec } from '../../catalog/options.ts';
+import {
+    checkedRows,
+    noRule,
+    settingEntry,
+    settingReader,
+    type SettingProblem
+} from '../reader.ts';
 
 /** The LaTeX formatter of behavior.yml: the one Format Document runs, and each path. */
 export type LatexFormatting = {

@@ -3,8 +3,8 @@
 // clamped to the display's work area; with no saved place the window is the default size, centred
 // on the primary display. The main window's place and the places of popped-out windows are placed
 // by the one function. The audience window of a presentation is placed against the window that
-// asked for it: on another display when there is one, else beside the asking window. Pure: the
-// displays are handed in.
+// asked for it: on another display when there is one, else beside the asking window, in the
+// proportions of the deck's frame its `window.open` features carry. Pure: the displays are given.
 
 /** A rectangle on the screen, in points. */
 export type Rect = { x: number; y: number; w: number; h: number };
@@ -68,8 +68,56 @@ export function placeWindow(saved: Rect | null, areas: readonly Rect[], primary:
     return holder === undefined ? inside(saved, primary) : inside(saved, holder);
 }
 
-/** The size of an audience window that has no display of its own to fill. */
+/**
+ * The size of an audience window that has no display of its own to fill and is told no frame: its
+ * width is that of every such window, and its height is the one a told frame replaces.
+ */
 const AUDIENCE_SIZE = { w: 960, h: 540 } as const;
+
+/** A deck's frame in px, as the page hands it to the host. */
+export type Frame = { width: number; height: number };
+
+/** Whether a value is a whole number above zero, which a side of a frame must be. */
+function side(value: unknown): value is number {
+    return typeof value === 'number' && Number.isInteger(value) && value > 0;
+}
+
+/**
+ * The frame a value holds when it is a map of a width and a height, each a whole number above
+ * zero, else null. The deck reader has already held the frame to its ranges; this is the host's
+ * check of the shape a page hands it, so no other value reaches a window's size.
+ */
+export function wholeFrame(value: unknown): Frame | null {
+    if (typeof value !== 'object' || value === null) return null;
+    const width: unknown = Reflect.get(value, 'width');
+    const height: unknown = Reflect.get(value, 'height');
+    return side(width) && side(height) ? { width, height } : null;
+}
+
+/**
+ * The frame the features of a `window.open` carry (`popup,width=1024,height=768`), or null when
+ * they hold no width or no height that is a whole number above zero.
+ */
+function featuresFrame(features: string): Frame | null {
+    const told = new Map(
+        features.split(',').map((part) => {
+            const [name = '', value = ''] = part.split('=');
+            return [name.trim(), value.trim()] as const;
+        })
+    );
+    const number = (name: string): number | null => {
+        const text = told.get(name) ?? '';
+        return /^\d+$/.test(text) ? Number(text) : null;
+    };
+    return wholeFrame({ width: number('width'), height: number('height') });
+}
+
+/** The audience window's size beside the asking window: its width, as high as the frame gives. */
+function audienceSize(features: string): { w: number; h: number } {
+    const frame = featuresFrame(features);
+    if (frame === null) return AUDIENCE_SIZE;
+    return { w: AUDIENCE_SIZE.w, h: Math.round((AUDIENCE_SIZE.w * frame.height) / frame.width) };
+}
 
 /** How far an audience window that fits nowhere beside the asking window is moved from it. */
 const AUDIENCE_OFFSET = 28;
@@ -98,9 +146,11 @@ function within(rect: Rect, area: Rect): boolean {
  * The place of the audience window for the window `from` that asked for it: the first display
  * other than the one `from` is mostly on, when there is one. With one display the window opens
  * beside `from`, to its right when that fits the display's work area, else to its left, else
- * moved a little from it and cut to the work area. `areas` are the displays' work areas.
+ * moved a little from it and cut to the work area, as wide as AUDIENCE_SIZE and as high as the
+ * deck's frame that `features` carries gives, or AUDIENCE_SIZE for features that carry none.
+ * `areas` are the displays' work areas.
  */
-export function audiencePlace(from: Rect, areas: readonly Rect[]): AudiencePlace {
+export function audiencePlace(from: Rect, areas: readonly Rect[], features: string): AudiencePlace {
     const own = areas.reduce(
         (best, area, at) => (covered(from, area) > covered(from, areas[best] ?? area) ? at : best),
         0
@@ -108,7 +158,7 @@ export function audiencePlace(from: Rect, areas: readonly Rect[]): AudiencePlace
     const other = areas.find((_, at) => at !== own);
     if (other !== undefined) return { kind: 'display', area: other };
     const area = areas[own] ?? from;
-    const size = AUDIENCE_SIZE;
+    const size = audienceSize(features);
     const right = { x: from.x + from.w, y: from.y, ...size };
     const left = { x: from.x - size.w, y: from.y, ...size };
     if (within(right, area)) return { kind: 'beside', rect: right };

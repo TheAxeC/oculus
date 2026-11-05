@@ -16,6 +16,7 @@
 
 import { createReader } from '../../../data/sources/deck/read.ts';
 import { hubDomainsOf } from '../../../data/index.ts';
+import { frameSetting } from '../../../data/sources/config.ts';
 import type { DeckProject } from '../../../data/sources/deck/kinds.ts';
 import type { Deck, PortfolioConfig, Project } from '../../../data/model/index.ts';
 import { bareId, ofHub } from '../../../data/helpers/hub-names.ts';
@@ -94,6 +95,7 @@ export function readDeck(
         projects: ofHub(source.projects, hub.key).map(deckProject),
         domains: Object.keys(hubDomainsOf(hub.dir, config)),
         tagTones: config.tagTones,
+        frame: frameSetting(config.merged),
         catalog: config.text,
         drafts: draftsOf(source.roots, drafts)
     });

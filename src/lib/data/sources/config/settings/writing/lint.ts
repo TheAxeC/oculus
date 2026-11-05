@@ -1,9 +1,9 @@
 // Layer 1, data. The typed reader of the linters' settings of behavior.yml: which linter runs,
 // where three of the programs are, ChkTeX's arguments and the writing rules' two lists of globs. It
-// reads through settingReader (reader.ts).
+// reads through settingReader (settings/reader.ts).
 
-import type { LintId } from '../../../model/index.ts';
-import { settingReader, type SettingProblem } from './reader.ts';
+import type { LintId } from '../../../../model/index.ts';
+import { settingReader, type SettingProblem } from '../reader.ts';
 
 /**
  * The linters' settings of behavior.yml: which run, where three of them are, ChkTeX's flags, and

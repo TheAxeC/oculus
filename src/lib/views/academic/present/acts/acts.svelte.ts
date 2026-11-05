@@ -18,6 +18,8 @@ type Reads = {
     instance: () => string;
     ref: () => DeckRef | null;
     deck: () => Deck | null;
+    /** The deck as saved, which the print route draws, so the PDF takes its frame. */
+    saved: () => Deck | null;
     /** The slide on screen, the one a command of the palette acts on. */
     shown: () => DeckSlide | null;
     /** Whether the overview grid is open, which has no slide to drop an image on. */
@@ -77,10 +79,12 @@ export function createActs(reads: Reads): Acts {
     function exportDeck(): void {
         const ref = reads.ref();
         const deck = reads.deck();
-        if (ref === null || deck === null || deck.slides.length === 0) return;
+        const saved = reads.saved();
+        if (ref === null || deck === null || saved === null || deck.slides.length === 0) return;
         void exportPdf({
             ref,
             deck,
+            frame: saved.frame,
             bridge: reads.bridge,
             upload: reads.upload,
             openTab: reads.openTab,

@@ -3,7 +3,7 @@
 
 import { workspaceVocabs } from '../../../src/lib/data/index.ts';
 import { engineDir, loadConfig, type LocalConfig } from '../../../src/lib/data/sources/config.ts';
-import { latexBuild } from '../../../src/lib/data/sources/config/settings/latex.ts';
+import { latexBuild } from '../../../src/lib/data/sources/config/settings/writing/latex.ts';
 import { ConnectStates } from '../../../src/lib/server/accounts/connect/oauth.ts';
 import { Hub } from '../../../src/lib/server/core/channels.ts';
 import { noApps } from '../../../src/lib/server/machine/apps/read/held.ts';

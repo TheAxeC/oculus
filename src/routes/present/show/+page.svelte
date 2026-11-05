@@ -1,8 +1,10 @@
 <script lang="ts">
     // Layer 3, route. The slide on show, alone: the audience's window while the presenter screen of
     // the Present view is on. `?root=&path=` name the deck, which the deck route answers as it does
-    // for the print route, and the slide is drawn by the same components in the same 1280 by 720
-    // frame, scaled to the window, with no toolbar, rail, counter or key hint.
+    // for the print route, and the slide is drawn by the same components in the deck's own frame
+    // (`deck.frame`, or the setting defaults.frame), scaled to the window, with no toolbar, rail,
+    // counter or key hint. The page measures nothing: the Present view's own stages say which
+    // slides are too tall.
     //
     // The page and the presenter screen keep one slide over a BroadcastChannel named for the deck
     // (state/life/present.ts): the page draws the key it is sent, says when it opened, and sends a
@@ -236,7 +238,7 @@
         <!-- A click on the slide is the reader's way to the next one; the keys are the page's. -->
         <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
         <div class="slide" onclick={advance}>
-            <Stage bare={full}>
+            <Stage bare={full} frame={deck.frame}>
                 <Slide row={shown} {deck} first={false} />
             </Stage>
         </div>

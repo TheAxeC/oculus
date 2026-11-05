@@ -75,8 +75,11 @@ const KINDS: readonly SlideKind[] = [
     'idea'
 ];
 
-/** A slide read, and the group its `legend:` names, which the reader turns into domain keys. */
-export type Built = { slide: DeckSlide; legend?: string };
+/**
+ * A slide read, the group its `legend:` names, which the reader turns into domain keys, and whether
+ * the slide has no title of its own, which the reader reports.
+ */
+export type Built = { slide: DeckSlide; legend?: string; untitled: boolean };
 
 const IMAGE = /!\[((?:[^[\]]|\[[^\]]*\])*)\]\(\s*([^)\s]+)(\s+"[^"]*")?\s*\)/g;
 const ABSOLUTE = /^(?:[a-z][a-z0-9+.-]*:|\/\/|\/|#)/i;
@@ -246,6 +249,8 @@ export function buildSlide(raw: RawSlide, number: number, context: KindContext):
     const { heading, rest } = headingOf(body);
     const fallback = `${context.deck} ${number + 1}`;
     const title = titled(heading, body, fallback);
+    /** Whether the slide has no level-1 heading, the title of every kind but project and idea. */
+    const untitled = plain(heading) === '';
     switch (kind) {
         case 'title':
         case 'closing': {
@@ -259,7 +264,7 @@ export function buildSlide(raw: RawSlide, number: number, context: KindContext):
                 contact: str(meta.contact),
                 legend: []
             });
-            return { slide, legend: group };
+            return { slide, legend: group, untitled };
         }
         case 'section': {
             const parts = sectionParts(rest);
@@ -273,10 +278,10 @@ export function buildSlide(raw: RawSlide, number: number, context: KindContext):
                 foot: str(meta.foot) ?? parts.foot,
                 legend: []
             });
-            return { slide, legend: group };
+            return { slide, legend: group, untitled };
         }
         case 'text':
-            return { slide: withNotes({ ...base, kind, title, body }) };
+            return { slide: withNotes({ ...base, kind, title, body }), untitled };
         case 'image': {
             const found = new RegExp(IMAGE.source).exec(rest);
             return {
@@ -287,7 +292,8 @@ export function buildSlide(raw: RawSlide, number: number, context: KindContext):
                     heading,
                     src: found?.[2] ?? '',
                     alt: (found?.[1] ?? '').replace(/\\([[\]\\])/g, '$1')
-                })
+                }),
+                untitled
             };
         }
         case 'columns': {
@@ -300,7 +306,8 @@ export function buildSlide(raw: RawSlide, number: number, context: KindContext):
                     heading,
                     left: left.trim(),
                     right: others.join('\n').trim()
-                })
+                }),
+                untitled
             };
         }
         case 'equation': {
@@ -313,12 +320,14 @@ export function buildSlide(raw: RawSlide, number: number, context: KindContext):
                     heading,
                     equation: display?.[1].trim() ?? '',
                     rest: display === null ? rest : rest.replace(display[0], '').trim()
-                })
+                }),
+                untitled
             };
         }
         case 'code':
             return {
-                slide: withNotes({ ...base, kind, title, heading, code: fenced(rest) })
+                slide: withNotes({ ...base, kind, title, heading, code: fenced(rest) }),
+                untitled
             };
         case 'project': {
             const slide: PresentSlide = projectSlide(
@@ -338,12 +347,19 @@ export function buildSlide(raw: RawSlide, number: number, context: KindContext):
                 stage: project?.stage,
                 domain: project?.domain
             });
-            return { slide: built };
+            // A project slide's own title is its `title:`, else its project's short name.
+            const named = plain(slide.title ?? '') !== '' || (project?.short ?? '') !== '';
+            return { slide: built, untitled: !named };
         }
         case 'idea': {
             const slideCard = ideaCard(meta, raw.body, context);
+            // An idea's own title is its card's name from a project, or its `title:` without one;
+            // the deck's name the card falls back to is not the slide's own.
+            const project = context.project;
+            const own = project === null ? (str(meta.title) ?? '') : slideCard.name;
             return {
-                slide: withNotes({ ...base, kind, title: slideCard.name, card: slideCard })
+                slide: withNotes({ ...base, kind, title: slideCard.name, card: slideCard }),
+                untitled: own.trim() === ''
             };
         }
         default:

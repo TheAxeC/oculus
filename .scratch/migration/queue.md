@@ -1,17 +1,17 @@
-In flight (1 of 6 slots in use):
-- O146 (a deck's frame size, slide findings), repair round 1 with the builder.
+In flight (0 of 6 slots in use): none.
 
 Queued, in order (6 steps):
-- O147 (the Present view's filter bar), after O146 lands.
+- O147 (the Present view's filter bar), next.
 - O148 (the Project facts strip), after O147 lands.
-- O149 (the Decks guide), after O146 to O148 land.
+- O149 (the Decks guide), after O147 and O148 land.
 - O150 (the hub's portfolio deck), after O147 lands; hub commit on Axel's word.
-- O151 (a deck for every research project), after O146 and O148; hub commit on Axel's word.
-- O152 (the Venue tag's tier icon), beside O146 or after it.
+- O151 (a deck for every research project), after O148; hub commit on Axel's word.
+- O152 (the Venue tag's tier icon), beside O147 or after it.
 
 Owed looks: none.
 
 Landed, newest first:
+- O146 (a deck's frame size, slide findings), 2026-11-05, this landing's commit.
 - O145 (the deck arranged in the Overview), 2026-11-05, 678bf5527.
 - O141 (Focus lane colours in every theme), 2026-11-04, 8b436978a.
 - O144 (a `period` type for when an entry happens), 2026-11-04, f72c5c797; hub 3eb85ff62.

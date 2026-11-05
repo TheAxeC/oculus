@@ -1,10 +1,11 @@
 <script lang="ts">
-    // Layer 3, Present partial. One tile of the Overview: a slide drawn small in its frame
-    // (screen/Stage.svelte and Slide.svelte, scaled to the tile) with its place and its title
-    // under it, or, for a deck that draws no slide, a title tile naming the deck. The tile carries
-    // the hue of the project the slide belongs to on its left edge, the hairline of the slide in
-    // force, the shell's card cursor through its card, and the menu of the slide and of its
-    // arranging acts on a right-click.
+    // Layer 3, Present partial. One tile of the Overview: a slide drawn small in its deck's frame
+    // and measured (screen/Framed.svelte, scaled to the tile) with its place and its title under
+    // it, or, for a deck that draws no slide, a title tile naming the deck. The tile carries the
+    // hue of the project the slide belongs to on its left edge, the hairline of the slide in force,
+    // the shell's card cursor through its card, the Too tall mark beside its place while the
+    // Present store holds the slide as taller than its frame, with the finding's message as its
+    // tooltip, and the menu of the slide and of its arranging acts on a right-click.
     //
     // The drawn slide is inert: nothing inside it takes a press or the focus, so a press anywhere
     // on the tile is the tile's press, which shows the slide, and the keyboard presses the card's
@@ -14,14 +15,16 @@
     // tile is its source and its target.
 
     import Card from '$lib/ui/frame/Card.svelte';
+    import Chip from '$lib/ui/controls/Chip.svelte';
     import ContextMenu from '$lib/ui/menu/ContextMenu.svelte';
     import Menu from '$lib/ui/menu/Menu.svelte';
+    import Tooltip from '$lib/ui/menu/Tooltip.svelte';
     import type { MenuItem } from '$lib/ui/menu/menu-items';
-    import Slide from '../Slide.svelte';
-    import Stage from '../screen/Stage.svelte';
+    import Framed from '../screen/Framed.svelte';
     import { t } from '$lib/state/shared/words/text';
     import { slideTone, type DeckSlide } from '$lib/state/life/present';
     import type { TileView } from '$lib/state/life/arrange';
+    import { useState } from '$lib/state/client/use';
 
     type Props = {
         /** The slide the tile draws, or null for a title tile. */
@@ -67,6 +70,13 @@
 
     const tone = $derived(row === null ? undefined : slideTone(row));
 
+    const {
+        present: { tooTall }
+    } = useState();
+
+    /** The finding of a slide measured taller than its frame, which the tile's mark carries. */
+    const tall = $derived(row === null ? '' : tooTall(view.deck, row.key));
+
     /** The row's hue as a custom property, so the edge below names a token and not a colour. */
     const toneStyle = $derived(tone === undefined ? undefined : `--tone: var(--c-${tone})`);
 
@@ -97,10 +107,12 @@
         onclick={pressed}
     >
         {#if row !== null}
-            <div class="shot" inert>
-                <Stage>
-                    <Slide {row} deck={view.deck} first={false} />
-                </Stage>
+            <div
+                class="shot"
+                inert
+                style:aspect-ratio="{view.deck.frame.width} / {view.deck.frame.height}"
+            >
+                <Framed {row} deck={view.deck} first={false} />
             </div>
         {/if}
         <Card
@@ -113,6 +125,15 @@
         >
             {#snippet meta()}
                 <span class="at">{place}</span>
+                {#if tall !== ''}
+                    <Tooltip text={tall}>
+                        <Chip
+                            label={t('present.too_tall')}
+                            glyph={t('present.too_tall_glyph')}
+                            tone="amber"
+                        />
+                    </Tooltip>
+                {/if}
             {/snippet}
         </Card>
     </div>
@@ -149,9 +170,9 @@
         outline-offset: 1px;
     }
 
-    /* The slide's frame keeps the proportions of the 1280 by 720 frame it is laid out in. */
+    /* The shot keeps the proportions of the deck's frame the slide is laid out in, set on the
+       element. */
     .shot {
-        aspect-ratio: 16 / 9;
         min-width: 0;
     }
 

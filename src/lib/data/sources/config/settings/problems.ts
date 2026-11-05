@@ -26,11 +26,12 @@ import {
     websiteSettings,
     zenodoSettings
 } from './files.ts';
-import { latexBuild, latexFormatting } from './latex.ts';
-import { lintSettings } from './lint.ts';
 import { appsSettings, changesKeep, processesSettings } from './machine.ts';
+import { frameSetting } from './present.ts';
 import type { SettingProblem } from './reader.ts';
 import { readRows } from './rows/read.ts';
+import { latexBuild, latexFormatting } from './writing/latex.ts';
+import { lintSettings } from './writing/lint.ts';
 
 /** Every reader that takes the problems it finds, in the order of their blocks. */
 const PROBLEM_READERS: ((
@@ -63,7 +64,8 @@ const PROBLEM_READERS: ((
     latexBuild,
     lintSettings,
     websiteSettings,
-    zenodoSettings
+    zenodoSettings,
+    frameSetting
 ];
 
 /**

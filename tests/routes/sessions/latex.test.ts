@@ -16,7 +16,7 @@ import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
 import {
     latexBuild,
     type LatexFormatting
-} from '../../../src/lib/data/sources/config/settings/latex.ts';
+} from '../../../src/lib/data/sources/config/settings/writing/latex.ts';
 import { it, scratchDir, test } from '../../fixtures/scratch.ts';
 import { TEXT } from '../../server/text.ts';
 

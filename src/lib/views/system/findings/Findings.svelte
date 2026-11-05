@@ -21,11 +21,12 @@
     // build found in the files, and Audit, what the hub is missing (AuditSection.svelte). Files
     // comes first, as the errors that stop records from resolving. It lists the snapshot's
     // findings, which come from validate over the hub's YAML, the config channel's own, which come
-    // from reading config/, the apps channel's, and the page's own, a project board the page left
-    // out of the registry (the registry's `refused`). A finding is reported and never repaired, so
-    // this view is where a bad manifest edit shows up within a second of being saved. The rows are
-    // drawn straight into the pane, so the pane asks for the tint; a clear list, or a search that
-    // leaves no row, is said once with the Empty primitive. Each section is the group every
+    // from reading config/, the apps channel's, and the page's own: a project board the page left
+    // out of the registry (the registry's `refused`) and a slide the Present view drew taller than
+    // its deck's frame (the Present store's `findings`). A finding is reported and never repaired,
+    // so this view is where a bad manifest edit shows up within a second of being saved. The rows
+    // are drawn straight into the pane, so the pane asks for the tint; a clear list, or a search
+    // that leaves no row, is said once with the Empty primitive. Each section is the group every
     // grouping of a view is drawn as (ui/controls/heads/GroupHead.svelte), folded under its key in
     // the pane's state (views/shared/card/pane-fold.ts) and headed with what the search leaves.
     //
@@ -55,7 +56,7 @@
     import Search from '$lib/ui/controls/text/Search.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
-    import { allFindings } from '$lib/state/workbench/navigation/status';
+    import { allFindings, pageFindings } from '$lib/state/workbench/navigation/status';
     import { auditSearch, fileSearch } from '$lib/state/system/audit';
     import { t } from '$lib/state/shared/words/text';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
@@ -72,6 +73,7 @@
         audit: { open, parked },
         entities: { config, portfolio },
         fs: { primary, roots },
+        present,
         registry,
         ui: { instanceState, setInstanceState }
     } = client;
@@ -88,7 +90,7 @@
             portfolio(),
             config(),
             { findings: appFindings() },
-            { findings: registry.refused() }
+            { findings: pageFindings(registry, present) }
         )
     );
 

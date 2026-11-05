@@ -1,8 +1,11 @@
 <script lang="ts">
-    // Layer 3, route. Every slide of one deck, in order, each in its 1280 by 720 frame at scale 1
-    // and one to a printed page, for the PDF of the Present view. The deck is the one the Present
-    // view draws: `?root=&path=` name it, the deck route answers it, and the slides are drawn by
-    // the same component, in the page's theme.
+    // Layer 3, route. Every slide of one deck, in order, each in the deck's frame at scale 1 and
+    // one to a printed page, for the PDF of the Present view. The deck is the one the Present view
+    // draws: `?root=&path=` name it, the deck route answers it, and the slides are drawn by the
+    // same component, in the page's theme. The printed page and each `.page` take the size of the
+    // deck's frame (`deck.frame`, or the setting defaults.frame): the `@page` rule is written into
+    // the document's head from the deck once it is read, and the desktop host's hidden window
+    // opens at the same frame.
     //
     // A slide taller than its page is scaled down to fit it, from the top and centred, so no slide
     // is cut or split over two pages; the Present pane scrolls such a slide instead.
@@ -34,6 +37,17 @@
     let deck = $state<Deck | null>(null);
     let failed = $state('');
     let ready = $state(false);
+
+    /**
+     * The rule that sizes every printed page to the deck's frame. The frame's sides are whole
+     * numbers above zero, which the deck answer's shape checks (`deckShape`), so the rule holds
+     * nothing but two numbers.
+     */
+    const pageRule = $derived(
+        deck === null
+            ? ''
+            : `<style>@page { size: ${deck.frame.width}px ${deck.frame.height}px; margin: 0; }</style>`
+    );
 
     /** Wait for every image of the page to load or fail, so none is half drawn when it prints. */
     function imagesSettled(): Promise<unknown> {
@@ -92,6 +106,11 @@
     });
 </script>
 
+<svelte:head>
+    <!-- eslint-disable-next-line svelte/no-at-html-tags -- two numbers deckShape checked -->
+    {@html pageRule}
+</svelte:head>
+
 <div
     class="print"
     data-print-root
@@ -102,7 +121,12 @@
         <p class="failed">{t('present.failed', failed)}</p>
     {:else if deck !== null}
         {#each deck.slides as row (row.key)}
-            <section class="slide-frame page" data-slide-key={row.key}>
+            <section
+                class="slide-frame page"
+                data-slide-key={row.key}
+                style:width="{deck.frame.width}px"
+                style:height="{deck.frame.height}px"
+            >
                 <div class="fit" data-fit>
                     <Slide {row} {deck} first={false} />
                 </div>
@@ -112,15 +136,9 @@
 </div>
 
 <style>
-    /* One slide to a page, at the size the slides are laid out for. */
-    @page {
-        size: 1280px 720px;
-        margin: 0;
-    }
-
+    /* One slide to a page, at the deck's frame, which the element and the head's `@page` rule
+       set. */
     .page {
-        width: 1280px;
-        height: 720px;
         overflow: hidden;
         border: none;
         border-radius: 0;

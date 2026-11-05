@@ -27,7 +27,7 @@ import type {
     LatexBuilding,
     LatexRecipe,
     LatexTool
-} from '../../../data/sources/config/settings/latex.ts';
+} from '../../../data/sources/config/settings/writing/latex.ts';
 import { inside, realPath } from '../../core/paths.ts';
 import type { Folders } from '../latex.ts';
 import { magicComments } from './reader.ts';

@@ -1,15 +1,15 @@
 // Layer 1, data tests. The typed readers of single settings out of the merged map (slurm, calendar,
 // search, literature search, open, mail, the change log's length, the usage tiers, the Processes
-// view's program names, the LaTeX formatter and its auto build, the usage refresh, the automatic
-// fetch, the editor's paint limit, the Files view's delete prompt, the apps' limits and closed
-// folders, and the Repositories view's scan depth and the chat's collection keys of sources.yml).
-// Each reader is run over a map that carries its own options catalog, whose every default differs
-// from the shipped one, so a default written in code instead of read from the entry fails a row. A
-// wrong value answers the entry's default and a problem naming the key; a missing key answers the
-// default and no problem; a catalog with no entry for a key throws.
+// view's program names, the usage refresh, the automatic fetch, the editor's paint limit, the
+// Files view's delete prompt, the apps' limits and closed folders, the Repositories view's scan
+// depth and the chat's collection keys of sources.yml, and the frame of present.yml). The writing
+// tools' readers are tested in writing.test.ts. Each reader is run over the map of synthetic.ts,
+// whose every default differs from the shipped one, so a default written in code instead of read
+// from the entry fails a row. A wrong value answers the entry's default and a problem naming the
+// key; a missing key answers the default and no problem; a catalog with no entry for a key throws.
 
 import { describe, expect } from 'vitest';
-import { it, plantScratch } from '../../../fixtures/scratch.ts';
+import { it, plantScratch } from '../../../../fixtures/scratch.ts';
 import {
     autofetchMin,
     calendarSettings,
@@ -17,8 +17,7 @@ import {
     chatContext,
     confirmDelete,
     engineDir,
-    latexFormatting,
-    lintSettings,
+    frameSetting,
     literatureSettings,
     loadConfig,
     mailSettings,
@@ -30,142 +29,17 @@ import {
     slurmSettings,
     usageTiers,
     appsSettings
-} from '../../../../src/lib/data/sources/config.ts';
-import { behaviorFindings } from '../../../../src/lib/data/sources/config/catalogs.ts';
+} from '../../../../../src/lib/data/sources/config.ts';
+import { behaviorFindings } from '../../../../../src/lib/data/sources/config/catalogs.ts';
+import {
+    paintLimit,
+    programApps
+} from '../../../../../src/lib/data/sources/config/settings/files.ts';
+import { settingProblems } from '../../../../../src/lib/data/sources/config/settings/problems.ts';
+import { SOURCES, mapWith, outcome, type Entries } from './synthetic.ts';
 
 /** Where the shipped config was read from: oculus's own files, no hub. */
 const SHIPPED_AT = { engine: engineDir(), hub: null, from: loadConfig(engineDir()).from };
-import { latexBuild } from '../../../../src/lib/data/sources/config/settings/latex.ts';
-import { paintLimit, programApps } from '../../../../src/lib/data/sources/config/settings/files.ts';
-import type { SettingProblem } from '../../../../src/lib/data/sources/config/settings/reader.ts';
-import { settingProblems } from '../../../../src/lib/data/sources/config/settings/problems.ts';
-
-type Entries = Record<string, Record<string, unknown>>;
-
-/** The shipped entries of behavior.yml, which a synthetic catalog is made from. */
-const SHIPPED: Entries = (loadConfig(engineDir()).config.options as Record<string, Entries>)[
-    'behavior.yml'
-];
-
-/** The shipped entries of sources.yml: the scan depth's, and the chat's collection keys'. */
-const SOURCES = (loadConfig(engineDir()).config.options as Record<string, Entries>)['sources.yml'];
-
-/** The shipped entry of sources.yml that the scan depth is read by. */
-const SCAN_DEPTH = SOURCES.repository_scan_depth;
-
-/** The default each synthetic entry answers, every one different from the shipped default. */
-const DEFAULTS: Record<string, unknown> = {
-    'slurm.resource': ['alpha'],
-    'slurm.days': 7,
-    'slurm.poll_min': 25,
-    'slurm.quota_min': 70,
-    'slurm.prewarm': false,
-    'calendar.poll_min': 20,
-    'calendar.days_back': 10,
-    'calendar.days_ahead': 20,
-    'search.max_hits': 300,
-    'search.timeout_s': 15,
-    'search.max_names': 7000,
-    'literature.timeout_s': 40,
-    'literature.per_source': 12,
-    'literature.cache_min': 5,
-    'mail.poll_min': 12,
-    'mail.per_signal': 30,
-    'changes.keep': 400,
-    'processes.patterns': ['perl', 'ruby'],
-    'latex.formatter': 'tex-fmt',
-    'latex.latexindent_path': '/a/latexindent',
-    'latex.tex_fmt_path': '/a/tex-fmt',
-    'latex.badness_path': '/a/badness',
-    'latex.auto_build': 'never',
-    'latex.auto_build_interval_ms': 2500,
-    'latex.recipe_default': 'last_used',
-    'latex.out_dir': 'out',
-    'latex.aux_dir': 'aux',
-    'latex.clean_and_retry': false,
-    'latex.auto_clean': 'on_built',
-    'latex.synctex_path': '/a/synctex',
-    'latex.reverse_synctex': 'double_click',
-    'latex.texcount_autorun': 'on_save',
-    'latex.context_menu': true,
-    'latex.texlab_path': '/a/texlab',
-    'latex.unimath_symbols': true,
-    'latex.includegraphics_preview': false,
-    'lint.chktex': false,
-    'lint.ruff': false,
-    'lint.eslint': false,
-    'lint.shellcheck': false,
-    'lint.writing': false,
-    'lint.chktex_path': '/a/chktex',
-    'lint.ruff_path': '/a/ruff',
-    'lint.shellcheck_path': '/a/shellcheck',
-    'lint.chktex_args': ['-q'],
-    'lint.writing_skip': ['skip/**'],
-    'lint.writing_glyphs': ['icons/**'],
-    usage_refresh_min: 12,
-    usage_refresh_model: 'm2',
-    'git.autofetch_minutes': 7,
-    'editor.paint_limit_kb': 100,
-    'files.confirm_delete': false,
-    'apps.connect_timeout_s': 11,
-    'apps.state_max_kb': 70,
-    'apps.store_max_kb': 300,
-    'apps.writes_per_min': 40,
-    'apps.opens_per_min': 41,
-    'apps.keys_per_s': 25,
-    'apps.messages_per_min': 700,
-    'apps.max_files': 600,
-    'apps.max_mb': 25,
-    'apps.host_output_kb': 300,
-    'apps.host_stop_seconds': 6,
-    'apps.scan_entries': 12000
-};
-
-/** A merged map whose catalog gives each setting a synthetic default, with the given keys set. */
-function mapWith(held: Record<string, unknown> = {}, drop: string[] = []): Record<string, unknown> {
-    const all: Entries = structuredClone(SHIPPED);
-    for (const [key, value] of Object.entries(DEFAULTS)) all[key] = { ...all[key], default: value };
-    const entries: Entries = Object.fromEntries(
-        Object.entries(all).filter(([key]) => !drop.includes(key))
-    );
-    return {
-        options: {
-            'behavior.yml': entries,
-            'sources.yml': { repository_scan_depth: { ...SCAN_DEPTH, default: 2 } }
-        },
-        agents: {
-            claude: {
-                lists: {
-                    model: {
-                        values: [
-                            { pass: 'a', id: 'm1' },
-                            { pass: 'b', id: 'm2' }
-                        ]
-                    }
-                }
-            }
-        },
-        ...held
-    };
-}
-
-/** What a reader answers and the problems it found, as key and kind, or the sentence it throws. */
-function outcome(
-    read: (problems: SettingProblem[]) => unknown
-): { value: unknown; problems: string[] } | { threw: string } {
-    const problems: SettingProblem[] = [];
-    try {
-        const value = read(problems);
-        return {
-            value,
-            problems: problems.map((one) =>
-                'problem' in one ? `${one.key}: ${one.problem.kind}` : `${one.key}: ${one.where}`
-            )
-        };
-    } catch (error) {
-        return { threw: error instanceof Error ? error.message : String(error) };
-    }
-}
 
 const NOT_FINITE = [Number.NaN, Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY, '5', null];
 
@@ -372,195 +246,6 @@ describe('openSettings and programApps', () => {
         });
         expect(programApps(mapWith({ open: { program_ext: MEMBERS } }))).toStrictEqual({
             '.pdf': 'com.adobe.Reader'
-        });
-    });
-});
-
-/** What latexBuild answers for a block that holds nothing: the `latex.*` defaults of DEFAULTS. */
-const BUILD_DEFAULTS = {
-    recipes: [],
-    tools: [],
-    recipeDefault: 'last_used',
-    outDir: 'out',
-    auxDir: 'aux',
-    autoBuild: 'never',
-    autoBuildIntervalMs: 2500,
-    cleanAndRetry: false,
-    autoClean: 'on_built',
-    synctexPath: '/a/synctex',
-    reverseSynctex: 'double_click',
-    texcountAutorun: 'on_save',
-    contextMenu: true,
-    texlabPath: '/a/texlab',
-    unimathSymbols: true,
-    includegraphicsPreview: false
-};
-
-describe('latexFormatting and the auto build', () => {
-    const PATHS = { latexindent_path: '', tex_fmt_path: '', badness_path: '' };
-    const read = (latex: unknown) => outcome((p) => latexFormatting(mapWith({ latex }), p));
-
-    it('answers the default for a formatter outside the entry words', () => {
-        expect(read({ formatter: 'prettier', ...PATHS })).toMatchObject({
-            value: { formatter: 'tex-fmt' },
-            problems: ['latex.formatter: choice']
-        });
-    });
-
-    it('reads the auto build by its entry', () => {
-        const auto = (latex: unknown) => latexBuild(mapWith({ latex })).autoBuild;
-        expect(auto({ auto_build: 'on_save' })).toBe('on_save');
-        expect(auto({ auto_build: 'on_file_change' })).toBe('on_file_change');
-        expect(auto({})).toBe('never');
-        expect(
-            outcome((p) => latexBuild(mapWith({ latex: { auto_build: 'x' } }), p))
-        ).toStrictEqual({ value: BUILD_DEFAULTS, problems: ['latex.auto_build: choice'] });
-    });
-});
-
-describe('lintSettings', () => {
-    const DEFAULT = {
-        on: { chktex: false, ruff: false, eslint: false, shellcheck: false, writing: false },
-        paths: { chktex: '/a/chktex', ruff: '/a/ruff', shellcheck: '/a/shellcheck' },
-        chktexArgs: ['-q'],
-        writingSkip: ['skip/**'],
-        writingGlyphs: ['icons/**']
-    };
-    const read = (lint: unknown) => outcome((p) => lintSettings(mapWith({ lint }), p));
-
-    it('answers the entry defaults for a block that holds nothing', () => {
-        expect(read({})).toStrictEqual({ value: DEFAULT, problems: [] });
-    });
-
-    it('reads the switches, the paths and the arguments the block holds', () => {
-        expect(
-            read({
-                chktex: true,
-                ruff: true,
-                eslint: true,
-                shellcheck: true,
-                writing: true,
-                chktex_path: '~/bin/chktex',
-                ruff_path: '/b/ruff',
-                shellcheck_path: '/b/shellcheck',
-                chktex_args: ['-wall', '-e9'],
-                writing_skip: [' a/** ', '', 'b/*.md'],
-                writing_glyphs: ['c/**']
-            })
-        ).toStrictEqual({
-            value: {
-                on: { chktex: true, ruff: true, eslint: true, shellcheck: true, writing: true },
-                paths: { chktex: '~/bin/chktex', ruff: '/b/ruff', shellcheck: '/b/shellcheck' },
-                chktexArgs: ['-wall', '-e9'],
-                writingSkip: ['a/**', 'b/*.md'],
-                writingGlyphs: ['c/**']
-            },
-            problems: []
-        });
-    });
-
-    it.each([
-        ['chktex', 'maybe', 'boolean'],
-        ['ruff', 'maybe', 'boolean'],
-        ['eslint', 'maybe', 'boolean'],
-        ['shellcheck', 'maybe', 'boolean'],
-        ['writing', 'maybe', 'boolean'],
-        ['chktex_path', 'chktex', 'path'],
-        ['ruff_path', 'ruff', 'path'],
-        ['shellcheck_path', '../shellcheck', 'path'],
-        ['chktex_args', 'no', 'strings'],
-        ['writing_skip', 'no', 'strings'],
-        ['writing_glyphs', 'no', 'strings']
-    ])('answers the default for a wrong lint.%s and names the key', (key, bad, kind) => {
-        expect(read({ [key]: bad })).toStrictEqual({
-            value: DEFAULT,
-            problems: [`lint.${key}: ${kind}`]
-        });
-    });
-});
-
-describe('latexBuild', () => {
-    const TOOLS = [
-        { name: 'one', command: 'latexmk', args: ['-pdf', '%DOC%'] },
-        { name: 'two', command: 'bibtex', args: ['%DOCFILE%'] }
-    ];
-    const RECIPES = [
-        { name: 'plain', tools: ['one'] },
-        { name: 'chain', tools: ['one', 'two', 'one'] }
-    ];
-    const read = (latex: unknown) => outcome((p) => latexBuild(mapWith({ latex }), p));
-
-    it('answers the entry defaults and no recipe for a block that holds nothing', () => {
-        expect(read({})).toStrictEqual({ value: BUILD_DEFAULTS, problems: [] });
-    });
-
-    it('reads the recipes and the tools they name, in the order the file holds them', () => {
-        expect(read({ tools: TOOLS, recipes: RECIPES })).toMatchObject({
-            value: { tools: TOOLS, recipes: RECIPES },
-            problems: []
-        });
-    });
-
-    it.each([
-        ['auto_build_interval_ms', 0, 'range', { autoBuildIntervalMs: 2500 }],
-        ['auto_build_interval_ms', 1.5, 'whole', { autoBuildIntervalMs: 2500 }],
-        ['recipe_default', 'x', 'choice', { recipeDefault: 'last_used' }],
-        ['out_dir', 5, 'text', { outDir: 'out' }],
-        ['aux_dir', 5, 'text', { auxDir: 'aux' }],
-        ['clean_and_retry', 'yes', 'boolean', { cleanAndRetry: false }],
-        ['auto_clean', 'x', 'choice', { autoClean: 'on_built' }],
-        ['synctex_path', 'synctex', 'path', { synctexPath: '/a/synctex' }],
-        ['reverse_synctex', 'x', 'choice', { reverseSynctex: 'double_click' }],
-        ['texcount_autorun', 'x', 'choice', { texcountAutorun: 'on_save' }],
-        ['context_menu', 'yes', 'boolean', { contextMenu: true }],
-        ['texlab_path', 3, 'text', { texlabPath: '/a/texlab' }],
-        ['unimath_symbols', 'yes', 'boolean', { unimathSymbols: true }],
-        ['includegraphics_preview', 'yes', 'boolean', { includegraphicsPreview: false }]
-    ])('answers the default for a wrong %s and names the key', (key, bad, kind, value) => {
-        expect(read({ [key]: bad })).toMatchObject({
-            value,
-            problems: [`latex.${key}: ${kind}`]
-        });
-    });
-
-    it('drops each row the entry refuses and names it, and keeps the others', () => {
-        const tools = [
-            TOOLS[0],
-            { ...TOOLS[0], command: 'other' },
-            { command: 'x', args: [] },
-            5,
-            { name: 'bare', command: '', args: [] },
-            { name: 'bad', command: 'x', args: 'no' },
-            TOOLS[1]
-        ];
-        const recipes = [
-            RECIPES[0],
-            { name: 'plain', tools: ['two'] },
-            { name: '', tools: ['one'] },
-            { name: 'lost', tools: ['nope'] },
-            { name: 'empty', tools: [] },
-            RECIPES[1]
-        ];
-        expect(read({ tools, recipes })).toMatchObject({
-            value: { tools: TOOLS, recipes: RECIPES },
-            problems: [
-                'latex.tools: repeat',
-                'latex.tools[2].name: text',
-                'latex.tools[3]: records',
-                'latex.tools[4].command: empty',
-                'latex.tools[5].args: strings',
-                'latex.recipes: repeat',
-                'latex.recipes[2]: unnamed',
-                'latex.recipes[3].tools: choice',
-                'latex.recipes[4].tools: choice'
-            ]
-        });
-    });
-
-    it('names a list that is no list as a family problem', () => {
-        expect(read({ tools: 'x', recipes: { a: 1 } })).toMatchObject({
-            value: { tools: [], recipes: [] },
-            problems: ['latex.tools: family', 'latex.recipes: family']
         });
     });
 });
@@ -874,6 +559,57 @@ describe('chatContext', () => {
             const map = mapOf();
             expect(outcome((p) => chatContext(map, p))).toStrictEqual({ value, problems });
             expect(settingProblems(map).some((one) => one.key === 'chat_context')).toBe(flagged);
+        }
+    );
+});
+
+describe('frameSetting', () => {
+    /** The shipped entries of present.yml, whose frame defaults are 1280 by 720. */
+    const PRESENT = (loadConfig(engineDir()).config.options as Record<string, Entries>)[
+        'present.yml'
+    ];
+    /** A map over the frame's entries with the defaults 1600 by 900, holding `frame`. */
+    const map = (frame: unknown): Record<string, unknown> => ({
+        options: {
+            'present.yml': {
+                'defaults.frame.width': { ...PRESENT['defaults.frame.width'], default: 1600 },
+                'defaults.frame.height': { ...PRESENT['defaults.frame.height'], default: 900 }
+            }
+        },
+        defaults: { frame }
+    });
+    const read = (frame: unknown) => outcome((p) => frameSetting(map(frame), p).frame);
+
+    it('reads the frame a workspace sets', () => {
+        expect(frameSetting(loadConfig(engineDir()).config).frame).toStrictEqual({
+            width: 1280,
+            height: 720
+        });
+        expect(read(undefined)).toStrictEqual({
+            value: { width: 1600, height: 900 },
+            problems: []
+        });
+        expect(read({ width: 1920, height: 1080 })).toStrictEqual({
+            value: { width: 1920, height: 1080 },
+            problems: []
+        });
+    });
+
+    it.each([
+        ['width', { width: 10, height: 1080 }, { width: 1600, height: 1080 }, 'range'],
+        ['width', { width: 1024.5, height: 1080 }, { width: 1600, height: 1080 }, 'whole'],
+        ['height', { width: 1920, height: 'x' }, { width: 1920, height: 900 }, 'number'],
+        ['height', { width: 1920, height: 3000 }, { width: 1920, height: 900 }, 'range']
+    ])(
+        'answers the default for a wrong defaults.frame.%s and names the key',
+        (side, frame, value, kind) => {
+            expect(read(frame)).toStrictEqual({
+                value,
+                problems: [`defaults.frame.${side}: ${kind}`]
+            });
+            expect(settingProblems(map(frame)).map((one) => one.key)).toContain(
+                `defaults.frame.${side}`
+            );
         }
     );
 });

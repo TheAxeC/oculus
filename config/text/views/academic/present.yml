@@ -143,6 +143,8 @@ text:
         said_rule_set: 'The rule of {0} is written.'
         title: Present
         toolbar: Deck controls
+        too_tall: Too tall
+        too_tall_glyph: warn
     views:
         present: Present
         present_glyph: poster

@@ -1,6 +1,6 @@
-// Layer 1, data. A deck's `present.yml` read into what the reader works from: the title, the tag
-// tones, the groups and the order. Nothing here touches the disk; the text and a way to report a
-// finding are handed in.
+// Layer 1, data. A deck's `present.yml` read into what the reader works from: the title, the frame
+// as the file holds it, the tag tones, the groups and the order. Nothing here touches the disk; the
+// text and a way to report a finding are handed in.
 //
 // A group or an order entry that is not of a shape the reader knows is reported and left out, and
 // the rest of the file is read, so one mistyped entry costs its own place and not the deck.
@@ -71,6 +71,8 @@ export function orderTokens(order: OrderEntry[]): string[] {
 /** What a `present.yml` holds. */
 export type DeckSpec = {
     title: string | null;
+    /** What `deck.frame` holds, as the file holds it, null when the file holds no such key. */
+    frame: { value: unknown } | null;
     tagTones: Record<string, string>;
     groups: GroupSpec[];
     order: OrderEntry[];
@@ -215,6 +217,7 @@ export function readSpec(value: unknown, raise: Raise): DeckSpec | null {
     const defaults = isMap(value.defaults) ? value.defaults : {};
     return {
         title: str(deck.title) ?? null,
+        frame: Object.hasOwn(deck, 'frame') ? { value: deck.frame } : null,
         tagTones: tones(defaults.tag_tones),
         groups: groupsOf(value.groups, raise),
         order: orderOf(value.order, raise),

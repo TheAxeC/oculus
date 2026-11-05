@@ -12,6 +12,14 @@
 // Counts, legends, summaries and grids read any group of the deck whose slide they sit in, placed
 // or not. A deck reached again while it is being read is a cycle: it is reported and places
 // nothing the second time.
+//
+// Each deck has a frame, the size in px its slides are laid out in: its own `deck.frame` when that
+// is a map of a width and a height in the ranges of the setting defaults.frame (the context's
+// `frame`, whose catalog entries hold the ranges), else the setting's frame, and a `deck.frame`
+// that is present and not such a map is a Finding on the key `deck.frame`. A member deck's frame
+// is read for its findings only: the deck the reader was asked for sets the frame of every slide
+// it draws. A slide with no title of its own is a Finding on its file at its line, under the key
+// `title`.
 
 import { existsSync, globSync, readFileSync, statSync } from 'node:fs';
 import { basename, dirname, join, relative } from 'node:path';
@@ -19,6 +27,7 @@ import { parse } from 'yaml';
 import { findingText, type TextCatalog } from '../../helpers/finding-text.ts';
 import type {
     Deck,
+    DeckFrame,
     DeckGroup,
     DeckIdeaCard,
     DeckOrderEntry,
@@ -28,6 +37,8 @@ import type {
     Finding
 } from '../../model/index.ts';
 import { fileBytesUrl } from '../../helpers/files/address.ts';
+import { mustBe } from '../config/catalog/value-words.ts';
+import { deckFrame, type FrameSetting } from '../config/settings/present.ts';
 import { realOf, resolveIn, type DeckRoot } from './files.ts';
 import { resolveGroups, type Doc, type Finder, type Resolved } from './groups.ts';
 import { buildSlide, type DeckProject, type KindContext } from './kinds.ts';
@@ -50,6 +61,8 @@ export type DeckContext = {
     domains: string[];
     /** The engine's `tag_tones`, which a deck's own `defaults` override. */
     tagTones: Record<string, string>;
+    /** The frame of the setting `defaults.frame`, and the rule a deck's own `deck.frame` meets. */
+    frame: FrameSetting;
     catalog: TextCatalog;
     /**
      * The text a file holds unsaved in an editor, by the file's real path. A file the deck reads
@@ -97,17 +110,47 @@ export function createReader(context: DeckContext): DeckReader {
     /** The 1-based first line of each slide of a slide file, by the file's path. */
     const firstLines = new Map<string, number[]>();
     const globbed = new Map<string, Doc[]>();
+    /** The frame each deck is laid out in, by the deck's real folder. */
+    const frames = new Map<string, DeckFrame>();
     let cuts = 0;
 
-    const raiseFor =
-        (file: string): Raise =>
+    /** A raise of findings on `file`, at `line` of it when one is given. */
+    const raiseAt =
+        (file: string, line?: number): Raise =>
         (key, id, ...args) => {
-            const finding = { file, key, message: findingText(context.catalog, id, ...args) };
-            const identity = `${finding.file}\n${finding.key}\n${finding.message}`;
+            const message = findingText(context.catalog, id, ...args);
+            const finding: Finding =
+                line === undefined ? { file, key, message } : { file, key, message, line };
+            const identity = `${file}\n${key}\n${line ?? ''}\n${message}`;
             if (known.has(identity)) return;
             known.add(identity);
             raised.push(finding);
         };
+    const raiseFor = (file: string): Raise => raiseAt(file);
+
+    /**
+     * The frame a deck's own `deck.frame` gives, or the setting's when the file holds none, and
+     * the setting's too, with a finding saying what is wrong, when what it holds is no frame.
+     */
+    function frameOf(held: { value: unknown } | null, raise: Raise): DeckFrame {
+        const { frame, rule } = context.frame;
+        if (held === null) return frame;
+        const read = deckFrame(held.value, rule);
+        if ('frame' in read) return read.frame;
+        const fault = read.fault;
+        const size = [frame.width, frame.height] as const;
+        if (fault.kind === 'not-a-map')
+            raise('deck.frame', 'findings.deck.frame_not_a_map', ...size);
+        else if (fault.kind === 'key') {
+            raise('deck.frame', 'findings.deck.frame_key_unknown', fault.key, ...size);
+        } else if (fault.kind === 'missing') {
+            raise('deck.frame', 'findings.deck.frame_side_missing', fault.side, ...size);
+        } else {
+            const words = mustBe(context.catalog, rule[fault.side], fault.problem);
+            raise('deck.frame', 'findings.deck.frame_side', fault.side, words, ...size);
+        }
+        return frame;
+    }
 
     const drafts = context.drafts ?? new Map<string, string>();
 
@@ -184,6 +227,7 @@ export function createReader(context: DeckContext): DeckReader {
         }
         doc.spec = spec;
         doc.title = spec.title ?? name;
+        frames.set(dir, frameOf(spec.frame, raise));
         doc.state = 'empty';
         if (spec.order.length === 0) raise('order', 'findings.deck.no_order');
         return doc;
@@ -339,14 +383,18 @@ export function createReader(context: DeckContext): DeckReader {
             };
             const built = buildSlide(filled, number, kind);
             if (built === null) continue;
+            const line = firstLines.get('path' in from ? from.path : '')?.[number] ?? 1;
             if (under !== null) {
                 built.slide.source = {
                     root: doc.root.key,
                     path: under,
                     index: number,
                     entry: entry.index,
-                    line: firstLines.get('path' in from ? from.path : '')?.[number] ?? 1
+                    line
                 };
+            }
+            if (built.untitled && 'path' in from) {
+                raiseAt(from.path, line)('title', 'findings.deck.untitled', entry.file, number + 1);
             }
             if (built.legend !== undefined && 'legend' in built.slide) {
                 built.slide.legend = legendOf(doc, built.legend, key);
@@ -557,6 +605,7 @@ export function createReader(context: DeckContext): DeckReader {
             order: [],
             groups: [],
             tagTones: { ...context.tagTones },
+            frame: context.frame.frame,
             keys: null,
             findings: [...raised]
         };
@@ -600,6 +649,7 @@ export function createReader(context: DeckContext): DeckReader {
             order: orderOfDeck(doc),
             groups: groupsOfDeck(doc),
             tagTones: { ...context.tagTones, ...(doc.spec?.tagTones ?? {}) },
+            frame: frames.get(doc.dir) ?? context.frame.frame,
             keys: doc.spec?.keys ?? null,
             findings: [...raised]
         };

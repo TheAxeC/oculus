@@ -1,9 +1,10 @@
 // Layer 2, server (the desktop host). The hidden window that prints a deck to a PDF. The page asks
-// over the bridge (`oculus:print-pdf`) with the address of the server's print route; the host loads
-// that address in a window of its own that is never shown, waits for the page to say it is ready
-// with a `data-ready` attribute on its root (or that it failed, with `data-failed`), calls
-// `printToPDF` with the page's own size and its backgrounds, closes the window and answers the
-// bytes. A page that has not said it is ready after the wait is closed and answered as a timeout.
+// over the bridge (`oculus:print-pdf`) with the address of the server's print route and the deck's
+// frame; the host loads that address in a window of its own that is never shown, opened at the
+// size of one slide's frame, waits for the page to say it is ready with a `data-ready` attribute
+// on its root (or that it failed, with `data-failed`), calls `printToPDF` with the page's own size
+// and its backgrounds, closes the window and answers the bytes. A page that has not said it is
+// ready after the wait is closed and answered as a timeout.
 //
 // The window is not one of the app's windows (windows.ts): it is never in its list, never recorded
 // in the window file, and its page may call no channel of the bridge (decide/sender.ts). It is made
@@ -14,6 +15,7 @@ import { BrowserWindow } from 'electron';
 import { READY_WAIT_MS } from '../../lib/data/file-ops.ts';
 import type { PrintAnswer } from '../../lib/state/shared/stores/desktop.ts';
 import type { WindowColours } from '../../lib/themes/parse.ts';
+import type { Frame } from '../decide/place.ts';
 import { windowFill, windowPreferences } from '../decide/window-options.ts';
 
 /** How often the host looks for the ready attribute. */
@@ -27,9 +29,6 @@ const STATE =
     "document.querySelector('[data-print-root][data-ready]') !== null ? 'ready' : " +
     "document.querySelector('[data-print-root][data-failed]') !== null ? 'failed' : 'wait'";
 
-/** The frame the page lays its slides out in, in px: the window starts at the size of one. */
-const FRAME = { width: 1280, height: 720 } as const;
-
 /**
  * What the printing needs of the app: the preload, the colours of the theme a window starts on,
  * whose background fills the hidden window, and how long to wait for the page.
@@ -40,12 +39,20 @@ function pause(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-/** Print the page at `address` to a PDF in a hidden window, and close the window. */
-export async function printPdf(address: string, options: PrintOptions): Promise<PrintAnswer> {
+/**
+ * Print the page at `address` to a PDF in a hidden window opened at the deck's frame, the size the
+ * page lays each slide out in, and close the window.
+ */
+export async function printPdf(
+    address: string,
+    frame: Frame,
+    options: PrintOptions
+): Promise<PrintAnswer> {
     const deadline = Date.now() + (options.wait ?? READY_WAIT_MS);
     const win = new BrowserWindow({
         show: false,
-        ...FRAME,
+        width: frame.width,
+        height: frame.height,
         ...windowFill(options.colours),
         webPreferences: windowPreferences(options.preload)
     });

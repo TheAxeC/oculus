@@ -190,3 +190,248 @@ Other commands the report quotes, run again:
 - That `t('findings.deck.too_tall')` resolves on the client. By reading, the page gets `textCatalog(...)` (`server/root/context.ts:423`), which holds the `findings` group, but nothing was drawn.
 
 Agent usage: afd5d153ef1fe296b, claude-opus-5-5, 282804 tokens, 84 tool uses, 24 min 25 s.
+
+## Repair round 1, refuted
+
+Worktree /Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O146, base 8c3da2a2f, snapshot /Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O146-round-1. I changed no file in the worktree: `git status --short` after every run is identical to the list I took before the first run (`diff` printed nothing, then "worktree unchanged"). The two scratch folders I used (compile, c3run) are removed.
+
+## Verification lines
+
+1. I did not run `npm run diagrams && npm run docs:palette`, because both write files (`writeFileSync` at `utils/diagrams/diagrams.mjs:204-205` and `palette.mjs:172`). The diagrams test `tests/checks/diagrams/diagrams.test.ts` runs `staleFiles()` in memory, and it is part of `ok vitest checks` below. `npm run test:quick -- --base 8c3da2a2f`, one run:
+```
+test:quick: 86 changed file(s), from git since 8c3da2a2f
+test:quick: 360 test file(s)
+ok      ASCII gate (1.3 s)
+ok      prettier (1.3 s): All matched files use Prettier code style!
+ok      svelte-kit sync (3.2 s)
+ok      eslint (3.1 s)
+ok      svelte-check (12.2 s): 1793903592733 COMPLETED 582 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest checks (213.9 s): Duration  197.60s (transform 80.60s, setup 0ms, import 221.22s, tests 529.85s, environment 7ms)
+FAILED  vitest (319.2 s)
+ FAIL  |unit| tests/routes/git/zenodo.test.ts > what Publish and a new version send, and what a press that stops leaves > refuses a DOI with no Zenodo status of a record with Anonymous among two creators, with no call after the read
+Error: Test timed out in 5000ms.
+ FAIL  |unit| tests/data/sources/config/layers/hub-vocab.test.ts > the vocabulary a hub lays over oculus's > words a removal of a category oculus lacks and a category named twice, and keeps oculus's rows
+Error: Test timed out in 5000ms.
+FAILED  vitest slow (521.1 s)
+ FAIL  |unit| tests/data/hubs/hub-portfolio.test.ts > the portfolio of several hubs > keeps a primary-hub id that begins with the name of a hub folder and a colon as a record of the primary, with no finding
+Error: Test timed out in 20000ms.
+ FAIL  |unit| tests/data/hubs/hub-portfolio.test.ts > a workspace of several hubs, every record under its hub and its key > gives a key two hubs hold two records, each project naming its own hub record, each shown by the key (C1)
+Error: Test timed out in 20000ms.
+test:quick: 524.5 s; failed: vitest, vitest slow
+```
+   - I ran each red file of my run, and each of the four files red in the builder's run, alone with `npx vitest run <file>`. Each passes:
+     - `tests/routes/git/zenodo.test.ts`: `Test Files  1 passed (1)`, `Tests  51 passed (51)`
+     - `tests/data/sources/config/layers/hub-vocab.test.ts`: `Tests  31 passed (31)`
+     - `tests/data/hubs/hub-portfolio.test.ts`: `Tests  16 passed (16)`
+     - `tests/data/hubs/website-files.test.ts`: `Tests  41 passed (41)`
+     - `tests/server/edit/config-key.test.ts`: `Tests  36 passed (36)`
+     - `tests/state/sessions/terminal/latex-fast-failure.test.ts`: `Tests  1 passed (1)`
+   - Whether the round can influence each of them through its imports:
+     - zenodo, hub-vocab, hub-portfolio, website-files and config-key all import `loadConfig` from `src/lib/data/sources/config.ts`. That module re-exports `frameSetting` from `settings/present.ts` (`config.ts:108`), which the round changed (item 7), and `loadConfig` reads `config/defaults/present.yml` and `config/options/present.yml`, whose comment lines the round changed (item 6). So the round reaches these five files by import. Each failure is a timeout under load, and each file passes alone. I do not count them.
+     - `latex-fast-failure.test.ts` is a file the step changed: a type-only import path, `settings/latex.ts` to `settings/writing/latex.ts`. It imports `builds.ts`, whose only change is the same type import. The round changes neither file and nothing either imports. Its red in the builder's run (`expected ... to have a length of 2 but got 14`) cannot come from the round. It passes alone and passed in my run.
+2. `npx vitest run tests/data/sources/present.test.ts tests/data/sources/config/settings tests/checks/config/config-folder.test.ts tests/checks/config/integrity.test.ts tests/server/desktop/window-guard.test.ts` prints `Test Files  6 passed (6)` and `Tests  163 passed | 9 skipped (172)`. The same as the builder's.
+3. The first grep prints only `src/desktop/decide/place.ts:75:const AUDIENCE_SIZE = { w: 960, h: 540 } as const;`. The second grep, `grep -rn "1280\|\b720\b" src --include='*.ts' --include='*.svelte'`, prints only `src/desktop/decide/place.ts:18:const DEFAULT_SIZE = { w: 1280, h: 800 } as const;`.
+4. The perl ASCII gate over `src tests bin config` prints nothing (rc 0). `LC_ALL=C grep -n '[^ -~]'` over the 77 touched files prints nothing (rc 1). The 77 files come from `git status --short`, with untracked folders expanded and `.svg` files left out. `grep -c '[^ -~]'` gives 0 for each `docs/diagrams/*.svg`.
+5. `wc -l`, the largest files:
+   - `context.ts` 878, `data/index.ts` 862, `builds.ts` 850, `model/index.ts` 836, `status.ts` 684, `read.ts` 675, `present.svelte.ts` 556.
+   - The largest component is `Present.svelte` at 518. `Findings.svelte` is 296, `Stage.svelte` 134, `Framed.svelte` 37.
+   - `live.svelte.ts` is 59 and `settings/present.ts` 87.
+   - Items per folder (`ls | wc -l`): `config/settings` 10, `settings/writing` 2, `present/screen` 4, `present/acts` 5, `tests/data/sources/config` 10, `tests/data/sources/config/settings` 3, `state/workbench/navigation` 10.
+6. `sh utils/unused-exports.sh` prints 335 lines, and the base's `unused-exports.txt` has 335. `diff` prints nothing (rc 0).
+7. Rename greps over `src tests config docs README.md`:
+   - The old import paths (`settings/latex`, `settings/lint`, `config/settings.test`, with the `settings/writing/` lines left out): no hits (rc 1).
+   - `FRAME_WIDTH|FRAME_HEIGHT|AUDIENCE_FEATURES`: no hits (rc 1).
+   - `AUDIENCE_SIZE`: `place.ts:75,118,119,149,150`.
+   - `Printer` and `printPdf`: `preload.cjs:33`, `app.ts:37,151`, `print.ts:46`, `bridge.ts:50,124`, `stores/desktop.ts:91`, `export.ts:94`. Each carries the frame.
+   - The round removes `drawn` from `createLive`'s `Reads`, and the round's one caller, `Present.svelte`, is carried. The new names `kept` and `pageFindings` are used only at the sites listed under item 3 and item 5 below.
+8. History-word grep (the words of spec.md:44):
+   - Over the 91 lines the round adds (the `+` lines of the delta and of the `live.svelte.ts` diff): no hits (rc 1).
+   - Over the 2049 lines the whole step adds (the `+` lines of `git diff 8c3da2a2f` over `src tests config docs/HELP.md docs/templates.md`, and every untracked file under `src` and `tests`): no hits.
+9. By reading:
+   - The round adds no Markdown list item.
+   - The YAML comment at `config/defaults/present.yml:1` and the `groups:` line at `config/options/present.yml:36` are one line each.
+   - One comment the round changed is not rewrapped as a paragraph: `slide.css:5-8`, Standards St1.
+   - Of the sentences the round adds, one is long: `Stage.svelte:15-18`, about 55 words, joined by "so" and "and". The standards pages set no word limit for a comment, so I raise no finding on it.
+
+Commands the round's section quotes, run again in the same form:
+- `grep -n "1040" src/lib/themes/slide.css src/lib/views/academic/present/Slide.svelte` prints `slide.css:4`, `slide.css:16` and `Slide.svelte:5`. Matches.
+- The `svelte/compiler` program (client, runes), in a scratch folder outside the worktree:
+  - `Framed.svelte`:
+    - `25: const drawing = $.derived(() => JSON.stringify([` over `$$props.deck.root`, `$$props.deck.path`, `$$props.row.key`, `$$props.row.title` (lines 26-29)
+    - `41: get drawing() {` and `42: return $.get(drawing);`
+    - `44: onmeasure: (over) => measured($$props.deck, $$props.row, over),`
+  - `Stage.svelte`:
+    - `36: drawing = $.prop($$props, 'drawing', 3, '');`
+    - `45: $.user_effect(() => {`, `46: const element = $.get(drawn);`, `47: const report = $$props.onmeasure;`
+    - `50: $.snapshot(drawing());`
+    - `52: if (element === null || report === undefined) return;`
+    - `57: const hint = element.querySelector('[data-key-hint]')?.offsetHeight ?? 0;`
+    - `59: report(Math.max(0, element.scrollHeight - element.clientHeight - hint));`
+    - `62: const observer = new ResizeObserver(measure);`, `64: observer.observe(element);`, `66: for (const child of element.children) observer.observe(child);`, `68: return () => observer.disconnect();`
+  - Matches the builder's lines.
+- `grep -n "kept" src/lib/state/life/present.svelte.ts src/lib/views/academic/present/acts/live.svelte.ts` prints `present.svelte.ts:147,155,171,284,317,318,398` and `live.svelte.ts:5,32,49`. Matches.
+- `grep -rn "pageFindings" src` prints `rail-badges.svelte.ts:22,224`, `status.ts:493` and `Findings.svelte:59,93`. Matches.
+- `grep -rn "registry.refused(), ...present" src` prints `src/lib/state/workbench/navigation/status.ts:497:    return [...registry.refused(), ...present.findings()];`. The report says it "prints nothing": Proof P2.
+- `python3 -c "import yaml;..."` prints `yaml ok`. Matches.
+- `tests/checks/imports/order.test.ts` alone prints `Test Files  1 passed (1)`, `Tests  13 passed (13)`. Matches.
+- `awk 'length > 100'` over the round's files prints `Slide.svelte:74: 134` and `Present.svelte:438: 105`. The base has `Slide.svelte:71: 134` and `Present.svelte:438: 105`. Matches.
+- The line counts the report quotes match `wc -l`.
+- I also ran:
+  - `deckFrame` over the C3 inputs, as a case run outside the worktree, since the round changed `deckFrame`. `{1024,768}` gives the frame. Each other input gives one fault: `{width:1024}` missing height; `100` range; `1024.5` whole; `'1024'` number; `-1024` range; `depth` key; `null` not-a-map; `'wide'` not-a-map; `{width:null}` number.
+  - C9: `OCULUS_TEST_HUB=$HOME/workspace/research-hub node tests/data/real-hub.probe.ts` prints `manifest findings: 0`, `registry findings: 0`, `collection findings: 0`, `config findings: 0` and `snapshot findings: 0`. `tests/checks/config/integrity.test.ts` with `OCULUS_TEST_HUB` set prints `Tests  14 passed (14)`.
+
+## Verdicts, the round's eight items
+
+1. Holds. `slide.css:16` reads `--slide-reading: min(1040px, calc(var(--slide-width) - 2 * var(--slide-pad)));`. The head of `slide.css` and `Slide.svelte:4-8` say it. The report's look list names 1040 px and 896 px (`O146-report.md:538`). The comment's wrap is Standards St1.
+2. Holds.
+   - `Stage.svelte` takes `drawing`, and the effect reads it through `$.snapshot(drawing())` (compiled line 50).
+   - `Framed.svelte` passes it as a getter over a derived value made of the deck's root and path and the slide's key and title (compiled lines 25-29 and 41-42).
+   - A change of slide or of title reruns the effect: the old observer is disconnected and a new one observes the frame and its children again. The `onmeasure` closure reads the current `$$props.row`, so the finding carries the new title.
+   - Nothing is remounted.
+   - A change to a slide's `source` alone is not measured again: Behaviour B1.
+3. Holds as ruled.
+   - `answered()` holds no `kept` (`present.svelte.ts:296-300`). `load()` calls `kept(answer.deck)` (`:284`).
+   - `live.svelte.ts:46-50` returns on `!current` before `live = answer.deck` and `kept(answer.deck)`. A dropped answer reaches the store not at all.
+   - The deck query is marked only with `'wait'` (`present.svelte.ts:249,254,258-262`). `query-core` runs one fetch per key at a time, and the query is never cancelled, so `load()` answers arrive in order.
+   - The case the builder names is real. It follows from the ruling's choice of the saved deck's answer as kept: Spec S1.
+4. Holds by reading. Stage subtracts the `[data-key-hint]` element's `offsetHeight`. The hint's CSS is `margin: auto 0 0; padding-top: 1.2em` (`Slide.svelte:91-96`), so when the column overflows, its top margin is 0 and the hint adds exactly its `offsetHeight`. The result is clamped at 0. That makes the measure equal to the overflow without the hint, wherever the slide is drawn. The on-screen check is the look.
+5. Holds. `pageFindings(registry, present)` is at `status.ts:488-498`. `Findings.svelte:93` and `rail-badges.svelte.ts:224` both read it. The only spread left is inside `pageFindings`.
+6. Holds. `config/defaults/present.yml:1` and the `groups:` line at `config/options/present.yml:36` say that a deck changes `defaults.tag_tones` under its own `defaults:` and the frame under `deck.frame`. YAML parses.
+7. Holds.
+   - The fallback to `not-a-map` after the loop is gone.
+   - `sides` is a `Record<Side, number>` filled by `held as number` after `valueProblem` passed. For a `number` control, `valueProblem` returns `{ kind: 'number' }` for anything not finite (`value-rule.ts` `case 'number'`).
+   - The C3 case run reproduces every fault.
+8. Holds. The Settings section `Slides` and the editor completion of `frame` are in the report at `:543-544`.
+
+## Verdicts, What to build (the whole diff since the base)
+
+1. Holds. The round changes only comments and `deckFrame`'s narrowing here, and the settings folder and the C3 run pass.
+2. Holds.
+3. Holds. The reading column is 1040 px at 1280 and 896 px at 1024, from the `min()` at `slide.css:16`.
+4. Violated, in part: Behaviour B1. Spec S1 is the ruled design itself and goes to the orchestrator. The first review's B1, B2 and B3 and its P1 are closed by reading and by the compiled lines above.
+5. Holds. The round does not touch the reader. The C8 rows of the first review were not repeated.
+6. Holds. The comments say the deck's frame and the new reading column. `HELP.md:331` names no column width or key hint. The comment's wrap is Standards St1.
+
+## Verdicts, cases
+
+- C1: met. The reading column is 1040 px at 1280 by `slide.css:16`, read. The first review ran the reader for the deck's frame, and the round does not touch the reader.
+- C2: met. 896 px at 1024 by the same line, read. The `audiencePlace` run is unchanged by the round.
+- C3: met, by my `deckFrame` case run.
+- C4: met. The settings folder passes in item 2.
+- C5: met by reading. A slide shortened while it is not drawn is measured when it is next shown, through `drawing`.
+- C6: met by reading.
+- C7: met by reading.
+- C8: met. The first review ran it, and the round does not touch the reader.
+- C9: met, by the probe and the integrity run.
+- C10: met. The first review ran it, and the round does not touch the bridge.
+- C11: partial: Spec S1. For a deck drawn from its files, the saved deck's answer prunes as asked. While a pane draws drafts, the saved deck's answer prunes a slide the pane still draws.
+- C12: met by reading. The key is the deck's root and path and the slide's key, and B3 of the first review is closed.
+- C13: met by reading.
+
+## Spec
+
+- S1. The ruled rule for which answer is kept removes the measure of a slide a pane is still drawing.
+  - Place: `src/lib/state/life/present.svelte.ts:283-284`
+    ```
+    +        if (answer.deck !== null) kept(answer.deck);
+    ```
+    and `src/lib/views/academic/present/acts/live.svelte.ts:47-49`
+    ```
+    +                if (!current) return;
+    +                live = answer.deck;
+    +                if (answer.deck !== null) kept(answer.deck);
+    ```
+  - What is wrong: the store keeps one measure per deck and slide. Two versions of one deck can be drawn on one page at once: the saved one and the one read over the drafts. A kept answer of either version prunes the measures of the other, and no Stage measures again, because neither the `drawing` text nor any size changes.
+  - Failure scenarios, by reading:
+    - The builder's case, confirmed. The pane draws the deck read over the drafts, in which slide X is added and is not on disk, and X is measured too tall. The reader then saves another file of the deck. The `files` push marks the deck query, and `load()` calls `kept` with the saved deck, which lacks X. X's finding and its tile mark go while X is still drawn too tall.
+    - The mirror case. One pane presents the deck, so it draws the saved deck (`drafts: () => (presented ? [] : drafts)`, `Present.svelte`). A second pane on the page draws the drafted deck, from which the reader has cut slide Y. The live answer's `kept` removes Y's measure while the presenting pane still draws Y too tall.
+    - A drafted slide that is not on disk keeps its finding after it stops being drawn. X measured too tall in the drafted deck stays in Findings after the draft is closed unsaved. `live` becomes null with no `kept`, and the saved answer the pane draws next was held before X was measured, so nothing prunes X until the next push.
+  - Who it falls to: the brief's item 4 ("when a deck's answer arrives again, its slides no longer in it leave the map") and ruling 3 of the round both make the saved deck's answer prune. The builder built the ruling and named the first case. This is for the orchestrator.
+  - Options:
+    - (a) The pane hands `kept` the deck it draws, saved or drafted, from an effect over its `deck`, and `load()` calls nothing. This closes the first and third scenarios. It leaves the mirror case.
+    - (b) As (a), with a measure pruned only when no pane draws a deck that holds its slide. This closes all three, at the cost of a count of drawn decks in the store.
+    - (c) Keep the ruling. This is the lazy option, since it leaves a drawn slide too tall out of Findings.
+  - My judgment: (a) is the smaller change that ends the common case. Only (b) ends the mirror case.
+
+## Proof
+
+- P1. The first part of the report states what the round made false, and the look is taken from the report.
+  - Place: `.scratch/migration/agents/reviews/O146-report.md:322`
+    ```
+    - A deck answer arriving after a measure: `kept()` removes the measures of slides the answer does not hold. A slide still held keeps its entry until its Stage measures again. A changed `deck.frame` changes the frame's size, and a changed title or row changes the `onmeasure` prop, which re-runs Stage's effect. Either way the slide is measured again.
+    ```
+    `:328`
+    ```
+    - C1: open the portfolio deck in Present. ... except that the reading column of text slides is 1152 px wide instead of 1040 (J2).
+    ```
+    and `:3`, Decision J2, "widens the reading column of a 1280 deck".
+  - What is wrong:
+    - The compiled `onmeasure` is a plain property, so the claim at `:322` is still false. The rerun now comes from `drawing`, which the Repair round section says.
+    - `kept()` no longer runs on every answer.
+    - The column at 1280 is now 1040 px, not 1152.
+    - The Repair round section, which states the true facts, does not withdraw these lines.
+  - Failure scenario: the look at landing is taken from "Host- and user-visible changes". Its C1 line expects 1152 px, so the 1040 px column, which is what item 1 asks for, reads as a defect. Or one of the two expectations is skipped.
+- P2. One quoted check does not reproduce.
+  - Place: `O146-report.md:427`, "`grep -rn "registry.refused(), ...present" src` prints nothing".
+  - My run of that exact command prints `src/lib/state/workbench/navigation/status.ts:497:    return [...registry.refused(), ...present.findings()];`.
+  - The conclusion holds: the two call sites are gone, and the one spread left is inside `pageFindings`. The printed output stated is false.
+  - Failure scenario: a reader who reruns the check to confirm item 5 gets a hit and cannot tell from the report whether it is expected. Low.
+
+## Standards
+
+- St1. The comment the round edited in `slide.css` is not rewrapped as one paragraph (spec.md:45).
+  - Place: `src/lib/themes/slide.css:5-8`
+    ```
+    +   and in a frame too narrow for that it is the frame's width less the padding on both sides (896
+    +   px in a 1024 frame). The
+    +   Present pane scales the frame to its box and the print route prints it at scale 1, both through
+    +   this one class. */
+    ```
+  - Line 6 is 27 columns and ends inside the paragraph ("The"). The wrap also splits "896" from "px".
+  - Prettier does not rewrap CSS comments, so the check passes over it.
+  - Failure scenario: none at run time. It breaks the rule that every edited comment is rewrapped, and the landing has to fix it.
+
+## Behaviour
+
+- B1. The text that makes the Stage measure again leaves out the slide's source, so a slide that moves inside its file keeps the old line in its finding.
+  - Place: `src/lib/views/academic/present/screen/Framed.svelte:32`
+    ```
+    +    const drawing = $derived(JSON.stringify([deck.root, deck.path, row.key, row.title]));
+    ```
+  - What is wrong:
+    - The finding's `line` is the `source.line` stored at the last `measured` call (`present.svelte.ts` `measured`, `next.source`).
+    - A slide's key is `${entry.file}#${number}` (`read.ts:364`), so it does not change when the slide's line does.
+    - `kept()` does not refresh the stored source.
+  - Failure scenario:
+    - A file holds two slides. Slide 2 is too tall and drawn on its Overview tile, or in the pane.
+    - The reader adds two lines to slide 1, which still fits. The drafted deck answers with slide 2 at a line 2 later, with the same key, title and size.
+    - `drawing` is unchanged and no size changes, so `measured` is not called. Findings opens slide 2's finding two lines above the slide until something else makes the Stage measure again.
+  - Item 4 of the brief requires the finding's `line` to be the slide's `source.line`, and the round's item 2 has the finding name "the slide as drawn".
+  - Adding `row.source?.path` and `row.source?.line` to the text would end it. Low.
+
+## Declined to judge
+
+- `npm run diagrams` and `npm run docs:palette`, as commands. Both write into the worktree, which this review may not change. That the committed diagrams match the source is covered by `tests/checks/diagrams/diagrams.test.ts` inside `ok vitest checks`. No check of `docs/palette.md` was run.
+- Whether the Stage's new measure is right on screen:
+  - the key hint subtracted on the pane's first slide;
+  - a newly shown slide measured when the right arrow is pressed;
+  - the first slide's finding not flipping when the Overview is opened and closed;
+  - the 1040 px and 896 px columns;
+  - the Settings section `Slides` and the editor's `frame` completion.
+  
+  Starting a server and driving a browser are not allowed here. The look at landing settles these, with the states at `O146-report.md:536-544`.
+- Whether `ResizeObserver` delivers its first observation after Svelte has put the new slide's DOM in place, so the new slide is what is measured. By reading, the effect runs after the render effects of the same flush, and the observer's callback runs after layout. Not run. The look settles it.
+- The C1, C2, C8 and C10 runs of the first review (the deck reader over a scratch deck, `audiencePlace`, `wholeFrame`), which I did not repeat. The round changes none of `read.ts`, `kinds.ts`, `place.ts` or `bridge.ts`, which `git diff 8c3da2a2f` against the snapshot shows: none of them is in the delta.
+- Whether `latex-fast-failure.test.ts:65` (14 reads where 2 are expected) also fails on the base under the same load. Settling it needs a run of the base copy's test while the full list runs.
+
+Agent usage: a2d2a3b6eaecb28b4, claude-opus-5-5, 227871 tokens, 67 tool uses, 18 min 28 s.
+
+## Closed
+
+- Repair round 1, Spec S1: closed at landing by option (b). The Present store keeps the deck each pane draws, `drawing(pane, deck)` in `src/lib/state/life/present.svelte.ts`, and a slide's measure leaves the store only when neither the saved deck's answer nor any deck a pane draws holds the slide (`prune` and `holds` in the same file); `load()` calls `prune` with the saved deck. `src/lib/views/academic/present/acts/live.svelte.ts` is `createDrawn`, which hands the store the deck its pane draws and takes it back when the pane goes, and `Present.svelte` draws `createDrawn`'s deck. This closes the builder's case, the mirror case and the drafted slide left in Findings. Option (a) left the mirror case; option (c), keeping the ruling, was the lazy option.
+- Repair round 1, Behaviour B1: closed at landing. The `drawing` text of `src/lib/views/academic/present/screen/Framed.svelte` holds `row.source?.path` and `row.source?.line`, so a slide that moves inside its file is measured again and its finding carries the new line.
+- Repair round 1, Standards St1: closed at landing. The head comment of `src/lib/themes/slide.css` is one rewrapped paragraph.
+- Repair round 1, Proof P1 and P2: lines of the builder's report (`O146-report.md:3`, `:322`, `:328`, `:427`), which stays the builder's record. The booking and the landing report state the facts in their place: the measure reruns through `drawing`, the column is 1040 px at 1280, and the grep of `:427` prints the one spread inside `pageFindings` (`status.ts:497`).
+- Found at the look, from round 1's item 1: the column measured 894 px in a 1024 frame, not the 896 px the comments, the report and this review's lines 285, 310 and 318 state. `.reading` is `width: 100%` inside the frame's content box (`Slide.svelte:81-88`), and the frame is `border-box` with a 1 px border, so the column is the frame's width less 128 px of padding and 2 px of border; the `calc` term of the `min()` never binds. Closed at landing: `--slide-reading` is `1040px` as on the base, `--slide-width` (set in `screen/Stage.svelte` and `routes/present/print/+page.svelte`) and `--slide-pad`, which nothing else read, are removed, and the head comments of `slide.css` and `Slide.svelte` state the column as drawn.
+- First review, the G13 line of `agents/guarded.md`: fixed at landing, naming `tests/data/sources/config/settings/settings.test.ts` and `writing.test.ts`.
+- Found at the look, from round 1's item 4: with the forty-item slide first in a 1024 by 768 deck, the pane, which draws the key hint, measured 911 px over and the Overview tile 912 px, so the slide's one finding changed with where it was drawn. The Stage took the rounded `scrollHeight` (1753 of 1753.375) less the hint's rounded `offsetHeight` (76 of 75.59). Closed at landing: `screen/Stage.svelte` takes the content's height and the hint's unrounded, in the frame's own px, and rounds the difference once; the pane and the tile then both give 912 px, and the finding read 912 px before and after the Overview was closed and opened again. The Stage's head comment no longer says it sets the width the reading column is made from.

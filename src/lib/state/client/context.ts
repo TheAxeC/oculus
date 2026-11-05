@@ -646,7 +646,8 @@ export function createClientState(
         audit,
         problems,
         selectors,
-        registry
+        registry,
+        present
     );
     const debug = withQueries(
         'debug',

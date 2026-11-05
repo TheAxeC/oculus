@@ -8,6 +8,7 @@
 // (src/desktop/preload.cjs) names this type in a JSDoc import and implements it.
 
 import type { MenuCommand, RecentEntry } from '../../../data/helpers/keys/oculus/menu-commands.ts';
+import type { DeckFrame } from '../../../data/model/index.ts';
 
 /** A window's content area on the screen. */
 type ScreenBounds = { x: number; y: number; w: number; h: number };
@@ -35,7 +36,7 @@ export { READY_WAIT_MS } from '../../../data/file-ops.ts';
 /**
  * What the host answers to a print of the deck at an address: the PDF's bytes, or why there are
  * none: the page was not ready within the wait, the print failed, or the address is not the print
- * route of this server.
+ * route of this server or the frame is not two whole numbers above zero.
  */
 export type PrintAnswer =
     { ok: true; bytes: Uint8Array } | { ok: false; error: 'timeout' | 'failed' | 'refused' };
@@ -83,8 +84,11 @@ export type DesktopBridge = {
     stopFind: () => void;
     /** Hide the find bar and give the page the keyboard. */
     closeFind: () => void;
-    /** Print the deck the print route at `address` draws to a PDF, in a window the host hides. */
-    printPdf: (address: string) => Promise<PrintAnswer>;
+    /**
+     * Print the deck the print route at `address` draws to a PDF, in a window the host hides and
+     * opens at `frame`, the deck's frame as saved.
+     */
+    printPdf: (address: string, frame: DeckFrame) => Promise<PrintAnswer>;
     /**
      * The reader pressed the empty part of the title bar strip twice: the host does what the
      * system's title bar does (zoom, minimise or nothing, as macOS's setting says).

@@ -57,7 +57,7 @@ import { engineDir } from './places/engine-dir.ts';
 import { engineFile } from './sources/config/folder.ts';
 import { createReader } from './sources/deck/read.ts';
 import type { DeckProject } from './sources/deck/kinds.ts';
-import { textCatalog, type loadConfig } from './sources/config.ts';
+import { frameSetting, textCatalog, type loadConfig } from './sources/config.ts';
 import { VOCAB_SHAPES } from './sources/config/merge/in-place.ts';
 import { categoriesFindings } from './sources/config/sections/boards.ts';
 import { vocabFindings } from './sources/config/sections/vocab.ts';
@@ -341,6 +341,7 @@ function decks(
         projects: deckProjects(manifests, vocabKeys(config.merged.tiers)),
         domains,
         tagTones: config.tagTones,
+        frame: frameSetting(config.merged),
         catalog: config.text
     });
     const found: Record<Id, RawDeck> = {};

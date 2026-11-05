@@ -23,7 +23,12 @@ import { hubDomainsOf, portfolioConfigFrom } from '../../../src/lib/data/index.t
 import { buildOneHub } from '../../fixtures/hubs/hub-build.ts';
 import { tex } from '../../../src/lib/views/academic/present/markup.ts';
 import { ENTITY_KINDS } from '../../../src/lib/data/snapshot/normalise.ts';
-import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
+import {
+    engineDir,
+    frameSetting,
+    loadConfig,
+    textCatalog
+} from '../../../src/lib/data/sources/config.ts';
 import { isMap } from '../../../src/lib/data/helpers/guards.ts';
 import { DEMO_HUB, hubOf, realHub, realHubName, skipLine } from '../../fixtures/hubs/real-hub.ts';
 import { it, plantScratch } from '../../fixtures/scratch.ts';
@@ -104,6 +109,7 @@ function readDeck(read: HubRead, projects: Project[], folder: string): Deck {
         projects: deckProjects(projects),
         domains: Object.keys(hubDomainsOf(read.hub, read.config)),
         tagTones: read.config.tagTones,
+        frame: frameSetting(read.merged),
         catalog: textCatalog(read.merged)
     }).read(root, folder);
 }
@@ -331,6 +337,7 @@ describe('the count of written equations', () => {
             projects: [],
             domains: [],
             tagTones: {},
+            frame: frameSetting(loadConfig(engine).config),
             catalog: textCatalog(loadConfig(engine).config)
         }).read(root, 'projects/active/alpha/present');
         const drawn = drawnEquations(deck).length;

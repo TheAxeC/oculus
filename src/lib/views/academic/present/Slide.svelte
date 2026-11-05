@@ -1,11 +1,12 @@
 <script lang="ts">
     // Layer 3, Present partial. One slide of the deck drawn as the kind it is. It is the one place
     // that knows which component each kind is, so the pane draws a slide by handing this the slide
-    // and the deck and nothing else. The slide sits in a reading column of at most
-    // `--slide-reading` (the frame's width less its padding, set by Present.svelte), centred in the
-    // frame, and a part that centres its content takes the column's height.
+    // and the deck and nothing else. The slide sits in a reading column as wide as the frame's
+    // inner width and at most `--slide-reading` (1040 px, themes/slide.css), centred in the frame,
+    // and a part that centres its content takes the column's height.
     //
-    // The first slide of a deck carries the key hint in its foot; no deck file holds one.
+    // The first slide of a deck carries the key hint in its foot when the pane draws it; no deck
+    // file holds one. A Stage that measures the slide leaves the hint out of the measure.
 
     import Grid from './parts/Grid.svelte';
     import Plain from './parts/Plain.svelte';

@@ -365,3 +365,180 @@ Still true as they stand:
 - The brief's path `src/lib/views/academic/present/screen/Slide.svelte` is `src/lib/views/academic/present/Slide.svelte` (`ls src/lib/views/academic/present/screen` lists `Framed.svelte`, `Stage.svelte`, `fullscreen.svelte.ts` and `keys.ts`).
 - Verify item 2 names `tests/data/sources/config/settings.test.ts`, which is now `tests/data/sources/config/settings/settings.test.ts` (C4) and `writing.test.ts`. For the orchestrator: G13 at `.scratch/migration/agents/guarded.md:254` names `tests/data/sources/config/settings.test.ts` four times. One of these is "the `latex.texlab_path`, `latex.unimath_symbols` and `latex.includegraphics_preview` rows of 'answers the default for a wrong %s and names the key'", which is now in `tests/data/sources/config/settings/writing.test.ts`. The others (one case per setting reader, `literature.*`, 'appsSettings', 'slurmSettings') are now in `tests/data/sources/config/settings/settings.test.ts`. C4's tests to record under G13: describe 'frameSetting', 'reads the frame a workspace sets', and the table 'answers the default for a wrong defaults.frame.%s and names the key'. The ledger is outside this step's write list, so these lines are unchanged.
 - "the way tagTones does" for the frame's route to the reader is not possible with the frame's rule in `PortfolioConfig` (J1).
+
+# Repair round 1
+
+The eight items of `.scratch/migration/agents/briefs/O146-round-1.md` are made as ruled. One check is red: the single run of `npm run diagrams && npm run docs:palette && npm run test:quick` failed 5 tests in `vitest` and `vitest slow`. Each of the 4 failing files passes when run alone (see "Verify"). Item 3 leaves one case open that the orchestrator should decide on ("Open point").
+
+## Items
+
+1. **Reading column.**
+   - Change: `src/lib/themes/slide.css:16` now reads `--slide-reading: min(1040px, calc(var(--slide-width) - 2 * var(--slide-pad)));`. The head of `slide.css` (lines 1-7) and `Slide.svelte:4-8` now say the column is at most 1040 px, and in a frame too narrow for that it is the frame's width less the padding (896 px in a 1024 frame).
+   - Check: `grep -n "1040" src/lib/themes/slide.css src/lib/views/academic/present/Slide.svelte` prints `slide.css:4`, `slide.css:16` and `Slide.svelte:5`. By the arithmetic: at 1280, min(1040, 1152) = 1040; at 1024, min(1040, 896) = 896.
+   - Look: see the "For the look" list at the end of this section.
+2. **A newly shown slide is measured.**
+   - Change:
+     - `screen/Stage.svelte` takes a new prop, `drawing?: string`, which defaults to `''`. Its measuring effect reads `drawing` with `$state.snapshot(drawing)`, the idiom `ui/tabs/Tabs.svelte:154` uses, so the effect runs again, observes the frame again and measures again when `drawing` changes.
+     - `screen/Framed.svelte` computes `const drawing = $derived(JSON.stringify([deck.root, deck.path, row.key, row.title]))` and passes it to the Stage. A pane or presenter Stage moved to another slide, or showing a retitled slide, measures again. The `onmeasure` closure reads the current `row` when it is called, so the finding carries the new title.
+     - Nothing is remounted. The head comments of Stage and Framed say this.
+   - Check: the compile program `compile.mjs` (source below) compiles each file with `svelte/compiler` (`generate: 'client', runes: true`) and prints the matching lines. For `node compile.mjs src/lib/views/academic/present/screen/Framed.svelte 'drawing|onmeasure'`:
+     ```
+     25:     const drawing = $.derived(() => JSON.stringify([
+     41:         get drawing() {
+     42:             return $.get(drawing);
+     44:         onmeasure: (over) => measured($$props.deck, $$props.row, over),
+     ```
+     For `node compile.mjs src/lib/views/academic/present/screen/Stage.svelte 'user_effect|drawing|snapshot|report|key-hint'`, the code lines:
+     ```
+     36:         drawing = $.prop($$props, 'drawing', 3, '');
+     45:     $.user_effect(() => {
+     47:         const report = $$props.onmeasure;
+     50:         $.snapshot(drawing());
+     52:         if (element === null || report === undefined) return;
+     57:             const hint = element.querySelector('[data-key-hint]')?.offsetHeight ?? 0;
+     59:             report(Math.max(0, element.scrollHeight - element.clientHeight - hint));
+     ```
+     The compiler indents with tabs. They are written here as four spaces each, and the vitest output's ellipsis below is written as `...`, so the report stays ASCII.
+     The effect reads the prop signal `drawing()`, and Framed passes the prop as a getter over a derived value. A new key or title therefore re-runs the effect, and the new ResizeObserver's first callback measures the slide now drawn.
+3. **A superseded answer leaves the measures alone.**
+   - Change in `src/lib/state/life/present.svelte.ts`:
+     - `answered()` no longer calls `kept`.
+     - `load()`, the saved deck's query, calls `kept(answer.deck)` when the answer holds a deck (lines 278-286).
+     - The store exposes `kept: (deck: Deck) => void` (type at 150-155, returned at 398). The doc comments of `measured` and `drawn` say which answers are kept.
+   - Change in `src/lib/views/academic/present/acts/live.svelte.ts`:
+     - It reads `present: { drawn, kept }` from `useState()`, as `views/sources/source/save/tab-save.svelte.ts:25` reads its stores.
+     - It hands the answer to `kept` only inside `if (current)`, the branch where the pane takes it (lines 46-50).
+     - Its `Reads` type no longer has `drawn`. `Present.svelte` drops `drawn` from its destructure and from the `createLive` call, and is now 518 lines.
+   - The asynchronous path in the case the review names:
+     - The answer to the drafts `[one.md, tw]` arrives after the next keystroke has cleared the timer's `current`.
+     - `live.svelte.ts` returns before `kept`, so the store keeps `two.md`'s measure.
+     - The answer to the drafts that were not typed over is taken and passed to `kept`, and the deck it holds removes only the slides it does not hold.
+     - The saved deck's answer passes to `kept` when it arrives.
+   - Check: `grep -n "kept" src/lib/state/life/present.svelte.ts src/lib/views/academic/present/acts/live.svelte.ts` prints `present.svelte.ts:147,155,171,284,317,318,398` and `live.svelte.ts:5,32,49`. `answered()` (lines 296-300) holds no call.
+4. **One slide, one measure.**
+   - Change: Stage's measure subtracts the height of the element marked `data-key-hint` (`Slide.svelte:76`), when there is one, from `scrollHeight - clientHeight`, and keeps the result at 0 or above (compiled lines 57 and 59 above).
+     - When the slide overflows, the hint's `margin-top: auto` resolves to 0, so the hint adds exactly its own `offsetHeight` (padding included) to the overflow.
+     - When the slide fits without the hint, the subtraction gives 0 or less, and so 0.
+     - `offsetHeight`, `scrollHeight` and `clientHeight` are all layout sizes that ignore the scale transform.
+   - Nothing drawn changes. The pane, the tile, the presenter, the audience window and the PDF measure the first slide alike.
+   - Check: by reading only, since no browser may be driven. The look at landing settles it with a first slide that fits with 20 px to spare: no finding in the pane, and no flip on opening and closing the Overview.
+5. **The page's own findings in one place.**
+   - Change: a new `pageFindings(registry: Pick<RegistryStore, 'refused'>, present: Pick<PresentStore, 'findings'>): Finding[]` in `src/lib/state/workbench/navigation/status.ts`, beside `allFindings`. `Findings.svelte:93` and `rail-badges.svelte.ts:224` both read `{ findings: pageFindings(registry, present) }`.
+   - Check: `grep -rn "pageFindings" src` prints `rail-badges.svelte.ts:22,224`, `status.ts:493`, `Findings.svelte:59,93`. `grep -rn "registry.refused(), ...present" src` prints nothing.
+6. **The defaults file says where a deck sets its frame.**
+   - Change: `config/defaults/present.yml:1` now says "its own present.yml changes `defaults.tag_tones` in its own `defaults:` block, and the frame in `deck.frame`". The `groups:` line of `config/options/present.yml:36` is now `defaults: "What oculus carries for every deck the Present view draws. A deck's own present.yml changes defaults.tag_tones in its own defaults: block, and the frame in deck.frame."`. It is quoted because of the `: ` inside it.
+   - Check: `python3 -c "import yaml;[yaml.safe_load(open(f)) for f in ['config/defaults/present.yml','config/options/present.yml']];print('yaml ok')"` prints `yaml ok`. The config tests in the related run below pass.
+7. **The unreachable branch goes.**
+   - Change in `src/lib/data/sources/config/settings/present.ts`:
+     - `sides` is `Record<Side, number>`.
+     - After `valueProblem` passes a side, it is narrowed once with `sides[side] = held as number;`, under the comment "Both entries are number controls, and valueProblem refuses what is no finite number."
+     - The function returns `{ frame: sides }`.
+     - The `not-a-map` fallback after the loop is gone. `not-a-map` stays for the value that is no map (line 67). The file is 87 lines.
+   - Check: the settings folder passes (verify item 2 below). The C3 rows are in `deckFrame`'s tests, through `present.test.ts`.
+8. **Report.** The new visible changes are in "For the look" below.
+
+## Verify
+
+- `npm run diagrams && npm run docs:palette && npm run test:quick`, run once after the last change, printed:
+  ```
+  test:quick: 86 changed file(s), from git since HEAD
+  test:quick: 360 test file(s)
+  ok      prettier (1.7 s): All matched files use Prettier code style!
+  ok      ASCII gate (1.8 s)
+  ok      svelte-kit sync (3.4 s)
+  ok      eslint (4.0 s)
+  ok      svelte-check (57.3 s): 1793902675370 COMPLETED 582 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+  ok      vitest checks (247.5 s): Duration  223.59s (transform 133.88s, setup 0ms, import 293.90s, tests 536.17s, environment 7ms)
+  FAILED  vitest (399.3 s)
+   FAIL  |unit| tests/data/hubs/website-files.test.ts [ tests/data/hubs/website-files.test.ts ]
+  Error: Hook timed out in 10000ms.
+   FAIL  |unit| tests/routes/git/zenodo.test.ts > the review copy For review sends > refuses two paths that become one, naming both, before any request
+   FAIL  |unit| tests/routes/git/zenodo.test.ts > the review copy For review sends > refuses a Latin-1 file holding a term in its one-byte form, naming it
+  Error: Test timed out in 5000ms.
+   FAIL  |unit| tests/state/sessions/terminal/latex-fast-failure.test.ts > posts the failure notice of a build whose terminal ended while its list was read
+  AssertionError: expected [ [Function], [Function], ...(12) ] to have a length of 2 but got 14
+  FAILED  vitest slow (579.2 s)
+   FAIL  |unit| tests/server/edit/config-key.test.ts > a write that names a hub > writes the primary alike for a body naming it and a body naming no hub
+  Error: Test timed out in 20000ms.
+  test:quick: 582.8 s; failed: vitest, vitest slow
+  ```
+  - The run's output also printed `svelte-kit types: waiting for .../.svelte-kit/oculus-types.lock, held by process 60789`.
+  - Each failing file was then run alone, `npx vitest run <file>`:
+    - `website-files.test.ts`: `Tests  41 passed (41)`
+    - `zenodo.test.ts`: `Tests  51 passed (51)`
+    - `latex-fast-failure.test.ts`: `Tests  1 passed (1)`
+    - `config-key.test.ts`: `Tests  36 passed (36)`
+  - The failures are 4 timeouts and one count:
+    - The count is `latex-fast-failure.test.ts:65`, `vi.waitFor(() => expect(reads).toHaveLength(2))`. It saw 14 reads, so the list was read 12 more times before the poll looked. The test counts reads against wall time, so it depends on load. The round changes nothing it imports.
+    - The timeouts are in files the round does not touch.
+  - The list was not run a second time, since the round says once. The orchestrator's run at landing settles it.
+- Verify item 2, with the settings folder in place of the moved file: `npx vitest run tests/data/sources/present.test.ts tests/data/sources/config/settings tests/checks/config/config-folder.test.ts tests/checks/config/integrity.test.ts tests/server/desktop/window-guard.test.ts` prints `Test Files  6 passed (6)` and `Tests  163 passed | 9 skipped (172)`.
+- `tests/checks/imports/order.test.ts` alone (status.ts gains two type imports): `Test Files  1 passed (1)`, `Tests  13 passed (13)`. In the wider related run, its 'holds the ui folders' test timed out at 5000 ms.
+- "Verify before you report" over the 13 files the round changes:
+  - `slide.css`
+  - `Slide.svelte`
+  - `Stage.svelte`
+  - `Framed.svelte`
+  - `present.svelte.ts`
+  - `live.svelte.ts`
+  - `Present.svelte`
+  - `status.ts`
+  - `rail-badges.svelte.ts`
+  - `Findings.svelte`
+  - both config YAML files
+  - `settings/present.ts`
+
+  Checks over them:
+  - `npx prettier --check` prints `All matched files use Prettier code style!`.
+  - `npx eslint` reports no errors (only "File ignored" warnings for the css and yml files).
+  - `LC_ALL=C grep -n '[^ -~]'` prints nothing (exit 1).
+  - The frame-size grep prints only the `place.ts` lines 18, 75, 118, 119, 149 and 150 that the first report names (exit 1 with those filtered out).
+  - The history-word grep of spec.md:44 over the added comment lines prints nothing (exit 1).
+  - `awk 'length > 100'` finds `Slide.svelte:74` and `Present.svelte:438`, both code lines with the same length on the base copy (`Slide.svelte:71` 134 columns, `Present.svelte:438` 105 columns there).
+  - `sh utils/unused-exports.sh` diffed against `O146-base/unused-exports.txt` prints nothing (exit 0).
+  - Line counts:
+    - `present.svelte.ts` 556
+    - `status.ts` 684
+    - `rail-badges.svelte.ts` 413
+    - `Present.svelte` 518
+    - `Findings.svelte` 296
+    - `Stage.svelte` 134
+    - `Framed.svelte` 37
+    - `live.svelte.ts` 59
+    - `settings/present.ts` 87
+  - `npm run diagrams` ran as the first command of the list. The folder edge from `state/workbench` to `state/life` in `layer-state.dot` has label 1, the same as on the base copy, since the new imports are type-only.
+- `docs/HELP.md:331` stays true as it stands: it names no column width, no key hint and no answer order.
+
+Paths outside the round's write list: none. `acts/live.svelte.ts` is named by item 3. The changes to `Present.svelte` are the two lines that drop `drawn`, which `live.svelte.ts` now reads itself, and `Present.svelte` is in the step's write list.
+
+Source of `compile.mjs` (in the scratchpad, deleted after this report):
+
+```js
+// Compiles a Svelte component (client, runes) and prints the compiled lines that match a pattern.
+import { readFileSync } from 'node:fs';
+import { compile } from '/Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O146/node_modules/svelte/src/compiler/index.js';
+const [file, pattern] = process.argv.slice(2);
+const out = compile(readFileSync(file, 'utf8'), { generate: 'client', runes: true, filename: file }).js.code;
+out.split('\n').forEach((line, i) => { if (new RegExp(pattern).test(line)) console.log(`${i + 1}: ${line}`); });
+```
+
+## Open point for the orchestrator (item 3)
+
+The ruling counts the saved deck's answer as kept. That leaves one case in which a measure goes while its slide is still drawn too tall:
+
+1. The pane draws a live deck whose drafts add slide X, and X is not on disk. X is measured too tall.
+2. A `files` or `config` push then re-reads the saved deck.
+3. `load()` calls `kept` with the saved deck, which lacks X, and X's entry leaves.
+4. The pane still draws X from the live deck, with the same `drawing` text and the same size, so no Stage measures it again until X is moved to or resized.
+
+A fix that ends this would have the pane hand `kept` the deck it draws, saved or live, and `load()` call nothing. Only a pane's Stages measure, so the deck a pane draws is the one whose measures are true. This is not built, because it changes what the ruling names as kept.
+
+## For the look (items 1 and 8, with the first report's list)
+
+- Item 1: open the portfolio deck. A text slide's reading column is 1040 px wide, as on the base. A 1024 by 768 deck's text column is 896 px.
+- Item 2: in a deck with A, which fits, and B, which is too tall, mark B too tall on its tile. Shorten B in an editor while the pane shows A, then press the right arrow. The finding for B goes.
+- Item 2, retitled: retitle a too-tall slide that is shown. The finding's message names the new title.
+- Item 3: type `order: [one.md, two.md]` over a too-tall `two.md`. The finding and the chip stay.
+- Item 4: a first slide that fits without the key hint gives no finding in the pane, and opening and closing the Overview does not change Findings.
+- Item 8, Settings: the Settings view's heading `presentation` holds a section `Slides` beside `Status chips`. It has two number controls, `defaults.frame.width` (320 to 3840, whole) and `defaults.frame.height` (240 to 2160, whole), each with the help line of `config/options/present.yml:10` and `:18`. On the base, the heading held only `Status chips`.
+- Item 8, editor: in the YAML editor on a deck's `present.yml`, completion under `deck:` offers `frame` beside `title`, with the help line of `config/schemas/deck-schema.yml:18`. On the base, it offered `title` only.

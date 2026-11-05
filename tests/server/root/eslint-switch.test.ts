@@ -17,7 +17,7 @@ import { readFileSync, realpathSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterEach, describe, expect, vi } from 'vitest';
 import { loadConfig } from '../../../src/lib/data/sources/config.ts';
-import { lintSettings } from '../../../src/lib/data/sources/config/settings/lint.ts';
+import { lintSettings } from '../../../src/lib/data/sources/config/settings/writing/lint.ts';
 import {
     createServerContext,
     type ContextDependencies

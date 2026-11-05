@@ -31,13 +31,15 @@ import { str } from '../../data/helpers/guards.ts';
 import { joinPath } from '../../data/helpers/files/paths.ts';
 import { placeOf } from '../../data/snapshot/place.ts';
 import { readAs } from '../../data/shapes/shapes.ts';
-import type { Deck } from '../../data/model/index.ts';
+import type { Deck, DeckFrame, DeckSlide, Finding } from '../../data/model/index.ts';
+import { t } from '../shared/words/text.ts';
 import { readAnswer } from '../sources/fs-transport.ts';
 import type { FsRoot } from '../sources/fs.ts';
 import { filesNamed, folderNamed } from '../shared/answers/files-named.ts';
 import type { EntitiesStore, Queries } from '../shared/stores/shapes.ts';
 import {
     audienceAddress,
+    audienceFeatures,
     deckShape,
     parseMessage,
     pausedTimer,
@@ -61,6 +63,21 @@ type DeckAnswer = {
 
 /** One project's deck as the deck menu lists it. */
 type ProjectDeck = { ref: DeckRef; id: string; title: string };
+
+/**
+ * A slide a Stage measured taller than its deck's frame: the deck by its root and folder, the
+ * slide's key and the file and line it is written at, and the message its finding carries.
+ */
+type TooTall = {
+    root: string;
+    path: string;
+    key: string;
+    source: DeckSlide['source'];
+    message: string;
+};
+
+/** How far a slide may run past its frame and count as fitting, so a layout rounding is none. */
+const TOO_TALL_PX = 1;
 
 /**
  * What a presentation reads of the pane that holds it. The pane's component may not be drawn (its
@@ -98,9 +115,6 @@ type Presenting = {
     reset: (instance: string) => void;
 };
 
-/** The features of the audience window when a browser opens it. */
-const AUDIENCE_FEATURES = 'popup,width=1280,height=720';
-
 /**
  * How long the presenter screen waits, after the audience page says it closed, for a page of the
  * same window to say it opened. A reload of the audience window closes and opens it, and the
@@ -127,6 +141,23 @@ type Held = {
 };
 
 export type PresentStore = {
+    /**
+     * Take what a Stage measured of a slide of a deck: how many px it runs past the deck's frame,
+     * 0 when it fits. A slide more than 1 px past it is too tall until a measure finds it fitting,
+     * or until neither the saved deck nor a deck a pane draws holds it.
+     */
+    measured: (deck: Deck, row: DeckSlide, over: number) => void;
+    /**
+     * The deck a pane draws, by the pane's instance id, the saved one or the one read over the
+     * drafts; null once the pane draws none. A measure whose slide neither the saved deck nor any
+     * pane's deck holds then leaves, so a slide one pane still draws keeps its measure while
+     * another pane draws a version of the deck without it.
+     */
+    drawing: (pane: string, deck: Deck | null) => void;
+    /** The message of a slide too tall in a deck, or the empty string for one that fits. */
+    tooTall: (deck: Deck, key: string) => string;
+    /** One finding for each slide too tall in a deck, at the slide's file and line. */
+    findings: () => Finding[];
     /** The portfolio deck, null when the configuration names none. */
     portfolio: () => DeckRef | null;
     /** The decks of the projects that have one, by title. */
@@ -138,7 +169,7 @@ export type PresentStore = {
     /**
      * The deck read over the text editors hold unsaved: the same answer, from the files as the
      * drafts have them. Asked on the page's own account and held nowhere, so only the pane that
-     * draws from the drafts holds it.
+     * draws from the drafts holds it, and that pane hands the deck it draws to `drawing`.
      */
     drawn: (ref: DeckRef, drafts: DeckDraft[]) => Promise<DeckAnswer>;
     presenting: Presenting;
@@ -245,11 +276,14 @@ export function createPresent(
         return data ?? PENDING;
     }
 
-    function load(ref: DeckRef): Promise<DeckAnswer> {
+    /** The saved deck's answer, which the query holds; the measures follow it as it arrives. */
+    async function load(ref: DeckRef): Promise<DeckAnswer> {
         const query = new URLSearchParams({ root: ref.root, path: ref.path });
-        return answered(() =>
+        const answer = await answered(() =>
             fetch(`/api/deck?${query.toString()}`, { headers: { 'x-oculus-token': token() } })
         );
+        if (answer.deck !== null) prune(answer.deck);
+        return answer;
     }
 
     function drawn(ref: DeckRef, drafts: DeckDraft[]): Promise<DeckAnswer> {
@@ -265,9 +299,91 @@ export function createPresent(
     /** The deck a request answers, or what it failed with. */
     async function answered(ask: () => Promise<Response>): Promise<DeckAnswer> {
         const held = await deckOf(ask);
-        return typeof held === 'string'
-            ? { deck: null, error: held, loading: false }
-            : { deck: held, error: '', loading: false };
+        if (typeof held === 'string') return { deck: null, error: held, loading: false };
+        return { deck: held, error: '', loading: false };
+    }
+
+    /**
+     * The slides measured too tall, one per deck and slide, keyed by the deck's root, its folder
+     * and the slide's key: two Stages drawing one slide of one deck share an entry, and one slide
+     * drawn in two decks has one in each.
+     */
+    const tall = new SvelteMap<string, TooTall>();
+
+    /** The key of a slide of a deck in `tall`. */
+    function tallKey(deck: Deck, key: string): string {
+        return JSON.stringify([deck.root, deck.path, key]);
+    }
+
+    /** The deck each pane draws, by the pane's instance id. */
+    const drawnBy = new Map<string, Deck>();
+
+    /** Whether a deck is the one a measure was taken in and holds its slide. */
+    function holds(deck: Deck | null | undefined, one: TooTall): boolean {
+        return (
+            deck?.root === one.root &&
+            deck.path === one.path &&
+            deck.slides.some((row) => row.key === one.key)
+        );
+    }
+
+    /**
+     * Drop the measures of the slides that neither the saved deck nor any pane's deck holds.
+     * `saved` is a saved deck's answer that is arriving, which the query does not hold yet.
+     */
+    function prune(saved: Deck | null): void {
+        for (const [key, one] of tall) {
+            const savedDeck =
+                saved?.root === one.root && saved.path === one.path
+                    ? saved
+                    : queries.peek<DeckAnswer>([KIND, one.root, one.path]).data?.deck;
+            if (holds(savedDeck, one)) continue;
+            if ([...drawnBy.values()].some((deck) => holds(deck, one))) continue;
+            tall.delete(key);
+        }
+    }
+
+    function drawing(pane: string, deck: Deck | null): void {
+        if (deck === null) drawnBy.delete(pane);
+        else drawnBy.set(pane, deck);
+        prune(null);
+    }
+
+    function measured(deck: Deck, row: DeckSlide, over: number): void {
+        const key = tallKey(deck, row.key);
+        if (over <= TOO_TALL_PX) {
+            tall.delete(key);
+            return;
+        }
+        const message = t(
+            'findings.deck.too_tall',
+            row.title,
+            String(over),
+            String(deck.frame.width),
+            String(deck.frame.height)
+        );
+        const next = {
+            root: deck.root,
+            path: deck.path,
+            key: row.key,
+            source: row.source,
+            message
+        };
+        if (JSON.stringify(tall.get(key)) !== JSON.stringify(next)) tall.set(key, next);
+    }
+
+    /** The findings of the slides too tall whose source file's root the page knows. */
+    const tallFindings = $derived(
+        [...tall.values()].flatMap((one): Finding[] => {
+            const dir = one.source === undefined ? undefined : rootDir(one.source.root);
+            if (one.source === undefined || dir === undefined) return [];
+            const file = joinPath(dir, one.source.path);
+            return [{ file, key: one.key, line: one.source.line, message: one.message }];
+        })
+    );
+
+    function rootDir(key: string): string | undefined {
+        return roots().find((one) => one.key === key)?.dir;
     }
 
     const path = $derived(str(entities.config()?.config.portfolio_deck) ?? '');
@@ -298,18 +414,30 @@ export function createPresent(
         return ref.root === '' ? portfolio : ref;
     }
 
+    /** The frame of the deck as saved, the answer `deck` holds, or null while none is held. */
+    function savedFrame(ref: DeckRef): DeckFrame | null {
+        return queries.peek<DeckAnswer>([KIND, ref.root, ref.path]).data?.deck?.frame ?? null;
+    }
+
     return {
+        measured,
+        drawing,
+        tooTall: (deck, key) => tall.get(tallKey(deck, key))?.message ?? '',
+        findings: () => tallFindings,
         portfolio: () => portfolio,
         projectDecks: () => projectDecks,
         shown,
         deck,
         drawn,
-        presenting: createPresenting()
+        presenting: createPresenting(savedFrame)
     };
 }
 
-/** The page's presentations, one per pane that presents. */
-function createPresenting(): Presenting {
+/**
+ * The page's presentations, one per pane that presents. `frameOf` is the frame of a deck as saved,
+ * which the audience window draws and so opens at.
+ */
+function createPresenting(frameOf: (ref: DeckRef) => DeckFrame | null): Presenting {
     const lives = new Map<string, Held>();
     const timers = new SvelteMap<string, Timer>();
     let listening = false;
@@ -368,7 +496,7 @@ function createPresenting(): Presenting {
             held.audience = window.open(
                 audienceAddress(held.ref),
                 presentName(held.ref),
-                AUDIENCE_FEATURES
+                audienceFeatures(frameOf(held.ref))
             );
         }
     }

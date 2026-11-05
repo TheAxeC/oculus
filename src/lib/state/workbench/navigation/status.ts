@@ -29,6 +29,7 @@
 
 import { z } from 'zod';
 import type {
+    Finding,
     GitFetchFailure,
     GitPayload,
     HostInfo,
@@ -37,6 +38,8 @@ import type {
     SessionsPayload,
     UsagePayload
 } from '../../../data/model/index.ts';
+import type { PresentStore } from '../../life/present.svelte.ts';
+import type { RegistryStore } from './registry.ts';
 import type { FsRoot } from '../../sources/fs.ts';
 import { deepestHolding, joinPath, underServedRoot } from '../../../data/helpers/files/paths.ts';
 import { readAs } from '../../../data/shapes/shapes.ts';
@@ -463,8 +466,10 @@ export function fileFindingsCount(
 
 /**
  * Every finding the page knows of: the portfolio's, then the configuration's, then the apps', then
- * the page's own findings of the config it registers its views from (the registry's `refused`). The
- * Findings view lists them and `fileFindingsCount` counts them, so both read one list.
+ * the page's own: its findings of the config it registers its views from (the registry's
+ * `refused`) and the slides the Present view drew taller than their deck's frame (the Present
+ * store's `findings`). The Findings view lists them and `fileFindingsCount` counts them, so both
+ * read one list.
  */
 export function allFindings<T>(
     snapshot: { findings?: readonly T[] } | null,
@@ -478,6 +483,18 @@ export function allFindings<T>(
         ...(apps?.findings ?? []),
         ...(page?.findings ?? [])
     ];
+}
+
+/**
+ * The page's own findings, the last part of `allFindings`: the registry's `refused`, then the
+ * Present store's slides too tall. The Findings view's list and `railBadges.findingsCount` both
+ * read them from here, so the list and its count hold the same findings.
+ */
+export function pageFindings(
+    registry: Pick<RegistryStore, 'refused'>,
+    present: Pick<PresentStore, 'findings'>
+): Finding[] {
+    return [...registry.refused(), ...present.findings()];
 }
 
 /** The words the page hands the status bar at once. */

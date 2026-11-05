@@ -17,8 +17,9 @@
     // `F` for the slide on the whole monitor, and the Presenter control or `P` for the presenter
     // screen.
     //
-    // A slide is drawn in a frame of 1280 by 720 px, scaled uniformly to the pane and centred in it
-    // (screen/Stage.svelte). The overview draws every slide the same way, scaled to its tile, and
+    // A slide is drawn in its deck's frame (the deck's `deck.frame`, else the setting
+    // `defaults.frame`), scaled uniformly to the pane and centred in it, and measured
+    // (screen/Framed.svelte). The overview draws every slide the same way, scaled to its tile, and
     // is where the deck is arranged (arrange/Overview.svelte); a deck with an entry or a group and
     // no slide draws it in place of a slide. The empty state keeps the UI's tokens.
     //
@@ -76,14 +77,13 @@
     import AskConfirm from '$lib/views/shared/writes/AskConfirm.svelte';
     import Bar from './Bar.svelte';
     import { createActs } from './acts/acts.svelte';
-    import { createLive } from './acts/live.svelte';
+    import { createDrawn } from './acts/live.svelte';
     import { slideMenu } from './acts/menu';
     import Overview from './arrange/Overview.svelte';
     import Presenter from './presenter/Presenter.svelte';
     import { createFullscreen } from './screen/fullscreen.svelte';
     import { CONTROLS, heldBack, inField, keepTab, moveOf } from './screen/keys';
-    import Slide from './Slide.svelte';
-    import Stage from './screen/Stage.svelte';
+    import Framed from './screen/Framed.svelte';
     import { cardCursor, tabsOf } from '$lib/state/workbench/layout/instance';
     import {
         deckChoices,
@@ -116,7 +116,7 @@
         explorer,
         layout: { holding, hosts, openBeside, pointInstance, restateInstance },
         paletteSource: { offer, withdraw },
-        present: { deck: deckOf, drawn, portfolio, presenting, projectDecks, shown: shownDeck },
+        present: { deck: deckOf, portfolio, presenting, projectDecks, shown: shownDeck },
         source: { reloadSource, sourceDirty, sourceDraft },
         ui: { instanceState, setInstanceState },
         writes: { writeDeckEdit }
@@ -142,13 +142,14 @@
     );
     /** Whether this pane shows the presenter screen, which draws the deck as the files hold it. */
     const presented = $derived(presenting.on(instance.id));
-    const liveDeck = createLive({
+    const drawnDeck = createDrawn({
         ref: () => ref,
-        drafts: () => (presented ? [] : drafts),
-        files: () => filesDeck,
-        drawn
+        instance: () => instance.id,
+        presented: () => presented,
+        drafts: () => drafts,
+        files: () => filesDeck
     });
-    const deck = $derived(presented ? filesDeck : (liveDeck() ?? filesDeck));
+    const deck = $derived(drawnDeck());
     const rows = $derived(deck?.slides ?? []);
     const shown = $derived(slideAt(rows, held.slide));
     const at = $derived(indexOf(rows, held.slide));
@@ -166,6 +167,7 @@
         instance: () => instance.id,
         ref: () => ref,
         deck: () => deck,
+        saved: () => filesDeck,
         shown: () => shown,
         grid: () => grid,
         write: writeDeckEdit,
@@ -472,9 +474,7 @@
                         onend={() => presenting.end(instance.id)}
                     />
                 {:else}
-                    <Stage bare={full}>
-                        <Slide row={shown} {deck} first={at === 0} />
-                    </Stage>
+                    <Framed row={shown} {deck} first={at === 0} bare={full} />
                 {/if}
             </ContextMenu>
         {/if}

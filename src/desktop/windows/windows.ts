@@ -146,12 +146,15 @@ export function createWindows(deps: WindowsDeps): Windows {
         deps.log(`refused an address: ${url}`);
     }
 
-    /** Send an address to where the decision says. */
-    function route(from: Entry, url: string): void {
+    /**
+     * Send an address to where the decision says. `features` are those of the `window.open` that
+     * asked for it, which an audience window takes its deck's frame from; a navigation has none.
+     */
+    function route(from: Entry, url: string, features = ''): void {
         const where = linkDecision(url, from.origin);
         if (where.kind === 'main') openMain(from.origin);
         else if (where.kind === 'float') openFloat(where.id, null, from.origin, null);
-        else if (where.kind === 'audience') audience.open(from, url, where);
+        else if (where.kind === 'audience') audience.open(from, url, where, features);
         else if (where.kind === 'browser') void shell.openExternal(url);
         else refuse(url);
     }
@@ -230,8 +233,8 @@ export function createWindows(deps: WindowsDeps): Windows {
     /** Wire what every window does with an address, a crash and a permission. */
     function guard(entry: Entry): void {
         const contents = entry.win.webContents;
-        contents.setWindowOpenHandler(({ url }) => {
-            route(entry, url);
+        contents.setWindowOpenHandler(({ url, features }) => {
+            route(entry, url, features);
             return { action: 'deny' };
         });
         contents.on('will-frame-navigate', (event) => {

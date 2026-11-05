@@ -33,7 +33,7 @@ import {
 import type {
     LatexBuilding,
     LatexFormatting
-} from '../../../data/sources/config/settings/latex.ts';
+} from '../../../data/sources/config/settings/writing/latex.ts';
 import type { OpsRefusal } from '../../../data/file-ops.ts';
 import { tokenedBody } from '../../core/auth.ts';
 import { realPath } from '../../core/paths.ts';

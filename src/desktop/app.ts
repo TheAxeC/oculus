@@ -148,7 +148,7 @@ async function run(
     let recent: RecentEntry[] = [];
     registerBridge(
         windows,
-        (address) => printPdf(address, { preload, colours: colours() }),
+        (address, frame) => printPdf(address, frame, { preload, colours: colours() }),
         (entries) => {
             recent = entries;
             setMenu();

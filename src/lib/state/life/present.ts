@@ -18,7 +18,7 @@ import { plainText } from '../../data/prose/literature.ts';
 import { optionalTextShape, readAs, rowsShape, unchangedAs } from '../../data/shapes/shapes.ts';
 import { domainTone } from '../shared/words/tones.ts';
 import { t } from '../shared/words/text.ts';
-import type { Deck, DeckSlide, PresentSlide } from '../../data/model/index.ts';
+import type { Deck, DeckFrame, DeckSlide, PresentSlide } from '../../data/model/index.ts';
 
 export { DECK_GAP } from '../../data/model/index.ts';
 
@@ -26,6 +26,7 @@ export { DECK_GAP } from '../../data/model/index.ts';
 export type {
     Deck,
     DeckCard,
+    DeckFrame,
     DeckIdeaCard,
     DeckSlide,
     DeckSummaryRow,
@@ -173,17 +174,22 @@ export function pageDrafts(
     return [...found.values()].slice(0, MAX_DRAFTS);
 }
 
-/** The size in px a slide is laid out at; the pane scales this frame as a whole. */
-export const FRAME_WIDTH = 1280;
-export const FRAME_HEIGHT = 720;
+/**
+ * The uniform scale that fits a deck's frame, the size in px its slides are laid out at, inside a
+ * box of the given size, or 0 for a box with no size, a negative one or one that is not a number (a
+ * hidden tab, the first paint).
+ */
+export function fit(width: number, height: number, frame: DeckFrame): number {
+    if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) return 0;
+    return Math.min(width / frame.width, height / frame.height);
+}
 
 /**
- * The uniform scale that fits the frame inside a box of the given size, or 0 for a box with no
- * size, a negative one or one that is not a number (a hidden tab, the first paint).
+ * The features the browser's audience window is opened with: a window of its own at the deck's
+ * frame, and of the browser's own size while the deck's answer is not held.
  */
-export function fit(width: number, height: number): number {
-    if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) return 0;
-    return Math.min(width / FRAME_WIDTH, height / FRAME_HEIGHT);
+export function audienceFeatures(frame: DeckFrame | null): string {
+    return frame === null ? 'popup' : `popup,width=${frame.width},height=${frame.height}`;
 }
 
 /**
@@ -467,6 +473,10 @@ export const deckShape = unchangedAs<Deck>(
         slides: z.array(z.object({ key: z.string(), kind: z.string(), title: z.string() })),
         groups: z.array(z.object({ name: z.string() })),
         tagTones: z.record(z.string(), z.string()),
+        frame: z.strictObject({
+            width: z.number().int().positive(),
+            height: z.number().int().positive()
+        }),
         findings: z.array(z.unknown())
     })
 );

@@ -19,8 +19,9 @@ import type { HpcStore } from '../../system/machine/hpc/hpc.svelte.ts';
 import type { InboxStore } from '../../feeds/inbox.svelte.ts';
 import { splitPosts } from '../../feeds/linkedin.ts';
 import { needsInput, sessionRows } from '../../sessions/folds.ts';
-import { fileFindingsCount } from '../navigation/status.ts';
+import { fileFindingsCount, pageFindings } from '../navigation/status.ts';
 import type { RegistryStore } from '../navigation/registry.ts';
+import type { PresentStore } from '../../life/present.svelte.ts';
 import { t } from '../../shared/words/text.ts';
 import { statusTone, toneOf } from '../../shared/words/tones.ts';
 import { countRow, countText, leadsDue, linkedinOverdue, matchedEntries } from './rail-badges.ts';
@@ -146,7 +147,8 @@ export function createRailBadges(
     audit: AuditStore,
     problems: Pick<ProblemsStore, 'total'>,
     selectors: BadgeSelectors,
-    registry: Pick<RegistryStore, 'refused'>
+    registry: Pick<RegistryStore, 'refused'>,
+    present: Pick<PresentStore, 'findings'>
 ): RailBadgesStore {
     /** Where one view's count is drawn: its `counts` row's `tab` and `rail`, false without one. */
     function countFlags(view: string): CountFlags {
@@ -213,12 +215,13 @@ export function createRailBadges(
     /**
      * The one count of the Findings view, which its tab, the view catalogue, the rail and the
      * status bar's item all read: the file findings (the snapshot's, the config channel's, the
-     * apps channel's and the page's own, the registry's `refused`) and the audit's open findings.
-     * A parked finding is left out, since the reader chose to leave it, and no search narrows it.
+     * apps channel's and the page's own, the registry's `refused` and the Present store's slides
+     * too tall) and the audit's open findings. A parked finding is left out, since the reader chose
+     * to leave it, and no search narrows it.
      */
     function findingsCount(): number {
         const files = fileFindingsCount(entities.portfolio(), entities.config(), entities.apps(), {
-            findings: registry.refused()
+            findings: pageFindings(registry, present)
         });
         return files + audit.openCount();
     }

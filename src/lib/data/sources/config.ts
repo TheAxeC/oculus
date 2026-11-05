@@ -92,7 +92,11 @@ export {
     repositoryScanDepth,
     searchSettings
 } from './config/settings/files.ts';
-export { type LatexFormatting, latexBuild, latexFormatting } from './config/settings/latex.ts';
+export {
+    type LatexFormatting,
+    latexBuild,
+    latexFormatting
+} from './config/settings/writing/latex.ts';
 export {
     basicServices,
     browserRow,
@@ -100,7 +104,8 @@ export {
     literatureRows,
     recoverRows
 } from './config/settings/rows/read.ts';
-export { type LintSettings, lintSettings } from './config/settings/lint.ts';
+export { type LintSettings, lintSettings } from './config/settings/writing/lint.ts';
+export { frameSetting } from './config/settings/present.ts';
 export {
     type AppsSettings,
     type ProcessesSettings,

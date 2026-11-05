@@ -251,10 +251,14 @@ export type DeckKeys = {
  */
 export type DeckState = 'ok' | 'empty' | 'no_file' | 'unreadable' | 'missing' | 'unnamed';
 
+/** The size in px a deck's slides are laid out in, each side a whole number above zero. */
+export type DeckFrame = { width: number; height: number };
+
 /**
  * One deck as the deck route answers it: the slides in order, the groups with their members, and
  * what was wrong with the files. `tagTones` is a hue name per `tag.class`, the engine's defaults
- * under the deck's own.
+ * under the deck's own. `frame` is the deck's own `deck.frame` when it is a valid frame, else the
+ * frame of the setting `defaults.frame`.
  */
 export type Deck = {
     root: string;
@@ -270,6 +274,7 @@ export type Deck = {
     order: DeckOrderEntry[];
     groups: DeckGroup[];
     tagTones: Record<string, string>;
+    frame: DeckFrame;
     /** The keys the Overview sets, as the file holds them; null for a file that was not read. */
     keys: DeckKeys | null;
     findings: Finding[];

@@ -459,6 +459,7 @@ export { MAC_TARGET } from './machine/model-recover.ts';
 export type {
     Deck,
     DeckCard,
+    DeckFrame,
     DeckGroup,
     DeckIdeaCard,
     DeckKeys,

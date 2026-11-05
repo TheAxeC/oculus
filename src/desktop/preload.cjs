@@ -30,7 +30,7 @@ const bridge = {
     find: (query, options) => ipcRenderer.send('oculus:find', query, options),
     stopFind: () => ipcRenderer.send('oculus:stop-find'),
     closeFind: () => ipcRenderer.send('oculus:close-find'),
-    printPdf: (address) => ipcRenderer.invoke('oculus:print-pdf', address),
+    printPdf: (address, frame) => ipcRenderer.invoke('oculus:print-pdf', address, frame),
     titleDoubleClick: () => ipcRenderer.send('oculus:title-double-click'),
     titleColours: (color, symbolColor, background) =>
         ipcRenderer.send('oculus:title-colours', color, symbolColor, background),

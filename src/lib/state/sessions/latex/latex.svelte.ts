@@ -34,8 +34,8 @@
 
 import type { LatexApproval, Message } from '../../../data/model/index.ts';
 import { joinPath } from '../../../data/helpers/files/paths.ts';
-import type { LatexBuilding } from '../../../data/sources/config/settings/latex.ts';
-import { latexBuild } from '../../../data/sources/config/settings/latex.ts';
+import type { LatexBuilding } from '../../../data/sources/config/settings/writing/latex.ts';
+import { latexBuild } from '../../../data/sources/config/settings/writing/latex.ts';
 import {
     readLatexEditing,
     readLatexUnimath,

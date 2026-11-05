@@ -23,21 +23,7 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 ```
 
 ```yaml
-dispatch:           # steps in flight, up to six (Z632)
-- step: O146
-  base: 8c3da2a2f
-  worktree: .agents/worktrees/migration-O146
-  executor: agent
-  worker: claude:opus
-  session_id: a3a5cf9fbc5f20011
-  model: claude-opus-5-5
-  launched: 2026-11-05
-  report: .scratch/migration/agents/reviews/O146-report.md
-  builder_usage: 113217 tokens (the final notice; the notice at the hand-back read 328084), 488 tool uses, 70 min 0 s
-  round: 1
-  reviewer_report: .scratch/migration/agents/reviews/O146-refuter.md (afd5d153ef1fe296b, claude-opus-5-5, 282804 tokens, 84 tool uses, 24 min 25 s)
-  brief_check: .scratch/migration/agents/reviews/O146-brief-check.md (ab81b2ba12033c208, claude-opus-5-5, 236854 tokens, 102 tool uses, 13 min 29 s)
-  landing: not-started
+dispatch: []      # steps in flight, up to six (Z632)
 ```
 
 ## The standing demands (from Axel, in force)
@@ -812,6 +798,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-11-05 (O146 landed). O146, a deck's frame size and the slide findings, landed (booking in plan.md under O146, `agents/reviews/O146-landing.md`), with fixes at landing: the Present store keeping the deck each pane draws so a drawn slide's measure stays (review S1, option (b)), the slide's source in the Stage's `drawing` text, the reading column back to `1040px` with the unread `--slide-width` and `--slide-pad` removed, and the Stage's measure taken unrounded so the pane and the tile agree. Axel ruled 686 (a) with the glyphs named in `vocab.yml`'s `venue_tiers` rows, booked as step O152. Next: O147, the Present view's filter bar, through `/spec`; O152 may run beside it. In flight: none. Open items: none.
 - 2026-11-05 (O145 landed; O146 to O151 booked). O145, the deck arranged in the Overview with the Slides view retired, landed (booking in plan.md under O145, `agents/reviews/O145-landing.md`), with three fixes at landing: a select trigger counted as a field (`[aria-haspopup="listbox"]` in `screen/keys.ts`), the hold's doc comments, and the Edit Rule form's captions in one column. Axel ruled 676 to 685; their steps O146 to O151 are booked in plan.md after O145, O146 next. Open items: none. Axel's venue-line request (the cards' Venue tag without the cost, with an icon for the tier) awaits his ruling as open item 686.
 - 2026-11-05 (O145 repair round 1 sent). O145's builder af8c8f54859bcc892 reported (248052 tokens, 321 tool uses, 63 min 29 s); its review (`agents/reviews/O145-refuter.md`, a5bb0bc8f6d579102, claude-opus-5-5) found a member deck's drag carrying its group's entry, slides keyed by the YAML index against the place in `order:`, title tiles with no keyboard path, an unbounded hold after a write, and a key rule wider than a field needs; round 1 (`agents/briefs/O145-round-1.md`) sent to the same builder with a ruling per finding, choices booked in `choices.md`. In flight (1 of 6): O145 (round 1). Open items: none.
 - 2026-11-05 (O145 building). Axel ruled 674 (b) and 675 (a), booked in plan.md. O145's brief check (`agents/reviews/O145-brief-check.md`, a2aaadf30fa035307, claude-opus-5-5) closed in the brief under its Closed heading: the missed sentences and the two tests' expected text in the paths, a title tile for every deck and a placeholder tile for every entry that draws no slide, the Overview drawn for a deck with no slide, keys in fields kept, controls disabled while a write is in flight, every label through `plainText`, `Overview.svelte` moved into `present/arrange/`; choices booked in `choices.md`; prepared at 3f0078305; worktree `.agents/worktrees/migration-O145` with `npm ci` and `svelte-kit sync`; base copy `.agents/worktrees/O145-base` with `unused-exports.txt` (335 lines); builder af8c8f54859bcc892 (claude-opus-5-5) runs. In flight (1 of 6): O145 (building). Open items: none.

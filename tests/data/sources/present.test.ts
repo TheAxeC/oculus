@@ -3,7 +3,12 @@
 // Nothing outside the temporary directory is read or written.
 
 import { describe, expect } from 'vitest';
-import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
+import {
+    engineDir,
+    frameSetting,
+    loadConfig,
+    textCatalog
+} from '../../../src/lib/data/sources/config.ts';
 import { createReader } from '../../../src/lib/data/sources/deck/read.ts';
 import { outlineOf } from '../../../src/lib/data/sources/deck/outline.ts';
 import { splitSlides } from '../../../src/lib/data/sources/deck/split.ts';
@@ -172,6 +177,7 @@ describe('the deck reader', () => {
             ],
             domains: ['heart'],
             tagTones: { measured: 'green' },
+            frame: frameSetting(loadConfig(engineDir()).config),
             catalog: CATALOG
         });
         return reader.read({ key: 'hub', dir }, 'deck');

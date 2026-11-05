@@ -9,7 +9,8 @@
     // The component holds no state of the deck or the presentation: Present.svelte hands in the
     // slides, the timer and what each control does. A click on the slide on show moves to the next
     // slide; a click on the next slide or on the notes does nothing. Only the clock and the timer
-    // are read again on a tick of their own.
+    // are read again on a tick of their own. Both slides are drawn at the deck's frame and measured
+    // (screen/Framed.svelte), and the next slide's room takes the frame's proportions.
     //
     // Over a wallpaper each slide's frame is its own surface, and the meters, the captions, the
     // end-of-deck line and the notes are read off a `Surface`.
@@ -25,8 +26,7 @@
         type Timer
     } from '$lib/state/life/present';
     import { t } from '$lib/state/shared/words/text';
-    import Slide from '../Slide.svelte';
-    import Stage from '../screen/Stage.svelte';
+    import Framed from '../screen/Framed.svelte';
 
     type Props = {
         /** The slide on show, and the one after it (null after the last). */
@@ -92,9 +92,7 @@
     <!-- A click on the slide is the reader's way to the next one; the keys are the pane's own. -->
     <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
     <div class="current" data-current onclick={onadvance}>
-        <Stage>
-            <Slide {row} {deck} first={false} />
-        </Stage>
+        <Framed {row} {deck} first={false} />
     </div>
     <div class="side">
         <section class="next" data-next aria-label={t('present.presenter_next')}>
@@ -105,10 +103,8 @@
                 {/if}
             </Surface>
             {#if next !== null}
-                <div class="preview">
-                    <Stage>
-                        <Slide row={next} {deck} first={false} />
-                    </Stage>
+                <div class="preview" style:aspect-ratio="{deck.frame.width} / {deck.frame.height}">
+                    <Framed row={next} {deck} first={false} />
                 </div>
             {/if}
         </section>
@@ -182,9 +178,9 @@
         flex: 0 0 auto;
     }
 
-    /* The next slide is a 16 by 9 room, which its stage fills and scales its frame to. */
+    /* The next slide is a room of the deck's frame's proportions, set on the element, which its
+       stage fills and scales its frame to. */
     .preview {
-        aspect-ratio: 16 / 9;
         width: 100%;
     }
 

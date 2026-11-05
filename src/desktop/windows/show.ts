@@ -14,10 +14,11 @@
 //
 // It opens on a display other than the asking window's with simple full screen, which makes no
 // Space and leaves the other displays usable, and beside the asking window when there is one
-// display. It closes with the window that asked for it, so a float's audience window goes when
-// the last main window closes the float. Its own `window.open` and its main-frame navigations go
-// through the same routing as any window's, so a slide's link goes to the default browser and the
-// window stays on the slide.
+// display, in the proportions of the deck's frame that the page's `window.open` features carry
+// (decide/place.ts). It closes with the window that asked for it, so a float's audience window
+// goes when the last main window closes the float. Its own `window.open` and its main-frame
+// navigations go through the same routing as any window's, so a slide's link goes to the default
+// browser and the window stays on the slide.
 
 import { BrowserWindow, type WebContents } from 'electron';
 import { audiencePlace, rectOf, type Rect } from '../decide/place.ts';
@@ -50,9 +51,15 @@ type Shown = {
 export type Audience = {
     /**
      * Open the window of the deck `url` names for `from`, or bring forward the one already open,
-     * now `from`'s, loading the address again when its page has ended.
+     * now `from`'s, loading the address again when its page has ended. `features` are those of the
+     * page's `window.open`, which carry the deck's frame a new window is sized to.
      */
-    open: (from: Entry, url: string, deck: { root: string; path: string }) => void;
+    open: (
+        from: Entry,
+        url: string,
+        deck: { root: string; path: string },
+        features: string
+    ) => void;
     /** The origin of the server an audience window's page was loaded from, or null for others. */
     originOf: (contents: WebContents) => string | null;
     /** Close the audience window the reader is in, and answer whether there was one. */
@@ -86,8 +93,8 @@ export function createAudience(deps: AudienceDeps): Audience {
         });
     }
 
-    function make(from: Entry, url: string, key: string): void {
-        const place = audiencePlace(rectOf(from.win.getBounds()), deps.areas());
+    function make(from: Entry, url: string, key: string, features: string): void {
+        const place = audiencePlace(rectOf(from.win.getBounds()), deps.areas(), features);
         const rect = place.kind === 'display' ? place.area : place.rect;
         const win = new BrowserWindow({
             x: rect.x,
@@ -110,11 +117,11 @@ export function createAudience(deps: AudienceDeps): Audience {
     }
 
     return {
-        open: (from, url, deck) => {
+        open: (from, url, deck, features) => {
             const key = JSON.stringify([from.origin, deck.root, deck.path]);
             const open = list.find((one) => one.key === key);
             if (open === undefined) {
-                make(from, url, key);
+                make(from, url, key, features);
                 return;
             }
             // A page that ended after a reload or a crash of the presenter screen is loaded again,
