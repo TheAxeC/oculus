@@ -34,7 +34,7 @@ dispatch:           # steps in flight, up to six (Z632)
   session_id: a700c9cd6e18ea451   # claude-opus-5-5, read from the agent's record
   builder_usage: 171430 tokens, 366 tool uses, 65 min 31 s
   reviewer_report: .scratch/migration/agents/reviews/O147-refuter.md (a531dbf1711f69533, claude-opus-5-5, 297296 tokens, 94 tool uses, 19 min 37 s)
-  round: 0
+  round: 1
   brief_check: .scratch/migration/agents/reviews/O147-brief-check.md (a5ec4b5cba21b2e92, claude-opus-5-5, 286289 tokens, 113 tool uses, 16 min 3 s)
   shared_paths: "docs/HELP.md and docs/templates.md with O152 of this plan; O147 writes the Present paragraph (HELP.md:331) and the present.yml section (templates.md:1910-1929), O152 the card's Venue sentence (HELP.md:299) and the venue_tiers comment (templates.md:541-546), different paragraphs, and docs/diagrams are regenerated at landing"
   landing: not-started
