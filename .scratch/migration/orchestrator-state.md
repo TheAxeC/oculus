@@ -39,8 +39,17 @@ dispatch:           # steps in flight, up to six (Z632)
   shared_paths: "docs/HELP.md with O153 of this plan; O147 writes the Present paragraph (HELP.md:331), O153 the project card paragraph (HELP.md:299), different paragraphs, and docs/diagrams are regenerated at landing"
   landing: not-started
 - step: O153
-  landing: preparing
+  base: 8ea70be0d
+  worktree: .agents/worktrees/migration-O153
+  executor: agent
+  worker: claude:opus
+  launched: 2026-11-05
+  report: .scratch/migration/agents/reviews/O153-report.md
+  session_id: a37253d9779601394   # claude-opus-5-5, read from the agent's record
+  round: 0
   brief_check: .scratch/migration/agents/reviews/O153-brief-check.md (a1fe23ba35d510aa2, claude-opus-5-5, 167507 tokens, 39 tool uses, 7 min 11 s)
+  shared_paths: "docs/HELP.md with O147 of this plan; O153 writes the project card paragraph (HELP.md:299), O147 the Present paragraph (HELP.md:331), different paragraphs"
+  landing: not-started
 ```
 
 ## The standing demands (from Axel, in force)
@@ -818,7 +827,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
-- 2026-11-05 (O153 prepared; O147 repair round 1 running). Axel ruled 687 (a), booked as step O153, and 688 (a), every project keeping Deposit, ruling 37's "not Deposit" replaced, both in plan.md Rulings. O153's brief check (`agents/reviews/O153-brief-check.md`, a1fe23ba35d510aa2, claude-opus-5-5) closed in the brief under its Closed heading: the keyboard menu, a project with no `code/` and an open Deposit view as cases, the Focus lane cards and the list mode named outside the step, the perl ASCII gate and the prose rule in the checks. In flight (2 of 6): O147 (repair round 1), O153 (preparing). Open items: none.
+- 2026-11-05 (O153 prepared; O147 repair round 1 running). Axel ruled 687 (a), booked as step O153, and 688 (a), every project keeping Deposit, ruling 37's "not Deposit" replaced, both in plan.md Rulings. O153's brief check (`agents/reviews/O153-brief-check.md`, a1fe23ba35d510aa2, claude-opus-5-5) closed in the brief under its Closed heading: the keyboard menu, a project with no `code/` and an open Deposit view as cases, the Focus lane cards and the list mode named outside the step, the perl ASCII gate and the prose rule in the checks. In flight (2 of 6): O147 (repair round 1), O153 (building; prepared at 8ea70be0d, worktree `.agents/worktrees/migration-O153` with `npm ci` and `svelte-kit sync`, base copy `.agents/worktrees/O153-base` with `unused-exports.txt` (335 lines), builder a37253d9779601394, claude-opus-5-5). Open items: none.
 - 2026-11-05 (O152 landed; O147 reviewed). O152, the Venue tag's tier icon, landed (booking in plan.md under O152, `agents/reviews/O152-landing.md`), with fixes at landing: the test's server path widened to the blank and glyph-less tier rows with `home` as primary, and the head comments of `tones.ts` and `lines.ts`; G127's Code line names `venueTierMark`; the look on 8797 saw the crown, star and target marks in their hues, the tip on keyboard focus, the Pillars tier counts and one bracket pair under the terminal theme. O147's review (`agents/reviews/O147-refuter.md`, a531dbf1711f69533) found every item holding and Proof, Standards and Behaviour points; its repair round 1 is next. In flight (1 of 6): O147 (reviewed, round 1 next). Open items: none.
 - 2026-11-05 (O146 landed). O146, a deck's frame size and the slide findings, landed (booking in plan.md under O146, `agents/reviews/O146-landing.md`), with fixes at landing: the Present store keeping the deck each pane draws so a drawn slide's measure stays (review S1, option (b)), the slide's source in the Stage's `drawing` text, the reading column back to `1040px` with the unread `--slide-width` and `--slide-pad` removed, and the Stage's measure taken unrounded so the pane and the tile agree. Axel ruled 686 (a) with the glyphs named in `vocab.yml`'s `venue_tiers` rows, booked as step O152. Next: O147, the Present view's filter bar, through `/spec`; O152 may run beside it. In flight: none. Open items: none.
 - 2026-11-05 (O145 landed; O146 to O151 booked). O145, the deck arranged in the Overview with the Slides view retired, landed (booking in plan.md under O145, `agents/reviews/O145-landing.md`), with three fixes at landing: a select trigger counted as a field (`[aria-haspopup="listbox"]` in `screen/keys.ts`), the hold's doc comments, and the Edit Rule form's captions in one column. Axel ruled 676 to 685; their steps O146 to O151 are booked in plan.md after O145, O146 next. Open items: none. Axel's venue-line request (the cards' Venue tag without the cost, with an icon for the tier) awaits his ruling as open item 686.

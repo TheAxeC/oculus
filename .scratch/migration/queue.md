@@ -1,6 +1,6 @@
 In flight (2 of 6 slots in use):
 - O147 (the Present view's filter bar), repair round 1 running.
-- O153 (Deposit in every project card's menu), brief check running.
+- O153 (Deposit in every project card's menu), building.
 
 Queued, in order (4 steps):
 - O148 (the Project facts strip), after O147 lands.
