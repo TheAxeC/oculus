@@ -44,7 +44,9 @@ dispatch:           # steps in flight, up to six (Z632)
   launched: 2026-11-05
   report: .scratch/migration/agents/reviews/O152-report.md
   session_id: a94ae9654f1813d77   # claude-opus-5-5, read from the agent's record
-  round: 0
+  builder_usage: 349041 tokens, 154 tool uses, 29 min 41 s
+  reviewer_report: .scratch/migration/agents/reviews/O152-refuter.md (a8593b71051db912f, claude-opus-5-5, 204111 tokens, 49 tool uses, 12 min 2 s)
+  round: 1
   brief_check: .scratch/migration/agents/reviews/O152-brief-check.md (a43403bea8848ebc5, claude-opus-5-5, 223233 tokens, 61 tool uses, 10 min 42 s)
   shared_paths: "docs/HELP.md and docs/templates.md with O147 of this plan, different paragraphs (see O147's entry)"
   landing: not-started
