@@ -533,7 +533,7 @@ export const vocabFileShape = z.strictObject({
         .array(keyed)
         .optional()
         .describe(
-            "The tiers a venue's `tier` takes, best first, each with its colour; a tier with `assignable: false` is drawn but not offered."
+            "The tiers a venue's `tier` takes, best first, each with its glyph, words and colour; a tier with `assignable: false` is drawn but not offered."
         ),
     radar_buckets: z
         .array(keyed)

@@ -11,7 +11,7 @@
 import { byKey } from '../../../data/helpers/guards.ts';
 import { keyOf, rootOf } from '../../../data/helpers/hub-names.ts';
 import { domainLabel, domainTone, stageTone } from '../../shared/words/tones.ts';
-import type { Id, Project, Snapshot } from '../../../data/model/index.ts';
+import type { Id, Project, Snapshot, Venue } from '../../../data/model/index.ts';
 import { categoryOf } from '../../../data/shapes/boards/categories.ts';
 import { isLead, isMine } from '../../../data/shapes/boards/roles.ts';
 import {
@@ -21,6 +21,7 @@ import {
     type TakeContext
 } from '../../../data/shapes/boards/takes.ts';
 import { personNames } from '../person.ts';
+import { venueTierMark } from '../structure/lines.ts';
 import { waitedOn } from '../waiting.ts';
 import { sliceValue, sliceWord } from './facets.ts';
 import { selfIds, shownTeam, teamOf } from './team.ts';
@@ -71,9 +72,16 @@ function relatedTags(project: Project, snapshot: Snapshot): RelatedTag[] {
 
 /**
  * Everything the search reads, from the project and from what it was joined with. `team` is the
- * whole team, the user included, since a search finds a project by any of its people.
+ * whole team, the user included, since a search finds a project by any of its people. The venue's
+ * cost (`free`) is read beside the venue's text, which leaves it out, so a project is found by its
+ * venue's cost though the card does not draw it.
  */
-function haystack(project: Project, item: Omit<BoardItem, 'haystack'>, team: BoardTag[]): string {
+function haystack(
+    project: Project,
+    item: Omit<BoardItem, 'haystack'>,
+    team: BoardTag[],
+    venue: Venue | undefined
+): string {
     const tags = [
         ...item.pillars,
         ...item.funding,
@@ -89,6 +97,7 @@ function haystack(project: Project, item: Omit<BoardItem, 'haystack'>, team: Boa
         project.next ?? '',
         project.outcome ?? '',
         item.venue?.text ?? '',
+        venue?.free ?? '',
         ...project.results,
         ...project.ideas,
         ...(project.tags ?? []),
@@ -146,7 +155,10 @@ function itemOf(
                       id: venue.id,
                       text: venueText(venue),
                       short:
-                          venue.short !== undefined && venue.short !== '' ? venue.short : venue.name
+                          venue.short !== undefined && venue.short !== ''
+                              ? venue.short
+                              : venue.name,
+                      tier: venueTierMark(venue, (root) => preset.words(root).config)
                   },
         pillars: project.pillarIds.map(pillar),
         funding: project.fundingIds.map((id) => tag(id, own(id))),
@@ -172,7 +184,7 @@ function itemOf(
         waiting: waitedOn(project.waitingOn, people.names, entities.projects),
         related: relatedTags(project, snapshot)
     };
-    return { ...item, haystack: haystack(project, item, teamOf(project).map(person)) };
+    return { ...item, haystack: haystack(project, item, teamOf(project).map(person), venue) };
 }
 
 /** The names and the user of a snapshot, read once for every item of a board. */

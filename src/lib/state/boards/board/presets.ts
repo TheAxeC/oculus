@@ -34,6 +34,7 @@ import {
     type BoardRule,
     type TakeWords
 } from '../../../data/shapes/boards/takes.ts';
+import type { TierMark } from '../structure/lines.ts';
 import type { WaitedOn } from '../waiting.ts';
 
 /** The value a facet gives what has none: no year, no funding, no compute, no code deposit. */
@@ -131,8 +132,11 @@ export type BoardItem = {
     tone: string;
     /** The `themes:` entry of the project's domain: its words and its hue. */
     domain: { id: Id; label: string; tone: string } | null;
-    /** The venue joined through `venue`: the card's line and the list row's short name. */
-    venue: { id: Id; text: string; short: string } | null;
+    /**
+     * The venue joined through `venue`: the card's line, the list row's short name, and the tier
+     * the card's Venue tag draws, null for a venue whose tier row gives no glyph.
+     */
+    venue: { id: Id; text: string; short: string; tier: TierMark | null } | null;
     pillars: BoardTag[];
     funding: BoardTag[];
     datasets: BoardTag[];
@@ -668,14 +672,14 @@ export function mapPreset(
 }
 
 /**
- * The venue as the card writes it: name, quartile, JIF and cost, in that order, joined by a bar.
+ * The venue as the card writes it: name, quartile and JIF, in that order, joined by a bar. The cost
+ * is drawn on the Venues view's card, and the board's search reads it beside this text.
  */
 export function venueText(venue: Venue): string {
     const parts = [venue.name];
     if (venue.quartile !== undefined && venue.quartile !== '') parts.push(venue.quartile);
     const jif = (venue.jif ?? '').trim();
     if (!NO_JIF.includes(jif.toLowerCase())) parts.push(`JIF ${jif}`);
-    if (venue.free !== undefined && venue.free !== '') parts.push(venue.free);
     return parts.filter((part) => part !== '').join(' | ');
 }
 

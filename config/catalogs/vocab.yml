@@ -297,12 +297,12 @@ pillar_kinds:
   - { key: provisional, label: Provisional, color: "#d97706" }
   - { key: offpillar,   label: Off-pillar,  color: "#9ca3af" }
 
-# Venue prestige tiers: the controlled vocabulary + colours for a venue's `tier:` (the venues registry). A curated JUDGMENT, NOT derived from JIF (so AAAI/TSP read flagship with no JIF, and a wide JIF band isn't flattened into one label). Order = ranking (best first). The venues schema's `tier` takes its options from the ASSIGNABLE keys here; the Pillars tab colours its tier spread from these. `unrated` is the computed fallback (no venue / no tier), `assignable: false` so it's not offered as a choice.
+# Venue prestige tiers: the controlled vocabulary + colours for a venue's `tier:` (the venues registry). A curated JUDGMENT, NOT derived from JIF (so AAAI/TSP read flagship with no JIF, and a wide JIF band isn't flattened into one label). Order = ranking (best first). A row is (key, glyph name, label, colour): `glyph` is a `glyphs:` key, the icon a project card's Venue tag draws in the tier's colour, with the label as its tip; a tier with no glyph draws the venue glyph. The venues schema's `tier` takes its options from the ASSIGNABLE keys here; the Pillars tab colours its tier spread from these. `unrated` is the computed fallback (no venue / no tier), `assignable: false` so it's not offered as a choice.
 venue_tiers:
-  - { key: flagship,   color: "#7c3aed", label: "flagship" }
-  - { key: strong,     color: "#0d9488", label: "strong" }
-  - { key: specialist, color: "#0891b2", label: "specialist" }
-  - { key: unrated,    color: "#94a3b8", label: "unrated", assignable: false }
+  - { key: flagship,   glyph: crown,  color: "#7c3aed", label: "flagship" }
+  - { key: strong,     glyph: star,   color: "#0d9488", label: "strong" }
+  - { key: specialist, glyph: target, color: "#0891b2", label: "specialist" }
+  - { key: unrated,                   color: "#94a3b8", label: "unrated", assignable: false }
 
 # Lit-Watch radar buckets: (key, glyph name, label, colour). New papers per project are classified into one of these; `glyph` is a `glyphs:` key. A bucket's label and colour are set here.
 radar_buckets:

@@ -333,3 +333,156 @@ The four existing cases call `install` as before and ignore its answer; they pas
 - A hub row whose glyph names a glyph the vocabulary lacks draws the venue glyph and raises no finding (the brief's decision 4).
 - The Venues view's card draws the cost (`VenueCard.svelte:258-259`, unchanged), as the brief says.
 - One file was changed by a command other than the Edit and Write tools: this report, where `sed -i ''` replaced one citation (`Tag.svelte:38-41`, `:60-77`). No file of the diff was changed that way; prettier's `--write` formatted `items.ts` and `Tag.svelte`, as the rules file asks.
+
+## Repair round 1
+
+Every item of `briefs/O152-round-1.md` is done. One file of the diff was changed in this round by a command other than the Edit and Write tools: `tests/state/shared/hub-words.test.ts`, where a `python3` program replaced five exact strings (each asserted to occur once) to move the board-item row to one parsed hub (item 5); the result is the file as the diff shows it. `tones.ts` is outside the step's write list and is changed because item 4 asks for it.
+
+1. **The tier tip's tab stop has a name.** `Tag.svelte:65-70`: the `Tooltip` is drawn `presentational` instead of `focusable`, and the stop is the `.mark` span itself, `tabindex="0"`, `role="img"`, `aria-label={glyphTip}`, under `<!-- svelte-ignore a11y_no_noninteractive_tabindex -->` as `Tooltip.svelte:232` and `:253` write it. Tooltip.svelte is unchanged: its `focused` (`Tooltip.svelte:142-149`) runs on the wrapper's `focusin`, which the span's focus bubbles to, so Tab to the span opens the tip when the span matches `:focus-visible`, and `left` (`:152-156`) puts it away. `presentational` makes `describedBy` (`tooltip-rules.ts:34-36`) give no description, which `Tooltip.svelte:48-51` says is for a tooltip that only repeats the control's own name: the stop's name is the tier's label, so a screen reader reads "strong" once rather than as both the name and the description. This departs from the original brief's item 5 wording ("reaches a screen reader through the Tooltip's description"): the words now reach it as the stop's name. Every other caller of `Tag` passes no `glyphTip` and draws the two other branches, unchanged. The `Tag.svelte` head comment (`:16-23`) says the stop is an image named by the tip's words and that the tooltip is presentational. Check: the server render of `tag.case.ts` (source and output under item 6), whose stop reads `<span class="mark svelte-138vb85" style="--mark-txt: var(--c-teal-txt)" tabindex="0" role="img" aria-label="strong">` inside `<span ... class="tip svelte-17l0wfn" role="presentation">`, with no `aria-describedby` on either and the glyph `aria-hidden="true"`.
+2. **`docs/HELP.md:299`.** The Venue sentence reads: "and Venue, which reads the icon of the venue's tier in the tier's colour, the tier its tip on hover and, since the icon takes a tab stop of its own, on keyboard focus as well, then the venue's name, quartile and JIF; the venue's cost is on the Venues view." Check: `git diff -U0 docs/HELP.md` shows one hunk, `@@ -299 +299 @@`.
+3. **The head comment of `lines.ts`.** `lines.ts:1-12` now says it holds the joins for the Pillars and Domains views and the venue tier a project card draws (`venueTierMark`); that the Pillars and Domains joins are pure over what they are given while the tier join reads the installed glyph vocabulary (`hasGlyph` of `state/shared/words/text.ts`), which keeps this module out of a module Node runs unbuilt; and that a venue is read under the words of its own hub, its rows and its hue alike. The palette is not read from the installed words any more than the rows are: after item 4 the hue comes from the words the caller gives, so the comment names the glyph vocabulary as the one installed read. Check: `sed -n 1,22p src/lib/state/boards/structure/lines.ts`.
+4. **One source for a tier's row and its tone.** `tones.ts:214-238`: the hex-to-hue step is the private `hueIn(palette, hex)`; `paletteTone(hex, hub)` reads it over the installed palette as before for its two callers (`facets.ts:71`, `LineCard.svelte:68`), and the new export `wordsTone(hex, words)` reads it over `words.palette` through the file's own `stringMap` and `hexShape`. `venueTierMark` (`lines.ts:335-355`) reads the row from `words.venue_tiers` and the tone from `wordsTone(row.color, words)` of the same `words`, and its doc comment says so. Check: `grep -rn "paletteTone\|wordsTone" src tests` lists `facets.ts:27`, `:71`, `LineCard.svelte:30`, `:68` and `lines.ts:36`, `:353`; the case holds every row (item 5).
+5. **The case runs well under a second, every row kept.** The nine rows of `venueTierMark` read each hub's words as a plain `wordsOf` (oculus's parsed `palette` with the hub's own `venue_tiers`, the same three hubs and the same rows), so they cost no parse. The board-item row reads one planted hub, `lab`, through `loadConfig`, `readOtherHub` and `buildHubs`; the project's folder `home` is installed as a folder that is no hub (`dir: null`), so it reads oculus's own words, whose strong row is star, teal, "strong", and `lab`'s strong row is crown, `#7c3aed`, "Top", so the item's `{ glyph: 'crown', tone: 'purple', label: 'Top' }` can only come from the venue's hub. What the rows no longer exercise is the server's parse of the blank and mistyped glyph rows; the board-item row exercises that parse for a row with a glyph. Check: `npx vitest run tests/state/shared/hub-words.test.ts --reporter=verbose`, last run: `<check mark> |unit| tests/state/shared/hub-words.test.ts > the words of each hub's records > draws a venue with the glyph, tone and label of its tier row in its own hub's words 317ms`, `Tests  5 passed (5)` (earlier runs of the same file this round: 349 ms, 347 ms, 459 ms). The case is not tagged slow.
+6. **The case-run programs.** Each lives in `/private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/o152/r1/`, outside the worktree, and is kept there; `git status --short` after the runs lists only the two untracked ledger files (`briefs/O152-round-1.md`, `reviews/O152-report.md`), and `ls -d $TMPDIR/o152-case-*` printed no folder before or after, the fixture's `it` sweeping the planted hub. The programs named earlier without source are replaced by these runs on the final tree: `zod-probe.mjs`, `untiered.mjs`, `case.config.mjs`, and `cases.case.ts` (the same program as the one quoted above, with `<W>` written out), plus `tag.case.ts` for item 1.
+
+`zod-probe.mjs`, run with `node zod-probe.mjs <worktree>` (zod 4.6.5):
+
+```js
+// Case-run program for O152: whether zod, as the tree given as argv[2] installs it, holds a key
+// typed z.unknown() as required, and whether .optional() makes it optional. It writes nothing.
+import { join } from 'node:path';
+const tree = process.argv[2];
+const { z } = await import(join(tree, 'node_modules/zod/index.js'));
+const required = z.object({ key: z.string(), assignable: z.unknown() });
+const optional = z.object({ key: z.string(), assignable: z.unknown().optional() });
+console.log('without assignable, z.unknown():', required.safeParse({ key: 'a' }).success);
+console.log('without assignable, z.unknown().optional():', optional.safeParse({ key: 'a' }).success);
+console.log('with assignable: false, z.unknown():', required.safeParse({ key: 'a', assignable: false }).success);
+```
+
+```
+without assignable, z.unknown(): false
+without assignable, z.unknown().optional(): true
+with assignable: false, z.unknown(): true
+```
+
+`untiered.mjs`, run with `node untiered.mjs <worktree>`:
+
+```js
+// Case-run program for O152: counts the `tier` values of the hub's venues and lists the entries
+// with none. Reads the hub's venues file read only, with the yaml parser of the tree given as
+// argv[2]. It writes nothing.
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { homedir } from 'node:os';
+const tree = process.argv[2];
+const yaml = (await import(join(tree, 'node_modules/yaml/dist/index.js'))).default;
+const file = join(homedir(), 'workspace/research-hub/.oculus/data/research/venues.yml');
+const entries = yaml.parse(readFileSync(file, 'utf8')).entries;
+const counts = {};
+for (const one of entries) {
+    const tier = one.tier ?? '(none)';
+    counts[tier] = (counts[tier] ?? 0) + 1;
+}
+console.log('hub tiers:', JSON.stringify(counts));
+console.log('no tier:', entries.filter((one) => one.tier === undefined).map((one) => one.id).join(', '));
+```
+
+```
+hub tiers: {"strong":25,"(none)":8,"specialist":20,"flagship":25}
+no tier: cbm, volga-neuroscience, icfp-src, chi-ea, ecnr, kuleuven-thesis, uhasselt-thesis, xai-nl
+```
+
+`case.config.mjs`, the config both vitest programs run under (`npx vitest run --config <scratch>/case.config.mjs --silent=false --reporter=verbose <file>`, from the worktree's root):
+
+```js
+// Scratch vitest config for O152's case-run programs: loads the worktree's Svelte plugin so the
+// rune modules and components compile, resolves `$lib` to the worktree's src/lib, and runs only the
+// *.case.ts files of this folder, with no cache.
+import { svelte } from '/Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O152/node_modules/@sveltejs/vite-plugin-svelte/src/index.js';
+
+const W = '/Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O152';
+const HERE = '/private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/o152/r1';
+
+export default {
+    plugins: [svelte()],
+    resolve: { alias: { $lib: `${W}/src/lib` } },
+    server: { fs: { allow: [W, HERE] } },
+    test: { dir: HERE, include: ['*.case.ts'], cache: false, environment: 'node' }
+};
+```
+
+`tag.case.ts` (`<W>` is the worktree path, written out in the file):
+
+```ts
+// Case-run program for O152 item 1: renders a Venue tag with a tier glyph and tip on the server, as
+// tests/shell/rail/schedule-dialog.test.ts renders a component under the page's tooltip group, and
+// prints the markup. It asserts nothing and writes nothing.
+import { render } from 'svelte/server';
+import { it } from '<W>/tests/fixtures/scratch.ts';
+import { clientContext, emptyClient } from '<W>/tests/fixtures/client.ts';
+import { setGlyphs } from '<W>/src/lib/state/shared/words/text.ts';
+import Tag from '<W>/src/lib/ui/controls/Tag.svelte';
+
+it('prints the tag', () => {
+    setGlyphs({ star: '[*]', venue: '<>' });
+    const context = clientContext(emptyClient());
+    const tipped = render(Tag, {
+        props: { label: 'JBI', glyph: 'star', glyphTone: 'teal', glyphTip: 'strong' },
+        context
+    });
+    console.log('with tip:', tipped.body);
+    const plain = render(Tag, { props: { label: 'CBM', glyph: 'venue' }, context });
+    console.log('no tip:', plain.body);
+});
+```
+
+```
+with tip: <!--[--><span class="tag svelte-138vb85"><!--[0--><!--[0--><!--[-1--><!--[--><!--[--><!--$s1--><!--[0--><span id="bits-s1" data-state="closed" data-delay-duration="150" data-tooltip-trigger="" class="tip svelte-17l0wfn" role="presentation"><span class="mark svelte-138vb85" style="--mark-txt: var(--c-teal-txt)" tabindex="0" role="img" aria-label="strong"><!--[0--><span class="glyph svelte-1ecfycl" data-glyph="star" aria-hidden="true"></span><!--]--><!----></span><!----> <span id="tip-1" class="words" hidden="">strong</span></span><!----><!--]--><!--]--><!--[--><!--[-1--><!--]--><!--]--><!----><!----><!--]--><!--]--><!--]--><!--]--> <span class="label svelte-138vb85">JBI</span></span><!--]-->
+no tip: <!--[--><span class="tag svelte-138vb85"><!--[0--><!--[-1--><!--[0--><span class="glyph svelte-1ecfycl" data-glyph="venue" aria-hidden="true"></span><!--]--><!--]--><!--]--> <span class="label svelte-138vb85">CBM</span></span><!--]-->
+ <check mark> ../../../../../../../private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/o152/r1/tag.case.ts > prints the tag 35ms
+```
+
+A server render runs no effect, so `aria-describedby`, which `Tooltip.svelte:215-225` sets on mount, is absent here by construction; on the page `describedBy` gives the empty string for a presentational wrapper and the effect removes the attribute (`:219-221`), so it stays absent there too, by reading.
+
+`cases.case.ts`, the program quoted under "Case results after the change" with `<W>` written out, its imports grouped, and `workspaceVocabs` imported with `portfolioConfigFrom`; its output on the tree after this round:
+
+```
+venueTiers(shipped): [{"key":"flagship","label":"flagship","color":"#7c3aed","glyph":"crown"},{"key":"strong","label":"strong","color":"#0d9488","glyph":"star"},{"key":"specialist","label":"specialist","color":"#0891b2","glyph":"target"},{"key":"unrated","label":"unrated","color":"#94a3b8","fallback":true}]
+jbi: venue={"id":"hub:jbi","text":"Journal of Biomedical Informatics | Q1 | JIF 5.9","short":"JBI","tier":{"glyph":"star","tone":"teal","label":"strong"}} haystack holds free=true ("free (subscription)")
+bspc: venue={"id":"hub:bspc","text":"Biomedical Signal Processing and Control | Q2 | JIF 5.7","short":"BSPC","tier":{"glyph":"target","tone":"cyan","label":"specialist"}} haystack holds free=true ("free (subscription)")
+hcin: venue={"id":"hub:hcin","text":"Human-Centric Intelligent Systems (HCIN)","short":"HCIN","tier":{"glyph":"target","tone":"cyan","label":"specialist"}} haystack holds free=true ("free (gold OA, no APC)")
+cbm: venue={"id":"hub:cbm","text":"Computers in Biology and Medicine | Q1 | JIF 6.3","short":"CBM","tier":null} haystack holds free=true ("free (subscription route, 'No open access publication fee' on the journal's open access page; the guide for authors names no page or colour charge, colour figures appear in colour online)")
+      Tests  1 passed (1)
+```
+
+The output equals the phase-1 output line for line, so the tones read from the words (item 4) give the same marks on the hub's venues.
+
+### Round checks
+
+| Check | Result |
+|---|---|
+| `npx eslint` over `Tag.svelte`, `tones.ts`, `lines.ts`, `hub-words.test.ts` | exit 0 |
+| `npx svelte-check --tsconfig ./tsconfig.json --threshold error` | `0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS` |
+| `npx vitest run` over the brief's four test files | `Test Files  4 passed (4)`, `Tests  131 passed \| 2 skipped (133)` |
+| ASCII gate of the rules file over `src tests config` (`bin` does not exist: `find: bin: No such file or directory`) | prints nothing |
+| `LC_ALL=C grep -n '[^ -~]'` over the round's five files | prints nothing |
+| `sh utils/unused-exports.sh` against `../O152-base/unused-exports.txt` | `diff` exit 0, no line added (`wordsTone` is used by `lines.ts`) |
+| `wc -l` | `Tag.svelte` 134, `tones.ts` 402, `lines.ts` 360, `hub-words.test.ts` 227 |
+| History-word grep over the added lines of `src`, `tests`, `docs/HELP.md` | one hit, `HELP.md:299`, on its existing words "still open" and "before an empty terminals pane", which are no history; no hit in a comment line or a test title |
+| `npm run diagrams && npm run docs:palette` | both exit 0 |
+| `npm run test:quick`, run once this round | below |
+
+```
+ok      prettier (1.1 s): All matched files use Prettier code style!
+ok      ASCII gate (1.2 s)
+ok      svelte-kit sync (3.0 s)
+ok      eslint (17.1 s)
+ok      svelte-check (24.0 s): 1793914283128 COMPLETED 582 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest slow (36.8 s): Duration  17.08s (transform 1.69s, setup 0ms, import 4.56s, tests 11.93s, environment 3ms)
+ok      vitest (63.5 s): Duration  44.04s (transform 31.94s, setup 0ms, import 59.83s, tests 73.78s, environment 3ms)
+ok      vitest checks (70.3 s): Duration  50.67s (transform 39.32s, setup 0ms, import 75.86s, tests 100.60s, environment 6ms)
+test:quick: 73.4 s; every command passed
+```
+
+No whole-suite command was run. The keyboard focus that opens the tip and the screen reader's reading of the stop are by reading of `Tooltip.svelte` and the rendered markup; the look confirms them on the page.

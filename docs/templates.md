@@ -538,11 +538,13 @@ The hub's own settings. A key of oculus's `config/catalogs/vocab.yml` set here i
 #     - { key: provisional, label: Provisional, color: "#d97706" }
 #     - { key: offpillar, label: Off-pillar, color: "#9ca3af" }
 
-# The tiers a venue's tier takes, best first, each with its colour and label.
+# The tiers a venue's tier takes, best first, each with its glyph, colour and label; the glyph is
+# what a project card's Venue tag draws in the tier's colour, and a tier with none draws the venue
+# glyph.
 # venue_tiers: []
 #   example:
 #   venue_tiers:
-#     - { key: core, color: "#7c3aed", label: core }
+#     - { key: core, glyph: crown, color: "#7c3aed", label: core }
 #     - { key: unrated, color: "#94a3b8", label: unrated, assignable: false }
 
 # The buckets of Lit Watch, in the order they are drawn, each with its glyph, label and colour.

@@ -14,10 +14,11 @@
 // the records of several hubs, reads the union of every hub's words: the primary's first, then each
 // other hub's in the workspace's order, each word once with the row of the first hub that holds it
 // (data/shapes/vocab-keys.ts, `unionWords`). A domain its hub does not list is drawn as an unlisted
-// domain, never with another hub's entry. Every lookup is pure over what was last installed and
-// reads the configuration's generation, state/shared/words/generation.svelte.ts, so a component
-// calling one during its first render gets the page's data and draws again when a push replaces
-// it.
+// domain, never with another hub's entry. Every lookup of the installed words is pure over what
+// was last installed and reads the configuration's generation,
+// state/shared/words/generation.svelte.ts, so a component calling one during its first render gets
+// the page's data and draws again when a push replaces it. `wordsTone` reads only the words it is
+// handed, so it draws again when its caller's words change and not on its own.
 //
 // A name is looked up among the record's own keys, so a name every object has, such as
 // `constructor`, finds nothing.
@@ -211,12 +212,30 @@ export function namedTone(name: unknown, hub?: string): string {
     return Object.values(palette).includes(`c-${tone}`) ? tone : UNKNOWN_TONE;
 }
 
-/** A palette hue, or undefined when the value has no usable palette token. */
-export function paletteTone(hex: unknown, hub?: string): string | undefined {
-    const token = byKey(wordsOf(hub).palette, scalar(hex).trim().toLowerCase());
+/**
+ * The hue `palette` maps a hex to, the palette being a map of hex to token name as the lookups read
+ * it: a `c-` token's hue, and undefined for a token that is not a hue, a hex the palette does not
+ * list and a value that is no hex.
+ */
+function hueIn(palette: Record<string, string | undefined>, hex: unknown): string | undefined {
+    const token = byKey(palette, scalar(hex).trim().toLowerCase());
     if (!token?.startsWith('c-')) return undefined;
     const tone = token.slice('c-'.length);
     return TONE.test(tone) ? tone : undefined;
+}
+
+/** A palette hue, or undefined when the value has no usable palette token. */
+export function paletteTone(hex: unknown, hub?: string): string | undefined {
+    return hueIn(wordsOf(hub).palette, hex);
+}
+
+/**
+ * The hue a hex is written as under the `palette` of `words`, words of one hub as `vocabOf` gives
+ * them, read as `paletteTone` reads the installed palette: for a caller handed the words it reads
+ * a list from, so the list's rows and their hues come from the same words.
+ */
+export function wordsTone(hex: unknown, words: Record<string, unknown>): string | undefined {
+    return hueIn(stringMap(words.palette, hexShape), hex);
 }
 
 /** The dataset access colour from `data_access`, with an unknown value kept neutral. */

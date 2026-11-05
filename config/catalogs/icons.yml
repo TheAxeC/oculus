@@ -87,6 +87,8 @@ icons:
     keyboard: keyboard
     data: database
     venue: diamond
+    crown: crown
+    target: target
     funding: banknote
     pillar: layers
     code: code

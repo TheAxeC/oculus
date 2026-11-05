@@ -88,6 +88,8 @@ glyphs:
   keyboard: "[k]"
   data: "<#>"
   venue: "<>"
+  crown: "[^]"
+  target: "(+)"
   funding: "<*>"
   pillar: "[ ]"
   code: "[_]"

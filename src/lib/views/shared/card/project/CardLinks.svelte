@@ -26,8 +26,11 @@
     // project in a row of `categories:` carrying `archival`, which opens its project tab.
     //
     // The venue kind is the venue the project's `venue_id` names, drawn only when it names one: its
-    // whole text (its name with its quartile and the rest) as one tag with no press, which wraps
-    // onto further lines rather than being cut, so every part of it can be read.
+    // text (its name, its quartile and its JIF, presets.ts `venueText`) as one tag with no press,
+    // which wraps onto further lines rather than being cut, so every part of it can be read. The
+    // tag's glyph is the venue's tier (lines.ts `venueTierMark`): the glyph of its row of
+    // `venue_tiers` in the venue's own hub's words, drawn in the row's colour with the row's label
+    // as its tip, the words staying muted; a venue whose tier gives no glyph draws the venue glyph.
 
     import Tag from '$lib/ui/controls/Tag.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
@@ -70,8 +73,8 @@
 
     /**
      * One line: which kind it is, what it is called, the glyph its entries carry, the hue they are
-     * drawn in where they have one, and whether an entry's words wrap onto further lines rather
-     * than being cut.
+     * drawn in where they have one, whether an entry's words wrap onto further lines rather than
+     * being cut, and the hue and the tip of the glyph alone, which an entry with no press carries.
      */
     type Kind = {
         key: string;
@@ -80,6 +83,8 @@
         tags: BoardTag[];
         tone?: string;
         wrap?: boolean;
+        glyphTone?: string;
+        glyphTip?: string;
     };
 
     const kinds = $derived<Kind[]>([
@@ -129,9 +134,11 @@
         {
             key: VENUE,
             label: t('project.card.venue'),
-            glyph: 'venue',
+            glyph: item.venue?.tier?.glyph ?? 'venue',
             tags: item.venue === null ? [] : [{ id: item.venue.id, label: item.venue.text }],
-            wrap: true
+            wrap: true,
+            glyphTone: item.venue?.tier?.tone,
+            glyphTip: item.venue?.tier?.label
         }
     ]);
 
@@ -182,6 +189,8 @@
                                 glyph={kind.glyph}
                                 tone={kind.tone}
                                 wrap={kind.wrap === true}
+                                glyphTone={kind.glyphTone}
+                                glyphTip={kind.glyphTip}
                             />
                         {:else}
                             <span class="crosslink">

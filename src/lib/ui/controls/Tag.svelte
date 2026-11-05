@@ -12,8 +12,18 @@
     //
     // A tag that is pressed is this inside the caller's own button: the click, the title and the
     // hover belong to the control, and what it holds is the same tag as the ones beside it.
+    //
+    // The glyph may carry a hue and words of its own, for a mark that says something the words
+    // beside it do not, as a project card's Venue tag draws the venue's tier: the hue paints the
+    // glyph alone as `--c-<tone>-txt`, the words keeping the tag's own colour, and the words are
+    // the glyph's tip through ui/menu/Tooltip.svelte, which shows them on hover and on keyboard
+    // focus. Such a glyph takes a tab stop of its own, since words on content that is no control
+    // are reached by keyboard only through one, and the stop is an image named by the same words,
+    // since the glyph itself is hidden from a screen reader: Tab to it reads the words as its name.
+    // The tooltip is presentational, so the words are not read a second time as a description.
 
     import Glyph from '../display/Glyph.svelte';
+    import Tooltip from '../menu/Tooltip.svelte';
     import { bracketedGlyph } from '$lib/state/shared/words/text';
 
     type Props = {
@@ -26,11 +36,20 @@
         /** Whether a label longer than the line wraps onto the next, for a tag whose whole name
          * must stay readable with no tooltip. Without it the label is cut with an ellipsis. */
         wrap?: boolean;
+        /** A hue name the glyph alone is drawn in, the label keeping the tag's colour. */
+        glyphTone?: string;
+        /** The words the glyph carries as its tip, already translated. Empty gives it none. */
+        glyphTip?: string;
     };
 
-    let { label, glyph, tone, wrap = false }: Props = $props();
+    let { label, glyph, tone, wrap = false, glyphTone, glyphTip = '' }: Props = $props();
 
     const style = $derived(tone === undefined ? undefined : `--tone-txt: var(--c-${tone}-txt)`);
+
+    /** The custom property the glyph's own hue reaches the CSS by, as the tag's tone does. */
+    const markStyle = $derived(
+        glyphTone === undefined ? undefined : `--mark-txt: var(--c-${glyphTone}-txt)`
+    );
 
     /**
      * Whether the glyph in force already reads as a bracketed tag, which the ASCII stand-ins of a
@@ -42,7 +61,20 @@
 
 <span class="tag" class:toned={tone !== undefined} class:bracketed class:wrap {style}>
     {#if glyph !== undefined && glyph !== ''}
-        <Glyph name={glyph} />
+        {#if glyphTip !== ''}
+            <Tooltip text={glyphTip} presentational>
+                <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+                <span class="mark" style={markStyle} tabindex="0" role="img" aria-label={glyphTip}>
+                    <Glyph name={glyph} />
+                </span>
+            </Tooltip>
+        {:else if markStyle !== undefined}
+            <span class="mark" style={markStyle}>
+                <Glyph name={glyph} />
+            </span>
+        {:else}
+            <Glyph name={glyph} />
+        {/if}
     {/if}
     <span class="label">{label}</span>
 </span>
@@ -62,6 +94,11 @@
 
     .tag.toned {
         color: var(--tone-txt, var(--muted-txt));
+    }
+
+    .mark {
+        display: inline-flex;
+        color: var(--mark-txt, inherit);
     }
 
     /* A long value is cut at the tag's own edge rather than at the card's, so a run of tags keeps

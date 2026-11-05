@@ -32,23 +32,11 @@ dispatch:           # steps in flight, up to six (Z632)
   launched: 2026-11-05
   report: .scratch/migration/agents/reviews/O147-report.md
   session_id: a700c9cd6e18ea451   # claude-opus-5-5, read from the agent's record
+  builder_usage: 171430 tokens, 366 tool uses, 65 min 31 s
+  reviewer_report: .scratch/migration/agents/reviews/O147-refuter.md (a531dbf1711f69533, claude-opus-5-5, 297296 tokens, 94 tool uses, 19 min 37 s)
   round: 0
   brief_check: .scratch/migration/agents/reviews/O147-brief-check.md (a5ec4b5cba21b2e92, claude-opus-5-5, 286289 tokens, 113 tool uses, 16 min 3 s)
   shared_paths: "docs/HELP.md and docs/templates.md with O152 of this plan; O147 writes the Present paragraph (HELP.md:331) and the present.yml section (templates.md:1910-1929), O152 the card's Venue sentence (HELP.md:299) and the venue_tiers comment (templates.md:541-546), different paragraphs, and docs/diagrams are regenerated at landing"
-  landing: not-started
-- step: O152
-  base: 3ad2d2346
-  worktree: .agents/worktrees/migration-O152
-  executor: agent
-  worker: claude:opus
-  launched: 2026-11-05
-  report: .scratch/migration/agents/reviews/O152-report.md
-  session_id: a94ae9654f1813d77   # claude-opus-5-5, read from the agent's record
-  builder_usage: 349041 tokens, 154 tool uses, 29 min 41 s
-  reviewer_report: .scratch/migration/agents/reviews/O152-refuter.md (a8593b71051db912f, claude-opus-5-5, 204111 tokens, 49 tool uses, 12 min 2 s)
-  round: 1
-  brief_check: .scratch/migration/agents/reviews/O152-brief-check.md (a43403bea8848ebc5, claude-opus-5-5, 223233 tokens, 61 tool uses, 10 min 42 s)
-  shared_paths: "docs/HELP.md and docs/templates.md with O147 of this plan, different paragraphs (see O147's entry)"
   landing: not-started
 ```
 
@@ -824,6 +812,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-11-05 (O152 landed; O147 reviewed). O152, the Venue tag's tier icon, landed (booking in plan.md under O152, `agents/reviews/O152-landing.md`), with fixes at landing: the test's server path widened to the blank and glyph-less tier rows with `home` as primary, and the head comments of `tones.ts` and `lines.ts`; G127's Code line names `venueTierMark`; the look on 8797 saw the crown, star and target marks in their hues, the tip on keyboard focus, the Pillars tier counts and one bracket pair under the terminal theme. O147's review (`agents/reviews/O147-refuter.md`, a531dbf1711f69533) found every item holding and Proof, Standards and Behaviour points; its repair round 1 is next. In flight (1 of 6): O147 (reviewed, round 1 next). Open items: none.
 - 2026-11-05 (O146 landed). O146, a deck's frame size and the slide findings, landed (booking in plan.md under O146, `agents/reviews/O146-landing.md`), with fixes at landing: the Present store keeping the deck each pane draws so a drawn slide's measure stays (review S1, option (b)), the slide's source in the Stage's `drawing` text, the reading column back to `1040px` with the unread `--slide-width` and `--slide-pad` removed, and the Stage's measure taken unrounded so the pane and the tile agree. Axel ruled 686 (a) with the glyphs named in `vocab.yml`'s `venue_tiers` rows, booked as step O152. Next: O147, the Present view's filter bar, through `/spec`; O152 may run beside it. In flight: none. Open items: none.
 - 2026-11-05 (O145 landed; O146 to O151 booked). O145, the deck arranged in the Overview with the Slides view retired, landed (booking in plan.md under O145, `agents/reviews/O145-landing.md`), with three fixes at landing: a select trigger counted as a field (`[aria-haspopup="listbox"]` in `screen/keys.ts`), the hold's doc comments, and the Edit Rule form's captions in one column. Axel ruled 676 to 685; their steps O146 to O151 are booked in plan.md after O145, O146 next. Open items: none. Axel's venue-line request (the cards' Venue tag without the cost, with an icon for the tier) awaits his ruling as open item 686.
 - 2026-11-05 (O145 repair round 1 sent). O145's builder af8c8f54859bcc892 reported (248052 tokens, 321 tool uses, 63 min 29 s); its review (`agents/reviews/O145-refuter.md`, a5bb0bc8f6d579102, claude-opus-5-5) found a member deck's drag carrying its group's entry, slides keyed by the YAML index against the place in `order:`, title tiles with no keyboard path, an unbounded hold after a write, and a key rule wider than a field needs; round 1 (`agents/briefs/O145-round-1.md`) sent to the same builder with a ruling per finding, choices booked in `choices.md`. In flight (1 of 6): O145 (round 1). Open items: none.

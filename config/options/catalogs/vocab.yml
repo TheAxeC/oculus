@@ -390,9 +390,12 @@ options:
     venue_tiers:
         heading: boards
         section: Vocabulary
-        help: "The tiers a venue's tier takes, in their order, each with its colour and words. A hub's list replaces oculus's whole."
+        help: "The tiers a venue's tier takes, in their order, each with its glyph, words and colour. A hub's list replaces oculus's whole."
         fields:
             key: the word a venue's tier writes
+            glyph:
+                help: the glyph a venue of the tier is drawn with on a project card; a tier with none draws the venue glyph
+                control: glyph
             label: the words the tier is drawn with
             color:
                 help: the colour the tier is drawn in

@@ -430,7 +430,7 @@
 <g id="node44" class="node">
 <title>folder state/boards to folder state/shared</title>
 <polygon fill="none" stroke="none" points="260.33,-192.16 245.67,-192.16 245.67,-179.68 260.33,-179.68 260.33,-192.16"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="253" y="-183.52" font-family="Helvetica,Arial,sans-serif" font-size="8.00">20</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="253" y="-183.52" font-family="Helvetica,Arial,sans-serif" font-size="8.00">22</text>
 </g>
 <!-- folder state/boards&#45;&gt;folder state/boards to folder state/shared -->
 <g id="edge76" class="edge">
@@ -452,7 +452,7 @@
 <g id="node46" class="node">
 <title>folder state/boards to layer data</title>
 <polygon fill="none" stroke="none" points="317.33,-351.28 302.67,-351.28 302.67,-338.8 317.33,-338.8 317.33,-351.28"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="310" y="-342.64" font-family="Helvetica,Arial,sans-serif" font-size="8.00">96</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="310" y="-342.64" font-family="Helvetica,Arial,sans-serif" font-size="8.00">97</text>
 </g>
 <!-- folder state/boards&#45;&gt;folder state/boards to layer data -->
 <g id="edge80" class="edge">
