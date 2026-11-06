@@ -39,21 +39,6 @@ dispatch:           # steps in flight, up to six (Z632)
   reviewer_report: .scratch/migration/agents/reviews/O158-refuter.md (a7c36a3b237a4d3c2, claude-opus-5-5, 230538 tokens, 56 tool uses, 11.9 min)
   brief_check: .scratch/migration/agents/reviews/O158-brief-check.md (adc6d991942348bee, claude-opus-5-5, 190286 tokens, 51 tool uses, 8.8 min)
   landing: not-started
-- step: O150
-  base: d46fcfa2e
-  worktree: .agents/worktrees/migration-O150
-  executor: agent
-  worker: claude:opus
-  session_id: a4c188eb9a1319932 (claude-opus-5-5)
-  launched: 2026-11-06
-  report: .scratch/migration/agents/reviews/O150-report.md
-  builder_usage: first run, handed back before any change (218920 tokens, 53 tool uses, 11.2 min); build after the cases ruling (315676 tokens, 33 tool uses, 9.8 min); round 1 (111622 tokens, 21 tool uses, 8.6 min)
-  round: 1
-  round_brief: .scratch/migration/agents/briefs/O150-round-1.md
-  cases_ruling: .scratch/migration/agents/briefs/O150-cases.md
-  reviewer_report: .scratch/migration/agents/reviews/O150-refuter.md (a6f3e70c7f1e62756, claude-opus-5-5, 210433 tokens, 47 tool uses, 9.7 min); over round 1: aeed84f6aa7d43a48, claude-opus-5-5, 193071 tokens, 44 tool uses, 7.0 min
-  brief_check: .scratch/migration/agents/reviews/O150-brief-check.md (a29f2fa39393ed95d, claude-opus-5-5, 226538 tokens, 67 tool uses, 13.2 min)
-  landing: not-started
 - step: O151
   base: f6493b536
   worktree: .agents/worktrees/migration-O151
@@ -852,6 +837,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-11-06 (O150 landed; O151 building). O150, the hub's portfolio deck, landed in the ledger (booking in plan.md under O150, `agents/reviews/O150-landing.md`): the research hub's `deck/present.yml`, `title.md` and `engine.md` written and `deck/transition.md` removed, uncommitted in the hub, the hub commit on Axel's word; one fix at landing, engine line 12. The gate passed at main's head 5929e2e0b and the integrity cases passed on the real hub; the look on 8797 drew the 28-slide deck with 16 project slides Too tall, which O151 rewrites. O151 prepared at f6493b536 with every brief-check finding closed, builder a16fff9be0294dea8 (claude-opus-5-5) running. O158's review over round 1 (a3b7974c339a4dc07) is in; its landing follows, its design to Axel before it lands. In flight (2 of 6): O158, O151. Queued: O159, O160, O161. Open items: 701, 702, 703.
 - 2026-11-06 (rulings 697, 698, 699 and Live HPC booked; O150 and O158 building under their round-0 cases rulings, 315cafed8). O150 builder a4c188eb9a1319932 and O158 builder a4151539c1a126061 resumed with `agents/briefs/O150-cases.md` and `O158-cases.md`. O151 in /spec (entry at `preparing`, brief not yet written). Steps O159 and O160 queued. Owed to Axel: Lit-Watch's loading time and its cause, measured on 8797 before O151 is launched (`agents/reviews/owed-looks.md`, "To take"). In flight (3 of 6): O158, O150, O151 (preparing). Open items: none.
 - 2026-11-06 (O157 landed). O157, a slide laid out from its content, landed (booking in plan.md under O157, `agents/reviews/O157-landing.md`): `screen/slide-layout.ts` places a slide's figures by their proportions and the text between 0.75 and 1.25 of the type scale, and Too tall is raised only for text that does not fit at 0.75. Fixes at landing, four: a tall Markdown image's cap lowered by the overrun, `data-room` on the ledes of the title, section and grid kinds, the key hint's height past the bottom padding kept at the reading column's foot, and figures whose captions leave the block no scale drawn at the size the room allows the images alone. The gate passed every command and the build, and main equals the gate under `cmp`; the look on 8797 measured 16 of 25 project decks Too tall, each for text that does not fit at 0.75. The research hub's `deck/present.yml:19` removal waits on Axel's word for its hub commit. Next: O158 (its design shown to Axel before it lands), O150, O151. In flight (0 of 6). Open items: none.
 - 2026-11-06 (O155 landed; O157 reviewed over round 1). O155, the deck order, landed (booking in plan.md under O155, `agents/reviews/O155-landing.md`): `deck_order` in `vocab.yml` orders the categories of the decks a group discovers, a category's decks by its row's `sort:` and then the board's order with no pin, the group key `sort:` removed. Fix at landing: the `groups.ts` head comment on the pin. The gate passed every command and the build, and main equals the gate under `cmp`; the look on 8797 saw Deck order in Settings with its 7 entries, the Edit Rule form with no sort control, and the discovered decks in the deck order. The research hub's `deck/present.yml:19` `sort: folder` is removed on disk; the hub commit waits on Axel's word. O157's review over round 1 (`agents/reviews/O157-refuter.md`, ae1d580808535f263) is saved; its dispositions are next. In flight (1 of 6): O157. Open items: none.

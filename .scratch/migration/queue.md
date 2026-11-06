@@ -1,16 +1,16 @@
-In flight (3 of 6 slots in use):
-- O158 (the facts strip redesigned): review of round 1 running; design to Axel before it lands.
-- O150 (the hub's portfolio deck): landing next; open item 703; hub commit on Axel's word.
+In flight (2 of 6 slots in use):
+- O158 (the facts strip redesigned): reviewed over round 1; design to Axel before it lands.
 - O151 (a deck for every research project): building; open items 701 and 702.
 
 Queued, in order (3):
-- O159 (one folder search per hub), after O150.
+- O159 (one folder search per hub).
 - O160 (Live HPC shows its refresh running).
 - O161 (cards drawn as they are seen, in every card view).
 
 Owed looks: none.
 
 Landed, newest first:
+- O150 (the hub's portfolio deck), 2026-11-06, 02056eb1a; hub commit on Axel's word.
 - O157 (a slide laid out from its content), 2026-11-06, 61d4ac3af.
 - O155 (the deck order), 2026-11-06, 19b77017f; hub commit on Axel's word.
 - O156 (one deck reader), 2026-11-06, 2fb7177ad.
