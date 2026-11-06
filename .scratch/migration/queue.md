@@ -1,5 +1,5 @@
 In flight (2 of 6 slots in use):
-- O154 (the project board's filter on the Present view), in /spec: brief written, brief check running.
+- O154 (the project board's filter on the Present view), building: base a6e95bf72, builder agent running.
 - O156 (one deck reader), in /spec beside O154 (no shared path): brief written, brief check running.
 
 Queued, in order:
