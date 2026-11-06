@@ -1,6 +1,6 @@
 # O151 report: a deck for every research project
 
-NOT DONE: 18 slides in 16 decks are still Too tall. Each holds one figure and its caption alone, and the figure by itself is taller than a slide's room. Item 3 allows only a split or a cut of repeated words, and neither shrinks a figure (open item 693). Every other item and case is met. The first runs on the unchanged hub are on record for C4 only. The hub commit waits on Axel's word; it will stage the 70 new `projects/**/present/` folders and the changed and new files of the 25 existing decks, as `git status --short projects` lists them (143 untracked entries, 32 modified files under `projects/`), and nothing else.
+NOT DONE (state after the fixes at landing; the section "Fixes at landing" at the end holds its evidence and holds over the sections before it): 16 slides are still Too tall. Each holds one figure with its caption and nothing else, its explanation on the next slide, and the figure with its caption is taller than a slide's room, which no split or cut can change (open item 693). Six existing decks state framings their projects have retired (open item 696, beside 694). Every other item and case is met. The hub commit waits on Axel's word; it will stage the 70 new `projects/**/present/` folders and the changed and new files of the 25 existing decks, as `git status --short projects` lists them (158 untracked entries, 32 modified files under `projects/`), and nothing else.
 
 ## Open items (verbatim from `orchestrator-state.md`, "## Open items")
 
@@ -15,6 +15,8 @@ NOT DONE: 18 slides in 16 decks are still Too tall. Each holds one figure and it
 - Open item 693 (2026-11-06, O151's build): some project slides stay Too tall even with one figure and its caption alone on the slide. A project slide draws a panel's figure at the full width of its column, about 485 px, with no height limit (`src/lib/views/academic/present/Panel.svelte:52-58`, `.fig { width: 100% }`), so a figure taller than it is wide is drawn taller than the room a slide has under its title (about 418 px at text scale 1). O151's item 3 allows only a split or a cut of repeated words, neither of which shrinks a figure, so these slides are left Too tall: the slide list is in `agents/reviews/O151-report.md`, section "The look". (a) A step in oculus: a project slide's figure is drawn no taller than the room its column has left, scaled down with its aspect ratio kept, at every text scale, with a test row for a tall figure; then O151's look is run again. (b) Remove those figures from the decks: every slide fits, and those projects lose the figure (a data glove, a sign-language alphabet, a coactivation plot among them). (c) Leave them Too tall: the lazy option, a finding on each of those slides every time its deck is drawn. Recommendation (a): it ends the cause for every deck, present and future, and keeps every figure.
 
 - Open item 694 (2026-11-06, O151's build): the existing deck of `projects/manuscripts/bttn-incident-af` states the provisional numbers the project has retired: its results read "BTTN+SSL 0.762 vs CNN 0.749", "parity at the noisy-label ceiling" and a headline "BTTN 0.762 vs CNN 0.748", while the manuscript's final gold ICD-10 numbers are CNN 0.734, ECG-only BTTN 0.747, clinical baseline 0.760 and the ECG plus clinical fusion 0.778 [0.767, 0.789] (`projects/manuscripts/bttn-incident-af/manuscript/main.tex:40`, `:224`, `:234-238`), and the project's `CLAUDE.md` names the old framing retired. O151's brief takes the sources only for the 70 new decks; for the 25 existing decks it allows titles, `notes:` and splits, so O151 split this deck with its words as they were. (a) O151 rewrites this deck's numbers and framing from the manuscript before the hub commit. (b) O151 also checks every number of the other 24 existing decks against its project's manuscript, README or manifest, as it did for the 70, and rewrites any that differ, this deck among them. (c) Leave the 25 decks' words as they are: the lazy option, a deck that states numbers its project has withdrawn. Recommendation (b): one stale deck found by chance means the other 24 have not been checked.
+
+- Open item 696 (2026-11-06, O151's repair round 1): six more of the 25 existing decks state a framing their project's own `CLAUDE.md` has retired; O151 split them with their words as they were, as for 694. `dongho-ecg-clustering/present/main.md:8` and `:21` say hand-crafted features "beat billion-parameter foundation models" ("Hand-crafted 0.71 vs foundation 0.19"), where the project's `CLAUDE.md:6` calls that framing dead (ECGFounder 0.885 above hand-crafted 0.711). `bttd-source-eeg/present/results.md:13` says "Most focal of the distributed solvers" unqualified, where `CLAUDE.md:10` says it is most focal on the 64-channel sphere only and the margin against eLORETA is not significant. `dries-bttr-ecg/present/results.md:13` ("Beats every baseline tested") and `baselines.md:9-10` ("Matches or beats every baseline", "the interpretability costs no accuracy") break `CLAUDE.md:25`. `ward-bttr-crosssubject/present/main.md:20-21` gives the mechanism as "BTTR deflation" and the headline "$\rho$ 0.084 to 0.49 fix", where `CLAUDE.md:12` says BTTR is dropped and the method is the alignment with a TCN. `meseret-cirrhosis/present/reframe.md:10` and `results.md:8` lead with "no ML model beats the 1989 Mayo score", the framing `CLAUDE.md:9` forbids as a headline. `covert-applied/present/main.md:22` heads with "theorem exact+private", which points at the theory paper this paper does not cite (`CLAUDE.md:6`), and `covert-theory/present/main.md:5` carries the venue tag "TMLR" where the paper is under review at IEEE TSP (`project.yml:14`). (a) O151 rewrites these places, and 694's deck, to each project's own framing from its manuscript, before the hub commit; it is 694 (b) carried out on the decks a read has already found. (b) The same, plus the number check of 694 (b) over the other existing decks. (c) Leave them: the lazy option, public slides that state claims their projects have withdrawn. Recommendation (b), with 694 (b): it ends the cause for all 25.
 
 ## The cases' first run on the unchanged hub
 
@@ -168,3 +170,114 @@ The brief does not build these, and no line of `plan.md`'s Rulings names them. E
 ## Usage
 
 The executor is inline (ruling 679): no builder agent, no usage to report.
+
+## Repair round 1
+
+Built inline by the orchestrating session under `agents/briefs/O151-round-1.md`, every hub file written with Write or Edit. This section states the state after the round; where it differs from the sections above, this section holds.
+
+### The cases' first run on the unchanged hub (ruling 1)
+
+HEAD's `projects/` was exported with `git archive HEAD projects | tar -x -C <scratchpad>/O151-head-r1` and the checks run there:
+
+- C1: `research 95, with deck 25, without 70`; `of the 70: with deck 0` (the four `tier: software` projects have no deck and are not research projects).
+- C2 and C6: the 70 hold `slides 0 figures 0`.
+- C7: the key read prints `projects/manuscripts/btfno/present/main.md: extra` and `projects/manuscripts/covert-applied/present/main.md: extra`.
+- C9: the brief's perl check prints nothing.
+- C8: `git status --short projects deck` (saved in `<scratchpad>/O151/c8-r1.txt`) prints 173 lines: 170 under a `present/` folder (138 `??`, 32 ` M`), the step's paths, and three under `deck/` (` M deck/present.yml`, ` M deck/title.md`, ` D deck/transition.md`), O150's uncommitted change.
+- C5: the look copy held HEAD's 25 `present/` folders only (the 70 new ones moved aside); the portfolio deck's Overview on 8797 drew 28 tiles, 16 of them Too tall, one per rich deck, from 667 px (`ecg-readable-substrate`) to 2616 px (`raw-pls`) past the frame; the nine idea decks fit (`<scratchpad>/O151/c5-first-run-head.txt`). The copy was then put back from `<scratchpad>/O151-look-backup`: a `diff -rq` of each of its 25 `present/` folders and of `deck/` against the backup finds no difference.
+- C4: as above, `Tests 14 passed (14)`.
+- C3 is a reading and has no first run.
+
+### Rulings
+
+| Ruling | State | Check and output |
+|---|---|---|
+| 1. First runs | DONE | the list above |
+| 2. One slide, split only where Too tall | DONE for every slide with text; 20 figure-only slides stay Too tall (open item 693) | Each deck was put back in one `main.md` (`<scratchpad>/O151-r1-onefile/`), measured, and split into the fewest slides that fit. The scratch oculus on 8797 at text scale 1, default theme, portfolio deck Overview after every tile was drawn: `tiles 219, tall 20`; for each of the 20, `.panel` count 1 and no `.eli5`, list, equation or specs block. The Findings view prints the same 20 "slide too tall" lines. |
+| 3. Intervals | DONE | fbttr-strategies, extended-bttr-note, block-term-tensor-regression and abduction state each comparator's $\pm$ interval (`grep '^- ' present/results.md` of each) |
+| 4. Manifest-only results | DONE | `grep -c '^results:'` prints 0 for algebraic-subtyping and individual-reference-intervals; no `outcome` line in connectivity-motor-imagery's slides |
+| 5. The simulated estimate | DONE | both decks' `results.md` give the manuscript's estimate in full, every coefficient included, as `connectivity-motor-imagery/manuscript/main.tex:150-156` against the truth at `:138-144` |
+| 6. cirrhosis-digital-twin | DONE | `desc: 'An idea with Maureen Guichelaar (MST hepatology): a digital twin for cardiovascular and liver outcomes in cirrhosis.'` |
+| 7. Unapproved scripts | DONE | the breach stays recorded under "Scripts written for the step"; no claim of this round rests on `compare.py`, `sync.sh` or the frame-height JavaScript. The look's copy was synced with `rsync`, the comparisons made with `diff` and `git show HEAD:`, and the Too tall state read from the Overview's own Too tall marks and the Findings view. |
+| 8. Nothing lost in a split | DONE | Existing decks against HEAD: `diff <(git show HEAD:<deck>/main.md) <one-file form>` for the 16 split existing decks prints no line for 14 and, for btfno and covert-applied, only the `extra:` block that brief item 2 turns into `notes:`. Every deck against its one-file form: of 95 decks compared, the split files differ from the one-file form only by added `panels:`, `results:`, `method:`, `specs:`, `eli5:` or `equation:` keys and section headings, except `block-term-tensor-regression`, whose headline ruling 11 rewrote. |
+| 9. erp-signatures' 16 participants | DONE | the place is `README.md:22` |
+| 10. modulation-lmp-bci | DONE | `cmp` of `manuscript/main.pdf` against `side-projects/theaxec.github.io/publications/abstracts/Abstract.Eva.CalvoMerino.pdf` prints nothing; the slide's numbers are that abstract's |
+| 11. Negation contrast | DONE | a grep of the 70 new decks for `not only`, `, not `, `rather than` and `instead of` finds one place, `block-term-tensor-regression/present/main.md` headline "Minutes instead of hours, same accuracy", rewritten from `manuscript/bare_jrnl.tex:842` and `:840` to "Trains in ~3 min against ~14 h for HOPLS, comparable accuracy" |
+| 12. brecht-fl-partitioning | DONE | its `desc` says what the study would show; whether the deck stands in the portfolio deck is open item 695 |
+| 13. btfno `notes` markup | DONE | `<i>dynamical</i>` and `<i>learned progression operator</i>` are in `btfno/present/main.md` |
+| 14. Explanations with their figures | DONE | 49 `explain:` lines, each inside a panel item with its figure or diagram (49 panel items); no explanation stands on a slide without its figure. Before: a figure and its explanation shared a slide in each deck's one file, and the first pass gave some figures a slide of their own with the explanation on another slide; after: each figure's slide carries its own caption and explanation. |
+
+### The checks again
+
+- C4: `OCULUS_TEST_HUB=~/workspace/research-hub npx vitest run tests/checks/config/integrity.test.ts` from oculus main: `Test Files 1 passed (1)`, `Tests 14 passed (14)`.
+- C1: 99 manifests, 95 research projects with a deck, the four without one all `tier: software`.
+- C6: `figures 46, missing 0`; the other three panels are diagrams.
+- C7: the key read over every slide prints nothing.
+- C9: the perl check prints nothing.
+- C8: `git status --short` outside the decks lists only Axel's `.oculus/data/academic/funding.yml` and `funding/2026-fwo-senior-transplant/` files, left alone.
+- C5: 20 slides Too tall, every one a figure-only slide (ruling 2's row).
+
+### The look
+
+The hub copy `<scratchpad>/O138look/home/workspace/research-hub` was refreshed with `rsync -a --delete` of every `present/` folder and of `deck/` from the hub, and served by the scratch oculus on 8797 at text scale 1 in the default theme. The portfolio deck (O150's `deck/present.yml`) draws 219 slides: title, engine, the 216 slides of the 95 decks, and closing. Each tile was scrolled into view and drawn before the Overview's Too tall marks were read. The copy was put back from `<scratchpad>/O151-look-backup` after C5's first run, as that bullet says.
+
+The 20 Too tall slides, each one figure with its caption and explanation, px past the 1280 by 720 frame as the Findings view gives them: ECG-Repr, representation against clusterer 73; ECG-Repr, the silhouette trap 224; HCCNet-FL, what crosses the hospital boundary 55; BT-FNO, the block-term spectral kernel 350; COVERT, what crosses between departments 82; PCD, the two regimes in one bound 55; BTTR-AF, against the baselines 13; Fed-Multicellular, complete and incomplete panels 134; HCCNet, the two-stage pipeline 92; HCCNet, discrimination across follow-up 196; Cirrhosis-CR, from classification to competing risks 42; Cirrhosis-CR, fresh biomarkers 159; RAW-PLS, how it works 54; RAW-PLS, under growing misalignment 191; RAW-PLS, against registered baselines 87; RAW-PLS, saliency on real patients 80; RAW-PLS, saliency in three views 32; BSA-ECoG, one alignment per subject 62; BSA-ECoG, the shared axes on the cortex 255; BSA-ECoG, calibration time 168.
+
+### The 16 split existing decks, slide order now
+
+fed-faithful-ecg: main, plain, method, next. ecg-readable-substrate: main, plain, method, next. dongho-ecg-clustering: main, method, results, clusterers, silhouette. hccnet-fl: main, plain, method, results, federation. bt-operator-theory: main, plain, method, results. btfno: main, plain, method, mobte, kernel, results, generalization. bttd-source-eeg: main, plain, method, results, correlated. bttn-incident-af: main, plain, method, results, readout. covert-applied: main, plain, method, parties, results. covert-theory: main, plain, method, regimes, results. dries-bttr-ecg: main, method, results, baselines. fed-multicellular-immune: main, plain, method, panels, results. hccnet-revision: main, method, pipeline, results, discrimination. meseret-cirrhosis: main, method, results, reframe, landmark. raw-pls: main, plain, method, overview, results, misalignment, real, registration, saliency, views. ward-bttr-crosssubject: main, method, overview, results, maps, calibration. The nine idea decks keep their one slide.
+
+### Found in the round
+
+Six existing decks state framings their projects have retired; open item 696, booked in `orchestrator-state.md` beside 694.
+
+### Usage
+
+Inline: no builder agent.
+
+## Fixes at landing
+
+The six findings of the review over repair round 1 (`agents/reviews/O151-refuter.md`, "Repair round 1, refuted") are fixed on the hub at landing, by the orchestrating session with Write and Edit. This section states the state now; where it differs from the sections above, this section holds.
+
+### The findings and their fixes
+
+1. The 41 `eli5:` strings: each is a map again, `eli5:` with `  plain: '...'` under it (the list is `<scratchpad>/O151/eli5-files.txt`). A read of every slide's front matter prints no `eli5` that is not a map, and 289 slides parse.
+2. The 22 figures outside `present/`: each is in the look copy at its relative path, and the page reports 46 images, 46 loaded, 0 gaps. Every measurement below was taken with them drawn.
+3. The explanations: wherever a figure, its caption and its explanation do not fit one slide, the explanation stands on the next slide, `<name>-explained.md`, a panel with only `explain:`, whose first words name the figure ("The silhouette trap figure: ..."). 38 such slides. A slide that held two figures holds one, the second figure on a slide of its own. A main slide too tall with its plain-words callout gives the callout away: to the next slide where both fit (17 decks), otherwise to a new slide `plain.md`, "<short name>, in plain words", after the main slide (23 decks). Clinical HCCNet's horizon slide gives its specs to a new slide `study.md` after the main slide.
+4. "(above)": the equation of btfno, raw-pls and fed-multicellular-immune stands on `method.md`, above the list that says "(above)"; `grep -c '^equation:'` prints 1 for each `method.md` that holds "(above)" (those three, hccnet-revision and meseret-cirrhosis).
+5. The two deck titles keep the comma, which ends the spaced hyphen the prose rule bans. hccnet-fl, before: "Training one liver-cancer model across hospitals - sharing only the backbone"; after: "Training one liver-cancer model across hospitals, sharing only the backbone". dries-bttr-ecg, before: "A hidden AF fingerprint in a <i>normal</i> ECG - read straight off the model"; after: "A hidden AF fingerprint in a <i>normal</i> ECG, read straight off the model".
+6. individual-reference-intervals: the hook ends "..., each patient measured against their own reference range." and the headline reads "Each patient against their own reference range"; `grep -rn 'in place of'` over every `present/` folder prints nothing.
+
+### Words that pointed at a side of a figure on another slide (ruling 14)
+
+- dongho silhouette, before "(big markers, top-left)", after "(big markers, in the upper left corner of the plot)".
+- hccnet-revision discrimination, before "**AUROC (right) and AUPRC (left)**", after "**AUROC and AUPRC panels**".
+- meseret-cirrhosis reframe, before "Left: the standard 3-class framing ... Right: as **competing risks**", after "The reframing figure, first panel: the standard 3-class framing ... Second panel: as **competing risks**".
+- raw-pls misalignment, before "(left to right on the x-axis)", after "(misalignment grows along the x-axis)".
+- raw-pls saliency, before "Left: a high-separation tumour ...; right: a concentric low-separation tumour ...", after "The first patient has a high-separation tumour ...; the second a concentric low-separation tumour ...".
+- ward overview, before "enter on the left", after "enter first".
+
+Explanations that stay on their figure's slide keep their words (bttd-source-eeg correlated, btfno generalization, bttn-incident-af readout); abduction's "right hand-knob area" is anatomy.
+
+### Nothing lost
+
+`diff` of each deck's content lines (keys, headings and the `eli5:` form left out) against its one-file form in `<scratchpad>/O151-r1-onefile/` (`<scratchpad>/O151/lossless-r2.txt`): every line of the one-file form is on a slide. The differences are the moved explanations with their figure's name in front and the side words above, the headlines rewritten by ruling 11 and finding 6, and the section headings of the two text decks.
+
+### Slide order of the decks changed at landing
+
+linfoot-estimator: main, plain, method, results, estimator-explained, engine, engine-explained. sandpile-operator: main, plain, method, results, metrics. jacobian-coupled-blockterm-dp: main, plain, method, results. ms-lipid-handshake: main, plain, method, results. phd-thesis: main, plain, results, task-explained. bachelor-network-ids: main, plain, results. icfp-src-abstract: main, plain, method. icfp-src-poster: main, plain, method. masters-algebraic-subtyping: main, plain, results. masters-eeg-infotheory: main, plain, results. source-localization: main, plain, results, sparsity, sparsity-explained, dipoles, dipoles-explained. block-term-tensor-regression: main, method, results, flexions, flexions-explained. connectivity-iris: main, plain, results. extended-bttr-note: main, plain, results, scheme-explained, coactivation, coactivation-explained. fbttr-strategies: main, plain, results, parameters-explained. fermat: main, plain, results, flexions-explained, parameters. go-bttr: main, plain, results, scheme-explained, task, task-explained. abduction: main, plain, results, glove, glove-explained, grid, grid-explained. dongho-ecg-clustering: main, method, results, clusterers, clusterers-explained, silhouette, silhouette-explained. erp-signatures: main, plain, results. hccnet-fl: main, plain, method, results, federation, federation-explained. connectivity-motor-imagery: main, method, results, tcdf-explained, simulation, simulation-explained. flkit: main, plain. algebraic-effects-compilation: main, plain, results. http2-web-performance: main, plain, results. engram: main, plain, method, results. fedbtd: main, plain, results. btfno: main, plain, method, mobte, kernel, kernel-explained, results, generalization. clinical-hccnet: main, study, results, horizon, horizon-explained, sequences, sequences-explained. covert-applied: main, plain, method, parties, parties-explained, results. covert-theory: main, plain, method, regimes, regimes-explained, results. dries-bttr-ecg: main, method, results, baselines, baselines-explained. fed-multicellular-immune: main, plain, method, panels, panels-explained, results. hccnet-revision: main, method, pipeline, pipeline-explained, results, discrimination, discrimination-explained. meseret-cirrhosis: main, method, results, reframe, reframe-explained, landmark, landmark-explained. raw-pls: main, plain, method, overview, overview-explained, results, misalignment, misalignment-explained, real, registration, registration-explained, saliency, saliency-explained, views, views-explained. ward-bttr-crosssubject: main, method, overview, overview-explained, results, maps, maps-explained, calibration, calibration-explained.
+
+The callout moved onto the next slide in faithful-block-term-layer, abstract-bci-meeting-2021, volga-finger-trajectories, block-term-tensor-regression, glassbox-decision-pipelines, hcc-modality-poster, connectivity-motor-imagery, chi-household-survival, chi-purpose-centric, http2-best-practices, coordinated-fingers-ecnr, ecog-frequency-features, modulation-lmp-bci, highgamma-event-detection, editorial-bigdata-ai-ms, pfl-ms-npj and proprioception-exoskeleton.
+
+### The checks
+
+- C4: `OCULUS_TEST_HUB=~/workspace/research-hub npx vitest run tests/checks/config/integrity.test.ts` from oculus main: `Test Files 1 passed (1)`, `Tests 14 passed (14)`. The Findings view of the scratch oculus lists 16 findings under `present/`, the 16 "slide too tall" lines below, and nothing else.
+- C5: the portfolio deck's Overview on 8797, text scale 1, default theme, every tile scrolled into view and drawn with its figures: 292 tiles (title, engine, the 289 slides of the 95 decks, closing; the 95 `order:` lists name 289 slides, so the portfolio deck holds every slide), 16 marked Too tall.
+- C6: 46 figures, each a PNG, JPG or JPEG that exists.
+- C7: the key read over the 289 slides (245 project, 36 idea, 8 text) prints no unread key.
+- C9: the brief's perl check prints nothing.
+- C8: `git status --short projects deck` prints 193 lines (158 untracked and 32 modified under `projects/`, three under `deck/`, O150's); outside them only Axel's `.oculus/data/academic/funding.yml` and `funding/2026-fwo-senior-transplant/` files, left alone.
+
+### The 16 slides still Too tall (open item 693)
+
+Each holds one figure and its caption, nothing else; px past the 1280 by 720 frame as the Findings view gives them: Linfoot Estimator, engine copulas 35; eLORETA Source Reduction, sparsity against fidelity 25; eLORETA Source Reduction, reconstructed dipoles 25; BTTR Coactivation, subject 3 471; Sign-Language ECoG, the alphabet task 149; Finger Abduction, the data glove 487; Finger Abduction, grid placement 2; ECG-Repr, the silhouette trap 63; Motor-Imagery Connectivity, results 4 (the results list beside the figure fits; the figure column overflows); Motor-Imagery Connectivity, the simulation framework 84; BT-FNO, the block-term spectral kernel 189; Clin-HCCNet, the fusion model by horizon 109; HCCNet, discrimination across follow-up 35; RAW-PLS, under growing misalignment 30; BSA-ECoG, the shared axes on the cortex 40; BSA-ECoG, calibration time 7.

@@ -109,3 +109,127 @@ Cases of the brief's "Cases":
 - What git would stage, or what it ignores, under the new `present/` folders. That needs `git add --dry-run` or `git check-ignore`, which this review does not run.
 
 Reviewer usage: a4e66cc7858239325, claude-opus-5-5, 301242 tokens, 98 tool uses, 16 min 20 s.
+
+## Repair round 1, refuted
+
+The round's main claim does not hold. The report says every slide with text now fits and that the 20 slides still Too tall each hold a figure that is too tall on its own. The reruns contradict both parts:
+- 41 new decks lose their `eli5` callout. The round wrote it as a plain string, and the reader drops a string without raising any finding.
+- The look as briefed does not draw any of the 22 figures in the new decks, so the new decks' fit was never measured.
+- 14 of the 20 Too-tall slides would fit if the explanation moved to its own slide, which is what ruling 14 prescribes when a figure and its explanation do not fit together.
+
+### Verification (rerun by the reviewer)
+
+```
+$ ps -Ao command | grep -E 'vitest|svelte-check' | grep -v grep
+(prints nothing)
+
+$ cd ~/workspace/oculus && export PATH=/Users/axelfaes/.nvm/versions/node/v24.21.0/bin:$PATH; OCULUS_TEST_HUB=~/workspace/research-hub npx vitest run tests/checks/config/integrity.test.ts
+ Test Files  1 passed (1)
+      Tests  14 passed (14)
+
+$ (enumeration, yaml.safe_load over every projects/**/project.yml, code/ left out)
+manifests 99 research 95 other [federated-learning-tutorial, bttr-block-term-tensor-regression, fl-kit-elixir-federated-learning-kit, coauthor/active/elixir-fl4e: all tier software]
+with deck 95 without 0
+present folders 95 not research []
+
+$ (C9, from the hub root under bash, the brief's perl check)
+(prints nothing) exit 0
+
+$ (C7 key read over every slide in each present.yml order; project keys of project.ts:4-5 plus kind, desc, notes)
+decks 95 slides 216 {'idea': 36, 'project': 172, 'text': 8}
+unread [] | order mismatch [] | multi [] | project no title []
+
+$ (value-shape read of the same slides)
+eli5 map 9, eli5 not a map 41        (round snapshot: eli5 map 50, not a map 0)
+
+$ git status --short projects deck | wc -l ; diff against <scratchpad>/O151/c8-r1.txt
+173 ; identical (138 '??' and 32 ' M' under projects/, all under present/; ' M deck/present.yml', ' M deck/title.md', ' D deck/transition.md')
+git status --short outside projects/ and deck/: .oculus/data/academic/funding.yml and funding/2026-fwo-senior-transplant/ only
+
+Ruling 1, first runs, on <scratchpad>/O151-head-r1 (each present/ file equals `git show HEAD:<path>` under cmp):
+research 95 with deck 25 without 70 of the 70 with deck 0
+C7: projects/manuscripts/btfno/present/main.md ['extra'] ; projects/manuscripts/covert-applied/present/main.md ['extra']
+C9: prints nothing, exit 0
+C5: the look copy restored from <scratchpad>/O151-look-backup holds HEAD's 25 present/ folders and HEAD's deck/present.yml.
+    Its portfolio Overview draws 31 tiles. The Too tall ones, px past the frame: 15 deck slides at 665 to 2614 (raw-pls 2614, ward 1668, btfno 1226, dongho 1168, ecg-readable-substrate 665), plus HEAD's idea grid at 643.
+    These match <scratchpad>/O151/c5-first-run-head.txt within 2 px. fed-faithful-ecg is not in HEAD's portfolio deck, so its 702 is not reproduced here.
+
+Ruling 3: fbttr-strategies, extended-bttr-note, block-term-tensor-regression and abduction carry every comparator's $\pm$.
+  Against the sources: fbttr-strategies main.tex:514-568; extended-bttr-note main.tex:316-365; bare_jrnl.tex:859-865; abduction main.tex:246-254. All equal.
+Ruling 4: grep -c '^results:' prints 0 for algebraic-subtyping and individual-reference-intervals; grep of connectivity-motor-imagery's present/ for the outcome sentence: exit 1 (no match).
+Ruling 5: both decks' results.md equal connectivity-motor-imagery/manuscript/main.tex:138-156 (and abstract-bci-meeting-2021 main.tex:52-54) coefficient for coefficient.
+Ruling 8: diff <(git show HEAD:<deck>/main.md) <one-file form> for the 16 split existing decks prints only the extra-to-notes blocks of btfno and covert-applied.
+  Split files against the one-file form, all 95 decks: differences only in fed-faithful-ecg and ecg-readable-substrate (added "# ..." headings) and block-term-tensor-regression (the headline ruling 11 rewrote).
+Ruling 9: README.md:22 of erp-signatures holds "completed by exactly 16 participants".
+Ruling 10: cmp modulation-lmp-bci/manuscript/main.pdf side-projects/theaxec.github.io/publications/abstracts/Abstract.Eva.CalvoMerino.pdf: exit 0
+Ruling 11: grep of the 70 new decks for "not only", ", not ", "rather than", "instead of": no match
+Ruling 13: btfno/present/main.md:20 notes hold <i>dynamical</i> and <i>learned progression operator</i>
+Ruling 14: 49 explain: lines, every one in a panel item with its figure or diagram_html (0 without)
+C6: figures 46, bad [] (each exists in the hub and is png/jpg/jpeg)
+
+The look (C4, C5): the copy was refreshed with the briefed rsync of every present/ folder and of deck/, then the page on 8797 was reloaded.
+  Portfolio Overview: 219 tiles. Every tile was scrolled into view twice. 20 tiles are marked Too tall, the same 20 slides the report lists. Each holds 1 .panel and no list, equation, specs or eli5 block.
+  22 tiles show `p.gap` (a missing figure). Only 9 tiles draw an eli5 block, all of them existing decks' plain.md slides.
+  Findings view: 20 "slide too tall" lines, px equal to the report's (73, 224, 55, 350, 82, 55, 13, 134, 92, 196, 42, 159, 54, 191, 87, 80, 32, 62, 255, 168).
+    22 "figure ../manuscript/... (or ../code/results/...) is not in projects/.../present/" lines. 0 untitled. 0 lines under deck/.
+  Copy put back: each backup present/ folder rsynced to the copy; the 70 others moved to <scratchpad>/O151-r1-refuter-moved; backup deck/ rsynced.
+    Result: 25 present/ folders in the copy and in the backup, and diff -rq of each and of deck/ prints nothing.
+```
+
+### Verdicts
+
+Items of the brief's "What to build":
+
+- 1: violated. Every new deck exists and every key is one its kind reads. But 41 new project slides write `eli5:` as a plain string, which the reader reads as absent (Findings 1). One new deck keeps an "in place of" contrast (Findings 6). The round's closures of Spec 3, 4, 5 and 6 and of Standards 1, 2 and 3 hold on rerun.
+- 2: holds. No untitled slide (Findings view 0 untitled; key read: every project slide has a title). btfno and covert-applied carry `notes:` with their `<i>` markup and no `extra:`. Two existing deck titles were also changed, which no ruling asks for (Findings 5).
+- 3: violated. 20 slides stay Too tall. For 14 of them the explanation can move to its own slide naming the figure, as ruling 14 prescribes, and the figure with its caption then fits (Findings 3). The new decks' figure slides were measured with their figures missing (Findings 2), and without their eli5 (Findings 1).
+- 4: violated. The Findings view lists 20 "slide too tall" findings under `present/` (rerun). For the real hub, whose 22 figures the look copy lacks, the count is not verified (Findings 2).
+
+Cases of the brief's "Cases":
+
+- C1: met. 95 with a deck, 0 without; the 70 new folders are the brief's list.
+- C2: met. Over the 70: nascent 12, scoping 7, de-risking 5 and exploring 3 are idea slides; exploring 3, published 30, failed 3, stopped 4, accepted 1, in-prep 1 and submitted 1 are project slides.
+- C3: met. This covers what the round changed and the comparator lines read: rulings 3, 4 and 5 against their manuscripts; every line of a new deck with a decimal number listed and its comparators checked (go-bttr's source gives no intervals); erp-signatures' place `README.md:22`.
+- C4: partial. The integrity test is green. The Findings view lists 20 Too tall findings under `present/` (Findings 3). In the copy it also lists 22 missing figures, which come from the copy lacking the `manuscript/` and `code/` folders (Findings 2).
+- C5: unmet. 20 Too-tall tiles on the portfolio Overview; 14 are fixable by ruling 14's split (Findings 3); the new decks' fit is unmeasured (Findings 1, 2).
+- C6: met. 46 figures, all exist, all PNG, JPG or JPEG.
+- C7: met for keys: 0 unread keys. The key read does not check value shapes (Findings 1).
+- C8: met. `git status --short projects deck` gives 173 lines, equal to the round's record. Axel's files are left alone.
+- C9: met. The perl check prints nothing.
+
+### Findings
+
+1. Behaviour and spec (`projects/active/linfoot-estimator/present/main.md` and 40 other new decks' `main.md`; the full list is the read's "eli5 not a map 41"). Quoted: `projects/archive/phd/phd-thesis/present/main.md:9` "eli5: 'Axel Faes''s PhD thesis on decoding single and coordinated finger movements ...'". The reader parses `eli5` only as a map of `purpose` and `plain` (`src/lib/data/sources/deck/project.ts:45-46`, read at `:134` through `readOr`); a string fails that shape and the callout is dropped without a finding. The round snapshot held 50 maps and 0 strings; the round's one-file rejoin turned 41 of them into strings, the one-file forms in `<scratchpad>/O151-r1-onefile/` included. Only 9 of the 219 tiles draw an eli5 block, all of them existing decks. The report states no before and after for this; its ruling-8 row describes the split files and the one-file form as differing only by "added ... `eli5:` ... keys". Failure scenario: every new project deck opens without its plain-words callout, and its main slide was measured shorter than it will be once the callout is restored, so its fit is unknown. Verdict: item 1, item 3, C5.
+
+2. Proof (`agents/reviews/O151-report.md`, "Repair round 1", ruling 2's row and "The look"). Quoted: "DONE for every slide with text" and "The hub copy ... was refreshed with `rsync -a --delete` of every `present/` folder and of `deck/`". That refresh copies no `manuscript/` or `code/` folder, so all 22 figures of the new decks (every `../manuscript/...` and `../code/results/...` path) are missing from the copy and drawn as 47 to 101 px gaps; the Findings view lists 22 "figure ... is not in" lines and the Overview shows 22 `p.gap` panels. The reviewer's estimate (a judgment, not a draw), from each figure's natural size drawn at the 513 px panel width against the 498 px room under the slide header: 11 of the 13 slides holding these figures would run past the frame (abduction results, extended-bttr-note results, linfoot-estimator results, sandpile-operator, phd-thesis, source-localization, block-term-tensor-regression, fermat, go-bttr, connectivity-motor-imagery and clinical-hccnet's main slide), with fbttr-strategies results and clinical-hccnet's horizon slide borderline. What would settle it: the same look with the 22 figures present in the copy. Failure scenario: Axel lands a hub commit where the new published-paper decks run off the slide once their figures are drawn, with a report that says they fit. Verdict: item 3, item 4, C5.
+
+3. Spec and proof (the report's first line and ruling 2's row; open item 693). Quoted: "Each holds one figure with its caption and explanation and nothing else, and the figure by itself is taller than a slide's room, which no split or cut can change". Measured per tile, overflow against the `.explain` block's height: for 14 of the 20 the explanation is taller than the overflow, so the figure with its caption fits alone (dongho clusterers 71 against 155, hccnet-fl federation 53/155, covert-applied parties 80/155, covert-theory regimes 53/155, dries-bttr-ecg baselines 11/155, fed-multicellular-immune panels 132/182, hccnet-revision pipeline 90/155, meseret-cirrhosis reframe 40/182, meseret-cirrhosis landmark 157/182, raw-pls overview 52/155, raw-pls registration 85/240, raw-pls saliency 78/236, raw-pls views 30/155, ward overview 60/182). Only 6 have a figure that alone exceeds the room: dongho silhouette (222), btfno kernel (348), hccnet-revision discrimination (194), raw-pls misalignment (189), ward maps (253) and ward calibration (166). Ruling 14 gives the split for the 14. Failure scenario: Axel rules on 693 believing no deck change can make these slides fit, and 14 slides keep raising a finding ruling 14 already resolves. Verdict: item 3, item 4, C5.
+
+4. Behaviour (three method slides). Quoted: `projects/manuscripts/btfno/present/method.md:8` "by a <b>sum of R rank-(L,L,1) blocks</b> (above)", `projects/manuscripts/raw-pls/present/method.md:9` "matched by <b>entropic fused-GW</b> (above)", `projects/manuscripts/fed-multicellular-immune/present/method.md:8` "... up to truncation (above)". At HEAD the equation sat on the same slide; now it is on `plain.md`, the slide before, and the method slide draws none. The report does not state it. Failure scenario: an audience reads "(above)" on a method slide with nothing above the list. Verdict: none.
+
+5. Spec (two existing deck titles). `projects/archive/published/2026/hccnet-fl/present/present.yml:2` and `projects/manuscripts/dries-bttr-ecg/present/present.yml:2` read ", " where the round snapshot and HEAD read " - ". No ruling asks for it and the report does not list it; the change removes a spaced hyphen the prose rule bans. Failure scenario: a reader of the landing diff finds title edits the report does not account for. Verdict: none.
+
+6. Standards (`projects/coauthor/stopped/individual-reference-intervals/present/main.md:8` and `:17`). Quoted: "... in place of population-wide normal ranges." and "headline: Personal ranges in place of population ranges". The contrast ruling 11 bans, written as "in place of", which the ruling's grep list does not catch. Failure scenario: the portfolio deck shows the contrast tell on a slide headline. Verdict: item 1.
+
+### Declined to judge
+
+- Not run: the `git archive HEAD projects | tar -x` that ruling 1 quotes, a git command outside the three allowed; the existing export `<scratchpad>/O151-head-r1` was checked against `git show HEAD:` file by file under cmp (no difference).
+- Not drawn: the new decks with their 22 figures present; the briefed refresh does not copy them.
+- Not reproduced: the C5 first run for fed-faithful-ecg (702 px); the restored copy holds HEAD's `deck/present.yml`, which does not include that deck.
+- Not fully searched: whether each split existing deck uses the fewest slides that fit; no two consecutive text slides of an existing deck are small enough to share the 498 px room, and other combinations were not tried.
+- Not observable: the round's statement that every hub file was written with Write or Edit.
+- Outside the round, at HEAD already: `projects/manuscripts/bttn-incident-af/present/results.md`'s second results item parses as a YAML mapping, as it does in HEAD's `main.md`; the deck's words are open item 694.
+- Axel's calls: open items 690, 693, 694, 695 and 696.
+
+Reviewer usage: ac1f9b0e31306a047, claude-opus-5-5, 285622 tokens, 104 tool uses, 17 min 35 s.
+
+## Closed
+
+The findings of the run over the last round, each fixed at landing on the hub (small and inside the brief), with the evidence in `agents/reviews/O151-report.md`, section "Fixes at landing":
+
+1. eli5 strings: closed at landing. The 41 strings are maps again; a front-matter read of the 289 slides prints no `eli5` that is not a map.
+2. Figures missing from the look copy: closed at landing. The 22 figures are in the copy; the page loads 46 of 46 images, and every measurement was retaken with them drawn.
+3. Explanations that fit on a slide of their own: closed at landing, and widened to every slide the full draw marks Too tall. 38 explanation slides, 23 plain-words slides, 17 callouts moved to the next slide, one specs slide; 16 slides stay Too tall, each a figure and its caption alone (open item 693, its list updated).
+4. "(above)" with no equation above: closed at landing. Each `method.md` that says "(above)" carries its `equation:`.
+5. Two deck titles changed with no ruling: closed at landing by statement. The comma stays, since it ends a spaced hyphen the prose rule bans; the report gives each title before and after.
+6. "in place of" on individual-reference-intervals: closed at landing. Hook and headline rewritten; the grep over every `present/` folder prints nothing.
