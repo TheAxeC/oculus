@@ -11,7 +11,10 @@
         lede: string;
         cards: DeckCard[];
         foot: string;
-        /** The domain keys the legend shows. */
+        /**
+         * The domains the legend shows, each the internal id of the domain a project's `domain:`
+         * resolves to, as the merge resolves it.
+         */
         legend: string[];
     };
 

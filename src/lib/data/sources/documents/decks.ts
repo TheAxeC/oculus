@@ -1,96 +1,124 @@
-// Layer 1, data. Reads a hub's decks for the snapshot build: the portfolio deck and every project
-// deck, with what was wrong in them, which the Findings view lists. The hub's registries give the
-// keys of its domains, which a project's `domain:` is checked against, and each project's facts,
-// which its slides fill their `{{project.<field>}}` from, name the records of the hub and of the
-// other hubs of the workspace as the merge resolves them (snapshot/hubs/deck-facts.ts), so the
-// findings are the ones the deck route raises over the merged snapshot. Server side only: it reads
-// the filesystem and no client module may import it.
+// Layer 1, data. The one module a deck folder is read through, by the snapshot build and by the
+// deck route, so the two give a deck the same slides, groups, members, projects, domains and
+// facts. Server side only: it reads the filesystem and no client module may import it.
+//
+// A read is made under one hub, given by its name, its folder and its settings, over projects in
+// the merged shape: each a `Project` with its internal id and every reference resolved as the
+// merge of the hubs resolves it (snapshot/hubs/merge.ts), its domain the record of its own hub that
+// holds the key, else of the one other hub that holds it, else none. The deck route reads the
+// merged snapshot's projects (server/content/deck/read.ts); the build makes the hub's projects the
+// same way from its manifests and the records of every hub of the workspace
+// (snapshot/hubs/deck-facts.ts). Each project's facts, which its slides' strip draws and its
+// `{{project.<field>}}` placeholders are filled from, are worked out by `projectFacts` with the
+// words the read is given.
+//
+// Neither read raises a finding on a project's domain. Each manifest's `domain:` is checked by
+// the manifest check (snapshot/schema/check.ts) against the keys of every hub of the workspace,
+// which raises the finding on that line for a key no hub holds, and the merge raises its own for a
+// key two or more other hubs hold and the project's own hub does not; such a project has no
+// domain, and its slides are drawn in the neutral tone. An empty `domain:` names no domain, and
+// the manifest check raises its finding for it as for any key no hub holds. The findings of the
+// build's read are the hub's findings, which the Findings view lists.
 
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
-import { isMap, str, strings } from '../../helpers/guards.ts';
-import { tierOf } from '../../helpers/hub-names.ts';
+import { ofHub } from '../../helpers/hub-names.ts';
 import type {
     Finding,
     Id,
     PortfolioConfig,
-    ProjectFact,
+    Project,
     RawDeck,
-    RawManifest,
     RawPortfolio
 } from '../../model/index.ts';
-import { vocabKeys } from '../../shapes/vocab-keys.ts';
-import { hubFacts, type HubRecords } from '../../snapshot/hubs/deck-facts.ts';
+import { projectFacts, type FactWords } from '../../shapes/project-facts.ts';
+import { hubProjects, type HubRecords } from '../../snapshot/hubs/deck-facts.ts';
 import { frameSetting } from '../config.ts';
 import type { DeckProject } from '../deck/kinds.ts';
-import { createReader } from '../deck/read.ts';
+import { createReader, type DeckReader } from '../deck/read.ts';
 
-/** A hub as the deck read needs it: its folder, its name, its settings and what it holds. */
-type DeckHub = {
-    hub: string;
-    root: string;
-    config: PortfolioConfig;
-    raw: Pick<RawPortfolio, 'manifests' | 'registries'>;
+/** A hub a deck is read under: its name, its folder and its settings. */
+type DeckHub = { key: string; dir: string; config: PortfolioConfig };
+
+/** What a read of decks is made over. */
+type DeckInput = {
+    hub: DeckHub;
+    /** Projects in the merged shape; the reader holds those of `hub`, each under its own key. */
+    projects: Project[];
+    /** The words the projects' facts name records by. */
+    words: FactWords;
+    /** The text an editor holds unsaved for files, by the file's real path. */
+    drafts?: ReadonlyMap<string, string>;
+    /** The keys of the projects a filter keeps; none for no filter. */
+    keep?: ReadonlySet<string>;
 };
 
-/** What the deck reader needs of each project: where it is, what it is called and its facts. */
-function deckProjects(
-    manifests: RawManifest[],
-    tiers: readonly string[],
-    facts: (manifest: RawManifest) => ProjectFact[]
-): DeckProject[] {
-    return manifests.map((manifest) => {
-        const status = isMap(manifest.status) ? manifest.status : {};
-        const project: DeckProject = {
-            id: manifest.id,
-            file: manifest.file,
-            folder: manifest.folder,
-            chips: strings(status.chips),
-            short: str(manifest.short) ?? '',
-            title: str(manifest.title) ?? manifest.id,
-            facts: facts(manifest)
-        };
-        if (manifest.workspaceFolder !== undefined)
-            project.workspaceFolder = manifest.workspaceFolder;
-        const tier = tierOf(manifest.tier, tiers);
-        if (tier !== undefined) project.tier = tier;
-        const stage = str(manifest.stage);
-        if (stage !== undefined) project.stage = stage;
-        const form = str(manifest.form);
-        if (form !== undefined) project.form = form;
-        const domain = str(manifest.domain);
-        if (domain !== undefined && domain !== '') project.domain = domain;
-        return project;
+/**
+ * What the reader holds of a project, its facts among it: its key in its own hub's files, and its
+ * domain as the internal id of the record it resolves to, which the client's hue and title of a
+ * domain read.
+ */
+function deckProject(project: Project, words: FactWords): DeckProject {
+    const one: DeckProject = {
+        id: project.id,
+        file: project.file,
+        folder: project.folder,
+        tier: project.tier,
+        chips: project.chips,
+        short: project.short ?? '',
+        title: project.title,
+        facts: projectFacts(project, words)
+    };
+    if (project.workspaceFolder !== undefined) one.workspaceFolder = project.workspaceFolder;
+    if (project.stage !== undefined) one.stage = project.stage;
+    if (project.form !== undefined) one.form = project.form;
+    const domain = project.domainIds.at(0);
+    if (domain !== undefined) one.domain = domain;
+    return one;
+}
+
+/** The reader of the decks of a hub, over the projects and the words `input` gives. */
+export function deckReader(input: DeckInput): DeckReader {
+    const { hub, words } = input;
+    return createReader({
+        hub: { key: hub.key, dir: hub.dir },
+        projects: ofHub(input.projects, hub.key).map((project) => deckProject(project, words)),
+        tagTones: hub.config.tagTones,
+        frame: frameSetting(hub.config.merged),
+        catalog: hub.config.text,
+        ...(input.drafts === undefined ? {} : { drafts: input.drafts }),
+        ...(input.keep === undefined ? {} : { keep: input.keep })
     });
 }
 
+/** A hub as the snapshot build reads its decks: its folder, name, settings and manifests. */
+type BuildHub = {
+    hub: string;
+    root: string;
+    config: PortfolioConfig;
+    raw: Pick<RawPortfolio, 'manifests'>;
+};
+
 /**
- * The decks of the hub `read`, by project id, and the findings of their read: a project's facts
- * name the records of `own`, the hub's, or of `others`, the other hubs of the workspace.
+ * The snapshot build's read of the decks of the hub `read`: its project decks, by project id, its
+ * portfolio deck, and the findings of the read. The hub's projects resolve their references in
+ * `own`, the hub's records, then in `others`, the other hubs of the workspace.
  */
 export function readDecks(
-    read: DeckHub,
+    read: BuildHub,
     own: HubRecords,
     others: readonly HubRecords[]
 ): { decks: Record<Id, RawDeck>; findings: Finding[] } {
-    const { hub, config } = read;
-    const root = { key: read.root, dir: hub };
-    const tiers = vocabKeys(config.merged.tiers);
-    const facts = hubFacts(own, others, { vocab: config.merged, catalog: config.text, tiers });
-    const reader = createReader({
-        hub: root,
-        projects: deckProjects(read.raw.manifests, tiers, facts),
-        domains: read.raw.registries.domains.entries.map((entry) => entry.key),
-        tagTones: config.tagTones,
-        frame: frameSetting(config.merged),
-        catalog: config.text
-    });
+    const { config } = read;
+    const hub = { key: read.root, dir: read.hub, config };
+    const made = hubProjects(read.raw.manifests, own, others, config);
+    const reader = deckReader({ hub, projects: made.projects, words: made.words });
     const decks: Record<Id, RawDeck> = {};
     for (const one of reader.projectDecks()) decks[one.id] = { path: one.path, tags: one.tags };
     if (config.portfolioDeck !== null) {
-        const deck = join(hub, config.portfolioDeck);
+        const deck = join(read.hub, config.portfolioDeck);
         if (!(config.unnamed?.deck === true && !existsSync(deck))) {
-            reader.read(root, config.portfolioDeck);
+            reader.read({ key: hub.key, dir: hub.dir }, config.portfolioDeck);
         }
     }
     return { decks, findings: reader.findings() };

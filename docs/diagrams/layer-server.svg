@@ -383,7 +383,7 @@
 <g id="node41" class="node">
 <title>folder server/content to layer data</title>
 <polygon fill="none" stroke="none" points="205.33,-551.96 190.67,-551.96 190.67,-539.48 205.33,-539.48 205.33,-551.96"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="198" y="-543.32" font-family="Helvetica,Arial,sans-serif" font-size="8.00">62</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="198" y="-543.32" font-family="Helvetica,Arial,sans-serif" font-size="8.00">58</text>
 </g>
 <!-- folder server/content&#45;&gt;folder server/content to layer data -->
 <g id="edge70" class="edge">

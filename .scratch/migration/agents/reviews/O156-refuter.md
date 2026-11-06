@@ -350,3 +350,12 @@ Cases of the brief's "Cases":
 - The probe of the first build was written into the scratchpad by a heredoc, a form the rules file's case-run rule counts as a script. Round item 4 rules that the probe and the stopped list run are recorded at landing and asks nothing else, so this review leaves that to the landing.
 
 Reviewer usage: a54c252e660a2e7eb, claude-opus-5-5, 212136 tokens, 49 tool uses, 17.5 min.
+
+## Closed
+
+- First run, Spec 1 (the deck's `domain_unknown` beside the manifest schema check's finding): closed in repair round 1 as a premise correction of the brief; the schema check is the one check, and the review over round 1 found item 4 holding.
+- First run, Standards 1 (comments calling a slide's domain a key) and Standards 2 (the holders-order comment of `deck-facts.ts:45`): closed in repair round 1; the review over round 1 found items 6 and 3 holding.
+- First run, Standards 3 (the case-run probe and the stopped verify-list run): the probe's source is quoted in the round report; the probe was written into the scratchpad by a heredoc, and both runs are recorded in the booking under the standing ruling "Unapproved builder scripts".
+- First run, Proof 1 (C11's base output cut after its first row): closed when round 1 was sent; the reviewer settled C11 by reading.
+- Over round 1, Standards (`tests/data/hubs/decks.test.ts:327-334`, an assertion over the words of the deleted catalog line): fixed at landing by deleting the assertion; the row check at `:312-322` pins every `domain` finding on each row's manifests.
+- Over round 1, declined: the hub-building tests that timed out under load. The landing's second run of the verify list passed every command, and six alternating runs of `hub-portfolio.test.ts` and `self.test.ts` gave the tests 74.13 s with the step against 74.41 s on main before it (difference -0.28 s, standard error 4.06 s), with a timeout on 2 of 6 base runs and 1 of 6 step runs, so the timeouts are load and the step does not slow the build. The real-hub cases of `integrity.test.ts` passed in the landing's run with `OCULUS_TEST_HUB` (14 passed).

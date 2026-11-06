@@ -87,7 +87,10 @@ export type DeckCard = {
 export type DeckIdeaCard = {
     name: string;
     desc: string;
-    /** The project's `domain:` key, which the card's colour and words are read from. */
+    /**
+     * The internal id of the domain the project's `domain:` resolves to, as the merge resolves it,
+     * which the card's colour and words are read from.
+     */
     domain?: string;
     /** The project's stage, a word of `stages:`, drawn by its label: how far the idea is. */
     maturity?: string;
@@ -95,7 +98,10 @@ export type DeckIdeaCard = {
 
 /** One row of a summary table. */
 export type DeckSummaryRow = {
-    /** The project's `domain:` key; the field is that domain's label. */
+    /**
+     * The internal id of the domain the project's `domain:` resolves to, as the merge resolves it;
+     * the field is that domain's label.
+     */
     domain?: string;
     project: string;
     mechanism: string;
@@ -176,7 +182,8 @@ export const DECK_GAP = '#gap';
 /**
  * One slide of a deck as the view draws it. Words are Markdown, with the group counts and the
  * `{{project.<field>}}` placeholders in them already replaced. A `legend` is the domains of the
- * group the slide names.
+ * group the slide names, each the internal id of the domain a member project's `domain:` resolves
+ * to, as the merge resolves it.
  */
 export type DeckSlide =
     | (SlideBase & {
@@ -205,7 +212,10 @@ export type DeckSlide =
           slide: PresentSlide;
           /** The project's stage, a word of `stages:`, drawn as its chip. */
           stage?: string;
-          /** The project's `domain:` key. */
+          /**
+           * The internal id of the domain the project's `domain:` resolves to, as the merge
+           * resolves it.
+           */
           domain?: string;
       })
     | (SlideBase & { kind: 'idea'; card: DeckIdeaCard })

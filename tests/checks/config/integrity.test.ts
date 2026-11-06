@@ -19,21 +19,17 @@ import { globSync, readFileSync } from 'node:fs';
 import { basename, dirname, join } from 'node:path';
 import { parse } from 'yaml';
 import { describe, expect } from 'vitest';
-import { hubDomainsOf, portfolioConfigFrom } from '../../../src/lib/data/index.ts';
+import { portfolioConfigFrom } from '../../../src/lib/data/index.ts';
 import { buildOneHub } from '../../fixtures/hubs/hub-build.ts';
 import { tex } from '../../../src/lib/views/academic/present/markup.ts';
 import { ENTITY_KINDS } from '../../../src/lib/data/snapshot/normalise.ts';
-import {
-    engineDir,
-    frameSetting,
-    loadConfig,
-    textCatalog
-} from '../../../src/lib/data/sources/config.ts';
+import { mergeHubs } from '../../../src/lib/data/snapshot/hubs/merge.ts';
+import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
 import { isMap } from '../../../src/lib/data/helpers/guards.ts';
 import { DEMO_HUB, hubOf, realHub, realHubName, skipLine } from '../../fixtures/hubs/real-hub.ts';
 import { it, plantScratch } from '../../fixtures/scratch.ts';
-import { createReader } from '../../../src/lib/data/sources/deck/read.ts';
-import type { DeckProject } from '../../../src/lib/data/sources/deck/kinds.ts';
+import { deckReader } from '../../../src/lib/data/sources/documents/decks.ts';
+import type { FactWords } from '../../../src/lib/data/shapes/project-facts.ts';
 import type {
     Deck,
     HubSnapshot,
@@ -57,6 +53,9 @@ type Floors = { decks: number; equations: number };
 const engine = engineDir();
 const REAL = realHub();
 if (!REAL.asked) console.warn(skipLine('integrity'));
+
+/** The name a hub's files are served and merged under. */
+const HUB_KEY = 'hub';
 
 /** A hub as the cases read it: its folder, its merged config and its portfolio config. */
 type HubRead = { hub: string; merged: Record<string, unknown>; config: PortfolioConfig };
@@ -84,35 +83,22 @@ function writtenEquations(text: string): number {
     }).length;
 }
 
-/** What the deck reader needs of a snapshot project, with no facts: no equation reads them. */
-function deckProjects(projects: Project[]): DeckProject[] {
-    return projects.map((project) => ({
-        id: project.id,
-        file: project.file,
-        folder: project.folder,
-        tier: project.tier,
-        ...(project.stage === undefined ? {} : { stage: project.stage }),
-        ...(project.form === undefined ? {} : { form: project.form }),
-        chips: project.chips,
-        short: project.short ?? '',
-        title: project.title,
-        facts: []
-    }));
+/**
+ * The words of a read with no record for a fact to name, in the words of `merged`: no equation
+ * reads a project's facts.
+ */
+function noRecords(merged: Record<string, unknown>): FactWords {
+    return { record: () => undefined, vocab: merged, catalog: textCatalog(merged) };
 }
 
 /**
- * A deck of the hub, a project's `present/` folder or the portfolio deck, read as the route does.
+ * A deck of the hub, a project's `present/` folder or the portfolio deck, read through the deck
+ * module the route and the build read through, over the hub's projects in the merged shape.
  */
 function readDeck(read: HubRead, projects: Project[], folder: string): Deck {
-    const root = { key: 'hub', dir: read.hub };
-    return createReader({
-        hub: root,
-        projects: deckProjects(projects),
-        domains: Object.keys(hubDomainsOf(read.hub, read.config)),
-        tagTones: read.config.tagTones,
-        frame: frameSetting(read.merged),
-        catalog: textCatalog(read.merged)
-    }).read(root, folder);
+    const hub = { key: HUB_KEY, dir: read.hub, config: read.config };
+    const words = noRecords(read.merged);
+    return deckReader({ hub, projects, words }).read({ key: hub.key, dir: hub.dir }, folder);
 }
 
 /** The equations a deck draws: those of its project slides and of its equation slides. */
@@ -186,7 +172,10 @@ function derivedCounts(read: HubRead): Record<string, number> {
     return counts;
 }
 
-/** A hub read and built once, on the first case that asks for it. */
+/**
+ * A hub read and built once, on the first case that asks for it, with its projects as the merge of
+ * the one hub makes them.
+ */
 type Built = { read: HubRead; snapshot: HubSnapshot; projects: Project[] };
 
 /** The read and build of a hub, made on the first call and kept for the cases after it. */
@@ -196,7 +185,9 @@ function builder(readOf: () => HubRead): () => Built {
         if (built !== null) return built;
         const read = readOf();
         const snapshot = buildOneHub(read.hub, read.config).snapshot;
-        built = { read, snapshot, projects: Object.values(snapshot.entities.projects) };
+        const part = { key: HUB_KEY, snapshot, files: read.config.registries };
+        const merged = mergeHubs([part], textCatalog(read.merged), 0);
+        built = { read, snapshot, projects: Object.values(merged.entities.projects) };
         return built;
     };
 }
@@ -332,15 +323,12 @@ describe('the count of written equations', () => {
             'projects/active/alpha/present/present.yml': 'order: [main.md]\n',
             'projects/active/alpha/present/main.md': text
         });
-        const root = { key: 'hub', dir: hub };
-        const deck = createReader({
-            hub: root,
-            projects: [],
-            domains: [],
-            tagTones: {},
-            frame: frameSetting(loadConfig(engine).config),
-            catalog: textCatalog(loadConfig(engine).config)
-        }).read(root, 'projects/active/alpha/present');
+        const merged = loadConfig(engine).config;
+        const root = { key: HUB_KEY, dir: hub, config: portfolioConfigFrom(merged) };
+        const deck = deckReader({ hub: root, projects: [], words: noRecords(merged) }).read(
+            { key: root.key, dir: root.dir },
+            'projects/active/alpha/present'
+        );
         const drawn = drawnEquations(deck).length;
         expect(drawn).toBe(2);
         expect(writtenEquations(text)).toBe(2);

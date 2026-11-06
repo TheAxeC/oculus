@@ -1,24 +1,40 @@
-// Layer 4, test helper. A workspace for the cases of a project's facts and its slides'
-// `{{project.<field>}}`: two hubs copied from the demo hub and a repository folder, built as the
-// portfolio watcher builds them, with the deck source the deck route reads over the snapshot.
+// Layer 4, test helper. A workspace for the cases of a deck's projects, their facts, their
+// domains and their slides' `{{project.<field>}}`: two hubs copied from the demo hub, a third hub
+// that holds a domains file alone and a repository folder, built as the portfolio watcher builds
+// them, with the deck source the deck route reads over the snapshot and the deck reader of each
+// hub over the build's own input.
 //
-// The hub `hub` holds the demo's projects and seven planted ones, each with a deck: `hccnet` with
+// The hub `hub` holds the demo's projects and ten planted ones, each with a deck: `hccnet` with
 // every field the strip shows, `quantum` with a few, `failedp` and `stoppedp` at the two dead
 // stages, `ghost` naming a person and a venue no registry holds and a person with no name, `empty`
-// with empty values, and `crossp` naming a venue and a person only the hub `lab` holds; its
-// portfolio deck places `hccnet`'s deck and the repository's. The venue `intelmed` has the short
-// name `A*B_<x>`. The repository folder `kit` holds a project of the primary hub. The hub `lab`
-// names the stage `submitted` "sent out" and the person `dana-example` "Dana of Lab", holds the
-// person `lab-only` and the venue `labjournal` with the short name `Lab J`, and holds the project
-// `labp`. The two hubs are copies of the demo hub in a temporary directory, and every file planted
-// or edited in them goes through `plantFile`.
+// with empty values and an empty domain, `crossp` naming a venue and a person only the hub `lab`
+// holds, `crossd` naming the domain `labonly` only `lab` holds, `stray` naming the domain
+// `nowhere` no hub holds, and `twind` naming the domain `twin` that `lab` and `far` hold and `hub`
+// does not; each of the last three has a project slide. Its portfolio deck places the decks of
+// `hccnet`, `crossd`, `stray` and `twind` as one group, with the group's legend, summary and grid,
+// and the repository's deck. The venue `intelmed` has the short name `A*B_<x>`, and the domain
+// `hubonly` is the hub's alone. The repository folder `kit` holds a project of the primary hub
+// naming the domain `graphs`, which `hub` and `lab` both hold. The hub `lab` names the stage
+// `submitted` "sent out" and the person `dana-example` "Dana of Lab", holds the person `lab-only`,
+// the venue `labjournal` with the short name `Lab J` and the domains `labonly` and `twin`, and
+// holds the project `labp`, naming the domain `hubonly`. The hubs are planted in a temporary
+// directory, and every file planted or edited in them goes through `plantFile`.
 
 import { cpSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { readOtherHub } from '../../../src/lib/data/index.ts';
+import { readHubBeforeDecks, readOtherHub } from '../../../src/lib/data/index.ts';
 import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
+import type { DeckReader } from '../../../src/lib/data/sources/deck/read.ts';
+import { deckReader } from '../../../src/lib/data/sources/documents/decks.ts';
+import { hubProjects } from '../../../src/lib/data/snapshot/hubs/deck-facts.ts';
+import { factRecords } from '../../../src/lib/data/snapshot/normalise.ts';
 import { createChecker } from '../../../src/lib/data/snapshot/schema/check.ts';
-import type { Finding, Snapshot } from '../../../src/lib/data/model/index.ts';
+import type {
+    Finding,
+    PortfolioConfig,
+    RepositoryRoot,
+    Snapshot
+} from '../../../src/lib/data/model/index.ts';
 import { buildHubs } from '../../../src/lib/server/root/watch/build.ts';
 import type { DeckSource } from '../../../src/lib/server/content/deck/read.ts';
 import { hubTargets, primaryConfig } from '../../../src/lib/server/files/roots.ts';
@@ -34,6 +50,12 @@ function deck(slide: string): Record<string, string> {
         'present/present.yml': 'deck: { title: Facts }\norder: [main.md]\n',
         'present/main.md': slide
     };
+}
+
+/** A project slide titled `title`, with a tag of the class `tag` when one is given. */
+function projectSlide(title: string, tag?: string): string {
+    const tagged = tag === undefined ? [] : [`tag: { text: ${tag}, class: ${tag} }`];
+    return ['---', 'kind: project', `title: ${title}`, ...tagged, '---', ''].join('\n');
 }
 
 /** The planted projects of the hub `hub`, by folder: the manifest's lines and the slide. */
@@ -91,6 +113,7 @@ const PROJECTS: Record<string, { manifest: string[]; slide: string }> = {
             'stage: exploring',
             'tier: research',
             'title: Empty',
+            'domain: ""',
             'venue: ""',
             'year: ""',
             'lead: []'
@@ -106,25 +129,61 @@ const PROJECTS: Record<string, { manifest: string[]; slide: string }> = {
             'lead: [lab-only]'
         ],
         slide: '# At {{project.venue}}\n\nLead {{project.lead}}.\n'
+    },
+    'projects/manuscripts/crossd': {
+        manifest: ['stage: exploring', 'tier: research', 'title: Cross domain', 'domain: labonly'],
+        slide: projectSlide('Cross domain', 'measured')
+    },
+    'projects/manuscripts/stray': {
+        manifest: ['stage: exploring', 'tier: research', 'title: Stray', 'domain: nowhere'],
+        slide: projectSlide('Stray')
+    },
+    'projects/manuscripts/twind': {
+        manifest: ['stage: exploring', 'tier: research', 'title: Twin', 'domain: twin'],
+        slide: projectSlide('Twin')
     }
 };
 
-/** The portfolio deck of the hub `hub`: `hccnet`'s deck and the repository's, each a group. */
+/**
+ * The portfolio deck of the hub `hub`: the group `project` of the decks of `hccnet`, `crossd`,
+ * `stray` and `twind`, with its legend on the title slide, its slides, its summary and its grid,
+ * and the group `kit` of the repository's deck.
+ */
 const PORTFOLIO: Record<string, string> = {
     'deck/present.yml': [
         'deck: { title: Portfolio }',
         'groups:',
         '    project:',
         '        find: { folders: projects/*/*/present }',
-        '        slides: [hccnet]',
+        '        slides: [hccnet, crossd, stray, twind]',
         '    kit:',
         '        slides: [kit]',
         'order:',
         '    - title.md',
         '    - { slides: project }',
+        '    - { kind: summary, of: project, title: Overview }',
+        '    - { kind: grid, of: project, title: Cards }',
         '    - { slides: kit }'
     ].join('\n'),
-    'deck/title.md': '# Portfolio\n'
+    'deck/title.md': '---\nkind: title\nlegend: project\n---\n# Portfolio\n'
+};
+
+/** The domains file of a hub copied from the demo hub. */
+const DOMAINS = '.oculus/data/pillars/domains.yml';
+
+/** The hub `far`: its settings, naming its domains file alone, and that file. */
+const FAR: Record<string, string> = {
+    '.oculus/config.yml':
+        'collections:\n  - { key: domains, file: domains.yml, registry: domains }\n',
+    'domains.yml': [
+        'schema:',
+        '  - { field: key, type: text, primary_key: true, required: true }',
+        '  - { field: title, type: text, required: true }',
+        'entries:',
+        '  - key: twin',
+        '    title: Twin of Far',
+        ''
+    ].join('\n')
 };
 
 /** Write each file under `dir`, its folders made, each path checked to stay inside `dir`. */
@@ -142,7 +201,11 @@ function edit(dir: string, path: string, from: string, to: string): void {
 /** The people file of a demo copy. */
 const PEOPLE = '.oculus/data/people/people.yml';
 
-/** What the workspace is built into, and the deck source the deck route reads over it. */
+/**
+ * What the workspace is built into, the deck source the deck route reads over it, and the deck
+ * reader of each hub over the build's own input: the hub's projects as the build makes them from
+ * its manifests and every hub's records, and their words.
+ */
 export type FactsWorkspace = {
     hub: string;
     lab: string;
@@ -150,7 +213,32 @@ export type FactsWorkspace = {
     snapshot: Snapshot;
     findings: Finding[];
     source: DeckSource;
+    built: (key: string) => DeckReader;
 };
+
+/** One hub of the workspace as the build reads it before its decks. */
+type HubAt = { key: string; dir: string; config: PortfolioConfig; roots: RepositoryRoot[] };
+
+/** The deck reader of each hub of `hubs` over the build's own input. */
+function buildReaders(hubs: readonly HubAt[]): (key: string) => DeckReader {
+    const reads = hubs.map((one) => ({
+        ...one,
+        raw: readHubBeforeDecks(one.dir, one.config, one.roots, one.key).raw
+    }));
+    const records = reads.map((one) => ({
+        key: one.key,
+        records: factRecords(one.raw.registries)
+    }));
+    return (key) => {
+        const at = reads.findIndex((one) => one.key === key);
+        if (at < 0) throw new Error(`no hub ${key}`);
+        const one = reads[at];
+        const others = records.filter((_, index) => index !== at);
+        const made = hubProjects(one.raw.manifests, records[at], others, one.config);
+        const hub = { key, dir: one.dir, config: one.config };
+        return deckReader({ hub, projects: made.projects, words: made.words });
+    };
+}
 
 /** The workspace of the two hubs and the repository folder, built. */
 export function factsWorkspace(): FactsWorkspace {
@@ -158,6 +246,7 @@ export function factsWorkspace(): FactsWorkspace {
     const hub = join(root, 'hub');
     const lab = join(root, 'lab');
     const kit = join(root, 'kit');
+    const far = join(root, 'far');
     cpSync(DEMO, hub, { recursive: true });
     cpSync(DEMO, lab, { recursive: true });
     for (const [folder, one] of Object.entries(PROJECTS)) {
@@ -175,10 +264,11 @@ export function factsWorkspace(): FactsWorkspace {
         '  - id: intelmed\n    name: Intelligent Medicine\n    short: "A*B_<x>"\n  - id: jmlr\n'
     );
     edit(hub, PEOPLE, 'entries:\n', 'entries:\n  - key: "nameless"\n    name: ""\n');
+    edit(hub, DOMAINS, 'entries:\n', 'entries:\n  - key: hubonly\n    title: Hub only\n');
     put(kit, {
         '.oculus/project.yml':
-            'title: Kit\ntier: research\nstage: submitted\nlead: [dana-example]\n',
-        ...deck('# Kit\n')
+            'title: Kit\ntier: research\nstage: submitted\ndomain: graphs\nlead: [dana-example]\n',
+        ...deck(projectSlide('Kit'))
     });
     edit(
         lab,
@@ -194,25 +284,38 @@ export function factsWorkspace(): FactsWorkspace {
         '  - id: jmlr\n',
         '  - id: labjournal\n    name: Lab Journal\n    short: "Lab J"\n  - id: jmlr\n'
     );
+    edit(
+        lab,
+        DOMAINS,
+        'entries:\n',
+        'entries:\n  - key: labonly\n    title: Lab only\n  - key: twin\n    title: Twin of Lab\n'
+    );
     put(join(lab, 'projects/manuscripts/labp'), {
-        'project.yml': 'id: labp\ntier: research\nstage: submitted\nlead: [dana-example]\n',
-        ...deck('# Lab\n')
+        'project.yml':
+            'id: labp\ntier: research\nstage: submitted\ndomain: hubonly\nlead: [dana-example]\n',
+        ...deck(projectSlide('Lab'))
     });
+    put(far, FAR);
     const folders = [
         { name: 'hub', dir: hub },
         { name: 'lab', dir: lab },
+        { name: 'far', dir: far },
         { name: 'kit', dir: kit }
     ];
     const open = workspaceWith(folders, 'hub').open();
     const settings = (dir: string) => loadConfig(engineDir(), { hub: dir });
     const { config, from } = settings(hub);
     const portfolio = primaryConfig(config, open, settings, from);
+    const others = [
+        readOtherHub({ key: 'lab', dir: lab }, settings(lab)),
+        readOtherHub({ key: 'far', dir: far }, settings(far))
+    ];
     const built = buildHubs(
         {
             primary: { key: 'hub', dir: hub, portfolio, workspace: null },
-            others: [readOtherHub({ key: 'lab', dir: lab }, settings(lab))],
+            others,
             config: portfolio,
-            order: ['hub', 'lab', 'kit'],
+            order: ['hub', 'lab', 'far', 'kit'],
             self: ''
         },
         0,
@@ -228,5 +331,9 @@ export function factsWorkspace(): FactsWorkspace {
         entities: (kind) => snapshot.entities[kind],
         hubs: hubTargets(open, settings)
     };
-    return { hub, lab, kit, snapshot, findings: snapshot.findings, source };
+    const readers = buildReaders([
+        { key: 'hub', dir: hub, config: portfolio, roots: portfolio.repositories },
+        ...others.map((one) => ({ key: one.key, dir: one.dir, config: one.portfolio, roots: [] }))
+    ]);
+    return { hub, lab, kit, snapshot, findings: snapshot.findings, source, built: readers };
 }

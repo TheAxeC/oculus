@@ -261,8 +261,8 @@ function staleDays(found: DocPresence[] | undefined, manifest: number | undefine
 
 /**
  * A project. Every field comes from the manifest key of the same meaning, and nothing else does.
- * The snapshot build's deck read (snapshot/hubs/deck-facts.ts `hubFacts`) reads a project's facts
- * from it too.
+ * The snapshot build's read of the decks (snapshot/hubs/deck-facts.ts `hubProjects`) makes the
+ * hub's projects from it too.
  */
 export function manifestProject(
     manifest: RawManifest,
@@ -634,7 +634,8 @@ function hubRecords(registries: RawPortfolio['registries'], readers: Readers) {
 
 /**
  * The records of a hub's registries that a project's facts name, by kind and key, each as the
- * hub's snapshot carries it, for the snapshot build's read of the decks (hubs/deck-facts.ts).
+ * hub's snapshot carries it, for the snapshot build's read of the decks, whose projects resolve
+ * their references in these records and whose facts name them (hubs/deck-facts.ts).
  */
 export function factRecords(registries: RawPortfolio['registries']): FactRecords {
     const held = hubRecords(registries, { browsable: false, kinds: new Set() });

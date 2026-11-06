@@ -42,7 +42,6 @@ import { existsSync, globSync, readFileSync, statSync } from 'node:fs';
 import { basename, dirname, join, relative } from 'node:path';
 import { parse } from 'yaml';
 import { findingText, type TextCatalog } from '../../helpers/finding-text.ts';
-import { keyOf } from '../../helpers/hub-names.ts';
 import { escapeAttribute } from '../../prose/markdown/markdown.ts';
 import { isFactField } from '../../shapes/project-facts.ts';
 import type {
@@ -79,11 +78,6 @@ export type DeckContext = {
     /** The hub's folder, and the key its files are served under. */
     hub: DeckRoot;
     projects: DeckProject[];
-    /**
-     * The keys of the hub's domains registry, which the key of a project's `domain:` is checked
-     * against.
-     */
-    domains: string[];
     /** The engine's `tag_tones`, which a deck's own `defaults` override. */
     tagTones: Record<string, string>;
     /** The frame of the setting `defaults.frame`, and the rule a deck's own `deck.frame` meets. */
@@ -276,20 +270,9 @@ export function createReader(context: DeckContext): DeckReader {
         if (dir !== null) projectDirs.set(dir, { project, root });
     }
 
-    /** The project a deck folder belongs to, with a domain the domains registry lacks reported. */
+    /** The project a deck folder belongs to, none for a deck that is no project's. */
     function projectOf(dir: string): DeckProject | null {
-        const project = projectDirs.get(dir)?.project;
-        if (project === undefined) return null;
-        if (project.domain !== undefined && !context.domains.includes(keyOf(project.domain))) {
-            raiseFor(project.file)(
-                'domain',
-                'findings.deck.domain_unknown',
-                project.id,
-                keyOf(project.domain)
-            );
-            return { ...project, domain: undefined };
-        }
-        return project;
+        return projectDirs.get(dir)?.project ?? null;
     }
 
     /** The deck in a real folder, read once. */

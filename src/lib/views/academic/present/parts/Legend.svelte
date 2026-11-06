@@ -8,7 +8,10 @@
     import { chipLabel, domainLabel, domainTone, stageTone } from '$lib/state/shared/words/tones';
 
     type Props = {
-        /** Domain keys, drawn with the `domains` entry's label and colour. */
+        /**
+         * The domains, each the internal id of the domain a project's `domain:` resolves to, as the
+         * merge resolves it, drawn with the `domains` entry's label and colour.
+         */
         domains?: string[];
         /** Words of `stages`, drawn with their label and colour. */
         stages?: string[];

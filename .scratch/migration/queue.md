@@ -1,18 +1,16 @@
-In flight (1 of 6 slots in use):
-- O156 (one deck reader): base a2385d834, reviewed over round 1 (`agents/reviews/O156-refuter.md`, one finding for landing), landing next.
+In flight (0 of 6 slots in use): none.
 
-Queued, in order:
+Queued, in order (5):
 - O155 (the deck order, `deck_order` in `vocab.yml`).
-- O157 (a slide laid out from its content), after O156.
+- O157 (a slide laid out from its content).
 - O158 (the Project facts strip redesigned), its design shown to Axel before it lands.
-- O150 (the hub's portfolio deck), after O154 and O155, worked again by a builder agent.
-- O151 (a deck for every research project), after O156 and O157, worked again by a builder agent.
-
-Undone: O150 and O151 (2026-11-06, at Axel's word); their records only in `agents/reviews/O150-O151-undone.patch`.
+- O150 (the hub's portfolio deck), after O155, worked again by a builder agent.
+- O151 (a deck for every research project), after O157, worked again by a builder agent.
 
 Owed looks: none.
 
 Landed, newest first:
+- O154 (the project board's filter on the Present view), 2026-11-06, 73f90f843.
 - O149 (the Decks guide), 2026-11-06, 4cf0df47b.
 - O148 (the Project facts strip), 2026-11-06, 64b159a6f.
 - O147 (the Present view's filter bar), 2026-11-05, 57649a80d.

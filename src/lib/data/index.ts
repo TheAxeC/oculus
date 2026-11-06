@@ -304,8 +304,9 @@ function recordsOf(read: HubRead): HubRecords {
 }
 
 /**
- * The hub `read` with its decks read (sources/documents/decks.ts) and what was wrong in them added
- * to its findings, its projects' facts naming the records of `own`, the hub's, or of `others`.
+ * The hub `read` with its decks read through the deck module the deck route reads through
+ * (sources/documents/decks.ts) and what was wrong in them added to its findings, its projects'
+ * references resolved in `own`, the hub's records, then in `others`, as the merge resolves them.
  */
 function decked(read: HubRead, own: HubRecords, others: readonly HubRecords[]): HubRead {
     const deck = readDecks(read, own, others);
@@ -368,8 +369,9 @@ function listFileOf(hub: string, config: PortfolioConfig): string {
 }
 
 /**
- * Each hub of a workspace as read, with its decks read: a project's facts name the records of its
- * own hub and of the other hubs of `hubs` (snapshot/hubs/deck-facts.ts).
+ * Each hub of a workspace as read, with its decks read: a project's references, its domain and
+ * the records its facts name, resolve in its own hub and then in the other hubs of `hubs`
+ * (snapshot/hubs/deck-facts.ts).
  */
 export function withDecks<T extends { read: HubRead }>(hubs: readonly T[]): T[] {
     const held = hubs.map((one) => ({ one, records: recordsOf(one.read) }));
@@ -659,10 +661,9 @@ function themeRows(file: Record<string, unknown> | null): HubVocab['venue_themes
 /**
  * The domains one hub gives its own projects, read from its domains registry: each entry by key,
  * with its `#rrggbb` colour and its title (its key when it has none). A file that does not read
- * gives none; its reader reports why. The vocabulary (`hubVocabOf`) and the deck reader, which
- * checks a project's `domain:` against these keys, both read the registry here.
+ * gives none; its reader reports why. It is the domains of the vocabulary (`hubVocabOf`).
  */
-export function hubDomainsOf(hub: string, config: PortfolioConfig): HubVocab['domains'] {
+function hubDomainsOf(hub: string, config: PortfolioConfig): HubVocab['domains'] {
     const domains: HubVocab['domains'] = {};
     const held = hubMap(hub, config.registries.domains, config.text);
     for (const entry of readOr(entryMapsShape, held?.entries, [])) {

@@ -178,7 +178,6 @@ describe('the deck reader', () => {
                 project('alpha', 'research', { domain: 'heart', short: 'Alpha' }),
                 project('beta', 'research', { domain: 'heart', short: 'Beta' })
             ],
-            domains: ['heart'],
             tagTones: { measured: 'green' },
             frame: frameSetting(loadConfig(engineDir()).config),
             catalog: CATALOG
@@ -289,7 +288,6 @@ describe('the deck reader', () => {
                     project('beta', 'research', { domain: 'brain', short: 'Beta' }),
                     project('gamma', 'research', { domain: 'brain', short: 'Gamma' })
                 ],
-                domains: ['heart', 'brain'],
                 tagTones: {},
                 frame: frameSetting(loadConfig(engineDir()).config),
                 catalog: CATALOG,
@@ -513,7 +511,6 @@ describe('the deck reader', () => {
                 project('beta', 'research'),
                 project('gamma', 'research')
             ],
-            domains: [],
             tagTones: {},
             frame: frameSetting(loadConfig(engineDir()).config),
             catalog: CATALOG

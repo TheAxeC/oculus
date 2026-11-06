@@ -11,31 +11,25 @@
 // reader holds the projects of that hub alone, a key names one project of it and never a project
 // of another hub that has the same key. With no keys the read is the whole deck.
 //
-// Each project the reader holds carries its facts, which the strip at the foot of its deck's slides
-// draws and its `{{project.<field>}}` placeholders are filled from. They are worked out here from
-// the project's ids in the snapshot, the snapshot's records and the words of the hub the deck is
-// read under (data/shapes/project-facts.ts), so a deck of a second hub draws that hub's words.
+// The deck is read through the module the snapshot build reads its decks through
+// (data/sources/documents/decks.ts), over the merged snapshot's projects, whose domains and other
+// references the merge has resolved, and over the snapshot's records in the words of the hub the
+// deck is read under, so a deck of a second hub draws that hub's words and a deck both read gives
+// the same slides, projects, domains and facts. Neither read raises a finding on a project's
+// domain: a key no hub holds is the finding of the manifest check (snapshot/schema/check.ts) on
+// the manifest's `domain:` line, and the project's slides are drawn in the neutral tone.
 //
 // The roots are the folders of the open workspace, so a root that is not one of their names and a
 // path that climbs out of a root or leaves it through a link is refused by the rule the file route
 // answers by (`resolveRootPath`), ahead of any read. A folder inside a root that holds no deck is
 // answered with the empty state of the deck, not refused: the view draws a sentence naming it. The
-// reader (data/sources/deck/read.ts) does the reading, and the write of a group's `slides:`
-// (server/edit/writes/config/lists/deck/deck.ts) reads the group's members, candidates and missing
-// names through the same function.
+// write of a group's `slides:` (server/edit/writes/config/lists/deck/deck.ts) reads the group's
+// members, candidates and missing names through the same function.
 
-import { createReader } from '../../../data/sources/deck/read.ts';
-import { hubDomainsOf } from '../../../data/index.ts';
-import { frameSetting } from '../../../data/sources/config.ts';
-import type { DeckProject } from '../../../data/sources/deck/kinds.ts';
+import { deckReader } from '../../../data/sources/documents/decks.ts';
 import type { Deck, PortfolioConfig, Project } from '../../../data/model/index.ts';
 import { byKey, isMap } from '../../../data/helpers/guards.ts';
-import { ofHub } from '../../../data/helpers/hub-names.ts';
-import {
-    projectFacts,
-    type FactRecordKind,
-    type FactWords
-} from '../../../data/shapes/project-facts.ts';
+import type { FactRecordKind, FactWords } from '../../../data/shapes/project-facts.ts';
 import { resolveRootPath, type Root } from '../../files/files.ts';
 import type { HubTarget } from '../../files/roots.ts';
 
@@ -54,30 +48,6 @@ export type DeckSource = {
     entities: (kind: FactRecordKind) => Record<string, unknown> | null;
     hubs?: HubTarget[];
 };
-
-/**
- * What the reader needs of a project of the snapshot, its facts among it. The project's id is the
- * key its own hub's files give it (`ofHub`); the domain stays the internal id, which the client's
- * hue and title of a domain read.
- */
-function deckProject(project: Project, words: FactWords): DeckProject {
-    const one: DeckProject = {
-        id: project.id,
-        file: project.file,
-        folder: project.folder,
-        tier: project.tier,
-        chips: project.chips,
-        short: project.short ?? '',
-        title: project.title,
-        facts: projectFacts(project, words)
-    };
-    if (project.workspaceFolder !== undefined) one.workspaceFolder = project.workspaceFolder;
-    if (project.stage !== undefined) one.stage = project.stage;
-    if (project.form !== undefined) one.form = project.form;
-    const domain = project.domainIds.at(0);
-    if (domain !== undefined) one.domain = domain;
-    return one;
-}
 
 /** The text an editor holds unsaved for one file, named by a served root and a path under it. */
 export type Draft = { root: string; path: string; text: string };
@@ -123,13 +93,10 @@ export function readDeck(
         vocab: config.merged,
         catalog: config.text
     };
-    const reader = createReader({
-        hub,
-        projects: ofHub(source.projects, hub.key).map((project) => deckProject(project, words)),
-        domains: Object.keys(hubDomainsOf(hub.dir, config)),
-        tagTones: config.tagTones,
-        frame: frameSetting(config.merged),
-        catalog: config.text,
+    const reader = deckReader({
+        hub: { key: hub.key, dir: hub.dir, config },
+        projects: source.projects,
+        words,
         drafts: draftsOf(source.roots, drafts),
         ...(keep === undefined ? {} : { keep: new Set(keep) })
     });

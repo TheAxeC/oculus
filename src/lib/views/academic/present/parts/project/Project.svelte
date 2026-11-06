@@ -22,7 +22,10 @@
          * The project's stage, drawn as its chip with the label and colour of its word of `stages`.
          */
         stage?: string;
-        /** The project's `domain:` key, which the chip's words and the slide's edge come from. */
+        /**
+         * The internal id of the domain the project's `domain:` resolves to, as the merge resolves
+         * it, which the chip's words and the slide's edge come from.
+         */
         domain?: string;
         /** The hub the deck is read under, whose words the stage is drawn in. */
         hub?: string;

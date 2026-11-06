@@ -49,9 +49,9 @@ export type DeckProject = {
     /** The manifest's `form`, a word of `forms:`, which a `find:` with `forms:` keeps a deck by. */
     form?: string;
     /**
-     * The manifest's `domain`: the internal id on the deck route's read, which the slide carries
-     * for the client's hue and title, and the key on the snapshot build's; the reader checks its
-     * key against the domains registry.
+     * The internal id of the domain the manifest's `domain` resolves to, as the merge resolves it
+     * (data/sources/documents/decks.ts), which the slide carries for the client's hue and title;
+     * absent for a key that resolves to no domain.
      */
     domain?: string;
     /** The project's facts, each field that holds a value (data/shapes/project-facts.ts). */
@@ -88,8 +88,9 @@ const KINDS: readonly SlideKind[] = [
 ];
 
 /**
- * A slide read, the group its `legend:` names, which the reader turns into domain keys, and whether
- * the slide has no title of its own, which the reader reports.
+ * A slide read, the group its `legend:` names, which the reader turns into the internal ids of the
+ * domains its member projects' `domain:` resolve to, as the merge resolves them, and whether the
+ * slide has no title of its own, which the reader reports.
  */
 export type Built = { slide: DeckSlide; legend?: string; untitled: boolean };
 

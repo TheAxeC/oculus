@@ -1,11 +1,11 @@
 // Layer 1, data, pure. The facts of a project that the Present view's strip draws and that a
 // slide's `{{project.<field>}}` is filled from: sixteen fields, each with the words the project
 // card gives it, worked out from the project's ids, the records they name and the words of the hub
-// the deck is read under. Both readers of decks make them here: the deck route's read
-// (server/content/deck/read.ts) from the merged snapshot, and the snapshot build's read
-// (snapshot/hubs/deck-facts.ts) from the project as the merged snapshot holds it, every reference
-// resolved in its own hub and then in the other hubs of the workspace as the merge resolves it.
-// The two give every field of every project the same words, and raise the same findings.
+// the deck is read under. The one module a deck is read through (sources/documents/decks.ts) makes
+// them here for the deck route, from the merged snapshot's projects, and for the snapshot build,
+// from the projects as the merge makes them (snapshot/hubs/deck-facts.ts), every reference
+// resolved in its own hub and then in the other hubs of the workspace, so the two reads give every
+// field of every project the same words and raise the same findings.
 //
 // The word rules the card and the strip share are here too, and the card reads them from here: a
 // person by the name of their record, else the key; a pillar and a domain by their title, else the
