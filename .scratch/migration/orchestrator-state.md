@@ -59,6 +59,8 @@ dispatch:           # steps in flight, up to six (Z632)
   session_id: a336874264e7be26f (claude-opus-5-5)
   launched: 2026-11-06
   report: .scratch/migration/agents/reviews/O161-report.md
+  builder_usage: first run, handed back before any change (198509 tokens, 52 tool uses, 11.4 min)
+  waits_on: open item 713
   round: 0
   landing: not-started
 - step: O164
@@ -212,7 +214,11 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
-None.
+- Open item 713 (2026-11-06), O161: the stand-in design cannot keep Cmd+F as it works today. O161's builder handed back before changing any code (`agents/reviews/O161-report.md`). Its evidence is Chromium's find-in-page source (`text_finder.cc`, `find_in_page.cc`), which the desktop app's find bar also uses (`src/desktop/windows/find-bar.ts:107-111`). When a find lands in a stand-in and the stand-in is replaced by the drawn card, the matched text is gone, and Chromium searches again from where the stand-in was. In one direction that skips every match of the card: Shift+Enter, or Enter, depending on the order of the swap. No order serves both. Cards drawn after the find began also show no yellow highlight until Chromium re-scans. This is read from Chromium's source and not seen in a browser; a real Cmd+F cannot be driven from here, so the look at landing would be the first sight of it. Ruling 712 (a) and your "exactly like it works today" rule this out.
+  - (a) Every card stays built, and each cell of the shared grid gets `content-visibility: auto` with a remembered size, so the browser skips laying out and painting the cards out of view. Pro: Cmd+F is unchanged in every respect (the same text stays on the page), the card cursor and reveal need no change, and rows keep their height. Con: Svelte still creates all 678 Lit Watch cards, so only layout and paint are saved; whether Lit Watch shows faster is measured at landing (the step already times it before and after). This was option (c) of open item 705. Recommendation: this.
+  - (b) Keep the stand-ins and accept that Cmd+F changes: Shift+Enter or Enter skips cards it reaches as stand-ins, and late-drawn matches lose their highlight for a while. Pro: the largest saving, since only the visible cards are built. Con: it breaks your Cmd+F rule. This is the lazy option.
+  - (c) Stand-ins whose swap order follows where the stand-in sits against the screen. Pro: ordinary stepping works both ways. Con: wrapping past the first or last match still skips cards, and the missing highlights stay, so Cmd+F still changes.
+  O161's builder waits on this item.
 
 ## Closed items
 
@@ -873,6 +879,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-11-06 (open item 713 raised). O162 landed in f3ebd1fa5; its worktree, round snapshot and branch are removed. O161's hand-back is saved with its usage; open item 713 holds its options. Open items: 713. In flight (4 of 6): O158 (its look next), O163, O164 (building), O161 (waits on 713). Next: O158's look against main at f3ebd1fa5 with O158 merged by hand, and its screenshots to Axel.
 - 2026-11-06 (O162 landed). O162, the arrow-keys hint removed with Help's deck keys rows, landed (booking in `plan.md`, `agents/reviews/O162-landing.md`). O158's landing now merges `Slide.svelte` by hand against main, removing the hint wording and the `past` room from O158's version. O161's builder handed back before any change: the stand-in mechanism cannot keep Cmd+F as today (its report, `agents/reviews/O161-report.md`); that goes to Axel as an open item. In flight (4 of 6): O158 (its look next), O163, O164 (building), O161 (handed back). Next: O158's look and screenshots to Axel; O161's open item.
 - 2026-11-06 (O161 launched). Axel ruled open item 712 (a): O161's stand-in holds exactly the text the card's face draws, so Cmd+F works exactly as today (`plan.md` Rulings, the step line, the brief's items 2 and 4, Decision 6, case C3c). The ruled brief is copied into O161's worktree; its builder a336874264e7be26f runs on claude-opus-5-5 from base 75bf4dd10. Open items: none. In flight (5 of 6): O158, O162 (review over round 1), O163, O161, O164 (building). Next: /land O162 with its look on 8797, then O158's look.
 - 2026-11-06 (O160 landed). O160, Live HPC showing its refresh running, landed (booking in `plan.md`, `agents/reviews/O160-landing.md`). The gate worktree sits at main's head with O160 staged until the commit; the O158 gate state it held is in the scratchpad's `O160land/gate-O158-staged.patch`. The look server on 8797 runs from the gate. O162's repair round 1 is back (180077 tokens, 11 tool uses, 2.8 min); its review over the round is next. Open items: 712. In flight (5 of 6): O158, O162, O163, O161 (waits on 712), O164. Next: /refute O162 over round 1, then /land O162 with its look, then O158's look.

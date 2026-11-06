@@ -1,7 +1,7 @@
 In flight (4 of 6 slots in use):
 - O158 (the facts strip redesigned): gate passed; its look and screenshots to Axel next.
 - O163 (the hub's portfolio deck written again): building.
-- O161 (cards drawn as they are seen): builder handed back before any change; waits on Axel.
+- O161 (cards drawn as they are seen): builder handed back before any change; waits on open item 713.
 - O164 (a card's links open their page): building.
 
 Queued, in order (4):
@@ -13,7 +13,7 @@ Queued, in order (4):
 Owed looks: none.
 
 Landed, newest first:
-- O162 (the arrow-keys hint removed), 2026-11-06, landing commit after eae89abbe.
+- O162 (the arrow-keys hint removed), 2026-11-06, f3ebd1fa5.
 - O160 (Live HPC shows its refresh running), 2026-11-06, eae89abbe.
 - O150 (the hub's portfolio deck), 2026-11-06, 6bdef6d4d; its hub changes are not on disk.
 - O157 (a slide laid out from its content), 2026-11-06, 61d4ac3af.
