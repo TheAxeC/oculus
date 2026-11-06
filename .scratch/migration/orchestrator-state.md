@@ -55,6 +55,12 @@ dispatch:           # steps in flight, up to six (Z632)
 - step: O162
   brief_check: "running: a782354b0336a03d9 (claude-opus-5-5)"
   landing: preparing
+- step: O163
+  brief_check: "running: ad6ecc7ddb8993bc9 (claude-opus-5-5)"
+  landing: preparing
+- step: O161
+  brief_check: "running: ac24ce86435cfa7fd (claude-opus-5-5)"
+  landing: preparing
 ```
 
 ## The standing demands (from Axel, in force)
@@ -195,6 +201,7 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
+- Open item 706 (2026-11-06), from O162's brief check (C-16): once the key hint goes, nothing a reader sees names the keys that move a deck besides Space. Help's keys table (`docs/HELP.md:199-200`) lists `F / P / O` and `Space / Shift+Space`; the arrows, Page Up / Page Down and Home / End that `screen/keys.ts:74-90` also handles are named nowhere. Options: (a) O162 widens to `docs/HELP.md` line 200, whose row becomes `Arrows, Page Up / Page Down, Space / Shift+Space | next / previous slide` with a row `Home / End | first / last slide`; pro: every deck key is named in the one place Help names keys, in the step that removes the only other place; con: one more path, shared with O158 and O160 at other lines of HELP.md, merged by hand at landing. (b) Help stays as it is; pro: no wider step; con: the arrow keys, Page Up / Page Down and Home / End stay undocumented. Recommendation: (a). (b) is the lazy option.
 
 ## Closed items
 
@@ -842,6 +849,8 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+
+- 2026-11-06 (O162 prepared; O160, O163 and O161 running). The scratch look server on 8797 is stopped; it is started again from the gate worktree when O158's look is due. The worktrees `migration-O151`, `migration-O159` and `O159-base` and the branches `migration-O151` and `migration-O159` are removed (`git worktree list` shows main, gate, migration-O158 and migration-O160). O162's brief check (a782354b0336a03d9) is closed in `agents/reviews/O162-brief-check.md`; its C-16 is open item 706. A new O160 builder (ab8a69fbb7ac9a0c1) runs in `migration-O160`; the brief checks of O163 (ad6ecc7ddb8993bc9) and O161 (ac24ce86435cfa7fd) run. In flight (5 of 6): O158 (gate passed; its look after O162), O160, O162, O163, O161. Queued: O151, O159. Open items: 706.
 - 2026-11-06 (O151 and O159 back in the queue). O151 waits for O162, O158 and O163 to land and O159 for O163, so neither holds a slot: their dispatch entries are removed and both get /spec again from main's head once those steps land. Their worktrees `.agents/worktrees/migration-O151` (only the stopped builder's report, not used) and `migration-O159` (no change), the branches `migration-O151` and `migration-O159` (no commit beyond main) and the base copy `.agents/worktrees/O159-base` are still on disk: their removal was refused by the runner's permission check and waits on Axel. In flight (2 of 6): O158 (gate passed; its look after O162), O160 (builder stopped, partial work in its worktree). Queued, in order: O162, O163, O151, O159, O161. Nothing runs; nothing starts until Axel's word. Open items: none.
 - 2026-11-06 (O162 and O163 booked; nothing running). Axel's rulings "Arrow-keys hint removed", "Hub deck written again" and "Decks are internal" are booked in plan.md Rulings, with steps O162 (the arrow-keys hint removed, before O158's look) and O163 (the hub's `deck/` written again, `engine.md` and `transition.md` removed). The hub's `deck/` and `projects/` hold no uncommitted change. No agent runs; nothing starts until Axel's word. In flight (4 of 6): O158 (gate passed; its look after O162), O151 (builder stopped; a new builder from the brief as now written), O159 (prepared at cd7094304, no builder), O160 (builder stopped, partial work in its worktree). Queued: O162, O163, O161. Open items: none.
 - 2026-11-06 (O150 landed; O151 building). O150, the hub's portfolio deck, landed in the ledger (booking in plan.md under O150, `agents/reviews/O150-landing.md`): the research hub's `deck/present.yml`, `title.md` and `engine.md` written and `deck/transition.md` removed, uncommitted in the hub, the hub commit on Axel's word; one fix at landing, engine line 12. The gate passed at main's head 5929e2e0b and the integrity cases passed on the real hub; the look on 8797 drew the 28-slide deck with 16 project slides Too tall, which O151 rewrites. O151 prepared at f6493b536 with every brief-check finding closed, builder a16fff9be0294dea8 (claude-opus-5-5) running. O158's review over round 1 (a3b7974c339a4dc07) is in, its one finding fixed in the report; its range (wip dfc32576b) is applied in the gate worktree on main's head 6bdef6d4d and the gate passed (`.agents/worktrees/gate-O158.log`); the look server on 8797 runs from the gate worktree and the screenshots went to Axel, open item 704; main is untouched until his word. In flight (2 of 6): O158, O151. Queued: O159, O160, O161. Open items: 704.

@@ -6060,3 +6060,5 @@ Builds on it: O155, O150
 Builds on it: O157, O158, O151
 - 2026-11-06, O157's review: the key hint of a deck's first slide is drawn in the frame's bottom padding, out of the flow, so it takes no room and a slide that fills its room never scrolls in the pane; leaving the hint in the foot and the slide scrolling by its height was the lazy option. The audience window and the print page set the text size in an effect over the configured look. Named in the next report.
 Builds on it: O157, O158
+- 2026-11-06, O162's brief check: the `first` prop of `Slide.svelte` and `Framed.svelte`, which only the key hint read, goes with the hint, and the six places that pass it (`Present.svelte:419`, `Tile.svelte:115`, `Presenter.svelte:110,122`, `print/+page.svelte:190`, `show/+page.svelte:276`) stop passing it; nothing a user sees changes. Keeping the prop with no reader was the lazy option. Named in the next report.
+Builds on it: O162
