@@ -45,9 +45,10 @@ dispatch:           # steps in flight, up to six (Z632)
   session_id: a4c188eb9a1319932 (claude-opus-5-5)
   launched: 2026-11-06
   report: .scratch/migration/agents/reviews/O150-report.md
-  builder_usage: first run, handed back before any change (218920 tokens, 53 tool uses, 11.2 min)
+  builder_usage: first run, handed back before any change (218920 tokens, 53 tool uses, 11.2 min); build after the cases ruling (315676 tokens, 33 tool uses, 9.8 min)
   round: 0
   cases_ruling: .scratch/migration/agents/briefs/O150-cases.md
+  reviewer_report: "running: a6f3e70c7f1e62756 (claude-opus-5-5)"
   brief_check: .scratch/migration/agents/reviews/O150-brief-check.md (a29f2fa39393ed95d, claude-opus-5-5, 226538 tokens, 67 tool uses, 13.2 min)
   landing: not-started
 - step: O151
@@ -192,7 +193,7 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
-None.
+- 700 (2026-11-06, the Lit-Watch measurement owed to Axel, `agents/reviews/owed-looks.md` "Taken"): Lit Watch takes about 7.7 s to show its papers on a page load, against 1.5 s for the shell, because the browser's main thread is blocked for 5.5 s in one frame while it builds the view, which draws all 678 papers' cards at once (39,956 elements; the likely cost, not profiled by function); the server and the radar file cost about 50 ms. (a) A step: Lit Watch draws the cards of the papers on screen and those just below, and the rest as they are scrolled to, with the bucket heads and their counts unchanged and a search still over every paper. Pros: the view shows at once, whatever the radar holds. Cons: one step; a find-in-page (Cmd+F) then sees only drawn cards, the view's own search still sees all. (b) Leave it. Cons: about 6 s of a frozen page each time Lit Watch is drawn, and more as the radar grows. Recommended (a); (b) is the lazy option.
 
 ## Closed items
 
