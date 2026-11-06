@@ -37,6 +37,12 @@ dispatch:           # steps in flight, up to six (Z632)
   round: 0 (cases ruling agents/briefs/O161-cases.md, ruling 713, sent 2026-11-06)
   landing: not-started
   shared_paths: src/lib/state/forms/page-entry.ts with O164 of this plan (landed in the commit after 6367eec0f); O164 added `EntryPage`, `pageLookup` and `entryPage` after `pageView`, O161 changes `feedPage` and `pageOf`, different functions, merged at O161's landing
+- step: O165
+  brief_check: "running: abe81b76d36c73c6b"
+  landing: preparing
+- step: O166
+  brief_check: "running: af52cf6c33a07ae89"
+  landing: preparing
 ```
 
 ## The standing demands (from Axel, in force)
