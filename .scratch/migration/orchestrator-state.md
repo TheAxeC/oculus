@@ -85,6 +85,7 @@ dispatch:           # steps in flight, up to six (Z632)
   launched: 2026-11-06
   report: .scratch/migration/agents/reviews/O159-report.md
   builder_usage: 301370 tokens, 330 tool uses, 91.5 min
+  reviewer_report: (acce973629dd121c5, claude-opus-5-5, discarded: dispatched before /refute was invoked; 262813 tokens, 60 tool uses, 17.4 min)
   round: 0
   landing: not-started
 ```
