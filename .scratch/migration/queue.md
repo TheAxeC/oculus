@@ -1,9 +1,9 @@
-In flight (0 of 6 slots in use): none.
+In flight (2 of 6 slots in use):
+- O154 (the project board's filter on the Present view), in /spec: brief written, brief check running.
+- O156 (one deck reader), in /spec beside O154 (no shared path): brief written, brief check running.
 
 Queued, in order:
-- O154 (the project board's filter on the Present view), next.
 - O155 (the deck order, `deck_order` in `vocab.yml`).
-- O156 (one deck reader).
 - O157 (a slide laid out from its content), after O156.
 - O158 (the Project facts strip redesigned), its design shown to Axel before it lands.
 - O150 (the hub's portfolio deck), after O154 and O155, worked again by a builder agent.
