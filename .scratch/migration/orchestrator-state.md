@@ -43,8 +43,10 @@ dispatch:           # steps in flight, up to six (Z632)
   worker: claude:opus
   launched: 2026-11-06
   report: .scratch/migration/agents/reviews/O149-report.md
+  builder_usage: 193934 tokens, 238 tool uses, 42 min 45 s
   session_id: a981cae52b72cb37d   # claude-opus-5-5, read from the agent's record
-  round: 0
+  round: 1
+  reviewer_report: .scratch/migration/agents/reviews/O149-refuter.md (a4b1d08d634ce40d6, claude-opus-5-5, 280247 tokens, 86 tool uses, 17 min 15 s)
   brief_check: .scratch/migration/agents/reviews/O149-brief-check.md (ab3e6c362e8cd02fd, claude-opus-5-5, 208864 tokens, 91 tool uses, 12 min 48 s)
   landing: not-started
 - step: O151
