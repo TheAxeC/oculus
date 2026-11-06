@@ -51,6 +51,8 @@ dispatch:           # steps in flight, up to six (Z632)
 - step: O166
   brief_check: "running: af52cf6c33a07ae89"
   landing: preparing
+- step: O151
+  landing: preparing
 ```
 
 ## The standing demands (from Axel, in force)
