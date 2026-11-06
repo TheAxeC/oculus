@@ -6058,3 +6058,5 @@ Builds on it: O151
 Builds on it: O155, O150
 - 2026-11-06, O157's brief check: the slide layout adds no test, since views have no guarded entry; its pure module is checked by one quoted run and the slides at the landing look. The print page and the audience window take the app's text scale, so every surface draws one size. The facts strip and the key hint keep their own sizes outside the text factor, O158 redesigning the strip. The cases are computed on the measured room, 1023 by 418 on a project slide and 1040 by 534 on a plain one. Named in the next report.
 Builds on it: O157, O158, O151
+- 2026-11-06, O157's review: the key hint of a deck's first slide is drawn in the frame's bottom padding, out of the flow, so it takes no room and a slide that fills its room never scrolls in the pane; leaving the hint in the foot and the slide scrolling by its height was the lazy option. The audience window and the print page set the text size in an effect over the configured look. Named in the next report.
+Builds on it: O157, O158

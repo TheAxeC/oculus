@@ -1,6 +1,6 @@
 In flight (2 of 6 slots in use):
-- O155 (the deck order, `deck_order` in `vocab.yml`): builder running.
-- O157 (a slide laid out from its content): builder running.
+- O155 (the deck order, `deck_order` in `vocab.yml`): repair round 1.
+- O157 (a slide laid out from its content): repair round 1.
 
 Queued, in order (3):
 - O158 (the facts strip redesigned), after O157; its design shown to Axel before it lands.
