@@ -161,7 +161,7 @@ Usage: ad6ecc7ddb8993bc9, claude-opus-5-5, 207946 tokens, 62 tool uses, 11.7 min
 
 - C-1: the brief's "What is on the tree" names `agents/briefs/O151.md:18` and `:72` as made false; O151's new brief drops `engine.md` from both.
 - C-2: the O150 booking's clause naming the engine heading and its open item is removed from `plan.md`, since that item must not exist in the ledger and `engine.md` goes with this step; nothing in the brief.
-- C-3: the demo fixture comment and the hub `README.md:60` are named in the brief and raised as open item 707 in the state file.
+- C-3: the demo fixture comment and the hub `README.md:60`, ruled by Axel under open item 707 (a): items 8 and 9 remove the comment and make "public slide" read "slide"; cases C10 and C12.
 - C-4: the committed ruling "Hub deck written again" (`plan.md`, preparation commit 8a423feb3) ends "built by a builder agent (the user)"; the clause after it was the session's, not Axel's, and is gone. The builder writes the texts and the orchestrator copies them byte for byte, so the brief stands.
 - C-5: Decision 1 says the texts are O150's drafts, which no ledger file records Axel correcting, and that his corrections come at O163's landing under ruling 698.
 - C-6: item 1's reason is `deck/present.yml` and `agents/spec.md:50`.
@@ -170,5 +170,5 @@ Usage: ad6ecc7ddb8993bc9, claude-opus-5-5, 207946 tokens, 62 tool uses, 11.7 min
 - C-9: the report shape adds the files changed with line counts, the limitations and the line of `spec.md:69`.
 - C-10: C10 checks the hub's `deck/` folder at landing.
 - C-11: C3, C5 and C7 give the expected values; C4 is recomputed and compared with O150's list.
-- C-12: `deck/closing.md:8` is named in the brief and raised as open item 708 in the state file.
+- C-12: `deck/closing.md`, ruled by Axel under open item 708 (a): item 5 has the builder draft the closing so it holds for every deck, the sentence on collaborators across computer science, psychology and medicine kept word for word; case C11.
 - C-13: C2 says the 70 research projects without a deck place nothing and raise no finding.
