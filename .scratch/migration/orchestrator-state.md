@@ -39,21 +39,6 @@ dispatch:           # steps in flight, up to six (Z632)
   reviewer_report: ".scratch/migration/agents/reviews/O158-refuter.md (a7c36a3b237a4d3c2, claude-opus-5-5, 230538 tokens, 56 tool uses, 11.9 min); over round 1: a3b7974c339a4dc07, claude-opus-5-5, 235128 tokens, 41 tool uses, 9.8 min"
   brief_check: .scratch/migration/agents/reviews/O158-brief-check.md (adc6d991942348bee, claude-opus-5-5, 190286 tokens, 51 tool uses, 8.8 min)
   landing: not-started
-- step: O162
-  base: 8a423feb3
-  worktree: .agents/worktrees/migration-O162
-  executor: agent
-  worker: claude:opus
-  session_id: aac46270be6d0de1c (claude-opus-5-5)
-  launched: 2026-11-06
-  report: .scratch/migration/agents/reviews/O162-report.md
-  builder_usage: first run (170909 tokens, 65 tool uses, 11.4 min); round 1 (180077 tokens, 11 tool uses, 2.8 min)
-  reviewer_report: ".scratch/migration/agents/reviews/O162-refuter.md (ae429b8f2a3648ec4, claude-opus-5-5, 184967 tokens, 35 tool uses, 8.2 min); over round 1: running: a743f1e2010fe22e9 (claude-opus-5-5)"
-  round: 1
-  round_brief: .scratch/migration/agents/briefs/O162-round-1.md
-  brief_check: .scratch/migration/agents/reviews/O162-brief-check.md (a782354b0336a03d9, claude-opus-5-5, 169025 tokens, 46 tool uses, 8.7 min)
-  shared_paths: "src/lib/views/academic/present/Slide.svelte, present.yml and docs/decks.md with O158 (migration): O162 lands first and O158's landing merges Slide.svelte by hand, removing the hint wording and the past room from O158's version; present.yml line 82 against O158's 95-105 and decks.md line 166 against O158's 383-393 do not touch"
-  landing: not-started
 - step: O163
   brief_check: .scratch/migration/agents/reviews/O163-brief-check.md (ad6ecc7ddb8993bc9, claude-opus-5-5, 207946 tokens, 62 tool uses, 11.7 min)
   base: 75bf4dd10
@@ -888,6 +873,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-11-06 (O162 landed). O162, the arrow-keys hint removed with Help's deck keys rows, landed (booking in `plan.md`, `agents/reviews/O162-landing.md`). O158's landing now merges `Slide.svelte` by hand against main, removing the hint wording and the `past` room from O158's version. O161's builder handed back before any change: the stand-in mechanism cannot keep Cmd+F as today (its report, `agents/reviews/O161-report.md`); that goes to Axel as an open item. In flight (4 of 6): O158 (its look next), O163, O164 (building), O161 (handed back). Next: O158's look and screenshots to Axel; O161's open item.
 - 2026-11-06 (O161 launched). Axel ruled open item 712 (a): O161's stand-in holds exactly the text the card's face draws, so Cmd+F works exactly as today (`plan.md` Rulings, the step line, the brief's items 2 and 4, Decision 6, case C3c). The ruled brief is copied into O161's worktree; its builder a336874264e7be26f runs on claude-opus-5-5 from base 75bf4dd10. Open items: none. In flight (5 of 6): O158, O162 (review over round 1), O163, O161, O164 (building). Next: /land O162 with its look on 8797, then O158's look.
 - 2026-11-06 (O160 landed). O160, Live HPC showing its refresh running, landed (booking in `plan.md`, `agents/reviews/O160-landing.md`). The gate worktree sits at main's head with O160 staged until the commit; the O158 gate state it held is in the scratchpad's `O160land/gate-O158-staged.patch`. The look server on 8797 runs from the gate. O162's repair round 1 is back (180077 tokens, 11 tool uses, 2.8 min); its review over the round is next. Open items: 712. In flight (5 of 6): O158, O162, O163, O161 (waits on 712), O164. Next: /refute O162 over round 1, then /land O162 with its look, then O158's look.
 - 2026-11-06 (O163, O161 and O164 briefs closed; O160 and O162 reviewed). Axel ruled 706 to 708, 710 and 711 (`plan.md` Rulings); ruling 705's line carries his words that the stand-in holds both sets of words, and O161's brief items 2 and 4, Decision 6 and cases C3b and C3c follow it. Steps O165 (the guides) and O166 (the record pages, after O164) are in the step list; `agents/spec.md:72` carries 711's D4 rule. O160's review (`agents/reviews/O160-refuter.md`) and O162's (`agents/reviews/O162-refuter.md`) are saved. O162's repair round 1 (`agents/briefs/O162-round-1.md`, snapshot `.agents/worktrees/migration-O162-round-1`, 15 paths) is sent to aac46270be6d0de1c. The builders of O163 (a298e389ab9f210ac) and O164 (a133caba1cd51dad2) run on claude-opus-5-5 from base 75bf4dd10. O161's worktree is made at 75bf4dd10; its builder waits on open item 712, Cmd+F unchanged against the stand-in's two sets of words. Next: O160's landing with its look; the review over O162's round. Open items: 712. In flight (6 of 6): O158, O160, O162, O163, O161, O164.

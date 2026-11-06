@@ -107,7 +107,7 @@
     <!-- A click on the slide is the reader's way to the next one; the keys are the pane's own. -->
     <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
     <div class="current" data-current onclick={onadvance}>
-        <Framed {row} {deck} {facts} first={false} />
+        <Framed {row} {deck} {facts} />
     </div>
     <div class="side">
         <section class="next" data-next aria-label={t('present.presenter_next')}>
@@ -119,7 +119,7 @@
             </Surface>
             {#if next !== null}
                 <div class="preview" style:aspect-ratio="{deck.frame.width} / {deck.frame.height}">
-                    <Framed row={next} {deck} {facts} first={false} />
+                    <Framed row={next} {deck} {facts} />
                 </div>
             {/if}
         </section>

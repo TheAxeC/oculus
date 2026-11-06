@@ -79,7 +79,6 @@ text:
         figure_missing: 'missing figure: {0}'
         form_apply: Apply
         form_cancel: Cancel
-        key_hint: Arrow keys or Space move through the deck | O opens the overview | F shows it full screen | P opens the presenter screen
         loading: Reading the deck ...
         menu_delete: Delete Slide
         menu_duplicate: Duplicate Slide

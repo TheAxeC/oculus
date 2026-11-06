@@ -13,17 +13,14 @@
     //
     // Given `onmeasure`, the Stage measures the slide it draws: how many px the frame's content
     // runs past the frame's height, 0 when it fits, taken at the frame's own size, so a tile
-    // measures what the pane does; the content's height is taken unrounded, in the frame's own
-    // px, and rounded once. The key hint the pane draws on a deck's first slide is drawn out of
-    // the flow in the frame's bottom padding (Slide.svelte) and takes no room, so the first slide
-    // measures the same wherever it is drawn. The strip of a project's facts at the slide's foot
-    // is counted: it keeps its room whether its words are shown or not, so the measure is the same
-    // with the pane's Project facts toggle on and off. The slide is measured each time `drawing`
-    // changes, so a Stage moved to another slide or shown a retitled one measures it, and a
-    // ResizeObserver on the frame and on its content measures again when either changes size (an
-    // image or a formula that loads late, the text size, the deck's frame). The observer is
-    // disconnected when the Stage goes away or measures anew. A frame with no height (a hidden
-    // tab) is not measured.
+    // measures what the pane does; the content's height is taken unrounded, in the frame's own px,
+    // and rounded once. The strip of a project's facts at the slide's foot is counted: it keeps its
+    // room whether its words are shown or not, so the measure is the same with the pane's Project
+    // facts toggle on and off. The slide is measured each time `drawing` changes, so a Stage moved
+    // to another slide or shown a retitled one measures it, and a ResizeObserver on the frame and
+    // on its content measures again when either changes size (an image or a formula that loads
+    // late, the text size, the deck's frame). The observer is disconnected when the Stage goes away
+    // or measures anew. A frame with no height (a hidden tab) is not measured.
     //
     // The parent gives the room a height: this fills its parent's width and height.
 

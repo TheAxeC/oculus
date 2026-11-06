@@ -197,7 +197,8 @@ Oculus shows the research hub's YAML and Markdown files as boards, lists and doc
 | Enter, Tab, Up / Down | in the Debug Console: send, complete, history |
 | arrows, Enter, Shift+Enter, Delete | on a terminal row: show / split / kill (twice) |
 | F / P / O | in Present: full screen / presenter screen / overview |
-| Space / Shift+Space | next / previous slide |
+| Right / Left, Page Down / Page Up, Space / Shift+Space | in Present: next / previous slide |
+| Home / End | in Present: first / last slide |
 
 Off macOS, Cmd is Ctrl.
 

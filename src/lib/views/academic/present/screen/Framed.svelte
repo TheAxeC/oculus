@@ -22,15 +22,13 @@
     type Props = {
         row: DeckSlide;
         deck: Deck;
-        /** Whether this is the deck's first slide, which names the keys under it. */
-        first: boolean;
         /** Whether the frame goes edge to edge with no border and no corner, as on the monitor. */
         bare?: boolean;
         /** Whether the strip of a project's facts shows its words: the pane's toggle. */
         facts: boolean;
     };
 
-    let { row, deck, first, bare = false, facts }: Props = $props();
+    let { row, deck, bare = false, facts }: Props = $props();
 
     const {
         present: { measured }
@@ -49,5 +47,5 @@
 </script>
 
 <Stage frame={deck.frame} {bare} {drawing} onmeasure={(over: number) => measured(deck, row, over)}>
-    <Slide {row} {deck} {first} {facts} />
+    <Slide {row} {deck} {facts} />
 </Stage>

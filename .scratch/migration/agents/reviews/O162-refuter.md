@@ -201,3 +201,243 @@ The paragraph removed was visible text, and a screen reader read it too. Its rem
 - **The builder's timings.** I did not compare them; my `test:quick` run is the one quoted above.
 
 Usage: ae429b8f2a3648ec4, claude-opus-5-5, 184967 tokens, 35 tool uses, 8.2 min
+
+## Repair round 1, refuted
+
+O162 review over repair round 1. Worktree /Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O162, base 8a423feb3, snapshot /Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O162-round-1. I changed no file in any worktree. My scratch files are /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/o162r1-unused.txt, /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/o162r1-status-before.txt and /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/o162r1-oi.txt.
+
+Verdict: every item holds and every case is met by reading. There is one low-severity Proof finding, P1: the report's file table leaves out docs/HELP.md. It can be fixed at landing. Spec, Standards and Behaviour have no findings.
+
+## The round's delta
+
+- I ran `diff -u` between the snapshot and the worktree for each of the 15 paths in `files.txt`. Every one exits 0, so none changed in the round.
+- `git status --short` lists one tracked path that `files.txt` does not: ` M docs/HELP.md`. It also lists two untracked files, `.scratch/migration/agents/briefs/O162-round-1.md` and `.scratch/migration/agents/reviews/O162-report.md`.
+- The round brief in the worktree is byte-identical to main's copy (`diff` exit 0). The builder's report does not name it as a path it wrote.
+- The whole of the round's change in code and docs is this hunk of `git diff 8a423feb3 -- docs/HELP.md`:
+```
+@@ -197,7 +197,8 @@ Oculus shows the research hub's YAML and Markdown files as boards, lists and doc
+ | Enter, Tab, Up / Down | in the Debug Console: send, complete, history |
+ | arrows, Enter, Shift+Enter, Delete | on a terminal row: show / split / kill (twice) |
+ | F / P / O | in Present: full screen / presenter screen / overview |
+-| Space / Shift+Space | next / previous slide |
++| Right / Left, Page Down / Page Up, Space / Shift+Space | in Present: next / previous slide |
++| Home / End | in Present: first / last slide |
+```
+
+## The two Help rows against moveOf
+
+The two rows say what `moveOf` does. `keys.ts` is unchanged from the base: `diff` against `git show 8a423feb3:src/lib/views/academic/present/screen/keys.ts` exits 0. In `src/lib/views/academic/present/screen/keys.ts:74-91`:
+- `ArrowRight` and `PageDown` return `{ by: 1 }`.
+- `ArrowLeft` and `PageUp` return `{ by: -1 }`.
+- `Home` returns `{ to: 'first' }` and `End` returns `{ to: 'last' }`.
+- `' '` returns `{ by: event.shiftKey ? -1 : 1 }`.
+- Every other key returns null. ArrowUp and ArrowDown are the overview grid's card-cursor keys (`keys.ts:17`) and move no slide, so "Right / Left" is the correct reading of "the arrows" in plan.md:1702.
+
+`moveOf` is called from `screen/box.ts:56` (the pane and the presenter screen) and from `src/routes/present/show/+page.svelte:198` (the audience window). Those are all Present's surfaces, so "in Present:" is true.
+
+The rows replace exactly the base row 200, after the `F / P / O` row, word for word as the round brief gives them. No other line of docs/HELP.md changes. `agents/spec.md:72` allows this ruled line.
+
+## Verification lines, verbatim
+
+Round check 1, `git diff 8a423feb3 -- docs/HELP.md`: one hunk, quoted above, from `index a07efd845..61901a958`. The step has no other hunk in that file.
+
+Round check 2 and brief verify 3, the ASCII gate in the rules file's perl form. I ran it under bash over the 16 modified paths and the report. It printed nothing: `exit 0`.
+
+Round check 3 and brief verify 1, `npm run test:quick`, run once. `git status --short` is the same before and after the run (`diff` exit 0).
+```
+test:quick: 18 changed file(s), from git since HEAD
+test:quick: 11 test file(s)
+        tests/data/hubs/decks.test.ts: named for a changed file
+        tests/data/sources/present.test.ts: named for a changed file
+        tests/checks/source/catalog-file-keys.test.ts: scans the source text of a changed file
+        tests/checks/source/comment-width.test.ts: scans the source text of a changed file
+        tests/checks/source/history.test.ts: scans the source text of a changed file
+        tests/checks/source/html-sites.test.ts: scans the source text of a changed file
+        tests/checks/source/keys.test.ts: scans the source text of a changed file
+        tests/checks/source/strip-types.test.ts: scans the source text of a changed file
+        tests/checks/tree/boundaries.test.ts: scans the source text of a changed file
+        tests/checks/tree/duplication.test.ts: scans the source text of a changed file
+        tests/checks/tree/size.test.ts: scans the source text of a changed file
+ok      prettier (1.5 s): All matched files use Prettier code style!
+ok      ASCII gate (1.8 s)
+ok      svelte-kit sync (3.7 s)
+ok      eslint (4.4 s)
+ok      svelte-check (18.5 s): 1793995080703 COMPLETED 584 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest (28.5 s): Duration  7.37s (transform 6.18s, setup 0ms, import 11.91s, tests 2.34s, environment 1ms)
+ok      vitest slow (37.0 s): Duration  15.54s (transform 4.57s, setup 0ms, import 7.68s, tests 7.63s, environment 0ms)
+ok      vitest checks (70.3 s): Duration  48.60s (transform 20.56s, setup 0ms, import 43.39s, tests 70.24s, environment 3ms)
+test:quick: 74.1 s; every command passed
+```
+`tests/checks/source/history.test.ts` reads every line of docs/HELP.md (its head comment, lines 3-5), and it is in this run and passed.
+
+Brief verify 2, the named tests.
+- The builder's file list, with `-e "HELP.md"` added, was made with `grep -rl -e "present/Slide" ... -e "decks.md" -e "HELP.md" tests | sort`. It printed:
+  - `tests/checks/config/config-folder.test.ts`
+  - `tests/checks/source/history.test.ts`
+  - `tests/routes/docs/docs.test.ts`
+  - `tests/server/desktop/window-guard.test.ts`
+  - `tests/server/git/clone-exclude.test.ts`
+  - `tests/server/git/git-scan-depth.test.ts`
+  - `tests/server/root/hooks-server.test.ts`
+  - `tests/views/shared/prose/doc-link.test.ts`
+- The builder's own command, `npx vitest run tests/checks/config/config-folder.test.ts tests/checks/tree/size.test.ts tests/server/desktop/window-guard.test.ts tests/server/root/hooks-server.test.ts tests/checks/source/keys.test.ts tests/checks/source/comment-width.test.ts --reporter=dot`:
+```
+ Test Files  6 passed (6)
+      Tests  100 passed | 2 skipped (102)
+```
+- The four files that name HELP.md, run alone (`clone-exclude`, `git-scan-depth`, `docs.test.ts`, `doc-link.test.ts`):
+```
+ Test Files  4 passed (4)
+      Tests  43 passed (43)
+```
+- In one combined run of all 11 files under the default 5000 ms limit, two checks timed out: `comment-width.test.ts > ... ends by the hundredth column everywhere under src, tests and utils 8672ms` and `history.test.ts > ... names no package id, date or session in any comment 14626ms`, each `Error: Test timed out in 5000ms.`
+- These are time-outs while the machine is loaded, with no failed assertion. `tests/tiers/quick.mjs:285` runs the checks with `--testTimeout 0`. Run that way, `npx vitest run tests/checks/source/comment-width.test.ts tests/checks/source/history.test.ts --testTimeout 0 --reporter=dot` prints:
+```
+ Test Files  2 passed (2)
+      Tests  8 passed (8)
+```
+- Both passed in test:quick above. Under spec.md:80 this is not a finding.
+
+Brief verify 4, `wc -l` of the changed files:
+```
+     151 config/text/views/academic/present.yml
+     644 docs/HELP.md
+     432 docs/decks.md
+     179 docs/diagrams/layer-views.dot
+     809 docs/diagrams/layer-views.svg
+     101 docs/diagrams/layers.dot
+     556 docs/diagrams/layers.svg
+      69 src/lib/themes/slide.css
+     462 src/lib/views/academic/present/Present.svelte
+     495 src/lib/views/academic/present/Slide.svelte
+     184 src/lib/views/academic/present/arrange/Tile.svelte
+     246 src/lib/views/academic/present/presenter/Presenter.svelte
+      51 src/lib/views/academic/present/screen/Framed.svelte
+     147 src/lib/views/academic/present/screen/Stage.svelte
+     221 src/routes/present/print/+page.svelte
+     325 src/routes/present/show/+page.svelte
+```
+Every component is at or under 520 lines and every other file at or under 880.
+
+Brief verify 5. `sh utils/unused-exports.sh` exited 0 and wrote 334 lines. `diff ../O162-base/unused-exports.txt <that output>` printed nothing (`diff exit 0`), so the step adds no line.
+
+Brief verify 6, the history-word grep.
+- Input: the `+` lines of `git diff 8a423feb3`, 47 lines. These are the 45 of the first review plus the two Help rows.
+- Command: `grep -n -i -E "before|used to|no longer|still|always has been|always had|as before|previously|the step adds|after this package lands|O1[0-9][0-9]|20[0-9][0-9]-"`.
+- Result: `grep exit 1`, no hit.
+
+Brief verify 7, C5 and C6. I ran them with `grep -rn` over the brief's paths; `git grep` is outside my three git commands.
+```
+== C5a   grep -rn -e "key_hint" -e "keys-past" -e 'class="keys"' -e "Arrow keys or Space" src tests docs config/text
+exit 1
+== C5b   grep -rn -i -e "key hint" -e "names the keys" src/lib/views/academic/present src/routes/present src/lib/themes/slide.css docs/decks.md docs/HELP.md
+exit 1
+== C6a   grep -rn "first={\|{first}" src/lib/views/academic/present src/routes/present
+src/lib/views/academic/present/arrange/Overview.svelte:170:                first={run.at === 0}
+== C6b   grep -n -w first src/lib/views/academic/present/Slide.svelte src/lib/views/academic/present/screen/Framed.svelte
+src/lib/views/academic/present/Slide.svelte:146:    /** The gap between two figures of a block: the bottom margin of the first figure's box. */
+```
+
+The paths of the diff since the base, from `git diff 8a423feb3 | grep '^diff --git'`:
+- the brief's 11 write-list paths;
+- `docs/HELP.md`, on the round's write list;
+- the four `docs/diagrams` files, generated.
+
+`diff -rq` against `O162-base` over `src`, `config` (with `--exclude=local.yml`), `tests` and `utils` lists only the 10 src and config files. tests and utils are unchanged.
+
+## Item verdicts, the whole diff since the base
+
+I re-read the whole diff of `src`, `config` and `docs/decks.md` since the base.
+
+1. No slide draws the hint: **holds**. `{#if first}<p class="keys" ...>{t('present.key_hint')}</p>{/if}` and the `.keys` rule with its comment are removed. C5a prints nothing.
+
+2. No room is kept for it: **holds**.
+   - `past`, `keys`, the measure, the `flushSync()` that followed it, `- past`, `style:--keys-past` and `padding-bottom: var(--keys-past, 0px)` are gone.
+   - `Slide.svelte` now reads `const above = inner - kept;`.
+   - The `flushSync` import is still used at `Slide.svelte:208,224,251,256,266,296,332`.
+   - The new `.reading` comment describes the rule as it stands.
+
+3. The probe still measures: **holds**. `Slide.svelte` reads `<span class="probe" aria-hidden="true" bind:this={probe}>Mg</span>`. The `.probe` rule and the effect are unchanged except the effect's comment.
+
+4. The `first` prop is gone: **holds**. It is removed from both Props types and both destructurings, and from all six callers. C6 prints only the two lines the brief allows.
+
+5. The words: **holds**.
+   - `key_hint` is gone from `present.yml`.
+   - The head comments of `Slide.svelte`, `Stage.svelte` and `show/+page.svelte`, and the `slide.css` paragraph, no longer name the hint. Each paragraph is rewrapped whole, and `comment-width` passed.
+   - The hint sentence of `docs/decks.md:166` is removed and nothing else on that line changes.
+
+6. Nothing else changes: **holds**.
+   - Apart from the generated diagrams, the diff touches only the brief's write list plus docs/HELP.md.
+   - docs/HELP.md was added by the round under ruling 706 and is on the round's write list (`briefs/O162-round-1.md`, "Paths this round writes").
+   - The round reaches nothing beyond the round: the 15 snapshot paths are unchanged.
+
+Round item 1, the deck keys in Help: **holds**. The hunk is the round brief's two rows word for word, in place of base line 200, and they match `moveOf` as set out above.
+
+## Case verdicts
+
+- C1: **met** by reading. `Present.svelte:419` passes no `first`, and Slide draws no paragraph under the content. On screen it is the look at landing.
+- C2: **met** by reading. `above = inner - kept` is the same on every surface. The factor on screen is the look.
+- C3: **met** by reading. The probe's triggers are unchanged: the ResizeObserver on the probe, `loadingdone`, and the effect on `[row, deck.frame, held]`. The probe follows `--slide-fs-body`. On screen it is the look.
+- C4: **met** by reading. These surfaces passed `first={false}`, so their path is the same apart from the probe's text.
+- C5: **met**. Both greps print nothing (quoted above).
+- C6: **met**. They print exactly `Overview.svelte:170` and the figure-box comment `Slide.svelte:146`.
+- C7: **met** by reading. `padding-bottom: var(--keys-past, 0px)` is gone, and `.foot { margin-top: auto }` puts the strip at the column's foot on every surface. On screen it is the look.
+
+## Spec
+
+None. The round wrote only docs/HELP.md, plus the report section, as its brief asks.
+
+## Proof
+
+P1 (low): the report's file table leaves out docs/HELP.md.
+- Place: `.agents/worktrees/migration-O162/.scratch/migration/agents/reviews/O162-report.md:114-133`, the section "Files changed".
+- Hunk: the table's rows run from `| src/lib/views/academic/present/Slide.svelte | 12 / 56 | 495 | yes |` to `| .scratch/migration/agents/reviews/O162-report.md | new | this file | yes |`. None of them names docs/HELP.md.
+  - `sed -n 114,135p ... | grep -c HELP` prints `0`.
+  - `git diff 8a423feb3` changes `docs/HELP.md` (2 added, 1 removed, 644 lines now).
+  - The section says it is made "plus `git diff --numstat` for `docs/`", and that would list HELP.md.
+- What is wrong: `spec.md:35` says the file table holds every changed path and marks each path outside the step brief's write list with its reason. docs/HELP.md is outside the step brief's write list, being on the round's, and is neither listed nor marked. The round section's sentence "Paths this round wrote: `docs/HELP.md` and this report" (`:228`) names it, but the table stays incomplete.
+- Failure scenario:
+  - The landing booking or the shared-path check is taken from the file table.
+  - It then shows O162 writing no line of docs/HELP.md.
+  - O158 and the plan's other Help writers are judged free of a shared file at landing, though O162 now changes `docs/HELP.md:200-201`. O158's worktree still holds the base rows at `:199-200` (`grep -n "Shift+Space\|F / P / O"` over its HELP.md).
+  - The `shared_paths:` entry of O162 in `orchestrator-state.md:55` also names only Slide.svelte, present.yml and decks.md.
+- Fix at landing: add one row, `| docs/HELP.md | 2 / 1 | 644 | no: the round's write list (ruling 706) |`.
+
+I reran the round section's other claims and they reproduce:
+- 18 changed files in test:quick, with the same 11 test files as the first run.
+- The diagram files are unchanged since the snapshot (`diff -u` exit 0 on all four).
+- The `git diff 8a423feb3 -- docs/HELP.md` quote is byte for byte, `index a07efd845..61901a958` included.
+- The ASCII gate over HELP.md prints nothing.
+- The three earlier report sentences on Help (`:9`, `:144`, `:158`) now describe the state after the round. No sentence of the report still says Help is unchanged (`grep -n -i "unchanged\|as it was\|left as"` hits only the unchanged tree and the not-covered line).
+
+## Standards
+
+None.
+- The ASCII gate is clean.
+- The history grep has no hit.
+- One line per table row.
+- The sizes are within the limits.
+- prettier, eslint and svelte-check are clean.
+- The `history.test.ts` audit of docs/HELP.md passed.
+
+## Behaviour
+
+None.
+- The Help page's keys table now shows the two rows. The report's before-and-after bullet (`:144`) gives the old row and the two new rows, so the look can be taken from it.
+- One fact for the look, not a finding: the Help rows leave unsaid that Space on a button or link inside a slide presses the control (`box.ts`, `heldBack` and `show/+page.svelte:199`). The round asked for what `moveOf` does, and the rows say exactly that.
+
+## Declined to judge
+
+- Git commands quoted in the report that are outside my three: `git diff src/lib/views/academic/present/Slide.svelte` (item 1), `git diff --numstat` (item 6 and the file table), and `git diff -U0 -- src config docs/decks.md` (verify 6). In their place I used `git diff 8a423feb3`, piped to the same greps. I used two piped forms of the allowed commands: `git diff 8a423feb3 | grep '^diff --git'` and `git status --short | grep '^ M'`.
+- The claim that `npm run diagrams` ran right before the round's test:quick. I cannot check it without running the generator, which writes into the worktree. The four diagram files are byte-identical to the snapshot.
+- The report's section "Open items of the state file, verbatim" (`:7`). It matches the worktree's copy of the state file at base, `orchestrator-state.md:204` (`diff` exit 0). Main's state file now lists 706 as closed (`:237`) and 712 as the open item (`:225`). The builder reads the ledger copy of its own worktree, and the round asked it to refresh nothing there, so this is not a builder finding. The landing report takes the open items from main.
+- The untracked round brief `.scratch/migration/agents/briefs/O162-round-1.md` in the worktree. It is identical to main's copy, and whether it goes into the wip commit at landing is the orchestrator's call.
+- The on-screen look: C1 to C4, C7 and the Help page's two rows are the orchestrator's look at landing. I started no server and opened no page.
+- The builder's timings and its count of two test:quick runs. My run is the one quoted above.
+
+Usage: a743f1e2010fe22e9, claude-opus-5-5, 149170 tokens, 33 tool uses, 9.7 min
+
+## Closed
+
+- Round 1 P1: fixed at landing, the report's file table gains the row `docs/HELP.md | 2 / 1 | 644 | no: the round's write list (ruling 706)`; O162's `shared_paths` names `docs/HELP.md` lines 200-201 against O158's 341-347, which do not touch.
+- The first review found nothing.

@@ -31,12 +31,8 @@
     // type scale. A slide that comes from a project's deck (`row.project`) carries the strip of
     // that project's facts (`deck.projects`, read by `slideFacts`, no strip for a project with
     // none), on every surface that draws a slide, its words shown by the pane's Project facts
-    // toggle (`facts`) and hidden, their room kept, when it is off. The content's room is taken
-    // above the foot with the strip counted. The first slide of a deck carries the key hint when
-    // the pane draws it; no deck file holds one. The hint is drawn out of the flow, under the
-    // reading column in the frame's bottom padding, and takes no room while its lines fit that
-    // padding; the lines past it, in a narrow reading column or at a large text size, are kept at
-    // the column's foot and taken off the content's room.
+    // toggle (`facts`) and hidden, their room kept, when it is off. The content's room is the
+    // frame's inner height less the foot's, the strip counted, on every slide alike.
 
     import { flushSync, untrack } from 'svelte';
     import Grid from './parts/Grid.svelte';
@@ -57,21 +53,18 @@
         type SlidePlace
     } from './screen/slide-layout';
     import { slideFacts, tagToneOf } from '$lib/state/life/present';
-    import { t } from '$lib/state/shared/words/text';
     import type { Deck, DeckSlide } from '$lib/state/life/present';
 
     type Props = {
         row: DeckSlide;
         deck: Deck;
-        /** Whether this is the deck's first slide, which names the keys under it. */
-        first: boolean;
         /** Whether the strip of a project's facts shows its words: the pane's toggle. */
         facts: boolean;
         /** Told each time the slide has been laid out: the print page waits for every slide. */
         onlaid?: () => void;
     };
 
-    let { row, deck, first, facts, onlaid }: Props = $props();
+    let { row, deck, facts, onlaid }: Props = $props();
 
     /**
      * How many times, at most, a factor's figures are laid out again with the heights measured
@@ -100,8 +93,6 @@
     let depth = $state(0);
     /** The height a Markdown image may take: the room under the heading, 0 until measured. */
     let room = $state(0);
-    /** The px of the key hint past the frame's bottom padding, kept at the column's foot. */
-    let past = $state(0);
     /** Whether the slide has been laid out once. */
     let laid = $state(false);
 
@@ -111,7 +102,6 @@
     let content = $state<HTMLElement | null>(null);
     let foot = $state<HTMLElement | null>(null);
     let probe = $state<HTMLElement | null>(null);
-    let keys = $state<HTMLElement | null>(null);
 
     /** One figure of the drawn slide: its index on the slide and its image. */
     type Drawn = { index: number; image: HTMLImageElement };
@@ -204,14 +194,8 @@
         const frame = getComputedStyle(parent);
         const inner =
             parent.clientHeight - parseFloat(frame.paddingTop) - parseFloat(frame.paddingBottom);
-        // The key hint's lines that pass the frame's bottom padding are kept at the column's foot.
-        past =
-            keys === null
-                ? 0
-                : Math.max(0, Math.ceil(tall(keys) - parseFloat(frame.paddingBottom)));
-        flushSync();
         const kept = foot === null ? 0 : tall(foot);
-        const above = inner - kept - past;
+        const above = inner - kept;
         /** An element's top from the content's top, in the frame's own px. */
         const top = (element: Element): number =>
             (element.getBoundingClientRect().top - box.getBoundingClientRect().top) / scale;
@@ -371,9 +355,9 @@
     });
 
     $effect(() => {
-        // The probe is a line of the frame's body type outside the content: its size changes with
-        // the text size, the theme and the slide being shown, and the factor the layout sets is
-        // outside it.
+        // The probe is a line of the frame's body type outside the content, two fixed letters that
+        // are hidden and never read: its size changes with the text size, the theme and the slide
+        // being shown, and the factor the layout sets is outside it.
         const element = probe;
         if (element === null) return;
         const sizeOf = (): string => `${element.offsetWidth} ${element.offsetHeight}`;
@@ -394,12 +378,7 @@
     });
 </script>
 
-<div
-    class="reading"
-    data-slide-key={row.key}
-    style:--keys-past={past > 0 ? `${past}px` : undefined}
-    bind:this={reading}
->
+<div class="reading" data-slide-key={row.key} bind:this={reading}>
     <div
         class="content slide-fit"
         class:waiting={!laid}
@@ -461,15 +440,13 @@
             </div>
         </div>
     {/if}
-    {#if first}
-        <p class="keys" bind:this={keys}>{t('present.key_hint')}</p>
-    {/if}
-    <span class="probe" aria-hidden="true" bind:this={probe}>{t('present.key_hint')}</span>
+    <span class="probe" aria-hidden="true" bind:this={probe}>Mg</span>
 </div>
 
 <style>
-    /* The column keeps at its foot, inside its height, the lines of the key hint past the frame's
-       bottom padding (`--keys-past`). */
+    /* The reading column, at most `--slide-reading` wide and centred in the frame, at least as tall
+       as the frame's inner box: the content and the foot stand in its flow, and the probe is
+       placed against its top-left corner. */
     .reading {
         position: relative;
         display: flex;
@@ -479,7 +456,6 @@
         max-width: var(--slide-reading);
         min-height: 100%;
         margin-inline: auto;
-        padding-bottom: var(--keys-past, 0px);
     }
 
     /* The content takes the column's height above the foot, so a part that centres its content
@@ -502,26 +478,6 @@
 
     .strip {
         padding-top: 1.2em;
-    }
-
-    /* The key hint is drawn out of the flow, in the app's type step at the frame, at the factor 1,
-       under the reading column in the frame's 64 px bottom padding (themes/slide.css). In the
-       1040 px column of a 1280 by 720 frame it takes two lines at most up to a text size of 1.6
-       (2 x 13 x 1.6 x 1.25 = 52 px and a padding of 10.4 px), which fit the padding, and takes
-       no room. In a narrower column or at a larger size it starts above the column's foot by as
-       many px as it passes the padding, in the room the column keeps for them, so its last line
-       ends at the frame's inner edge. */
-    .keys {
-        position: absolute;
-        top: calc(100% - var(--keys-past, 0px));
-        right: 0;
-        left: 0;
-        margin: 0;
-        padding-top: 0.5em;
-        color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-md);
-        line-height: 1.25;
-        text-align: center;
     }
 
     /* One line of the frame's body type, drawn nowhere and taking no room. */

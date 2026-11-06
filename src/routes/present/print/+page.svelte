@@ -187,7 +187,7 @@
                 style:height="{deck.frame.height}px"
             >
                 <div class="fit" data-fit>
-                    <Slide {row} {deck} {facts} first={false} onlaid={() => slideLaid(row.key)} />
+                    <Slide {row} {deck} {facts} onlaid={() => slideLaid(row.key)} />
                 </div>
             </section>
         {/each}

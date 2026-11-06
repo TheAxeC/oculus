@@ -416,7 +416,7 @@
                         onend={() => presenting.end(instance.id)}
                     />
                 {:else}
-                    <Framed row={shown} {deck} facts={held.facts} first={at === 0} bare={full} />
+                    <Framed row={shown} {deck} facts={held.facts} bare={full} />
                 {/if}
             </ContextMenu>
         {/if}
