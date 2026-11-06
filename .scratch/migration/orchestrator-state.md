@@ -47,8 +47,7 @@ dispatch:           # steps in flight, up to six (Z632)
   launched: 2026-11-06
   report: .scratch/migration/agents/reviews/O161-report.md
   builder_usage: first run, handed back before any change (198509 tokens, 52 tool uses, 11.4 min)
-  waits_on: open item 713
-  round: 0
+  round: 0 (cases ruling agents/briefs/O161-cases.md, ruling 713, sent 2026-11-06)
   landing: not-started
 - step: O164
   brief_check: .scratch/migration/agents/reviews/O164-brief-check.md (a7883a6fa8f16f8f4, claude-opus-5-5, 187199 tokens, 71 tool uses, 10.1 min)
@@ -60,7 +59,7 @@ dispatch:           # steps in flight, up to six (Z632)
   launched: 2026-11-06
   report: .scratch/migration/agents/reviews/O164-report.md
   builder_usage: first run 283925 tokens, 150 tool uses, 30.7 min; round 1 330150 tokens, 48 tool uses, 8.7 min
-  reviewer_report: .scratch/migration/agents/reviews/O164-refuter.md (a30a3f28ea4eb8488, claude-opus-5-5, 241783 tokens, 54 tool uses, 12.4 min); over round 1: running: ab7bbaa55783b18d3 (claude-opus-5-5)
+  reviewer_report: .scratch/migration/agents/reviews/O164-refuter.md (a30a3f28ea4eb8488, claude-opus-5-5, 241783 tokens, 54 tool uses, 12.4 min); over round 1: ab7bbaa55783b18d3, claude-opus-5-5, 174838 tokens, 45 tool uses, 10.3 min
   round: 1 (agents/briefs/O164-round-1.md, snapshot .agents/worktrees/migration-O164-round-1, 18 paths)
   landing: not-started
 ```
