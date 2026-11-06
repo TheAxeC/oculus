@@ -73,7 +73,7 @@ text:
         field_sort_of: 'sort of {0}'
         field_sort_title: by title
         field_title: Title
-        field_title_help: The title shown on the first slide and in the deck list.
+        field_title_help: "The deck's title: the words of its tab, of its entry in the deck menu and of the Overview's heading. No slide of its own deck draws it; the summary and grid slides of a deck whose group holds it draw it for a member deck that is no project's, the grid's only when that deck has no idea slide."
         field_tone_add: Add
         field_tone_hue: hue of the new tag
         field_tone_none: no hue

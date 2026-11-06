@@ -2,7 +2,8 @@
 // made from the config has its documents from navigation/arrangement.ts (`withDocs`); a saved page
 // that lacks a listed document gains that document's tab here, once, pinned as the arrangement's
 // tabs are, and the page records the paths it has been given (`Page.docs`), so a tab the reader
-// closes stays closed.
+// closes stays closed. The same record holds the ids of the documents of oculus's own folder the
+// page's arrangement shows, which saved/views.ts gives and this module keeps as they are.
 
 import { docState, type DocEntry } from '../../navigation/catalogue.ts';
 import { DOC_VIEW, instanceText, newInstance, panes, tabsOf } from '../instance.ts';

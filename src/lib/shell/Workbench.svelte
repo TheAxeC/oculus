@@ -275,8 +275,9 @@
         } else client.layout.keepDefaultPage(shipped);
     });
 
-    // A page of the rail, saved or adopted by its button, is given each of the hub's documents and
-    // each view of its arrangement it lacks, once, as a tab.
+    // A page of the rail, saved or adopted by its button, is given each of the hub's documents, and
+    // each view and each document of oculus's own folder its arrangement shows, that it has not
+    // been given, once, as a tab.
     $effect(() => {
         if (!configured || floatId !== null) return;
         client.layout.giveDocuments(pages.map(({ page, docs, node }) => ({ page, docs, node })));

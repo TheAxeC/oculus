@@ -85,7 +85,7 @@ export const DOC_VIEW = 'doc';
  * The paths of the hub's documents a tree holds as tabs, in the order of its tabs. A tab over a
  * document of oculus's own folder, which carries `engine: true`, is not one of them.
  */
-export function docPaths(layout: Layout): string[] {
+function docPaths(layout: Layout): string[] {
     return tabsOf(layout)
         .filter((tab) => tab.view === DOC_VIEW && !instanceFlag(tab.state, 'engine'))
         .map((tab) => instanceText(tab.state, 'path'))
@@ -93,8 +93,34 @@ export function docPaths(layout: Layout): string[] {
 }
 
 /**
+ * The tabs of a tree over documents of oculus's own folder that a page records by their id: each
+ * `doc` tab whose state carries `engine: true` and a filled `id`, the first tab of an id alone, in
+ * the order of its tabs.
+ */
+export function engineDocTabs(layout: Layout): Instance[] {
+    const seen = new Set<string>();
+    return tabsOf(layout).filter((tab) => {
+        if (tab.view !== DOC_VIEW || !instanceFlag(tab.state, 'engine')) return false;
+        const id = instanceText(tab.state, 'id');
+        if (id === '' || seen.has(id)) return false;
+        seen.add(id);
+        return true;
+    });
+}
+
+/**
+ * What a page made from a tree records as the documents it was given (`Page.docs`): the paths of
+ * the hub's documents its tabs hold (`docPaths`), then the ids of the documents of oculus's own
+ * folder (`engineDocTabs`).
+ */
+export function docRecord(layout: Layout): string[] {
+    const engine = engineDocTabs(layout).map((tab) => instanceText(tab.state, 'id'));
+    return [...docPaths(layout), ...engine];
+}
+
+/**
  * The views a tree holds as tabs, each once, in the order of its first tab: every view but the
- * document view, whose tabs `docPaths` names by their documents.
+ * document view, whose tabs `docRecord` names by their documents.
  */
 export function viewIds(layout: Layout): string[] {
     return [

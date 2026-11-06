@@ -180,8 +180,11 @@ export type LayoutStore = Omit<Instances, 'forgetTabs'> &
         /** The rail list came and names no page: the default page stays, and is drawn. */
         keepDefaultPage: (floats: FloatSpec[]) => void;
         /**
-         * Give every rail page the documents its source lists that it has not been given: a tab
-         * after the page's first tab, recorded so a tab the reader closes is not given again.
+         * Give every rail page what it has not been given: the hub's documents its source lists, a
+         * tab after the page's first tab, and the views and the documents of oculus's own folder
+         * its arrangement shows: a view after the view the arrangement shows just before it, a
+         * document after the nearest tab before it in the arrangement that the page holds. Each is
+         * recorded, so a tab the reader closes is not given again.
          */
         giveDocuments: (sources: readonly DocSource[]) => void;
         /**

@@ -1,8 +1,8 @@
 <script lang="ts">
     // Layer 3, Present partial. The form the deck's Edit opens at the head of the Overview: the
-    // deck's own keys, `deck.title`, the title on the first slide and in the deck list, and
-    // `defaults.tag_tones`, one row for each slide tag with the hue its chip wears, a hue picked or
-    // the tag taken out, and a row that adds a tag.
+    // deck's own keys, `deck.title`, the words of the deck's tab, menu entry and Overview heading,
+    // and `defaults.tag_tones`, one row for each slide tag with the hue its chip wears, a hue
+    // picked or the tag taken out, and a row that adds a tag.
     //
     // What the reader sets is the form's own work until Apply writes it, each key with the value
     // the file held as its base, and closes the form; Cancel and Escape close it with nothing

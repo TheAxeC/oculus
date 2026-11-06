@@ -60,7 +60,7 @@ options:
     arrangements:
         heading: rail
         section: Page layouts
-        help: "What each rail page is first made from, and what Reset gives it back. After the first press the page is the one the reader arranged, kept in the saved layout. An arrangement that does not add up makes no page. A workspace file's settings: overrides a page's arrangement by its page key, adds one for a new page, and takes one of oculus's out with <page>: null."
+        help: "What each rail page is first made from, and what Reset gives it back. After the first press the page is the one the reader arranged, kept in the saved layout; a view or a document of oculus's own folder that the arrangement shows later is given to that page once, and one the reader closed is not given again. An arrangement that does not add up makes no page. A workspace file's settings: overrides a page's arrangement by its page key, adds one for a new page, and takes one of oculus's out with <page>: null."
         fields:
             key: a page key that a rail entry names
             root:

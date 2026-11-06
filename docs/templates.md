@@ -1911,7 +1911,7 @@ title: Career strategy
 
 ## present.yml
 
-A deck: this file and Markdown slides in one folder. The Present view's filter of a deck's project decks (Stage, Status, Tier, Pillar and Form) is the view's own: its picks are kept with the pane and write nothing to this file.
+A deck: this file and Markdown slides in one folder. The [Decks guide](decks.md) gives every key and every slide kind, each with an example. The Present view's filter of a deck's project decks (Stage, Status, Tier, Pillar and Form) is the view's own: its picks are kept with the pane and write nothing to this file.
 
 ```yaml
 deck:

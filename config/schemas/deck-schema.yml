@@ -14,7 +14,7 @@ deck_schema:
     type: records
     help: "The deck's own facts."
     fields:
-      - { field: title, type: text, help: "The title shown on the first slide and in the deck list." }
+      - { field: title, type: text, help: "The deck's title: the words of its tab, of its entry in the deck menu and of the Overview's heading. No slide of its own deck draws it; the summary and grid slides of a deck whose group holds it draw it for a member deck that is no project's, the grid's only when that deck has no idea slide." }
       - { field: frame, type: raw, help: "The size every slide of this deck is laid out in, as { width, height } in px, overriding the setting defaults.frame." }
   - field: defaults
     type: records
@@ -26,7 +26,7 @@ deck_schema:
     map: true
     help: "A map from a group name to its find rule, its sort, whether it discovers further decks and its slides."
     fields:
-      - { field: find, type: raw, help: "Which project folders the group finds: their folder globs, the tiers, the types and the statuses they may have." }
+      - { field: find, type: raw, help: "Which decks the group finds: the folder globs it looks in (folders), and the tiers, stages, forms and status chips a deck's project may have (tiers, stages, forms, status)." }
       - { field: sort, type: text, help: "How the found decks are ordered: folder or title." }
       - { field: discover, type: checkbox, help: "Whether the group also takes the decks it finds beyond the slides it names." }
       - { field: slides, type: tags, foreign_key: projects, help: "The projects whose decks the group shows, in order, each named by its project id." }

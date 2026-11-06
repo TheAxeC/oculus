@@ -39,9 +39,9 @@ Each button on the rail at the left opens a page:
 - **Pillars**: see your projects grouped by research pillar and application domain, and as a graph of what links them.
 - **Registries**: keep the shared lists of venues, datasets, statements, people, organisations and computing resources.
 - **Literature**: search the literature sources, watch new papers and keep the ones you want.
-- **Present**: show a slide deck written in Markdown, with a presenter screen and PDF export.
+- **Present**: show a slide deck written in Markdown, with a presenter screen and PDF export. The [Decks guide](docs/decks.md) shows how to write one.
 - **Apps**: add, enable, disable and remove apps, which are folders of web files oculus draws in a tab.
-- **Help**: read the manual, the keyboard shortcuts, the Apps guide, the templates, the data map and the palette commands.
+- **Help**: read the manual, the keyboard shortcuts, the Apps guide, the templates, the data map, the palette commands and the Decks guide.
 - **System**: change settings and look at oculus itself: its views, pages, processes, status, findings, audit and the history of its writes.
 
 ## Install
@@ -96,6 +96,7 @@ To have Claude Code sessions tell oculus when they want you, merge the hooks blo
 - [docs/templates.md](docs/templates.md) gives every YAML file oculus reads as a template to copy.
 - [docs/data-map.md](docs/data-map.md) maps a hub's data files, the views that show them and the keys that link them.
 - [docs/apps.md](docs/apps.md) shows how to build an app, a folder of web files oculus draws in a tab.
+- [docs/decks.md](docs/decks.md) shows how to write a deck: every key of `present.yml` and every slide kind, each with an example.
 - [docs/palette.md](docs/palette.md) lists every palette command and key. `npm run docs:palette` writes it from the code.
 - [docs/third-party.md](docs/third-party.md) names the bundled programs under other licenses.
 

@@ -1,6 +1,5 @@
-In flight (3 of 6 slots in use):
-- O149 (the Decks guide), building (agent).
-- O151 (a deck for every research project), building inline in the hub; hub commit on Axel's word.
+In flight (2 of 6 slots in use):
+- O151 (a deck for every research project), built inline in the hub, under review; 18 single-figure slides stay Too tall (open item 693); hub commit on Axel's word.
 - O150 (the hub's portfolio deck), built inline in the hub (uncommitted there), refuted over round 1; its landing waits on Axel's rulings of open items 689 (engine.md's sentence), 690 (the failed deck in the public deck) and 691 (a summary slide), each of which may change the hub files, and on his word for the hub commit.
 
 Queued: none.

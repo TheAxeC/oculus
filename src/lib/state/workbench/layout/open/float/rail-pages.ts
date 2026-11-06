@@ -1,11 +1,11 @@
 // Layer 2, client state. The operations that bring the pages of the rail buttons into the page
 // list: the page of one button shown, the first button's page put on screen in place of the default
 // page, the default page kept when the rail names none, the shipped floats taken into a layout
-// saved without floats, and the documents a button's source lists and the views its arrangement
-// shows given to its page. Each reads and writes the page list through the access object, and the
-// two flags the factory holds as plain values (a browser with no saved layout that has changed
-// nothing, and an envelope waiting for the shipped floats) through the functions it is given, so
-// this module holds no rune and no second copy of either.
+// saved without floats, and the documents a button's source lists and the views and the documents
+// of oculus's own folder its arrangement shows given to its page. Each reads and writes the page
+// list through the access object, and the two flags the factory holds as plain values (a browser
+// with no saved layout that has changed nothing, and an envelope waiting for the shipped floats)
+// through the functions it is given, so this module holds no rune and no second copy of either.
 
 import { parseArrangement } from '../../../navigation/arrangement.ts';
 import type { LayoutAccess } from '../../access.ts';
@@ -108,8 +108,9 @@ export function createRailPages(access: LayoutAccess, grounds: RailPageGrounds):
     }
 
     /**
-     * Every rail page given the documents its source lists, and the views its arrangement shows,
-     * that it has not been given.
+     * Every rail page given the hub's documents its source lists, and the views and the documents
+     * of oculus's own folder its arrangement shows, that it has not been given: the hub's first,
+     * then the arrangement's.
      */
     function giveDocuments(sources: readonly DocSource[]): void {
         const held = access.held();

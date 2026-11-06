@@ -1,8 +1,8 @@
 <script module lang="ts">
     // Layer 3, view registration. Help opens the Help page's group, and is the first tab of that
-    // page's one pane, followed by the Keyboard Shortcuts view (keys/Keys.svelte), the hub's
-    // documents (the `docs:` entries whose group is `help`) and the Apps guide, the Templates and
-    // the Palette pages, documents of oculus's own folder.
+    // page's one pane, followed by the hub's documents (the `docs:` entries whose group is `help`),
+    // the Keyboard Shortcuts view (keys/Keys.svelte) and the documents of oculus's own folder: the
+    // Apps guide, the Templates, the Data map, the Palette and the Decks guide.
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
 
     export const registration: ViewRegistration = {
