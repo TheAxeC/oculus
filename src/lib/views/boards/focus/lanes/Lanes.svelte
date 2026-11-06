@@ -12,13 +12,14 @@
     // find-in-page searches their cards, and a match inside them unfolds the group. A lane naming
     // no cluster of the list is drawn in none. A card is lanes/LaneCard.svelte, drawn from what
     // this module works out for it: its status marks, its facts (state/boards/focus.ts
-    // `laneFacts`), its deadline, the people it waits on or that it is blocked, and its move menu.
-    // The projects on each lane are the ones the Focus filter keeps, which the board hands it with
-    // how many each lane hides. Which lane a card sits on, which marks it draws there and what a
-    // move writes are state/boards/focus.ts's projectLane, laneMarks and hubMoveOnto, so a drop and
-    // the menu write the same fields. The board's lanes are the lanes of every hub of the
-    // workspace; a card sits on, and moves to, the lane of its own hub's lanes with the same key,
-    // read under its own hub's words.
+    // `laneFacts`), its deadline, the people it waits on or that it is blocked, its move menu, and
+    // the press on its venue, which opens the venue's page (views/shared/card/card.ts
+    // `venueOpener`). The projects on each lane are the ones the Focus filter keeps, which the
+    // board hands it with how many each lane hides. Which lane a card sits on, which marks it draws
+    // there and what a move writes are state/boards/focus.ts's projectLane, laneMarks and
+    // hubMoveOnto, so a drop and the menu write the same fields. The board's lanes are the lanes of
+    // every hub of the workspace; a card sits on, and moves to, the lane of its own hub's lanes
+    // with the same key, read under its own hub's words.
     //
     // The drag is the card's own HTML5 events. state/workbench/drag.svelte.ts is the shell's pane
     // drag and a view has no business in it. The move menu stays beside the drag because it
@@ -57,6 +58,7 @@
     import { vocabOf } from '$lib/state/shared/words/tones';
     import { rootOf } from '$lib/state/shared/page/hubs';
     import { useState } from '$lib/state/client/use';
+    import { venueOpener } from '$lib/views/shared/card/card';
 
     const client = useState();
     const {
@@ -239,6 +241,9 @@
                     items={menuFor(project)}
                     onpick={(id: string) => void choose(project, id)}
                     onopen={() => onproject(project.id)}
+                    onvenue={project.venueId === undefined
+                        ? null
+                        : venueOpener(client, project.venueId)}
                     ondragstart={(event: DragEvent) => started(project, event)}
                     ondragend={ended}
                 />

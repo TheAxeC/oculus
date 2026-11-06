@@ -18,6 +18,11 @@
 // the draft of a tab that is not on screen be judged against the snapshot now. A tab on a page
 // names the entry by its hub and its key, two fields of its state (`entryPageState`), and never by
 // its internal id.
+//
+// The view and the state that open an entry's page are `pageView`'s. A view that names an entry by
+// its internal id, as a project card's tag, a Focus line or a band card does, finds that page
+// through `entryPage`, or `venuePage` for a venue, in the collection of the id's own hub, so every
+// such press opens the same page through one lookup and none opens a collection in its place.
 
 import {
     addressOfId,
@@ -35,8 +40,10 @@ import type {
     FeedData,
     FeedKind,
     FeedsPayload,
+    Id,
     SchemaField,
-    Snapshot
+    Snapshot,
+    Venue
 } from '../../data/model/index.ts';
 import { entryIdOf, entryTitleOf, primaryKeyOf } from '../../data/model/index.ts';
 import { feedEntryId, feedIdents, feedRoot } from '../shared/page/idents.ts';
@@ -139,10 +146,78 @@ export function pageView(
     id: string,
     label: string,
     registry?: RegistryWord
-): { view: string; state: Record<string, string> } {
+): EntryPage {
     return registry === 'people'
         ? { view: 'person', state: { ...addressOfId(id), label } }
         : { view: 'entry', state: entryPageState(collection, id, label) };
+}
+
+/** A view to open and the state it is opened with: the page of one entry. */
+export type EntryPage = { view: string; state: Record<string, string> };
+
+/** The collections of every hub under one key, which an entry's page is resolved among. */
+type CollectionsOf = (key: string) => Collection[];
+
+/**
+ * What `pageLookup` reads of a client: its collections by key, the key a hub gives a registry, and
+ * the portfolio that holds the venues. It is the client's shape written out, since the forms state
+ * sits below the client's folder and imports nothing of it.
+ */
+type LookupSource = {
+    selectors: {
+        collectionsOfKey: CollectionsOf;
+        registryKey: (registry: RegistryWord, hub?: string) => string;
+    };
+    entities: { portfolio: () => Snapshot | null };
+};
+
+/** What the page of an entry a view names is read from: the collections, the venue registry. */
+export type PageLookup = {
+    collections: CollectionsOf;
+    /** The key the hub `hub` gives the venues registry, the empty text when it names none. */
+    venuesKey: (hub: string) => string;
+    venues: Record<Id, Venue>;
+};
+
+/** The lookup of a client: its collections by key, its venue registry and its venues. */
+export function pageLookup(client: LookupSource): PageLookup {
+    return {
+        collections: client.selectors.collectionsOfKey,
+        venuesKey: (hub) => client.selectors.registryKey('venues', hub),
+        venues: client.entities.portfolio()?.entities.venues ?? {}
+    };
+}
+
+/**
+ * The page of the entry `id` of the collection of the key `key` in the hub `root`, as a card's
+ * title opens it (views/boards/collection/Collection.svelte `pageOpener`): the person page for an
+ * entry of the `people` registry, the entry page otherwise, named by the entry's title or by its
+ * id when it has none. Null when that hub holds no collection of the key or the collection no such
+ * entry, the entry being found by its key in its hub, and for an entry with no key, which has no
+ * page.
+ */
+export function entryPage(
+    key: string,
+    root: string,
+    id: string,
+    collections: CollectionsOf
+): EntryPage | null {
+    const home = collections(key).find((one) => rootOf(one) === root);
+    const wanted = bareId({ id, root });
+    const entry = home?.entries.find((one) => bareId(one) === wanted);
+    if (home === undefined || entry === undefined || wanted === '') return null;
+    return pageView(key, entry.id, entry.title === '' ? entry.id : entry.title, home.registry);
+}
+
+/**
+ * The page of the venue of the registry id `id`: its entry of the venues registry of its own hub,
+ * named by the venue's name. Null when no venue has the id or its hub names no venues registry.
+ */
+export function venuePage(id: string, lookup: PageLookup): EntryPage | null {
+    const venue = Object.hasOwn(lookup.venues, id) ? lookup.venues[id] : undefined;
+    if (venue === undefined) return null;
+    const key = lookup.venuesKey(rootOf(venue));
+    return key === '' ? null : pageView(key, venue.id, venue.name === '' ? venue.id : venue.name);
 }
 
 /**
@@ -153,7 +228,7 @@ export function writtenPage(
     collections: readonly Collection[],
     id: string,
     label: string
-): { view: string; state: Record<string, string> } {
+): EntryPage {
     const home = collections.find((one) => rootOf(one) === addressOfId(id).hub);
     return pageView(home === undefined ? '' : bareId(home), id, label, home?.registry);
 }

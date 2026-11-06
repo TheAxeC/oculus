@@ -5,7 +5,9 @@
     // the form and chips, the year the paper appeared, the code status, reproduced, the compute
     // resources and the folder, each with its glyph and a hover title naming its kind) is
     // CardFacts.svelte; WAITING ON, BLOCKED and the cross-links down to the venue are the labelled
-    // lines of CardLinks.svelte.
+    // lines of CardLinks.svelte. The domain tag of the meta row opens the domain's page in the
+    // current pane (card.ts `entryOpener`), drawn in the box PressBox.svelte draws, and is drawn
+    // with no press when the `domains` collection of the domain's own hub does not hold it.
     //
     // A board draws every card closed. The card's title, its Open project page action and Enter on
     // the keyboard cursor open the project page beside the board as the preview tab of the pane it
@@ -35,6 +37,7 @@
     import type { Snippet } from 'svelte';
     import Chip from '$lib/ui/controls/Chip.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
+    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import RecordCard from '../record/RecordCard.svelte';
     import CardBrief from './CardBrief.svelte';
     import { answerWords } from '../../forms/answer-words';
@@ -43,8 +46,9 @@
     import CardLinks from './CardLinks.svelte';
     import CardFacts from './CardFacts.svelte';
     import CardSessions from './CardSessions.svelte';
+    import PressBox from './PressBox.svelte';
     import CommandBar from '../../sessions/CommandBar.svelte';
-    import { deadline, deckOf, openWorkbench } from '../card';
+    import { deadline, deckOf, entryOpener, openWorkbench } from '../card';
     import type { RecordAction } from '../record/record-menu';
     import { placeOf, rootOf } from '$lib/state/shared/page/hubs';
     import { isStale, newestDocDate, type BoardItem } from '$lib/state/boards/board';
@@ -342,7 +346,21 @@
         />
     {/if}
     {#if item.domain}
-        <Tag label={item.domain.label} tone={item.domain.tone} />
+        {@const ondomain = entryOpener(client, 'domains', item.domain.id)}
+        {#if ondomain === null}
+            <Tag label={item.domain.label} tone={item.domain.tone} />
+        {:else}
+            <PressBox>
+                <ToolButton
+                    plain
+                    label={item.domain.label}
+                    title={t('project.card.open_in', t('board.facet_domain'))}
+                    onclick={ondomain}
+                >
+                    <Tag label={item.domain.label} tone={item.domain.tone} />
+                </ToolButton>
+            </PressBox>
+        {/if}
     {/if}
     {#if due}
         <Tag label={due.label} glyph={t('project.card.deadline_glyph')} tone={due.tone} />

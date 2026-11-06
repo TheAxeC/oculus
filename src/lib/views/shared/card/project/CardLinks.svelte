@@ -5,7 +5,8 @@
     // Each kind that has entries is its own labelled line, in the order Waiting on, Blocked,
     // Funding, Pillar, Datasets, Team, Related and Venue, so a card with many tags is read by kind
     // rather than as one wrapping run; a kind longer than SHOWN draws that many and a control that
-    // draws the rest in place.
+    // draws the rest in place. A tag that is a press is a plain ToolButton in the box
+    // PressBox.svelte draws.
     //
     // The waiting kind is the project's `waiting-on:`, each value named by state/boards/waiting.ts
     // as the Focus board's strip and lane cards name it, in red with the waiting glyph on every
@@ -18,6 +19,11 @@
     // first, then those of its `collaborators:`, then those of its `supervisors:`, without the
     // user (the person marked `self: true`), each opening the Person view for its own key.
     //
+    // A Funding, Pillar or Datasets tag opens, in the current pane, the page of the entry its id
+    // names (card.ts `entryOpener`): a funding scheme's, a pillar's or a dataset's, found in the
+    // collection that the id's own hub gives the registry `funding`, `pillars` or `datasets`. A tag
+    // whose entry that collection does not hold is drawn as its tag with no press.
+    //
     // The related kind is the link between two projects, read both ways: the projects a project's
     // `related:` names and those whose `related:` names it, so a paper lists the software that
     // implements it and a software project the papers it names. The card's foot draws them as the
@@ -26,21 +32,26 @@
     // project in a row of `categories:` carrying `archival`, which opens its project tab.
     //
     // The venue kind is the venue the project's `venue_id` names, drawn only when it names one: its
-    // text (its name, its quartile and its JIF, presets.ts `venueText`) as one tag with no press,
-    // which wraps onto further lines rather than being cut, so every part of it can be read. The
-    // tag's glyph is the venue's tier (lines.ts `venueTierMark`): the glyph of its row of
-    // `venue_tiers` in the venue's own hub's words, drawn in the row's colour with the row's label
-    // as its tip, the words staying muted; a venue whose tier gives no glyph draws the venue glyph.
+    // text (its name, its quartile and its JIF, presets.ts `venueText`) as one tag that wraps onto
+    // further lines rather than being cut, so every part of it can be read, and a press on its
+    // words opens the venue's page in the current pane (card.ts `venueOpener`); a venue whose hub
+    // names no venues registry is drawn with no press. The tag's glyph is the venue's tier
+    // (lines.ts `venueTierMark`): the glyph of its row of `venue_tiers` in the venue's own hub's
+    // words, drawn in the row's colour with the row's label as its tip, the words staying muted; a
+    // venue whose tier gives no glyph draws the venue glyph. A glyph with a tip has a tab stop of
+    // its own, so it is drawn beside the pressed words and outside their button, one control to
+    // each tab stop.
 
     import Tag from '$lib/ui/controls/Tag.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import PressBox from './PressBox.svelte';
     import type { BoardTag, LinkedItem } from '$lib/state/boards/board';
     import type { WaitedOn } from '$lib/state/boards/waiting';
     import { t } from '$lib/state/shared/words/text';
-    import { goto, linkView, shownTags } from '../card';
+    import { entryOpener, shownTags, venueOpener } from '../card';
     import { useState } from '$lib/state/client/use';
     import { recordState } from '$lib/state/shared/page/records';
-    import { addressOfId } from '$lib/state/shared/page/hubs';
+    import type { RegistryWord } from '$lib/state/shared/page/hubs';
 
     const client = useState();
     const {
@@ -74,7 +85,8 @@
     /**
      * One line: which kind it is, what it is called, the glyph its entries carry, the hue they are
      * drawn in where they have one, whether an entry's words wrap onto further lines rather than
-     * being cut, and the hue and the tip of the glyph alone, which an entry with no press carries.
+     * being cut, the hue and the tip of the glyph alone, and the registry whose entries its tags
+     * name, whose entry's page a press on one opens.
      */
     type Kind = {
         key: string;
@@ -85,6 +97,7 @@
         wrap?: boolean;
         glyphTone?: string;
         glyphTip?: string;
+        registry?: RegistryWord;
     };
 
     const kinds = $derived<Kind[]>([
@@ -105,19 +118,22 @@
             key: 'funding',
             label: t('board.facet_funding'),
             glyph: t('project.card.funding_glyph'),
-            tags: item.funding
+            tags: item.funding,
+            registry: 'funding'
         },
         {
             key: 'pillars',
             label: t('board.facet_pillar'),
             glyph: t('project.card.pillar_glyph'),
-            tags: item.pillars
+            tags: item.pillars,
+            registry: 'pillars'
         },
         {
             key: 'datasets',
             label: t('board.facet_dataset'),
             glyph: t('project.card.dataset_glyph'),
-            tags: item.datasets
+            tags: item.datasets,
+            registry: 'datasets'
         },
         {
             key: TEAM,
@@ -154,7 +170,10 @@
         opened = { id: item.id, kinds: [...expanded, key] };
     }
 
-    /** What pressing one entry does, and nothing for a kind whose entries are not cross-links. */
+    /**
+     * What pressing one entry does, and nothing for a kind whose entries are not cross-links or an
+     * entry whose page is not found.
+     */
     function press(kind: Kind, tag: BoardTag): (() => void) | null {
         if (kind.key === WAITING) {
             const named = waiting.find((one) => one.id === tag.id)?.kind;
@@ -167,10 +186,13 @@
         if (kind.key === RELATED && 'held' in tag && tag.held === false) return null;
         if (kind.key === RELATED) return () => openView('project', recordState(tag.id, tag.label));
         if (kind.key === TEAM) return () => openView('person', recordState(tag.id, tag.label));
-        const funding = client.selectors.registryKey('funding', addressOfId(item.id).hub);
-        const view = linkView(kind.key, funding);
-        if (view === '') return null;
-        return () => goto(client, view, tag.label);
+        if (kind.key === VENUE) return venueOpener(client, tag.id);
+        return kind.registry === undefined ? null : entryOpener(client, kind.registry, tag.id);
+    }
+
+    /** Whether a kind's glyph carries a tip, which gives it a tab stop of its own. */
+    function marked(kind: Kind): boolean {
+        return kind.glyphTip !== undefined && kind.glyphTip !== '';
     }
 </script>
 
@@ -192,17 +214,46 @@
                                 glyphTone={kind.glyphTone}
                                 glyphTip={kind.glyphTip}
                             />
+                        {:else if marked(kind)}
+                            <span class="marked">
+                                <Tag
+                                    label=""
+                                    glyph={kind.glyph}
+                                    glyphTone={kind.glyphTone}
+                                    glyphTip={kind.glyphTip}
+                                />
+                                <PressBox>
+                                    <ToolButton
+                                        plain
+                                        label={tag.label}
+                                        title={t('project.card.open_in', kind.label)}
+                                        onclick={onpress}
+                                    >
+                                        <Tag
+                                            label={tag.label}
+                                            tone={kind.tone}
+                                            wrap={kind.wrap === true}
+                                        />
+                                    </ToolButton>
+                                </PressBox>
+                            </span>
                         {:else}
-                            <span class="crosslink">
+                            <PressBox>
                                 <ToolButton
                                     plain
                                     label={tag.label}
                                     title={t('project.card.open_in', kind.label)}
                                     onclick={onpress}
                                 >
-                                    <Tag label={tag.label} glyph={kind.glyph} tone={kind.tone} />
+                                    <Tag
+                                        label={tag.label}
+                                        glyph={kind.glyph}
+                                        tone={kind.tone}
+                                        wrap={kind.wrap === true}
+                                        glyphTone={kind.glyphTone}
+                                    />
                                 </ToolButton>
-                            </span>
+                            </PressBox>
                         {/if}
                     {/each}
                     {#if drawn.length < kind.tags.length}
@@ -243,19 +294,13 @@
         color: var(--muted-txt, var(--muted));
     }
 
-    /* The box a cross-link's plain button sits in, which draws its look: no frame until the
-       pointer is over it, then the chip surface. */
-    .crosslink {
+    /* A glyph with a tip of its own beside the pressed words it marks, so the glyph keeps its own
+       tab stop outside the button. The two sit with no gap between them: the 4px a tag sets between
+       its glyph and its words comes from the glyph's own tag, whose words are empty. */
+    .marked {
         display: inline-flex;
         align-items: center;
         min-width: 0;
         max-width: 100%;
-        border: 1px solid transparent;
-        border-radius: var(--radius-sm);
-        text-align: left;
-    }
-
-    .crosslink:hover {
-        background: var(--chip);
     }
 </style>

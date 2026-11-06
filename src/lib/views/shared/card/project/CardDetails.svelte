@@ -6,20 +6,26 @@
     // narrow for two columns of readable width sets the right column under the left. Every prose
     // field is drawn through CodeText, so a backticked word is code and a web address in the other
     // words is a link.
+    //
+    // DISSEMINATED IN lists the entries of the collections flagged `dissemination` that name the
+    // project, each a press that opens that entry's page in the current pane
+    // (state/forms/page-entry.ts `pageView`), drawn in the box PressBox.svelte draws.
 
     import type { Snippet } from 'svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import CodeText from '$lib/ui/display/text/CodeText.svelte';
-    import type { BoardItem } from '$lib/state/boards/board';
+    import type { BoardItem, Dissemination } from '$lib/state/boards/board';
+    import { pageView } from '$lib/state/forms/page-entry';
     import { t } from '$lib/state/shared/words/text';
-    import { goto } from '../card';
     import CardDocs from '../CardDocs.svelte';
+    import PressBox from './PressBox.svelte';
     import { useState } from '$lib/state/client/use';
 
     const client = useState();
 
     const {
+        layout: { openView },
         selectors: { disseminatedFor }
     } = client;
 
@@ -35,6 +41,12 @@
     };
     let { item, onsaid, documents, children }: Props = $props();
     const shows = $derived(disseminatedFor(item.id));
+
+    /** Open the page of one entry the project is disseminated in. */
+    function openShown(entry: Dissemination): void {
+        const page = pageView(entry.collection, entry.id, entry.title);
+        openView(page.view, page.state);
+    }
 </script>
 
 {#snippet field(name: string, value: string)}
@@ -97,16 +109,16 @@
                 <span class="label">{t('project.card.disseminated_in')}</span>
                 <div class="tags">
                     {#each shows as entry (`${entry.collection}:${entry.id}`)}
-                        <span class="crosslink">
+                        <PressBox>
                             <ToolButton
                                 plain
                                 label={entry.title}
                                 title={t('project.card.open_in', entry.collection)}
-                                onclick={() => goto(client, entry.collection, entry.title)}
+                                onclick={() => openShown(entry)}
                             >
                                 <Tag label={entry.title} />
                             </ToolButton>
-                        </span>
+                        </PressBox>
                     {/each}
                 </div>
             </div>
@@ -162,21 +174,5 @@
         align-items: center;
         gap: 6px;
         margin-top: 6px;
-    }
-
-    /* The box a cross-link's plain button sits in, which draws its look: no frame until the
-       pointer is over it, then the chip surface. */
-    .crosslink {
-        display: inline-flex;
-        align-items: center;
-        min-width: 0;
-        max-width: 100%;
-        border: 1px solid transparent;
-        border-radius: var(--radius-sm);
-        text-align: left;
-    }
-
-    .crosslink:hover {
-        background: var(--chip);
     }
 </style>

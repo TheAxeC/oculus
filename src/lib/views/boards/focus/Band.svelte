@@ -6,7 +6,7 @@
     // drawn as a block in its colour under its label.
     //
     // A press on a card's title opens its entry's page, as a card title of its collection does
-    // (views/boards/focus/rows.ts `entryPage`): the person page for an entry of the `people`
+    // (state/forms/page-entry.ts `entryPage`): the person page for an entry of the `people`
     // registry, the entry page otherwise. A card of an entry of a hub but the primary carries the
     // hub's chip after its title, as the Command center's rows do. A web address written in a
     // card's note is a link (ui/display/text/LinkedText.svelte).
@@ -41,7 +41,7 @@
     import { namedTone, toneOf } from '$lib/state/shared/words/tones';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
-    import { entryPage } from './rows';
+    import { entryPage } from '$lib/state/forms/page-entry';
 
     const {
         layout: { openView },

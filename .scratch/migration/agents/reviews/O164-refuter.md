@@ -301,3 +301,7 @@ What I checked in the round's delta to reach that:
 - The builder's side runs (`npx prettier --write`/`--check`, `npx eslint`, `npx svelte-check` over the six files) were not rerun one by one. The `test:quick` rerun holds prettier, eslint and svelte-check, all green.
 
 Reviewer usage: ab7bbaa55783b18d3, claude-opus-5-5, 174838 tokens, 45 tool uses, 10.3 min.
+
+## Closed
+
+- Standards 1 (five copies of the press box): closed in repair round 1. One component, `src/lib/views/shared/card/project/PressBox.svelte` (props `width` and `mono`), holds the one rule, and every plain press of a project card and the Focus lane card's venue are drawn in it; the review over round 1 reproduced the closure (`grep -rn 'border: 1px solid transparent'` over the card and lane folders prints only `PressBox.svelte:38`) and found nothing.

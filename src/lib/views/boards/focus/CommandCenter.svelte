@@ -36,15 +36,8 @@
     import { attention, refresh } from '$lib/state/feeds/feeds';
     import { t } from '$lib/state/shared/words/text';
     import { instanceMap, recordField } from '$lib/state/workbench/layout';
-    import {
-        act,
-        fileBlock,
-        openLine,
-        pageLookup,
-        rowMaker,
-        venuePage,
-        type SectionProps
-    } from './rows';
+    import { act, fileBlock, openLine, rowMaker, type SectionProps } from './rows';
+    import { pageLookup, venuePage } from '$lib/state/forms/page-entry';
     import CommandCenterView from './CommandCenterView.svelte';
     import { useState } from '$lib/state/client/use';
     import { vocabOf } from '$lib/state/shared/words/tones';

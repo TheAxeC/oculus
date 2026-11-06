@@ -1,17 +1,17 @@
-In flight (2 of 6 slots in use):
+In flight (1 of 6 slots in use):
 - O161 (cards made cheaper, every card kept in the page): the round-0 ruling to 713 (a) sent, its builder resumed and building.
-- O164 (a card's links open their page): the review over repair round 1 found nothing; /land next.
 
 Queued, in order (4):
 - O165 (the guides redesigned): /spec now; O162 and O158 have landed.
 - O151 (a deck for every research project): /spec again now; O163 has landed.
 - O159 (one folder search per hub): /spec again now; O163 has landed.
-- O166 (the record pages made one design): /spec after O164 lands.
+- O166 (the record pages made one design): /spec now; O164 has landed.
 
 Owed looks: none.
 
 Landed, newest first:
-- O163 (the hub's portfolio deck written again), 2026-11-06, the commit after 94cb4f3b6; its hub files wait on Axel's word for their commit.
+- O164 (a card's links open their page), 2026-11-06, the commit after 6367eec0f.
+- O163 (the hub's portfolio deck written again), 2026-11-06, 6367eec0f; its hub files wait on Axel's word for their commit.
 - O158 (the Project facts strip redesigned), 2026-11-06, ca24a1132.
 - O162 (the arrow-keys hint removed), 2026-11-06, f3ebd1fa5.
 - O160 (Live HPC shows its refresh running), 2026-11-06, eae89abbe.

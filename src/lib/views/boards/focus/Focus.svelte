@@ -62,7 +62,7 @@
     import Lanes from './lanes/Lanes.svelte';
     import QuickAdd from './QuickAdd.svelte';
     import Tasks from './Tasks.svelte';
-    import { entryPage } from './rows';
+    import { entryPage } from '$lib/state/forms/page-entry';
     import { AWAITING_VIEW } from '$lib/state/boards/board';
     import { cardCursor, instanceMap } from '$lib/state/workbench/layout/instance';
     import { recordState } from '$lib/state/shared/page/records';

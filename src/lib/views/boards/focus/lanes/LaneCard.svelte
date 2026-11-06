@@ -13,8 +13,12 @@
     // chips each in its word's hue, tones.ts `statusMarkTone`, a chip whose word carries `blocked`
     // in red), then the facts (the year the paper appeared, at a stage that carries both `terminal`
     // and `public`, with "Year: 2025" in its tip, the user's role, the tier, the venue by its short
-    // name with its whole name in the tip). Every tag is drawn: the tags a line has no room for
-    // wrap onto a further line under it, and the name stays alone on its own line above them.
+    // name with its whole name in the tip). The venue is a press that opens the venue's page in the
+    // current pane, the press the lanes hand the card as `onvenue`, drawn in the box
+    // views/shared/card/project/PressBox.svelte draws, as a project card's presses are, and its tip
+    // is its button's own; a venue whose page is not found is drawn as the other facts are, with no
+    // press. Every tag is drawn: the tags a line has no room for wrap onto a further line under it,
+    // and the name stays alone on its own line above them.
     //
     // A card is its own markup rather than ui/frame/Card.svelte: it is a drag handle whose first
     // line is one row of the tree's height, which is a different thing from the titled box with a
@@ -33,6 +37,7 @@
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import Tooltip from '$lib/ui/menu/Tooltip.svelte';
     import RootChip from '$lib/views/shared/card/RootChip.svelte';
+    import PressBox from '$lib/views/shared/card/project/PressBox.svelte';
     import { wordGlyph } from '$lib/views/shared/card/card';
     import LinkedText from '$lib/ui/display/text/LinkedText.svelte';
     import Menu from '$lib/ui/menu/Menu.svelte';
@@ -72,6 +77,8 @@
         items: MenuItem[];
         onpick: (id: string) => void;
         onopen: () => void;
+        /** Open the page of the project's venue, or null when that page is not found. */
+        onvenue: (() => void) | null;
         ondragstart: (event: DragEvent) => void;
         ondragend: () => void;
     };
@@ -87,6 +94,7 @@
         items,
         onpick,
         onopen,
+        onvenue,
         ondragstart,
         ondragend
     }: Props = $props();
@@ -95,9 +103,17 @@
     const CARD_NEXT = 130;
 
     /**
-     * One tag of the card: its words, its glyph, its tone, the words of its tip, whether it
-     * is drawn as a chip (a form or a chip) or as a tag (the stage and the facts), and whether its
-     * words are cut past a bounded width (the venue, whose whole name is in its tip).
+     * How wide a venue tag is drawn before its words are cut with an ellipsis, its whole name in
+     * its tip, so a long venue name shortens rather than taking a line of its own; a pressed venue
+     * and one with no press alike.
+     */
+    const CUT_WIDTH = '14em';
+
+    /**
+     * One tag of the card: its words, its glyph, its tone, the words of its tip, whether it is
+     * drawn as a chip (a form or a chip) or as a tag (the stage and the facts), whether its words
+     * are cut past a bounded width (the venue, whose whole name is in its tip), and what a press on
+     * it does, null for a tag that has no press.
      */
     type Tagged = {
         key: string;
@@ -107,6 +123,7 @@
         tip: string;
         chip: boolean;
         cut: boolean;
+        press: (() => void) | null;
     };
 
     /** The glyph of each kind of fact. */
@@ -136,7 +153,16 @@
                 const tip = t('project.card.stage_tip', words);
                 const tone = statusMarkTone(word, hub);
                 const key = `mark:${word}`;
-                return { key, label: words, glyph, tone, tip, chip: false, cut: false };
+                return {
+                    key,
+                    label: words,
+                    glyph,
+                    tone,
+                    tip,
+                    chip: false,
+                    cut: false,
+                    press: null
+                };
             }
             const form = word === project.form;
             const blocked = !form && isBlocked({ chips: [word] }, vocabOf(hub));
@@ -147,7 +173,8 @@
                 tone: blocked ? 'red' : statusMarkTone(word, hub),
                 tip: form ? t('project.card.form_tip', words) : t('project.card.chip_tip', words),
                 chip: true,
-                cut: false
+                cut: false,
+                press: null
             };
         }),
         ...facts.map((fact): Tagged => ({
@@ -157,7 +184,8 @@
             tone: undefined,
             tip: factTip(fact),
             chip: false,
-            cut: fact.kind === 'venue'
+            cut: fact.kind === 'venue',
+            press: fact.kind === 'venue' ? onvenue : null
         }))
     ]);
 </script>
@@ -189,17 +217,25 @@
     {#if tags.length > 0}
         <div class="tags">
             {#each tags as one (one.key)}
-                <Tooltip text={one.tip}>
-                    {#if one.chip}
-                        <Chip label={one.label} glyph={one.glyph} tone={one.tone} />
-                    {:else if one.cut}
-                        <span class="cut">
+                {#if one.press !== null}
+                    <PressBox width={one.cut ? CUT_WIDTH : undefined}>
+                        <ToolButton plain cut label={one.label} title={one.tip} onclick={one.press}>
                             <Tag label={one.label} glyph={one.glyph} tone={one.tone} />
-                        </span>
-                    {:else}
-                        <Tag label={one.label} glyph={one.glyph} tone={one.tone} />
-                    {/if}
-                </Tooltip>
+                        </ToolButton>
+                    </PressBox>
+                {:else}
+                    <Tooltip text={one.tip}>
+                        {#if one.chip}
+                            <Chip label={one.label} glyph={one.glyph} tone={one.tone} />
+                        {:else if one.cut}
+                            <span class="cut" style:max-width={CUT_WIDTH}>
+                                <Tag label={one.label} glyph={one.glyph} tone={one.tone} />
+                            </span>
+                        {:else}
+                            <Tag label={one.label} glyph={one.glyph} tone={one.tone} />
+                        {/if}
+                    </Tooltip>
+                {/if}
             {/each}
         </div>
     {/if}
@@ -284,12 +320,10 @@
         padding-bottom: 4px;
     }
 
-    /* A venue tag is cut with an ellipsis past this width, its whole name in its tip, so a long
-       venue name shortens rather than taking a line of its own. */
+    /* The box of a venue tag with no press, cut at CUT_WIDTH, which its style sets. */
     .cut {
         display: inline-flex;
         min-width: 0;
-        max-width: 14em;
     }
 
     /* The move menu is drawn as the card around it says, and keeps the keyboard while it is not

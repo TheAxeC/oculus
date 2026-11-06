@@ -36,19 +36,7 @@ dispatch:           # steps in flight, up to six (Z632)
   builder_usage: first run, handed back before any change (198509 tokens, 52 tool uses, 11.4 min)
   round: 0 (cases ruling agents/briefs/O161-cases.md, ruling 713, sent 2026-11-06)
   landing: not-started
-- step: O164
-  brief_check: .scratch/migration/agents/reviews/O164-brief-check.md (a7883a6fa8f16f8f4, claude-opus-5-5, 187199 tokens, 71 tool uses, 10.1 min)
-  base: 75bf4dd10
-  worktree: .agents/worktrees/migration-O164
-  executor: agent
-  worker: claude:opus
-  session_id: a133caba1cd51dad2 (claude-opus-5-5)
-  launched: 2026-11-06
-  report: .scratch/migration/agents/reviews/O164-report.md
-  builder_usage: first run 283925 tokens, 150 tool uses, 30.7 min; round 1 330150 tokens, 48 tool uses, 8.7 min
-  reviewer_report: .scratch/migration/agents/reviews/O164-refuter.md (a30a3f28ea4eb8488, claude-opus-5-5, 241783 tokens, 54 tool uses, 12.4 min); over round 1: ab7bbaa55783b18d3, claude-opus-5-5, 174838 tokens, 45 tool uses, 10.3 min
-  round: 1 (agents/briefs/O164-round-1.md, snapshot .agents/worktrees/migration-O164-round-1, 18 paths)
-  landing: not-started
+  shared_paths: src/lib/state/forms/page-entry.ts with O164 of this plan (landed in the commit after 6367eec0f); O164 added `EntryPage`, `pageLookup` and `entryPage` after `pageView`, O161 changes `feedPage` and `pageOf`, different functions, merged at O161's landing
 ```
 
 ## The standing demands (from Axel, in force)
@@ -857,6 +845,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-11-06 (O164 landed). O164, a card's links open their page, landed (booking in `plan.md`, `agents/reviews/O164-landing.md`), every press seen opening its entry's page on the scratch server. Open items: none. In flight (1 of 6): O161 (building on the round-0 cases ruling). Queued: O165 (/spec now), O151 and O159 (/spec again now), O166 (/spec now: O164 has landed).
 - 2026-11-06 (O163 landed). O163, the hub's portfolio deck written again, landed (booking in `plan.md`, `agents/reviews/O163-landing.md`): the demo fixture's comment line on main, the hub's `deck/` and `README.md:60` changed on disk in the research hub, their commit waiting on Axel's word. O161's round-0 cases ruling to 713 (a) sent and its builder resumed after a network drop. O164's review over round 1 found nothing; /land O164 next. Open items: none. In flight (2 of 6): O161 (building), O164 (/land next). Queued: O165 (/spec now), O151 and O159 (/spec again now: O163 has landed), O166 (after O164).
 - 2026-11-06 (O158 landed). O158, the Project facts strip redesigned, landed (booking in `plan.md`, `agents/reviews/O158-landing.md`) on Axel's "I like O158", with the rule fix and the value cap removed. Axel ruled 713 (a), cheaper cards; O161's brief is rewritten to it next and its builder resumed. O164's review over round 1 runs (ab7bbaa55783b18d3). Open items: none. In flight (3 of 6): O163 (/land next), O164 (review over round 1), O161 (brief rewrite for 713 (a)). Queued: O151 (after O163), O159 (after O163), O165 (/spec now: O162 and O158 have landed), O166 (after O164).
 - 2026-11-06 (O158's look defects fixed; 713's options rewritten; O163 reviewed). O158's two defects are fixed in the gate in `src/lib/views/academic/present/parts/project/Facts.svelte`: the rule above the strip is drawn in a mix of the muted text colour and `--line` (rgb 100,100,100 under Dark Modern, where `--line` alone was #2b2b2b), and the 14em cap on a value is removed, so a value is cut only when its fact is wider than the strip's whole line; the look on 8797 over all 25 project decks: every fact drawn, none outside the strip, none cut, each deck's text factor equal to main's; screenshots in the scratchpad's `O158look/`; the gate run follows O164's builder's tests. Axel ruled Cmd+F unchanged, not negotiable, for 713; Lit Watch measured on 8797 (6.24 s to paint, one 5.90 s main-thread task, 50 ms of paint); 713's options rewritten from that. O163's review (`agents/reviews/O163-refuter.md`) found Proof 1 (the report's red for `hub-portfolio.test.ts` does not reproduce: 16 passed alone) and Behaviour 1 (C5 and C6 give no before in the look section), both closed at landing. Open items: 713. In flight (4 of 6): O158 (gate run, then its screenshots to Axel and /land), O163 (/land next), O164 (round 1), O161 (waits on 713).

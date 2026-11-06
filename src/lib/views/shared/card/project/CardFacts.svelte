@@ -13,10 +13,18 @@
     // `folder:`, and a press opens the folder as the card's Folder action does. A project with no
     // folder draws none.
     //
-    // Each fact is wrapped in ui/menu/Tooltip.svelte with the words of its kind ("Focus lane:
-    // Review", "Code: deposited"), which the pointer's rest shows. The wrappers take no tab stop,
-    // so a card gains no stops before its controls; a reader of the page reads each fact's own
-    // words.
+    // A compute resource is a press that opens, in the current pane, the page of its entry of the
+    // `resources` collection of the resource's own hub (card.ts `entryOpener`), with one tip, the
+    // words of its kind and its name (`project.card.compute_tip`), which the button draws itself; a
+    // resource whose entry is not found there is drawn as the other facts are, with no press. The
+    // folder and the compute resources are the presses of the row, each one tab stop and each in
+    // the box PressBox.svelte draws, the folder's words in the monospace face, the one fact of the
+    // card that names a place on disk.
+    //
+    // Every other fact is wrapped in ui/menu/Tooltip.svelte with the words of its kind ("Focus
+    // lane: Review", "Code: deposited"), which the pointer's rest shows. Those wrappers take no tab
+    // stop, so a card gains no stops before its controls for them; a reader of the page reads each
+    // fact's own words.
     //
     // A glyph named by a hub's words is drawn only where the glyph vocabulary holds it, through
     // card.ts `laneGlyph`, `wordGlyph` and `computeGlyph`, which give a stand-in otherwise, so
@@ -29,7 +37,9 @@
     import Tag from '$lib/ui/controls/Tag.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import Tooltip from '$lib/ui/menu/Tooltip.svelte';
-    import { computeGlyph, laneGlyph, wordGlyph } from '../card';
+    import { computeGlyph, entryOpener, laneGlyph, wordGlyph } from '../card';
+    import { useState } from '$lib/state/client/use';
+    import PressBox from './PressBox.svelte';
     import type { BoardItem } from '$lib/state/boards/board';
     import { cardYear, isBlocked, projectLane } from '$lib/state/boards/focus';
     import { rootOf } from '$lib/state/shared/page/hubs';
@@ -41,6 +51,8 @@
         vocabOf
     } from '$lib/state/shared/words/tones';
     import { t } from '$lib/state/shared/words/text';
+
+    const client = useState();
 
     type Props = {
         /** The joined board item whose facts are drawn. */
@@ -119,33 +131,28 @@
     </Tooltip>
 {/if}
 {#each item.compute as resource (resource.id)}
-    <Tooltip text={t('project.card.compute_tip', resource.label)}>
-        <Tag label={resource.label} glyph={computeGlyph(resource.kind)} />
-    </Tooltip>
+    {@const onpress = entryOpener(client, 'resources', resource.id)}
+    {#if onpress === null}
+        <Tooltip text={t('project.card.compute_tip', resource.label)}>
+            <Tag label={resource.label} glyph={computeGlyph(resource.kind)} />
+        </Tooltip>
+    {:else}
+        <PressBox>
+            <ToolButton
+                plain
+                label={resource.label}
+                title={t('project.card.compute_tip', resource.label)}
+                onclick={onpress}
+            >
+                <Tag label={resource.label} glyph={computeGlyph(resource.kind)} />
+            </ToolButton>
+        </PressBox>
+    {/if}
 {/each}
 {#if folder !== null}
-    <span class="folder">
+    <PressBox mono>
         <ToolButton plain label={folder.name} title={folder.path} onclick={onfolder}>
             <Tag label={folder.name} glyph={t('project.card.folder_glyph')} />
         </ToolButton>
-    </span>
+    </PressBox>
 {/if}
-
-<style>
-    /* The folder's box, which draws its look: no frame until the pointer is over it, then the chip
-       surface, as a cross-link of the card does. Its name is in the monospace face, the one line
-       of the card that names a place on disk. */
-    .folder {
-        display: inline-flex;
-        align-items: center;
-        min-width: 0;
-        max-width: 100%;
-        border: 1px solid transparent;
-        border-radius: var(--radius-sm);
-        font-family: var(--font-mono);
-    }
-
-    .folder:hover {
-        background: var(--chip);
-    }
-</style>

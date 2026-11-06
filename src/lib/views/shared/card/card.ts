@@ -1,6 +1,7 @@
 // Layer 3, view helpers. Project-card path, label and deadline calculations, the glyph each fact
-// of the card's top row is drawn with, what a session press on the card opens, and the shape of a
-// card's control, live here because pure display rules change independently of Svelte markup.
+// of the card's top row is drawn with, what a session press on the card opens, the page a press on
+// a tag or a fact that names an entry opens, and the shape of a card's control, live here because
+// pure display rules change independently of Svelte markup.
 
 import { DEADLINE_SOON, daysUntil, type BoardItem, type BoardTag } from '$lib/state/boards/board';
 import { pausesCountdown } from '$lib/state/boards/focus';
@@ -12,10 +13,11 @@ import {
     type Instance,
     type Layout
 } from '$lib/state/workbench/layout';
-import { placeOf } from '$lib/state/shared/page/hubs';
+import { addressOfId, placeOf, type RegistryWord } from '$lib/state/shared/page/hubs';
 import { fileBytesUrl } from '$lib/state/sources/fs-transport';
 import { hasGlyph, t } from '$lib/state/shared/words/text';
 import { resourceGlyph } from '$lib/state/forms/schema';
+import { entryPage, pageLookup, venuePage, type EntryPage } from '$lib/state/forms/page-entry';
 import { openPage } from '../explorer/opening';
 
 export type Translate = (key: string, ...args: (string | number)[]) => string;
@@ -80,16 +82,42 @@ export function shownTags(tags: BoardTag[], expanded: boolean): BoardTag[] {
     return expanded ? tags : tags.slice(0, SHOWN);
 }
 
+/** What a press on one of a card's tags does, or null for a tag that has no press. */
+type Opener = (() => void) | null;
+
+/** The press that opens `page` in the current pane, and none where there is no page to open. */
+function opener(client: Pick<ClientState, 'layout'>, page: EntryPage | null): Opener {
+    return page === null ? null : () => client.layout.openView(page.view, page.state);
+}
+
 /**
- * The view one tag kind's entries open, and the empty string for a kind that is not a cross-link.
- * A tag of the team names a person rather than a record of a collection, so it opens the Person
- * view for that key; the funding tag opens `funding`, the view of the funding registry under the
- * key the project's hub gives it.
+ * What a press on a card's tag or fact that names the entry of the internal id `id` of the registry
+ * `registry` does (a funding scheme, a pillar, a dataset, a domain, a compute resource): it opens
+ * that entry's page (state/forms/page-entry.ts `entryPage`) in the current pane. The entry is
+ * looked up in the collection that the id's own hub gives the registry, which is not always the
+ * project's hub, since a project of one hub may name an entry another holds. Null when that hub has
+ * no collection for the registry or the collection no such entry, and the tag then has no press.
  */
-export function linkView(kind: string, funding: string): string {
-    if (kind === 'funding') return funding;
-    if (kind === 'team') return 'person';
-    return '';
+export function entryOpener(
+    client: Pick<ClientState, 'layout' | 'selectors'>,
+    registry: RegistryWord,
+    id: string
+): Opener {
+    const { hub } = addressOfId(id);
+    const key = client.selectors.registryKey(registry, hub);
+    return opener(client, entryPage(key, hub, id, client.selectors.collectionsOfKey));
+}
+
+/**
+ * What a press on a card's venue does: it opens the page of the venue of the registry id `id`
+ * (state/forms/page-entry.ts `venuePage`) in the current pane. Null when no venue has the id or its
+ * hub names no venues registry, and the venue then has no press.
+ */
+export function venueOpener(
+    client: Pick<ClientState, 'layout' | 'selectors' | 'entities'>,
+    id: string
+): Opener {
+    return opener(client, venuePage(id, pageLookup(client)));
 }
 
 /** The last segment of a path. */
@@ -112,15 +140,6 @@ export function below(folder: string, path: string): string {
 /** The encoded api/file address for a project-relative file. */
 export function urlOf(folder: string, path: string, root: string): string {
     return fileBytesUrl(root, below(folder, path));
-}
-
-/**
- * Open a registered collection or registry view at one label, and nothing when none is registered.
- */
-export function goto(client: ClientState, view: string, label: string): void {
-    if (client.registry.viewFor(view) !== undefined) {
-        client.layout.openView(view, { label });
-    }
 }
 
 /**
