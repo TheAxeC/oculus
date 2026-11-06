@@ -1,6 +1,6 @@
 In flight (2 of 6 slots in use):
-- O154 (the project board's filter on the Present view), building: base a6e95bf72, builder agent running.
-- O156 (one deck reader), building beside O154 (no shared path): base a2385d834, builder agent running.
+- O154 (the project board's filter on the Present view), repair round 1: base a6e95bf72, reviewed (`agents/reviews/O154-refuter.md`, one finding), round 1 sent to the builder.
+- O156 (one deck reader), under review beside O154 (no shared path): base a2385d834, built (report `agents/reviews/O156-report.md`), reviewer agent running.
 
 Queued, in order:
 - O155 (the deck order, `deck_order` in `vocab.yml`).
