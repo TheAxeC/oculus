@@ -3,8 +3,11 @@
     // the Present view is on. `?root=&path=` name the deck, which the deck route answers as it does
     // for the print route, and the slide is drawn by the same components in the deck's own frame
     // (`deck.frame`, or the setting defaults.frame), scaled to the window, with no toolbar, rail,
-    // counter or key hint. The page measures nothing: the Present view's own stages say which
-    // slides are too tall.
+    // counter or key hint, and at the app's text size (the `text_size` option, as the shell draws
+    // it), so the slide lays itself out as the Present view lays it out. The page installs the
+    // config once, when it opens (+page.ts), and has no socket, so it draws the text size and the
+    // theme the config held then; a change of either reaches it when the window opens again. The
+    // page measures nothing: the Present view's own stages say which slides are too tall.
     //
     // The page and the presenter screen keep one slide over a BroadcastChannel named for the deck
     // (state/life/present.ts): the page draws the key it is sent, says when it opened, and sends a
@@ -46,6 +49,7 @@
         type DeckRef
     } from '$lib/state/life/present';
     import { readDeck } from '$lib/state/life/present.svelte';
+    import { configuredLook } from '$lib/state/shared/words/appearance';
     import { desktopOf } from '$lib/state/shared/stores/desktop';
     import { t } from '$lib/state/shared/words/text';
     import { createTipIds, provideTipIds } from '$lib/ui/menu/tip-ids';
@@ -203,6 +207,13 @@
         if (window.getSelection()?.isCollapsed === false) return;
         go(stepKey(deck.slides, key, 1));
     }
+
+    $effect(() => {
+        // Read inside the effect, the text size is drawn again whenever the page's config is
+        // installed anew.
+        const scale = String(configuredLook().textSize);
+        document.documentElement.style.setProperty('--text-scale', scale);
+    });
 
     onMount(() => {
         void drawConfiguredTheme(document, desktopOf(window, '') !== undefined, data.appThemes);

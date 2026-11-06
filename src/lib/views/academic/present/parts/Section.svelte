@@ -1,6 +1,7 @@
 <script lang="ts">
     // Layer 3, Present partial. A section slide: a heading and a lede, the numbered cards, the
-    // legend of the group the slide names and the foot line.
+    // legend of the group the slide names and the foot line. The lede's box is the slide's room
+    // (`data-room`), so an image in it is held under the heading.
 
     import Legend from './Legend.svelte';
     import Words from './Words.svelte';
@@ -26,7 +27,7 @@
         <h3 class="headline"><Words text={heading} /></h3>
     {/if}
     {#if lede !== ''}
-        <div class="lede"><Words text={lede} block /></div>
+        <div class="lede" data-room><Words text={lede} block /></div>
     {/if}
     {#if cards.length > 0}
         <div class="cards">

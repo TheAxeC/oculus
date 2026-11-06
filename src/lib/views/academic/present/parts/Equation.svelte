@@ -1,36 +1,28 @@
 <script lang="ts">
-    // Layer 3, Present partial. The governing equation at the top of a project slide, and the
-    // equation of an equation slide, in the card the deck gives it. A slide writes it as LaTeX,
-    // which is typeset in the page; a formula that does not parse is drawn as its own source in the
-    // error colour, so one mistyped line costs its own slide. A formula wider than the card is
-    // drawn smaller until it fits (equationScale).
+    // Layer 3, Present partial. The governing equation of a project slide, and the equation of an
+    // equation slide, in the card the deck gives it. A slide writes it as LaTeX, which is typeset
+    // in the page; a formula that does not parse is drawn as its own source in the error colour, so
+    // one mistyped line costs its own slide. A formula wider than the card is drawn smaller until
+    // it fits (screen/formula.ts), inside the box the slide's layout gives the text and at the size
+    // of the slide's type scale: the card fits it when it is drawn and when its width changes, and
+    // the slide's layout (Slide.svelte) fits it at each size it tries.
 
     import type { Attachment } from 'svelte/attachments';
     import { tex } from '../markup';
-    import { equationScale, type PresentSlide } from '$lib/state/life/present';
+    import { fitFormula } from '../screen/formula';
+    import type { PresentSlide } from '$lib/state/life/present';
 
     type Props = { slide: Pick<PresentSlide, 'equation'> };
 
     let { slide }: Props = $props();
 
     /**
-     * Draw the typeset formula at the scale that fits the card's content width, measured at its own
-     * size first. It runs again when the slide's formula changes and when the card's width does,
-     * after the browser has laid the new formula out.
+     * Fit the formula to the card. It runs again when the slide's formula changes and when the
+     * card's width does, after the browser has laid the new formula out.
      */
     function fitted(equation: string | undefined): Attachment<HTMLElement> {
         return (card) => {
-            const apply = (): void => {
-                const math = card.querySelector<HTMLElement>('.katex-display');
-                if (math === null) return;
-                math.style.fontSize = '';
-                const style = getComputedStyle(card);
-                const room =
-                    card.clientWidth -
-                    parseFloat(style.paddingLeft) -
-                    parseFloat(style.paddingRight);
-                math.style.fontSize = `${equationScale(math.scrollWidth, room)}em`;
-            };
+            const apply = (): void => fitFormula(card);
             const frame = equation === undefined ? 0 : requestAnimationFrame(apply);
             const watcher = new ResizeObserver(apply);
             watcher.observe(card);
@@ -42,7 +34,7 @@
     }
 </script>
 
-<div class="eqcard" {@attach fitted(slide.equation)}>
+<div class="eqcard" data-formula {@attach fitted(slide.equation)}>
     {#if slide.equation !== undefined}
         <!-- eslint-disable-next-line svelte/no-at-html-tags -- tex() is KaTeX's own markup over escaped source, and the sanitiser would drop the boxes it positions -->
         {@html tex(slide.equation, true)}

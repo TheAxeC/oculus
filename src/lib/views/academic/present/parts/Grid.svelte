@@ -4,7 +4,8 @@
     // slide, which is the same card alone. A card is the project's name with its domain's dot, its
     // maturity (the label of the project's stage) and one line of what the idea is; the dot's hue
     // and the maturity's words come from config/catalogs/vocab.yml, the maturity's from the words
-    // of the deck's hub.
+    // of the deck's hub. The lede's box is the slide's room (`data-room`), so an image in it is
+    // held under the heading.
 
     import Dot from './Dot.svelte';
     import Legend from './Legend.svelte';
@@ -33,7 +34,7 @@
         <h3 class="headline"><Words text={heading} /></h3>
     {/if}
     {#if lede !== ''}
-        <div class="lede"><Words text={lede} block /></div>
+        <div class="lede" data-room><Words text={lede} block /></div>
     {/if}
     <div class="grid">
         {#each cards as card, at (`${at}:${card.name}`)}

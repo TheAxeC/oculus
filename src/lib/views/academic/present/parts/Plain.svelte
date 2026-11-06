@@ -3,17 +3,33 @@
     // columns, a display equation and a code block. Each is a heading over its Markdown, drawn
     // through Words so the sanitiser and the typesetter see every field; the equation is drawn in
     // the card of Equation. Code is a fenced block, so the Markdown renderer highlights it.
+    //
+    // An image slide's image is its one figure (index 0): it is drawn in the room under the
+    // heading at the box the slide's layout gives it (`place`, Slide.svelte and
+    // screen/slide-layout.ts), the whole room for its proportions and centred, its padding and
+    // border inside the box. It is not drawn until its image has loaded, and an image that fails to
+    // load is drawn as the missing-figure words, as an image the folder lacks is.
+    //
+    // Every other kind marks the box of its Markdown as its room (`data-room`), so an image in the
+    // Markdown is held to the room under the slide's heading: under the heading drawn above the
+    // box, or under the heading the Markdown opens with (Slide.svelte, `--slide-room-height`).
 
     import Equation from './Equation.svelte';
     import Words from './Words.svelte';
     import { t } from '$lib/state/shared/words/text';
     import { DECK_GAP, type DeckSlide } from '$lib/state/life/present';
+    import type { Box, SlidePlace } from '../screen/slide-layout';
 
     type Props = {
         row: Extract<DeckSlide, { kind: 'text' | 'image' | 'columns' | 'equation' | 'code' }>;
+        /** Where the slide's layout puts an image slide's image. */
+        place: SlidePlace;
     };
 
-    let { row }: Props = $props();
+    let { row, place }: Props = $props();
+
+    /** The image's box in the room; none while its image has not loaded. */
+    const box: Box | undefined = $derived(place.boxes[0]);
 </script>
 
 <section class="slide" data-slide-kind={row.kind}>
@@ -21,25 +37,43 @@
         <h3 class="headline"><Words text={row.heading} /></h3>
     {/if}
     {#if row.kind === 'text'}
-        <div class="body"><Words text={row.body} block /></div>
+        <div class="body" data-room><Words text={row.body} block /></div>
     {:else if row.kind === 'image'}
-        {#if row.src === DECK_GAP}
+        {#if row.src === DECK_GAP || place.failed.includes(0)}
             <p class="gap">{t('present.figure_missing', row.alt)}</p>
         {:else if row.src !== ''}
-            <img class="figure" src={row.src} alt={row.alt} />
+            <div
+                class="room"
+                data-room
+                style:min-height={place.layout === null
+                    ? undefined
+                    : `${Math.max(place.layout.height, place.depth)}px`}
+            >
+                <img
+                    class="figure"
+                    class:waiting={box === undefined}
+                    data-figure="0"
+                    src={row.src}
+                    alt={row.alt}
+                    style:left={box === undefined ? undefined : `${box.x}px`}
+                    style:top={box === undefined ? undefined : `${box.y}px`}
+                    style:width={box === undefined ? undefined : `${box.width}px`}
+                    style:height={box === undefined ? undefined : `${box.height}px`}
+                />
+            </div>
         {/if}
     {:else if row.kind === 'columns'}
-        <div class="columns">
+        <div class="columns" data-room>
             <div><Words text={row.left} block /></div>
             <div><Words text={row.right} block /></div>
         </div>
     {:else if row.kind === 'equation'}
         <Equation slide={{ equation: row.equation }} />
         {#if row.rest !== ''}
-            <div class="body"><Words text={row.rest} block /></div>
+            <div class="body" data-room><Words text={row.rest} block /></div>
         {/if}
     {:else}
-        <div class="body"><Words text={row.code} block /></div>
+        <div class="body" data-room><Words text={row.code} block /></div>
     {/if}
 </section>
 
@@ -55,15 +89,25 @@
         line-height: 1.45;
     }
 
+    .room {
+        position: relative;
+    }
+
+    /* The image stands at its box in the room, its padding and border inside the box. */
     .figure {
+        position: absolute;
         display: block;
-        max-width: 100%;
-        max-height: 480px;
-        margin: 8px auto;
+        box-sizing: border-box;
+        object-fit: contain;
         padding: 6px;
         border: 1px solid var(--line);
         border-radius: var(--radius);
         background: var(--card);
+    }
+
+    /* An image that has not loaded takes no room; it loads all the same. */
+    .waiting {
+        display: none;
     }
 
     .gap {

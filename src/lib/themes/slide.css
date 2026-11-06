@@ -1,16 +1,27 @@
 /* The frame a slide is laid out in, at its deck's frame: the slide type scale in px, which follows
    the text size, the reading width, the padding and the surface. Where the frame is drawn
-   (screen/Stage.svelte, the print route's page) sizes it to the deck's frame. The reading column
-   is at most 1040 px wide whatever the frame, since the type sizes are in px; it takes the
-   frame's inner width, less the padding and the border, where that is narrower, 894 px in a 1024
-   frame with its border. The Present pane scales the frame to its box and the print route prints
-   it at scale 1, both through this one class. */
+   (screen/Stage.svelte, the print route's page) sizes it to the deck's frame; a frame drawn with
+   no visible border keeps its border transparent, so every surface gives the slide the same
+   inner box, 1150 by 590 px in a 1280 by 720 frame. The reading column is at most 1040 px wide
+   whatever the frame, since the type sizes are in px; it takes the frame's inner width, less the
+   padding and the border, where that is narrower, 894 px in a 1024 frame. The Present pane scales
+   the frame to its box and the print route prints it at scale 1, both through this one class.
+
+   A slide's content is drawn at one factor on the type scale (`--slide-fit`, between 0.75 and
+   1.25, which Slide.svelte finds by measuring the drawn slide and sets on its `.slide-fit` box):
+   the title, the headings, the body and the small sizes move together, and so do the app's type
+   steps the slide's chips and table are set in. The frame itself, the slide's foot under the
+   content (the strip of a project's facts) and the key hint keep the factor 1. The design sizes
+   are the sizes at the factor 1, each times the app's text size (`--text-scale`). */
 .slide-frame {
-    --slide-fs-title: calc(56px * var(--text-scale, 1));
-    --slide-fs-h: calc(36px * var(--text-scale, 1));
-    --slide-fs-sub: calc(28px * var(--text-scale, 1));
-    --slide-fs-body: calc(24px * var(--text-scale, 1));
-    --slide-fs-small: calc(18px * var(--text-scale, 1));
+    --slide-design-title: 56px;
+    --slide-design-h: 36px;
+    --slide-design-sub: 28px;
+    --slide-design-body: 24px;
+    --slide-design-small: 18px;
+    --slide-ui-xs: var(--fs-xs);
+    --slide-ui-sm: var(--fs-sm);
+    --slide-ui-md: var(--fs-md);
     --slide-reading: 1040px;
     box-sizing: border-box;
     padding: 64px;
@@ -18,7 +29,25 @@
     border-radius: var(--radius);
     background: var(--card);
     color: var(--ink-txt, var(--ink));
+}
+
+.slide-frame,
+.slide-fit {
+    --slide-fs-title: calc(var(--slide-design-title) * var(--text-scale, 1) * var(--slide-fit, 1));
+    --slide-fs-h: calc(var(--slide-design-h) * var(--text-scale, 1) * var(--slide-fit, 1));
+    --slide-fs-sub: calc(var(--slide-design-sub) * var(--text-scale, 1) * var(--slide-fit, 1));
+    --slide-fs-body: calc(var(--slide-design-body) * var(--text-scale, 1) * var(--slide-fit, 1));
+    --slide-fs-small: calc(var(--slide-design-small) * var(--text-scale, 1) * var(--slide-fit, 1));
     font-size: var(--slide-fs-body);
+}
+
+/* The app's type steps a slide's chips, tags and table are set in, at the slide's factor; the
+   chip's own measures follow its words (`--chip-text`, ui/controls/Chip.svelte). */
+.slide-fit {
+    --fs-xs: calc(var(--slide-ui-xs) * var(--slide-fit, 1));
+    --fs-sm: calc(var(--slide-ui-sm) * var(--slide-fit, 1));
+    --fs-md: calc(var(--slide-ui-md) * var(--slide-fit, 1));
+    --chip-text: var(--fs-xs);
 }
 
 /* A link on a slide is drawn in the theme's link colour, the accent's text form, as a link of a
@@ -32,9 +61,9 @@
    sizes are declared on `.slide-frame` itself, where a declaration on `body.rice` does not
    reach. */
 body.rice .slide-frame {
-    --slide-fs-title: calc(52px * var(--text-scale, 1));
-    --slide-fs-h: calc(33px * var(--text-scale, 1));
-    --slide-fs-sub: calc(26px * var(--text-scale, 1));
-    --slide-fs-body: calc(22px * var(--text-scale, 1));
-    --slide-fs-small: calc(17px * var(--text-scale, 1));
+    --slide-design-title: 52px;
+    --slide-design-h: 33px;
+    --slide-design-sub: 26px;
+    --slide-design-body: 22px;
+    --slide-design-small: 17px;
 }

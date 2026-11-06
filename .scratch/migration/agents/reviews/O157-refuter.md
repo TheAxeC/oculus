@@ -402,3 +402,13 @@ How each ruling of the round closed, by reading and by the reruns above:
 - Cases C10 to C21 on screen are the orchestrator's look at landing. The verdicts above are by reading.
 
 Reviewer usage: ae1d580808535f263, claude-opus-5-5, 246421 tokens, 50 tool uses, 14.4 min.
+
+## Closed
+
+- Round 1, Spec 1 (a text slide with a heading and a tall Markdown image still too tall): fixed at landing in `Slide.svelte`'s `draw`: once the room's cap is drawn, a slide whose Markdown holds an image and whose content still runs past `above` has its cap lowered once by that overrun, so the image takes what the rest of the slide leaves; `docs/decks.md:168` says so. The fix is a few lines inside item 3, so it is no second round.
+- Round 1, Spec 2 (the ledes of the title, section and grid kinds mark no room): fixed at landing, `data-room` on the lede box of `Title.svelte`, `Section.svelte` and `Grid.svelte`, so an image there is held under the slide's heading as `docs/decks.md:168` says.
+- Round 1, Proof 1 (the report's flush count, five a try where its own list gives seven): recorded in the booking with the count by reading; the Overview open time is measured at the look.
+- Round 1, Standards 1 (verify runs beyond the round brief's one run): recorded in the booking; no change to the code.
+- Round 1, Standards 2 and Behaviour 1 (the key hint fits the bottom padding only in a wide reading column): fixed at landing in `Slide.svelte`: the hint's drawn height is measured, the part past the frame's bottom padding is reserved at the reading column's foot and taken off the room the slide is laid out in, so no line of the hint runs past the frame in any frame or text size; the comment at `:477-480` and `docs/decks.md:168` say so.
+- Round 1, C21 (the Too tall count): measured at the look: 16 of 25 project decks, each with text that does not fit its room at 0.75.
+- Found at the look (figures of five project decks drawn 14 by 14 px above the room): fixed at landing in `screen/slide-layout.ts`: where captions measured at a narrow width leave the block no scale, the images take the size the room allows them alone, and a tall column of no width is never chosen.

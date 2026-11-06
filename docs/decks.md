@@ -163,6 +163,8 @@ Each entry of `order:` is one of four things. Any other entry is the finding `an
 - The body is Markdown. Its first line that is not blank, when it is a level-1 heading, is the slide's heading, and what follows is read by the slide's kind. An image is named relative to the slide file's folder; an image the folder lacks is drawn as a gap and is a finding.
 - A `kind:` that is no kind of the list below is a finding, and the slide is not drawn.
 
+A slide is laid out in its deck's frame, and the frame keeps its shape and is scaled to the screen, so a slide is laid out the same in the pane, on the presenter screen, in an Overview tile, in the audience window and in the PDF. Its figures are placed by their proportions in the room under the slide's title: a figure narrower than the room's own proportions is a column at the right with the text beside it, the text keeping at least 360 px; a wider one goes under the text across the room's width; several figures stand side by side or stacked, whichever draws them larger; a slide with no text gives its figures the whole room, centred. A figure is drawn whole and larger than its pixels where the room allows, its caption and explanation under it inside the room. The text takes the room the figures leave and is drawn at the largest size that fits it, between three quarters and one and a quarter of its design size, the title and headings with it; the project facts strip keeps its own size. An image in a slide's Markdown, the lede of a title, section or grid slide included, is drawn no taller than the room under the slide's heading leaves once the rest of the slide's Markdown is drawn. The key hint of a deck's first slide is drawn under the slide in the frame's margin and takes no room where it fits the margin; in a narrow frame or at a large text size it takes the room it passes the margin by. A slide is too tall only when its text, or a figure with its caption, does not fit the room at the least size.
+
 ## Slide kinds
 
 Each kind with an example and what it draws. `summary` and `grid` are no front-matter kind: an entry of `order:` draws them, so their examples are entries of `present.yml`.
@@ -224,7 +226,7 @@ kind: image
 ![Loss per epoch](figure.png)
 ```
 
-The heading and the body's first image, with its words as its alt text; the rest of the body is not drawn.
+The heading and the body's first image, with its words as its alt text; the rest of the body is not drawn. The image takes the whole room under the heading at its own proportions, centred, so a tall image fills the room's height and a wide one its width. An image that fails to load is drawn as the words of a missing figure.
 
 ### columns
 
@@ -309,7 +311,7 @@ headline: "Half the training time"
 ---
 ```
 
-A project's slide: the project's domain and stage chips and the tag, the title, the sub line and the hook, the spec chips, the plain-words callout, the method and results lists beside the formula and the figures. A project slide that sets none of `title`, `sub`, `hook`, `tag`, `eli5`, `equation`, `specs`, `panels`, `method` and `results` draws its body instead. `mechanism` and `headline` are what a summary of another deck reads from it.
+A project's slide: the project's domain and stage chips and the tag, the title, the sub line and the hook, the spec chips, the plain-words callout, the method and results lists beside the formula and the figures. The figures of `panels` are placed by their proportions under the title, each with its caption and explanation under it: a tall figure is a column beside the text, a wide one goes under the text, and several stand side by side or stacked, whichever draws them larger. A diagram (`diagram_html`) and the words of a missing figure are drawn with the text. A project slide that sets none of `title`, `sub`, `hook`, `tag`, `eli5`, `equation`, `specs`, `panels`, `method` and `results` draws its body instead. `mechanism` and `headline` are what a summary of another deck reads from it.
 
 ### idea
 
@@ -427,4 +429,4 @@ Led by {{project.lead}}, for {{project.venue}}.
 Two findings are about a slide itself. Each is listed under Findings for the portfolio deck and the projects' decks, at the slide's file and line.
 
 - **No title of its own.** "slide 2 of slides.md has no title of its own; give it a level-1 heading, or a title: in its front matter for a project or an idea slide". A slide of every kind but `project` and `idea` is titled by its level-1 heading; a project slide by its `title:` or its project's short name; an idea slide by its project's name, or by its `title:` in a deck that is no project's.
-- **Too tall.** "slide too tall: Three results runs 40 px past its frame of 1280 by 720 px", when the Present view draws a slide more than 1 px taller than its frame. Its Overview tile is marked Too tall. The finding and the mark stay until the slide fits, leaves the deck or the page is reloaded.
+- **Too tall.** "slide too tall: Three results runs 40 px past its frame of 1280 by 720 px", when the Present view draws a slide more than 1 px taller than its frame. A slide's figures are placed in the room under its title and its text is drawn smaller to fit the room they leave, so a slide is too tall only when its text, or a figure with its caption, does not fit that room at its least size, three quarters of its design size; such a slide scrolls in the pane and is scaled down on its PDF page. Its Overview tile is marked Too tall. The finding and the mark stay until the slide fits, leaves the deck or the page is reloaded.

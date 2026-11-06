@@ -37,8 +37,12 @@
         display: contents;
     }
 
+    /* An image in the Markdown is no wider than the text's box and no taller than the room under
+       the slide's heading at the factor the slide is drawn at (`--slide-room-height`,
+       Slide.svelte), at its own proportions. */
     .block :global(img) {
         max-width: 100%;
+        max-height: var(--slide-room-height, none);
         border-radius: var(--radius-sm);
     }
 

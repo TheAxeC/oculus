@@ -2,8 +2,15 @@
     // Layer 3, Present partial. One visual of a project slide: a figure the deck's folder holds, or
     // the inline diagram markup the slide wrote, with the caption and the explanation under it.
     //
-    // A figure the folder does not hold is named in its place rather than left as a dead image, and
-    // the reader who wrote the slide gets the same name as the finding does.
+    // A figure is drawn in the slide's room at the box the slide's layout gives it
+    // (screen/slide-layout.ts), its image whole at its own proportions inside the box's padding and
+    // border, the caption and the explanation under it in the box's column. Its image names its
+    // index on the slide (`data-figure`), by which the slide reads its ratio once it has loaded and
+    // gives it its box; until then the figure is not drawn. The slide's layout reads the image's
+    // padding and border and the panel's bottom margin, the gap between two figures, from the
+    // drawn figure. A figure the folder does not hold, and one whose image fails to load, is drawn
+    // as its name in its place, the same name the finding gives the reader who wrote the slide;
+    // that name, like a diagram, is drawn with the slide's text.
     //
     // A diagram is a grid of labelled boxes, and a slide writes its columns and its per-box colour
     // on the elements themselves, so it goes through the diagram profile of ui/html.ts, which is
@@ -15,42 +22,90 @@
     import { t } from '$lib/state/shared/words/text';
     import Words from './parts/Words.svelte';
     import type { PresentPanel } from '$lib/state/life/present';
+    import type { Box } from './screen/slide-layout';
 
-    type Props = { panel: PresentPanel };
+    type Props = {
+        panel: PresentPanel;
+        /** The panel's index on the slide, which names its figure to the slide's layout. */
+        index: number;
+        /** Whether the figure's image failed to load, so its name is drawn in its place. */
+        failed?: boolean;
+        /** The figure's box in the slide's room; none while its image has not loaded. */
+        box?: Box;
+    };
 
-    let { panel }: Props = $props();
+    let { panel, index, failed = false, box }: Props = $props();
 
     /** The address the deck's route gave the figure, absent for one the deck's folder lacks. */
-    const src = $derived(panel.missing === true ? '' : (panel.src ?? ''));
+    const src = $derived(panel.missing === true || failed ? '' : (panel.src ?? ''));
     const diagram = $derived(
         panel.diagramHtml === undefined ? '' : sanitiseDiagram(panel.diagramHtml)
     );
 </script>
 
-<div class="panel">
-    {#if src !== ''}
-        <img class="fig" {src} alt={t('present.figure_alt')} />
-    {:else if panel.figure !== undefined}
-        <p class="gap">{t('present.figure_missing', panel.figure)}</p>
-    {:else if diagram !== ''}
-        <!-- eslint-disable-next-line svelte/no-at-html-tags -- the slide's own markup, cut down by the diagram profile of the app's one sanitiser -->
-        <div class="diagram">{@html diagram}</div>
-    {/if}
+{#snippet notes()}
     {#if panel.caption !== undefined}
         <div class="cap"><Words text={panel.caption} /></div>
     {/if}
     {#if panel.explain !== undefined}
         <div class="explain"><Words text={panel.explain} /></div>
     {/if}
-</div>
+{/snippet}
+
+{#if src !== ''}
+    <div
+        class="panel placed"
+        class:waiting={box === undefined}
+        data-figure-box={index}
+        style:left={box === undefined ? undefined : `${box.x}px`}
+        style:top={box === undefined ? undefined : `${box.y}px`}
+        style:width={box === undefined ? undefined : `${box.width}px`}
+    >
+        <img
+            class="fig"
+            data-figure={index}
+            {src}
+            alt={t('present.figure_alt')}
+            style:height={box === undefined ? undefined : `${box.height}px`}
+        />
+        <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+        {@render notes()}
+    </div>
+{:else}
+    <div class="panel">
+        {#if panel.figure !== undefined}
+            <p class="gap">{t('present.figure_missing', panel.figure)}</p>
+        {:else if diagram !== ''}
+            <!-- eslint-disable-next-line svelte/no-at-html-tags -- the slide's own markup, cut down by the diagram profile of the app's one sanitiser -->
+            <div class="diagram">{@html diagram}</div>
+        {/if}
+        <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+        {@render notes()}
+    </div>
+{/if}
 
 <style>
     .panel {
         margin-bottom: 14px;
     }
 
+    /* A figure stands at its box in the slide's room (parts/project/Project.svelte). It keeps the
+       panel's bottom margin, which moves nothing at its place and which the slide's layout reads
+       as the gap between two figures. */
+    .placed {
+        position: absolute;
+    }
+
+    /* A figure whose image has not loaded takes no room; its image loads all the same. */
+    .waiting {
+        display: none;
+    }
+
     .fig {
+        display: block;
+        box-sizing: border-box;
         width: 100%;
+        object-fit: contain;
         padding: 6px;
         border: 1px solid var(--line);
         border-radius: var(--radius);

@@ -2,13 +2,18 @@
     // Layer 3, route. Every slide of one deck, in order, each in the deck's frame at scale 1 and
     // one to a printed page, for the PDF of the Present view. The deck is the one the Present view
     // draws: `?root=&path=` name it, the deck route answers it, and the slides are drawn by the
-    // same component, in the page's theme. The printed page and each `.page` take the size of the
-    // deck's frame (`deck.frame`, or the setting defaults.frame): the `@page` rule is written into
-    // the document's head from the deck once it is read, and the desktop host's hidden window
-    // opens at the same frame.
+    // same component, in the page's theme and at the app's text size (the `text_size` option, as
+    // the shell draws it), so a slide is laid out as the Present view lays it out. The printed
+    // page and each `.page` take the size of the deck's frame (`deck.frame`, or the setting
+    // defaults.frame): the `@page` rule is written into the document's head from the deck once it
+    // is read, and the desktop host's hidden window opens at the same frame. A page keeps the
+    // frame's border, transparent, so the slide has the inner box it has in the Present view. The
+    // page installs the config once, when it opens (+page.ts), so it draws the text size the
+    // config held then.
     //
-    // A slide taller than its page is scaled down to fit it, from the top and centred, so no slide
-    // is cut or split over two pages; the Present pane scrolls such a slide instead.
+    // A slide whose text or figures do not fit at its least size is taller than its page; it is
+    // scaled down to fit it, from the top and centred, so every slide is printed whole on one
+    // page; the Present pane scrolls such a slide.
     //
     // The deck is drawn as the exporting pane filters it. The address names the deck alone, so
     // before it reads the deck the page asks over the deck's channel which projects the filter
@@ -19,16 +24,18 @@
     // wait, the page says so and fails, and prints no deck.
     //
     // The page says it is ready with a `data-ready` attribute on its root once the deck is read and
-    // drawn, the fonts are loaded and every image has loaded or failed; the desktop app's hidden
-    // window prints it then. A deck that cannot be read, or that draws no slide, is told on the
-    // page and the root carries `data-failed` instead, so the host answers at once and not after
-    // its wait. In a browser tab there is no host, so the page opens the browser's print dialog
-    // once it is ready.
+    // drawn, the fonts are loaded, every image has loaded or failed and every slide has been laid
+    // out (Slide.svelte lays a slide out again when one of its images loads or fails, before the
+    // image's own wait ends); the desktop app's hidden window prints it then. A deck that cannot
+    // be read, or that draws no slide, is told on the page and the root carries `data-failed`, so
+    // the host answers at once. In a browser tab there is no host, so the page opens the
+    // browser's print dialog once it is ready.
 
     import { onMount, tick } from 'svelte';
     import Slide from '$lib/views/academic/present/Slide.svelte';
     import type { Deck } from '$lib/state/life/present';
     import { exportKeep, readDeck } from '$lib/state/life/present.svelte';
+    import { configuredLook } from '$lib/state/shared/words/appearance';
     import { desktopOf } from '$lib/state/shared/stores/desktop';
     import { t } from '$lib/state/shared/words/text';
     import { createTipIds, provideTipIds } from '$lib/ui/menu/tip-ids';
@@ -64,6 +71,29 @@
             ? ''
             : `<style>@page { size: ${deck.frame.width}px ${deck.frame.height}px; margin: 0; }</style>`
     );
+
+    /** The keys of the slides laid out since the deck was drawn. */
+    const laid: string[] = [];
+    /** Ends the wait for the layouts, once every slide has been laid out. */
+    let allLaid = (): void => undefined;
+
+    /** Whether every slide of the deck has been laid out once. */
+    function everyLaid(): boolean {
+        return deck?.slides.every((row) => laid.includes(row.key)) === true;
+    }
+
+    function slideLaid(key: string): void {
+        if (!laid.includes(key)) laid.push(key);
+        if (everyLaid()) allLaid();
+    }
+
+    /** Wait until every slide of the deck has been laid out once. */
+    function layoutsSettled(): Promise<void> {
+        return new Promise((settle) => {
+            allLaid = settle;
+            if (everyLaid()) settle();
+        });
+    }
 
     /** Wait for every image of the page to load or fail, so none is half drawn when it prints. */
     function imagesSettled(): Promise<unknown> {
@@ -103,6 +133,13 @@
         return readDeck(ref, data.token, held.keep);
     }
 
+    $effect(() => {
+        // Read inside the effect, the text size is drawn again whenever the page's config is
+        // installed anew.
+        const scale = String(configuredLook().textSize);
+        document.documentElement.style.setProperty('--text-scale', scale);
+    });
+
     onMount(() => {
         void drawConfiguredTheme(document, desktopOf(window, '') !== undefined, data.appThemes);
         void (async () => {
@@ -119,6 +156,7 @@
             await tick();
             await document.fonts.ready;
             await imagesSettled();
+            await layoutsSettled();
             fitSlides();
             ready = true;
             // The host's hidden window has the bridge and prints it itself; a tab has none.
@@ -149,7 +187,7 @@
                 style:height="{deck.frame.height}px"
             >
                 <div class="fit" data-fit>
-                    <Slide {row} {deck} {facts} first={false} />
+                    <Slide {row} {deck} {facts} first={false} onlaid={() => slideLaid(row.key)} />
                 </div>
             </section>
         {/each}
@@ -161,12 +199,14 @@
        set. */
     .page {
         overflow: hidden;
-        border: none;
+        border-color: transparent;
         border-radius: 0;
         break-after: page;
     }
 
+    /* The slide takes the page's inner height, as it takes the frame's in the Present view. */
     .fit {
+        height: 100%;
         transform-origin: top center;
     }
 

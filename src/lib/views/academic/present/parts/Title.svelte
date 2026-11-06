@@ -1,6 +1,7 @@
 <script lang="ts">
     // Layer 3, Present partial. A title or a closing slide: the kicker, the headline, the lede, the
-    // legend of the group the slide names and the contact line a closing slide may carry.
+    // legend of the group the slide names and the contact line a closing slide may carry. The
+    // lede's box is the slide's room (`data-room`), so an image in it is held under the headline.
 
     import Legend from './Legend.svelte';
     import Words from './Words.svelte';
@@ -29,7 +30,7 @@
         <h3 class="headline"><Words text={heading} /></h3>
     {/if}
     {#if lede !== ''}
-        <div class="lede"><Words text={lede} block /></div>
+        <div class="lede" data-room><Words text={lede} block /></div>
     {/if}
     <Legend domains={legend} />
     {#if contact !== undefined && contact !== ''}

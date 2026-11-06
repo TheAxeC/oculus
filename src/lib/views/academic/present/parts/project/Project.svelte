@@ -1,14 +1,26 @@
 <script lang="ts">
-    // Layer 3, Present partial. A project's slide: the domain and stage chips, the headline and
-    // the hook, the spec strip, then the method and results beside the equation and the figures. A
-    // slide that wrote none of the rich keys reaches here carrying its Markdown alone, and that
-    // Markdown is what the slide draws.
+    // Layer 3, Present partial. A project's slide: the domain and stage chips and the headline,
+    // then its text (the sub line, the hook, the spec strip, the plain-words callout and the
+    // method and results lists beside the equation, a diagram and the name of a missing figure)
+    // and its figures. A slide that wrote none of the rich keys reaches here carrying its Markdown
+    // alone, and that Markdown is what the slide draws.
+    //
+    // A slide with a figure draws its text and its figures in a room under the headline, at the
+    // boxes the slide's layout gives (`place`, Slide.svelte and screen/slide-layout.ts): the
+    // figures as one block, a column at the room's right with the text beside it, or across the
+    // room's width under the text, or centred in the room when the slide has no text. While the
+    // room is measured the text takes the room's width and no figure is drawn. The room is as tall
+    // as the layout, or as the lowest figure's box where that ends lower (`place.depth`), so a
+    // slide whose figures run past its frame is measured too tall. A slide with no figure draws
+    // its text as it is, the lists and the equation in two columns; one that draws its Markdown
+    // alone marks the body as its room (`data-room`), the room a Markdown image is held to.
 
     import Chip from '$lib/ui/controls/Chip.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
     import Equation from '../Equation.svelte';
     import Panel from '../../Panel.svelte';
     import Words from '../Words.svelte';
+    import { TEXT_GAP, type SlidePlace } from '../../screen/slide-layout';
     import { hasSlideContent } from '$lib/state/life/present';
     import { chipLabel, domainLabel, domainTone, stageTone } from '$lib/state/shared/words/tones';
     import { t } from '$lib/state/shared/words/text';
@@ -31,28 +43,51 @@
         hub?: string;
         /** The hue the slide's `tag.class` wears, from the deck's `tag_tones`. */
         tagTone?: string;
+        /** Where the slide's layout puts the room's text and figures. */
+        place: SlidePlace;
     };
 
-    let { slide, title, stage, domain, hub, tagTone }: Props = $props();
+    let { slide, title, stage, domain, hub, tagTone, place }: Props = $props();
 
     const rich = $derived(hasSlideContent(slide));
     const tone = $derived(domain === undefined ? undefined : domainTone(domain));
     const style = $derived(tone === undefined ? undefined : `--tone: var(--c-${tone})`);
+
+    /** Whether each panel is drawn as a figure: an image the folder holds that has not failed. */
+    const figures = $derived(
+        slide.panels.map(
+            (panel, at) =>
+                rich &&
+                panel.missing !== true &&
+                (panel.src ?? '') !== '' &&
+                !place.failed.includes(at)
+        )
+    );
+    const pictured = $derived(figures.includes(true));
+    /** Whether the right-hand column holds anything: the equation, a diagram or a figure's name. */
+    const right = $derived(slide.equation !== undefined || figures.includes(false));
+    /** Whether the slide has text beside or above its figures. */
+    const worded = $derived(
+        slide.sub !== undefined ||
+            slide.hook !== undefined ||
+            (rich &&
+                (slide.specs.length > 0 ||
+                    slide.eli5 !== undefined ||
+                    slide.method.length > 0 ||
+                    slide.results.length > 0 ||
+                    right)) ||
+            (!rich && slide.body !== undefined)
+    );
+    const shape = $derived(place.layout?.shape ?? null);
+    /** The room's height: the layout's, or the lowest figure's bottom where that is lower. */
+    const height = $derived(
+        place.layout === null ? null : Math.max(place.layout.height, place.depth)
+    );
+    /** The box the layout gives the text, null while the room is measured. */
+    const given = $derived(place.layout?.text ?? null);
 </script>
 
-<section class="slide" data-slide-kind="project" {style}>
-    <div class="top">
-        {#if domain !== undefined}
-            <Tag label={domainLabel(domain)} {tone} />
-        {/if}
-        {#if stage !== undefined}
-            <Chip label={chipLabel(stage, hub)} tone={stageTone(stage, hub)} filled />
-        {/if}
-        {#if slide.tag?.text !== undefined && slide.tag.text !== ''}
-            <Tag label={slide.tag.text} tone={tagTone} />
-        {/if}
-    </div>
-    <h3 class="headline"><Words text={slide.title ?? title} /></h3>
+{#snippet words()}
     {#if slide.sub !== undefined}
         <div class="sub"><Words text={slide.sub} /></div>
     {/if}
@@ -106,17 +141,59 @@
                     </ul>
                 {/if}
             </div>
-            <div class="right">
-                {#if slide.equation !== undefined}
-                    <Equation {slide} />
-                {/if}
-                {#each slide.panels as panel, at (`${at}:${panel.figure ?? panel.caption ?? ''}`)}
-                    <Panel {panel} />
-                {/each}
-            </div>
+            {#if right || !pictured}
+                <div class="right">
+                    {#if slide.equation !== undefined}
+                        <Equation {slide} />
+                    {/if}
+                    {#each slide.panels as panel, at (`${at}:${panel.figure ?? panel.caption ?? ''}`)}
+                        {#if !figures[at]}
+                            <Panel {panel} index={at} failed={place.failed.includes(at)} />
+                        {/if}
+                    {/each}
+                </div>
+            {/if}
         </div>
     {:else if slide.body !== undefined}
-        <div class="body"><Words text={slide.body} block /></div>
+        <div class="body" data-room><Words text={slide.body} block /></div>
+    {/if}
+{/snippet}
+
+<section class="slide" data-slide-kind="project" {style}>
+    <div class="top">
+        {#if domain !== undefined}
+            <Tag label={domainLabel(domain)} {tone} />
+        {/if}
+        {#if stage !== undefined}
+            <Chip label={chipLabel(stage, hub)} tone={stageTone(stage, hub)} filled />
+        {/if}
+        {#if slide.tag?.text !== undefined && slide.tag.text !== ''}
+            <Tag label={slide.tag.text} tone={tagTone} />
+        {/if}
+    </div>
+    <h3 class="headline"><Words text={slide.title ?? title} /></h3>
+    {#if pictured}
+        <div class="room" data-room style:min-height={height === null ? undefined : `${height}px`}>
+            {#if worded}
+                <div
+                    class="text"
+                    data-text
+                    style:width={given === null ? undefined : `${given.width}px`}
+                    style:padding-bottom={shape === 'tall' ? undefined : `${TEXT_GAP}px`}
+                >
+                    <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+                    {@render words()}
+                </div>
+            {/if}
+            {#each slide.panels as panel, at (`${at}:${panel.figure ?? panel.caption ?? ''}`)}
+                {#if figures[at]}
+                    <Panel {panel} index={at} box={place.boxes[at]} />
+                {/if}
+            {/each}
+        </div>
+    {:else}
+        <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+        {@render words()}
     {/if}
 </section>
 
@@ -180,8 +257,21 @@
         text-transform: uppercase;
     }
 
-    /* The method and the results side by side: the reading width holds two columns of at least
-       300 px. */
+    /* The room under the headline the figures and the text share: the text in its flow, so a text
+       taller than its box makes the slide taller and the slide is measured too tall, and each
+       figure at its box (Panel.svelte). */
+    .room {
+        position: relative;
+    }
+
+    .text {
+        box-sizing: border-box;
+        min-width: 0;
+    }
+
+    /* The method and the results side by side wherever the text's box holds two columns of at
+       least 300 px, as the reading width does; the narrower text beside a column of figures holds
+       one. */
     .cols {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr));
