@@ -1,25 +1,26 @@
 <script lang="ts">
-    // Layer 3, shared view partial of the project boards (views/boards/projects/Projects.svelte),
-    // the collection views (views/boards/collection/Collection.svelte), the Map
-    // (views/structure/map/Map.svelte) and the Present view's filter
-    // (views/academic/present/Bar.svelte). Line 1 of their bar: the search, drawn when the caller
-    // gives `onsearch`; the caller's toggles (`toggles`: a board's stale, deadline and waiting
-    // toggles, the Map's Show button and nothing on a collection); Mine only, drawn when the caller
-    // gives `onmine` while a person is marked as the user (`named`) and drawn disabled, its tip
-    // saying every project here is the user's, where it would change nothing (`mine`); the Present
-    // view gives neither, so its line is the group buttons alone; then one group button per group
-    // `line` names, in that order, each reading its picks ("Form: journal article +1") and opening
-    // its values (PickMenu.svelte); then More, which holds the groups `line` does not name as
-    // headed sections. A group button carries the red badge and the amber mark the caller gives it
-    // by its id (`badges`: a board's Situation and Venue). A caller's `section` names a run of the
-    // groups More holds, which More lists last under one heading over their own (a collection's
-    // Projects section).
+    // Layer 3, shared view partial of the project boards and the Present view, through the shared
+    // board bar (BoardBar.svelte), the collection views (views/boards/collection/Collection.svelte)
+    // and the Map (views/structure/map/Map.svelte). Line 1 of their bar: the search, drawn when the
+    // caller gives `onsearch`; the caller's toggles (`toggles`: a board's stale, deadline and
+    // waiting toggles, the Map's Show button and nothing on a collection); Mine only, drawn when
+    // the caller gives `onmine` while a person is marked as the user (`named`) and drawn disabled,
+    // its tip saying every project here is the user's, where it would change nothing (`mine`); then
+    // one group button per group `line` names, in that order, each reading its picks ("Form:
+    // journal article +1") and opening its values (PickMenu.svelte); then More, which holds the
+    // groups `line` does not name as headed sections. A group button carries the red badge and the
+    // amber mark the caller gives it by its id (`badges`: a board's Situation and Venue). A
+    // caller's `section` names a run of the groups More holds, which More lists last under one
+    // heading over their own (a collection's Projects section).
     //
-    // The line is one line at any pane width: the group buttons that do not fit beside the
-    // controls before them go into More, last in, first out, the search keeping `SEARCH_MIN`;
-    // More then holds their sections first, and carries the badge and the mark of a group it
-    // holds. The folding is ui/frame/toolbar/FoldRun.svelte's, which line 2 (SliceLine.svelte)
-    // folds by too; a render with no layout draws every group button.
+    // The line is one line wherever the controls that never fold fit in it: the group buttons that
+    // do not fit beside the controls before them go into More, last in, first out, the search
+    // keeping `SEARCH_MIN`; More then holds their sections first, and carries the badge and the
+    // mark of a group it holds. In a pane too narrow for the search, the toggles, Mine only and
+    // More together (the Present view beside the editor), every group is in More and the line
+    // wraps (`cramped`), so Mine only and More stay in reach. The folding is
+    // ui/frame/toolbar/FoldRun.svelte's, which line 2 (SliceLine.svelte) folds by too; a render
+    // with no layout draws every group button.
     //
     // It holds no state of its caller and works nothing out: the search, the groups and the counts
     // are the caller's, computed by pure functions of state/boards/, and every press is handed back
@@ -100,6 +101,8 @@
     let moreBox = $state<HTMLElement | null>(null);
     /** The width More was last drawn at. */
     let moreWidth = MORE_GUESS;
+    /** Whether the controls that never fold pass the line's width, which wraps the line. */
+    let cramped = $state(false);
 
     const folded = $derived(shown === null ? [] : lineGroups.slice(shown));
     /** Whether a group is of the section's run, which More lists after the rest. */
@@ -125,15 +128,15 @@
         if (moreBox !== null) moreWidth = moreBox.getBoundingClientRect().width;
         const always = ownGroups.length > 0;
         const searched = onsearch !== undefined;
-        return {
-            room:
-                line.getBoundingClientRect().width -
-                (searched ? SEARCH_MIN : 0) -
-                toggles.getBoundingClientRect().width -
-                gap * ((always ? 2 : 1) + (searched ? 1 : 0)) -
-                (always ? moreWidth : 0),
-            opener: always ? 0 : moreWidth
-        };
+        const fixed =
+            (searched ? SEARCH_MIN : 0) +
+            toggles.getBoundingClientRect().width +
+            gap * ((always ? 2 : 1) + (searched ? 1 : 0)) +
+            (always ? moreWidth : 0);
+        const width = line.getBoundingClientRect().width;
+        // More is drawn beside the fixed controls once a group folds, so it counts here too.
+        cramped = fixed + (always ? 0 : gap + moreWidth) > width;
+        return { room: width - fixed, opener: always ? 0 : moreWidth };
     }
 </script>
 
@@ -147,7 +150,7 @@
     />
 {/snippet}
 
-<div class="line" role="toolbar" aria-label={label} bind:this={line}>
+<div class="line" class:cramped role="toolbar" aria-label={label} bind:this={line}>
     {#if onsearch !== undefined}
         <span class="search">
             <Search fill value={search} {placeholder} oninput={onsearch} />
@@ -189,9 +192,10 @@
 </div>
 
 <style>
-    /* One line that never wraps: the search takes what the controls leave, down to its minimum,
-       and the group buttons past the line's room are folded into More. Until the first measure
-       the line clips what passes its width rather than scrolling the bar sideways. */
+    /* One line: the search takes what the controls leave, down to its minimum, and the group
+       buttons past the line's room are folded into More. Until the first measure the line clips
+       what passes its width rather than scrolling the bar sideways; a line too narrow for the
+       controls that never fold wraps (.cramped). */
     .line {
         display: flex;
         flex: 1 0 100%;
@@ -199,6 +203,10 @@
         gap: 6px;
         min-width: 0;
         overflow: hidden;
+    }
+
+    .line.cramped {
+        flex-wrap: wrap;
     }
 
     .search {

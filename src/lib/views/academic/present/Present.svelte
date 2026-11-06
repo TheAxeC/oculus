@@ -28,10 +28,12 @@
     // deck until it is pointed at another: a project's deck, a deck it has shown, or the one a
     // folder of the Files view opened it on. The deck menu in the toolbar lists them.
     //
-    // A deck whose groups hold project decks has a filter under the toolbar, Stage, Status, Tier,
-    // Pillar and Form, by the boards' rules (acts/filter.svelte.ts): its picks are the pane's, the
-    // deck is read with the projects they keep, and the pane, the overview, the presenter screen,
-    // the audience window and the PDF draw that deck. The file is never written for a pick.
+    // A deck whose groups hold project decks draws the Projects board's filter under the toolbar,
+    // the same bar and rules over the projects whose decks those groups hold
+    // (acts/filter.svelte.ts): its controls are the pane's, saved with its instance under the
+    // board's keys and set back as a board starts when it opens another deck, the deck is read with
+    // the projects the bar shows, and the pane, the overview, the presenter screen, the audience
+    // window and the PDF draw that deck. The file is never written for a control.
     //
     // Where the reader is, and whether the grid is open, belong to the instance rather than to the
     // store, so two panes on the deck hold two positions and a push that rebuilds the deck leaves
@@ -143,7 +145,6 @@
     const filter = createFilter({
         ref: () => ref,
         instance: () => instance.id,
-        filters: () => held.filters,
         slide: () => held.slide,
         write: (changes) => write(changes)
     });

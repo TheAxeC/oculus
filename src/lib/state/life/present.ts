@@ -4,18 +4,18 @@
 // A deck is read by the server (data/sources/deck/read.ts) and arrives whole: the slides in order
 // with their words, the groups with their members, the facts of each project a slide comes from.
 // What is here is the pane's own state (the slide it is on, whether its grid is open, the decks it
-// has shown, its filter's picks and its Project facts toggle), the deck a tab's layout state
-// names, the moves over a deck's slides, the frame the slides are laid out in, and the one hue a
-// slide's status tag wears. A presentation adds the names its two windows share (the audience
+// has shown, the controls of its filter and its Project facts toggle), the deck a tab's layout
+// state names, the moves over a deck's slides, the frame the slides are laid out in, and the one
+// hue a slide's status tag wears. A presentation adds the names its two windows share (the audience
 // address, and the window, channel and lock name), the messages they send each other, and the
 // presenter screen's timer and clock text.
 //
-// A pane's filter keeps the member decks of the projects it picks. Its groups are Stage, Status,
-// Tier, Pillar and Form, a bar of project groups drawn by the boards' rules
-// (state/boards/collection/bar.ts `projectFilter`) over the member projects of the deck's groups
-// of project decks, and its picks are the pane's alone: the file is never written for them. The
-// deck route is asked for the deck with the keys of the projects the picks keep (`keptKeys`), and
-// the answer says which members are kept, which the toolbar counts (`deckTally`).
+// A pane's filter is the Projects board's filter over the member projects of the deck's groups of
+// project decks (`memberItems`): the same function works it out (state/boards/board/filter-menu.ts
+// `boardFilter`) from the controls the pane saves under the board's own keys, and its controls are
+// the pane's alone: the file is never written for them. The deck route is asked for the deck with
+// the keys of the projects the bar shows (`shownKeys`), or for the whole deck while it shows every
+// member.
 //
 // Nothing here reads a store or a file.
 
@@ -25,10 +25,12 @@ import { bareId, rootOf } from '../../data/helpers/hub-names.ts';
 import { MAX_DRAFT_BYTES, MAX_UPLOAD_BYTES, MAX_UPLOAD_MB } from '../../data/file-ops.ts';
 import { plainText } from '../../data/prose/literature.ts';
 import { optionalTextShape, readAs, rowsShape, unchangedAs } from '../../data/shapes/shapes.ts';
-import type { FilterGroup } from '../boards/board/filter-menu.ts';
-import type { BoardItem, BoardPreset } from '../boards/board/presets.ts';
-import { projectFilter, projectKeeps, type ProjectLayout } from '../boards/collection/bar.ts';
-import { STAGE_FACET } from '../boards/structure/map-bar.ts';
+import {
+    emptyBoardState,
+    parseBoardState,
+    type BoardItem,
+    type BoardState
+} from '../boards/board/index.ts';
 import { domainTone } from '../shared/words/tones.ts';
 import { t } from '../shared/words/text.ts';
 import type {
@@ -81,21 +83,25 @@ export type DeckRef = { root: string; path: string };
 /** How many decks a pane remembers having shown. */
 const RECENT_LIMIT = 10;
 
-/** A pane's filter: the values picked in each of its groups, by the group's id. */
-export type DeckFilters = Record<string, string[]>;
+/**
+ * The controls of a pane's filter, under the board's own keys of its saved state: the search, the
+ * stale, deadline and waiting toggles, Mine only and the picks by facet, the slices under `slice`.
+ */
+export type PresentBar = Pick<
+    BoardState,
+    'search' | 'stale' | 'dated' | 'waiting' | 'mine' | 'filters'
+>;
 
 /**
- * What one Present pane holds of its own: its place in the deck it shows, its history, its filter
- * and its Project facts toggle.
+ * What one Present pane holds of its own: its place in the deck it shows, its history, its Project
+ * facts toggle and the controls of its filter.
  */
-export type PresentState = {
+export type PresentState = PresentBar & {
     /** The key of the slide the pane draws; empty means the deck's first. */
     slide: string;
     overview: boolean;
     /** The decks the pane has shown, newest first, without the one it shows now. */
     recent: DeckRef[];
-    /** The values picked in its filter's groups; a group with no pick is not in it. */
-    filters: DeckFilters;
     /**
      * Whether the strip of a project's facts at the foot of its slides shows its words, in the pane
      * and in its presenter screen, audience window and PDF; on unless the pane turned it off.
@@ -111,53 +117,33 @@ const presentStateShape = z.object({
     slide: optionalTextShape,
     overview: z.boolean().catch(false),
     recent: rowsShape(refShape).catch(() => []),
-    filters: z.record(z.string(), z.array(z.string())).catch(() => ({})),
     facts: z.boolean().catch(true)
 });
 
-/** The board facets of a pane's filter, after the Map's Stage group, in the bar's order. */
-const FILTER_FACETS = ['status', 'tier', 'pillar', 'form'];
-
 /**
- * The ids of the filter's groups, the order its bar draws them in: the Map's Stage group, then the
- * board facets. It is frozen, since the pane hands it to the bar.
+ * The controls of a pane's filter out of a board's state, the card fields (`mode`, `more`,
+ * `labels`, `folded`, `columns`) left out, since the Present view draws no cards.
  */
-export const FILTER_GROUPS: readonly string[] = Object.freeze([STAGE_FACET, ...FILTER_FACETS]);
-
-/** The filter as a bar of project groups: Stage, then the facets, each saved under its own key. */
-const FILTER_LAYOUT: ProjectLayout = {
-    category: null,
-    stage: STAGE_FACET,
-    facets: FILTER_FACETS,
-    idOf: (facet) => facet,
-    named: false
-};
-
-/** The picks of the filter's groups a saved map holds, each once; any other key is left out. */
-function filtersOf(held: Record<string, string[]>): DeckFilters {
-    return Object.fromEntries(
-        FILTER_GROUPS.flatMap((id) => {
-            const values = byKey(held, id) ?? [];
-            return values.length === 0 ? [] : [[id, [...new Set(values)]]];
-        })
-    );
+export function barFields(state: BoardState): PresentBar {
+    const { search, stale, dated, waiting, mine, filters } = state;
+    return { search, stale, dated, waiting, mine, filters };
 }
 
-/** One pane's own state out of what its instance holds, with defaults for what is missing. */
+/**
+ * One pane's own state out of what its instance holds, with defaults for what is missing. The
+ * controls of its filter are read by the board's parser, so a facet the board does not know is
+ * dropped and Mine only is on until the reader turns it off; which slices and compute values the
+ * deck's projects hold is read against by the filter (`boardFilter`), which holds those projects.
+ */
 export function parsePresentState(value: unknown): PresentState {
     const held = readAs(presentStateShape, value);
     return {
+        ...barFields(parseBoardState(value)),
         slide: held?.slide ?? '',
         overview: held?.overview ?? false,
         recent: (held?.recent ?? []).slice(0, RECENT_LIMIT),
-        filters: filtersOf(held?.filters ?? {}),
         facts: held?.facts ?? true
     };
-}
-
-/** Whether a pane's filter holds a pick in any group. */
-export function filtering(filters: DeckFilters): boolean {
-    return Object.values(filters).some((values) => values.length > 0);
 }
 
 /**
@@ -176,83 +162,34 @@ export function filterable(deck: Deck | null): boolean {
 }
 
 /**
- * How many decks a deck's groups of project decks hold (`total`), and how many of them the filter
- * its answer was read under keeps (`kept`): a project's deck counted once by its project's key and
- * any other by its folder, so a deck in two groups counts once.
+ * The projects a pane's filter runs over: the board items that are member projects of the deck's
+ * groups of project decks, every member of the deck's answer counted, kept or not. A member is
+ * matched by its project's key (`DeckMember.projectId`) to a board item of the deck's own hub
+ * (`deck.hub`), so a project of another hub with the same key is never one, and a member that
+ * matches no board item (a deck that is no project's, a project the snapshot lacks) is none. Each
+ * project is one item however many groups hold its deck, in the order of `items`.
  */
-export function deckTally(deck: Deck): { kept: number; total: number } {
-    const decks = new Map<string, boolean>();
-    for (const group of projectDeckGroups(deck)) {
-        for (const one of group.members) {
-            const id =
-                one.projectId === undefined ? `path:${one.path}` : `project:${one.projectId}`;
-            decks.set(id, decks.get(id) === true || one.kept);
-        }
-    }
-    return { kept: [...decks.values()].filter((kept) => kept).length, total: decks.size };
-}
-
-/**
- * The hub a deck is read under, by the rule the deck route reads it by
- * (server/content/deck/read.ts): its root when that root is a hub of the workspace, else the
- * primary hub, else the root itself.
- */
-export function deckHub(
-    ref: DeckRef,
-    roots: readonly { key: string; hub?: true }[],
-    primary: string | null
-): string {
-    if (roots.some((one) => one.key === ref.root && one.hub === true)) return ref.root;
-    return primary ?? ref.root;
-}
-
-/** The picks of one group of a filter, none for a group it does not hold. */
-function pickedIn(filters: DeckFilters): (id: string) => string[] {
-    return (id) => byKey(filters, id) ?? [];
-}
-
-/**
- * The groups of a pane's filter over a deck, as the bar draws them: each lists the values of the
- * member projects of the deck's groups of project decks, unfiltered, and counts each over those
- * the other groups' picks leave. A member is matched to a board item of the deck's own hub by its
- * project's key (`DeckMember.projectId`), so a project of another hub with the same key is never
- * one; a group no member gives a value draws no group.
- */
-export function filterGroupsOf(
-    deck: Deck,
-    items: readonly BoardItem[],
-    filters: DeckFilters,
-    preset: BoardPreset
-): FilterGroup[] {
+export function memberItems(deck: Deck, items: readonly BoardItem[]): BoardItem[] {
     const keys = new Set(
         projectDeckGroups(deck).flatMap((group) =>
             group.members.flatMap((one) => one.projectId ?? [])
         )
     );
-    const members = items.filter(
-        (one) => rootOf(one.project) === deck.hub && keys.has(bareId(one.project))
-    );
-    return projectFilter(members, preset, FILTER_LAYOUT, pickedIn(filters));
+    return items.filter((one) => rootOf(one.project) === deck.hub && keys.has(bareId(one.project)));
 }
 
 /**
- * The keys of the projects a pane's filter keeps, as the deck route takes them: the keys, in their
- * own hub's files, of the board items of the deck's hub (`hub`) that every group with a pick
- * keeps, each once and sorted, so one filter asks under one query key. Null with no pick in any
- * group, which asks for the whole deck.
+ * The kept list a pane's deck is read under, from the projects its filter runs over (`members`) and
+ * those the bar shows (`shown`): null while every member is shown, which asks for the whole deck,
+ * else the keys of the projects shown in their own hub's files, each once and sorted, so one state
+ * asks under one query key; `[]` when none is shown.
  */
-export function keptKeys(
-    items: readonly BoardItem[],
-    hub: string,
-    filters: DeckFilters,
-    preset: BoardPreset
+export function shownKeys(
+    members: readonly BoardItem[],
+    shown: readonly BoardItem[]
 ): string[] | null {
-    if (!filtering(filters)) return null;
-    const keeps = projectKeeps(preset, FILTER_LAYOUT, pickedIn(filters));
-    const keys = items
-        .filter((one) => rootOf(one.project) === hub && keeps(one))
-        .map((one) => bareId(one.project));
-    return [...new Set(keys)].sort();
+    if (shown.length === members.length) return null;
+    return [...new Set(shown.map((one) => bareId(one.project)))].sort();
 }
 
 /**
@@ -471,18 +408,18 @@ export function deckState(base: unknown, ref: DeckRef): Record<string, unknown> 
 
 /**
  * A pane's own state after it leaves the deck it showed (`shown`, null when none is resolved) for
- * `next`: the first slide, the grid closed, no filter, since its picks are values of the members
- * of the deck it left, and that deck remembered. The Project facts toggle is a setting of the pane
- * and stays as it was.
+ * `next`: the first slide, the grid closed, every control of its filter as a board starts
+ * (`emptyBoardState`), since its picks are values of the members of the deck it left, and that deck
+ * remembered. The Project facts toggle is a setting of the pane and stays as it was.
  */
 export function leftDeck(value: unknown, shown: DeckRef | null, next: DeckRef): PresentState {
     const held = parsePresentState(value);
     return {
         ...held,
+        ...barFields(emptyBoardState()),
         slide: '',
         overview: false,
-        recent: shown === null ? held.recent : withRecent(held.recent, shown, next),
-        filters: {}
+        recent: shown === null ? held.recent : withRecent(held.recent, shown, next)
     };
 }
 

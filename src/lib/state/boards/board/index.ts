@@ -36,7 +36,6 @@ export type {
     Facet,
     FacetValue,
     LabelMode,
-    QuickFilters,
     SessionsOf,
     VenueCount
 } from './presets.ts';
@@ -53,6 +52,7 @@ export type { Slice, SliceGroup } from './facets.ts';
 export {
     LINE_FACETS,
     blockedBadge,
+    boardFilter,
     deadlineWords,
     facetHeading,
     filterGroups,
@@ -60,13 +60,14 @@ export {
     listCells,
     moreWords,
     pickCell,
+    searchWords,
     shownWords,
     sliceChoices,
     valueLabel,
     venueWarning,
     waitingWords
 } from './filter-menu.ts';
-export type { FilterChoice, FilterGroup } from './filter-menu.ts';
+export type { BoardFilter, FilterChoice, FilterGroup } from './filter-menu.ts';
 export { VENUE_WARN, disseminated, humanSize, stats } from './stats.ts';
 export type { Dissemination } from './stats.ts';
 export {

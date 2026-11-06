@@ -1,17 +1,17 @@
 <script lang="ts">
-    // Layer 3, shared view partial of the project boards (views/boards/projects/Projects.svelte),
-    // the collection views (views/boards/collection/Collection.svelte) and the Map
-    // (views/structure/map/Map.svelte). Line 2 of their bar: for each category of slices the caller
-    // hands (a board's and the Map's categories of projects, a collection's status field), its
-    // label in small capitals in the category's colour, then its slices as chips, each with its
-    // words and its count ("journal article 9"), outlined in the slice's hue and filled while
-    // picked; a press on a slice picks or unpicks it, and a press on a category's label picks every
-    // slice of it, or takes them all out when all are picked. The slices are stored under one facet
-    // key (`facet`: `slice` on a board and the Map, the collection's `status`), and their counts
-    // are that facet's in `counted`. The line ends with how many are shown, in the caller's words
-    // (`words`: "16 projects", "5 of 16 shown", "12 entries") and, while any facet value is picked,
-    // Clear all, which takes every group's and slice's pick out and leaves the search and the
-    // caller's toggles as they are.
+    // Layer 3, shared view partial of the project boards and the Present view, through the shared
+    // board bar (BoardBar.svelte), the collection views (views/boards/collection/Collection.svelte)
+    // and the Map (views/structure/map/Map.svelte). Line 2 of their bar: for each category of
+    // slices the caller hands (a board's and the Map's categories of projects, a collection's
+    // status field), its label in small capitals in the category's colour, then its slices as
+    // chips, each with its words and its count ("journal article 9"), outlined in the slice's hue
+    // and filled while picked; a press on a slice picks or unpicks it, and a press on a category's
+    // label picks every slice of it, or takes them all out when all are picked. The slices are
+    // stored under one facet key (`facet`: `slice` on a board and the Map, the collection's
+    // `status`), and their counts are that facet's in `counted`. The line ends with how many are
+    // shown, in the caller's words (`words`: "16 projects", "5 of 16 shown", "12 entries") and,
+    // while any facet value is picked, Clear all, which takes every group's and slice's pick out
+    // and leaves the search and the caller's toggles as they are.
     //
     // The line is one line at any pane width: the slices that do not fit beside the end of the line
     // fold, last in, first out, into a "+<n>" button that opens them in a list headed by category

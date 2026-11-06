@@ -146,3 +146,207 @@ none. The report states with before and after the C2 and C17 domain drawn from a
 - `docs/HELP.md`, `docs/decks.md` and the redrawn `layers.dot`/`.svg` and `layer-server.dot`/`.svg` are outside the write list. I judge them justified, not findings. The rules file's documentation rule asks a step to write what a user meets into `docs/HELP.md`, and `docs/decks.md` is the guide of the changed behaviour; I read both added sentences as true. The diagram files are the output of `npm run diagrams`, which the verify list runs, and my rerun left them byte-identical. All are named in the report.
 
 Reviewer usage: a883220b1e4e27a9e, claude-opus-5-5, 243008 tokens, 80 tool uses, 17.5 min.
+
+## Repair round 1, refuted
+
+```
+$ export PATH=/Users/axelfaes/.nvm/versions/node/v24.21.0/bin:$PATH   (every command below from .agents/worktrees/migration-O156)
+
+$ npm run diagrams && npm run docs:palette   (sha of every file under docs/ and git status --short taken before and after)
+... docs/diagrams/writes.dot
+docs/diagrams/writes.svg
+> oculus@1.0.0 docs:palette
+> node utils/diagrams/palette.mjs
+docs/palette.md
+docs unchanged by diagrams and palette
+status unchanged
+
+$ npm run test:quick -- --base a2385d834   (full output kept in the reviewer's scratchpad, r1/quick.log)
+test:quick: 34 changed file(s), from git since a2385d834
+test:quick: 248 test file(s)
+ok      prettier (1.2 s): All matched files use Prettier code style!
+ok      ASCII gate (1.2 s)
+ok      svelte-kit sync (2.6 s)
+ok      eslint (3.1 s)
+ok      svelte-check (11.5 s): 1793966470717 COMPLETED 583 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest checks (196.9 s): Duration  180.74s (transform 141.73s, setup 0ms, import 262.57s, tests 373.47s, environment 5ms)
+FAILED  vitest (271.0 s)
+FAILED  vitest slow (405.5 s)
+test:quick: 408.3 s; failed: vitest, vitest slow
+The red lines, in full as vitest printed them:
+ FAIL  |unit| tests/data/hubs/workspace-projects.test.ts > a folder of the workspace that holds a project manifest > is a project on the board its tier names when it lies inside the hub and outside every scan folder
+Error: Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ <U+276F> tests/data/hubs/workspace-projects.test.ts:89:5
+ FAIL  |unit| tests/routes/git/zenodo.test.ts > what Publish and a new version send, and what a press that stops leaves > still writes the DOI and the share link when Cancel comes after the publish was sent
+Error: Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ <U+276F> tests/routes/git/zenodo.test.ts:638:5
+ Test Files  2 failed | 181 passed | 50 skipped (233)
+      Tests  2 failed | 2710 passed | 663 skipped (3375)
+ FAIL  |unit| tests/server/machine/apps/tools/languages.test.ts > a save of a file the page holds > is sent to the server of an app that declared save, with the text when it asked for it
+Error: Test timed out in 30000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ <U+276F> tests/server/machine/apps/tools/languages.test.ts:669:5
+ Test Files  1 failed | 66 passed (67)
+      Tests  1 failed | 662 passed | 314 skipped (977)
+(hub-portfolio.test.ts passed in this slow run. Load average during the runs: 9.23 11.89 11.19 at 13:09, 8.90 10.74 10.84 at 13:12, with the O154 landing running at the same time. The step does not change zenodo.test.ts or languages.test.ts, and none of the step's code is in their scope, so under the rules file's "Verify before you report" they are named and not rerun.)
+
+$ npx vitest run tests/data/hubs/workspace-projects.test.ts --reporter=dot   (the red file that goes through the build, alone)
+ Test Files  1 passed (1)
+      Tests  5 passed (5)
+
+$ npx vitest run tests/data/hubs/decks.test.ts tests/routes/docs/deck.test.ts --reporter=dot
+ Test Files  2 passed (2)
+      Tests  5 passed (5)
+
+$ npx vitest run tests/data/sources/present.test.ts tests/data/hubs tests/routes/edit/deck-slides.test.ts tests/server/edit/deck/deck-acts.test.ts tests/data/snapshot/normalise.test.ts --reporter=dot
+first run, output filtered to its FAIL, Error and summary lines:
+ FAIL  |unit| tests/data/hubs/decks.test.ts > a deck's projects, facts and domains > gives each deck the same slides, projects, domains and facts on the build's read and the route's, and leaves a project's domain to the manifest check's finding
+Error: Test timed out in 5000ms.
+ FAIL  |unit| tests/data/hubs/hub-portfolio.test.ts > the portfolio of several hubs > holds every record of both hubs, each under the name of its hub's folder
+Error: Test timed out in 5000ms.
+ FAIL  |unit| tests/data/hubs/hub-portfolio.test.ts > the portfolio of several hubs > names a record of the second hub in a relation pair only by ids of the second hub
+Error: Test timed out in 5000ms.
+ FAIL  |unit| tests/data/hubs/hub-portfolio.test.ts > the portfolio of several hubs > reports the findings each hub gives, the second hub own naming its files
+Error: Test timed out in 5000ms.
+ FAIL  |unit| tests/data/hubs/hub-portfolio.test.ts > the portfolio of several hubs > keeps a primary-hub id that begins with the name of a hub folder and a colon as a record of the primary, with no finding
+Error: Test timed out in 5000ms.
+ FAIL  |unit| tests/data/hubs/self.test.ts > the user the key self names > marks nobody for a key two other hubs hold, with one finding naming them (case 4)
+Error: Test timed out in 5000ms.
+ Test Files  3 failed | 9 passed (12)
+      Tests  6 failed | 149 passed (155)
+second run, full output (r1/v2b.log):
+ FAIL  |unit| tests/data/hubs/hub-portfolio.test.ts > the portfolio of several hubs > holds every record of both hubs, each under the name of its hub's folder
+Error: Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ <U+276F> tests/data/hubs/hub-portfolio.test.ts:109:5
+    109|     it(
+    110|         "holds every record of both hubs, each under the name of its h<U+2026>
+    111|         { tags: ['slow'] },
+ Test Files  1 failed | 11 passed (12)
+      Tests  1 failed | 154 passed (155)
+   Duration  54.47s (transform 4.81s, setup 0ms, import 20.65s, tests 113.59s, environment 3ms)
+
+$ npx vitest run tests/data/hubs/hub-portfolio.test.ts --reporter=verbose   (alone)
+ <check mark> ... > the portfolio of several hubs > holds every record of both hubs, each under the name of its hub's folder 3194ms
+ <check mark> ... > gives a key two hubs hold two records, each project naming its own hub record, each shown by the key (C1) 2924ms
+ <check mark> ... > finds the page of an entry of the one hub that holds it and writes that hub's file (C6) 3881ms
+ Test Files  1 passed (1)
+      Tests  16 passed (16)
+
+$ npx vitest run tests/data/hubs/decks.test.ts --reporter=verbose   (item 5's run alone)
+ <check mark> |unit| tests/data/hubs/decks.test.ts > a deck's projects, facts and domains > gives each deck the same slides, projects, domains and facts on the build's read and the route's, and leaves a project's domain to the manifest check's finding 2906ms
+ Test Files  1 passed (1)
+      Tests  1 passed (1)
+
+$ grep -rn "deckProjects\|createReader(\|hubDomainsOf" src tests   (C9)
+src/lib/data/sources/documents/decks.ts:83:    return createReader({
+src/lib/data/sources/deck/read.ts:202:export function createReader(context: DeckContext): DeckReader {
+src/lib/data/index.ts:666:function hubDomainsOf(hub: string, config: PortfolioConfig): HubVocab['domains'] {
+src/lib/data/index.ts:694: * The words one hub gives its own records, read from its own files: its domains (`hubDomainsOf`)
+src/lib/data/index.ts:709:        domains: hubDomainsOf(hub, config),
+tests/data/sources/present.test.ts:175:        const reader = createReader({
+tests/data/sources/present.test.ts:284:            createReader({
+tests/data/sources/present.test.ts:680:            const deck = createReader(context).read({ key: 'hub', dir }, one.path);
+
+$ LC_ALL=C perl -ne '<the rules file's ASCII gate>' $(find src tests bin config -type f ! -name local.yml 2>/dev/null)
+(nothing; exit 0)
+$ the same perl check without the config exemption over every non-deleted path of git status --short
+(nothing; exit 0)
+
+$ wc -l (every changed file)
+125 decks.ts | 107 server/content/deck/read.ts | 126 deck-facts.ts | 829 data/index.ts | 830 sources/deck/read.ts | 394 kinds.ts | 719 normalise.ts | 180 project-facts.ts | 340 model-deck.ts | 43 Legend.svelte | 110 Section.svelte | 75 Title.svelte | 267 Project.svelte | 505 findings.yml | 361 decks.test.ts | 339 deck-hub.ts | 198 deck.test.ts | 336 integrity.test.ts | 749 present.test.ts | 642 HELP.md | 431 decks.md | 447 guarded.md
+(each equal to the report's table; every source file at or under 880, every component at or under 520)
+
+$ sh utils/unused-exports.sh > <scratchpad>/r1/unused.txt; diff .agents/worktrees/O156-base/unused-exports.txt <scratchpad>/r1/unused.txt
+(nothing; exit 0)
+
+$ sh utils/folder-check.sh
+(nothing; exit 0)
+$ ls tests/data/hubs | wc -l ; ls tests/data/sources | wc -l ; ls src/lib/data/sources/deck | wc -l
+9 / 10 / 10
+
+$ history-word grep over the added lines of git diff a2385d834 -U0 -- src tests config docs/HELP.md docs/decks.md .scratch/migration/agents/guarded.md and the whole of tests/data/hubs/decks.test.ts
++import { readHubBeforeDecks, readOtherHub } from '../../../src/lib/data/index.ts';
++/** One hub of the workspace as the build reads it before its decks. */
++        raw: readHubBeforeDecks(one.dir, one.config, one.roots, one.key).raw
+(the comment names the order of the build's steps; the other two hits are an identifier)
+
+The round report's evidence, rerun:
+$ grep -rn "domain_unknown\|names the domain" src tests config docs --exclude=local.yml
+tests/data/hubs/decks.test.ts:330:                    .filter(({ one: found }) => found.message.includes('names the domain'))
+(no domain_unknown anywhere: the report's "prints nothing" for domain_unknown reproduces)
+$ grep -rn 'domain:` key\|domain key\|domain keys' src docs README.md
+src/lib/data/model/model-entities.ts:587:    /** The venue registry's own theme words (`core-ml`, `clinical`), which are not domain keys. */
+src/lib/data/model/model-entities.ts:641:    /** The dataset registry's own theme words (`ecg`, `single-cell`), which are not domain keys. */
+$ grep -n "no_key" config/text/findings.yml
+331:            no_key: '{0} is {1}, which is not a key of {2}'
+$ grep -n "it(" tests/data/hubs/decks.test.ts
+267:    it("gives each deck the same slides, ... and leaves a project's domain to the manifest check's finding"
+(the report says :270; no decision rests on the line number)
+$ grep -c hubDomainsOf docs/diagrams/writes.dot ; grep -n deckReader docs/diagrams/writes.dot
+0
+1415:    "51. lib/server/content/deck/read.ts" -> "51. lib/data/sources/documents/decks.ts" [tooltip="deckReader", ...
+$ round delta: diff -u of each files.txt path between .agents/worktrees/migration-O156-round-1 and the worktree, and git diff a2385d834 for model-deck.ts, Legend.svelte, Section.svelte, Title.svelte, Project.svelte, layer-data.dot/.svg and guarded.md
+(the round changed findings.yml, HELP.md, decks.md, deck-facts.ts, kinds.ts, documents/decks.ts, server/content/deck/read.ts, decks.test.ts, and the paths outside files.txt; the diagram files in files.txt are byte-identical to the snapshot; layer-data.dot's one change, 93 to 91 edges from data/sources to data/helpers, is the redraw after decks.ts lost two helper imports)
+```
+
+### Verdicts
+
+Items of the brief's "What to build" (judged with the round brief's correction of item 4's domain check):
+
+- 1: holds. `deckProject` and `deckReader` are at `documents/decks.ts:61-92`. The C9 grep shows `createReader(` only there and in the three reader tests of `present.test.ts`. `integrity.test.ts` reads through `deckReader`.
+- 2: holds. `decked` calls `readDecks`, which builds the projects with `hubProjects` (`deck-facts.ts:51-126`, the projects and words, `HubProjects` now `{ projects, words }`). It reads through `deckReader` (`decks.ts:114-115`). The `unnamed` rule is at `decks.ts:118-123` and the `decks` record at `:116-117`. `DECKS` pins the record.
+- 3: holds. `server/content/deck/read.ts:96-102` calls `deckReader` and holds no `DeckProject`, `createReader` or `hubDomainsOf`. `DeckSource` and `readDeck` keep their shape. The deck-slides and deck-acts tests pass in the 155-test runs.
+- 4: holds under round item 1. `readDecks` returns `{ decks, findings: reader.findings() }` with no domain loop (`decks.ts:107-125`). `createReader` holds no domain check (`deck/read.ts` `projectOf`). `findings.deck.domain_unknown` has left `findings.yml`, with no reader left in the tree (grep above). The schema check joins every hub's keys (`schema/lists.ts:116-125`, used at `schema/run.ts:474`). Each row of the table compares the module's deck over the build's input with `readDeck`'s answer as a whole, and pins the build's `domain` findings for the deck's manifests and no route domain finding. No field is added to `Project`.
+- 5: holds. One table in `tests/data/hubs/decks.test.ts`, `@module-tag slow`, run alone green. G32's Test line names the new title, which matches `decks.test.ts:267` character for character.
+- 6: holds. The comments at `model-deck.ts:90-93`, `:101-104`, `:183-186`, `:215-218`, `kinds.ts:91-93` and the four Present parts' prop comments now say "the internal id of the domain the project's `domain:` resolves to". The grep for "domain key" over `src`, `docs` and `README.md` finds only the two theme-word comments of `model-entities.ts`. The head comments of `decks.ts:15-21` and `server/content/deck/read.ts:18-20` say neither read raises a domain finding, which is true of the code.
+
+Cases of the brief's "Cases":
+
+- C1: met, row 'a project deck naming a domain key its own hub holds' (`hub:graphs` on both slides, no domain finding), green.
+- C2: met, the crossd row and the portfolio row (`lab:labonly` on the slide, legend, summary and grid, no domain finding on either read).
+- C3: met as round item 1 restates it: the stray row pins `notKey('stray', 'nowhere')` alone, at the manifest's line 5, and no deck finding. The slide domain is undefined on both reads.
+- C4: met, the twind row pins the merge's ambiguity finding alone and no domain drawn.
+- C5: met, the placeholder rows (quantum, hccnet, ghost, empty, crossp) pin the same findings on both reads, and none for hccnet and crossp.
+- C6: met, the labp row in lab's words (`sent out`, `Dana of Lab`).
+- C7: met, the route's unnamed test passes (`deck.test.ts`, 5 passed). The build side is read at `decks.ts:118-123`.
+- C8: met, the draft test and the narrowing test pass.
+- C9: met, the grep above, each hit as the brief names it.
+- C10: met for the fixture by reading the pinned build findings of every row: the deck's domain finding is gone, and the schema and merge findings stay. The running hub is for the look.
+- C11: met, `DECKS` pins path and tags for 14 projects. Unchanged in the round.
+- C12: met, the kit row and the portfolio row (`hub:graphs`, resolved in the primary).
+- C13: met by reading: the route's choice of hub (`read.ts:82-87`) and the build's `withDecks` call are unchanged.
+- C14: met by reading and the route's tests: `readDecks` reads the project decks and the portfolio deck only, and `readOtherHub` still sets `portfolioDeck: null`.
+- C15: met as round item 1 restates it: failedp (no `domain:`) pins no domain finding. The empty row pins the build's findings as they are, `notKey('empty', '')` ("domain is , which is not a key of domains"). Neither read draws a domain.
+- C16: met, deck-slides and deck-acts pass.
+- C17: met, labp draws `hub:hubonly` and pins no domain finding.
+- C18: met as round item 1 restates it: the portfolio row pins the schema finding for stray once, beside the twind ambiguity finding, over the whole build's findings for the deck's manifests.
+- C19: met, unchanged in the round. `integrity.test.ts` reads through `deckReader` over the merged projects. Its real-hub cases skip here (see Declined to judge).
+- C20: met. Rerunning `npm run diagrams` leaves every file under `docs/` byte-identical. `writes.dot:1415` draws the `deckReader` edge and holds no `hubDomainsOf`. The diagram check in "vitest checks" passes.
+
+### Findings
+
+1. Spec: none. Each of the four round items is closed and the closure reproduced: item 1 by the grep, the diff of `decks.ts` and `deck-facts.ts`, and the table's green solo run; item 2 by the grep and the diff of the six files; item 3 at `deck-facts.ts:59` over `const hubs = [own, ...others]` (`:57`); item 4 by the probe source quoted in the report under "The case-run probe". The edits to `model-deck.ts`, the four Present parts and `layer-data.dot/.svg` stay inside item 2 (comments a grep finds) and inside the redraw `npm run diagrams` makes.
+
+2. Proof: none.
+
+3. Standards:
+- `tests/data/hubs/decks.test.ts:327-334`: `.filter(({ one: found }) => found.message.includes('names the domain'))` ... `"the build's findings: no deck finding on a project's domain"`.
+  - What is wrong: the assertion matches the words of the catalog line this round deleted (`findings.deck.domain_unknown`, "project {0} names the domain {1}, ..."). Since no catalog key holds those words any more, no code in the tree can make it fail. A deck domain finding added back with other words passes it. The behaviour it is written for is already pinned by the row check at `:312-322`, which pins every `domain` finding on each row's manifests whatever its words. This is code larger than its job (rules file, "The principles every package is judged on", YAGNI; the Proof rule on an assertion over a constant).
+  - Failure scenario: a later change puts a domain finding back in `readDecks` under a new catalog key with other words, on a manifest no row reads, such as `lab:graph-bandits`. This assertion stays green, and a reader of the test takes it as a guard that does not exist.
+  - Small and inside the brief: fix at landing by deleting `:327-334`, or by filtering on `found.key === 'domain'` over the manifests of every project with a deck, against the schema and merge findings the rows pin.
+  - Verdict: none.
+
+4. Behaviour: none. The report states each before and after for C2, C3 (two findings before, the schema check's alone after), C4, C10 and C17, and that the route's answer carries no domain finding.
+
+### Declined to judge
+
+- The look: the Findings view of the running hub (C10), and the other hub's domain colour and title on the slide, legend, summary and grid (C2, C17). A read and a run cannot show what is drawn; the look at landing does.
+- The real-hub cases of `tests/checks/config/integrity.test.ts` (7 skipped). They need `OCULUS_TEST_HUB` set to the real hub, which this review does not load. A run with it at landing settles C19 on the real hub.
+- Whether the step makes the hub builds slower. Under a load average of 9 to 12, with the O154 landing running, three files that build hubs timed out at 5 s in the brief's second named run or in the list: `hub-portfolio.test.ts`, `self.test.ts`, `workspace-projects.test.ts`, and once the step's own `decks.test.ts`. Each passes alone (decks.test.ts in 2906 ms; hub-portfolio's slowest cases in 3194 ms and 3881 ms). The base copy has no `node_modules`, so these cases cannot be timed on the base here. Timing them on a checkout of the base under the same load would settle it.
+- `zenodo.test.ts` and `languages.test.ts`, red in the list as timeouts. The step does not change them and none of its code is in their scope, so under the rules file's "Verify before you report" they are named and not rerun.
+- The probe of the first build was written into the scratchpad by a heredoc, a form the rules file's case-run rule counts as a script. Round item 4 rules that the probe and the stopped list run are recorded at landing and asks nothing else, so this review leaves that to the landing.
+
+Reviewer usage: a54c252e660a2e7eb, claude-opus-5-5, 212136 tokens, 49 tool uses, 17.5 min.

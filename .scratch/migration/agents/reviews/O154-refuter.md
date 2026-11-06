@@ -165,3 +165,70 @@ none. The report gives before and after for each change named in the request: Mi
 - The doubled deck-route reads for a narrowed pane (report limitation): not measured by the builder, and a measurement needs a running page.
 
 Reviewer usage: a40ee61bf8428979b, claude-opus-5-5, 269077 tokens, 74 tool uses, 16.5 min.
+
+## Repair round 1, refuted
+
+```
+Round delta: for each of the 23 paths of ../migration-O154-round-1/files.txt, diff -u snapshot vs worktree
+23 of 23 "same", no DIFF, none missing
+$ git diff a6e95bf72 --stat | tail -1
+ 22 files changed, 371 insertions(+), 484 deletions(-)
+
+$ npm run diagrams; npm run docs:palette   (md5 of docs/diagrams/* docs/*.md before and after: 47ea99e1cdee69325c58e3b8cb6e050a both times)
+
+$ npm run test:quick -- --base a6e95bf72      (run 1, O156 running beside it)
+ Test Files  1 failed | 15 passed | 1 skipped (17)
+      Tests  1 failed | 340 passed | 3 skipped (344)
+test:quick: 261.1 s; failed: vitest
+$ npm run test:quick -- --base a6e95bf72      (run 2, no file changed between the runs)
+ok      prettier (11.3 s) | ok ASCII gate (11.9 s) | ok svelte-kit sync (17.2 s) | ok eslint (16.6 s)
+ok      svelte-check (46.9 s): 584 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest (143.4 s) | ok vitest slow (154.3 s) | ok vitest checks (178.6 s)
+test:quick: 198.3 s; every command passed
+
+$ npx vitest run --reporter=dot <the five brief test files>
+ FAIL  |unit| tests/checks/imports/cycles.test.ts > the runtime import graph of src > holds no cycle
+ Tests  1 failed | 119 passed (120)
+$ npx vitest run tests/checks/imports/cycles.test.ts
+ Tests  7 passed (7)
+$ npx vitest run --reporter=dot <the same five files>
+ Tests  120 passed (120)
+
+C15 greps: c15a exit=1, c15b exit=1, the third prints FilterBar.svelte:2 and SliceLine.svelte:2 (both true)
+ASCII gate over the tree and over the 27 touched paths: exit 0
+wc -l: every component at or under 520, every source file under 880
+unused-exports: 226 to 225, no line added | folder-check exit=0
+history-word grep: 11 hits, none history
+
+Transcript checks (agent-acf1b0553e05d698a.jsonl): wrap.py and short.py sources and the twelve runs equal the report's "Programs"; the 16 paragraphs equal their runs' output but present.svelte.ts:9 ("keeps" printed, "shows" in the file); round 1 calls (11:27:01 to 11:33:32): reads, the verify list once, Edit of the report only.
+Other inline programs of the first build, none named in the report: 10:29:38 python3 edit of scratchpad/caserun/base.test.ts (inserts a setCatalog import and call); 10:57:00, 10:58:09, 11:01:48, 11:02:01 python3 prints of the transcript; 11:02:33 python3 - "$T" > scratchpad/caserun/base-src.txt.
+base.test.ts as written at 10:28:46, run at 10:29:00: "Tests 5 failed" (text key not in the text catalog: board.section_other); after the python3 edit, 10:29:38: "Tests 5 passed (5)" with the quoted lines. The report's quoted base.test.ts equals the 10:28:46 Write, with no setCatalog.
+```
+
+### Verdicts
+
+Items 1 to 7: hold, over the whole diff since the base (the round changed no file of the step).
+
+Cases C1 to C26: met, as the first run gave them; C13 under the cases ruling.
+
+### Findings
+
+- Spec. Builder transcript at 10:29:38, 10:57:00, 10:58:09, 11:01:48, 11:02:01 and 11:02:33 (first build); the report's "Programs" section names only `wrap.py` and `short.py`. Six inline `python3` programs the brief does not build and no Rulings line approves: the first edited the case-run program `scratchpad/caserun/base.test.ts`; the other five printed parts of the builder's transcript, the last by a redirect into `scratchpad/caserun/base-src.txt`, whose text became the report's quoted `base.test.ts`. They fall under the standing ruling "Unapproved builder scripts". Failure scenario: the orchestrator reads only the hunks the "Programs" section lists and does not learn that a program edited the first-run case program. Verdict: none.
+- Proof. `O154-report.md`, "The cases' first run", the quoted `base.test.ts`: the quote is the file as written at 10:28:46, which failed all five tests; the quoted output came from the 10:29:38 run, after the python3 edit inserted the `setCatalog` import and call. The quoted program does not print the quoted lines. Failure scenario: a reader who runs the quoted `base.test.ts` against the base gets five failures in place of the quoted first-run lines. Verdict: no case made partial; the changed-tree results come from `after.test.ts`, quoted as written and run.
+- Standards. `src/lib/state/boards/board/filter-menu.ts:15-16`: "It lives in this file because it calls facets.ts and state.ts, and facets.ts imports state.ts, so a home in either would make an import cycle." The stated cause gives a cycle for a home in `state.ts` but not for `facets.ts`; the cycle there comes from `filterGroups`, which lives in this file, which imports `facets.ts`. Failure scenario: a maintainer checks the stated cause, finds no cycle for `facets.ts`, moves `boardFilter` there and meets the red cycle check with a comment that does not explain it. Verdict: none.
+
+### Declined to judge
+
+- The red lines of the first `test:quick` run and of the first five-file run (`cycles.test.ts > holds no cycle`): the error text was cut by the reviewer's filters; no file changed between the runs, and the cycle check passed alone and the second runs passed. The reviewer's judgment is load from O156's suite beside it, not verified; the landing's own run of the list gives a further reading.
+- The drawn bar and the states for the look (C1, C3, C5, C6, C8, C11, C14, C17, C22, C26): no page was run.
+- The disposition of the six python3 programs: the orchestrator's.
+- The first-run lines of the corrected `base.test.ts`: not rerun, since a rerun needs a written file.
+
+Reviewer usage: a94ce92d3cbedacf9, claude-opus-5-5, 247816 tokens, 70 tool uses, 20.0 min.
+
+## Closed
+
+- First run, Spec 1 (`wrap.py`, `short.py`): closed under the standing ruling "Unapproved builder scripts"; round 1 listed both programs, their twelve runs and the 16 paragraphs they shaped, and the orchestrator read each paragraph in the diff and keeps it; the breach is recorded in the booking.
+- Over round 1, Spec (six inline `python3` programs): closed under the same ruling. None wrote a file of the worktree: the first edited the scratchpad case-run program and the others printed the transcript, one by a redirect into the scratchpad. The breach is recorded in the booking with each program, and the only text of theirs that reached the step is the report's quote, corrected at landing (next item).
+- Over round 1, Proof (the quoted `base.test.ts`): fixed at landing in the report, where the quote gains the import and the call the python3 edit inserted, word for word from the transcript.
+- Over round 1, Standards (`filter-menu.ts:15-16`): fixed at landing; the comment names the cause: `boardFilter` calls `filterGroups` of this file, which imports `facets.ts` and `state.ts`, so a home in either would import this file back and make a cycle.

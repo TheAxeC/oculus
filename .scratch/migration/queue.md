@@ -1,6 +1,5 @@
-In flight (2 of 6 slots in use):
-- O154 (the project board's filter on the Present view), repair round 1: base a6e95bf72, reviewed (`agents/reviews/O154-refuter.md`, one finding), round 1 reported, review over round 1 next.
-- O156 (one deck reader), repair round 1 beside O154 (no shared path): base a2385d834, reviewed (`agents/reviews/O156-refuter.md`), round 1 sent to the builder.
+In flight (1 of 6 slots in use):
+- O156 (one deck reader): base a2385d834, reviewed over round 1 (`agents/reviews/O156-refuter.md`, one finding for landing), landing next.
 
 Queued, in order:
 - O155 (the deck order, `deck_order` in `vocab.yml`).

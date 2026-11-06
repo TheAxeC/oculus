@@ -1,65 +1,72 @@
-// Layer 3, view helper. The filter of one Present pane: the picks it holds in the pane's saved
-// state (`filters` of PresentState), the kept list its deck is read under, the answer the pane
-// draws, and what the toolbar draws of it: the groups of its bar and the line that says how many
-// of the deck's decks it keeps. The rules are the boards', through state/life/present.ts
-// (`filterGroupsOf`, `keptKeys`, `deckTally`); this holds only the wiring to the pane and to the
-// page's stores. No pick writes a file.
+// Layer 3, view helper. The filter of one Present pane: the Projects board's filter over the member
+// projects of the deck's groups of project decks, the kept list its deck is read under, the answer
+// the pane draws, and what the bar under the toolbar draws (views/shared/forms/bar/BoardBar.svelte,
+// the board's own bar). The filter is the board's function (state/boards/board/filter-menu.ts
+// `boardFilter`) given the same arguments as on the board: the members as board items of the Map's
+// preset, which takes every project, whether a person is marked as the user, the hubs of the Hub
+// group, the pane's saved state and the stale lag. Its controls are saved in the pane's state under
+// the board's keys (state/life/present.ts `PresentBar`); no control writes a file.
 //
-// The kept list is read from the pane's saved state and the page's stores at each call, so the
-// presenting store's link (`keepFor`) answers for a pane that is not drawn. While picks are held
-// and the snapshot the board items are made from is not read yet, it is undefined, which asks the
-// deck route for nothing. The pane's own list stays the same array while its keys are the same, and
-// the pane tells the Present store which list it reads under (`asking`), so the answers of lists no
-// pane reads under any more are dropped.
+// The members are read from the deck's whole answer, which the Present store holds for as long as
+// the page does (state/life/present.svelte.ts `asking` never drops it), so the kept list is one
+// function of a pane's saved state and that answer, read at each call: the pane's own `keep` and
+// the presenting store's link (`keepFor`) give the same list whether the pane is drawn or not. It
+// is null for a deck with no group of project decks and while the bar shows every member, and
+// undefined, which asks the deck route for nothing, while the whole answer or the snapshot the
+// board items are made from is not read yet; so a pane opened on a deck its saved controls narrow
+// draws its loading state until the narrowed answer is in. The pane's own list stays the same array
+// while its keys are the same, and the pane tells the Present store which list it reads under
+// (`asking`), so the answers of lists no pane reads under any more are dropped.
 //
 // While the deck under a new kept list is being read, the pane goes on drawing the answer it drew
-// for the same deck, so a pick neither blanks the pane nor ends a presentation that runs. Once
-// that answer is in, a pick or Clear leaves the pane on the slide on screen when the deck read
-// under the new list holds it, and puts it on that deck's first slide when the filter took it
-// out. It is called while the view is being initialised, since it registers its effect there.
+// for the same deck, so a change of the controls neither blanks the pane nor ends a presentation
+// that runs. Once that answer is in, the pane stays on the slide on screen when the deck read under
+// the new list holds it, and goes to that deck's first slide when the filter took it out. It is
+// called while the view is being initialised, since it registers its effects there.
 
 import { untrack } from 'svelte';
-import { mapPreset, withPick, type FilterGroup } from '$lib/state/boards/board';
+import {
+    boardFilter,
+    mapPreset,
+    searchWords,
+    type BoardFilter,
+    type BoardItem,
+    type BoardPreset,
+    type BoardState,
+    type BoardStats
+} from '$lib/state/boards/board';
 import { useState } from '$lib/state/client/use';
 import {
-    FILTER_GROUPS,
-    deckHub,
-    deckTally,
-    filterGroupsOf,
+    barFields,
     filterable,
-    filtering,
-    keptKeys,
-    parsePresentState,
+    memberItems,
     sameDeck,
-    type DeckFilters,
-    type DeckRef
+    shownKeys,
+    type DeckRef,
+    type PresentState
 } from '$lib/state/life/present';
 import type { DeckAnswer, Keep } from '$lib/state/life/present.svelte';
+import { hubList } from '$lib/state/shared/page/hubs';
 import { vocabOf } from '$lib/state/shared/words/tones';
-import { t } from '$lib/state/shared/words/text';
 
 /** What the filter reads from the pane. */
 type Reads = {
     ref: () => DeckRef | null;
-    /** The pane's instance id, which the Present store knows the list the pane reads under by. */
+    /** The pane's instance id, whose saved state holds the controls. */
     instance: () => string;
-    /** The pane's picks, from its saved state. */
-    filters: () => DeckFilters;
     /** The key of the slide the pane is on; empty for the deck's first. */
     slide: () => string;
-    /** Write the pane's picks and, when the filter took the slide on screen out, its slide. */
-    write: (changes: { filters?: DeckFilters; slide?: string }) => void;
+    /** Write fields of the pane's state: the controls, or the slide the filter took out. */
+    write: (changes: Partial<PresentState>) => void;
 };
 
-/** What the toolbar draws of a pane's filter. */
-export type FilterLine = {
-    groups: FilterGroup[];
-    /** The ids of the groups the bar draws, in their order. */
-    line: readonly string[];
-    /** "Filtered: n of m decks" while a pick is held, else the empty string. */
-    said: string;
-    ontoggle: (group: string, value: string) => void;
-    onclear: () => void;
+/** What the bar under the toolbar draws of a pane's filter, as the board's bar takes it. */
+export type PaneBar = {
+    filter: BoardFilter;
+    /** The counts on the controls, over the members before any filter. */
+    stats: BoardStats;
+    placeholder: string;
+    write: (next: Partial<BoardState>) => void;
 };
 
 export type PaneFilter = {
@@ -68,30 +75,52 @@ export type PaneFilter = {
     keep: () => Keep;
     /** The kept list of a pane by its instance id, read from its saved state at the call. */
     keepFor: (instance: string, ref: DeckRef) => Keep;
-    /** What the toolbar draws, null for a deck that holds no group of project decks. */
-    bar: () => FilterLine | null;
+    /** What the bar draws, null for a deck that holds no group of project decks. */
+    bar: () => PaneBar | null;
 };
+
+/**
+ * A pane's filter over its deck: the members it runs over, the preset they are items of, and the
+ * board's answer; null for a deck with no group of project decks, or whose whole answer failed or
+ * names nothing, and undefined while that answer or the snapshot is not read yet.
+ */
+type Worked = { members: BoardItem[]; preset: BoardPreset; filter: BoardFilter } | null | undefined;
 
 export function createFilter(reads: Reads): PaneFilter {
     const {
         entities: { portfolio },
         fs: { primary, roots },
         present: { asking, deck: deckOf },
-        selectors: { board, configMap },
+        selectors: { board, boardStats, configMap, selfNamed, staleLag },
         ui: { instanceState }
     } = useState();
 
-    /** The kept list under a set of picks: undefined while the snapshot is not read. */
-    function keepOf(ref: DeckRef, filters: DeckFilters): Keep {
-        if (!filtering(filters)) return null;
+    function worked(instance: string, ref: DeckRef): Worked {
+        const whole = deckOf(ref, null);
+        if (whole.deck === null) return whole.loading ? undefined : null;
+        if (!filterable(whole.deck)) return null;
         if (portfolio() === null) return undefined;
         const preset = mapPreset(configMap(), vocabOf);
-        return keptKeys(board(preset), deckHub(ref, roots(), primary()), filters, preset);
+        const members = memberItems(whole.deck, board(preset));
+        const hubs = hubList(roots(), primary());
+        const saved = instanceState(instance);
+        const filter = boardFilter(members, preset, selfNamed(), hubs, saved, staleLag());
+        return { members, preset, filter };
+    }
+
+    function keepOf(work: Worked): Keep {
+        if (work === undefined || work === null) return work;
+        return shownKeys(work.members, work.filter.shown);
     }
 
     function keepFor(instance: string, ref: DeckRef): Keep {
-        return keepOf(ref, parsePresentState(instanceState(instance)).filters);
+        return keepOf(worked(instance, ref));
     }
+
+    const work = $derived.by((): Worked => {
+        const ref = reads.ref();
+        return ref === null ? null : worked(reads.instance(), ref);
+    });
 
     /**
      * The pane's kept list: the same array while the keys it holds are the same, so a slide move or
@@ -99,8 +128,7 @@ export function createFilter(reads: Reads): PaneFilter {
      */
     let kept: Keep = null;
     const keep = $derived.by(() => {
-        const ref = reads.ref();
-        const next = ref === null ? null : keepOf(ref, reads.filters());
+        const next = keepOf(work);
         if (JSON.stringify(next) !== JSON.stringify(kept)) kept = next;
         return kept;
     });
@@ -131,40 +159,36 @@ export function createFilter(reads: Reads): PaneFilter {
         return { ...last.answer, loading: true };
     });
 
-    /** Whether a pick changed and the answer under the new kept list is yet to be checked. */
+    /** Whether the kept list changed and the answer under the new one is yet to be checked. */
     let moving = $state(false);
+    /** The kept list the pane last read under, which a change of it is told from. */
+    let previous: string | undefined;
+    $effect(() => {
+        const now = JSON.stringify(keep);
+        untrack(() => {
+            if (now !== previous) moving = true;
+            previous = now;
+        });
+    });
     $effect(() => {
         const read = answer;
         if (!moving || read === null || read.loading) return;
         moving = false;
+        const slide = reads.slide();
         const slides = read.deck?.slides ?? [];
-        if (!slides.some((row) => row.key === reads.slide())) {
+        if (slide !== '' && !slides.some((row) => row.key === slide)) {
             reads.write({ slide: slides.at(0)?.key ?? '' });
         }
     });
 
-    function pick(filters: DeckFilters): void {
-        moving = true;
-        reads.write({ filters });
-    }
-
-    const bar = $derived.by((): FilterLine | null => {
-        const deck = answer?.deck ?? null;
-        if (deck === null || !filterable(deck)) return null;
-        const preset = mapPreset(configMap(), vocabOf);
-        const filters = reads.filters();
-        const tally = deckTally(deck);
-        const said = !filtering(filters)
-            ? ''
-            : tally.total === 1
-              ? t('present.filtered_one', String(tally.kept))
-              : t('present.filtered', String(tally.kept), String(tally.total));
+    const bar = $derived.by((): PaneBar | null => {
+        if (work === null || work === undefined) return null;
+        const { filter, members, preset } = work;
         return {
-            groups: filterGroupsOf(deck, board(preset), filters, preset),
-            line: FILTER_GROUPS,
-            said,
-            ontoggle: (group, value) => pick(withPick(filters, group, value)),
-            onclear: () => pick({})
+            filter,
+            stats: boardStats(members),
+            placeholder: searchWords(preset),
+            write: (next) => reads.write(barFields({ ...filter.held, ...next }))
         };
     });
 

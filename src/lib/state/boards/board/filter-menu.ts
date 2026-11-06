@@ -8,6 +8,14 @@
 // (state/boards/structure/map-bar.ts) are made in the same shapes: the collection's reads the
 // facets' hues from here (`facetToneIn`), the Map's its facet groups (`filterGroups`).
 //
+// The whole filter of a project board's bar is one function here (`boardFilter`): the saved state
+// read against the board's facets and slices, the quick filters, the counted facets, the groups and
+// the projects shown. The Projects board and the Present view, over the projects of a deck's groups
+// of project decks, both read their bar through it, so the two cannot count or keep a project
+// differently. It lives in this file because it calls `filterGroups`, which is defined here, and
+// this file imports facets.ts and state.ts, so a home in either would import this file back and
+// make an import cycle.
+//
 // It is apart from the views so the grouping, the counts and the words can be read without a DOM:
 // a group's list is drawn only once it is opened, which a server rendering never does.
 
@@ -16,7 +24,7 @@ import type { ListedColumn } from '../../../data/shapes/boards/columns.ts';
 import { mapOfShape, readAs, wordShape } from '../../../data/shapes/shapes.ts';
 import { t } from '../../shared/words/text.ts';
 import { codeLabel, namedTone } from '../../shared/words/tones.ts';
-import { facetLabel, type SliceGroup } from './facets.ts';
+import { facetLabel, facets, sliceGroups, type SliceGroup } from './facets.ts';
 import {
     FACETS,
     LIST_CELLS,
@@ -24,11 +32,15 @@ import {
     SESSIONS_LIVE,
     SESSIONS_RECENT,
     type BoardColumn,
+    type BoardItem,
     type BoardPreset,
+    type BoardState,
     type BoardStats,
     type Facet,
-    type FacetValue
+    type FacetValue,
+    type QuickFilters
 } from './presets.ts';
+import { appliedFilters, applyFilters, offersMine, parseBoardState } from './state.ts';
 
 /** One value of one facet as a choice of a group's list. */
 export type FilterChoice = {
@@ -176,6 +188,77 @@ export function filterGroups(
             }
         ];
     });
+}
+
+/** What a project board's bar draws and the board shows, as `boardFilter` works it out. */
+export type BoardFilter = {
+    /** The saved state as the board reads it, a value the board would drop left out. */
+    held: BoardState;
+    /** Whether a person is marked as the user, which draws Mine only and the Role group. */
+    named: boolean;
+    /** Whether Mine only changes what is shown, which is where it is applied. */
+    mine: boolean;
+    /** The slices by category, read from the projects before any filter. */
+    slices: SliceGroup[];
+    /** The facets with each value counted over the projects the other filters leave. */
+    counted: Facet[];
+    /** The groups of line 1, a picked value no project holds listed at 0. */
+    groups: FilterGroup[];
+    /** The projects the search, the toggles, Mine only and every pick leave, in their order. */
+    shown: BoardItem[];
+};
+
+/**
+ * The filter of a project board's bar over the projects `items` of the preset `preset`, with
+ * `named` whether a person is marked as the user, `hubs` the hubs the Hub group lists (none with
+ * one hub), `saved` the raw state the bar's controls were saved in and `staleLag` the lag of the
+ * stale toggle. The saved state is read against the facets and the slices of `items` before any
+ * filter (`parseBoardState`), so a compute value no project offers and a slice no project holds are
+ * dropped; Mine only is applied only where one of `items` is one it does not keep (`offersMine`);
+ * the role and hub picks narrow only while their groups are drawn (`appliedFilters`); each facet is
+ * counted over the projects the search, the toggles and the other facets leave (`facets`); and the
+ * projects shown are those every control leaves (`applyFilters`).
+ */
+export function boardFilter(
+    items: BoardItem[],
+    preset: BoardPreset,
+    named: boolean,
+    hubs: readonly string[],
+    saved: unknown,
+    staleLag: number
+): BoardFilter {
+    const mine = offersMine(items, named);
+    const offered = facets(items, preset, named);
+    const slices = sliceGroups(items, preset);
+    const held = parseBoardState(
+        saved,
+        preset.labels,
+        offered,
+        slices.flatMap((group) => group.slices.map((one) => one.value))
+    );
+    const quick: QuickFilters = {
+        stale: held.stale,
+        dated: held.dated,
+        waiting: held.waiting,
+        mine: mine && held.mine,
+        staleLag
+    };
+    const filters = appliedFilters(held.filters, named, hubs);
+    const counted = facets(items, preset, named, { filters, search: held.search, quick }, hubs);
+    return {
+        held,
+        named,
+        mine,
+        slices,
+        counted,
+        groups: filterGroups(counted, held.filters, preset, named, hubs),
+        shown: applyFilters(items, filters, held.search, quick)
+    };
+}
+
+/** The search box's placeholder: the preset's search words, or the board's own with none. */
+export function searchWords(preset: BoardPreset): string {
+    return preset.search === '' ? t('board.search_default') : preset.search;
 }
 
 /** How many of a group's values are picked. */

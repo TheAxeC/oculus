@@ -128,7 +128,7 @@ order:
 
 1. The decks `slides:` names, in its order. A name written twice is placed once, and a name that matches no deck the group can see is a finding.
 2. With `discover: true`, then every deck `find:` keeps that no group of the deck names, in the order `sort:` gives.
-3. A filter's picks then narrow a group of project decks (see [The filter](#the-filter)).
+3. The filter's controls then narrow a group of project decks (see [The filter](#the-filter)).
 
 What the group cannot place is told, in the Overview's group heading and as a finding of `present.yml`:
 
@@ -374,10 +374,11 @@ Every key a slide's front matter is read for, with its shape, the kinds that rea
 
 ## The filter
 
-- A deck whose groups hold project decks draws a filter under the toolbar, as the boards do: Stage, Status, Tier, Pillar and Form, each listing the values of those projects with their counts. A group no project gives a value is not drawn.
-- A pick narrows every group of project decks to the decks of the projects it keeps, and leaves out of such a group a deck that is no project's. It narrows what each group places: the slides of `{ slides: <group> }`, `{{<group>.count}}`, the summary rows, the grid cards, the legends and the Overview's tiles and counts, on the pane, the presenter screen, the audience window and the PDF. A group of other decks keeps every deck.
-- While a pick is held the toolbar reads "Filtered: 3 of 7 decks" ("Filtered: 1 of 1 deck" for a deck of one), each deck counted once however many groups hold it. Clear takes every pick out and shows every deck again.
-- The picks are the pane's: kept with it when its page comes back, dropped when it opens another deck. No pick writes `present.yml` or a slide file.
+- A deck whose groups hold project decks draws the Projects board's filter under the toolbar: the same bar and the same rules, over the projects whose decks those groups hold. Line 1 holds the search, the stale, deadline and waiting toggles, Mine only and the Role group while a person is marked as you, the group buttons with the rest in More, and the Hub group while the workspace has more than one hub. Line 2 holds the slices by category, how many projects are shown, and Clear all. The counts on the toggles and the badges are over those projects before any filter, and each project counts once however many groups hold its deck. A deck with no group of project decks draws no bar.
+- Mine only is on by default where it applies, as on a board: a deck one of whose projects is not yours opens narrowed to your projects and those naming no one.
+- A control that narrows the bar narrows every group of project decks to the decks of the projects the bar shows, and leaves out of such a group a deck that is no project's. It narrows what each group places: the slides of `{ slides: <group> }`, `{{<group>.count}}`, the summary rows, the grid cards, the legends and the Overview's tiles and counts, on the pane, the presenter screen, the audience window and the PDF. A group of other decks keeps every deck.
+- While a control narrows, line 2 reads "5 of 16 shown", and "16 projects" while every project is shown. Clear all takes every group's and slice's pick out and leaves the search and the toggles.
+- The controls are the pane's: kept with it when its page comes back, and set back as a board starts (Mine only on, nothing else) when it opens another deck. No control writes `present.yml` or a slide file.
 
 ## The project facts strip
 

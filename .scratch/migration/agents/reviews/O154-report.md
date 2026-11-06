@@ -169,6 +169,10 @@ import {
     keptKeys,
     parsePresentState
 } from '/Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O154/src/lib/state/life/present.ts';
+import { setCatalog } from '/Users/axelfaes/workspace/oculus/.agents/worktrees/migration-O154/src/lib/state/shared/words/text.ts';
+
+// Every text key reads as itself, so no config file is read.
+setCatalog(new Proxy({}, { get: (_t, key) => String(key) }) as Record<string, string>);
 
 function item(key: string, root: string, over: Record<string, unknown> = {}): BoardItem {
     return {

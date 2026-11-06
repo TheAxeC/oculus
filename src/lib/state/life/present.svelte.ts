@@ -6,12 +6,13 @@
 // both derived, so a deck added or a project given its first slide reaches the open deck menu on
 // the next push. The deck itself is asked of api/deck the first time it is wanted and held in the
 // client state's query client by its root, its folder and the kept list of the pane's filter (the
-// keys of the projects the filter keeps, none for the whole deck), so a filtered answer and a whole
+// keys of the projects the filter shows, none for the whole deck), so a filtered answer and a whole
 // one are held apart, and every read of a pane's deck (its slides, the measures it keeps, the frame
-// its audience window opens at) is under the same key. A pane with picks whose kept list cannot be
-// worked out yet, before the first snapshot, asks for nothing. Each pane says which deck and list
-// it reads under (`asking`), and an answer held under a kept list no pane reads under any more is
-// dropped, so the page holds the whole deck and the lists in use, and a push marks only those.
+// its audience window opens at) is under the same key. A pane's filter reads the deck's members
+// from its whole answer, so a pane whose kept list cannot be worked out yet, before that answer and
+// the first snapshot are read, asks for nothing else. Each pane says which deck and list it reads
+// under (`asking`), and an answer held under a kept list no pane reads under any more is dropped,
+// so the page holds the whole deck and the lists in use, and a push marks only those.
 //
 // The deck is read by the server from files and from the portfolio, so three things make a held
 // answer stale: a slide file or `present.yml` written under a watched root (the `files` channel,

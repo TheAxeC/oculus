@@ -13,8 +13,7 @@
 // count is taken over what the other filters leave, the Stage group's under every filter but its
 // own, the other groups' over the projects the stage rule keeps. The Stage group's listing
 // (`stageGroup`) is also the Stage group of a collection's Projects section in More
-// (state/boards/collection/bar.ts) and of the Present view's filter (state/life/present.ts),
-// neither of which applies a stage rule of its own.
+// (state/boards/collection/bar.ts), which applies no stage rule of its own.
 
 import type { Snapshot } from '../../../data/model/index.ts';
 import { byKey } from '../../../data/helpers/guards.ts';
@@ -37,8 +36,8 @@ import {
 } from '../board/index.ts';
 import { buildGraph, type GraphKind, type GraphShow } from './graph.ts';
 
-/** The facet key the Stage group's picks are stored under, the Present view's filter's too. */
-export const STAGE_FACET = 'stage';
+/** The facet key the Stage group's picks are stored under. */
+const STAGE_FACET = 'stage';
 
 /** The facet the Pillar group stores its picks under, which the graph draws its pillars by. */
 export const PILLAR_FACET = 'pillar';

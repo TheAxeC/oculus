@@ -57,18 +57,17 @@
     // mode, Columns, a menu that shows or hides each cell of the list, Project always shown. A
     // board offers New project, written with its tier and its `role:` keys, only when its rule
     // takes the project that write makes (state/boards/board/new-project.ts), so Archive, which
-    // takes done work, offers none with the shipped boards. Line 1 of the bar is the search, the
-    // stale, deadline and waiting toggles this view hands it, and the group buttons, those of
-    // `LINE_FACETS` on the line and the rest, Tier among them, in More
-    // (views/shared/forms/bar/FilterBar.svelte); line 2 the slices, each the projects of one
-    // category at one stage or form, how many projects are shown, and Clear all
-    // (views/shared/forms/bar/SliceLine.svelte). While a person is marked as the user, the bar
-    // draws the Role group and Mine only, and a card whose lead is the user carries the Lead badge;
-    // Mine only, on by default, is applied only where one of the board's projects is one it does
-    // not keep, and drawn disabled elsewhere. Without a `self` it draws none of them. While the
-    // workspace has more than one hub, line 1 draws the Hub group after Venue and Waiting on, a
-    // project's hub being its `root`; with one hub it draws none, and a hub picked earlier narrows
-    // nothing.
+    // takes done work, offers none with the shipped boards. The bar is the shared board bar
+    // (views/shared/forms/bar/BoardBar.svelte), which the Present view draws too. Line 1 of the bar
+    // is the search, the stale, deadline and waiting toggles, and the group buttons, those of
+    // `LINE_FACETS` on the line and the rest, Tier among them, in More; line 2 the slices, each the
+    // projects of one category at one stage or form, how many projects are shown, and Clear all.
+    // While a person is marked as the user, the bar draws the Role group and Mine only, and a card
+    // whose lead is the user carries the Lead badge; Mine only, on by default, is applied only
+    // where one of the board's projects is one it does not keep, and drawn disabled elsewhere.
+    // Without a `self` it draws none of them. While the workspace has more than one hub, line 1
+    // draws the Hub group after Venue and Waiting on, a project's hub being its `root`; with one
+    // hub it draws none, and a hub picked earlier narrows nothing.
     //
     // Every card is drawn closed; its title, its Open project page action and Enter on the
     // keyboard cursor open the project page beside the board (ProjectCard.svelte).
@@ -87,54 +86,40 @@
     // section (views/boards/projects/BoardList.svelte).
     //
     // It joins nothing and counts nothing itself: the projects come from the board selector already
-    // joined, and the facets, the slices, the groups, the filters, the counts on the controls and
-    // the columns are the pure functions of state/boards/board/; each facet's counts are taken over
-    // the projects the search, the toggles and the other facets leave, and the counts on the
-    // controls over the board's projects before any filter. The new-project form is
-    // views/boards/projects/NewIdea.svelte, which is the partials rule of the boundary table: a
-    // view too large for one file is split into its own folder. The card is
-    // views/shared/card/project/ProjectCard.svelte, since views/boards/project/Project.svelte draws
-    // the same one.
+    // joined, the bar's filter (the saved state as read, the facets, the slices, the groups and the
+    // projects shown) is one pure function, state/boards/board/filter-menu.ts `boardFilter`, and
+    // the counts on the controls and the columns are the other pure functions of
+    // state/boards/board/; each facet's counts are taken over the projects the search, the toggles
+    // and the other facets leave, and the counts on the controls over the board's projects before
+    // any filter. The new-project form is views/boards/projects/NewIdea.svelte, which is the
+    // partials rule of the boundary table: a view too large for one file is split into its own
+    // folder. The card is views/shared/card/project/ProjectCard.svelte, since
+    // views/boards/project/Project.svelte draws the same one.
 
     import Menu from '$lib/ui/menu/Menu.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Surface from '$lib/ui/frame/Surface.svelte';
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import Chip from '$lib/ui/controls/Chip.svelte';
     import GroupHead from '$lib/ui/controls/heads/GroupHead.svelte';
     import Card from '../../shared/card/project/ProjectCard.svelte';
     import CardGrid from '../../shared/card/record/CardGrid.svelte';
     import SaidBody from '../../shared/writes/SaidBody.svelte';
-    import FilterBar from '../../shared/forms/bar/FilterBar.svelte';
-    import SliceLine from '../../shared/forms/bar/SliceLine.svelte';
+    import BoardBar from '../../shared/forms/bar/BoardBar.svelte';
     import ModeButtons from '../../shared/forms/bar/ModeButtons.svelte';
     import BoardList from './BoardList.svelte';
     import NewIdea from './NewIdea.svelte';
     import {
-        LINE_FACETS,
-        appliedFilters,
-        applyFilters,
         awaitingPreset,
-        blockedBadge,
+        boardFilter,
         cardSections,
-        deadlineWords,
-        facets,
-        filterGroups,
         listCells,
         newProjectTier,
-        offersMine,
-        parseBoardState,
         pickCell,
-        shownWords,
-        sliceGroups,
-        venueWarning,
-        waitingWords,
-        withPick,
+        searchWords,
         type BoardItem,
         type BoardMode,
-        type BoardState,
-        type QuickFilters
+        type BoardState
     } from '$lib/state/boards/board';
     import { awaitingTabOf, awaitingTake } from '$lib/state/boards/focus/filter';
     import { stateFolds } from '$lib/state/shared/page/folds';
@@ -187,41 +172,13 @@
     );
     const cursor = $derived(cardCursor(instance.state));
     const items = $derived(board(preset));
-    /** Whether a person is marked as the user, which Mine only and the Role facet need. */
-    const named = $derived(selfNamed());
-    /** Whether Mine only changes the board, which is where it is applied. */
-    const mineApplies = $derived(offersMine(items, named));
-    /** The facets with their counts over every project, which the saved state is read against. */
-    const offered = $derived(facets(items, preset, named));
-    /** The board's slices by category, read from its projects before any filter. */
-    const slices = $derived(sliceGroups(items, preset));
-    const held = $derived(
-        parseBoardState(
-            instanceState(instance.id),
-            preset.labels,
-            offered,
-            slices.flatMap((group) => group.slices.map((one) => one.value))
-        )
-    );
     const lag = $derived(staleLag());
-    const quick: QuickFilters = $derived({
-        stale: held.stale,
-        dated: held.dated,
-        waiting: held.waiting,
-        mine: mineApplies && held.mine,
-        staleLag: lag
-    });
-    /**
-     * The facet values that narrow the board, which leave out a role while no `self` is named and
-     * a hub while the Hub group is not drawn.
-     */
-    const filters = $derived(appliedFilters(held.filters, named, hubs));
-    /** The facets with each value counted over the projects the other filters leave. */
-    const counted = $derived(
-        facets(items, preset, named, { filters, search: held.search, quick }, hubs)
+    /** The bar's filter over the board's projects, read from the saved state. */
+    const filter = $derived(
+        boardFilter(items, preset, selfNamed(), hubs, instanceState(instance.id), lag)
     );
-    const groups = $derived(filterGroups(counted, held.filters, preset, named, hubs));
-    const shown = $derived(applyFilters(items, filters, held.search, quick));
+    const held = $derived(filter.held);
+    const shown = $derived(filter.shown);
     const grid = $derived(preset.cards === 'grid');
     const sections = $derived(cardSections(shown, preset));
     const folded = $derived(new Set(held.folded));
@@ -255,11 +212,6 @@
     /** Draw the cards or the list; a press on the mode in force changes nothing. */
     function setMode(mode: BoardMode): void {
         if (held.mode !== mode) write({ mode });
-    }
-
-    /** Add or remove one value of one facet, which is what a pick in a group's list means. */
-    function toggleFilter(facet: string, value: string): void {
-        write({ filters: withPick(held.filters, facet, value) });
     }
 
     /** Draw one card's long description whole, or cut it to its clamp again. */
@@ -373,60 +325,8 @@
     </Toolbar>
 {/snippet}
 
-{#snippet toggles()}
-    <Chip
-        label={t('board.quick_stale')}
-        title={t('board.quick_stale_tip')}
-        glyph={t('board.stale_glyph')}
-        pressed={held.stale}
-        onclick={() => write({ stale: !held.stale })}
-    />
-    <Chip
-        label={deadlineWords(strip)}
-        title={t('board.quick_deadline_tip')}
-        glyph={t('project.card.deadline_glyph')}
-        pressed={held.dated}
-        onclick={() => write({ dated: !held.dated })}
-    />
-    <Chip
-        label={waitingWords(strip)}
-        title={t('board.quick_waiting_tip')}
-        glyph={t('project.card.waiting_glyph')}
-        pressed={held.waiting}
-        onclick={() => write({ waiting: !held.waiting })}
-    />
-{/snippet}
-
 {#snippet bar()}
-    <FilterBar
-        label={t('board.filters')}
-        search={held.search}
-        placeholder={preset.search === '' ? t('board.search_default') : preset.search}
-        onsearch={(value: string) => write({ search: value })}
-        {toggles}
-        {named}
-        mine={mineApplies}
-        pressed={held.mine}
-        onmine={() => write({ mine: !held.mine })}
-        {groups}
-        line={LINE_FACETS}
-        badges={{
-            status: { badge: blockedBadge(strip) },
-            venue: { warning: venueWarning(strip) }
-        }}
-        ontoggle={toggleFilter}
-    />
-    <SliceLine
-        label={t('board.slices')}
-        groups={slices}
-        facet="slice"
-        {counted}
-        filters={held.filters}
-        shown={shown.length}
-        total={strip.projects}
-        words={shownWords}
-        onfilters={(next: Record<string, string[]>) => write({ filters: next })}
-    />
+    <BoardBar {filter} stats={strip} placeholder={searchWords(preset)} {write} />
 {/snippet}
 
 <Pane title={title()} toolbar={tools} {bar}>

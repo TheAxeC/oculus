@@ -83,11 +83,6 @@ text:
         field_tones_help: The hue each slide tag's chip wears; no hue takes the tag out.
         figure_alt: A figure of the project
         figure_missing: 'missing figure: {0}'
-        filter: Filter the decks of the deck's groups by their projects
-        filter_clear: Clear
-        filter_clear_tip: Take out every pick of the filter and show every deck again
-        filtered: 'Filtered: {0} of {1} decks'
-        filtered_one: 'Filtered: {0} of 1 deck'
         form_apply: Apply
         form_cancel: Cancel
         key_hint: Arrow keys or Space move through the deck | O opens the overview | F shows it full screen | P opens the presenter screen
