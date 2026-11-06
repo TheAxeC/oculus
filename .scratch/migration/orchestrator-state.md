@@ -36,7 +36,7 @@ dispatch:           # steps in flight, up to six (Z632)
   brief_check: .scratch/migration/agents/reviews/O158-brief-check.md (adc6d991942348bee, claude-opus-5-5, 190286 tokens, 51 tool uses, 8.8 min)
   landing: not-started
 - step: O150
-  brief_check: "running: a29f2fa39393ed95d"
+  brief_check: .scratch/migration/agents/reviews/O150-brief-check.md (a29f2fa39393ed95d, claude-opus-5-5, 226538 tokens, 67 tool uses, 13.2 min)
   landing: preparing
 ```
 
@@ -178,7 +178,8 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
-None.
+- 697 (2026-11-06, O150's brief check): the hub's new portfolio deck finds its decks with `projects/**/present`, which must walk every folder under `projects/` (70,316 files); timed with `node -e` and `globSync` in the hub it takes 1319 ms, against 2 ms for the old `projects/*/*/present`. The deck reader keeps a glob only inside one reader (`src/lib/data/sources/deck/read.ts:217,347-362`), and a new reader is made for each snapshot build and each deck read of the Present view, a filter change included, so each of those would wait about 1.3 s. (a) A new step: the deck reader keeps a folder glob's matches per hub across readers and drops them when the file watcher sees a folder added, moved or removed under the glob's root. Pros: every depth stays covered, as the hub's `README.md:52` allows any depth of filing, and the cost is paid once. Cons: one more step, and a cache that must be cleared at the right moments. (b) Accept the 1.3 s on each snapshot build and each filter change. Pros: no work. Cons: the Present view's filter bar answers about a second late on this hub. Recommended (a); (b) is the lazy option. A list of today's three depths is not offered, since it misses a deck filed deeper, which the layout allows. O150 is built with `**` either way.
+- 698 (2026-11-06, O150's brief check): with every research deck placed, some of the deck's framing words no longer hold for all of them: the title slide's "A shared thesis: clinical data is intrinsically multi-way ... block-term tensor structure ...", the heading "The common engine" and "recurs across the portfolio" on the engine slide, and the kicker "June 2026". Three of the 25 decks (`clinical-ai-eval-artifacts`, `fl-privacy-auditing`, `ssm-longitudinal`) name no tensor or block-term word (`grep -c -i -E 'block-term|tensor|multi-way|BTD|Tucker'` gives 0). O150 keeps these words as they stand, and its builder drafts versions that hold for all 25 decks; both come to you with the landing's screenshots. (a) The drafted versions, as you correct them. Pros: the public deck claims only what each deck shows. Cons: the thesis line becomes less sweeping. (b) Your words as they stand. Pros: no change of the deck's voice. Cons: the title slide claims a shared thesis three decks do not share, and the kicker carries a past month. Recommended (a); (b) is the lazy option.
 
 ## Closed items
 
