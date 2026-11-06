@@ -33,9 +33,10 @@ dispatch:           # steps in flight, up to six (Z632)
   launched: 2026-11-06
   report: .scratch/migration/agents/reviews/O158-report.md
   builder_usage: first run, handed back before any change (221753 tokens, 63 tool uses, 12.1 min); build after the cases ruling (311178 tokens, 78 tool uses, 16.3 min)
-  round: 0
+  round: 1
+  round_brief: .scratch/migration/agents/briefs/O158-round-1.md
   cases_ruling: .scratch/migration/agents/briefs/O158-cases.md
-  reviewer_report: "running: a7c36a3b237a4d3c2 (claude-opus-5-5)"
+  reviewer_report: .scratch/migration/agents/reviews/O158-refuter.md (a7c36a3b237a4d3c2, claude-opus-5-5, 230538 tokens, 56 tool uses, 11.9 min)
   brief_check: .scratch/migration/agents/reviews/O158-brief-check.md (adc6d991942348bee, claude-opus-5-5, 190286 tokens, 51 tool uses, 8.8 min)
   landing: not-started
 - step: O150

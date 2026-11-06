@@ -1,5 +1,5 @@
 In flight (3 of 6 slots in use):
-- O158 (the facts strip redesigned): built; review running; design to Axel before it lands.
+- O158 (the facts strip redesigned): repair round 1; design to Axel before it lands.
 - O150 (the hub's portfolio deck): repair round 1; hub commit on Axel's word.
 - O151 (a deck for every research project): brief check running.
 
