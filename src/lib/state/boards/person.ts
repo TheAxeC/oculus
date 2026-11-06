@@ -21,6 +21,7 @@ import type {
 import { byKey } from '../../data/helpers/guards.ts';
 import { LINE_PEOPLE } from '../../data/shapes/shapes.ts';
 import { holdersOf, keyOf, resolveKey, rootOf } from '../../data/helpers/hub-names.ts';
+import { personWords } from '../../data/shapes/project-facts.ts';
 
 /**
  * One person and what they are joined to; every join is empty for an id the registry does not hold.
@@ -45,7 +46,7 @@ export type PersonJoin = {
 export function personNames(snapshot: Snapshot | null): Record<Id, string> {
     const names: Record<Id, string> = {};
     for (const one of Object.values(snapshot?.entities.people ?? {})) {
-        names[one.id] = one.name === '' ? keyOf(one.id) : one.name;
+        names[one.id] = personWords(one.name, keyOf(one.id));
     }
     return names;
 }
@@ -83,7 +84,7 @@ export function lineNames(snapshot: Snapshot | null): (root: string, line: LineP
  */
 export function personName(snapshot: Snapshot | null, id: Id): string {
     const held = snapshot === null ? undefined : byKey(snapshot.entities.people, id);
-    return held === undefined || held.name === '' ? keyOf(id) : held.name;
+    return personWords(held?.name ?? '', keyOf(id));
 }
 
 /** One person, by their id, joined to their organisations, projects and folder. */

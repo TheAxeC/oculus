@@ -22,6 +22,9 @@
 //
 // A name is looked up among the record's own keys, so a name every object has, such as
 // `constructor`, finds nothing.
+//
+// One word here is the catalog's: `codeLabel`, the words of a code-deposit state, read from the
+// text catalog by the rule data/shapes/project-facts.ts holds for the server too (`codeWords`).
 
 import { z } from 'zod';
 import type { HubVocabs } from '../../../data/model/index.ts';
@@ -29,7 +32,9 @@ import { byKey, scalar } from '../../../data/helpers/guards.ts';
 import { splitHubId } from '../../../data/helpers/hub-names.ts';
 import { mapOfShape, mapShape, readAs } from '../../../data/shapes/shapes.ts';
 import { unionWords } from '../../../data/shapes/vocab-keys.ts';
+import { codeWords, vocabWords } from '../../../data/shapes/project-facts.ts';
 import { configGeneration } from './generation.svelte.ts';
+import { t } from './text.ts';
 
 /** The tone anything unknown gets: a hue every theme defines and nothing means. */
 export const UNKNOWN_TONE = 'grey';
@@ -95,11 +100,8 @@ function stringMap(node: unknown, value: z.ZodType<string>): Record<string, stri
     );
 }
 
-/** A word of `stages`, `forms` or `chips`: the icon and the label it may leave out. */
-const legendRowShape = z.object({
-    icon: z.string().catch(''),
-    label: z.string().optional().catch(undefined)
-});
+/** A word of `stages`, `forms` or `chips`: the icon it may leave out. */
+const legendRowShape = z.object({ icon: z.string().catch('') });
 
 /**
  * The words of one of `stages`, `forms` and `chips`, in order, each drawn with its `label`, or the
@@ -110,7 +112,7 @@ function legendRows(value: unknown): Legend[] {
     const map = readAs(mapShape, value) ?? {};
     return Object.entries(map).flatMap(([key, row]) => {
         const held = key === '__proto__' ? null : readAs(legendRowShape, row);
-        return held === null ? [] : [{ key, icon: held.icon, label: held.label ?? key }];
+        return held === null ? [] : [{ key, icon: held.icon, label: vocabWords(row, key) }];
     });
 }
 
@@ -342,6 +344,11 @@ export function statusMarkTone(word: string, hub?: string): string {
  */
 export function chipLabel(chip: string, hub?: string): string {
     return byKey(wordsOf(hub).legend.words, chip)?.label ?? chip;
+}
+
+/** The words of a code-deposit state, as the card, the filter menu and the strip give them. */
+export function codeLabel(status: string): string {
+    return codeWords(status, t);
 }
 
 /**

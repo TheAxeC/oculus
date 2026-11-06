@@ -1,10 +1,11 @@
 // Layer 3, view helper. The presenter screen as one Present pane drives it: the press that starts
 // it over the deck as saved, with the link the presenting store reads the pane through (the slide
-// it is on and the kept list of its filter, each read from the pane's saved state at the call, so
-// the presentation goes on while the pane is not drawn), and, while it is on, the audience window
-// told which slide is on and when the deck was read again, and the presentation ended with the
-// deck's last slide gone. The presentation is the page's (state/life/present.svelte.ts). It is
-// called while the view is being initialised, since it registers its effects there.
+// it is on, the kept list of its filter and its Project facts toggle, each read from the pane's
+// saved state at the call, so the presentation goes on while the pane is not drawn), and, while
+// it is on, the audience window told which slide is on and when the deck was read again, and the
+// presentation ended with the deck's last slide gone. The presentation is the page's
+// (state/life/present.svelte.ts). It is called while the view is being initialised, since it
+// registers its effects there.
 
 import {
     parsePresentState,
@@ -62,6 +63,7 @@ export function createPresentation(reads: Reads): () => void {
         const link: PresentLink = {
             current: () => parsePresentState(instanceState(id)).slide,
             keep: () => reads.keepFor(id, ref),
+            facts: () => parsePresentState(instanceState(id)).facts,
             show: (key) =>
                 setInstanceState(id, { ...parsePresentState(instanceState(id)), slide: key }),
             held: () => holding(id) !== null

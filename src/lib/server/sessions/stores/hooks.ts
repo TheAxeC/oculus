@@ -21,6 +21,7 @@ import type {
 } from '../../../data/model/index.ts';
 import { isMap } from '../../../data/helpers/guards.ts';
 import { addressOf } from '../../../data/helpers/hub-names.ts';
+import type { FactRecordKind } from '../../../data/shapes/project-facts.ts';
 
 /** How long a hook keeps showing on its session before it is treated as if it never arrived. */
 export const HOOK_EXPIRY_MS = 24 * 60 * 60 * 1000;
@@ -135,14 +136,11 @@ function entityMap(hub: HubLike, kind: string): Record<string, unknown> | null {
 }
 
 /**
- * One entity map of the last published `portfolio` payload (the domains, the resources, the
- * people), for a config write that checks a value against them; null while the process has
- * published none.
+ * One entity map of the last published `portfolio` payload, for a config write that checks a value
+ * against the domains, the resources or the people, and for the deck read, which names a project's
+ * facts by the records of each registry they name; null while the process has published none.
  */
-export function entities(
-    hub: HubLike,
-    kind: 'domains' | 'resources' | 'people'
-): Record<string, unknown> | null {
+export function entities(hub: HubLike, kind: FactRecordKind): Record<string, unknown> | null {
     return entityMap(hub, kind);
 }
 

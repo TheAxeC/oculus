@@ -1,14 +1,14 @@
-In flight (2 of 6 slots in use):
-- O148 (the Project facts strip), refuted; repair round 1 sent (agents/briefs/O148-round-1.md).
+In flight (1 of 6 slots in use):
 - O150 (the hub's portfolio deck), built inline in the hub (uncommitted there), refuted over round 1; its landing waits on Axel's rulings of open items 689 (engine.md's sentence), 690 (the failed deck in the public deck) and 691 (a summary slide), each of which may change the hub files, and on his word for the hub commit.
 
 Queued, in order (2 steps):
-- O149 (the Decks guide), after O148 lands.
-- O151 (a deck for every research project), after O148; hub commit on Axel's word.
+- O149 (the Decks guide), next.
+- O151 (a deck for every research project), ready; hub commit on Axel's word.
 
 Owed looks: none.
 
 Landed, newest first:
+- O148 (the Project facts strip), 2026-11-06, landing commit below.
 - O147 (the Present view's filter bar), 2026-11-05, 57649a80d.
 - O153 (Deposit in every project card's menu), 2026-11-05, 6a2b38d06.
 - O152 (the Venue tag's tier icon), 2026-11-05, de7276141.

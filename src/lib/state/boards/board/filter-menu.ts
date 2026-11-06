@@ -15,7 +15,7 @@ import { byKey } from '../../../data/helpers/guards.ts';
 import type { ListedColumn } from '../../../data/shapes/boards/columns.ts';
 import { mapOfShape, readAs, wordShape } from '../../../data/shapes/shapes.ts';
 import { t } from '../../shared/words/text.ts';
-import { namedTone } from '../../shared/words/tones.ts';
+import { codeLabel, namedTone } from '../../shared/words/tones.ts';
 import { facetLabel, type SliceGroup } from './facets.ts';
 import {
     FACETS,
@@ -103,13 +103,6 @@ function sessionsLabel(value: string): string {
     if (value === SESSIONS_LIVE) return t('board.sessions_live');
     if (value === SESSIONS_RECENT) return t('board.sessions_recent');
     return t('board.sessions_none');
-}
-
-function codeLabel(value: string): string {
-    if (value === 'deposited') return t('board.code_deposited');
-    if (value === 'review-anon') return t('board.code_anon');
-    if (value === 'none') return t('board.code_pending');
-    return t('board.code_none');
 }
 
 /** The words of a facet value that is vocabulary rather than data. */

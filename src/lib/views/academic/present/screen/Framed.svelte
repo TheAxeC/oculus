@@ -8,7 +8,8 @@
     // Stage is told what it draws (the deck's root and folder, the slide's key, its title and the
     // file and line it is written at), so a pane moved to another slide, a slide given another
     // title or a slide moved in its file is measured again and its finding names the slide as
-    // drawn.
+    // drawn. The strip of a project's facts shows its words by the pane's Project facts toggle
+    // (`facts`), and keeps its room either way, so the measure does not change with the toggle.
 
     import Slide from '../Slide.svelte';
     import Stage from './Stage.svelte';
@@ -22,9 +23,11 @@
         first: boolean;
         /** Whether the frame goes edge to edge with no border and no corner, as on the monitor. */
         bare?: boolean;
+        /** Whether the strip of a project's facts shows its words: the pane's toggle. */
+        facts: boolean;
     };
 
-    let { row, deck, first, bare = false }: Props = $props();
+    let { row, deck, first, bare = false, facts }: Props = $props();
 
     const {
         present: { measured }
@@ -43,5 +46,5 @@
 </script>
 
 <Stage frame={deck.frame} {bare} {drawing} onmeasure={(over: number) => measured(deck, row, over)}>
-    <Slide {row} {deck} {first} />
+    <Slide {row} {deck} {first} {facts} />
 </Stage>

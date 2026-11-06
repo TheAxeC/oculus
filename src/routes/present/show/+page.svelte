@@ -21,7 +21,9 @@
     // the page asks over the channel which projects the pane's filter keeps (`keep-asked`) when it
     // opens, reads the deck once the presenter screen answers (a `keep` with `at` 0), and reads it
     // again whenever the screen says the kept list changed; an answer that arrives after a later
-    // one is dropped.
+    // one is dropped. The same answer carries the pane's Project facts toggle, which the strip of a
+    // project's facts at the foot of its slides shows its words by: a change of the toggle alone is
+    // drawn at once, with no read of the deck.
     //
     // A browser enters full screen only from a press in the window, so the page has a Full Screen
     // control and the key F. The control shows at the load, goes after the pointer has rested,
@@ -75,6 +77,8 @@
     let ref: DeckRef = { root: '', path: '' };
     /** The kept list of the presenting pane's filter; undefined until the screen has said it. */
     let keep: readonly string[] | null | undefined = undefined;
+    /** The presenting pane's Project facts toggle, on until the screen has said otherwise. */
+    let facts = $state(true);
     /** How many reads the page has asked for, so only the last one's answer is drawn. */
     let reads = 0;
     /** Whether the page is going on purpose, so the presenter screen is not told it closed. */
@@ -159,6 +163,7 @@
         if (message.kind === 'slide') key = message.key;
         else if (message.kind === 'changed') void read();
         else if (message.kind === 'keep' && message.at === 0) {
+            facts = message.facts;
             if (keep !== undefined && JSON.stringify(message.keep) === JSON.stringify(keep)) return;
             keep = message.keep;
             void read();
@@ -257,7 +262,7 @@
         <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
         <div class="slide" onclick={advance}>
             <Stage bare={full} frame={deck.frame}>
-                <Slide row={shown} {deck} first={false} />
+                <Slide row={shown} {deck} {facts} first={false} />
             </Stage>
         </div>
         {#if !full && !resting}

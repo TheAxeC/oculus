@@ -10,7 +10,8 @@
     // slides, the timer and what each control does. A click on the slide on show moves to the next
     // slide; a click on the next slide or on the notes does nothing. Only the clock and the timer
     // are read again on a tick of their own. Both slides are drawn at the deck's frame and measured
-    // (screen/Framed.svelte), and the next slide's room takes the frame's proportions.
+    // (screen/Framed.svelte), and the next slide's room takes the frame's proportions; both draw
+    // the strip of a project's facts by the pane's Project facts toggle (`facts`).
     //
     // Over a wallpaper each slide's frame is its own surface, and the meters, the captions, the
     // end-of-deck line and the notes are read off a `Surface`.
@@ -33,6 +34,8 @@
         row: DeckSlide;
         next: DeckSlide | null;
         deck: Deck;
+        /** Whether the strip of a project's facts shows its words: the pane's toggle. */
+        facts: boolean;
         /** The 1-based place of the slide on show, and how many slides the deck holds. */
         at: number;
         count: number;
@@ -46,8 +49,20 @@
         onend: () => void;
     };
 
-    let { row, next, deck, at, count, timer, onadvance, onpause, onresume, onreset, onend }: Props =
-        $props();
+    let {
+        row,
+        next,
+        deck,
+        facts,
+        at,
+        count,
+        timer,
+        onadvance,
+        onpause,
+        onresume,
+        onreset,
+        onend
+    }: Props = $props();
 
     /** How often the clock and the timer are read again. */
     const TICK_MS = 250;
@@ -92,7 +107,7 @@
     <!-- A click on the slide is the reader's way to the next one; the keys are the pane's own. -->
     <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
     <div class="current" data-current onclick={onadvance}>
-        <Framed {row} {deck} first={false} />
+        <Framed {row} {deck} {facts} first={false} />
     </div>
     <div class="side">
         <section class="next" data-next aria-label={t('present.presenter_next')}>
@@ -104,7 +119,7 @@
             </Surface>
             {#if next !== null}
                 <div class="preview" style:aspect-ratio="{deck.frame.width} / {deck.frame.height}">
-                    <Framed row={next} {deck} first={false} />
+                    <Framed row={next} {deck} {facts} first={false} />
                 </div>
             {/if}
         </section>

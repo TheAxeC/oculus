@@ -15,7 +15,8 @@ import {
     buildFolderProjects,
     builtHub,
     readFolders,
-    readHub,
+    readHubBeforeDecks,
+    withDecks,
     type EngineConfigIn,
     type HubBuild,
     type HubRoot,
@@ -122,16 +123,18 @@ function folderParts(build: HubBuild): HubPart[] {
 }
 
 /**
- * The portfolio of a workspace as one build. Each hub is read with its own settings, and built on
- * its own once the keys every other hub holds are known, so a reference its hub does not hold is
- * kept for the merge (snapshot/hubs/merge.ts), which gives every record its id `<hub>:<key>` and
- * resolves each reference in its own hub, then in the others. The project folders of a workspace
- * with no primary are built together and merged one part per folder, the folder's name its hub. The
- * YAML server's schemas and reference index join each hub's, the primary's as they are and another
- * hub's under its own name. The primary hub alone reads the workspace's repositories, its settings
- * file, its own `.oculus/local.yml` for the index and oculus's own config folder `engine`. The user
- * is marked once over the merge, the person the key `self` of the primary's `local.yml` names as
- * the primary resolves it (snapshot/hubs/self.ts).
+ * The portfolio of a workspace as one build. Each hub is read with its own settings, its decks once
+ * the records of every hub are read (`withDecks`), so a project's facts name a record of another
+ * hub as the merge resolves it, and built on its own once the keys every other hub holds are
+ * known, so a reference its hub does not hold is kept for the merge (snapshot/hubs/merge.ts),
+ * which gives every record its id `<hub>:<key>` and resolves each reference in its own hub, then
+ * in the others. The project folders of a workspace with no primary are built together and merged
+ * one part per folder, the folder's name its hub. The YAML server's schemas and reference index
+ * join each hub's, the primary's as they are and another hub's under its own name. The primary hub
+ * alone reads the workspace's repositories, its settings file, its own `.oculus/local.yml` for the
+ * index and oculus's own config folder `engine`. The user is marked once over the merge, the
+ * person the key `self` of the primary's `local.yml` names as the primary resolves it
+ * (snapshot/hubs/self.ts).
  */
 export function buildHubs(
     read: WorkspaceRead,
@@ -140,13 +143,13 @@ export function buildHubs(
     engine: EngineConfigIn | null
 ): PortfolioBuild {
     const { primary } = read;
-    const hubs = [
+    const hubs = withDecks([
         ...(primary === null
             ? []
             : [
                   {
                       ...primary,
-                      read: readHub(
+                      read: readHubBeforeDecks(
                           primary.dir,
                           primary.portfolio,
                           primary.portfolio.repositories,
@@ -157,9 +160,9 @@ export function buildHubs(
         ...read.others.map((one) => ({
             ...one,
             workspace: null,
-            read: readHub(one.dir, one.portfolio, [], one.key)
+            read: readHubBeforeDecks(one.dir, one.portfolio, [], one.key)
         }))
-    ];
+    ]);
     const folders = primary === null ? readFolders(read.config) : null;
     const lists = [
         ...hubs.map((one) => hubLists(one.read.raw)),

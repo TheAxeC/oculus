@@ -23,6 +23,8 @@ type Reads = {
     saved: () => Deck | null;
     /** The kept list of the pane's filter, which the print route is answered with. */
     keep: () => Keep;
+    /** The pane's Project facts toggle, which the print route is answered with too. */
+    facts: () => boolean;
     /** The slide on screen, the one a command of the palette acts on. */
     shown: () => DeckSlide | null;
     /** Whether the overview grid is open, which has no slide to drop an image on. */
@@ -90,6 +92,7 @@ export function createActs(reads: Reads): Acts {
             ref,
             deck,
             keep,
+            facts: reads.facts(),
             frame: saved.frame,
             bridge: reads.bridge,
             upload: reads.upload,

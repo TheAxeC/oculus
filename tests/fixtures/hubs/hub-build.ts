@@ -1,13 +1,14 @@
 // Layer 4, test helper. The build of one hub on its own, for the cases that check what the readers,
 // validate, the schemas and normalise make of one hub's files: the steps of data/index.ts that
-// server/root/watch/build.ts runs for each hub of a workspace (`readHub`, then `builtHub`), with
-// no other hub, so every record is under the key its file gives it and a reference that the hub
-// does not hold is reported as the hub's own finding.
+// server/root/watch/build.ts runs for each hub of a workspace (`readHubBeforeDecks`, `withDecks`,
+// then `builtHub`), with no other hub, so every record is under the key its file gives it and a
+// reference that the hub does not hold is reported as the hub's own finding.
 
 import { basename } from 'node:path';
 import {
     builtHub,
-    readHub,
+    readHubBeforeDecks,
+    withDecks,
     type EngineConfigIn,
     type HubBuild
 } from '../../../src/lib/data/index.ts';
@@ -30,6 +31,6 @@ export function buildOneHub(
     root: string = basename(hub),
     workspace: SettingsFile | null = null
 ): HubBuild {
-    const read = readHub(hub, config, roots, root);
+    const [{ read }] = withDecks([{ read: readHubBeforeDecks(hub, config, roots, root) }]);
     return builtHub(read, { version, checker, engine, workspace, others: {} });
 }

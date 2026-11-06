@@ -1,6 +1,7 @@
 <script lang="ts">
     // Layer 3, Present partial. The toolbar of the Present pane: the deck menu, the two step
-    // buttons, the overview, full-screen and presenter controls, the Export to PDF button, while a
+    // buttons, the overview control, the Project facts toggle while the slide on screen comes from
+    // a project's deck, the full-screen and presenter controls, the Export to PDF button, while a
     // filter is in force the line that says how many of the deck's decks it keeps and Clear, the
     // status line of the last act on a slide or on the deck's arrangement, and the place in the
     // deck. Under it, for a deck whose groups hold project decks, the filter's line: one group
@@ -27,6 +28,12 @@
         count: number;
         at: number;
         overview: boolean;
+        /**
+         * The pane's Project facts toggle, null while the slide on screen carries no project, when
+         * the toggle is not drawn.
+         */
+        facts: boolean | null;
+        onfacts: () => void;
         full: boolean;
         /** Whether the pane shows the presenter screen. */
         presenting: boolean;
@@ -48,6 +55,8 @@
         count,
         at,
         overview,
+        facts,
+        onfacts,
         full,
         presenting,
         onstep,
@@ -70,6 +79,14 @@
         pressed={overview}
         onclick={onoverview}
     />
+    {#if facts !== null}
+        <Chip
+            label={t('present.facts')}
+            title={t('present.facts_tip')}
+            pressed={facts}
+            onclick={onfacts}
+        />
+    {/if}
     <ToolButton
         label={t('present.present')}
         title={t('present.present_tip')}

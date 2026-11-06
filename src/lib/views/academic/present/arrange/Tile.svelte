@@ -112,7 +112,7 @@
                 inert
                 style:aspect-ratio="{view.deck.frame.width} / {view.deck.frame.height}"
             >
-                <Framed {row} deck={view.deck} first={false} />
+                <Framed {row} deck={view.deck} facts={view.facts} first={false} />
             </div>
         {/if}
         <Card

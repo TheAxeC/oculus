@@ -2,6 +2,8 @@
 // slide file is cut into slides, and how a deck folder is read into the slides and groups it holds.
 // Nothing outside the temporary directory is read or written.
 
+import { realpathSync } from 'node:fs';
+import { relative } from 'node:path';
 import { describe, expect } from 'vitest';
 import {
     engineDir,
@@ -29,6 +31,7 @@ function project(id: string, tier: string, extra: Partial<DeckProject> = {}): De
         chips: [],
         short: id,
         title: id,
+        facts: [],
         ...extra
     };
 }
@@ -437,6 +440,256 @@ describe('the deck reader', () => {
             'deck/fig(1).png': 'x'
         });
         expect(readHub(dir).findings).toEqual([]);
+    });
+
+    it("gives each slide the project of the deck whose file holds it, and fills {{project.<field>}} from that project's facts", () => {
+        const dir = plantScratch('oculus-deck-facts-', {
+            'projects/manuscripts/alpha/present/present.yml': [
+                'deck: { title: Alpha }',
+                'groups:',
+                '    kin:',
+                '        find: { folders: projects/*/*/present }',
+                '        slides: [beta]',
+                'order: [main.md, { kind: summary, of: kin, title: Kin }]'
+            ].join('\n'),
+            'projects/manuscripts/alpha/present/main.md': [
+                '---',
+                'kind: project',
+                'title: "At {{project.venue}}"',
+                'tag: { text: "{{project.venue}}" }',
+                'equation: "v = {{project.venue}}"',
+                'specs:',
+                '  - { label: Venue, value: "{{project.venue}}" }',
+                'panels:',
+                '  - { figure: "{{project.venue}}.png", diagram_html: "<b>{{project.venue}}</b>" }',
+                'notes: "Lead {{project.lead}}"',
+                '---',
+                '---',
+                '',
+                '# Text {{project.venue}}',
+                '',
+                'Lead {{project.lead}}, year {{ project.year }}, code `{{project.venue}}`.',
+                '',
+                '```',
+                '{{project.venue}}',
+                '```'
+            ].join('\n'),
+            'projects/manuscripts/beta/present/present.yml': [
+                'deck: { title: Beta }',
+                'order: [main.md]'
+            ].join('\n'),
+            'projects/manuscripts/alpha/present/A*B_<x>.png': 'x',
+            'projects/manuscripts/beta/present/main.md':
+                '# Beta\n\nVenue {{project.venue}}, {{project.nope}}, {{project.Venue}}.\n',
+            'projects/manuscripts/gamma/present/present.yml': [
+                'deck: { title: Gamma }',
+                'order: [main.md]'
+            ].join('\n'),
+            'projects/manuscripts/gamma/present/main.md': '# Gamma\n\n{{project.count}} slides.\n',
+            'talks/present.yml': ['deck: { title: Talks }', 'order: [main.md]'].join('\n'),
+            'talks/main.md': '# Talks\n\n{{project.count}} talks.\n',
+            'deck/present.yml': [
+                'deck: { title: Portfolio }',
+                'groups:',
+                '    project:',
+                '        find: { folders: projects/*/*/present }',
+                '        slides: [alpha]',
+                'order:',
+                '    - title.md',
+                '    - { slides: project }',
+                '    - { kind: summary, of: project, title: Overview }'
+            ].join('\n'),
+            'deck/title.md': '# Portfolio\n\n{{project.count}} and {{project.venue}}\n'
+        });
+        const facts = [
+            { field: 'venue' as const, words: ['A*B_<x>'] },
+            { field: 'lead' as const, words: ['Ann Example', 'Bo'] },
+            { field: 'year' as const, words: ['2026'] }
+        ];
+        const context = {
+            hub: { key: 'hub', dir },
+            projects: [
+                project('alpha', 'research', { facts }),
+                project('beta', 'research'),
+                project('gamma', 'research')
+            ],
+            domains: [],
+            tagTones: {},
+            frame: frameSetting(loadConfig(engineDir()).config),
+            catalog: CATALOG
+        };
+        const escaped = 'A\\*B\\_\\<x\\>';
+        const filled = {
+            project: {
+                title: 'At A*B_<x>',
+                heading: `At ${escaped}`,
+                tag: 'A*B_<x>',
+                equation: 'v = A*B_<x>',
+                spec: escaped,
+                figure: 'A*B_<x>.png',
+                diagram: '<b>A*B_&lt;x&gt;</b>',
+                notes: 'Lead Ann Example, Bo'
+            },
+            text: {
+                title: 'Text A*B_<x>',
+                body: [
+                    `# Text ${escaped}`,
+                    '',
+                    'Lead Ann Example, Bo, year 2026, code `A*B_<x>`.',
+                    '',
+                    '```',
+                    'A*B_<x>',
+                    '```'
+                ].join('\n')
+            }
+        };
+        /** What a slide carries: its project, and its words where a placeholder may stand. */
+        const carried = (slide: DeckSlide) => ({
+            key: slide.key,
+            project: slide.project,
+            ...(slide.kind === 'project'
+                ? {
+                      title: slide.title,
+                      heading: slide.slide.title,
+                      tag: slide.slide.tag?.text,
+                      equation: slide.slide.equation,
+                      spec: slide.slide.specs.at(0)?.value,
+                      figure: slide.slide.panels.at(0)?.figure,
+                      diagram: slide.slide.panels.at(0)?.diagramHtml,
+                      notes: slide.notes
+                  }
+                : {}),
+            ...(slide.kind === 'text' ? { title: slide.title, body: slide.body } : {})
+        });
+        const beta = 'projects/manuscripts/beta/present/main.md';
+        /** What a summary over beta's deck raises, since it reads beta's slides. */
+        const betaFindings: [string, number | undefined, string][] = [
+            [
+                beta,
+                1,
+                '{{project.venue}} holds no value for the project beta; it is filled with nothing'
+            ],
+            [
+                beta,
+                1,
+                "{{project.nope}} names no field of a project's facts (form, stage, chips, domain, pillars, datasets, lead, supervisors, collaborators, year, venue, funding, compute, code, reproduced, tier); it stays as written"
+            ],
+            [
+                beta,
+                1,
+                "{{project.Venue}} names no field of a project's facts (form, stage, chips, domain, pillars, datasets, lead, supervisors, collaborators, year, venue, funding, compute, code, reproduced, tier); it stays as written"
+            ]
+        ];
+        const rows: {
+            row: string;
+            path: string;
+            slides: ReturnType<typeof carried>[];
+            projects: string[];
+            findings: [string, number | undefined, string][];
+        }[] = [
+            {
+                row: "a deck that is no project's, placing a project deck and a summary of it",
+                path: 'deck',
+                slides: [
+                    {
+                        key: 'title.md#0',
+                        project: undefined,
+                        title: 'Portfolio',
+                        body: '# Portfolio\n\n3 and {{project.venue}}'
+                    },
+                    { key: 'alpha/main.md#0', project: 'alpha', ...filled.project },
+                    { key: 'alpha/main.md#1', project: 'alpha', ...filled.text },
+                    { key: 'alpha/summary:kin', project: 'alpha' },
+                    { key: 'summary:project', project: undefined }
+                ],
+                projects: ['alpha'],
+                findings: [
+                    ...betaFindings,
+                    [
+                        'deck/title.md',
+                        1,
+                        "{{project.venue}} is in a deck that is no project's; it stays as written"
+                    ]
+                ]
+            },
+            {
+                row: "a project's own deck, its summary of another project's deck its own",
+                path: 'projects/manuscripts/alpha/present',
+                slides: [
+                    { key: 'main.md#0', project: 'alpha', ...filled.project },
+                    { key: 'main.md#1', project: 'alpha', ...filled.text },
+                    { key: 'summary:kin', project: 'alpha' }
+                ],
+                projects: ['alpha'],
+                findings: betaFindings
+            },
+            {
+                row: 'a field with no value, a name that is no field and one of another case',
+                path: 'projects/manuscripts/beta/present',
+                slides: [
+                    {
+                        key: 'main.md#0',
+                        project: 'beta',
+                        title: 'Beta',
+                        body: '# Beta\n\nVenue , {{project.nope}}, {{project.Venue}}.'
+                    }
+                ],
+                projects: ['beta'],
+                findings: betaFindings
+            },
+            {
+                row: "{{project.count}} in a deck that is no project's",
+                path: 'talks',
+                slides: [
+                    {
+                        key: 'main.md#0',
+                        project: undefined,
+                        title: 'Talks',
+                        body: '# Talks\n\n{{project.count}} talks.'
+                    }
+                ],
+                projects: [],
+                findings: [
+                    [
+                        'talks/present.yml',
+                        undefined,
+                        'a count of group project, which the deck does not define, stays as written'
+                    ]
+                ]
+            },
+            {
+                row: "{{project.count}} in a project's deck that defines no group project",
+                path: 'projects/manuscripts/gamma/present',
+                slides: [
+                    {
+                        key: 'main.md#0',
+                        project: 'gamma',
+                        title: 'Gamma',
+                        body: '# Gamma\n\n{{project.count}} slides.'
+                    }
+                ],
+                projects: ['gamma'],
+                findings: [
+                    [
+                        'projects/manuscripts/gamma/present/present.yml',
+                        undefined,
+                        'a count of group project, which the deck does not define, stays as written'
+                    ]
+                ]
+            }
+        ];
+        const real = realpathSync(dir);
+        for (const one of rows) {
+            const deck = createReader(context).read({ key: 'hub', dir }, one.path);
+            expect(deck.slides.map(carried), one.row).toEqual(one.slides);
+            expect(Object.keys(deck.projects), one.row).toEqual(one.projects);
+            const found = deck.findings.map((finding) => [
+                relative(real, finding.file),
+                finding.line,
+                finding.message
+            ]);
+            expect(found.sort(), one.row).toEqual([...one.findings].sort());
+        }
     });
 });
 

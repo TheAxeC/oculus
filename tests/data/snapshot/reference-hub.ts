@@ -6,7 +6,12 @@
 // `.oculus/local.yml` a row plants is read for its `self`.
 // The texts are synthetic; none of them is a file of the hub.
 
-import { builtHub, portfolioConfigFrom, readHub } from '../../../src/lib/data/index.ts';
+import {
+    builtHub,
+    portfolioConfigFrom,
+    readHubBeforeDecks,
+    withDecks
+} from '../../../src/lib/data/index.ts';
 import { createChecker } from '../../../src/lib/data/snapshot/schema/check.ts';
 import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
 import {
@@ -329,7 +334,8 @@ export function plantHub(
         ? { root: HUB_FOLDER, path: CONFIG_IN_HUB }
         : { root: CONFIG_FOLDER, path: '' };
     // The hub is built as the primary is, so its own `.oculus/local.yml` is read for `self`.
-    const index = builtHub(readHub(hub, config, [], HUB_FOLDER), {
+    const [{ read }] = withDecks([{ read: readHubBeforeDecks(hub, config, [], HUB_FOLDER) }]);
+    const index = builtHub(read, {
         version: 0,
         checker: createChecker(),
         engine: { dir: engine, held: [held] },

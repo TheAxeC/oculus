@@ -3,7 +3,10 @@
 //
 // The roots are a temporary directory the case plants a deck in; a folder outside it is planted
 // beside it, so a path that climbs out of the root or leaves it through a link has something real
-// to reach. Nothing outside the temporary directory is read or written.
+// to reach. The case of a project's facts reads the two-hub workspace of
+// tests/fixtures/hubs/deck-hub.ts: the hubs `hub` and `lab`, copied from the demo hub, and the
+// repository folder `kit`, built as the portfolio watcher builds them. Nothing outside the
+// temporary directories is read or written.
 // @module-tag slow: its cases time out under the load of a full npm test, so npm test leaves
 // it out.
 
@@ -15,6 +18,8 @@ import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
 import { mintToken } from '../../../src/lib/server/core/auth.ts';
 import { handleDeck, handleDeckDrafts } from '../../../src/lib/server/content/deck/endpoint.ts';
 import type { DeckSource } from '../../../src/lib/server/content/deck/read.ts';
+import type { Deck } from '../../../src/lib/data/model/index.ts';
+import { factsWorkspace } from '../../fixtures/hubs/deck-hub.ts';
 import { it, plantScratch } from '../../fixtures/scratch.ts';
 
 const TOKEN = mintToken();
@@ -34,7 +39,8 @@ function source(): { source: DeckSource; dir: string } {
             roots: [{ key: 'hub', dir: join(dir, 'hub') }],
             primary: { key: 'hub', dir: join(dir, 'hub') },
             config: portfolioConfigFrom(loadConfig(engineDir()).config),
-            projects: []
+            projects: [],
+            entities: () => null
         }
     };
 }
@@ -185,10 +191,183 @@ describe('the deck route', () => {
                 roots: [{ key: 'hub', dir: hub }],
                 primary: { key: 'hub', dir: hub },
                 config: portfolioConfigFrom(loaded.config, loaded.from),
-                projects: []
+                projects: [],
+                entities: () => null
             };
             const deck = (await ask(held, `root=hub&path=${path}`).json()) as { state: string };
             expect(deck.state, row).toBe(state);
         }
+    });
+
+    it("answers each project's facts in the words of the hub its deck is read under, and each slide's domain", async () => {
+        const { source } = factsWorkspace();
+        const read = async (root: string, path: string): Promise<Deck> =>
+            (await ask(source, `root=${root}&path=${encodeURIComponent(path)}`).json()) as Deck;
+        const research = { field: 'tier', words: ['Research'] };
+        const rows: {
+            row: string;
+            root: string;
+            path: string;
+            projects: Record<string, unknown[]>;
+            slides: [string, string | undefined][];
+        }[] = [
+            {
+                row: 'a portfolio deck placing a deck with every field and a repository project',
+                root: 'hub',
+                path: 'deck',
+                projects: {
+                    hccnet: [
+                        {
+                            field: 'stage',
+                            words: ['submitted / under review'],
+                            keys: ['submitted']
+                        },
+                        { field: 'domain', words: ['Graph learning'], keys: ['hub:graphs'] },
+                        {
+                            field: 'pillars',
+                            words: [
+                                'Graph learning over evolving relational structure and streaming interaction data'
+                            ]
+                        },
+                        { field: 'datasets', words: ['synthgraph'] },
+                        { field: 'lead', words: ['Dr. Dana Example', 'B. Coauthor'] },
+                        {
+                            field: 'collaborators',
+                            words: ['B. Colleague', 'C. Senior', 'Ana Rivera']
+                        },
+                        { field: 'year', words: ['2026'] },
+                        { field: 'venue', words: ['A*B_<x>'] },
+                        { field: 'funding', words: ['ecf'] },
+                        { field: 'compute', words: ['Demo cluster'], keys: ['cluster'] },
+                        { field: 'code', words: ['deposited'] },
+                        research
+                    ],
+                    kit: [
+                        {
+                            field: 'stage',
+                            words: ['submitted / under review'],
+                            keys: ['submitted']
+                        },
+                        { field: 'lead', words: ['Dr. Dana Example'] },
+                        research
+                    ]
+                },
+                slides: [
+                    ['title.md#0', undefined],
+                    ['hccnet/main.md#0', 'hccnet'],
+                    ['kit/main.md#0', 'kit']
+                ]
+            },
+            {
+                row: 'a project deck with a few fields',
+                root: 'hub',
+                path: 'projects/ideas/quantum/present',
+                projects: {
+                    quantum: [
+                        { field: 'stage', words: ['nascent (concept)'], keys: ['nascent'] },
+                        {
+                            field: 'domain',
+                            words: ['Methods (domain-agnostic)'],
+                            keys: ['hub:method']
+                        },
+                        {
+                            field: 'pillars',
+                            words: [
+                                'Graph learning over evolving relational structure and streaming interaction data',
+                                'Structured tensor methods'
+                            ]
+                        },
+                        { field: 'lead', words: ['Dr. Dana Example'] },
+                        research
+                    ]
+                },
+                slides: [['main.md#0', 'quantum']]
+            },
+            {
+                row: 'a failed project',
+                root: 'hub',
+                path: 'projects/archive/failedp/present',
+                projects: {
+                    failedp: [
+                        {
+                            field: 'stage',
+                            words: ['failed (no-go or disproved)'],
+                            keys: ['failed']
+                        },
+                        research
+                    ]
+                },
+                slides: [['main.md#0', 'failedp']]
+            },
+            {
+                row: 'a stopped project',
+                root: 'hub',
+                path: 'projects/archive/stoppedp/present',
+                projects: {
+                    stoppedp: [
+                        {
+                            field: 'stage',
+                            words: ['stopped (dropped or abandoned)'],
+                            keys: ['stopped']
+                        },
+                        research
+                    ]
+                },
+                slides: [['main.md#0', 'stoppedp']]
+            },
+            {
+                row: 'a person and a venue no registry holds, a person with no name and a reproduction with a note alone',
+                root: 'hub',
+                path: 'projects/manuscripts/ghost/present',
+                projects: {
+                    ghost: [
+                        { field: 'stage', words: ['exploring'], keys: ['exploring'] },
+                        { field: 'lead', words: ['Dr. Dana Example', 'nameless'] },
+                        { field: 'reproduced', words: ['reproduced'] },
+                        research
+                    ]
+                },
+                slides: [['main.md#0', 'ghost']]
+            },
+            {
+                row: 'empty values',
+                root: 'hub',
+                path: 'projects/manuscripts/empty/present',
+                projects: {
+                    empty: [{ field: 'stage', words: ['exploring'], keys: ['exploring'] }, research]
+                },
+                slides: [['main.md#0', 'empty']]
+            },
+            {
+                row: "a deck in a second hub's root, in that hub's words",
+                root: 'lab',
+                path: 'projects/manuscripts/labp/present',
+                projects: {
+                    labp: [
+                        { field: 'stage', words: ['sent out'], keys: ['submitted'] },
+                        { field: 'lead', words: ['Dana of Lab'] },
+                        research
+                    ]
+                },
+                slides: [['main.md#0', 'labp']]
+            }
+        ];
+        for (const one of rows) {
+            const deck = await read(one.root, one.path);
+            expect(deck.projects, one.row).toEqual(one.projects);
+            expect(
+                deck.slides.map((slide) => [slide.key, slide.project]),
+                one.row
+            ).toEqual(one.slides);
+        }
+        const graphs = await read('hub', 'projects/active/graph-bandits/present');
+        const domains = graphs.slides.map((slide) =>
+            slide.kind === 'project' ? slide.domain : null
+        );
+        expect(domains, 'a project slide of a project with a domain').toContain('hub:graphs');
+        expect(
+            graphs.findings.filter((one) => one.message.includes('domains registry')),
+            'a domain the registry holds'
+        ).toEqual([]);
     });
 });

@@ -12,6 +12,7 @@
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import Tooltip from '$lib/ui/menu/Tooltip.svelte';
     import { t } from '$lib/state/shared/words/text';
+    import { venueLabel } from '$lib/state/boards/focus';
     import {
         SPARK_HEIGHT,
         sparkBars,
@@ -28,9 +29,7 @@
     const bars = $derived(sparkBars(data.counts));
     const monthLabels = $derived(t('venues.months').split(','));
 
-    function short(venue: Venue): string {
-        return venue.short ?? venue.name;
-    }
+    const short = venueLabel;
 
     function tip(chip: TimelineChip, kind: string, month: string): string {
         const timing =

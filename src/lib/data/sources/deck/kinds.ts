@@ -15,13 +15,18 @@ import {
     type DeckIdeaCard,
     type DeckSlide,
     type PresentSlide,
+    type ProjectFact,
     type SlideKind
 } from '../../model/index.ts';
 import { projectSlide, type Figures } from './project.ts';
 import type { RawSlide } from './split.ts';
 import type { Raise } from './spec.ts';
 
-/** What the reader knows of the project a deck belongs to. */
+/**
+ * What the reader knows of the project a deck belongs to: where it is, what it is called, the words
+ * a `find:` keeps its deck by, and its facts, which its slides' strip draws and its
+ * `{{project.<field>}}` placeholders are filled from.
+ */
 export type DeckProject = {
     /** The project's key, as its hub's files name it, which a finding about it shows. */
     id: string;
@@ -43,7 +48,14 @@ export type DeckProject = {
     stage?: string;
     /** The manifest's `form`, a word of `forms:`, which a `find:` with `forms:` keeps a deck by. */
     form?: string;
+    /**
+     * The manifest's `domain`: the internal id on the deck route's read, which the slide carries
+     * for the client's hue and title, and the key on the snapshot build's; the reader checks its
+     * key against the domains registry.
+     */
     domain?: string;
+    /** The project's facts, each field that holds a value (data/shapes/project-facts.ts). */
+    facts: ProjectFact[];
 };
 
 /** What one slide is read against. */
@@ -87,12 +99,25 @@ const HEADING = /^#\s+(.*?)\s*#*\s*$/;
 const ITEM = /^\s{0,3}(\d+)[.)]\s+(.*)$/;
 const FENCE = /^ {0,3}(`{3,}|~{3,})/;
 
-/** A heading's words turned into the plain words the overview names the slide with. */
+/** A markup character written backslash-escaped, as a filled `{{project.<field>}}` writes it. */
+const ESCAPED = /\\([\\`*_[\]<>&~|$#!])/;
+
+/**
+ * A heading's words turned into the plain words the overview names the slide with: tags and the
+ * marks of emphasis and code dropped, and an escaped markup character kept as the character.
+ */
 function plain(text: string): string {
     return text
-        .replace(/<[^>]*>/g, ' ')
-        .replace(/&amp;/g, '&')
-        .replace(/[`*_#]/g, '')
+        .split(ESCAPED)
+        .map((part, at) =>
+            at % 2 === 1
+                ? part
+                : part
+                      .replace(/<[^>]*>/g, ' ')
+                      .replace(/&amp;/g, '&')
+                      .replace(/[`*_#]/g, '')
+        )
+        .join('')
         .replace(/\s+/g, ' ')
         .trim();
 }

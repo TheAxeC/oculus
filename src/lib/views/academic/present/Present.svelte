@@ -37,17 +37,17 @@
     // store, so two panes on the deck hold two positions and a push that rebuilds the deck leaves
     // each reader where they were. The instance's `slide` is the key a slide of the deck carries.
     //
-    // The keys are the pane's own, bound to the view's box rather than to the window: the shell
-    // owns the digits and the chords, and a deck that swallowed an arrow key wherever the reader
-    // was looking would take the pane strip's own keys with it. The box takes the focus when the
-    // view is mounted and on a press inside it, so the arrows work from the moment the deck is
-    // opened. The keys are the arrows, Page Up and Page Down, Home and End, Space (the next slide,
-    // Shift+Space the previous one), `O` for the grid, `F` for full screen, `P` for the presenter
-    // screen and Escape to close the grid, and then to end the presentation. A key pressed in a
-    // field inside the box (an input, a text area, a select, editable text) is the field's, so a
-    // form of the overview keeps what is typed in it; Escape in a field closes the grid unless the
-    // field or the form around it took it. On a button or a link the deck's keys act, except
-    // Space, which presses the control.
+    // The keys are the pane's own (screen/box.ts), bound to the view's box rather than to the
+    // window: the shell owns the digits and the chords, and a deck that swallowed an arrow key
+    // wherever the reader was looking would take the pane strip's own keys with it. The box takes
+    // the focus when the view is mounted and on a press inside it, so the arrows work from the
+    // moment the deck is opened. The keys are the arrows, Page Up and Page Down, Home and End,
+    // Space (the next slide, Shift+Space the previous one), `O` for the grid, `F` for full screen,
+    // `P` for the presenter screen and Escape to close the grid, and then to end the presentation.
+    // A key pressed in a field inside the box (an input, a text area, a select, editable text) is
+    // the field's, so a form of the overview keeps what is typed in it; Escape in a field closes
+    // the grid unless the field or the form around it took it. On a button or a link the deck's
+    // keys act, except Space, which presses the control.
     //
     // The presenter screen (presenter/Presenter.svelte) takes the place of the slide in the pane:
     // the slide, the next one, the slide's notes, the time and a timer, while the audience sees
@@ -64,6 +64,12 @@
     // the deck's keys, the card cursor's keys over the grid, Enter and Space on a control and what
     // is typed in a field act, Tab wraps inside the box, and the focus leaving for an element
     // outside the box (a modified key such as Cmd+Shift+F) ends the full screen.
+    //
+    // A slide that comes from a project's deck, whose project has a field that holds a value,
+    // carries the strip of the project's facts at its foot (`slideFacts`), on the pane, the
+    // presenter screen, the tiles, the audience window and the PDF. The toolbar's Project facts
+    // toggle, drawn while the slide on screen carries a project, shows or hides its words; it is
+    // the pane's, kept with the instance and through a change of deck.
     //
     // A slide has a menu on a right-click, on the slide and on its tile in the grid (acts/menu.ts):
     // Edit Slide, New Slide, Duplicate Slide and Delete Slide, which are also commands in the
@@ -89,7 +95,7 @@
     import Overview from './arrange/Overview.svelte';
     import Presenter from './presenter/Presenter.svelte';
     import { createFullscreen } from './screen/fullscreen.svelte';
-    import { CONTROLS, heldBack, inField, keepTab, moveOf } from './screen/keys';
+    import { createBoxKeys } from './screen/box';
     import Framed from './screen/Framed.svelte';
     import { cardCursor, tabsOf } from '$lib/state/workbench/layout/instance';
     import {
@@ -100,7 +106,6 @@
         indexOf,
         labelOf,
         leftDeck,
-        movedKey,
         nothingToShow,
         pageDrafts,
         parsePresentState,
@@ -182,6 +187,7 @@
         deck: () => deck,
         saved: () => filesDeck,
         keep: filter.keep,
+        facts: () => held.facts,
         shown: () => shown,
         grid: () => grid,
         write: writeDeckEdit,
@@ -286,13 +292,6 @@
         if (!held) box.focus();
     });
 
-    /** Whether `target` is, or is inside, a control of the slide that acts on a press itself. */
-    function inControl(target: EventTarget | null): boolean {
-        if (!(target instanceof Element) || box === null) return false;
-        const control = target.closest(CONTROLS);
-        return control !== null && box.contains(control);
-    }
-
     /**
      * Move, and put the keys in force, so the next arrow key reaches this pane and not the shell.
      */
@@ -301,84 +300,21 @@
         box?.focus();
     }
 
-    /** The deck's own keys: the moves, the grid, full screen, the presenter screen and Escape. */
-    function deckKey(event: KeyboardEvent): boolean {
-        const move = moveOf(event);
-        if (move !== null) {
-            event.preventDefault();
-            if (event.key !== ' ' || !event.repeat) {
-                write({ slide: movedKey(rows, held.slide, move) });
-            }
-            return true;
-        }
-        switch (event.key) {
-            case 'o':
-            case 'O':
-                event.preventDefault();
-                write({ overview: !grid });
-                return true;
-            case 'f':
-            case 'F':
-                if (rows.length === 0) return true;
-                event.preventDefault();
-                if (!event.repeat) screen.toggle();
-                return true;
-            case 'p':
-            case 'P':
-                event.preventDefault();
-                if (!event.repeat) present();
-                return true;
-            case 'Escape':
-                if (grid) {
-                    event.preventDefault();
-                    write({ overview: false });
-                } else if (presented) {
-                    event.preventDefault();
-                    presenting.end(instance.id);
-                }
-                return true;
-            default:
-                return false;
-        }
-    }
-
-    function keys(event: KeyboardEvent): void {
-        if (event.altKey || event.ctrlKey || event.metaKey) return;
-        // A key in a field is the field's, Escape too when the field or a form around it took it;
-        // Space on a button or a link acts on it; every other key is the deck's on any control.
-        const control = inControl(event.target);
-        const typed = inField(event.target) && (event.key !== 'Escape' || event.defaultPrevented);
-        const pressed = control && event.key === ' ';
-        if (!typed && !pressed && deckKey(event)) return;
-        if (event.key === 'Tab') {
-            if (full && box !== null) keepTab(event, box);
-            return;
-        }
-        if (full && heldBack(event, { control, grid, cursor: cursor !== null })) {
-            event.preventDefault();
-        }
-    }
-
-    /** In full screen the focus leaving for an element outside the box ends the full screen. */
-    function focusLeft(event: FocusEvent): void {
-        const to = event.relatedTarget;
-        if (full && box !== null && to instanceof Node && !box.contains(to)) screen.leave();
-    }
-
-    /**
-     * A click on the slide shows the next one: in full screen on the letterbox around it too, and
-     * on the presenter screen on the current slide alone.
-     */
-    function advance(event: MouseEvent): void {
-        if (grid || shown === null || inControl(event.target)) return;
-        if (window.getSelection()?.isCollapsed === false) return;
-        write({ slide: stepKey(rows, held.slide, 1) });
-    }
-
-    /** The click on the pane's box: in full screen it moves on, except on the presenter screen. */
-    function boxClicked(event: MouseEvent): void {
-        if (full && !presented) advance(event);
-    }
+    const { keys, focusLeft, advance, boxClicked } = createBoxKeys({
+        box: () => box,
+        rows: () => rows,
+        slide: () => held.slide,
+        shown: () => shown,
+        grid: () => grid,
+        full: () => full,
+        presented: () => presented,
+        cursor: () => cursor !== null,
+        write,
+        toggleFull: screen.toggle,
+        leaveFull: screen.leave,
+        present: () => present(),
+        endPresenting: () => presenting.end(instance.id)
+    });
 
     /** Show a slide picked in the grid, and close the grid over it. */
     function pick(key: string): void {
@@ -395,6 +331,11 @@
         count={rows.length}
         at={rows.length === 0 ? 0 : at + 1}
         overview={grid}
+        facts={shown?.project === undefined ? null : held.facts}
+        onfacts={() => {
+            write({ facts: !held.facts });
+            box?.focus();
+        }}
         {full}
         onstep={step}
         onoverview={() => {
@@ -445,6 +386,7 @@
                 {deck}
                 saved={filesDeck}
                 {ref}
+                facts={held.facts}
                 current={shown?.key ?? ''}
                 {cursor}
                 onpick={pick}
@@ -462,6 +404,7 @@
                         row={shown}
                         {next}
                         {deck}
+                        facts={held.facts}
                         at={at + 1}
                         count={rows.length}
                         timer={presenting.timer(instance.id)}
@@ -472,7 +415,7 @@
                         onend={() => presenting.end(instance.id)}
                     />
                 {:else}
-                    <Framed row={shown} {deck} first={at === 0} bare={full} />
+                    <Framed row={shown} {deck} facts={held.facts} first={at === 0} bare={full} />
                 {/if}
             </ContextMenu>
         {/if}

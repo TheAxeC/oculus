@@ -1,6 +1,7 @@
 // Layer 1, data. The entry point: read, validate, normalise, and nothing else. Composition only, so
 // the order of the three steps is the whole content of this file and every rule lives in the module
-// it belongs to. Each hub is read (`readHub`) and built on its own (`builtHub`), and
+// it belongs to. Each hub is read (`readHubBeforeDecks`), the decks of the hubs of a workspace are
+// read together (`withDecks`), and each hub is built on its own (`builtHub`);
 // server/root/watch/build.ts builds the hubs of a workspace as one portfolio from those steps and
 // the merge of snapshot/hubs/merge.ts.
 //
@@ -11,7 +12,7 @@
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { z } from 'zod';
-import { focusBlock, isMap, str, strings } from './helpers/guards.ts';
+import { focusBlock, isMap, str } from './helpers/guards.ts';
 import { MEMORIES_DIR, WALLPAPER_DIR } from './helpers/files/paths.ts';
 import { filledTextShape, mapShape, readAs, readOr, rowsShape } from './shapes/shapes.ts';
 import {
@@ -49,15 +50,13 @@ import {
     hasCardList,
     hubKeysOf,
     isFeedEntry,
-    tierOf,
     type FeedRegistry,
     type RegistryWord
 } from './helpers/hub-names.ts';
 import { engineDir } from './places/engine-dir.ts';
 import { engineFile } from './sources/config/folder.ts';
-import { createReader } from './sources/deck/read.ts';
-import type { DeckProject } from './sources/deck/kinds.ts';
-import { frameSetting, textCatalog, type loadConfig } from './sources/config.ts';
+import { readDecks } from './sources/documents/decks.ts';
+import { textCatalog, type loadConfig } from './sources/config.ts';
 import { VOCAB_SHAPES } from './sources/config/merge/in-place.ts';
 import { categoriesFindings } from './sources/config/sections/boards.ts';
 import { vocabFindings } from './sources/config/sections/vocab.ts';
@@ -69,7 +68,9 @@ import {
     scanRules
 } from './sources/config/settings/scan.ts';
 import { fieldsOf } from './snapshot/schema/field.ts';
-import { normalise } from './snapshot/normalise.ts';
+import { factRecords, normalise } from './snapshot/normalise.ts';
+import type { HubRecords } from './snapshot/hubs/deck-facts.ts';
+import { titleWords } from './shapes/project-facts.ts';
 import { browserRow, recoverRows } from './sources/config/settings/rows/read.ts';
 import { sortFindings, validate, withoutValidated } from './snapshot/validate.ts';
 import type { Checker } from './snapshot/schema/check.ts';
@@ -109,7 +110,6 @@ import type {
     Id,
     ListedCollection,
     PortfolioConfig,
-    RawDeck,
     RawManifest,
     RawPortfolio,
     RepositoryRoot,
@@ -298,61 +298,19 @@ function documents(hub: string, manifests: RawManifest[]): Record<Id, DocPresenc
     return found;
 }
 
-/** What the deck reader needs to know of each project: where it is and what it is called. */
-function deckProjects(manifests: RawManifest[], tiers: readonly string[]): DeckProject[] {
-    return manifests.map((manifest) => {
-        const status = isMap(manifest.status) ? manifest.status : {};
-        const project: DeckProject = {
-            id: manifest.id,
-            file: manifest.file,
-            folder: manifest.folder,
-            chips: strings(status.chips),
-            short: str(manifest.short) ?? '',
-            title: str(manifest.title) ?? manifest.id
-        };
-        if (manifest.workspaceFolder !== undefined)
-            project.workspaceFolder = manifest.workspaceFolder;
-        const tier = tierOf(manifest.tier, tiers);
-        if (tier !== undefined) project.tier = tier;
-        const stage = str(manifest.stage);
-        if (stage !== undefined) project.stage = stage;
-        const form = str(manifest.form);
-        if (form !== undefined) project.form = form;
-        const domain = str(manifest.domain);
-        if (domain !== undefined && domain !== '') project.domain = domain;
-        return project;
-    });
+/** The records of the hub `read` that a project's facts name, under the hub's name. */
+function recordsOf(read: HubRead): HubRecords {
+    return { key: read.root, records: factRecords(read.raw.registries) };
 }
 
 /**
- * The portfolio deck and every project deck read, with what was wrong in them. `domains` are the
- * keys of the hub's domains registry, which a project's `domain:` is checked against.
+ * The hub `read` with its decks read (sources/documents/decks.ts) and what was wrong in them added
+ * to its findings, its projects' facts naming the records of `own`, the hub's, or of `others`.
  */
-function decks(
-    hub: string,
-    name: string,
-    manifests: RawManifest[],
-    config: PortfolioConfig,
-    domains: string[]
-): { decks: Record<Id, RawDeck>; findings: Finding[] } {
-    const root = { key: name, dir: hub };
-    const reader = createReader({
-        hub: root,
-        projects: deckProjects(manifests, vocabKeys(config.merged.tiers)),
-        domains,
-        tagTones: config.tagTones,
-        frame: frameSetting(config.merged),
-        catalog: config.text
-    });
-    const found: Record<Id, RawDeck> = {};
-    for (const one of reader.projectDecks()) found[one.id] = { path: one.path, tags: one.tags };
-    if (config.portfolioDeck !== null) {
-        const deck = join(hub, config.portfolioDeck);
-        if (!(config.unnamed?.deck === true && !existsSync(deck))) {
-            reader.read(root, config.portfolioDeck);
-        }
-    }
-    return { decks: found, findings: reader.findings() };
+function decked(read: HubRead, own: HubRecords, others: readonly HubRecords[]): HubRead {
+    const deck = readDecks(read, own, others);
+    const findings = [...read.raw.findings, ...deck.findings];
+    return { ...read, raw: { ...read.raw, decks: deck.decks, findings } };
 }
 
 /**
@@ -410,13 +368,25 @@ function listFileOf(hub: string, config: PortfolioConfig): string {
 }
 
 /**
+ * Each hub of a workspace as read, with its decks read: a project's facts name the records of its
+ * own hub and of the other hubs of `hubs` (snapshot/hubs/deck-facts.ts).
+ */
+export function withDecks<T extends { read: HubRead }>(hubs: readonly T[]): T[] {
+    const held = hubs.map((one) => ({ one, records: recordsOf(one.read) }));
+    return held.map(({ one, records }) => {
+        const others = held.flatMap((other) => (other.records === records ? [] : [other.records]));
+        return { ...one, read: decked(one.read, records, others) };
+    });
+}
+
+/**
  * Read the hub at `hub` under the name `root`, the name of the workspace folder its files are named
- * under: its manifests, registries, collections, feeds, career, documents and decks, with the
- * findings of their readers. `roots` are the directories whose `project.yml` or
+ * under: its manifests, registries, collections, feeds, career and documents, with the findings of
+ * their readers, its decks left for `withDecks`. `roots` are the directories whose `project.yml` or
  * `.oculus/project.yml` is read, as handed, each a project of the hub (`readHubManifests`);
  * `repositoriesOf` of server/files/roots.ts decides which roots of the file browser they are.
  */
-export function readHub(
+export function readHubBeforeDecks(
     hub: string,
     config: PortfolioConfig,
     roots: RepositoryRoot[],
@@ -452,8 +422,6 @@ export function readHub(
         config.career === null
             ? { career: null, findings: [] }
             : readCareer(hub, config.career, config.text);
-    const domainKeys = registries.domains.entries.map((entry) => entry.key);
-    const deck = decks(hub, root, manifests.manifests, config, domainKeys);
     const raw: RawPortfolio = {
         manifests: manifests.manifests,
         registries,
@@ -461,15 +429,14 @@ export function readHub(
         feeds: feeds.feeds,
         career: career.career,
         docs: documents(hub, manifests.manifests),
-        decks: deck.decks,
+        decks: {},
         findings: [
             ...manifests.findings,
             ...registries.findings,
             ...listed,
             ...collections.findings,
             ...feeds.findings,
-            ...career.findings,
-            ...deck.findings
+            ...career.findings
         ]
     };
     return { hub, root, config, raw };
@@ -702,10 +669,9 @@ export function hubDomainsOf(hub: string, config: PortfolioConfig): HubVocab['do
         const key = str(entry.key);
         if (key === undefined || key === '') continue;
         const color = domainColorOf(entry);
-        const title = str(entry.title);
         domains[key] = {
             ...(color === undefined ? {} : { color }),
-            label: title === undefined || title === '' ? key : title
+            label: titleWords(str(entry.title), key)
         };
     }
     return domains;

@@ -29,13 +29,14 @@
     import Tag from '$lib/ui/controls/Tag.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import Tooltip from '$lib/ui/menu/Tooltip.svelte';
-    import { codeLabel, computeGlyph, laneGlyph, wordGlyph } from '../card';
+    import { computeGlyph, laneGlyph, wordGlyph } from '../card';
     import type { BoardItem } from '$lib/state/boards/board';
     import { cardYear, isBlocked, projectLane } from '$lib/state/boards/focus';
     import { rootOf } from '$lib/state/shared/page/hubs';
     import {
         chipGlyphName,
         chipLabel,
+        codeLabel,
         statusMarkTone,
         vocabOf
     } from '$lib/state/shared/words/tones';
@@ -108,8 +109,8 @@
     </Tooltip>
 {/if}
 {#if item.code !== ''}
-    <Tooltip text={t('project.card.code_tip', codeLabel(item.code, t))}>
-        <Tag label={codeLabel(item.code, t)} glyph={t('project.card.code_glyph')} />
+    <Tooltip text={t('project.card.code_tip', codeLabel(item.code))}>
+        <Tag label={codeLabel(item.code)} glyph={t('project.card.code_glyph')} />
     </Tooltip>
 {/if}
 {#if item.reproduced}

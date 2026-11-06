@@ -11,7 +11,8 @@
     // theme.
     //
     // A tag that is pressed is this inside the caller's own button: the click, the title and the
-    // hover belong to the control, and what it holds is the same tag as the ones beside it.
+    // hover belong to the control, and what it holds is the same tag as the ones beside it. A
+    // surface that sets its tags' words in a size of its own gives that size as `--tag-text`.
     //
     // The glyph may carry a hue and words of its own, for a mark that says something the words
     // beside it do not, as a project card's Venue tag draws the venue's tier: the hue paints the
@@ -88,7 +89,7 @@
         min-width: 0;
         padding: 1px 0;
         color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-sm);
+        font-size: var(--tag-text, var(--fs-sm));
         white-space: nowrap;
     }
 

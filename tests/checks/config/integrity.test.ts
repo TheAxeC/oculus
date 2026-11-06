@@ -84,7 +84,7 @@ function writtenEquations(text: string): number {
     }).length;
 }
 
-/** What the deck reader needs of a project of the snapshot. */
+/** What the deck reader needs of a snapshot project, with no facts: no equation reads them. */
 function deckProjects(projects: Project[]): DeckProject[] {
     return projects.map((project) => ({
         id: project.id,
@@ -95,7 +95,8 @@ function deckProjects(projects: Project[]): DeckProject[] {
         ...(project.form === undefined ? {} : { form: project.form }),
         chips: project.chips,
         short: project.short ?? '',
-        title: project.title
+        title: project.title,
+        facts: []
     }));
 }
 

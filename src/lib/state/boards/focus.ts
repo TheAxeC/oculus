@@ -58,6 +58,7 @@ import {
 import { FOCUS_SECTIONS, focusSections } from '../../data/shapes/boards/focus-sections.ts';
 import { catalogOf, type CatalogEntry } from '../../data/sources/config/catalog/options.ts';
 import { rolesOf } from '../../data/shapes/boards/roles.ts';
+import { venueWords } from '../../data/shapes/project-facts.ts';
 import { projectRole } from '../../data/shapes/boards/takes.ts';
 import { projectStatusWords, toneOf } from '../shared/words/tones.ts';
 import { hasText } from '../shared/words/text.ts';
@@ -573,8 +574,7 @@ function byTitle(one: AwaitedEntry, two: AwaitedEntry): number {
 /** A venue's short name, and its full name when the registry gives it no short one. */
 export function venueLabel(venue: Venue | undefined): string {
     if (venue === undefined) return '';
-    const short = venue.short ?? '';
-    return short === '' ? venue.name : short;
+    return venueWords(venue.short, venue.name);
 }
 
 /**

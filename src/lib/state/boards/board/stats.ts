@@ -4,6 +4,7 @@
 import type { Id, Snapshot, Venue, When } from '../../../data/model/index.ts';
 import { byKey, strings, text as str } from '../../../data/helpers/guards.ts';
 import { anyWord, hasWord } from '../../../data/shapes/vocab-keys.ts';
+import { venueWords } from '../../../data/shapes/project-facts.ts';
 import {
     bareId,
     flaggedCollections,
@@ -56,7 +57,7 @@ export function stats(
         .filter(([, { count }]) => count >= warnAt)
         .map(([name, { id, count }]) => {
             const venue = byKey(venues, id);
-            const short = venue?.short !== undefined && venue.short !== '' ? venue.short : name;
+            const short = venueWords(venue?.short, name);
             return { id, short, name, count };
         });
     rows.sort((left, right) => right.count - left.count || left.name.localeCompare(right.name));

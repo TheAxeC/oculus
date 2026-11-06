@@ -13,12 +13,17 @@
     // measures what the pane does. The key hint the pane draws on a deck's first slide
     // (`data-key-hint`, Slide.svelte) is left out of the measure, so the first slide measures the
     // same wherever it is drawn: the content's height and the hint's are taken unrounded, in the
-    // frame's own px, and the difference is rounded once. The slide is measured each time
-    // `drawing` changes, so a Stage moved to another slide or shown a retitled one measures it,
-    // and a ResizeObserver on the frame and on its content measures again when either changes
-    // size (an image or a formula that loads late, the text size, the deck's frame). The observer
-    // is disconnected when the Stage goes away or measures anew. A frame with no height (a hidden
-    // tab) is not measured.
+    // frame's own px, and the difference is rounded once. The strip of a project's facts at the
+    // slide's foot is counted: it keeps its room whether its words are shown or not, so the measure
+    // is the same with the pane's Project facts toggle on and off, and the space above it is the
+    // same with the hint drawn above it or not, so a project deck's first slide measures the same
+    // in the pane as on the presenter screen, a tile, the audience window and the print page. The
+    // hint's own space above it is part of the hint's box, so it leaves the measure with the hint.
+    // The slide is measured each time `drawing` changes, so a Stage moved to another slide or shown
+    // a retitled one measures it, and a ResizeObserver on the frame and on its content measures
+    // again when either changes size (an image or a formula that loads late, the text size, the
+    // deck's frame). The observer is disconnected when the Stage goes away or measures anew. A
+    // frame with no height (a hidden tab) is not measured.
     //
     // The parent gives the room a height: this fills its parent's width and height.
 

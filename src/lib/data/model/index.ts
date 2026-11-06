@@ -467,11 +467,13 @@ export type {
     DeckSlide,
     DeckState,
     DeckSummaryRow,
+    FactField,
     PresentEli5,
     PresentPanel,
     PresentSlide,
     PresentSpec,
     PresentTag,
+    ProjectFact,
     SlideKind
 } from './model-deck.ts';
 
@@ -607,7 +609,7 @@ export type {
 } from './machine/model-hpc.ts';
 export { queueIsCurrent } from './machine/model-hpc.ts';
 
-export { DECK_GAP } from './model-deck.ts';
+export { DECK_GAP, FACT_FIELDS } from './model-deck.ts';
 export { confirmValues } from './model-agents.ts';
 export { domainColorOf, statedKind } from './model-entities.ts';
 export { COLLECTION_FLAGS, FILTERED_TYPES, REGISTRY_WORDS } from './model-collections.ts';

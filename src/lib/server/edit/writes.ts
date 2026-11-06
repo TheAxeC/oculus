@@ -36,6 +36,7 @@ import { join, resolve } from 'node:path';
 import { appsSettings, changesKeep, type LocalConfig } from '../../data/sources/config.ts';
 import { FILES_KIND } from '../../data/file-ops.ts';
 import { keyOf } from '../../data/helpers/hub-names.ts';
+import type { FactRecordKind } from '../../data/shapes/project-facts.ts';
 import type { HubSettings } from '../../data/index.ts';
 import { tokenedBody } from '../core/auth.ts';
 import { changeAt, defaultChangesPath, logChanges } from '../core/changes.ts';
@@ -134,11 +135,12 @@ export type WriteTarget = {
      */
     projects: () => Project[];
     /**
-     * One entity map (the domains, the resources, the people) of the portfolio this server last
-     * published, or null while it has published none, which the config writes check a choice
-     * against. A target built without it checks those choices for their type alone.
+     * One entity map of the portfolio this server last published, or null while it has published
+     * none: the config writes check a choice against the domains, the resources or the people, and
+     * the deck writes read a project's facts from the records of each registry they name. A target
+     * built without it checks those choices for their type alone, and its decks name no record.
      */
-    entities?: (kind: 'domains' | 'resources' | 'people') => Record<string, unknown> | null;
+    entities?: (kind: FactRecordKind) => Record<string, unknown> | null;
     bookmarks?: string;
     /**
      * Where this machine's change log is, how much of it is kept, and the chain an append waits

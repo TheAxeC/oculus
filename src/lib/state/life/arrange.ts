@@ -45,12 +45,13 @@ export type DeckTile = {
 };
 
 /**
- * What every tile of one Overview reads: the deck, the words of a slide's place, the key of the
- * slide the reader was on, the card the shell's cursor is on (null for none) and the press that
- * shows a slide.
+ * What every tile of one Overview reads: the deck, the pane's Project facts toggle the strip of a
+ * project's facts shows its words by, the words of a slide's place, the key of the slide the reader
+ * was on, the card the shell's cursor is on (null for none) and the press that shows a slide.
  */
 export type TileView = {
     deck: Deck;
+    facts: boolean;
     placeOf: (row: DeckSlide) => string;
     current: string;
     cursor: string | null;

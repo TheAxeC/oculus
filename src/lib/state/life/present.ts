@@ -2,12 +2,13 @@
 // the server answered.
 //
 // A deck is read by the server (data/sources/deck/read.ts) and arrives whole: the slides in order
-// with their words, the groups with their members. What is here is the pane's own state (the
-// slide it is on, whether its grid is open, the decks it has shown and its filter's picks), the
-// deck a tab's layout state names, the moves over a deck's slides, the frame the slides are laid
-// out in, and the one hue a slide's status tag wears. A presentation adds the names its two
-// windows share (the audience address, and the window, channel and lock name), the messages they
-// send each other, and the presenter screen's timer and clock text.
+// with their words, the groups with their members, the facts of each project a slide comes from.
+// What is here is the pane's own state (the slide it is on, whether its grid is open, the decks it
+// has shown, its filter's picks and its Project facts toggle), the deck a tab's layout state
+// names, the moves over a deck's slides, the frame the slides are laid out in, and the one hue a
+// slide's status tag wears. A presentation adds the names its two windows share (the audience
+// address, and the window, channel and lock name), the messages they send each other, and the
+// presenter screen's timer and clock text.
 //
 // A pane's filter keeps the member decks of the projects it picks. Its groups are Stage, Status,
 // Tier, Pillar and Form, a bar of project groups drawn by the boards' rules
@@ -35,7 +36,8 @@ import type {
     DeckFrame,
     DeckGroup,
     DeckSlide,
-    PresentSlide
+    PresentSlide,
+    ProjectFact
 } from '../../data/model/index.ts';
 
 export { DECK_GAP } from '../../data/model/index.ts';
@@ -48,8 +50,10 @@ export type {
     DeckIdeaCard,
     DeckSlide,
     DeckSummaryRow,
+    FactField,
     PresentPanel,
-    PresentSlide
+    PresentSlide,
+    ProjectFact
 } from '../../data/model/index.ts';
 
 /**
@@ -80,7 +84,10 @@ const RECENT_LIMIT = 10;
 /** A pane's filter: the values picked in each of its groups, by the group's id. */
 export type DeckFilters = Record<string, string[]>;
 
-/** What one Present pane holds of its own: its place in the deck it shows and its history. */
+/**
+ * What one Present pane holds of its own: its place in the deck it shows, its history, its filter
+ * and its Project facts toggle.
+ */
 export type PresentState = {
     /** The key of the slide the pane draws; empty means the deck's first. */
     slide: string;
@@ -89,6 +96,11 @@ export type PresentState = {
     recent: DeckRef[];
     /** The values picked in its filter's groups; a group with no pick is not in it. */
     filters: DeckFilters;
+    /**
+     * Whether the strip of a project's facts at the foot of its slides shows its words, in the pane
+     * and in its presenter screen, audience window and PDF; on unless the pane turned it off.
+     */
+    facts: boolean;
 };
 
 /** One remembered deck, kept when it names both halves. */
@@ -99,7 +111,8 @@ const presentStateShape = z.object({
     slide: optionalTextShape,
     overview: z.boolean().catch(false),
     recent: rowsShape(refShape).catch(() => []),
-    filters: z.record(z.string(), z.array(z.string())).catch(() => ({}))
+    filters: z.record(z.string(), z.array(z.string())).catch(() => ({})),
+    facts: z.boolean().catch(true)
 });
 
 /** The board facets of a pane's filter, after the Map's Stage group, in the bar's order. */
@@ -137,7 +150,8 @@ export function parsePresentState(value: unknown): PresentState {
         slide: held?.slide ?? '',
         overview: held?.overview ?? false,
         recent: (held?.recent ?? []).slice(0, RECENT_LIMIT),
-        filters: filtersOf(held?.filters ?? {})
+        filters: filtersOf(held?.filters ?? {}),
+        facts: held?.facts ?? true
     };
 }
 
@@ -367,6 +381,15 @@ export function tagToneOf(deck: Deck, slide: PresentSlide): string | undefined {
     return byKey(deck.tagTones, slide.tag?.class ?? '');
 }
 
+/**
+ * The facts of the project a slide comes from, the strip at its foot draws: null for a slide of no
+ * project's deck, and for a project with no field that holds a value, which has no strip.
+ */
+export function slideFacts(deck: Deck, slide: DeckSlide): ProjectFact[] | null {
+    const facts = slide.project === undefined ? undefined : byKey(deck.projects, slide.project);
+    return facts === undefined || facts.length === 0 ? null : facts;
+}
+
 /** Where a key sits in a deck's slides, and the first slide when the deck does not hold it. */
 export function indexOf(slides: DeckSlide[], key: string): number {
     const found = slides.findIndex((slide) => slide.key === key);
@@ -449,7 +472,8 @@ export function deckState(base: unknown, ref: DeckRef): Record<string, unknown> 
 /**
  * A pane's own state after it leaves the deck it showed (`shown`, null when none is resolved) for
  * `next`: the first slide, the grid closed, no filter, since its picks are values of the members
- * of the deck it left, and that deck remembered.
+ * of the deck it left, and that deck remembered. The Project facts toggle is a setting of the pane
+ * and stays as it was.
  */
 export function leftDeck(value: unknown, shown: DeckRef | null, next: DeckRef): PresentState {
     const held = parsePresentState(value);
@@ -616,7 +640,10 @@ export function dropRefusal(
     return '';
 }
 
-/** The part of an answer the pane depends on; the slides are the server's own and are kept. */
+/**
+ * The part of an answer the pane depends on, the project each slide names and each project's facts
+ * among it; the slides are the server's own and are kept.
+ */
 export const deckShape = unchangedAs<Deck>(
     z.object({
         root: z.string(),
@@ -625,13 +652,24 @@ export const deckShape = unchangedAs<Deck>(
         name: z.string(),
         title: z.string(),
         state: z.enum(['ok', 'empty', 'no_file', 'unreadable', 'missing', 'unnamed']),
-        slides: z.array(z.object({ key: z.string(), kind: z.string(), title: z.string() })),
+        slides: z.array(
+            z.object({
+                key: z.string(),
+                kind: z.string(),
+                title: z.string(),
+                project: z.string().optional()
+            })
+        ),
         groups: z.array(z.object({ name: z.string() })),
         tagTones: z.record(z.string(), z.string()),
         frame: z.strictObject({
             width: z.number().int().positive(),
             height: z.number().int().positive()
         }),
+        projects: z.record(
+            z.string(),
+            z.array(z.object({ field: z.string(), words: z.array(z.string()) }))
+        ),
         findings: z.array(z.unknown())
     })
 );
@@ -672,8 +710,8 @@ export function presentName(ref: DeckRef): string {
 
 /**
  * What names one deck's export to PDF: the Web Lock the exporting pane holds from the press until
- * its print page has the filter's kept list, so a second press of Export on the deck, from any
- * pane, waits for none and says the export is in progress.
+ * its print page has the filter's kept list and the Project facts toggle, so a second press of
+ * Export on the deck, from any pane, waits for none and says the export is in progress.
  */
 export function exportName(ref: DeckRef): string {
     return `oculus-present-export-${deckQuery(ref)}`;
@@ -689,12 +727,14 @@ export function exportName(ref: DeckRef): string {
  * carries.
  *
  * The audience page, when it opens, and the print page, before it reads the deck, ask which
- * projects the filter keeps (`keep-asked`, `from` naming which of the two asks). The answer is a
- * `keep`, the kept list or null for no filter: the presenting pane answers the audience page with
- * `at` 0, and says it again with `at` 0 whenever its kept list changes; the exporting pane answers
- * the print page with `at` the moment of the press, in milliseconds. The audience page takes only
- * the answers with `at` 0 and the print page only the others, so neither takes the kept list of a
- * pane that is not its own.
+ * projects the filter keeps and whether the strip of a project's facts shows its words
+ * (`keep-asked`, `from` naming which of the two asks). The answer is a `keep`: the kept list or
+ * null for no filter, and the pane's Project facts toggle (`facts`). The presenting pane answers
+ * the audience page with `at` 0, and says it again with `at` 0 whenever its kept list or its
+ * toggle changes; the exporting pane answers the print page with both as they were at the press
+ * and `at` the moment of the press, in milliseconds. The audience page takes only the answers with
+ * `at` 0 and the print page only the others, so neither takes the answer of a pane that is not its
+ * own.
  */
 const messageShape = z.discriminatedUnion('kind', [
     z.object({ kind: z.literal('slide'), key: z.string() }),
@@ -708,6 +748,7 @@ const messageShape = z.discriminatedUnion('kind', [
     z.object({
         kind: z.literal('keep'),
         keep: z.array(z.string()).nullable(),
+        facts: z.boolean(),
         at: z.number().int().nonnegative()
     })
 ]);

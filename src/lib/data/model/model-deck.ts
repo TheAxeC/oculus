@@ -127,7 +127,45 @@ type SlideBase = {
     notes?: string;
     /** Absent for a slide the deck does not read from a file. */
     source?: DeckSlideSource;
+    /**
+     * The key of the project whose deck's file holds the slide, or whose deck places the summary or
+     * the grid; absent for a slide of a deck that is no project's. The strip at the slide's foot
+     * draws that project's facts (`Deck.projects`).
+     */
+    project?: string;
 };
+
+/** The fields of a project's facts, in the order the strip at a slide's foot draws them. */
+export const FACT_FIELDS = [
+    'form',
+    'stage',
+    'chips',
+    'domain',
+    'pillars',
+    'datasets',
+    'lead',
+    'supervisors',
+    'collaborators',
+    'year',
+    'venue',
+    'funding',
+    'compute',
+    'code',
+    'reproduced',
+    'tier'
+] as const;
+
+/** One field of a project's facts, which `{{project.<field>}}` names too. */
+export type FactField = (typeof FACT_FIELDS)[number];
+
+/**
+ * One field of a project that holds a value: its words, in the order of the project's ids (the
+ * merged snapshot orders the collaborators and supervisors by the project's team). The form, the
+ * stage and the chips also carry their words of the vocabulary and the domain its id, which the
+ * strip draws their hue by, and compute the kind of each resource, which its glyph is read by:
+ * `keys` holds one entry per word, for those five fields alone.
+ */
+export type ProjectFact = { field: FactField; words: string[]; keys?: string[] };
 
 /**
  * The address a slide's Markdown image is given when the deck's folder lacks the file, which the
@@ -136,8 +174,9 @@ type SlideBase = {
 export const DECK_GAP = '#gap';
 
 /**
- * One slide of a deck as the view draws it. Words are Markdown, with the group counts in them
- * already replaced. A `legend` is the domain keys of the group the slide names.
+ * One slide of a deck as the view draws it. Words are Markdown, with the group counts and the
+ * `{{project.<field>}}` placeholders in them already replaced. A `legend` is the domains of the
+ * group the slide names.
  */
 export type DeckSlide =
     | (SlideBase & {
@@ -285,5 +324,7 @@ export type Deck = {
     frame: DeckFrame;
     /** The keys the Overview sets, as the file holds them; null for a file that was not read. */
     keys: DeckKeys | null;
+    /** The facts of each project a slide names (`project`), by the project's key. */
+    projects: Record<string, ProjectFact[]>;
     findings: Finding[];
 };

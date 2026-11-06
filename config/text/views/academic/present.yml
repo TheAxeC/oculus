@@ -104,6 +104,11 @@ text:
         next: Next
         overview: Overview
         overview_glyph: cards
+        facts: Project facts
+        facts_tip: Show the strip of the project's facts at the foot of its slides, here and in the presenter screen, the audience window and the PDF
+        fact: '{0}: {1}'
+        fact_chips: Status chips
+        fact_pillars: Pillars
         present: Present
         present_tip: Show the deck on the whole screen (F, while the deck has the focus)
         presenter: Presenter

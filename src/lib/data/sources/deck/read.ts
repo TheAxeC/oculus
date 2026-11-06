@@ -28,11 +28,23 @@
 // cards, a legend's domains and the group's `count`. The answer's `groups[].members` stay every
 // member, each saying whether the filter keeps it and the key of its project, so one answer gives
 // what a filter can pick and how many decks it keeps.
+//
+// A slide built from a project's deck carries that project's key (`project`): a slide of a member
+// deck its member's, a slide of the deck's own files and a summary or a grid it places the deck's
+// own, and a slide of a deck that is no project's none. The answer carries the facts of each
+// project its slides name (`projects`), which the strip at the foot of those slides draws. A
+// slide's `{{project.<field>}}` is filled from the same facts after its counts are: the words of
+// the field, a list's joined with ", ", written so the slide draws them as they are. A field with
+// no value is filled with nothing, and a name that is no field, or a placeholder in a deck that is
+// no project's, is left as written; each is a Finding on the slide's file at its line.
 
 import { existsSync, globSync, readFileSync, statSync } from 'node:fs';
 import { basename, dirname, join, relative } from 'node:path';
 import { parse } from 'yaml';
 import { findingText, type TextCatalog } from '../../helpers/finding-text.ts';
+import { keyOf } from '../../helpers/hub-names.ts';
+import { escapeAttribute } from '../../prose/markdown/markdown.ts';
+import { isFactField } from '../../shapes/project-facts.ts';
 import type {
     Deck,
     DeckFrame,
@@ -42,8 +54,10 @@ import type {
     DeckSlide,
     DeckState,
     DeckSummaryRow,
-    Finding
+    Finding,
+    ProjectFact
 } from '../../model/index.ts';
+import { FACT_FIELDS } from '../../model/index.ts';
 import { fileBytesUrl } from '../../helpers/files/address.ts';
 import { mustBe } from '../config/catalog/value-words.ts';
 import { deckFrame, type FrameSetting } from '../config/settings/present.ts';
@@ -65,7 +79,10 @@ export type DeckContext = {
     /** The hub's folder, and the key its files are served under. */
     hub: DeckRoot;
     projects: DeckProject[];
-    /** The keys of the hub's domains registry, which a project's `domain:` is checked against. */
+    /**
+     * The keys of the hub's domains registry, which the key of a project's `domain:` is checked
+     * against.
+     */
     domains: string[];
     /** The engine's `tag_tones`, which a deck's own `defaults` override. */
     tagTones: Record<string, string>;
@@ -107,6 +124,81 @@ function counted(value: unknown, fill: (group: string, whole: string) => string)
     if (typeof value === 'object' && value !== null) {
         return Object.fromEntries(
             Object.entries(value).map(([key, one]) => [key, counted(one, fill)])
+        );
+    }
+    return value;
+}
+
+const PROJECT = /\{\{\s*project\.([\w-]+)\s*\}\}/g;
+
+/**
+ * The parts of Markdown whose characters are drawn as written, which a filled value is put in
+ * unescaped: a fenced code block, an inline code span and a formula in the four delimiters the
+ * page typesets (views/academic/present/markup.ts).
+ */
+const LITERAL =
+    /(?:^|\n)(```|~~~)[^\n]*\n[\s\S]*?(?:\n\1[^\n]*(?=\n|$)|$)|`[^`\n]*`|\$\$[\s\S]+?\$\$|\\\[[\s\S]+?\\\]|\\\([\s\S]+?\\\)|(?<!\\)\$(?!\s)[^$\n]+?(?<!\s)\$/g;
+
+/** The characters Markdown, HTML or the page's formulas read as markup. */
+const MARKUP = /[\\`*_[\]<>&~|$#!]/g;
+
+/** Words written so Markdown draws them as they are: each markup character backslash-escaped. */
+function escapeMarkdown(words: string): string {
+    return words.replace(MARKUP, (char) => `\\${char}`);
+}
+
+/**
+ * A Markdown text with each `{{project.<field>}}` replaced by what `fill` gives, escaped outside
+ * the literal parts and as it is inside them; a placeholder `fill` answers null for is left.
+ */
+function filledMarkdown(text: string, fill: (field: string) => string | null): string {
+    const replaced = (part: string, literal: boolean): string =>
+        part.replace(PROJECT, (whole, field: string) => {
+            const words = fill(field);
+            if (words === null) return whole;
+            return literal ? words : escapeMarkdown(words);
+        });
+    let out = '';
+    let from = 0;
+    for (const match of text.matchAll(LITERAL)) {
+        out += replaced(text.slice(from, match.index), false) + replaced(match[0], true);
+        from = match.index + match[0].length;
+    }
+    return out + replaced(text.slice(from), false);
+}
+
+/**
+ * The front matter keys, by their path with a list's places left out, that take the filled words
+ * as they are: the ones a slide draws as plain text (`notes` in the presenter's notes, `tag.text`
+ * as the tag's label, `panels.figure` as the file name the figure is looked up by and the words of
+ * its gap) and `equation`, a formula, as a formula in Markdown takes them.
+ */
+const AS_WRITTEN: ReadonlySet<string> = new Set(['notes', 'tag.text', 'panels.figure', 'equation']);
+
+/** The front matter keys a slide draws as HTML, which take the filled words HTML-escaped. */
+const AS_HTML: ReadonlySet<string> = new Set(['panels.diagram_html']);
+
+/**
+ * The words of a slide's front matter or body with each `{{project.<field>}}` filled: as they are
+ * in a key of `AS_WRITTEN`, HTML-escaped in a key of `AS_HTML`, and escaped as Markdown outside its
+ * literal parts in every other key and in the body. `path` is the key's path.
+ */
+function filledProject(value: unknown, fill: (field: string) => string | null, path = ''): unknown {
+    if (typeof value === 'string') {
+        if (!AS_WRITTEN.has(path) && !AS_HTML.has(path)) return filledMarkdown(value, fill);
+        return value.replace(PROJECT, (whole, field: string) => {
+            const words = fill(field);
+            if (words === null) return whole;
+            return AS_HTML.has(path) ? escapeAttribute(words) : words;
+        });
+    }
+    if (Array.isArray(value)) return value.map((one) => filledProject(one, fill, path));
+    if (typeof value === 'object' && value !== null) {
+        return Object.fromEntries(
+            Object.entries(value).map(([name, one]) => [
+                name,
+                filledProject(one, fill, path === '' ? name : `${path}.${name}`)
+            ])
         );
     }
     return value;
@@ -188,12 +280,12 @@ export function createReader(context: DeckContext): DeckReader {
     function projectOf(dir: string): DeckProject | null {
         const project = projectDirs.get(dir)?.project;
         if (project === undefined) return null;
-        if (project.domain !== undefined && !context.domains.includes(project.domain)) {
+        if (project.domain !== undefined && !context.domains.includes(keyOf(project.domain))) {
             raiseFor(project.file)(
                 'domain',
                 'findings.deck.domain_unknown',
                 project.id,
-                project.domain
+                keyOf(project.domain)
             );
             return { ...project, domain: undefined };
         }
@@ -381,13 +473,43 @@ export function createReader(context: DeckContext): DeckReader {
             }
             return String(count);
         };
+        const project = doc.project;
         for (const [number, slide] of (raw ?? []).entries()) {
             const key = `${entry.file}#${number}`;
+            const line = firstLines.get('path' in from ? from.path : '')?.[number] ?? 1;
+            const raiseHere = 'path' in from ? raiseAt(from.path, line) : raise;
+            const words = (field: string): string | null => {
+                // The count's fill runs first and writes out every `{{project.count}}` it can, so
+                // one in the text it hands on is one it left as written and raised its finding for.
+                if (field === 'count') return null;
+                const whole = `{{project.${field}}}`;
+                if (project === null) {
+                    raiseHere('project', 'findings.deck.project_none', whole);
+                    return null;
+                }
+                if (!isFactField(field)) {
+                    raiseHere(
+                        'project',
+                        'findings.deck.project_field_unknown',
+                        whole,
+                        FACT_FIELDS.join(', ')
+                    );
+                    return null;
+                }
+                const fact = project.facts.find((one) => one.field === field);
+                if (fact === undefined) {
+                    raiseHere('project', 'findings.deck.project_field_empty', whole, project.id);
+                    return '';
+                }
+                return fact.words.join(', ');
+            };
             const meta =
-                slide.meta === null ? null : (counted(slide.meta, fill) as Record<string, unknown>);
+                slide.meta === null
+                    ? null
+                    : (filledProject(counted(slide.meta, fill), words) as Record<string, unknown>);
             const filled: RawSlide = {
                 meta,
-                body: counted(slide.body, fill) as string
+                body: filledProject(counted(slide.body, fill), words) as string
             };
             const resolve = (name: string) => {
                 const at = resolveIn(doc.root, folder, name);
@@ -404,7 +526,7 @@ export function createReader(context: DeckContext): DeckReader {
             };
             const built = buildSlide(filled, number, kind);
             if (built === null) continue;
-            const line = firstLines.get('path' in from ? from.path : '')?.[number] ?? 1;
+            if (project !== null) built.slide.project = project.id;
             if (under !== null) {
                 built.slide.source = {
                     root: doc.root.key,
@@ -456,6 +578,7 @@ export function createReader(context: DeckContext): DeckReader {
             line: (orderText(textOf(doc.file))?.slots.at(entry.index)?.line ?? 0) + 1
         };
         const title = entry.title.replace(/<[^>]*>/g, '');
+        const owner = doc.project === null ? {} : { project: doc.project.id };
         const members = drawnOf(found);
         if (entry.kind === 'grid') {
             const cards: DeckIdeaCard[] = members.map((member) => {
@@ -473,6 +596,7 @@ export function createReader(context: DeckContext): DeckReader {
             return {
                 key,
                 source,
+                ...owner,
                 kind: 'grid',
                 title,
                 heading: entry.title,
@@ -496,6 +620,7 @@ export function createReader(context: DeckContext): DeckReader {
         return {
             key,
             source,
+            ...owner,
             kind: 'summary',
             title,
             heading: entry.title,
@@ -641,8 +766,20 @@ export function createReader(context: DeckContext): DeckReader {
             tagTones: { ...context.tagTones },
             frame: context.frame.frame,
             keys: null,
+            projects: {},
             findings: [...raised]
         };
+    }
+
+    /** The facts of each project the slides name, by the project's key. */
+    function factsOf(slides: DeckSlide[]): Record<string, ProjectFact[]> {
+        const facts: Record<string, ProjectFact[]> = {};
+        for (const one of slides) {
+            if (one.project === undefined || Object.hasOwn(facts, one.project)) continue;
+            const project = context.projects.find((held) => held.id === one.project);
+            if (project !== undefined) facts[one.project] = project.facts;
+        }
+        return facts;
     }
 
     function read(root: DeckRoot, path: string): Deck {
@@ -685,6 +822,7 @@ export function createReader(context: DeckContext): DeckReader {
             tagTones: { ...context.tagTones, ...(doc.spec?.tagTones ?? {}) },
             frame: frames.get(doc.dir) ?? context.frame.frame,
             keys: doc.spec?.keys ?? null,
+            projects: factsOf(slides),
             findings: [...raised]
         };
     }

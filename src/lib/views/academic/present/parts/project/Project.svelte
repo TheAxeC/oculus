@@ -6,9 +6,9 @@
 
     import Chip from '$lib/ui/controls/Chip.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
-    import Equation from './Equation.svelte';
-    import Panel from '../Panel.svelte';
-    import Words from './Words.svelte';
+    import Equation from '../Equation.svelte';
+    import Panel from '../../Panel.svelte';
+    import Words from '../Words.svelte';
     import { hasSlideContent } from '$lib/state/life/present';
     import { chipLabel, domainLabel, domainTone, stageTone } from '$lib/state/shared/words/tones';
     import { t } from '$lib/state/shared/words/text';

@@ -11,6 +11,11 @@
 // reader holds the projects of that hub alone, a key names one project of it and never a project
 // of another hub that has the same key. With no keys the read is the whole deck.
 //
+// Each project the reader holds carries its facts, which the strip at the foot of its deck's slides
+// draws and its `{{project.<field>}}` placeholders are filled from. They are worked out here from
+// the project's ids in the snapshot, the snapshot's records and the words of the hub the deck is
+// read under (data/shapes/project-facts.ts), so a deck of a second hub draws that hub's words.
+//
 // The roots are the folders of the open workspace, so a root that is not one of their names and a
 // path that climbs out of a root or leaves it through a link is refused by the rule the file route
 // answers by (`resolveRootPath`), ahead of any read. A folder inside a root that holds no deck is
@@ -24,34 +29,47 @@ import { hubDomainsOf } from '../../../data/index.ts';
 import { frameSetting } from '../../../data/sources/config.ts';
 import type { DeckProject } from '../../../data/sources/deck/kinds.ts';
 import type { Deck, PortfolioConfig, Project } from '../../../data/model/index.ts';
-import { bareId, ofHub } from '../../../data/helpers/hub-names.ts';
+import { byKey, isMap } from '../../../data/helpers/guards.ts';
+import { ofHub } from '../../../data/helpers/hub-names.ts';
+import {
+    projectFacts,
+    type FactRecordKind,
+    type FactWords
+} from '../../../data/shapes/project-facts.ts';
 import { resolveRootPath, type Root } from '../../files/files.ts';
 import type { HubTarget } from '../../files/roots.ts';
 
 /**
  * What a deck is read over: the roots it may be in, the primary hub (null with none), its settings,
- * the portfolio's projects and the hubs other than the primary. A deck in the root of one of those
- * hubs is read over that hub's folder, settings and projects; a deck in any other root is read over
- * the primary.
+ * the portfolio's projects, the snapshot's records the projects' facts name, and the hubs other
+ * than the primary. A deck in the root of one of those hubs is read over that hub's folder,
+ * settings and projects; a deck in any other root is read over the primary.
  */
 export type DeckSource = {
     roots: Root[];
     primary: { key: string; dir: string } | null;
     config: PortfolioConfig;
     projects: Project[];
+    /** One entity map of the snapshot by internal id, or null while none was published. */
+    entities: (kind: FactRecordKind) => Record<string, unknown> | null;
     hubs?: HubTarget[];
 };
 
-/** What the reader needs of a project of the snapshot. */
-function deckProject(project: Project): DeckProject {
+/**
+ * What the reader needs of a project of the snapshot, its facts among it. The project's id is the
+ * key its own hub's files give it (`ofHub`); the domain stays the internal id, which the client's
+ * hue and title of a domain read.
+ */
+function deckProject(project: Project, words: FactWords): DeckProject {
     const one: DeckProject = {
-        id: bareId(project),
+        id: project.id,
         file: project.file,
         folder: project.folder,
         tier: project.tier,
         chips: project.chips,
         short: project.short ?? '',
-        title: project.title
+        title: project.title,
+        facts: projectFacts(project, words)
     };
     if (project.workspaceFolder !== undefined) one.workspaceFolder = project.workspaceFolder;
     if (project.stage !== undefined) one.stage = project.stage;
@@ -97,9 +115,17 @@ export function readDeck(
         owner === undefined
             ? (source.primary ?? { key: held.key, dir: held.dir })
             : { key: owner.key, dir: owner.hub };
+    const words: FactWords = {
+        record: (kind, id) => {
+            const held = byKey(source.entities(kind) ?? {}, id);
+            return isMap(held) ? held : undefined;
+        },
+        vocab: config.merged,
+        catalog: config.text
+    };
     const reader = createReader({
         hub,
-        projects: ofHub(source.projects, hub.key).map(deckProject),
+        projects: ofHub(source.projects, hub.key).map((project) => deckProject(project, words)),
         domains: Object.keys(hubDomainsOf(hub.dir, config)),
         tagTones: config.tagTones,
         frame: frameSetting(config.merged),

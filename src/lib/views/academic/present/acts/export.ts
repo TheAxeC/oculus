@@ -7,14 +7,14 @@
 // a new tab, which opens the browser's print dialog when it is ready.
 //
 // The print route's address names the deck and nothing else, so the PDF learns the pane's filter
-// over the deck's channel: from the press until the print page has asked for the kept list and been
-// answered, or for `EXPORT_HOLD_MS`, the pane holds the deck's export under a Web Lock named for it
-// (`exportName`) and answers the page's `keep-asked` with its kept list and the moment of the
-// press. This holds on both paths, the browser tab's too, where the export returns once the tab is
-// open. A press of Export on the same deck while the lock is held, from any pane of any window,
-// says an export is in progress and prints nothing. In a browser tab the print tab opens inside the
-// press, before the lock is asked for, so a press while the lock is held opens a tab and closes it
-// again.
+// and its Project facts toggle over the deck's channel: from the press until the print page has
+// asked for them and been answered, or for `EXPORT_HOLD_MS`, the pane holds the deck's export under
+// a Web Lock named for it (`exportName`) and answers the page's `keep-asked` with its kept list and
+// its toggle as they were at the press, and the moment of the press. This holds on both paths,
+// the browser tab's too, where the export returns once the tab is open. A press of Export on the
+// same deck while the lock is held, from any pane of any window, says an export is in progress
+// and prints nothing. In a browser tab the print tab opens inside the press, before the lock is
+// asked for, so a press while the lock is held opens a tab and closes it again.
 //
 // `<name>` is the deck folder's name, the project's name for a project's `present/` folder, and
 // the root's folder name for a deck at the top of a root (the deck's own `name`).
@@ -42,6 +42,8 @@ export type ExportDeps = {
     deck: Deck;
     /** The kept list of the pane's filter, null for none, which the print page is answered. */
     keep: readonly string[] | null;
+    /** The pane's Project facts toggle at the press, which the print page is answered too. */
+    facts: boolean;
     /** The frame of the deck as saved, the one the print route draws, which the host prints at. */
     frame: DeckFrame;
     /** The desktop bridge, or undefined in a browser. */
@@ -96,7 +98,10 @@ async function put(deps: ExportDeps, name: string, data: string, replace: boolea
     } else deps.say(outcomeLine(outcome));
 }
 
-/** The longest an export holds the deck's export for its print page to ask for the kept list. */
+/**
+ * The longest an export holds the deck's export for its print page to ask for the kept list and
+ * the toggle.
+ */
 const EXPORT_HOLD_MS = 10_000;
 
 /**
@@ -106,11 +111,16 @@ const EXPORT_HOLD_MS = 10_000;
 type KeepReply = { answered: Promise<void>; grant: () => void; stop: () => void };
 
 /**
- * Answer the print page's ask for the kept list over the deck's channel, once, with `at` the moment
- * of the press, after `grant`; an ask heard before it is answered at `grant`. Done once it is
- * answered, after `EXPORT_HOLD_MS`, or when stopped.
+ * Answer the print page's ask for the kept list and the Project facts toggle over the deck's
+ * channel, once, with `at` the moment of the press, after `grant`; an ask heard before it is
+ * answered at `grant`. Done once it is answered, after `EXPORT_HOLD_MS`, or when stopped.
  */
-function answerPrint(ref: DeckRef, keep: readonly string[] | null, at: number): KeepReply {
+function answerPrint(
+    ref: DeckRef,
+    keep: readonly string[] | null,
+    facts: boolean,
+    at: number
+): KeepReply {
     const channel = new BroadcastChannel(presentName(ref));
     let asked = false;
     let granted = false;
@@ -128,7 +138,7 @@ function answerPrint(ref: DeckRef, keep: readonly string[] | null, at: number): 
         stop = finish;
         reply = () => {
             if (over || !asked || !granted) return;
-            channel.postMessage({ kind: 'keep', keep, at });
+            channel.postMessage({ kind: 'keep', keep, facts, at });
             finish();
         };
         const timer = setTimeout(finish, EXPORT_HOLD_MS);
@@ -177,7 +187,7 @@ function holdExport(ref: DeckRef, answer: () => Promise<void>): Promise<boolean>
  * lock is granted, so a press the lock refuses never answers another export's print page.
  */
 async function exportTab(deps: ExportDeps, address: string): Promise<void> {
-    const print = answerPrint(deps.ref, deps.keep, Date.now());
+    const print = answerPrint(deps.ref, deps.keep, deps.facts, Date.now());
     const tab = deps.openTab(address);
     if (tab === null) {
         print.stop();
@@ -209,7 +219,7 @@ export async function exportPdf(deps: ExportDeps): Promise<void> {
     const at = Date.now();
     // The channel listens before the page is opened, so the page's ask is never missed.
     const granted = (): Promise<void> => {
-        const print = answerPrint(deps.ref, deps.keep, at);
+        const print = answerPrint(deps.ref, deps.keep, deps.facts, at);
         print.grant();
         return print.answered;
     };

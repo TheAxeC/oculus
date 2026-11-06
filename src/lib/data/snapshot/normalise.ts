@@ -63,6 +63,7 @@ import {
     placedKeys,
     tierOf
 } from '../helpers/hub-names.ts';
+import type { FactRecords } from '../shapes/project-facts.ts';
 import { vocabKeys } from '../shapes/vocab-keys.ts';
 import { followups, mapShape, readOr, stringItemsShape, subtasks } from '../shapes/shapes.ts';
 
@@ -260,8 +261,10 @@ function staleDays(found: DocPresence[] | undefined, manifest: number | undefine
 
 /**
  * A project. Every field comes from the manifest key of the same meaning, and nothing else does.
+ * The snapshot build's deck read (snapshot/hubs/deck-facts.ts `hubFacts`) reads a project's facts
+ * from it too.
  */
-function project(
+export function manifestProject(
     manifest: RawManifest,
     found: DocPresence[] | undefined,
     deck: RawDeck | undefined,
@@ -606,6 +609,46 @@ function feeds(raw: RawFeeds): RawFeeds {
     };
 }
 
+/** What a hub's reader rows give its records; see `normalise`. */
+type Readers = { browsable: boolean; kinds: ReadonlySet<string> };
+
+/**
+ * The records of a hub's registries, each as the hub's snapshot carries it: an entry with no key is
+ * left out, a funding scheme with none is carried under its title, and a resource with a fault is
+ * left out.
+ */
+function hubRecords(registries: RawPortfolio['registries'], readers: Readers) {
+    const withId = (entries: RawRegistryEntry[]): RawRegistryEntry[] =>
+        entries.filter((item) => item.key.length > 0);
+    return {
+        venues: withId(registries.venues.entries).map((one) => venue(one, readers.browsable)),
+        datasets: withId(registries.datasets.entries).map((one) => dataset(one, readers.kinds)),
+        pillars: withId(registries.pillars.entries).map(pillar),
+        domains: withId(registries.domains.entries).map(domain),
+        schemes: registries.funding.entries.map(funding).filter((one) => one.id.length > 0),
+        people: withId(registries.people.entries).map(person),
+        organisations: withId(registries.organisations.entries).map(organisation),
+        resources: keptResources(registries.resources.entries).map(resource)
+    };
+}
+
+/**
+ * The records of a hub's registries that a project's facts name, by kind and key, each as the
+ * hub's snapshot carries it, for the snapshot build's read of the decks (hubs/deck-facts.ts).
+ */
+export function factRecords(registries: RawPortfolio['registries']): FactRecords {
+    const held = hubRecords(registries, { browsable: false, kinds: new Set() });
+    return {
+        people: byId(held.people),
+        pillars: byId(held.pillars),
+        datasets: byId(held.datasets),
+        funding: byId(held.schemes),
+        venues: byId(held.venues),
+        resources: byId(held.resources),
+        domains: byId(held.domains)
+    };
+}
+
 /**
  * One hub's own snapshot, which the merge of the hubs (hubs/merge.ts) turns into the snapshot the
  * socket carries. `version` is the caller's, monotonic and incremented by the watcher on every
@@ -624,32 +667,14 @@ export function normalise(
     merged: Record<string, unknown>,
     version = 0,
     others: Readonly<Record<string, readonly string[]>> = {},
-    readers: { browsable: boolean; kinds: ReadonlySet<string> } = {
-        browsable: false,
-        kinds: new Set()
-    }
+    readers: Readers = { browsable: false, kinds: new Set() }
 ): HubSnapshot {
-    const withId = (entries: RawRegistryEntry[]): RawRegistryEntry[] =>
-        entries.filter((item) => item.key.length > 0);
-
     const tiers = vocabKeys(merged.tiers);
     const projects = raw.manifests.map((manifest) =>
-        project(manifest, raw.docs[manifest.id], raw.decks[manifest.id], tiers)
+        manifestProject(manifest, raw.docs[manifest.id], raw.decks[manifest.id], tiers)
     );
-    const venues = withId(raw.registries.venues.entries).map((entry) =>
-        venue(entry, readers.browsable)
-    );
-    const datasets = withId(raw.registries.datasets.entries).map((entry) =>
-        dataset(entry, readers.kinds)
-    );
-    const pillars = withId(raw.registries.pillars.entries).map(pillar);
-    const domains = withId(raw.registries.domains.entries).map(domain);
-    const schemes = raw.registries.funding.entries
-        .map(funding)
-        .filter((scheme) => scheme.id.length > 0);
-    const people = withId(raw.registries.people.entries).map(person);
-    const organisations = withId(raw.registries.organisations.entries).map(organisation);
-    const resources = keptResources(raw.registries.resources.entries).map(resource);
+    const { venues, datasets, pillars, domains, schemes, people, organisations, resources } =
+        hubRecords(raw.registries, readers);
     const collections = Object.keys(raw.collections).map((key) => collection(raw.collections[key]));
 
     const keys = (source: string, own: { id: Id }[]): Set<Id> =>

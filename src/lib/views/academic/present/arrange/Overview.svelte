@@ -52,6 +52,8 @@
          */
         saved: Deck | null;
         ref: DeckRef | null;
+        /** Whether the tiles' strip of a project's facts shows its words: the pane's toggle. */
+        facts: boolean;
         /** The key of the slide the reader was on, marked as the one in force. */
         current: string;
         /** The shell's card cursor, the card its keys act on; null for none. */
@@ -63,7 +65,7 @@
         say: (line: string) => void;
     };
 
-    let { deck, saved, ref, current, cursor, onpick, onact, say }: Props = $props();
+    let { deck, saved, ref, facts, current, cursor, onpick, onact, say }: Props = $props();
 
     const {
         entities: { config },
@@ -89,7 +91,7 @@
     }
 
     /** What every tile reads, the tiles of the groups as well. */
-    const view: TileView = $derived({ deck, placeOf, current, cursor, onpick });
+    const view: TileView = $derived({ deck, facts, placeOf, current, cursor, onpick });
 
     /**
      * The engine's configuration, whose palette and vocabulary the forms offer and whose labels the

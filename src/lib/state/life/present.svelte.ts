@@ -31,11 +31,13 @@
 // presenter screen is gone, and the timer. It belongs to the page and is keyed by the pane's
 // instance id, so it outlives the pane's component: a tab switch, a page switch and any redraw of
 // the panes leave it on, and it ends when the instance leaves the layout. The kept list of the
-// pane's filter is read through the pane's link as its slide is, so the audience page is answered
-// it when it asks and told it again whenever it changes, while the pane is drawn or not.
+// pane's filter and its Project facts toggle are read through the pane's link as its slide is, so
+// the audience page is answered both when it asks and told both again whenever either changes,
+// while the pane is drawn or not.
 //
 // The print and audience routes hold no store: they read the deck through `readDeck` under the
-// kept list they were told, and the print page asks the exporting pane for it (`exportKeep`).
+// kept list they were told and draw the strip of a project's facts by the toggle they were told,
+// and the print page asks the exporting pane for both (`exportKeep`).
 
 import { SvelteMap } from 'svelte/reactivity';
 import { str } from '../../data/helpers/guards.ts';
@@ -105,6 +107,8 @@ export type PresentLink = {
     current: () => string;
     /** The kept list of the pane's filter: null for none, undefined while it is not known. */
     keep: () => Keep;
+    /** Whether the pane's Project facts toggle is on. */
+    facts: () => boolean;
     /** Show the slide a key names in the pane. */
     show: (key: string) => void;
     /** Whether the pane's instance is still in the layout. */
@@ -261,23 +265,29 @@ export function readDeck(
     return deckOf(() => askDeck(ref, token, keep));
 }
 
+/** What the exporting pane tells the print page: its kept list and its Project facts toggle. */
+export type ExportKeep = { keep: readonly string[] | null; facts: boolean };
+
 /**
- * The kept list the exporting pane answers the print page with over the deck's channel: the first
- * `keep` an export sends (`at` above 0) within `wait` ms of the ask, or undefined when none comes,
- * which the page reads as a deck it cannot print as the pane filters it.
+ * The kept list and the Project facts toggle the exporting pane answers the print page with over
+ * the deck's channel: the first `keep` an export sends (`at` above 0) within `wait` ms of the ask,
+ * or undefined when none comes, which the page reads as a deck it cannot print as the pane filters
+ * it.
  */
-export function exportKeep(ref: DeckRef, wait: number): Promise<Keep> {
+export function exportKeep(ref: DeckRef, wait: number): Promise<ExportKeep | undefined> {
     return new Promise((answer) => {
         const channel = new BroadcastChannel(presentName(ref));
-        const done = (keep: Keep): void => {
+        const done = (held: ExportKeep | undefined): void => {
             clearTimeout(timer);
             channel.close();
-            answer(keep);
+            answer(held);
         };
         const timer = setTimeout(() => done(undefined), wait);
         channel.onmessage = (event: MessageEvent<unknown>) => {
             const message = parseMessage(event.data);
-            if (message?.kind === 'keep' && message.at > 0) done(message.keep);
+            if (message?.kind === 'keep' && message.at > 0) {
+                done({ keep: message.keep, facts: message.facts });
+            }
         };
         channel.postMessage({ kind: 'keep-asked', from: 'print' });
     });
@@ -612,17 +622,20 @@ function createPresenting(
     }
 
     /**
-     * Tell the audience window the kept list of the pane's filter; one that cannot be worked out
-     * yet is told once it can.
+     * Tell the audience window the kept list of the pane's filter and the pane's Project facts
+     * toggle; while the kept list cannot be worked out yet nothing is told, and both are told once
+     * it can.
      */
     function sendKeep(held: Held): void {
         const keep = held.link.keep();
-        if (keep !== undefined) held.channel.postMessage({ kind: 'keep', keep, at: 0 });
+        const facts = held.link.facts();
+        if (keep !== undefined) held.channel.postMessage({ kind: 'keep', keep, facts, at: 0 });
     }
 
     /**
-     * What the audience window says: it opened, it asks for the kept list, its reader moved, it
-     * closed. An ask of the print page is the exporting pane's to answer.
+     * What the audience window says: it opened, it asks for the kept list and the Project facts
+     * toggle, its reader moved, it closed. An ask of the print page is the exporting pane's to
+     * answer.
      */
     function hear(instance: string, held: Held, data: unknown): void {
         const message = parseMessage(data);
@@ -704,12 +717,12 @@ function createPresenting(
             $effect(() => {
                 if (!link.held()) end(instance);
             });
-            // The kept list is said at the start and again each time it changes; a push that
-            // leaves it as it was says nothing.
+            // The kept list and the toggle are said at the start and again each time either
+            // changes; a push that leaves both as they were says nothing.
             let said: string | null = null;
             $effect(() => {
                 const keep = link.keep();
-                const now = JSON.stringify(keep);
+                const now = JSON.stringify([keep, link.facts()]);
                 if (held.ended || keep === undefined || now === said) return;
                 said = now;
                 sendKeep(held);

@@ -5,7 +5,9 @@
     // ui/controls/Tag.svelte instead. It is VS Code's count badge in shape: 11px words, an 18 px
     // minimum, a full round end. Outline is the default and the filled form is for the one chip
     // that has to carry a row; a pressed toggle is drawn filled in its hue, and an `outlined` one
-    // not pressed has its border in its hue.
+    // not pressed has its border in its hue. A surface that sets its chips' words in a size of its
+    // own gives that size as `--chip-text`, and the chip's line, its minimum height and the room
+    // its icon gives back grow with the words, as they grow with the text scale.
     //
     // The hue reaches the CSS as three custom properties the component sets from the tone, so the
     // rules below name only tokens: the tinted form paints `--c-<tone>-txt` on `--chip` and the
@@ -134,21 +136,25 @@
 {/if}
 
 <style>
+    /* The chip's sizes are counted in `--chip-px`, the chip being drawn for words of 11 of them:
+       1 px grown with the text scale, or an eleventh of the size a surface gives its chips' words
+       as `--chip-text`, so every size grows with those words. */
     .chip {
+        --chip-px: calc(var(--chip-text, calc(11px * var(--text-scale, 1))) / 11);
         display: inline-flex;
         align-items: center;
         gap: 4px;
         box-sizing: border-box;
         max-width: 100%;
         min-width: 0;
-        min-height: calc(18px * var(--text-scale, 1));
+        min-height: calc(18 * var(--chip-px));
         padding: 3px 5px;
         border: 1px solid var(--line);
         border-radius: var(--radius-pill);
         background: var(--chip);
         color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-xs);
-        line-height: calc(11px * var(--text-scale, 1));
+        font-size: var(--chip-text, var(--fs-xs));
+        line-height: calc(11 * var(--chip-px));
         white-space: nowrap;
     }
 
@@ -156,7 +162,7 @@
        back, so a chip with an icon is as high as one without. */
     .chip .mark {
         display: inline-flex;
-        margin: calc(-3px * var(--text-scale, 1)) 0;
+        margin: calc(-3 * var(--chip-px)) 0;
     }
 
     /* A long value is cut at the chip's own edge rather than at the card's, so a column of chips
@@ -167,8 +173,8 @@
         min-width: 0;
         overflow: hidden;
         text-overflow: ellipsis;
-        line-height: calc(15px * var(--text-scale, 1));
-        margin: calc(-2px * var(--text-scale, 1)) 0;
+        line-height: calc(15 * var(--chip-px));
+        margin: calc(-2 * var(--chip-px)) 0;
     }
 
     .chip.toned {
@@ -187,7 +193,7 @@
     .remove {
         display: inline-flex;
         align-items: center;
-        margin: calc(-3px * var(--text-scale, 1)) 0;
+        margin: calc(-3 * var(--chip-px)) 0;
         padding: 0;
         border: 0;
         border-radius: var(--radius-sm);

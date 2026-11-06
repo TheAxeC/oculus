@@ -13,6 +13,7 @@ import { keyOf, rootOf } from '../../../data/helpers/hub-names.ts';
 import { domainLabel, domainTone, stageTone } from '../../shared/words/tones.ts';
 import type { Id, Project, Snapshot, Venue } from '../../../data/model/index.ts';
 import { categoryOf } from '../../../data/shapes/boards/categories.ts';
+import { titleWords, venueWords } from '../../../data/shapes/project-facts.ts';
 import { isLead, isMine } from '../../../data/shapes/boards/roles.ts';
 import {
     boardTakes,
@@ -136,7 +137,7 @@ function itemOf(
     const pillar = (id: Id): BoardTag => {
         const held = byKey(entities.pillars, id);
         const color = held?.color ?? '';
-        const made = tag(id, held?.title ?? own(id));
+        const made = tag(id, titleWords(held?.title, own(id)));
         return /^#[0-9a-f]{6}$/i.test(color) ? { ...made, color } : made;
     };
 
@@ -154,10 +155,7 @@ function itemOf(
                 : {
                       id: venue.id,
                       text: venueText(venue),
-                      short:
-                          venue.short !== undefined && venue.short !== ''
-                              ? venue.short
-                              : venue.name,
+                      short: venueWords(venue.short, venue.name),
                       tier: venueTierMark(venue, (root) => preset.words(root).config)
                   },
         pillars: project.pillarIds.map(pillar),

@@ -132,6 +132,12 @@
 // on the server, read them through it, so a board, a category and a role are one rule on both
 // sides. It holds the Focus board's sections of `focus.sections` too, which the Focus view draws
 // and the config check words its findings from.
+// `data/shapes/project-facts` holds the words a project's records are drawn by (a person's name
+// else key, a pillar's or a domain's title else key, a venue's short name else name, a vocabulary
+// word's label else the word, a code-deposit state's words): the project card, the boards' filter
+// menu and the legend read them on the page, and the deck readers on the server write them into a
+// slide's strip of a project's facts and its `{{project.<field>}}`, so the card and the slide
+// cannot disagree.
 //
 // `data/prose/markdown/**` is in the primitives' row, the one folder of layer 1 there: a Markdown
 // document is rendered by the document route on the server and by ui/html.ts on the page, and the
@@ -312,6 +318,7 @@ export const ALLOWED: Record<string, string[]> = {
         'data/helpers/hub-names',
         'data/snapshot/place',
         'data/shapes/vocab-keys',
+        'data/shapes/project-facts',
         'data/shapes/hub-keys',
         'data/shapes/config-save',
         'data/shapes/boards/**',

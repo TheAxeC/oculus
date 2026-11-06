@@ -185,14 +185,6 @@ export function computeGlyph(kind: string): string {
     return resourceGlyph(kind) ?? t('project.card.hpc_glyph');
 }
 
-/** The catalogued label for a code-deposit state. */
-export function codeLabel(value: string, translate: Translate): string {
-    if (value === 'deposited') return translate('board.code_deposited');
-    if (value === 'review-anon') return translate('board.code_anon');
-    if (value === 'none') return translate('board.code_pending');
-    return translate('board.code_none');
-}
-
 /**
  * The deadline badge label and tone for one project; a project whose stage carries
  * `pauses_countdown` in `stages` (submitted) shows its date with no countdown.

@@ -13,8 +13,10 @@
     // The deck is drawn as the exporting pane filters it. The address names the deck alone, so
     // before it reads the deck the page asks over the deck's channel which projects the filter
     // keeps (`keep-asked`), takes the first answer of an export (state/life/present.svelte.ts
-    // `exportKeep`) and reads the deck under it. With no answer within `KEEP_WAIT_MS`, well inside
-    // the desktop host's wait, the page says so and fails, and prints no deck.
+    // `exportKeep`) and reads the deck under it. The answer carries the pane's Project facts
+    // toggle as it was at the press, which the strip of a project's facts at the foot of its slides
+    // shows its words by. With no answer within `KEEP_WAIT_MS`, well inside the desktop host's
+    // wait, the page says so and fails, and prints no deck.
     //
     // The page says it is ready with a `data-ready` attribute on its root once the deck is read and
     // drawn, the fonts are loaded and every image has loaded or failed; the desktop app's hidden
@@ -40,10 +42,15 @@
     /** The frame's padding above and below the slide, in px (themes/slide.css). */
     const PAGE_PADDING = 128;
 
-    /** The longest the page waits for the exporting pane to say which projects its filter keeps. */
+    /**
+     * The longest the page waits for the exporting pane to say which projects its filter keeps and
+     * whether the strip shows its words.
+     */
     const KEEP_WAIT_MS = 5000;
 
     let deck = $state<Deck | null>(null);
+    /** The exporting pane's Project facts toggle at the press. */
+    let facts = $state(true);
     let failed = $state('');
     let ready = $state(false);
 
@@ -83,15 +90,17 @@
     }
 
     /**
-     * Read the deck the address names, under the kept list the exporting pane answers; what the
-     * page fails with when it is not answered.
+     * Read the deck the address names, under the kept list the exporting pane answers, and keep the
+     * pane's Project facts toggle it answers with; what the page fails with when it is not
+     * answered.
      */
     async function read(): Promise<Deck | string> {
         const asked = new URLSearchParams(window.location.search);
         const ref = { root: asked.get('root') ?? '', path: asked.get('path') ?? '' };
-        const keep = await exportKeep(ref, KEEP_WAIT_MS);
-        if (keep === undefined) return t('present.print_unanswered', String(KEEP_WAIT_MS / 1000));
-        return readDeck(ref, data.token, keep);
+        const held = await exportKeep(ref, KEEP_WAIT_MS);
+        if (held === undefined) return t('present.print_unanswered', String(KEEP_WAIT_MS / 1000));
+        facts = held.facts;
+        return readDeck(ref, data.token, held.keep);
     }
 
     onMount(() => {
@@ -140,7 +149,7 @@
                 style:height="{deck.frame.height}px"
             >
                 <div class="fit" data-fit>
-                    <Slide {row} {deck} first={false} />
+                    <Slide {row} {deck} {facts} first={false} />
                 </div>
             </section>
         {/each}

@@ -129,6 +129,9 @@ text:
             front_matter: the front matter of {0} does not parse; its lines stay in the slide
             file_empty: '{0} holds no slide'
             count_unknown: a count of group {0}, which the deck does not define, stays as written
+            project_none: "{0} is in a deck that is no project's; it stays as written"
+            project_field_unknown: "{0} names no field of a project's facts ({1}); it stays as written"
+            project_field_empty: '{0} holds no value for the project {1}; it is filled with nothing'
             legend_unknown: legend names group {0}, which the deck does not define
             order_group_unknown: order names group {0}, which the deck does not define
             cycle: deck {0} holds itself through its groups; the repeat is not placed
