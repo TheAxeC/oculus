@@ -1,9 +1,11 @@
-In flight (2 of 6 slots in use):
-- O158 (the facts strip redesigned): building; design to Axel before it lands.
-- O150 (the hub's portfolio deck): building; hub commit on Axel's word.
+In flight (3 of 6 slots in use):
+- O158 (the facts strip redesigned): building under ruling 699; design to Axel before it lands.
+- O150 (the hub's portfolio deck): building under ruling 698; hub commit on Axel's word.
+- O151 (a deck for every research project): brief being written.
 
-Queued, in order (1):
-- O151 (a deck for every research project), worked again by a builder agent.
+Queued, in order (2):
+- O159 (one folder search per hub), after O150.
+- O160 (Live HPC shows its refresh running).
 
 Owed looks: none.
 

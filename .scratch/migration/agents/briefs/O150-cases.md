@@ -1,0 +1,10 @@
+# O150 cases ruling, round 0
+
+The brief changed after your launch, by Axel's ruling 698 (a); read its item 1, item 3 and decision 4 again in `.scratch/migration/agents/briefs/O150.md`. The deck's framing is redrafted in the hub files themselves, the deck's title in `present.yml` included, and the report's "Proposed framing" lists each draft beside the words it replaces.
+
+1. Item 4 and C8. The sentence on `deck/engine.md:12` names no count and claims no part a deck may lack. It says that the slides that follow are the research projects' own decks, and that a project's slides give its governing equation, its specs, its method and its results where the project has them. It must stay true when a deck is one idea card or one page of text, and when the filter bar keeps any number of decks. You word it. C8 holds when each of its claims holds for the 25 decks as they stand. Your option (c), rewriting the 11 decks, is not this step's.
+2. C1. C1 holds when the portfolio deck's state is `ok` and the reader raises no finding on the portfolio deck's own files. The "slide too tall" findings the Present view raises on the project decks' own files are counted and named per deck in the report, for the look. Splitting or cutting those slides is O151's work (ruling 679).
+3. C4. The reader's order inside in-flight, `ecg-af-fair` (exploring) before `bt-operator-theory` and `btfno` (revision), is the stage order the rule names, and stands; the brief listed membership only.
+4. Item 7. Every `pillars` hit is judged: name in the report each hit that names the research hub's deck group `pillars` or its files, with whether the change makes it false, and say in one line per folder why the other hits (the pillars registry, its views and tests) do not.
+
+Rewrite the report whole for the state after this round. Copy the open items from the state file at the moment you write it. After the round's last change, run the full verify list and quote its final lines in the report; a red line in a file you touched is fixed before hand-back.
