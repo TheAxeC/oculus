@@ -7,7 +7,8 @@ Queued, in order (2):
 - O159 (one folder search per hub), after O150.
 - O160 (Live HPC shows its refresh running).
 
-Owed looks: none.
+Owed looks (1):
+- Lit-Watch's loading time and its cause, on 8797, before O151 is launched.
 
 Landed, newest first:
 - O157 (a slide laid out from its content), 2026-11-06, 61d4ac3af.

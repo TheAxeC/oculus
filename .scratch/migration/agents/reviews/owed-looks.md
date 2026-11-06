@@ -8,6 +8,8 @@ Found with `grep -n -i "not seen in the look\|not seen at the look\|not looked a
 
 Every look below is owed from a landed step and taken while O37 builds, on TEST or on a scratch oculus with a scratch hub, and recorded under "Taken" with what was seen (plan.md, O37, Step 0, the looks). Found by the triage of 2026-10-16 over every landing report, plan.md, the state file and the history, each checked against "Taken".
 
+- Lit-Watch's loading time and its cause (owed to Axel, 2026-11-06, his question whether O159's folder-search memory would help Lit-Watch, "which can be slow to load"): on the scratch server on 8797 with the scratch hub copy, open the Lit-Watch view cold and warm and time it: the server's answer for its data (the request's time in the network log), the parse of `.oculus/data/literature/radar.yml` (415 KB, 7203 lines; about 50 ms alone in `node`), and the browser's draw until the papers are listed. Name where the time goes, with each number's command, and bring the cause to Axel; a cause that needs a code change becomes a step on his word. Taken before O151 is launched.
+
 ## Cannot be taken on this hub (each held by its test, named in its landing report)
 
 - O64, the Calendar Refresh turning: a press makes the server fetch the ICS calendar address, which the session never fetches; `Calendar.svelte:199` hands its head `refreshing={refreshing()}` as `Inbox.svelte:125` does, and the Inbox's turning was seen.
