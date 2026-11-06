@@ -2,9 +2,9 @@ In flight (6 of 6 slots in use):
 - O158 (the facts strip redesigned): gate passed; after O162, its look and screenshots to Axel.
 - O160 (Live HPC shows its refresh running): reviewed; landing next.
 - O162 (the arrow-keys hint removed): repair round 1 (Help's deck keys) running.
-- O163 (the hub's portfolio deck written again): brief closed; builder launch next.
-- O161 (cards drawn as they are seen): brief closed; builder launch next.
-- O164 (a card's links open their page): brief closed; builder launch next.
+- O163 (the hub's portfolio deck written again): building.
+- O161 (cards drawn as they are seen): worktree ready; builder waits on open item 712.
+- O164 (a card's links open their page): building.
 
 Queued, in order (4):
 - O151 (a deck for every research project): /spec again after O162, O158 and O163 land.
