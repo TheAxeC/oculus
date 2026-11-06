@@ -23,7 +23,30 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 ```
 
 ```yaml
-dispatch: []        # steps in flight, up to six (Z632)
+dispatch:           # steps in flight, up to six (Z632)
+- step: O155
+  base: 8a157c780
+  worktree: .agents/worktrees/migration-O155
+  executor: agent
+  worker: claude:opus
+  session_id: a2c4de66431970038 (claude-opus-5-5)
+  launched: 2026-11-06
+  report: .scratch/migration/agents/reviews/O155-report.md
+  round: 0
+  brief_check: .scratch/migration/agents/reviews/O155-brief-check.md (af5bb92a343ab966d, claude-opus-5-5, 260942 tokens, 105 tool uses, 16.7 min)
+  landing: not-started
+- step: O157
+  base: 8a157c780
+  worktree: .agents/worktrees/migration-O157
+  executor: agent
+  worker: claude:opus
+  session_id: a928a4ae4b2a98ab4 (claude-opus-5-5)
+  launched: 2026-11-06
+  report: .scratch/migration/agents/reviews/O157-report.md
+  round: 0
+  brief_check: .scratch/migration/agents/reviews/O157-brief-check.md (ab20efa6321dbf728, claude-opus-5-5, 190352 tokens, 47 tool uses, 9.2 min)
+  shared_paths: "docs/decks.md with O155 of this plan; O155 writes lines 80-140 (the group keys and how a group picks its decks), O157 lines 160-166, 218-230, 292-315 and 427 on (Slides, the image and project kinds, Slide findings), over 20 lines apart; docs/diagrams are regenerated at landing"
+  landing: not-started
 ```
 
 ## The standing demands (from Axel, in force)
@@ -806,6 +829,8 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-11-06 (O155 and O157 building). Both briefs are prepared at 8a157c780, every brief-check finding closed (the `## Closed` sections of `agents/reviews/O155-brief-check.md` and `O157-brief-check.md`), the automode choices booked in plan.md Rulings ("O155 brief check", "O157 brief check") and `choices.md`. Builders a2c4de66431970038 (O155) and a928a4ae4b2a98ab4 (O157) run, both claude-opus-5-5, in `.agents/worktrees/migration-O155` and `migration-O157`. The two share `docs/decks.md` at line ranges over 20 lines apart (O157's `shared_paths:`). O158 waits for O157, O150 for O155, O151 for O157. In flight (2 of 6): O155, O157 (building). Open items: none.
+- 2026-11-06 (O155 and O157 in /spec, both brief checks running). O155's brief (`agents/briefs/O155.md`) and O157's (`agents/briefs/O157.md`) are written; their brief checks run as af5bb92a343ab966d and ab20efa6321dbf728, both claude-opus-5-5. The two briefs share `docs/decks.md` (different sections) and the generated diagrams, judged simple to merge; `docs/HELP.md:331` is O155's alone. O158 waits for O157 to land: it redesigns the facts strip at the foot of `Slide.svelte`, which O157 rewrites, and its design depends on the room O157 leaves the strip. Open items: none.
 - 2026-11-06 (O156 landed). O156, one deck reader, landed (booking in plan.md under O156, `agents/reviews/O156-landing.md`): `deckReader` in `documents/decks.ts` reads every deck for the snapshot build and the deck route, a project's domain is checked once by the manifest schema check, `domain_unknown` is gone, the readers' tests are one table. Premise correction: the brief missed the manifest schema check. The case-run probe is recorded under "Unapproved builder scripts". Fix at landing: the `decks.test.ts` assertion over the deleted catalog words. The gate's second run passed every command and the build, the real-hub integrity cases passed, and main equals the gate under `cmp`; six alternating timing runs show no slowdown of the hub builds. In flight: none. Next: /spec O155, then O157 (both may run beside each other where their paths are disjoint). Queued: O155, O157, O158, O150, O151. Open items: none.
 - 2026-11-06 (O154 landed; O156 reviewed over round 1). O154, the project board's filter on the Present view, landed (booking in plan.md under O154, `agents/reviews/O154-landing.md`): one `boardFilter` and one `BoardBar` for the Projects board and the Present view, the pane's bar fields at the top of its state, O147's own groups and "Filtered" line gone. The programs of the first build are recorded under "Unapproved builder scripts". Fixes at landing: the report's quoted case program, the `filter-menu.ts` cycle comment, and from the look `FilterBar.svelte` wrapping a line too narrow for its controls that never fold, so Mine only and More stay in reach in the Present pane. The gate passed every command and the build, and main equals the gate under `cmp`. O156's review over round 1 (a54c252e660a2e7eb, claude-opus-5-5) holds every item and case, one Standards finding (`decks.test.ts:327-334` asserts the words of the deleted catalog line), small and inside the brief, for its landing, which is next. In flight (1 of 6): O156 (landing next). Queued: O155, O157, O158, O150, O151. Open items: none.
 - 2026-11-06 (O156 round 1 sent; O154 round 1 reported). O156's review (`agents/reviews/O156-refuter.md`, a883220b1e4e27a9e, claude-opus-5-5): items 1 to 5 hold, item 6 violated (comments that still call a slide's domain a key), every case met; Spec 1 (a key no hub holds gives the deck's `domain_unknown` beside the manifest schema check's own finding) ruled in automode as a premise correction: the schema check, which reads every hub's keys (`schema/lists.ts` `joinedLists`), is the one check, and `domain_unknown` goes. Repair round 1 (`agents/briefs/O156-round-1.md`, 4 items) copied into the worktree; snapshot `.agents/worktrees/migration-O156-round-1`. O154's builder reported round 1 (the Programs section: both sources, twelve runs, 16 paragraphs, each read and holding; no file of the step changed, every snapshot file equal under `cmp`); the orchestrator read the 16 paragraphs in the diff and keeps them. In flight (2 of 6): O154 (review over round 1 next), O156 (repair round 1). Open items: none.

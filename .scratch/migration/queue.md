@@ -1,15 +1,16 @@
-In flight (0 of 6 slots in use): none.
+In flight (2 of 6 slots in use):
+- O155 (the deck order, `deck_order` in `vocab.yml`): builder running.
+- O157 (a slide laid out from its content): builder running.
 
-Queued, in order (5):
-- O155 (the deck order, `deck_order` in `vocab.yml`).
-- O157 (a slide laid out from its content).
-- O158 (the Project facts strip redesigned), its design shown to Axel before it lands.
+Queued, in order (3):
+- O158 (the facts strip redesigned), after O157; its design shown to Axel before it lands.
 - O150 (the hub's portfolio deck), after O155, worked again by a builder agent.
 - O151 (a deck for every research project), after O157, worked again by a builder agent.
 
 Owed looks: none.
 
 Landed, newest first:
+- O156 (one deck reader), 2026-11-06, 2fb7177ad.
 - O154 (the project board's filter on the Present view), 2026-11-06, 73f90f843.
 - O149 (the Decks guide), 2026-11-06, 4cf0df47b.
 - O148 (the Project facts strip), 2026-11-06, 64b159a6f.
