@@ -468,8 +468,8 @@ The hub's own settings. A key of oculus's `config/catalogs/vocab.yml` set here i
 
 # The lists below are replaced whole, since their order is their meaning: set here, the list is
 # this hub's in full. A row of the wrong kind, or two rows naming one `key` (one `label` in a list
-# of stages), is a finding, and oculus's list stands; `focus_clusters` is read row by row, such a
-# row being a finding and not read.
+# of stages, one word in `deck_order`), is a finding, and oculus's list stands; `focus_clusters`
+# is read row by row, such a row being a finding and not read.
 
 # The clusters the Focus board groups its lanes in, in drawing order, each with the dotted keys of
 # the words of its heading (`label`) and its glyph (`glyph`), whether it is drawn muted, its
@@ -552,6 +552,16 @@ The hub's own settings. A key of oculus's `config/catalogs/vocab.yml` set here i
 #   example:
 #   radar_buckets:
 #     - { key: cite_baseline, glyph: green, label: "Cite / baseline", color: "#16a34a" }
+
+# The order a deck places the categories in: the decks a group of a deck adds by `discover: true`
+# go category by category in this order, the decks of one category by its row's `sort` and then
+# the board's own order (stage, then title), then the decks whose project no row holds, by folder.
+# A deck reads no pin: a pinned project's deck is placed as any other. A category left out comes
+# after the listed ones, in the order of `categories`. Each word is a `key` of this hub's
+# categories; a key no row holds, or a key named twice, is a finding.
+# deck_order: [publications, other-outputs, in-review, in-flight, released, idea, dead-ends]
+#   example:
+#   deck_order: [idea, in-flight, publications]
 
 # The fields this hub adds to the form of its own projects. A row is a field of the form with
 # `field:`, the key of project.yml it adds, beside its `label`, `type`, `section`, `help` and, where
@@ -1924,7 +1934,6 @@ deck:
 # groups:
 #   active:
 #     find: { folders: projects/*/*/present, tiers: [research], stages: [in-prep] }
-#     sort: folder           # folder or title
 #     discover: true         # also take decks found beyond `slides`
 #     slides: []             # project ids, in order
 

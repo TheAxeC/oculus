@@ -24,19 +24,6 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 
 ```yaml
 dispatch:           # steps in flight, up to six (Z632)
-- step: O155
-  base: 8a157c780
-  worktree: .agents/worktrees/migration-O155
-  executor: agent
-  worker: claude:opus
-  session_id: a2c4de66431970038 (claude-opus-5-5)
-  launched: 2026-11-06
-  report: .scratch/migration/agents/reviews/O155-report.md
-  builder_usage: 331510 tokens, 350 tool uses, 54.8 min
-  reviewer_report: .scratch/migration/agents/reviews/O155-refuter.md (a01664c3d86b25a7b, claude-opus-5-5, 250112 tokens, 75 tool uses, 18.7 min)
-  round: 1
-  brief_check: .scratch/migration/agents/reviews/O155-brief-check.md (af5bb92a343ab966d, claude-opus-5-5, 260942 tokens, 105 tool uses, 16.7 min)
-  landing: not-started
 - step: O157
   base: 8a157c780
   worktree: .agents/worktrees/migration-O157
@@ -45,8 +32,8 @@ dispatch:           # steps in flight, up to six (Z632)
   session_id: a928a4ae4b2a98ab4 (claude-opus-5-5)
   launched: 2026-11-06
   report: .scratch/migration/agents/reviews/O157-report.md
-  builder_usage: 125104 tokens, 174 tool uses, 42.8 min
-  reviewer_report: .scratch/migration/agents/reviews/O157-refuter.md (a90de74f922bc0f23, claude-opus-5-5, 238527 tokens, 66 tool uses, 28.8 min)
+  builder_usage: 125104 tokens, 174 tool uses, 42.8 min; round 1: 271934 tokens, 126 tool uses, 26.5 min
+  reviewer_report: .scratch/migration/agents/reviews/O157-refuter.md (a90de74f922bc0f23, claude-opus-5-5, 238527 tokens, 66 tool uses, 28.8 min); over round 1: ae1d580808535f263, claude-opus-5-5, 246421 tokens, 50 tool uses, 14.4 min
   round: 1
   brief_check: .scratch/migration/agents/reviews/O157-brief-check.md (ab20efa6321dbf728, claude-opus-5-5, 190352 tokens, 47 tool uses, 9.2 min)
   shared_paths: "docs/decks.md with O155 of this plan; O155 writes lines 80-140 (the group keys and how a group picks its decks), O157 lines 160-166, 218-230, 292-315 and 427 on (Slides, the image and project kinds, Slide findings), over 20 lines apart; docs/diagrams are regenerated at landing"
@@ -833,6 +820,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-11-06 (O155 landed; O157 reviewed over round 1). O155, the deck order, landed (booking in plan.md under O155, `agents/reviews/O155-landing.md`): `deck_order` in `vocab.yml` orders the categories of the decks a group discovers, a category's decks by its row's `sort:` and then the board's order with no pin, the group key `sort:` removed. Fix at landing: the `groups.ts` head comment on the pin. The gate passed every command and the build, and main equals the gate under `cmp`; the look on 8797 saw Deck order in Settings with its 7 entries, the Edit Rule form with no sort control, and the discovered decks in the deck order. The research hub's `deck/present.yml:19` `sort: folder` is removed on disk; the hub commit waits on Axel's word. O157's review over round 1 (`agents/reviews/O157-refuter.md`, ae1d580808535f263) is saved; its dispositions are next. In flight (1 of 6): O157. Open items: none.
 - 2026-11-06 (O155 and O157 repair round 1 sent). O157's review (`agents/reviews/O157-refuter.md`, a90de74f922bc0f23, claude-opus-5-5): items 2, 4, 6, 7 hold, items 1, 3, 5 violated; Spec 1 (a caption measured at the wrong width), Spec 2 (the key hint pushes a first slide past its frame), Spec 3 (a Markdown image capped at the whole content height), three Standards and one Behaviour finding, all inside the brief; repair round 1 (`agents/briefs/O157-round-1.md`, 7 items, the key hint drawn in the frame's bottom padding booked in `choices.md`), snapshot `.agents/worktrees/migration-O157-round-1`. O155's review (`agents/reviews/O155-refuter.md`, a01664c3d86b25a7b, claude-opus-5-5): every item holds, every case met but C20 (the look); findings with no verdict, small and inside the brief, sent as repair round 1 (`agents/briefs/O155-round-1.md`, 7 items), snapshot `.agents/worktrees/migration-O155-round-1`. In flight (2 of 6): O155, O157 (repair round 1). Open items: none.
 - 2026-11-06 (O155 and O157 building). Both briefs are prepared at 8a157c780, every brief-check finding closed (the `## Closed` sections of `agents/reviews/O155-brief-check.md` and `O157-brief-check.md`), the automode choices booked in plan.md Rulings ("O155 brief check", "O157 brief check") and `choices.md`. Builders a2c4de66431970038 (O155) and a928a4ae4b2a98ab4 (O157) run, both claude-opus-5-5, in `.agents/worktrees/migration-O155` and `migration-O157`. The two share `docs/decks.md` at line ranges over 20 lines apart (O157's `shared_paths:`). O158 waits for O157, O150 for O155, O151 for O157. In flight (2 of 6): O155, O157 (building). Open items: none.
 - 2026-11-06 (O155 and O157 in /spec, both brief checks running). O155's brief (`agents/briefs/O155.md`) and O157's (`agents/briefs/O157.md`) are written; their brief checks run as af5bb92a343ab966d and ab20efa6321dbf728, both claude-opus-5-5. The two briefs share `docs/decks.md` (different sections) and the generated diagrams, judged simple to merge; `docs/HELP.md:331` is O155's alone. O158 waits for O157 to land: it redesigns the facts strip at the foot of `Slide.svelte`, which O157 rewrites, and its design depends on the room O157 leaves the strip. Open items: none.

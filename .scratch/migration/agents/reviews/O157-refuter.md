@@ -187,3 +187,218 @@ Cases of the brief's "Cases":
 - Cases C10 to C21 on screen: the orchestrator's look at landing. The verdicts above are by reading.
 
 Reviewer usage: a90de74f922bc0f23, claude-opus-5-5, 238527 tokens, 66 tool uses, 28.8 min.
+
+## Repair round 1, refuted
+
+The round's delta: `files.txt` lists 16 paths. A `diff -u` of each path's snapshot copy against the worktree shows changes in 12 of them: `docs/decks.md`, `slide.css`, `Panel.svelte`, `Slide.svelte`, `Plain.svelte`, `Words.svelte`, `Project.svelte`, `Framed.svelte`, `Stage.svelte`, the print and show routes, and `slide-layout.ts`. The other 4 are unchanged: `layers.dot`, `layers.svg`, `Equation.svelte` and `formula.ts`. `git status --short` lists no other changed path except the two ledger files.
+
+```
+# Before each vitest run: ps -Ao command | grep -E 'vitest|svelte-check' | grep -v grep
+At the first look the O155 worktree's test:quick was running. I read code and ran the non-vitest checks, then waited (15 s per look, at most 40 looks): "clear after 1 checks". The same command printed nothing before each later run.
+
+# Verify 1 (PATH with /Users/axelfaes/.nvm/versions/node/v24.21.0/bin first)
+npm run test:quick -- --base 8a157c780
+test:quick: 18 changed file(s), from git since 8a157c780
+test:quick: 10 test file(s)
+ok      prettier (1.1 s): All matched files use Prettier code style!
+ok      ASCII gate (1.2 s)
+ok      svelte-kit sync (2.5 s)
+ok      eslint (3.1 s)
+ok      svelte-check (11.3 s): 1793978489218 COMPLETED 584 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest (17.0 s): Duration  3.62s (transform 2.27s, setup 0ms, import 3.45s, tests 0ms, environment 1ms)
+ok      vitest slow (21.5 s): Duration  7.95s (transform 1.99s, setup 0ms, import 3.34s, tests 4.45s, environment 1ms)
+ok      vitest checks (44.7 s): Duration  31.01s (transform 12.73s, setup 0ms, import 25.94s, tests 45.74s, environment 2ms)
+test:quick: 47.3 s; every command passed
+
+# Verify 2. The brief's grep lists 26 files, 19 of them .test.ts
+npx vitest run <the 19 .test.ts files> --reporter=dot      (no other vitest or svelte-check at its start; load average 9.49)
+ FAIL  |unit| tests/checks/tree/boundaries.test.ts > layer boundaries > holds across src/lib
+Error: Test timed out in 5000ms.
+ Test Files  1 failed | 18 passed (19)
+      Tests  1 failed | 352 passed | 2 skipped (355)
+npx vitest run tests/checks/tree/boundaries.test.ts --reporter=verbose
+ <check mark> |unit| tests/checks/tree/boundaries.test.ts > layer boundaries > holds across src/lib 3683ms
+ Test Files  1 passed (1)
+      Tests  11 passed (11)
+
+# Verify 2a. The report's command, byte for byte (node v24.21.0)
+node --input-type=module -e "const m = await import('./src/lib/views/academic/present/screen/slide-layout.ts'); ... show('C9 portrait C3', T, [3.75], 120);"
+C1 one tall block 405x418 at (618,0) figures 405x418 text 592x418 area 169482 inside true
+C2 one tall block 637x334 at (386,42) figures 637x334 text 360x418 area 212445 inside true
+C3 one wide block 1023x273 at (0,145) figures 1023x273 text 1023x145 area 279074 inside true
+C4 one alone block 1040x102 at (0,216) figures 1040x102 text none area 106039 inside true
+C5 side wide block 1023x254 at (0,164) figures 246x254 777x254 text 1023x164 area 259685 inside true
+C5 side as one block one wide block 1023x254 at (0,164) figures 1023x254 text 1023x164 area 259685 inside true
+C5 stacked as one block one tall block 308x418 at (715,0) figures 308x418 text 689x418 area 128689 inside true
+C6 side tall block 585x418 at (438,0) figures 293x418 293x418 text 412x418 area 244614 inside true
+C6 stacked as one block one tall block 146x418 at (877,0) figures 146x418 text 851x418 area 61153 inside true
+C7 side wide block 1023x192 at (0,226) figures 186x192 250x192 587x192 text 1023x226 area 196347 inside true
+C7 stacked as one block one tall block 197x418 at (826,0) figures 197x418 text 800x418 area 82147 inside true
+C8 one alone block 267x534 at (387,0) figures 267x534 text none area 142578 inside true
+C9 4:3 C1 one tall block 452x466 at (425,0) figures 452x466 text 399x466 area 210641 inside true
+C9 4:3 C3 one wide block 877x234 at (0,232) figures 877x234 text 877x232 area 205101 inside true
+C9 portrait C1 one wide block 573x591 at (0,387) figures 573x591 text 573x387 area 338484 inside true
+C9 portrait C3 one wide block 573x153 at (0,825) figures 573x153 text 573x825 area 87554 inside true
+sed -n '126,141p' <the report> | diff - <this output>   -> identical to report
+
+# Verify 3
+LC_ALL=C perl -ne '<the rules file's gate>' $(find src tests bin config -type f ! -name local.yml)   -> nothing; gate exit 0
+the same perl check, file by file, over every path git status --short lists                        -> nothing
+
+# Verify 4. wc -l
+434 docs/decks.md | 101 layers.dot | 556 layers.svg | 69 slide.css | 231 Panel.svelte | 506 Slide.svelte | 66 Equation.svelte | 129 Plain.svelte | 68 Words.svelte | 357 Project.svelte | 53 Framed.svelte | 150 Stage.svelte | 221 print/+page.svelte | 325 show/+page.svelte | 18 formula.ts | 238 slide-layout.ts   (each at or under 520 / 880)
+
+# Verify 5
+sh utils/unused-exports.sh > <scratchpad>; diff ../O157-base/unused-exports.txt <scratchpad>   -> unused diff exit 0
+
+# Verify 6
+sh utils/folder-check.sh   -> folder-check exit 0; ls src/lib/views/academic/present/screen | wc -l -> 7
+
+# Verify 7. History words
+over the round's added lines: nothing (grep exit 1)
+over the whole diff's added lines and the two new files: one hit
++    // out (Slide.svelte lays a slide out again when one of its images loads or fails, before the
+(an order of events, not history)
+
+# Verify 8 / round item 6. Contrast words (rather|instead|, not | but |not only| and not ) over the round's added lines
+nothing (grep exit 1)
+
+# The report's other quoted evidence
+grep -rn "data-key-hint\|bind:this={hint}" src tests            -> nothing
+grep -rn "FIGURE_FRAME\|FIGURE_GAP" src                         -> nothing
+grep -n "key hint\|hint" docs/HELP.md                           -> lines 277 and 437, neither about the Present view
+grep -n "taller than its frame" docs/HELP.md                    -> line 331
+grep -rn "socket.svelte" src/routes/present                     -> nothing
+grep -rn "holderOf\|frameOf\|gapOf\|capTopOf" src tests (outside Slide.svelte) -> same names in json.ts, opening.ts, deck/read.ts, FoldRun.svelte, literature/handler.ts, tab-frames.svelte.ts, Document.svelte, present.svelte.ts, each for something else
+diff -rq ../O157-base/tests tests                               -> nothing (exit 0)
+diff -rq ../O157-base/src src; diff -rq ../O157-base/config config -> the 11 changed and 2 new paths of the report's table; config: nothing
+show/+page.ts:8 installPageConfig(data); install.ts:38 configInstalled(); show/+page.server.ts:11-23 a load with no socket; socket.svelte.ts:383-388 the push that calls configInstalled() on the main page's socket
+```
+
+### Verdicts
+
+Items of the brief's "What to build":
+
+- 1: holds.
+  - The case run reproduces.
+  - The caption re-measure at `Slide.svelte:276-285` is bounded at `UNDER_PASSES = 3`. Each height is kept at the largest measured, so the heights only grow and cannot oscillate.
+  - A caption still growing after the third pass is caught by `fits()`. At `:306` every `[data-figure-box]` bottom is held to `above + SLACK`.
+  - `depth` (`:288-292`) reaches the Stage's measure. `Project.svelte:83-85,176` and `Plain.svelte:47-50` draw `.room`'s `min-height` as `max(layout.height, depth)`. That grows `.content` and `.reading`, the frame child `Stage.svelte:68-70` reads.
+  - `frameOf` (`:132-149`) and `gapOf` (`:152-155`) read the computed padding, border and bottom margin.
+  - `.placed` now keeps `margin-bottom: 14px`. An absolute box placed by `top` and `left` is not moved by its bottom margin.
+- 2: holds by reading. The key hint is drawn at `--fs-md` (13 px times the text size, the tokens.css step outside `.slide-fit`). Brief item 2 and round item 2 had it keep the slide's small size. This departure is named under "Declined to judge".
+- 3: violated, Spec 1 (a text slide with a heading and a tall Markdown image is Too tall although its text fits).
+  - The figure case holds.
+  - The first slide's hint takes no room. `.keys` is absolute at `top: 100%`, and `getBoundingClientRect` of `.reading` leaves an absolute descendant out. Removing the Stage's hint subtraction therefore removes no guard.
+- 4: holds by reading.
+  - Both routes set `--text-scale` in an `$effect` over `configuredLook()`. Each route installs its config once, at load (`+page.ts:8`), and opens no socket, as the head comments now say.
+  - `data-ready` and the print scale-down (`fit.scrollHeight`) see `depth`.
+- 5: violated, Spec 1 and Spec 2. Project, Panel and Plain place figures by the layout's boxes. The html-sites line is unchanged, and `html-sites.test.ts` passed in test:quick.
+- 6: violated, Spec 2. `docs/decks.md:168` and `:434` state rules that Spec 1 and Spec 2 make false. The head comments rewritten in the round match the code by reading.
+- 7: holds. No test was added or changed (`diff -rq` of `tests` printed nothing), and the case run reproduces.
+
+Cases of the brief's "Cases":
+
+- C1 to C9: met, by the run lines above, identical to the report.
+- C10: met by reading. Captions are measured again at the drawn width, every figure box is held to the room, and figures that do not fit at 0.75 grow the room through `depth`, so the Stage reports them.
+- C11: met by reading (unchanged in the round).
+- C12: met by reading. One inner box and one `--text-scale` source.
+- C13: met by reading (unchanged in the round).
+- C14: met by reading.
+- C15: met by reading (a figure is placed and its caption is held inside the room).
+- C16: met under round ruling 7. An audience window already open keeps the size it opened with. The report's C16 line states this with its before and after, and the claim that no config reaches an open window reproduces (`show/+page.ts:8`, `install.ts:38`, `show/+page.server.ts`, no socket under `src/routes/present`).
+- C17: met by reading.
+- C18: partial, Spec 1. Image slides are met. A text slide with a heading and a tall image is still Too tall by reading.
+- C19: met by reading in the default frame. The hint is out of the flow and the factor is the same on every surface. Behaviour 1 covers narrow frames.
+- C20: met by reading.
+- C21: not verifiable here. It needs the orchestrator's count in the Findings view at the look.
+
+### Findings
+
+How each ruling of the round closed, by reading and by the reruns above:
+
+- Ruling 1 (first review's Spec 1): closed.
+- Ruling 2 (Spec 2): closed, with the type-step departure noted under "Declined to judge".
+- Ruling 3 (Spec 3): not closed; see Spec 1 below.
+- Ruling 4 (Standards 1): closed for `Stage.svelte:10-12` and `Framed.svelte:5-7`. `docs/decks.md:168` and `:434` are false again through Spec 1 and Spec 2 below.
+- Ruling 5 (Standards 2): closed.
+- Ruling 6 (Standards 3): closed; the grep printed nothing.
+- Ruling 7 (Behaviour 1): closed by the statement the ruling allows.
+
+#### 1. Spec
+
+- Spec 1. `src/lib/views/academic/present/Slide.svelte:258` with `capTopOf` (`:163-175`) and `parts/Words.svelte:43-46`:
+  - Quoted hunk: "const cap = Math.max(0, above - capTopOf(space, top, tall));" and "max-height: var(--slide-room-height, none);".
+  - What is wrong: the round closes Spec 3 by claiming "a text slide with a heading and a tall image then fits". A read of the CSS does not reproduce that claim.
+    - The cap is the whole height from under the heading (its bottom margin included) to `above`.
+    - A Markdown image alone on its line is drawn by marked (`ui/html.ts` imports `marked`) as `<p><img></p>`.
+    - No rule of the slide resets a paragraph's margin. `margin` greps over `Words.svelte`, `Plain.svelte` and `src/lib/themes` show none for `p`.
+    - The paragraph's bottom margin (1 em, 24 px times the factor) stays inside `section.slide`. That section is a flex item of `.content`, so the margin does not collapse out of it.
+    - The inline image's line box adds the strut's share below the baseline (line-height 1.45).
+    - So the content passes `above` by about 1 em plus that share at every factor. `fits(1.25)` and `fits(0.75)` both fail, the slide is drawn at 0.75 and runs about 20 to 25 px past its frame (a judgment from the CSS, not measured), and the Stage reports it.
+    - The same cap gives a paragraph between the heading and the image no room at all. A columns slide with an image fails the same way.
+  - Failure scenario: a `kind: text` slide holds `# Results` and one `![](tall.png)` whose natural height is over 590 px. It is listed as "slide too tall", its tile is marked and the pane scrolls, though its only text is a heading that fits. Axel cuts words that were never the cause. The report's C18 look line ("so the slide fits") sends the look to expect the opposite.
+  - Fix inside the brief: hold the image to what the room leaves once everything else is drawn. For example, per try, lower the cap once by the overrun `tall(box) - above` measured with the cap applied, bounded as the caption passes are. Or set the cap from the image's own top less the height drawn after it.
+  - Verdict: items 3 and 5 violated; C18 partial.
+- Spec 2. `parts/Title.svelte:32`, `parts/Section.svelte:29`, `parts/Grid.svelte:36` and `:48` (no `data-room`), with `docs/decks.md:168`:
+  - Quoted hunk: "An image in a slide's Markdown is drawn no taller than the room under the slide's heading."
+  - What is wrong: the ledes of the title, section and grid kinds and a grid card's description are Markdown blocks (`<Words ... block />`) that mark no room. For these, `capTopOf(null, ...)` returns 0, so an image there is capped at the whole content height above the foot, heading included. The builder names this as its decision 6.
+    - Brief item 5 covers every Markdown image in text, "no taller than the room".
+    - The new docs sentence states the rule for every kind.
+    - The rules file says a sentence in a document that the change makes false is a defect of the change.
+    - `:168` and `:434`, "too tall only when its text, or a figure with its caption, does not fit", are false with Spec 1 and this finding.
+  - Failure scenario: a section slide whose lede holds a tall image draws it up to 590 px tall under its heading, runs past the frame and is Too tall. A reader of `docs/decks.md` expects the image to be held under the heading and looks for a text problem.
+  - Fix: mark the lede box as the room (`data-room`) in Title, Section and Grid. That work is inside item 5, so the path list is widened as the rules file says. The other option is to narrow the sentence to the kinds that hold the image.
+  - Verdict: items 5 and 6 violated.
+
+#### 2. Proof
+
+- `.scratch/migration/agents/reviews/O157-report.md`, "Limitations and sharp edges":
+  - Quoted: "each factor tried for a figure slide now runs up to five flushes (the factor, the room's cap when it changes, the first layout, up to three relayouts when a caption grows, the room's depth when a figure ends low)".
+  - What is wrong: the list the report gives itself adds up to seven. Reading `draw` gives the same: `:256`, `:261`, `:272` through `show` (`:229`), up to three at `:284` through `show`, and `:291`. Over up to 9 drawn tries (two ends, six halvings, the final draw), that is up to 63 flushes per figure slide, plus `:213` and `:243` before the search.
+  - The decision resting on it: the cost of an Overview open, which the round rules is timed at the look against this report.
+  - Failure scenario: the orchestrator sizes the Overview timing from 5 flushes a try. It undercounts the forced layouts per tile by two-sevenths and may judge a slow open acceptable.
+  - Verdict: none.
+
+#### 3. Standards
+
+- `.scratch/migration/agents/reviews/O157-report.md`, DONE table paragraph "How many times the list ran":
+  - Quoted: "two earlier runs of `npm run test:quick` (each `every command passed`) and one of the 19 files ... preceded comment-only edits", and "The first, right after `npm run test:quick` and while the case run, the ASCII gates, `utils/unused-exports.sh` and `utils/folder-check.sh` ran beside it".
+  - What is wrong:
+    - The round brief says to run "the brief's 'Verify before you report' once, at the end of the round ... no other run of the list". The rules file's "Token discipline" says a run of the list beyond what that paragraph allows is a finding of the review.
+    - The list ran three times in the round, and the 19 files ran three times.
+    - A red batch was rerun whole, where the rules file has a red line in a file the step does not change rerun alone and named.
+    - That batch ran beside the builder's own other commands, which is load of the builder's making, and the report then cannot name its failure.
+  - Failure scenario: three times the tokens and minutes of the verify list, and a red result the report leaves unnamed. My own run named it as the `boundaries.test.ts` timeout.
+  - Verdict: none.
+- The comment at `Slide.svelte:477-480` ("so its two lines at a text size of 1.6 ... fit the padding") states unconditionally a fit that holds only in a wide reading column. See Behaviour 1.
+
+#### 4. Behaviour
+
+- Behaviour 1. `Slide.svelte:481-492` with its comment `:477-480`:
+  - Quoted hunk: "position: absolute; top: 100%; ... padding-top: 0.5em; ... font-size: var(--fs-md); line-height: 1.25;".
+  - What is wrong:
+    - Reading the CSS: in the 1280 by 720 frame (reading column 1040 px), one line is 22.75 px at text size 1. Two lines are 39 px at 1, 58.5 px at 1.5 and 62.4 px at 1.6. Each fits the 64 px padding.
+    - The fit does not overlap the facts strip: the strip ends at `.reading`'s bottom, where the hint begins. It does not reach the 1 px border either.
+    - The number of lines follows the column width, and `deck.frame` may be 320 to 3840 px wide (`docs/decks.md:101`).
+    - The 120 characters of `present.key_hint` take about 780 px times the text size. That figure is a judgment at about half an em a glyph of `--font-ui`, not measured.
+    - In the portrait frame the brief's C9 names (720 wide, column 590 px), at text size 1.5 that is about 1170 px. It takes three lines once the breaks fall short: 3 x 24.4 + 9.75 = 82.9 px, past the padding and the border.
+    - The pane's frame (`overflow-y: auto`) then scrolls the first slide by the overrun. The Stage reads `.reading`'s box and raises no Too tall.
+    - The report gives the hint's px for the 1040 px column only.
+  - Failure scenario: a portrait deck opened in the pane at text size 1.5 shows a scrollable first slide with the hint's last line cut by the frame's edge.
+  - Fix: state the column width the fit holds for in the comment and in the C19 look line, or keep the hint inside the padding whatever the column, for example by a line clamp. The second is the orchestrator's choice.
+  - Verdict: none (C19 is met in the default frame).
+
+### Declined to judge
+
+- The key hint at `--fs-md` in place of `--slide-fs-small`. This departs from the letter of brief item 2 and round item 2, which is the orchestrator's ruling. The builder's arithmetic holds by reading:
+  - two lines of 27 px type at line-height 1.25 are 67.5 px, more than 64 px with no padding at all;
+  - one line of 120 characters in 1040 px at 27 px needs under 0.33 em a glyph.
+- How many lines the hint takes in a given font. Reading cannot settle it; the look at C19 at text size 1.5, and in a portrait deck, settles it.
+- The cost per try. It was not measured, since measuring needs a page; the round rules it timed at the look. Proof gives the count by reading.
+- The 19-file batch failure. My run names it: `tests/checks/tree/boundaries.test.ts > layer boundaries > holds across src/lib`, timed out at 5000 ms, with no other vitest or svelte-check at the run's start and a load average of 9.49. Alone it passes in 3683 ms. My judgment is a timeout under load in a file the step does not change, which the round closed. Whether the builder's unnamed failure was the same test is not verifiable, since its output was not kept.
+- Classic, space-taking scrollbars during an overrun such as Behaviour 1. A scrollbar narrows `.reading` and the probe, which runs the layout once more. That run yields the same result, by my reading. Not verified on a page.
+- Whether the builder ran any program other than the case run. The transcript is not among my inputs, and the report names none.
+- Cases C10 to C21 on screen are the orchestrator's look at landing. The verdicts above are by reading.
+
+Reviewer usage: ae1d580808535f263, claude-opus-5-5, 246421 tokens, 50 tool uses, 14.4 min.

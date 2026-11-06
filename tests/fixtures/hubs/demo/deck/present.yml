@@ -6,7 +6,6 @@ groups:
     projects:
         find: { folders: projects/*/*/present }
         discover: true
-        sort: folder
 
 order:
     - title.md

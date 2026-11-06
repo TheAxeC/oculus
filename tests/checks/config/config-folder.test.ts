@@ -245,6 +245,7 @@ describe("oculus's own config directory", () => {
             'research_audit',
             'roles',
             'categories',
+            'deck_order',
             'rail_color',
             'data_access',
             'venue_categories',

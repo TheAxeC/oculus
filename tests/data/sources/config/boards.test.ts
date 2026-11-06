@@ -3,7 +3,10 @@
 // finding, and each malformed form gives one finding naming the board, the category, the field, the
 // block or the record. The `categories` rows a hub other than the primary writes in its settings
 // file are checked against that hub's merged config, each finding naming that file, and a hub that
-// writes none gets no category finding. Findings are compared whole, in order.
+// writes none gets no category finding. A hub's `deck_order`, the primary's and another's alike, is
+// a list of keys of that hub's merged `categories:`: a key no row holds is a finding naming the
+// hub's file and is not read, and a list of the wrong kind or naming a key twice is a finding and
+// oculus's list stands. Findings are compared whole, in order.
 
 import { join } from 'node:path';
 import { describe, expect } from 'vitest';
@@ -334,4 +337,81 @@ describe('the category rows of a hub that is not the primary', () => {
             expected.map(([key, message]) => [file, key, message])
         );
     });
+});
+
+/** oculus's own deck order, which a hub's list of the wrong kind leaves standing. */
+const SHIPPED_ORDER = SHIPPED.deck_order;
+
+/** The finding that oculus's deck order stands for a value of the wrong kind. */
+const NOT_A_LIST = ['deck_order', "deck_order must be a list; oculus's value stands"];
+
+describe('the deck_order of the primary hub and of a hub that is not the primary', () => {
+    it.each([
+        [
+            'a key no row of categories holds',
+            'deck_order: [publications, nowhere]\n',
+            ['publications'],
+            [
+                [
+                    'deck_order.1',
+                    'deck_order.1 names nowhere, which no row of categories holds; it is not read'
+                ]
+            ]
+        ],
+        [
+            'a file setting only a key no row holds',
+            'deck_order: [nowhere]\n',
+            [],
+            [
+                [
+                    'deck_order.0',
+                    'deck_order.0 names nowhere, which no row of categories holds; it is not read'
+                ]
+            ]
+        ],
+        [
+            'a key named twice',
+            'deck_order: [idea, publications, idea]\n',
+            SHIPPED_ORDER,
+            [
+                [
+                    'deck_order.2',
+                    "deck_order.2 names idea, which an earlier row names; none of the list is applied and oculus's list stands"
+                ]
+            ]
+        ],
+        ['a text', 'deck_order: publications\n', SHIPPED_ORDER, [NOT_A_LIST]],
+        ['a map', 'deck_order: { publications: 1 }\n', SHIPPED_ORDER, [NOT_A_LIST]],
+        [
+            'a list holding a map',
+            'deck_order: [publications, { key: idea }]\n',
+            SHIPPED_ORDER,
+            [['deck_order.1', 'deck_order.1 must be a text']]
+        ],
+        [
+            'a key of its own categories',
+            'categories:\n  - { key: mine, color: "#16a34a" }\ndeck_order: [mine, idea]\n',
+            ['mine', 'idea'],
+            []
+        ]
+    ])(
+        'gives the findings of %s, naming the settings file it is in',
+        (_, text, order, expected) => {
+            for (const other of [undefined, 'lab']) {
+                const dir = plantScratch('oculus-deck-order-', { [HUB_FILE]: text });
+                const loaded = loadConfig(engineDir(), { hub: dir, ...(other && { other }) });
+                const found =
+                    other === undefined
+                        ? loaded.findings
+                        : readOtherHub({ key: other, dir }, loaded).findings;
+                const rows = found.filter((one) => one.key.startsWith('deck_order'));
+                const file = join(dir, HUB_FILE);
+                expect(
+                    rows.map((one) => [one.file, one.key, one.message]),
+                    other
+                ).toEqual(expected.map(([key, message]) => [file, key, message]));
+                expect(loaded.config.deck_order, other).toEqual(order);
+            }
+        }
+    );
 });

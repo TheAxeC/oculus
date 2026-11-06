@@ -10,7 +10,8 @@
 // no record is its words as written. The words are the ones a project card draws for the
 // record, which items.ts gives by the key. The card view's sections, one per category, are cut here
 // too, each ordering its cards by its row's `sort:` after the pinned ones (presets.ts
-// `compareCards`), and so are the slices of the bar's second line, each the projects of one
+// `compareCards`, over the order rule of data/shapes/boards/order.ts that a deck's discovering
+// group reads too), and so are the slices of the bar's second line, each the projects of one
 // category at one stage or, for a category whose row has a `forms:` block, of one form: a slice is
 // the slice facet's value laid out, and a project is in one slice at most.
 
@@ -31,8 +32,8 @@ import {
     vocabOf
 } from '../../shared/words/tones.ts';
 import { tierWords } from '../../../data/shapes/boards/tiers.ts';
+import { BOARD_SORT, stageRank } from '../../../data/shapes/boards/order.ts';
 import {
-    BOARD_SORT,
     CODE_VALUES,
     FACETS,
     NONE,
@@ -40,7 +41,6 @@ import {
     SESSIONS_VALUES,
     compareCards,
     shortWords,
-    stageRank,
     type BoardItem,
     type BoardPreset,
     type Facet,

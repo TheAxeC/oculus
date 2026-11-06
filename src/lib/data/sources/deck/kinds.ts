@@ -49,6 +49,11 @@ export type DeckProject = {
     /** The manifest's `form`, a word of `forms:`, which a `find:` with `forms:` keeps a deck by. */
     form?: string;
     /**
+     * The manifest's `year`, which a discovering group orders its decks by under a category's
+     * `sort:`.
+     */
+    year?: number;
+    /**
      * The internal id of the domain the manifest's `domain` resolves to, as the merge resolves it
      * (data/sources/documents/decks.ts), which the slide carries for the client's hue and title;
      * absent for a key that resolves to no domain.

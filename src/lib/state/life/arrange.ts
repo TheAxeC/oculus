@@ -14,7 +14,7 @@
 // members the filter hides keep their places in the file: a tile dropped beside another goes
 // beside it in the list, and a step changes places with the next tile drawn.
 //
-// The keys the forms set (`deck.title`, `defaults.tag_tones` and each group's `find`, `sort` and
+// The keys the forms set (`deck.title`, `defaults.tag_tones` and each group's `find` and
 // `discover`, the keys config/schemas/deck-schema.yml describes) are held by the form as work by
 // each key's path and written with the value the file held as their base.
 
@@ -339,7 +339,7 @@ function keyId(path: readonly string[]): string {
 }
 
 /** The path of a group's key. */
-export function groupKey(group: string, key: 'find' | 'sort' | 'discover'): string[] {
+export function groupKey(group: string, key: 'find' | 'discover'): string[] {
     return ['groups', group, key];
 }
 
@@ -355,7 +355,6 @@ function keyRows(keys: DeckKeys | null): DeckKeyRow[] {
         { path: TONES_KEY, held: keys.tagTones },
         ...keys.groups.flatMap((group) => [
             { path: groupKey(group.name, 'find'), held: group.find },
-            { path: groupKey(group.name, 'sort'), held: group.sort },
             { path: groupKey(group.name, 'discover'), held: group.discover }
         ])
     ];
@@ -484,8 +483,7 @@ export type FindChoices = (list: FindList) => { id: string; label: string }[];
  * A group's rule as one sentence: the projects its `find:` finds (their tiers, stages, forms and
  * status chips, each list in the order the file holds it, each word by its label in the engine's
  * vocabulary, `choices`, or by itself when the vocabulary has none) and the folders it looks in,
- * then whether it adds what it finds and how it sorts. A group with no `find:` shows the decks it
- * names.
+ * then whether it adds what it finds. A group with no `find:` shows the decks it names.
  */
 export function ruleSentence(keys: DeckKeys | null, group: string, choices: FindChoices): string {
     const held = keys?.groups.find((one) => one.name === group);
@@ -508,9 +506,7 @@ export function ruleSentence(keys: DeckKeys | null, group: string, choices: Find
     ];
     const finds = t('present.rule_finds', parts.join(t('present.rule_comma')));
     if (held.discover !== true) return t('present.rule_names_only', finds);
-    const sort =
-        held.sort === 'title' ? t('present.field_sort_title') : t('present.field_sort_folder');
-    return t('present.rule_adds', finds, sort);
+    return t('present.rule_adds', finds);
 }
 
 /** Whether an answer wrote: the server took the write whole and changed the file. */

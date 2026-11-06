@@ -687,27 +687,27 @@ export function offerAlong(
  * not applied. A key of config/catalogs/vocab.yml is laid over oculus's value by its shape
  * (data/sources/config/merge/in-place.ts): a map by its words in oculus's place, `categories` by
  * its rows' `key`, `focus_clusters`, `focus_lanes`, `fund_stages`, `position_stages`,
- * `teaching_stages`, `roles`, `venue_categories`, `pillar_kinds`, `venue_tiers` and `radar_buckets`
- * whole, and `rail_color` as a colour written `#rrggbb`; `manifest_fields`, the fields the hub adds
- * to the project form, is read row by row; the service rows oculus ships (`literature.sources`,
- * `recover.sources`, `links` and `sign_in` by their `key`, `connections.failures` by its `kind`)
- * are laid over oculus's row by row, so a hub adds, changes or removes one row; every other key
- * replaces oculus's value whole, oculus's value standing where the hub sets none. They are the keys
- * that describe this hub rather than the engine: its folders and the files of its records, which of
- * its records a chat's index holds, where the reader's bookmarks, the schedules and the machine's
- * apps are kept, the clusters its jobs run on and the key Account setup makes for each, the rows
- * that tell a failed connection apart, the providers its readers sign in with, where Recover
- * downloads Node.js from, the files its writing rules skip or let draw arrows, the conventions its
- * audit holds its projects to (`audit:`: the files and sections it requires, the folders a stage
- * keeps a project in and its website's feed), the website its files are written into (`website:`,
- * each of the four paths of `website.files` a key of its own, so a hub that sets one keeps oculus's
- * other three), the values its apps' settings hold, the counts its tabs draw, its vocabulary (every
- * list of vocab.yml) and the fields it adds to the project form, the reader rows of its literature
- * sources, its Recover sources and its journal browser, the links every page link is built from,
- * and the Zenodo deposit of its projects (`deposit.zenodo`, each of its three fields a key of its
- * own, so a hub that sets one keeps oculus's other two). Its domains and theme words are its own
- * registry files'. Which of them each hub's own file is read for, and which the primary's alone, is
- * data/shapes/hub-keys.ts's.
+ * `teaching_stages`, `roles`, `venue_categories`, `pillar_kinds`, `venue_tiers`, `radar_buckets`
+ * and `deck_order` whole, and `rail_color` as a colour written `#rrggbb`; `manifest_fields`, the
+ * fields the hub adds to the project form, is read row by row; the service rows oculus ships
+ * (`literature.sources`, `recover.sources`, `links` and `sign_in` by their `key`,
+ * `connections.failures` by its `kind`) are laid over oculus's row by row, so a hub adds, changes
+ * or removes one row; every other key replaces oculus's value whole, oculus's value standing where
+ * the hub sets none. They are the keys that describe this hub rather than the engine: its folders
+ * and the files of its records, which of its records a chat's index holds, where the reader's
+ * bookmarks, the schedules and the machine's apps are kept, the clusters its jobs run on and the
+ * key Account setup makes for each, the rows that tell a failed connection apart, the providers its
+ * readers sign in with, where Recover downloads Node.js from, the files its writing rules skip or
+ * let draw arrows, the conventions its audit holds its projects to (`audit:`: the files and
+ * sections it requires, the folders a stage keeps a project in and its website's feed), the
+ * website its files are written into (`website:`, each of the four paths of `website.files` a key
+ * of its own, so a hub that sets one keeps oculus's other three), the values its apps' settings
+ * hold, the counts its tabs draw, its vocabulary (every list of vocab.yml) and the fields it adds
+ * to the project form, the reader rows of its literature sources, its Recover sources and its
+ * journal browser, the links every page link is built from, and the Zenodo deposit of its projects
+ * (`deposit.zenodo`, each of its three fields a key of its own, so a hub that sets one keeps
+ * oculus's other two). Its domains and theme words are its own registry files'. Which of them each
+ * hub's own file is read for, and which the primary's alone, is data/shapes/hub-keys.ts's.
  */
 const HUB_LIST: readonly { key: string; file: string }[] = [
     { key: 'scan', file: 'sources.yml' },
@@ -742,6 +742,7 @@ const HUB_LIST: readonly { key: string; file: string }[] = [
     { key: 'research_audit', file: 'catalogs/vocab.yml' },
     { key: 'roles', file: 'catalogs/vocab.yml' },
     { key: 'categories', file: 'catalogs/vocab.yml' },
+    { key: 'deck_order', file: 'catalogs/vocab.yml' },
     { key: 'rail_color', file: 'catalogs/vocab.yml' },
     { key: 'leads_fit', file: 'catalogs/vocab.yml' },
     { key: 'data_access', file: 'catalogs/vocab.yml' },

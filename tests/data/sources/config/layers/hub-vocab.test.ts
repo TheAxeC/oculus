@@ -228,6 +228,20 @@ describe("the vocabulary a hub lays over oculus's", () => {
         expect(rowKeys(read.config, 'radar_buckets')).toEqual(['idea']);
     });
 
+    it("replaces oculus's deck order whole with the hub's own", () => {
+        const read = withHub('deck_order: [idea, in-flight]\n');
+        expect(said(read)).toEqual([]);
+        expect(read.config.deck_order).toEqual(['idea', 'in-flight']);
+    });
+
+    it("keeps oculus's deck order with no finding when the hub takes out a category it names", () => {
+        const read = withHub('categories: [ { key: released, removed: true } ]\n');
+        expect(said(read)).toEqual([]);
+        expect(OCULUS.deck_order).toContain('released');
+        expect(read.config.deck_order).toEqual(OCULUS.deck_order);
+        expect(categoriesOf(read.config).map((one) => one.key)).not.toContain('released');
+    });
+
     it('reads a row of teaching_stages with no statuses', () => {
         const bare = withHub('teaching_stages: [ { label: Running, color: "#16a34a" } ]\n');
         expect(said(bare)).toEqual([]);

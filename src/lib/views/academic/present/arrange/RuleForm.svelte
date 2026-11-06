@@ -2,9 +2,9 @@
     // Layer 3, Present partial. The form a group's Edit Rule opens under its header in the
     // Overview: `find`, the folder globs the group looks in and the tiers, stages, forms and status
     // chips a found deck's project must have, each list a word of the engine's vocabulary or one
-    // typed; `sort`, how the found decks are ordered; and `discover`, whether the group takes the
-    // decks it finds beyond the ones it names. Unset, `sort` orders by folder and `discover` takes
-    // none, the deck reader's defaults.
+    // typed; and `discover`, whether the group takes the decks it finds beyond the ones it names.
+    // Unset, `discover` takes none, the deck reader's default. The decks a group takes go in the
+    // deck order (data/shapes/boards/order.ts), which the form does not set.
     //
     // What the reader sets is the form's own work until Apply writes it, each key with the value
     // the file held as its base, and closes the form; Cancel and Escape close it with nothing
@@ -14,7 +14,6 @@
     import Checkbox from '$lib/ui/forms/Checkbox.svelte';
     import Field from '$lib/ui/forms/Field.svelte';
     import TextInput from '$lib/ui/forms/TextInput.svelte';
-    import Select from '$lib/ui/forms/choice/Select.svelte';
     import MultiSelect from '$lib/ui/forms/choice/MultiSelect.svelte';
     import KeyForm from './KeyForm.svelte';
     import { createKeyWork } from './arrange.svelte';
@@ -54,12 +53,8 @@
     const work = createKeyWork(() => keys);
     const { shown, onset } = work;
 
-    /** The group's `find:` as the form draws it, its sort (empty for none) and its discovery. */
+    /** The group's `find:` as the form draws it, and its discovery. */
     const find = $derived(findForm(shown(groupKey(group, 'find'))));
-    const sort = $derived.by(() => {
-        const held = shown(groupKey(group, 'sort'));
-        return typeof held === 'string' ? held : '';
-    });
     const discover = $derived.by(() => {
         const held = shown(groupKey(group, 'discover'));
         return typeof held === 'boolean' ? held : null;
@@ -120,28 +115,13 @@
             {/each}
         </div>
     </Field>
-    <div class="line">
-        <Field label={t('present.field_sort')} help={t('present.field_sort_help')}>
-            <Select
-                value={sort}
-                label={t('present.field_sort_of', group)}
-                empty={t('present.field_sort_none')}
-                choices={[
-                    { id: 'folder', label: t('present.field_sort_folder') },
-                    { id: 'title', label: t('present.field_sort_title') }
-                ]}
-                onchange={(next: string) =>
-                    onset(groupKey(group, 'sort'), next === '' ? null : next)}
-            />
-        </Field>
-        <Checkbox
-            checked={discover}
-            label={t('present.field_discover')}
-            unset={t('present.field_discover_none')}
-            onchange={(on: boolean) => onset(groupKey(group, 'discover'), on)}
-            onunset={() => onset(groupKey(group, 'discover'), null)}
-        />
-    </div>
+    <Checkbox
+        checked={discover}
+        label={t('present.field_discover')}
+        unset={t('present.field_discover_none')}
+        onchange={(on: boolean) => onset(groupKey(group, 'discover'), on)}
+        onunset={() => onset(groupKey(group, 'discover'), null)}
+    />
 </KeyForm>
 
 <style>
@@ -161,13 +141,5 @@
     .caption {
         color: var(--muted-txt, var(--muted));
         font-size: var(--fs-sm);
-    }
-
-    .line {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        gap: 12px;
-        min-width: 0;
     }
 </style>

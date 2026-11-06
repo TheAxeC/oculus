@@ -1,10 +1,12 @@
 // Layer 1, data tests. The deck reader against synthetic decks in a temporary directory: how a
-// slide file is cut into slides, and how a deck folder is read into the slides and groups it holds.
-// Nothing outside the temporary directory is read or written.
+// slide file is cut into slides, how a deck folder is read into the slides and groups it holds, and
+// the order of the decks a group discovers. Nothing outside the temporary directory is read or
+// written.
 
 import { realpathSync } from 'node:fs';
 import { relative } from 'node:path';
 import { describe, expect } from 'vitest';
+import { deckOrderOf } from '../../../src/lib/data/shapes/boards/order.ts';
 import {
     engineDir,
     frameSetting,
@@ -18,8 +20,11 @@ import type { DeckProject } from '../../../src/lib/data/sources/deck/kinds.ts';
 import type { DeckSlide } from '../../../src/lib/data/model/index.ts';
 import { it, plantScratch } from '../../fixtures/scratch.ts';
 
-/** The catalog the findings are worded from: the one oculus ships, read as the server reads it. */
-const CATALOG = textCatalog(loadConfig(engineDir()).config);
+/** oculus's own merged config, read as the server reads it. */
+const VOCAB = loadConfig(engineDir()).config;
+
+/** The catalog the findings are worded from: the one oculus ships. */
+const CATALOG = textCatalog(VOCAB);
 
 /** One project of a hub, its deck at `<folder>/present`. */
 function project(id: string, tier: string, extra: Partial<DeckProject> = {}): DeckProject {
@@ -179,8 +184,9 @@ describe('the deck reader', () => {
                 project('beta', 'research', { domain: 'heart', short: 'Beta' })
             ],
             tagTones: { measured: 'green' },
-            frame: frameSetting(loadConfig(engineDir()).config),
-            catalog: CATALOG
+            frame: frameSetting(VOCAB),
+            catalog: CATALOG,
+            order: deckOrderOf(VOCAB)
         });
         return reader.read({ key: 'hub', dir }, 'deck');
     }
@@ -289,8 +295,9 @@ describe('the deck reader', () => {
                     project('gamma', 'research', { domain: 'brain', short: 'Gamma' })
                 ],
                 tagTones: {},
-                frame: frameSetting(loadConfig(engineDir()).config),
+                frame: frameSetting(VOCAB),
                 catalog: CATALOG,
+                order: deckOrderOf(VOCAB),
                 ...(keep === undefined ? {} : { keep: new Set(keep) })
             }).read({ key: 'hub', dir }, 'deck');
         const rows: {
@@ -512,8 +519,9 @@ describe('the deck reader', () => {
                 project('gamma', 'research')
             ],
             tagTones: {},
-            frame: frameSetting(loadConfig(engineDir()).config),
-            catalog: CATALOG
+            frame: frameSetting(VOCAB),
+            catalog: CATALOG,
+            order: deckOrderOf(VOCAB)
         };
         const escaped = 'A\\*B\\_\\<x\\>';
         const filled = {
@@ -687,6 +695,115 @@ describe('the deck reader', () => {
             ]);
             expect(found.sort(), one.row).toEqual([...one.findings].sort());
         }
+    });
+});
+
+/** A published journal article titled `title`, of the year given when one is. */
+function pub(year?: number, title = 'Paper'): Partial<DeckProject> {
+    return { stage: 'published', form: 'journal', title, ...(year === undefined ? {} : { year }) };
+}
+
+/** A project at `stage` titled `title`. */
+const at = (stage: string, title: string): Partial<DeckProject> => ({ stage, title });
+
+/** oculus's rows of `categories:` as its file writes them, the row `released` taken out. */
+const NO_RELEASED = (VOCAB.categories as { key: string }[]).filter((row) => row.key !== 'released');
+
+describe('the order of the decks a group discovers', () => {
+    const SAME = at('nascent', 'Same');
+    const rows: {
+        row: string;
+        /** Each deck by folder, in its place in the order: a stage, a project, null for none. */
+        decks: Record<string, string | Partial<DeckProject> | null>;
+        /** The deck titles that are not the folder's name. */
+        titles?: Record<string, string>;
+        /** The group's keys beside its find and its discover, as a flow map writes them. */
+        group?: string;
+        /** The vocabulary's `deck_order` and its `categories`, oculus's when none. */
+        keys?: string[];
+        categories?: unknown[];
+        keep?: string[];
+    }[] = [
+        {
+            row: 'the publications newest first, then in review, in flight and idea',
+            decks: { d: pub(2025), e: pub(2023), c: 'submitted', b: 'exploring', a: 'nascent' }
+        },
+        {
+            row: 'publications of one stage and year by the project title, a year before none',
+            decks: { b: pub(2024, 'Alpha'), a: pub(2024, 'Zeta'), d: pub(2020), c: pub() }
+        },
+        {
+            row: 'in flight, a row with no sort, by the stage order and then the title',
+            decks: { c: at('exploring', 'Ann'), b: at('exploring', 'Zed'), a: 'building' }
+        },
+        {
+            row: 'the decks slides names first in its order, then the discovered ones',
+            group: ', slides: [z, y]',
+            decks: { z: 'exploring', y: 'nascent', b: pub(2020), c: 'exploring', a: 'nascent' }
+        },
+        {
+            row: 'a deck of no project and a project no row holds after every category, by folder',
+            decks: { c: pub(2020), d: 'nascent', a: null, b: 'accepted' }
+        },
+        {
+            row: 'the categories deck_order leaves out after the listed ones, in the order of categories',
+            keys: ['publications', 'other-outputs', 'in-review', 'in-flight', 'dead-ends'],
+            decks: { d: 'exploring', c: 'failed', b: 'nascent', a: 'released' }
+        },
+        {
+            row: 'the decks a filter keeps, in the deck order',
+            keep: ['a', 'b', 'c'],
+            decks: { c: pub(2021), b: 'exploring', a: 'nascent', d: 'submitted' }
+        },
+        {
+            row: 'a key of deck_order no row of categories holds, passed over',
+            categories: NO_RELEASED,
+            decks: { b: 'nascent', a: 'released' }
+        },
+        {
+            row: 'an empty deck_order, every category in the order of categories',
+            keys: [],
+            decks: { d: 'submitted', c: 'exploring', b: 'nascent', a: pub(2020) }
+        },
+        {
+            row: 'ties under the words of a category, then a project with no stage and a deck of no project, by folder',
+            decks: { z: pub(2020), c: SAME, d: SAME, a: {}, b: null },
+            titles: { c: 'Zed', d: 'Ann' }
+        },
+        {
+            row: 'decks of no project by folder, a sort key left in the group not read',
+            group: ', sort: title',
+            decks: { a: null, b: null },
+            titles: { a: 'Zed', b: 'Ann' }
+        }
+    ];
+    it.each(rows)('$row', ({ decks, titles = {}, group = '', keys, categories, keep }) => {
+        const all = `find: { folders: projects/*/*/present }, discover: true${group}`;
+        const files: Record<string, string> = {
+            'deck/present.yml': `groups: { all: { ${all} } }\norder: [{ slides: all }]\n`
+        };
+        const projects: DeckProject[] = [];
+        for (const [id, held] of Object.entries(decks)) {
+            const folder = `projects/manuscripts/${id}/present`;
+            files[`${folder}/present.yml`] = `deck: { title: ${titles[id] ?? id} }\n`;
+            if (typeof held === 'string') projects.push(project(id, 'research', { stage: held }));
+            else if (held !== null) projects.push(project(id, 'research', held));
+        }
+        const vocab: Record<string, unknown> = { ...VOCAB, deck_order: keys ?? VOCAB.deck_order };
+        if (categories !== undefined) vocab.categories = categories;
+        const dir = plantScratch('oculus-deck-order-', files);
+        const deck = createReader({
+            hub: { key: 'hub', dir },
+            projects,
+            tagTones: {},
+            frame: frameSetting(VOCAB),
+            catalog: CATALOG,
+            order: deckOrderOf(vocab),
+            ...(keep && { keep: new Set(keep) })
+        }).read({ key: 'hub', dir }, 'deck');
+        const kept = Object.keys(decks).filter((id) => keep === undefined || keep.includes(id));
+        const members = deck.groups[0]?.members ?? [];
+        expect(members.filter((one) => one.kept).map((one) => one.name)).toEqual(kept);
     });
 });
 

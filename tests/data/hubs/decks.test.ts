@@ -2,15 +2,17 @@
 // for the snapshot build and for the deck route: the projects of a deck's slides, their facts and
 // their domains, and the findings the build raises over them, which the Findings view lists. Each
 // row reads one deck through the route's read (`readDeck`) and through the module over the build's
-// own input, and compares the two answers whole. The workspace is planted in a temporary directory
-// (tests/fixtures/hubs/deck-hub.ts); nothing outside it is read or written.
-// @module-tag slow: it builds two copies of the demo hub and reads each of them again.
+// own input, and compares the two answers whole. A hub whose settings give its own deck order and
+// categories is read through the module for the order of the decks a group discovers. The
+// workspaces are planted in a temporary directory (tests/fixtures/hubs/deck-hub.ts); nothing
+// outside it is read or written.
+// @module-tag slow: it builds three copies of the demo hub and reads each of them again.
 
 import { describe, expect } from 'vitest';
 import { ofHub } from '../../../src/lib/data/helpers/hub-names.ts';
 import type { Deck, Finding } from '../../../src/lib/data/model/index.ts';
 import { readDeck } from '../../../src/lib/server/content/deck/read.ts';
-import { factsWorkspace } from '../../fixtures/hubs/deck-hub.ts';
+import { factsWorkspace, orderHub } from '../../fixtures/hubs/deck-hub.ts';
 import { it } from '../../fixtures/scratch.ts';
 
 /** A finding by its file under the workspace folder, its line and its message. */
@@ -331,6 +333,21 @@ describe("a deck's projects, facts and domains", () => {
                 .sort(),
             "the build's decks record"
         ).toEqual(DECKS);
+    });
+});
+
+describe('the order of the decks a group of a hub discovers', () => {
+    it("orders them by the hub's own deck_order and its own publications row, read from its merged settings", () => {
+        const { dir, reader } = orderHub();
+        const deck = reader.read({ key: 'hub', dir }, 'talks/order');
+        expect(deck.findings).toEqual([]);
+        expect(deck.groups[0]?.members.map((one) => one.name)).toEqual([
+            'e-idea',
+            'd-alpha',
+            'c-zeta',
+            'b-flight',
+            'a-review'
+        ]);
     });
 });
 

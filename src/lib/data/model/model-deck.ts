@@ -293,12 +293,12 @@ export type DeckOrderEntry = {
 /**
  * The keys of a deck's `present.yml` the Present view's Overview sets, each as the file holds it,
  * null for a key the file does not hold: `deck.title`, `defaults.tag_tones`, and each group's
- * `find`, `sort` and `discover`. A write names one of them by its path and this value as its base.
+ * `find` and `discover`. A write names one of them by its path and this value as its base.
  */
 export type DeckKeys = {
     title: unknown;
     tagTones: unknown;
-    groups: { name: string; find: unknown; sort: unknown; discover: unknown }[];
+    groups: { name: string; find: unknown; discover: unknown }[];
 };
 
 /**

@@ -5,8 +5,9 @@
 // reads the whole team. Which projects a board holds, a card's category and the user's role on a
 // project are read by data/shapes/boards/, the rules the audit reads too, each under the words of
 // the project's own hub; the cards sort pinned first, then by the stage order of every hub's words,
-// then by title (presets.ts `compareCards`), and a category's section orders its own cards by its
-// row's `sort:` (facets.ts `cardSections`).
+// then by title (presets.ts `compareCards`, over `BOARD_SORT` and the order rule of
+// data/shapes/boards/order.ts), and a category's section orders its own cards by its row's `sort:`
+// (facets.ts `cardSections`).
 
 import { byKey } from '../../../data/helpers/guards.ts';
 import { keyOf, rootOf } from '../../../data/helpers/hub-names.ts';
@@ -26,8 +27,8 @@ import { venueTierMark } from '../structure/lines.ts';
 import { waitedOn } from '../waiting.ts';
 import { sliceValue, sliceWord } from './facets.ts';
 import { selfIds, shownTeam, teamOf } from './team.ts';
+import { BOARD_SORT } from '../../../data/shapes/boards/order.ts';
 import {
-    BOARD_SORT,
     SESSIONS_NONE,
     compareCards,
     venueText,

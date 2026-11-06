@@ -10,7 +10,9 @@
 // same way from its manifests and the records of every hub of the workspace
 // (snapshot/hubs/deck-facts.ts). Each project's facts, which its slides' strip draws and its
 // `{{project.<field>}}` placeholders are filled from, are worked out by `projectFacts` with the
-// words the read is given.
+// words the read is given. The decks a group discovers are ordered under the hub's merged settings,
+// its categories, its `deck_order` and its stages (data/shapes/boards/order.ts `deckOrderOf`), read
+// once for the reader.
 //
 // Neither read raises a finding on a project's domain. Each manifest's `domain:` is checked by
 // the manifest check (snapshot/schema/check.ts) against the keys of every hub of the workspace,
@@ -31,6 +33,7 @@ import type {
     RawDeck,
     RawPortfolio
 } from '../../model/index.ts';
+import { deckOrderOf } from '../../shapes/boards/order.ts';
 import { projectFacts, type FactWords } from '../../shapes/project-facts.ts';
 import { hubProjects, type HubRecords } from '../../snapshot/hubs/deck-facts.ts';
 import { frameSetting } from '../config.ts';
@@ -72,6 +75,7 @@ function deckProject(project: Project, words: FactWords): DeckProject {
     if (project.workspaceFolder !== undefined) one.workspaceFolder = project.workspaceFolder;
     if (project.stage !== undefined) one.stage = project.stage;
     if (project.form !== undefined) one.form = project.form;
+    if (project.year !== undefined) one.year = project.year;
     const domain = project.domainIds.at(0);
     if (domain !== undefined) one.domain = domain;
     return one;
@@ -86,6 +90,7 @@ export function deckReader(input: DeckInput): DeckReader {
         tagTones: hub.config.tagTones,
         frame: frameSetting(hub.config.merged),
         catalog: hub.config.text,
+        order: deckOrderOf(hub.config.merged),
         ...(input.drafts === undefined ? {} : { drafts: input.drafts }),
         ...(input.keep === undefined ? {} : { keep: input.keep })
     });

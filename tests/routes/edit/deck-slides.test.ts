@@ -218,8 +218,11 @@ function textWith(before: string, records: { key: string; field: string }[]): st
     let text = before;
     if (has('deck', 'title'))
         text = text.replace('    title: A deck\n', '    title: The new title\n');
-    if (has('groups.pillars', 'sort')) {
-        text = text.replace('            - alpha\n', '            - alpha\n        sort: title\n');
+    if (has('groups.pillars', 'discover')) {
+        text = text.replace(
+            '            - alpha\n',
+            '            - alpha\n        discover: false\n'
+        );
     }
     if (has('groups.more', 'discover')) {
         text = text.replace('        slides: []\n', '        slides: []\n        discover: true\n');
@@ -242,7 +245,7 @@ function keysBody(keys: [string[], unknown, unknown][]): unknown {
 }
 
 describe("writing a deck's keys", () => {
-    it("sets the title, the tag tones and a group's sort, discover and find, changing only their lines, a record each, each undone", async () => {
+    it("sets the title, the tag tones and two groups' discover and a group's find, changing only their lines, a record each, each undone", async () => {
         const into = deckTarget();
         const before = deckOf(into);
         const written = await answered(
@@ -250,7 +253,7 @@ describe("writing a deck's keys", () => {
             keysBody([
                 [['deck', 'title'], 'A deck', 'The new title'],
                 [['defaults', 'tag_tones'], null, { measured: 'teal' }],
-                [['groups', 'pillars', 'sort'], null, 'title'],
+                [['groups', 'pillars', 'discover'], null, false],
                 [['groups', 'more', 'discover'], null, true],
                 [
                     ['groups', 'ideas', 'find'],
@@ -265,7 +268,7 @@ describe("writing a deck's keys", () => {
             [
                 'deck.title',
                 'defaults.tag_tones',
-                'groups.pillars.sort',
+                'groups.pillars.discover',
                 'groups.more.discover',
                 'groups.ideas.find'
             ]
@@ -280,7 +283,7 @@ describe("writing a deck's keys", () => {
                 { folders: 'projects/*/*/present', tiers: ['personal', 'research'] }
             ],
             ['groups.more', 'discover', null, true],
-            ['groups.pillars', 'sort', null, 'title'],
+            ['groups.pillars', 'discover', null, false],
             ['defaults', 'tag_tones', null, { measured: 'teal' }],
             ['deck', 'title', 'A deck', 'The new title']
         ]);
@@ -308,9 +311,9 @@ describe("writing a deck's keys", () => {
                 reason: 'deck.title cannot hold that value: it takes a text that is not empty'
             },
             {
-                row: 'a sort of another word',
-                key: [['groups', 'pillars', 'sort'], null, 'date'],
-                reason: 'groups.pillars.sort cannot hold that value: it takes folder or title'
+                row: "a group's sort, which the Overview does not set",
+                key: [['groups', 'pillars', 'sort'], null, 'title'],
+                reason: "groups.pillars.sort is not a key the Present view's Overview sets"
             },
             {
                 row: 'a find with no folders',
@@ -324,7 +327,7 @@ describe("writing a deck's keys", () => {
             },
             {
                 row: 'a group the deck does not have',
-                key: [['groups', 'nothing', 'sort'], null, 'title'],
+                key: [['groups', 'nothing', 'discover'], null, true],
                 reason: 'The deck has no group named nothing'
             }
         ];

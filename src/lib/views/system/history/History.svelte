@@ -122,7 +122,7 @@
     }
 
     /** The fields of the records of a deck's keys, which the Present view's Overview sets. */
-    const DECK_KEYS = new Set(['title', 'tag_tones', 'find', 'sort', 'discover']);
+    const DECK_KEYS = new Set(['title', 'tag_tones', 'find', 'discover']);
 
     /**
      * The word a row's kind of write is called. The records of a deck's `order:` and of its keys

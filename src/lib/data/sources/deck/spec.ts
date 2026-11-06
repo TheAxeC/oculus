@@ -30,7 +30,6 @@ export type GroupSpec = {
     name: string;
     find?: FindSpec;
     discover: boolean;
-    sort: 'folder' | 'title';
     slides: string[];
 };
 
@@ -95,14 +94,7 @@ function readKeys(value: Record<string, unknown>): DeckKeys {
         tagTones: heldAt(value.defaults, 'tag_tones'),
         groups: groups.flatMap(([name, body]) =>
             isMap(body)
-                ? [
-                      {
-                          name,
-                          find: heldAt(body, 'find'),
-                          sort: heldAt(body, 'sort'),
-                          discover: heldAt(body, 'discover')
-                      }
-                  ]
+                ? [{ name, find: heldAt(body, 'find'), discover: heldAt(body, 'discover') }]
                 : []
         )
     };
@@ -155,14 +147,9 @@ function groupsOf(value: unknown, raise: Raise): GroupSpec[] {
             raise(`groups.${name}`, 'findings.deck.group_not_a_map', name);
             continue;
         }
-        const sort = str(body.sort);
-        if (sort !== undefined && sort !== 'folder' && sort !== 'title') {
-            raise(`groups.${name}.sort`, 'findings.deck.sort_unknown', name, sort);
-        }
         const group: GroupSpec = {
             name,
             discover: body.discover === true,
-            sort: sort === 'title' ? 'title' : 'folder',
             slides: strings(body.slides)
         };
         const looks = find(name, body.find, raise);

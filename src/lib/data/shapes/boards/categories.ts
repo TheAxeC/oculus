@@ -5,7 +5,8 @@
 // Pillars view's Archival band all read a project's category through `categoryOf`, so the rule is
 // written once and the boards name no categories of their own. A project is filed under the
 // categories and the words of its own hub (`categoriesBy`). A row's `sort:` is read here into the
-// words its section's cards are ordered by (state/boards/board/facets.ts `cardSections`).
+// words its section's cards are ordered by (state/boards/board/facets.ts `cardSections`) and the
+// words a deck orders the decks of its category by (order.ts beside this file).
 
 import { z } from 'zod';
 import type { Rooted } from '../../model/index.ts';

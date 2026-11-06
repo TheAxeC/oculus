@@ -4,8 +4,12 @@
 // A group looks for decks with `find:` (globs of folders under the root, kept by the tiers, the
 // stages, the forms and the chips of the deck's project) and lists them in `slides:`. The members
 // are the decks `slides:` names, in its order, then, under `discover: true`, every found deck that
-// no group of the deck names, in the order `sort:` gives. Two groups that discover the same
-// unnamed deck both lose it, and say so. A group with no `find:` names project decks of the hub.
+// no group of the deck names, in the deck order: the decks of each category of `categories:` in
+// turn, the categories by `deck_order` (data/shapes/boards/order.ts), the decks of a category by
+// its row's `sort:` and then the board's order, stage then title, with no pin read, then the decks
+// in no category, by folder. Two groups that discover the same unnamed deck both lose it, and say
+// so. A group with no `find:` names project decks of the hub. The candidates of the Add tile keep
+// the order the finder gives.
 //
 // A read may be narrowed by a filter, the keys of the projects it keeps (`keptMembers`). It
 // narrows only a group of project decks, one a member or a candidate of which is a project's deck
@@ -16,6 +20,8 @@
 // Nothing here reads a file: the reader hands in the decks each glob found.
 
 import type { DeckState } from '../../model/index.ts';
+import { categoryOf } from '../../shapes/boards/categories.ts';
+import { BOARD_SORT, compareProjects, type DeckOrder } from '../../shapes/boards/order.ts';
 import type { DeckProject } from './kinds.ts';
 import type { DeckRoot } from './files.ts';
 import type { DeckSpec, FindSpec, GroupSpec, Raise } from './spec.ts';
@@ -43,6 +49,11 @@ export type Finder = {
     under: (root: DeckRoot, globs: string[], raise: Raise) => Doc[];
     /** The project decks of the hub. */
     projects: () => Doc[];
+    /**
+     * What the decks a group discovers are ordered by: the categories, the same categories in the
+     * order a deck places them, the stage order and the config, read once for the reader.
+     */
+    order: DeckOrder;
 };
 
 /** A member of a group: the deck, and whether `slides:` names it. */
@@ -110,15 +121,38 @@ function visible(
     };
 }
 
-/** The decks of a list in the order `sort:` gives. */
-function sorted(docs: Doc[], by: 'folder' | 'title'): Doc[] {
-    const order = [...docs];
-    order.sort((a, b) =>
-        by === 'folder'
-            ? a.path.localeCompare(b.path)
-            : a.title.localeCompare(b.title) || a.name.localeCompare(b.name)
+/**
+ * The decks of a list in the deck order `order` holds, its categories already placed. A deck's
+ * category is its project's, the first row of `categories:` that holds it (`categoryOf`, as the
+ * boards file a project); the categories go in the order of `order.placed`, and the decks of one
+ * category by its row's `sort:` words and then the board's order (`BOARD_SORT`), each word read
+ * from the project's own stage, year and title under the stage order. The decks in no category, a
+ * deck of no project and one whose project no row holds, come after every category. A tie, and the
+ * decks in no category, go by the folder's path, so the order is the same on every read. No pin is
+ * read: a pinned project's deck is placed as any other.
+ */
+function inDeckOrder(docs: readonly Doc[], order: DeckOrder): Doc[] {
+    const ranked = order.placed;
+    const placed = docs.map((doc) => {
+        const project = doc.project;
+        const category =
+            project === null ? undefined : categoryOf(project, order.categories, order.vocab);
+        return {
+            doc,
+            project,
+            rank: category === undefined ? ranked.length : ranked.indexOf(category),
+            words: category === undefined ? [] : [...category.sort, ...BOARD_SORT]
+        };
+    });
+    placed.sort(
+        (left, right) =>
+            left.rank - right.rank ||
+            (left.project === null || right.project === null
+                ? 0
+                : compareProjects(left.project, right.project, left.words, order.stages)) ||
+            left.doc.path.localeCompare(right.doc.path)
     );
-    return order;
+    return placed.map((one) => one.doc);
 }
 
 /** Every group of a deck, resolved. */
@@ -189,7 +223,9 @@ export function resolveGroups(
                 }
             }
         }
-        for (const one of sorted(mine, group.sort)) out.members.push({ doc: one, named: false });
+        for (const one of inDeckOrder(mine, finder.order)) {
+            out.members.push({ doc: one, named: false });
+        }
         const sight = seen.get(group.name);
         const inGroup = new Set(out.members.map((member) => member.doc.dir));
         const clashing = new Set(out.conflicts.map((conflict) => conflict.doc.dir));

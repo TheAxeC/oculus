@@ -43,6 +43,7 @@ import { basename, dirname, join, relative } from 'node:path';
 import { parse } from 'yaml';
 import { findingText, type TextCatalog } from '../../helpers/finding-text.ts';
 import { escapeAttribute } from '../../prose/markdown/markdown.ts';
+import type { DeckOrder } from '../../shapes/boards/order.ts';
 import { isFactField } from '../../shapes/project-facts.ts';
 import type {
     Deck,
@@ -83,6 +84,11 @@ export type DeckContext = {
     /** The frame of the setting `defaults.frame`, and the rule a deck's own `deck.frame` meets. */
     frame: FrameSetting;
     catalog: TextCatalog;
+    /**
+     * What the decks a group discovers are ordered by, read once (`deckOrderOf`): the categories,
+     * the same categories in the order a deck places them, the stage order and the config.
+     */
+    order: DeckOrder;
     /**
      * The text a file holds unsaved in an editor, by the file's real path. A file the deck reads
      * is read from its draft; a path the deck does not read is never looked at.
@@ -360,7 +366,7 @@ export function createReader(context: DeckContext): DeckReader {
         return found;
     }
 
-    const finder: Finder = { under, projects: projectDocs };
+    const finder: Finder = { under, projects: projectDocs, order: context.order };
 
     /** The groups of a deck, resolved. */
     function groupsOf(doc: Doc): Map<string, Resolved> {

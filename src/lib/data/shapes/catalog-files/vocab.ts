@@ -483,6 +483,12 @@ export const vocabFileShape = z.strictObject({
         .describe(
             'The categories a project is filed under on every board: the first row whose blocks it meets.'
         ),
+    deck_order: z
+        .array(text)
+        .optional()
+        .describe(
+            "The keys of `categories` in the order a deck places the decks a group discovers; a hub's list replaces oculus's whole."
+        ),
     rail_color: text
         .regex(HEX_COLOUR)
         .optional()

@@ -14,12 +14,13 @@
 // problem and oculus's entry stands: a null or a removal naming an entry oculus does not hold,
 // `removed` holding anything but true, and two rows naming one key (none of the two is applied). A
 // row with no key to tell it by comes after oculus's rows as it is, and the reader of the list says
-// what is wrong with it. The rows of a list replaced whole are told apart by their `key`, or by
-// their `label` in a list of the Focus band's stages, which has no key: a row naming the key of an
-// earlier row is a problem naming its place, and oculus's list stands. The hub layer (hub-layer.ts)
-// lets oculus's list stand too when a row of such a list is not of the shape oculus's file takes,
-// and takes a word the hub's values no longer give out of the lists that name it. `focus_clusters`
-// is applied as written, since its reader (sections/vocab.ts) takes it row by row.
+// what is wrong with it. The rows of a list replaced whole are told apart by their `key`, by their
+// `label` in a list of the Focus band's stages, which has no key, or by the text itself in a list
+// of texts (`deck_order`): a row naming the key of an earlier row is a problem naming its place,
+// and oculus's list stands. The hub layer (hub-layer.ts) lets oculus's list stand too when a row of
+// such a list is not of the shape oculus's file takes, and takes a word the hub's values no longer
+// give out of the lists that name it. `focus_clusters` is applied as written, since its reader
+// (sections/vocab.ts) takes it row by row.
 //
 // The inverse is here too: the value a settings file holds for a value the reader sees, so the
 // merge over oculus's value gives the seen value back. It holds only the entries the reader changed
@@ -39,14 +40,23 @@ const REMOVED = 'removed';
 
 /**
  * How one key is laid over oculus's value: a map by its keys, rows by a field, a list whole, its
- * rows told apart by `field` when it names one, or a colour that replaces oculus's. A list of rows
- * marked `added: 'first'` puts the rows oculus lacks before oculus's, and any other after them.
+ * rows told apart by `field` when it names one or, under `texts`, by the texts themselves, or a
+ * colour that replaces oculus's. A list of rows marked `added: 'first'` puts the rows oculus lacks
+ * before oculus's, and any other after them.
  */
 export type InPlace =
     | { kind: 'map' }
     | { kind: 'rows'; field: string; added?: 'first' }
-    | { kind: 'whole'; field?: string }
+    | { kind: 'whole'; field?: string; texts?: true }
     | { kind: 'colour' };
+
+/**
+ * Whether the rows of a list replaced whole are told apart, by a field or as texts, so a row that
+ * repeats an earlier one, or one of a kind its file refuses, leaves oculus's list standing.
+ */
+export function toldApart(shape: InPlace): boolean {
+    return shape.kind === 'whole' && (shape.field !== undefined || shape.texts === true);
+}
 
 /**
  * What of a value laid in place cannot be applied: a problem of a merge by key, or a row of a list
@@ -75,6 +85,9 @@ const STAGES: InPlace = { kind: 'whole', field: 'label' };
  */
 const READ_BY_ROW: InPlace = { kind: 'whole' };
 
+/** A list of texts replaced whole, each text named once (`deck_order`). */
+const TEXTS: InPlace = { kind: 'whole', texts: true };
+
 /**
  * The keys of config/catalogs/vocab.yml a hub's settings file sets, every key of the file, each
  * with its shape. `leads_fit`, which oculus ships none of, is a map.
@@ -97,6 +110,7 @@ export const VOCAB_SHAPES: Readonly<Record<string, InPlace>> = {
     research_audit: MAP,
     roles: WHOLE,
     categories: { kind: 'rows', field: 'key' },
+    deck_order: TEXTS,
     rail_color: COLOUR,
     leads_fit: MAP,
     data_access: MAP,
@@ -236,13 +250,16 @@ function mergeMapInPlace(
 }
 
 /**
- * The rows of a list that name the key `field` of an earlier row, one problem each with the key and
- * the row's index, in the list's order.
+ * The rows of a list that name the key of an earlier row, as `keyOf` reads it, one problem each
+ * with the key and the row's index, in the list's order.
  */
-function repeatedRows(rows: readonly unknown[], field: string): InPlaceProblem[] {
+function repeatedRows(
+    rows: readonly unknown[],
+    keyOf: (row: unknown) => string | null
+): InPlaceProblem[] {
     const seen = new Set<string>();
     return rows.flatMap((row, at): InPlaceProblem[] => {
-        const key = rowKey(row, field);
+        const key = keyOf(row);
         if (key === null) return [];
         if (!seen.has(key)) {
             seen.add(key);
@@ -265,7 +282,7 @@ function mergeRowsInPlace(
 ): Merged<unknown[]> {
     const problems: OverrideProblem[] = [];
     const held = new Set(oculus.flatMap((row) => rowKey(row, field) ?? []));
-    const twice = new Set(repeatedRows(over, field).map((one) => one.entry));
+    const twice = new Set(repeatedRows(over, (row) => rowKey(row, field)).map((one) => one.entry));
     for (const key of twice) problems.push({ kind: 'repeated', entry: key });
     const named = new Map<string, unknown>();
     const tail: unknown[] = [];
@@ -299,8 +316,9 @@ function mergeRowsInPlace(
 /**
  * A value laid over oculus's by its shape, or `wrong` naming the kind of value the shape takes when
  * the value is not of it: a map for a map, a list for rows and for a list replaced whole, a colour
- * written `#rrggbb` for a colour. A list replaced whole two of whose rows name one key is oculus's
- * value, with a problem for each row that names an earlier row's key.
+ * written `#rrggbb` for a colour. A list replaced whole two of whose rows name one key, or, under
+ * `texts`, that holds one text twice, is oculus's value, with a problem for each row that names an
+ * earlier row's key.
  */
 export function layInPlace(
     shape: InPlace,
@@ -317,7 +335,13 @@ export function layInPlace(
     }
     if (!Array.isArray(value)) return { wrong: 'list' };
     if (shape.kind === 'whole') {
-        const problems = shape.field === undefined ? [] : repeatedRows(value, shape.field);
+        const field = shape.field;
+        const problems =
+            field !== undefined
+                ? repeatedRows(value, (row) => rowKey(row, field))
+                : shape.texts === true
+                  ? repeatedRows(value, (row) => (typeof row === 'string' ? row : null))
+                  : [];
         return { value: problems.length > 0 ? oculus : value, problems };
     }
     const base = Array.isArray(oculus) ? oculus : [];

@@ -3,20 +3,22 @@
 // A key of config/catalogs/vocab.yml is laid over oculus's value by its shape (in-place.ts): a map
 // by its words in oculus's place, `categories` by its rows' `key`, and the lists whose order is
 // their meaning whole, oculus's list standing when a row is of the wrong kind or two rows name one
-// key, save `focus_clusters`, which its reader takes row by row. A word the hub's values no longer
-// give, taken out with `<word>: null` or by a list replaced whole, also leaves every word list that
-// names it, each option and each field of an option's rows the options catalog describes with a
-// `from` naming that list: in oculus's own values, a row left with no word stays, a board's
-// one-word `tier` or `role` becomes an empty list and a Focus lane's `move_writes` loses the word;
-// in a list or row the hub wrote, each such word is one finding naming the hub's file at the
-// word's place there. The options' defaults lose the word the same way. `manifest_fields`, the
-// fields the hub adds to the project form, is read row by row here: a row is a field of
-// `manifest_schema` under the key `field` it adds to project.yml, and a row that would change a
-// field oculus's form has, that the form cannot draw, or whose `foreign_key:` names no collection
-// of the hub, `projects` or vocab list once the hub's own values are laid in, is left out. The
-// lists of service rows oculus ships (`literature.sources`, `recover.sources`, `links`, `sign_in`
-// and `connections.failures`, in-place.ts's `ROW_SHAPES`) are laid over oculus's row by row, with
-// the same findings as `categories`. Every other key replaces oculus's value whole.
+// key, save `focus_clusters`, which its reader takes row by row. A key of the hub's own
+// `deck_order` that no row of the merged `categories:` holds is a finding and is not read. A word
+// the hub's values no longer give, taken out with `<word>: null` or by a list replaced whole, also
+// leaves every word list that names it, each option and each field of an option's rows the options
+// catalog describes with a `from` naming that list: in oculus's own values, a row left with no
+// word stays, a board's one-word `tier` or `role` becomes an empty list and a Focus lane's
+// `move_writes` loses the word; in a list or row the hub wrote, each such word is one finding
+// naming the hub's file at the word's place there. The options' defaults lose the word the same
+// way. `manifest_fields`, the fields the hub adds to the project form, is read row by row here: a
+// row is a field of `manifest_schema` under the key `field` it adds to project.yml, and a row that
+// would change a field oculus's form has, that the form cannot draw, or whose `foreign_key:` names
+// no collection of the hub, `projects` or vocab list once the hub's own values are laid in, is
+// left out. The lists of service rows oculus ships (`literature.sources`, `recover.sources`,
+// `links`, `sign_in` and `connections.failures`, in-place.ts's `ROW_SHAPES`) are laid over
+// oculus's row by row, with the same findings as `categories`. Every other key replaces oculus's
+// value whole.
 
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -34,9 +36,11 @@ import {
     hubShapeOf,
     layInPlace,
     problemFinding,
+    toldApart,
     wrongKindFinding,
     type InPlace
 } from './in-place.ts';
+import { categoriesOf } from '../../../shapes/boards/categories.ts';
 import { LOCAL_NAME } from '../local.ts';
 import { MANIFEST_WIDGETS, manifestFieldRow } from '../../../shapes/catalog-files/manifest.ts';
 import { MANIFEST_FIELDS_KEY } from '../../../shapes/vocab-keys.ts';
@@ -518,6 +522,34 @@ function rowsNamingLists(
     });
 }
 
+/** The key of the order a deck places the categories in. */
+const DECK_ORDER = 'deck_order';
+
+/**
+ * The hub's own `deck_order` held to the rows of `categories:` in `config`, with the hub's own
+ * values laid in: a key no row holds is a finding naming the hub's file and the key's place in the
+ * list (`deck_order.1`), and is taken out of the list.
+ */
+function orderNamingRows(
+    order: unknown,
+    config: Record<string, unknown>,
+    file: string,
+    pending: PendingFinding[]
+): unknown[] {
+    const keys = new Set(categoriesOf(config).map((category) => category.key));
+    const listed = Array.isArray(order) ? order : [];
+    return listed.filter((key, index) => {
+        if (typeof key !== 'string' || keys.has(key)) return true;
+        const at = `${DECK_ORDER}.${index}`;
+        pending.push({
+            file,
+            key: at,
+            words: (catalog) => findingText(catalog, 'findings.config.deck_order_unknown', at, key)
+        });
+        return false;
+    });
+}
+
 /**
  * The hub's settings file, read after oculus's config. A value the file holds at a path of HUB_LIST
  * is laid over oculus's value at that path: a key of the vocabulary by its shape, `manifest_fields`
@@ -530,12 +562,13 @@ function rowsNamingLists(
  * to, and a list of the vocabulary replaced whole holding a row that shape refuses is not applied,
  * oculus's list standing, save `focus_clusters`, which its reader takes row by row. The rows of
  * `manifest_fields` whose `foreign_key:` names no list are taken out once the hub's values are laid
- * in, so a list the hub adds counts. `from` names the hub's file for every key it set, and for a
- * map of the vocabulary, oculus's file for each of oculus's words the merged map holds and the hub
- * did not write. `text` is the file's text to read instead of the disk, null for the file removed.
- * `other` is the hub's name when it is not the workspace's primary: a key the primary hub alone is
- * read for (`primaryOnly`) is then a finding naming the hub, its file and the key, and is not
- * applied.
+ * in, so a list the hub adds counts, and so is a key of the hub's own `deck_order` that no row of
+ * the merged `categories:` holds, each with a finding. `from` names the hub's file for every key it
+ * set, and for a map of the vocabulary, oculus's file for each of oculus's words the merged map
+ * holds and the hub did not write. `text` is the file's text to read instead of the disk, null for
+ * the file removed. `other` is the hub's name when it is not the workspace's primary: a key the
+ * primary hub alone is read for (`primaryOnly`) is then a finding naming the hub, its file and the
+ * key, and is not applied.
  */
 export function mergeHub(
     hub: string,
@@ -624,8 +657,7 @@ export function mergeHub(
             pending.push({ file, key: issue.key, words: (catalog) => issueText(catalog, issue) });
             const head = issue.key.split('.')[0];
             if (!Object.hasOwn(VOCAB_SHAPES, head) || !Object.hasOwn(hubValues, head)) continue;
-            const shape = VOCAB_SHAPES[head];
-            if (shape.kind !== 'whole' || shape.field === undefined) continue;
+            if (!toldApart(VOCAB_SHAPES[head])) continue;
             applied[head] = valueAt(config, head);
             Reflect.deleteProperty(hubValues, head);
         }
@@ -649,5 +681,8 @@ export function mergeHub(
     if (lost.size > 0) dropRemovedWords(config, hubValues, lost, file, pending);
     if (fields !== undefined) {
         setAt(config, MANIFEST_FIELDS_KEY, rowsNamingLists(fields, config, file, pending));
+    }
+    if (Object.hasOwn(hubValues, DECK_ORDER)) {
+        config[DECK_ORDER] = orderNamingRows(config[DECK_ORDER], config, file, pending);
     }
 }

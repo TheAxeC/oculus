@@ -24,10 +24,9 @@ deck_schema:
   - field: groups
     type: records
     map: true
-    help: "A map from a group name to its find rule, its sort, whether it discovers further decks and its slides."
+    help: "A map from a group name to its find rule, whether it discovers further decks and its slides."
     fields:
       - { field: find, type: raw, help: "Which decks the group finds: the folder globs it looks in (folders), and the tiers, stages, forms and status chips a deck's project may have (tiers, stages, forms, status)." }
-      - { field: sort, type: text, help: "How the found decks are ordered: folder or title." }
       - { field: discover, type: checkbox, help: "Whether the group also takes the decks it finds beyond the slides it names." }
       - { field: slides, type: tags, foreign_key: projects, help: "The projects whose decks the group shows, in order, each named by its project id." }
   - { field: order, type: raw, help: "The slides in the order they are shown: a slide file name, a group of slides, or a summary or a grid of a group." }

@@ -19,6 +19,10 @@
 // the venue `labjournal` with the short name `Lab J` and the domains `labonly` and `twin`, and
 // holds the project `labp`, naming the domain `hubonly`. The hubs are planted in a temporary
 // directory, and every file planted or edited in them goes through `plantFile`.
+//
+// A second workspace, of one hub (`orderHub`), is for the order of the decks a group discovers:
+// the hub's settings give its own deck order and a `publications` row of its own, and the deck
+// reader of the hub reads them from the hub's merged settings.
 
 import { cpSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -336,4 +340,73 @@ export function factsWorkspace(): FactsWorkspace {
         ...others.map((one) => ({ key: one.key, dir: one.dir, config: one.portfolio, roots: [] }))
     ]);
     return { hub, lab, kit, snapshot, findings: snapshot.findings, source, built: readers };
+}
+
+/**
+ * The settings the hub of `orderHub` lays over oculus's: its own `publications` row, ordered by
+ * title alone, and its own deck order, which leaves out every category but three.
+ */
+const ORDER_SETTINGS = [
+    'categories:',
+    '  - { key: publications, label: publications, stages: { words: [accepted, published] }, forms: { words: [journal, conference] }, color: "#db2777", sort: [title] }',
+    'deck_order: [idea, publications, in-flight]',
+    '',
+    ''
+].join('\n');
+
+/**
+ * The projects of `orderHub` under side-projects/, a scan folder of oculus's that the demo hub
+ * leaves empty, by folder: the manifest's lines.
+ */
+const ORDER_PROJECTS: Record<string, string[]> = {
+    'a-review': ['stage: submitted', 'title: Review'],
+    'b-flight': ['stage: exploring', 'title: Flight'],
+    'c-zeta': ['stage: published', 'form: journal', 'year: 2025', 'title: Zeta'],
+    'd-alpha': ['stage: published', 'form: journal', 'year: 2020', 'title: Alpha'],
+    'e-idea': ['stage: nascent', 'title: Idea']
+};
+
+/**
+ * A hub copied from the demo hub whose settings give its own `publications` row and deck order
+ * (ORDER_SETTINGS), with five projects at the stages of five categories, each with a deck, and a
+ * deck `talks/order` whose one group discovers them, read through the deck reader of the hub over
+ * the build's own input, as the build reads it.
+ */
+export function orderHub(): { dir: string; reader: DeckReader } {
+    const dir = join(scratchDir('oculus-deck-order-'), 'hub');
+    cpSync(DEMO, dir, { recursive: true });
+    edit(
+        dir,
+        '.oculus/config.yml',
+        "# The hub's data files",
+        `${ORDER_SETTINGS}# The hub's data files`
+    );
+    for (const [folder, manifest] of Object.entries(ORDER_PROJECTS)) {
+        put(join(dir, 'side-projects', folder), {
+            'project.yml': [
+                `id: ${folder}`,
+                'tier: personal',
+                'lead: [dana-example]',
+                ...manifest,
+                ''
+            ].join('\n'),
+            ...deck(`# ${folder}\n`)
+        });
+    }
+    put(dir, {
+        'talks/order/present.yml': [
+            'deck: { title: Order }',
+            'groups:',
+            '    found:',
+            '        find: { folders: side-projects/*/present }',
+            '        discover: true',
+            'order: [{ slides: found }]',
+            ''
+        ].join('\n')
+    });
+    const config = readOtherHub(
+        { key: 'hub', dir },
+        loadConfig(engineDir(), { hub: dir })
+    ).portfolio;
+    return { dir, reader: buildReaders([{ key: 'hub', dir, config, roots: [] }])('hub') };
 }

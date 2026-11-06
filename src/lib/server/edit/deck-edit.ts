@@ -18,7 +18,7 @@
 // to the original with only the order list changed.
 //
 // The keys the Present view's Overview sets beside the lists (`deck.title`, `defaults.tag_tones`
-// and a group's `find`, `sort` and `discover`) are set over the bytes too, a key at a time
+// and a group's `find` and `discover`) are set over the bytes too, a key at a time
 // (server/core/files/yaml/key-path.ts), and the read-back guard holds the result to the original
 // with only those keys changed.
 

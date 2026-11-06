@@ -85,7 +85,6 @@ defaults:
 groups:
   members:
     find: { folders: "projects/*/*/present", tiers: [research], stages: [in-prep], forms: [article], status: [active] }
-    sort: title
     discover: true
     slides: [alpha, beta]
 order:
@@ -97,7 +96,7 @@ order:
 
 ### deck
 
-- `deck.title`, text. The deck's title: the words of its tab, of its entry in the deck menu, of the Overview's heading and of the audience window, and what `sort: title` orders a group's decks by. No slide of its own deck draws it; the summary and grid slides of a deck whose group holds it draw it for a member deck that is no project's, in its summary row and on its grid card when it has no idea slide. With none, or a value that is not text, the deck's name. `title: "Lab update"`
+- `deck.title`, text. The deck's title: the words of its tab, of its entry in the deck menu, of the Overview's heading and of the audience window. No slide of its own deck draws it; the summary and grid slides of a deck whose group holds it draw it for a member deck that is no project's, in its summary row and on its grid card when it has no idea slide. With none, or a value that is not text, the deck's name. `title: "Lab update"`
 - `deck.frame`, a map `{ width, height }` in px. The size every slide of the deck is laid out in, in the pane, the presenter screen, the audience window and the PDF. With none, the setting `defaults.frame`, 1280 by 720 unless Settings or the workspace file's `settings:` says otherwise. The width is a whole number from 320 to 3840 and the height one from 240 to 2160. A value that is no map, a key that is neither `width` nor `height`, a missing side or a side out of its range is a finding on `deck.frame`, and the setting's frame is used. `frame: { width: 1920, height: 1080 }`
 - A deck placed inside another (by a group) is laid out in the frame of the deck that is shown; its own `deck.frame` is read for its findings only.
 
@@ -116,7 +115,6 @@ order:
   - `forms`, a list of words of `forms:`. A found deck is kept when its project's `form` is one of them. With none, every form. `forms: [article]`
   - `status`, a list of words of `chips:`. A found deck is kept when its project's `status.chips` holds one of them. With none, every deck. `status: [active]`
   - Each of the four is a list: a single word written without brackets reads as an empty list, which keeps no deck. A found deck that is no project's deck is kept only while none of the four is set.
-- `sort`, `folder` or `title`. How the decks the group adds by discovery are ordered: by their folder's path, or by their title and then their name. With none, `folder`; any other value is a finding, and `folder` is used. `sort: title`
 - `discover`, `true` or `false`. Whether the group also takes the decks `find:` keeps that no group of the deck names. With none, or any value but `true`, false. `discover: true`
 - `slides`, a list of deck names. The decks the group shows, in this order. A name is matched to a deck by its name: among the decks `find:` keeps, or among the hub's projects' decks when the group has no `find:`. With none, the group names no deck. `slides: [alpha, beta]`
 
@@ -127,7 +125,7 @@ order:
 ## How a group picks its decks
 
 1. The decks `slides:` names, in its order. A name written twice is placed once, and a name that matches no deck the group can see is a finding.
-2. With `discover: true`, then every deck `find:` keeps that no group of the deck names, in the order `sort:` gives.
+2. With `discover: true`, then every deck `find:` keeps that no group of the deck names, in the deck order: category by category, the categories of `categories:` in the order `deck_order` gives (`config/catalogs/vocab.yml`, which a hub's settings file replaces with its own) and then the categories it leaves out, in the order of `categories:`; inside a category by the row's `sort:` and then the board's own order (stage, then title); then the decks whose project no row holds, and the decks of no project, by folder. A deck's category is its project's, the first row that holds it, as on the boards; two decks the words do not tell apart go by folder. A deck reads no pin: a board puts its pinned cards first, and a pinned project's deck is placed as any other.
 3. The filter's controls then narrow a group of project decks (see [The filter](#the-filter)).
 
 What the group cannot place is told, in the Overview's group heading and as a finding of `present.yml`:
@@ -136,7 +134,7 @@ What the group cannot place is told, in the Overview's group heading and as a fi
 - A deck two discovering groups both find, and neither names: it is in neither group. The heading reads "beta is found by talks too", and the finding "deck beta is found by the discovering groups members, talks and named by none; it is in neither". Naming it in one group's `slides:` places it there.
 - Two decks of one name that one group sees: neither is placed under that name, and the finding names both folders.
 
-The Overview's Add tile lists the decks the group's rule finds that it does not hold, and Edit Rule sets its `find:`, `sort:` and `discover:`.
+The Overview's Add tile lists the decks the group's rule finds that it does not hold, and Edit Rule sets its `find:` and `discover:`.
 
 ## The order
 

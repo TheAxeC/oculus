@@ -148,7 +148,6 @@ text:
             key_value: '{0} cannot hold that value: {1}'
             value_discover: it takes true or false
             value_find: it takes a map whose folders is a glob or a list of globs, with the lists tiers, stages, forms and status beside it
-            value_sort: it takes folder or title
             value_title: it takes a text that is not empty
             value_tones: it takes a map from a slide tag to the name of a hue
             no_group: 'The deck has no group named {0}'

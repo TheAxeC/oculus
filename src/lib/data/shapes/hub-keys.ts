@@ -33,6 +33,7 @@ export const OWN_HUB_KEYS: readonly string[] = [
     'research_audit',
     'roles',
     'categories',
+    'deck_order',
     'rail_color',
     'leads_fit',
     'data_access',

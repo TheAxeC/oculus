@@ -1,6 +1,6 @@
 // Layer 2, server, pure. The keys of a deck's `present.yml` the Present view's Overview sets
 // beside its lists, as the `deck-slides` write names them (deck.ts): `deck.title`,
-// `defaults.tag_tones`, and a group's `find`, `sort` and `discover`, each by its path from the top
+// `defaults.tag_tones`, and a group's `find` and `discover`, each by its path from the top
 // of the file. Which paths a write may name, the values each takes
 // (`config/schemas/deck-schema.yml` gives their meaning, and data/sources/deck/spec.ts is the
 // reader they must read back through), and the record a change of one leaves: keyed by the map
@@ -11,13 +11,13 @@ import { isMap } from '../../../../../../data/helpers/guards.ts';
 import { words } from '../../../../../core/words.ts';
 
 /** The fields a record of a key carries. */
-export const KEY_FIELDS = ['title', 'tag_tones', 'find', 'sort', 'discover'] as const;
+export const KEY_FIELDS = ['title', 'tag_tones', 'find', 'discover'] as const;
 
 /** One key's field. */
 type KeyField = (typeof KEY_FIELDS)[number];
 
 /** The keys a group holds that a write may set. */
-const GROUP_KEYS: readonly string[] = ['find', 'sort', 'discover'];
+const GROUP_KEYS: readonly string[] = ['find', 'discover'];
 
 /** The lists a group's `find:` takes beside `folders`. */
 const FIND_LISTS = ['tiers', 'stages', 'forms', 'status'];
@@ -74,8 +74,6 @@ function takes(field: KeyField, value: unknown): boolean {
                 isMap(value) &&
                 Object.values(value).every((one) => typeof one === 'string' && one !== '')
             );
-        case 'sort':
-            return value === 'folder' || value === 'title';
         case 'discover':
             return typeof value === 'boolean';
         case 'find':
@@ -90,8 +88,6 @@ function takenWords(text: Record<string, string>, field: KeyField): string {
             return words(text, 'server.deck_slides.value_title');
         case 'tag_tones':
             return words(text, 'server.deck_slides.value_tones');
-        case 'sort':
-            return words(text, 'server.deck_slides.value_sort');
         case 'discover':
             return words(text, 'server.deck_slides.value_discover');
         case 'find':

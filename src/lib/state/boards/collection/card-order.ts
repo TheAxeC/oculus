@@ -8,7 +8,7 @@
 import { periodValueOrder } from '../../../data/helpers/dates.ts';
 import { optionKeys, type Entry, type SchemaField } from '../../../data/model/index.ts';
 import { entryWords } from '../../shared/page/idents.ts';
-import { stageRank } from '../board/presets.ts';
+import { stageRank } from '../../../data/shapes/boards/order.ts';
 import { STATUS_FIELD, isPinned } from './index.ts';
 
 /**
