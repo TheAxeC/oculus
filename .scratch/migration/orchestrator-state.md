@@ -57,7 +57,9 @@ dispatch:           # steps in flight, up to six (Z632)
   session_id: ae67fca9ae879a854 (claude-opus-5-5)
   launched: 2026-11-06
   report: .scratch/migration/agents/reviews/O166-report.md
+  builder_usage: "round 0 hand-back: 290096 tokens, 56 tool uses, 8.1 min"
   round: 0
+  cases_ruling: .scratch/migration/agents/briefs/O166-cases.md
   landing: not-started
   shared_paths: "src/lib/views/shared/card/record/RecordCard.svelte and src/lib/views/boards/projects/Projects.svelte with O161 (O161 changes the grid call and the card's build; O166 the page's foot strip, a registration beside :18-27 and the live ids beside :155-172), judged simple to merge; src/lib/ui/controls/heads/GroupHead.svelte lines 64-82 with O161's lines 49-57, no overlap"
 - step: O151
