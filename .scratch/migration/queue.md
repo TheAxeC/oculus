@@ -1,12 +1,12 @@
-In flight (4 of 6 slots in use), nothing running, nothing starts without Axel's word:
+In flight (2 of 6 slots in use), nothing running, nothing starts without Axel's word:
 - O158 (the facts strip redesigned): gate passed; after O162, its look and screenshots to Axel.
-- O151 (a deck for every research project): builder stopped by Axel; a new builder, new brief.
-- O159 (one folder search per hub): prepared at cd7094304, worktree ready, no builder.
 - O160 (Live HPC shows its refresh running): builder stopped by Axel, partial work kept.
 
-Queued, in order (3):
-- O162 (the arrow-keys hint removed): /spec, before O158's look.
-- O163 (the hub's portfolio deck written again): /spec; before O151's Too tall pass and O159.
+Queued, in order (5):
+- O162 (the arrow-keys hint removed): /spec; before O158's look.
+- O163 (the hub's portfolio deck written again): /spec; before O151 and O159.
+- O151 (a deck for every research project): /spec again after O162, O158 and O163 land.
+- O159 (one folder search per hub): /spec again after O163 lands.
 - O161 (cards drawn as they are seen): 705 ruled (b); /spec again.
 
 Owed looks: none.

@@ -39,24 +39,6 @@ dispatch:           # steps in flight, up to six (Z632)
   reviewer_report: ".scratch/migration/agents/reviews/O158-refuter.md (a7c36a3b237a4d3c2, claude-opus-5-5, 230538 tokens, 56 tool uses, 11.9 min); over round 1: a3b7974c339a4dc07, claude-opus-5-5, 235128 tokens, 41 tool uses, 9.8 min"
   brief_check: .scratch/migration/agents/reviews/O158-brief-check.md (adc6d991942348bee, claude-opus-5-5, 190286 tokens, 51 tool uses, 8.8 min)
   landing: not-started
-- step: O151
-  base: f6493b536
-  worktree: .agents/worktrees/migration-O151
-  executor: agent
-  worker: claude:opus
-  session_id: a16fff9be0294dea8 (claude-opus-5-5)
-  launched: 2026-11-06
-  report: .scratch/migration/agents/reviews/O151-report.md
-  brief_check: .scratch/migration/agents/reviews/O151-brief-check.md (af22dc2fbdb77b4ae, claude-opus-5-5, 211381 tokens, 60 tool uses, 16.4 min)
-  landing: not-started
-- step: O159
-  base: cd7094304
-  worktree: .agents/worktrees/migration-O159
-  executor: agent
-  worker: claude:opus
-  report: .scratch/migration/agents/reviews/O159-report.md
-  brief_check: .scratch/migration/agents/reviews/O159-brief-check.md (a1e03b87281fab689, claude-opus-5-5, 250038 tokens, 80 tool uses, 13.5 min)
-  landing: not-started
 - step: O160
   base: 9ce4937ed
   worktree: .agents/worktrees/migration-O160
@@ -856,6 +838,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-11-06 (O151 and O159 back in the queue). O151 waits for O162, O158 and O163 to land and O159 for O163, so neither holds a slot: their dispatch entries are removed and both get /spec again from main's head once those steps land. Their worktrees `.agents/worktrees/migration-O151` (only the stopped builder's report, not used) and `migration-O159` (no change), the branches `migration-O151` and `migration-O159` (no commit beyond main) and the base copy `.agents/worktrees/O159-base` are still on disk: their removal was refused by the runner's permission check and waits on Axel. In flight (2 of 6): O158 (gate passed; its look after O162), O160 (builder stopped, partial work in its worktree). Queued, in order: O162, O163, O151, O159, O161. Nothing runs; nothing starts until Axel's word. Open items: none.
 - 2026-11-06 (O162 and O163 booked; nothing running). Axel's rulings "Arrow-keys hint removed", "Hub deck written again" and "Decks are internal" are booked in plan.md Rulings, with steps O162 (the arrow-keys hint removed, before O158's look) and O163 (the hub's `deck/` written again, `engine.md` and `transition.md` removed). The hub's `deck/` and `projects/` hold no uncommitted change. No agent runs; nothing starts until Axel's word. In flight (4 of 6): O158 (gate passed; its look after O162), O151 (builder stopped; a new builder from the brief as now written), O159 (prepared at cd7094304, no builder), O160 (builder stopped, partial work in its worktree). Queued: O162, O163, O161. Open items: none.
 - 2026-11-06 (O150 landed; O151 building). O150, the hub's portfolio deck, landed in the ledger (booking in plan.md under O150, `agents/reviews/O150-landing.md`): the research hub's `deck/present.yml`, `title.md` and `engine.md` written and `deck/transition.md` removed, uncommitted in the hub, the hub commit on Axel's word; one fix at landing, engine line 12. The gate passed at main's head 5929e2e0b and the integrity cases passed on the real hub; the look on 8797 drew the 28-slide deck with 16 project slides Too tall, which O151 rewrites. O151 prepared at f6493b536 with every brief-check finding closed, builder a16fff9be0294dea8 (claude-opus-5-5) running. O158's review over round 1 (a3b7974c339a4dc07) is in, its one finding fixed in the report; its range (wip dfc32576b) is applied in the gate worktree on main's head 6bdef6d4d and the gate passed (`.agents/worktrees/gate-O158.log`); the look server on 8797 runs from the gate worktree and the screenshots went to Axel, open item 704; main is untouched until his word. In flight (2 of 6): O158, O151. Queued: O159, O160, O161. Open items: 704.
 - 2026-11-06 (rulings 697, 698, 699 and Live HPC booked; O150 and O158 building under their round-0 cases rulings, 315cafed8). O150 builder a4c188eb9a1319932 and O158 builder a4151539c1a126061 resumed with `agents/briefs/O150-cases.md` and `O158-cases.md`. O151 in /spec (entry at `preparing`, brief not yet written). Steps O159 and O160 queued. Owed to Axel: Lit-Watch's loading time and its cause, measured on 8797 before O151 is launched (`agents/reviews/owed-looks.md`, "To take"). In flight (3 of 6): O158, O150, O151 (preparing). Open items: none.
