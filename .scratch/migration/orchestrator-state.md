@@ -63,7 +63,16 @@ dispatch:           # steps in flight, up to six (Z632)
   round: 0
   landing: not-started
 - step: O159
-  landing: preparing
+  brief_check: .scratch/migration/agents/reviews/O159-brief-check.md (a1e03b87281fab689, claude-opus-5-5, 250038 tokens, 80 tool uses, 13.5 min)
+  base: 2e8c2c4dd
+  worktree: .agents/worktrees/migration-O159
+  executor: agent
+  worker: claude:opus
+  session_id: a1fc9c46cf69b0c9f (claude-opus-5-5)
+  launched: 2026-11-06
+  report: .scratch/migration/agents/reviews/O159-report.md
+  round: 0
+  landing: not-started
 ```
 
 ## The standing demands (from Axel, in force)
