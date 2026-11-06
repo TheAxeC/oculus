@@ -1,6 +1,8 @@
 <script lang="ts">
     // Layer 3, view partial. The log box owns loading, output, empty, and failure states while its
-    // controls repeat or close the selected tail.
+    // controls repeat or close the selected tail. The tail carries the refresh glyph, which turns
+    // while the log is read (`status` is `loading`), from the press until the read answers; a read
+    // in flight when the cluster stops answering turns until its answer, the control disabled.
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { t } from '$lib/state/shared/words/text';
     let {
@@ -36,6 +38,8 @@
         <span>
             <ToolButton
                 label={t('hpc.tail')}
+                glyph="refresh"
+                turning={status === 'loading'}
                 disabled={!live}
                 title={live ? undefined : t('hpc.controls_offline')}
                 onclick={onrefresh}

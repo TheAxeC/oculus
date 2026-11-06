@@ -5,6 +5,12 @@
     // own word), the refresh control is the retry of the cluster's error box (Cluster.svelte) and
     // the head holds the failure word, the time the cluster last answered and the retry. A failed
     // poll whose queue is this poll's holds the failure word, the queue, its time and the retry.
+    //
+    // Refresh now carries the refresh glyph beside its words, and the glyph turns while
+    // `refreshing` says a press of this cluster's refresh waits for its answer. Which presses wait
+    // is the HPC store's (hpc.svelte.ts), never this head's own state, so the error box's retry,
+    // drawn in its place while the poll fails, reads the same wait, and a head drawn again while a
+    // press waits turns until the answer.
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { t } from '$lib/state/shared/words/text';
@@ -26,7 +32,16 @@
     const {
         clock: { minuteNow, startMinuteClock }
     } = useState();
-    let { data, onrefresh }: { data: HpcPayload; onrefresh: () => void } = $props();
+    let {
+        data,
+        refreshing,
+        onrefresh
+    }: {
+        data: HpcPayload;
+        /** Whether a press of this cluster's refresh waits for its answer; it turns the glyph. */
+        refreshing: boolean;
+        onrefresh: () => void;
+    } = $props();
 
     // The head ages between publishes, so the minute the page is in is read as state.
     $effect(startMinuteClock);
@@ -92,7 +107,12 @@
      status line. -->
 <Toolbar label={t('hpc.toolbar', data.name)}>
     {#if !failed}
-        <ToolButton label={t('hpc.refresh_now')} onclick={onrefresh} />
+        <ToolButton
+            label={t('hpc.refresh_now')}
+            glyph="refresh"
+            turning={refreshing}
+            onclick={onrefresh}
+        />
     {/if}
     <p class="meta">
         <span class:ok={data.status === 'ok'} class:bad={failed}>

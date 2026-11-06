@@ -6,7 +6,7 @@ Everything in the brief is done.
 
 - Open item 706 (2026-11-06), from O162's brief check (C-16): once the key hint goes, nothing a reader sees names the keys that move a deck besides Space. Help's keys table (`docs/HELP.md:199-200`) lists `F / P / O` and `Space / Shift+Space`; the arrows, Page Up / Page Down and Home / End that `screen/keys.ts:74-90` also handles are named nowhere. Options: (a) O162 widens to `docs/HELP.md` line 200, whose row becomes `Arrows, Page Up / Page Down, Space / Shift+Space | next / previous slide` with a row `Home / End | first / last slide`; pro: every deck key is named in the one place Help names keys, in the step that removes the only other place; con: one more path, shared with O158 and O160 at other lines of HELP.md, merged by hand at landing. (b) Help stays as it is; pro: no wider step; con: the arrow keys, Page Up / Page Down and Home / End stay undocumented. Recommendation: (a). (b) is the lazy option.
 
-`docs/HELP.md` is unchanged by this step, as the brief and the dispatch say, pending that ruling.
+Axel ruled (a); repair round 1 (below) carries it into `docs/HELP.md`.
 
 ## The cases' first run, on the unchanged tree (base 8a423feb3), before any change
 
@@ -141,7 +141,7 @@ The diagram counts drop by one because Slide.svelte drops its import of `t` from
 - The same deck with a project slide first, carrying a facts strip: before, the strip sat higher in the pane than on the tile by the hint's overflow. After, the strip sits at the foot at the same height as on the tile.
 - The presenter screen (both slides), the audience window, the Overview tiles and the PDF: no change (none drew the hint).
 - A change of text size or theme while a slide is shown, and a Present pane opened behind another tab then brought to the front: the slide is laid out again as before the change, through the probe, which now holds `Mg`.
-- Help's keys table is unchanged; with the hint gone, the arrow keys, Page Up / Page Down and Home / End are named nowhere a reader sees (open item 706).
+- Help's keys table (Help page, the keys table): before, `| Space / Shift+Space | next / previous slide |`. After, `| Right / Left, Page Down / Page Up, Space / Shift+Space | in Present: next / previous slide |` and `| Home / End | in Present: first / last slide |` (repair round 1).
 
 ## Head comments and docs that describe the changed behaviour
 
@@ -155,7 +155,7 @@ The diagram counts drop by one because Slide.svelte drops its import of `t` from
 - `src/routes/present/print/+page.svelte`, `Present.svelte`, `arrange/Tile.svelte`, `presenter/Presenter.svelte` head comments: still true (none named the hint or the prop).
 - `src/lib/themes/slide.css`, paragraph `:10-15`: rewritten ("The frame itself and the slide's foot under the content (the strip of a project's facts) keep the factor 1"). Paragraph `:1-8` and the rice paragraph: still true.
 - `docs/decks.md:166`: rewritten (the hint sentence removed).
-- `docs/HELP.md`: not changed (outside the step's paths); it never named the hint.
+- `docs/HELP.md`: the keys table's slide row rewritten into two rows in repair round 1; it never named the hint.
 
 ## Judgment calls the brief left open
 
@@ -176,3 +176,53 @@ Nothing wrong. Every premise checked reproduced: `key_hint` at `present.yml:82` 
 - C1, C2, C3, C4 and C7 are checked by reading only; the drawing, the factor in the narrow deck and the re-layout on a text-size, theme or tab change are the look at landing.
 - The step adds and changes no test.
 - O158 (in flight) keeps the hint wording and `past` in its own version of Slide.svelte; as the brief says, those are removed at O158's landing on the new head.
+
+## Repair round 1
+
+Everything in the round's brief is done.
+
+| Item | State | Proof (command, output as printed) |
+| --- | --- | --- |
+| 1. In `docs/HELP.md`, the row `| Space / Shift+Space | next / previous slide |` replaced, after the `F / P / O` row, by the two rows of the round, word for word | DONE | `git diff 8a423feb3 -- docs/HELP.md`, below: one hunk, the one row out and the two rows in |
+
+The rows were checked against `moveOf` (`src/lib/views/academic/present/screen/keys.ts:74-91`) before they were written: `ArrowRight` and `PageDown` return `{ by: 1 }`, `ArrowLeft` and `PageUp` `{ by: -1 }`, `Home` `{ to: 'first' }`, `End` `{ to: 'last' }`, `' '` `{ by: event.shiftKey ? -1 : 1 }`. The rows say what that code does.
+
+Check 1, `git diff 8a423feb3 -- docs/HELP.md` (the step had no earlier hunk in this file):
+
+```
+diff --git a/docs/HELP.md b/docs/HELP.md
+index a07efd845..61901a958 100644
+--- a/docs/HELP.md
++++ b/docs/HELP.md
+@@ -197,7 +197,8 @@ Oculus shows the research hub's YAML and Markdown files as boards, lists and doc
+ | Enter, Tab, Up / Down | in the Debug Console: send, complete, history |
+ | arrows, Enter, Shift+Enter, Delete | on a terminal row: show / split / kill (twice) |
+ | F / P / O | in Present: full screen / presenter screen / overview |
+-| Space / Shift+Space | next / previous slide |
++| Right / Left, Page Down / Page Up, Space / Shift+Space | in Present: next / previous slide |
++| Home / End | in Present: first / last slide |
+ 
+ Off macOS, Cmd is Ctrl.
+```
+
+Check 2, the ASCII gate of the rules file (perl form) over `docs/HELP.md`: prints nothing.
+
+Check 3, `npm run test:quick`, run once in this round after the change, `npm run diagrams` right before it (the diagram files show the same four modified paths as in the step's first run):
+
+```
+test:quick: 18 changed file(s), from git since HEAD
+test:quick: 11 test file(s)
+ok      prettier (1.2 s): All matched files use Prettier code style!
+ok      ASCII gate (1.3 s)
+ok      svelte-kit sync (3.7 s)
+ok      eslint (4.4 s)
+ok      svelte-check (13.9 s): 1793994494053 COMPLETED 584 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest (23.5 s): Duration  7.28s (transform 5.51s, setup 0ms, import 11.39s, tests 2.42s, environment 1ms)
+ok      vitest slow (29.1 s): Duration  12.75s (transform 4.80s, setup 0ms, import 7.74s, tests 4.81s, environment 0ms)
+ok      vitest checks (54.6 s): Duration  37.95s (transform 16.58s, setup 0ms, import 35.96s, tests 55.38s, environment 2ms)
+test:quick: 58.4 s; every command passed
+```
+
+The 11 test files it chose are the same as in the first run. `npm run test:quick` has run twice in the step: once after the first build and once in this round. No whole-suite command was run.
+
+Paths this round wrote: `docs/HELP.md` and this report. Three sentences in the earlier sections of this report that said Help was left unchanged are rewritten for the state after this round: the line under the open items, the Help bullet under the user-visible changes, and the `docs/HELP.md` line under the head comments.

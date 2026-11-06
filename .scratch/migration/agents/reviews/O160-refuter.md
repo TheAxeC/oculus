@@ -174,3 +174,10 @@ The swallowed rejection of a failed refresh request shows no change on screen. B
 - Whether reduced motion and the terminal palette keep the glyph still: this is the brief's decision 4 and `Glyph.svelte`'s existing behaviour (`Glyph.svelte:77-91`), which the step does not change. I read it but did not exercise it.
 
 Usage: a954d5be2d7b092c9, claude-opus-5-5, 179166 tokens, 61 tool uses, 12.6 min
+
+## Closed
+
+- P1: closed by the review's own grep on the base copy (two copies of the fold, no third).
+- S1: recorded in the booking as a breach of `spec.md:26`; nothing of it is in the diff.
+- S2: fixed at landing, the four comment lines rewrapped as whole paragraphs at 100 columns.
+- The added sentence of `docs/HELP.md:363`: removed at landing under the ruling "Help redesigned" (no step in flight adds a sentence to `docs/HELP.md` beyond what Axel ruled); `docs/HELP.md` lands as on main.

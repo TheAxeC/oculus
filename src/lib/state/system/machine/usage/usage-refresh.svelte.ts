@@ -11,6 +11,7 @@ import type { UsagePayload } from '../../../../data/model/index.ts';
 import { byKey } from '../../../../data/helpers/guards.ts';
 import { optionalTextShape, readAs, readJson } from '../../../../data/shapes/shapes.ts';
 import type { EntitiesStore, WritesStore } from '../../../shared/stores/shapes.ts';
+import { createWaiting } from '../../../shared/stores/waiting.svelte.ts';
 import { t } from '../../../shared/words/text.ts';
 
 /** What the route answers a refusal with: the words of its error, absent when it is no text. */
@@ -47,15 +48,7 @@ export function createUsageRefresh(
 ): UsageRefreshStore {
     let refusals = $state.raw<Record<string, { payload: UsagePayload | null; reason: string }>>({});
     /** How many presses of each account's refresh wait for their answer. */
-    let pressed = $state.raw<Record<string, number>>({});
-
-    /** Count one press of an account's refresh in, or one answered press out. */
-    function hold(label: string, step: 1 | -1): void {
-        const count = (byKey(pressed, label) ?? 0) + step;
-        pressed = Object.fromEntries(
-            Object.entries({ ...pressed, [label]: count }).filter(([, held]) => held > 0)
-        );
-    }
+    const pressed = createWaiting();
 
     function refreshRefusal(label: string): string {
         const held = byKey(refusals, label);
@@ -64,7 +57,7 @@ export function createUsageRefresh(
 
     async function refreshUsageAccount(label: string): Promise<void> {
         let reason = '';
-        hold(label, 1);
+        pressed.hold(label, 1);
         try {
             const response = await fetch('/api/usage/refresh', {
                 method: 'POST',
@@ -78,7 +71,7 @@ export function createUsageRefresh(
         } catch {
             reason = t('usage.refusal_failed');
         } finally {
-            hold(label, -1);
+            pressed.hold(label, -1);
         }
         if (reason !== '') {
             const payload = entities.usage();
@@ -91,7 +84,7 @@ export function createUsageRefresh(
 
     return {
         refreshRefusal,
-        refreshing: (label) => (byKey(pressed, label) ?? 0) > 0,
+        refreshing: (label) => pressed.count(label) > 0,
         refreshUsageAccount
     };
 }

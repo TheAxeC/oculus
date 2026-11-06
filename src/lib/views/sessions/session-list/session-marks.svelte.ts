@@ -7,6 +7,7 @@
 
 import type { GroupedSession } from '$lib/state/client/selectors.svelte';
 import { isTop } from '$lib/state/sessions/folds';
+import { createWaiting } from '$lib/state/shared/stores/waiting.svelte';
 
 type Mark = 'hidden' | 'top';
 
@@ -31,7 +32,7 @@ export function createSessionMarks(deps: MarkDeps): SessionMarks {
     let archivedNow: Record<string, boolean> = $state({});
     let topNow: Record<string, boolean> = $state({});
     /** The writes of a mark in flight, by `<field>:<session id>`, counted. */
-    let writing: Record<string, number> = $state({});
+    const writing = createWaiting();
 
     // A mark drawn ahead goes once the channel's row carries it and no write of it is in flight.
     $effect(() => {
@@ -54,7 +55,10 @@ export function createSessionMarks(deps: MarkDeps): SessionMarks {
     ): Record<string, boolean> | null {
         const carried = new Set(
             rows
-                .filter((row) => drawn[row.id] === mark(row) && !writing[`${field}:${row.id}`])
+                .filter(
+                    (row) =>
+                        drawn[row.id] === mark(row) && writing.count(`${field}:${row.id}`) === 0
+                )
                 .map((row) => row.id)
         );
         if (carried.size === 0) return null;
@@ -69,14 +73,6 @@ export function createSessionMarks(deps: MarkDeps): SessionMarks {
         else topNow = without(topNow);
     }
 
-    /** Count one write of a row's mark in, or one answered write out. */
-    function hold(key: string, step: 1 | -1): void {
-        const count = (writing[key] ?? 0) + step;
-        writing = Object.fromEntries(
-            Object.entries({ ...writing, [key]: count }).filter(([, held]) => held > 0)
-        );
-    }
-
     return {
         archived: (row) => archivedNow[row.id] ?? row.hidden,
         top: (row) => topNow[row.id] ?? isTop(row),
@@ -84,15 +80,15 @@ export function createSessionMarks(deps: MarkDeps): SessionMarks {
             const key = `${field}:${row.id}`;
             if (field === 'hidden') archivedNow = { ...archivedNow, [row.id]: next };
             else topNow = { ...topNow, [row.id]: next };
-            hold(key, 1);
+            writing.hold(key, 1);
             try {
                 const write = field === 'hidden' ? { hidden: next } : { top: next };
                 const answer = await deps.write(row.id, write);
                 if (answer.ok) return true;
-                if (writing[key] === 1) forget(field, row.id);
+                if (writing.count(key) === 1) forget(field, row.id);
                 return false;
             } finally {
-                hold(key, -1);
+                writing.hold(key, -1);
             }
         }
     };

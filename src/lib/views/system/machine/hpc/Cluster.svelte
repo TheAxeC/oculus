@@ -14,6 +14,13 @@
     // the payload names in `stale` carries its mark in its heading, and with no rows it draws its
     // heading and mark alone, whatever the status. Every press names this cluster, so a cancel or
     // a log reaches the job on the cluster its row came from.
+    //
+    // Both refresh controls carry the refresh glyph and turn while the HPC store's `refreshing`
+    // says a press of this cluster's refresh waits for its answer, so a press in the head whose
+    // poll then fails leaves the error box's retry turning until the answer. The read of a log is
+    // this section's own, and the log's tail turns while it runs: the answer of a read that a later
+    // one replaced, or whose box was closed while it ran, is dropped, a press while that log is
+    // read sends nothing, and a read that fails leaves the box saying so.
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Head from './Head.svelte';
@@ -44,14 +51,18 @@
     } = $props();
 
     const {
-        hpc: { command, jobLog }
+        hpc: { command, jobLog, refresh, refreshing }
     } = useState();
 
     /** Whether the queue on screen is this poll's, so the controls asking the cluster are live. */
     const live = $derived(queueIsCurrent(data));
+    /** Whether a press of this cluster's refresh waits for its answer. */
+    const turning = $derived(refreshing(data.resource));
     let logId = $state('');
     let logStatus = $state('');
     let logOutput = $state('');
+    /** Counts each log read and each close of the box; an earlier read's answer is dropped. */
+    let logAsk = 0;
 
     /**
      * The words of a failed poll, for the error box and the Login node section: the kind and the
@@ -80,24 +91,42 @@
         return t('hpc.resolution', read.hostname, read.user, read.port, keys);
     });
 
-    async function refresh(): Promise<void> {
-        await command({ action: 'refresh', resource: data.resource });
+    function refreshCluster(): void {
+        void refresh(data.resource);
     }
     async function cancel(id: string): Promise<void> {
         await command({ action: 'cancel', resource: data.resource, id });
     }
+    /**
+     * Read one job's log into the box. A press while that log is read sends nothing; the answer of
+     * a read that a later read or a close superseded is dropped; a read that rejects is shown as a
+     * failed read.
+     */
     async function showLog(id: string): Promise<void> {
+        if (id === logId && logStatus === 'loading') return;
+        logAsk += 1;
+        const ask = logAsk;
         logId = id;
         logStatus = 'loading';
-        const answer = await jobLog(data.resource, id);
+        let answer: { status: string; output: string };
+        try {
+            answer = await jobLog(data.resource, id);
+        } catch {
+            answer = { status: 'error', output: '' };
+        }
+        if (ask !== logAsk) return;
         logStatus = answer.status;
         logOutput = answer.output;
+    }
+    function closeLog(): void {
+        logAsk += 1;
+        logId = '';
     }
 </script>
 
 <section class="cluster" data-cluster={data.resource} aria-label={data.name}>
     <h3>{data.name}</h3>
-    <Head {data} onrefresh={refresh} />
+    <Head {data} refreshing={turning} onrefresh={refreshCluster} />
     {#if resolution !== ''}
         <p class="resolution">{resolution}</p>
     {/if}
@@ -106,7 +135,13 @@
     {:else if data.status !== 'ok'}
         <Empty error message={failureMessage(data)}>
             {#snippet action()}
-                <ToolButton small label={t('hpc.refresh_now')} onclick={refresh} />
+                <ToolButton
+                    small
+                    label={t('hpc.refresh_now')}
+                    glyph="refresh"
+                    {turning}
+                    onclick={refreshCluster}
+                />
             {/snippet}
         </Empty>
     {/if}
@@ -144,7 +179,7 @@
             status={logStatus}
             output={logOutput}
             onrefresh={() => showLog(logId)}
-            onclose={() => (logId = '')}
+            onclose={closeLog}
         />
     {/if}
     {#if data.host !== ''}
