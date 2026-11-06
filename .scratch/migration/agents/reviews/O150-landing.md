@@ -4,9 +4,7 @@ Position: roadmap entry "migration" (the oculus migration plan); step O150, the 
 
 ## Open items
 
-- Open item 701 (2026-11-06, O151's brief check, C-4): how the slides marked Too tall reach O151's builder. (a) Inside the build, before the review, repeated until none is marked (a resume outside the skill's round flow, needing Axel's yes); (b) in repair round 1 beside the review's findings. Recommended (a); (b) is the lazy option.
-- Open item 702 (2026-11-06, O151's brief check, C-6): the `cirrhosis-digital-twin` deck, whose idea comes from a proposal shared in confidence. (a) Name, stage and the manifest's facts not taken from the proposal; (b) the idea in Axel's words from the README's opening paragraph; (c) no deck. Recommended (a) until Axel says the idea may be shown.
-- Open item 703 (2026-11-06, O150's review over round 1): the engine slide's heading "Composable with constraints" over four settings, one of them no constraint. (a) Keep it; (b) "Composable with other settings"; (c) "Carried into new settings". Recommended (c).
+None.
 
 ## Check of Steps 1
 

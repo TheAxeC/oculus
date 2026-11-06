@@ -1,18 +1,20 @@
-In flight (4 of 6 slots in use):
-- O158 (the facts strip redesigned): gate passed; lands on Axel's word, open item 704.
-- O151 (a deck for every research project): building; open items 701 and 702.
-- O159 (one folder search per hub): /spec, brief check running.
-- O160 (Live HPC shows its refresh running): building.
+In flight (4 of 6 slots in use), nothing running, nothing starts without Axel's word:
+- O158 (the facts strip redesigned): gate passed; after O162, its look and screenshots to Axel.
+- O151 (a deck for every research project): builder stopped by Axel; a new builder, new brief.
+- O159 (one folder search per hub): prepared at cd7094304, worktree ready, no builder.
+- O160 (Live HPC shows its refresh running): builder stopped by Axel, partial work kept.
 
-Queued, in order (1):
-- O161 (cards drawn as they are seen): stopped at /spec, open item 705.
+Queued, in order (3):
+- O162 (the arrow-keys hint removed): /spec, before O158's look.
+- O163 (the hub's portfolio deck written again): /spec; before O151's Too tall pass and O159.
+- O161 (cards drawn as they are seen): 705 ruled (b); /spec again.
 
 Owed looks: none.
 
 Landed, newest first:
-- O150 (the hub's portfolio deck), 2026-11-06, 6bdef6d4d; hub commit on Axel's word.
+- O150 (the hub's portfolio deck), 2026-11-06, 6bdef6d4d; its hub changes are not on disk.
 - O157 (a slide laid out from its content), 2026-11-06, 61d4ac3af.
-- O155 (the deck order), 2026-11-06, 19b77017f; hub commit on Axel's word.
+- O155 (the deck order), 2026-11-06, 19b77017f; its hub change is not on disk.
 - O156 (one deck reader), 2026-11-06, 2fb7177ad.
 - O154 (the project board's filter on the Present view), 2026-11-06, 73f90f843.
 - O149 (the Decks guide), 2026-11-06, 4cf0df47b.

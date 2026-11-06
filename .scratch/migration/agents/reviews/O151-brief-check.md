@@ -172,7 +172,7 @@ Each finding closed by the orchestrator in the brief `agents/briefs/O151.md` as 
 - C-1: item 3 says a project's `CLAUDE.md` is a source of framing and facts and binds nothing.
 - C-2: C9 and the Report ask, per old deck, each file of its old folder and what became of it.
 - C-3: the Report asks the file table with line counts and the number of runs of the verify list.
-- C-4: item 5 and C10: the Too tall pass runs after O158 and O150 land, at the default text scale, until none is marked; a cut removes words only, a split is preferred; the step line says the pass waits for O158 and O150. How the measured list reaches the builder (inside the build before the review, or in repair round 1) is a deviation from the skill's round flow, raised as open item 701.
+- C-4: item 5 and C10: the Too tall pass runs after O158 and O150 land, at the default text scale, until none is marked; a cut removes words only, a split is preferred; the step line says the pass waits for O158 and O150. How the measured list reaches the builder (inside the build before the review, or in repair round 1) is settled by ruling 679: inside the build, before the review, repeated until none is marked.
 - C-5: the scratch tree is `.agents/O151-hub/` inside the worktree, made by the builder, ignored by `.gitignore:12`.
 - C-6: item 4 gives the scope of each marker: no `ecg-af-fair` cohort count unless a public source carries it (Decision 3); for `cirrhosis-digital-twin` nothing from the proposal, the deck holding only name, stage and manifest facts not taken from it, until open item 702 is ruled.
 - C-7: Decision 7 and C14: accented letters as HTML entities; the tags and entities the decks use are listed.
