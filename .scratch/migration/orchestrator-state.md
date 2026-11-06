@@ -53,8 +53,17 @@ dispatch:           # steps in flight, up to six (Z632)
   shared_paths: "docs/HELP.md with O158 (migration): O158 writes lines 341-347, O160 lines 359 and 363, so the two hunks do not touch"
   landing: not-started
 - step: O162
-  brief_check: "running: a782354b0336a03d9 (claude-opus-5-5)"
-  landing: preparing
+  base: 8a423feb3
+  worktree: .agents/worktrees/migration-O162
+  executor: agent
+  worker: claude:opus
+  session_id: aac46270be6d0de1c (claude-opus-5-5)
+  launched: 2026-11-06
+  report: .scratch/migration/agents/reviews/O162-report.md
+  round: 0
+  brief_check: .scratch/migration/agents/reviews/O162-brief-check.md (a782354b0336a03d9, claude-opus-5-5, 169025 tokens, 46 tool uses, 8.7 min)
+  shared_paths: "src/lib/views/academic/present/Slide.svelte, present.yml and docs/decks.md with O158 (migration): O162 lands first and O158's landing merges Slide.svelte by hand, removing the hint wording and the past room from O158's version; present.yml line 82 against O158's 95-105 and decks.md line 166 against O158's 383-393 do not touch"
+  landing: not-started
 - step: O163
   brief_check: "running: ad6ecc7ddb8993bc9 (claude-opus-5-5)"
   landing: preparing
