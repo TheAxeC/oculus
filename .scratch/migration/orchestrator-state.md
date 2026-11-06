@@ -32,6 +32,8 @@ dispatch:           # steps in flight, up to six (Z632)
   session_id: acf1b0553e05d698a (claude-opus-5-5)
   launched: 2026-11-06
   report: .scratch/migration/agents/reviews/O154-report.md
+  builder_usage: "first run, C13 handed back: 238149 tokens, 64 tool uses, 9.0 min"
+  cases_ruling: .scratch/migration/agents/briefs/O154-cases.md (C13, option (a))
   round: 0
   brief_check: .scratch/migration/agents/reviews/O154-brief-check.md (ab1987cb1fbaa184b, claude-opus-5-5, 220919 tokens, 68 tool uses, 12.6 min)
   landing: not-started
