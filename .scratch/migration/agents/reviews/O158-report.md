@@ -1,98 +1,186 @@
-# O158 report: handed back before any code change
+# O158 report, round 0 under ruling 699 (a)
 
-NOT done: nothing of the brief is built. The step is handed back before any code change, as the dispatch says for a case the brief's rules get wrong: under item 6's rules (two lines at most, whole facts only, the strip at `--slide-fs-small` (18 px), the 1150 px inner width, the labels of the shared catalog keys, a label at about 0.72em, a gap of about 1em, a value of at most about 14em), cases C1, C2, C3 and C4 do not give what they expect. The estimate below, from a case-run program calibrated against the brief's own measurement of the base, gives 13 of the 25 project decks hiding 34 facts; no setting of the three numbers inside the design reaches 0 hidden facts on every deck. The worktree is unchanged but for this report: `git status --short` prints `?? .scratch/migration/agents/reviews/O158-report.md` and nothing else.
+Everything in the brief is done, under the brief and its cases ruling `briefs/O158-cases.md` (ruling 699 (a): every fact drawn, the strip wrapping to as many lines as its facts need, no line limit). The fit of the strip on each deck is an estimate from a case-run program; the look on landing measures it.
 
 ## Open items of the state file, verbatim
 
 None.
 
-## The cases' first run, on the unchanged worktree
+## The cases' first run, on the unchanged tree, and the case the brief got wrong
 
-Each case read on the base, by the code and, for the fit cases, by the case-run program quoted at the end (an estimate; the look measures the truth).
+Read on the base before any change (each by the code; the fit cases by the case-run program at the end, whose base mode reproduces the brief's own measurement of the base: btfno 9, covert-applied 10, fed-multicellular-immune 10, covert-theory 8, hccnet-fl 7, hccnet-revision 5 hidden, with the fields the brief names; 16 of the 24 decks losing facts, the 8 small decks none; the venue hidden on 8 of the 24; the tier on 16 of the 24 against the loop's 15).
 
-- C1 (HCCNet, `hccnet-revision`). Base: `Facts.svelte:87-127` draws the stage as a filled `Chip` (`look: 'stage'`, `filled`, `:140-145`), the domain as a toned `Tag`, the rest as plain `Tag`s, each `'{0}: {1}'` (`present.yml:98`) with the list joined by ", " (`Facts.svelte:88`); no rule above the strip (`.facts` has no border, `Facts.svelte:159-171`; `.strip` only `padding-top: 1.2em`, `Slide.svelte:503-505`). The program's base mode reproduces the brief's 5 hidden facts exactly (venue, funding, compute, code, tier). Under the brief's rules the program gives 3 lines, 3 facts hidden: compute, code, tier. C1's "the venue, the funding, the compute, the code and the tier visible within two lines" does not hold: compute, code and tier are on the third line.
-- C2 (`btfno`). Base: 9 hidden (the program gives the same 9 fields the brief names). Under the brief's rules: 12 facts, 3 lines (1130 + 955 + 330 px), 2 hidden (reproduced, tier). Expected 0; does not hold.
-- C3 (`covert-applied`, `fed-multicellular-immune`). Base: 10 and 10 hidden (the program gives 10 and 10). Under the brief's rules: `covert-applied` 4 hidden (compute, code, reproduced, tier); `fed-multicellular-immune` 3 hidden (code, reproduced, tier). Expected 0; does not hold.
-- C4 (every project deck). Under the brief's rules: 13 of 25 decks hide 34 facts: `dongho-ecg-clustering` 3 (code, reproduced, tier), `hccnet-fl` 3 (compute, code, tier), `btfno` 2 (reproduced, tier), `bttd-source-eeg` 3 (code, reproduced, tier), `bttn-incident-af` 2 (reproduced, tier), `covert-applied` 4 (compute, code, reproduced, tier), `covert-theory` 2 (reproduced, tier), `dries-bttr-ecg` 2 (reproduced, tier), `fed-multicellular-immune` 3 (code, reproduced, tier), `hccnet-revision` 3 (compute, code, tier), `meseret-cirrhosis` 2 (reproduced, tier), `raw-pls` 3 (code, reproduced, tier), `ward-bttr-crosssubject` 2 (reproduced, tier). Expected 0 on each; does not hold. The room they lack: each of these decks needs a third line of 330 to 682 px.
-- C5 (`ssm-longitudinal`, 5 facts). Under the brief's rules: one line, 1085 px of 1150. The strip's list is laid out from the left with no justification (`Facts.svelte:173-187` today, and the redesign keeps a left-aligned flow). Holds.
-- C6 (`fed-faithful-ecg`, stage `failed`). The stage's words are its vocab label, "failed (no-go or disproved)" (`config/catalogs/vocab.yml:76`, `project-facts.ts:78-81`); its hue `stageTone('failed', hub)` (`tones.ts:256-258`, colour `#dc2626`). Base draws it as a filled chip in that hue. Under the brief's rules: a dot in that hue and the words. Holds; the deck fits one line (1123 px).
-- C7 (lists of one and of two). Base joins the words with ", " (`Facts.svelte:88`). Under the brief's rules a list of one draws its entry alone and a list of two its first entry and `+1`. Holds by construction.
-- C8 (tooltips). Base: `Tooltip text={shown ? one.text : ''}` with `one.text = t('present.fact', label, words.join(', '))` (`Facts.svelte:88`, `:136`). The redesign keeps the whole words in the tooltip. Holds.
-- C9 (toggle off). Base: `.hidden { visibility: hidden }` on `.facts` and `aria-hidden` (`Facts.svelte:132`, `:195-197`); the room is kept, so `Slide.svelte:213` measures the same foot. A rule drawn as `.facts`'s own top border is hidden with it. Holds.
-- C10 (text size 1.5; a 400 px frame). Text size 1.5 (27 px type) under the brief's rules: 18 of 25 decks hide, 113 facts in all. A 400 px frame (inner width 400 - 128 - 2 = 270 px): every deck hides, 194 facts in all. The case asks only for the counts; holds as a case.
-- C11 (themes). The tokens named (`--line`, `--muted-txt`, `--c-<tone>`, `--c-grey` at `tokens.css:56`) exist. Under the rice theme the face is the monospace one (`themes.css:85-86`) at 17 px; the program does not model it, and a monospace face is wider, so more facts hide there than in C4. Holds as a case.
-- C12 (other surfaces). Every surface draws `Slide.svelte`: `screen/Framed.svelte:51` (pane, presenter screen, Overview tiles), `routes/present/show/+page.svelte:276` (audience window), `routes/present/print/+page.svelte:190` (PDF). Holds.
-- C13 (a blocking chip not first). Base: `isBlocked({ chips: keys }, words)` over every chip gives `'red'` (`Facts.svelte:104-106`, `focus.ts:216-221`). Holds.
-- C14 (a word with no colour). `statusMarkTone` and `stageTone` give `UNKNOWN_TONE`, `'grey'` (`tones.ts:40`, `:258`, `:338`). Holds.
-- C15 (a first entry longer than the value's width). Base cuts the whole chip at the column (`Chip.svelte` `.label` ellipsis, `max-width: 100%`). Under the brief's rules the entry shrinks with an ellipsis and the count stays drawn. Holds by construction.
-- C16 (the split). `wc -l src/lib/views/academic/present/Slide.svelte` prints 539; `ls src/lib/views/academic/present/screen | wc -l` prints 7. Holds as a case.
+- C1 `hccnet-revision`. Base: the stage a filled `Chip`, the domain a toned `Tag`, the rest plain `Tag`s, each `'{0}: {1}'` with the list joined by ", " (`Facts.svelte:87-127`, `:140-145` on the base); no rule (`.facts` had no border; `.strip` only `padding-top: 1.2em`); 5 facts hidden (venue, funding, compute, code, tier).
+- C2 `btfno`: base 9 hidden. C3 `covert-applied` and `fed-multicellular-immune`: base 10 and 10 hidden.
+- C4: base, 16 of 24 decks hide facts.
+- C5 `ssm-longitudinal`: base one line, no fact hidden.
+- C6 `fed-faithful-ecg`: the stage words "failed (no-go or disproved)" (`config/catalogs/vocab.yml:76`), hue `stageTone` (`tones.ts:256-258`), drawn on the base as a filled chip.
+- C7: base joins a list with ", " (`Facts.svelte:88` on the base).
+- C8: base tooltip `t('present.fact', label, words.join(', '))`.
+- C9: base `.hidden { visibility: hidden }` and `aria-hidden`; the foot's room is measured either way (`Slide.svelte`, `kept = tall(foot)`).
+- C10: base counted hidden facts; the program gives the base 2 lines at most by the clamp.
+- C11: tokens `--line`, `--muted-txt`, `--c-<tone>`, `--c-grey` (`tokens.css:56`) exist; rice draws the monospace face at 17 px.
+- C12: every surface draws `Slide.svelte` (`screen/Framed.svelte:51`, `routes/present/show/+page.svelte:276`, `routes/present/print/+page.svelte:190`).
+- C13: base `isBlocked({ chips: keys }, words)` over every chip gives `'red'` (`focus.ts:216-221`).
+- C14: `statusMarkTone` and `stageTone` give `UNKNOWN_TONE`, `'grey'` (`tones.ts:40`, `:258`, `:338`).
+- C15: base cut a whole chip at the column's edge.
+- C16: `wc -l Slide.svelte` printed 539; `screen/` held 7 entries.
 
-## The case the brief's rules get wrong
-
-The rule: item 6, "The aim is that every fact that holds a value fits those two lines on every project deck of the research hub in its frame (1280 by 720 by default) at text size 1. To get there the strip takes the slide's whole inner width (... 1150 px ...), the label is set at about 0.72em, the gap between facts about 1em, and a value at most about 14em", with C1's list of visible facts, C2's and C3's "all drawn within two lines" and C4's "expected 0 on each".
-
-The result it gives (estimate): at 0.72em / 1em / 14em, 13 decks hide 34 facts. A 13-fact strip needs about 2500 to 2800 px of whole facts (each fact a label, a value and the gap to the next), and two lines of 1150 px hold 2300 px less what the wrap leaves at each line's end.
-
-How far the brief's three numbers can move it (the program, face factor 1.0, every other rule kept):
-
-| Label | Gap | Value cap | Decks hiding | Facts hidden |
-| --- | --- | --- | --- | --- |
-| 0.72em | 1em | 14em | 13 | 34 |
-| 0.72em | 1em | 10em | 13 | 25 |
-| 0.72em | 0.75em | 8em | 9 | 16 |
-| 0.65em | 0.75em | 8em | 7 | 11 |
-| 0.65em | 0.6em | 7em | 5 | 7 |
-| 0.6em | 0.6em | 7em | 2 | 2 |
-
-The last row sets the label at 10.8 px and cuts every value at 126 px ("submitted / under review" and every pillar title ellipsed), and still hides facts on 2 decks. No setting inside the design reaches 0.
-
-Options that change something the brief or a ruling holds fixed (the program's results):
-
-- (a) Build at the brief's numbers and report the hidden counts (13 decks, 34 facts). C4's own text allows "a deck that still hides a fact is named". This is the lazy option: item 6's aim, every fact seen, is left unmet.
-- (b) Tighten the numbers within the design (label 0.65em, gap 0.75em, value 8em): 7 decks, 11 facts hidden; labels at 11.7 px and values cut at 144 px, so the stage and the pillar titles are ellipsed on most decks.
-- (c) Three lines at most in place of two, at the brief's numbers: 0 decks, 0 facts hidden. Ruling 680 (`plan.md:3572`) says two lines, so this is Axel's. It costs the slide's content one more line of the strip (about 23 px at 18 px type) on decks with more than about 10 facts.
-- (d) A smaller strip type in place of `--slide-fs-small` (item 7 keeps it): 16 px gives 10 decks, 11 facts; 15 px gives 4 decks, 4 facts; 14 px gives 1 deck, 1 fact; 16 px with label 0.65em, gap 0.8em and value 10em gives 4 decks, 5 facts.
-- (e) Leave out the tier when it is the hub's unmarked default (`tiers.research: { label: Research, unmarked: true, default: true }`, `vocab.yml:249-252`), as an unmarked word is left off elsewhere; ruling 680 says each field that holds a value, so this is Axel's. At the brief's numbers: 13 decks, 21 facts; with label 0.65em, gap 0.75em, value 10em: 8 decks, 8 facts (reproduced on 7, code on 1).
-
-Recommendation (a judgment): (c), three lines at most at the brief's numbers. It is the only option the estimate gives every fact seen on every deck while the labels stay readable and the values whole; its cost is one strip line of room on the larger decks, which the slide's fit search absorbs by drawing the content a little smaller. The lazy option is (a).
-
-What would settle the estimate: the look on the scratch server at main's head, counting `[data-fact]` items below the strip as the brief's loop did. The program's base mode reproduces that loop's figures for the base: btfno 9, covert-applied 10, fed-multicellular-immune 10, covert-theory 8, hccnet-fl 7, hccnet-revision 5 hidden, each with the same fields the brief names; 16 of the 24 decks losing facts and the 8 small decks losing none; venue hidden on 8 of the 24. The one difference is the tier, hidden on 16 of the 24 by the program and on 15 by the loop.
+The case the brief got wrong, handed back before any change: under item 6's two-line limit at the brief's sizes, C1 to C4 could not hold (13 decks hiding 34 facts by the estimate). The orchestrator's ruling, from `briefs/O158-cases.md`: Axel's ruling 699 (a), the strip shows every fact at the brief's sizes and wraps to as many lines as it needs, with no line limit; C1 to C4 expect 0 hidden; C10 reports line counts; the report names how the strip's height reaches the layout and which decks lose room; the docs and every "two lines" about the strip are changed.
 
 ## DONE / NOT DONE
 
 | Item | State | Proof |
 | --- | --- | --- |
-| 1 to 11 of "What to build" | NOT DONE | handed back before any change; `git status --short` prints only `?? .scratch/migration/agents/reviews/O158-report.md` |
-| Verify 1 (`npm run diagrams && npm run docs:palette`, `npm run test:quick`) | NOT RUN | no change to verify; the list was run 0 times; no whole-suite command was run |
-| Verify 2 to 8 | NOT RUN | no change to verify |
+| 1 One visual language | DONE | `Facts.svelte`: no `Chip`, `Tag` or glyph import (`grep -n "Chip\|Tag\|Glyph" src/lib/views/academic/present/parts/project/Facts.svelte` prints nothing); label, dot, value as text nodes; the accessible phrase from `present.fact`; the look |
+| 2 Hues as dots | DONE | `toneOf` in `Facts.svelte`; `Dot.svelte` `--dot-size`, default 9 px; head comment names the strip; the look |
+| 3 Facts set apart | DONE | `.list` `gap: 0.2em var(--fact-gap)` with `--fact-gap: 1em`; `.drawn` `gap: 0.4em` and `white-space: nowrap`; the look |
+| 4 Rule above the strip | DONE | `.facts` `border-top: 1px solid var(--line)`, `padding-top: 0.6em`; `.strip` padding kept; the look |
+| 5 Short values | DONE | `fact_count: '+{0}'` and `fact_more: '{0} +{1}'` in `present.yml`; `.value` `max-width: var(--fact-value)` (14em); `.count` `flex: none`; the look |
+| 6 Every fact seen (as ruled) | DONE | no clamp in `Facts.svelte` (`grep -n "clamp" src/lib/views/academic/present/parts/project/Facts.svelte` prints nothing); the program gives 0 hidden on 25 decks; the look |
+| 7 Kept as it is | DONE | `FACT_FIELDS` order and `project-facts.ts` unchanged (`git status --short` lists neither); `.hidden { visibility: hidden }` kept; `font-size: var(--slide-fs-small)` outside `.slide-fit`; the look |
+| 8 Themes | DONE | colours only from tokens (`--line`, `--muted-txt`/`--muted`, `--c-<tone>`); the look |
+| 9 Docs and comments | DONE | the list below |
+| 10 No new test; existing tests pass | DONE | `npx vitest run tests/checks/config/config-folder.test.ts tests/checks/source/keys.test.ts tests/checks/tree/size.test.ts --reporter=dot` prints `Tests  48 passed \| 2 skipped (50)` |
+| 11 Slide.svelte split | DONE | `wc -l`: `Slide.svelte` 484, `screen/drawn-slide.ts` 81 |
+| Verify 1 | DONE | `npm run diagrams && npm run docs:palette` exit 0; `npm run test:quick` prints `test:quick: 62.3 s; every command passed` |
+| Verify 3 ASCII gate | DONE | the perl gate over `src tests utils config` prints nothing; the same over every touched file prints nothing |
+| Verify 4 sizes | DONE | `wc -l` below, each under its limit |
+| Verify 5 unused exports | DONE | `diff .agents/worktrees/O158-base/unused-exports.txt <(sh utils/unused-exports.sh)` prints nothing: the step adds no line |
+| Verify 6 folders | DONE | `sh utils/folder-check.sh` prints nothing, exit 0; `ls src/lib/views/academic/present/screen \| wc -l` prints 8 |
+| Verify 7 history words | DONE | below |
+| Verify 8 prose | DONE | below |
+
+The list `npm run test:quick` ran twice. The first run was red on one line in `tests/checks/tree/boundaries.test.ts:478`, caused by a file the step changed: `"views/academic/present/parts/project/Facts.svelte styles .dot of ui/menu/MenuList.svelte, ui/tabs/TabFace.svelte through .drawn > :global(.dot)"`. The dot's centring is now on a span of `Facts.svelte`'s own (`.mark`), `npx vitest run tests/checks/tree/boundaries.test.ts --reporter=dot` printed `Tests  11 passed (11)`, then `npm run diagrams && npm run docs:palette` and the list ran once more. Its final lines:
+
+```
+ok      prettier (1.2 s): All matched files use Prettier code style!
+ok      ASCII gate (1.2 s)
+ok      svelte-kit sync (2.5 s)
+ok      eslint (16.4 s)
+ok      svelte-check (16.9 s): 1793984532097 COMPLETED 584 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest (25.3 s): Duration  6.13s (transform 4.56s, setup 0ms, import 9.72s, tests 1.39s, environment 1ms)
+ok      vitest slow (30.9 s): Duration  11.73s (transform 3.92s, setup 0ms, import 6.22s, tests 5.29s, environment 0ms)
+ok      vitest checks (59.6 s): Duration  40.10s (transform 15.43s, setup 0ms, import 34.46s, tests 57.29s, environment 3ms)
+test:quick: 62.3 s; every command passed
+test:quick: not covered: tests that reach no changed file within the import depth,
+            other than the checks under tests/checks/source and tests/checks/tree,
+            which run for any change under src, tests or utils; the build, the lint
+            of unchanged files
+```
+
+No whole-suite command was run. The step adds and changes no test. Verify 2's grep, `grep -rln "Facts.svelte\|Slide.svelte\|Dot.svelte\|views/academic/present.yml\|present\.fact\|drawn-slide" tests`, prints `tests/checks/config/config-folder.test.ts` alone.
 
 ## Files
 
-`git status --short` prints `?? .scratch/migration/agents/reviews/O158-report.md` and nothing else: no tracked file changed. This report is the one file written, `.scratch/migration/agents/reviews/O158-report.md`, which is on the write list.
+`diff -rq` against `.agents/worktrees/O158-base` over `src`, `config`, `tests`, `utils` (the base copy holds no `docs`; those are from `git diff --stat`):
 
-## Visible changes
+| Path | Lines now | Note |
+| --- | --- | --- |
+| `src/lib/views/academic/present/Slide.svelte` | 484 | was 539 |
+| `src/lib/views/academic/present/screen/drawn-slide.ts` | 81 | new, from the split |
+| `src/lib/views/academic/present/parts/project/Facts.svelte` | 246 | was 198 |
+| `src/lib/views/academic/present/parts/Dot.svelte` | 36 | |
+| `config/text/views/academic/present.yml` | 154 | 2 lines added at 100-101 |
+| `docs/decks.md` | | 8 lines changed (386-389, 395) |
+| `docs/HELP.md` | | 8 lines changed (342-345, 349) |
+| `docs/diagrams/layer-views.dot`, `.svg`, `layers.dot`, `.svg` | | by `npm run diagrams` ("views to ui" 1102 to 1100, and the views graph) |
+| `.scratch/migration/agents/reviews/O158-report.md` | | this report |
 
-None.
+Every path is on the write list. `docs/decks.md` runs to line 395 and `docs/HELP.md` to 349 now because the strip section grew by two bullets each; the lines changed are the section's of the brief's ranges.
+
+## The split of Slide.svelte (item 11)
+
+- Moved to `screen/drawn-slide.ts`, unchanged in code and comments: the type `Drawn` and `figuresIn`, `holderOf`, `frameOf`, `gapOf`, `capTopOf`, `fitFormulas` (base `Slide.svelte:116-187`, now `drawn-slide.ts:10-81`), with `fitFormula`'s import (base `:49`, now `drawn-slide.ts:8`). `Slide.svelte:56-63` imports them. The module opens with its own head comment.
+- The search, the state it sets, the effects, the markup and the styles stay in `Slide.svelte`.
+- The root element is renamed with its new job: class `reading` to `slide`, variable `reading` to `slide`, the local `column` in `layOutSlide` to `whole` (`Slide.svelte:136-143`). Its identity is unchanged (the same element, the frame's child, `data-slide-key` on it), so `parentElement`, the scale and the Stage's measure read what they read on the base.
+
+## How the strip reaches the whole inner width, and the layout (ruling item 4)
+
+- The root `.slide` takes the frame's inner box (`width: 100%`, no max width); `.content` carries the reading column (`width: 100%; max-width: var(--slide-reading); margin-inline: auto`); `.foot` spans the root, so the strip is 1150 px in a 1280 px frame and the content stays 1040. `.keys` takes `max-width: var(--slide-reading); margin: 0 auto`, so the key hint wraps in the 1040 px it had.
+- The strip's height reaches the layout through `layOutSlide`: `const kept = foot === null ? 0 : tall(foot);` and `const above = inner - kept - past;` (`Slide.svelte:154-155`); every fit and every figure box is measured against `above`. The layout runs again when the slide, the deck's frame or the strip's facts change (`$state.snapshot([row, deck.frame, held])`, `:301`), when the text size or the theme changes (the probe's ResizeObserver, `:328`), when a font loads (`:330`), and when an image loads or fails; these are every input of the strip's height. A taller strip leaves the content less room and the content never lies under it.
+- Room against today (estimate: today's two chip lines about 59 px as the brief gives, about 29.5 px for one; the new strip `n x 23.4 + (n - 1) x 3.6 + 10.8 + 1` px, the `.strip` padding the same in both):
+  - 3 lines, about 30 px less room: `dongho-ecg-clustering`, `hccnet-fl`, `btfno`, `bttd-source-eeg`, `bttn-incident-af`, `covert-applied`, `covert-theory`, `dries-bttr-ecg`, `fed-multicellular-immune`, `hccnet-revision`, `meseret-cirrhosis`, `raw-pls`, `ward-bttr-crosssubject` (13).
+  - 2 lines, about 3 px less: `ecg-af-fair`, `florank-personalization`, `hccnet-fl-sweden`, `hccnet-pathology`, `bt-operator-theory`, `ecg-readable-substrate` (6).
+  - 1 line where today took 1, about 6 px less: `clinical-ai-eval-artifacts`, `ssm-longitudinal` (2).
+  - 1 line where today took 2, about 24 px more: `fed-faithful-ecg`, `btd-autoencoder`, `fl-privacy-auditing`, `quantum-tensor-fl` (4).
+
+## Visible changes, for the look and Axel's screenshots
+
+Every view below is the Present pane at text size 1, base dark theme, 1280 by 720 frame, Project facts on, unless named.
+
+- C1 `hccnet-revision`, its project slide. Before: a filled blue pill "Stage: submitted / under review", a toned "Domain: Hepatology | imaging", run-on plain words, 7 of 12 facts on two lines, the second ending in an ellipsis, no rule. After: a 1 px rule in `--line` across 1150 px, then three lines of facts set 1em apart, each a muted capital label at 0.72em (STAGE, DOMAIN, PILLARS, DATASETS, LEAD, COLLABORATORS, YEAR, VENUE, FUNDING, COMPUTE, CODE, TIER) followed 0.4em later by its value in the text colour; a dot in the stage's hue between STAGE and "submitted / under review", a dot in the domain's hue between DOMAIN and "Hepatology | imaging"; LEAD "Axel Faes +1"; COLLABORATORS "<first entry> +2" (the brief saw "Maryam Amir Haeri" first); VENUE "Intell Med", FUNDING "ZonMw-AI-HCC", COMPUTE, CODE "deposited", TIER "Research" all drawn. No box, fill, border or glyph on any fact. Estimate: 3 lines (1047 + 953 + 467 px).
+- C2 `btfno`: 12 facts on 3 lines (1132 + 955 + 330 px), reproduced and tier on the third.
+- C3 `covert-applied`: 13 facts, 3 lines (1081 + 947 + 682). `fed-multicellular-immune`: 13 facts, 3 lines (1122 + 1034 + 473).
+- C4, each deck's line count by the estimate, 0 facts hidden on each: `fed-faithful-ecg` 1, `dongho-ecg-clustering` 3, `hccnet-fl` 3, `btd-autoencoder` 1, `clinical-ai-eval-artifacts` 1, `ecg-af-fair` 2, `fl-privacy-auditing` 1, `florank-personalization` 2, `hccnet-fl-sweden` 2, `hccnet-pathology` 2, `quantum-tensor-fl` 1, `ssm-longitudinal` 1, `bt-operator-theory` 2, `btfno` 3, `bttd-source-eeg` 3, `bttn-incident-af` 3, `covert-applied` 3, `covert-theory` 3, `dries-bttr-ecg` 3, `ecg-readable-substrate` 2, `fed-multicellular-immune` 3, `hccnet-revision` 3, `meseret-cirrhosis` 3, `raw-pls` 3, `ward-bttr-crosssubject` 3. The look counts `[data-fact]` items and the strip's lines per deck.
+- C5 `ssm-longitudinal`: one line from the strip's left edge, facts 1em apart, no stretched gaps (`.list` has no `justify-content`).
+- C6 `fed-faithful-ecg`: STAGE, a dot in the stage's hue (the stage's colour `#dc2626` is the value of `--c-red`, `tokens.css:27`, so a red dot is expected), "failed (no-go or disproved)".
+- C7: a lead of one person draws the name alone; `hccnet-revision`'s lead of two draws "Axel Faes +1".
+- C8: rest the pointer on C1's collaborators: the tooltip reads "Collaborators: " and every name joined by ", " as the manifest's records write them, accented letter included. A value cut by the 14em cap (the pillar titles on most decks, such as "Interpretable Structured-Tensor Methods" on `covert-applied`) ends in an ellipsis with "+1" after it, and its tooltip gives every title.
+- C9: toggle Project facts off on C1: the words and the rule vanish, the room stays, the slide's content and its Too tall state do not move; same with the presenter screen and the audience window open.
+- C10: text size 1.5 (27 px type): every fact drawn; line counts 2 on 7 decks, 3 on 5, 4 on 12, 5 on 1; the tallest `covert-applied`, 5 lines. In a 400 px frame (inner 270 px): every fact drawn, about one fact per line, a value wider than the room cut with an ellipsis; the tallest `dongho-ecg-clustering`, 13 lines, and the content's room correspondingly small (Too tall is expected there).
+- C11: C1's slide under base light, base dark, the rice theme and a high-contrast VS Code theme: labels in `--muted-txt`, dots in their hues, the rule in `--line`. Under rice the face is monospace at 17 px, wider, so the line counts can be one higher than C4's; the rice theme's brackets around each fact are gone (they were `Tag`'s, `rice.brackets`).
+- C12: the Overview's tile, the presenter screen, the audience window and the PDF of C1's slide draw the same strip. In a small tile the 1 px rule is scaled with the frame and may draw thinner than 1 px or fade.
+- C13 (read): `toneOf`'s `chips` case gives `'red'` when `isBlocked({ chips: fact.keys ?? [] }, words)` holds, over every chip, the first chip's hue otherwise.
+- C14 (read): a form, stage or chip word with no colour gets `'grey'` from `statusMarkTone` or `stageTone`; the dot draws `var(--c-grey)`.
+- C15 (read): `.value` is a flex box at most 14em; `.entry` has `min-width: 0`, `overflow: hidden`, `text-overflow: ellipsis`; `.count` is `flex: none`, so the entry gives way and the count stays.
+- C16: `wc -l` gives `Slide.svelte` 484 (limit 520), `drawn-slide.ts` 81 (limit 880). Every surface draws the same slide: the content keeps 1040 px and its height above the foot; the look compares C1 and C12 with the base.
+- Also visible: the strip is wider than the content column (1150 against 1040) in a 1280 px frame, its left edge 55 px left of the content's; in a frame whose inner width is 1040 or less the two are as wide.
+- Screenshots for Axel: C1's slide under the base dark theme; `btfno`; `covert-applied`; C1 with the toggle off; C1 under the rice theme.
 
 ## Comments and docs
 
-None changed; none read against a change.
+- `Facts.svelte` head comment and CSS comments: rewritten.
+- `Slide.svelte` head comment, first paragraph (the slide and its reading column): rewritten; second paragraph (the fit search): still true, one sentence added naming `screen/drawn-slide.ts`; third paragraph (the foot, the strip, the key hint): rewritten; the comments on `.slide`, `.content`, `.foot` and `.keys`: rewritten; `past`'s doc comment and the comment in `layOutSlide` on the key hint: "column's foot" to "slide's foot".
+- `Dot.svelte` head comment: rewritten, names the strip and `--dot-size`.
+- `screen/drawn-slide.ts`: new head comment; the doc comments of the moved functions: still true, moved unchanged.
+- `docs/decks.md` "The project facts strip" (386-389) and the placeholder paragraph (395): rewritten; 385 and 390-391: still true. `docs/decks.md:166` ("the project facts strip keeps its own size"): still true.
+- `docs/HELP.md` 342-345 and 349: rewritten; 341, 346-348: still true.
+- Still true, read: `screen/Stage.svelte:16-22` (the strip counted, its room kept with the toggle), `screen/Framed.svelte:13-15`, `Present.svelte:70-74`, `themes/slide.css:1-15` (the reading column at most 1040 px; the foot at the factor 1), `routes/present/print/+page.svelte:20-24`, `config/text/views/academic/present.yml` `facts_tip`.
+- The "two lines" grep, `grep -rn -i "two lines" src tests config docs README.md --exclude=local.yml`, gave four hits about the strip, `Facts.svelte:11`, `Facts.svelte:158`, `docs/HELP.md:343` and `docs/decks.md:387`, all four rewritten. Run again, its hits about the strip are only the new sentences `Facts.svelte:22` and `docs/decks.md:389` (a fact is never broken across two lines) and `Facts.svelte:157` (the gap between two lines); none states a line limit. `Slide.svelte`'s "two lines at most up to a text size of 1.6" is about the key hint and stays; the other hits are about other things (the board bars, folding, git parsing).
 
-## Judgment calls
+## The history-word grep (verify 7)
 
-None taken in code. Reading notes for the build once the orchestrator rules:
+Over every line the step added to `Slide.svelte`, `Facts.svelte` and `Dot.svelte` and the whole of `drawn-slide.ts`, `grep -n -i -E "\bbefore\b|used to|no longer|\bstill\b|always has been|always had|as before|previously|the step adds|after this package|O1[0-9][0-9]|20[0-9][0-9]-"` printed three hits, each "before" in the sense of place, none history:
 
-- The strip at the slide's whole inner width needs `Slide.svelte`'s root to span the frame's inner box and the content to keep the reading width: the foot sits inside `.reading`, which is at most `--slide-reading` (1040 px) wide (`Slide.svelte:473-483`), and no CSS length in the strip knows the frame's inner width. The plan was the root at 100% of the frame's inner box, `.content` at `width: 100%; max-width: var(--slide-reading); margin-inline: auto`, and `.keys` held to the same reading width so the key hint wraps as it does today.
-- The split of item 11 was planned as one new file, `screen/drawn-slide.ts`, holding the DOM measures `Slide.svelte:116-187` holds (`figuresIn`, `holderOf`, `frameOf`, `gapOf`, `capTopOf`, `fitFormulas`), about 70 lines out of `Slide.svelte`.
-- The accessible text was planned as a visually hidden copy of the fact in `present.fact`'s words, the drawn parts `aria-hidden`, so a reader of the page hears "Collaborators: Maryam Amir Haeri +2" whatever the browser does with the spaces between flex items.
+```
+61:>     // the stage, the status chips and the domain carry their hue as a dot before the value
+88:>         /** The hue of the dot before the value; none for a field that draws no dot. */
+141:>        label's size and the widest a value is drawn. The dot before a hued value is as wide as
+```
+
+## Prose (verify 8)
+
+Every new sentence in the comments, `docs/decks.md` and `docs/HELP.md` was read against the rules file's prose rule: ASCII, no em dash, no quip, no "not X but Y". No departure.
+
+## Judgment calls the brief left open
+
+- The numbers: the label at 0.72em of the strip's type (12.96 px at 18 px), letter spacing 0.04em, normal weight; the gap between facts 1em (18 px); the gap inside a fact 0.4em (7.2 px); the value cap 14em (252 px); the room between the rule and the first line 0.6em; the row gap 0.2em; the count 0.3em after the entry; the dot 0.5em (9 px at 18 px, the default size). They are the brief's sizes, which the ruling keeps, set as `--fact-label`, `--fact-gap`, `--fact-between`, `--fact-value` and `--dot-size` on `.facts`.
+- The order inside a fact is label, dot, value. Item 2 says a dot "before their value"; the brief's decision 1 lists "a dot in the stage's hue, STAGE, ..." with the dot first. Label, dot, value keeps every label at a fact's left edge and puts the hue against the word it colours; the orchestrator may reverse it.
+- The capitals are kept under the rice theme too (`ui/forms/Field.svelte` drops its capitals under rice; the brief names capitals without a theme exception).
+- The accessible phrase: each fact holds a visually hidden copy in `present.fact`'s words, the list shortened as drawn (`fact_more: '{0} +{1}'`: "Collaborators: Maryam Amir Haeri +2"), and the drawn label, dot and value are `aria-hidden`. Chosen over a hidden separator between label and value because whether a browser puts a space between two flex items in the text it reads is not fixed; the copy reads the same in each.
+- Two catalog keys: `fact_count: '+{0}'`, the count as drawn, and `fact_more: '{0} +{1}'`, the shortened value as read. Both have a reader in `Facts.svelte`; `tests/checks/source/keys.test.ts` passed in the list.
+- The form's and the chips' glyphs are dropped with the year, code, reproduced and compute glyphs, since every fact is drawn one way (item 2: "The other facts carry no dot and no glyph"; decision 2).
+- The dot's size is a CSS custom property, `--dot-size`, with `9px` as the fallback in `Dot.svelte`, in place of a component prop, so the strip sizes it in its own type without a px value in script.
+- The split's file: one new file, `screen/drawn-slide.ts`, named for what it holds.
+- The probe line (`.probe`, `max-width: 100%`) now measures against the slide's full width; it only signals a change of the body type's size, so the layout runs on the same events.
 
 ## Wrong or impossible in the brief
 
-Item 6's aim and the expectations of C1 to C4, as above: under the brief's rules they cannot all hold on the hub's decks. The 1150 px and the 18 px premises reproduce (`themes/slide.css:5`, `:21`, `:27`).
+- Item 6's two-line limit with the brief's sizes and C1 to C4's expectations, handed back before any change and ruled by 699 (a), as above.
+- Item 4 asked for the rule to be "inside `Facts.svelte`'s box"; with no clamp that is `.facts`'s top border, which `visibility: hidden` hides with the words.
+
+## Limitations and sharp edges
+
+- Every fit figure is an estimate from Helvetica's widths at face factor 1.0, calibrated against the brief's base measurement; the look measures the lines and the room.
+- The 13 decks of 12 to 14 facts take a third strip line and give their content about 30 px less room; a slide that just fitted can be drawn at a slightly smaller text factor, and one already near its least factor can become Too tall. The look should check the Findings view's Too tall list on those decks against the base.
+- In a 400 px frame or at large text sizes the strip takes many lines (13 on `dongho-ecg-clustering` in a 400 px frame), as the ruling's "as many lines as its facts need" gives.
+- The strip in a 1280 px frame is 110 px wider than the content column above it.
+- The accessible phrase is not exercised by any run; the look's accessibility tree shows it.
 
 ## The case-run program
 
-It ran from the scratchpad as `node strip-fit.mjs <worktree>` with the environment variables of each row (`FACE=1.0` on every row above; `TODAY=1 WIDTH=1040 GAP=0.35` for the base mode; `LINES=3` for option (c); `FS=` for option (d); `UNMARKED=1` for option (e); `WIDTH=270` and `FS=27` for C10). It reads the hub read only and writes nothing; it was removed from the scratchpad after this report was written. Collaborators are taken in the manifest's order, which can differ from the server's first entry; the widths of the first entries differ by a few px on the decks read. The run stripped accents with the combining range U+0300 to U+036F; the source below writes it as `\p{M}` to stay ASCII, which gives the same widths for the hub's names. Source:
+Run from the scratchpad as `node strip-fit.mjs <worktree>` with `FACE=1.0 LINES=99` for the line counts, `FS=27` for text size 1.5, `WIDTH=270` for the 400 px frame, and `TODAY=1 WIDTH=1040 GAP=0.35` for the base; it reads the hub read only, prints only, and was deleted from the scratchpad before this report was written. Collaborators are taken in the manifest's order. The accent stripping ran on the combining range U+0300 to U+036F, written here as `\p{M}` to stay ASCII. Source:
 
 ```js
 // Case-run program for C2-C5 and C7 of O158: reads each project deck's manifest of the research
@@ -121,7 +209,7 @@ const P = {
     capEm: Number(process.env.CAP ?? 14),
     face: Number(process.env.FACE ?? 1.05),
     dotEm: 0.5,
-    dotGap: 0.35,
+    dotGap: 0.4,
     moreGap: 0.3
 };
 
@@ -277,50 +365,36 @@ for (const folder of decks.sort()) {
 console.log(`decks ${decks.length}, facts hidden in all ${hiddenAll}`);
 ```
 
-Output at the brief's numbers (`FACE=1.0 node strip-fit.mjs <worktree>`, the `, cut ...` tail of each line left off):
+Output of `FACE=1.0 LINES=99 node strip-fit.mjs <worktree>` (each line's `, cut ...` tail left off):
 
 ```
-{"fs":18,"width":1150,"labelEm":0.72,"track":0.04,"labelGap":0.4,"factGap":1,"capEm":14,"face":1,"dotEm":0.5,"dotGap":0.35,"moreGap":0.3}
-fed-faithful-ecg: facts 5, lines 1 (1123 px), hidden 0
-dongho-ecg-clustering: facts 14, lines 3 (990 + 1046 + 473 px), hidden 3 [code, reproduced, tier]
-hccnet-fl: facts 13, lines 3 (1052 + 1075 + 453 px), hidden 3 [compute, code, tier]
-btd-autoencoder: facts 5, lines 1 (1094 px), hidden 0
-clinical-ai-eval-artifacts: facts 5, lines 1 (1024 px), hidden 0
-ecg-af-fair: facts 8, lines 2 (994 + 542 px), hidden 0
-fl-privacy-auditing: facts 5, lines 1 (1073 px), hidden 0
-florank-personalization: facts 6, lines 2 (1107 + 257 px), hidden 0
-hccnet-fl-sweden: facts 6, lines 2 (965 + 386 px), hidden 0
-hccnet-pathology: facts 5, lines 2 (1054 + 116 px), hidden 0
-quantum-tensor-fl: facts 5, lines 1 (1094 px), hidden 0
-ssm-longitudinal: facts 5, lines 1 (1085 px), hidden 0
-bt-operator-theory: facts 10, lines 2 (1115 + 836 px), hidden 0
-btfno: facts 12, lines 3 (1130 + 955 + 330 px), hidden 2 [reproduced, tier]
-bttd-source-eeg: facts 13, lines 3 (1080 + 1064 + 473 px), hidden 3 [code, reproduced, tier]
-bttn-incident-af: facts 13, lines 3 (1024 + 1113 + 330 px), hidden 2 [reproduced, tier]
-covert-applied: facts 13, lines 3 (1079 + 947 + 682 px), hidden 4 [compute, code, reproduced, tier]
-covert-theory: facts 12, lines 3 (1013 + 1018 + 330 px), hidden 2 [reproduced, tier]
-dries-bttr-ecg: facts 13, lines 3 (976 + 1055 + 330 px), hidden 2 [reproduced, tier]
-ecg-readable-substrate: facts 10, lines 2 (1059 + 829 px), hidden 0
-fed-multicellular-immune: facts 13, lines 3 (1120 + 1034 + 473 px), hidden 3 [code, reproduced, tier]
-hccnet-revision: facts 12, lines 3 (1045 + 953 + 467 px), hidden 3 [compute, code, tier]
-meseret-cirrhosis: facts 12, lines 3 (1089 + 950 + 330 px), hidden 2 [reproduced, tier]
-raw-pls: facts 13, lines 3 (1061 + 1049 + 473 px), hidden 3 [code, reproduced, tier]
-ward-bttr-crosssubject: facts 12, lines 3 (1129 + 1005 + 330 px), hidden 2 [reproduced, tier]
-decks 25, facts hidden in all 34
+{"fs":18,"width":1150,"labelEm":0.72,"track":0.04,"labelGap":0.4,"factGap":1,"capEm":14,"face":1,"dotEm":0.5,"dotGap":0.4,"moreGap":0.3}
+fed-faithful-ecg: facts 5, lines 1 (1125 px), hidden 0
+dongho-ecg-clustering: facts 14, lines 3 (993 + 1046 + 473 px), hidden 0
+hccnet-fl: facts 13, lines 3 (1055 + 1075 + 453 px), hidden 0
+btd-autoencoder: facts 5, lines 1 (1096 px), hidden 0
+clinical-ai-eval-artifacts: facts 5, lines 1 (1025 px), hidden 0
+ecg-af-fair: facts 8, lines 2 (996 + 542 px), hidden 0
+fl-privacy-auditing: facts 5, lines 1 (1075 px), hidden 0
+florank-personalization: facts 6, lines 2 (1109 + 257 px), hidden 0
+hccnet-fl-sweden: facts 6, lines 2 (966 + 386 px), hidden 0
+hccnet-pathology: facts 5, lines 2 (1055 + 116 px), hidden 0
+quantum-tensor-fl: facts 5, lines 1 (1096 px), hidden 0
+ssm-longitudinal: facts 5, lines 1 (1087 px), hidden 0
+bt-operator-theory: facts 10, lines 2 (1118 + 836 px), hidden 0
+btfno: facts 12, lines 3 (1132 + 955 + 330 px), hidden 0
+bttd-source-eeg: facts 13, lines 3 (1082 + 1064 + 473 px), hidden 0
+bttn-incident-af: facts 13, lines 3 (1026 + 1113 + 330 px), hidden 0
+covert-applied: facts 13, lines 3 (1081 + 947 + 682 px), hidden 0
+covert-theory: facts 12, lines 3 (1015 + 1018 + 330 px), hidden 0
+dries-bttr-ecg: facts 13, lines 3 (978 + 1055 + 330 px), hidden 0
+ecg-readable-substrate: facts 10, lines 2 (1061 + 829 px), hidden 0
+fed-multicellular-immune: facts 13, lines 3 (1122 + 1034 + 473 px), hidden 0
+hccnet-revision: facts 12, lines 3 (1047 + 953 + 467 px), hidden 0
+meseret-cirrhosis: facts 12, lines 3 (1091 + 950 + 330 px), hidden 0
+raw-pls: facts 13, lines 3 (1063 + 1049 + 473 px), hidden 0
+ward-bttr-crosssubject: facts 12, lines 3 (1131 + 1005 + 330 px), hidden 0
+decks 25, facts hidden in all 0
 ```
 
-Output of the option runs (each line: the variables, decks hiding, facts hidden):
-
-```
-LINES=3: 0 decks, 0 facts
-FS=16: 10 decks, 11 facts
-FS=16 LABEL=0.65 GAP=0.8 CAP=10: 4 decks, 5 facts
-FS=15: 4 decks, 4 facts
-FS=14: 1 decks, 1 facts
-WIDTH=270: 25 decks, 194 facts
-FS=27: 18 decks, 113 facts
-UNMARKED=1: 13 decks, 21 facts
-UNMARKED=1 LABEL=0.65 GAP=0.75 CAP=10: 8 decks, 8 facts
-```
-
-Base mode (`TODAY=1 WIDTH=1040 GAP=0.35 FACE=1.0`), the decks that hide: `dongho-ecg-clustering` 4, `hccnet-fl` 7, `florank-personalization` 2, `hccnet-fl-sweden` 1, `bt-operator-theory` 4, `btfno` 9, `bttd-source-eeg` 6, `bttn-incident-af` 5, `covert-applied` 10, `covert-theory` 8, `dries-bttr-ecg` 3, `ecg-readable-substrate` 1, `fed-multicellular-immune` 10, `hccnet-revision` 5, `meseret-cirrhosis` 4, `raw-pls` 5, `ward-bttr-crosssubject` 5; the 8 decks of 5 to 8 facts hide none.
+`FS=27`: line counts `7 lines 2`, `5 lines 3`, `12 lines 4`, `1 lines 5` (`covert-applied: facts 13, lines 5 (809 + 997 + 887 + 1144 + 174 px), hidden 0`), `decks 25, facts hidden in all 0`. `WIDTH=270`: `dongho-ecg-clustering: facts 14, lines 13`, `decks 25, facts hidden in all 0`.
