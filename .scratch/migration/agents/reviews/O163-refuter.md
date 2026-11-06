@@ -167,3 +167,8 @@ none. The prose read of the three drafts against the rules file's prose rule: th
 - The 1.3 s glob cost and any watcher behaviour of `projects/**/present`: outside this step (open item 697, step O159).
 
 Reviewer usage: aa3bb87266628f0f5, claude-opus-5-5, 170759 tokens, 49 tool uses, 17.4 min.
+
+## Closed
+
+- Proof 1 (the report's NOT DONE for item 8 and C12): closed at landing with no change. The fixture edit stands; the gate at 94cb4f3b6 ran `npm run diagrams && npm run docs:palette && npm run test:quick` to "test:quick: 63.2 s; every command passed", which covers the demo-reading tests of the changed fixture, and the reviewer's alone run of `tests/data/hubs/hub-portfolio.test.ts` passed 16 of 16. The builder's red runs were "Test timed out in 5000ms" under machine load, with no assertion failure.
+- Behaviour 1 (C5 and C6 given without their before): closed at landing by the look, which records both. C5, the stage `submitted`: before 18 slides and "11 of 24 shown" (the report's first-run section), after 13 slides and "11 of 25 shown", seen on the scratch server. C6, a search no project holds: before 7 slides and "0 of 24 shown", after 2 slides (title, closing) and "0 of 25 shown", seen on the scratch server.

@@ -1,4 +1,3 @@
-# Rules for what goes on a slide (a public artifact): public-safe only, every number real and matching the manuscript, never a null or negative result, no hedging (the slide's `tag` chip carries the status).
 deck:
     title: 'The demo hub, at a glance'
 

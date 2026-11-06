@@ -24,19 +24,6 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 
 ```yaml
 dispatch:           # steps in flight, up to six (Z632)
-- step: O163
-  brief_check: .scratch/migration/agents/reviews/O163-brief-check.md (ad6ecc7ddb8993bc9, claude-opus-5-5, 207946 tokens, 62 tool uses, 11.7 min)
-  base: 75bf4dd10
-  worktree: .agents/worktrees/migration-O163
-  executor: agent
-  worker: claude:opus
-  session_id: a298e389ab9f210ac (claude-opus-5-5)
-  launched: 2026-11-06
-  report: .scratch/migration/agents/reviews/O163-report.md
-  builder_usage: first run 255823 tokens, 100 tool uses, 25.4 min
-  reviewer_report: .scratch/migration/agents/reviews/O163-refuter.md (aa3bb87266628f0f5, claude-opus-5-5, 170759 tokens, 49 tool uses, 17.4 min)
-  round: 0
-  landing: not-started
 - step: O161
   brief_check: .scratch/migration/agents/reviews/O161-brief-check.md (ac24ce86435cfa7fd, claude-opus-5-5, 184834 tokens, 49 tool uses, 10.4 min)
   base: 75bf4dd10
@@ -870,6 +857,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-11-06 (O163 landed). O163, the hub's portfolio deck written again, landed (booking in `plan.md`, `agents/reviews/O163-landing.md`): the demo fixture's comment line on main, the hub's `deck/` and `README.md:60` changed on disk in the research hub, their commit waiting on Axel's word. O161's round-0 cases ruling to 713 (a) sent and its builder resumed after a network drop. O164's review over round 1 found nothing; /land O164 next. Open items: none. In flight (2 of 6): O161 (building), O164 (/land next). Queued: O165 (/spec now), O151 and O159 (/spec again now: O163 has landed), O166 (after O164).
 - 2026-11-06 (O158 landed). O158, the Project facts strip redesigned, landed (booking in `plan.md`, `agents/reviews/O158-landing.md`) on Axel's "I like O158", with the rule fix and the value cap removed. Axel ruled 713 (a), cheaper cards; O161's brief is rewritten to it next and its builder resumed. O164's review over round 1 runs (ab7bbaa55783b18d3). Open items: none. In flight (3 of 6): O163 (/land next), O164 (review over round 1), O161 (brief rewrite for 713 (a)). Queued: O151 (after O163), O159 (after O163), O165 (/spec now: O162 and O158 have landed), O166 (after O164).
 - 2026-11-06 (O158's look defects fixed; 713's options rewritten; O163 reviewed). O158's two defects are fixed in the gate in `src/lib/views/academic/present/parts/project/Facts.svelte`: the rule above the strip is drawn in a mix of the muted text colour and `--line` (rgb 100,100,100 under Dark Modern, where `--line` alone was #2b2b2b), and the 14em cap on a value is removed, so a value is cut only when its fact is wider than the strip's whole line; the look on 8797 over all 25 project decks: every fact drawn, none outside the strip, none cut, each deck's text factor equal to main's; screenshots in the scratchpad's `O158look/`; the gate run follows O164's builder's tests. Axel ruled Cmd+F unchanged, not negotiable, for 713; Lit Watch measured on 8797 (6.24 s to paint, one 5.90 s main-thread task, 50 ms of paint); 713's options rewritten from that. O163's review (`agents/reviews/O163-refuter.md`) found Proof 1 (the report's red for `hub-portfolio.test.ts` does not reproduce: 16 passed alone) and Behaviour 1 (C5 and C6 give no before in the look section), both closed at landing. Open items: 713. In flight (4 of 6): O158 (gate run, then its screenshots to Axel and /land), O163 (/land next), O164 (round 1), O161 (waits on 713).
 - 2026-11-06 (O164 round 1 sent; O158's look defects being fixed). Axel ruled that 714 is invalid: a look's defects are fixed, never put to him; the item is removed. O158's two defects seen at the look (the rule above the strip barely visible under Dark Modern; values cut at 14em, the stage of `btfno` and `bt-operator-theory` and the first pillar on 22 decks) are fixed in the gate at landing, then the look is taken again and the screenshots go to Axel. O164's review (`agents/reviews/O164-refuter.md`) found Standards 1, the press box written five times; repair round 1 (`agents/briefs/O164-round-1.md`) is sent to a133caba1cd51dad2. Open items: 713. In flight (4 of 6): O158, O163 (under review), O164 (round 1), O161 (waits on 713).
