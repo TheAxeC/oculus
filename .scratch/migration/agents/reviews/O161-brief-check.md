@@ -165,7 +165,7 @@ Usage: ac24ce86435cfa7fd, claude-opus-5-5, 184834 tokens, 49 tool uses, 10.4 min
 - C-7: the HELP.md path line names O158, O160 and O162.
 - C-8: item 1 keeps a drawn card by its stable identity; C9 adds Lit Watch with a paper added above the cursor.
 - C-9: C2 at reading speed with the scroll-bar drag; C2b for scrolling up after a jump.
-- C-10: item 4 and Decision 6 give the stand-in both sets of words, the words the view's search reads and the text the card's face draws, as Axel ruled under ruling 705; cases C3b (a word only on the face) and C3c (a word only the search reads) added.
+- C-10: item 4 and Decision 6 give the stand-in exactly the text the card's face draws, as Axel ruled (ruling 712 (a)), so Cmd+F finds what it finds today; cases C3b (a word only on the face: found) and C3c (a word only the search reads: no match, as today) added.
 - C-11: item 2 and C3, C4 name the app's find bar and the next Enter.
 - C-12: item 8 fixes the mark and requires the after time below the before time.
 - C-13: item 2 ignores a measurement of 0 and gives a first guess in `rem`; C13 for a background tab.

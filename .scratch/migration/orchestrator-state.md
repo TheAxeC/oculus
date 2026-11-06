@@ -69,8 +69,13 @@ dispatch:           # steps in flight, up to six (Z632)
   brief_check: .scratch/migration/agents/reviews/O161-brief-check.md (ac24ce86435cfa7fd, claude-opus-5-5, 184834 tokens, 49 tool uses, 10.4 min)
   base: 75bf4dd10
   worktree: .agents/worktrees/migration-O161
-  waits_on: open item 712
-  landing: preparing
+  executor: agent
+  worker: claude:opus
+  session_id: a336874264e7be26f (claude-opus-5-5)
+  launched: 2026-11-06
+  report: .scratch/migration/agents/reviews/O161-report.md
+  round: 0
+  landing: not-started
 - step: O164
   brief_check: .scratch/migration/agents/reviews/O164-brief-check.md (a7883a6fa8f16f8f4, claude-opus-5-5, 187199 tokens, 71 tool uses, 10.1 min)
   base: 75bf4dd10
@@ -222,13 +227,11 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
-- Open item 712 (2026-11-06), O161: a clash between two of Axel's words on the stand-in. Ruling 705: "The placeholder holds both sets of words", the words the view's search reads and the text the card's face draws. His later message: "CMD-F must essentially, work exactly like it works today with no change in behaviour". They differ on one kind of word only: a word the view's search reads that the card's face does not draw. On Lit Watch that is a project's key (`radar.ts:103` reads `project`, the card draws the project's title). Today Cmd+F finds no match for such a word. A stand-in that holds it gives a match, and the match goes away once the card is drawn, which is a change of behaviour. Every word the face draws is in both readings.
-  - (a) The stand-in holds exactly the text the card's face draws. Cmd+F then finds the same matches as today, with the same count and order; a search word the face also draws is still found. Pro: Cmd+F is unchanged. Con: a search-only word (a project key) is found by the view's search box only, as today. Recommendation: this.
-  - (b) The stand-in holds both sets. Pro: the literal words of ruling 705. Con: Cmd+F gains matches that vanish when the card is drawn, so Cmd+F does change.
-  - Lazy option: neither; both carry the same work.
-  O161's builder waits on this item.
+None.
 
 ## Closed items
+
+- Open item 712 (2026-11-06), closed by Axel the same day: (a), O161's stand-in holds exactly the text the card's face draws, so Cmd+F works exactly as today, as `plan.md` Rulings "Open item 712" says.
 
 - Open item 710 (2026-11-06), closed by Axel the same day: agreed, D1 to D7 as recommended, the project page's layout the model; step O166 after O164, as `plan.md` Rulings "Open item 710" says; removing "Referred to by" from the entry page alone was the lazy option.
 
@@ -885,6 +888,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-11-06 (O161 launched). Axel ruled open item 712 (a): O161's stand-in holds exactly the text the card's face draws, so Cmd+F works exactly as today (`plan.md` Rulings, the step line, the brief's items 2 and 4, Decision 6, case C3c). The ruled brief is copied into O161's worktree; its builder a336874264e7be26f runs on claude-opus-5-5 from base 75bf4dd10. Open items: none. In flight (5 of 6): O158, O162 (review over round 1), O163, O161, O164 (building). Next: /land O162 with its look on 8797, then O158's look.
 - 2026-11-06 (O160 landed). O160, Live HPC showing its refresh running, landed (booking in `plan.md`, `agents/reviews/O160-landing.md`). The gate worktree sits at main's head with O160 staged until the commit; the O158 gate state it held is in the scratchpad's `O160land/gate-O158-staged.patch`. The look server on 8797 runs from the gate. O162's repair round 1 is back (180077 tokens, 11 tool uses, 2.8 min); its review over the round is next. Open items: 712. In flight (5 of 6): O158, O162, O163, O161 (waits on 712), O164. Next: /refute O162 over round 1, then /land O162 with its look, then O158's look.
 - 2026-11-06 (O163, O161 and O164 briefs closed; O160 and O162 reviewed). Axel ruled 706 to 708, 710 and 711 (`plan.md` Rulings); ruling 705's line carries his words that the stand-in holds both sets of words, and O161's brief items 2 and 4, Decision 6 and cases C3b and C3c follow it. Steps O165 (the guides) and O166 (the record pages, after O164) are in the step list; `agents/spec.md:72` carries 711's D4 rule. O160's review (`agents/reviews/O160-refuter.md`) and O162's (`agents/reviews/O162-refuter.md`) are saved. O162's repair round 1 (`agents/briefs/O162-round-1.md`, snapshot `.agents/worktrees/migration-O162-round-1`, 15 paths) is sent to aac46270be6d0de1c. The builders of O163 (a298e389ab9f210ac) and O164 (a133caba1cd51dad2) run on claude-opus-5-5 from base 75bf4dd10. O161's worktree is made at 75bf4dd10; its builder waits on open item 712, Cmd+F unchanged against the stand-in's two sets of words. Next: O160's landing with its look; the review over O162's round. Open items: 712. In flight (6 of 6): O158, O160, O162, O163, O161, O164.
 - 2026-11-06 (O162 prepared; O160, O163 and O161 running). The scratch look server on 8797 is stopped; it is started again from the gate worktree when O158's look is due. The worktrees `migration-O151`, `migration-O159` and `O159-base` and the branches `migration-O151` and `migration-O159` are removed (`git worktree list` shows main, gate, migration-O158 and migration-O160). O162's brief check (a782354b0336a03d9) is closed in `agents/reviews/O162-brief-check.md`; its C-16 is open item 706. A new O160 builder (ab8a69fbb7ac9a0c1) runs in `migration-O160`; the brief checks of O163 (ad6ecc7ddb8993bc9) and O161 (ac24ce86435cfa7fd) run. In flight (5 of 6): O158 (gate passed; its look after O162), O160, O162, O163, O161. Queued: O151, O159. Open items: 706.

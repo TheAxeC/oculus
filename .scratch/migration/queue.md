@@ -2,7 +2,7 @@ In flight (5 of 6 slots in use):
 - O158 (the facts strip redesigned): gate passed; after O162, its look and screenshots to Axel.
 - O162 (the arrow-keys hint removed): review over repair round 1 running.
 - O163 (the hub's portfolio deck written again): building.
-- O161 (cards drawn as they are seen): worktree ready; builder waits on open item 712.
+- O161 (cards drawn as they are seen): building.
 - O164 (a card's links open their page): building.
 
 Queued, in order (4):
