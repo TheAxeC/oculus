@@ -50,7 +50,16 @@ dispatch:           # steps in flight, up to six (Z632)
   landing: not-started
 - step: O166
   brief_check: .scratch/migration/agents/reviews/O166-brief-check.md (af52cf6c33a07ae89, claude-opus-5-5, 267934 tokens, 87 tool uses, 13.2 min)
-  landing: preparing
+  base: feb1d1354
+  worktree: .agents/worktrees/migration-O166
+  executor: agent
+  worker: claude:opus
+  session_id: ae67fca9ae879a854 (claude-opus-5-5)
+  launched: 2026-11-06
+  report: .scratch/migration/agents/reviews/O166-report.md
+  round: 0
+  landing: not-started
+  shared_paths: "src/lib/views/shared/card/record/RecordCard.svelte and src/lib/views/boards/projects/Projects.svelte with O161 (O161 changes the grid call and the card's build; O166 the page's foot strip, a registration beside :18-27 and the live ids beside :155-172), judged simple to merge; src/lib/ui/controls/heads/GroupHead.svelte lines 64-82 with O161's lines 49-57, no overlap"
 - step: O151
   brief_check: .scratch/migration/agents/reviews/O151-brief-check.md (af22dc2fbdb77b4ae, claude-opus-5-5, 211381 tokens, 60 tool uses, 16.4 min)
   base: 74deadb1f
