@@ -1,5 +1,5 @@
 In flight (2 of 6 slots in use):
-- O148 (the Project facts strip), builder resumed with the cases ruling (C15's person row, the deck route's domain fix).
+- O148 (the Project facts strip), refuted; repair round 1 sent (agents/briefs/O148-round-1.md).
 - O150 (the hub's portfolio deck), built inline in the hub (uncommitted there), refuted over round 1; its landing waits on Axel's rulings of open items 689 (engine.md's sentence), 690 (the failed deck in the public deck) and 691 (a summary slide), each of which may change the hub files, and on his word for the hub commit.
 
 Queued, in order (2 steps):
