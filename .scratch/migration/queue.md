@@ -1,7 +1,7 @@
 In flight (6 of 6 slots in use):
 - O158 (the facts strip redesigned): gate passed; after O162, its look and screenshots to Axel.
 - O160 (Live HPC shows its refresh running): reviewed; landing next.
-- O162 (the arrow-keys hint removed): reviewed; repair round 1 (Help's deck keys) next.
+- O162 (the arrow-keys hint removed): repair round 1 (Help's deck keys) running.
 - O163 (the hub's portfolio deck written again): brief closed; builder launch next.
 - O161 (cards drawn as they are seen): brief closed; builder launch next.
 - O164 (a card's links open their page): brief closed; builder launch next.

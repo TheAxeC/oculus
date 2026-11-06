@@ -64,7 +64,8 @@ dispatch:           # steps in flight, up to six (Z632)
   report: .scratch/migration/agents/reviews/O162-report.md
   builder_usage: first run (170909 tokens, 65 tool uses, 11.4 min)
   reviewer_report: .scratch/migration/agents/reviews/O162-refuter.md (ae429b8f2a3648ec4, claude-opus-5-5, 184967 tokens, 35 tool uses, 8.2 min)
-  round: 0
+  round: 1
+  round_brief: .scratch/migration/agents/briefs/O162-round-1.md
   brief_check: .scratch/migration/agents/reviews/O162-brief-check.md (a782354b0336a03d9, claude-opus-5-5, 169025 tokens, 46 tool uses, 8.7 min)
   shared_paths: "src/lib/views/academic/present/Slide.svelte, present.yml and docs/decks.md with O158 (migration): O162 lands first and O158's landing merges Slide.svelte by hand, removing the hint wording and the past room from O158's version; present.yml line 82 against O158's 95-105 and decks.md line 166 against O158's 383-393 do not touch"
   landing: not-started
