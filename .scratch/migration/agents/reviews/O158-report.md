@@ -114,7 +114,7 @@ Every path is on the write list.
   - 2 lines, about 3 px less: `ecg-af-fair`, `florank-personalization`, `hccnet-fl-sweden`, `hccnet-pathology`, `bt-operator-theory`, `ecg-readable-substrate` (6).
   - 1 line where today took 1, about 6 px less: `clinical-ai-eval-artifacts`, `ssm-longitudinal` (2).
   - 1 line where today took 2, about 24 px more: `fed-faithful-ecg`, `btd-autoencoder`, `fl-privacy-auditing`, `quantum-tensor-fl` (4).
-- Unsettled until the look: run at face factors 0.95 and 1.05 (widths 5 percent narrower and wider), two decks change their count: `fed-faithful-ecg` (1 line at 0.95 and 1.0, 2 at 1.05; its line is 1125 of 1150 px) and `hccnet-pathology` (1 line at 0.95, 2 at 1.0 and 1.05). Every other deck keeps its count across 0.95 to 1.05; `ssm-longitudinal` (1087 px), `btd-autoencoder` and `quantum-tensor-fl` (1096 px) are the nearest one-line decks to a break.
+- Unsettled until the look: the face factor scales the glyph widths only, so 0.95 and 1.05 move a line by about 3 percent; run with the strip's width 5 percent narrower and wider (WIDTH 1095 and 1210 at FACE 1.0), six decks change their count: `fed-faithful-ecg` (2/1/1 lines at 1095/1150/1210 px), `btd-autoencoder` (2/1/1), `quantum-tensor-fl` (2/1/1), `hccnet-pathology` (2/2/1), `bt-operator-theory` (3/2/2) and `dries-bttr-ecg` (3/3/2). Each of the six is unsettled until the look; `ssm-longitudinal` (1087 px) is the next nearest one-line deck to a break.
 
 ## Visible changes, for the look and Axel's screenshots
 
