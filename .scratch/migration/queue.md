@@ -1,6 +1,6 @@
 In flight (2 of 6 slots in use):
 - O148 (the Project facts strip), builder resumed with the cases ruling (C15's person row, the deck route's domain fix).
-- O150 (the hub's portfolio deck), built inline in the hub (uncommitted there), /refute running; hub commit on Axel's word; open item 689 (engine.md's sentence) awaits his ruling.
+- O150 (the hub's portfolio deck), built inline in the hub (uncommitted there), refuted over round 1; its landing waits on Axel's rulings of open items 689 (engine.md's sentence), 690 (the failed deck in the public deck) and 691 (a summary slide), each of which may change the hub files, and on his word for the hub commit.
 
 Queued, in order (2 steps):
 - O149 (the Decks guide), after O148 lands.

@@ -225,3 +225,235 @@ none
 - Whether the bounded globs miss a research project placed deeper than `projects/<a>/<b>/<c>/<d>/` after O151. No such project exists today (depths 2, 3 and 4 only).
 
 Reviewer usage: a075435932da7fd20, claude-opus-5-5, 178571 tokens, 39 tool uses, 8 min 57 s.
+
+## Repair round 1, refuted
+
+```
+# Verify 1, 2 and 4, from ~/workspace/research-hub
+$ python3 -c "import yaml; yaml.safe_load(open('deck/present.yml'))"; echo "exit $?"
+exit 0
+$ LC_ALL=C perl -ne 'print "$ARGV:$.:$_" if /[^\x20-\x7E\n]/; close ARGV if eof' deck/present.yml deck/title.md; echo "exit $?"
+exit 0
+$ git status --short deck; echo "exit $?"
+ M deck/present.yml
+ M deck/title.md
+ D deck/transition.md
+exit 0
+
+# Verify 3, from /Users/axelfaes/workspace/oculus, Node v24.21.0 on PATH, output to my own file
+$ OCULUS_TEST_HUB=~/workspace/research-hub npx vitest run tests/checks/config/integrity.test.ts --reporter=verbose > <scratchpad>/O150-round1-refute/integrity.txt 2>&1; echo "exit $?"
+exit 0
+$ LC_ALL=C grep -a -E 'real hub|Test Files|Tests ' .../integrity.txt   (the check mark glyph written as <check mark>)
+ <check mark> |unit| tests/checks/config/integrity.test.ts > the real hub > validates with no findings 1238ms
+stdout | tests/checks/config/integrity.test.ts > the real hub > holds exactly what a second count of the tree finds
+ <check mark> |unit| tests/checks/config/integrity.test.ts > the real hub > holds exactly what a second count of the tree finds 373ms
+ <check mark> |unit| tests/checks/config/integrity.test.ts > the real hub > survives JSON.stringify and JSON.parse unchanged 20ms
+ <check mark> |unit| tests/checks/config/integrity.test.ts > the real hub > reads a deck out of every project that has a present/ folder, with no finding 189ms
+ <check mark> |unit| tests/checks/config/integrity.test.ts > the real hub > reads an equation out of every slide that writes one, as LaTeX that typesets 326ms
+ <check mark> |unit| tests/checks/config/integrity.test.ts > the real hub > reads the portfolio deck with every named deck found 81ms
+ <check mark> |unit| tests/checks/config/integrity.test.ts > the real hub > reads every project of the personal folder with no finding, each with the tier personal 1244ms
+ Test Files  1 passed (1)
+      Tests  14 passed (14)
+
+# The whole hub status (C4 and the report's Verify 4 row)
+$ git status --short
+ M .oculus/data/academic/funding.yml
+ M deck/present.yml
+ M deck/title.md
+ D deck/transition.md
+ M funding/2026-fwo-senior-transplant/RESEARCHQUESTIONS.md
+ M funding/2026-fwo-senior-transplant/proposal/proposal/figs/fig-concept.tex
+ M funding/2026-fwo-senior-transplant/proposal/proposal/form-fields.md
+ M funding/2026-fwo-senior-transplant/proposal/proposal/main.pdf
+ M funding/2026-fwo-senior-transplant/proposal/proposal/main.tex
+ M funding/2026-fwo-senior-transplant/proposal/proposal/main.tex.block-manifest.json
+?? funding/2026-fwo-senior-transplant/proposal/proposal/figs/fig-concept.tex.block-manifest.json
+?? funding/2026-fwo-senior-transplant/proposal/proposal/form-fields.md.block-manifest.json
+?? funding/2026-fwo-senior-transplant/proposal/proposal/reviews/
+exit 0
+$ cat <scratchpad>/O150-status-before.txt
+ M .oculus/data/academic/funding.yml
+ M funding/2026-fwo-senior-transplant/RESEARCHQUESTIONS.md
+?? funding/2026-fwo-senior-transplant/proposal/proposal/figs/fig-concept.tex.block-manifest.json
+?? funding/2026-fwo-senior-transplant/proposal/proposal/form-fields.md.block-manifest.json
+?? funding/2026-fwo-senior-transplant/proposal/proposal/reviews/
+$ stat -f '%Sm %N' -t '%Y-%m-%d %H:%M:%S' <the five extra funding paths> .../agents/reviews/O150-report.md
+2026-11-06 00:45:27 funding/2026-fwo-senior-transplant/proposal/proposal/figs/fig-concept.tex
+2026-11-06 00:46:05 funding/2026-fwo-senior-transplant/proposal/proposal/form-fields.md
+2026-11-06 00:58:15 funding/2026-fwo-senior-transplant/proposal/proposal/main.pdf
+2026-11-06 00:58:13 funding/2026-fwo-senior-transplant/proposal/proposal/main.tex
+2026-11-06 00:58:15 funding/2026-fwo-senior-transplant/proposal/proposal/main.tex.block-manifest.json
+2026-11-06 00:58:59 /Users/axelfaes/workspace/oculus/.scratch/migration/agents/reviews/O150-report.md
+(O150-round-1.md mtime 00:54; O150-status-after.txt 00:39:57 holds the five lines plus the three deck lines)
+
+# The round's delta
+$ diff -u <snapshot>/hub/deck/present.yml ~/workspace/research-hub/deck/present.yml; echo "exit $?"
+exit 0
+$ diff -u <snapshot>/hub/deck/title.md ~/workspace/research-hub/deck/title.md; echo "exit $?"
+exit 0
+$ diff -u <snapshot>/ledger/O150-report.md .scratch/migration/agents/reviews/O150-report.md
+(exit 1; the hunks read in full: open item 690 added, the first-run paragraph, the Files changed table, the C1 lists with their two commands, the look table, the quoted diff, the measured decision 2, the reworded visible changes)
+$ git diff 81bda1d59 -- .scratch/migration/choices.md   (in oculus)
+@@ -6046,5 +6046,5 @@ one line changed, 6049: "... one slide with a row per project (25 today, about 95 after O151), far past the frame, and the filter bar ..." to "... one slide with a row or card per project (25 today, about 95 after O151), and both were measured Too tall at 25 (a summary and a grid of `research` placed in the look's copy, O146's measure, 1280 by 720); filtered to the 11 submitted decks the summary fits and the grid stays Too tall, so a summary would draw only under a narrowing; ..."
+
+# The report's quoted commands
+$ git diff --stat e0d231cb0 -- deck   (hub)
+ deck/present.yml   | 45 +++------------------------------------------
+ deck/title.md      |  4 ++--
+ deck/transition.md |  6 ------
+ 3 files changed, 5 insertions(+), 50 deletions(-)
+$ wc -l deck/present.yml deck/title.md; git show e0d231cb0:deck/{present.yml,title.md,transition.md} | wc -l each
+15 / 8 ; 54 / 8 / 6
+$ (added and removed lines of present.yml, title.md from git diff e0d231cb0)
+3 42 2 2
+$ awk the report's ```diff block > report-diff.txt; git diff e0d231cb0 -- deck | grep -v -E '^(diff --git|index |deleted file mode)' > real-diff.txt; diff report-diff.txt real-diff.txt; echo "diff exit $?"
+diff exit 0
+$ <the report's find | python3 manifest command, written to my own folder>; echo "exit $?"
+exit 0
+$ <the report's node fs.globSync command, written to my own folder>; echo "exit $?"
+exit 0
+$ diff O150-glob.txt O150-manifests.txt; echo "diff exit $?"   (my two files)
+diff exit 0
+$ wc -l   -> 25 and 25
+$ diff <mine>/O150-manifests.txt <scratchpad>/O150-manifests.txt; echo "vs builder exit $?"
+vs builder exit 0
+$ git grep -n -E '...'   not run (Declined); the plain form:
+$ grep -rn -E --exclude=local.yml --exclude-dir=.git --exclude-dir=node_modules --exclude-dir=.venv --exclude-dir=venv '\{\{ *(pillars|more)\.count *\}\}|transition\.md|slides: *(pillars|more|ideas)|legend: *(pillars|more|ideas)' --include='*.md' --include='*.yml' --include='*.yaml' --include='*.txt' . ; echo "exit $?"
+exit 1
+$ sed -n 12p deck/engine.md
+Each of the next slides leads with the governing equation, then specs, method, and results.
+$ git log --oneline 57649a80d..81bda1d59 -- src config   not run (Declined); in its place:
+$ git diff --stat 81bda1d59 57649a80d -- src config; echo "exit $?"   (oculus)
+exit 0
+$ diff -r <scratchpad>/O150-deck-backup <copy>/deck; echo "diff backup-copy exit $?"
+diff backup-copy exit 0
+$ git show e0d231cb0:deck/<f> | cmp -s - <scratchpad>/O150r1/base-<f>   (each of the five)
+base-present.yml equals base / base-title.md equals base / base-transition.md equals base / base-engine.md equals base / base-closing.md equals base
+$ git show e0d231cb0:deck/title.md | diff - <copy>/deck/title.md
+3c3
+< kicker: Research portfolio | technical briefing | June 2026
+---
+> kicker: Research portfolio | technical briefing
+$ find <copy>/projects -name present.yml -path '*/present/*' | wc -l
+      25
+
+# The deck reader, run directly: <scratchpad>/O150-round1-refute/deck-read.ts, run with node from oculus. It builds the hub with tests/fixtures/hubs/hub-build.ts buildOneHub, maps the projects as src/lib/server/content/deck/read.ts:59-60 does (domain = domainIds[0]), and reads the deck with createReader as integrity.test.ts readDeck does; argument 3 keeps the research projects at one stage.
+$ node deck-read.ts ~/workspace/research-hub deck
+ms 62 state ok findings []
+slides 28 keep none
+group research count 25 members 25 kept 25 missing [] candidates 0 conflicts 0
+member research kept projects/archive/failed/fed-faithful-ecg/present | Keeping Federated Glass-Box ECG Models Honest
+... (25 member lines, in folder order: the 3 archive, the 9 ideas, the 13 manuscripts) ...
+3 text projects/archive/failed/fed-faithful-ecg/present/main.md | Keeping Federated Glass-Box ECG Models Honest
+4 project .../archive/published/2026/dongho-ecg-clustering/present/main.md
+5 project .../archive/published/2026/hccnet-fl/present/main.md
+6 to 14 idea, titles: BTD Autoencoder, Eval Artifacts, ECG-AF (FAIR), FL Privacy Audit, FLoRank Personalization, HCCNet FL Sweden, HCCNet Pathology, Quantum Tensor/FL, SSM Longitudinal
+15 to 27: bt-operator-theory, btfno, bttd-source-eeg, bttn-incident-af, covert-applied, covert-theory, dries-bttr-ecg, ecg-readable-substrate (text), fed-multicellular-immune, hccnet-revision, meseret-cirrhosis, raw-pls, ward-bttr-crosssubject
+28 closing deck/closing.md
+title legend ["heart","liver","method","meta","privacy","liverfl","brain"] lede "A shared thesis: clinical data is intrinsically <b>multi-way"
+$ node deck-read.ts ~/workspace/research-hub deck submitted
+ms 61 state ok findings []
+slides 14 keep 12
+group research count 11 members 25 kept 11 missing [] candidates 0 conflicts 0
+(3 to 13: the 11 submitted manuscripts' slides; 1 title, 2 engine, 14 closing)
+# The base deck, read from a scratch hub in my own folder (projects copied with the brief's rsync filter, 25 present.yml; deck/ from git show e0d231cb0)
+$ node deck-read.ts <mine>/basehub deck
+ms 34 state ok findings []
+slides 22 keep none
+group pillars count 7 members 7 kept 7 missing [] candidates 15 conflicts 0
+group more count 8 members 8 kept 8 missing [] candidates 8 conflicts 0
+group ideas count 9 members 9 kept 9 missing [] candidates 0 conflicts 0
+3 to 9 project (pillars), 10 summary deck/present.yml rows=7, 11 section deck/transition.md, 12 to 19 (more), 20 summary deck/present.yml rows=8, 21 grid deck/present.yml cards=9, 22 closing
+title legend ["liver","method","heart","brain"] lede "7 pillar projects and 8 more. A shared thesis: clinical data"
+$ node deck-read.ts <mine>/basehub deck submitted
+slides 18 keep 12; pillars count 5, more count 6, ideas count 0
+# Decision 2 at reader level: the step's deck plus `{ kind: summary, of: research }` and `{ kind: grid, of: research }`, in my own scratch hub
+$ node deck-read.ts <mine>/basehub deck-measure
+slides 30; 28 summary rows=25; 29 grid cards=25; findings []
+$ node deck-read.ts <mine>/basehub deck-measure submitted
+slides 16; 14 summary rows=11; 15 grid cards=11; findings []
+
+# C5
+$ python3 (os.walk over projects/, code/ skipped, tier research)
+research manifests 95
+depths Counter({2: 54, 4: 32, 3: 9})
+basename repeats []
+coauthor with deck []
+stages with deck {'submitted': 11, 'revision': 2, 'failed': 1, 'accepted': 2, 'nascent': 6, 'scoping': 2, 'exploring': 1}
+$ grep -n 'name_twice' src/lib/data/sources/deck/groups.ts
+101:            'findings.deck.name_twice',
+```
+
+### Verdicts
+
+The first report's findings, each against its ruling in `O150-round-1.md`:
+- P1: partly closed. Both commands are quoted (`O150-report.md`, C1's two lists). My rerun reproduces them: `diff exit 0`, 25 lines each, equal to the builder's file. The ruling also asks that C1 compare the manifest list "with the members the Overview draws, by name". The report names slides 3 to 14 and gives slides 15 to 27 only as "the thirteen manuscripts' decks in folder order". See P-r1-2. My reader run lists the 13 by path and title in folder order, so the membership holds.
+- P2 and B2: closed in the text. The report has a before and after table (16 and 16 marks, 164 and 164 findings, 148 at rest) and says the rows are the member decks', O151's to fix. The slide numbers in that table match my reader's numbering of both decks: base 3 to 9 and 12 to 19 are the 15 pillar and more slides and 21 is the grid; the step's 3 to 5 and 15 to 27 are 3 plus 13. The counts themselves need the browser (Declined). The sentence "no finding is on a file under `deck/`" is false of the base row; see P-r1-3.
+- P3: closed. The base reader has no idea slide, and slide 21 is `grid ... cards=9`.
+- P4: closed as ruled. `choices.md:6049` now states the measure in place of "far past the frame", and the reader gives 25 rows and cards unfiltered and 11 under `submitted`. The Too tall marks are Declined. The measured result raises Sp-r1-1.
+- P5: closed. The report says the copy was refreshed from the hub before the first run and that the backup is the copy's earlier state. That fits the backup's `title.md`, which lacks "| June 2026", and the round's base files `O150r1/base-*`, which each equal `git show e0d231cb0:deck/<f>`. The `diff -r` the first run quotes cannot be rerun, since the copy has been restored (Declined).
+- S1: closed. The quoted diff equals `git diff e0d231cb0 -- deck` once the header lines are taken out (`diff exit 0`).
+- S2: closed. The file table reproduces: 54 to 15, 8 to 8, 6 deleted, 3 added and 42 removed, and the stat line verbatim.
+- B1: closed as ruled. It is open item 690 at `orchestrator-state.md:192` and is in the report's Open items. The hub text is unchanged: `fed-faithful-ecg/present/main.md` still reads "In progress: real-hospital replication", and its stage is `failed`.
+
+No finding was closed by removing a check. The round did not change the hub: both snapshot diffs exit 0, and the hub's deck files date from 00:39, before the round was sent at 00:54. The round's change to the ledger stays within its seven items.
+
+Items of "What to build", over the whole diff since e0d231cb0:
+- 1, `deck/present.yml`: holds. `deck/present.yml:5-15` has one group, `research`, with the three globs, `tiers: [research]`, `discover: true`, `sort: folder` and no `slides:`. The order is `title.md`, `engine.md`, `{ slides: research }`, `closing.md`. Line 1 and `deck.title` are unchanged.
+- 2, `deck/title.md`: holds. Only `:4` (`legend: research`) and `:8` change, the counts dropped and the thesis sentence kept verbatim.
+- 3, `deck/transition.md` deleted: holds.
+- 4, the deck read with no finding: holds at reader level. Verify 3 is green, and the reader prints `state ok findings []`. The Present-view half is Declined.
+
+Cases:
+- C1: met. The reader holds 25 members, which equal the manifest enumeration by path, in folder order. Slide 3 is `archive/failed/fed-faithful-ecg`, the group count is 25 and the deck has 28 slides. The report's evidence for this case is P-r1-2.
+- C2: met. The integrity run is green, and the reader gives no finding of the deck or of any member. The Findings view is Declined.
+- C3: met at reader level. Under `submitted`, 11 of the 25 members are kept and the deck has 14 slides, the 11 sitting between engine and closing. The toolbar text is Declined.
+- C4: met. `git status --short deck` lists the three paths. The five lines the whole status gained since its first run are all under `funding/2026-fwo-senior-transplant/proposal/proposal/`, Axel's work outside `deck/`. The report's row on this is P-r1-1.
+- C5: met by reading and by the count. `projects/*/*/*/*/present` reaches `projects/coauthor/published/<year>/<p>/present`, `name_twice` is at `groups.ts:101`, the basenames repeat none, and no coauthor project has a deck.
+
+### Findings
+
+#### 1. Spec
+
+- Sp-r1-1. Place: `O150-report.md`, "Limitations and judgment calls", with `choices.md:6049`.
+  - Hunk: "Decision 2, measured: a summary and a grid of `research` ... are both Too tall unfiltered ...; with Stage `submitted` (11 decks) the summary fits and the grid stays Too tall. The deck drops both, so a summary would draw only under a narrowing".
+  - What is wrong: round item 4 says the deck stays as built "unless the measure contradicts decision 2, which then goes to Axel as an open item". The brief gives decision 2's ground as the overflow of "one summary or grid of every research project". The measure confirms that overflow only for the unfiltered deck. Ruling 678 hands every narrowing to the filter bar, and ruling 676 has the summary and grid slides "counting only what it keeps". In that filtered use the measure shows the summary fits, so it contradicts decision 2 there. The round kept the decision and booked no open item. My reader run reproduces the row counts behind this (25 unfiltered, 11 under `submitted`). Whether this counts as "contradicts" is a judgment, and Axel's ruling settles it.
+  - Failure scenario: Axel presents the submitted papers through the filter bar. The deck has no at-a-glance summary, although the base deck had two (slides 10 and 20) and an 11-row summary fits. Nobody asked him whether to drop it.
+
+#### 2. Proof
+
+- P-r1-1. Place: `O150-report.md`, the DONE / NOT DONE row "Verify 4", reworded in the round (C4's row cites it).
+  - Hunk: "the whole status is the first run's five lines plus those three".
+  - What is wrong: the rerun prints 13 lines. Five more paths under `funding/2026-fwo-senior-transplant/proposal/proposal/` are modified: `figs/fig-concept.tex` (mtime 00:45:27), `form-fields.md` (00:46:05), `main.tex`, `main.pdf` and `main.tex.block-manifest.json` (00:58:13 to 00:58:15). The report was written at 00:58:59 and the round sent at 00:54. The sentence was reworded in the round without the status being taken after the last change, which `spec.md`'s Report rule requires. The extra paths are outside `deck/`, so the step's own paths are still the three.
+  - Failure scenario: at the hub commit, the orchestrator expects the eight lines this row gives and finds 13. It must either rework out which change set is the step's, or take the row as proof that nothing else in the hub moved while Axel's funding files did.
+- P-r1-2. Place: `O150-report.md`, C1's lists, after the two commands.
+  - Hunk: "15 to 27 the thirteen manuscripts' decks in folder order".
+  - What is wrong: round item 1 asks for C1 "by name", and the report names only slides 3 to 14. The 13 manuscript members are counted, not named, so a reader cannot check the Overview against the manifest list for 13 of the 25.
+  - Failure scenario: a manuscript deck dropped by the reader and replaced by a second deck of another project still reads as "thirteen". My reader run shows that this has not happened today.
+- P-r1-3. Place: `O150-report.md`, the sentence under the Too tall table.
+  - Hunk: "The 16 findings over 148 are the "slide too tall" rows, each on its member deck's `present/main.md`; no finding is on a file under `deck/`."
+  - What is wrong: the table has two rows, and the sentence is true only of the step's deck. In the base row, one of the 16 marks is slide 21, the idea grid, whose `source.path` the reader gives as `deck/present.yml`. A too-tall finding is filed at `joinPath(dir, one.source.path)` (`src/lib/state/life/present.svelte.ts:505-507`), so that row of the base's 16 sits on `deck/present.yml`.
+  - Failure scenario: the look on landing opens the base deck for comparison, sees a "slide too tall" row on `deck/present.yml`, and finds it against the report's before figure.
+- P-r1-4. Place: `O150-report.md`, the look paragraph.
+  - Hunk: "the gate at 57649a80d, whose `src` and `config` equal the base's: `git log --oneline 57649a80d..81bda1d59 -- src config` prints nothing".
+  - What is wrong: that range lists the commits reachable from 81bda1d59 and not from 57649a80d. If 57649a80d descends from the base, the range prints nothing whatever the gate's `src` holds, so the quoted command does not test the claim. The claim itself holds: `git diff --stat 81bda1d59 57649a80d -- src config` prints nothing.
+  - Failure scenario: a later look on a gate that changed the deck reader quotes the same command, gets empty output, and records "equal to the base" falsely.
+
+#### 3. Standards
+
+none
+
+#### 4. Behaviour
+
+none new. B1 is booked as open item 690 and the `engine.md:12` sentence as open item 689. Both are Axel's to rule on and are repeated in the report's Open items.
+
+### Declined to judge
+
+- Everything seen on the scratch server on 8797: the 16 and 16 Too tall marks with their slide numbers, the findings counts of 148, 164 and 164, the Too tall marks of the measured summary and grid (unfiltered and under `submitted`), the nine idea slides drawing as not too tall, "Filtered: 11 of 25 decks" with "1 / 14", the Stage menu's "failed 1", the filter bar drawing, and the Overview reading "research 25" and "1 / 28". These need a server and a browser, which this review may not start. The reader-level counts behind them are reproduced above. The copy's `deck/` ctime of 00:57:57 is consistent with a restore at the end of a look inside the round's window, but it does not prove the look ran.
+- `git grep -n -E '\{\{ *(pillars|more)\.count *\}\}|transition\.md|slides: *(pillars|more|ideas)|legend: *(pillars|more|ideas)'` in the hub was not run, because `git grep` is outside the git commands this review may run. The plain `grep -rn` form exits 1. That `git grep` in `~/workspace/research-hub` would settle it.
+- `git log --oneline 57649a80d..81bda1d59 -- src config` was not run. Whether 57649a80d descends from 81bda1d59 is settled by `git merge-base --is-ancestor 81bda1d59 57649a80d` in oculus.
+- The first run's `diff -r ~/workspace/research-hub/deck <copy>/deck` "printed nothing" cannot be rerun, since the copy now holds the restored backup. The session's transcript at the first run would settle it.
+- Whether any of the five extra `funding/` paths in the status was written by the step. Their content is Axel's grant work outside the step's write list, and the session's transcript of the round would settle who wrote them.
+- Whether Sp-r1-1 counts as "contradicts decision 2" under round item 4 is a ruling for Axel.
+
+Reviewer usage: ad04d60608866efd6, claude-opus-5-5, 190711 tokens, 57 tool uses, 9 min 6 s.
