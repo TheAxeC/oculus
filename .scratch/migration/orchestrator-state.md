@@ -49,7 +49,7 @@ dispatch:           # steps in flight, up to six (Z632)
   round: 0
   landing: not-started
 - step: O166
-  brief_check: "running: af52cf6c33a07ae89"
+  brief_check: .scratch/migration/agents/reviews/O166-brief-check.md (af52cf6c33a07ae89, claude-opus-5-5, 267934 tokens, 87 tool uses, 13.2 min)
   landing: preparing
 - step: O151
   brief_check: .scratch/migration/agents/reviews/O151-brief-check.md (af22dc2fbdb77b4ae, claude-opus-5-5, 211381 tokens, 60 tool uses, 16.4 min)
