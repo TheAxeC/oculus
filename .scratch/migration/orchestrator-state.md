@@ -53,8 +53,17 @@ dispatch:           # steps in flight, up to six (Z632)
   brief_check: "running: a1e03b87281fab689 (claude-opus-5-5)"
   landing: preparing
 - step: O160
-  brief_check: "running: ab29e1d416fa5d19e (claude-opus-5-5)"
-  landing: preparing
+  base: 9ce4937ed
+  worktree: .agents/worktrees/migration-O160
+  executor: agent
+  worker: claude:opus
+  session_id: a09725d8f3259d142 (claude-opus-5-5)
+  launched: 2026-11-06
+  report: .scratch/migration/agents/reviews/O160-report.md
+  round: 0
+  brief_check: .scratch/migration/agents/reviews/O160-brief-check.md (ab29e1d416fa5d19e, claude-opus-5-5, 138617 tokens, 40 tool uses, 5.7 min)
+  shared_paths: "docs/HELP.md with O158 (migration): O158 writes lines 341-347, O160 lines 359 and 363, so the two hunks do not touch"
+  landing: not-started
 ```
 
 ## The standing demands (from Axel, in force)

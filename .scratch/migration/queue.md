@@ -2,7 +2,7 @@ In flight (4 of 6 slots in use):
 - O158 (the facts strip redesigned): gate passed; lands on Axel's word, open item 704.
 - O151 (a deck for every research project): building; open items 701 and 702.
 - O159 (one folder search per hub): /spec, brief check running.
-- O160 (Live HPC shows its refresh running): /spec, brief check running.
+- O160 (Live HPC shows its refresh running): building.
 
 Queued, in order (1):
 - O161 (cards drawn as they are seen): stopped at /spec, open item 705.
