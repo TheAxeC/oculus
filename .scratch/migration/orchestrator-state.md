@@ -47,7 +47,8 @@ dispatch:           # steps in flight, up to six (Z632)
   launched: 2026-11-06
   report: .scratch/migration/agents/reviews/O165-report.md
   builder_usage: 189316 tokens, 328 tool uses, 73.8 min
-  round: 0
+  reviewer_report: .scratch/migration/agents/reviews/O165-refuter.md (afbf839ba49f56236, claude-opus-5-5, 279824 tokens, 87 tool uses, 18.4 min)
+  round: 1 (agents/briefs/O165-round-1.md, sent 2026-11-07)
   landing: not-started
 - step: O166
   brief_check: .scratch/migration/agents/reviews/O166-brief-check.md (af52cf6c33a07ae89, claude-opus-5-5, 267934 tokens, 87 tool uses, 13.2 min)
