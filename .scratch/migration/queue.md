@@ -11,7 +11,7 @@ Owed looks: none.
 
 Landed, newest first:
 - O164 (a card's links open their page), 2026-11-06, 2ba2827a3.
-- O163 (the hub's portfolio deck written again), 2026-11-06, 6367eec0f; its hub files wait on Axel's word for their commit.
+- O163 (the hub's portfolio deck written again), 2026-11-06, 6367eec0f; its hub files committed in the hub as a7b8bb6ca.
 - O158 (the Project facts strip redesigned), 2026-11-06, ca24a1132.
 - O162 (the arrow-keys hint removed), 2026-11-06, f3ebd1fa5.
 - O160 (Live HPC shows its refresh running), 2026-11-06, eae89abbe.
