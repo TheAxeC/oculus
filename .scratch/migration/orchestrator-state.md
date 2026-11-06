@@ -196,9 +196,11 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
-- 700 (2026-11-06, the Lit-Watch measurement owed to Axel, `agents/reviews/owed-looks.md` "Taken"): Lit Watch takes about 7.7 s to show its papers on a page load, against 1.5 s for the shell, because the browser's main thread is blocked for 5.5 s in one frame while it builds the view, which draws all 678 papers' cards at once (39,956 elements; the likely cost, not profiled by function); the server and the radar file cost about 50 ms. (a) A step: Lit Watch draws the cards of the papers on screen and those just below, and the rest as they are scrolled to, with the bucket heads and their counts unchanged and a search still over every paper. Pros: the view shows at once, whatever the radar holds. Cons: one step; a find-in-page (Cmd+F) then sees only drawn cards, the view's own search still sees all. (b) Leave it. Cons: about 6 s of a frozen page each time Lit Watch is drawn, and more as the radar grows. Recommended (a); (b) is the lazy option.
+None.
 
 ## Closed items
+
+- Open item 700 (2026-11-06), closed by Axel the same day: (a), widened on his question ("maybe this can be a general thing, for any card drawing thing?") to the shared card grid `CardGrid.svelte`, through which the twelve card views draw; step O161, as `plan.md` Rulings "Open item 700" says.
 
 - Open items 697, 698 and 699 (2026-11-06), closed by Axel the same day, each (a), as `plan.md` Rulings says: 697 became step O159; 698 has O150's builder draft the deck's framing, its title included, the drafts going into the hub files at landing with his corrections; 699 lets the facts strip wrap to every fact, the two-line limit being the orchestrator's own words in open item 680's option and never his. His report of Live HPC's Refresh now with no sign of running became step O160.
 

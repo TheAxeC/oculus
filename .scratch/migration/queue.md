@@ -3,9 +3,10 @@ In flight (3 of 6 slots in use):
 - O150 (the hub's portfolio deck): repair round 1; hub commit on Axel's word.
 - O151 (a deck for every research project): brief check running.
 
-Queued, in order (2):
+Queued, in order (3):
 - O159 (one folder search per hub), after O150.
 - O160 (Live HPC shows its refresh running).
+- O161 (cards drawn as they are seen, in every card view).
 
 Owed looks: none.
 
