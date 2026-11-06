@@ -1,13 +1,14 @@
-In flight (0 of 6 slots in use): none.
+In flight (2 of 6 slots in use):
+- O158 (the facts strip redesigned): brief check running; design to Axel before it lands.
+- O150 (the hub's portfolio deck): brief check running.
 
-Queued, in order (3):
-- O158 (the facts strip redesigned), next; its design shown to Axel before it lands.
-- O150 (the hub's portfolio deck), worked again by a builder agent.
+Queued, in order (1):
 - O151 (a deck for every research project), worked again by a builder agent.
 
 Owed looks: none.
 
 Landed, newest first:
+- O157 (a slide laid out from its content), 2026-11-06, 61d4ac3af.
 - O155 (the deck order), 2026-11-06, 19b77017f; hub commit on Axel's word.
 - O156 (one deck reader), 2026-11-06, 2fb7177ad.
 - O154 (the project board's filter on the Present view), 2026-11-06, 73f90f843.
