@@ -1,11 +1,12 @@
 # O150 report
 
-NOT done: I have not counted the "slide too tall" findings per deck, which the cases ruling (point 2) asks for for the look. Only a drawn page measures them, and the rules file bars a builder from running one. The deck reader cannot measure height. The O157 landing look measured 16 of the 25 project decks Too tall (`agents/reviews/O157-landing.md:52`), and no file in this worktree names those 16. The look on landing counts them per deck; "Before and after, for the look", C1, gives the state and what to count. Everything else in the brief and the cases ruling is done.
+NOT done: I have not counted the "slide too tall" findings per deck. Only a drawn page measures them, and the repair brief's item 6 rules that the orchestrator counts them at the look on landing. "Before and after, for the look", C1, says what to count. Everything else in the brief, the cases ruling (`agents/briefs/O150-cases.md`) and repair round 1 (`agents/briefs/O150-round-1.md`, items 1 to 5) is done.
 
 ## Open items of the state file, verbatim
 
-- 697 (2026-11-06, O150's brief check): the hub's new portfolio deck finds its decks with `projects/**/present`, which must walk every folder under `projects/` (70,316 files); timed with `node -e` and `globSync` in the hub it takes 1319 ms, against 2 ms for the old `projects/*/*/present`. The deck reader keeps a glob only inside one reader (`src/lib/data/sources/deck/read.ts:217,347-362`), and a new reader is made for each snapshot build and each deck read of the Present view, a filter change included, so each of those would wait about 1.3 s. (a) A new step: the deck reader keeps a folder glob's matches per hub across readers and drops them when the file watcher sees a folder added, moved or removed under the glob's root. Pros: every depth stays covered, as the hub's `README.md:52` allows any depth of filing, and the cost is paid once. Cons: one more step, and a cache that must be cleared at the right moments. (b) Accept the 1.3 s on each snapshot build and each filter change. Pros: no work. Cons: the Present view's filter bar answers about a second late on this hub. Recommended (a); (b) is the lazy option. A list of today's three depths is not offered, since it misses a deck filed deeper, which the layout allows. O150 is built with `**` either way.
-- 698 (2026-11-06, O150's brief check): with every research deck placed, some of the deck's framing words no longer hold for all of them: the title slide's "A shared thesis: clinical data is intrinsically multi-way ... block-term tensor structure ...", the heading "The common engine" and "recurs across the portfolio" on the engine slide, and the kicker "June 2026". Three of the 25 decks (`clinical-ai-eval-artifacts`, `fl-privacy-auditing`, `ssm-longitudinal`) name no tensor or block-term word (`grep -c -i -E 'block-term|tensor|multi-way|BTD|Tucker'` gives 0). O150 keeps these words as they stand, and its builder drafts versions that hold for all 25 decks; both come to you with the landing's screenshots. (a) The drafted versions, as you correct them. Pros: the public deck claims only what each deck shows. Cons: the thesis line becomes less sweeping. (b) Your words as they stand. Pros: no change of the deck's voice. Cons: the title slide claims a shared thesis three decks do not share, and the kicker carries a past month. Recommended (a); (b) is the lazy option.
+Copied from `/Users/axelfaes/workspace/oculus/.scratch/migration/orchestrator-state.md`, section "Open items", as it stands while I write this. Items 697, 698 and 699 are ruled and closed there.
+
+- 700 (2026-11-06, the Lit-Watch measurement owed to Axel, `agents/reviews/owed-looks.md` "Taken"): Lit Watch takes about 7.7 s to show its papers on a page load, against 1.5 s for the shell, because the browser's main thread is blocked for 5.5 s in one frame while it builds the view, which draws all 678 papers' cards at once (39,956 elements; the likely cost, not profiled by function); the server and the radar file cost about 50 ms. (a) A step: Lit Watch draws the cards of the papers on screen and those just below, and the rest as they are scrolled to, with the bucket heads and their counts unchanged and a search still over every paper. Pros: the view shows at once, whatever the radar holds. Cons: one step; a find-in-page (Cmd+F) then sees only drawn cards, the view's own search still sees all. (b) Leave it. Cons: about 6 s of a frozen page each time Lit Watch is drawn, and more as the radar grows. Recommended (a); (b) is the lazy option.
 
 ## The cases' first run, on the hub's files as they stand
 
@@ -53,10 +54,10 @@ ward-bttr-crosssubject | files calibration_curve.png finger_spatial_maps.png mai
 
 ### The cases the brief's rules got wrong, and the rulings
 
-- Item 4 and C8. The rule asked for a sentence saying "each project's slides first giving its governing equation where it has one, then its specs, method and results", true for the 25 decks. The result: 11 of the 25 decks draw none of these. Nine are one `kind: idea` card each and two are one `kind: text` slide each (the listing above). Handed back before any change. The orchestrator's ruling (`agents/briefs/O150-cases.md`, point 1): the sentence names no count and claims no part a deck may lack. It says the slides that follow are the research projects' own decks, and that a project's slides give its governing equation, its specs, its method and its results where the project has them. It stays true for an idea card, a page of text, and any number of decks the filter keeps. Built so.
-- C1. The rule asked for "no deck finding under Findings". The result: the Present view lists each slide it has drawn taller than its frame under Findings (`docs/HELP.md:331`, `tallFindings` at `src/lib/state/life/present.svelte.ts:513-520`), and O157's look measured 16 of the 25 project decks Too tall. The orchestrator's ruling (point 2): C1 holds when the portfolio deck's state is `ok` and the reader raises no finding on its own files. The "slide too tall" findings on the project decks' own files are counted and named per deck for the look. Splitting or cutting those slides is O151's work.
-- C4. The brief listed in-flight as `bt-operator-theory, btfno (revision), ecg-af-fair (exploring)`. The reader places `ecg-af-fair` first, by the board's stage order. The orchestrator's ruling (point 3): the reader's order stands, and the brief listed membership only.
-- Item 7. The orchestrator's ruling (point 4): every `pillars` hit is judged. Done under "Item 7, the grep over oculus".
+- Item 4 and C8. The rule asked for a sentence saying "each project's slides first giving its governing equation where it has one, then its specs, method and results", true for the 25 decks. The result: 11 of the 25 decks draw none of these. Nine are one `kind: idea` card each and two are one `kind: text` slide each (the listing above). Handed back before any change. The cases ruling (point 1) says the sentence names no count and claims no part a deck may lack. Repair round 1 (item 2) adds that the claim about what a project's slides give is tied to the slides themselves. Built so.
+- C1. The rule asked for "no deck finding under Findings". The result: the Present view lists each slide it has drawn taller than its frame under Findings (`docs/HELP.md:331`, `tallFindings` at `src/lib/state/life/present.svelte.ts:513-520`), and O157's look measured 16 of the 25 project decks Too tall. The cases ruling (point 2): C1 holds when the portfolio deck's state is `ok` and the reader raises no finding on its own files. The "slide too tall" findings on the project decks' own files are counted per deck, and repair round 1 (item 6) makes that count the orchestrator's at the look.
+- C4. The brief listed in-flight as `bt-operator-theory, btfno (revision), ecg-af-fair (exploring)`. The reader places `ecg-af-fair` first, by the board's stage order. The cases ruling (point 3): the reader's order stands, and the brief listed membership only.
+- Item 7. The cases ruling (point 4): every `pillars` hit is judged. Done under "Item 7, the grep over oculus".
 
 ## DONE / NOT DONE
 
@@ -64,30 +65,32 @@ ward-bttr-crosssubject | files calibration_curve.png finger_spatial_maps.png mai
 |---|---|---|
 | 1. `deck/present.yml` rewritten | DONE | "Hub files" below. `node o150-cases.ts new o150-deck none`: `order entries file:title.md, file:engine.md, group:projects, file:closing.md`, `group projects: members 25, kept 25, count 25, missing [], conflicts 0, candidates 0`, `state ok, deck findings 0` |
 | 2. `deck/transition.md` removed | DONE, in the report for the orchestrator | "Hub files" names the removal; no order entry names it (C10 grep below) |
-| 3. `deck/title.md` and the framing redraft | DONE | "Hub files" and "Proposed framing". Last line of the run: `slide kinds {"title":1,"section":1,"project":14,"text":2,"idea":9,"closing":1}`, title slide `legend [hub:liver,hub:heart,hub:brain,hub:method,hub:meta,hub:privacy,hub:liverfl]` |
-| 4. `deck/engine.md:12` | DONE | The sentence: "Next come the research projects' own decks: a project's slides give its governing equation, its specs, its method and its results where the project has them." C8 below |
-| 5. `deck/closing.md` unchanged | DONE | Not in "Hub files"; `diff` of the other three against the hub's files shows the changes, and closing is read from the hub in every run (slide 28 heading `"Questions &amp;<br>collaborations welcome"`) |
-| 6. "Hub files" section | DONE | Below, three fenced blocks and the removal |
-| 7. The grep over oculus | DONE | "Item 7, the grep over oculus" below; no sentence is made false, and no oculus file is changed |
-| C1 reader side | DONE | `state ok, deck findings 0` in all three new runs |
-| C1 per-deck count of "slide too tall" | NOT DONE | Needs a drawn page; see the first line |
-| C2 to C10 | DONE, the look's parts on landing | Below, under "The cases on the built files" |
-| Verify 1, ASCII gate | DONE | The perl gate over `/private/tmp/.../scratchpad/o150-deck/present.yml`, `title.md` and `engine.md` (the bytes quoted below) printed nothing, `gate exit 0`; over this report, see the last rows |
+| 3. `deck/title.md` and the framing redraft (round 1 items 1 and 3) | DONE | "Hub files" and "Proposed framing". The run prints `title "Research projects"`, the title slide's `lede "Research projects that have a deck of their own, each in its own slides."` and `legend [hub:liver,hub:heart,hub:brain,hub:method,hub:meta,hub:privacy,hub:liverfl]` |
+| 4. `deck/engine.md:12` (round 1 item 2) | DONE | The sentence: "Next come research projects' own decks, one after another: a project slide shows its project's governing equation, specs, method and results, each where the slide states it." C8 below |
+| 5. `deck/closing.md` unchanged | DONE | Not in "Hub files". Every run reads the hub's closing slide (slide 28, heading `"Questions &amp;<br>collaborations welcome"`) |
+| 6. "Hub files" section | DONE | Below: three fenced blocks and the removal |
+| 7. The grep over oculus | DONE | "Item 7, the grep over oculus" below. No sentence is made false, and no oculus file is changed |
+| Round 1 item 4, the open items | DONE | Copied above from main's state file |
+| Round 1 item 5, the filter bar before and after | DONE | "Before and after, for the look", C2 and C5 |
+| C1, reader side | DONE | `state ok, deck findings 0` in all three new runs |
+| C1, per-deck count of "slide too tall" | NOT DONE, the look's | Round 1 item 6: the orchestrator counts it at the look on landing |
+| C2 to C10 | DONE, with the look's parts on landing | "The cases on the built files" below |
+| Verify 1, ASCII gate | DONE | The perl gate over the scratch copies of the three hub texts (the bytes quoted below) printed nothing, `gate exit 0`. For this report, see the last section |
 | Verify 2, the texts parse | DONE | Three `node -e` runs below |
-| Verify 3, `git status --short` | DONE | See the last rows |
-| Verify 4, `npm run test:quick` | DONE | See the last rows |
+| Verify 3, `git status --short` | DONE | See the last section |
+| Verify 4, `npm run test:quick` | DONE | See the last section |
 | Verify 5, prose | DONE | "Prose of the new sentences" below |
-| Unused exports | DONE | `sh utils/unused-exports.sh 2>&1 \| diff .agents/worktrees/O150-base/unused-exports.txt -` printed nothing, `diff exit 0`: the step adds no line |
+| Unused exports | DONE | From the worktree's root, `sh utils/unused-exports.sh 2>&1 \| diff /Users/axelfaes/workspace/oculus/.agents/worktrees/O150-base/unused-exports.txt -` printed nothing, `diff exit 0`. The step adds no line |
 
 ## Hub files
 
-The orchestrator writes these into `~/workspace/research-hub/deck/` at landing; the hub commit waits on Axel's word. Each file ends with one newline after its last line, as the hub's files do (`tail -c1 | od -c` gives `\n` for all three today).
+The orchestrator writes these into `~/workspace/research-hub/deck/` at landing; the hub commit waits on Axel's word. Each file ends with one newline after its last line, as the hub's files do: `tail -c1 | od -An -c` gave `\n` for each scratch copy.
 
 `deck/present.yml`:
 
 ```yaml
 deck:
-    title: 'Methods for clinical and scientific data'
+    title: 'Research projects'
 
 groups:
     projects:
@@ -109,9 +112,9 @@ kind: title
 kicker: Research portfolio | technical briefing
 legend: projects
 ---
-# Methods for clinical<br>and scientific data
+# Research projects
 
-The research projects, each from its own deck: what it sets out to do, and the model or method it brings.
+Research projects that have a deck of their own, each in its own slides.
 ```
 
 `deck/engine.md`:
@@ -126,9 +129,9 @@ A block-term tensor is a <b>sum of R low-multilinear-rank blocks</b>, strictly b
 
 1. **Interpretable by construction.** Sparse and low-rank cores <i>are</i> the explanation: per-block (time x lead) or (freq x lead) signatures a clinician can read.
 2. **Parameter-efficient.** An (R,L) knob matches CP and Tucker budgets while dedicating capacity to distinct regimes (scales, modalities, leads).
-3. **Composable with constraints.** The same factorization carries through irregular time, federation, differential privacy, and unaligned geometry.
+3. **Composable with constraints.** The same factorization carries through a lead-field constraint, federation, differential privacy, and spectral operators for PDEs.
 
-Next come the research projects' own decks: a project's slides give its governing equation, its specs, its method and its results where the project has them.
+Next come research projects' own decks, one after another: a project slide shows its project's governing equation, specs, method and results, each where the slide states it.
 ```
 
 `deck/transition.md`: removed (`rm ~/workspace/research-hub/deck/transition.md`).
@@ -148,11 +151,11 @@ The `diff` of each drafted file against the hub's, run before the scratch copy w
 6c6
 < # Structured models,<br>everywhere they hide
 ---
-> # Methods for clinical<br>and scientific data
+> # Research projects
 8c8
 < {{pillars.count}} pillar projects and {{more.count}} more. A shared thesis: clinical data is intrinsically <b>multi-way</b> (modality x time x space x leads), and <b>block-term tensor structure</b>, interpolating CP and Tucker, buys interpretability and parameter efficiency that flattening throws away.
 ---
-> The research projects, each from its own deck: what it sets out to do, and the model or method it brings.
+> Research projects that have a deck of their own, each in its own slides.
 -- diff engine.md
 4c4
 < # The common engine: rank-(L,L,1) block-term decomposition
@@ -162,19 +165,23 @@ The `diff` of each drafted file against the hub's, run before the scratch copy w
 < A block-term tensor is a <b>sum of R low-multilinear-rank blocks</b>, strictly between CP (rank-1 blocks, no within-block coupling) and Tucker (one dense core, no modularity). That middle ground recurs across the portfolio:
 ---
 > A block-term tensor is a <b>sum of R low-multilinear-rank blocks</b>, strictly between CP (rank-1 blocks, no within-block coupling) and Tucker (one dense core, no modularity). That middle ground recurs across several of the portfolio's projects:
+10c10
+< 3. **Composable with constraints.** The same factorization carries through irregular time, federation, differential privacy, and unaligned geometry.
+---
+> 3. **Composable with constraints.** The same factorization carries through a lead-field constraint, federation, differential privacy, and spectral operators for PDEs.
 12c12
 < Each of the next slides leads with the governing equation, then specs, method, and results.
 ---
-> Next come the research projects' own decks: a project's slides give its governing equation, its specs, its method and its results where the project has them.
+> Next come research projects' own decks, one after another: a project slide shows its project's governing equation, specs, method and results, each where the slide states it.
 ```
 
-The `present.yml` diff removes line 1 (the comment), the three groups and the old order entries. It sets `title: 'Methods for clinical and scientific data'`, the group `projects` with `find: { folders: [projects/**/present], tiers: [research] }` and `discover: true`, and the four order entries. Engine lines 1 to 3, 5 and 7 to 11 are byte for byte the hub's (the diff names only lines 4, 6 and 12). In `title.md`, lines 1, 2, 5 and 7 are the hub's.
+The `present.yml` diff removes line 1 (the comment), the three groups and the old order entries. It sets `title: 'Research projects'`, the group `projects` with `find: { folders: [projects/**/present], tiers: [research] }` and `discover: true`, and the four order entries. The diff names only lines 4, 6, 10 and 12 of `engine.md`; every other line is the hub's, byte for byte. In `title.md`, lines 1, 2, 5 and 7 are the hub's.
 
 The parse of each text with the `yaml` package, typed on the command line in the worktree:
 
 ```
-$ node -e "const Y=require('yaml'); console.log(JSON.stringify(Y.parse(\"deck:\n    title: 'Methods for clinical and scientific data'\n\ngroups:\n    projects:\n        find: { folders: [projects/**/present], tiers: [research] }\n        discover: true\n\norder:\n    - title.md\n    - engine.md\n    - { slides: projects }\n    - closing.md\n\")))"
-{"deck":{"title":"Methods for clinical and scientific data"},"groups":{"projects":{"find":{"folders":["projects/**/present"],"tiers":["research"]},"discover":true}},"order":["title.md","engine.md",{"slides":"projects"},"closing.md"]}
+$ node -e "const Y=require('yaml'); console.log(JSON.stringify(Y.parse(\"deck:\n    title: 'Research projects'\n\ngroups:\n    projects:\n        find: { folders: [projects/**/present], tiers: [research] }\n        discover: true\n\norder:\n    - title.md\n    - engine.md\n    - { slides: projects }\n    - closing.md\n\")))"
+{"deck":{"title":"Research projects"},"groups":{"projects":{"find":{"folders":["projects/**/present"],"tiers":["research"]},"discover":true}},"order":["title.md","engine.md",{"slides":"projects"},"closing.md"]}
 $ node -e "const Y=require('yaml'); console.log(JSON.stringify(Y.parse('kind: title\nkicker: Research portfolio | technical briefing\nlegend: projects\n')))"
 {"kind":"title","kicker":"Research portfolio | technical briefing","legend":"projects"}
 $ node -e "const Y=require('yaml'); console.log(JSON.stringify(Y.parse('kind: section\n')))"
@@ -183,27 +190,60 @@ $ node -e "const Y=require('yaml'); console.log(JSON.stringify(Y.parse('kind: se
 
 ## Proposed framing
 
-Each draft is given beside the words it replaces, with the decks that show the claim holds. These are for Axel's corrections at landing.
+Each draft is given beside the words it replaces, claim by claim, with the decks that bear it out and any deck that does not. These are for Axel's corrections at landing.
 
-| Place | Today | Draft | Why it holds for the 25 decks |
-|---|---|---|---|
-| `present.yml` `deck.title` | Structured models, everywhere they hide | Methods for clinical and scientific data | 21 decks name clinical data (ECG, MRI, EEG, ECoG, liver, cirrhosis, immune, HCC, patient or hospital words in their slides). `btd-autoencoder` names scRNA-seq data, and `bt-operator-theory` and `btfno` name PDEs, which are scientific data. `quantum-tensor-fl` is the weakest fit: its card ("Exploratory: quantum-inspired tensor networks or quantum federated learning, after a novelty check") names a method and no data. |
-| `title.md:6` heading | Structured models,<br>everywhere they hide | Methods for clinical<br>and scientific data | The same claim as the deck title, which it repeats. |
-| `title.md:3` kicker | Research portfolio \| technical briefing \| June 2026 | Research portfolio \| technical briefing | The kicker drops the date, which is past. No date stays true. |
-| `title.md:8` thesis | {{pillars.count}} pillar projects and {{more.count}} more. A shared thesis: clinical data is intrinsically <b>multi-way</b> (modality x time x space x leads), and <b>block-term tensor structure</b>, interpolating CP and Tucker, buys interpretability and parameter efficiency that flattening throws away. | The research projects, each from its own deck: what it sets out to do, and the model or method it brings. | Every deck's slide states an aim and a model or method. A project slide states it in its title, sub line and method list, an idea card in its `desc:`, and the two text slides under "The idea / method". There is no count, so the sentence holds under every filter. |
-| `engine.md:4` heading | The common engine: rank-(L,L,1) block-term decomposition | A recurring engine: rank-(L,L,1) block-term decomposition | "Common" claimed every deck. 8 decks draw a block-term word on their slides: `bt-operator-theory`, `btfno`, `bttd-source-eeg`, `bttn-incident-af`, `covert-applied`, `dries-bttr-ecg`, `fed-faithful-ecg` (main.md:12, "Interpretable block-term ECG models"), `florank-personalization` (its card, "a block-term adapter"). `ward-bttr-crosssubject` names `BTTR deflation` only in `mechanism:`, which only a summary row draws, and the deck has no summary. |
-| `engine.md:6` | That middle ground recurs across the portfolio: | That middle ground recurs across several of the portfolio's projects: | The same 8 decks. The phrase claims several projects, not all of them. |
-| `engine.md:12` | Each of the next slides leads with the governing equation, then specs, method, and results. | Next come the research projects' own decks: a project's slides give its governing equation, its specs, its method and its results where the project has them. | See C8. |
+### The deck title and the title slide
 
-The block-term count per deck came from `grep -c -i -E 'block-term|BTTR|BTTD|BTTN|BTD|rank-\(L'` over each deck's `*.md`. It gave `bt=1` for `fed-faithful-ecg`, `florank-personalization` and `ward-bttr-crosssubject`, `bt=0` for the 16 decks it did not name above, and 4 to 9 for the other six. `grep -n` showed where the single hits sit: `ward-bttr-crosssubject/present/main.md:38: mechanism: BTTR deflation, LOSO transfer`, `fed-faithful-ecg/present/main.md:12`, and `florank-personalization/present/main.md:3`.
+- `present.yml` `deck.title`, and `title.md:6`, the heading that repeats it. Today: "Structured models, everywhere they hide" (the heading breaks it with `<br>`). Draft: "Research projects".
+  - The claim: each deck placed is a research project's deck.
+  - Borne out by all 25: the group keeps a deck only when its project's `tier` is `research` (`tiers: [research]`). The run prints `research | axel true` for each of the 25 members and `held decks of no research project with a deck: []`. `quantum-tensor-fl` is a research project (`idea | nascent | quantum-tensor-fl | research`).
+  - It stays true once every research project has a deck, since a deck of any other tier is not kept.
+  - No deck fails it.
+- `title.md:8`, the lede. Today: "{{pillars.count}} pillar projects and {{more.count}} more. A shared thesis: clinical data is intrinsically <b>multi-way</b> (modality x time x space x leads), and <b>block-term tensor structure</b>, interpolating CP and Tucker, buys interpretability and parameter efficiency that flattening throws away." Draft: "Research projects that have a deck of their own, each in its own slides." It makes two claims.
+  - "Research projects that have a deck of their own": each of the 25 is a research project with its own `present/` deck (`research projects 95, with a deck 25`, and every member path ends in `/present`). The phrase has no article and names the projects as those with a deck, so it does not say the deck holds every research project. It stays true under any filter, and once every research project has a deck. No deck fails it.
+  - "each in its own slides": the reader places each member deck's own slides (`{ slides: projects }`; slides 3 to 27 carry one project key each). `quantum-tensor-fl` is slide 23, its own `idea` card. No deck fails it.
+  - The thesis sentence is gone whole. Three decks (`clinical-ai-eval-artifacts`, `fl-privacy-auditing`, `ssm-longitudinal`) name no tensor word. `quantum-tensor-fl`'s card names a method and no data, so no claim about the decks' data holds for all 25.
+- `title.md:3`, the kicker. Today: "Research portfolio | technical briefing | June 2026". Draft: "Research portfolio | technical briefing". The date is past and no date stays true. The other words are Axel's and are kept.
 
-The engine slide's lines 8 to 10 stay, as item 4 says. They describe the block-term model itself, and each of their claims is drawn by at least one of the 8 decks. The closing slide stays as it is (item 5).
+### The engine slide
+
+- `engine.md:4`, the heading. Today: "The common engine: rank-(L,L,1) block-term decomposition". Draft: "A recurring engine: rank-(L,L,1) block-term decomposition". "Common" claimed every deck; "recurring" claims that several decks show it.
+  - Borne out by 8 decks whose slides draw a block-term word: `bt-operator-theory`, `btfno`, `bttd-source-eeg`, `bttn-incident-af`, `covert-applied`, `dries-bttr-ecg`, `fed-faithful-ecg` (main.md:12, "Interpretable block-term ECG models") and `florank-personalization` (its card, "a block-term adapter").
+  - The other 17 show no block-term word. The heading makes no claim about them.
+  - `ward-bttr-crosssubject` names `BTTR deflation` only in `mechanism:`, which only a summary row draws, and the deck has no summary.
+- `engine.md:6`, the lede's end. Today: "That middle ground recurs across the portfolio:". Draft: "That middle ground recurs across several of the portfolio's projects:". The same 8 decks bear it out. The phrase claims several projects, not all.
+- `engine.md:8`, kept: "**Interpretable by construction.** Sparse and low-rank cores <i>are</i> the explanation: per-block (time x lead) or (freq x lead) signatures a clinician can read."
+  - (time x lead) maps: `dries-bttr-ecg` ("Every block <b>is</b> a (time x lead) weight map, faithful by construction", main.md:30).
+  - (freq x lead) signatures: `bttn-incident-af` ("Per-block (freq x lead) signatures make each risk score auditable", main.md:39; "a clinically coherent readout", main.md:30).
+  - Sparse cores: `covert-applied` ("A sparse, interpretable multiway core (87% zero entries)", main.md:45).
+  - Every claim of the line is borne out, so it is not redrafted.
+- `engine.md:9`, kept: "**Parameter-efficient.** An (R,L) knob matches CP and Tucker budgets while dedicating capacity to distinct regimes (scales, modalities, leads)."
+  - The (R,L) knob between CP and Tucker at matched parameters: `btfno` ("(R,L) interpolate CP <-> Tucker", main.md:17; "matched ~670k params", main.md:36) and `bt-operator-theory` ("better than CP/Tucker at matched capacity", main.md:8).
+  - Scales: `btfno` ("specialist blocks, each tuned to its own scale", main.md:11).
+  - Modalities: `covert-applied` ("Same patients, different modalities per site", main.md:25).
+  - Leads: `bttn-incident-af` ("low-rank (freq, lead) subspaces", main.md:32).
+  - Every claim is borne out, so it is not redrafted.
+- `engine.md:10`. Today: "**Composable with constraints.** The same factorization carries through irregular time, federation, differential privacy, and unaligned geometry." Draft: "**Composable with constraints.** The same factorization carries through a lead-field constraint, federation, differential privacy, and spectral operators for PDEs."
+  - Dropped, "irregular time": no block-term deck shows it. `btfno`'s line (main.md:42) is a plan ("could give HCCNet ... from irregular longitudinal history"), and `hccnet-revision`, which shows irregular time, draws no block-term word.
+  - Dropped, "unaligned geometry": the one block-term deck that tests alignment shows the opposite. `dries-bttr-ecg`, main.md:35: "aligned 0.715 vs unaligned 0.434 (chance)". `raw-pls`, which handles unaligned MRI, draws no block-term word.
+  - Added, "a lead-field constraint": `bttd-source-eeg` ("lead-field-constrained block-term decomposition", main.md:7).
+  - Kept, "federation": `covert-applied` (a coupled block-term model across departments, only a secure-aggregated score crossing, main.md:37-39); also `fed-faithful-ecg` (block-term ECG models across a multi-hospital federation, main.md:12) and `florank-personalization` (federated personalization with a block-term adapter).
+  - Kept, "differential privacy": `covert-applied` ("clipped + DP-noised score", main.md:26, over its "Coupled block-term model", main.md:37).
+  - Added, "spectral operators for PDEs": `btfno` ("BT-FNO gives each spectral layer a sum of specialist low-rank blocks", main.md:8) and `bt-operator-theory` (block-term neural operators on PDEBench).
+- `engine.md:12`. Today: "Each of the next slides leads with the governing equation, then specs, method, and results." Draft: "Next come research projects' own decks, one after another: a project slide shows its project's governing equation, specs, method and results, each where the slide states it."
+  - The first clause holds for slides 3 to 27 (C3), under any filter, and once every research project has a deck.
+  - The second clause is tied to the slide itself, so it holds in every case:
+    - The 13 project slides with `equation:` state all four.
+    - `ward-bttr-crosssubject`'s project slide states specs, method and results and no equation.
+    - The 9 idea cards and the 2 text slides are no project slide, so the clause says nothing of them. `ecg-readable-substrate` is one of the two text slides ("Key results" / "- In progress.").
+    - If its deck later opens with a project slide that states no results, the clause still holds.
+  - The sentence carries no count.
 
 ## The cases on the built files
 
 Read with the case-run program over the hub, with the three drafted files handed to the reader as drafts. Every state is with Mine only on: `axel true` on every member line.
 
-- C1. Reader side holds: `state ok, deck findings 0` with no filter, with `submitted` and with `in-prep`; `snapshot findings 0`. The "slide too tall" count per deck is not taken (first line).
+- C1. Reader side holds: `state ok, deck findings 0` with no filter, with `submitted` and with `in-prep`; `snapshot findings 0`. The "slide too tall" count per deck is the look's (round 1 item 6).
 - C2. Holds: `group projects: members 25, kept 25, count 25, missing [], conflicts 0, candidates 0`, `research decks the groups do not hold: []`, `held decks of no research project with a deck: []`. `fed-faithful-ecg` (`dead-ends | failed`) and both `projects/archive/published/2026/` decks are members. 95 research projects, 25 with a deck, so 70 without.
 - C3. Holds: 28 slides. Slide 1 is the title, slide 2 the engine slide, slides 3 to 27 the 25 decks one slide each, slide 28 the closing. `slide kinds {"title":1,"section":1,"project":14,"text":2,"idea":9,"closing":1}`: no summary, no grid, no transition. Each of the 9 idea decks is its own `idea` slide (slides 16 and 19 to 26). The 25 decks in order, by slide: 3 hccnet-fl, 4 dongho-ecg-clustering, 5 bttn-incident-af, 6 dries-bttr-ecg, 7 ward-bttr-crosssubject, 8 meseret-cirrhosis, 9 hccnet-revision, 10 bttd-source-eeg, 11 fed-multicellular-immune, 12 covert-theory, 13 raw-pls, 14 covert-applied, 15 ecg-readable-substrate, 16 ecg-af-fair, 17 bt-operator-theory, 18 btfno, 19 btd-autoencoder, 20 clinical-ai-eval-artifacts, 21 fl-privacy-auditing, 22 hccnet-fl-sweden, 23 quantum-tensor-fl, 24 ssm-longitudinal, 25 florank-personalization, 26 hccnet-pathology, 27 fed-faithful-ecg.
 - C4. Holds under the ruling. By category, in the reader's order, each deck's title:
@@ -215,8 +255,8 @@ Read with the case-run program over the hub, with the three drafted files handed
   - No deck of no category.
 - C5. Holds: the `submitted` filter gives `kept 11, count 11` and 14 slides: title, engine, the 11 in-review decks in C4's order, closing. The legend is `[hub:heart,hub:brain,hub:liver,hub:method]`. With no filter (Clear all), 25 again.
 - C6. Holds: the `in-prep` filter gives `kept 0, count 0` and 3 slides (title, engine, closing). The legend is `[]`, `deck findings 0`.
-- C7. Holds: `title.md` holds no `{{pillars.count}}`, `{{more.count}}` or `legend: pillars` (C10 grep). The legend draws `[hub:liver,hub:heart,hub:brain,hub:method,hub:meta,hub:privacy,hub:liverfl]`, the seven domains each once, and no finding is raised.
-- C8. Holds. The sentence makes three claims. (1) What follows is the research projects' own decks: every slide 3 to 27 carries a project key of a research deck (C3). (2) A project's slides give its governing equation, specs, method and results where the project has them. The 13 project slides with `equation:` give all four; `ward-bttr-crosssubject` gives specs, method and results and has no equation; the 9 idea cards and the 2 text slides have none of the four keys, so the claim says nothing of them (the per-deck listing above). (3) There is no count, so the sentence stays true under the `submitted` and `in-prep` filters.
+- C7. Holds: `title.md` holds no `{{pillars.count}}`, `{{more.count}}` or `legend: pillars` (the C10 grep, and `grep -n '{{'` over `title.md` and `engine.md`, exit 1). The legend draws `[hub:liver,hub:heart,hub:brain,hub:method,hub:meta,hub:privacy,hub:liverfl]`, the seven domains each once, and no finding is raised.
+- C8. Holds, as "Proposed framing", `engine.md:12`, sets out for each claim.
 - C9. Holds: `grep -n '^\s*#'` over the drafted `present.yml` printed nothing (`C9 grep exit 1`).
 - C10. Holds: `grep -n -E 'transition\.md|pillars|more|ideas'` over the drafted `present.yml`, `title.md`, `engine.md` and the hub's `closing.md` printed nothing (`C10 grep exit 1`), and `transition.md` is removed.
 
@@ -241,11 +281,20 @@ The other hits, by folder, are the pillars registry, the manifest key `pillars:`
 - `tests/fixtures/hubs` (15 files): the demo hub's manifests, its `.oculus/data/pillars/pillars.yml`, `.oculus/config.yml` and `README.md`, and `deck-hub.ts:73,91,176` (manifest `pillars:` lists and the domains file path).
 - `tests/checks/config`, `tests/data/helpers`, `tests/data/hubs` (`decks.test.ts:78,166`, the fact field), `tests/data/real-hub.probe.ts`, `tests/data/snapshot`, `tests/data/sources` (beyond `present.test.ts`), `tests/routes/sessions`, `tests/server/edit` (beyond `deck-edit.test.ts`), `tests/state/boards`, `tests/state/forms` and `tests/ui/controls`: the registry, the manifest key and the fact field.
 
-The groups were made with `grep -rln ... | awk -F/ '{ ... print $1"/"$2"/"$3 }' | sort | uniq -c`. The deck-group hits were found with `grep -rn --exclude=local.yml -E 'pillars\.count|legend: *pillars|slides: *pillars|of: *pillars|groups\.pillars|group pillars|\{ *slides: *pillars'` plus `grep -n 'pillars'` over each deck test file. `grep -rn --exclude=local.yml 'everywhere they hide' src tests config docs README.md` printed nothing, so no oculus file names the old deck title. In the hub, `grep -rln 'everywhere they hide' --include='*.yml' --include='*.md' . | grep -v '^./deck/'` printed nothing.
+How the hits were found:
+- The folders: `grep -rln ... | awk -F/ '{ ... print $1"/"$2"/"$3 }' | sort | uniq -c`.
+- The deck-group hits: `grep -rn --exclude=local.yml -E 'pillars\.count|legend: *pillars|slides: *pillars|of: *pillars|groups\.pillars|group pillars|\{ *slides: *pillars'`, plus `grep -n 'pillars'` over each deck test file.
+- The old and new deck titles and the new lede: `grep -rn --exclude=local.yml -e 'Research projects that have' -e 'Structured models' src tests config docs README.md` printed nothing.
 
 ## The case-run program
 
-It runs oculus's deck reader over the research hub, read only. In mode `new` it reads the text of `present.yml`, `title.md` and `engine.md` from the scratch copy `o150-deck` (the three files of "Hub files", byte for byte) and hands them to the reader as an editor's drafts over the hub's own deck paths. The reader reads drafts in place of a file's text at `src/lib/data/sources/deck/read.ts:260-264`. So the glob runs over the real hub's `projects/` and nothing is written there. `transition.md` stays on disk and no order entry names it. A filter is the reader's `keep` set, the bare keys of the projects at the named stage, as the deck route passes it (`src/lib/server/content/deck/read.ts:76,101`). It was run as `node o150-cases.ts <base|new> <scratch deck folder> <none|stage>` from the scratchpad. The program and the scratch copy are removed: `rm -f`, `rm -rf`, then `ls $S | grep -E '^o150'` printed nothing.
+What it does:
+- It runs oculus's deck reader over the research hub, read only.
+- In mode `new` it reads the text of `present.yml`, `title.md` and `engine.md` from the scratch copy `o150-deck` (the three files of "Hub files", byte for byte). It hands them to the reader as an editor's drafts over the hub's own deck paths; the reader reads drafts in place of a file's text at `src/lib/data/sources/deck/read.ts:260-264`. So the glob runs over the real hub's `projects/` and nothing is written there.
+- `transition.md` stays on disk, and no order entry names it.
+- A filter is the reader's `keep` set, the bare keys of the projects at the named stage, as the deck route passes it (`src/lib/server/content/deck/read.ts:76,101`).
+
+It was run as `node o150-cases.ts <base|new> <scratch deck folder> <none|stage>` from the scratchpad; each of the four runs exited 0. The program, its outputs and the scratch copy are removed: `rm -f`, `rm -rf`, then `ls $S | grep -E '^o150'` printed nothing.
 
 ```ts
 // Case-run program of O150. It only prints. It reads the research hub read only, builds its
@@ -405,7 +454,7 @@ slide kinds {"title":1,"section":2,"project":14,"summary":2,"text":1,"grid":1,"c
 `node o150-cases.ts new o150-deck none`, the hub files of this report:
 
 ```
-mode new, filter none, portfolio_deck deck, title "Methods for clinical and scientific data"
+mode new, filter none, portfolio_deck deck, title "Research projects"
 snapshot findings 0
 research projects 95, with a deck 25
 state ok, deck findings 0
@@ -439,8 +488,8 @@ group projects: members 25, kept 25, count 25, missing [], conflicts 0, candidat
 research decks the groups do not hold: []
 held decks of no research project with a deck: []
 slides 28
-  slide 1 (deck) title heading "Methods for clinical<br>and scientific data" legend [hub:liver,hub:heart,hub:brain,hub:method,hub:meta,hub:privacy,hub:liverfl]
-    lede "The research projects, each from its own deck: what it sets out to do, and the model or method it brings."
+  slide 1 (deck) title heading "Research projects" legend [hub:liver,hub:heart,hub:brain,hub:method,hub:meta,hub:privacy,hub:liverfl]
+    lede "Research projects that have a deck of their own, each in its own slides."
     kicker "Research portfolio | technical briefing"
   slide 2 (deck) section heading "A recurring engine: rank-(L,L,1) block-term decomposition" legend []
     lede "A block-term tensor is a <b>sum of R low-multilinear-rank blocks</b>, strictly between CP (rank-1 blocks, no within-block coupling) and Tucker (one dense core, no modularity). That middle ground recurs across several of the portfolio's projects:"
@@ -479,7 +528,7 @@ slide kinds {"title":1,"section":1,"project":14,"text":2,"idea":9,"closing":1}
 `node o150-cases.ts new o150-deck submitted`:
 
 ```
-mode new, filter submitted, portfolio_deck deck, title "Methods for clinical and scientific data"
+mode new, filter submitted, portfolio_deck deck, title "Research projects"
 snapshot findings 0
 research projects 95, with a deck 25
 state ok, deck findings 0
@@ -499,8 +548,8 @@ group projects: members 25, kept 11, count 11, missing [], conflicts 0, candidat
 research decks the groups do not hold: []
 held decks of no research project with a deck: []
 slides 14
-  slide 1 (deck) title heading "Methods for clinical<br>and scientific data" legend [hub:heart,hub:brain,hub:liver,hub:method]
-    lede "The research projects, each from its own deck: what it sets out to do, and the model or method it brings."
+  slide 1 (deck) title heading "Research projects" legend [hub:heart,hub:brain,hub:liver,hub:method]
+    lede "Research projects that have a deck of their own, each in its own slides."
     kicker "Research portfolio | technical briefing"
   slide 2 (deck) section heading "A recurring engine: rank-(L,L,1) block-term decomposition" legend []
     lede "A block-term tensor is a <b>sum of R low-multilinear-rank blocks</b>, strictly between CP (rank-1 blocks, no within-block coupling) and Tucker (one dense core, no modularity). That middle ground recurs across several of the portfolio's projects:"
@@ -525,7 +574,7 @@ slide kinds {"title":1,"section":1,"project":10,"text":1,"closing":1}
 `node o150-cases.ts new o150-deck in-prep`:
 
 ```
-mode new, filter in-prep, portfolio_deck deck, title "Methods for clinical and scientific data"
+mode new, filter in-prep, portfolio_deck deck, title "Research projects"
 snapshot findings 0
 research projects 95, with a deck 25
 state ok, deck findings 0
@@ -534,8 +583,8 @@ group projects: members 25, kept 0, count 0, missing [], conflicts 0, candidates
 research decks the groups do not hold: []
 held decks of no research project with a deck: []
 slides 3
-  slide 1 (deck) title heading "Methods for clinical<br>and scientific data" legend []
-    lede "The research projects, each from its own deck: what it sets out to do, and the model or method it brings."
+  slide 1 (deck) title heading "Research projects" legend []
+    lede "Research projects that have a deck of their own, each in its own slides."
     kicker "Research portfolio | technical briefing"
   slide 2 (deck) section heading "A recurring engine: rank-(L,L,1) block-term decomposition" legend []
     lede "A block-term tensor is a <b>sum of R low-multilinear-rank blocks</b>, strictly between CP (rank-1 blocks, no within-block coupling) and Tucker (one dense core, no modularity). That middle ground recurs across several of the portfolio's projects:"
@@ -546,59 +595,68 @@ project slides 0, with no equation []
 slide kinds {"title":1,"section":1,"closing":1}
 ```
 
-The gate, C9 and C10 over the drafted files, before the scratch copy was removed:
+The gate, C9, C10 and the count-token grep over the drafted files, before the scratch copy was removed:
 
 ```
--- gate over the hub texts
 gate exit 0
--- C9
 C9 grep exit 1
--- C10
 C10 grep exit 1
+count grep exit 1
 ```
+
+The categories of the members for the filter bar's slices: `grep -E '^  [a-z-]+ \| ' <output> | cut -d'|' -f1 | sort | uniq -c`. Over the base output it gave `8 idea`, `3 in-flight`, `11 in-review`, `2 publications`. Over the new output it gave `1 dead-ends`, `8 idea`, `3 in-flight`, `11 in-review`, `2 publications`.
 
 ## Before and after, for the look
 
-Open these on a copy of the hub with the three files of "Hub files" written in and `deck/transition.md` removed. Use the Present view with no deck named (the portfolio deck), Mine only on (its default).
+Open these on a copy of the hub with the three files of "Hub files" written in and `deck/transition.md` removed. Use the Present view with no deck named (the portfolio deck), Mine only on (its default; every one of the 25 deck projects names `axel-faes`, so Mine only leaves out none).
 
 - C1. Before: Findings lists no reader finding of the portfolio deck. After: the same, with the deck's state `ok`. Count the "slide too tall" findings under Findings that sit on the project decks' own files, and name each deck with its count. O157's look measured 16 of the 25 project decks Too tall. Before this step the deck placed 14 project slides and 1 text slide; after, it places 14 project slides, 2 text slides and 9 idea slides.
-- C2. Overview, the group heading `projects`. Before: three group headings, `pillars` (7), `more` (8), `ideas` (9); `fed-faithful-ecg` in none. After: one heading, `projects`, with 25 decks, `fed-faithful-ecg` among them, and an Add tile with no candidate.
+- C2. The Overview and the filter bar.
+  - Overview before: three group headings, `pillars` (7), `more` (8), `ideas` (9), with `fed-faithful-ecg` in none.
+  - Overview after: one heading, `projects`, with 25 decks, `fed-faithful-ecg` among them, and an Add tile with no candidate.
+  - The filter bar is drawn over the projects whose decks the groups hold (`docs/decks.md`, "The filter"). Before, line 2 reads "24 projects", with slices for 4 categories: publications 2, in-review 11, in-flight 3, idea 8, and no dead-ends slice. After, line 2 reads "25 projects", with a fifth slice, dead-ends 1 (`fed-faithful-ecg`).
+  - The portfolio deck now places `fed-faithful-ecg`'s text slide (slide 27). Its project facts strip shows the stage chip `failed`, drawn as it is (`docs/decks.md:387`; `project.yml:2` is `stage: failed`).
 - C3. Overview. Before: 22 tiles, with 2 summaries, the "8 more, same backbone" section and the idea grid. After: 28 tiles in the order of "The cases on the built files", C3. There is no summary, grid or transition, and 9 idea cards stand as tiles.
 - C4. Overview, the order of the 25 tiles: the categories and titles as C4 above lists them.
-- C5. The filter bar, the stage `submitted`. After: 14 tiles (title, engine, the 11 in-review decks, closing). Line 2 reads "11 of 25 shown". The title slide's legend shows heart, brain, liver and method. Clear all gives 28 tiles again.
+- C5. The filter bar, the stage `submitted`. Before: line 2 reads "11 of 24 shown". After: "11 of 25 shown", the dead-ends slice offered beside the four others. After shows 14 tiles (title, engine, the 11 in-review decks, closing), and the title slide's legend shows heart, brain, liver and method. Clear all gives 28 tiles again and "25 projects".
 - C6. The filter bar, the stage `in-prep`. After: 3 tiles (title, engine, closing), the title slide with no legend, and no finding.
-- C7. The title slide. Before: kicker "Research portfolio | technical briefing | June 2026", heading "Structured models, everywhere they hide", lede "7 pillar projects and 8 more. A shared thesis: ...", and a legend of 4 domains. After: kicker "Research portfolio | technical briefing", heading "Methods for clinical and scientific data" on two lines, the new lede, and a legend of 7 domains (liver, heart, brain, method, meta, privacy, liverfl), each once. The deck's tab and deck menu entry read "Methods for clinical and scientific data".
-- C8. The engine slide. After: heading "A recurring engine: rank-(L,L,1) block-term decomposition", the lede ending "recurs across several of the portfolio's projects:", the three numbered points unchanged, and the last line "Next come the research projects' own decks: ...".
+- C7. The title slide.
+  - Before: kicker "Research portfolio | technical briefing | June 2026", heading "Structured models, everywhere they hide", lede "7 pillar projects and 8 more. A shared thesis: ...", a legend of 4 domains.
+  - After: kicker "Research portfolio | technical briefing", heading "Research projects", lede "Research projects that have a deck of their own, each in its own slides.", a legend of 7 domains (liver, heart, brain, method, meta, privacy, liverfl), each once.
+  - The deck's tab and its deck menu entry read "Research projects".
+- C8. The engine slide. After: heading "A recurring engine: rank-(L,L,1) block-term decomposition"; the lede ending "recurs across several of the portfolio's projects:"; point 3 reading "... carries through a lead-field constraint, federation, differential privacy, and spectral operators for PDEs."; and the last line "Next come research projects' own decks, one after another: ...". Points 1 and 2 are unchanged.
 - C9. `deck/present.yml` in the hub has no comment line: `grep -n '^\s*#' deck/present.yml` prints nothing.
 - C10. `ls deck` shows `closing.md engine.md present.yml title.md`. `grep -n -E 'transition\.md|pillars|more|ideas' deck/*` prints nothing.
 
 ## Prose of the new sentences
 
-I read each new sentence against the rules file's prose rule: plain, ASCII, no em dash, no quip and no "not X but Y" construction.
+Each new sentence was read against the rules file's prose rule: plain, ASCII, no em dash, no quip and no "not X but Y" construction.
 
-- "Methods for clinical and scientific data": a plain noun phrase.
+- "Research projects": a plain noun phrase.
 - "Research portfolio | technical briefing": the kicker's own words, less the date.
-- "The research projects, each from its own deck: what it sets out to do, and the model or method it brings.": plain. It is the title slide's lede, so it carries no verb of its own in its first half, in the deck's voice.
+- "Research projects that have a deck of their own, each in its own slides.": a lede in the deck's voice, with no verb of its own, as a title slide's lede can be.
 - "A recurring engine: rank-(L,L,1) block-term decomposition": plain.
 - "That middle ground recurs across several of the portfolio's projects:": plain.
-- "Next come the research projects' own decks: a project's slides give its governing equation, its specs, its method and its results where the project has them.": the list of four is the four parts the slides have, as the ruling names them.
+- "**Composable with constraints.** The same factorization carries through a lead-field constraint, federation, differential privacy, and spectral operators for PDEs.": plain. Its list has four items, the four settings the decks show.
+- "Next come research projects' own decks, one after another: a project slide shows its project's governing equation, specs, method and results, each where the slide states it.": plain. Its list of four is the four parts a project slide has.
 
 No sentence departs from the rule.
 
 ## Judgment calls
 
-- The deck title and heading "Methods for clinical and scientific data". `quantum-tensor-fl` is the one deck whose card names no data. Another title for Axel to weigh: "Models and methods for clinical data", which `bt-operator-theory`, `btfno` (PDEs) and `btd-autoencoder` (scRNA-seq) would not fit.
-- The title slide's lede "The research projects, each from its own deck: what it sets out to do, and the model or method it brings." It carries no count, since `{{projects.count}}` counts slides (decision 3), and it names neither the board order nor a tensor thesis. The thesis sentence is gone whole, since three decks name no tensor word (open item 698).
+- The deck title is "Research projects", plain, since every richer claim tried against the 25 decks fails for at least one. `quantum-tensor-fl`'s card names no data. The decks of `btfno` and `bt-operator-theory` are not clinical. Three decks name no tensor word.
+- The lede names the projects as those that have a deck, with no article, so it holds under any filter and makes no claim about the research projects without one.
 - The kicker drops the date and keeps "Research portfolio | technical briefing".
-- The engine heading keeps "rank-(L,L,1) block-term decomposition" and changes "The common engine" to "A recurring engine"; the lede's "recurs across the portfolio" becomes "recurs across several of the portfolio's projects".
-- The engine slide's lines 8 to 10 are kept as item 4 says. Line 8's "a clinician can read" and line 10's "irregular time, federation, differential privacy, and unaligned geometry" describe what the factorization offers, and are not claims about every deck.
+- Engine line 10 keeps "federation" and "differential privacy", drops "irregular time" and "unaligned geometry", and adds the two settings block-term decks show: a lead-field constraint and spectral operators for PDEs. The heading "Composable with constraints" stays, as Axel's words. "spectral operators for PDEs" is a setting the factorization is carried into, and is not a constraint in the narrow sense; Axel may prefer a heading that fits all four.
+- Engine lines 8 and 9 stay. Every claim of each is borne out by a named deck ("Proposed framing").
+- Engine line 12 ties its claim to "a project slide" and to what "the slide states", so an idea card, a text slide and a project slide that states no results all leave it true.
 - The case-run program reads the drafted files as drafts over the hub's own paths in place of a scratch copy of the whole hub. The glob then runs over the real `projects/`, and nothing is written in the hub.
-- The C5 and C6 filters were simulated by the reader's `keep` set. Mine only was left out of that set, since every one of the 25 deck projects names `axel-faes` as lead or supervisor (`axel true` on every member line).
+- The C5 and C6 filters are simulated by the reader's `keep` set. Mine only is left out of the set, since all 25 deck projects name `axel-faes` as lead or supervisor (`axel true` on every member line).
 
 ## Wrong or impossible in the brief
 
-- Item 4 and C8, as first given: the dictated content was false for the 9 idea decks and the 2 text decks. Ruled and built (see "The cases the brief's rules got wrong").
-- C1, as first given: the look will list the Too tall findings of the placed project decks. Ruled. The per-deck count those findings need is the look's, since a builder runs no page (first line).
+- Item 4 and C8, as first given: the dictated content was false for the 9 idea decks and the 2 text decks. Ruled by the cases ruling and repair round 1 item 2, and built.
+- C1, as first given: the look will list the Too tall findings of the placed project decks. Ruled; the per-deck count is the orchestrator's at the look (round 1 item 6).
 - C4 listed the in-flight decks out of the reader's order. Ruled; membership holds.
 - Every other premise the cases rest on reproduced: 25 research decks, 95 research projects, the deck folders (13 under `manuscripts`, 9 under `ideas`, 2 under `archive/published/2026`, 1 under `archive/failed`), the 24 decks the three groups hold today, the 7 domains, and the `deck_order` categories.
 
@@ -608,9 +666,44 @@ No sentence departs from the rule.
 
 ## The verify list, after the last change
 
-The list ran once, after this report was written. No whole-suite command ran.
+The list ran once after this report was written. No whole-suite command ran.
 
-- `npm run diagrams`: `diagrams exit 0`.
-- `npm run test:quick`, its final lines: `test:quick: 3 changed file(s), from git since HEAD`, `test:quick: 0 test file(s)`, `ok      ASCII gate (2.0 s)`, `ok      svelte-kit sync (3.8 s)`, `ok      svelte-check (8.4 s): 1793984442872 COMPLETED 584 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS`, `test:quick: 12.5 s; every command passed`. The three changed files are the ledger's, and the run did not cover the build or the lint of unchanged files, as it says.
-- The ASCII gate (the rules file's perl form) over this report printed nothing: `gate exit 0`.
-- `git status --short`: ` M .scratch/migration/agents/briefs/O150.md`, `?? .scratch/migration/agents/briefs/O150-cases.md`, `?? .scratch/migration/agents/reviews/O150-report.md`. All three are under the ledger; the first two are the orchestrator's, and I wrote only the report. Nothing is changed outside the ledger.
+Before it, the quoted deck lines of "Proposed framing" were re-read on the hub with one `grep -n -E` over the 25 decks' `main.md` files, and each one cited matched. The `deck/` lines quoted under C9 and C10 were re-read with the C9 and C10 greps over the hub, and `ls deck` printed `closing.md engine.md present.yml title.md transition.md`.
+
+`npm run diagrams` printed the diagram files it rebuilt, ending:
+
+```
+docs/diagrams/channels.svg
+docs/diagrams/writes.dot
+docs/diagrams/writes.svg
+```
+
+`npm run test:quick`, once:
+
+```
+test:quick: 4 changed file(s), from git since HEAD
+test:quick: 0 test file(s)
+ok      ASCII gate (1.4 s)
+ok      svelte-kit sync (3.2 s)
+ok      svelte-check (7.8 s): 1793985627887 COMPLETED 584 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+test:quick: 11.2 s; every command passed
+test:quick: not covered: tests that reach no changed file within the import depth,
+            other than the checks under tests/checks/source and tests/checks/tree,
+            which run for any change under src, tests or utils; the build, the lint
+            of unchanged files
+```
+
+The four changed files are the ledger files below. `.scratch` and `*.md` are in `.prettierignore`, so they select no test file. The green run covers no oculus code, because the step changes none. It does not cover the hub texts either, which the case-run program read.
+
+`git status --short`:
+
+```
+ M .scratch/migration/agents/briefs/O150.md
+?? .scratch/migration/agents/briefs/O150-cases.md
+?? .scratch/migration/agents/briefs/O150-round-1.md
+?? .scratch/migration/agents/reviews/O150-report.md
+```
+
+The orchestrator changed the three brief files. This report is the only file the builder wrote.
+
+The perl ASCII gate over this report printed nothing (`gate exit 0`). `diff -rq` of the base copy against the worktree printed nothing for `config`, `src`, `tests` and `utils` (each `diff exit 0`). `sh utils/unused-exports.sh 2>&1 | diff /Users/axelfaes/workspace/oculus/.agents/worktrees/O150-base/unused-exports.txt -` printed nothing (`unused diff exit 0`).

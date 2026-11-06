@@ -32,7 +32,7 @@ dispatch:           # steps in flight, up to six (Z632)
   session_id: a4151539c1a126061 (claude-opus-5-5)
   launched: 2026-11-06
   report: .scratch/migration/agents/reviews/O158-report.md
-  builder_usage: first run, handed back before any change (221753 tokens, 63 tool uses, 12.1 min); build after the cases ruling (311178 tokens, 78 tool uses, 16.3 min)
+  builder_usage: first run, handed back before any change (221753 tokens, 63 tool uses, 12.1 min); build after the cases ruling (311178 tokens, 78 tool uses, 16.3 min); round 1 (109836 tokens, 29 tool uses, 7.9 min)
   round: 1
   round_brief: .scratch/migration/agents/briefs/O158-round-1.md
   cases_ruling: .scratch/migration/agents/briefs/O158-cases.md
@@ -47,15 +47,15 @@ dispatch:           # steps in flight, up to six (Z632)
   session_id: a4c188eb9a1319932 (claude-opus-5-5)
   launched: 2026-11-06
   report: .scratch/migration/agents/reviews/O150-report.md
-  builder_usage: first run, handed back before any change (218920 tokens, 53 tool uses, 11.2 min); build after the cases ruling (315676 tokens, 33 tool uses, 9.8 min)
+  builder_usage: first run, handed back before any change (218920 tokens, 53 tool uses, 11.2 min); build after the cases ruling (315676 tokens, 33 tool uses, 9.8 min); round 1 (111622 tokens, 21 tool uses, 8.6 min)
   round: 1
   round_brief: .scratch/migration/agents/briefs/O150-round-1.md
   cases_ruling: .scratch/migration/agents/briefs/O150-cases.md
-  reviewer_report: .scratch/migration/agents/reviews/O150-refuter.md (a6f3e70c7f1e62756, claude-opus-5-5, 210433 tokens, 47 tool uses, 9.7 min)
+  reviewer_report: .scratch/migration/agents/reviews/O150-refuter.md (a6f3e70c7f1e62756, claude-opus-5-5, 210433 tokens, 47 tool uses, 9.7 min); over round 1: aeed84f6aa7d43a48, claude-opus-5-5, 193071 tokens, 44 tool uses, 7.0 min
   brief_check: .scratch/migration/agents/reviews/O150-brief-check.md (a29f2fa39393ed95d, claude-opus-5-5, 226538 tokens, 67 tool uses, 13.2 min)
   landing: not-started
 - step: O151
-  brief_check: "running: af22dc2fbdb77b4ae"
+  brief_check: .scratch/migration/agents/reviews/O151-brief-check.md (af22dc2fbdb77b4ae, claude-opus-5-5, 211381 tokens, 60 tool uses, 16.4 min)
   landing: preparing
 ```
 
@@ -197,7 +197,9 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
-None.
+- Open item 701 (2026-11-06, O151's brief check, C-4): how the slides marked Too tall reach O151's builder. Ruling 679 wants the same step to split or cut every one; the orchestrator measures them in the Present view (a builder runs no page) once O158 and O150 have landed. (a) Inside the build: after the first report the orchestrator measures, resumes the same builder with the list, and repeats until none is marked; only then the review, so repair round 1 stays for the review's findings. Pro: the step lands with none marked, as 679 asks; con: a resume outside the skill's round flow, which needs your yes. (b) In repair round 1, beside the review's findings. Pro: the skill's flow unchanged; con: a split slide is never measured again before landing, and what is still too tall after the one round is fixed by the orchestrator at landing (an inline build) or left marked. Recommended (a). (b) is the lazy option.
+- Open item 702 (2026-11-06, O151's brief check, C-6): the `cirrhosis-digital-twin` deck. The project's idea comes from a proposal shared with you in confidence, and the README's account of the idea is drawn from it. (a) The deck holds the project's name, stage and the manifest's facts that do not come from the proposal, nothing of its aims, methods or numbers. Pro: nothing confidential reaches an audience; con: a thin deck. (b) The deck states the idea in your own words from the README's opening paragraph, with nothing of the proposal's text, aims or numbers. Pro: a real deck; con: the idea itself may be what was shared in confidence. (c) No deck for it. Con: against ruling 679, every research project. Recommended (a) until you say the idea itself may be shown; the brief builds (a) meanwhile. None is the lazy option.
+- Open item 703 (2026-11-06, O150's review over round 1, declined to judge): the heading of the engine slide's third point. The point now reads "**Composable with constraints.** The same factorization carries through a lead-field constraint, federation, differential privacy, and spectral operators for PDEs." A spectral operator is a setting the factorization is carried into, not a constraint. (a) Keep your heading. (b) "Composable with other settings". (c) "Carried into new settings". Recommended (c): it names what all four items are. None is the lazy option.
 
 ## Closed items
 
