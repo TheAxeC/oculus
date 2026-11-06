@@ -1,33 +1,35 @@
 <script lang="ts">
     // Layer 3, Present partial. The strip of a project's facts at the foot of a slide that comes
-    // from the project's deck (Slide.svelte): each field that holds a value as one short chip, the
-    // field's label and then its words, a list's words joined in the one chip, in the order of
-    // `FACT_FIELDS`. The words are the server's (data/shapes/project-facts.ts), so every surface
-    // draws the same strip. The form and the status chips wear the project card's hues, a blocking
-    // chip red; the stage is the card's filled stage chip in the stage's hue, `failed` and
-    // `stopped` as they are; the domain wears its hue; the year, the code, reproduced and compute
-    // carry the card's glyphs; the rest are plain tags.
+    // from the project's deck (Slide.svelte): each field that holds a value, in the order of
+    // `FACT_FIELDS`, drawn one way, its label in small muted capitals and then its value in the
+    // slide's text colour, with no box, fill or border around any fact. The words are the
+    // server's (data/shapes/project-facts.ts), so every surface draws the same strip. The form,
+    // the stage, the status chips and the domain carry their hue as a dot before the value
+    // (parts/Dot.svelte): the form and the chips in the project card's hues, the chips' dot red
+    // when any chip blocks, the stage in its own hue, `failed` and `stopped` as they are, the
+    // domain in its hue, and a word with no colour in the grey tone those hues give it. The other
+    // fields carry no dot.
     //
-    // The strip wraps and is two lines at most: a third line is not drawn, and a chip whose words
-    // are longer than its room ends in an ellipsis, its tooltip giving the whole. Its chips and
-    // its tags, their words and their glyphs, are drawn at one size, the slide's small type
-    // (`--slide-fs-small`, themes/slide.css), so the strip scales with the slide, the text size
-    // and the theme; each line is as tall as the tallest chip or tag on it. With the pane's
-    // Project facts toggle off its words are hidden and its room is kept, so the slide is laid out
-    // and measured the same either way.
+    // A list draws its first entry and the count of the others ("Maryam Amir Haeri +2"), a list
+    // of one its entry alone. A value is drawn whole; only a fact wider than the strip's whole
+    // line, which happens in a narrow frame, has its value end in an ellipsis at the strip's edge,
+    // and a list's count stays drawn after its cut first entry. Each fact's tooltip gives the
+    // whole fact, its label and every entry, in `present.fact`'s words, and a screen reader reads
+    // the same whole fact from a copy drawn nowhere, since the drawn label and value carry no
+    // colon between them and the drawn list is shortened.
+    //
+    // A rule runs across the strip above its first line, in a mix of the muted text colour and
+    // the hairline colour, so it shows on the slide's frame under every theme. The facts wrap to
+    // as many lines as they need, every fact drawn and none broken across two lines. The strip is
+    // set in the slide's small type (`--slide-fs-small`, themes/slide.css) at the frame's factor
+    // 1, so it scales with the text size and the theme, outside the content's factor. With the
+    // pane's Project facts toggle off its words and its rule are hidden and its room is kept, so
+    // the slide is laid out and measured the same either way.
 
-    import Chip from '$lib/ui/controls/Chip.svelte';
-    import Tag from '$lib/ui/controls/Tag.svelte';
+    import Dot from '../Dot.svelte';
     import Tooltip from '$lib/ui/menu/Tooltip.svelte';
-    import { computeGlyph, wordGlyph } from '$lib/views/shared/card/card';
     import { isBlocked } from '$lib/state/boards/focus';
-    import {
-        chipGlyphName,
-        domainTone,
-        stageTone,
-        statusMarkTone,
-        vocabOf
-    } from '$lib/state/shared/words/tones';
+    import { domainTone, stageTone, statusMarkTone, vocabOf } from '$lib/state/shared/words/tones';
     import { t } from '$lib/state/shared/words/text';
     import type { FactField, ProjectFact } from '$lib/state/life/present';
 
@@ -61,69 +63,60 @@
         tier: t('board.facet_tier')
     });
 
-    /** The glyph the card draws a field with, for the three fields whose glyph is fixed. */
-    const glyphs: Partial<Record<FactField, string>> = $derived({
-        year: t('project.card.year_glyph'),
-        code: t('project.card.code_glyph'),
-        reproduced: t('project.card.repro_glyph')
-    });
-
-    /** One fact as the strip draws it: its words, and how it is drawn. */
+    /** One fact as the strip draws it. */
     type Drawn = {
         field: FactField;
-        text: string;
-        look: 'chip' | 'stage' | 'tag';
+        label: string;
+        /** The value's first entry, the whole value for a field of one word. */
+        first: string;
+        /** The count of the entries after the first ("+2"), the empty string for none. */
+        count: string;
+        /** The hue of the dot before the value; none for a field that draws no dot. */
         tone?: string;
-        glyph?: string;
+        /** The whole fact, every entry, for the tooltip and for a screen reader. */
+        whole: string;
     };
 
     const words = $derived(vocabOf(hub));
 
-    /** A fact's first key, the word or id its hue and glyph are read by. */
-    function first(fact: ProjectFact): string {
+    /** A fact's first key, the word or id its hue is read by. */
+    function key(fact: ProjectFact): string {
         return fact.keys?.at(0) ?? '';
     }
 
-    function drawnOf(fact: ProjectFact): Drawn {
-        const text = t('present.fact', labels[fact.field], fact.words.join(', '));
-        const keys = fact.keys ?? [];
+    /** The hue of a fact's dot, for the four fields that draw one. */
+    function toneOf(fact: ProjectFact): string | undefined {
         switch (fact.field) {
             case 'form':
-                return {
-                    field: fact.field,
-                    text,
-                    look: 'chip',
-                    tone: statusMarkTone(first(fact), hub),
-                    glyph: wordGlyph(chipGlyphName(first(fact), hub))
-                };
+                return statusMarkTone(key(fact), hub);
             case 'chips':
-                return {
-                    field: fact.field,
-                    text,
-                    look: 'chip',
-                    tone: isBlocked({ chips: keys }, words)
-                        ? 'red'
-                        : statusMarkTone(first(fact), hub),
-                    glyph: wordGlyph(chipGlyphName(first(fact), hub))
-                };
+                return isBlocked({ chips: fact.keys ?? [] }, words)
+                    ? 'red'
+                    : statusMarkTone(key(fact), hub);
             case 'stage':
-                return {
-                    field: fact.field,
-                    text,
-                    look: 'stage',
-                    tone: stageTone(first(fact), hub)
-                };
+                return stageTone(key(fact), hub);
             case 'domain':
-                return { field: fact.field, text, look: 'tag', tone: domainTone(first(fact)) };
-            case 'compute':
-                return { field: fact.field, text, look: 'tag', glyph: computeGlyph(first(fact)) };
-            default: {
-                const glyph = glyphs[fact.field];
-                return glyph === undefined
-                    ? { field: fact.field, text, look: 'tag' }
-                    : { field: fact.field, text, look: 'tag', glyph };
-            }
+                return domainTone(key(fact));
+            default:
+                return undefined;
         }
+    }
+
+    function drawnOf(fact: ProjectFact): Drawn {
+        const label = labels[fact.field];
+        const first = fact.words.at(0) ?? '';
+        const others = fact.words.length - 1;
+        const count = others > 0 ? t('present.fact_count', others) : '';
+        const one: Drawn = {
+            field: fact.field,
+            label,
+            first,
+            count,
+            whole: t('present.fact', label, fact.words.join(', '))
+        };
+        const tone = toneOf(fact);
+        if (tone !== undefined) one.tone = tone;
+        return one;
     }
 
     const drawn = $derived(facts.map(drawnOf));
@@ -133,17 +126,22 @@
     <ul class="list">
         {#each drawn as one (one.field)}
             <li class="fact" data-fact={one.field}>
-                <Tooltip text={shown ? one.text : ''}>
-                    {#if one.look === 'tag'}
-                        <Tag label={one.text} tone={one.tone} glyph={one.glyph} />
-                    {:else}
-                        <Chip
-                            label={one.text}
-                            tone={one.tone}
-                            glyph={one.glyph}
-                            filled={one.look === 'stage'}
-                        />
-                    {/if}
+                <span class="read">{one.whole}</span>
+                <Tooltip text={shown ? one.whole : ''}>
+                    <span class="drawn" aria-hidden="true">
+                        <span class="label">{one.label}</span>
+                        {#if one.tone !== undefined}
+                            <span class="mark">
+                                <Dot tone={one.tone} />
+                            </span>
+                        {/if}
+                        <span class="value">
+                            <span class="entry">{one.first}</span>
+                            {#if one.count !== ''}
+                                <span class="count">{one.count}</span>
+                            {/if}
+                        </span>
+                    </span>
                 </Tooltip>
             </li>
         {/each}
@@ -151,44 +149,97 @@
 </div>
 
 <style>
-    /* The strip is set in the slide's small type: the words of its chips and its tags and their
-       glyphs are drawn at `--slide-fs-small`, and a chip's line and height grow with its words
-       (`--chip-text`, ui/controls/Chip.svelte). Its facts are laid out as words are, each one a box
-       in a line, so a line is as tall as the tallest chip or tag on it at every text size, and the
-       strip is clamped to its first two lines: a third is not drawn, and a box is never cut. */
+    /* The strip is set in the slide's small type, and every measure below is in that type: the
+       rule above it and the room between the rule and the first line of facts, the gap between
+       two facts on a line and between two lines, the gap between a label and its value and the
+       label's size. The dot before a hued value is as wide as half the strip's type, 9 px at the
+       design size. */
     .facts {
-        --chip-text: var(--slide-fs-small);
-        --tag-text: var(--slide-fs-small);
-        --glyph-size: var(--slide-fs-small);
+        --fact-label: 0.72em;
+        --fact-gap: 1em;
+        --fact-between: 0.4em;
+        --dot-size: 0.5em;
 
-        display: -webkit-box;
-        overflow: hidden;
-        -webkit-box-orient: vertical;
-        -webkit-line-clamp: 2;
-        line-clamp: 2;
+        padding-top: 0.6em;
+        border-top: 1px solid color-mix(in srgb, var(--muted-txt, var(--muted)) 50%, var(--line));
         font-size: var(--slide-fs-small);
         line-height: 1.3;
     }
 
+    /* The facts wrap as words do, each one whole on its line. */
     .list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.2em var(--fact-gap);
         margin: 0;
         padding: 0;
         list-style: none;
     }
 
-    /* The room between two facts and between two lines, in the strip's own type. */
+    /* A fact, and the tooltip wrapper inside it, are no wider than the strip's line, so in a
+       narrow frame a value gives way to what its fact's line leaves it and ends in an ellipsis at
+       the strip's edge. */
     .fact {
-        display: inline-flex;
-        align-items: center;
+        position: relative;
         min-width: 0;
         max-width: 100%;
-        margin: 0.15em 0.35em 0.15em 0;
-        vertical-align: middle;
     }
 
     .fact > :global(*) {
         min-width: 0;
         max-width: 100%;
+    }
+
+    /* The fact as a screen reader reads it, drawn nowhere. */
+    .read {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip-path: inset(50%);
+        white-space: nowrap;
+    }
+
+    /* Label, dot and value on one line, the label and the value on one baseline and the dot
+       centred on the line. */
+    .drawn {
+        display: flex;
+        align-items: baseline;
+        gap: var(--fact-between);
+        min-width: 0;
+        white-space: nowrap;
+    }
+
+    .mark {
+        display: inline-flex;
+        flex: none;
+        align-self: center;
+    }
+
+    .label {
+        flex: none;
+        color: var(--muted-txt, var(--muted));
+        font-size: var(--fact-label);
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+    }
+
+    /* A value is drawn whole while its fact fits the strip's line; past that its first entry
+       gives way and ends in an ellipsis, and a list's count after it is always drawn. */
+    .value {
+        display: flex;
+        min-width: 0;
+    }
+
+    .entry {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .count {
+        flex: none;
+        margin-left: 0.3em;
     }
 
     /* With the toggle off the strip keeps its room, so the slide is laid out the same. */

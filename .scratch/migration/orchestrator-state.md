@@ -24,21 +24,6 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 
 ```yaml
 dispatch:           # steps in flight, up to six (Z632)
-- step: O158
-  base: a199495e4
-  worktree: .agents/worktrees/migration-O158
-  executor: agent
-  worker: claude:opus
-  session_id: a4151539c1a126061 (claude-opus-5-5)
-  launched: 2026-11-06
-  report: .scratch/migration/agents/reviews/O158-report.md
-  builder_usage: first run, handed back before any change (221753 tokens, 63 tool uses, 12.1 min); build after the cases ruling (311178 tokens, 78 tool uses, 16.3 min); round 1 (109836 tokens, 29 tool uses, 7.9 min)
-  round: 1
-  round_brief: .scratch/migration/agents/briefs/O158-round-1.md
-  cases_ruling: .scratch/migration/agents/briefs/O158-cases.md
-  reviewer_report: ".scratch/migration/agents/reviews/O158-refuter.md (a7c36a3b237a4d3c2, claude-opus-5-5, 230538 tokens, 56 tool uses, 11.9 min); over round 1: a3b7974c339a4dc07, claude-opus-5-5, 235128 tokens, 41 tool uses, 9.8 min"
-  brief_check: .scratch/migration/agents/reviews/O158-brief-check.md (adc6d991942348bee, claude-opus-5-5, 190286 tokens, 51 tool uses, 8.8 min)
-  landing: not-started
 - step: O163
   brief_check: .scratch/migration/agents/reviews/O163-brief-check.md (ad6ecc7ddb8993bc9, claude-opus-5-5, 207946 tokens, 62 tool uses, 11.7 min)
   base: 75bf4dd10
@@ -74,8 +59,8 @@ dispatch:           # steps in flight, up to six (Z632)
   session_id: a133caba1cd51dad2 (claude-opus-5-5)
   launched: 2026-11-06
   report: .scratch/migration/agents/reviews/O164-report.md
-  builder_usage: first run 283925 tokens, 150 tool uses, 30.7 min
-  reviewer_report: .scratch/migration/agents/reviews/O164-refuter.md (a30a3f28ea4eb8488, claude-opus-5-5, 241783 tokens, 54 tool uses, 12.4 min)
+  builder_usage: first run 283925 tokens, 150 tool uses, 30.7 min; round 1 330150 tokens, 48 tool uses, 8.7 min
+  reviewer_report: .scratch/migration/agents/reviews/O164-refuter.md (a30a3f28ea4eb8488, claude-opus-5-5, 241783 tokens, 54 tool uses, 12.4 min); over round 1: running: ab7bbaa55783b18d3 (claude-opus-5-5)
   round: 1 (agents/briefs/O164-round-1.md, snapshot .agents/worktrees/migration-O164-round-1, 18 paths)
   landing: not-started
 ```
@@ -218,14 +203,16 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
-- Open item 713 (2026-11-06), O161: the stand-in design cannot keep Cmd+F as it works today. O161's builder handed back before changing any code (`agents/reviews/O161-report.md`). Its evidence is Chromium's find-in-page source (`text_finder.cc`, `find_in_page.cc`), which the desktop app's find bar also uses (`src/desktop/windows/find-bar.ts:107-111`). When a find lands in a stand-in and the stand-in is replaced by the drawn card, the matched text is gone, and Chromium searches again from where the stand-in was. In one direction that skips every match of the card: Shift+Enter, or Enter, depending on the order of the swap. No order serves both. Cards drawn after the find began also show no yellow highlight until Chromium re-scans. This is read from Chromium's source and not seen in a browser; a real Cmd+F cannot be driven from here, so the look at landing would be the first sight of it. Ruling 712 (a) and your "exactly like it works today" rule this out.
+None.
+
+## Closed items
+
+- Open item 713 (2026-11-06), closed by Axel the same day: (a), cheaper cards, as `plan.md` Rulings "Open item 713" says; `content-visibility: auto` alone was the lazy option. The item as raised: O161: the stand-in design cannot keep Cmd+F as it works today. O161's builder handed back before changing any code (`agents/reviews/O161-report.md`). Its evidence is Chromium's find-in-page source (`text_finder.cc`, `find_in_page.cc`), which the desktop app's find bar also uses (`src/desktop/windows/find-bar.ts:107-111`). When a find lands in a stand-in and the stand-in is replaced by the drawn card, the matched text is gone, and Chromium searches again from where the stand-in was. In one direction that skips every match of the card: Shift+Enter, or Enter, depending on the order of the swap. No order serves both. Cards drawn after the find began also show no yellow highlight until Chromium re-scans. This is read from Chromium's source and not seen in a browser; a real Cmd+F cannot be driven from here, so the look at landing would be the first sight of it. Ruling 712 (a) and your "exactly like it works today" rule this out.
   Axel: Cmd+F stays unchanged, not negotiable; the options are rewritten so each keeps every card's text in the page from the first frame, so Cmd+F finds, counts, orders, steps and highlights exactly as today. Measured on the scratch server on 8797 (main with O158), Lit Watch on the scratch hub, one run each, by `performance.now`, a `longtask` observer and the resource timings in the page: from the click on the Lit Watch tab to the cards painted, 6.24 s; one main-thread task of 5.90 s starts at the click, and no request is made during it; the 678 cards exist at 6.19 s and are painted about 50 ms later; the 678 cards hold 37,147 elements (55 per card), and cloning all of them takes 66 ms; a forced style and layout of the grid takes 16 ms. So nearly all of the time is JavaScript run while the cards are made, about 8.7 ms per card, and almost none is layout or paint. The earlier option of `content-visibility: auto` saves only layout and paint, so it would leave Lit Watch about as slow as today; it is dropped.
   - (a) Cheaper cards: every card stays built and in the page, and the work each card does when it is made is cut. The step first takes a CPU profile of the 5.9 s task (a Chrome performance trace on the scratch server, as item 8 already asks for the timing), then removes the per-card work it shows, for example a tooltip or menu built only on its first hover or open, and a value every card works out on its own worked out once for the list. Pro: nothing about what is on the page changes, so Cmd+F, the card cursor, the reveal and the keys are untouched; it ends the cause of the slowness. Con: how much it saves is known only after the profile. Recommendation: this.
   - (b) Cards rendered as HTML first, made interactive in place when seen: every card's HTML is put into the page at once (the clone above shows the page takes 37,147 elements in 66 ms), and each card is hydrated (its Svelte code attached to the HTML already there) when it scrolls into view, gets focus or the pointer. Hydration keeps the card's text nodes, so a Cmd+F match in it is not disturbed. Pro: the largest saving when the cost is in the cards' live code. Con: producing the HTML still runs each card's code once, so part of the cost stays; the HTML must match what the card draws exactly, and a card where it does not is rebuilt, which for that card would disturb a current match; more machinery than (a).
   - The lazy option is the dropped `content-visibility: auto`, which keeps Cmd+F but leaves the 5.9 s.
   O161's builder waits on this item.
-
-## Closed items
 
 - Open item 712 (2026-11-06), closed by Axel the same day: (a), O161's stand-in holds exactly the text the card's face draws, so Cmd+F works exactly as today, as `plan.md` Rulings "Open item 712" says.
 
@@ -884,6 +871,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-11-06 (O158 landed). O158, the Project facts strip redesigned, landed (booking in `plan.md`, `agents/reviews/O158-landing.md`) on Axel's "I like O158", with the rule fix and the value cap removed. Axel ruled 713 (a), cheaper cards; O161's brief is rewritten to it next and its builder resumed. O164's review over round 1 runs (ab7bbaa55783b18d3). Open items: none. In flight (3 of 6): O163 (/land next), O164 (review over round 1), O161 (brief rewrite for 713 (a)). Queued: O151 (after O163), O159 (after O163), O165 (/spec now: O162 and O158 have landed), O166 (after O164).
 - 2026-11-06 (O158's look defects fixed; 713's options rewritten; O163 reviewed). O158's two defects are fixed in the gate in `src/lib/views/academic/present/parts/project/Facts.svelte`: the rule above the strip is drawn in a mix of the muted text colour and `--line` (rgb 100,100,100 under Dark Modern, where `--line` alone was #2b2b2b), and the 14em cap on a value is removed, so a value is cut only when its fact is wider than the strip's whole line; the look on 8797 over all 25 project decks: every fact drawn, none outside the strip, none cut, each deck's text factor equal to main's; screenshots in the scratchpad's `O158look/`; the gate run follows O164's builder's tests. Axel ruled Cmd+F unchanged, not negotiable, for 713; Lit Watch measured on 8797 (6.24 s to paint, one 5.90 s main-thread task, 50 ms of paint); 713's options rewritten from that. O163's review (`agents/reviews/O163-refuter.md`) found Proof 1 (the report's red for `hub-portfolio.test.ts` does not reproduce: 16 passed alone) and Behaviour 1 (C5 and C6 give no before in the look section), both closed at landing. Open items: 713. In flight (4 of 6): O158 (gate run, then its screenshots to Axel and /land), O163 (/land next), O164 (round 1), O161 (waits on 713).
 - 2026-11-06 (O164 round 1 sent; O158's look defects being fixed). Axel ruled that 714 is invalid: a look's defects are fixed, never put to him; the item is removed. O158's two defects seen at the look (the rule above the strip barely visible under Dark Modern; values cut at 14em, the stage of `btfno` and `bt-operator-theory` and the first pillar on 22 decks) are fixed in the gate at landing, then the look is taken again and the screenshots go to Axel. O164's review (`agents/reviews/O164-refuter.md`) found Standards 1, the press box written five times; repair round 1 (`agents/briefs/O164-round-1.md`) is sent to a133caba1cd51dad2. Open items: 713. In flight (4 of 6): O158, O163 (under review), O164 (round 1), O161 (waits on 713).
 - 2026-11-06 (O158's look taken; O163 and O164 under review). O158 is merged by hand in the gate against main at f3ebd1fa5, every key-hint part of its `Slide.svelte` removed; the gate's `npm run diagrams && npm run docs:palette && npm run test:quick` exited 0 ("test:quick: 89.9 s; every command passed", `.agents/worktrees/gate-O158.log`); the merged diff is saved in the scratchpad's `O158land/staged.patch`. Its look on 8797 is open item 714. O163's report and O164's report are saved with their usage; their reviewers run on claude-opus-5-5. Open items: 713, 714. In flight (4 of 6): O158 (waits on 714), O163 and O164 (under review), O161 (waits on 713). Next: the two reviews; Axel's rulings on 713 and 714.

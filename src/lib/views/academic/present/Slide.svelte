@@ -1,9 +1,10 @@
 <script lang="ts">
     // Layer 3, Present partial. One slide of the deck drawn as the kind it is. It is the one place
     // that knows which component each kind is, so the pane draws a slide by handing this the slide
-    // and the deck and nothing else. The slide sits in a reading column as wide as the frame's
-    // inner width and at most `--slide-reading` (1040 px, themes/slide.css), centred in the frame
-    // and as tall as its inner box, and a part that centres its content takes the column's height.
+    // and the deck and nothing else. The slide takes the frame's inner box, and its content sits
+    // in a reading column, centred in that box, as wide as it and at most `--slide-reading`
+    // (1040 px, themes/slide.css), as tall as the box less the foot, and a part that centres its
+    // content takes the column's height.
     //
     // The slide lays itself out from what it holds, in the frame's own px, so it is laid out the
     // same on every surface that draws it at the same frame: the pane, the presenter screen, the
@@ -21,18 +22,24 @@
     // factor fits when the content ends above the foot, the text inside its box and every figure's
     // box, caption included, inside the room. An image in a slide's Markdown is drawn no taller
     // than the room under the slide's heading at the factor tried, less what the rest of the
-    // slide's Markdown takes of that room. A figure whose image has not
-    // loaded is not drawn until it has, and one that fails is drawn as the missing-figure words,
-    // as text. The content is hidden until it has been laid out once. A slide whose content does
-    // not fit at the least factor is drawn at it and runs past its frame, its room as tall as its
-    // lowest figure, which a measuring Stage reports as too tall.
+    // slide's Markdown takes of that room. A figure whose image has not loaded is not drawn until
+    // it has, and one that fails is drawn as the missing-figure words, as text. The content is
+    // hidden until it has been laid out once. A slide whose content does not fit at the least
+    // factor is drawn at it and runs past its frame, its room as tall as its lowest figure, which
+    // a measuring Stage reports as too tall. What the layout reads off the drawn slide (its
+    // figures, their frames and gaps, the room under a heading, the formulas' fit) is
+    // screen/drawn-slide.ts's; the search and the state it sets are here.
     //
     // The slide's foot, under its content, holds the strip of a project's facts at the frame's own
-    // type scale. A slide that comes from a project's deck (`row.project`) carries the strip of
-    // that project's facts (`deck.projects`, read by `slideFacts`, no strip for a project with
-    // none), on every surface that draws a slide, its words shown by the pane's Project facts
-    // toggle (`facts`) and hidden, their room kept, when it is off. The content's room is the
-    // frame's inner height less the foot's, the strip counted, on every slide alike.
+    // type scale, across the frame's whole inner width, which is wider than the reading column
+    // where that width passes 1040 px (1150 px in a 1280 px frame). A slide that comes from a
+    // project's deck (`row.project`) carries the strip of that project's facts (`deck.projects`,
+    // read by `slideFacts`, no strip for a project with none), on every surface that draws a
+    // slide, its words shown by the pane's Project facts toggle (`facts`) and hidden, their room
+    // kept, when it is off. The strip wraps to as many lines as its facts need, so its height
+    // differs from one project to the next; the layout measures the foot as drawn each time it
+    // runs and takes the content's room above it, so a taller strip leaves the content less room
+    // and never lies over it.
 
     import { flushSync, untrack } from 'svelte';
     import Grid from './parts/Grid.svelte';
@@ -42,7 +49,14 @@
     import Section from './parts/Section.svelte';
     import Summary from './parts/Summary.svelte';
     import Title from './parts/Title.svelte';
-    import { fitFormula } from './screen/formula';
+    import {
+        capTopOf,
+        figuresIn,
+        fitFormulas,
+        frameOf,
+        gapOf,
+        holderOf
+    } from './screen/drawn-slide';
     import {
         FIT_LEAST,
         FIT_MOST,
@@ -98,83 +112,10 @@
 
     const place: SlidePlace = $derived({ layout, boxes, failed, depth });
 
-    let reading = $state<HTMLElement | null>(null);
+    let slide = $state<HTMLElement | null>(null);
     let content = $state<HTMLElement | null>(null);
     let foot = $state<HTMLElement | null>(null);
     let probe = $state<HTMLElement | null>(null);
-
-    /** One figure of the drawn slide: its index on the slide and its image. */
-    type Drawn = { index: number; image: HTMLImageElement };
-
-    /** The figures of the slide whose image is drawn, in the order the slide holds them. */
-    function figuresIn(within: HTMLElement): Drawn[] {
-        return [...within.querySelectorAll<HTMLImageElement>('img[data-figure]')].map((image) => ({
-            index: Number(image.dataset.figure),
-            image
-        }));
-    }
-
-    /** The box a figure is drawn in: its panel with the caption and explanation, or its image. */
-    function holderOf(image: HTMLImageElement): Element {
-        return image.closest('[data-figure-box]') ?? image;
-    }
-
-    /**
-     * The px the drawn image's padding and border add to it: the larger of its two axes, the
-     * left and right sides on the width and the top and bottom on the height, since the layout
-     * takes one frame for both.
-     */
-    function frameOf(image: HTMLImageElement): number {
-        const style = getComputedStyle(image);
-        const px = (...sides: string[]): number =>
-            sides.reduce((total, side) => total + (parseFloat(side) || 0), 0);
-        const across = px(
-            style.paddingLeft,
-            style.paddingRight,
-            style.borderLeftWidth,
-            style.borderRightWidth
-        );
-        const down = px(
-            style.paddingTop,
-            style.paddingBottom,
-            style.borderTopWidth,
-            style.borderBottomWidth
-        );
-        return Math.max(across, down);
-    }
-
-    /** The gap between two figures of a block: the bottom margin of the first figure's box. */
-    function gapOf(drawn: Drawn[]): number {
-        if (drawn.length === 0) return 0;
-        return parseFloat(getComputedStyle(holderOf(drawn[0].image)).marginBottom) || 0;
-    }
-
-    /**
-     * Where the room for a Markdown image starts, from the content's top: the top of the part's
-     * room (`data-room`), or, when the room is one Markdown field that opens with a heading (a
-     * text slide's), under that heading, its bottom margin included; the content's top when the
-     * part marks no room.
-     */
-    function capTopOf(
-        space: Element | null,
-        top: (element: Element) => number,
-        tall: (element: Element) => number
-    ): number {
-        if (space === null) return 0;
-        const opening = space.querySelector(':scope > .block')?.firstElementChild ?? null;
-        if (opening !== null && /^H[1-6]$/.test(opening.tagName)) {
-            const margin = parseFloat(getComputedStyle(opening).marginBottom) || 0;
-            return top(opening) + tall(opening) + margin;
-        }
-        return top(space);
-    }
-
-    /** Fit every formula of the slide to the box it is drawn in now. */
-    function fitFormulas(within: HTMLElement): void {
-        for (const card of within.querySelectorAll<HTMLElement>('[data-formula]')) {
-            fitFormula(card);
-        }
-    }
 
     /**
      * Lay the slide out: measure the room and the figures, then search the largest factor at
@@ -182,14 +123,14 @@
      * drawn (a hidden tab) is left until it is.
      */
     function layOutSlide(): void {
-        const column = reading;
+        const whole = slide;
         const box = content;
-        const parent = column?.parentElement ?? null;
-        if (column === null || box === null || parent === null || column.offsetWidth === 0) {
+        const parent = whole?.parentElement ?? null;
+        if (whole === null || box === null || parent === null || whole.offsetWidth === 0) {
             return;
         }
         // The slide is drawn scaled; a rect divided by the scale is in the frame's own px.
-        const scale = column.getBoundingClientRect().width / column.offsetWidth;
+        const scale = whole.getBoundingClientRect().width / whole.offsetWidth;
         const tall = (element: Element): number => element.getBoundingClientRect().height / scale;
         const frame = getComputedStyle(parent);
         const inner =
@@ -378,7 +319,7 @@
     });
 </script>
 
-<div class="reading" data-slide-key={row.key} bind:this={reading}>
+<div class="slide" data-slide-key={row.key} bind:this={slide}>
     <div
         class="content slide-fit"
         class:waiting={!laid}
@@ -444,34 +385,36 @@
 </div>
 
 <style>
-    /* The reading column, at most `--slide-reading` wide and centred in the frame, at least as tall
-       as the frame's inner box: the content and the foot stand in its flow, and the probe is
-       placed against its top-left corner. */
-    .reading {
+    /* The slide takes the frame's inner box: the content and the foot stand in its flow, and the
+       probe is placed against its top-left corner. */
+    .slide {
         position: relative;
         display: flex;
         flex-direction: column;
         box-sizing: border-box;
         width: 100%;
-        max-width: var(--slide-reading);
         min-height: 100%;
-        margin-inline: auto;
     }
 
-    /* The content takes the column's height above the foot, so a part that centres its content
+    /* The content is the reading column: as wide as the slide and at most `--slide-reading`,
+       centred, and as tall as the slide above the foot, so a part that centres its content
        centres it there; the content's box carries the factor its type is drawn at. */
     .content {
         display: flex;
         flex: 1 0 auto;
         flex-direction: column;
+        box-sizing: border-box;
+        width: 100%;
+        max-width: var(--slide-reading);
+        margin-inline: auto;
     }
 
     .waiting {
         visibility: hidden;
     }
 
-    /* The foot sits at the bottom of the reading column, under the slide's content, and holds the
-       strip with its own space above it. */
+    /* The foot sits at the bottom of the slide, under the content, across the slide's whole
+       width, and holds the strip with its own space above it. */
     .foot {
         margin-top: auto;
     }

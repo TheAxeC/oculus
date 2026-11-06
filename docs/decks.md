@@ -383,14 +383,16 @@ Every key a slide's front matter is read for, with its shape, the kinds that rea
 ## The project facts strip
 
 - Each slide that comes from a project's deck carries a strip of the project's facts at its foot: a slide of the project's own files, a slide a group places from a project's deck, and a summary or a grid a project's deck places. It is drawn on the pane, the presenter screen, the Overview's tiles, the audience window and the PDF.
-- The strip shows each field that holds a value as a labelled chip, in the words and hues of the project card, in this order: form, stage, status chips, domain, pillars, datasets, lead, supervisors, collaborators, year, venue, funding, compute, code, reproduced and tier.
-- The stage is drawn as it is, `failed` and `stopped` included. The strip is two lines at most, and a chip too long for its room ends in an ellipsis, its tooltip giving the whole.
+- The strip shows every field that holds a value, in this order: form, stage, status chips, domain, pillars, datasets, lead, supervisors, collaborators, year, venue, funding, compute, code, reproduced and tier. Each is drawn the same way, in the words of the project card: its label in small muted capitals, then its value, with no box around it, under a thin rule that runs across the slide above the strip.
+- The form, the stage, the status chips and the domain carry their hue as a dot before the value, in the hues of the project card; the chips' dot is red when any chip blocks, and a word with no colour gets a grey dot. The stage is drawn as it is, `failed` and `stopped` included.
+- A list shows its first entry and how many more ("Maryam Amir Haeri +2"). A value too long for its room ends in an ellipsis, with a list's count drawn after it. Each fact's tooltip gives the whole fact, its label and every entry.
+- The strip runs across the slide's whole inner width and wraps to as many lines as its facts need, so every fact is shown and none is broken across two lines. The slide's content is laid out in the room above it.
 - The project's domain, on its slides, the strip, a legend, a summary row and a grid card, is the domain the manifest's `domain:` names in the project's own hub, else in the one other hub of the workspace that holds the key. A key no hub holds names no domain: the finding is the manifest's, "domain is heart, which is not a key of domains" on its `domain:` line under Findings, and the project's slides are drawn in the neutral tone. A key two or more other hubs hold and the own hub does not names no domain either, with the finding of that reference. An empty `domain:` names no domain and is that same finding of the manifest. A deck raises no finding of its own on a project's domain.
 - The Project facts toggle in the toolbar, drawn while the slide on screen comes from a project's deck, shows or hides the strip's words. It is on by default and kept with the pane, also when it opens another deck. The strip keeps its room while hidden, so the slide's layout and its Too tall finding do not change with the toggle.
 
 ## Project fields in a slide
 
-`{{project.<field>}}` anywhere in a slide, its front matter included, is filled from the manifest of the project whose deck holds the slide, in the strip's words, the words of a list joined with ", ". Spaces inside the braces are allowed, and the field's name is written as it is listed.
+`{{project.<field>}}` anywhere in a slide, its front matter included, is filled from the manifest of the project whose deck holds the slide, in the strip's words, every entry of a list joined with ", " as the strip's tooltip gives it, where the strip draws the first entry and a count. Spaces inside the braces are allowed, and the field's name is written as it is listed.
 
 ```markdown
 # Alpha at {{project.stage}}

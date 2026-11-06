@@ -1,18 +1,18 @@
-In flight (4 of 6 slots in use):
-- O158 (the facts strip redesigned): merged by hand against main; the defects its look found (the rule not visible, values cut) are fixed in the gate before its screenshots go to Axel.
-- O163 (the hub's portfolio deck written again): built; under review.
-- O161 (cards drawn as they are seen): builder handed back before any change; waits on open item 713.
-- O164 (a card's links open their page): repair round 1 sent (one press box).
+In flight (3 of 6 slots in use):
+- O163 (the hub's portfolio deck written again): reviewed; /land next.
+- O161 (cards made cheaper, every card kept in the page): its brief rewritten to ruling 713 (a), then its builder resumed.
+- O164 (a card's links open their page): repair round 1 built; its review over the round runs.
 
 Queued, in order (4):
-- O151 (a deck for every research project): /spec again after O162, O158 and O163 land.
+- O165 (the guides redesigned): /spec now; O162 and O158 have landed.
+- O151 (a deck for every research project): /spec again after O163 lands.
 - O159 (one folder search per hub): /spec again after O163 lands.
-- O165 (the guides redesigned): /spec after O162 and O158 land, which write docs/HELP.md and docs/decks.md.
 - O166 (the record pages made one design): /spec after O164 lands.
 
 Owed looks: none.
 
 Landed, newest first:
+- O158 (the Project facts strip redesigned), 2026-11-06, the commit after 5cf89aea8.
 - O162 (the arrow-keys hint removed), 2026-11-06, f3ebd1fa5.
 - O160 (Live HPC shows its refresh running), 2026-11-06, eae89abbe.
 - O150 (the hub's portfolio deck), 2026-11-06, 6bdef6d4d; its hub changes are not on disk.

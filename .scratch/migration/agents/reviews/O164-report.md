@@ -201,4 +201,124 @@ No sentence of `docs/HELP.md` is made false; three are made incomplete. For the 
 - C7 holds by reading: `entryOpener` takes the hub from `addressOfId(id)` of the tag's own id and passes it to both `registryKey` and `entryPage`.
 - This step adds or changes no test.
 
-Usage: builder a133caba1cd51dad2 (claude-opus-5-5), 283925 tokens, 150 tool uses, 30.7 min.
+## Repair round 1
+
+Everything in the round's brief is done.
+
+### DONE / NOT DONE
+
+| Item | State | Proof |
+| --- | --- | --- |
+| 1. One component draws the box a plain press sits in; the five places use it; the five copies of the rule are removed | DONE | `src/lib/views/shared/card/project/PressBox.svelte`; check 1 below prints only its line; `grep -rn 'class="crosslink"\|\.crosslink\|class="press' src/lib/views` prints only `PressBox.svelte:28` |
+| 1. A caller sets its own width | DONE | `PressBox` props `width` (a CSS length, the line's whole width when none) and `mono` (the folder's monospace face); `LaneCard.svelte` passes `width={one.cut ? CUT_WIDTH : undefined}` |
+| 2. Comments point at the one component, no history | DONE | head comments of `CardLinks.svelte:5-9`, `CardDetails.svelte:10-12`, `CardFacts.svelte:16-22`, `ProjectCard.svelte:7-10`, `LaneCard.svelte:16-21` name `PressBox.svelte`; the box's style comments are gone with the rules; history grep below |
+| Check 1 | DONE | one line, quoted below |
+| Check 2 | DONE | the ASCII gate printed nothing |
+| Check 3 | DONE | every component at or under 520 lines, largest 444 |
+| Check 4 | DONE | `diff` printed nothing, exit 0 |
+| Check 5 | DONE | `test:quick: 116.7 s; every command passed` |
+
+The new file sits in `views/shared/card/project/`, which now holds 8 items (`ls src/lib/views/shared/card/project | wc -l`). `views/shared/card/` holds 10 items, so the ten-item rule rules it out there.
+
+The component sets `--press-width` on every box it draws (`100%` when no `width` is given), so a box never takes the width of an outer box through inheritance. `LaneCard.svelte` holds the venue's 14em once, as the constant `CUT_WIDTH`. Its pressed venue and its venue with no press both use it, the latter through `style:max-width` on its `.cut` span.
+
+### What the one rule changes, per place
+
+The one rule is `display: inline-flex; align-items: center; min-width: 0; max-width: var(--press-width); border: 1px solid transparent; border-radius: var(--radius-sm); text-align: left;` with `background: var(--chip)` on hover.
+
+- **`CardLinks.svelte`, the pressed tags (both branches):** the old `.crosslink` held the same declarations with `max-width: 100%`. Nothing changes in what is drawn.
+- **`CardDetails.svelte`, the DISSEMINATED IN tags:** the old `.crosslink` was identical. Nothing changes.
+- **`ProjectCard.svelte`, the domain tag:** the old `.crosslink` was identical. Nothing changes.
+- **`CardFacts.svelte`, the compute facts and the folder:** these gain `text-align: left`, which their `.press` lacked. Judged no change in what is drawn:
+  - The box is `inline-flex`, so it is as wide as the button it holds.
+  - The plain button inherits the alignment.
+  - Its tag is one line (`white-space: nowrap` in `Tag.svelte`, since neither passes `wrap`), so the words fill the box with no slack to align.
+  - The folder's monospace face moves from the folder's own `.folder` rule to `PressBox`'s `.mono`, on the same box, with the same `font-family: var(--font-mono)`.
+- **`LaneCard.svelte`, the pressed venue:** this gains `text-align: left` and `max-width: var(--press-width)`, here 14em. Judged no change in what is drawn:
+  - The old box was `.press.cut`: `max-width: 14em`, with no 100% cap. The new one is the same 14em.
+  - The words are one line, cut with an ellipsis by `ToolButton cut`, so there is no slack to align.
+  - The box no longer carries `.cut`'s rule, but its `display: inline-flex` and `min-width: 0` are both in the one rule.
+- **`LaneCard.svelte`, the venue with no press:** its 14em moves from the `.cut` rule to `style:max-width={CUT_WIDTH}`. Same value, same box.
+
+This is by reading only; it is for the look on landing.
+
+### Files of the round
+
+From `wc -l`, before the round to after it:
+
+| File | Lines | In the round's write list |
+| --- | --- | --- |
+| `src/lib/views/shared/card/project/PressBox.svelte` | new, 50 | yes |
+| `src/lib/views/shared/card/project/CardLinks.svelte` | 320 to 306 | yes |
+| `src/lib/views/shared/card/project/CardDetails.svelte` | 193 to 178 | yes |
+| `src/lib/views/shared/card/project/CardFacts.svelte` | 179 to 158 | yes |
+| `src/lib/views/shared/card/project/ProjectCard.svelte` | 459 to 444 | yes |
+| `src/lib/views/boards/focus/lanes/LaneCard.svelte` | 360 to 353 | yes |
+| `docs/diagrams/*` | rewritten by `npm run diagrams`; `git diff --numstat -- docs` gives the same counts as at the end of the step (channels +285 -283 and +701 -689, layer-views +4 -4, layers +2 -2) | yes |
+| `.scratch/migration/agents/reviews/O164-report.md` | this section | yes |
+
+No other path changed (`git status --short`).
+
+### The checks as printed
+
+Check 1, `grep -rn -E 'border: 1px solid transparent' src/lib/views/shared/card src/lib/views/boards/focus/lanes`:
+
+```
+src/lib/views/shared/card/project/PressBox.svelte:38:        border: 1px solid transparent;
+```
+
+Check 2: the ASCII gate of the rules file (its perl form) ran over the six changed files and printed nothing.
+
+Check 3, `wc -l`:
+
+```
+      50 src/lib/views/shared/card/project/PressBox.svelte
+     306 src/lib/views/shared/card/project/CardLinks.svelte
+     178 src/lib/views/shared/card/project/CardDetails.svelte
+     158 src/lib/views/shared/card/project/CardFacts.svelte
+     444 src/lib/views/shared/card/project/ProjectCard.svelte
+     353 src/lib/views/boards/focus/lanes/LaneCard.svelte
+```
+
+Check 4: I wrote `sh utils/unused-exports.sh` into the scratchpad. `diff .agents/worktrees/O164-base/unused-exports.txt <that file>` printed nothing, exit 0; the list has 334 lines.
+
+Check 5: `npm run diagrams` (exit 0), then `npm run test:quick`, once:
+
+```
+test:quick: 21 changed file(s), from git since HEAD
+test:quick: 28 test file(s)
+ok      prettier (2.5 s): All matched files use Prettier code style!
+ok      ASCII gate (2.6 s)
+ok      svelte-kit sync (5.2 s)
+ok      svelte-check (25.2 s): 1793997519693 COMPLETED 585 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      eslint (25.8 s)
+ok      vitest (65.4 s): Duration  37.30s (transform 61.75s, setup 0ms, import 129.49s, tests 4.98s, environment 852ms)
+ok      vitest checks (94.0 s): Duration  65.70s (transform 40.22s, setup 0ms, import 73.72s, tests 158.08s, environment 4ms)
+ok      vitest slow (111.2 s): Duration  83.09s (transform 38.01s, setup 0ms, import 52.87s, tests 80.12s, environment 1ms)
+test:quick: 116.7 s; every command passed
+```
+
+**The verify list ran once in this round,** three times across the step and the round. No whole-suite command was run. While working I also ran:
+
+- `npx prettier --write` and `--check` over the six files.
+- `npx eslint` over the six files, exit 0.
+- `npx svelte-check` over the project once: `0 ERRORS 0 WARNINGS`.
+
+History-word grep over every added line of `git diff -U0 -- src`, plus `PressBox.svelte` (untracked, which gave no hit):
+
+```
+94:+     * How wide a venue tag is drawn before its words are cut with an ellipsis, its whole name in
+225:+    // stop, so a card gains no stops before its controls for them; a reader of the page reads each
+```
+
+Both uses of "before" are order on the page, not a comparison with an earlier state of the code.
+
+### Judgment calls and limits of the round
+
+- The way a caller sets a width is a prop, `width`, because a scoped class from the caller would not reach the component's element without `:global`. The monospace face is the prop `mono`, the folder's one need. Both are reversible.
+- The box is now one element with a style attribute (`--press-width`) on every press. The rendered markup gains that attribute and loses the per-file scoped class names. Nothing else in the markup changes.
+- `src/lib/ui/` holds no such box. `src/lib/views/sources/file/pdf/viewer.css` has a `border: 1px solid transparent` of its own (`grep -rln 'border: 1px solid transparent' src/lib/views`); it belongs to the PDF viewer, not to a card press, and is outside the round.
+- Nothing was seen on screen. The per-place account above is by reading, for the look on landing.
+- The round adds or changes no test.
+
+Usage: builder a133caba1cd51dad2 (claude-opus-5-5): first run 283925 tokens, 150 tool uses, 30.7 min; round 1 330150 tokens, 48 tool uses, 8.7 min.
