@@ -48,6 +48,8 @@ dispatch:           # steps in flight, up to six (Z632)
   builders_before: a09725d8f3259d142 (claude-opus-5-5, stopped)
   launched: 2026-11-06
   report: .scratch/migration/agents/reviews/O160-report.md
+  builder_usage: the stopped builder's draft (not recorded); this builder (239648 tokens, 79 tool uses, 18.4 min)
+  reviewer_report: "running: a954d5be2d7b092c9 (claude-opus-5-5)"
   round: 0
   brief_check: .scratch/migration/agents/reviews/O160-brief-check.md (ab29e1d416fa5d19e, claude-opus-5-5, 138617 tokens, 40 tool uses, 5.7 min)
   shared_paths: "docs/HELP.md with O158 (migration): O158 writes lines 341-347, O160 lines 359 and 363, so the two hunks do not touch"
@@ -65,10 +67,15 @@ dispatch:           # steps in flight, up to six (Z632)
   shared_paths: "src/lib/views/academic/present/Slide.svelte, present.yml and docs/decks.md with O158 (migration): O162 lands first and O158's landing merges Slide.svelte by hand, removing the hint wording and the past room from O158's version; present.yml line 82 against O158's 95-105 and decks.md line 166 against O158's 383-393 do not touch"
   landing: not-started
 - step: O163
-  brief_check: "running: ad6ecc7ddb8993bc9 (claude-opus-5-5)"
+  brief_check: .scratch/migration/agents/reviews/O163-brief-check.md (ad6ecc7ddb8993bc9, claude-opus-5-5, 207946 tokens, 62 tool uses, 11.7 min)
+  waits_on: open items 707 and 708
   landing: preparing
 - step: O161
-  brief_check: "running: ac24ce86435cfa7fd (claude-opus-5-5)"
+  brief_check: .scratch/migration/agents/reviews/O161-brief-check.md (ac24ce86435cfa7fd, claude-opus-5-5, 184834 tokens, 49 tool uses, 10.4 min)
+  waits_on: open item 709
+  landing: preparing
+- step: O164
+  brief_check: "running: a7883a6fa8f16f8f4 (claude-opus-5-5)"
   landing: preparing
 ```
 
@@ -211,6 +218,21 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
 - Open item 706 (2026-11-06), from O162's brief check (C-16): once the key hint goes, nothing a reader sees names the keys that move a deck besides Space. Help's keys table (`docs/HELP.md:199-200`) lists `F / P / O` and `Space / Shift+Space`; the arrows, Page Up / Page Down and Home / End that `screen/keys.ts:74-90` also handles are named nowhere. Options: (a) O162 widens to `docs/HELP.md` line 200, whose row becomes `Arrows, Page Up / Page Down, Space / Shift+Space | next / previous slide` with a row `Home / End | first / last slide`; pro: every deck key is named in the one place Help names keys, in the step that removes the only other place; con: one more path, shared with O158 and O160 at other lines of HELP.md, merged by hand at landing. (b) Help stays as it is; pro: no wider step; con: the arrow keys, Page Up / Page Down and Home / End stay undocumented. Recommendation: (a). (b) is the lazy option.
+
+- Open item 707 (2026-11-06), from O163's brief check (C-3): two lines still describe a deck as public, against the ruling "Decks are internal". `tests/fixtures/hubs/demo/deck/present.yml:1` reads "# Rules for what goes on a slide (a public artifact): public-safe only, every number real and matching the manuscript, never a null or negative result, no hedging (the slide's `tag` chip carries the status)."; the research hub's `README.md:60` reads "A project's public slide is `present/main.md` (`kind: project`)". Options: (a) O163 widens to both: the fixture's comment line is removed (the demo deck then states no rule of its own), and the hub README's "public slide" becomes "slide", copied into the hub at landing for your commit; pro: no file left says a deck is public or hides a result; con: two more paths, one of them your hub README. (b) Both stay; pro: the step stays at the deck folder; con: the demo hub and the hub README keep a rule you ruled out. Recommendation: (a). (b) is the lazy option.
+
+- Open item 708 (2026-11-06), from O163's brief check (C-12): the hub deck's closing slide, `deck/closing.md:8`, reads "Several are open to collaborators across computer science, psychology, and medicine."; no deck of the 25 names psychology. Options: (a) O163's builder drafts a closing lede that holds for every deck the group places (the 25 now, and those O151 adds), for your corrections at landing, as ruling 698 did for the title; pro: the closing says nothing false; con: one more file written, and a text for you to read. (b) The closing stays as it is; pro: no change to your words; con: the deck ends on a claim no deck backs. Recommendation: (a). (b) is the lazy option.
+
+- Open item 709 (2026-11-06), from O161's brief check (C-10): ruling 705 gives a card not yet drawn a stand-in with the words the view's own search reads. A card's face also draws text the search does not read: in Lit Watch the search reads title, authors, venue, year, project, motif, why and threatens (`src/lib/state/feeds/radar.ts:103`), while the face also draws the idea spark (`RadarCard.svelte:126`), the relevance tag (`:271-272`) and the project titles. Today Cmd+F finds those words on every card; with the ruling's words alone it finds them only on cards already drawn. Options: (a) each stand-in holds the search's words plus the text its card's face draws, so Cmd+F finds every word it finds today; pro: no find that works today stops working; con: each caller gives two sets of fields, and a stand-in holds more text. (b) The stand-in holds the search's words only, as ruling 705 reads; pro: one set of fields per caller; con: a word only on a card's face is not found until the card is drawn. Recommendation: (a). (b) is the lazy option.
+
+- Open item 710 (2026-11-06), Axel's request that every record's page be one design: the pillar page's count buttons kept, the "Referred to by" list gone, and a button that opens a transient board of the record's projects with the board's filters. What the tree has: every record's page is `RecordPage.svelte`; the entry page (`views/boards/entry/Entry.svelte`) draws the card, then "Referred to by" (`views/shared/forms/entry/Referrers.svelte`, from `state/forms/referrers.ts`) and the folder blocks; the Person page (`views/boards/person/Person.svelte`) draws the card, then project cards under Projects and Waiting on and the supervision folder; the pillar's counts are `LineCard.svelte:90-103` (in flight, total, one tag per stage tier). A transient board exists already: the Awaiting box's board (`state/boards/board/presets.ts:570` `awaitingPreset`, `Projects.svelte:155`), the Projects board component under a view of its own, one tab per name, holding exactly the projects given by id. The decisions, each with a recommendation:
+  - D1, which pages: every record page, the entry page of every collection and the Person page, through one shared part, so no page draws its own project list. Recommendation: all of them.
+  - D2, the count strip: on every record page under the card, the pillar's strip (in flight, total, one per stage tier) for the record's projects, each count a button that opens the record's board with that tier picked in the bar, and the total opening it unfiltered. Recommendation: this.
+  - D3, the record's board: a transient board built as the Awaiting board is (`awaitingPreset` over the ids the referrers give), one tab per record, titled with the record's name, with the full bar (search, facets, slices, Cards and List); its picks are the tab's own state, so changing them there changes nothing else. Recommendation: this.
+  - D4, what is not a project: the people and funding schemes that name an organisation and the setting that names a resource are drawn on the card as tag lines by kind (People, Funding, Setting), each tag opening its page, as a project card's tags do after O164; "Referred to by" is removed. Recommendation: this.
+  - D5, the Person page's Waiting on: a button of the strip, "<n> waiting on <name>", opening the record's board with the waiting toggle on. Recommendation: this.
+  - D6, the folder blocks (an entry's linked folder, a student's supervision folder): kept as they are, since they are files and not referrers. Recommendation: kept.
+  The lazy option would be to delete "Referred to by" on the entry page alone and leave the Person page's card lists. On the ruling, the work is booked as one step after O164 lands, since O164 changes the card tags D4 reuses.
 
 ## Closed items
 
