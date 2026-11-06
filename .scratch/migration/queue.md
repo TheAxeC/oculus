@@ -8,7 +8,7 @@ In flight (5 of 6 slots in use):
 Queued, in order (4):
 - O151 (a deck for every research project): /spec again after O162, O158 and O163 land.
 - O159 (one folder search per hub): /spec again after O163 lands.
-- O165 (the guides redesigned): /spec when a slot frees.
+- O165 (the guides redesigned): /spec after O162 and O158 land, which write docs/HELP.md and docs/decks.md.
 - O166 (the record pages made one design): /spec after O164 lands.
 
 Owed looks: none.
