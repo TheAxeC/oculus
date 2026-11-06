@@ -1,8 +1,8 @@
 In flight (4 of 6 slots in use):
-- O158 (the facts strip redesigned): gate passed; its look and screenshots to Axel next.
-- O163 (the hub's portfolio deck written again): building.
+- O158 (the facts strip redesigned): merged by hand against main, gate passed, look taken; waits on Axel's word, open item 714.
+- O163 (the hub's portfolio deck written again): built; under review.
 - O161 (cards drawn as they are seen): builder handed back before any change; waits on open item 713.
-- O164 (a card's links open their page): building.
+- O164 (a card's links open their page): built; under review.
 
 Queued, in order (4):
 - O151 (a deck for every research project): /spec again after O162, O158 and O163 land.

@@ -48,6 +48,8 @@ dispatch:           # steps in flight, up to six (Z632)
   session_id: a298e389ab9f210ac (claude-opus-5-5)
   launched: 2026-11-06
   report: .scratch/migration/agents/reviews/O163-report.md
+  builder_usage: first run 255823 tokens, 100 tool uses, 25.4 min
+  reviewer_report: "running: aa3bb87266628f0f5 (claude-opus-5-5)"
   round: 0
   landing: not-started
 - step: O161
@@ -72,6 +74,8 @@ dispatch:           # steps in flight, up to six (Z632)
   session_id: a133caba1cd51dad2 (claude-opus-5-5)
   launched: 2026-11-06
   report: .scratch/migration/agents/reviews/O164-report.md
+  builder_usage: first run 283925 tokens, 150 tool uses, 30.7 min
+  reviewer_report: "running: a30a3f28ea4eb8488 (claude-opus-5-5)"
   round: 0
   landing: not-started
 ```
@@ -219,6 +223,11 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
   - (b) Keep the stand-ins and accept that Cmd+F changes: Shift+Enter or Enter skips cards it reaches as stand-ins, and late-drawn matches lose their highlight for a while. Pro: the largest saving, since only the visible cards are built. Con: it breaks your Cmd+F rule. This is the lazy option.
   - (c) Stand-ins whose swap order follows where the stand-in sits against the screen. Pro: ordinary stepping works both ways. Con: wrapping past the first or last match still skips cards, and the missing highlights stay, so Cmd+F still changes.
   O161's builder waits on this item.
+
+- Open item 714 (2026-11-06), O158: the redesigned facts strip, shown from the scratch server on 8797 (main at f3ebd1fa5 with O158 merged by hand, the key hint removed), lands only on Axel's word. Screenshots in the scratchpad's `O158look/`: `1-hccnet-after.jpg`, `2-btfno-strip-after.png`, `3-btfno-before-main.jpg` (the same deck on main), `4-covert-applied-strip-after.png`, `5-overview-tile-after.jpg`. Measured on all 25 project decks: every fact drawn, none outside the strip; 13 decks take three lines, 6 two, 6 one; each deck's text factor equals main's (0.75 or 1.25 on both servers), so no deck became Too tall; Project facts off hides the words and the rule and keeps the room (strip 89 px, factor 0.75, on and off). Two things seen: the rule above the strip is `--line` (#2b2b2b) on a frame of about #202020 under VS Code Dark Modern, so it is barely visible; a value over 14em is cut with an ellipsis, the whole fact in its tooltip, which on `btfno` and `bt-operator-theory` cuts the stage to "major revision (back with the ...", and on 22 decks the first pillar.
+  - (a) Land it with the rule drawn in the muted text colour, so it shows under every theme, and with the stage exempt from the 14em cap, since a stage is short and is the fact a reader looks for first. Pro: both seen problems fixed at landing, inside the brief (C11 asks for a visible rule, C1 for the stage drawn). Con: the stage can be the longest value on its line. Recommendation: this.
+  - (b) Land it as shown. Pro: nothing more to change. Con: the rule is not visible under Dark Modern and a stage can be cut. This is the lazy option.
+  - (c) Change the design before landing (say which part).
 
 ## Closed items
 
@@ -879,6 +888,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-11-06 (O158's look taken; O163 and O164 under review). O158 is merged by hand in the gate against main at f3ebd1fa5, every key-hint part of its `Slide.svelte` removed; the gate's `npm run diagrams && npm run docs:palette && npm run test:quick` exited 0 ("test:quick: 89.9 s; every command passed", `.agents/worktrees/gate-O158.log`); the merged diff is saved in the scratchpad's `O158land/staged.patch`. Its look on 8797 is open item 714. O163's report and O164's report are saved with their usage; their reviewers run on claude-opus-5-5. Open items: 713, 714. In flight (4 of 6): O158 (waits on 714), O163 and O164 (under review), O161 (waits on 713). Next: the two reviews; Axel's rulings on 713 and 714.
 - 2026-11-06 (open item 713 raised). O162 landed in f3ebd1fa5; its worktree, round snapshot and branch are removed. O161's hand-back is saved with its usage; open item 713 holds its options. Open items: 713. In flight (4 of 6): O158 (its look next), O163, O164 (building), O161 (waits on 713). Next: O158's look against main at f3ebd1fa5 with O158 merged by hand, and its screenshots to Axel.
 - 2026-11-06 (O162 landed). O162, the arrow-keys hint removed with Help's deck keys rows, landed (booking in `plan.md`, `agents/reviews/O162-landing.md`). O158's landing now merges `Slide.svelte` by hand against main, removing the hint wording and the `past` room from O158's version. O161's builder handed back before any change: the stand-in mechanism cannot keep Cmd+F as today (its report, `agents/reviews/O161-report.md`); that goes to Axel as an open item. In flight (4 of 6): O158 (its look next), O163, O164 (building), O161 (handed back). Next: O158's look and screenshots to Axel; O161's open item.
 - 2026-11-06 (O161 launched). Axel ruled open item 712 (a): O161's stand-in holds exactly the text the card's face draws, so Cmd+F works exactly as today (`plan.md` Rulings, the step line, the brief's items 2 and 4, Decision 6, case C3c). The ruled brief is copied into O161's worktree; its builder a336874264e7be26f runs on claude-opus-5-5 from base 75bf4dd10. Open items: none. In flight (5 of 6): O158, O162 (review over round 1), O163, O161, O164 (building). Next: /land O162 with its look on 8797, then O158's look.
