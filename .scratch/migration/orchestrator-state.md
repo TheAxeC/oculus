@@ -32,7 +32,7 @@ dispatch:           # steps in flight, up to six (Z632)
   session_id: acf1b0553e05d698a (claude-opus-5-5)
   launched: 2026-11-06
   report: .scratch/migration/agents/reviews/O154-report.md
-  builder_usage: "first run, C13 handed back: 238149 tokens, 64 tool uses, 9.0 min; build after the C13 ruling: 202544 tokens, 170 tool uses, 32.1 min"
+  builder_usage: "first run, C13 handed back: 238149 tokens, 64 tool uses, 9.0 min; build after the C13 ruling: 202544 tokens, 170 tool uses, 32.1 min; round 1: 284901 tokens, 34 tool uses, 6.6 min"
   cases_ruling: .scratch/migration/agents/briefs/O154-cases.md (C13, option (a))
   reviewer_report: .scratch/migration/agents/reviews/O154-refuter.md (a40ee61bf8428979b, claude-opus-5-5, 269077 tokens, 74 tool uses, 16.5 min)
   round: 1
@@ -48,8 +48,9 @@ dispatch:           # steps in flight, up to six (Z632)
   launched: 2026-11-06
   report: .scratch/migration/agents/reviews/O156-report.md
   builder_usage: "349930 tokens, 197 tool uses, 45.2 min"
-  reviewer_report: "running: a883220b1e4e27a9e (claude-opus-5-5)"
-  round: 0
+  reviewer_report: .scratch/migration/agents/reviews/O156-refuter.md (a883220b1e4e27a9e, claude-opus-5-5, 243008 tokens, 80 tool uses, 17.5 min)
+  round: 1
+  round_brief: .scratch/migration/agents/briefs/O156-round-1.md (snapshot .agents/worktrees/migration-O156-round-1)
   brief_check: .scratch/migration/agents/reviews/O156-brief-check.md (a7ae7433adbc605b5, claude-opus-5-5, 201464 tokens, 68 tool uses, 10.3 min)
   landing: not-started
 ```
@@ -834,6 +835,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-11-06 (O156 round 1 sent; O154 round 1 reported). O156's review (`agents/reviews/O156-refuter.md`, a883220b1e4e27a9e, claude-opus-5-5): items 1 to 5 hold, item 6 violated (comments that still call a slide's domain a key), every case met; Spec 1 (a key no hub holds gives the deck's `domain_unknown` beside the manifest schema check's own finding) ruled in automode as a premise correction: the schema check, which reads every hub's keys (`schema/lists.ts` `joinedLists`), is the one check, and `domain_unknown` goes. Repair round 1 (`agents/briefs/O156-round-1.md`, 4 items) copied into the worktree; snapshot `.agents/worktrees/migration-O156-round-1`. O154's builder reported round 1 (the Programs section: both sources, twelve runs, 16 paragraphs, each read and holding; no file of the step changed, every snapshot file equal under `cmp`); the orchestrator read the 16 paragraphs in the diff and keeps them. In flight (2 of 6): O154 (review over round 1 next), O156 (repair round 1). Open items: none.
 - 2026-11-06 (O154 round 1 sent; O156 under review). O154's builder reported (`agents/reviews/O154-report.md`, usage under builder_usage) and the orchestrator read the whole diff. Its review (`agents/reviews/O154-refuter.md`, a40ee61bf8428979b, claude-opus-5-5): every item holds and every case is met; one Spec finding, the print-only programs `wrap.py` and `short.py`, closed under the standing ruling "Unapproved builder scripts". Repair round 1 (`agents/briefs/O154-round-1.md`, one item: list the programs and the paragraphs they shaped, read and fix those by hand) copied into the worktree; snapshot `.agents/worktrees/migration-O154-round-1`. O156's builder reported (`agents/reviews/O156-report.md`); the orchestrator read the whole diff; its reviewer a883220b1e4e27a9e (claude-opus-5-5) runs. In flight (2 of 6): O154 (repair round 1), O156 (review). Open items: none.
 - 2026-11-06 (O151 landed in the ledger; its hub commit on Axel's word). O151, a deck for every research project, landed (booking in plan.md under O151, `agents/reviews/O151-landing.md`): 95 decks, 289 slides, every slide titled; the six findings of the review over round 1 fixed at landing (the `eli5` maps, the 22 figures drawn in the look, 38 explanation slides and 40 moved plain-words callouts, the equations above "(above)", the two titles stated, the "in place of" contrast); 16 figure slides stay Too tall (open item 693). The gate passed at main's head 465f25909; the look on 8797 drew 292 tiles with 16 Too tall and the Findings view only those 16; the look copy is restored and the server stopped. The hub work is on disk and uncommitted; the hub commit waits on Axel's word. In flight (1 of 6): O150 (waits on 689, 690, 691 and Axel's word for the hub commit). Open items: 689, 690, 691, 692, 693, 694, 695, 696.
 - 2026-11-06 (O150 and O151 undone; O154 to O158 booked). At Axel's word O150 and O151 are undone: their research hub work, never committed, is out of the hub (`git status --short --untracked-files=all deck projects` in the hub prints nothing; a copy outside the repositories); their ledger records are kept only as `agents/reviews/O150-O151-undone.patch`; O151 is unticked and both are worked again from new lines, each by a builder agent. New steps from Axel's rulings of 2026-11-06 (`plan.md` Rulings): O154 the project board's filter on the Present view, O155 the deck order (`deck_order` in `vocab.yml`), O156 one deck reader, O157 a slide laid out from its content, O158 the Project facts strip redesigned; then O150 and O151 again. Standing demand added: no step built inline. Order: O154, O155, O156, O157 after O156, O158, O150 after O154 and O155, O151 after O156 and O157. In flight: none. Open items: none.
