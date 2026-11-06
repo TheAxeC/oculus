@@ -1,5 +1,5 @@
 In flight (2 of 6 slots in use):
-- O158 (the facts strip redesigned): brief check running; design to Axel before it lands.
+- O158 (the facts strip redesigned): building; design to Axel before it lands.
 - O150 (the hub's portfolio deck): brief check running.
 
 Queued, in order (1):
