@@ -1,5 +1,5 @@
 In flight (2 of 6 slots in use):
-- O151 (a deck for every research project), built inline in the hub, under review; 18 single-figure slides stay Too tall (open item 693); hub commit on Axel's word.
+- O151 (a deck for every research project), built inline in the hub, reviewed; repair round 1 (14 rulings) being built inline; 18 single-figure slides stay Too tall (open item 693); the Brecht deck waits on open item 695; hub commit on Axel's word.
 - O150 (the hub's portfolio deck), built inline in the hub (uncommitted there), refuted over round 1; its landing waits on Axel's rulings of open items 689 (engine.md's sentence), 690 (the failed deck in the public deck) and 691 (a summary slide), each of which may change the hub files, and on his word for the hub commit.
 
 Queued: none.
@@ -7,6 +7,7 @@ Queued: none.
 Owed looks: none.
 
 Landed, newest first:
+- O149 (the Decks guide), 2026-11-06, 4cf0df47b.
 - O148 (the Project facts strip), 2026-11-06, 64b159a6f.
 - O147 (the Present view's filter bar), 2026-11-05, 57649a80d.
 - O153 (Deposit in every project card's menu), 2026-11-05, 6a2b38d06.
