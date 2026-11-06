@@ -7,7 +7,7 @@ The builder's first run found two cases the brief's rules get wrong, read on mai
 
 ## Ruling 1: the dead-ends button on a pillar's, a domain's and a venue's page (C13, item 2, decision 7)
 
-Option B. On a pillar's, a domain's and a venue's page, the row and the record's board count every project whose `pillarIds`, `domainIds` or `venueId` names the record, the join `referrersOf` uses, so a dead-end project gets its `dead-ends` button and its board holds it. The card keeps its real members everywhere, its page included: its tags, the pillar metrics and the dormant look stay as on the Pillars, Domains and Venues views. The report's before-and-after names the page where the card's member count and the row's total differ, and by how many. Option A, counting as written so the button never appears on those three pages, was the lazy option. Option C was not taken: the page's card would show numbers that differ from the same card on its view.
+One count per record, the same everywhere (Axel). For a pillar, a domain and a venue, the projects of the record are every project whose `pillarIds`, `domainIds` or `venueId` names it, the join `referrersOf` uses, dead-end projects included. The row, the record's board and the card's project count read that one list, on the record's page and on the Pillars, Domains and Venues views alike, so the card and the row always agree. A dead-end project gets its `dead-ends` button, and its board holds it. Only what describes activity keeps reading the real members: a card's dormant look and the pillar card's in-flight and tier metrics. The report's before-and-after names every card whose project count changes on its view.
 
 ## Ruling 2: a project with no stage (item 2, decision 7, C4)
 
