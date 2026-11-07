@@ -1,6 +1,6 @@
 # O165 report: the guides redesigned
 
-Everything in the brief is done.
+Everything in the brief and in repair round 1 (`.scratch/migration/agents/briefs/O165-round-1.md`, items 1 to 13) is done.
 
 ## Open items of the state file, verbatim
 
@@ -12,11 +12,34 @@ From `.scratch/migration/orchestrator-state.md:182-186`:
 >
 > None.
 
+## Repair round 1: each item and how it was closed
+
+1. **S1, Literature.** The Literature entry is gone (`grep -n "^### Literature$" docs/HELP.md` prints nothing). Its facts are one bullet of Collection views, `docs/HELP.md:318`: the key rule (`src/lib/data/helpers/literature-key.ts:1-4`), Add by DOI, arXiv or PubMed and by address (`src/lib/views/shared/forms/entry/entry-add.ts:31-35`), Save to Literature with its hub question, and the duplicate refusal (`src/lib/server/edit/feeds/literature.ts:1-11`). The Collection views summary line, `docs/HELP.md:310`, names Literature among the views it covers.
+2. **S2 and P1, the `h` row.** `docs/HELP.md` keys table: `| h1 / h2 / h3-h7 / h8, h9 | Help / Keyboard Shortcuts / the Apps guide, Templates, Data map, Palette and Decks guide, in the Help page's order / the hub's docs: entries of the Help group |`. Source: the Help arrangement `config/defaults/layout.yml:136-145` (help, keys, then the five `engine: true` docs in that order), `arrangedDocs` in `src/lib/state/workbench/navigation/arrangement.ts:206-224` (the group's views, then its engine docs, then its `docs:` entries), `Workbench.svelte:201-212` and `rail.ts:52-61` (digit = place). The `Cmd+K Shift+Enter` row reads "in the editor: pin or unpin the tab" (`src/lib/ui/controls/editor/chords.ts:15-17, 51`, `PIN_KEYS`). The User-visible changes line below gives the row as built.
+3. **S3 and P3, what the screen shows.** The base sentences of case C3 are quoted in full below with their base lines. Every view entry was read against its strings in `config/text/views/` and its markup, and each sentence the screen draws is removed; the list of removals, each with the string or markup that shows it, is under "Sentences removed in this round because the screen draws them".
+4. **S4.** `docs/HELP.md:494` (the paragraph under The keys) says the Keyboard Shortcuts view lists the keys of the workbench, the palette, the debugger, the editor, the LaTeX tab and the apps, and in the app the desktop app's own: the four row groups `Keys.svelte:109-114` draws (`workbenchRows`, which holds the workbench's, the palette's and the debugger's keys and in the app the desktop rows, `rows.ts:285-313`; `editorRows`, `rows.ts:315-322`; `latexRows`, `rows.ts:210-249`; `appRows`, `rows.ts:324-327`). It then says the table also gives the keys a view binds on its own box (the Present view's, the Files tree's and the Search view's). The Keyboard Shortcuts entry, `docs/HELP.md:427`, says the same.
+5. **S5, citations.** Every paragraph, list item and table row of the three pages has its code below, under "Code read per paragraph, item and row". Sentences with no code to cite were removed; they are listed under "Sentences removed in this round for want of a citation".
+6. **S6.** The base sentence of `HELP.md:3` ("It writes only where a control says so: ...") is removed: the full set of writes oculus makes without a control (the nested-repos block, the layout, the state files) is not one list in the code, so the sentence cannot be made true and complete. The write without a control is stated where it happens: the nested-repos block at `docs/data-map.md:383` ("writes that block alone, with no control", `src/lib/server/git/clone/exclude.ts:5-17`) and the layout at `docs/HELP.md:30`. `docs/HELP.md:173` gives the global option's range, 0 to 3 and 1 unset (`config/options/sources.yml:181-188`, `config/defaults/sources.yml:78`), and that a workspace folder's own `repository_scan_depth` takes any whole number from -1, -1 meaning no limit (`src/lib/data/sources/config/folders.ts:15-17`, `src/lib/data/sources/config/merge/workspace-file.ts:35-41`); `docs/data-map.md:174` says the same.
+7. **S7.** `docs/decks.md:120`: the categories go in the order of the hub's `deck_order`, set in the hub's `.oculus/config.yml` with a link to the data map's place, oculus's value in `config/catalogs/vocab.yml` (`deckOrderOf`, `src/lib/data/shapes/boards/order.ts:99-104`; a per-hub key, `src/lib/data/shapes/hub-keys.ts:36`; `vocab.yml:280`). "A deck reads no pin." is removed.
+8. **S8, one home for a hub file's keys.** Deposit (`docs/HELP.md:121`), Inbox (`:127`), Calendar (`:148`), Live HPC (`:480`) and Settings (`:433`) link to the data map's section instead of restating the keys; so do Schedules (`:24`), Files (`:166`), Repositories (`:173`, `:180`), Debug (`:235`), Collection views (`:312`) and Findings (`:462`). The Live HPC sentence that restated the `resources` file's `host` field is now a link to Collection files. The Person sentence on `self` is removed under item 3.
+9. **P2, the LaTeX chords.** The row `| Cmd+L, then Cmd+L / Ctrl+Shift+M | select the line / tab focus mode, so Tab leaves the editor, in a .tex tab; off macOS the second is Ctrl+M |` is in the keys table (`src/lib/data/helpers/keys/editor-keys.ts:50-51` LATEX_SCOPES `selectLine` and `tabFocus` both `tex`, `:66-82` SECONDS_MAC and the off-macOS `Cmd+M`). The first round's reason for dropping them is gone from this report.
+10. **P4.** The section "Verify before you report 6: the prose rule" is below.
+11. **ST1.** Each sentence of the three pages that said what something is not is rewritten to what it is or does, or removed. The named ones: base `HELP.md:88` (the landing rule's "never covers the tool views") is removed and the landing order stands alone at `docs/HELP.md:32`; base `:164` and `:413` are removed; `decks.md:120`'s "A deck reads no pin." is removed; `data-map.md:369` reads "Live HPC checks the keys `slurm.resource` lists, and says in that cluster's section which condition fails. A field that names a path is checked by the Audit, which reports a missing path for the `link` of the `funding`, `events`, `education` and `applications` files." Every rewrite is listed under "Sentences rewritten for ST1". What remains with a negative word is a condition that leads to a positive action ("a project no board takes ... is a finding", "a tab with no unsaved text reloads it") or a When unset value ("no group", "none").
+12. **The Files row keys.** The keys table has nine Files rows from `ENTRIES`, `src/lib/state/sources/explorer/acts/keys.ts:43-61`: Enter, F2 (rename); Cmd+Down (open), Space (open in the background); Cmd+Enter (open beside, Files and Repositories); Cmd+Backspace (delete); Cmd+C, Cmd+X, Cmd+V and Esc (copy, cut, paste, drop the cut); Cmd+Alt+C and Cmd+Alt+Shift+C (copy the path, the relative path); Cmd+Z and Cmd+Shift+Z (undo, redo); Cmd+A, Shift+Up and Shift+Down (select all, extend). Alt+Up and Alt+Down keep their row. Cmd is Ctrl off macOS (`keys.ts:7-8, 73-83`).
+13. **The "This machine's values" table.** Each row's code and When unset value are under "docs/data-map.md, This machine's values"; all come from `src/`. One value changed: `commit_message_account` unset is "Claude's default folder" (`src/lib/server/git/git-message.ts:45, 53-61`), in place of `~/.claude`. No `local.yml` file was read.
+
+ST2 needed no change.
+
 ## The cases' first run (unchanged tree)
 
-- C1: the registered views today's Help does not name are `awaiting_board`, `keys` and `recover` (`comm -23 c1-components.txt c1-help-all.txt` in the scratchpad's `O165build/`, rerun for this report). Today's Help named the 16 boards and collection views one by one, with no single entry for the collection view or the project board, and the title bar, the update tray and Linux each had a subsection of their own.
+- C1: the registered views today's Help does not name are `awaiting_board`, `keys` and `recover` (`comm -23 c1-components.txt c1-help-all.txt` in the scratchpad's `O165build/`). Today's Help named the 16 boards and collection views one by one, with no single entry for the collection view or the project board, and the title bar, the update tray and Linux each had a subsection of their own.
 - C2: the row `p1-p4` was false, since the shipped Projects group holds 6 boards (`config/defaults/layout.yml:216` `boards:`; `src/lib/state/workbench/navigation/catalogue.ts:219-244` `railOrder`). The deck rows are bound in the Present box (`src/lib/views/academic/present/screen/keys.ts:74-91` `moveOf`, and the box's o/O, f/F, p/P and Escape), not in `rows.ts`.
-- C3: five sentences repeated the screen: HELP.md:288 (the follow-up and subtask form headings, against `config/text/views/boards/project.yml:34-37`), HELP.md:314 (the board header's Full titles and Columns, against `projects.yml:20,45`), HELP.md:306 (the Literature hit's Open PDF, Copy BibTeX, Add to Lit Watch and Save to Literature, against `literature.yml:5,14,38,94`), HELP.md:90 (Workbenches' Reopen, Forget and New workbench, against `workbench.yml:293-302`), and HELP.md:262 (Apps: Add app from folder and Remove, against `apps.yml:101-102`).
+- C3: five sentences repeated the screen, quoted in full here from `git show HEAD:docs/HELP.md`:
+  - `HELP.md:288`: "  - The form has a rule above it, a heading and a label over each box. A follow-up is headed "New follow-up" and asks What, Not before, Lead, Supervisors and Collaborators; a subtask is headed "New subtask" and asks What, Deadline, Lead, Supervisors and Collaborators. Lead, Supervisors and Collaborators each pick any number of the people the registry holds. A line's Edit form asks the same, its three picks starting from the line's people, and a save writes only the fields it changed." (against `config/text/views/boards/project.yml:34-37`)
+  - `HELP.md:314`: "- **The board's header.** After New project come Cards and List, the one in force pressed, Full titles, pressed while the cards and rows show full titles instead of short handles, and, in list mode, Columns." (against `config/text/views/boards/projects.yml:20, 45`)
+  - `HELP.md:306`: "  - The strips: a project has Ask, Open Workbench and Open project page; an entry Open Workbench at its folder and Page; a venue, a dataset, a domain and a pillar line Page; a lead Applied and Page; a Lit Watch paper Dismiss (Restore while dismissed) and Page; a LinkedIn post Mark posted while an idea, and Edit; an inbox thread Draft reply, Triaged (Restore once triaged) and Archive. On a record's own page Edit stands where Page stood. A card of the Career page has Edit. A Literature search hit has none, its Open PDF, Copy BibTeX, Add to Lit Watch and Save to Literature drawn in its top row. Archival, Orphans and No funding have none; their title opens a page listing their projects as closed project cards." (against `config/text/views/feeds/literature.yml:5, 14, 38, 94`)
+  - `HELP.md:90`: "- The Workbenches view (`w` then `3`) has Open (one row per open workbench, with its folder and branch) and Closed (kept layouts, last closed first). Reopen restores a kept layout; Forget drops it. New workbench opens one for a root, or for a folder picked in the folder panel." (against `config/text/views/system/workbench.yml:293-302`)
+  - `HELP.md:262`: "| `apps` | Apps | Every app, with its state, Add app from folder, Disable, Enable, Remove. |" (against `config/text/views/apps/apps.yml:101-102`)
 - C4: today's map named the files of item 2 but left out the keys of `local.yml`, `bookmarks.yml`, `schedules.yml`, the workspace file, the tasks, the repository's `settings.yml`, `commands.yml`, `launch.yml` and `cpp.yml`, and the app-data files. Its config block listed the 69 entries of `HUB_LIST` (`src/lib/data/helpers/hub-names.ts:712-792`).
 - C5: today's guide matched `spec.ts`, `kinds.ts` and `project.ts`: every key was present and all 10 kinds had an example. Summary and grid are order entries, not kinds.
 - C6: every item 5 line was true of today's pages.
@@ -28,421 +51,317 @@ From `.scratch/migration/orchestrator-state.md:182-186`:
 
 | Item | State | Proof |
 |---|---|---|
-| 1 Help: one entry per view the reader reaches, the collection view and the project board one entry each, each shell part one entry | DONE | the `awk` count of `###` headings per section prints `5 65`: 5 shell entries under The window and 65 entries under The views (listed below) |
-| 1 Help: one sentence on what the view is for, then only what its screen does not show | DONE | `grep -c "New follow-up\|Full titles\|Open PDF, Copy BibTeX\|Add app from folder\|Reopen, Forget and New" docs/HELP.md` prints 0. The Workbenches view entry (line 517) keeps "Reopen restores a kept layout; Forget drops it.", which says what each control does to a kept layout. |
-| 1 Help: a keys table under "The keys", each row true of a binding, the deck rows of ruling 706 kept | DONE | `grep -n "^## The keys" docs/HELP.md` gives line 519; each row's binding is listed under "The keys" below |
-| 2 Data map: each hub file oculus reads, with its path, keys and links | DONE | `grep -n "^## " docs/data-map.md`; the code read per section is listed below |
+| 1 Help: one entry per view the reader reaches, the collection view and the project board one entry each, each shell part one entry | DONE | `grep -n "^#" docs/HELP.md`: 5 entries under The window (The rail, Pages and panes, Workbenches, The palette, The status bar) and 64 under The views (listed below) |
+| 1 Help: one sentence on what the view is for, then only what its screen does not show | DONE | each entry read against its strings and markup; the removals are listed below |
+| 1 Help: a keys table under "The keys", each row true of a binding, the deck rows of ruling 706 kept | DONE | `grep -n "^## The keys" docs/HELP.md` gives line 492; each row's binding is listed below |
+| 2 Data map: each hub file oculus reads, with its path, keys and links | DONE | `grep -n "^## " docs/data-map.md`; the code per paragraph and table below |
 | 3 Decks guide: a deck's files, the keys with their values when unset, one example per slide kind | DONE | `grep -n "When unset\|^### " docs/decks.md` shows two tables with a When unset column and 10 kind headings |
-| 4 every sentence true and needed; the kept sentences quoted | DONE | the kept lists are below. Every Help sentence carried from today's page was traced to its code (list below). Two of them were incomplete in today's page and are completed: Cmd+P also skips `.svelte-kit-app` (`src/lib/data/helpers/search/query.ts:54`), and the limits of its name list are given (`config/defaults/behavior.yml:489-493`) |
-| 5 the lines describing or citing the pages left true | DONE | before and after, below |
+| 4 every sentence true and needed; the kept sentences quoted | DONE | the kept lists and the citations are below |
+| 5 the lines describing or citing the pages left true | DONE | below |
 | 6 headings and counts before and after | DONE | below |
-| Character-set check over the 12 files | DONE | `perl -ne 'print "$ARGV:$.: $_" if /[^\x00-\x7F]/; close ARGV if eof' docs/HELP.md docs/data-map.md docs/decks.md README.md docs/templates.md docs/apps.md src/lib/state/workbench/layout/open/float/return-place.ts src/lib/ui/controls/editor/chords.ts tests/server/git/clone-exclude.test.ts tests/server/git/git-scan-depth.test.ts config/defaults/sources.yml config/text/views/system/help.yml; echo "charset exit $?"` printed no line and `charset exit 0`, after the last change |
-| History words in the changed comments | DONE | `git diff -U0 -- src tests \| grep "^+" \| grep -inE "\b(now\|no longer\|used to\|previously\|formerly\|renamed\|moved\|was\|were)\b"` prints one line: the return-place comment's "which moved or closed that node". It describes a page rearranged at runtime, and `git show HEAD:` of the file has the same clause |
+| Round 1 items 1 to 13 | DONE | each closed above |
+| Check 3 (the brief's character-set check over the 12 files) | DONE | `LC_ALL=C perl -ne 'my $l = $_; $l =~ s/\xC3[\x80-\xBF]//g if $ARGV =~ m{^config/}; print "$ARGV:$.:$_" if $l =~ /[^\x20-\x7E\n]/; close ARGV if eof' docs/HELP.md docs/data-map.md docs/decks.md README.md docs/templates.md docs/apps.md src/lib/state/workbench/layout/open/float/return-place.ts src/lib/ui/controls/editor/chords.ts tests/server/git/clone-exclude.test.ts tests/server/git/git-scan-depth.test.ts config/defaults/sources.yml config/text/views/system/help.yml; echo "check3 exit $?"` printed no line and `check3 exit 0`, after the last change |
+| Check 4 (the counts) | DONE | `wc -l -w docs/HELP.md docs/data-map.md docs/decks.md` prints 571 6890, 383 5542, 361 3049 after the last change |
+| spec.md verify: `LC_ALL=C grep -n '[^ -~]'` over the touched pages and README | DONE | `LC_ALL=C grep -n '[^ -~]' docs/HELP.md docs/data-map.md docs/decks.md README.md; echo "grep exit $?"` printed no line and `grep exit 1` |
+| History words in the changed comments | DONE | `git diff -U0 -- src tests \| grep "^+" \| grep -inE "\b(now\|no longer\|used to\|previously\|formerly\|renamed\|moved\|was\|were)\b"` prints one line: the return-place comment's "which moved or closed that node", which describes a page rearranged at runtime; `git show HEAD:` of the file has the same clause |
 | Comment width of the changed comment | DONE | `awk 'length>100' src/lib/state/workbench/layout/open/float/return-place.ts \| wc -l` prints 0 |
-| C7 history test | DONE | the test times out at its 5000 ms default under load, as in the first run; with `--testTimeout=120000` the file passes 6 of 6; its run inside `npm run test:quick` ("vitest checks") passes |
-| C8 links | DONE | every link target of the three pages exists: apps.md, data-map.md, decks.md, HELP.md, palette.md and templates.md (`test -f`). `figure.png` is inside a code block and `<file>` inside a code span. `HELP.md#the-keys` resolves to line 519 |
-| `npm run diagrams` then `npm run test:quick` after the last change | DONE | exit 0. Every step printed `ok`: prettier, ASCII gate, svelte-kit sync, eslint, svelte-check (0 errors, 0 warnings), vitest, vitest slow and vitest checks (`test:quick: 115.3 s; every command passed`). `git status --short` lists the 8 modified files and this report; diagrams changed no tracked file |
-| Number of full-list runs | 4 | Runs 1 and 3 passed every step. Run 2 failed only in "vitest slow": two real-git cases, in `clone-exclude.test.ts` and in `git-scan-depth.test.ts`, timed out at 20000 ms under a load average of 18.65. The same two files run alone (`npx vitest run tests/server/git/clone-exclude.test.ts tests/server/git/git-scan-depth.test.ts --tagsFilter slow --testTimeout 20000`) passed 18 of 18, 10 skipped. Run 4 came after the last page change and passed every step |
+| C8 links | DONE | `grep -rnoh "HELP.md#[a-z0-9-]*\|data-map.md#[a-z0-9-]*\|decks.md#[a-z0-9-]*"` over src, config, docs, README.md and tests lists `HELP.md#the-keys` and seven data-map anchors; each matches a heading under GitHub's slug rule (`src/lib/views/shared/prose/markdown.ts:10`): the-files, the-hubs-settings, this-machines-values, the-workspace-file, bookmarks-schedules-and-tasks, collection-files, repositories-below-a-hub. `## The keys` is `docs/HELP.md:492` |
+| `npm run diagrams` then `npm run test:quick` after the last change | DONE | `(npm run diagrams && npm run test:quick) > O165build/quick6.log 2>&1; echo "exit $?"` printed `exit 0`; every step printed `ok`: prettier, ASCII gate, svelte-kit sync, eslint, svelte-check (585 files, 0 errors, 0 warnings), vitest, vitest slow and vitest checks (`test:quick: 105.2 s; every command passed`). It does not cover tests that reach no changed file within the import depth, the build, or the lint of unchanged files (its own "not covered" line). `git status --short` after it lists the 8 modified files, the round-1 brief and this report; diagrams changed no tracked file |
+| Number of full-list runs | 6 started, 5 complete | Runs 1 to 4 are the first round's: runs 1 and 3 passed every step; run 2 failed only in "vitest slow", two real-git cases in `clone-exclude.test.ts` and `git-scan-depth.test.ts` timing out at 20000 ms under a load average of 18.65, and those two files run alone (`npx vitest run tests/server/git/clone-exclude.test.ts tests/server/git/git-scan-depth.test.ts --tagsFilter slow --testTimeout 20000`) passed 18 of 18, 10 skipped; run 4 passed every step. Run 5 of this round was stopped before it finished, because `README.md:95` was changed after it started. Run 6 started after the last change of this round and passed every step |
 | `sh utils/unused-exports.sh` | not needed | no export was added or removed |
 
 ## docs/HELP.md
 
-Before: 646 lines, 32223 words (`git show HEAD:docs/HELP.md | wc -l -w`). After: 590 lines, 7391 words (`wc -l -w docs/HELP.md`).
+Before: 646 lines, 32223 words (`git show HEAD:docs/HELP.md | wc -l -w`). After: 571 lines, 6890 words (`wc -l -w docs/HELP.md`).
 
 Headings before: The window (On Linux and WSL2, The title bar, The rail, Pages and the pane tree, Workbenches, The palette, The update tray and schedules, The status bar and notifications); The keys; The views (Entries and their editor, Notes on single views, LaTeX builds); Files and the editor (Notes, Language servers, Hub keys in YAML, Linters); Searching the files; Terminals; Project commands; Debugging; Apps; Source Control and worktrees; Configuration and the data (Hubs and projects, Mail and calendar, Git hosts and clusters).
 
-Headings after: Oculus; Contents; The window (The rail, Pages and panes, Workbenches, The palette, The status bar); The views (Focus, Awaiting board, Project boards, Project, Editor, Deposit, Inbox, Position Leads, LinkedIn, Calendar, Post, Files, Repositories, Sessions, Search, TeX view, Terminal, Problems, References, Debug, Debug Console, Notes Graph, Session, Source, File, Document, Doc, Markdown Preview, Math Preview, Diff, Merge, Refactor Preview, Customization, Language server output, Collection views, Memories, Career, Entry, Pillars, Domains, Map, Listing, Venues, Journal Browser, Data, Person, Recover, Literature search, Lit Watch, Literature, Present, Apps, Help, Keyboard Shortcuts, Settings, Account setup, Views, Pages, Status, Findings, History, Processes, Live HPC, Usage, Workbenches view); The keys.
+Headings after (`grep -n "^#" docs/HELP.md`): Oculus; Contents; The window (The rail, Pages and panes, Workbenches, The palette, The status bar); The views (Focus, Awaiting board, Project boards, Project, Editor, Deposit, Inbox, Position Leads, LinkedIn, Calendar, Post, Files, Repositories, Sessions, Search, TeX view, Terminal, Problems, References, Debug, Debug Console, Notes Graph, Session, Source, File, Document, Doc, Markdown Preview, Math Preview, Diff, Merge, Refactor Preview, Customization, Language server output, Collection views, Memories, Career, Entry, Pillars, Domains, Map, Listing, Venues, Journal Browser, Data, Person, Recover, Literature search, Lit Watch, Present, Apps, Help, Keyboard Shortcuts, Settings, Account setup, Views, Pages, Status, Findings, History, Processes, Live HPC, Usage, Workbenches view); The keys.
 
-The order is the rail's (`config/defaults/layout.yml:9-21`) and each group's `order` (the registrations under `src/lib/views`). A view opened for one thing comes after the group of the view that opens it (decision 2).
+The order is the rail's (`config/defaults/layout.yml:9-21`) and each group's `order` (the registrations under `src/lib/views`), a view opened for one thing after the group of the view that opens it (decision 2).
 
-Code read, per section:
+### Code read per paragraph, item and row
 
-- The window: `config/defaults/layout.yml:1-21` (the rail); the app and Linux facts carried from today's page lines 13-47; `src/lib/server/root/process/build-folders.ts:1-18`.
-- The rail: `layout.yml:9-21, 304` (the rail and its counts), `src/lib/shell/rail/rail.ts:1-5, 79-82`, `src/lib/server/machine/runs/schedules/task.ts:1-17` (the tasks of any hub), `src/lib/data/helpers/run/schedules.ts:9-17, 37-43`, `src/lib/server/machine/runs/schedules/run.ts:2, 87`, `config/defaults/sources.yml:53` (`chat_context`).
-- Pages and panes: `src/lib/state/workbench/navigation/registry.ts:120-135` (`unique`), the eleven `unique: true` registrations (`grep -rln "unique: true" src/lib/views` gives Status, Settings, Pages, Workbenches, Findings, Processes, Usage, Hpc, History, Focus and Apps), `src/lib/state/workbench/layout/open/landing.ts:1-11` (where an opened view lands), `src/lib/state/workbench/layout/open/float/return-place.ts:1-6`, `src/lib/data/helpers/keys/oculus/resolve.ts:174-181`.
-- Workbenches: the `workbench:` arrangement of `layout.yml`.
-- The palette: `src/lib/data/helpers/keys/oculus/palette-table.ts` (KEY_ROWS, PREFIX_ROWS), `src/lib/views/system/help/keys/rows.ts:1-8`, `src/lib/shell/keys/lists/file-window.svelte.ts:2` (200 files per answer), `src/lib/data/helpers/search/query.ts:53-54, 336-345` (hidden files listed, the skipped folders), `config/defaults/behavior.yml:489-493` (`max_names`, `timeout_s`).
-- The status bar: carried from today's page lines 118-125.
-- Focus: the head comment of `src/lib/views/boards/focus/Focus.svelte`, `config/defaults/behavior.yml:48-50`.
-- Awaiting board: `src/lib/views/boards/projects/Projects.svelte:1-26` and its registration's head comment, `Focus.svelte:40-56`.
-- Project boards: the head comment of `Projects.svelte`, `layout.yml:216-260` (`boards:`).
-- Project, Editor, Deposit, Entry, Listing, Person, Post: the head comments of `boards/project/Project.svelte`, `boards/editor/Editor.svelte`, `boards/deposit/Deposit.svelte`, `boards/entry/Entry.svelte`, `boards/listing/Listing.svelte`, `boards/person/Person.svelte` and `feeds/post/Post.svelte`; `config/schemas/manifest-schema.yml:88-91`; `src/lib/server/git/deposit/deposit-git.ts:143-146` and `deposit.ts:115` (the mirror under `~/.oculus/deposits`).
-- Inbox, Calendar, Account setup: their head comments, `config/options/local.yml` (`calendars`, `calendar_dir`, `mail`, `mail_dir`, `clusters`), `src/lib/server/accounts/connect/store.ts:1-21, 48` (tokens and calendar links in account files at 0600), `src/lib/server/accounts/mail/triage.ts:6, 24`, `src/lib/server/machine/hpc/clusters/keys.ts:4-15` (`ssh-keygen`, `known_hosts`).
-- Position Leads, LinkedIn, Lit Watch, Literature search, Literature: their head comments, `config/options/sources.yml:143` (`linkedin_dir`).
-- Files and Source: the head comments of `src/lib/views/sources/files/Files.svelte` and `sources/source/Source.svelte`, `src/lib/server/files/fs/notes.ts:1-17`, `src/lib/data/prose/markdown/note-names.ts:10, 33`, `config/defaults/behavior.yml:451` (note autosave 800 ms), `src/lib/server/machine/lsp/held/held.ts:48` (server linger 60 s), `src/lib/views/shared/explorer/tree/make/make-words.ts`, `config/text/views/sources/files.yml:104-154`, `src/lib/state/sources/explorer/acts/keys.ts:44-62`.
-- Repositories: its head comment, `src/lib/server/git/git-write.ts:107, 112` (10 s and 60 s), `config/defaults/sources.yml:78` and `config/options/sources.yml:181-188` (scan depth 1, at most 3).
-- Search: `src/lib/server/files/search/search.ts:1-12`, `query.ts:51, 184-188` (2M).
-- TeX view, Math Preview: their head comments; the LaTeX root rule carried from today's page lines 382-390.
-- Terminal, Sessions, Session, Customization: their head comments, `src/lib/server/machine/pty/channel.ts:18-30, 64` (agent detection 5 s), `src/lib/state/sessions/terminal/terminal-tabs.ts:1-6, 124-141` (Lock is part of the saved tab state, so it survives a reload), `src/lib/views/sessions/terminal/transcript/tab-session.svelte.ts:79-98`, `src/lib/state/sessions/folds.ts:162-172` (pinned rows and rows needing input first, then newest), `src/lib/views/sessions/terminal/terminal-list.ts:216-226`.
-- Problems, References, Refactor Preview, Diff, Merge, Doc, Markdown Preview, File, Document, Language server output, Notes Graph, Debug, Debug Console: their head comments; `src/lib/server/files/workspace/page-state/files.ts:5, 22` (breakpoints in `debug.json`).
-- Collection views: `src/lib/views/boards/collection/registration.ts`, `config/defaults/sources.yml:26-55`, `src/lib/state/shared/page/hubs.ts:8-12`.
-- Memories, Career: their head comments, `config/options/sources.yml:149, 154`.
-- Pillars, Domains, Map, Venues, Journal Browser, Data, Recover: their head comments.
-- Present: its head comment, and `docs/decks.md` as built.
-- Apps: `src/routes/views.ts:205-261` (the apps group), the head comment of the Apps view.
-- Help, Keyboard Shortcuts: `src/lib/views/system/help/Help.svelte:18-23`, `keys/rows.ts:1-8`, `layout.yml:138-145, 334` (`docs: []`).
-- Settings, Views, Pages, Status, Findings, History, Processes, Usage, Workbenches view: their head comments.
-- Live HPC: its head comment, `src/lib/server/machine/hpc/submit.ts:1-14` (the plan shown and confirmed before it runs), `scratch.ts:2, 29-32` (the `/local/$SLURM_JOB_ID` warning), `transfer.ts:11` (no `--delete`).
+Line numbers are of `docs/HELP.md` as it stands. A view's head comment is the leading comment of its component, given with its range.
 
-The keys: each row is a row `rows.ts` builds from its sources, or a key a view binds on its own box. The checks:
+The window:
 
-- the digits, Ctrl+digit, Ctrl+[ ], `n`, `/`, `g g`, `G`, the cursor keys and Escape: `resolve.ts:376-379` and its chord and cursor code
-- Ctrl+Tab: `page-keys.ts:44-47`
+- 3: the four guides and `README.md` exist (`test -f`); `src/lib/views/sources/doc/Doc.svelte:18-73` (the guides open as Doc tabs).
+- 13: `src/desktop/app.ts:1-11, 284-289, 326-334` (single instance, quit leaves tmux, the restart dialog, windows reconnect), `src/desktop/windows/menu-template.ts:1-12` (menu items run the page commands), `src/lib/server/root/process/start/first-run.ts:14-22` (zenity, xdg-open, wslview, optional lacks), `src/lib/server/root/process/build-folders.ts:1-18` (the app forms).
+- 17: `config/defaults/layout.yml:8`, `src/lib/data/sources/config/merge/keyed.ts:2, 7` (the workspace overlay by `page`).
+- 19: `layout.yml:33` (arrangements, Reset), `src/lib/state/workbench/navigation/pages.ts:326-336`.
+- 20: `src/lib/shell/rail/rail.ts:1-5, 76-82` (URGENT_TONES red, amber, green), `layout.yml:303` (`counts`), `src/lib/views/boards/projects/Projects.svelte:2-9`.
+- 21: `src/lib/server/edit/writes/config/lists/rail.ts:1-14, 30-44`.
+- 22: `rail.ts` (server) `:30-44` (`unplaced_collections`, `project_boards`), `src/lib/state/workbench/navigation/catalogue.ts:219-244`.
+- 23: `src/lib/server/machine/runs/schedules/task.ts:5-14`, `src/lib/server/machine/runs/schedules/watch.ts:1-7`, `src/lib/server/machine/pty/start/context.ts:3, 37` (`chat_context`).
+- 24: `src/lib/server/machine/runs/schedules/run.ts:1-16, 87`, `watch.ts:1-4, 16-25`.
+
+Pages and panes:
+
+- 28: `src/lib/state/workbench/layout/model.ts`, `tree.ts` (a page is one tree of splits and panes), `layout/workbench.ts:11-14`.
+- 30: `src/lib/server/files/workspace/page-state/files.ts:2, 19` (`layouts.json`).
+- 31: `src/lib/state/workbench/layout/open/opening.ts:4-8`, and `grep -rn "unique: true" src/lib/views` lists Status, Settings, Pages, Workbenches, Findings, Processes, Usage, Hpc, History, Focus and Apps.
+- 32: `src/lib/state/workbench/layout/open/landing.ts:1-11` and the rule below it.
+- 33: `opening.ts:179-181` (`options.preview`).
+- 34: `src/lib/shell/panes/floats/FloatLayer.svelte:25`, `float-geometry.ts:18` (SNAP_PX 24), `src/lib/state/workbench/layout/open/float/return-place.ts:1-6`.
+- 35: `layout.yml:33` (an empty pane of the arrangement), `src/lib/state/workbench/layout.svelte.ts:688` (Lock Group).
+- 36: `layout.yml:33` (pinned tabs: Close All, Close Others and Cmd+W leave them open).
+- 37: `src/lib/state/workbench/layout/tabs/closed.ts:19` (20), `src/lib/state/workbench/history/history.ts:16` (HISTORY_MAX 50).
+- 38: `src/lib/state/forms/form-draft.ts:1-3`, `src/lib/state/sessions/source/source.svelte.ts:430-433`.
+- 39: `src/lib/ui/menu/ContextMenu.svelte:4, 29, 135`.
+
+Workbenches:
+
+- 43: `src/lib/state/workbench/layout/open/float/folder-opener.ts:1-14`, `layout.yml:183` (`workbench:`).
+- 45: `config/text/views/boards/project.yml:161`, `collection.yml:30-32`, `entry.yml:18`, `shared/folder-files.yml:7`; Open in New Files `config/text/views/sources/files.yml:104-154`.
+- 46: `src/lib/state/workbench/layout/open/float/folder-pages.ts:5`.
+- 47: `folder-opener.ts:9-13`.
+- 48: `folder-pages.ts:5-11`, `model.ts:213` (KEPT_MAX 20), `folder-opener.ts:5` (Reset layout).
+
+The palette:
+
+- 52, 54: `src/lib/state/workbench/palette.ts:1-18`, `src/lib/data/helpers/keys/oculus/palette-keys.ts` (`paletteKeyOf`).
+- 55: `palette.ts:1, 67-71` (fuzzy), `palette.ts:778-790` (the modes); every command in `docs/palette.md`.
+- 56: `palette.ts:778-787` (`#` the symbols mode).
+- 57: `src/lib/shell/keys/lists/file-window.svelte.ts:2` (200), `src/lib/data/helpers/search/query.ts:53-54, 342-344` (`--files --hidden`, SKIP_GLOBS), `config/defaults/behavior.yml:489-493`.
+- 58: `src/lib/state/forms/new-entry.ts:1-5, 102-121` (`default_task`), `config/catalogs/vocab.yml:108, 133`, `src/lib/shell/keys/lists/task-hub-list.svelte.ts:1-7`.
+
+The status bar:
+
+- 62, 64: `src/lib/shell/status/status-items.ts:1-3, 15-19`.
+- 65: `status-items.ts:19-22`.
+- 66: `status-items.ts:1-3`, `src/lib/shell/status/StatusBar.svelte:102`.
+- 67: `src/lib/shell/status/notices/Bell.svelte:2-10`.
+
+The views (one line per entry; the first line number is the summary sentence):
+
+- Focus 73-79: `src/lib/views/boards/focus/Focus.svelte:15-52`, `config/defaults/behavior.yml:50, 62`, `config/catalogs/vocab.yml:182-192` (lanes, `move_writes`), `vocab.yml:61, 103` (`deadline_met`), `src/lib/state/boards/focus/filter.ts:321` (a feed line stays), `vocab.yml:197, 203, 210`, `config/defaults/sources.yml:47-48` (`band_teaching`, `band_positions`).
+- Awaiting board 83-85: `Projects.svelte:11-14, 47-52`, `Focus.svelte:43-49`.
+- Project boards 89-96: `Projects.svelte:2-9, 40-84`, `layout.yml:216-260` (`boards:`), `vocab.yml:260, 270` (`roles`, `categories`), `src/lib/state/boards/board/new-project.ts`, `config/defaults/sources.yml:20-21` (`new_project_dir`), `src/lib/views/shared/card/project/ProjectCard.svelte:13, 295-297` (preview tab), `src/lib/server/content/audit/projects.ts:3-9, 396-406`.
+- Project 100-103: `src/lib/views/boards/project/Project.svelte:2-54`, `behavior.yml:70-76` (`file_index`), `config/schemas/manifest-schema.yml:88-91` (`after`, `done`).
+- Editor 107-112: `src/lib/views/boards/editor/Editor.svelte:15-53`, `src/lib/server/core/files/yaml/yaml-edit.ts:1-6` (one field's bytes), `src/lib/server/edit/adapters/yaml/hub-keys.ts:22` (F2), `src/lib/state/forms/new-entry.ts:1-5` (`addPerson`).
+- Deposit 116-121: `src/lib/views/boards/deposit/Deposit.svelte:16-41`, `src/lib/server/git/deposit/deposit-git.ts:143-146`, `src/lib/server/git/deposit/zenodo-copy.ts:6-14` (a file holding a term refuses), `zenodo.ts:11-20` (new version or new record; the manifest writes).
+- Inbox 125-130: `src/lib/views/feeds/inbox/Inbox.svelte:20-36`, `src/lib/server/accounts/mail/plate.ts:4-8`, `triage.ts:1-7, 33-34`, `InboxCard.svelte:8-10`, `microsoft.ts:1`.
+- Position Leads 134-138: `src/lib/views/feeds/leads/Leads.svelte:17-34`, `src/lib/state/feeds/lead-application.ts:1-7`, `lead-apply.ts:1-10`, `LeadCard.svelte:23-29`, `src/lib/server/edit/feeds/leads.ts:1-5, 43`.
+- LinkedIn 142: `src/lib/views/feeds/linkedin/Linkedin.svelte:2-33`, `config/defaults/sources.yml:60-63`.
+- Calendar 146-149: `src/lib/views/personal/calendar/Calendar.svelte:22-41`, `src/lib/server/accounts/connect/store.ts:19-21, 48`, `src/lib/server/accounts/calendar/poll.ts:12-14`, `connectors.ts:263-265`.
+- Post 153-155: `src/lib/views/feeds/post/Post.svelte:16-24`.
+- Files 159-167: `src/lib/views/sources/files/Files.svelte:15-73`, `src/lib/server/files/fs/history.ts:4, 10-11, 17-20`, `file-undo.ts:9, 15`, `src/lib/server/files/fs/notes.ts:1-17`, `behavior.yml:451` (800 ms), `src/lib/data/prose/markdown/note-names.ts:6-12`, `note-attach.ts:1-8`, `src/lib/views/shared/explorer/tree/make/make-words.ts`, `src/lib/data/helpers/files/private.ts:1-3`, `search-routes.ts:19`.
+- Repositories 171-180: `src/lib/views/sources/repositories/Repositories.svelte:2-73`, `config/options/sources.yml:181-188`, `config/defaults/sources.yml:78`, `folders.ts:15-17`, `workspace-file.ts:35-41`, `src/lib/server/git/git-write.ts:16-17, 34-38, 107, 112, 539-544`, `deposit-git.ts:18-23` (the one force push), `autofetch.ts:1-4`, `behavior.yml:472`, `RepoItems.svelte:35`, `credentials.ts:4-5`, `exclude.ts:5-17`.
+- Sessions 184-187: `src/lib/views/sessions/session-list/SessionList.svelte:2-5, 23-27, 46-50`, `src/lib/state/sessions/folds.ts:162-172`.
+- Search 191-195: `src/lib/server/files/search/search.ts:1-12, 20-24`, `src/lib/data/helpers/search/query.ts:14, 26-34, 51-54, 166-189`, `config/text/views/sources/files.yml:150`, `behavior.yml:489-492`, `replace.ts:14-19, 23`.
+- TeX view 199-205: `src/lib/views/academic/latex/Latex.svelte:17-28`, `root.ts:5`, `latex.ts:17`, `recipes.ts:2, 13, 72`, `LatexItem.svelte:10`, `builds.ts:40`, `saves.ts:2`, `endpoint.ts:494`.
+- Terminal 209-215: `src/lib/views/sessions/terminal/Terminal.svelte:15-73`, `composer.ts:390`, `src/lib/server/machine/pty/routes.ts:325`, `channel.ts:16-22, 30, 64`, `src/lib/state/sessions/terminal/terminal-tabs.ts:124-141`, `pty/sessions.ts:13`, `src/lib/state/workbench/navigation/pages.ts:153`.
+- Problems 219-223: `src/lib/views/sources/search/Problems.svelte:19-48` (`:33-34` the filter).
+- References 227-229: `src/lib/views/sources/search/References.svelte:15-41`.
+- Debug 233-237: `src/lib/views/system/machine/debug/Debug.svelte:16-30`, `src/lib/server/machine/debug/launch/read.ts:1-13`, `debug/routes.ts:7`, `page-state/files.ts:5, 22`.
+- Debug Console 241: `src/lib/views/system/machine/debug/Console.svelte:2-31`.
+- Notes Graph 245: `src/lib/views/sources/notes-graph/NotesGraph.svelte:16-29`.
+- Session 249: `src/lib/views/sessions/session-detail/SessionDetail.svelte:2-20`.
+- Source 253-262: `src/lib/views/sources/source/Source.svelte:16-81`, `editor-options.ts:101, 104`, `autosave.svelte.ts:3`, `cpp-file.ts:5`, `src/lib/server/machine/lsp/held/held.ts:10-12` (60 s), `src/lib/server/edit/adapters/yaml/hub-keys.ts:22`.
+- File 266, Document 270, Doc 274, Markdown Preview 278-280, Math Preview 284: the head comments `File.svelte:16-84`, `Document.svelte:16-50`, `Doc.svelte:18-73`, `MarkdownPreview.svelte:18-41`, `latex-widget.ts:132` (KaTeX `throwOnError: false`), `MathPreview.svelte:17-25`.
+- Diff 288-290, Merge 294, Refactor Preview 298: `Diff.svelte:18-55` (`:38-39`), `Merge.svelte:18-45` (`:34-36`), `RefactorPreview.svelte:18-30`.
+- Customization 302: `src/lib/views/sessions/customization/CustomizationView.svelte:2-20`. Language server output 306: `src/lib/views/system/machine/output/Output.svelte:17-22`.
+- Collection views 310-318: `src/lib/views/boards/collection/Collection.svelte:11-56, 225-227, 271-276`, `config/defaults/sources.yml:26-55`, `src/lib/data/model/model-collections.ts:167, 185` (display), `entry-add.ts:3, 16-17, 31-35`, `src/lib/server/edit/primary-key.ts:1-10`, `literature-key.ts:1-4`, `server/edit/feeds/literature.ts:1-11`.
+- Memories 322-325: `src/lib/views/personal/memories/Memories.svelte:16-36`.
+- Career 329-332: `src/lib/views/academic/career/Career.svelte:16-35`.
+- Entry 336-338: `src/lib/views/boards/entry/Entry.svelte:17-52` (`:28-29` Delete and Undo).
+- Pillars 342-344, Domains 348, Map 352-356, Listing 360: `Pillars.svelte:14-27`, `Domains.svelte:2-16`, `Map.svelte:15-37`, `Listing.svelte:16-25`.
+- Venues 364-367, Journal Browser 371-373: `Venues.svelte:14-26`, `Browser.svelte:15-25`, `registries/browser.ts:8, 157`.
+- Data 377-379: `src/lib/views/sources/data/Data.svelte:14-17`.
+- Person 383: `src/lib/views/boards/person/Person.svelte:17-50`.
+- Recover 387-391: `src/lib/views/sources/data/recover/Recover.svelte:16-28`.
+- Literature search 395-398: `src/lib/views/feeds/literature/Literature.svelte:2-5`, `behavior.yml:496`.
+- Lit Watch 402: `src/lib/views/feeds/radar/Radar.svelte:15-27`.
+- Present 406-411: `src/lib/views/academic/present/Present.svelte:15-85`, `src/lib/state/boards/board/state.ts:157, 170`.
+- Apps 415-419: `src/lib/views/apps/Apps.svelte:18-33`, `AppFrame.svelte:13`, `apps/shell/contributions.ts:3`, `private.ts:1-3`.
+- Help 423: `src/lib/views/system/help/Help.svelte:2-5, 18-23`, `layout.yml:136-145`.
+- Keyboard Shortcuts 427: `Keys.svelte:16-26, 109-114`, `rows.ts:285-327`.
+- Settings 431-436: `src/lib/views/system/workbench/Settings.svelte:15-67`, `src/lib/data/sources/config/local.ts:131-138` (no value of a `downloads` row reaches a page).
+- Account setup 440-444: `AccountSetup.svelte:17-34`, `src/lib/server/machine/hpc/clusters/keys.ts:4-15`, `askpass.ts:1-3`, `credentials.ts:5`.
+- Views 448: `Catalogue.svelte:15-50`. Pages 452: `Pages.svelte:15-25`. Status 456: `Status.svelte:15-28`.
+- Findings 460-464: `Findings.svelte:20-48`, `config/text/views/system/audit.yml:73`.
+- History 468-470: `History.svelte:17-44`.
+- Processes 474: `Processes.svelte:2-27`.
+- Live HPC 478-482: `Hpc.svelte:22-28`, `connectors.ts:64`, `src/lib/server/machine/hpc/ssh.ts:46-57`, `submit.ts:1-14`, `scratch.ts:2, 29-32`, `transfer.ts:11-12`.
+- Usage 486: `Usage.svelte:19-40`. Workbenches view 490: `Workbenches.svelte:17-35`.
+
+The keys:
+
+- 494: `Keys.svelte:109-114`, `rows.ts:285-327`, `catalogue.ts:219-249` (the chords), `layout.yml:9-21` (`chord`), `src/lib/data/helpers/keys/oculus/resolve.ts:376-379` (letter then digit), Cmd as Ctrl off macOS in each key table.
+- the digits, Ctrl+digit, Ctrl+] and Ctrl+[, `n`, `/`, `g g`, `G`, j, k, i, o, Esc and Enter: `resolve.ts:376-379` and its chord and cursor code
+- Ctrl+Tab: `src/lib/data/helpers/keys/oculus/page-keys.ts:44-47`
 - Cmd+W, Cmd+N, Cmd+F, Cmd+T and Cmd+Shift+T: `resolve.ts:174-181`, `page-keys.ts:35`
+- Ctrl+- and Ctrl+Shift+-: `resolve.ts` back and forward bindings, `history.ts:16`
 - Cmd+Shift+N, Cmd+Shift+W, Cmd+, and Cmd+R: OWN_ACCELERATORS in `desktop-keys.ts`
-- Cmd+S: `resolve.ts:168-171, 280`, `src/lib/shell/window/source-keys.ts:28-33`
-- build, test, Problems and F8: `resolve.ts:116-117, 141-157`
-- the chords: `catalogue.ts:219-249`, `layout.yml:9-21, 334`, `src/routes/views.ts:211-261`
-- the palette keys: `palette-table.ts`
-- the LaTeX keys: `editor-keys.ts`, `src/lib/views/shared/prose/editor/latex-editing.ts:187, 204`
-- Shift+Alt+F12, Shift+Alt+H, Alt+O and F4: `src/lib/views/shared/prose/editor/lsp.ts:127-133`
-- Alt+F5: `gutter.ts:116-117`
-- Cmd+K Shift+Enter: `src/lib/ui/controls/editor/chords.ts`
-- Alt+Z: `src/lib/views/sources/source/status/ask-perform.ts:75-79`
-- the Files row keys: `src/lib/state/sources/explorer/acts/keys.ts:44-62`
-- the Search keys: `src/lib/state/sources/search/keys.ts:35-40`, `box-keys.ts`
+- Tab and Shift+Tab, the arrows and Home and End of the rail, the strip and the tree: `src/lib/ui/tree/tree-keys.ts`, `src/lib/shell/rail/rail.ts:1-5` (`nextStop`)
 - Delete on a tab: `src/lib/ui/tabs/Tabs.svelte:252`
-- the terminal row: `terminal-list.ts:216-226`
-- Shift+F10: `src/lib/ui/menu/ContextMenu.svelte:135, 277`
+- the group chords f1 to y1-y8, w1-w3, a1-a9 and the `h` row: `catalogue.ts:219-249`, `layout.yml:9-21, 136-145, 334`, `src/routes/views.ts:211-261`, `arrangement.ts:206-224`
+- Cmd+Shift+F and Cmd+Shift+H, the Search box rows and the Search row keys: `src/lib/state/sources/search/keys.ts:35-40`, `box-keys.ts`
+- the Files rows: `src/lib/state/sources/explorer/acts/keys.ts:43-61`
+- Cmd+S: `resolve.ts:168-171, 280`, `src/lib/shell/window/source-keys.ts:28-33`
+- Alt+Z: `src/lib/views/sources/source/status/ask-perform.ts:75-79`
+- build, test, Problems and F8: `resolve.ts:116-117, 141-157`
+- the LaTeX rows, Cmd+L Cmd+L and Cmd+L Ctrl+Shift+M among them: `src/lib/data/helpers/keys/editor-keys.ts:50-51, 66-82`, `src/lib/views/shared/prose/editor/latex-editing.ts:187, 204`
+- Cmd+K, Cmd+Shift+P, F1, Cmd+P, Cmd+T, Shift+Enter and `:`: `palette-table.ts` (KEY_ROWS, PREFIX_ROWS)
+- Cmd+K Shift+Enter: `chords.ts:15-17, 51`
+- F2, F12, Cmd+click: `src/lib/views/shared/prose/editor/lsp.ts:127-133`, `hub-keys.ts:22`
+- Shift+Alt+F12, F4 and Shift+F4, Shift+Alt+H, Alt+O: `lsp.ts:127-133`
+- Alt+F5 and Shift+Alt+F5: `gutter.ts:116-117`
+- F5, Shift+F5, Cmd+Shift+F5, F9, F10, F11 and Shift+F11: the debugger's bindings in `workbenchBindings`, `rows.ts:285-313`
+- the Debug Console row: `Console.svelte:2-31`
+- Ctrl+Enter and Cmd+Enter: the commit box and the diff comment box bindings, `resolve.ts`
+- the terminal row: `src/lib/views/sessions/terminal/terminal-list.ts:216-226`
+- Shift+F10: `ContextMenu.svelte:135, 277`
 - the float handle: `src/lib/ui/frame/sash/Sash.svelte`
-- the Debug Console: `src/lib/views/system/machine/debug/Console.svelte`
-- the tree: `src/lib/ui/tree/tree-keys.ts`
-- the deck rows: `present/screen/keys.ts:74-91`, and the box's o/O, f/F, p/P and Escape
+- the Present rows: `src/lib/views/academic/present/screen/keys.ts:74-91`, and the box's o/O, f/F, p/P and Escape
+
+### Sentences removed in this round because the screen draws them
+
+Each is a sentence of the first round's page; the string or markup that shows it follows.
+
+- The Views entry's click sentence: `workbench.catalogue_hint`, `config/text/views/system/workbench.yml:126`.
+- The Pages entry's row-controls sentence: `pages_close`, `pages_rename`, `pages_reset`, `workbench.yml:130-136`, drawn on each row (`Pages.svelte:20-24`).
+- The Pages entry's Reset all pages bullet: `reset_all`, `reset_all_tip`, `workbench.yml:178, 181`.
+- The Workbenches view's "Reopen restores a kept layout, and Forget drops it": `workbenches_forget`, `workbenches_forget_question`, `workbenches_forget_detail`, `workbench.yml:293-295`.
+- Processes' "with Stop, which asks first, and Restart": `host_restart`, `host_stop_question`, `config/text/views/system/machine/processes.yml:41, 46`.
+- LinkedIn's Mark posted bullet: `markpost_tip`, `config/text/views/feeds/linkedin.yml:18`.
+- Deposit's For review and Publish descriptions (the anonymisation, Anonymous, the share link, the real files and authors, the confirmations): `zenodo_review_confirm`, `zenodo_review_detail`, `zenodo_review_title`, `zenodo_publish_confirm`, `zenodo_publish_detail`, `zenodo_publish_title`, `config/text/views/boards/deposit.yml:83-89`; the sign-in row: `zenodo_off`, `deposit.yml:81`.
+- Person's "this is me" bullet and its disabled clause: `self`, `self_tip`, `self_held_tip`, `self_no_primary_tip`, `config/text/views/boards/person.yml:10-15`.
+- Session's Resume bullet: `resume_confirm` and `resume_live`, `config/text/views/sessions/session-detail.yml:34, 36`.
+- Terminal's "Lock leaves every grid and steer box of the tab read-only": `terminal_lock_tip`, `config/text/views/sessions/terminal.yml:105`.
+- Repositories' New worktree path and branch, and the branch going with a removed worktree: `worktree_new_detail`, `remove_detail`, `config/text/views/sources/repositories.yml:254, 269`.
+- Present's "Export to PDF writes `<name>.pdf` in the deck's folder": `export_tip`, `config/text/views/academic/present.yml:54`.
+- Findings' "and the finding leaves the count": `mute_tip`, `config/text/views/system/audit.yml:19`.
+- Inbox's "each behind a confirmation": the confirm the card draws before Send and Archive, `InboxCard.svelte:8-10`, and `archive_tip`, `config/text/views/feeds/inbox.yml:10`.
+- Search's "asks first" of Replace All: the confirm of `Search.svelte:37-38`.
+- Settings' "is shown as Set or Not set": `secret_set`, `secret_unset`, `workbench.yml:112-113`.
+- Position Leads' "opens the Applications file beside the leads with a new entry filled from the lead ... then sets the lead applied; ... it asks which": `applied_tip`, `applied_hub_tip`, `config/text/views/feeds/leads.yml:6-7`; the disabled title: `applied_none`, `leads.yml:8`.
+- Career's sentence naming the files Write the website writes: `website_tip`, `website_tip_run`, `config/text/views/academic/career.yml:27-28`; and "Edit needs the file's `schema:`": `no_schema`, `career.yml:10`.
+- Entry's "An entry of a file with no `schema:` opens a read-only page": `no_schema`, `config/text/views/boards/entry.yml:13`, and the page drawing no control that writes (`Entry.svelte:31-34`).
+- Apps' Remove and the approval labels: `menu_remove`, `remove_question`, `remove_confirm`, `config/text/views/apps/apps.yml:101, 118, 124`.
+
+### Sentences removed in this round for want of a citation
+
+- "Every drag has a menu equivalent" (the drag clause of the Shift+F10 item): no code states it as a rule; the item keeps Shift+F10 (`ContextMenu.svelte:4`).
+- "while a tab holds it every control that would write that file is disabled": no single module gives it; the item keeps that the unsaved text survives (`form-draft.ts:1-3`, `source.svelte.ts:430-433`).
+- Collection views' "those references become findings" after a delete: `Entry.svelte:28-29` gives the question and the Undo only; the Delete item moved to Entry with that text.
+- The Files sentence on a 32 MB upload limit, Repositories' commit signing and its list of what asks first, Search's "searched even when hidden or ignored", the TeX view's `brew install texlab`, and Debug's list of what `rite_dap` lacks: no code was found that states them.
+
+### Sentences rewritten for ST1
+
+Help: the landing rule (no "never covers the tool views"); Lock Group; pinned tabs ("only Close in a tab's menu closes one"); the status bar menu ("offers Save Workspace As..."); Mine only ("a feed line stays"); New project ("It is on the boards whose rule takes the project it writes"); Other ("for any other project that names people"); the Editor rename (F2); the local history ("up to 256 KB"); Make Folder a Hub ("stops at a folder that holds one of its files, and names it"); the secrets folder ("left out of"); the force push ("Only a deposit's snapshot is force-pushed"); autofetch ("0 is the default"); the hooks write ("has no time limit and Cancel stops it"); the terminal close ("keep them running"); the Literature search ("is asked once that row is set"); Journal Browser ("Only a press asks the browser"); Present's filter ("leaves the deck's files as they are"); Apps ("reaches the folders of the workspace apart from ..."); Settings ("its comments and its other keys kept"; "its value stays on the server"); Account setup ("keeps a key file that is there"); Live HPC ("adds and updates files on the cluster"); the File view ("for any other file the editor leaves to it"); the chords ("the first nine views of a group have a chord"); Findings ("applies once the hub sets it"); Pages ("each shown by a press on its row"). Removed: the intro's "It writes only where a control says so ..." and the page's structure sentence; base `HELP.md:88`, `:150`, `:164`, `:183`, `:247`, `:310` (Discard), `:413`, the "no pause" Debug sentence, and the negative list of the Account setup password.
+
+Data map: `:31` ("in the folder the key names"); `:44` ("which oculus writes ... or where the keys of `local.yml` put them"); `:50` ("Any other key is a finding, and oculus skips it"); `:124` ("the deck skips it", `order.ts:88-90`); `:128` and `:134` ("the primary's value stands", `machine.ts:8-9`); `:174` (the depth's range; the sentence on a workspace without `primary:` removed); `:195` (`unattended` starts the session with `--dangerously-skip-permissions`, `run.ts:87`); `:210` ("A collection has a view while a hub lists it"); `:231` ("whatever its schema"); `:233` ("Any other type is read as `text`"); `:252` ("a field of one value"); `:270` ("the user name comes from this machine's row"); `:282` ("skips a dot folder, `node_modules` and a symbolic link"); `:288` ("read-only", `manifest-schema.yml:8, 49`); `:307` ("kept away from its usual place"); `:311` ("takes it off the Focus board"; "A project's Focus lane follows from its stage and chips"); `:315` ("the field's list is empty"); `:369` (as in item 11); `:383` ("writes that block alone, with no control").
+
+Decks guide: `:13` ("A deck folder needs its `present.yml`, and one that lacks it is a finding"); `:66` ("The reader reads the keys below"); `:102` (the frame "anything but a map of `width` and `height`, each in its range"; the list "written in brackets even for one word"; "while all four are unset"; "the group skips it"); `:106` ("one of the four below"); `:111` ("is placed once", `read.ts:13-14`); `:112`, `:322` and `:361` ("a deck of no project"); `:120` (item 7); `:123` ("finds outside the group"); `:127` ("outside a fenced code block and an HTML comment"); `:128` ("A blank line after a slide's `---` starts its body at once"); `:129` ("fails to parse"); `:130` ("Its first line with words"; "A slide needs a heading, or ... a title ...; one that lacks both is a finding"); `:162` ("Any other `kind:` is a finding, and the deck skips the slide", `kinds.ts:266-273`); `:212` and `:257` ("alone"); `:323` ("They narrow the slides on screen and leave `present.yml` and the slide files as they are"); `:329` ("stays the same either way"); `:358-360` ("is shown as its key; a reference to a missing record is left out"; "filled with the empty text"; "Any other name stays as written").
+
+README: `README.md:95` reads "is the manual: each part of the window and each view, with the rules, files and limits behind what its screen shows, and the keys", in place of "with what its screen does not show".
 
 ## docs/data-map.md
 
-Before: 311 lines, 5206 words. After: 383 lines, 5587 words.
+Before: 311 lines, 5206 words. After: 383 lines, 5542 words (`wc -l -w`).
 
 Headings before: Contents; Files in `.oculus`; Data files; Views that draw these files; The hub's settings; The workspace's settings; Keys and links; Fields that hold only under a condition; Schema fields; A second hub; The primary hub; Repositories below a hub.
 
 Headings after: Contents; The files; The hub's settings; This machine's values; The workspace file; Bookmarks, schedules and tasks; Collection files; The career file; Project manifests; Keys and links; Several hubs; Repositories below a hub.
 
-Code read, per section:
+### Code read per paragraph, item and row
 
-- The files: `src/lib/data/helpers/hub-names.ts:574-576` (what a hub is), `config/defaults/sources.yml:22-75` (the default paths), `config/options/sources.yml:12-170` (`scan`, `collections`, `linkedin_dir`, `career_file`, `memories_dir`, `bookmarks`), `src/lib/server/files/fs/notes.ts:1-17`, `src/lib/server/machine/runs/schedules/task.ts:5-11`, `src/lib/data/model/machine/model-machine.ts:13`, `src/lib/data/sources/config/editor-options.ts:1-4, 198-206`, `config/options/behavior.yml:500-505`, `src/lib/server/machine/runs/commands/files.ts:1-14`, `src/lib/server/machine/debug/launch/read.ts:1-13, 37-38`, `config/schemas/cpp-schema.yml`, `src/lib/server/machine/apps/store/store.ts:1-6, 22`, `config/options/local.yml` (the `~/.oculus` defaults), `src/lib/data/sources/documents/templates.ts:1-14`, `config/text/views/sources/files.yml:104-154`.
-- The hub's settings: `hub-names.ts:712-792` (HUB_LIST, 69 keys), `src/lib/data/shapes/hub-keys.ts:11-60` (OWN_HUB_KEYS, 42 keys, and `primaryOnly`), the 27 keys read from the primary only, from `comm -23` of the two lists, `src/lib/data/sources/config/merge/hub-layer.ts:1-21, 569-606`, `src/lib/data/sources/config/merge/in-place.ts:10, 147-158` (ROW_SHAPES), the option help of each key in `config/options/*.yml`, `config/defaults/sources.yml:72-75`.
-- This machine's values: every key of `config/options/local.yml`, `src/lib/data/sources/config/local.ts:160-189, 600-660`, `src/lib/data/sources/config/machine.ts:1-12, 56-58`.
-- The workspace file: `src/lib/data/sources/config/merge/workspace-file.ts:1-56`, `src/lib/server/files/workspace/open.ts:1-17`, `src/lib/data/sources/config/merge/workspace-layer.ts:1-21`, `src/lib/server/root/watch/bookmarks.ts:21-24`, `src/lib/server/machine/runs/schedules/watch.ts:90`.
-- Bookmarks, schedules and tasks: `src/lib/server/files/fs/bookmarks.ts:1-70`, `src/lib/data/helpers/run/schedules.ts:9-17, 37-43, 175-235`, `src/lib/server/machine/runs/schedules/task.ts:5-14`, `run.ts:87`.
-- Collection files: `config/options/sources.yml:50-140` (the `collections` fields), `config/defaults/sources.yml:26-50`, `docs/templates.md:1148, 1163-1164, 1302-1303, 1427, 1481` (the template schemas), `src/lib/data/model/model-collections.ts:64-82, 209-287` (FILTERED_TYPES, `KeyPicked`, the `when` glob), `src/lib/data/snapshot/schema/record.ts:1-18, 89-101`, `src/lib/data/snapshot/validate.ts:450-471, 528`, `config/catalogs/vocab.yml:106, 139, 141`.
-- The career file: `config/options/sources.yml:149`.
-- Project manifests: `config/schemas/manifest-schema.yml:1-135`, `config/options/sources.yml:12` (`scan`).
-- Keys and links: `manifest-schema.yml:18-26`, `record.ts:9-12`, `model-collections.ts:220-226`, `docs/templates.md:1322`.
-- Several hubs: `hub-keys.ts:1-6`, `machine.ts:1-12`, `src/lib/state/shared/page/hubs.ts:8-12, 31-36`, `config/options/local.yml` (`self`).
-- Repositories below a hub: `src/lib/server/git/clone/exclude.ts:7-35`.
+- 3: the two links resolve (`test -f`).
+- 13: `src/lib/data/helpers/hub-names.ts:574-576` (a hub holds `.oculus/config.yml`).
+- The files table, 17-31: `.oculus/config.yml` `hub-names.ts:574-576`; `local.yml` `src/lib/data/sources/config/local.ts:1-7, 548` (LOCAL_NAME under `.oculus`); workspaces `src/lib/server/files/workspace/open.ts:1-17`; bookmarks `src/lib/server/files/fs/bookmarks.ts:1-24`, `config/options/sources.yml` `bookmarks`; schedules `src/lib/data/helpers/run/schedules.ts:9-17`; tasks `src/lib/server/machine/runs/schedules/task.ts:5-11`; collections `config/defaults/sources.yml:26-55`; career `config/options/sources.yml:149`; project manifests `config/options/sources.yml:12` (`scan`), `src/lib/data/sources/projects` walk; deck `config/defaults/sources.yml` `portfolio_deck`; notes `src/lib/server/files/fs/notes.ts:1-17`; memories `config/options/sources.yml:154`; wallpaper `wallpaper_dir`; apps `src/lib/server/machine/apps/store/store.ts:1-6`; LinkedIn `config/defaults/sources.yml:60-63`.
+- 33 and the repository table 37-42: `src/lib/data/model/machine/model-machine.ts:13`, `src/lib/data/sources/config/editor-options.ts:1-4, 198-206`, `src/lib/server/machine/runs/commands/files.ts:1-14`, `src/lib/server/machine/debug/launch/read.ts:1-13, 37-38`, `config/schemas/cpp-schema.yml`, `store.ts:22` (app-data).
+- 44: `local.ts:50-87` (the state paths and their `~/.oculus` defaults), `local.ts:559-569` (STATE_PATHS).
+- 46: `src/lib/data/sources/documents/templates.ts:1-14`, `config/text/views/sources/files.yml:104-154`.
+- 50 and the key block 53-121: `hub-names.ts:712-792` (HUB_LIST, one entry per line of the block), the option help of each key in `config/options/*.yml`.
+- 124: `src/lib/data/sources/config/merge/hub-layer.ts:1-21, 569-606`, `in-place.ts:10, 147-158` (ROW_SHAPES), `config/catalogs/vocab.yml:4`, `order.ts:88-90`.
+- 126: `vocab.yml:4`.
+- 128: `src/lib/data/shapes/hub-keys.ts:11-60` (OWN_HUB_KEYS, 42 keys, `primaryOnly`), and the 27 from `comm -23` of HUB_LIST and OWN_HUB_KEYS.
+- 130: `config/defaults/sources.yml:72-75`.
+- 134: `src/lib/data/sources/config/machine.ts:1-12, 56-58`.
+- This machine's values, one row each, the type field, the read and the unset value, all in `src/lib/data/sources/config/local.ts` unless named:
+  - `port`: `:38-39`, read `:619-623`, unset `:161` (DEFAULT_PORT 8790); bound to 127.0.0.1 `src/lib/server/root/socket.ts:24`.
+  - `self`: `:40-44` ("empty when the file names nobody"), read `:632-635`, unset `:201`.
+  - `clusters`: `:45-49`, read `:643-646`, unset `:202` (empty); with no row ssh gets no `-l` and no `-i`, so ssh's own configuration applies (`src/lib/server/machine/hpc/ssh.ts:46-57`).
+  - `sessions_cache`: `:50-54` (unset `~/.oculus/transcript-cache.json`), read `:559-561, 679-684`.
+  - `sessions_overrides`: `:55-59` (unset `~/.oculus/sessions.json`), read as above.
+  - `changes`: `:60-64` (unset `~/.oculus/changes.jsonl`).
+  - `history`: `:65-69` (unset `~/.oculus/history`).
+  - `approvals`: `:70-75` (unset `~/.oculus/approvals.json`).
+  - `lsp`: `:76-82` (unset `~/.oculus/lsp`).
+  - `schedule_record`: `:83-87` (unset `~/.oculus/schedule.json`).
+  - `claude_bin`: `:88-91`, read `:552-556, 624-629`, unset `:203` (`claude`).
+  - `commit_message_account`: `:92-97`, read `:636-642`, unset: the default folder (`src/lib/server/git/git-message.ts:45, 53-61`).
+  - `open_bin`: `:98-104` (unset the platform's opener: /usr/bin/open, xdg-open, wslview), read `:552-556`; `src/lib/server/root/context.ts:837`.
+  - `rite_dap_bin`: `:105-109`, unset `:204` (`rite_dap`).
+  - `accounts`: `:110-111`, read `:647-650`, unset `:205-208` (`~/.claude` and `~/.codex`).
+  - `calendars`: `:112-113`, read `:651-659` (google, microsoft or ics), unset `:209` (empty).
+  - `calendar_dir`: `:114-118` (unset `~/.oculus/calendar`).
+  - `mail`: `:119-120`, read `:660-668` (google or microsoft), unset `:210` (empty).
+  - `mail_dir`: `:121-125` (unset `~/.oculus/mail`).
+  - `literature.mailto`: `:28-35, 126-131`, read `:669-672`, unset: absent.
+  - `downloads`: `:132-138`, read `:673-676`, unset `:211` (empty); the row shape `:156-160`.
+- 160: `localPath`, `local.ts:215-223`.
+- 164-172 and 174: `src/lib/data/sources/config/merge/workspace-file.ts:1-56`, `folders.ts:15-17`.
+- 176-189: `src/lib/data/sources/config/merge/workspace-layer.ts:1-21`.
+- 193: `src/lib/server/files/fs/bookmarks.ts:1-70`.
+- 195: `schedules.ts:9-17, 37-43, 175-235`, `run.ts:1-16, 87`.
+- 197: `task.ts:5-14`.
+- 201-208: `config/options/sources.yml:50-140` (the `collections` fields).
+- 210 and the collections table 213-229: `config/defaults/sources.yml:26-50` (one entry per row), `docs/templates.md:1148, 1163-1164, 1302-1303, 1427, 1481` (the template schemas' primary keys), `src/lib/state/shared/page/hubs.ts:8-12`.
+- 231: `src/lib/data/snapshot/schema/record.ts:1-18, 89-101`, `src/lib/data/snapshot/validate.ts:450-471, 528`.
+- 233 and the type table 236-246: `src/lib/data/model/model-collections.ts:64-82` (the types; FILTERED_TYPES).
+- The attribute table 249-262: `model-collections.ts:167, 185, 209-287` (display, `when` glob, `KeyPicked`), `record.ts:9-12`.
+- 264: `record.ts:89-101`.
+- 266-274: `config/catalogs/vocab.yml:106, 139, 141`, `docs/templates.md:1481`, `src/lib/server/machine/hpc/ssh.ts:46-57` (the user from `clusters:`).
+- 278: `config/options/sources.yml:149`.
+- 282: `config/options/sources.yml:12` (`scan`), `config/schemas/manifest-schema.yml:49` (the id).
+- 284 and the manifest table 287-309: `config/schemas/manifest-schema.yml:1-135` (one field per row; `:8, 49` the read-only id; `:103` `paths`).
+- 311: `manifest-schema.yml:88-91`, `vocab.yml:182`.
+- 315: `manifest-schema.yml:18-26`, `model-collections.ts:220-226`.
+- 317-363: the `foreign_key:` lines of `manifest-schema.yml` and of the template schemas, `docs/templates.md:1322`.
+- 365, 367: `vocab.yml:4`, `src/lib/data/snapshot/validate.ts:450-471`.
+- 369: `Hpc.svelte:22-28`, `src/lib/server/content/audit` link rows.
+- 373-379: `hub-keys.ts:1-6`, `machine.ts:1-12`, `hubs.ts:8-12, 31-36`.
+- 383: `src/lib/server/git/clone/exclude.ts:5-35`.
 
 ## docs/decks.md
 
-Before: 434 lines, 5687 words. After: 361 lines, 3065 words.
+Before: 434 lines, 5687 words. After: 361 lines, 3049 words (`wc -l -w`).
 
 Headings before: A first deck; What a deck is (Where decks are); present.yml (deck, defaults, groups, order); How a group picks its decks; The order (Counts); Slides; Slide kinds (title, section, text, image, columns, equation, code, closing, project, idea, summary, grid); Front-matter keys; Notes, images and tags; The filter; The project facts strip; Project fields in a slide; Slide findings.
 
 Headings after: Contents; A deck's files; present.yml; The order; How a group picks its decks; Slides; Front-matter keys; Slide kinds (title, section, text, image, columns, equation, code, closing, project, idea); The filter; The project facts strip.
 
-Code read, per section:
+### Code read per paragraph, item and row
 
-- A deck's files: `src/lib/data/sources/deck/read.ts:1-38, 75`, `deck-files.ts:52, 388-396, 414-458` (images), `src/lib/data/file-ops.ts:46`, `src/lib/views/academic/present/acts/run.ts:111-150` (`dropImage`), `config/text/views/academic/present.yml:4, 34-37`.
-- present.yml: `src/lib/data/sources/deck/spec.ts:104-112, 121-135, 138-212`, `read.ts:240-256, 305, 326, 343-355`, `config/options/present.yml:7-22`, `config/defaults/present.yml`.
-- The order: `spec.ts:163-198`, `read.ts:117, 132, 551-626, 639`.
-- How a group picks its decks: `src/lib/data/sources/deck/groups.ts:1-18, 110, 178, 185, 217`.
-- Slides: the head comment and lines 50-85 of `src/lib/data/sources/deck/split.ts`.
-- Front-matter keys and Slide kinds: `src/lib/data/sources/deck/kinds.ts:82-93, 163-177, 239-253, 266-398`, `project.ts` (`projectSlide`, IMAGE_SUFFIXES), `src/lib/views/academic/present/parts/project/Project.svelte:52, 157`, `read.ts:426-447, 529`, `config/text/views/academic/present.yml:109`.
-- The filter: `src/lib/state/boards/board/state.ts:157, 170`, `config/text/views/academic/present.yml:123`.
-- The project facts strip: `src/lib/data/shapes/project-facts.ts:83-180`, `config/text/views/boards/projects.yml:16-19`, `src/lib/state/life/present.ts:120, 145`, `parts/project/Facts.svelte:130`, `read.ts:470-491`.
+- 13-17: `src/lib/data/sources/deck/read.ts:1-38, 75`, `src/lib/server/edit/writes/config/lists/deck/deck-files.ts:51-52, 414-441` (images, the name rule), `src/lib/data/file-ops.ts:46` (32 MB), `src/lib/views/academic/present/acts/run.ts:111-150` (`dropImage`), `config/text/views/academic/present.yml:4, 34-37`.
+- 19-62 (the example): `spec.ts`, `kinds.ts:82-93`, `split.ts:50-85`.
+- 66 and the example block: `src/lib/data/sources/deck/spec.ts:104-112`.
+- The present.yml table 88-100: `spec.ts:121-135, 138-212` (one key per row, with its unset value), `config/options/present.yml:7-22`, `config/defaults/present.yml`.
+- 102: `spec.ts:121-135` (the frame and its ranges), `read.ts:240-256, 305, 326, 343-355` (the lists, the deck of no project, the glob refusal).
+- 106 and the order table 110-113: `spec.ts:163-198`, `read.ts:13-14, 117, 132, 551-626, 639`.
+- 115: `read.ts:551-626`.
+- 119-123: `src/lib/data/sources/deck/groups.ts:1-18, 110, 178, 185, 217`, `order.ts:85-104`, `hub-keys.ts:36`, `vocab.yml:280`.
+- 127-132: `src/lib/data/sources/deck/split.ts` head comment and `:50-85`, `read.ts:426-447, 470-491`.
+- The front-matter table: `kinds.ts:163-177, 239-253`, `project.ts` (`projectSlide`, IMAGE_SUFFIXES).
+- 162: `kinds.ts:262-273`.
+- Each kind, 164-317: `kinds.ts:266-398` (one builder per kind), `src/lib/views/academic/present/parts/project/Project.svelte:52, 157`.
+- 321-323: `src/lib/state/boards/board/state.ts:157, 170`, `config/text/views/academic/present.yml:123`.
+- 327-331: `src/lib/data/shapes/project-facts.ts:83-180`, `config/text/views/boards/projects.yml:16-19`, `src/lib/state/life/present.ts:120, 145`, `parts/project/Facts.svelte:130`.
+- The facts table 341-356 and 358-361: `project-facts.ts:83-180` (one field per row), `read.ts:470-491`.
 
 ## Sentences of today's pages kept word for word
 
-How the lists were made: each page, before and after, was split at a period followed by a space and a capital. Each table row and each code line counts as one unit, and only units over 25 characters are counted. `comm -12` of the before and after lists of each page gives the kept units, held in the scratchpad's `O165build/kept-HELP.txt` (88), `kept-data-map.txt` (120) and `kept-decks.txt` (60).
+How the lists were made: each page, before and after, was split at a period followed by a space and a capital. Each table row and each code line counts as one unit, and only units over 25 characters are counted. `comm -12` of the before and after lists of each page gives the kept units, held in the scratchpad's `O165build/kept-HELP.txt`, `kept-data-map.txt` and `kept-decks.txt`. Those lists were made over the first round's pages; this round removed or rewrote, of the units they hold, the Help sentences on `rite_dap`'s missing features, `Set or Not set`, "A file with no `schema:` has no Edit", "A view opened for something ... never covers the tool views", "Apply writes the checked edits; Discard writes nothing", "Delete asks first and names everything that refers to the entry; those references become findings", "It writes only where a control says so: ...", "No app can reach ...", "No draft is made at the provider", "Nothing force-pushes except a deposit's snapshot", "Reopen restores a kept layout; Forget drops it", "Resume asks once ...", "Search and More each send one request, and nothing else asks the browser", "The `secrets` folder of every hub is private: ...", the Delete row "(not a pinned one)"; the data map's `:50`, `:270`, `:231` (snooze), `:315`, `:210`, `:369` sentences; and the decks guide's `:127`, `:128`, `:106`, `:323` and `:257` sentences, each rewritten as listed under ST1. The other kept units stand unchanged, among them the key rows of `docs/HELP.md:496-571` other than the Delete row, the data map's key block, collections table and link block, and the decks guide's examples and facts table.
 
-One sentence moved between pages by decision 3: "Nothing else in that file changes." It was in today's Help at line 631 and is now at `docs/data-map.md:383`. A cross-page `comm -12` of before and after gives this sentence and two table separator rows, and nothing else.
-
-docs/HELP.md (88):
-
-```
-`rite_dap` has no pause, conditional breakpoints or Set Value; an app's debugger offers what it declares.
-`search.max_hits` and `search.timeout_s` limit it.
-| : | command line |
-| / | focus the board's search; in Search, back to the query box |
-| 1-9 / Ctrl+1-9 | show that rail page / that tab of the focused pane |
-| Alt+F5 / Shift+Alt+F5 | next / previous change |
-| Alt+Up / Alt+Down | move a root, bookmark, note or section of Files |
-| Alt+Z | toggle word wrap |
-| arrows | on a docked float's handle: resize it |
-| arrows, Home / End | along the rail or a tab strip |
-| Cmd+Alt+[ / Cmd+Alt+] | promote / demote sections, in a `.tex` tab |
-| Cmd+Alt+B / Cmd+Alt+C / Cmd+Alt+V | LaTeX build / clean / view PDF, in a `.tex`, `.sty` or `.cls` tab |
-| Cmd+Alt+Enter / Cmd+Shift+1 / Cmd+Backspace | in Search: Replace All / replace the focused row / dismiss it |
-| Cmd+Alt+J | LaTeX: show the caret's line in the PDF, in a `.tex` tab |
-| Cmd+Alt+M / Cmd+Alt+X | Math Preview, in a `.tex` tab / TeX view |
-| Cmd+F | find in a terminal, or in the app's window for a view with no find of its own |
-| Cmd+K | open the palette, or close it when open; in the editor, the first key of the editor's chords |
-| Cmd+L, then Cmd+B, I, U, E, R, T, S, C, N, 6 or - | wrap in `\textbf`, `\textit`, `\underline`, `\emph`, `\textrm`, `\texttt`, `\textsl`, `\textsc`, `\textnormal`, `\textsuperscript`, `\textsubscript`, in a `.tex` or `.bib` tab |
-| Cmd+L, then Cmd+Enter / Cmd+W | insert `\item` / surround with a command, in a `.tex` tab |
-| Cmd+N; Cmd+Shift+N / Cmd+Shift+W; Cmd+,; Cmd+R | new text file; new window / close window; settings; reload (in the app) |
-| Cmd+P | find a file by name |
-| Cmd+Shift+B / Cmd+Alt+T | default build / default test of the repository |
-| Cmd+Shift+F / Cmd+Shift+H | Search / Search with replace |
-| Cmd+Shift+M; F8 / Shift+F8 | Problems view; next / previous problem |
-| Cmd+Shift+P, F1 | palette in command mode |
-| Cmd+Shift+T | reopen the tabs closed last (in the app) |
-| Cmd+T | symbols of the workspace (in the app) |
-| Ctrl+] / Ctrl+[ | next / previous tab of the focused pane |
-| Ctrl+Enter / Cmd+Enter | commit; send a diff comment |
-| Ctrl+Shift+M, then Cmd+B, I, R, T, S, Shift+B or C | wrap in `\mathbf`, `\mathit`, `\mathrm`, `\mathtt`, `\mathsf`, `\mathbb`, `\mathcal`, in a `.tex` or `.bib` tab |
-| Ctrl+Tab / Ctrl+Shift+Tab | next / previous tab (in the app) |
-| Delete | close the focused tab (not a pinned one) |
-| Enter, Tab, Up / Down | in the Debug Console: send, complete, history |
-| Enter; Up / Down | in a Search box: run; walk the last twenty texts |
-| Esc / Enter | in a Files name box: cancel / accept |
-| F / P / O | in Present: full screen / presenter screen / overview |
-| F10 / F11 / Shift+F11 | step over / into / out |
-| F12 / Cmd+click | go to definition; on a hub key, open its entry; on a Markdown link, follow it |
-| F4 / Shift+F4; Shift+Alt+H | next / previous reference; call hierarchy |
-| F5 | start or continue debugging |
-| F9 | toggle a breakpoint |
-| g g / G | top / bottom of the page |
-| Home / End | in Present: first / last slide |
-| Key | What it does |
-| n | new agent session in the page's Terminal tab |
-| Right / Left, Page Down / Page Up, Space / Shift+Space | in Present: next / previous slide |
-| Shift+Enter | palette, on `:task-add`: add and open |
-| Shift+F10 | the right-click menu of the focused control |
-| Shift+F5 / Cmd+Shift+F5 | stop / restart debugging |
-| Tab / Shift+Tab | move between controls; in an editor Tab indents, and Escape then Tab moves on |
-| w1-w3 | Live HPC, Usage, Workbenches |
-A `downloads` secret is shown as Set or Not set and is never sent to the page.
-A file builds through its root: a `% !TEX root = <path>` comment, else the file itself if it has `\documentclass`, else the main file that includes it, else the only main file of its folder.
-A file with no `schema:` has no Edit.
-A folder has at most one workbench.
-A limited tab says `In <root>/<path>` and has a control that widens it to the whole root.
-A location in a library opens a read-only tab.
-A page is a working surface: a tree of splits and panes, each pane a strip of tabs.
-A pane from the arrangement stays, empty, when its last tab closes; a pane you split off closes with its last tab.
-A save is atomic and refuses a file with a NUL byte or that is not UTF-8.
-A schedule runs a task, a command of a repository's `.oculus/commands.yml` or a prompt on a cron pattern, in local time.
-A view opened for something (a project, a person, an entry, a document, a file, a diff) never covers the tool views.
-An option that makes the agent ask less (Accept edits, Auto, Bypass permissions, Full access) asks first, every time.
-Apply writes the checked edits; Discard writes nothing.
-Delete asks first and names everything that refers to the entry; those references become findings.
-Eleven views exist once: Settings, Focus, Usage, Live HPC, Findings, History, Processes, Pages, Workbenches, Status and Apps.
-Fetch downloads every missing, partial or different file, and a partial file resumes.
-Indentation, word wrap and rulers come from, in order: the tab's own choice, the file, the repository's `.oculus/settings.yml`, `editor.languages`, the global keys.
-It lands, in this order: in a workbench's documents pane; in the pane that took the last such tab; in the pane you are in, if it holds such tabs; in an empty documents pane; in a new pane split off to the right.
-It runs `squeue`, `sacct` and `sinfo` on each cluster over ssh every `slurm.poll_min` minutes.
-It writes only where a control says so: back into the file a value came from, and files and folders you make from the Files view.
-No app can reach `~/.oculus`, oculus's `config/`, a hub's `secrets` folder or any `local.yml`.
-No draft is made at the provider.
-Nothing force-pushes except a deposit's snapshot.
-Oculus shows the research hub's YAML and Markdown files as boards, lists and documents, in a browser tab or in its own app.
-Opening one goes to wherever it is.
-Reopen restores a kept layout; Forget drops it.
-Results with one DOI, PubMed id or arXiv id merge, each field taken from the source `literature.prefer` puts first.
-Resume asks once and runs on the second press, and is disabled while the session runs.
-Save writes only the changed fields and keeps the file's other lines and comments.
-Search and More each send one request, and nothing else asks the browser.
-Switching branch and Sync ask first.
-The `secrets` folder of every hub is private: no search, language server, linter fix or app reads it.
-The app starts the server and stops it when it quits; tmux terminals keep running.
-The deck menu opens the portfolio deck (`portfolio_deck`), a project's `present/` deck, or one opened from Files.
-The FILES block lists the files of the extensions in `file_index.ext`.
-The layout is Graphviz's neato.
-The notes per thread are in `<mail_dir>/triage.json`, written by the card and by the Inbox update task.
-```
-
-docs/data-map.md (120):
-
-```
-  access: vocab data_access
-  affiliations: [organisations key]
-  bucket: vocab radar_buckets
-  category: vocab venue_categories
-  collaborators: [people key]
-  compute: [resources key]
-  funder: organisations key
-  groups.<name>.slides: [a project]
-  kind: vocab pillar_kinds
-  lead, collaborators, supervisors: [people key]
-  maps_to: a project, or new-idea-candidate
-  status.chips: [vocab chips]
-  supervisors: [people key]
-  themes: [an option of the themes field]
-  waiting-on: [people key, or a project]
-`.oculus/config.yml` may set these 69 keys and no others; any other key is a finding and is not applied.
-`radar`: an `idea` entry carries `motif`, `maps_to` and `idea_spark`; the other buckets carry `project`, `relevance` and `why`, and a `preemption` entry also `threatens`.
-`resources`: `host` is needed for `slurm.resource` to poll the cluster; it is an ssh alias, a DNS name or an address, with no user name, which is this machine's row of `clusters:` in `local.yml`.
-`snooze`, `subtasks` and `followup` are written by oculus into any entry and need no line in a schema.
-`text` is laid over the display language and over oculus's English words, key by key.
-| `applications` | none | `.oculus/data/academic/applications.yml` | a position application | `key` | Applications |
-| `checkbox` | `true` or `false` |
-| `data` | `datasets` | `.oculus/data/research/data.yml` | a dataset | `key` | Data |
-| `date` | `YYYY-MM-DD` |
-| `display` | a whole number from 1: what a card heading and a reference to the entry show, the filled field of the lowest rank first |
-| `domains` | `domains` | `.oculus/data/pillars/domains.yml` | an application domain | `key` | Domains |
-| `education` | none | `.oculus/data/academic/education.yml` | a course, supervision or service role | `key` | Education & Service |
-| `events` | none | `.oculus/data/academic/events.yml` | a talk, visit or conference | `key` | Talks & Events |
-| `fields` | the fields of each record of a `records` field |
-| `funding` | `funding` | `.oculus/data/academic/funding.yml` | a grant application or programme | `key` | Funding |
-| `help` | the hover text in the editor |
-| `label` | the field's name on screen |
-| `leads` | `leads` | `.oculus/data/academic/leads.yml` | an opening the scout found | `title` | Position Leads |
-| `map` | `true` on a `records` field that is a map from a name to a record |
-| `metalist` | a list of `{ label, value }` |
-| `open` | `true` allows undeclared keys in a `records` or `raw` field |
-| `options` | the allowed values of a `select` or `tags` field, each a word or `{ key, label }` |
-| `organisations` | `organisations` | `.oculus/data/people/organisations.yml` | a university, hospital, funder or company | `key` | Organisations |
-| `people` | `people` | `.oculus/data/people/people.yml` | a person | `key` | People, Person |
-| `period` | a date or a span, EDTF: a year `2025`, a month `2025-09`, a day `YYYY-MM-DD`, a moment `YYYY-MM-DDTHH:MM:SS`, with an optional `Z`, `+HH:MM` or `-HH:MM`, a span `2025-09/2026-09`, an open span `2025/..` |
-| `pillars` | `pillars` | `.oculus/data/pillars/pillars.yml` | a research line | `key` | Pillars, Map |
-| `radar` | `radar` | `.oculus/data/literature/radar.yml` | a paper the literature scout found | `title` | Lit Watch |
-| `raw` | a nested map |
-| `records` | a list of maps with the fields `fields` lists; with `map: true`, a map from a name to one such map |
-| `required` | `true`, or `{ when: ... }` |
-| `resources` | `resources` | `.oculus/data/research/resources.yml` | a cluster, machine or storage | `key` | Resources, Live HPC |
-| `select` | one of `options`, or a key from `foreign_key` |
-| `statements` | none | `.oculus/data/research/statements.yml` | a reusable manuscript statement | `key` | Statements |
-| `tags` | a list of strings |
-| `tasks` | none | `.oculus/data/academic/tasks.yml` | a task | `key` | Tasks |
-| `text` | one line |
-| `textarea` | several lines |
-| `venues` | `venues` | `.oculus/data/research/venues.yml` | a journal or conference | `id` | Venues |
-| Attribute | Meaning |
-| Key | Registry | Default file | One entry is | Primary key | View |
-| Type | Value |
-A `foreign_key:` that is empty, names nothing, or names a collection with no primary key is a finding, and the field offers nothing.
-A collection the hub does not list has no view: its tab is left out of its page, and the pane says which key is missing.
-A hub keys its files as it likes.
-A link between a project and another record is written on one side only.
-A project names what it belongs to: its venue, domain, pillars, funding, datasets, compute and people.
-A record that is about projects names them: an event, a teaching entry or an application in its `related:`, a literature entry in its `projects:`, a Lit Watch paper in its `project:`.
-A record that owns a folder of work, such as a paper, a tool or a study, is a project: its manifest is a `project.yml` at the folder's top or in its `.oculus/`, found by `scan:`, so it moves, is archived and is deleted with its folder.
-A status that is no word of its list is a finding naming the closest word of the list when that word is within half the written word's length in single-letter changes, rounded down, and a stage word or a form written as a chip is a finding naming the field it belongs in.
-agents:                   # the composer's agents (by name)
-An empty value of any other field passes for every type.
-app_settings:             # the values of the settings apps declare
-apps_dir:                 # where the machine's apps are kept
-audit.required_sections:  # the headings a project's file must hold while a manifest key has a value
-audit.stage_folders:      # the folders a project at a stage is kept under
-Below, each file is named by its collection key, and `[ ]` marks a list.
-categories:               # the categories a project is filed under, each with its colour (by key)
-chat_context:             # the collections whose files a chat's index holds for the hub
-collections:              # the data files and the two feeds, each a key, a file and the fields of what it is
-data_access:              # the colour of a dataset's access chip (by word)
-deck_order:               # the order a deck places the categories in (whole)
-deposit.zenodo.address:   # the address every call of the Deposit view is built from
-deposit.zenodo.auth:      # the header, prefix and downloads row of the token every Zenodo call carries
-deposit.zenodo.timeout_s: # the seconds one upload of a project's zip is given
-events, education, applications:
-Fields that name a path are not keys: an Audit row reports a missing path for the `link` of the `funding`, `events`, `education` and `applications` files.
-focus_lane_tones:         # the colour of each collection lane bar of Focus (by word)
-focus_lanes:              # the Focus lanes, in order, with what a move onto each writes (whole)
-forms:                    # the forms of a project's output (by word)
-fund_stages:              # the stages stacked in the Focus Funding column, in order (whole)
-funding, events, education, applications, tasks:
-glyphs:                   # the glyphs' ASCII stand-ins (by name)
-icons:                    # the icon map (by name)
-In the editor, Cmd+click on a foreign key opens the entry, Find All References lists every place that names it, and F2 renames a registry entry's key everywhere it is named.
-latex_editing:            # the sections of the LaTeX tables (by name)
-latex_unimath:            # the Unicode math rows (by command)
-leads_fit:                # the fit colours of the Position Leads (by word)
-lint.writing_skip:        # the files the writing rules skip
-locale:                   # the display language: en, or the languageId an app contributes
-manifest_fields:          # the fields the hub adds to the form of its own projects (by row)
-new_project_dir:          # the folder a new project is made in, per tier
-patterns:                 # the file nesting patterns (by pattern)
-position_stages:          # the stages stacked in the Focus Job applications column, in order (whole)
-radar_buckets:            # the buckets of Lit Watch, in order (whole)
-rail_color:               # the colour of a project board's rail count (the hub's value)
-recover.sources:          # the reader rows Recover lists a dataset's files with, one per source kind (by key)
-research_audit:           # the tiers the audit's research rules skip (by word)
-scan:                     # the folders projects are found in
-schedules:                # where the schedules are kept
-sign_in:                  # the providers a reader signs in with: google, microsoft and git hosts (by key)
-slurm.resource:           # the clusters Live HPC polls, in order
-teaching_stages:          # the stages stacked in the Focus Teaching & supervision column, in order (whole)
-text:                     # words of the interface, by the dotted key of the text catalog
-The field flagged `primary_key: true` is the one a write finds the entry by, and its value is required.
-The view of either side finds the other by reading the side that names it.
-ticker_categories:        # the command center's deadline groups, with their words (by word)
-tiers:                    # the kinds of project a manifest's tier names (by word)
-venue_tiers:              # the tiers of venues, in order (whole)
-venues.browser:           # the reader row of the hub's journal browser
-website.cv:               # the command run in that folder after a write
-website.files.cv:         # the CV's file, relative to the website's folder
-website.files.industry:   # the employer CVs' file, relative to the website's folder
-website.files.papers:     # the publications' file, relative to the website's folder
-website.files.site:       # the website's own file, relative to its folder
-website.kinds:            # the sections of the website's publications, by stage and form
-```
-
-docs/decks.md (60):
-
-```
-    find: { folders: "projects/*/*/present", tiers: [research], stages: [in-prep], forms: [article], status: [active] }
-  frame: { width: 1280, height: 720 }
-  tag_tones: { measured: green }
-![Loss per epoch](figure.png)
-{ figure: figure.png, caption: "Loss per epoch", explain: "Lower is better." }
-{ kind: grid, of: members, title: "The ideas", lede: "One card each.", foot: "Drawn by stage." }
-{ kind: summary, of: members, title: "Where each project stands", foot: "From the last runs." }
-{ label: "Data", value: "two cohorts" }
-| `chips` | `status.chips`, each by its label in `chips:` |
-| `code` | `code_availability.status`: deposited, anon for `review-anon`, pending for `none`, no code for any other |
-| `collaborators` | `collaborators`, each by the person's name |
-| `compute` | `compute`, each by the resource's name |
-| `datasets` | `datasets`, each by its key |
-| `domain` | `domain`, by the domain's title |
-| `form` | `form`, by its label in `forms:` |
-| `funding` | `funding`, each by its key |
-| `lead` | `lead`, each by the person's name |
-| `pillars` | `pillars`, each by the pillar's title |
-| `reproduced` | `reproduced.date`, else the word reproduced |
-| `stage` | `stage`, by its label in `stages:` |
-| `supervisors` | `supervisors`, each by the person's name |
-| `tier` | `tier`, by its label in `tiers:` |
-| `venue` | `venue`, by the venue's short name, else its name |
-| `year` | `year`, as it is written |
-| Field | Filled from the manifest |
-$$ L = \sum_i (y_i - \hat{y}_i)^2 $$
-1. **Faster** The model trains in half the time.
-2. **Smaller** It needs a third of the memory.
-3. **Clearer** Its errors are easier to read.
-A `---` inside a fenced code block or an HTML comment does not cut.
-A group of other decks keeps every deck.
-A name written twice is placed once, and a name that matches no deck the group can see is a finding.
-A project slide that sets none of `title`, `sub`, `hook`, `tag`, `eli5`, `equation`, `specs`, `panels`, `method` and `results` draws its body instead.
-A slide with no front matter leaves a blank line after its `---`.
-Alpha at {{project.stage}}
-contact: "name@example.org"
-desc: "A model that learns the same with less work."
-Each entry of `order:` is one of four things.
-eli5: { purpose: "Train faster.", plain: "It learns the same with less work." }
-equation: "L = \\sum_i (y_i - \\hat{y}_i)^2"
-headline: "Half the training time"
-hook: "Half the training time."
-How a group picks its decks
-Led by {{project.lead}}, for {{project.venue}}.
-Measured on the first cohort.
-mechanism: "A smaller model"
-method: ["Train on the first cohort.", "Test on the second."]
-model.fit(data, epochs=10)
-Naming it in one group's `slides:` places it there.
-No control writes `present.yml` or a slide file.
-results: ["Half the training time."]
-Spaces inside the braces are allowed.
-sub: "A smaller model for the same task"
-tag: { class: measured, text: "Measured" }
-The decks `slides:` names, in its order.
-The heading and the body's first fenced code block; the rest of the body is not drawn.
-The heading, the body's first `$$ ... $$` formula as the display formula, and the rest of the words under it.
-The new one reads the cache.
-The old pipeline read every file.
-Write the methods section.
-```
+One sentence moved between pages by decision 3: "Nothing else in that file changes." It was in today's Help at line 631 and moved to the data map's last section, where this round rewrote it to "and writes that block alone, with no control" (`docs/data-map.md:383`).
 
 ## Item 5 lines
 
 - `README.md:42`: "The [Decks guide](docs/decks.md) shows how to write one." Still true.
-- `README.md:95`: before "is the manual: every view, key, setting and file. The app shows it on its Help page." After "is the manual: each part of the window and each view, with what its screen does not show, and the keys. The app shows it on its Help page."
+- `README.md:95`: before "is the manual: every view, key, setting and file. The app shows it on its Help page." After "is the manual: each part of the window and each view, with the rules, files and limits behind what its screen shows, and the keys. The app shows it on its Help page."
 - `README.md:96`, `:98` and `:100` (templates, apps, palette): still true.
 - `README.md:97`: before "maps a hub's data files, the views that show them and the keys that link them." After "maps the files oculus reads from a hub and from a repository: where each is, its keys and the keys that link them."
 - `README.md:99`: before "shows how to write a deck: every key of `present.yml` and every slide kind, each with an example." After "shows how to write a deck: its files, every key of `present.yml` and of a slide's front matter with its value when unset, and an example of every slide kind."
@@ -453,38 +372,56 @@ Write the methods section.
 - `tests/server/git/clone-exclude.test.ts:25` and `tests/server/git/git-scan-depth.test.ts:210`: before "as docs/HELP.md names them", after "as docs/data-map.md names them". The block is at `docs/data-map.md:383` (decision 3).
 - `config/defaults/sources.yml:35`: "The links between files are in docs/data-map.md, the Data map tab of the Help page." Still true (Keys and links, `docs/data-map.md:313`).
 - `config/text/views/system/help.yml:1`: "the tool's own manual, the docs/HELP.md of oculus's folder, and the Keyboard Shortcuts view with what each key does." Still true.
-- Help's scope as built, for the orchestrator's rewrite of `CLAUDE.md:5`: `docs/HELP.md` gives each part of the window and each view, with what it is for and what its screen does not show, and then the keys.
+- Help's scope as built, for the orchestrator's rewrite of `CLAUDE.md:5`: `docs/HELP.md` gives each part of the window and each view, with what it is for and the rules, files and limits its screen does not draw, and then the keys.
+
+## Verify before you report 6: the prose rule
+
+Every list item and sentence new or changed in this round was read against the prose rule of `.scratch/migration/agents/spec.md` (plain, ASCII, no em dashes, no quips, no 'not X but Y', one line per paragraph) and the brief's Conventions (no sentence says what something is not; a page's own structure is never narrated). Checks run: check 3 and `LC_ALL=C grep -n '[^ -~]'` (no line); `grep -n "\bnot\b\|\bnever\b\|\bnone\b\|n't\|\bnothing\b\|\bwithout\b\|\bno\b"` over the three pages, each hit read.
+
+Departures kept, each with why it needs its form:
+
+- Conditions phrased with "no" or "without" that lead to a positive action stay, since the condition is what the reader must match: "a project no board takes ... is a finding" (`docs/HELP.md:96`), "a tab with no unsaved text reloads it" (`:256`), "With no stage picked the map draws ..." (`:356`), "an entry of a file with no primary key" (`:316`), "a lead with ... with or without a day" (`:138`), and the data map's and decks guide's finding rules of the same shape.
+- When unset cells that name an absence ("no group", "none", "no chip", "nobody is marked", "no calendar") stay, since the absence is the value.
+- "only" in "Only a deposit's snapshot is force-pushed", "Only a press asks the browser", "Send and Archive are the only writes to a mailbox" and "only Close in a tab's menu closes one" states the one thing that does it.
+- The keys paragraph's "The table below also gives ..." (`docs/HELP.md:494`) points at the table because item 4 asks Help to say the table covers the view-bound keys the view does not list; it is the one sentence that refers to the page's own parts.
+- "is a finding, and oculus skips it" and "the deck skips it" say what the reader sees: the key has no effect.
 
 ## Judgment calls
 
 - The apps' own views (one registration per app, `src/routes/views.ts:211-234`) and the views the apps contribute (`views.ts:236-261`) have no Help entry, as item 1 says. The Apps entry and the a1-a9 row name them.
-- Literature has an entry of its own beside Collection views, since it is the one collection with Save to Literature, Add by DOI and its own key rule. Collection views lists it among the collections it draws.
-- Workbenches is both a shell part (under The window) and a view (the float). The view's entry is headed "Workbenches view" and holds only Reopen and Forget, so no fact is written twice.
+- Literature is one bullet of Collection views (item 1), since it is a collection view whose Add, key rule and Save to Literature are its own.
+- Workbenches is both a shell part (under The window) and a view (the float). The view's entry is headed "Workbenches view" and holds its one-line description.
 - The title bar, the update tray and Linux have no entries of their own. The update tray and the schedules are in the rail's entry, since Update sits at the rail's foot. The app and Linux facts are the opening paragraph of The window.
-- "A second hub" and "The primary hub" of the data map are now one section, Several hubs. It holds only what changes which file is read or written (decision 5).
-- The data map drops its Views table. The collections table keeps a View column, and Help names the file each view draws.
-- The keys table drops the rows whose binding is Monaco's own and which the Keyboard Shortcuts view lists (Shift+F12, Cmd+., Shift+Alt+F, Shift+Alt+O, Cmd+L Cmd+L). It also drops the arrows of a menu and of a terminal row.
+- "A second hub" and "The primary hub" of the data map are one section, Several hubs. It holds only what changes which file is read or written (decision 5).
+- The data map has no Views table. The collections table keeps a View column, and Help names the file each view draws.
+- The keys table leaves out the rows whose binding is Monaco's own and which the Keyboard Shortcuts view lists (Shift+F12, Cmd+., Shift+Alt+F, Shift+Alt+O), and the arrows of a menu and of a terminal row. The LaTeX tab's own chords Cmd+L Cmd+L and Cmd+L Ctrl+Shift+M are in the table (item 9).
+- The per-row citations of the This machine's values table are in this report, not on the page: the page is a reader's guide, and the When unset column carries each row's value from the code.
 
 ## User-visible changes
 
-- Help is 7391 words, down from 32223. It has a short entry for each part of the window and each view, then the key table, and it does not describe what the screen shows. The configuration chapter, the Files chapter and the per-view notes are cut to the facts each view's screen does not show, and the keys of the files are on the data map.
-- Help's heading "Pages and the pane tree" is now "Pages and panes". "The keys" keeps its anchor `#the-keys`.
+- Help is 6890 words, down from 32223. It has a short entry for each part of the window and each view, then the key table. Each entry holds what the view is for and the rules, files and limits its screen does not draw; the configuration chapter, the Files chapter and the per-view notes are cut to those, and the keys of the hub files are on the data map, linked from Help.
+- Help's heading "Pages and the pane tree" is now "Pages and panes". "The keys" keeps its anchor `#the-keys`. The Literature entry is folded into Collection views.
 - In Help's key table:
   - `p1-p6` replaces `p1-p4`.
-  - `h1, h2, h3-h9` replaces `h1-h9 | the Help page's tabs`. Only Help, Keyboard Shortcuts and the hub's `docs:` entries of the Help group have chords, and `layout.yml:334` ships `docs: []`.
-  - Escape in Present and Cmd+K Shift+Enter are added.
-  - Cmd+Enter now names the Files row too.
-- The data map now gives:
-  - the keys of `local.yml`, the workspace file, `bookmarks.yml`, `schedules.yml`, `project.yml` and the repository's `.oculus/` files
+  - `h1 / h2 / h3-h7 / h8, h9` replaces `h1-h9 | the Help page's tabs`: h1 Help, h2 Keyboard Shortcuts, h3 to h7 the Apps guide, Templates, Data map, Palette and Decks guide (the Help arrangement's order, `layout.yml:136-145`), and h8 and h9 the hub's `docs:` entries of the Help group, which oculus ships empty (`layout.yml:334`).
+  - Escape in Present, Cmd+K Shift+Enter (pin or unpin the tab), the nine Files row rows, and Cmd+L Cmd+L and Cmd+L Ctrl+Shift+M are added.
+  - Cmd+Enter names the Files and Repositories row.
+- The data map gives:
+  - the keys of `local.yml` with each value when unset, the workspace file, `bookmarks.yml`, `schedules.yml`, `project.yml` and the repository's `.oculus/` files
   - which of the 69 config keys are read from the primary hub only
-- Sentences of today's pages that the code shows to be false or incomplete, now corrected:
+  - the workspace folder's `repository_scan_depth` range
+- The decks guide says the deck order is the hub's merged `deck_order`, set in the hub's `.oculus/config.yml`.
+- Sentences of today's pages that the code shows to be false or incomplete, corrected:
   - An update task is a file of any hub, and the tray offers the task of every hub that holds its file (`task.ts:5-11`). Today's Help and data map said it was a file of the primary hub.
   - `filter: true` also takes a `period` field (FILTERED_TYPES in `model-collections.ts`).
   - An event's `link` is required when `role: present` and `status` is `upcoming` or `planned` (`docs/templates.md:1481`).
-  - `literature.sources`, `recover.sources`, `links`, `sign_in` and `connections.failures` are laid over oculus's rows row by row. They do not replace oculus's value whole (`hub-layer.ts:18-21`, `in-place.ts:147-153`).
+  - `literature.sources`, `recover.sources`, `links`, `sign_in` and `connections.failures` are laid over oculus's rows row by row (`hub-layer.ts:18-21`, `in-place.ts:147-153`).
   - Breakpoints and watches are kept in `~/.oculus/debug.json` (`page-state/files.ts:5, 22`).
   - Cmd+P skips `.svelte-kit-app` as well as `node_modules`, `.git` and `.svelte-kit` (`query.ts:54`).
+  - "Stage All never stages new files" was false: Stage All adds the untracked group, with no time limit (`git-write.ts:34-38`).
+  - `:task-add` writes the status carrying `default_task`, `todo` in oculus's vocabulary (`new-entry.ts:102-121`, `vocab.yml:133`).
+  - `commit_message_account` unset runs under Claude's default folder (`git-message.ts:45, 53-61`).
 
 ## Anything in the brief that was wrong or impossible
 
-Nothing in the brief was wrong or impossible.
+Nothing in the brief or the round-1 brief was wrong or impossible.

@@ -46,7 +46,7 @@ dispatch:           # steps in flight, up to six (Z632)
   session_id: af4ed91caba9dc0c9 (claude-opus-5-5)
   launched: 2026-11-06
   report: .scratch/migration/agents/reviews/O165-report.md
-  builder_usage: 189316 tokens, 328 tool uses, 73.8 min
+  builder_usage: "build: 189316 tokens, 328 tool uses, 73.8 min; round 1: 321249 tokens, 301 tool uses, 41.1 min"
   reviewer_report: .scratch/migration/agents/reviews/O165-refuter.md (afbf839ba49f56236, claude-opus-5-5, 279824 tokens, 87 tool uses, 18.4 min)
   round: 1 (agents/briefs/O165-round-1.md, sent 2026-11-07)
   landing: not-started
@@ -86,8 +86,8 @@ dispatch:           # steps in flight, up to six (Z632)
   launched: 2026-11-06
   report: .scratch/migration/agents/reviews/O159-report.md
   builder_usage: 301370 tokens, 330 tool uses, 91.5 min
-  reviewer_report: (acce973629dd121c5, claude-opus-5-5, discarded: dispatched before /refute was invoked; 262813 tokens, 60 tool uses, 17.4 min)
-  round: 0
+  reviewer_report: (acce973629dd121c5, claude-opus-5-5, discarded: dispatched before /refute was invoked; 262813 tokens, 60 tool uses, 17.4 min); .scratch/migration/agents/reviews/O159-refuter.md (a864d9923908a74ce, claude-opus-5-5, 268862 tokens, 59 tool uses, 15.6 min)
+  round: 1 (agents/briefs/O159-round-1.md, sent 2026-11-07)
   landing: not-started
 ```
 
