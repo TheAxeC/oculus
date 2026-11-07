@@ -51,10 +51,11 @@ dispatch:           # steps in flight, up to six (Z632)
   round: 1
   shared_paths: src/lib/views/system/workbench/settings/scopes/ScopeBar.svelte with O167 of this plan; O169 writes lines 55-70, O167 lines 130-230, disjoint hunks, so the cherry-pick merges them without a conflict
   landing: not-started
-- step: O168
-  brief_check: "running: ac49bd723d867d915"
-  landing: preparing
 - step: O151
+  brief_check: .scratch/migration/agents/reviews/O151-brief-check.md (a423faa7257a10eea, claude-opus-5-5, 217403 tokens, 73 tool uses, 12.6 min)
+  landing: preparing
+- step: O170
+  brief_check: .scratch/migration/agents/reviews/O170-brief-check.md (a62bf71210ab6cbbf, claude-opus-5-5, 225844 tokens, 66 tool uses, 9.8 min)
   landing: preparing
 ```
 
