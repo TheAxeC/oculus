@@ -1,7 +1,7 @@
 In flight (4 of 6 slots in use):
 - O167 (the shell's controls hold one behaviour): building, round-0 rulings sent.
 - O169 (connections and their failures said in full): review in, repair round 1 sent.
-- O151 (a deck for every research project): /spec, brief check closed, worktrees being made.
+- O151 (a deck for every research project): building, in its oculus worktree and its hub worktree.
 - O170 (Literature and Present said and drawn plainly): /spec, brief check in, its findings being closed.
 
 Queued, in order (1 step):
