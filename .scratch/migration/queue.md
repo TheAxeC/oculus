@@ -3,8 +3,12 @@ In flight (1 of 6 slots in use):
 
 Queued, in order:
 - O151 (a deck for every research project, and the facts strip made smaller): deleted entirely; redone from its line only on Axel's go.
+- O167 (the shell's controls hold one behaviour): booked from the looks of 2026-11-07; on Axel's go.
+- O168 (the boards and record lists drawn whole): booked from the same looks; on Axel's go.
+- O169 (connections and their failures said in full): booked from the same looks; on Axel's go.
+- O170 (Literature and Present said and drawn plainly): booked from the same looks; on Axel's go.
 
-Owed looks: none.
+Owed looks that the browser cannot take: the PDF file of O147, O148, O158 and O163 (the print dialog); O149 ruling 9; O152 C11; O155's order before; O161's real Cmd+F; O158's 400 px frame.
 
 Landed, newest first:
 - O161 (cheaper cards), 2026-11-07, ccabf01ef.
