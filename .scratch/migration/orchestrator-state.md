@@ -47,7 +47,9 @@ dispatch:           # steps in flight, up to six (Z632)
   session_id: a242c8c8c4aa11ec0 (claude-opus-5-5)
   launched: 2026-11-07
   report: .scratch/migration/agents/reviews/O151-report.md
-  round: 0
+  builder_usage: "build: 329549 tokens, 1538 tool uses, 163.9 min"
+  reviewer_report: .scratch/migration/agents/reviews/O151-refuter.md (a35359bb43448153a, claude-opus-5-5, 94045 tokens, 95 tool uses, 15.3 min)
+  round: 1 (agents/briefs/O151-round-1.md, sent 2026-11-07; snapshot .agents/worktrees/migration-O151-round-1)
   landing: not-started
 ```
 

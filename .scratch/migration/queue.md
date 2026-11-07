@@ -1,13 +1,13 @@
 In flight (2 of 6 slots in use):
-- O151 (a deck for every research project, and the facts strip made smaller): building.
-- O165 (the guides redesigned): writing findings applied next, then Axel's approval.
+- O151 (a deck for every research project, and the facts strip made smaller): repair round 1 running (every slide made to fit, the G14 test fix, the review's findings); then a fresh review and a second look.
+- O165 (the guides redesigned): writing findings applied, waiting on Axel's approval of the three pages.
 
 Queued, in order: none.
 
 Owed looks: none.
 
 Landed, newest first:
-- O161 (cheaper cards), 2026-11-07.
+- O161 (cheaper cards), 2026-11-07, ccabf01ef.
 - O166 (the record pages made one design), 2026-11-07, 6038e7fdc.
 - O159 (one folder search per hub), 2026-11-07, db4244173.
 - O164 (a card's links open their page), 2026-11-06, 2ba2827a3.
